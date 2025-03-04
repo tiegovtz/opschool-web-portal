@@ -15,7 +15,7 @@
               />
             </div>
             <div class="flex flex-col">
-              <p class="text-lg ">Hello, Friend</p>
+              <p class="text-lg">Hello, Friend</p>
               <p class="text-base text-gray-400/80">Student</p>
             </div>
           </div>

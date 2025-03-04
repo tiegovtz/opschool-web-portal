@@ -26,6 +26,11 @@
   @apply min-h-[calc(100vh-9.125rem)];
 }
 
+/* Shadow left */
+@utility shadow-left {
+  @apply shadow-lg shadow-gray-300/50;
+}
+
 @theme {
   --color-darkBlue: #282938;
   --color-oceanBlue: #56ade8;

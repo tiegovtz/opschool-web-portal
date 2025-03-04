@@ -3,7 +3,7 @@
     <HeroSection />
     <TabBar />
 
-    <div v-if="status === 'pending'">Loading...</div>
+    <div v-if="status === 'pending'" class="flex justify-center items-center">Loading...</div>
     <div v-else-if="status === 'error'">Error: {{ error.message }}</div>
     <div v-else-if="status === 'success'">
       <div class=" grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 gap-6 mb-10">
@@ -23,9 +23,18 @@
             @send-page-number="currentPage = $event" />
         </div>
         <div v-else class="flex justify-center gap-2">
+          <!-- previous -->
+          <div class="flex justify-center items-center" v-if="currentPage > 5">
+              <Icon name="iconamoon:arrow-left-2-fill"  size="2rem" @click="prevPage"/>
+             </div>
           <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page" :is-active="page === currentPage"
             :disabled="page === currentPage" @click="sliceData((page - 1) * pageSize, page * pageSize)"
             @send-page-number="currentPage = $event" />
+
+            <!-- next button -->
+             <div class="flex justify-center items-center" v-if="currentPage >4">
+              <Icon name="iconamoon:arrow-right-2-fill"  size="2rem" @click="nextPage"/>
+             </div>
         </div>
       </div>
     </div>
@@ -40,29 +49,64 @@ import TopicCard from "@/components/home/TopicCard.vue";
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
 import { ref, computed, onMounted } from 'vue';
-
+import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 
 const { data, status, error } = useFetch("/api/get-topic", {
   query: { streamId: 1, subjectId: 3 },
 });
 
-// current page data
-const currentPage = ref(1);
-const pageSize = 9;
-// total pages data
-const totalPages = computed(() => {
-  return Math.ceil(data.value.data.length / pageSize);
-});
+  // current page data
+  const currentPage = ref(1);
+  const pageSize = ref(isGreaterToXL.value ? 12 : isGreaterToLG.value ? 9 : isGreaterToMD.value ? 6 : isGreaterToSM.value ? 4 : 4);
 
-// slice data to 9
-const slicedData = ref();
-const sliceData = (start, end) => {
-  slicedData.value = data.value.data.slice(start, end);
-};
 
-// slice data on mount
+  // total pages data
+  const totalPages = computed(() => {
+    return Math.ceil(data.value.data.length / pageSize.value);
+  });
+
+  // extact total pages in groups of 5
+
+
+  // slice data to 9
+  const slicedData = ref();
+  const sliceData = (start, end) => {
+    slicedData.value = data.value.data.slice(start, end);
+  };
+
+// On mount, always slice with initial 12 items
 onMounted(() => {
-  sliceData((currentPage.value - 1) * pageSize, currentPage.value * pageSize);
-});
+  sliceData(
+    (currentPage.value - 1) * pageSize.value, 
+    currentPage.value * pageSize.value
+  )
+})
 
+// Watch screen width and update page size accordingly
+watch(() => screenWidth.value, () => {
+  if (screenWidth.value >= 1280) {
+    pageSize.value = 12
+  } else if (screenWidth.value >= 1024 && screenWidth.value < 1280) {
+    pageSize.value = 9
+  } else if (screenWidth.value >= 768 && screenWidth.value < 1024) {
+    pageSize.value = 6
+  } else if (screenWidth.value >= 640 && screenWidth.value < 768) {
+    pageSize.value = 4
+  } else {
+    pageSize.value = 4
+  }
+}, { immediate: true });
+
+// once pages are more than 5, handle pagination
+const nextPage = () => {
+  currentPage.value++;
+  currentPage.value = currentPage.value > totalPages.value ? totalPages.value : currentPage.value;
+  sliceData((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value);
+}
+
+const prevPage = () => {
+  currentPage.value--;
+  currentPage.value = currentPage.value < 1 ? 1 : currentPage.value;
+  sliceData((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value);
+}
 </script>

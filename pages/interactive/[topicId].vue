@@ -1,26 +1,49 @@
 <template>
-  <section class="relative w-full h-full inline-flex">
-    <div class="bg-blue-500 lg:w-3/4 w-full center-height p-5">
+  <section class="relative w-full h-full inline-flex center-height">
+    <div class="lg:w-3/4 w-full center-height p-5">
 
       <div class="flex items-center justify-between">
-        <h1>Interactive Topics</h1>
-        <Icon name="basil:menu-outline" class="cursor-pointer  lg:hidden flex" size="2rem" />
+        <h1>{{ data.descriptions }}</h1>
+        <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" />
       </div>
-      <p>{{ topicId }}</p>
+      <div class="content" >
+        <div class="" v-for="chapter in data.chapters" :key="chapter._id">
+          <NuxtImg :src="baseUrl + chapter.thumbnail" class="w-full h-56 object-cover" alt=""/>
+          <h1>{{ chapter.name }}</h1>
+          <p>{{ chapter.description }}</p>
+          <div class="entent-container" v-html="chapter.content">
+
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="absolute right-0 top-0 bg-red-500 w-1/4  center-height p-5">
-      <h1>Sidebar</h1>
+    <div class="absolute right-0 top-0 w-1/4 h-full p-5 bg-oceanBlue ">
+      <h1 class="text-lg font-medium mb-4">{{ data.descriptions }}</h1>
+      <!-- UL list of chapters -->
+      <ul class="flex flex-col gap-3">
+        <li class="p-2 bg-gray-100 rounded-md">Chapter 1: Basics</li>
+        <li class="p-2 bg-gray-100 rounded-md">Chapter 2: Motion</li>
+        <li class="p-2 bg-gray-100 rounded-md">Chapter 3: Forces</li>
+        <li class="p-2 bg-gray-100 rounded-md">Chapter 4: Energy</li>
+      </ul>
     </div>
   </section>
 </template>
 
 <script setup>
+import { baseUrl } from '@/utilities/controlls';
+
 const route = useRoute()
 const topicId = route.fullPath.split('/').pop()
-console.log(topicId)
 
 // const toggleSidebar = () => {
 //   const sidebar = document.querySelector('.sidebar')
 //   sidebar.classList.toggle('hidden')
 // }
+
+const { data, status, error } = useFetch("/api/get-demo-topics", {
+  query: { topicId: topicId },
+});
+
+console.log(data.value)
 </script>

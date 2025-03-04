@@ -5,6 +5,8 @@
  * @returns {string} - The calculated value
  * @author MinjaBaraka (https://github.com/MinjaBaraka)
  * @description This function calculates the metrics of a topic
+ * @version 1.0.0
+ * @since 1.0.0
  * @example     
  * calculateTopicMetrics(1000) // "1K"
  * calculateTopicMetrics(1000000) // "1M"

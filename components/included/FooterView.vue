@@ -1,8 +1,8 @@
 <template>
     <!-- Footer -->
     <footer class="bg-darkBlue text-white p-4">
-      <div class="container flex justify-between items-center">
-        <p class="">
+      <div class="container flex justify-between items-center lg:flex-row flex-col gap-2">
+        <p class="text-center">
             All Rights Reserved &copy; Tanzania Institute of Education
         </p>
         <ul class="flex items-center gap-6">
