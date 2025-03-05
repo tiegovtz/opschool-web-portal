@@ -1,1 +1,0 @@
-export { default } from "file:///home/xyden/Data/Web/tie-web-portal/node_modules/@nuxt/vite-builder/dist/runtime/vite-node.mjs"
