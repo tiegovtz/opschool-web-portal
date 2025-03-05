@@ -36,6 +36,7 @@
   --color-oceanBlue: #56ade8;
   --color-normalBlue: #2405f2;
   --color-normalYellow: #FCD980;
+  --color-textGray: #6E7178;
    /* Background color */
    --color-grayLight: #f0f0f0;
 
@@ -43,12 +44,12 @@
    --font-PTSerif: "PT Serif", serif;
 
    /* Text size */
-   --text-extraLarge: 2.5rem; /* 40px */        
-   --text-large: 1.5rem; /* 24px */
-   --text-medium: 1.1rem; /* 18px */
-   --text-small: 1rem; /* 16px */
-   --text-extraSmall: 0.8rem; /* 14px */
-   --text-smallest: 0.6rem; /* 12px */
+   --text-extraLarge: 2.5rem !important; /* 40px */        
+   --text-large: 1.5rem !important; /* 24px */
+   --text-medium: 1.1rem !important; /* 18px */
+   --text-small: 1rem !important; /* 16px */
+   --text-extraSmall: 0.8rem !important; /* 14px */
+   --text-smallest: 0.6rem !important; /* 12px */
 
 }
 

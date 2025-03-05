@@ -3,6 +3,7 @@ import type { DefineComponent, SlotsType } from 'vue'
 type IslandComponent<T extends DefineComponent> = T & DefineComponent<{}, {refresh: () => Promise<void>}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, SlotsType<{ fallback: { error: unknown } }>>
 interface _GlobalComponents {
       'HomeHeroSection': typeof import("../components/home/HeroSection.vue")['default']
+    'HomeInputsSelection': typeof import("../components/home/InputsSelection.vue")['default']
     'HomeTabBar': typeof import("../components/home/TabBar.vue")['default']
     'HomeTopicCard': typeof import("../components/home/TopicCard.vue")['default']
     'IncludedFooterView': typeof import("../components/included/FooterView.vue")['default']
@@ -33,6 +34,7 @@ interface _GlobalComponents {
     'NuxtIsland': typeof import("../node_modules/nuxt/dist/app/components/nuxt-island")['default']
     'NuxtRouteAnnouncer': IslandComponent<typeof import("../node_modules/nuxt/dist/app/components/server-placeholder")['default']>
       'LazyHomeHeroSection': typeof import("../components/home/HeroSection.vue")['default']
+    'LazyHomeInputsSelection': typeof import("../components/home/InputsSelection.vue")['default']
     'LazyHomeTabBar': typeof import("../components/home/TabBar.vue")['default']
     'LazyHomeTopicCard': typeof import("../components/home/TopicCard.vue")['default']
     'LazyIncludedFooterView': typeof import("../components/included/FooterView.vue")['default']
@@ -69,6 +71,7 @@ declare module 'vue' {
 }
 
 export const HomeHeroSection: typeof import("../components/home/HeroSection.vue")['default']
+export const HomeInputsSelection: typeof import("../components/home/InputsSelection.vue")['default']
 export const HomeTabBar: typeof import("../components/home/TabBar.vue")['default']
 export const HomeTopicCard: typeof import("../components/home/TopicCard.vue")['default']
 export const IncludedFooterView: typeof import("../components/included/FooterView.vue")['default']
@@ -99,6 +102,7 @@ export const Body: typeof import("../node_modules/nuxt/dist/head/runtime/compone
 export const NuxtIsland: typeof import("../node_modules/nuxt/dist/app/components/nuxt-island")['default']
 export const NuxtRouteAnnouncer: IslandComponent<typeof import("../node_modules/nuxt/dist/app/components/server-placeholder")['default']>
 export const LazyHomeHeroSection: typeof import("../components/home/HeroSection.vue")['default']
+export const LazyHomeInputsSelection: typeof import("../components/home/InputsSelection.vue")['default']
 export const LazyHomeTabBar: typeof import("../components/home/TabBar.vue")['default']
 export const LazyHomeTopicCard: typeof import("../components/home/TopicCard.vue")['default']
 export const LazyIncludedFooterView: typeof import("../components/included/FooterView.vue")['default']

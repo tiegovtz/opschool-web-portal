@@ -1,17 +1,20 @@
 <template>
   <section class="relative w-full h-full inline-flex center-height">
     <div class="lg:w-3/4 w-full center-height p-5">
-
+      <!-- Header Description -->
       <div class="flex items-center justify-between">
-        <h1>{{ data.descriptions }}</h1>
+        <h1 class="text-large font-medium">{{ data.descriptions }}</h1>
         <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" />
       </div>
       <div class="content" >
         <div class="" v-for="chapter in data.chapters" :key="chapter._id">
           <NuxtImg :src="baseUrl + chapter.thumbnail" class="w-full h-56 object-cover" alt=""/>
-          <h1>{{ chapter.name }}</h1>
-          <p>{{ chapter.description }}</p>
-          <div class="entent-container" v-html="chapter.content">
+          <!-- Chapter Name and Description -->
+          <div class="flex items-center justify-between">
+            <h1 class="text-large my-4">{{ chapter.name }}</h1>
+          </div>
+          <!-- Chapter Content -->
+          <div class="text-extraSmall text-textGray" v-html="chapter.content">
 
           </div>
         </div>
