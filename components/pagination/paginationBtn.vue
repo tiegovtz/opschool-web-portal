@@ -1,6 +1,6 @@
 <template>
     <button @click="emit('sendPageNumber', pageNumber)" :disabled="disabled"
-        :class="isActive ? 'bg-normalYellow text-white' : 'bg-gray-200 text-gray-500'"
+        :class="isActive ? 'bg-oceanBlue text-white' : 'bg-gray-200 text-gray-500'"
         class="w-10 h-10 rounded-md shadow-sm cursor-pointer">
         {{ pageNumber }}
     </button>

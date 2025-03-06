@@ -96,8 +96,9 @@ const prevPage = () => {
 </script>
 
 <template>
-  <div class="container">
-    <HeroSection />
+  <NuxtLayout name="home-layout">
+    <div class="container">
+      <HeroSection />
     <TabBar />
     <InputsSelection />
 
@@ -175,5 +176,6 @@ const prevPage = () => {
 
       </div>
     </div>
-  </div>
+    </div>
+  </NuxtLayout>
 </template>

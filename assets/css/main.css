@@ -31,6 +31,11 @@
   @apply shadow-lg shadow-gray-300/50;
 }
 
+/* Focus input icon */
+.focus-input-icon:focus-within span.iconify {
+  color: var( --color-oceanBlue);
+  }
+
 @theme {
   --color-darkBlue: #282938;
   --color-oceanBlue: #56ade8;
@@ -51,6 +56,15 @@
    --text-extraSmall: 0.8rem !important; /* 14px */
    --text-smallest: 0.6rem !important; /* 12px */
 
-}
 
-/*  */
+   --animate-bounce-horizontal: bounce-horizontal 1s infinite;
+   @keyframes bounce-horizontal {
+     0%, 100% {
+       transform: translateX(-5px);
+     }
+     50% {
+       transform: translateX(5px);
+     }
+   }
+
+}
