@@ -1,5 +1,13 @@
 <template>
   <section class="relative w-full h-full inline-flex center-height">
+   <!-- loading indicator -->
+    <div class="loading content-height flex items-center justify-center w-full" v-if="status=='pending'">
+      <LoadingIndicator :is-loading="true" />
+   </div>
+   <div class="error" v-else-if="status=='error'">
+      {{ error.message }}
+   </div>
+   <div class="sucess" v-if="status=='success'">
     <div class="lg:w-3/4 w-full center-height p-5">
       <!-- Header Description -->
       <div class="flex items-center justify-between">
@@ -30,11 +38,16 @@
         <li class="p-2 bg-gray-100 rounded-md">Chapter 4: Energy</li>
       </ul>
     </div>
+   </div>
+   <div class="idle" v-else-if="status == 'idle'">
+      <p> Try to reload the page ,Something went wrong</p>
+   </div>
   </section>
 </template>
 
 <script setup>
 import { baseUrl } from '@/utilities/controlls';
+import LoadingIndicator from '@/components/loading/loadingIndicator.vue';
 
 const route = useRoute()
 const topicId = route.fullPath.split('/').pop()
@@ -47,6 +60,4 @@ const topicId = route.fullPath.split('/').pop()
 const { data, status, error } = useFetch("/api/get-demo-topics", {
   query: { topicId: topicId },
 });
-
-console.log(data.value)
 </script>
