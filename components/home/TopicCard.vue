@@ -27,7 +27,7 @@
             {{ topicDescription }}
           </p>
         </div>
-        <div class="flex items-center justify-between px-1 pb-2 whitespace-nowrap xl:text-small md:text-extraSmall text-gray-400">
+        <div class="flex items-center justify-between px-1 pb-2 whitespace-nowrap text-extraSmall text-gray-400">
           <div class="flex items-center gap-2">
             <Icon name="proicons:clock" class="text-medium" />
             <p class="capitalize">{{ topicDuration }}</p>
