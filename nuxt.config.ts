@@ -19,7 +19,8 @@ export default defineNuxtConfig({
 
 
   image: {
-    dir: "assets/images",
+    // dir: "assets/images",
+    // dirPublic: "public/images",
     quality: 80,
     format: ["webp"],
     densities: [1],
