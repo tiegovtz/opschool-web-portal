@@ -1,6 +1,6 @@
 <template>
   <section class="">
-    <div class="flex items-center justify-center gap-6 mb-6">
+    <div class="flex items-center flex-wrap justify-center gap-6 mb-6">
       <NuxtLink to="/home" class="cursor-pointer  text-medium hover:text-oceanBlue/60" active-class="text-oceanBlue">
         Interactive Books
       </NuxtLink>
