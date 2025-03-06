@@ -1,7 +1,8 @@
 <template>
-  <section class="relative w-full h-full inline-flex center-height">
-   <!-- loading indicator -->
-    <div class="loading content-height flex items-center justify-center w-full" v-if="status=='pending'">
+  <NuxtLayout name="home-layout">
+    <section class="relative w-full h-full inline-flex center-height">
+      <!-- loading indicator -->
+      <div class="loading content-height flex items-center justify-center w-full" v-if="status=='pending'">
       <LoadingIndicator :is-loading="true" />
    </div>
    <div class="error" v-else-if="status=='error'">
@@ -43,6 +44,7 @@
       <p> Try to reload the page ,Something went wrong</p>
    </div>
   </section>
+  </NuxtLayout>
 </template>
 
 <script setup>
