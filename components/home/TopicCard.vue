@@ -19,7 +19,7 @@
             </div>
           </div>
         </div>
-        <div class="flex flex-col my-auto mt-5">
+        <div class="flex flex-col my-auto mt-5 px-1">
           <p class="text-small font-medium text-gray-800">
             {{ topicTitle }}
           </p>
