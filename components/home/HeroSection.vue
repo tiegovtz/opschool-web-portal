@@ -5,7 +5,7 @@
         <SliderShow />
       </div>
       <div class="flex flex-col justify-center md:ml-10 ">
-        <h1 class="text-extraLarge font-extrabold text-gray-800 mb-4">Welcome</h1>
+        <h1 class="md:text-extraLarge text-large font-extrabold text-gray-800 mb-4">Welcome</h1>
         <p class="text-medium text-gray-600/60 mb-6">
           What do you want to learn today?
         </p>
@@ -29,7 +29,7 @@
           <!-- Search Button -->
           <button
             type="submit"
-            class="bg-oceanBlue text-white p-2 md:p-4 md:flex hidden rounded-r-lg hover:bg-blue-400 transition duration-500 cursor-pointer"
+            class="bg-oceanBlue text-white p-2 md:p-4 lg:flex hidden rounded-r-lg hover:bg-blue-400 transition duration-500 cursor-pointer"
           >
             Search
           </button>

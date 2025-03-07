@@ -5,7 +5,7 @@
 
 @layer base {
   html {
-    @apply scroll-smooth overflow-auto bg-grayLight min-h-dvh leading-relaxed m-0 p-0 box-border font-Poppins;
+    @apply scroll-smooth overflow-auto bg-white/50 min-h-dvh leading-relaxed m-0 p-0 box-border font-Poppins;
   }
 
   ::selection {
@@ -26,6 +26,9 @@
   @apply min-h-[calc(100vh-9.125rem)];
 }
 
+@utility scroll-height {
+  @apply max-h-[calc(100vh-9.125rem)];
+}
 /* Shadow left */
 @utility shadow-left {
   @apply shadow-lg shadow-gray-300/50;
@@ -42,6 +45,9 @@
   --color-normalBlue: #2405f2;
   --color-normalYellow: #FCD980;
   --color-textGray: #6E7178;
+  --color-containerGray: #F3F3F3;
+  --color-normalGreen: #00BF77;
+  
    /* Background color */
    --color-grayLight: #f0f0f0;
 
@@ -69,6 +75,11 @@
 
 }
 
+@plugin 'tailwind-scrollbar';
+/* font */
+@utility content-view{
+  font-size: var(--text-extraSmall) !important;
+}
 
 
 /* swiper-pagination-bullet 

@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout name="home-layout">
-    <section class="relative w-full h-full inline-flex center-height">
+    <section class="relative w-full h-full inline-flex center-height overflow-hidden">
       <!-- loading indicator -->
       <div class="loading content-height flex items-center justify-center w-full" v-if="status=='pending'">
       <LoadingIndicator :is-loading="true" />
@@ -9,34 +9,50 @@
       {{ error.message }}
    </div>
    <div class="sucess" v-if="status=='success'">
-    <div class="lg:w-3/4 w-full center-height p-5">
+    <div class="lg:w-3/4 w-full scroll-height overflow-y-scroll p-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
       <!-- Header Description -->
-      <div class="flex items-center justify-between">
-        <h1 class="text-large font-medium">{{ data.descriptions }}</h1>
-        <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" />
+      <div class="flex items-center justify-end">
+        <div class="flex lg:hidden">
+          <Icon name="basil:menu-outline" class="cursor-pointer  hidden" size="2rem" />
+        </div>
       </div>
-      <div class="content" >
+      <div class="content-view" >
         <div class="" v-for="chapter in data.chapters" :key="chapter._id">
+          <div class="max-h-[800px] h-auto overflow-hidden mb-10 xl:p-6">
+            <video data-v-fa195f18="" class="rounded-md" controls id="video" nodownload="true" preload="auto" src="https://kisomo.co.tz/kisomo%20app/kisomo_schools/backend/contents/videos/How To Do Titration Calculations -edited.mp4" type="video/mp4" > Your browser does not support the track element. </video>
+          </div>
           <NuxtImg :src="baseUrl + chapter.thumbnail" class="w-full h-56 object-cover" alt=""/>
           <!-- Chapter Name and Description -->
           <div class="flex items-center justify-between">
             <h1 class="text-large my-4">{{ chapter.name }}</h1>
           </div>
           <!-- Chapter Content -->
-          <div class="text-extraSmall text-textGray" v-html="chapter.content">
+          <div class="!text-extraSmall text-textGray" v-html="chapter.content">
 
           </div>
         </div>
       </div>
     </div>
-    <div class="absolute right-0 top-0 w-1/4 h-full p-5 bg-oceanBlue ">
+    <div class="absolute -right-full lg:right-0 top-0 w-1/4 h-full p-5 shadow-md">
       <h1 class="text-lg font-medium mb-4">{{ data.descriptions }}</h1>
       <!-- UL list of chapters -->
-      <ul class="flex flex-col gap-3">
-        <li class="p-2 bg-gray-100 rounded-md">Chapter 1: Basics</li>
-        <li class="p-2 bg-gray-100 rounded-md">Chapter 2: Motion</li>
-        <li class="p-2 bg-gray-100 rounded-md">Chapter 3: Forces</li>
-        <li class="p-2 bg-gray-100 rounded-md">Chapter 4: Energy</li>
+      <ul class="flex flex-col gap-3 pl-4">
+        <li class="flex items-center gap-2 cursor-pointer p-3 rounded-md bg-containerGray">
+          <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
+          Chapter 1: Basics
+        </li>
+        <li class="flex items-center gap-2 cursor-pointer p-3 rounded-md bg-containerGray">
+          <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
+          Chapter 2: Motion
+        </li>
+        <li class="flex items-center gap-2 cursor-pointer p-3 rounded-md bg-containerGray">
+          <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
+          Chapter 3: Forces
+        </li>
+        <li class="flex items-center gap-2 cursor-pointer p-3 rounded-md bg-containerGray">
+          <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
+          Chapter 4: Energy
+        </li>
       </ul>
     </div>
    </div>

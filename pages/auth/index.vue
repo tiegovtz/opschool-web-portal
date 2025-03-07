@@ -1,6 +1,6 @@
 <template>
-    <div class="flex items-center justify-center min-h-screen">
-        <div class="w-full max-w-md p-4 bg-white rounded-lg shadow-md">
+    <div class="flex items-center justify-center min-h-screen ">
+        <div class="w-full max-w-md px-4 md:bg-white rounded-lg md:shadow-md md:pt-3">
             <h1 class="text-large font-bold text-center">Welcome</h1>
             <NuxtImg src="/logo/logo_tie.png" class="w-20 h-20 mx-auto my-6" alt="logo" />
             <form @submit.prevent="signIn" class="px-4">
