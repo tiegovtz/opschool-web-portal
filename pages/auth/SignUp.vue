@@ -1,21 +1,21 @@
 <template>
-    <div class="flex items-center justify-center min-h-screen container mx-auto py-4">
-        <div class="w-full max-w-md px-4 py-8 bg-white rounded-lg shadow-md">
+    <div class="flex items-center justify-center min-h-screen md:container mx-auto py-4">
+        <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-md">
             <h1 class="text-large font-bold text-center">Sign Up</h1>
             <NuxtImg src="/logo/logo_tie.png" class="w-20 h-20 mx-auto my-6" alt="logo" />
             <form @submit.prevent="signUp"
-                class=" text-textGray transition-all duration-500 h-[450px] relative overflow-hidden">
+                class=" text-textGray md:h-[450px] h-dvh relative overflow-hidden text-extraSmall">
 
                 <!-- First Input Group -->
-                <div class="flex flex-col absolute -left-150 top-0 px-6"
+                <div class="flex flex-col absolute -left-150 top-0 px-6 transition-all duration-500"
                     :class="inputTabs === 'tabOne' ? 'left-0 w-full' : ''">
                     <!-- Select User Type -->
                     <div
                         class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col">
                         <label for="role" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select User
                             Type:</label>
-                        <select name="role" id="role" class="w-full focus:outline-none focus:ring-0">
-                            <option value=""></option>
+                        <select name="role" id="role" class="w-full p-2 focus:outline-none focus:ring-0">
+                            <option value="">Eg: Student, Teacher ...</option>
                             <option value="student">Student</option>
                             <option value="teacher">Teacher</option>
                             <option value="reasearcher">Researcher</option>
@@ -70,16 +70,18 @@
 
                     <!-- gender input radio -->
                     <div
-                        class="flex items-center justify-start gap-10 mb-4 border-b border-gray-300 focus-within:border-oceanBlue py-2">
+                        class="flex items-center justify-start md:flex-row flex-col md:gap-10 mb-4 border-b border-gray-300 focus-within:border-oceanBlue py-2">
                         <label for="gender" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select
                             Gender:</label>
                         <div class="flex items-center gap-2">
-                            <input type="radio" name="gender" id="male" value="male">
-                            <label for="male">Male</label>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <input type="radio" name="gender" id="female" value="female">
-                            <label for="female">Female</label>
+                            <div class="flex items-center gap-2">
+                                <input type="radio" name="gender" id="male" value="male" class="w-4 h-4 checked:bg-oceanBlue">
+                                <label for="male">Male</label>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="radio" name="gender" id="female" value="female" class="w-4 h-4 checked:bg-oceanBlue">
+                                <label for="female">Female</label>
+                            </div>
                         </div>
                     </div>
 
@@ -103,17 +105,15 @@
                 </div>
 
                 <!-- Second Input Group -->
-                <div class="flex flex-col absolute -left-150 top-0 px-6"
-                    :class="inputTabs === 'tabTwo' ? 'left-0 w-full h-full' : ''">
-
-
+                <div class="flex flex-col absolute -right-150 top-0 px-6 transition-all duration-500"
+                    :class="inputTabs === 'tabTwo' ? 'right-0 w-full h-full' : ''">
                     <!-- Select Age -->
                     <div
                         class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col">
                         <label for="age" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select
                             Age:</label>
                         <select name="age" id="age" class="w-full p-2 focus:outline-none focus:ring-0">
-                            <option value=""></option>
+                            <option value="">Eg: kids(3 - 12) ...</option>
                             <option value="3-12">Kids(3 - 12)</option>
                             <option value="13-19">Teens(13 - 19)</option>
                             <option value="20-60">Young Adults(20 - 35)</option>
@@ -126,7 +126,7 @@
                         <label for="region" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select
                             Region:</label>
                         <select name="region" id="region" class="w-full p-2 focus:outline-none focus:ring-0">
-                            <option value=""></option>
+                            <option value="">Eg: Arusha ...</option>
                             <option value="arusha">Arusha</option>
                             <option value="dar_es_salaam">Dar es Salaam</option>
                             <option value="dodoma">Dodoma</option>
@@ -197,7 +197,7 @@
                     <!-- Previous Button -->
                     <div class="flex items-center justify-center px-2">
                         <button type="button" @click="switchTab('tabOne')"
-                        class="rounded-full h-8 w-auto px-4 gap-2 hover:bg-oceanBlue hover:text-white text-oceanBlue border border-oceanBlue animate-bounce-horizontal cursor-pointer transition-all duration-500 flex items-center group">
+                            class="rounded-full h-8 w-auto px-4 gap-2 hover:bg-oceanBlue hover:text-white text-oceanBlue border border-oceanBlue animate-bounce-horizontal cursor-pointer transition-all duration-500 flex items-center group">
                             <Icon name="f7:arrow-left" class="group-hover:text-white" size="16" />
                             <p class="text-small group-hover:text-white">Back</p>
                         </button>

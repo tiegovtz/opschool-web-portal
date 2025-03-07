@@ -16,6 +16,6 @@
 
 <script setup>
 import FooterView from '@/components/included/FooterView.vue'
-import HeaderView from '~/public/HeaderView.vue'
+import HeaderView from '~/components/included/HeaderView.vue'
 
 </script>
