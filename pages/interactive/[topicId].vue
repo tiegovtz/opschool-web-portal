@@ -30,7 +30,7 @@ const { data, status, error } = useFetch("/api/get-demo-topics", {
       <!-- Header Description -->
       <div class="flex items-center justify-end">
         <div class="flex lg:hidden">
-          <Icon name="basil:menu-outline" class="cursor-pointer  hidden" size="2rem" />
+          <Icon name="basil:menu-outline" class="cursor-pointer " size="2rem" />
         </div>
       </div>
       <div class="content-view" >
