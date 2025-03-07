@@ -1,12 +1,14 @@
 <template>
-  <div class="container">
-    <HeroSection />
-    <TabBar />
-    <div class="loading flex justify-center" >
-      <LoadingIndicator :is-loading="true" />
+  <NuxtLayout name="home-layout">
+    <div class="container">
+      <HeroSection />
+      <TabBar />
+      <div class="loading flex justify-center" >
+        <LoadingIndicator :is-loading="true" />
+      </div>
+      <!-- render books -->
     </div>
-    <!-- render books -->
-  </div>
+  </NuxtLayout>
 </template>
 
 <script setup>
