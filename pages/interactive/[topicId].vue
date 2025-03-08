@@ -1,3 +1,20 @@
+<script setup>
+import { baseUrl } from '@/utilities/controlls';
+import LoadingIndicator from '@/components/loading/loadingIndicator.vue';
+
+const route = useRoute()
+const topicId = route.fullPath.split('/').pop()
+
+// const toggleSidebar = () => {
+//   const sidebar = document.querySelector('.sidebar')
+//   sidebar.classList.toggle('hidden')
+// }
+
+const { data, status, error } = useFetch("/api/get-demo-topics", {
+  query: { topicId: topicId },
+});
+</script>
+
 <template>
   <NuxtLayout name="home-layout">
     <section class="relative w-full h-full inline-flex center-height overflow-hidden">
@@ -13,7 +30,7 @@
       <!-- Header Description -->
       <div class="flex items-center justify-end">
         <div class="flex lg:hidden">
-          <Icon name="basil:menu-outline" class="cursor-pointer  hidden" size="2rem" />
+          <Icon name="basil:menu-outline" class="cursor-pointer " size="2rem" />
         </div>
       </div>
       <div class="content-view" >
@@ -63,19 +80,19 @@
   </NuxtLayout>
 </template>
 
-<script setup>
-import { baseUrl } from '@/utilities/controlls';
-import LoadingIndicator from '@/components/loading/loadingIndicator.vue';
+<style scoped>
+:deep(.swiper-pagination-bullet) {
+  width: 1rem; /* w-4 = 1rem */
+  height: 1rem; /* h-4 = 1rem */
+  background-color: #6b7280; /* bg-gray-500 */
+  opacity: 0.75;
+  transition: all;
+}
 
-const route = useRoute()
-const topicId = route.fullPath.split('/').pop()
-
-// const toggleSidebar = () => {
-//   const sidebar = document.querySelector('.sidebar')
-//   sidebar.classList.toggle('hidden')
-// }
-
-const { data, status, error } = useFetch("/api/get-demo-topics", {
-  query: { topicId: topicId },
-});
-</script>
+:deep(.swiper-pagination-bullet-active) {
+  background-color: #3b82f6; /* bg-blue-500 */
+  width: 1.5rem; /* w-6 = 1.5rem */
+  height: 1.5rem; /* h-6 = 1.5rem */
+  opacity: 1;
+}
+</style>
