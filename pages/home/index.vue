@@ -93,11 +93,14 @@ const prevPage = () => {
   currentPage.value = currentPage.value < 1 ? 1 : currentPage.value;
   sliceData((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value);
 }
+
+// loadoing indicator
+const { progress, isLoading} =useLoadingIndicator()
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="container">
+    <div class="container" :class="{' animate-pulse':isLoading}">
       <HeroSection />
     <TabBar />
     <InputsSelection />

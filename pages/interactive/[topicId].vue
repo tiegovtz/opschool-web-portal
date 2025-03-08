@@ -3,6 +3,7 @@ import { baseUrl } from '@/utilities/controlls';
 import LoadingIndicator from '@/components/loading/loadingIndicator.vue';
 
 const route = useRoute()
+const path = useState()
 const topicId = route.fullPath.split('/').pop()
 
 // const toggleSidebar = () => {
@@ -13,6 +14,10 @@ const topicId = route.fullPath.split('/').pop()
 const { data, status, error } = useFetch("/api/get-demo-topics", {
   query: { topicId: topicId },
 });
+
+definePageMeta({
+  middleware:'auth'
+})
 </script>
 
 <template>
@@ -25,7 +30,7 @@ const { data, status, error } = useFetch("/api/get-demo-topics", {
    <div class="error" v-else-if="status=='error'">
       {{ error.message }}
    </div>
-   <div class="sucess" v-if="status=='success'">
+   <div class="sucess w-full" v-if="status=='success'">
     <div class="lg:w-3/4 w-full scroll-height overflow-y-scroll p-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
       <!-- Header Description -->
       <div class="flex items-center justify-end">

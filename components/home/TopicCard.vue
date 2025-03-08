@@ -1,5 +1,5 @@
 <template>
-    <NuxtLink :to="`/interactive/${topicId}`" class="overflow-hidden rounded-lg flex flex-col shadow-xs">
+    <NuxtLink :to="`/interactive/${topicId}`" class="overflow-hidden rounded-lg flex flex-col shadow-xs" @click="setTopicToView">
         <div class="relative h-56">
           <NuxtImg
             :src="topicImage"
@@ -48,6 +48,7 @@
 <script setup>
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
 
+
 const props = defineProps({
     topicId: {
         type: String,
@@ -79,5 +80,8 @@ const props = defineProps({
     },
 })
 
+const setTopicToView = ()=>{
+  useState('topicToView',()=>`/interactive/${props.topicId}`)
+}
 
 </script>
