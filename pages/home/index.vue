@@ -111,7 +111,7 @@ const { progress, isLoading} =useLoadingIndicator()
     </div>
     <div v-else-if="status === 'error'">Error: {{ error.message }}</div>
     <div v-else-if="status == 'success'">
-      <div class=" grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 gap-6 mb-10">
+      <div class=" grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 gap-6 xl:gap-10 mb-10">
         <TopicCard v-for="topic in slicedData" :key="topic.topic_id" :topic-id="topic.topic_id"
           :topic-image="'https://kisomo.co.tz/kisomo app/' + topic.img_path" :topic-title="topic.topic_title"
           :topic-description="topic.topic_description"

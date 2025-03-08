@@ -23,7 +23,7 @@
           <p class="text-small font-medium text-gray-800">
             {{ topicTitle }}
           </p>
-          <p class="text-extraSmall text-gray-500 line-clamp-3">
+          <p class="text-extraSmall text-gray-500 line-clamp-2">
             {{ topicDescription }}
           </p>
         </div>
