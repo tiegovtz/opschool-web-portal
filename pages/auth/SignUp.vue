@@ -22,26 +22,26 @@
                             <option value="education_stackeholder">Education Stackeholder</option>
                         </select>
                     </div>
-                    <!-- Full Name -->
+                    <!-- First Name -->
                     <div
                         class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex items-center gap-2">
                         <input type="text" id="fname" v-model="fname" name="fname" autocomplete="off"
                             class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray placeholder:text-xs"
-                            placeholder="Full Name (eg: Baraka Minja)">
+                            placeholder="First Name (eg: Baraka)">
                         <Icon name="lets-icons:user-box-light" class="h-5 w-5 text-textGray" />
                     </div>
-                    <!-- Username -->
+                    <!-- Last Name -->
                     <div
                         class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex items-center gap-2">
-                        <input type="text" id="username" v-model="username" name="username" autocomplete="off"
+                        <input type="text" id="lname" v-model="lname" name="lname" autocomplete="off"
                             class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray placeholder:text-xs"
-                            placeholder="username ( eg: baraka )">
-                        <Icon name="solar:user-outline" class="h-5 w-5 text-textGray" />
+                            placeholder="Last Name ( eg: Minja )">
+                            <Icon name="lets-icons:user-box-light" class="h-5 w-5 text-textGray" />
                     </div>
                     <!-- Email -->
                     <div
                         class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex items-center gap-2">
-                        <input type="text" id="email" v-model="email" name="email" autocomplete="off"
+                        <input type="text" id="email" v-model="email" name="username" autocomplete="off"
                             class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray placeholder:text-xs"
                             placeholder="Email (eg: example@gmail.com)">
                         <Icon name="mdi-light:email" class="h-5 w-5 text-textGray" />

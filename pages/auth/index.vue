@@ -1,49 +1,157 @@
+<script setup>
+import messages from '~/utilities/messages';
+import { auth } from '~/utilities/validationInput';
+
+
+const userToken = useCookie('userToken')
+const path = useState('topicToView')
+// User Sign In Function
+const userSignIn = reactive({
+    username: null,
+    password: null,
+    rememberMe: false,
+    controller: {
+        isSubmitted: false,
+        errors: {
+            username: '',
+            password: ''
+        }
+    }
+});
+
+
+// Sign In Function
+const signIn = () => {
+    // Reset error messages first
+    userSignIn.controller.errors.username = '';
+    userSignIn.controller.errors.password = '';
+
+    let isValid = true;
+
+    // Check for empty fields first
+    if (!userSignIn.username) {
+        userSignIn.controller.errors.username = messages.error.form.usernameRequired;
+        isValid = false;
+    } else if (!auth.checkEmailOrPhoneNumber(userSignIn.username)) {
+        userSignIn.controller.errors.username = messages.error.form.usernameValid;
+        isValid = false;
+    }
+
+    if (!userSignIn.password) {
+        userSignIn.controller.errors.password = messages.error.form.passwordRequired;
+        isValid = false;
+    }
+
+    if (isValid) {
+        // Form is valid, proceed with submission
+        isDisable.value = true;
+        // Here you would typically call your authentication API
+        userToken.value = "123434567789756yeghsvwcrstgqw5cvschwsgv"
+        // 
+        const router = useRouter();
+        router.push(path.value);
+
+    }
+};
+
+// Disable Variable
+const isDisable = ref(false);
+
+// Password toggle
+const showPassword = ref(false);
+const togglePassword = () => {
+    showPassword.value = !showPassword.value;
+};
+
+// Clear validation errors when user types
+watch(() => userSignIn.username, (username) => {
+    if (username) {
+        if (auth.checkEmailOrPhoneNumber(username)) {
+            userSignIn.controller.errors.username = '';
+        } else {
+            userSignIn.controller.errors.username = messages.error.form.usernameValid;
+        }
+    }
+});
+
+watch(() => userSignIn.password, (password) => {
+    if (password) {
+        userSignIn.controller.errors.password = '';
+    }
+});
+</script>
+
 <template>
-    <div class="flex items-center justify-center min-h-screen ">
+    <div class="flex items-center justify-center min-h-screen">
+
         <div class="w-full max-w-md px-4 md:bg-white rounded-lg md:shadow-md md:pt-3">
             <h1 class="text-large font-bold text-center">Welcome</h1>
             <NuxtImg src="/logo/logo_tie.png" class="w-20 h-20 mx-auto my-6" alt="logo" />
             <form @submit.prevent="signIn" class="px-4">
-                <div class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex items-center gap-2">
-                    <input type="text" id="username" v-model="username" name="username" autocomplete="off"
-                        class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray placeholder:text-xs"
-                        placeholder="username">
+
+                <!-- Username -->
+                <div class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+                    :class="{ 'focus-input-icon-warning border-red-500': userSignIn.controller.errors.username }">
+                    <div class="flex w-full items-center">
+                        <input type="text" id="username" v-model="userSignIn.username" name="username"
+                            autocomplete="off"
+                            class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray placeholder:text-xs"
+                            placeholder="Username (e.g., example@gmail.com or 0622 *** 722)">
                         <Icon name="solar:user-outline" class="h-5 w-5 text-textGray" />
+                    </div>
+
+                    <!-- Username error message -->
+                    <small v-if="userSignIn.controller.errors.username" class="text-red-500 text-smallest w-full">
+                        {{ userSignIn.controller.errors.username }}
+                    </small>
                 </div>
-                <div
-                    class="focus-input-icon mb-4 flex items-center justify-between border-b border-gray-300 focus-within:border-oceanBlue">
-                    <input :type="showPassword ? 'text' : 'password'" id="password" v-model="password" name="password"
-                        class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray placeholder:text-xs"
-                        placeholder="password">
-                    <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
-                        class="h-5 w-5 cursor-pointer text-textGray" @click="togglePassword" />
+
+                <!-- Password -->
+                <div class="focus-input-icon px-2 mb-4 flex flex-col items-start justify-between border-b border-gray-300 focus-within:border-oceanBlue"
+                    :class="{ 'focus-input-icon-warning border-red-500': userSignIn.controller.errors.password }">
+                    <div class="flex w-full items-center">
+                        <input :type="showPassword ? 'text' : 'password'" id="password" v-model="userSignIn.password"
+                            name="password"
+                            class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray placeholder:text-xs"
+                            placeholder="Password">
+                        <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
+                            class="h-5 w-5 cursor-pointer text-textGray" @click="togglePassword" />
+                    </div>
+
+                    <!-- Password error message -->
+                    <small v-if="userSignIn.controller.errors.password" class="text-red-500 text-smallest w-full">
+                        {{ userSignIn.controller.errors.password }}
+                    </small>
                 </div>
+
                 <div class="my-6 flex items-center justify-between">
-                    <NuxtLink to="/auth/ForgotPassword" class="text-sm text-textGray cursor-pointer">Forgot Password?
+                    <NuxtLink to="/auth/ForgotPassword" class="text-sm text-textGray cursor-pointer">
+                        Forgot Password?
                     </NuxtLink>
                     <div class="flex items-center gap-2">
-                        <input type="checkbox" id="remember" v-model="remember" class="w-4 h-4 cursor-pointer">
-                        <label for="remember" class="text-sm text-textGray cursor-pointer">Remember me</label>
+                        <input type="checkbox" id="remember" v-model="userSignIn.rememberMe"
+                            class="w-4 h-4 cursor-pointer">
+                        <label for="remember" class="text-sm text-textGray cursor-pointer">
+                            Remember me
+                        </label>
                     </div>
                 </div>
-                <button type="submit" class="w-full p-2 bg-oceanBlue text-white rounded-md cursor-pointer hover:bg-oceanBlue/80 transition-all duration-500 capitalize">Sign
-                    In</button>
 
-                    <!-- sign up -->
-                    <div class="my-4 flex flex-col items-center gap-4">
-                        <p class="text-sm text-textGray">Don't have an account?</p>
-                        <NuxtLink to="/auth/SignUp"
-                                class="w-full p-2 text-center cursor-pointer bg-darkBlue text-white rounded-md hover:bg-darkBlue/80 transition-all duration-500 capitalize">Sign Up</NuxtLink>
-                    </div>
+                <button type="submit" :disabled="isDisable"
+                    class="w-full p-2 bg-oceanBlue text-white disabled:bg-gray-500/40 disabled:cursor-not-allowed gap-3 flex items-center justify-center rounded-md cursor-pointer hover:bg-oceanBlue/80 transition-all duration-500 capitalize">
+                    Sign In
+                    <Icon name="eos-icons:loading" class="text-white" size="20" v-if="isDisable" />
+                </button>
+
+                <!-- sign up -->
+                <div class="my-4 flex flex-col items-center gap-4">
+                    <p class="text-sm text-textGray">Don't have an account?</p>
+                    <NuxtLink to="/auth/SignUp"
+                        class="w-full p-2 text-center cursor-pointer bg-darkBlue text-white rounded-md hover:bg-darkBlue/80 transition-all duration-500 capitalize">
+                        Sign Up
+                    </NuxtLink>
+                </div>
             </form>
         </div>
     </div>
 </template>
-
-<script setup>
-// Password toggle
-const showPassword = ref(false)
-const togglePassword = () => {
-    showPassword.value = !showPassword.value
-}
-</script>

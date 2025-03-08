@@ -39,8 +39,8 @@
          <div class="flex flex-col item-center justify-start gap-2 mt-2">
            <p>Get this App for  Android  and Ios</p>
            <div class="flex item-center justify-start gap-2">
-            <IconsPlayStore/>
-            <IconsAppStore/>
+            <IconsPlayStore class="cursor-pointer"/>
+            <IconsAppStore class="cursor-pointer"/>
            </div>
          </div>
       </div>

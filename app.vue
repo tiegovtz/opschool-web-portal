@@ -33,7 +33,10 @@ onUnmounted(() => {
 
 </script>
 <template>
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  
+    <NuxtLayout>
+      <NuxtLoadingIndicator color="#56ade8"/>
+      <NuxtPage />
+    </NuxtLayout>
+
 </template>

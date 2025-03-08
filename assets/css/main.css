@@ -23,11 +23,11 @@
 }
 /* content container height */
 @utility center-height {
-  @apply min-h-[calc(100vh-9.125rem)];
+  @apply min-h-[calc(100vh-138px)];
 }
 
 @utility scroll-height {
-  @apply max-h-[calc(100vh-9.125rem)];
+  @apply max-h-[calc(100vh-138px)];
 }
 /* Shadow left */
 @utility shadow-left {
@@ -37,6 +37,11 @@
 /* Focus input icon */
 .focus-input-icon:focus-within span.iconify {
   color: var( --color-oceanBlue);
+  }
+
+/* Focus warning input */
+.focus-input-icon-warning span.iconify {
+  color: var( --color-normalRed);
   }
   
 
@@ -48,6 +53,7 @@
   --color-textGray: #6E7178;
   --color-containerGray: #F3F3F3;
   --color-normalGreen: #00BF77;
+  --color-normalRed: #f00;
   
    /* Background color */
    --color-grayLight: #f0f0f0;
