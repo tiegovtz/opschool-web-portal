@@ -38,6 +38,7 @@
 .focus-input-icon:focus-within span.iconify {
   color: var( --color-oceanBlue);
   }
+  
 
 @theme {
   --color-darkBlue: #282938;
