@@ -38,7 +38,7 @@
       </defs>
     </svg>
   </template>
-  <style scoped nonce="kisomoWebAppStyles">
+  <style scoped nonce="">
   svg:hover path{
       fill: #000;
   }
