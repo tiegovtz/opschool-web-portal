@@ -44,6 +44,11 @@
   color: var( --color-normalRed);
   }
   
+  /* Focus warning input */
+.focus-input-icon-warning:focus-within span.iconify {
+  color: var( --color-normalRed);
+  }
+  
 
 @theme {
   --color-darkBlue: #282938;

@@ -51,6 +51,15 @@ const messages = {
         accountExists: "An account with this email already exists",
         tokenExpired: "Your session has expired. Please log in again"
       },
+
+      // Password Strength
+      passwordStrength: {
+        hasUppercase: "At least one uppercase letter",
+        hasLowercase: "At least one lowercase letter",
+        hasNumber: "At least one number",
+        hasSpecialChar: "At least one special character",
+        hasMinLength: "At least 8 characters",
+      },
       
       // Form validation error messages
       validation: {
@@ -87,11 +96,21 @@ const messages = {
     //   Form Error
     form: {
         allInputs: "Fill username and password",
+        all: "All Fields are required",
         invalid: "User does not exist",
         usernameValid: "Username is not valid (use email or phone number)",
         passwordValid: "Password is not valid",
         usernameRequired: "Username is required",
         passwordRequired: "Password is required",
+        firstName: "First Name should have at least three characters",
+        lastName: "Last Name should have at least three characters",
+        confirmPassword: "Password Mismatch",
+        role: "User role is required",
+        gender: "User gender is required",
+        region: "Region is required",
+        isMinLength: " Name must be at least 3 characters long",
+        hasSpecialChars: "Name should not contain special characters or numbers", 
+        hasRepeatedChars: "Name should not have three or more repeating characters" 
     }
     },
   
