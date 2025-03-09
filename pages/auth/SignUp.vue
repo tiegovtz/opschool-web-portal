@@ -4,7 +4,7 @@ import { auth } from "~/utilities/validationInput";
 // input tabs control
 const inputTabs = ref("tabOne");
 const signUp = () => {
-  if(usersignUp.age && usersignUp.confirm_password && usersignUp.email && usersignUp.fname && usersignUp.gender && usersignUp.lname && usersignUp.password && usersignUp.phone && usersignUp.region !=='' && usersignUp.role !==''){
+  if(usersignUp.age && usersignUp.confirm_password && usersignUp.email && usersignUp.fname && usersignUp.gender && usersignUp.lname && usersignUp.password  && usersignUp.password === usersignUp.confirm_password && usersignUp.phone && usersignUp.region !=='' && usersignUp.role !==''){
     usersignUp.controller.isSubmitted = true;
     console.log("usersignUp", usersignUp);
   }else{
