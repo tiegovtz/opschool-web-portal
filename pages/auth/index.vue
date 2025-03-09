@@ -3,7 +3,7 @@ import messages from '~/utilities/messages';
 import { auth } from '~/utilities/validationInput';
 
 
-const userToken = useCookie('userToken')
+const userToken = useCookie('signInToken')
 const path = useState('topicToView')
 // User Sign In Function
 const userSignIn = reactive({
@@ -71,12 +71,16 @@ watch(() => userSignIn.username, (username) => {
         } else {
             userSignIn.controller.errors.username = messages.error.form.usernameValid;
         }
+    }else {
+        userSignIn.controller.errors.username = null;
     }
 });
 
 watch(() => userSignIn.password, (password) => {
     if (password) {
         userSignIn.controller.errors.password = '';
+    }else {
+        userSignIn.controller.errors.password = null;
     }
 });
 </script>
@@ -91,12 +95,13 @@ watch(() => userSignIn.password, (password) => {
 
                 <!-- Username -->
                 <div class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
-                    :class="{ 'focus-input-icon-warning border-red-500': userSignIn.controller.errors.username }">
+                    :class="{ 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userSignIn.controller.errors.username }">
                     <div class="flex w-full items-center">
                         <input type="text" id="username" v-model="userSignIn.username" name="username"
                             autocomplete="off"
-                            class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray placeholder:text-xs"
-                            placeholder="Username (e.g., example@gmail.com or 0622 *** 722)">
+                              @keydown.space.prevent
+                            class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
+                            placeholder="Username (e.g. example@gmail.com or 0622 *** 722)">
                         <Icon name="solar:user-outline" class="h-5 w-5 text-textGray" />
                     </div>
 
@@ -108,11 +113,11 @@ watch(() => userSignIn.password, (password) => {
 
                 <!-- Password -->
                 <div class="focus-input-icon px-2 mb-4 flex flex-col items-start justify-between border-b border-gray-300 focus-within:border-oceanBlue"
-                    :class="{ 'focus-input-icon-warning border-red-500': userSignIn.controller.errors.password }">
+                    :class="{ 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userSignIn.controller.errors.password }">
                     <div class="flex w-full items-center">
                         <input :type="showPassword ? 'text' : 'password'" id="password" v-model="userSignIn.password"
                             name="password"
-                            class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray placeholder:text-xs"
+                            class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                             placeholder="Password">
                         <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
                             class="h-5 w-5 cursor-pointer text-textGray" @click="togglePassword" />

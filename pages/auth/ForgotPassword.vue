@@ -6,7 +6,7 @@
             <form @submit.prevent="forgotPassword" class="px-4">
                 <div class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex items-center gap-2">
                     <input type="email" id="email" v-model="email" name="email" autocomplete="off"
-                        class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray placeholder:text-xs"
+                        class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                         placeholder="Email ( eg:example@gmail.com )">
                         <Icon name="mdi-light:email" class="h-5 w-5 text-textGray focus:text-oceanBlue" />
                 </div>

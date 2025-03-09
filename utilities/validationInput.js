@@ -1,11 +1,11 @@
 /**
  * JavaScript Validation Module
  * 
- * This module provides utility functions for validating email addresses, Tanzanian phone numbers, 
- * and passwords based on predefined regular expressions.
+ * This module provides utility functions for validating names, email addresses, 
+ * Tanzanian phone numbers, and passwords based on predefined regular expressions.
  * 
  * @author Minja Baraka (https://github.com/MinjaBaraka)
- * @version 1.0.0
+ * @version 1.1.0
  * @since 1.0.0
  */
 
@@ -13,10 +13,11 @@
 const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const tanzaniaPhoneRegex = /^(?:\+255|0)(6[1-9]|7[1-9]|9[1-9])\d{7}$/;
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+const nameRegex = /^(?!.*(.)\1{2,})[A-Za-z]{3,}$/;
 
 /**
  * Authentication Utility
- * Provides validation functions for email, phone numbers, and passwords.
+ * Provides validation functions for names, email, phone numbers, and passwords.
  */
 const auth = {
     /**
@@ -26,12 +27,9 @@ const auth = {
      * @returns {boolean} True if valid, false otherwise.
      * 
      * @example
-     * const result = auth.isValidEmail("test@example.com");
-     * console.log(result); // true
+     * console.log(auth.isValidEmail("test@example.com")); // true
      */
-    isValidEmail: (email) => {
-        return emailPattern.test(email);
-    },
+    isValidEmail: (email) => emailPattern.test(email),
 
     /**
      * Validates a Tanzanian phone number.
@@ -40,12 +38,9 @@ const auth = {
      * @returns {boolean} True if valid, false otherwise.
      * 
      * @example
-     * const result = auth.isValidPhone("+255622660722");
-     * console.log(result); // true
+     * console.log(auth.isValidPhone("+255622660722")); // true
      */
-    isValidPhone: (phone) => {
-        return tanzaniaPhoneRegex.test(phone);
-    },
+    isValidPhone: (phone) => tanzaniaPhoneRegex.test(phone),
 
     /**
      * Checks if a password meets security criteria.
@@ -54,12 +49,9 @@ const auth = {
      * @returns {boolean} True if valid, false otherwise.
      * 
      * @example
-     * const result = auth.isValidPassword("StrongP@ss1");
-     * console.log(result); // true
+     * console.log(auth.isValidPassword("StrongP@ss1")); // true
      */
-    isValidPassword: (password) => {
-        return passwordPattern.test(password);
-    },
+    isValidPassword: (password) => passwordPattern.test(password),
 
     /**
      * Analyzes password strength and returns an object indicating which constraints it meets.
@@ -68,8 +60,7 @@ const auth = {
      * @returns {Object} An object with validation results.
      * 
      * @example
-     * const result = auth.checkPasswordStrength("StrongP@ss1");
-     * console.log(result);
+     * console.log(auth.checkPasswordStrength("StrongP@ss1"));
      * // Output:
      * // {
      * //   hasLowercase: true,
@@ -83,26 +74,42 @@ const auth = {
         return {
             hasLowercase: /[a-z]/.test(password),  // At least one lowercase letter
             hasUppercase: /[A-Z]/.test(password),  // At least one uppercase letter
-            hasNumber: /\d/.test(password),        // At least one number
+            hasNumber: /\d/.test(password),       // At least one number
             hasSpecialChar: /[@$!%*?&]/.test(password), // At least one special character
-            hasMinLength: password.length >= 8     // At least 8 characters
+            hasMinLength: password.length >= 8    // At least 8 characters
         };
     },
-    
+
     /**
-     * Checks if a email or Phone Number meets security criteria.
+     * Validates whether input is a valid email or Tanzanian phone number.
      * 
-     * @param {string} userName - The  email or Phone Number to validate.
+     * @param {string} userName - The email or phone number to validate.
      * @returns {boolean} True if valid, false otherwise.
      * 
      * @example
-     * const resultEmail = auth.checkEmailOrPhoneNumber("example@gmail.com");
-     * console.log(resultEmail); // true
-     * const resultPhoneNumber = auth.checkEmailOrPhoneNumber(""+255622660722"");
-     * console.log(resultPhoneNumber); // true
+     * console.log(auth.checkEmailOrPhoneNumber("example@gmail.com")); // true
+     * console.log(auth.checkEmailOrPhoneNumber("+255622660722")); // true
      */
-    checkEmailOrPhoneNumber: (userName) => {
-        return emailPattern.test(userName) || tanzaniaPhoneRegex.test(userName);
+    checkEmailOrPhoneNumber: (userName) => emailPattern.test(userName) || tanzaniaPhoneRegex.test(userName),
+
+    /**
+     * Validates a name, ensuring it contains only letters, has at least 3 characters,
+     * and does not have repeated letters more than twice in a row.
+     * 
+     * @param {string} name - The name to validate.
+     * @returns {Object} True if valid, false otherwise.
+     * 
+     * @example
+     * console.log(auth.isValidName("James")); // true
+     * console.log(auth.isValidName("ffff")); // false
+     * console.log(auth.isValidName("Ja@mes")); // false
+     */
+     isValidName: (name) => {
+        return {
+            isMinLength: name.length >= 3, // Name must be at least 3 characters long
+            hasNoSpecialChars: /^[A-Za-z]+$/.test(name), // Name should not contain special characters or numbers
+            hasNoRepeatedChars: !/(.)\1{2,}/.test(name) // Name should not have three or more repeating characters
+        };
     }
 };
 
