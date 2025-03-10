@@ -1,7 +1,9 @@
 <script setup>
 import messages from '~/utilities/messages';
 import { auth } from '~/utilities/validationInput';
-
+import apiDocs from '~/utilities/api-docs';
+import { sanitize } from "~/utilities/sanitizeInput";
+import axios from 'axios'
 
 const userToken = useCookie('signInToken')
 const path = useState('topicToView')
@@ -12,6 +14,8 @@ const userSignIn = reactive({
     rememberMe: false,
     controller: {
         isSubmitted: false,
+        feedback: null,
+        attemps:0,
         errors: {
             username: '',
             password: ''
@@ -21,7 +25,7 @@ const userSignIn = reactive({
 
 
 // Sign In Function
-const signIn = () => {
+const signIn = async () => {
     // Reset error messages first
     userSignIn.controller.errors.username = '';
     userSignIn.controller.errors.password = '';
@@ -45,12 +49,36 @@ const signIn = () => {
     if (isValid) {
         // Form is valid, proceed with submission
         isDisable.value = true;
-        // Here you would typically call your authentication API
-        userToken.value = "123434567789756yeghsvwcrstgqw5cvschwsgv"
-        // 
-        const router = useRouter();
-        router.push(path.value);
+        if(userSignIn.controller.attemps == 3){
+            return
+        }
+        // send data
+        await axios.post(apiDocs.auth.login, {
+            username: sanitize.input(userSignIn.username),
+            password: userSignIn.password,
+        }).then((response) => {
 
+            if (response.data.statuCode == 200) {
+                userSignIn.controller.feedback = messages.success.auth.authenticated;
+
+                // Here you would typically call your authentication API
+                userToken.value = ""
+
+                // router
+                const router = useRouter();
+                router.push(path.value);
+                // unlock button
+                isDisable.value = false;
+            }else {
+                userSignIn.controller.attemps++;
+                isDisable.value=false
+                userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
+            }
+            
+        }).catch((error)=>{
+            userSignIn.controller.attemps++;
+            isDisable.value=false
+        }) 
     }
 };
 
@@ -91,15 +119,14 @@ watch(() => userSignIn.password, (password) => {
         <div class="w-full max-w-md px-4 md:bg-white rounded-lg md:shadow-md md:pt-3">
             <h1 class="text-large font-bold text-center">Welcome</h1>
             <NuxtImg src="/logo/logo_tie.png" class="w-20 h-20 mx-auto my-6" alt="logo" />
-            <form @submit.prevent="signIn" class="px-4">
+            <form @submit.prevent="signIn" class="px-4" v-if="userSignIn.controller.attemps < 3">
 
                 <!-- Username -->
                 <div class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
                     :class="{ 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userSignIn.controller.errors.username }">
                     <div class="flex w-full items-center">
                         <input type="text" id="username" v-model="userSignIn.username" name="username"
-                            autocomplete="off"
-                              @keydown.space.prevent
+                            autocomplete="off" @keydown.space.prevent
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                             placeholder="Username (e.g. example@gmail.com or 0622 *** 722)">
                         <Icon name="solar:user-outline" class="h-5 w-5 text-textGray" />
@@ -157,6 +184,25 @@ watch(() => userSignIn.password, (password) => {
                     </NuxtLink>
                 </div>
             </form>
+            <div v-else class="flex flex-col gap-2 w-full items-center justify-center">
+                <div class="py-3">
+                    You have attempted to sign in <span class="text-oceanBlue">{{ userSignIn.controller.attemps
+                        }}</span> times.
+                    Please consider to
+                </div>
+                <NuxtLink to="/auth/ForgotPassword"
+                    class="bg-oceanBlue cursor-pointer w-full flex justify-center items-center rounded-md text-white p-2 capitalize">
+                    reset
+                    your
+                    password
+                </NuxtLink>
+                or
+                <NuxtLink to="/auth/SignUp"
+                    class="bg-oceanBlue cursor-pointer w-full flex justify-center items-center rounded-md text-white p-2 mb-3 capitalize">
+                    Register a
+                    new account.
+                </NuxtLink>
+            </div>
         </div>
     </div>
 </template>

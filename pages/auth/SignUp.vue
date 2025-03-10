@@ -1,9 +1,13 @@
 <script setup>
+import apiDocs from "~/utilities/api-docs";
 import messages from "~/utilities/messages";
+import { sanitize } from "~/utilities/sanitizeInput";
 import { auth } from "~/utilities/validationInput";
+import axios from 'axios'
+
 // input tabs control
 const inputTabs = ref("tabOne");
-const signUp = () => {
+const signUp = async () => {
   if (
     usersignUp.age &&
     usersignUp.confirm_password &&
@@ -17,18 +21,49 @@ const signUp = () => {
     usersignUp.region !== "" &&
     usersignUp.role !== ""
   ) {
+
+    // 
     usersignUp.controller.isSubmitted = true;
+
+
+    // submit data
+    await axios.post(apiDocs.auth.signUp, {
+        name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
+        password: usersignUp.password,
+        phoneNumber: sanitize.input(usersignUp.phone),
+        type: usersignUp.role,
+        email: sanitize.input(usersignUp.email),
+        gender: usersignUp.gender,
+        region: usersignUp.region,
+        school: "",
+        district: "",
+        age: usersignUp.age,
+        terms: true,
+      })
+      .then((response) => {
+        if (!response.ok) {
+          usersignUp.controller.isSent = false;
+          return
+        }
+        usersignUp.controller.isSent = true;
+       
+      })
+      .catch((error) => {
+        usersignUp.controller.isSent = false;
+      });
   } else {
     usersignUp.controller.isSubmitted = false;
 
     if (!usersignUp.age) {
-        usersignUp.controller.errors.age = messages.error.form.age;
+      usersignUp.controller.errors.age = messages.error.form.age;
     }
     if (!usersignUp.confirm_password) {
-      usersignUp.controller.errors.confirm_password = messages.error.form.confirmPassword;
+      usersignUp.controller.errors.confirm_password =
+        messages.error.form.confirmPassword;
     }
     if (!usersignUp.email) {
-      usersignUp.controller.errors.email = messages.error.validation.invalidEmail;
+      usersignUp.controller.errors.email =
+        messages.error.validation.invalidEmail;
       switchTab("tabOne");
     }
     if (!usersignUp.fname) {
@@ -44,10 +79,12 @@ const signUp = () => {
       switchTab("tabOne");
     }
     if (!usersignUp.password) {
-      usersignUp.controller.errors.password = messages.error.passwordStrength.hasMinLength;
+      usersignUp.controller.errors.password =
+        messages.error.passwordStrength.hasMinLength;
     }
     if (!usersignUp.phone) {
-      usersignUp.controller.errors.phone = messages.error.validation.invalidPhone;
+      usersignUp.controller.errors.phone =
+        messages.error.validation.invalidPhone;
       switchTab("tabOne");
     }
     if (!usersignUp.region) {
@@ -55,9 +92,9 @@ const signUp = () => {
     }
     if (!usersignUp.role) {
       usersignUp.controller.errors.role = messages.error.form.role;
-    };
     }
-  };
+  }
+};
 
 const usersignUp = reactive({
   role: "",
@@ -72,6 +109,7 @@ const usersignUp = reactive({
   confirm_password: null,
   controller: {
     isSubmitted: false,
+    isSent: false,
     errors: {
       all: null,
       role: "",
@@ -776,7 +814,20 @@ const switchTab = (tabName) => {
             type="submit"
             class="w-full p-2 bg-oceanBlue text-white rounded-md cursor-pointer hover:bg-oceanBlue/80 transition-all duration-500"
           >
-            Sign Up
+          <!-- submited successful -->
+          <div class="flex items-center justify-center gap-2" v-if="usersignUp.controller.isSubmitted && usersignUp.controller.isSent">
+            Submitted
+            <Icon name="icons8:checked" class="h-5 w-5 cursor-pointer text-white" size="16" />
+          </div>
+              <div class="flex items-center justify-center gap-2" v-else-if="usersignUp.controller.isSubmitted && !usersignUp.controller.isSent">
+                Sign up failed
+                <Icon name="oui:cross-in-circle-empty" class="h-5 w-5 cursor-pointer text-white" size="16" />
+              </div>
+
+             <div class="flex items-center justify-center gap-2" v-else>
+                 Sign Up
+                 <Icon name="mynaui:send" class="h-5 w-5 cursor-pointer text-white" size="16" />
+             </div> 
           </button>
 
           <!-- Already have an account -->

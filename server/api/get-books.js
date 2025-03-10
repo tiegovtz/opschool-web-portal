@@ -1,4 +1,3 @@
-// import { isEmptyObject } from "@tiptap/core";
 
 export default defineEventHandler(async (event) => {
 
