@@ -4,13 +4,60 @@ import { auth } from "~/utilities/validationInput";
 // input tabs control
 const inputTabs = ref("tabOne");
 const signUp = () => {
-  if(usersignUp.age && usersignUp.confirm_password && usersignUp.email && usersignUp.fname && usersignUp.gender && usersignUp.lname && usersignUp.password  && usersignUp.password === usersignUp.confirm_password && usersignUp.phone && usersignUp.region !=='' && usersignUp.role !==''){
+  if (
+    usersignUp.age &&
+    usersignUp.confirm_password &&
+    usersignUp.email &&
+    usersignUp.fname &&
+    usersignUp.gender &&
+    usersignUp.lname &&
+    usersignUp.password &&
+    usersignUp.password === usersignUp.confirm_password &&
+    usersignUp.phone &&
+    usersignUp.region !== "" &&
+    usersignUp.role !== ""
+  ) {
     usersignUp.controller.isSubmitted = true;
-    console.log("usersignUp", usersignUp);
-  }else{
+  } else {
     usersignUp.controller.isSubmitted = false;
-  }
-};
+
+    if (!usersignUp.age) {
+        usersignUp.controller.errors.age = messages.error.form.age;
+    }
+    if (!usersignUp.confirm_password) {
+      usersignUp.controller.errors.confirm_password = messages.error.form.confirmPassword;
+    }
+    if (!usersignUp.email) {
+      usersignUp.controller.errors.email = messages.error.validation.invalidEmail;
+      switchTab("tabOne");
+    }
+    if (!usersignUp.fname) {
+      usersignUp.controller.errors.fname = messages.error.form.firstName;
+      switchTab("tabOne");
+    }
+    if (!usersignUp.gender) {
+      usersignUp.controller.errors.gender = messages.error.form.gender;
+      switchTab("tabOne");
+    }
+    if (!usersignUp.lname) {
+      usersignUp.controller.errors.lname = messages.error.form.lastName;
+      switchTab("tabOne");
+    }
+    if (!usersignUp.password) {
+      usersignUp.controller.errors.password = messages.error.passwordStrength.hasMinLength;
+    }
+    if (!usersignUp.phone) {
+      usersignUp.controller.errors.phone = messages.error.validation.invalidPhone;
+      switchTab("tabOne");
+    }
+    if (!usersignUp.region) {
+      usersignUp.controller.errors.region = messages.error.form.region;
+    }
+    if (!usersignUp.role) {
+      usersignUp.controller.errors.role = messages.error.form.role;
+    };
+    }
+  };
 
 const usersignUp = reactive({
   role: "",
@@ -135,7 +182,7 @@ watch(
     }
   }
 );
-// Age watching
+// Region watching
 watch(
   () => usersignUp.region,
   (region) => {
@@ -144,6 +191,18 @@ watch(
       usersignUp.controller.errors.region = null;
     } else {
       usersignUp.controller.errors.region = messages.error.form.region;
+    }
+  }
+);
+// Age watching
+watch(
+  () => usersignUp.age,
+  (age) => {
+    // Validate Region
+    if (age) {
+      usersignUp.controller.errors.age = null;
+    } else {
+      usersignUp.controller.errors.age = messages.error.form.age;
     }
   }
 );
@@ -164,26 +223,9 @@ watch(
   () => usersignUp.password,
   (password) => {
     // Validate Password
-    if (password) {
-      const passwordStrength = auth.checkPasswordStrength(password);
-      if (!passwordStrength.hasUppercase) {
-        usersignUp.controller.errors.password =
-          messages.error.passwordStrength.hasUppercase;
-      } else if (!passwordStrength.hasLowercase) {
-        usersignUp.controller.errors.password =
-          messages.error.passwordStrength.hasLowercase;
-      } else if (!passwordStrength.hasNumber) {
-        usersignUp.controller.errors.password =
-          messages.error.passwordStrength.hasNumber;
-      } else if (!passwordStrength.hasSpecialChar) {
-        usersignUp.controller.errors.password =
-          messages.error.passwordStrength.hasSpecialChar;
-      } else if (!passwordStrength.hasMinLength) {
-        usersignUp.controller.errors.password =
-          messages.error.passwordStrength.hasMinLength;
-      } else {
-        usersignUp.controller.errors.password = null;
-      }
+    if (password.length < 6) {
+      usersignUp.controller.errors.password =
+        messages.error.passwordStrength.hasMinLength;
     } else {
       usersignUp.controller.errors.password = null;
     }
@@ -192,10 +234,14 @@ watch(
 // confirm password watching
 watch(
   () => usersignUp.confirm_password,
-  () => {
-    if (usersignUp.confirm_password !== usersignUp.password) {
-      usersignUp.controller.errors.confirm_password =
-        messages.error.form.confirmPassword;
+  (confirmPassword) => {
+    if (confirmPassword) {
+      if (usersignUp.confirm_password !== usersignUp.password) {
+        usersignUp.controller.errors.confirm_password =
+          messages.error.form.confirmPassword;
+      } else {
+        usersignUp.controller.errors.confirm_password = null;
+      }
     } else {
       usersignUp.controller.errors.confirm_password = null;
     }
@@ -268,7 +314,6 @@ const switchTab = (tabName) => {
       <form
         @submit.prevent="signUp"
         @keydown.enter.prevent
-        
         class="text-textGray md:h-[450px] h-dvh relative overflow-hidden text-extraSmall"
         :class="{
           'md:h-[550px]':
@@ -469,8 +514,10 @@ const switchTab = (tabName) => {
             >
               <div
                 class="text-oceanBlue font-semibold text-extraSmall capitalize"
-                >Select Gender:</div>
-              
+              >
+                Select Gender:
+              </div>
+
               <div class="flex items-center gap-2" id="gender">
                 <div class="flex items-center gap-2">
                   <input
