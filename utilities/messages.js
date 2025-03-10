@@ -58,7 +58,7 @@ const messages = {
         hasLowercase: "At least one lowercase letter",
         hasNumber: "At least one number",
         hasSpecialChar: "At least one special character",
-        hasMinLength: "At least 8 characters",
+        hasMinLength: "At least 6 characters",
       },
       
       // Form validation error messages
@@ -110,7 +110,8 @@ const messages = {
         region: "Region is required",
         isMinLength: " Name must be at least 3 characters long",
         hasSpecialChars: "Name should not contain special characters or numbers", 
-        hasRepeatedChars: "Name should not have three or more repeating characters" 
+        hasRepeatedChars: "Name should not have three or more repeating characters" ,
+        age:"Age is required",
     }
     },
   
