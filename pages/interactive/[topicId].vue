@@ -2,6 +2,8 @@
 import { baseUrl } from '@/utilities/controlls';
 import LoadingIndicator from '@/components/loading/loadingIndicator.vue';
 
+const userToken = useCookie('signInUserToken')
+
 const route = useRoute()
 const path = useState()
 const topicId = route.fullPath.split('/').pop()
@@ -17,6 +19,12 @@ const { data, status, error } = useFetch("/api/get-demo-topics", {
 
 definePageMeta({
   middleware:'auth'
+})
+
+watch(userToken,(token) => {
+  if (!token) {
+    route.replace('/')
+  }
 })
 </script>
 

@@ -2,7 +2,6 @@
 import apiDocs from "~/utilities/api-docs"
 
 const userToken = useCookie('signInUserToken')
-// apiDocs
 
 const logout = () => {
   userToken.value = null;
