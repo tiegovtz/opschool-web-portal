@@ -5,7 +5,7 @@ import apiDocs from '~/utilities/api-docs';
 import { sanitize } from "~/utilities/sanitizeInput";
 import axios from 'axios'
 
-const userToken = useCookie('signInToken')
+
 const path = useState('topicToView')
 // User Sign In Function
 const userSignIn = reactive({
@@ -52,33 +52,54 @@ const signIn = async () => {
         if(userSignIn.controller.attemps == 3){
             return
         }
+
         // send data
-        await axios.post(apiDocs.auth.login, {
-            username: sanitize.input(userSignIn.username),
-            password: userSignIn.password,
-        }).then((response) => {
+       try {
+           const response = await axios.post(apiDocs.auth.login, {
+               username: sanitize.input(userSignIn.username),
+               password: userSignIn.password,
+           })
 
-            if (response.data.statuCode == 200) {
-                userSignIn.controller.feedback = messages.success.auth.authenticated;
+           if (response.status >= 200 && response.status < 300) {
+               userSignIn.controller.feedback = messages.success.auth.authenticated;
+          
+               // unlock button
+               isDisable.value = false;
 
-                // Here you would typically call your authentication API
-                userToken.value = ""
+               const accessToken = useCookie('signInAccessToken')
+               const refreshToken = useCookie('signInRefreshToken')
+               const userToken = useCookie('signInUserToken', {
+                   default: () => ({}),
+                   
+                   // This is important for objects - automatic serialization/deserialization
+                   encode: (value) => JSON.stringify(value),
+                   decode: (value) => JSON.parse(value)
+               })
 
-                // router
-                const router = useRouter();
-                router.push(path.value);
-                // unlock button
-                isDisable.value = false;
-            }else {
-                userSignIn.controller.attemps++;
-                isDisable.value=false
-                userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
-            }
-            
-        }).catch((error)=>{
-            userSignIn.controller.attemps++;
-            isDisable.value=false
-        }) 
+               accessToken.value = response.data.access_token
+               refreshToken.value = response.data.refresh_token
+               userToken.value = response.data.user
+
+               // router
+               const router = useRouter();
+
+               if (path.value) {
+                   // Clears history and navigates to the new page 
+                   router.replace(path.value); 
+               } else {
+                   router.replace('/home'); 
+               }
+
+           } else {
+               userSignIn.controller.attemps++;
+               isDisable.value = false
+               userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
+           }
+       } catch (error) {
+           userSignIn.controller.attemps++;
+           console.error(`Error sign in failed : ${error.message}`)
+           isDisable.value = false
+       }
     }
 };
 

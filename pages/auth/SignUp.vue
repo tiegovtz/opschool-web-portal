@@ -25,27 +25,35 @@ const signUp = async () => {
     // 
     usersignUp.controller.isSubmitted = true;
 
-
+    // sanitize.input(usersignUp.phone),
     // submit data
     await axios.post(apiDocs.auth.signUp, {
         name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
         password: usersignUp.password,
-        phoneNumber: sanitize.input(usersignUp.phone),
+      phoneNumber: sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) ,
         type: usersignUp.role,
         email: sanitize.input(usersignUp.email),
         gender: usersignUp.gender,
         region: usersignUp.region,
-        school: "",
-        district: "",
-        age: usersignUp.age,
+        school: null,
+        district: null,
+        ageGroup: usersignUp.age,
         terms: true,
       })
       .then((response) => {
-        if (!response.ok) {
+        if (response.status >= 200 && response.status < 300) {
+          usersignUp.controller.isSent = true;
+          setTimeout(() => {
+            // router
+            const router = useRouter()
+            router.push('/auth');
+          }, 3000)
+         
+        }else{
           usersignUp.controller.isSent = false;
           return
         }
-        usersignUp.controller.isSent = true;
+      
        
       })
       .catch((error) => {
@@ -391,12 +399,10 @@ const switchTab = (tabName) => {
                 :class="{ 'text-textGray/40': !usersignUp.role }"
               >
                 <option value="">(eg: Student, Teacher ...)</option>
-                <option value="student">Student</option>
-                <option value="teacher">Teacher</option>
-                <option value="reasearcher">Researcher</option>
-                <option value="education_stackeholder">
-                  Education Stackeholder
-                </option>
+                <option value="Student">Student</option>
+                <option value="Teacher">Teacher</option>
+                <option value="Reasearcher">Researcher</option>
+                <option value="Education Stackeholder">Education Stackeholder</option>
               </select>
             </div>
 
@@ -659,10 +665,10 @@ const switchTab = (tabName) => {
                 v-model="usersignUp.age"
               >
                 <option value="">Eg: kids(3 - 12) ...</option>
-                <option value="3-12">Kids(3 - 12)</option>
-                <option value="13-19">Teens(13 - 19)</option>
-                <option value="20-60">Young Adults(20 - 35)</option>
-                <option value="60+">Middle-Aged Adults(36 - 60)</option>
+                <option value="Child">Kids(3 - 12)</option>
+                <option value="Teen">Teens(13 - 19)</option>
+                <option value="YoungAdult">Young Adults(20 - 35)</option>
+                <option value="Adult">Middle-Aged Adults(36 - 60)</option>
               </select>
             </div>
 
