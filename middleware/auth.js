@@ -1,5 +1,5 @@
 export default defineNuxtRouteMiddleware((to, from) => {
-    const user = useCookie('signInToken') // Example: Checking login token in cookies
+    const user = useCookie('signInUserToken') // Example: Checking login token in cookies
     const path = useState('topicToView')
 
     if (!user.value && to.path !== '/auth' ) {

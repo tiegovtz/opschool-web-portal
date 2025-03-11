@@ -11,11 +11,11 @@
         </p>
 
         <!-- Search Form -->
-        <form action="" @submit.prevent="search" class="flex items-center w-full md:p-2 p-3 focus:outline-none focus:ring-2 focus:ring-gray-400 mt-auto rounded-lg bg-gray-500/20 ">
+        <form action="" @submit.prevent="search" class="flex items-center w-full max-w-lg p-2 focus:outline-none focus:ring-2 focus:ring-gray-400 mt-auto rounded-lg bg-gray-500/20 ">
           <!-- Search Icon -->
           <Icon
             name="mdi:magnify"
-            class="text-gray-500  border border-gray-300 rounded-l-lg h-full flex items-center justify-center"
+            class="text-gray-400"
             size="1.5rem"
           />
 
@@ -29,7 +29,7 @@
           <!-- Search Button -->
           <button
             type="submit"
-            class="bg-oceanBlue text-white p-2 md:p-4 lg:flex hidden rounded-r-lg hover:bg-blue-400 transition duration-500 cursor-pointer"
+            class="bg-oceanBlue text-white p-2 lg:flex hidden rounded-r-lg hover:bg-blue-400 transition duration-500 cursor-pointer"
           >
             Search
           </button>
@@ -37,7 +37,7 @@
 
         <!-- app download links -->
          <div class="flex flex-col item-center justify-start gap-2 mt-2">
-           <p>Get this App for  Android  and Ios</p>
+           <p>Get the App for  Android  and IOS</p>
            <div class="flex item-center md:justify-start justify-center gap-2">
             
             <div class="play-store flex items-center justify-center bg-black rounded-md p-1 gap-2 cursor-pointer group">
