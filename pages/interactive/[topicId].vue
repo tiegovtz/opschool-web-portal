@@ -22,8 +22,12 @@ definePageMeta({
 })
 
 watch(userToken,(token) => {
+
+  // Get the router instance
+  const router = useRouter()
+
   if (!token) {
-    route.replace('/')
+    router.replace('/')
   }
 })
 </script>

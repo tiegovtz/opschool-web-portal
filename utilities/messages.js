@@ -10,7 +10,7 @@ const messages = {
       // Authentication related success messages
       auth: {
         authenticated: "Successfully logged in",
-        registered: "Account successfully created",
+        registered: "Account successfully created, Please login",
         passwordReset: "Password has been reset successfully",
         passwordChanged: "Password has been changed successfully",
         emailVerified: "Email has been verified successfully",
