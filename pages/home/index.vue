@@ -2,14 +2,18 @@
 import TopicCard from "@/components/home/TopicCard.vue";
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
+import axios from "axios";
 import { ref, computed, onMounted } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import InputsSelection from '@/components/home/InputsSelection.vue'
+
 
 const { data: topic, status, error } = useFetch("/api/get-topic", {
   query: { streamId: 1, subjectId: 3 },
 });
 
+// access token
+const accessToken = useCookie('signInAccessToken')
 // current page data
 const currentPage = ref(1);
 const pageSize = ref();
@@ -103,6 +107,18 @@ const emit = {
   subject: null,
   standard: null,
 }
+
+// sample requesr
+await $fetch('/api/topics',{
+  credentials: "include",
+  headers:{
+    Cookie: `auth_token=${accessToken.value}`,
+  }
+}).then((response)=>{
+  console.log('Data :',response)
+}).catch((error)=>{
+  console.error(error)
+})
 </script>
 
 <template>
