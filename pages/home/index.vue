@@ -31,23 +31,23 @@ else {
 
 // total pages data
 const totalPages = computed(() => {
-  if (topic.value) {
+  if (topic.value?.data && Array.isArray(topic.value.data)) {
     return Math.ceil(topic.value.data.length / pageSize.value);
-  } else {
-    return 0; // return 0 if no data
   }
+  return 0; // Default to 0 if no data
 });
-
-// extact total pages in groups of 5
 
 
 // slice data to 9
 const slicedData = ref();
 const sliceData = (start, end) => {
-  if (topic.value?.data) {
+  if (topic.value?.data && Array.isArray(topic.value.data)) {
     slicedData.value = topic.value.data.slice(start, end);
+  } else {
+    slicedData.value = []; // Set to empty array if data is unavailable
   }
 };
+
 
 sliceData(
   (currentPage.value - 1) * pageSize.value,
@@ -96,14 +96,25 @@ const prevPage = () => {
 
 // loadoing indicator
 const { progress, isLoading} =useLoadingIndicator()
+
+// define Emited
+const emit = {
+  level: null,
+  subject: null,
+  standard: null,
+}
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
     <div class="container" :class="{' animate-pulse':isLoading}">
       <HeroSection />
+      <InputsSelection 
+      @emit-level="emit.level = $event" 
+      @emit-standard="emit.standard = $event" 
+      @emit-subject="emit.subject = $event"
+      />
     <TabBar />
-    <InputsSelection />
 
     <div v-if="status === 'pending'" class="flex justify-center items-center">
       <LoadingIndicator :is-loading="true" />
@@ -146,7 +157,7 @@ const { progress, isLoading} =useLoadingIndicator()
 
     </div>
     <div v-else>
-      <div class="" v-if="sliceData.length === 0">Try to refresh the page, Something went Wrong</div>
+      <div class="" v-if="slicedData?.length === 0">Try to refresh the page, Something went Wrong</div>
       <div class=" grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 gap-6 mb-10" v-else>
         <TopicCard v-for="topic in slicedData" :key="topic.topic_id" :topic-id="topic.topic_id"
           :topic-image="'https://kisomo.co.tz/kisomo app/' + topic.img_path" :topic-title="topic.topic_title"
