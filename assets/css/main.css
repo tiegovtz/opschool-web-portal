@@ -111,3 +111,24 @@
   border-radius: 50%;
   background-color: var(--color-oceanBlue) !important;
 }
+
+
+/*  notes styles */
+.notes p{
+  margin-top: 10px;
+}
+/* images in notes */
+.notes p img{
+ margin: 10px auto;
+}
+
+/* model-viewer */
+.notes model-viewer{
+  margin: 0 auto;
+  height: 300px;
+}
+
+
+.notes p span{
+  display: block;
+}

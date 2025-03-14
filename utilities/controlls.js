@@ -13,8 +13,6 @@ const isGreaterToXS = ref(false); // check if the screen size is greater to xs
 
 const screenWidth = ref(0)
 
-// urls
-const baseUrl = 'https://api.smartdarasa.com/'
 export {
     isGreaterToXL,
     isGreaterToLG,
@@ -22,5 +20,4 @@ export {
     isGreaterToSM,
     isGreaterToXS,
     screenWidth,
-    baseUrl
 }
