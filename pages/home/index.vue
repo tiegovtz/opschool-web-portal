@@ -6,7 +6,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import InputsSelection from '@/components/home/InputsSelection.vue'
 import apiDocs from "~/utilities/api-docs";
-import { encodeURL } from "~/node_modules/nuxt/dist/app/composables/router";
+
 
 
 // Define meta info about page
@@ -73,7 +73,7 @@ const fetchTopics = async (params) => {
     });
     topic.value = response;
     status.value = 'success';
-    console.log(topic.value)
+    // console.log(topic.value)
     // Call sliceData after data is loaded
     sliceData(
       (currentPage.value - 1) * pageSize.value,
@@ -155,15 +155,16 @@ const prevPage = () => {
 const { progress, isLoading} =useLoadingIndicator()
 
 // define Emited
-const emit =reactive(
+const filters =reactive(
   {
     level: null,
     subject: null,
   }
 )
 
+const level = ref()
 // watch emits changes
-watch(emit,(filters)=>{
+watch(filters,(filters)=>{
   fetchTopics({
     "level": filters.level.toString(),
     "subject":filters.subject.toString()
@@ -175,47 +176,48 @@ watch(emit,(filters)=>{
   <NuxtLayout name="home-layout">
     <div class="container" :class="{' animate-pulse':isLoading}">
       <HeroSection />
-      <InputsSelection @emit-level="emit.level = $event"
-        @emit-subject="emit.subject = $event" />
+      <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event" @emit-subject="filters.subject = $event" />
       <TabBar />
 
-      <div v-if="status === 'pending'" class="flex justify-center items-center">
+      <div v-if="status === 'pending'" class="flex flex-col justify-center items-center">
         <LoadingIndicator :is-loading="true" />
-
       </div>
       <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
       <div v-else-if="status == 'success'">
-        <div class=" grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 gap-6 xl:gap-10 mb-10">
-          <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail"
-            :topic-title="topic.name" :topic-description="topic.descriptions"
-            :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
-            :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 100"
-            :topic-level="emit.level" :topic-standard="emit.standard" />
-        </div>
-
-        <!-- pagination numbers based on data length greater to 9 -->
-        <div class="flex justify-center mb-10">
-          <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-            <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page" :is-active="page === currentPage"
-              :disabled="page === currentPage" @click="sliceData((page - 1) * pageSize, page * pageSize)"
-              @send-page-number="currentPage = $event" />
+        <div class="w-full flex flex-col" v-if="slicedData?.length > 0">
+          <div class=" grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 gap-6 xl:gap-10 mb-10">
+            <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail"
+              :topic-title="topic.name" :topic-description="topic.descriptions"
+              :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
+              :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 100"
+              :topic-level="level" :topic-standard="filters.standard" />
           </div>
-          <div v-else class="flex justify-center gap-2">
-            <!-- previous -->
-            <div class="flex justify-center items-center" v-if="currentPage > 5">
-              <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+
+          <!-- pagination numbers based on data length greater to 9 -->
+          <div class="flex justify-center mb-10">
+            <div v-if="totalPages <= 5" class="flex justify-center gap-2">
+              <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                :is-active="page === currentPage" :disabled="page === currentPage"
+                @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
             </div>
+            <div v-else class="flex justify-center gap-2">
+              <!-- previous -->
+              <div class="flex justify-center items-center" v-if="currentPage > 5">
+                <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+              </div>
 
-            <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page" :is-active="page === currentPage"
-              :disabled="page === currentPage" @click="sliceData((page - 1) * pageSize, page * pageSize)"
-              @send-page-number="currentPage = $event" />
+              <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                :is-active="page === currentPage" :disabled="page === currentPage"
+                @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
 
-            <!-- next button -->
-            <div class="flex justify-center items-center" v-if="currentPage >4">
-              <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+              <!-- next button -->
+              <div class="flex justify-center items-center" v-if="currentPage > 4">
+                <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+              </div>
             </div>
           </div>
         </div>
+       <MessageTopicNotFound v-else/> 
 
       </div>
       <div v-else>
@@ -226,7 +228,7 @@ watch(emit,(filters)=>{
             :topic-title="topic.name" :topic-description="topic.descriptions"
             :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
             :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 100"
-            :topic-level="emit.level" :topic-standard="emit.standard" />
+            :topic-level="level" :topic-standard="filters.standard" />
 
           <!-- pagination numbers based on data length greater to 9 -->
           <div class="flex justify-center mb-10">

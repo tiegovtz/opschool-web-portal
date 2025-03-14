@@ -20,11 +20,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  console.log(apiDocs.topics.getTopicId.replaceAll(':id', topicId))
-
-
   try {
-    const response = await fetch(apiDocs.topics.getTopicId.replaceAll(':id', topicId),{
+    const response = await fetch(apiDocs.chapters.getByTopicId.replaceAll('{topicId}', topicId),{
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${auth_token}`
