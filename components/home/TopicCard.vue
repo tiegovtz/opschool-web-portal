@@ -1,3 +1,59 @@
+<script setup>
+import { calculateTopicMetrics } from '@/utilities/topicMetrics'
+
+
+const props = defineProps({
+  topicId: {
+    type: String,
+    required: true,
+  },
+  topicImage: {
+    type: String,
+    required: true,
+  },
+  topicTitle: {
+    type: String,
+    required: true,
+  },
+  topicDescription: {
+    type: String,
+    required: true,
+  },
+  topicDuration: {
+    type: String,
+    required: true,
+  },
+  topicLikes: {
+    types: Number,
+    required: true,
+  },
+  topicViews: {
+    type: Number,
+    required: true,
+  },
+  topicLevel: {
+    type: String,
+    default: 'Secondary',
+  },
+  topicTitle: {
+    type: String,
+    default: 'Introduction to Physics',
+  },
+  topicStandard: {
+    type: String,
+    default: 'Form One',
+  },
+})
+
+const setTopicToView = () => {
+  useState('topicToView', () => `/interactive/${props.topicId}`);
+  useState('topicLevel', () => `${props.topicLevel}`);
+  useState('topicTitle', () => `${props.topicTitle}`);
+  useState('topicStandard', () => `${props.topicStandard}`);
+}
+
+</script>
+
 <template>
     <NuxtLink :to="`/interactive/${topicId}`" class="overflow-hidden rounded-lg flex flex-col shadow-xs" @click="setTopicToView">
         <div class="relative h-56">
@@ -44,44 +100,3 @@
       </NuxtLink>
 </template>
 
-
-<script setup>
-import { calculateTopicMetrics } from '@/utilities/topicMetrics'
-
-
-const props = defineProps({
-    topicId: {
-        type: String,
-        required: true,
-    },
-    topicImage: {
-        type: String,
-        required: true,
-    },
-    topicTitle: {
-        type: String,
-        required: true,
-    },
-    topicDescription: {
-        type: String,
-        required: true,
-    },
-    topicDuration: {
-        type: String,
-        required: true,
-    },
-    topicLikes: {
-        types: Number,
-        required: true,
-    },
-    topicViews: {
-        type: Number,
-        required: true,
-    },
-})
-
-const setTopicToView = ()=>{
-  useState('topicToView',()=>`/interactive/${props.topicId}`)
-}
-
-</script>

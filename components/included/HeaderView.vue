@@ -5,6 +5,8 @@ const userToken = useCookie('signInUserToken')
 
 const logout = () => {
   userToken.value = null;
+  // Dismiss Drop Down
+  dropDown();
 }
 
 const isPop = ref(true)

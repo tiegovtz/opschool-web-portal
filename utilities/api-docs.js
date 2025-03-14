@@ -54,7 +54,8 @@ const apiDocs = {
         getTopics: `${baseURL}/topics`,
         getTopicId: `${baseURL}/topics/:id`,
         getQuestionId: `${baseURL}/topics/{id}/questions`,
-        getSubjectId: `${baseURL}/topics/by-subject/{subjectId}`
+        getSubjectId: `${baseURL}/topics/by-subject/{subjectId}`,
+        filterTopics: `${baseURL}/public-topics`
     },
 }
 
