@@ -14,6 +14,7 @@ const userSignIn = reactive({
     rememberMe: false,
     controller: {
         isSubmitted: false,
+        isSucces: false,
         feedback: null,
         attemps:0,
         errors: {
@@ -22,7 +23,6 @@ const userSignIn = reactive({
         }
     }
 });
-
 
 // Sign In Function
 const signIn = async () => {
@@ -66,6 +66,9 @@ const signIn = async () => {
                // unlock button
                isDisable.value = false;
 
+               userSignIn.controller.feedback = messages.success.auth.authenticated;
+               userSignIn.controller.isSucces = true;
+
                const accessToken = useCookie('signInAccessToken')
                const refreshToken = useCookie('signInRefreshToken')
                const userToken = useCookie('signInUserToken', {
@@ -80,26 +83,36 @@ const signIn = async () => {
                refreshToken.value = response.data.refresh_token
                userToken.value = response.data.user
 
-               // router
-               const router = useRouter();
+             setTimeout(() => {
+                 // router
+                 const router = useRouter();
 
-               if (path.value) {
-                   // Clears history and navigates to the new page 
-                   router.replace(path.value); 
-               } else {
-                   router.replace('/home'); 
-               }
+                 if (path.value) {
+                     // Clears history and navigates to the new page 
+                     router.replace(path.value);
+                 } else {
+                     router.replace('/home');
+                 }
+             }, 3000)
+             
 
            } else {
                userSignIn.controller.attemps++;
                isDisable.value = false
                userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
+               
            }
        } catch (error) {
            userSignIn.controller.attemps++;
-           console.error(`Error sign in failed : ${error.message}`)
+           userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
            isDisable.value = false
        }
+
+       setTimeout(() => {
+           userSignIn.controller.feedback = null;
+           userSignIn.controller.isSucces = false;
+       }, 2000)
+       
     }
 };
 
@@ -136,6 +149,10 @@ watch(() => userSignIn.password, (password) => {
 
 <template>
     <div class="flex items-center justify-center min-h-screen">
+
+        <MessageComponent :message="userSignIn.controller.feedback" :position="userSignIn.controller.feedback"
+            :event-type="userSignIn.controller.isSucces ? 'succes' : 'error' "
+            :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty' " />
 
         <div class="w-full max-w-md px-4 md:bg-white rounded-lg md:shadow-md md:pt-3">
             <h1 class="text-large font-bold text-center">Welcome</h1>
