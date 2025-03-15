@@ -11,6 +11,11 @@ const isGreaterToMD = ref(false); // check if the screen size is greater to md
 const isGreaterToSM = ref(false); // check if the screen size is greater to sm
 const isGreaterToXS = ref(false); // check if the screen size is greater to xs
 
+
+// restriction message control
+const isPopUp = ref(false)
+const popMessage= ref()
+
 const screenWidth = ref(0)
 
 export {
@@ -20,4 +25,6 @@ export {
     isGreaterToSM,
     isGreaterToXS,
     screenWidth,
+    isPopUp,
+    popMessage
 }

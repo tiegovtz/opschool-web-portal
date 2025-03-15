@@ -71,6 +71,7 @@ const fetchTopics = async (params) => {
     const response = await $fetch(apiDocs.topics.filterTopics,{
       params: params
     });
+
     topic.value = response;
     status.value = 'success';
     // console.log(topic.value)
@@ -174,9 +175,10 @@ watch(filters,(filters)=>{
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="container" :class="{' animate-pulse':isLoading}">
+    <div class="container" :class="{' animate-pulse':isLoading}" >
       <HeroSection />
-      <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event" @emit-subject="filters.subject = $event" />
+      <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+        @emit-subject="filters.subject = $event" />
       <TabBar />
 
       <div v-if="status === 'pending'" class="flex flex-col justify-center items-center">
@@ -188,9 +190,9 @@ watch(filters,(filters)=>{
           <div class=" grid grid-cols-1 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 gap-6 xl:gap-10 mb-10">
             <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail"
               :topic-title="topic.name" :topic-description="topic.descriptions"
-              :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
+              :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'" 
               :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 100"
-              :topic-level="level" :topic-standard="filters.standard" />
+              :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name" />
           </div>
 
           <!-- pagination numbers based on data length greater to 9 -->
@@ -217,7 +219,7 @@ watch(filters,(filters)=>{
             </div>
           </div>
         </div>
-       <MessageTopicNotFound v-else/> 
+        <MessageTopicNotFound v-else />
 
       </div>
       <div v-else>
@@ -228,7 +230,7 @@ watch(filters,(filters)=>{
             :topic-title="topic.name" :topic-description="topic.descriptions"
             :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
             :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 100"
-            :topic-level="level" :topic-standard="filters.standard" />
+            :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name" />
 
           <!-- pagination numbers based on data length greater to 9 -->
           <div class="flex justify-center mb-10">

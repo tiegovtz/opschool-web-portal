@@ -1,8 +1,8 @@
 <template>
-  <div class="">
+  <div class="bg-white">
     <!-- Header -->
     <HeaderView />
-    
+
 
     <!-- Main content -->
     <main class="center-height">
