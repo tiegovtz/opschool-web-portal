@@ -46,29 +46,31 @@ useHead({
   ],
 });
 
-// const topicToView = useState('topicToView');
-const topicLevel = useState("topicLevel");
-const topicTitle = useState("topicTitle");
-const topicStandard = useState("topicStandard");
-
+// Define State
 const userToken = useCookie("signInUserToken");
-
-// const toggleSidebar = () => {
-//   const sidebar = document.querySelector('.sidebar')
-//   sidebar.classList.toggle('hidden')
-// }
-
-const route = useRoute();
-const topicId = route.fullPath.split("/").pop();
 //  chapters informations
 const chapters = reactive({
   list: null,
   notes: null,
   status: "pending",
   error: null,
-  currentChapterId:null,
-  notesStatus:'pending'
+  currentChapterId: null,
+  notesStatus: 'pending'
 });
+
+// const istoggleSidebar = ref(false)
+
+const toggleSidebar = () => {
+  const sidebar = document.querySelector('.sidebar')
+  sidebar.classList.toggle('right-0')
+}
+
+const route = useRoute();
+const topicId = route.fullPath.split("/").pop();
+const topicTitle = String(route.fullPath.split("/")[4]).toString().replaceAll('%20',' ');
+const topicStandard = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
+const topicLevel = String(route.fullPath.split("/")[3]).toString().replaceAll('%20', ' ');
+
 
 
 // fetch chapters information
@@ -141,18 +143,18 @@ watch(userToken, (token) => {
         <div v-else-if="chapters.notesStatus == 'success'"
           class="lg:w-3/4 w-full scroll-height overflow-y-scroll p-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
-          <div class="flex container items-center justify-between">
+          <div class="flex lg:container items-center justify-between">
             <div class="flex items-center gap-2">
-              <p class="capitalize text-oceanBlue text-small">
+              <p class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                 {{ topicLevel != null && topicLevel != undefined && topicLevel != "null" ? topicLevel : `Secondary` }}
+                <Icon name="weui:arrow-outlined" size="18" class="" />
               </p>
-              <Icon name="weui:arrow-outlined" size="16" class="text-oceanBlue" />
 
-              <p class="capitalize text-oceanBlue text-small">
+              <p class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                 {{ topicStandard != null && topicStandard != undefined && topicStandard != "null" ? topicStandard :
                 `Form One` }}
+                <Icon name="weui:arrow-outlined" size="18" class="" />
               </p>
-              <Icon name="weui:arrow-outlined" size="16" class="text-oceanBlue" />
 
               <p class="capitalize text-small">
                 {{ topicTitle != null && topicTitle != undefined && topicTitle != "null" ? topicTitle : `Introduction to
@@ -161,14 +163,14 @@ watch(userToken, (token) => {
             </div>
 
             <!-- Header Description -->
-            <div class="flex lg:hidden">
+            <div class="flex lg:hidden" @click="toggleSidebar()">
               <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" />
             </div>
           </div>
 
           <!-- Description -->
-          <div class="content-view container w-full flex flex-col gap-2 py-3">
-            <div class="text-large">{{ chapters.notes?.name }}</div>
+          <div class="content-view lg:container w-full flex flex-col gap-2 py-3" @click="toggleSidebar()">
+            <div class="lg:text-large text-medium">{{ chapters.notes?.name }}</div>
             <div class="w-full h-64 overflow-hidden rounded-md">
               <NuxtImg class="h-full w-full object-cover" :src="chapters.notes?.thumbnail"
                 :alt="chapters.notes?.name + ' cover image'" />
@@ -183,11 +185,21 @@ watch(userToken, (token) => {
         </div>
 
         <!-- Sidebar -->
-        <div class="absolute -right-full lg:right-0 top-0 w-1/4 h-full p-5 shadow-md lg:static">
-          <h1 class="text-lg font-medium mb-4">
-            {{ topicTitle != null && topicTitle != undefined && topicTitle != "null" ? topicTitle : `Introduction to
-            Physics` }}
-          </h1>
+        <div
+          class="sidebar transition-all duration-700 ease-in-out absolute -right-[500px] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-5 shadow-md lg:static bg-white">
+          <div class="flex items-center justify-between mb-4">
+            <h1 class="text-lg font-medium  capitalize">
+              {{ topicTitle != null && topicTitle != undefined && topicTitle != "null" ? topicTitle : `Introduction to
+              Physics` }}
+            </h1>
+            <!-- toggle menu -->
+            <div
+              class="hover:bg-oceanBlue cursor-pointer rounded-full w-5 h-5 flex lg:hidden items-center justify-center group transition-all duration-500 ease-in-out"
+              @click="toggleSidebar">
+              <!-- Cancel Icon -->
+              <Icon name="iconoir:cancel" size="18" class="group-hover:text-white" />
+            </div>
+          </div>
           <!-- UL list of chapters -->
           <ChapterContainer :chapters="chapters?.list" @emit-chapter-id="getChapter($event)"
             :active-chapter-id="chapters.currentChapterId" />

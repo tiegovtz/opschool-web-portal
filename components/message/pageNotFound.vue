@@ -4,7 +4,7 @@
         <Icon name="fluent:warning-20-regular" size="50" class="text-red-500" />
 
         <!-- Main Message -->
-        <p class="text-xl font-semibold text-textGray text-center">
+        <p class="text-medium font-medium text-textGray text-center">
             Oops! The page you are looking for doesn't exist. 😞
         </p>
 
