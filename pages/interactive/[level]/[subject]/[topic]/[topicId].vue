@@ -143,7 +143,7 @@ watch(userToken, (token) => {
         <div v-else-if="chapters.notesStatus == 'success'"
           class="lg:w-3/4 w-full scroll-height overflow-y-scroll p-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
-          <div class="flex lg:container items-center justify-between">
+          <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <p class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                 {{ topicLevel != null && topicLevel != undefined && topicLevel != "null" ? topicLevel : `Secondary` }}
@@ -169,7 +169,7 @@ watch(userToken, (token) => {
           </div>
 
           <!-- Description -->
-          <div class="content-view lg:container w-full flex flex-col gap-2 py-3" @click="toggleSidebar()">
+          <div class="content-view w-full flex flex-col gap-2 py-3" @click="toggleSidebar()">
             <div class="lg:text-large text-medium">{{ chapters.notes?.name }}</div>
             <div class="w-full h-64 overflow-hidden rounded-md">
               <NuxtImg class="h-full w-full object-cover" :src="chapters.notes?.thumbnail"
