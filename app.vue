@@ -30,13 +30,14 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('load', handleResize) // resize on loading
 })
-
+  // console.log(disableshots)
 </script>
 <template>
-  
-    <NuxtLayout>
-      <NuxtLoadingIndicator color="#56ade8"/>
-      <NuxtPage />
-    </NuxtLayout>
+
+  <NuxtLayout>
+    <MessageRestrictionMessage />
+    <NuxtLoadingIndicator color="#56ade8" />
+    <NuxtPage @contextmenu.prevent  />
+  </NuxtLayout>
 
 </template>

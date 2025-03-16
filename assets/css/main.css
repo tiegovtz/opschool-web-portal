@@ -5,12 +5,12 @@
 
 @layer base {
   html {
-    @apply scroll-smooth overflow-auto bg-white/50 min-h-dvh leading-relaxed m-0 p-0 box-border font-Poppins;
+    @apply scroll-smooth overflow-auto bg-white/50 min-h-dvh leading-relaxed m-0 p-0 box-border font-Poppins select-none;
   }
 
-  ::selection {
+  /* ::selection {
     @apply bg-darkBlue text-white;
-  }
+  } */
 }
 
 @utility container {
@@ -67,12 +67,12 @@
    --font-PTSerif: "PT Serif", serif;
 
    /* Text size */
-   --text-extraLarge: 2.5rem !important; /* 40px */        
-   --text-large: 1.5rem !important; /* 24px */
-   --text-medium: 1.1rem !important; /* 18px */
-   --text-small: 1rem !important; /* 16px */
-   --text-extraSmall: 0.8rem !important; /* 14px */
-   --text-smallest: 0.6rem !important; /* 12px */
+   --text-extraLarge: 2.5rem; /* 40px */        
+   --text-large: 1.5rem; /* 24px */
+   --text-medium: 1.1rem; /* 18px */
+   --text-small: 1rem; /* 16px */
+   --text-extraSmall: 0.8rem; /* 14px */
+   --text-smallest: 0.6rem; /* 12px */
    
 
 
@@ -110,4 +110,29 @@
   width: 14px !important;
   border-radius: 50%;
   background-color: var(--color-oceanBlue) !important;
+}
+
+
+/*  notes styles */
+.notes span, .notes p{
+  font-size: var(--text-small) !important;
+}
+.notes p{
+  margin-top: 10px;
+  
+}
+/* images in notes */
+.notes p img{
+ margin: 10px auto;
+}
+
+/* model-viewer */
+.notes model-viewer{
+  margin: 0 auto;
+  height: 300px;
+  width: 100%;
+}
+
+.notes p span{
+  display: block;
 }

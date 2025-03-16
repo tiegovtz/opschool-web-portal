@@ -2,9 +2,10 @@
   <NuxtLayout name="home-layout">
     <div class="container">
       <HeroSection />
+      <HomeInputsSelection />
       <TabBar />
-      <div class="loading flex justify-center" >
-        <LoadingIndicator :is-loading="true" />
+      <div class="loading flex justify-center">
+        <MessageTopicNotFound message="This page will be updated soon" />
       </div>
       <!-- render books -->
     </div>
