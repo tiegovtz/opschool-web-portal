@@ -34,7 +34,7 @@ const sendEmits =()=>{
 </script>
 
 <template>
-  <form action="" class="flex md:flex-row flex-col items-center justify-center mb-10 gap-4">
+  <form action="" class="flex md:flex-row flex-col items-center justify-center my-5 gap-4">
     <select v-model="level" name="" id=""
       class="w-full h-10 border-b border-gray-300 px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue"
       @change="sendEmits">
