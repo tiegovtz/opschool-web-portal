@@ -40,5 +40,10 @@ export default defineNuxtConfig({
       xxl: 1536,
       "2xl": 1536,
     },
-  }
+  },
+
+  // devServer: {
+  //   host: '192.168.0.17',
+  //   port: 3000
+  // }
 });
