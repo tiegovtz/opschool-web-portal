@@ -21,7 +21,7 @@ const dropDown = () => {
 <template>
   <!-- Header -->
   <header class="sticky top-0 z-10 bg-grayLight shadow-sm">
-    <nav class="relative container max-w-screen-xl flex justify-between items-center py-2 bg-grayLight">
+    <nav class="relative container flex justify-between items-center py-2">
       <NuxtLink to="/" class="cursor-pointer">
         <NuxtImg src="/logo/logo_tie.png" alt="TIE LOGO" class="w-16 h-16" />
       </NuxtLink>

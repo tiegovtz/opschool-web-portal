@@ -5,7 +5,7 @@
 
 
     <!-- Main content -->
-    <main class="center-height">
+    <main class="center-height container">
       <slot />
     </main>
 
