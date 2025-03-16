@@ -170,7 +170,7 @@ watch(userToken, (token) => {
 
           <!-- Description -->
           <div class="content-view w-full flex flex-col gap-2 py-3" @click="toggleSidebar()">
-            <p class="notes" v-html="modelParser(chapters.notes?.content)"></p>
+            <p class="notes md:px-4" v-html="modelParser(chapters.notes?.content)"></p>
           </div>
         </div>
 
