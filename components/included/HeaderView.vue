@@ -21,23 +21,23 @@ const dropDown = () => {
 <template>
   <!-- Header -->
   <header class="sticky top-0 z-10 bg-grayLight shadow-sm">
-    <nav class="relative container flex justify-between items-center py-2">
-      <NuxtLink to="/" class="cursor-pointer">
+    <nav class="relative wrapper-container flex justify-between items-center ">
+      <NuxtLink to="/" class="cursor-pointer p-2">
         <NuxtImg src="/logo/logo_tie.png" alt="TIE LOGO" class="w-16 h-16" />
       </NuxtLink>
 
-      <div class=" flex max-w-60 bg-grayLight" @click="dropDown">
-        <div class="flex items-start cursor-pointer">
-          <div class="overflow-hidden rounded-full flex items-center justify-center">
+      <div class=" flex max-w-60 bg-grayLight" v-if="userToken" @click="dropDown">
+        <div class="flex items-start cursor-pointer" >
+          <div class="overflow-hidden rounded-full flex items-center justify-center" >
             <NuxtImg v-if="userToken?.profilePic" :src="apiDocs.baseURL" alt="User Profile"
               class="w-full h-full object-cover" />
-            <Icon v-else name="ix:user-profile-filled" class="text-gray-400/80" size="56" />
+            <Icon v-else name="gg:profile" class="text-gray-400/80" size="56" />
           </div>
           <div class="md:flex flex-col hidden">
             <p class="text-lg capitalize line-clamp-1">Hello, {{ userToken?.name ? String(userToken.name).split(' ')[0]
               :'friend' }}
             </p>
-            <p class="text-base text-gray-400/80 capitalize">{{ userToken?.type ? userToken.type : 'Guest' }}</p>
+            <p class="text-base text-gray-400/80 capitalize" v-if="userToken?.type">{{ userToken?.type ? userToken.type : 'Guest' }}</p>
           </div>
         </div>
         <div class="md:flex hidden">
@@ -45,11 +45,25 @@ const dropDown = () => {
             class="cursor-pointer transition-transform duration-500 ease-in-out" size="2rem" />
         </div>
       </div>
+      <div v-else>
+        <NuxtLink to="/auth" class="flex items-center gap-2 cursor-pointer p-2">
+          <Icon name="solar:login-2-outline" class="" size="2rem" title="Sign in" /> 
+          <span>
+            Sign in
+          </span>
+        </NuxtLink>
+      </div>
       <div
         class="absolute top-18 right-10 -z-10 flex flex-col w-40 gap-2 bg-grayLight shadow-md rounded-md p-2 transition-all duration-500 ease-in-out"
         :class="{'!-top-20 !z-0' : isPop}">
-        <p class="cursor-pointer" v-if="userToken">Profile</p>
-        <p @click="logout" class="cursor-pointer" v-if="userToken">Logout</p>
+        <p class="flex items-center gap-2 cursor-pointer" v-if="userToken">
+          <Icon  name="gg:profile" class="" size="1.1rem" title="Profile" />
+          <span>Profile</span>
+        </p>
+          <p class="flex items-center gap-2 cursor-pointer"  @click="logout" v-if="userToken">
+            <Icon name="solar:logout-2-outline" size="1.1rem" title="Sign in" />
+            <span>Logout</span>
+           </p>
         <NuxtLink to="/auth" class="cursor-pointer" v-else>Login</NuxtLink>
       </div>
     </nav>

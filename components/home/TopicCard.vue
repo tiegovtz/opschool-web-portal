@@ -67,9 +67,9 @@ const setTopicToView = () => {
     <div class="relative h-56">
       <NuxtImg :src="topicImage" loading="lazy" alt="book1" class="w-full h-full object-cover" />
       <div class="absolute -bottom-4 right-2">
-        <div class="bg-darkBlue rounded-full h-8 w-20 flex items-center justify-center gap-2">
-          <Icon name="solar:star-bold" class="text-normalYellow text-medium" />
-          <p class="text-white text-medium">4.5</p>
+        <div class="bg-oceanBlue  rounded-full h-8 w-20 flex items-center justify-center">
+          <p class="text-white text-small">45</p>
+          <Icon name="ic:round-percent" class="text-white text-medium" />
         </div>
       </div>
     </div>

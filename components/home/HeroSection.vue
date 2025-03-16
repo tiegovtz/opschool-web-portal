@@ -1,12 +1,12 @@
 <template>
-  <section class="hero-section md:h-[400px] pt-10 overflow-hidden md:mb-0 mb-10">
-    <div class=" grid grid-cols-1 md:grid-cols-2 md:gap-4">
-      <div class="flex-col items-center justify-center h-[300px] hidden md:flex  ">
+  <section class="hero-section lg:max-h-[550px] pt-10 overflow-hidden mb-2 md:mb-10">
+    <div class=" grid grid-cols-1 lg:grid-cols-2 md:gap-4 ">
+      <div class="flex-col items-center justify-center h-full  flex  ">
         <SliderShow />
       </div>
-      <div class="flex flex-col justify-center md:ml-10 ">
-        <h1 class="md:text-extraLarge text-large font-extrabold text-gray-800 mb-4">Welcome</h1>
-        <p class="text-medium text-gray-600/60 mb-6">
+      <div class="flex flex-col justify-center xl:ml-10 ">
+        <h1 class="md:text-extraLarge text-large font-extrabold text-gray-800 mb-4 hidden lg:block">Welcome</h1>
+        <p class="text-medium text-center md:text-left  lg:text-gray-600/60 my-2 md:mb-6 ">
           What do you want to learn today?
         </p>
 
@@ -18,18 +18,18 @@
             <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" />
 
             <!-- Search Input -->
-            <input type="text" placeholder="Search for anything to learn" class="flex-1 h-full focus:outline-none caret-gray-400 px-2" />
+            <input type="text" placeholder="Search" class="flex-1 h-full focus:outline-none caret-gray-400 px-2" />
           </div>
 
           <!-- Search Button -->
           <button type="submit"
-            class="bg-oceanBlue text-white p-2 lg:flex hidden rounded-r-lg hover:bg-blue-400 transition duration-500 cursor-pointer">
+            class="bg-oceanBlue text-white p-2 md:flex hidden rounded-r-lg hover:bg-blue-400 transition duration-500 cursor-pointer">
             Search
           </button>
         </form>
 
         <!-- app download links -->
-        <div class="flex flex-col item-center justify-start gap-2 mt-2">
+        <div class="md:flex flex-col item-center justify-start gap-2 mt-2 hidden ">
           <p>Get the App for Android and IOS</p>
           <div class="flex item-center md:justify-start justify-center gap-2">
 

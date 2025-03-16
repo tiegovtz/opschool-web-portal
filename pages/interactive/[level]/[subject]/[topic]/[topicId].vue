@@ -117,7 +117,7 @@ watch(userToken, (token) => {
 
 <template>
   <NuxtLayout name="home-layout">
-    <section class="relative w-full h-full inline-flex center-height overflow-hidden">
+    <section class=" relative w-full h-full inline-flex center-height overflow-hidden">
       <!-- Loading state -->
       <div v-if="chapters.status == 'pending'" class="loading content-height flex items-center justify-center w-full">
         <LoadingIndicator :is-loading="true" />
@@ -141,22 +141,22 @@ watch(userToken, (token) => {
 
         <!-- Notes loaded successfully -->
         <div v-else-if="chapters.notesStatus == 'success'"
-          class="lg:w-3/4 w-full scroll-height overflow-y-scroll p-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+          class="lg:w-3/4 w-full scroll-height overflow-y-scroll py-5 lg:pr-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between ">
             <div class="flex items-center gap-2">
               <p class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                 {{ topicLevel != null && topicLevel != undefined && topicLevel != "null" ? topicLevel : `Secondary` }}
-                <Icon name="weui:arrow-outlined" size="18" class="" />
+                <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </p>
 
               <p class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                 {{ topicStandard != null && topicStandard != undefined && topicStandard != "null" ? topicStandard :
                 `Form One` }}
-                <Icon name="weui:arrow-outlined" size="18" class="" />
+                <Icon name="weui:arrow-outlined" size="18" class=" text-black" />
               </p>
 
-              <p class="capitalize text-small">
+              <p class="text-medium uppercase md:capitalize font-medium">
                 {{ topicTitle != null && topicTitle != undefined && topicTitle != "null" ? topicTitle : `Introduction to
                 Physics` }}
               </p>
@@ -170,27 +170,21 @@ watch(userToken, (token) => {
 
           <!-- Description -->
           <div class="content-view w-full flex flex-col gap-2 py-3" @click="toggleSidebar()">
-            <div class="lg:text-large text-medium">{{ chapters.notes?.name }}</div>
-            <div class="w-full h-64 overflow-hidden rounded-md">
-              <NuxtImg class="h-full w-full object-cover" :src="chapters.notes?.thumbnail"
-                :alt="chapters.notes?.name + ' cover image'" />
-            </div>
             <p class="notes" v-html="modelParser(chapters.notes?.content)"></p>
           </div>
         </div>
 
         <!-- Notes failed to load -->
         <div v-else class="flex w-full items-center justify-center lg:w-3/4 scroll-height overflow-y-scroll p-5">
-          Chapter failed to load
+          <MessageTopicNotFound message="This chapter currently not available"/>
         </div>
 
         <!-- Sidebar -->
         <div
-          class="sidebar transition-all duration-700 ease-in-out absolute -right-[500px] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-5 shadow-md lg:static bg-white">
+          class="sidebar transition-all duration-700 ease-in-out absolute -right-[500px] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2  lg:static bg-white">
           <div class="flex items-center justify-between mb-4">
-            <h1 class="text-lg font-medium  capitalize">
-              {{ topicTitle != null && topicTitle != undefined && topicTitle != "null" ? topicTitle : `Introduction to
-              Physics` }}
+            <h1 class="text-medium font-medium capitalize pt-5">
+              Chapters
             </h1>
             <!-- toggle menu -->
             <div
