@@ -175,7 +175,7 @@ watch(filters,(filters)=>{
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="container" :class="{' animate-pulse':isLoading}" >
+    <div class="" :class="{' animate-pulse':isLoading}" >
       <HeroSection />
       <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
         @emit-subject="filters.subject = $event" />

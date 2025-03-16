@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout name="home-layout">
-    <div class="container">
+    <div class="wrapper-container">
       <HeroSection />
       <HomeInputsSelection />
       <TabBar />
