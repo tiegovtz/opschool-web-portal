@@ -1,0 +1,31 @@
+<script setup>
+
+defineProps({
+    chapters:{
+        type:Object,
+        default: () => { {}}
+    },
+    activeChapterId:{
+        type:String,
+        required:true
+    }
+})
+
+// emit for color change and id sharing
+const emit = defineEmits(['emitChapterId'])
+</script>
+
+<template>
+    <ul class="flex flex-col gap-3 md:pl-4">
+        <li v-for="(chapter, index) in chapters" :key="index" @click="emit('emitChapterId',chapter?._id)"
+            class="flex items-center gap-2 cursor-pointer p-3 rounded-md bg-containerGray"
+            :class="{ 'bg-oceanBlue text-white shadow-oceanBlue/50 shadow-md': activeChapterId == chapter?._id }">
+            <div class="">
+                <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
+            </div>
+            <div class="line-clamp-2">
+                {{ chapter?.name }}
+            </div>
+        </li>
+    </ul>
+</template>

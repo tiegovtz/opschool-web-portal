@@ -1,4 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
+// import '@google/model-viewer';
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 export default defineNuxtConfig({
@@ -7,7 +9,9 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
 
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+    ],
   },
 
   modules: [
@@ -15,6 +19,9 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxt/icon",
     "nuxt-swiper",
+    '@pinia/nuxt',
+    'pinia-plugin-persistedstate/nuxt',
+    
   ],
 
 

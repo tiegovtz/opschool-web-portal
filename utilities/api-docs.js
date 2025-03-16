@@ -30,6 +30,7 @@ const apiDocs = {
     chapters: {
         getChapters: `${baseURL}/chapters`,
         getChapterId: `${baseURL}/chapters/:id`,
+        getByTopicId: `${baseURL}/chapters/load-by-topic/{topicId}`,
     },
     
     // EXPERIMENTS API
