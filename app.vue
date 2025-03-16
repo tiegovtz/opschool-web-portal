@@ -22,7 +22,7 @@ const handleResize = () => {
   isGreaterToXS.value = widthGreater320.value
   
   // force page reload on resize
-  document.location.reload()
+  // document.location.reload()
 }
 
 window.addEventListener('resize', handleResize) //resizing window
