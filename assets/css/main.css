@@ -124,7 +124,7 @@
 /* images in notes */
 .notes p img{
  margin: 10px auto;
- display: inline-block;
+ /* display: inline-block; */
 }
 
 /* model-viewer */
@@ -150,7 +150,7 @@
   height: 231px;
   width: 100%;
   border-radius: 12px ;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .notes  img{
