@@ -20,6 +20,9 @@ const handleResize = () => {
   isGreaterToMD.value  = widthGreater768.value
   isGreaterToSM.value = widthGreater640.value
   isGreaterToXS.value = widthGreater320.value
+  
+  // force page reload on resize
+  document.location.reload()
 }
 
 window.addEventListener('resize', handleResize) //resizing window

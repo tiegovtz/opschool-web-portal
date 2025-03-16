@@ -23,7 +23,7 @@ const usersignUp = reactive({
   controller: {
     isSubmitted: false,
     feedback: null,
-    isSent: false,
+    isSent:null,
     errors: {
       all: null,
       role: "",
@@ -56,8 +56,8 @@ const signUp = async () => {
   ) {
 
     // 
+    usersignUp.controller.isSent = 'pending';
     usersignUp.controller.isSubmitted = true;
-
     // sanitize.input(usersignUp.phone),
     // submit data
     await axios.post(apiDocs.auth.signUp, {
@@ -75,7 +75,7 @@ const signUp = async () => {
       })
       .then((response) => {
         if (response.status >= 200 && response.status < 300) {
-          usersignUp.controller.isSent = true;
+          usersignUp.controller.isSent = 'success';
           usersignUp.controller.feedback = messages.success.auth.registered;
           setTimeout(() => {
             // router
@@ -84,19 +84,19 @@ const signUp = async () => {
           }, 5000)
          
         }else{
-          usersignUp.controller.isSent = false;
+          usersignUp.controller.isSent = 'failed';
           usersignUp.controller.feedback = messages.error.auth.accountExists;
           return
         }
        
       })
       .catch((error) => {
-        usersignUp.controller.isSent = false;
+        usersignUp.controller.isSent = 'error';
         usersignUp.controller.feedback = messages.error.auth.accountExists;
       });
 
         setTimeout(() => {
-          usersignUp.controller.isSent = false;
+          usersignUp.controller.isSent = null;
           }, 5000)
 
   } else {
@@ -362,10 +362,10 @@ const switchTab = (tabName) => {
 
     <!-- Message Component -->
     <MessageComponent :message="usersignUp.controller.feedback" :position="usersignUp.controller.feedback"
-      :event-type="usersignUp.controller.isSent ? 'succes' : 'error'"
-      :icon="usersignUp.controller.isSent ? 'icons8:checked' : 'oui:cross-in-circle-empty' " />
+      :event-type="usersignUp.controller.isSent"
+      :icon="usersignUp.controller.isSent =='success' ? 'icons8:checked' : 'oui:cross-in-circle-empty' " />
 
-    <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-md">
+    <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-2xl">
       <h1 class="text-large font-bold text-center">Sign Up</h1>
       <NuxtImg src="/logo/logo_tie.png" class="w-20 h-20 mx-auto my-6" alt="logo" />
       <form @submit.prevent="signUp" @keydown.enter.prevent
@@ -668,16 +668,24 @@ const switchTab = (tabName) => {
             class="w-full p-2 bg-oceanBlue text-white rounded-md cursor-pointer hover:bg-oceanBlue/80 transition-all duration-500">
             <!-- submited successful -->
             <div class="flex items-center justify-center gap-2"
-              v-if="usersignUp.controller.isSubmitted && usersignUp.controller.isSent">
+              v-if="usersignUp.controller.isSent==='success' && usersignUp.controller.isSubmitted">
               Submitted
               <Icon name="icons8:checked" class="h-5 w-5 cursor-pointer text-white" size="16" />
             </div>
             <div class="flex items-center justify-center gap-2"
-              v-else-if="usersignUp.controller.isSubmitted && !usersignUp.controller.isSent">
-              Sign up failed
-              <Icon name="oui:cross-in-circle-empty" class="h-5 w-5 cursor-pointer text-white" size="16" />
+              v-else-if="usersignUp.controller.isSent==='pending' && usersignUp.controller.isSubmitted">
+              Please Wait
+              <Icon name="eos-icons:loading" class="h-5 w-5 cursor-pointer text-white" size="16" />
             </div>
 
+            <div class="flex items-center justify-center gap-2" v-else-if="usersignUp.controller.isSent==='failed' && usersignUp.controller.isSubmitted">
+              Failed
+              <Icon name="oui:cross-in-circle-empty" class="h-5 w-5 cursor-pointer text-white" size="16" />
+            </div>
+            <div class="flex items-center justify-center gap-2" v-else-if="usersignUp.controller.isSent==='error' && usersignUp.controller.isSubmitted">
+              Internal Error
+              <Icon name="oui:cross-in-circle-empty" class="h-5 w-5 cursor-pointer text-white" size="16" />
+            </div>
             <div class="flex items-center justify-center gap-2" v-else>
               Sign Up
               <Icon name="mynaui:send" class="h-5 w-5 cursor-pointer text-white" size="16" />
