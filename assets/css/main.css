@@ -149,7 +149,6 @@
 .notes table td img{
   height: 231px;
   width: 100%;
-  /* padding: 10p !important; */
   border-radius: 12px ;
   object-fit: cover;
 }
