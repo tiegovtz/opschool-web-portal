@@ -1,3 +1,12 @@
+<script setup>
+
+const search = () => {
+  console.log('searching')
+}
+
+
+</script>
+
 <template>
          <!-- Search Form -->
     <form action="" @submit.prevent="search"
