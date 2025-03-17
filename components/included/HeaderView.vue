@@ -24,40 +24,36 @@ const dropDown = () => {
 
     <nav class="wrapper-container flex flex-col items-center">
       <!-- Phone Number -->
-      <div class="relative flex justify-end items-center bg-oceanBlue w-full rounded-b-md">
-        <div class=" flex max-w-60 bg-grayLight" v-if="userToken" @click="dropDown">
-        <div class="flex items-start cursor-pointer" >
+      <div class="relative flex justify-end items-center bg-oceanBlue w-full rounded-b-md text-white">
+
+        <div class=" flex items-center py-2 px-2 gap-4" v-if="userToken">
           <div class="overflow-hidden rounded-full flex items-center justify-center" >
+           <div class="flex items-center gap-1 cursor-pointer">
             <NuxtImg v-if="userToken?.profilePic" :src="apiDocs.baseURL" alt="User Profile"
               class="w-full h-full object-cover" />
-            <Icon v-else name="gg:profile" class="text-gray-400/80" size="56" />
-          </div>
-          <div class="md:flex flex-col hidden">
-            <p class="text-lg capitalize line-clamp-1">Hello, {{ userToken?.name ? String(userToken.name).split(' ')[0]
+            <Icon v-else name="iconamoon:profile-circle-thin" class="" size="2rem" />
+            <p class="text-lg capitalize line-clamp-1 max-w-60">Hello, {{ userToken?.name ? String(userToken.name).split(' ')[0]
               :'friend' }}
             </p>
-            <p class="text-base text-gray-400/80 capitalize" v-if="userToken?.type">{{ userToken?.type ? userToken.type : 'Guest' }}</p>
+           </div>
           </div>
-        </div>
-        <div class="md:flex hidden">
-          <Icon name="hugeicons:arrow-down-01" :class="{ 'transform rotate-180': !isPop }"
-            class="cursor-pointer transition-transform duration-500 ease-in-out" size="2rem" />
+        <div class="flex items-center gap-2 cursor-pointer  text-white border-1 h-8 p-2 border-white rounded-md" @click="logout">
+          <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" /> 
+          <span class="capitalize">
+            Logout
+          </span>
         </div>
       </div>
-      <div class="p-2 flex items-center gap-2" v-else>
+      <div class="p-2 flex items-center gap-4" v-else>
         <NuxtLink to="/auth" class="flex items-center gap-2 cursor-pointer  text-white border-1 h-8 px-1 border-white rounded-md">
           <Icon name="solar:login-2-outline" class="" size="1.5rem" title="Sign in" /> 
-          <span>
-            Sign in
-          </span>
+          <span>Sign in </span>
         </NuxtLink>
 
         <!-- sign up -->
         <NuxtLink to="/auth/SignUp" class="flex items-center gap-2 cursor-pointer  text-white border-1 h-8 px-1 border-white rounded-md">
-          <Icon name="solar:login-2-outline" class="" size="1.5rem" title="Sign in" /> 
-          <span>
-            Sign Up
-          </span>
+          <Icon name="iconamoon:profile-thin" class="" size="1.5rem" title="Sign in" /> 
+          <span>Create Account</span>
         </NuxtLink>
       </div>
       </div>
