@@ -141,7 +141,7 @@ watch(userToken, (token) => {
 
         <!-- Notes loaded successfully -->
         <div v-else-if="chapters.notesStatus == 'success'"
-          class="lg:w-3/4 w-full scroll-height overflow-y-scroll py-5 lg:pr-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+          class="lg:w-3/4 w-full scroll-height overflow-y-scroll py-5 lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between ">
             <div class="flex items-center gap-2">
