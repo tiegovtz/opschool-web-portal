@@ -27,7 +27,7 @@ const dropDown = () => {
       <!-- Phone Number -->
       <div class="relative flex justify-between items-center bg-oceanBlue w-full rounded-b-md text-white">
 
-        <div class="title px-2 text-large font-medium uppercase">
+        <div class="title px-2 text-large font-medium uppercase text-shadow">
           TIE online public school
         </div>
         <div class="info">
@@ -71,13 +71,13 @@ const dropDown = () => {
 
       <!-- Header -->
       <div class="relative w-full h-19  mt-1 bg-[url('/public/flag/Flag_of_Tanzania.gif')] bg-cover bg-center bg-no-repeat">
-        <div class="absolute top-0 left-0 z-0 w-full h-full bg-[rgba(0,0,0,0.1)]"></div>
+        <div class="absolute top-0 left-0 z-0 w-full h-full bg-[#f0f0f0f0]"></div>
         <div class="flex justify-between items-center w-full h-full absolute top-0 left-0  ">
           <div class="flex items-center justify-center bg-grayLight shadow-2xl shadow-grayLight h-full ">
           <NuxtImg src="/logo/emblem.png" alt="EMBLEM" class="w-18 h-18" />
         </div>
-        <div class="title flex flex-col items-center text-center gap-1 text-white h-full">
-          <p class="text-medium  md:text-large font-medium uppercase text-shadow">wizara ya elimu, sayansi na teknolojia </p>
+        <div class="title flex flex-col items-center text-center gap-1  h-full">
+          <p class="text-medium  md:text-large font-bold uppercase text-shadow">wizara ya elimu, sayansi na teknolojia </p>
           <p class="text-small md:text-medium capitalize">taasisi ya elimu tanzania (TET)</p>
         </div>
         <NuxtLink to="/" class="cursor-pointer p-2 h-full bg-grayLight shadow-2xl shadow-grayLight ">
