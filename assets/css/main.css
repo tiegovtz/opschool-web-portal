@@ -3,10 +3,22 @@
 
 @import "tailwindcss";
 
+/* @font-face declarations */
+@font-face {
+  font-family: 'Reey-Regular';
+  src: url('/fonts/tahoma.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 @layer base {
   html {
-    @apply scroll-smooth overflow-auto bg-white/50 min-h-dvh leading-relaxed m-0 p-0 box-border font-Poppins select-none;
+    @apply scroll-smooth overflow-auto bg-white/50 min-h-dvh leading-relaxed m-0 p-0 box-border  select-none;
   }
+
+  .title {
+    @apply !font-[Tahoma];
+  } 
 
   /* ::selection {
     @apply bg-darkBlue text-white;
@@ -79,6 +91,8 @@
    --text-extraSmall: 0.8rem; /* 14px */
    --text-smallest: 0.6rem; /* 12px */
    
+  /* Font Family */
+  --font-tahoma: 'tahoma', 'sans-serif';
 
 
    --animate-bounce-horizontal: bounce-horizontal 1s infinite;
@@ -209,9 +223,9 @@
 
 
 /* title style  font tahoma important*/
-.title{
+/* .title{
   font-family: Tahoma !important;
-}
+} */
 
 
 /* wrapper-container media querries  */
