@@ -148,7 +148,8 @@ watch(() => userSignIn.password, (password) => {
 </script>
 
 <template>
-    <div class="flex items-center justify-center min-h-screen bg-[linear-gradient(to_right,, #56ade8, #56ade8, #56ade8, #56ade8)]">
+    <div class="flex items-center justify-center min-h-screen bg-gradient-to-b ">
+
 
         <MessageComponent :message="userSignIn.controller.feedback" :position="userSignIn.controller.feedback"
             :event-type="userSignIn.controller.isSucces ? 'succes' : 'error' "
