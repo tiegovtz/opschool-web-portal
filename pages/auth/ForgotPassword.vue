@@ -2,7 +2,7 @@
     <div class="flex items-center justify-center min-h-screen">
         <div class="w-full max-w-md p-4 bg-white rounded-lg shadow-md">
             <h1 class="text-large font-bold text-center">Forgot Password</h1>
-            <NuxtImg src="/logo/logo_tie.png" class="w-20 h-20 mx-auto my-6" alt="logo" />
+            <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
             <form @submit.prevent="forgotPassword" class="px-4">
                 <div class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex items-center gap-2">
                     <input type="email" id="email" v-model="email" name="email" autocomplete="off"
