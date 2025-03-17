@@ -146,16 +146,16 @@ watch(userToken, (token) => {
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between ">
             <div class="flex items-center gap-2">
-              <p class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+              <NuxtLink to="/" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                 {{ topicLevel != null && topicLevel != undefined && topicLevel != "null" ? topicLevel : `Secondary` }}
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
-              </p>
+              </NuxtLink>
 
-              <p class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+              <NuxtLink to="/"  class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                 {{ topicStandard != null && topicStandard != undefined && topicStandard != "null" ? topicStandard :
                 `Form One` }}
                 <Icon name="weui:arrow-outlined" size="18" class=" text-black" />
-              </p>
+              </NuxtLink>
 
               <p class="text-medium uppercase md:capitalize font-medium">
                 {{ topicTitle != null && topicTitle != undefined && topicTitle != "null" ? topicTitle : `Introduction to
