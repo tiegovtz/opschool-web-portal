@@ -125,8 +125,9 @@ watch(userToken, (token) => {
 
       <!-- Error state -->
       <div v-else-if="chapters.status == 'error'" class="error flex w-full items-center justify-center gap-2 flex-col">
-        <p>{{ chapters.error?.message }}</p>
-        <MessagePageNotFound />
+        <MessagePageNotFound 
+          message="Error while loading chapter" 
+          subMessage="Make sure you are connected to the stable internet or try to reload the page" />
       </div>
 
       <!-- Success state -->

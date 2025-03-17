@@ -25,9 +25,9 @@ const dropDown = () => {
 
     <nav class="wrapper-container flex flex-col items-center">
       <!-- Phone Number -->
-      <div class="relative flex justify-between items-center bg-oceanBlue w-full rounded-b-md text-white">
+      <div class="relative flex  items-center bg-oceanBlue w-full rounded-b-md text-white">
 
-        <div class="title px-2 text-large font-medium uppercase text-shadow">
+        <div class="title px-2 text-large font-medium uppercase text-shadow flex-1 text-center relative left-40">
           TIE online public school
         </div>
         <div class="info">
