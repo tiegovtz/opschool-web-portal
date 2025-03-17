@@ -5,12 +5,13 @@ import { screenWidth} from '~/utilities/controlls';
 <template>
     <!-- Footer -->
     <footer class="bg-oceanBlue text-white p-4">
-      <div class="wrapper-container flex justify-between items-center lg:flex-row flex-col gap-2">
+      <div class="wrapper-container flex justify-between items-center xl:flex-row flex-col gap-2">
         <p class="text-center">
             All Rights Reserved &copy; <span v-if="screenWidth >= 640">Tanzania Institute of Education</span> 
             <span v-else>TIE</span> 
         </p>
-        <ul class=" lg:flex hidden items-center gap-6">
+        <div class="flex items-center gap-4">
+          <ul class=" lg:flex hidden items-center gap-6">
           <li>
             <NuxtLink to="/contact" class="text-white uppercase">contact</NuxtLink>
           </li>
@@ -21,6 +22,9 @@ import { screenWidth} from '~/utilities/controlls';
             <NuxtLink to="/updates" class="text-white uppercase">updates</NuxtLink>
           </li>
           </ul>
+          <!-- App Download -->
+           <HomeAppDownload />
+        </div>
       </div>
     </footer>
 </template>
