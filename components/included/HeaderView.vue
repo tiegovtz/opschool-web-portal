@@ -20,7 +20,7 @@ const dropDown = () => {
 
 <template>
   <!-- Header -->
-  <header class="sticky top-0 z-10 bg-grayLight shadow-sm">
+  <header class=" bg-grayLight shadow-sm">
 
     <nav class="wrapper-container flex flex-col items-center">
       <!-- Phone Number -->
