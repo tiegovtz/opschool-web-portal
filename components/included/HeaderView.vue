@@ -26,7 +26,7 @@ const dropDown = () => {
       <!-- Phone Number -->
       <div class="relative flex justify-end items-center bg-oceanBlue w-full rounded-b-md text-white">
 
-        <div class=" flex items-center py-2 px-2 gap-4" v-if="userToken">
+        <div class=" flex items-center py-1 px-2 gap-4" v-if="userToken">
           <div class="overflow-hidden rounded-full flex items-center justify-center" >
            <div class="flex items-center gap-1 cursor-pointer">
             <NuxtImg v-if="userToken?.profilePic" :src="apiDocs.baseURL" alt="User Profile"
@@ -61,11 +61,11 @@ const dropDown = () => {
       <!-- Header -->
       <div class="relative flex justify-between items-center w-full">
         <div class="flex items-center justify-center">
-          <NuxtImg src="/logo/emblem.png" alt="EMBLEM" class="w-16 h-16" />
+          <NuxtImg src="/logo/emblem.png" alt="EMBLEM" class="w-18 h-18" />
         </div>
         <div class="flex flex-col items-center text-center gap-1">
-          <p class="text-large font-medium uppercase">wizara ya elimu, sayansi na teknolojia </p>
-          <p class="text-medium capitalize">taasisi ya elimu tanzania (TET)</p>
+          <p class="text-medium  md:text-large font-medium uppercase">wizara ya elimu, sayansi na teknolojia </p>
+          <p class="text-small md:text-medium capitalize">taasisi ya elimu tanzania (TET)</p>
         </div>
       <NuxtLink to="/" class="cursor-pointer p-2">
         <NuxtImg src="/logo/logo_tie.png" alt="TIE LOGO" class="w-16 h-16" />
