@@ -49,6 +49,10 @@
   color: var( --color-normalRed);
   }
   
+  /* bg-gradient-to-b from-customRedColor to-customGreenColor */
+.bg-gradient-to-b{
+  background: linear-gradient(to bottom, var(--color-oceanBlue), var(--color-normalWhite));
+}
 
 @theme {
   --color-darkBlue: #282938;
@@ -59,6 +63,7 @@
   --color-containerGray: #F3F3F3;
   --color-normalGreen: #00BF77;
   --color-normalRed: #f00;
+  --color-normalWhite: #FFF;
   
    /* Background color */
    --color-grayLight: #f0f0f0;
@@ -243,7 +248,3 @@
   }
 }
 
-/* bg-gradient-to-b from-customRedColor to-customGreenColor */
-.bg-gradient-to-b{
-  background: linear-gradient(to bottom, var(--color-normalRed), var(--color-normalGreen));
-}
