@@ -38,7 +38,7 @@ const dropDown = () => {
                 <NuxtImg v-if="userToken?.profilePic" :src="apiDocs.baseURL" alt="User Profile"
                   class="w-full h-full object-cover" />
                 <Icon v-else name="iconamoon:profile-circle-thin" class="" size="2rem" />
-                <p class="lg:text-large text-medium capitalize line-clamp-1 max-w-60">Hello, {{ userToken?.name ?
+                <p class=" text-medium capitalize line-clamp-1 max-w-60">Hello, {{ userToken?.name ?
                   String(userToken.name).split(' ')[0]
                   : 'friend' }}
                 </p>
