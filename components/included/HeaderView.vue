@@ -73,9 +73,9 @@ const dropDown = () => {
       <div class="relative w-full h-20  mt-1 bg-[url('/public/flag/Flag_of_Tanzania.gif')] bg-cover bg-center bg-no-repeat">
         <div class="absolute top-0 left-0 z-0 w-full h-full bg-[#f0f0f0e0]"></div>
         <div class="flex justify-between items-center w-full h-full absolute top-0 left-0  ">
-          <div class="flex items-center justify-center bg-grayLight shadow-2xl shadow-grayLight h-full ">
+          <NuxtLink to="/" class="flex items-center justify-center bg-grayLight shadow-2xl shadow-grayLight h-full ">
           <NuxtImg src="/logo/emblem.webp" alt="EMBLEM" class="w-18 h-18" />
-        </div>
+        </NuxtLink>
         <div class="title flex flex-col items-center text-center gap-1  h-full">
           <p class="lg:text-large md:text-medium text-extraSmall font-bold uppercase text-shadow">wizara ya elimu, sayansi na teknolojia </p>
           <p class="lg:text-medium md:text-small text-smallest capitalize">taasisi ya elimu tanzania (TET)</p>
