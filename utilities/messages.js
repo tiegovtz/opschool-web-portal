@@ -105,13 +105,16 @@ const messages = {
         firstName: "First Name should have at least three characters",
         lastName: "Last Name should have at least three characters",
         confirmPassword: "Password Mismatch",
-        role: "User role is required",
+        type: "User role is required",
         gender: "User gender is required",
         region: "Region is required",
         isMinLength: " Name must be at least 3 characters long",
         hasSpecialChars: "Name should not contain special characters or numbers", 
         hasRepeatedChars: "Name should not have three or more repeating characters" ,
         age:"Age is required",
+        role:"Role is required",
+        district:"District is required",
+        school:"School is required",
     }
     },
   

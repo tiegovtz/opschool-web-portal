@@ -1,6 +1,6 @@
 <script setup>
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
-import modelParser from '~/utilities/modelParser'
+import modelParser from '~/utilities/parsers/modelParser'
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania/volumetric analysis",
