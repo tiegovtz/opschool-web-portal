@@ -17,9 +17,9 @@ const usersignUp = reactive({
   phone: null,
   gender: null,
   age: "",
-  region: "MOROGORO",
+  region: "",
   school: "",
-  district: "MOROGORO CD",
+  district: "",
   organization: null,
   password: null,
   confirm_password: null,
@@ -454,40 +454,44 @@ const switchTab = (tabName) => {
           </div>
 
           <div v-if="usersignUp.type.toLowerCase() === 'student'" class="">
-             <!-- region -->
-          <div
-            class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
-            :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.email,
-            }">
-           <SelectionRegionSelection :error="usersignUp.controller.errors.region " :update-region="usersignUp.region = $event"/>
-          </div>
+            <!-- region -->
+            <div
+              class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+              :class="{
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.region,
+              }">
+              <SelectionRegionSelection :error="usersignUp.controller.errors.region"
+                @update-region="usersignUp.region = $event" />
+            </div>
 
-          <!-- District -->
-          <div
-            class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
-            :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.district,
-            }">
-            <!-- select district -->
-            <SelectionDistrictSelection :error="usersignUp.controller.errors.district" :region="usersignUp.region" :update-district="usersignUp.district = $event" />
-          </div>
+            <!-- District -->
+            <div
+              class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+              :class="{
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.district,
+              }">
+              <!-- select district -->
+              <SelectionDistrictSelection :error="usersignUp.controller.errors.district" :region="usersignUp.region"
+                @update-district="usersignUp.district = $event" />
+            </div>
 
-          <!-- school -->
-          <div
-            class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
-            :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.school,
-            }">
+            <!-- school -->
+            <div
+              class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+              :class="{
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.school,
+              }">
 
-            <!-- select school -->
-            <SelectionSchoolSelection :district="usersignUp.district" :region="usersignUp.region" :school="usersignUp.school" :update-school="usersignUp.school = $event" :error="usersignUp.controller.errors.school"/>
-            
+              <!-- select school -->
+              <SelectionSchoolSelection :district="usersignUp.district" :region="usersignUp.region"
+                :school="usersignUp.school" @update-school="usersignUp.school = $event"
+                :error="usersignUp.controller.errors.school" />
 
-          </div>
+
+            </div>
           </div>
           <!-- email and phone for students -->
           <div v-else>
@@ -614,12 +618,12 @@ const switchTab = (tabName) => {
           </div>
 
           <!-- Select Region -->
-          <div v-if="usersignUp.type.toLowerCase() !== 'student'" class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col"
-            :class="{
+          <div v-if="usersignUp.type.toLowerCase() !== 'student'"
+            class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col" :class="{
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
                 usersignUp.controller.errors.region,
             }">
-            
+
             <SelectionDistrictSelection :error="usersignUp.controller.errors.district" :region="usersignUp.region" />
           </div>
 
@@ -636,8 +640,8 @@ const switchTab = (tabName) => {
                 class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Password" />
               <Icon :name="showPassword
-                  ? 'iconamoon:eye-off-light'
-                  : 'iconamoon:eye-thin'
+                ? 'iconamoon:eye-off-light'
+                : 'iconamoon:eye-thin'
                 " class="h-5 w-5 cursor-pointer text-textGray" @click="togglePassword" />
             </div>
             <!-- Password error message -->
@@ -655,8 +659,8 @@ const switchTab = (tabName) => {
                 class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Confirm Password" />
               <Icon :name="showConfirmPassword
-                  ? 'iconamoon:eye-off-light'
-                  : 'iconamoon:eye-thin'
+                ? 'iconamoon:eye-off-light'
+                : 'iconamoon:eye-thin'
                 " class="h-5 w-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
             </div>
             <!-- Password error message -->

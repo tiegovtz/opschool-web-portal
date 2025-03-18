@@ -41,16 +41,14 @@ watch(() => props.region, (region) => {
     }
 });
 
-// Initial fetch
-fetchDistricts(props.region);
 </script>
 
 <template>
     <div class="flex w-full flex-col items-start">
-        <label for="school" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select District:</label>
+        <label for="district" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select District:</label>
 
-        <select name="school" id="school" class="w-full p-2 focus:outline-none focus:ring-0 capitalize"
-            :class="{ 'text-textGray/40': error }" @change="$emit('updateSchool', $event.target.value)">
+        <select name="district" id="district" class="w-full p-2 focus:outline-none focus:ring-0 capitalize"
+            :class="{ 'text-textGray/40': error }" @change="$emit('updateDistrict', $event.target.value)">
             <option value="" v-if="data.status === 'idle'">Select Region First</option>
             <option value="" v-if="data.status === 'pending'">Loading...</option>
             <option value="" v-if="data.status === 'error'">{{ data.error }}</option>

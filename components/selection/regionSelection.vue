@@ -10,7 +10,7 @@ const props = defineProps({
 // Reactive state
 const data = reactive({
     regions: [],
-    status: "idle",
+    status: "pending",
     error: null,
 });
 
@@ -18,15 +18,15 @@ const data = reactive({
 defineEmits(["updateRegion"]);
 
 // Fetch district function
-const fetchDistricts = async (region) => {
-    data.status = "pending";
+const fetchDistricts = async () => {
+   
     data.error = null;
 
     try {
         const response = await axios.get(`https://apitie.ekima.africa/v1/schools/regions`);
 
         data.status = "success";
-        data.district = response.data;
+        data.regions = response.data;
     } catch (err) {
         data.status = "error";
         data.error = err.message;
@@ -42,7 +42,7 @@ fetchDistricts();
         <label for="region" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select Region:</label>
 
         <select name="region" id="region" class="w-full p-2 focus:outline-none focus:ring-0 capitalize"
-            :class="{ 'text-textGray/40': region }" @change="$emit('updateRegion', $event.target.value)">
+            :class="{ 'text-textGray/40': region }" @change="$emit('updateRegion',$event.target.value)">
             <option value="" v-if="data.status === 'pending'">Loading...</option>
             <option value="" v-else-if="data.status === 'error'">{{ data.error }}</option>
             <option value="" v-else-if="data.regions && data.status === 'success'">Eg ( Arusha ) ...</option>
