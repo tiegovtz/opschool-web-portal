@@ -11,10 +11,10 @@ const modelParser = (query:String) => {
               alt="${altText}"
               auto-rotate
               camera-controls
-              shadow-intensity="1"
-              shadow-softness="1"
+              shadow-intensity="0.4"
+              shadow-softness="0.5"
               shadow="true"
-              exposure="1.5"
+              exposure="0.7"
               >
             </model-viewer>`;
     });
