@@ -160,12 +160,12 @@
 .notes model-viewer{
   margin: 0 auto;
   height: 300px;
-  width: 100%;
+  width: 50%;
 }
 
-.notes p span{
+/* .notes p span{
   display: block;
-}
+} */
 
 .notes p video{
   width: 100% !important;
@@ -186,6 +186,7 @@
 .notes table td{
   padding: 10px !important;
   overflow: hidden;
+  border: 1px solid #ccc;
 }
 
 /* .notes table td p{
