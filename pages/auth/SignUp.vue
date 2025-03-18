@@ -10,32 +10,38 @@ const inputTabs = ref("tabOne");
 
 
 const usersignUp = reactive({
-  role: "",
+  type: "",
   fname: null,
   lname: null,
   email: null,
   phone: null,
   gender: null,
   age: "",
-  region: "",
+  region: "MOROGORO",
+  school: "",
+  district: "MOROGORO CD",
+  organization: null,
   password: null,
   confirm_password: null,
   controller: {
     isSubmitted: false,
     feedback: null,
-    isSent:null,
+    isSent: null,
     errors: {
       all: null,
-      role: "",
+      type: "",
       fname: null,
       lname: null,
       email: null,
       phone: null,
       gender: null,
-      age: "",
-      region: "",
+      age: null,
+      region: null,
       password: null,
       confirm_password: null,
+      school: null,
+      district: null,
+      organization: null,
     },
   },
 });
@@ -52,7 +58,7 @@ const signUp = async () => {
     usersignUp.password === usersignUp.confirm_password &&
     usersignUp.phone &&
     usersignUp.region !== "" &&
-    usersignUp.role !== ""
+    usersignUp.type !== ""
   ) {
 
     // 
@@ -61,18 +67,18 @@ const signUp = async () => {
     // sanitize.input(usersignUp.phone),
     // submit data
     await axios.post(apiDocs.auth.signUp, {
-        name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
-        password: usersignUp.password,
-      phoneNumber: sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) ,
-        type: usersignUp.role,
-        email: sanitize.input(usersignUp.email),
-        gender: usersignUp.gender,
-        region: usersignUp.region,
-        school: null,
-        district: null,
-        ageGroup: usersignUp.age,
-        terms: true,
-      })
+      name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
+      password: usersignUp.password,
+      phoneNumber: sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)),
+      type: usersignUp.type,
+      email: sanitize.input(usersignUp.email),
+      gender: usersignUp.gender,
+      region: usersignUp.region,
+      school: null,
+      district: null,
+      ageGroup: usersignUp.age,
+      terms: true,
+    })
       .then((response) => {
         if (response.status >= 200 && response.status < 300) {
           usersignUp.controller.isSent = 'success';
@@ -82,22 +88,22 @@ const signUp = async () => {
             const router = useRouter()
             router.push('/auth');
           }, 5000)
-         
-        }else{
+
+        } else {
           usersignUp.controller.isSent = 'failed';
           usersignUp.controller.feedback = messages.error.auth.accountExists;
           return
         }
-       
+
       })
       .catch((error) => {
         usersignUp.controller.isSent = 'error';
         usersignUp.controller.feedback = messages.error.auth.accountExists;
       });
 
-        setTimeout(() => {
-          usersignUp.controller.isSent = null;
-          }, 5000)
+    setTimeout(() => {
+      usersignUp.controller.isSent = null;
+    }, 5000)
 
   } else {
     usersignUp.controller.isSubmitted = false;
@@ -138,8 +144,8 @@ const signUp = async () => {
     if (!usersignUp.region) {
       usersignUp.controller.errors.region = messages.error.form.region;
     }
-    if (!usersignUp.role) {
-      usersignUp.controller.errors.role = messages.error.form.role;
+    if (!usersignUp.type) {
+      usersignUp.controller.errors.type = messages.error.form.type;
     }
   }
 };
@@ -227,15 +233,15 @@ watch(
     }
   }
 );
-// role watching
+// type watching
 watch(
-  () => usersignUp.role,
-  (role) => {
-    // Validate Role
-    if (role) {
-      usersignUp.controller.errors.role = null;
+  () => usersignUp.type,
+  (type) => {
+    // Validate type
+    if (type) {
+      usersignUp.controller.errors.type = null;
     } else {
-      usersignUp.controller.errors.role = messages.error.validation.role;
+      usersignUp.controller.errors.type = messages.error.validation.type;
     }
   }
 );
@@ -320,8 +326,8 @@ const toggleConfirmPassword = () => {
 
 const switchTab = (tabName) => {
   if (tabName === "tabTwo") {
-    if (!usersignUp.role || usersignUp.role.trim() === " ") {
-      usersignUp.controller.errors.role = messages.error.form.role;
+    if (!usersignUp.type || usersignUp.type.trim() === " ") {
+      usersignUp.controller.errors.type = messages.error.form.type;
     }
     if (!usersignUp.fname || usersignUp.fname.trim() == " ") {
       usersignUp.controller.errors.fname = messages.error.form.firstName;
@@ -342,7 +348,7 @@ const switchTab = (tabName) => {
     }
 
     if (
-      usersignUp.role &&
+      usersignUp.type &&
       usersignUp.fname &&
       usersignUp.lname &&
       usersignUp.email &&
@@ -363,7 +369,7 @@ const switchTab = (tabName) => {
     <!-- Message Component -->
     <MessageComponent :message="usersignUp.controller.feedback" :position="usersignUp.controller.feedback"
       :event-type="usersignUp.controller.isSent"
-      :icon="usersignUp.controller.isSent =='success' ? 'icons8:checked' : 'oui:cross-in-circle-empty' " />
+      :icon="usersignUp.controller.isSent == 'success' ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
     <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-2xl">
       <h1 class="text-large font-bold text-center">Sign Up</h1>
@@ -384,25 +390,24 @@ const switchTab = (tabName) => {
           :class="inputTabs === 'tabOne' ? 'left-0 w-full' : ''">
           <!-- Select User Type -->
           <div class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue" :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.role,
-            }">
+            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+              usersignUp.controller.errors.type,
+          }">
             <div class="flex flex-col w-full items-start">
-              <label for="role" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select User
+              <label for="type" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select User
                 Type:</label>
-              <select name="role" id="role" v-model="usersignUp.role" class="w-full p-2 focus:outline-none focus:ring-0"
-                :class="{ 'text-textGray/40': !usersignUp.role }">
+              <select name="type" id="type" v-model="usersignUp.type" class="w-full p-2 focus:outline-none focus:ring-0"
+                :class="{ 'text-textGray/40': !usersignUp.type }">
                 <option value="">(eg: Student, Teacher ...)</option>
                 <option value="Student">Student</option>
                 <option value="Teacher">Teacher</option>
-                <option value="Reasearcher">Researcher</option>
                 <option value="Education Stackeholder">Education Stackeholder</option>
               </select>
             </div>
 
             <!-- Select User Type error message -->
-            <small v-if="usersignUp.controller.errors.role" class="text-red-500 text-smallest w-full">
-              {{ usersignUp.controller.errors.role }}
+            <small v-if="usersignUp.controller.errors.type" class="text-red-500 text-smallest w-full">
+              {{ usersignUp.controller.errors.type }}
             </small>
           </div>
 
@@ -448,56 +453,95 @@ const switchTab = (tabName) => {
             </small>
           </div>
 
-          <!-- Email -->
+          <div v-if="usersignUp.type.toLowerCase() === 'student'" class="">
+             <!-- region -->
           <div
             class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
             :class="{
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
                 usersignUp.controller.errors.email,
             }">
-            <div class="flex w-full items-center">
-              <input type="text" id="email" v-model="usersignUp.email" @keydown.space.prevent name="username"
-                autocomplete="off"
-                class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                placeholder="Email (eg: example@gmail.com)" />
-              <Icon name="mdi-light:email" class="h-5 w-5 text-textGray" />
-            </div>
-
-            <!-- Email error message -->
-            <small v-if="usersignUp.controller.errors.email" class="text-red-500 text-smallest w-full">
-              {{ usersignUp.controller.errors.email }}
-            </small>
+           <SelectionRegionSelection :error="usersignUp.controller.errors.region " :update-region="usersignUp.region = $event"/>
           </div>
 
-          <!-- Phone Number -->
+          <!-- District -->
           <div
             class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
             :class="{
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.phone,
+                usersignUp.controller.errors.district,
             }">
-            <div class="flex w-full items-center">
-              <input type="tel" id="phone" v-model="usersignUp.phone" @keydown.space.prevent name="phone"
-                autocomplete="off"
-                class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                placeholder="Phone Number (eg: 0622***722 or +255622***722)" />
-              <Icon name="iconamoon:phone-thin" class="h-5 w-5 text-textGray" />
-            </div>
-
-            <!-- Phone Number error message -->
-            <small v-if="usersignUp.controller.errors.phone" class="text-red-500 text-smallest w-full">
-              {{ usersignUp.controller.errors.phone }}
-            </small>
+            <!-- select district -->
+            <SelectionDistrictSelection :error="usersignUp.controller.errors.district" :region="usersignUp.region" :update-district="usersignUp.district = $event" />
           </div>
 
+          <!-- school -->
+          <div
+            class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+            :class="{
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.school,
+            }">
+
+            <!-- select school -->
+            <SelectionSchoolSelection :district="usersignUp.district" :region="usersignUp.region" :school="usersignUp.school" :update-school="usersignUp.school = $event" :error="usersignUp.controller.errors.school"/>
+            
+
+          </div>
+          </div>
+          <!-- email and phone for students -->
+          <div v-else>
+            <!-- Email -->
+            <div
+              class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+              :class="{
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.email,
+              }">
+              <div class="flex w-full items-center">
+                <input type="text" id="email" v-model="usersignUp.email" @keydown.space.prevent name="username"
+                  autocomplete="off"
+                  class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
+                  placeholder="Email (eg: example@gmail.com)" />
+                <Icon name="mdi-light:email" class="h-5 w-5 text-textGray" />
+              </div>
+
+              <!-- Email error message -->
+              <small v-if="usersignUp.controller.errors.email" class="text-red-500 text-smallest w-full">
+                {{ usersignUp.controller.errors.email }}
+              </small>
+            </div>
+
+            <!-- Phone Number -->
+            <div
+              class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+              :class="{
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.phone,
+              }">
+              <div class="flex w-full items-center">
+                <input type="tel" id="phone" v-model="usersignUp.phone" @keydown.space.prevent name="phone"
+                  autocomplete="off"
+                  class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
+                  placeholder="Phone Number (eg: 0622***722 or +255622***722)" />
+                <Icon name="iconamoon:phone-thin" class="h-5 w-5 text-textGray" />
+              </div>
+
+              <!-- Phone Number error message -->
+              <small v-if="usersignUp.controller.errors.phone" class="text-red-500 text-smallest w-full">
+                {{ usersignUp.controller.errors.phone }}
+              </small>
+            </div>
+
+          </div>
           <!-- gender input radio -->
           <div class="mb-4 border-b border-gray-300 focus-within:border-oceanBlue py-2" :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.gender,
-            }">
+            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+              usersignUp.controller.errors.gender,
+          }">
             <div class="flex md:flex-row flex-col items-center justify-start md:gap-10">
               <div class="text-oceanBlue font-semibold text-extraSmall capitalize">
-                Select Gender:
+                Select Sex:
               </div>
 
               <div class="flex items-center gap-2" id="gender">
@@ -505,15 +549,15 @@ const switchTab = (tabName) => {
                   <input type="radio" name="gender" id="male" value="male" v-model="usersignUp.gender"
                     class="w-4 h-4 checked:bg-oceanBlue" />
                   <label for="male" :class="{
-                      'text-textGray/40': usersignUp.gender !== 'male',
-                    }">Male</label>
+                    'text-textGray/40': usersignUp.gender !== 'male',
+                  }">Male</label>
                 </div>
                 <div class="flex items-center gap-2">
                   <input type="radio" name="gender" id="female" value="female" v-model="usersignUp.gender"
                     class="w-4 h-4 checked:bg-oceanBlue" />
                   <label for="female" :class="{
-                      'text-textGray/40': usersignUp.gender !== 'female',
-                    }">Female</label>
+                    'text-textGray/40': usersignUp.gender !== 'female',
+                  }">Female</label>
                 </div>
               </div>
             </div>
@@ -570,53 +614,13 @@ const switchTab = (tabName) => {
           </div>
 
           <!-- Select Region -->
-          <div class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col"
+          <div v-if="usersignUp.type.toLowerCase() !== 'student'" class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col"
             :class="{
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
                 usersignUp.controller.errors.region,
             }">
-            <div class="flex flex-col">
-              <label for="region" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select Region:</label>
-              <select name="region" id="region" class="w-full p-2 focus:outline-none focus:ring-0"
-                :class="{ 'text-textGray/40': !usersignUp.region }" v-model="usersignUp.region">
-                <option value="">Eg: Arusha ...</option>
-                <option value="arusha">Arusha</option>
-                <option value="dar_es_salaam">Dar es Salaam</option>
-                <option value="dodoma">Dodoma</option>
-                <option value="geita">Geita</option>
-                <option value="iringa">Iringa</option>
-                <option value="kagera">Kagera</option>
-                <option value="katavi">Katavi</option>
-                <option value="kigoma">Kigoma</option>
-                <option value="kilimanjaro">Kilimanjaro</option>
-                <option value="lindi">Lindi</option>
-                <option value="manyara">Manyara</option>
-                <option value="mara">Mara</option>
-                <option value="mbeya">Mbeya</option>
-                <option value="mjini_magharibi">Mjini Magharibi</option>
-                <option value="morogoro">Morogoro</option>
-                <option value="mtwara">Mtwara</option>
-                <option value="mwanza">Mwanza</option>
-                <option value="njombe">Njombe</option>
-                <option value="pemba_north">Pemba North</option>
-                <option value="pemba_south">Pemba South</option>
-                <option value="pwani">Pwani</option>
-                <option value="rukwa">Rukwa</option>
-                <option value="ruvuma">Ruvuma</option>
-                <option value="shinyanga">Shinyanga</option>
-                <option value="simiyu">Simiyu</option>
-                <option value="singida">Singida</option>
-                <option value="songwe">Songwe</option>
-                <option value="tabora">Tabora</option>
-                <option value="tanga">Tanga</option>
-                <option value="unguja_north">Unguja North</option>
-                <option value="unguja_south">Unguja South</option>
-              </select>
-            </div>
-            <!-- Region error message -->
-            <small v-if="usersignUp.controller.errors.region" class="text-red-500 text-smallest w-full">
-              {{ usersignUp.controller.errors.region }}
-            </small>
+            
+            <SelectionDistrictSelection :error="usersignUp.controller.errors.district" :region="usersignUp.region" />
           </div>
 
           <!-- Password -->
@@ -631,10 +635,9 @@ const switchTab = (tabName) => {
                 name="password" autocomplete="off"
                 class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Password" />
-              <Icon :name="
-                  showPassword
-                    ? 'iconamoon:eye-off-light'
-                    : 'iconamoon:eye-thin'
+              <Icon :name="showPassword
+                  ? 'iconamoon:eye-off-light'
+                  : 'iconamoon:eye-thin'
                 " class="h-5 w-5 cursor-pointer text-textGray" @click="togglePassword" />
             </div>
             <!-- Password error message -->
@@ -651,10 +654,9 @@ const switchTab = (tabName) => {
                 v-model="usersignUp.confirm_password" name="confirm_password" autocomplete="off"
                 class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Confirm Password" />
-              <Icon :name="
-                  showConfirmPassword
-                    ? 'iconamoon:eye-off-light'
-                    : 'iconamoon:eye-thin'
+              <Icon :name="showConfirmPassword
+                  ? 'iconamoon:eye-off-light'
+                  : 'iconamoon:eye-thin'
                 " class="h-5 w-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
             </div>
             <!-- Password error message -->
@@ -668,21 +670,23 @@ const switchTab = (tabName) => {
             class="w-full p-2 bg-oceanBlue text-white rounded-md cursor-pointer hover:bg-oceanBlue/80 transition-all duration-500">
             <!-- submited successful -->
             <div class="flex items-center justify-center gap-2"
-              v-if="usersignUp.controller.isSent==='success' && usersignUp.controller.isSubmitted">
+              v-if="usersignUp.controller.isSent === 'success' && usersignUp.controller.isSubmitted">
               Submitted
               <Icon name="icons8:checked" class="h-5 w-5 cursor-pointer text-white" size="16" />
             </div>
             <div class="flex items-center justify-center gap-2"
-              v-else-if="usersignUp.controller.isSent==='pending' && usersignUp.controller.isSubmitted">
+              v-else-if="usersignUp.controller.isSent === 'pending' && usersignUp.controller.isSubmitted">
               Please Wait
               <Icon name="eos-icons:loading" class="h-5 w-5 cursor-pointer text-white" size="16" />
             </div>
 
-            <div class="flex items-center justify-center gap-2" v-else-if="usersignUp.controller.isSent==='failed' && usersignUp.controller.isSubmitted">
+            <div class="flex items-center justify-center gap-2"
+              v-else-if="usersignUp.controller.isSent === 'failed' && usersignUp.controller.isSubmitted">
               Failed
               <Icon name="oui:cross-in-circle-empty" class="h-5 w-5 cursor-pointer text-white" size="16" />
             </div>
-            <div class="flex items-center justify-center gap-2" v-else-if="usersignUp.controller.isSent==='error' && usersignUp.controller.isSubmitted">
+            <div class="flex items-center justify-center gap-2"
+              v-else-if="usersignUp.controller.isSent === 'error' && usersignUp.controller.isSubmitted">
               Internal Error
               <Icon name="oui:cross-in-circle-empty" class="h-5 w-5 cursor-pointer text-white" size="16" />
             </div>
