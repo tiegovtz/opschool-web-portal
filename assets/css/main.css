@@ -62,8 +62,8 @@
   }
   
   /* bg-gradient-to-b from-customRedColor to-customGreenColor */
-.bg-gradient-to-b{
-  background: linear-gradient(to bottom, var(--color-oceanBlue), var( --color-darkBlue));
+@utility bg-gradient-to-b{
+  @apply  from-[var(--color-oceanBlue)] to-[var(--color-darkBlue)]
 }
 
 @theme {

@@ -358,7 +358,7 @@ const switchTab = (tabName) => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen py-4 bg-gradient-to-b">
+  <div class="flex items-center justify-center min-h-screen py-4 md:bg-gradient-to-b">
 
     <!-- Message Component -->
     <MessageComponent :message="usersignUp.controller.feedback" :position="usersignUp.controller.feedback"

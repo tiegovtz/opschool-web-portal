@@ -148,7 +148,7 @@ watch(() => userSignIn.password, (password) => {
 </script>
 
 <template>
-    <div class="flex items-center justify-center min-h-screen bg-gradient-to-b ">
+    <div class="flex items-center justify-center min-h-screen md:bg-gradient-to-b">
 
 
         <MessageComponent :message="userSignIn.controller.feedback" :position="userSignIn.controller.feedback"
