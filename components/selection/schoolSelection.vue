@@ -23,7 +23,6 @@ defineEmits(["updateSchool"]);
 const fetchSchools = async (region, district) => {
     data.status = "pending";
     data.error = null;
-    console.log(" Update District:", district, "Update Region:", region);
     if (!region || !district || region === "" || district === "") {
         data.status = "idle";
         return;

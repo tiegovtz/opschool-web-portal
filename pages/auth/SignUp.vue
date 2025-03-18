@@ -326,37 +326,55 @@ const toggleConfirmPassword = () => {
 
 const switchTab = (tabName) => {
   if (tabName === "tabTwo") {
-    if (!usersignUp.type || usersignUp.type.trim() === " ") {
-      usersignUp.controller.errors.type = messages.error.form.type;
-    }
-    if (!usersignUp.fname || usersignUp.fname.trim() == " ") {
-      usersignUp.controller.errors.fname = messages.error.form.firstName;
-    }
-    if (!usersignUp.lname || usersignUp.lname.trim() == "") {
-      usersignUp.controller.errors.lname = messages.error.form.lastName;
-    }
-    if (!usersignUp.email || usersignUp.email.trim() == " ") {
-      usersignUp.controller.errors.email =
-        messages.error.validation.invalidEmail;
-    }
-    if (!usersignUp.phone || usersignUp.phone.trim() == "  ") {
-      usersignUp.controller.errors.phone =
-        messages.error.validation.invalidPhone;
-    }
-    if (!usersignUp.gender || usersignUp.gender.trim() == " ") {
-      usersignUp.controller.errors.gender = messages.error.form.gender;
+
+    // if user is student or techer validate school and district and region too
+    if (usersignUp.type.toLowerCase() === "student" || usersignUp.type.toLowerCase() === "teacher") {
+      if (!usersignUp.region || usersignUp.region.trim() == " ") {
+        usersignUp.controller.errors.region = messages.error.form.region;
+      }
+      if (!usersignUp.district || usersignUp.district.trim() == " ") {
+        usersignUp.controller.errors.district = messages.error.form.district;
+      }
+      if (!usersignUp.school || usersignUp.school.trim() == " ") {
+        usersignUp.controller.errors.school = messages.error.form.school;
+      }
+    } else {
+
+      if (!usersignUp.type || usersignUp.type.trim() === " ") {
+        usersignUp.controller.errors.type = messages.error.form.type;
+      }
+      if (!usersignUp.fname || usersignUp.fname.trim() == " ") {
+        usersignUp.controller.errors.fname = messages.error.form.firstName;
+      }
+      if (!usersignUp.lname || usersignUp.lname.trim() == "") {
+        usersignUp.controller.errors.lname = messages.error.form.lastName;
+      }
+      if (!usersignUp.email || usersignUp.email.trim() == " ") {
+        usersignUp.controller.errors.email =
+          messages.error.validation.invalidEmail;
+      }
+      if (!usersignUp.phone || usersignUp.phone.trim() == "  ") {
+        usersignUp.controller.errors.phone =
+          messages.error.validation.invalidPhone;
+      }
+      if (!usersignUp.gender || usersignUp.gender.trim() == " ") {
+        usersignUp.controller.errors.gender = messages.error.form.gender;
+      }
+
+
+      if (
+        usersignUp.type &&
+        usersignUp.fname &&
+        usersignUp.lname &&
+        usersignUp.email &&
+        usersignUp.phone &&
+        usersignUp.gender
+      ) {
+        inputTabs.value = tabName;
+      }
+
     }
 
-    if (
-      usersignUp.type &&
-      usersignUp.fname &&
-      usersignUp.lname &&
-      usersignUp.email &&
-      usersignUp.phone &&
-      usersignUp.gender
-    ) {
-      inputTabs.value = tabName;
-    }
   } else {
     inputTabs.value = tabName;
   }
@@ -375,8 +393,8 @@ const switchTab = (tabName) => {
       <h1 class="text-large font-bold text-center">Sign Up</h1>
       <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
       <form @submit.prevent="signUp" @keydown.enter.prevent
-        class="text-textGray md:h-[450px] h-dvh relative overflow-hidden text-extraSmall" :class="{
-          'md:h-[550px]':
+        class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" :class="{
+          'md:h-[600px]':
             usersignUp.controller.errors.age ||
             usersignUp.controller.errors.age ||
             usersignUp.controller.errors.fname ||
