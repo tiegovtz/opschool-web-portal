@@ -63,9 +63,9 @@ const setTopicToView = () => {
 <template>
   <NuxtLink
     :to="`/interactive/${topicStandard.toLowerCase()}/${subjectName.toLowerCase()}/${topicTitle.toLowerCase()}/${topicId.toLowerCase()}`"
-    class="overflow-hidden rounded-lg flex flex-col shadow-xs" @click="setTopicToView">
+    class="overflow-hidden rounded-lg flex flex-col shadow-md px-2 pb-4" @click="setTopicToView">
     <div class="relative h-56">
-      <NuxtImg :src="topicImage" loading="lazy" alt="book1" class="w-full h-full object-cover" />
+      <NuxtImg :src="topicImage" loading="lazy" alt="book1" class="w-full h-full object-cover rounded-t-md" />
       <div class="absolute -bottom-4 right-2">
         <div class="bg-oceanBlue  rounded-full h-8 w-20 flex items-center justify-center">
           <p class="text-white text-small">45</p>
@@ -81,7 +81,7 @@ const setTopicToView = () => {
         {{ topicDescription }}
       </p>
     </div>
-    <div class="flex items-center justify-between px-1 pb-2 whitespace-nowrap text-extraSmall text-gray-400">
+    <!-- <div class="flex items-center justify-between px-1 pb-2 whitespace-nowrap text-extraSmall text-gray-400">
       <div class="flex items-center gap-2">
         <Icon name="proicons:clock" class="text-medium" />
         <p class="capitalize">{{ topicDuration }}</p>
@@ -94,7 +94,7 @@ const setTopicToView = () => {
         <Icon name="flowbite:users-outline" class="text-medium" />
         <p class="">{{ calculateTopicMetrics(topicViews) + " Views" }}</p>
       </div>
-    </div>
+    </div> -->
   </NuxtLink>
 </template>
 
