@@ -18,6 +18,7 @@ const emit = defineEmits(['emitChapterId'])
 <template>
     <ul class="flex flex-col gap-3 md:pl-4  ">
         <li v-for="(chapter, index) in chapters" :key="index" @click="emit('emitChapterId',chapter?._id)"
+            :title="chapter?.name"
             class="flex items-center gap-2 cursor-pointer p-3 rounded-md bg-containerGray"
             :class="{ 'bg-oceanBlue text-white shadow-oceanBlue/50 shadow-md': activeChapterId == chapter?._id }">
             <div class="">

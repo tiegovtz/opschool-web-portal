@@ -1,18 +1,14 @@
-const videoParser = (query:String) => {
-    // Regular expression to match the model and image URLs along with any attributes
-    const regex = /model="([^"]+)",&lt;img src="([^"]+)" alt="([^"]+)"&gt;/g;
+const videoParser = (query: string): string => {
+    // Regular expression to match <video> tags with a <source> inside
+    const regex = /<video\b([^>]*)>\s*<source\s+src="([^"]+)"\s+type="([^"]+)"\s*>\s*<\/video>/gi;
 
-    // Replace matching patterns with <model-viewer> element
-    return query.replace(regex, (match, modelSrc, imgSrc, altText) => {
-        return `<video
-             
-              src="${modelSrc}"
-              poster="${imgSrc}"
-              alt="${altText}"  
-              controls="true"
-              download="false"
-              >
-            </video>`;
+    return query.replace(regex, (match, videoAttrs, sourceSrc, sourceType) => {
+        return `
+            <video ${videoAttrs} controls controlslist="nodownload" oncontextmenu="return false;">
+              <source src="${sourceSrc}" type="${sourceType}">
+              Your browser does not support the video tag.
+            </video>
+        `;
     });
 }
 
