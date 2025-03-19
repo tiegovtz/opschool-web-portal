@@ -55,7 +55,7 @@ const setTopicToView = () => {
   useState('topicLevel', () => `${props.topicLevel}`);
   useState('topicTitle', () => `${props.topicTitle}`);
   useState('topicStandard', () => `${props.topicStandard}`);
-  useState('topicId', () => `${props.topicId}` )
+  useState('topicId', () => `${props.topicId}`)
 }
 
 </script>
@@ -66,13 +66,26 @@ const setTopicToView = () => {
     class="overflow-hidden rounded-lg flex flex-col shadow-md px-2 pb-4" @click="setTopicToView">
     <div class="relative h-56">
       <NuxtImg :src="topicImage" loading="lazy" alt="book1" class="w-full h-full object-cover rounded-t-md" />
-      <div class="absolute -bottom-4 right-2">
+      <!-- <div class="absolute -bottom-4 right-2">
         <div class="bg-oceanBlue  rounded-full h-8 w-20 flex items-center justify-center">
           <p class="text-white text-small">45</p>
           <Icon name="ic:round-percent" class="text-white text-medium" />
         </div>
-      </div>
+      </div> -->
     </div>
+    <div class="flex items-center gap-2 w-full mt-2 max-w-full">
+  <progress 
+    :value="45" max="100" 
+    class="w-full h-2 rounded-full bg-gray-200 [&::-webkit-progress-bar]:bg-gray-200 
+           [&::-webkit-progress-value]:bg-oceanBlue [&::-webkit-progress-value]:rounded-full 
+           [&::-moz-progress-bar]:bg-oceanBlue [&::-moz-progress-bar]:rounded-full 
+           transition-all duration-500">
+  </progress>
+  <span class="text-xs sm:text-sm font-medium text-oceanBlue whitespace-nowrap">
+    {{ 45 }}%
+  </span>
+</div>
+
     <div class="flex flex-col my-auto mt-5 px-1">
       <p class="text-small font-medium text-gray-800">
         {{ topicTitle }}
@@ -97,4 +110,3 @@ const setTopicToView = () => {
     </div> -->
   </NuxtLink>
 </template>
-
