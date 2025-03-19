@@ -7,7 +7,7 @@
       <div class="flex flex-col justify-center xl:ml-10 ">
         <h1 class="md:text-extraLarge text-large font-extrabold text-gray-800 mb-4 hidden lg:block">Welcome</h1>
         <p class="text-medium text-center md:text-left  lg:text-gray-600/60 my-2 md:mb-6 ">
-          What do you want to learn today?
+          
         </p>
       
       </div>
