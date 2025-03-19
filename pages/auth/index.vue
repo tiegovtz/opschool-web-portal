@@ -39,7 +39,7 @@ const signIn = async () => {
     if (!userSignIn.username) {
         userSignIn.controller.errors.username = messages.error.form.usernameRequired;
         isValid = false;
-    } else if (!auth.checkEmailOrPhoneNumber(userSignIn.username)) {
+    } else if (!auth.checkEmailOrPhoneNumber(userSignIn.username) && userSignIn.type.trim().toLowerCase() !== 'student') {
         userSignIn.controller.errors.username = messages.error.form.usernameValid;
         isValid = false;
     }
@@ -131,11 +131,15 @@ const togglePassword = () => {
 // Clear validation errors when user types
 watch(() => userSignIn.username, (username) => {
     if (username) {
+      if (userSignIn.type.trim().toLowerCase() === 'student') {
+        userSignIn.controller.errors.username = null;
+      } else {
         if (auth.checkEmailOrPhoneNumber(username)) {
             userSignIn.controller.errors.username = '';
         } else {
             userSignIn.controller.errors.username = messages.error.form.usernameValid;
         }
+      }
     } else {
         userSignIn.controller.errors.username = null;
     }
@@ -155,12 +159,14 @@ watch(() => userSignIn.password, (password) => {
 
 
         <MessageComponent :message="userSignIn.controller.feedback" :position="userSignIn.controller.feedback"
-            :event-type="userSignIn.controller.isSucces ? 'succes' : 'error'"
+            :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
             :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
         <div class="w-full max-w-md px-4 md:bg-white rounded-lg md:shadow-2xl md:pt-3">
             <h1 class="text-large font-bold text-center">Welcome</h1>
-            <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+            <NuxtLink to="/">
+                <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+            </NuxtLink>
             <form @submit.prevent="signIn" v-if="userSignIn.controller.attemps < 3"
             class="px-4 text-textGray md:h-[400px] h-dvh relative overflow-hidden text-extraSmall" 
             :class="{'md:h-[450px]': userSignIn.controller.errors.type}">
@@ -200,14 +206,14 @@ watch(() => userSignIn.password, (password) => {
                          <!-- student -->
                         <input type="text" v-else-if="userSignIn.type.trim().toLowerCase() === 'student'"
                         class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                        placeholder="Username (e.g. Baraka.Minja)">
+                        placeholder="Username (e.g. Baraka.Minja)" v-model="userSignIn.username" name="username">
                         <input type="text" id="username" v-model="userSignIn.username" name="username" v-else
                             autocomplete="off" @keydown.space.prevent
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                             placeholder="Username (e.g. example@gmail.com or 0622 *** 722)">
-                        <Icon name="solar:user-outline" class="h-5 w-5 text-textGray" v-if="userSignIn.type.trim().toLowerCase() === 'student'" />
+                        <Icon name="ph:student-thin" class="h-5 w-5 text-textGray" v-if="userSignIn.type.trim().toLowerCase() === 'student'" />
                         <Icon name="ant-design:select-outlined" class="h-5 w-5 text-textGray" v-else-if="userSignIn.type.trim().toLowerCase() === ''" />
-                        <Icon name="ph:student-thin" class="h-5 w-5 text-textGray" v-else />
+                        <Icon name="solar:user-outline" class="h-5 w-5 text-textGray" v-else />
 
                     </div>
 
@@ -215,8 +221,8 @@ watch(() => userSignIn.password, (password) => {
                     <small v-if="userSignIn.controller.errors.username" 
                     class="text-red-500 text-smallest w-full"
                     :class="[
-                        {'mt-2': userSignIn.type.trim().toLowerCase() === 'student'},
-                        {'mt-4': userSignIn.type.trim().toLowerCase() === 'teacher' || 
+                        {'mt-1': userSignIn.type.trim().toLowerCase() === 'student'},
+                        {'mt-1': userSignIn.type.trim().toLowerCase() === 'teacher' || 
                         userSignIn.type.trim().toLowerCase() === 'education stackeholder'},
                         {'mt-0': userSignIn.type.trim().toLowerCase() === ''},
                     ]">

@@ -16,7 +16,7 @@ const search = () => {
         <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" />
 
         <!-- Search Input -->
-        <input type="text" placeholder="Search" class="flex flex-1 h-full px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue" />
+        <input type="text" placeholder="What do you want to learn?" class="flex flex-1 h-full px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue" />
       </div>
 
       <!-- Search Button -->
