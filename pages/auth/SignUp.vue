@@ -53,45 +53,55 @@ const usersignUp = reactive({
 });
 
 const signUp = async () => {
+  if (usersignUp.userOrgRole.toLowerCase().trim() == 'others' && usersignUp.otherRole) {
+      usersignUp.userOrgRole = usersignUp.otherRole
+    }
+
   if (
-    usersignUp.age &&
-    usersignUp.confirm_password &&
-    usersignUp.email &&
-    usersignUp.fname &&
-    usersignUp.gender &&
-    usersignUp.lname &&
-    usersignUp.password &&
-    usersignUp.password === usersignUp.confirm_password &&
-    usersignUp.phone &&
-    usersignUp.region !== "" &&
-    usersignUp.type !== "" &&
-    usersignUp.school !== '' &&
-    usersignUp.district !== "" &&
-    usersignUp.organization !== "" &&
-    usersignUp.userOrgRole
-  ) {
+    usersignUp.age &&                                  // Age must be greater than 0
+    usersignUp.confirm_password?.trim() &&                // Confirm password is required
+    usersignUp.fname?.trim() &&                           // First name is required
+    usersignUp.lname?.trim() &&                           // Last name is required
+    usersignUp.gender?.trim() &&                          // Gender is required
+    usersignUp.password?.trim() &&                        // Password is required
+    usersignUp.password === usersignUp.confirm_password && // Passwords must match
+    usersignUp.region?.trim() &&                          // Region is required
+    usersignUp.type?.trim() &&                            // User type is required
+    usersignUp.district?.trim() &&                        // District is required
+
+    // If not an "Education Stakeholder", user must provide their school
+    (usersignUp.type.toLowerCase().trim() !== 'education stackeholder' && usersignUp.school?.trim()) ||
+
+    // If user is an "Education Stakeholder", they must provide organization and role
+    (usersignUp.type.toLowerCase().trim() === 'education stackeholder' && 
+    usersignUp.organization?.trim() && usersignUp.userOrgRole?.trim()) &&
+
+    // Either user is not "Student"  they must provide both email and phone
+    (usersignUp.type.toLowerCase().trim() !== 'student' && (usersignUp.email?.trim() && usersignUp.phone?.trim()))
+) 
+ {
 
     // 
     usersignUp.controller.isSent = 'pending';
     usersignUp.controller.isSubmitted = true;
     // user role other,
 
-    if (usersignUp.userOrgRole == 'others' && usersignUp.otherRole) {
-      usersignUp.userOrgRole = usersignUp.otherRole
-    }
     // submit data
     await axios.post(apiDocs.auth.signUp, {
       name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
       password: usersignUp.password,
-      phoneNumber: sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)),
+      phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
       type: usersignUp.type,
-      email: sanitize.input(usersignUp.email),
+      email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
       gender: usersignUp.gender,
       region: usersignUp.region,
-      school: null,
-      district: null,
+      school: usersignUp.school,
+      district: usersignUp.district,
       ageGroup: usersignUp.age,
       terms: true,
+      organization: usersignUp.organization,
+      role: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
+      username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
     })
       .then((response) => {
         if (response.status >= 200 && response.status < 300) {
@@ -106,7 +116,7 @@ const signUp = async () => {
         } else {
           usersignUp.controller.isSent = 'failed';
           usersignUp.controller.feedback = messages.error.auth.accountExists;
-          return
+          // return
         }
 
       })
@@ -293,6 +303,7 @@ watch(
     }
   }
 );
+
 // password watching
 watch(
   () => usersignUp.password,
@@ -377,6 +388,7 @@ const switchTab = (tabName) => {
       usersignUp.district ||
       usersignUp.school
     ) {
+      usersignUp.userName = usersignUp.fname + "." + usersignUp.lname
       inputTabs.value = tabName;
     }
   } else {
