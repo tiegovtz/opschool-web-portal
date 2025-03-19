@@ -21,7 +21,7 @@ const search = () => {
 
       <!-- Search Button -->
       <button type="submit"
-        class="border-1 border-gray-300 hover:border-oceanBlue text-gray-400  hover:text-white p-2 rounded-t-md rounded-b-none hover:bg-oceanBlue transition duration-500 cursor-pointer">
+        class="text-white p-2 rounded-t-md rounded-b-none  bg-oceanBlue hover:bg-oceanBlue/80 transition duration-500 cursor-pointer">
         Search
       </button>
     </form>
