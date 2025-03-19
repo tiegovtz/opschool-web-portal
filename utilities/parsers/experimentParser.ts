@@ -7,7 +7,7 @@ const experimentParser = (query: string): string => {
     return query.replace(regex, (match, expSrc, imgSrc, altText) => {
         return `<div
               id="experimentPackage"  
-              class="w-full rounded-md overflow-hidden cursor-pointer mx-h-[400px]"
+              class="w-full rounded-md overflow-hidden cursor-pointer min-h-[400px]"
               src="${expSrc}"
               alt="${altText}"
               onclick="openActivity('${expSrc}')"
