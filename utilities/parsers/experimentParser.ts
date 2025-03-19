@@ -17,14 +17,18 @@ const experimentParser = (query: string): string => {
     });
 }
 
+// Extend the Window interface to include openActivity
+declare global {
+    interface Window {
+        openActivity: (expSrc: string) => void;
+    }
+}
+
 // Define the global function to handle clicks
-// ignore this error, it's a global function
-// @ts-ignore
 // return source of the experiment clicked
 window.openActivity = (expSrc: string) => {
     // You can add custom logic here (e.g., open modal, navigate, etc.)
     // For now, just log the source of the experiment clicked
     experimrntUrl.value= expSrc;
 }
-
 export default experimentParser;
