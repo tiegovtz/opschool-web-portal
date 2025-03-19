@@ -3,6 +3,7 @@ import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from '~/utilities/parsers/modelParser'
 import videoParser from "~/utilities/parsers/videoParser";
+import { experimrntUrl } from "~/utilities/controlls";
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania/volumetric analysis",
@@ -114,14 +115,17 @@ watch(userToken, (token) => {
   }
 });
 
-const openActivity = (expSrc) => {
-    console.log(expSrc);
-}
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <section class=" relative w-full h-full inline-flex center-height overflow-hidden">
+    <section v-if="experimrntUrl" class="relative w-full center-height p-2">
+      <div class="absolute top-0 right-0 p-2 cursor-pointer h-10 w-10 rounded-full bg-red-500 flex items-center justify-center" @click="experimrntUrl = null">
+        <Icon name="formkit:close" size="24" class="text-white font-bold" />
+      </div>
+      <iframe :src="experimrntUrl" frameborder="0" class="h-full w-full center-height rounded-md !bg-white" ></iframe>
+    </section>
+    <section v-else class=" relative w-full h-full inline-flex center-height overflow-hidden">
       <!-- Loading state -->
       <div v-if="chapters.status == 'pending'" class="loading content-height flex items-center justify-center w-full">
         <LoadingIndicator :is-loading="true" />
