@@ -72,21 +72,23 @@ const fullScreen = () => {
   if (import.meta.client) {
     if (!isFullscreen.value) {
       experimentContainer.requestFullscreen();
-     
+
     } else {
       document.exitFullscreen();
-     
+
     }
-     // set flag to opposite
-     isFullscreen.value = !isFullscreen.value;
+    // set flag to opposite
+    isFullscreen.value = !isFullscreen.value;
   }
 }
 
 // const istoggleSidebar = ref(false)
 
 const toggleSidebar = () => {
-  const sidebar = document.querySelector('.sidebar')
-  sidebar.classList.toggle('right-0')
+  if (import.meta.client) {
+    const sidebar = document.querySelector('.sidebar');
+    sidebar.classList.toggle('right-0')
+  }
 }
 
 const route = useRoute();
@@ -148,7 +150,9 @@ watch(userToken, (token) => {
       </div>
       <iframe :src="experimrntUrl" frameborder="0" class="h-full w-full center-height rounded-md !bg-white "></iframe>
       <!-- full screen controls -->
-      <div class="screen-control absolute bottom-0 right-0 p-2 cursor-pointer h-10 w-10 bg-oceanBlue hover:bg-white hover:text-oceanBlue transition-all duration-500 text-white flex items-center justify-center rounded-md" :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" @click="fullScreen">
+      <div
+        class="screen-control absolute bottom-0 right-0 p-2 cursor-pointer h-10 w-10 bg-oceanBlue hover:bg-white hover:text-oceanBlue transition-all duration-500 text-white flex items-center justify-center rounded-md"
+        :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" @click="fullScreen">
         <Icon v-if="isFullscreen" name="qlementine-icons:fullscreen-exit-16" size="24" />
         <Icon v-else name="qlementine-icons:fullscreen-16" size="24" />
       </div>
