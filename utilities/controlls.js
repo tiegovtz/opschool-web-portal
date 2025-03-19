@@ -18,6 +18,8 @@ const popMessage= ref()
 
 const screenWidth = ref(0)
 
+const experimrntUrl = ref();
+
 export {
     isGreaterToXL,
     isGreaterToLG,
@@ -26,5 +28,6 @@ export {
     isGreaterToXS,
     screenWidth,
     isPopUp,
-    popMessage
+    popMessage,
+    experimrntUrl
 }
