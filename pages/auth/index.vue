@@ -160,7 +160,9 @@ watch(() => userSignIn.password, (password) => {
 
         <div class="w-full max-w-md px-4 md:bg-white rounded-lg md:shadow-2xl md:pt-3">
             <h1 class="text-large font-bold text-center">Welcome</h1>
-            <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+            <NuxtLink to="/">
+                <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+            </NuxtLink>
             <form @submit.prevent="signIn" v-if="userSignIn.controller.attemps < 3"
             class="px-4 text-textGray md:h-[400px] h-dvh relative overflow-hidden text-extraSmall" 
             :class="{'md:h-[450px]': userSignIn.controller.errors.type}">
