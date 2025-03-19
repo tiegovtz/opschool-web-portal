@@ -90,14 +90,14 @@ const setTopicToView = () => {
       <p class="text-small font-medium text-gray-800">
         {{ topicTitle }}
       </p>
-      <p class="text-extraSmall text-gray-500 line-clamp-2">
+      <p class="text-extraSmall text-black/80 line-clamp-2">
         {{ topicDescription }}
       </p>
     </div>
     <!-- topic subject name and metrics -->
-    <div class="flex items-center justify-between px-1 whitespace-nowrap text-extraSmall text-gray-400">
+    <div class="flex items-center justify-between px-1 pt-2 whitespace-nowrap text-extraSmall text-oceanBlue">
       <div class="flex items-center gap-2">
-        <Icon name="proicons:clock" class="text-medium" />
+        <Icon name="material-symbols-light:menu-book-outline-rounded" class="text-medium" />
         <p class="capitalize">{{ subjectName }}</p>
       </div>
       <!-- <div class="flex items-center gap-2">
