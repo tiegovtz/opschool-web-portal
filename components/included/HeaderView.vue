@@ -25,14 +25,13 @@ const dropDown = () => {
 
     <nav class="wrapper-container flex flex-col items-center">
       <!-- Phone Number -->
-      <div class="relative flex md:flex-row flex-col items-center bg-oceanBlue w-full rounded-b-md text-white">
+      <div class="md:flex hidden md:flex-row flex-col items-center bg-oceanBlue w-full rounded-b-md text-white">
 
-        <div
-          class="title px-2 lg:text-large text-medium font-medium uppercase text-shadow flex-1 text-center relative xl:left-40">
-          TIE online public school
+        <div class="title px-2 lg:text-large text-medium font-medium uppercase text-shadow flex-1 text-center">
+          <p class="relative xl:left-40">TIE online public school</p>
         </div>
         <div class="info">
-          <div class=" flex items-center py-1 px-2 gap-4" v-if="userToken">
+          <div class="flex items-center py-1 px-2 gap-4" v-if="userToken">
             <div class="overflow-hidden rounded-full flex items-center justify-center">
               <div class="flex items-center gap-1 cursor-pointer">
                 <NuxtImg v-if="userToken?.profilePic" :src="apiDocs.baseURL" alt="User Profile"
@@ -62,10 +61,9 @@ const dropDown = () => {
             </NuxtLink>
 
             <!-- sign up -->
-            <NuxtLink to="/auth/SignUp"
-            title="Sign Up" 
+            <NuxtLink to="/auth/SignUp" title="Sign Up"
               class="flex items-center gap-2 cursor-pointer  text-white border-1 md:h-8 h-6 px-1 border-white rounded-md">
-              <Icon name="iconamoon:profile-thin" class="" size="1.5rem"/>
+              <Icon name="iconamoon:profile-thin" class="" size="1.5rem" />
               Create Account
             </NuxtLink>
           </div>
@@ -73,6 +71,33 @@ const dropDown = () => {
         </div>
       </div>
 
+      <!-- Mobile Menu -->
+      <div class="flex md:hidden md:flex-row flex-col items-center bg-oceanBlue w-full rounded-b-md text-white">
+
+        <div class="flex items-center justify-between w-full">
+         <div class="flex items-center">
+          <Icon v-if="userToken" name="iconamoon:profile-circle-thin" class="" size="1.2rem" />
+          <NuxtLink to="/auth/SignUp" title="Sign Up" v-else
+            class="flex items-center gap-2 cursor-pointer md:h-8 h-6 px-1">
+            <Icon name="iconamoon:profile-thin" class="" size="1.2rem" />
+          </NuxtLink>
+         </div>
+
+          <p class="font-medium uppercase text-shadow">TIE online public school</p>
+
+          <div class="flex items-center">
+            <div class="flex items-center gap-2 cursor-pointer md:h-8 h-6 p-2" @click="logout"  v-if="userToken">
+            <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
+          </div>
+           <!-- sign in -->
+           <NuxtLink to="/auth" title="Sign in" v-else
+              class="flex items-center gap-2 cursor-pointer md:h-8 h-6 px-1">
+              <Icon name="solar:login-2-outline" class="" size="1.2rem" />
+            </NuxtLink>
+          </div>
+        </div>
+
+      </div>
       <!-- Header -->
       <div
         class="relative w-full h-20  mt-1 bg-[url('/public/flag/Flag_of_Tanzania.gif')] bg-cover bg-center bg-no-repeat">
