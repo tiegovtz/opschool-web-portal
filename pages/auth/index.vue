@@ -9,6 +9,8 @@ import axios from 'axios'
 const path = useState('topicToView')
 // User Sign In Function
 const userSignIn = reactive({
+    type: "",
+    status: "idle",
     username: null,
     password: null,
     rememberMe: false,
@@ -16,10 +18,11 @@ const userSignIn = reactive({
         isSubmitted: false,
         isSucces: false,
         feedback: null,
-        attemps:0,
+        attemps: 0,
         errors: {
             username: '',
-            password: ''
+            password: '',
+            type: "",
         }
     }
 });
@@ -49,70 +52,70 @@ const signIn = async () => {
     if (isValid) {
         // Form is valid, proceed with submission
         isDisable.value = true;
-        if(userSignIn.controller.attemps == 3){
+        if (userSignIn.controller.attemps == 3) {
             return
         }
 
         // send data
-       try {
-           const response = await axios.post(apiDocs.auth.login, {
-               username: sanitize.input(userSignIn.username),
-               password: userSignIn.password,
-           })
+        try {
+            const response = await axios.post(apiDocs.auth.login, {
+                username: sanitize.input(userSignIn.username),
+                password: userSignIn.password,
+            })
 
-           if (response.status >= 200 && response.status < 300) {
-               userSignIn.controller.feedback = messages.success.auth.authenticated;
-          
-               // unlock button
-               isDisable.value = false;
+            if (response.status >= 200 && response.status < 300) {
+                userSignIn.controller.feedback = messages.success.auth.authenticated;
 
-               userSignIn.controller.feedback = messages.success.auth.authenticated;
-               userSignIn.controller.isSucces = true;
+                // unlock button
+                isDisable.value = false;
 
-               const accessToken = useCookie('signInAccessToken')
-               const refreshToken = useCookie('signInRefreshToken')
-               const userToken = useCookie('signInUserToken', {
-                   default: () => ({}),
-                   
-                   // This is important for objects - automatic serialization/deserialization
-                   encode: (value) => JSON.stringify(value),
-                   decode: (value) => JSON.parse(value)
-               })
+                userSignIn.controller.feedback = messages.success.auth.authenticated;
+                userSignIn.controller.isSucces = true;
 
-               accessToken.value = response.data.access_token
-               refreshToken.value = response.data.refresh_token
-               userToken.value = response.data.user
+                const accessToken = useCookie('signInAccessToken')
+                const refreshToken = useCookie('signInRefreshToken')
+                const userToken = useCookie('signInUserToken', {
+                    default: () => ({}),
 
-             setTimeout(() => {
-                 // router
-                 const router = useRouter();
+                    // This is important for objects - automatic serialization/deserialization
+                    encode: (value) => JSON.stringify(value),
+                    decode: (value) => JSON.parse(value)
+                })
 
-                 if (path.value) {
-                     // Clears history and navigates to the new page 
-                     router.replace(path.value);
-                 } else {
-                     router.replace('/home');
-                 }
-             }, 3000)
-             
+                accessToken.value = response.data.access_token
+                refreshToken.value = response.data.refresh_token
+                userToken.value = response.data.user
 
-           } else {
-               userSignIn.controller.attemps++;
-               isDisable.value = false
-               userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
-               
-           }
-       } catch (error) {
-           userSignIn.controller.attemps++;
-           userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
-           isDisable.value = false
-       }
+                setTimeout(() => {
+                    // router
+                    const router = useRouter();
 
-       setTimeout(() => {
-           userSignIn.controller.feedback = null;
-           userSignIn.controller.isSucces = false;
-       }, 2000)
-       
+                    if (path.value) {
+                        // Clears history and navigates to the new page 
+                        router.replace(path.value);
+                    } else {
+                        router.replace('/home');
+                    }
+                }, 3000)
+
+
+            } else {
+                userSignIn.controller.attemps++;
+                isDisable.value = false
+                userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
+
+            }
+        } catch (error) {
+            userSignIn.controller.attemps++;
+            userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
+            isDisable.value = false
+        }
+
+        setTimeout(() => {
+            userSignIn.controller.feedback = null;
+            userSignIn.controller.isSucces = false;
+        }, 2000)
+
     }
 };
 
@@ -133,7 +136,7 @@ watch(() => userSignIn.username, (username) => {
         } else {
             userSignIn.controller.errors.username = messages.error.form.usernameValid;
         }
-    }else {
+    } else {
         userSignIn.controller.errors.username = null;
     }
 });
@@ -141,7 +144,7 @@ watch(() => userSignIn.username, (username) => {
 watch(() => userSignIn.password, (password) => {
     if (password) {
         userSignIn.controller.errors.password = '';
-    }else {
+    } else {
         userSignIn.controller.errors.password = null;
     }
 });
@@ -152,27 +155,71 @@ watch(() => userSignIn.password, (password) => {
 
 
         <MessageComponent :message="userSignIn.controller.feedback" :position="userSignIn.controller.feedback"
-            :event-type="userSignIn.controller.isSucces ? 'succes' : 'error' "
-            :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty' " />
+            :event-type="userSignIn.controller.isSucces ? 'succes' : 'error'"
+            :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
         <div class="w-full max-w-md px-4 md:bg-white rounded-lg md:shadow-2xl md:pt-3">
             <h1 class="text-large font-bold text-center">Welcome</h1>
             <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
-            <form @submit.prevent="signIn" class="px-4" v-if="userSignIn.controller.attemps < 3">
+            <form @submit.prevent="signIn" v-if="userSignIn.controller.attemps < 3"
+            class="px-4 text-textGray md:h-[400px] h-dvh relative overflow-hidden text-extraSmall" 
+            :class="{'md:h-[450px]': userSignIn.controller.errors.type}">
+                <!-- Select User Type -->
+                <div class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue" 
+                :class="{'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                        userSignIn.controller.errors.type}">
+                    <div class="flex flex-col w-full items-start">
+                        <label for="type" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select User
+                            Type:</label>
+                        <select name="type" id="type" v-model="userSignIn.type"
+                            class="w-full p-1 focus:outline-none focus:ring-0"
+                            :class="{ 'text-textGray/40': !userSignIn.type }">
+                            <option value="">(eg: Student, Teacher ...)</option>
+                            <option value="Student">Student</option>
+                            <option value="Teacher">Teacher</option>
+                            <option value="Education Stackeholder">Education Stackeholder</option>
+                        </select>
+                    </div>
 
-                <!-- Username -->
-                <div class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+                    <!-- Select User Type error message -->
+                    <small v-if="userSignIn.controller.errors.type" class="text-red-500 text-smallest w-full">
+                        {{ userSignIn.controller.errors.type }}
+                    </small>
+                </div>
+
+                <!-- Username Teacher and Stackeholder and Student -->
+                    <div 
+                    class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
                     :class="{ 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userSignIn.controller.errors.username }">
                     <div class="flex w-full items-center">
-                        <input type="text" id="username" v-model="userSignIn.username" name="username"
+                        <!-- idle -->
+                         <div class="text-red-500 text-xs flex items-center flex-1 py-2 mt-2" v-if="userSignIn.type.trim() === ''">
+                            Please select user type First
+                         </div>
+                         
+                         <!-- student -->
+                        <input type="text" v-else-if="userSignIn.type.trim().toLowerCase() === 'student'"
+                        class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
+                        placeholder="Username (e.g. Baraka.Minja)">
+                        <input type="text" id="username" v-model="userSignIn.username" name="username" v-else
                             autocomplete="off" @keydown.space.prevent
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                             placeholder="Username (e.g. example@gmail.com or 0622 *** 722)">
-                        <Icon name="solar:user-outline" class="h-5 w-5 text-textGray" />
+                        <Icon name="solar:user-outline" class="h-5 w-5 text-textGray" v-if="userSignIn.type.trim().toLowerCase() === 'student'" />
+                        <Icon name="ant-design:select-outlined" class="h-5 w-5 text-textGray" v-else-if="userSignIn.type.trim().toLowerCase() === ''" />
+                        <Icon name="ph:student-thin" class="h-5 w-5 text-textGray" v-else />
+
                     </div>
 
                     <!-- Username error message -->
-                    <small v-if="userSignIn.controller.errors.username" class="text-red-500 text-smallest w-full">
+                    <small v-if="userSignIn.controller.errors.username" 
+                    class="text-red-500 text-smallest w-full"
+                    :class="[
+                        {'mt-2': userSignIn.type.trim().toLowerCase() === 'student'},
+                        {'mt-4': userSignIn.type.trim().toLowerCase() === 'teacher' || 
+                        userSignIn.type.trim().toLowerCase() === 'education stackeholder'},
+                        {'mt-0': userSignIn.type.trim().toLowerCase() === ''},
+                    ]">
                         {{ userSignIn.controller.errors.username }}
                     </small>
                 </div>
@@ -226,7 +273,7 @@ watch(() => userSignIn.password, (password) => {
             <div v-else class="flex flex-col gap-2 w-full items-center justify-center">
                 <div class="py-3">
                     You have attempted to sign in <span class="text-oceanBlue">{{ userSignIn.controller.attemps
-                        }}</span> times.
+                    }}</span> times.
                     Please consider to
                 </div>
                 <NuxtLink to="/auth/ForgotPassword"
