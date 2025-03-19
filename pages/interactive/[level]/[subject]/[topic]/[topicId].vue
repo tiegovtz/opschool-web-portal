@@ -1,6 +1,8 @@
 <script setup>
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
+import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from '~/utilities/parsers/modelParser'
+import videoParser from "~/utilities/parsers/videoParser";
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania/volumetric analysis",
@@ -112,7 +114,9 @@ watch(userToken, (token) => {
   }
 });
 
-
+const openActivity = (expSrc) => {
+    console.log(expSrc);
+}
 </script>
 
 <template>
@@ -171,7 +175,7 @@ watch(userToken, (token) => {
 
           <!-- Description -->
           <div class="content-view w-full flex flex-col gap-2 py-3" @click="toggleSidebar()">
-            <p class="notes md:px-4" v-html="modelParser(chapters.notes?.content)"></p>
+            <p class="notes md:px-4" v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p>
           </div>
         </div>
 
