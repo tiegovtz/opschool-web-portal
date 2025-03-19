@@ -7,6 +7,8 @@
       <div class="loading flex justify-center">
         <MessageTopicNotFound message="This page will be updated soon" />
       </div>
+
+
       <!-- render books -->
     </div>
   </NuxtLayout>
@@ -15,6 +17,7 @@
 <script setup>
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
+
 
 // Define meta info about page
 useHead({

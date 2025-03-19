@@ -58,6 +58,11 @@ const apiDocs = {
         getSubjectId: `${baseURL}/topics/by-subject/{subjectId}`,
         filterTopics: `${baseURL}/public-topics`
     },
+
+    // VIDEO API 
+    videos: {
+        getStream: `${baseURL}/video-stream/`,
+    },
 }
 
 export default apiDocs;
