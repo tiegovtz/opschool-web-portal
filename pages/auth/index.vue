@@ -39,7 +39,7 @@ const signIn = async () => {
     if (!userSignIn.username) {
         userSignIn.controller.errors.username = messages.error.form.usernameRequired;
         isValid = false;
-    } else if (!auth.checkEmailOrPhoneNumber(userSignIn.username)) {
+    } else if (!auth.checkEmailOrPhoneNumber(userSignIn.username) && userSignIn.type.trim().toLowerCase() !== 'student') {
         userSignIn.controller.errors.username = messages.error.form.usernameValid;
         isValid = false;
     }
@@ -131,11 +131,15 @@ const togglePassword = () => {
 // Clear validation errors when user types
 watch(() => userSignIn.username, (username) => {
     if (username) {
+      if (userSignIn.type.trim().toLowerCase() === 'student') {
+        userSignIn.controller.errors.username = null;
+      } else {
         if (auth.checkEmailOrPhoneNumber(username)) {
             userSignIn.controller.errors.username = '';
         } else {
             userSignIn.controller.errors.username = messages.error.form.usernameValid;
         }
+      }
     } else {
         userSignIn.controller.errors.username = null;
     }
@@ -202,7 +206,7 @@ watch(() => userSignIn.password, (password) => {
                          <!-- student -->
                         <input type="text" v-else-if="userSignIn.type.trim().toLowerCase() === 'student'"
                         class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                        placeholder="Username (e.g. Baraka.Minja)">
+                        placeholder="Username (e.g. Baraka.Minja)" v-model="userSignIn.username" name="username">
                         <input type="text" id="username" v-model="userSignIn.username" name="username" v-else
                             autocomplete="off" @keydown.space.prevent
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
