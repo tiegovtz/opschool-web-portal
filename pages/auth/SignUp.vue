@@ -23,7 +23,7 @@ const usersignUp = reactive({
   district: "",
   organization: null,
   userOrgRole: '',
-  otherRole:null,
+  otherRole: null,
   password: null,
   confirm_password: null,
   controller: {
@@ -47,51 +47,61 @@ const usersignUp = reactive({
       district: null,
       organization: null,
       userOrgRole: null,
-      otherRole:null,
+      otherRole: null,
     },
   },
 });
 
 const signUp = async () => {
+  if (usersignUp.userOrgRole.toLowerCase().trim() == 'others' && usersignUp.otherRole) {
+      usersignUp.userOrgRole = usersignUp.otherRole
+    }
+
   if (
-    usersignUp.age &&
-    usersignUp.confirm_password &&
-    usersignUp.email &&
-    usersignUp.fname &&
-    usersignUp.gender &&
-    usersignUp.lname &&
-    usersignUp.password &&
-    usersignUp.password === usersignUp.confirm_password &&
-    usersignUp.phone &&
-    usersignUp.region !== "" &&
-    usersignUp.type !== "" &&
-    usersignUp.school  !== '' &&
-    usersignUp.district !== "" &&
-    usersignUp.organization  !== "" &&
-    usersignUp.userOrgRole 
-  ) {
+    usersignUp.age &&                                  // Age must be greater than 0
+    usersignUp.confirm_password?.trim() &&                // Confirm password is required
+    usersignUp.fname?.trim() &&                           // First name is required
+    usersignUp.lname?.trim() &&                           // Last name is required
+    usersignUp.gender?.trim() &&                          // Gender is required
+    usersignUp.password?.trim() &&                        // Password is required
+    usersignUp.password === usersignUp.confirm_password && // Passwords must match
+    usersignUp.region?.trim() &&                          // Region is required
+    usersignUp.type?.trim() &&                            // User type is required
+    usersignUp.district?.trim() &&                        // District is required
+
+    // If not an "Education Stakeholder", user must provide their school
+    (usersignUp.type.toLowerCase().trim() !== 'education stackeholder' && usersignUp.school?.trim()) ||
+
+    // If user is an "Education Stakeholder", they must provide organization and role
+    (usersignUp.type.toLowerCase().trim() === 'education stackeholder' && 
+    usersignUp.organization?.trim() && usersignUp.userOrgRole?.trim()) &&
+
+    // Either user is not "Student"  they must provide both email and phone
+    (usersignUp.type.toLowerCase().trim() !== 'student' && (usersignUp.email?.trim() && usersignUp.phone?.trim()))
+) 
+ {
 
     // 
     usersignUp.controller.isSent = 'pending';
     usersignUp.controller.isSubmitted = true;
     // user role other,
 
-    if(usersignUp.userOrgRole == 'others' && usersignUp.otherRole){
-      usersignUp.userOrgRole = usersignUp.otherRole
-    }
     // submit data
     await axios.post(apiDocs.auth.signUp, {
       name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
       password: usersignUp.password,
-      phoneNumber: sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)),
+      phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
       type: usersignUp.type,
-      email: sanitize.input(usersignUp.email),
+      email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
       gender: usersignUp.gender,
       region: usersignUp.region,
-      school: null,
-      district: null,
+      school: usersignUp.school,
+      district: usersignUp.district,
       ageGroup: usersignUp.age,
       terms: true,
+      organization: usersignUp.organization,
+      role: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
+      username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
     })
       .then((response) => {
         if (response.status >= 200 && response.status < 300) {
@@ -106,7 +116,7 @@ const signUp = async () => {
         } else {
           usersignUp.controller.isSent = 'failed';
           usersignUp.controller.feedback = messages.error.auth.accountExists;
-          return
+          // return
         }
 
       })
@@ -293,6 +303,7 @@ watch(
     }
   }
 );
+
 // password watching
 watch(
   () => usersignUp.password,
@@ -377,6 +388,7 @@ const switchTab = (tabName) => {
       usersignUp.district ||
       usersignUp.school
     ) {
+      usersignUp.userName = usersignUp.fname + "." + usersignUp.lname
       inputTabs.value = tabName;
     }
   } else {
@@ -395,26 +407,28 @@ const switchTab = (tabName) => {
 
     <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-2xl">
       <h1 class="text-large font-bold text-center">Sign Up</h1>
-      <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+      <NuxtLink to="/">
+        <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+      </NuxtLink>
       <form @submit.prevent="signUp" @keydown.enter.prevent
         class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" :class="[
           {
-          'md:h-[600px]':
-            usersignUp.controller.errors.age ||
-            usersignUp.controller.errors.fname ||
-            usersignUp.controller.errors.gender ||
-            usersignUp.controller.errors.lname ||
-            usersignUp.controller.errors.password ||
-            usersignUp.controller.errors.confirm_password,
-        },
-         {'md:h-[650px]' : usersignUp.userOrgRole.toLowerCase() === 'others'}
+            'md:h-[600px]':
+              usersignUp.controller.errors.age ||
+              usersignUp.controller.errors.fname ||
+              usersignUp.controller.errors.gender ||
+              usersignUp.controller.errors.lname ||
+              usersignUp.controller.errors.password ||
+              usersignUp.controller.errors.confirm_password,
+          },
+          { 'md:h-[650px]': usersignUp.userOrgRole.toLowerCase() === 'others' }
         ]">
         <!-- First Input Group -->
         <div class="flex flex-col absolute -left-150 top-0 px-6 transition-all duration-500"
           :class="inputTabs === 'tabOne' ? 'left-0 w-full' : ''">
           <!-- Select User Type -->
-          <div class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue" 
-          :class="{'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+          <div class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue" :class="{
+            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
               usersignUp.controller.errors.type,
           }">
             <div class="flex flex-col w-full items-start">
@@ -655,39 +669,38 @@ const switchTab = (tabName) => {
                   <Icon name="tdesign:institution" class="h-5 w-5 text-textGray" />
                 </div>
                 <!-- org name error message -->
-              <small v-if="usersignUp.controller.errors.email" class="text-red-500 text-smallest w-full">
-                {{ usersignUp.controller.errors.email }}
-              </small>
+                <small v-if="usersignUp.controller.errors.email" class="text-red-500 text-smallest w-full">
+                  {{ usersignUp.controller.errors.email }}
+                </small>
               </div>
               <!-- stakeholder role -->
               <div class="focus-input-icon mb-3 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col"
-                  :class="{
-                    'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                      usersignUp.controller.errors.age,
-                  }">
-                  <div class="flex flex-col">
-                    <label for="userOrgRole" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select role
-                      in your Organization:</label>
-                    <select name="userOrgRole" id="userOrgRole" class="w-full p-1 focus:outline-none focus:ring-0"
-                      :class="{ 'text-textGray/40': !usersignUp.userOrgRole }" v-model="usersignUp.userOrgRole">
-                      <option value="">Eg: ( Manager ) ...</option>
-                      <option value="Reseacher">Reseacher</option>
-                      <option value="School Admin | Owner">School Admin | Owner</option>
-                      <option value="School Manager">School Manager</option>
-                      <option value="Educationalist">Educationalist</option>
-                      <option value="others">Others</option>
-                    </select>
-                  </div>
-
-                  <!-- Age error message -->
-                  <small v-if="usersignUp.controller.errors.userOrgRole" class="text-red-500 text-smallest w-full">
-                    {{ usersignUp.controller.errors.userOrgRole }}
-                  </small>
+                :class="{
+                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                    usersignUp.controller.errors.age,
+                }">
+                <div class="flex flex-col">
+                  <label for="userOrgRole" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select role
+                    in your Organization:</label>
+                  <select name="userOrgRole" id="userOrgRole" class="w-full p-1 focus:outline-none focus:ring-0"
+                    :class="{ 'text-textGray/40': !usersignUp.userOrgRole }" v-model="usersignUp.userOrgRole">
+                    <option value="">Eg: ( Manager ) ...</option>
+                    <option value="Reseacher">Reseacher</option>
+                    <option value="School Admin | Owner">School Admin | Owner</option>
+                    <option value="School Manager">School Manager</option>
+                    <option value="Educationalist">Educationalist</option>
+                    <option value="others">Others</option>
+                  </select>
                 </div>
 
-                <!-- other user role in their org -->
-              <div
-                v-if="usersignUp.userOrgRole.toLowerCase() === 'others'"
+                <!-- Age error message -->
+                <small v-if="usersignUp.controller.errors.userOrgRole" class="text-red-500 text-smallest w-full">
+                  {{ usersignUp.controller.errors.userOrgRole }}
+                </small>
+              </div>
+
+              <!-- other user role in their org -->
+              <div v-if="usersignUp.userOrgRole.toLowerCase() === 'others'"
                 class="focus-input-icon px-2 mb-3 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
                 :class="{
                   'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -701,14 +714,14 @@ const switchTab = (tabName) => {
                   <Icon name="mdi-light:shield" class="h-5 w-5 text-textGray" />
                 </div>
                 <!-- org name error message -->
-              <small v-if="usersignUp.controller.errors.otherRole" class="text-red-500 text-smallest w-full">
-                {{ usersignUp.controller.errors.otherRole }}
-              </small>
+                <small v-if="usersignUp.controller.errors.otherRole" class="text-red-500 text-smallest w-full">
+                  {{ usersignUp.controller.errors.otherRole }}
+                </small>
               </div>
             </div>
           </div>
 
-           <!-- username student -->
+          <!-- username student -->
           <div v-if="usersignUp.type.toLowerCase() === 'student'"
             class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
             :class="{
