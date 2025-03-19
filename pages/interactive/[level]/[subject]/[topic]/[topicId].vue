@@ -119,7 +119,7 @@ watch(userToken, (token) => {
 
 <template>
   <NuxtLayout name="home-layout">
-    <section v-if="experimrntUrl" class="relative w-full center-height p-2">
+    <section v-if="experimrntUrl" class="relative w-full center-height">
       <div class="absolute top-0 right-0 p-2 cursor-pointer h-10 w-10 rounded-full bg-red-500 flex items-center justify-center" @click="experimrntUrl = null">
         <Icon name="formkit:close" size="24" class="text-white font-bold" />
       </div>
