@@ -16,6 +16,7 @@ const usersignUp = reactive({
   email: null,
   phone: null,
   gender: null,
+  userName: null,
   age: "",
   region: "",
   school: "",
@@ -34,6 +35,7 @@ const usersignUp = reactive({
       type: "",
       fname: null,
       lname: null,
+      userName: null,
       email: null,
       phone: null,
       gender: null,
@@ -411,8 +413,8 @@ const switchTab = (tabName) => {
         <div class="flex flex-col absolute -left-150 top-0 px-6 transition-all duration-500"
           :class="inputTabs === 'tabOne' ? 'left-0 w-full' : ''">
           <!-- Select User Type -->
-          <div class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue" :class="{
-            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+          <div class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue" 
+          :class="{'focus-input-icon-warning border-red-500 focus-within:border-red-500':
               usersignUp.controller.errors.type,
           }">
             <div class="flex flex-col w-full items-start">
@@ -511,6 +513,7 @@ const switchTab = (tabName) => {
               :school="usersignUp.school" @update-school="usersignUp.school = $event"
               :error="usersignUp.controller.errors.school" />
           </div>
+
           <!-- gender input radio -->
           <div class="mb-4 border-b border-gray-300 focus-within:border-oceanBlue py-2" :class="{
             'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -703,6 +706,27 @@ const switchTab = (tabName) => {
               </small>
               </div>
             </div>
+          </div>
+
+           <!-- username student -->
+          <div v-if="usersignUp.type.toLowerCase() === 'student'"
+            class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+            :class="{
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.userName,
+            }">
+            <div class="flex w-full items-center">
+              <input type="text" id="userName" v-model="usersignUp.userName" @keydown.space.prevent name="userName"
+                autocomplete="off"
+                class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
+                placeholder="Username (eg: Baraka.Minja)" />
+              <Icon name="lets-icons:user-box-light" class="h-5 w-5 text-textGray" />
+            </div>
+
+            <!-- username error message -->
+            <small v-if="usersignUp.controller.errors.userName" class="text-red-500 text-smallest w-full">
+              {{ usersignUp.controller.errors.userName }}
+            </small>
           </div>
 
           <!-- Password -->
