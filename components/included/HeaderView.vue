@@ -74,6 +74,7 @@ const dropDown = () => {
       <!-- Mobile Menu -->
       <div class="flex md:hidden md:flex-row flex-col items-center bg-oceanBlue w-full rounded-b-md text-white">
 
+        <!-- Profile and Sign Up -->
         <div class="flex items-center justify-between w-full">
          <div class="flex items-center">
           <Icon v-if="userToken" name="iconamoon:profile-circle-thin" class="" size="1.2rem" />
@@ -82,9 +83,11 @@ const dropDown = () => {
             <Icon name="iconamoon:profile-thin" class="" size="1.2rem" />
           </NuxtLink>
          </div>
-
+         
+         <!-- Paragraph Text -->
           <p class="font-medium uppercase text-shadow">TIE online public school</p>
 
+          <!-- Logout and Sign in -->
           <div class="flex items-center">
             <div class="flex items-center gap-2 cursor-pointer md:h-8 h-6 p-2" @click="logout"  v-if="userToken">
             <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
