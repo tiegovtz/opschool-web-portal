@@ -29,7 +29,7 @@ watch(() => searchReactive.search, (newVal) => {
 <template>
   <div class="relative flex items-center justify-center w-full max-w-md">
     <!-- Search Form -->
-    <form action="" @submit.prevent="search" @focusout="searchReactive.searchResult = null"
+    <form action="" @submit.prevent="search" 
       class="flex w-full h-10 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
       <div class="flex items-center w-full">
         <!-- Search Icon -->
