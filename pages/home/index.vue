@@ -187,7 +187,7 @@ watch(filters,(filters)=>{
       <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
       <div v-else-if="status == 'success'">
         <div class="w-full flex flex-col" v-if="slicedData?.length > 0">
-          <div class=" grid grid-cols-1   2xl:grid-cols-5  xl:grid-cols-4  lg:grid-cols-3 md:grid-cols-2 gap-4 xl:gap-10 mb-10">
+          <div class="!grid grid-cols-1   2xl:grid-cols-5  xl:grid-cols-4  lg:grid-cols-3 md:grid-cols-2 gap-4 xl:gap-10 mb-10">
             <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail"
               :topic-title="topic.name" :topic-description="topic.descriptions"
               :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'" 
@@ -224,7 +224,7 @@ watch(filters,(filters)=>{
       </div>
       <div v-else>
         <div class="" v-if="slicedData?.length === 0">Try to refresh the page, Something went Wrong</div>
-        <div class=" grid grid-cols-1 2xl:grid-cols-5 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 gap-4 mb-10" v-else>
+        <div class="!grid grid-cols-1 2xl:grid-cols-5 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 gap-4 mb-10" v-else>
 
           <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail"
             :topic-title="topic.name" :topic-description="topic.descriptions"

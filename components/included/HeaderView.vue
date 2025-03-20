@@ -83,7 +83,7 @@ const dropDown = () => {
             <Icon name="iconamoon:profile-thin" class="" size="1.2rem" />
           </NuxtLink>
          </div>
-         
+
          <!-- Paragraph Text -->
           <p class="font-medium uppercase text-shadow">TIE online public school</p>
 
@@ -112,7 +112,7 @@ const dropDown = () => {
           <div class="title flex flex-col items-center text-center gap-1  h-full">
             <p class="lg:text-large md:text-medium text-extraSmall font-bold uppercase text-shadow">wizara ya elimu,
               sayansi na teknolojia </p>
-            <p class="lg:text-medium md:text-small text-smallest capitalize">taasisi ya elimu tanzania (TET)</p>
+            <p class="lg:text-medium md:text-small text-smallest capitalize">taasisi <span class="lowercase"> ya </span> elimu tanzania (TET)</p>
           </div>
           <NuxtLink to="/" class="cursor-pointer p-2 h-full bg-grayLight shadow-2xl shadow-grayLight ">
             <NuxtImg src="/logo/logo_tie.webp" alt="TIE LOGO" class="w-14 h-14" />
