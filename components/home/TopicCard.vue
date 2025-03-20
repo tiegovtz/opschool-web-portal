@@ -97,10 +97,10 @@ const userToken = useCookie('signInUserToken')
     </div>
     <!-- topic title and description -->
     <div class="flex flex-col my-auto px-1">
-      <p class="text-small font-medium text-gray-800" :class="{'mt-2': !userToken}">
+      <p class="text-[1.2rem] font-bold text-gray-800" :class="{'mt-2': !userToken}">
         {{ topicTitle }}
       </p>
-      <p v-if="modelType === 'card'" class="text-extraSmall text-black/80 line-clamp-2">
+      <p v-if="modelType === 'card'" class="text-small text-black/80 line-clamp-2">
         {{ topicDescription }}
       </p>
     </div>
