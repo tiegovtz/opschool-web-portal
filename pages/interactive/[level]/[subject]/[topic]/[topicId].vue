@@ -221,7 +221,7 @@ watch(userToken, (token) => {
 
         <!-- Sidebar -->
         <div
-          class="sidebar transition-all duration-700 ease-in-out absolute -right-[500px] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2  lg:static bg-white">
+          class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2  lg:static bg-white">
           <div class="flex items-center justify-between mb-4">
             <h1 class="text-medium font-medium capitalize pt-5">
               Chapters
