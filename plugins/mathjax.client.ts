@@ -1,12 +1,7 @@
+// import { loadMathJax } from "@/utilities/mathjax";
 
-export default defineNuxtPlugin(() => {
-  return {
-    provide: {
-      renderMathJax: () => {
-        if (window.MathJax) {
-          window.MathJax.typesetPromise();
-        }
-      }
-    }
-  };
-});
+// export default defineNuxtPlugin(async () => {
+//   if(import.meta.client){
+//     await loadMathJax();
+//   }
+// });

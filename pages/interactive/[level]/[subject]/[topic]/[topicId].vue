@@ -47,6 +47,14 @@ useHead({
     },
     { name: "twitter:image", content: "https://example.com/preview-image.jpg" }, // Replace with actual image URL
   ],
+
+  script: [
+    {
+      src: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js",
+      body: true,
+    },
+  ],
+  // script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
 });
 
 // Define State
@@ -138,6 +146,13 @@ watch(userToken, (token) => {
   }
 });
 
+
+
+onMounted(() => {
+  if (window.MathJax) {
+    MathJax.typeset();
+  }
+});
 </script>
 
 <template>
