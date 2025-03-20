@@ -43,7 +43,7 @@ export default defineNuxtConfig({
   },
 
   devServer: {
-    host: ' 192.168.0.18',
+    host: ' 192.168.1.156',
     port: 3000
   }
 });
