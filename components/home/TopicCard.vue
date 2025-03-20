@@ -58,6 +58,7 @@ const setTopicToView = () => {
   useState('topicId', () => `${props.topicId}`)
 }
 
+const userToken = useCookie('signInUserToken')
 </script>
 
 <template>
@@ -75,7 +76,7 @@ const setTopicToView = () => {
       </div>
     </div>
     <!-- topic progress bar -->
-    <div class="flex items-center gap-2 w-full mt-2 max-w-full">
+    <div v-if="userToken" class="flex items-center gap-2 w-full mt-2 max-w-full">
       <progress :value="45" max="100" class="w-full h-2 rounded-full bg-gray-200 [&::-webkit-progress-bar]:bg-gray-200 
            [&::-webkit-progress-value]:bg-oceanBlue [&::-webkit-progress-value]:rounded-full 
            [&::-moz-progress-bar]:bg-oceanBlue [&::-moz-progress-bar]:rounded-full 
@@ -87,7 +88,7 @@ const setTopicToView = () => {
     </div>
     <!-- topic title and description -->
     <div class="flex flex-col my-auto px-1">
-      <p class="text-small font-medium text-gray-800">
+      <p class="text-small font-medium text-gray-800" :class="{'mt-2': !userToken}">
         {{ topicTitle }}
       </p>
       <p class="text-extraSmall text-black/80 line-clamp-2">
