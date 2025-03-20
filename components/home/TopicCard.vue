@@ -47,7 +47,13 @@ const props = defineProps({
   subjectName: {
     type: String,
     default: 'Physics'
-  }
+  },
+
+  modelType: {
+    type: String,
+    default: 'card',
+  },
+  
 })
 
 const setTopicToView = () => {
@@ -64,19 +70,22 @@ const userToken = useCookie('signInUserToken')
 <template>
   <NuxtLink
     :to="`/interactive/${topicStandard.toLowerCase()}/${subjectName.toLowerCase()}/${topicTitle.toLowerCase()}/${topicId.toLowerCase()}`"
-    class="overflow-hidden rounded-lg flex flex-col shadow-md px-2 pb-4" @click="setTopicToView">
+    class="overflow-hidden rounded-lg flex flex-col shadow-md px-2 pb-4" @click="setTopicToView"
+    :class="{'cursor-pointer flex-row my-2 pb-0': modelType === 'search'}"
+    >
     <!-- topic image -->
-    <div class="relative h-56">
-      <NuxtImg :src="topicImage" loading="lazy" alt="book1" class="w-full h-full object-cover rounded-t-md" />
+    <div :class="{'relative h-56': modelType === 'card', 'h-20': modelType === 'search'}">
+      <NuxtImg :src="topicImage" loading="lazy" alt="book1" class="w-full h-full object-cover" 
+      :class="{'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search'}" />
       <!-- topic standard -->
-      <div class="absolute -bottom-0 right-0">
+      <div v-if="modelType === 'card'" class="absolute -bottom-0 right-0">
         <div class="bg-oceanBlue  rounded-tl-md  h-8 w-20 flex items-center justify-center">
          <p class="text-extraSmall font-medium text-white">{{ topicStandard }}</p>
         </div>
       </div>
     </div>
     <!-- topic progress bar -->
-    <div v-if="userToken" class="flex items-center gap-2 w-full mt-2 max-w-full">
+    <div v-if="userToken && modelType === 'card'" class="flex items-center gap-2 w-full mt-2 max-w-full">
       <progress :value="45" max="100" class="w-full h-2 rounded-full bg-gray-200 [&::-webkit-progress-bar]:bg-gray-200 
            [&::-webkit-progress-value]:bg-oceanBlue [&::-webkit-progress-value]:rounded-full 
            [&::-moz-progress-bar]:bg-oceanBlue [&::-moz-progress-bar]:rounded-full 
@@ -91,12 +100,12 @@ const userToken = useCookie('signInUserToken')
       <p class="text-small font-medium text-gray-800" :class="{'mt-2': !userToken}">
         {{ topicTitle }}
       </p>
-      <p class="text-extraSmall text-black/80 line-clamp-2">
+      <p v-if="modelType === 'card'" class="text-extraSmall text-black/80 line-clamp-2">
         {{ topicDescription }}
       </p>
     </div>
     <!-- topic subject name and metrics -->
-    <div class="flex items-center justify-between px-1 pt-2 whitespace-nowrap text-extraSmall text-oceanBlue">
+    <div v-if="modelType === 'card'" class="flex items-center justify-between px-1 pt-2 whitespace-nowrap text-extraSmall text-oceanBlue">
       <div class="flex items-center gap-2">
         <Icon name="material-symbols-light:menu-book-outline-rounded" class="text-medium" />
         <p class="capitalize">{{ subjectName }}</p>
@@ -111,4 +120,5 @@ const userToken = useCookie('signInUserToken')
       </div>
     </div>
   </NuxtLink>
+  
 </template>

@@ -187,13 +187,17 @@ watch(filters,(filters)=>{
       <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
       <div v-else-if="status == 'success'">
         <div class="w-full flex flex-col" v-if="slicedData?.length > 0">
-          <div class=" grid grid-cols-1   2xl:grid-cols-5  xl:grid-cols-4  lg:grid-cols-3 md:grid-cols-2 gap-4 xl:gap-10 mb-10">
+         
+
+          <ClientOnly>
+            <div class="!grid 2xl:grid-cols-5 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 xl:gap-10 mb-10">
             <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail"
               :topic-title="topic.name" :topic-description="topic.descriptions"
               :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'" 
               :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 100"
               :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name" />
           </div>
+          </ClientOnly>
 
           <!-- pagination numbers based on data length greater to 9 -->
           <div class="flex justify-center mb-10">
@@ -222,42 +226,44 @@ watch(filters,(filters)=>{
         <MessageTopicNotFound v-else />
 
       </div>
-      <div v-else>
+      <div class="w-full flex flex-col" v-else>
         <div class="" v-if="slicedData?.length === 0">Try to refresh the page, Something went Wrong</div>
-        <div class=" grid grid-cols-1 2xl:grid-cols-5 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 gap-4 mb-10" v-else>
-
-          <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail"
-            :topic-title="topic.name" :topic-description="topic.descriptions"
-            :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
-            :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 100"
-            :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name" />
-
-          <!-- pagination numbers based on data length greater to 9 -->
-          <div class="flex justify-center mb-10">
-            <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-
-              <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                :is-active="page === currentPage" :disabled="page === currentPage"
-                @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
-            </div>
-
-            <div v-else class="flex justify-center gap-2">
-              <!-- previous -->
-              <div class="flex justify-center items-center" v-if="currentPage > 5">
-                <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+        <ClientOnly v-else>
+          <div class="!grid 2xl:grid-cols-5 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 mb-10">
+  
+            <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail"
+              :topic-title="topic.name" :topic-description="topic.descriptions"
+              :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
+              :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 100"
+              :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name" />
+  
+            <!-- pagination numbers based on data length greater to 9 -->
+            <div class="flex justify-center mb-10">
+              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
+  
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
               </div>
-              <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                :is-active="page === currentPage" :disabled="page === currentPage"
-                @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
-
-              <!-- next button -->
-              <div class="flex justify-center items-center" v-if="currentPage > 4">
-                <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+  
+              <div v-else class="flex justify-center gap-2">
+                <!-- previous -->
+                <div class="flex justify-center items-center" v-if="currentPage > 5">
+                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+                </div>
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+  
+                <!-- next button -->
+                <div class="flex justify-center items-center" v-if="currentPage > 4">
+                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+                </div>
               </div>
             </div>
+  
           </div>
-
-        </div>
+        </ClientOnly>
       </div>
     </div>
   </NuxtLayout>

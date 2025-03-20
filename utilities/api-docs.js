@@ -63,6 +63,7 @@ const apiDocs = {
     videos: {
         getStream: `${baseURL}/video-stream/`,
     },
+
 }
 
 export default apiDocs;
