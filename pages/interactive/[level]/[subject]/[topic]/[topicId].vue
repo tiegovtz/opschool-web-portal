@@ -47,6 +47,14 @@ useHead({
     },
     { name: "twitter:image", content: "https://example.com/preview-image.jpg" }, // Replace with actual image URL
   ],
+
+  script: [
+    {
+      src: "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js",
+      body: true,
+    },
+  ],
+  // script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
 });
 
 // Define State
@@ -138,6 +146,13 @@ watch(userToken, (token) => {
   }
 });
 
+
+
+onMounted(() => {
+  if (window.MathJax) {
+    MathJax.typeset();
+  }
+});
 </script>
 
 <template>
@@ -210,7 +225,7 @@ watch(userToken, (token) => {
 
           <!-- Description -->
           <div class="content-view w-full flex flex-col gap-2 py-3 justify-center" @click="toggleSidebar()">
-            <p class="notes md:px-4 max-w-7xl" v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p>
+            <p class="notes md:px-4 max-w-7xl mx-auto" v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p>
           </div>
         </div>
 
