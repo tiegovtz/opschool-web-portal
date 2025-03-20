@@ -209,8 +209,8 @@ watch(userToken, (token) => {
           </div>
 
           <!-- Description -->
-          <div class="content-view w-full flex flex-col gap-2 py-3" @click="toggleSidebar()">
-            <p class="notes md:px-4" v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p>
+          <div class="content-view w-full flex flex-col gap-2 py-3 justify-center" @click="toggleSidebar()">
+            <p class="notes md:px-4 max-w-7xl" v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p>
           </div>
         </div>
 
