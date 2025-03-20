@@ -13,7 +13,7 @@
 const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const tanzaniaPhoneRegex = /^(?:\+255|0)(6[1-9]|7[1-9]|9[1-9])\d{7}$/;
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-const nameRegex = /^(?!.*(.)\1{2,})[A-Za-z]{3,}$/;
+const usernameRegex = /^[A-Za-z]+\.[A-Za-z]+$/;
 
 /**
  * Authentication Utility
@@ -80,17 +80,23 @@ const auth = {
         };
     },
 
-    /**
-     * Validates whether input is a valid email or Tanzanian phone number.
-     * 
-     * @param {string} userName - The email or phone number to validate.
-     * @returns {boolean} True if valid, false otherwise.
-     * 
-     * @example
-     * console.log(auth.checkEmailOrPhoneNumber("example@gmail.com")); // true
-     * console.log(auth.checkEmailOrPhoneNumber("+255622660722")); // true
-     */
-    checkEmailOrPhoneNumber: (userName) => emailPattern.test(userName) || tanzaniaPhoneRegex.test(userName),
+  /**
+ * Validates whether the input is a valid email, Tanzanian phone number, or username in the format "Example.Example".
+ * 
+ * @param {string} userInput - The email, phone number, or username to validate.
+ * @returns {boolean} True if valid, false otherwise.
+ * 
+ * @example
+ * console.log(auth.checkEmailPhoneOrUsername("example@gmail.com")); // true (valid email)
+ * console.log(auth.checkEmailPhoneOrUsername("+255622660722")); // true (valid Tanzanian phone number)
+ * console.log(auth.checkEmailPhoneOrUsername("John.Doe")); // true (valid username)
+ * console.log(auth.checkEmailPhoneOrUsername("invalid@com")); // false (invalid email)
+ * console.log(auth.checkEmailPhoneOrUsername("12345")); // false (invalid phone number)
+ * console.log(auth.checkEmailPhoneOrUsername("JohnDoe")); // false (missing dot in username)
+ */
+checkEmailPhoneOrUsername: (userInput) => {
+    return emailPattern.test(userInput) || tanzaniaPhoneRegex.test(userInput) || usernameRegex.test(userInput);
+},
 
     /**
      * Validates a name, ensuring it contains only letters, has at least 3 characters,

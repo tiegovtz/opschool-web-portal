@@ -98,7 +98,7 @@ const messages = {
         allInputs: "Fill username and password",
         all: "All Fields are required",
         invalid: "User does not exist",
-        usernameValid: "Username is not valid (use email or phone number)",
+        usernameValid: "Username is not valid (use email or phone number or username)",
         passwordValid: "Password is not valid",
         usernameRequired: "Username is required",
         passwordRequired: "Password is required",

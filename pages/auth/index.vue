@@ -36,10 +36,7 @@ const signIn = async () => {
     let isValid = true;
 
     // Check for empty fields first
-    if (!userSignIn.username) {
-        userSignIn.controller.errors.username = messages.error.form.usernameRequired;
-        isValid = false;
-    } else if (!auth.checkEmailOrPhoneNumber(userSignIn.username) && userSignIn.type.trim().toLowerCase() !== 'student') {
+    if (!auth.checkEmailPhoneOrUsername(userSignIn.username) ) {
         userSignIn.controller.errors.username = messages.error.form.usernameValid;
         isValid = false;
     }
@@ -131,15 +128,11 @@ const togglePassword = () => {
 // Clear validation errors when user types
 watch(() => userSignIn.username, (username) => {
     if (username) {
-      if (userSignIn.type.trim().toLowerCase() === 'student') {
-        userSignIn.controller.errors.username = null;
-      } else {
-        if (auth.checkEmailOrPhoneNumber(username)) {
+        if (auth.checkEmailPhoneOrUsername(username)) {
             userSignIn.controller.errors.username = '';
         } else {
             userSignIn.controller.errors.username = messages.error.form.usernameValid;
         }
-      }
     } else {
         userSignIn.controller.errors.username = null;
     }
@@ -168,53 +161,19 @@ watch(() => userSignIn.password, (password) => {
                 <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
             </NuxtLink>
             <form @submit.prevent="signIn" v-if="userSignIn.controller.attemps < 3"
-            class="px-4 text-textGray md:h-[400px] h-dvh relative overflow-hidden text-extraSmall" 
-            :class="{'md:h-[450px]': userSignIn.controller.errors.type}">
-                <!-- Select User Type -->
-                <div class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue" 
-                :class="{'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                        userSignIn.controller.errors.type}">
-                    <div class="flex flex-col w-full items-start">
-                        <label for="type" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select User
-                            Type:</label>
-                        <select name="type" id="type" v-model="userSignIn.type"
-                            class="w-full p-1 focus:outline-none focus:ring-0"
-                            :class="{ 'text-textGray/40': !userSignIn.type }">
-                            <option value="">(eg: Student, Teacher ...)</option>
-                            <option value="Student">Student</option>
-                            <option value="Teacher">Teacher</option>
-                            <option value="Education Stackeholder">Education Stackeholder</option>
-                        </select>
-                    </div>
-
-                    <!-- Select User Type error message -->
-                    <small v-if="userSignIn.controller.errors.type" class="text-red-500 text-smallest w-full">
-                        {{ userSignIn.controller.errors.type }}
-                    </small>
-                </div>
-
+            class="px-4 text-textGray overflow-hidden text-extraSmall">
                 <!-- Username Teacher and Stackeholder and Student -->
                     <div 
                     class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
                     :class="{ 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userSignIn.controller.errors.username }">
                     <div class="flex w-full items-center">
-                        <!-- idle -->
-                         <div class="text-red-500 text-xs flex items-center flex-1 py-2 mt-2" v-if="userSignIn.type.trim() === ''">
-                            Please select user type First
-                         </div>
-                         
-                         <!-- student -->
-                        <input type="text" v-else-if="userSignIn.type.trim().toLowerCase() === 'student'"
-                        class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                        placeholder="Username (e.g. Baraka.Minja)" v-model="userSignIn.username" name="username">
-                        <input type="text" id="username" v-model="userSignIn.username" name="username" v-else
+                    
+                        <input type="text" id="username" v-model="userSignIn.username" name="username"
                             autocomplete="off" @keydown.space.prevent
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                            placeholder="Username (e.g. example@gmail.com or 0622 *** 722)">
-                        <Icon name="ph:student-thin" class="h-5 w-5 text-textGray" v-if="userSignIn.type.trim().toLowerCase() === 'student'" />
-                        <Icon name="ant-design:select-outlined" class="h-5 w-5 text-textGray" v-else-if="userSignIn.type.trim().toLowerCase() === ''" />
-                        <Icon name="solar:user-outline" class="h-5 w-5 text-textGray" v-else />
+                            placeholder="(e.g. example@gmail.com /0622***722 /Baraka.Minja)">
 
+                        <Icon name="solar:user-outline" class="h-5 w-5 text-textGray" />
                     </div>
 
                     <!-- Username error message -->
