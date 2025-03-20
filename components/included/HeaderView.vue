@@ -28,7 +28,7 @@ const dropDown = () => {
       <div class="md:flex hidden md:flex-row flex-col items-center bg-oceanBlue w-full rounded-b-md text-white">
 
         <div class="title px-2 lg:text-large text-medium font-medium uppercase text-shadow flex-1 text-center">
-          <p class="relative xl:left-40">TIE online public school</p>
+          <p class="relative xl:left-40 z-0">TIE online public school</p>
         </div>
         <div class="info">
           <div class="flex items-center py-1 px-2 gap-4" v-if="userToken">
