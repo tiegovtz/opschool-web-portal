@@ -141,10 +141,9 @@ watch(userToken, (token) => {
 
 
 
+
 onMounted(() => {
-  if (window.MathJax) {
-    MathJax.typeset();
-  }
+  window.MathJax.typeset(); // Fanya rendering ya MathJax
 });
 </script>
 
@@ -222,8 +221,9 @@ onMounted(() => {
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
             <p class="notes md:px-4 max-w-7xl mx-auto"
+              v-mathjax
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))" 
-              v-mathjax>
+              >
             </p>
           </div>
         </div>
