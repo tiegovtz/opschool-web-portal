@@ -79,7 +79,7 @@ const forgotPassword = async () => {
 </script>
 
 <template>
-    <div class="flex items-center justify-center min-h-screen">
+    <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b">
         <!-- Message Component -->
         <MessageComponent 
         :message="userForgotPassword.controller.feedback" 
@@ -205,5 +205,5 @@ const forgotPassword = async () => {
                 </p>
             </div>
         </div>
-    </div>
+    </section>
 </template>
