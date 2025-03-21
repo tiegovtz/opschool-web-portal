@@ -233,7 +233,7 @@ watch(filters, (filters) => {
       <div class="w-full flex flex-col" v-else>
         <div class="" v-if="slicedData?.length === 0">Try to refresh the page, Something went Wrong</div>
 
-        <!-- client  -->
+        <!-- client only  -->
         <ClientOnly v-else>
           <div class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 mb-10">
 

@@ -93,7 +93,7 @@ const signIn = async () => {
                     } else {
                         router.replace('/home');
                     }
-                }, 3000)
+                }, 2000)
 
 
             } else {
