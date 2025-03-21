@@ -148,9 +148,8 @@ watch(() => userSignIn.password, (password) => {
 </script>
 
 <template>
-    <div class="flex items-center justify-center min-h-screen md:bg-gradient-to-b">
-
-
+    <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b">
+        <!-- Message Component -->
         <MessageComponent :message="userSignIn.controller.feedback" :position="userSignIn.controller.feedback"
             :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
             :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
@@ -255,5 +254,5 @@ watch(() => userSignIn.password, (password) => {
                 </NuxtLink>
             </div>
         </div>
-    </div>
+    </section>
 </template>
