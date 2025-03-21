@@ -8,6 +8,11 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ["~/assets/css/main.css"],
 
+  plugins: [
+    { src: '~/plugins/mathjax.client.js', mode: 'client' },
+    { src: '~/plugins/mathjax-directive.client.js', mode: 'client' }
+  ],
+
   vite: {
     plugins: [
       tailwindcss(),
