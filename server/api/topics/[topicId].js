@@ -24,7 +24,8 @@ export default defineEventHandler(async (event) => {
     const response = await fetch(apiDocs.chapters.getByTopicId.replaceAll('{topicId}', topicId),{
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${auth_token}`
+        'Authorization': `Bearer ${auth_token}`,
+        'Content-Type': 'application/json'
       }
     });
 

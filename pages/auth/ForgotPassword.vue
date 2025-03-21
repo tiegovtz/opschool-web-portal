@@ -1,29 +1,93 @@
-<script setup lang="ts">
-const email = ref('')
+<script setup>
+import messages from '~/utilities/messages';
+import { auth } from '~/utilities/validationInput';
+
 
 const userForgotPassword = reactive({
     type: '',
-    fname: '',
-    lname: '',
-    school: '',
+    fname: null,
+    lname: null,
+    school: null,
+    email: null,
     controller: {
+        isDisabled: false,
+        feedback:null,
+        isSucces: false,
+        position: false,
         errors: {
             type: '',
             fname: '',
             lname: '',
             school: '',
+            email: '',
         }
     }
 })
 
-const forgotPassword = () => {
-    // TODO: Implement forgot password logic
-    console.log('Forgot password for:', email.value)
+const forgotPassword = async () => {
+    // reset error messages first
+    userForgotPassword.controller.errors.email = '';
+    userForgotPassword.controller.errors.type = '';
+    userForgotPassword.controller.errors.fname = '';
+    userForgotPassword.controller.errors.lname = '';
+    userForgotPassword.controller.errors.school = '';   
+
+    let isValid = true;
+
+    if (!userForgotPassword.email) {
+        userForgotPassword.controller.errors.email = messages.error.form.emailRequired;
+        isValid = false;
+    } else if (!auth.checkEmailPhoneOrUsername(userForgotPassword.email)) {
+        userForgotPassword.controller.errors.email = messages.error.form.emailRequired;
+        isValid = false;
+    }
+
+    if (isValid) {
+        // Form is valid, proceed with submission
+        userForgotPassword.controller.isDisabled = true;
+        // TODO: Implement forgot password logic
+        console.log('Forgot password for:', userForgotPassword.email)
+    }
+
+    // send data to server
+    try {
+        const response = await $fetch('/api/auth/forgot-password', {
+            method: 'POST',
+            body: {
+                email: userForgotPassword.email
+            }
+        });
+
+        if (response?.message) {
+                userForgotPassword.controller.feedback = messages.success.auth.checkEmail;
+                userForgotPassword.controller.isSucces = true;
+            }
+
+
+            setTimeout(() => {
+                userForgotPassword.controller.feedback = null;
+                userForgotPassword.controller.isSucces = false;
+                userForgotPassword.controller.isDisabled = false;
+            }, 3000)
+    } catch (error) {
+        userForgotPassword.controller.feedback = messages.error.auth.invalidCredentials;
+        userForgotPassword.controller.isSucces = false;
+        userForgotPassword.controller.isDisabled = false;
+        console.error('Error sending forgot password request:', error);
+    }
 }
 </script>
 
 <template>
     <div class="flex items-center justify-center min-h-screen">
+        <!-- Message Component -->
+        <MessageComponent 
+        :message="userForgotPassword.controller.feedback" 
+        :position="userForgotPassword.controller.feedback ? true : false"
+        :event-type="userForgotPassword.controller.isSucces ? 'success' : 'error'"
+        :icon="userForgotPassword.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" 
+        />
+
         <div class="w-full max-w-md p-4 bg-white rounded-lg shadow-md">
             <h1 class="text-large font-bold text-center">Forgot Password</h1>
             <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
@@ -124,14 +188,16 @@ const forgotPassword = () => {
                 </div>
                 <div v-else
                     class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex items-center gap-2">
-                    <input type="email" id="email" :disabled="userForgotPassword.type.toLowerCase().trim() === ''" v-model="email" name="email" autocomplete="off"
+                    <input type="email" id="email" :disabled="userForgotPassword.type.toLowerCase().trim() === ''" v-model="userForgotPassword.email" name="email" autocomplete="off"
                         class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                         placeholder="Email ( eg:example@gmail.com )">
                     <Icon name="mdi-light:email" class="h-5 w-5 text-textGray focus:text-oceanBlue" />
                 </div>
-                <button type="submit"
-                    class="w-full p-2 bg-oceanBlue text-white rounded-md cursor-pointer hover:bg-oceanBlue/80 transition-all duration-500">Forgot
-                    Password</button>
+                <button type="submit" :disabled="userForgotPassword.controller.isDisabled"
+                class="w-full p-2 bg-oceanBlue text-white disabled:bg-gray-500/40 disabled:cursor-not-allowed gap-3 flex items-center justify-center rounded-md cursor-pointer hover:bg-oceanBlue/80 transition-all duration-500 capitalize">
+                    Forgot Password
+                    <Icon name="eos-icons:loading" class="text-white" size="20" v-if="userForgotPassword.controller.isDisabled" />
+                </button>
             </form>
             <div class="mt-4 text-center">
                 <p class="text-sm text-textGray">Back to <NuxtLink to="/auth" class="text-oceanBlue cursor-pointer">Sign
