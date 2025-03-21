@@ -1,123 +1,90 @@
-import { $fetch as $fetchType } from 'ofetch';
+import { defineNuxtPlugin } from "#app";
 import apiDocs from "~/utilities/api-docs";
 
-interface FetchOptions {
-  headers?: Record<string, string>;
-  method?: string;
-  body?: any;
-}
-
-interface FetchError {
-  response?: {
-    status: number;
-  };
-}
-
 export default defineNuxtPlugin((nuxtApp) => {
-  // Set up interceptor for API requests
-  const { $fetch } = useNuxtApp();
-  const typedFetch = $fetch as typeof $fetchType;
-  
-  // Create a custom fetch instance with interceptors
-  const customFetch = async (url: string, options: FetchOptions = {}) => {
+  const customFetch = async (url: string, options: any = {}) => {
     const accessToken = useCookie("signInAccessToken");
     
-    // Add token to request if available
     if (accessToken.value) {
       options.headers = {
         ...options.headers,
-        Authorization: `Bearer ${accessToken.value}`
+        Authorization: `Bearer ${accessToken.value}`,
       };
     }
-    
+
     try {
-      // Attempt the original request
-      return await typedFetch(url, options);
-    } catch (error: unknown) {
-      const fetchError = error as FetchError;
-      if (fetchError?.response?.status === 401 && accessToken.value) {
-        // Check if token is expired
+      return await $fetch(url, options);
+    } catch (error: any) {
+      if (error?.response?.status === 401 && accessToken.value) {
         if (isTokenExpired(accessToken.value)) {
-          // Try to refresh the token
           const newToken = await refreshAuthToken();
-          
           if (newToken) {
-            // Update token in cookie
             accessToken.value = newToken;
-            
-            // Retry the original request with new token
-            options.headers = {
-              ...options.headers,
-              Authorization: `Bearer ${newToken}`
-            };
-            
-            // Retry the original request
-            return await typedFetch(url, options);
+            options.headers.Authorization = `Bearer ${newToken}`;
+            return await $fetch(url, options);
           }
         }
       }
-      
-      // If we can't refresh or request still fails, throw the error
       throw error;
     }
   };
 
-  // Provide the custom fetch to the app
-  nuxtApp.provide('apiFetch', customFetch);
-  
-  // Handle initial token validation on app load
+  nuxtApp.provide("apiFetch", customFetch);
+
+  // Ensure token refresh on app startup
   nuxtApp.hooks.hook("app:created", async () => {
     const token = useCookie("signInAccessToken");
-    
+
     if (token.value && isTokenExpired(token.value)) {
       const newToken = await refreshAuthToken();
       if (newToken) {
         token.value = newToken;
       } else {
-        // If refresh fails, clear tokens (logout)
-        const refreshToken = useCookie("signInRefreshToken");
-        token.value = null;
-        refreshToken.value = null;
-        
-        // Redirect to login if needed
-        if (process.client) {
-          navigateTo('/login'); // Adjust path as needed
-        }
+        logoutUser(); // Logout if token refresh fails
       }
     }
   });
 
-  // Function to check if token is expired
   function isTokenExpired(token: string): boolean {
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       return payload.exp * 1000 < Date.now();
-    } catch (error) {
+    } catch {
       return true;
     }
   }
 
-  // Function to refresh the token
   async function refreshAuthToken() {
+    const refreshToken = useCookie("signInRefreshToken");
+
+    if (!refreshToken.value) return null;
+
     try {
-      const refreshToken = useCookie("signInRefreshToken");
-      
-      if (!refreshToken.value) {
-        return null;
+      interface RefreshTokenResponse {
+        accessToken: string;
       }
-      
-      const response = await typedFetch(apiDocs.auth.refreshToken, {
+
+      const response = await $fetch<RefreshTokenResponse>(apiDocs.auth.refreshToken, {
         method: "POST",
-        body: { 
-          refresh_token: refreshToken.value 
-        },
+        body: { refresh_token: refreshToken.value },
         headers: { "Content-Type": "application/json" },
       });
-      
-      return response?.accessToken || null;
+
+      return response.accessToken || null;
     } catch (error) {
       console.error("Failed to refresh token:", error);
       return null;
+    }
+  }
+
+  function logoutUser() {
+    const token = useCookie("signInAccessToken");
+    const refreshToken = useCookie("signInRefreshToken");
+    token.value = null;
+    refreshToken.value = null;
+
+    if (import.meta.client) {
+      navigateTo("/auth");
     }
   }
 });
