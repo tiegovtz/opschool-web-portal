@@ -251,7 +251,9 @@ watch(
 );
 
 // user name watching
-watch(()=>usersignUp.userName, (username) => {
+watch(
+  ()=>usersignUp.userName, 
+  (username) => {
   if (username) {
     if (!auth.checkEmailPhoneOrUsername(username)) {
       usersignUp.controller.errors.userName = messages.error.auth.invalidUserName;
