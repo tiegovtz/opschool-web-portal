@@ -1,8 +1,19 @@
 // import { isEmptyObject } from "@tiptap/core";
-
 import apiDocs from "~/utilities/api-docs";
 
 export default defineEventHandler(async (event) => {
+  
+  // get refferer header
+ // Get the referer header
+const referer = getHeader(event, 'referer');
+
+// Check if the referer is valid
+if (!referer || !referer?.includes('/interactive/form')) {
+   //     return createError({ statusCode: 403, message: 'Access denied' });
+   return sendRedirect(event, '/error/access-denied', 301); // permanent Redirect
+}
+
+   
   const { videoId } = getRouterParams(event); // Get query parameters
   const auth_token = getCookie(event, 'signInAccessToken');
 
