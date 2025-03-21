@@ -61,6 +61,52 @@ const resetPassword = async () => {
         userResetPassword.controller.isDisabled = false;
     }, 4000);
 }
+
+
+// password watching
+watch(
+    () => userResetPassword.password,
+    (password) => {
+        // Validate Password
+        if (password) {
+            if (password.length < 6) {
+                userResetPassword.controller.errors.password =
+                    messages.error.passwordStrength.hasMinLength;
+            } else {
+                userResetPassword.controller.errors.password = null;
+            }
+        } else {
+            userResetPassword.controller.errors.password = null;
+        }
+    }
+);
+// confirm password watching
+watch(
+    () => userResetPassword.confirmPassword,
+    (confirmPassword) => {
+        if (confirmPassword) {
+            if (userResetPassword.confirmPassword !== userResetPassword.password) {
+                userResetPassword.controller.errors.confirmPassword =
+                    messages.error.form.confirmPassword;
+            } else {
+                userResetPassword.controller.errors.confirmPassword = null;
+            }
+        } else {
+            userResetPassword.controller.errors.confirmPassword = null;
+        }
+    }
+);
+
+// Password toggle
+const showPassword = ref(false);
+const togglePassword = () => {
+    showPassword.value = !showPassword.value;
+};
+// Confirm Password toggle
+const showConfirmPassword = ref(false);
+const toggleConfirmPassword = () => {
+    showConfirmPassword.value = !showConfirmPassword.value;
+};
 </script>
 
 <template>
@@ -101,11 +147,11 @@ const resetPassword = async () => {
                 <div class="focus-input-icon px-2 mb-4 flex flex-col items-start justify-between border-b border-gray-300 focus-within:border-oceanBlue"
                     :class="{ 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userResetPassword.controller.errors.password }">
                     <div class="flex w-full items-center">
-                        <input :type="showPassword ? 'text' : 'password'" id="password"
-                            v-model="userResetPassword.password" name="password"
+                        <input :type="showConfirmPassword ? 'text' : 'password'" id="password"
+                            v-model="userResetPassword.confirmPassword" name="password"
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                             placeholder="Confirm Password ">
-                        <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
+                        <Icon :name="showConfirmPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
                             class="h-5 w-5 cursor-pointer text-textGray" @click="togglePassword" />
                     </div>
 

@@ -54,8 +54,8 @@ const usersignUp = reactive({
 
 const signUp = async () => {
   if (usersignUp.userOrgRole.toLowerCase().trim() == 'others' && usersignUp.otherRole) {
-      usersignUp.userOrgRole = usersignUp.otherRole
-    }
+    usersignUp.userOrgRole = usersignUp.otherRole
+  }
 
   if (
     usersignUp.age &&                                  // Age must be greater than 0
@@ -73,13 +73,12 @@ const signUp = async () => {
     (usersignUp.type.toLowerCase().trim() !== 'education stackeholder' && usersignUp.school?.trim()) ||
 
     // If user is an "Education Stakeholder", they must provide organization and role
-    (usersignUp.type.toLowerCase().trim() === 'education stackeholder' && 
-    usersignUp.organization?.trim() && usersignUp.userOrgRole?.trim()) &&
+    (usersignUp.type.toLowerCase().trim() === 'education stackeholder' &&
+      usersignUp.organization?.trim() && usersignUp.userOrgRole?.trim()) &&
 
     // Either user is not "Student"  they must provide both email and phone
     (usersignUp.type.toLowerCase().trim() !== 'student' && (usersignUp.email?.trim() && usersignUp.phone?.trim()))
-) 
- {
+  ) {
 
     // 
     usersignUp.controller.isSent = 'pending';
@@ -309,9 +308,13 @@ watch(
   () => usersignUp.password,
   (password) => {
     // Validate Password
-    if (password.length < 6) {
-      usersignUp.controller.errors.password =
-        messages.error.passwordStrength.hasMinLength;
+    if (password) {
+      if (password.length < 6) {
+        usersignUp.controller.errors.password =
+          messages.error.passwordStrength.hasMinLength;
+      } else {
+        usersignUp.controller.errors.password = null;
+      }
     } else {
       usersignUp.controller.errors.password = null;
     }
