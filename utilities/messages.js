@@ -52,6 +52,8 @@ const messages = {
         accountExists: "An account with this email already exists",
         tokenExpired: "Your session has expired. Please log in again",
         noToken: "Authentication failed: No token provided.",
+        userExist: "This username is already in use. Please choose another.",
+        invalidUserName: "Invalid username. Ensure it meets the required format.",
       },
 
       // Password Strength

@@ -18,6 +18,7 @@ const apiDocs = {
         forgotPassword: `${baseURL}/auth/forgot-password`,
         resetPassword: `${baseURL}/auth/reset-password`,
         changePassword: `${baseURL}/auth/change-password`,
+        userExists: `${baseURL}/auth/user-exists`,
 
         // GET
         profile: `${baseURL}/auth/profile`,

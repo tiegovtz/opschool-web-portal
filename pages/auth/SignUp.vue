@@ -4,6 +4,7 @@ import messages from "~/utilities/messages";
 import { sanitize } from "~/utilities/sanitizeInput";
 import { auth } from "~/utilities/validationInput";
 import axios from 'axios'
+import { generateRandomID } from "~/utilities/generateRandomNumber";
 
 // input tabs control
 const inputTabs = ref("tabOne");
@@ -27,6 +28,7 @@ const usersignUp = reactive({
   password: null,
   confirm_password: null,
   controller: {
+    userExists: false,
     isSubmitted: false,
     feedback: null,
     isSent: null,
@@ -48,6 +50,7 @@ const usersignUp = reactive({
       organization: null,
       userOrgRole: null,
       otherRole: null,
+      userExist: null,
     },
   },
 });
@@ -171,6 +174,33 @@ const signUp = async () => {
   }
 };
 
+// check user exists in records
+const userExists = async () => {
+  try {
+    const response = await $fetch(apiDocs.auth.userExists, {
+      method: "POST",
+      body: {
+        username: usersignUp.userName,
+      }
+    });
+
+    if (response === 'true') {
+      usersignUp.controller.userExists = true;
+      usersignUp.controller.errors.userName = messages.error.auth.userExist;
+
+      //Generate randomly number
+      usersignUp.userName = usersignUp.fname + "." + usersignUp.lname + generateRandomID();
+
+      userExists();
+    }else {
+      usersignUp.controller.userExists = false;
+      usersignUp.controller.errors.userName = null;
+    }
+  } catch (error) {
+    usersignUp.controller.userExists = true;
+    usersignUp.controller.feedback = messages.error.server.internalError;
+  }
+}
 
 // Watch if user has inset data
 // First Name watching
@@ -219,6 +249,21 @@ watch(
     }
   }
 );
+
+// user name watching
+watch(()=>usersignUp.userName, (username) => {
+  if (username) {
+    if (!auth.checkEmailPhoneOrUsername(username)) {
+      usersignUp.controller.errors.userName = messages.error.auth.invalidUserName;
+    }
+    else{
+      userExists()
+    }
+  }
+  else{
+    usersignUp.controller.errors.userName =null
+  } 
+})
 
 // Email watching
 watch(
@@ -353,7 +398,6 @@ const toggleConfirmPassword = () => {
 const switchTab = (tabName) => {
   if (tabName === "tabTwo") {
 
-
     if (!usersignUp.type || usersignUp.type.trim() === " ") {
       usersignUp.controller.errors.type = messages.error.form.type;
     }
@@ -392,6 +436,7 @@ const switchTab = (tabName) => {
       usersignUp.school
     ) {
       usersignUp.userName = usersignUp.fname + "." + usersignUp.lname
+      userExists();
       inputTabs.value = tabName;
     }
   } else {
