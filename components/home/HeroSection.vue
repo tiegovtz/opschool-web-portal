@@ -8,7 +8,7 @@
         <h1 class="md:text-extraLarge text-large font-extrabold mb-4 hidden lg:block">
           Welcome
         </h1>
-        <p class="text-medium text-left max-w-2xl text-black/80 my-2 md:mb-6">
+        <p class="text-medium text-left xl:max-w-2xl text-black/80 my-2 md:mb-6">
           Welcome to <b>TIE ONLINE SCHOOL</b>, a cutting-edge platform developed by the
           Tanzania Institute of Education (TIE) to help you reach your
           educational goals through innovative and engaging methods. Here,
