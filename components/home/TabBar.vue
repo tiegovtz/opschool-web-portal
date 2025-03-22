@@ -7,7 +7,7 @@
         class="flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue px-2 text-white text-medium lg:w-45 text-center gap-2"
         active-class="text-white !bg-deepBlue ">
         <div class="flex items-center justify-center">
-          <Icon name="material-symbols-light:menu-book-outline-rounded" size="20" class="" />
+          <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
         </div>
         Interactive Books
       </NuxtLink>
@@ -17,7 +17,7 @@
         class="flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue px-2 text-white text-medium lg:w-45 text-center gap-2"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
-          <Icon name="et:notebook" size="20" />
+          <Icon name="ph:notebook-fill" size="20" />
         </div>
         eBooks
       </NuxtLink>
@@ -27,7 +27,7 @@
         class="flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue px-2 text-white text-medium lg:w-45 text-center gap-2"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
-          <Icon name="arcticons:ds-audio" size="20" />
+          <Icon name="famicons:headset-sharp" size="20" />
         </div>
         Audio
       </NuxtLink>
@@ -37,7 +37,7 @@
         class="flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue px-2 text-white text-medium lg:w-45 text-center gap-2"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
-          <Icon name="circum:video-on" size="20" />
+          <Icon name="fluent:video-24-filled" size="20" />
         </div>
         Video
       </NuxtLink>
