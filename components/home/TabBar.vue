@@ -2,24 +2,31 @@
   <section class="my-5">
     <div
       class="flex items-center overflow-x-scroll scrollbar-none whitespace-nowrap justify-start md:justify-center gap-3 mb-6">
+      <!-- Interactive Books -->
       <NuxtLink to="/home"
-        class="cursor-pointer rounded-md bg-gray-500/40 md:bg-transparent px-2 text-white md:text-black text-medium hover:text-oceanBlue/60"
-        active-class="text-white hover:text-white/60 bg-oceanBlue md:bg-white md:text-oceanBlue md:hover:text-oceanBlue/60">
+        class="cursor-pointer rounded-[30px] bg-oceanBlue px-2 text-white text-medium lg:w-40 text-center"
+        active-class="text-white !bg-deepBlue ">
         Interactive Books
       </NuxtLink>
+
+      <!-- Electronics Books -->
       <NuxtLink to="/printed"
-        class="cursor-pointer rounded-md bg-gray-500/40 md:bg-transparent px-2 text-white md:text-black text-medium hover:text-oceanBlue/60"
-        active-class="text-white hover:text-white/60 bg-oceanBlue md:bg-white md:text-oceanBlue md:hover:text-oceanBlue/60">
-        PDF Books
+        class="cursor-pointer rounded-[30px] bg-oceanBlue px-2 text-white text-medium lg:w-40 text-center"
+        active-class="text-white !bg-deepBlue">
+        eBooks
       </NuxtLink>
+
+      <!-- Audio -->
       <NuxtLink to="/audio"
-        class="cursor-pointer rounded-md bg-gray-500/40  md:bg-transparent px-2 text-white md:text-black text-medium hover:text-oceanBlue/60"
-        active-class="text-white hover:text-white/60 bg-oceanBlue md:bg-white md:text-oceanBlue md:hover:text-oceanBlue/60">
+        class="cursor-pointer rounded-[30px] bg-oceanBlue px-2 text-white text-medium lg:w-40 text-center"
+        active-class="text-white !bg-deepBlue">
         Audio
       </NuxtLink>
+
+      <!-- Video -->
       <NuxtLink to="/video"
-        class="cursor-pointer rounded-md bg-gray-500/40  md:bg-transparent px-2 text-white md:text-black text-medium hover:text-oceanBlue/60"
-        active-class="text-white hover:text-white/60 bg-oceanBlue md:bg-white md:text-oceanBlue md:hover:text-oceanBlue/60">
+        class="cursor-pointer rounded-[30px] bg-oceanBlue px-2 text-white text-medium lg:w-40 text-center"
+        active-class="text-white !bg-deepBlue">
         Video
       </NuxtLink>
     </div>

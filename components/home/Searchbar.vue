@@ -9,7 +9,7 @@ const searchReactive = reactive({
 })
 
 const search = async () => {
-  await axios.get(`${apiDocs.topics.filterTopics}?name=${searchReactive.search}`)
+  await axios.get(`${apiDocs.topics.filterTopics}?name=${searchReactive.search.trim()}`)
     .then((response) => {
       searchReactive.searchResult = response.data;
     })
@@ -20,8 +20,10 @@ const search = async () => {
 
 // watch search
 watch(() => searchReactive.search, (newVal) => {
-  if (newVal) {
+  if (newVal && newVal.trim() !== '') {
     search();
+  }else {
+    searchReactive.searchResult = null;
   }
 })
 </script>
@@ -29,7 +31,7 @@ watch(() => searchReactive.search, (newVal) => {
 <template>
   <div class="relative flex items-center justify-center w-full max-w-md">
     <!-- Search Form -->
-    <form action="" @submit.prevent="search" 
+    <form action="" @submit.prevent="search"
       class="flex w-full h-10 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
       <div class="flex items-center w-full">
         <!-- Search Icon -->
@@ -42,7 +44,7 @@ watch(() => searchReactive.search, (newVal) => {
 
       <!-- Search Button -->
       <button type="submit" @click="search"
-        class="text-white p-2 rounded-t-md rounded-b-none  bg-oceanBlue hover:bg-oceanBlue/80 transition duration-500 cursor-pointer">
+        class="text-white p-2 md:flex hidden rounded-t-md rounded-b-none  bg-oceanBlue hover:bg-oceanBlue/80 transition duration-500 cursor-pointer">
         Search
       </button>
     </form>
