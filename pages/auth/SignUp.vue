@@ -97,7 +97,7 @@ const signUp = async () => {
       email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
       gender: usersignUp.gender,
       region: usersignUp.region,
-      school: usersignUp.school,
+      school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
       district: usersignUp.district,
       ageGroup: usersignUp.age,
       terms: true,
@@ -117,18 +117,69 @@ const signUp = async () => {
 
         } else {
           usersignUp.controller.isSent = 'failed';
-          usersignUp.controller.feedback = messages.error.auth.accountExists;
-          // return
+
+          // Check both student and Stakeholder and teacher already Exist
+          if (usersignUp.type.toLowerCase().trim() === 'student') {
+            usersignUp.controller.feedback = messages.error.auth.userExist;
+          } else {
+            usersignUp.controller.feedback = messages.error.auth.accountExists;
+          }
         }
 
       })
       .catch((error) => {
         usersignUp.controller.isSent = 'error';
-        usersignUp.controller.feedback = messages.error.auth.accountExists;
+        const errorMessage = JSON.stringify(error?.response?.data?.error);
+        console.log(errorMessage)
+        if (error.response) {
+          // The request was made, but the server responded with a status code
+          switch (error.response.status) {
+            case 400:
+              usersignUp.controller.feedback = "Bad request. Please check your input.";
+              break;
+            case 401:
+              usersignUp.controller.feedback = "Unauthorized access. Please log in.";
+              break;
+            case 403:
+              usersignUp.controller.feedback = "Forbidden. You do not have permission.";
+              break;
+            case 404:
+              usersignUp.controller.feedback = "Requested resource not found.";
+              break;
+            case 422:
+              if (errorMessage.includes('email')) {
+                usersignUp.controller.feedback = 'This email already exists.';
+              } else if (errorMessage.includes('phone')) {
+                usersignUp.controller.feedback = 'This phone number is already registered.';
+              } else if (errorMessage.includes('username')) {
+                usersignUp.controller.feedback = 'This username is already taken.';
+              } else {
+                usersignUp.controller.feedback = 'An unexpected error occurred. Please try again.';
+              }
+              break;
+            case 500:
+              usersignUp.controller.feedback = "Internal server error. Please try again later.";
+              break;
+            case 503:
+              usersignUp.controller.feedback = "Service unavailable. Server is currently down.";
+              break;
+            default:
+
+              usersignUp.controller.feedback = 'An unexpected error occurred. Please try again.';
+          }
+        } else if (error.request) {
+          // The request was made but no response was received
+          usersignUp.controller.feedback = "No response from the server. Please check your internet connection.";
+        } else {
+          // Something else went wrong in setting up the request
+          usersignUp.controller.feedback = "Request failed due to an unknown error.";
+        }
       });
+
 
     setTimeout(() => {
       usersignUp.controller.isSent = null;
+      usersignUp.controller.feedback = null;
     }, 5000)
 
   } else {
@@ -192,7 +243,7 @@ const userExists = async () => {
       usersignUp.userName = usersignUp.fname + "." + usersignUp.lname + generateRandomID();
 
       userExists();
-    }else {
+    } else {
       usersignUp.controller.userExists = false;
       usersignUp.controller.errors.userName = null;
     }
@@ -252,20 +303,20 @@ watch(
 
 // user name watching
 watch(
-  ()=>usersignUp.userName, 
+  () => usersignUp.userName,
   (username) => {
-  if (username) {
-    if (!auth.checkEmailPhoneOrUsername(username)) {
-      usersignUp.controller.errors.userName = messages.error.auth.invalidUserName;
+    if (username) {
+      if (!auth.checkEmailPhoneOrUsername(username)) {
+        usersignUp.controller.errors.userName = messages.error.auth.invalidUserName;
+      }
+      else {
+        userExists()
+      }
     }
-    else{
-      userExists()
+    else {
+      usersignUp.controller.errors.userName = null
     }
-  }
-  else{
-    usersignUp.controller.errors.userName =null
-  } 
-})
+  })
 
 // Email watching
 watch(
@@ -346,6 +397,17 @@ watch(
       usersignUp.controller.errors.gender = null;
     } else {
       usersignUp.controller.errors.gender = messages.error.validation.gender;
+    }
+  }
+);
+
+// School watching
+watch(
+  () => usersignUp.school, (school) => {
+    if (school) {
+      usersignUp.controller.errors.school = null;
+    }else {
+      usersignUp.controller.errors.school = messages.error.form.school;
     }
   }
 );
@@ -437,8 +499,15 @@ const switchTab = (tabName) => {
       usersignUp.district ||
       usersignUp.school
     ) {
-      usersignUp.userName = usersignUp.fname + "." + usersignUp.lname
-      userExists();
+      usersignUp.userName = usersignUp.fname + "." + usersignUp.lname;
+
+      // One-liner equivalent to the if statement, use a logical && operator:
+      usersignUp.type.toLowerCase().trim() === 'student' && userExists();
+
+      // if (usersignUp.type.toLowerCase().trim() === 'student') {
+      //   userExists();
+      // }
+
       inputTabs.value = tabName;
     }
   } else {
@@ -451,8 +520,8 @@ const switchTab = (tabName) => {
   <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b">
 
     <!-- Message Component -->
-    <MessageComponent :message="usersignUp.controller.feedback" :position="usersignUp.controller.feedback"
-      :event-type="usersignUp.controller.isSent"
+    <MessageComponent :message="usersignUp.controller.feedback"
+      :position="usersignUp.controller.feedback ? true : false" :event-type="usersignUp.controller.isSent"
       :icon="usersignUp.controller.isSent == 'success' ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
     <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-2xl">
