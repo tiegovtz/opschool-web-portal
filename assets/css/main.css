@@ -3,7 +3,15 @@
 
 @import "tailwindcss";
 
-/* @font-face declarations */
+/* @font-tahomabd declarations */
+@font-face {
+  font-family: 'tahomabd';
+  src: url('/font/tahomabd.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* @font-tahoma declarations */
 @font-face {
   font-family: 'tahoma';
   src: url('/font/tahoma.ttf') format('truetype');
@@ -13,16 +21,26 @@
 
 @layer base {
   html {
-    @apply scroll-smooth overflow-auto bg-white/50 min-h-dvh leading-relaxed m-0 p-0 box-border  select-none;
+    @apply scroll-smooth overflow-auto bg-white/50 min-h-dvh leading-relaxed m-0 p-0 box-border select-none;
   }
 
   .title {
-    @apply !font-[Tahoma];
+    @apply font-tahomabd;
   } 
 
   /* ::selection {
     @apply bg-darkBlue text-white;
   } */
+}
+
+@layer components {
+  .topic-card__progress-bar {
+    @apply w-full h-2 rounded-full bg-gray-200;
+    @apply [&::-webkit-progress-bar]:bg-gray-200;
+    @apply [&::-webkit-progress-value]:bg-oceanBlue [&::-webkit-progress-value]:rounded-full;
+    @apply [&::-moz-progress-bar]:bg-oceanBlue [&::-moz-progress-bar]:rounded-full;
+    transition: all 0.5s;
+  }
 }
 
 @utility container {
@@ -59,6 +77,7 @@
   /* Focus warning input */
 .focus-input-icon-warning:focus-within span.iconify {
   color: var( --color-normalRed);
+  /* color: #0077c7; */
   }
   
   /* bg-gradient-to-b from-customRedColor to-customGreenColor */
@@ -69,6 +88,7 @@
 @theme {
   --color-darkBlue: #282938;
   --color-oceanBlue: #56ade8;
+  --color-deepBlue:  #0077c5;
   --color-normalBlue: #2405f2;
   --color-normalYellow: #FCD980;
   --color-textGray: #6E7178;
@@ -82,6 +102,7 @@
    
   /* Font Family */
    --font-tahoma: 'tahoma', 'sans-serif';
+   --font-tahomabd: 'tahomabd', 'sans-serif';
    --font-Poppins: "Poppins", sans-serif;
    --font-PTSerif: "PT Serif", serif;
 
@@ -115,11 +136,9 @@
 /* text shadow */
 @layer utilities {
   .text-shadow {
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1) !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2) !important;
   }
 }
-
-
 
 /* swiper-pagination-bullet 
 <span part="bullet" class="swiper-pagination-bullet" tabindex="0" role="button" aria-label="Go to slide 7"></span>
@@ -137,8 +156,6 @@
   border-radius: 50%;
   background-color: var(--color-oceanBlue) !important;
 }
-
-
 
 /*  notes styles */
 .notes span, .notes p{

@@ -180,7 +180,7 @@ onMounted(() => {
       <div v-else-if="chapters.status == 'success'" class="success w-full flex justify-center">
         <!-- Notes loading -->
         <div v-if="chapters.notesStatus == 'pending'"
-          class="flex w-full items-center justify-center lg:w-3/4 scroll-height overflow-y-scroll p-5 flex-col h-full">
+          class="flex w-full items-center justify-center lg:w-3/4 lg:scroll-height lg:overflow-y-scroll p-5 flex-col h-full">
           <div class="flex-1 flex items-center justify-center">
             <LoadingIndicator :is-loading="true" />
           </div>
@@ -188,7 +188,7 @@ onMounted(() => {
 
         <!-- Notes loaded successfully -->
         <div v-else-if="chapters.notesStatus == 'success'"
-          class="lg:w-3/4 w-full scroll-height overflow-y-scroll py-5 lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+          class="lg:w-3/4 w-full lg:scroll-height lg:overflow-y-scroll py-5 lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between ">
             <div class="flex items-center gap-2">
@@ -199,7 +199,7 @@ onMounted(() => {
 
               <NuxtLink to="/" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                 {{ topicStandard != null && topicStandard != undefined && topicStandard != "null" ? topicStandard :
-                  `Form One` }}
+                `Form One` }}
                 <Icon name="weui:arrow-outlined" size="18" class=" text-black" />
               </NuxtLink>
 
@@ -220,16 +220,14 @@ onMounted(() => {
             <!-- <p class="notes md:px-4 max-w-7xl mx-auto"
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
-            <p class="notes md:px-4 max-w-7xl mx-auto"
-              v-mathjax
-              v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))" 
-              >
+            <p class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
+              v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
             </p>
           </div>
         </div>
 
         <!-- Notes failed to load -->
-        <div v-else class="flex w-full items-center justify-center lg:w-3/4 scroll-height overflow-y-scroll p-5">
+        <div v-else class="flex w-full items-center justify-center lg:w-3/4 lg:scroll-height lg:overflow-y-scroll p-5">
           <MessageTopicNotFound message="This chapter currently not available" />
         </div>
 
