@@ -13,6 +13,7 @@ const messages = {
         registered: "Account successfully created, Please login",
         passwordReset: "Password has been reset successfully",
         passwordChanged: "Password has been changed successfully",
+        checkEmail: "Your reset password link has been sent to your email, please visit your email to reset your password",
         emailVerified: "Email has been verified successfully",
         loggedOut: "You have been logged out successfully"
       },
@@ -49,7 +50,10 @@ const messages = {
         passwordMismatch: "Passwords do not match",
         weakPassword: "Password is too weak",
         accountExists: "An account with this email already exists",
-        tokenExpired: "Your session has expired. Please log in again"
+        tokenExpired: "Your session has expired. Please log in again",
+        noToken: "Authentication failed: No token provided.",
+        userExist: "This username is already in use. Please choose another.",
+        invalidUserName: "Invalid username. Ensure it meets the required format.",
       },
 
       // Password Strength
@@ -102,6 +106,7 @@ const messages = {
         passwordValid: "Password is not valid",
         usernameRequired: "Username is required",
         passwordRequired: "Password is required",
+        emailRequired: "Email is required",
         firstName: "First Name should have at least three characters",
         lastName: "Last Name should have at least three characters",
         confirmPassword: "Password Mismatch",
