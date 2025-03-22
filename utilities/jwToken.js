@@ -1,5 +1,12 @@
+/**
+ * @description This file contains the controls for generating a random number identifier.
+ * @author MinjaBaraka (https://github.com/MinjaBaraka)
+ * @version 1.0.0
+ * @since 1.0.0
+ */
+
 // import jwt from "jsonwebtoken";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import apiDocs from "./api-docs";
 
 /**
@@ -21,25 +28,25 @@ const isTokenExpiringSoon = (token, thresholdInSeconds = 300) => {
     // console.error("Invalid JWT", e);
     return true;
   }
-}; // console.error("Invalid JWT", e);
+};
 
+// console.error("Invalid JWT", e);
 const refreshToken = async () => {
   // Call backend to refresh token
   // console.log('Refresh token');
-
   await $fetch(apiDocs.auth.refreshToken, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
     },
-    body:{
-      "refresh_token": `${useCookie("signInRefreshToken").value}`
-    }
+    body: {
+      "refresh_token": `${useCookie("signInRefreshToken").value}`,
+    },
   })
     .then((res) => {
       if (res.ok) {
-        // console.log('Token  // console.error("Invalid JWT", e);refreshed');
+        // console.log('Token refreshed');
         return res.json();
       } else {
         // console.error('Failed to refresh token');
@@ -52,7 +59,4 @@ const refreshToken = async () => {
     });
 };
 
-export { isTokenExpiringSoon , refreshToken};
-// Usage:
-// import { isTokenExpired, isTokenExpiringSoon } from '~/utilities/jwToken';
-//
+export { isTokenExpiringSoon, refreshToken };
