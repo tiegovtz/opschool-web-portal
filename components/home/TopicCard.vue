@@ -129,7 +129,7 @@ const userToken = useCookie('signInUserToken')
     <!-- learn more -->
     <div v-if=" modelType == 'card' "
       class="absolute z-10 bottom-0 opacity-0 flex items-center justify-between px-4 w-full h-10 bg-gradient-to-b from-deepBlue to-gray-800 text-white group-hover:opacity-100 transition-all duration-500 ease-in-out">
-      <p class="text-small">Learn more</p>
+      <p class="text-small capitalize">Start learning</p>
       <div class="flex items-center justify-center h-6 w-6 rounded-full bg-white animate-bounce-horizontal">
         <Icon name="weui:arrow-filled" size="20" class="text-deepBlue" />
       </div>
