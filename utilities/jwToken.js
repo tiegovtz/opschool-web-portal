@@ -1,26 +1,58 @@
-import jwt from 'jsonwebtoken';
+// import jwt from "jsonwebtoken";
+import {jwtDecode} from "jwt-decode";
+import apiDocs from "./api-docs";
 
 /**
  * Checks if a given JWT token has expired.
- * 
+ *
  * @param {string} token - The JWT token to check.
  * @returns {boolean} - Returns `true` if the token has expired, otherwise `false`.
  */
-function isTokenExpired(token) {
-    if (!token) {
-        return true; // Consider it expired if no token is provided
-    }
+// check if token is going to expire in the next 5 minutes
+const isTokenExpiringSoon = (token, thresholdInSeconds = 300) => {
+  if (!token) {
+    return true;
+  }
+  try {
+    const { exp } = jwtDecode(token);
+    const now = Math.floor(Date.now() / 1000);
+    return exp - now <= thresholdInSeconds;
+  } catch (e) {
+    // console.error("Invalid JWT", e);
+    return true;
+  }
+}; // console.error("Invalid JWT", e);
 
-    try {
-        const decoded = jwt.decode(token); // Decode the token without verifying signature
+const refreshToken = async () => {
+  // Call backend to refresh token
+  // console.log('Refresh token');
 
-        if (decoded && decoded.exp) {
-            const expirationDate = decoded.exp * 1000; // Convert expiration time from seconds to milliseconds
-            return Date.now() > expirationDate; // Check if the current time is past the expiration time
-        } else {
-            return true; // If there is no expiration info, consider the token expired
-        }
-    } catch (e) {
-        return true; // Consider expired if decoding fails
+  await $fetch(apiDocs.auth.refreshToken, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+    },
+    body:{
+      "refresh_token": `${useCookie("signInRefreshToken").value}`
     }
-}
+  })
+    .then((res) => {
+      if (res.ok) {
+        // console.log('Token  // console.error("Invalid JWT", e);refreshed');
+        return res.json();
+      } else {
+        // console.error('Failed to refresh token');
+        return null;
+      }
+    })
+    .catch((error) => {
+      // console.error('Failed to refresh token', error);
+      return null;
+    });
+};
+
+export { isTokenExpiringSoon , refreshToken};
+// Usage:
+// import { isTokenExpired, isTokenExpiringSoon } from '~/utilities/jwToken';
+//
