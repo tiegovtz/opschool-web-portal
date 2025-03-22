@@ -16,7 +16,7 @@ import apiDocs from "./api-docs";
  * @returns {boolean} - Returns `true` if the token has expired, otherwise `false`.
  */
 // check if token is going to expire in the next 5 minutes
-const isTokenExpiringSoon = (token, thresholdInSeconds = 300) => {
+const isTokenExpiringSoon = (token, thresholdInSeconds) => {
   if (!token) {
     return true;
   }

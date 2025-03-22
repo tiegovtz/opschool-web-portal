@@ -2,7 +2,8 @@ import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 
 export default defineNuxtRouteMiddleware((to, from) => {
     const token = useCookie("signInAccessToken");
-    if (token.value && isTokenExpiringSoon(token.value, 300)) {
+    const isAbout = isTokenExpiringSoon(token.value, 300)
+    if (token.value && isAbout) {
         
         const refreshedToken = refreshToken();
         if(refreshed !== null){
