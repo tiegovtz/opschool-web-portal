@@ -10,4 +10,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
             token.value =  refreshedToken; // Call backend to refresh
         }
     }
+    else{
+        token.value = null
+    }
 });
