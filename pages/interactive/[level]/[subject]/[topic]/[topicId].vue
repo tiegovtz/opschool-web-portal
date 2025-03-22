@@ -127,7 +127,7 @@ await useFetch(`/api/topics/${topicId}`)
   });
 
 definePageMeta({
-  middleware: "auth",
+  middleware: [ "token","auth",],
 });
 
 watch(userToken, (token) => {

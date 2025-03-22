@@ -56,7 +56,7 @@
       />
     </svg>
   </template>
-  <style scoped nonce="">
+  <style scoped lang="css">
 
   .play-store:hover path#upper-start-tri {
     fill: #2c9fd9;
