@@ -13,7 +13,7 @@
 const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const tanzaniaPhoneRegex = /^(?:\+255|0)(6[1-9]|7[1-9]|9[1-9])\d{7}$/;
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-const usernameRegex = /^[A-Za-z]+\.[A-Za-z]+$/;
+const usernameRegex = /^[A-Za-z0-9]+\.[A-Za-z0-9]+$/;
 
 /**
  * Authentication Utility

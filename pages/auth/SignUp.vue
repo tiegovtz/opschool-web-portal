@@ -4,6 +4,7 @@ import messages from "~/utilities/messages";
 import { sanitize } from "~/utilities/sanitizeInput";
 import { auth } from "~/utilities/validationInput";
 import axios from 'axios'
+import { generateRandomID } from "~/utilities/generateRandomNumber";
 
 // input tabs control
 const inputTabs = ref("tabOne");
@@ -27,6 +28,7 @@ const usersignUp = reactive({
   password: null,
   confirm_password: null,
   controller: {
+    userExists: false,
     isSubmitted: false,
     feedback: null,
     isSent: null,
@@ -48,14 +50,15 @@ const usersignUp = reactive({
       organization: null,
       userOrgRole: null,
       otherRole: null,
+      userExist: null,
     },
   },
 });
 
 const signUp = async () => {
   if (usersignUp.userOrgRole.toLowerCase().trim() == 'others' && usersignUp.otherRole) {
-      usersignUp.userOrgRole = usersignUp.otherRole
-    }
+    usersignUp.userOrgRole = usersignUp.otherRole
+  }
 
   if (
     usersignUp.age &&                                  // Age must be greater than 0
@@ -73,13 +76,12 @@ const signUp = async () => {
     (usersignUp.type.toLowerCase().trim() !== 'education stackeholder' && usersignUp.school?.trim()) ||
 
     // If user is an "Education Stakeholder", they must provide organization and role
-    (usersignUp.type.toLowerCase().trim() === 'education stackeholder' && 
-    usersignUp.organization?.trim() && usersignUp.userOrgRole?.trim()) &&
+    (usersignUp.type.toLowerCase().trim() === 'education stackeholder' &&
+      usersignUp.organization?.trim() && usersignUp.userOrgRole?.trim()) &&
 
     // Either user is not "Student"  they must provide both email and phone
     (usersignUp.type.toLowerCase().trim() !== 'student' && (usersignUp.email?.trim() && usersignUp.phone?.trim()))
-) 
- {
+  ) {
 
     // 
     usersignUp.controller.isSent = 'pending';
@@ -95,7 +97,7 @@ const signUp = async () => {
       email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
       gender: usersignUp.gender,
       region: usersignUp.region,
-      school: usersignUp.school,
+      school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
       district: usersignUp.district,
       ageGroup: usersignUp.age,
       terms: true,
@@ -115,18 +117,69 @@ const signUp = async () => {
 
         } else {
           usersignUp.controller.isSent = 'failed';
-          usersignUp.controller.feedback = messages.error.auth.accountExists;
-          // return
+
+          // Check both student and Stakeholder and teacher already Exist
+          if (usersignUp.type.toLowerCase().trim() === 'student') {
+            usersignUp.controller.feedback = messages.error.auth.userExist;
+          } else {
+            usersignUp.controller.feedback = messages.error.auth.accountExists;
+          }
         }
 
       })
       .catch((error) => {
         usersignUp.controller.isSent = 'error';
-        usersignUp.controller.feedback = messages.error.auth.accountExists;
+        const errorMessage = JSON.stringify(error?.response?.data?.error);
+        console.log(errorMessage)
+        if (error.response) {
+          // The request was made, but the server responded with a status code
+          switch (error.response.status) {
+            case 400:
+              usersignUp.controller.feedback = "Bad request. Please check your input.";
+              break;
+            case 401:
+              usersignUp.controller.feedback = "Unauthorized access. Please log in.";
+              break;
+            case 403:
+              usersignUp.controller.feedback = "Forbidden. You do not have permission.";
+              break;
+            case 404:
+              usersignUp.controller.feedback = "Requested resource not found.";
+              break;
+            case 422:
+              if (errorMessage.includes('email')) {
+                usersignUp.controller.feedback = 'This email already exists.';
+              } else if (errorMessage.includes('phone')) {
+                usersignUp.controller.feedback = 'This phone number is already registered.';
+              } else if (errorMessage.includes('username')) {
+                usersignUp.controller.feedback = 'This username is already taken.';
+              } else {
+                usersignUp.controller.feedback = 'An unexpected error occurred. Please try again.';
+              }
+              break;
+            case 500:
+              usersignUp.controller.feedback = "Internal server error. Please try again later.";
+              break;
+            case 503:
+              usersignUp.controller.feedback = "Service unavailable. Server is currently down.";
+              break;
+            default:
+
+              usersignUp.controller.feedback = 'An unexpected error occurred. Please try again.';
+          }
+        } else if (error.request) {
+          // The request was made but no response was received
+          usersignUp.controller.feedback = "No response from the server. Please check your internet connection.";
+        } else {
+          // Something else went wrong in setting up the request
+          usersignUp.controller.feedback = "Request failed due to an unknown error.";
+        }
       });
+
 
     setTimeout(() => {
       usersignUp.controller.isSent = null;
+      usersignUp.controller.feedback = null;
     }, 5000)
 
   } else {
@@ -172,6 +225,33 @@ const signUp = async () => {
   }
 };
 
+// check user exists in records
+const userExists = async () => {
+  try {
+    const response = await $fetch(apiDocs.auth.userExists, {
+      method: "POST",
+      body: {
+        username: usersignUp.userName,
+      }
+    });
+
+    if (response === 'true') {
+      usersignUp.controller.userExists = true;
+      usersignUp.controller.errors.userName = messages.error.auth.userExist;
+
+      //Generate randomly number
+      usersignUp.userName = usersignUp.fname + "." + usersignUp.lname + generateRandomID();
+
+      userExists();
+    } else {
+      usersignUp.controller.userExists = false;
+      usersignUp.controller.errors.userName = null;
+    }
+  } catch (error) {
+    usersignUp.controller.userExists = true;
+    usersignUp.controller.feedback = messages.error.server.internalError;
+  }
+}
 
 // Watch if user has inset data
 // First Name watching
@@ -220,6 +300,23 @@ watch(
     }
   }
 );
+
+// user name watching
+watch(
+  () => usersignUp.userName,
+  (username) => {
+    if (username) {
+      if (!auth.checkEmailPhoneOrUsername(username)) {
+        usersignUp.controller.errors.userName = messages.error.auth.invalidUserName;
+      }
+      else {
+        userExists()
+      }
+    }
+    else {
+      usersignUp.controller.errors.userName = null
+    }
+  })
 
 // Email watching
 watch(
@@ -304,14 +401,29 @@ watch(
   }
 );
 
+// School watching
+watch(
+  () => usersignUp.school, (school) => {
+    if (school) {
+      usersignUp.controller.errors.school = null;
+    }else {
+      usersignUp.controller.errors.school = messages.error.form.school;
+    }
+  }
+);
+
 // password watching
 watch(
   () => usersignUp.password,
   (password) => {
     // Validate Password
-    if (password.length < 6) {
-      usersignUp.controller.errors.password =
-        messages.error.passwordStrength.hasMinLength;
+    if (password) {
+      if (password.length < 6) {
+        usersignUp.controller.errors.password =
+          messages.error.passwordStrength.hasMinLength;
+      } else {
+        usersignUp.controller.errors.password = null;
+      }
     } else {
       usersignUp.controller.errors.password = null;
     }
@@ -350,7 +462,6 @@ const toggleConfirmPassword = () => {
 const switchTab = (tabName) => {
   if (tabName === "tabTwo") {
 
-
     if (!usersignUp.type || usersignUp.type.trim() === " ") {
       usersignUp.controller.errors.type = messages.error.form.type;
     }
@@ -388,7 +499,15 @@ const switchTab = (tabName) => {
       usersignUp.district ||
       usersignUp.school
     ) {
-      usersignUp.userName = usersignUp.fname + "." + usersignUp.lname
+      usersignUp.userName = usersignUp.fname + "." + usersignUp.lname;
+
+      // One-liner equivalent to the if statement, use a logical && operator:
+      usersignUp.type.toLowerCase().trim() === 'student' && userExists();
+
+      // if (usersignUp.type.toLowerCase().trim() === 'student') {
+      //   userExists();
+      // }
+
       inputTabs.value = tabName;
     }
   } else {
@@ -401,8 +520,8 @@ const switchTab = (tabName) => {
   <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b">
 
     <!-- Message Component -->
-    <MessageComponent :message="usersignUp.controller.feedback" :position="usersignUp.controller.feedback"
-      :event-type="usersignUp.controller.isSent"
+    <MessageComponent :message="usersignUp.controller.feedback"
+      :position="usersignUp.controller.feedback ? true : false" :event-type="usersignUp.controller.isSent"
       :icon="usersignUp.controller.isSent == 'success' ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
     <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-2xl">
