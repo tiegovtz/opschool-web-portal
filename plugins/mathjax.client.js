@@ -16,7 +16,7 @@ export default function() {
         renderActions: {
           // Add a custom action to render after page changes
           find_mathjax: [10, function (doc) {
-            console.log('MathJax rendering completed');
+            // console.log('MathJax rendering completed');
           }]
         }
       },
@@ -37,7 +37,7 @@ export default function() {
       script.async = true;
       script.onload = resolve;
       script.onerror = (err) => {
-        console.error('Failed to load MathJax:', err);
+        // console.error('Failed to load MathJax:', err);
         reject(err);
         
         // Fallback to CDN if local file fails

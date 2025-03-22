@@ -5,8 +5,8 @@
 
 /* @font-face declarations */
 @font-face {
-  font-family: 'Reey-Regular';
-  src: url('/fonts/tahoma.ttf') format('truetype');
+  font-family: 'tahoma';
+  src: url('/font/tahoma.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
@@ -79,7 +79,9 @@
   
    /* Background color */
    --color-grayLight: #f0f0f0;
-
+   
+  /* Font Family */
+   --font-tahoma: 'tahoma', 'sans-serif';
    --font-Poppins: "Poppins", sans-serif;
    --font-PTSerif: "PT Serif", serif;
 
@@ -91,10 +93,7 @@
    --text-extraSmall: 0.8rem; /* 14px */
    --text-smallest: 0.6rem; /* 12px */
    
-  /* Font Family */
-  --font-tahoma: 'tahoma', 'sans-serif';
-
-
+  
    --animate-bounce-horizontal: bounce-horizontal 1s infinite;
    @keyframes bounce-horizontal {
      0%, 100% {
