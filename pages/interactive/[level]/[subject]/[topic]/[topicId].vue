@@ -127,7 +127,9 @@ await useFetch(`/api/topics/${topicId}`)
   });
 
 definePageMeta({
-  middleware: [ "token","auth",],
+  // middleware: [ "token","auth",],
+  middleware: ["auth",],
+
 });
 
 watch(userToken, (token) => {
@@ -248,7 +250,7 @@ onMounted(() => {
           </div>
           <!-- UL list of chapters -->
           <ChapterContainer :chapters="chapters?.list" @emit-chapter-id="getChapter($event)"
-            :active-chapter-id="chapters.currentChapterId" />
+            :active-chapter-id="chapters.currentChapterId" @click="toggleSidebar"/>
         </div>
       </div>
 
