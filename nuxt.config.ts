@@ -1,4 +1,5 @@
 import tailwindcss from "@tailwindcss/vite";
+import { resolve } from 'path';
 // import '@google/model-viewer';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
@@ -47,8 +48,9 @@ export default defineNuxtConfig({
     },
   },
 
+
   devServer: {
-    host: ' 192.168.1.143 ',
+    host: ' 192.168.0.12 ',
     port: 3000
   }
 });
