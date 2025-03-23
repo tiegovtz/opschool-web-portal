@@ -16,6 +16,7 @@ const apiDocs = {
         requestCode: `${baseURL}/auth/request-code`,
         verifyCode: `${baseURL}/auth/verify-code`,
         forgotPassword: `${baseURL}/auth/forgot-password`,
+        forgotPasswordStudent: `${baseURL}/auth/forgot-password-student`,
         resetPassword: `${baseURL}/auth/reset-password`,
         changePassword: `${baseURL}/auth/change-password`,
         userExists: `${baseURL}/auth/user-exists`,
@@ -58,7 +59,9 @@ const apiDocs = {
         getTopicId: `${baseURL}/topics/:id`,
         getQuestionId: `${baseURL}/topics/{id}/questions`,
         getSubjectId: `${baseURL}/topics/by-subject/{subjectId}`,
-        filterTopics: `${baseURL}/public-topics`
+        filterTopics: `${baseURL}/public-topics`,
+        filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
+        topicViewedRead: `${baseURL}/topics/{id}/read`,
     },
 
     // VIDEO API 
