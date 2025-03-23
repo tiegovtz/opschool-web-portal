@@ -4,9 +4,18 @@ import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from '~/utilities/parsers/modelParser'
 import videoParser from "~/utilities/parsers/videoParser";
 import { experimrntUrl } from "~/utilities/controlls";
+
+
+const route = useRoute();
+const topicId = route.fullPath.split("/").pop();
+const topicTitle = String(route.fullPath.split("/")[4]).toString().replaceAll('%20', ' ');
+const topicStandard = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
+const topicLevel = String(route.fullPath.split("/")[3]).toString().replaceAll('%20', ' ');
+
+
 // Define meta info about page
 useHead({
-  title: "TIE - Tanzania/volumetric analysis",
+  title: `TIE - Tanzania/${topicTitle}`,
   meta: [
     {
       name: "description",
@@ -59,11 +68,32 @@ const chapters = reactive({
   status: "pending",
   error: null,
   currentChapterId: null,
-  notesStatus: 'pending'
+  notesStatus: 'pending',
+  number: 0,
 });
 
 // flag for toggling experiment fullscreeen
 const isFullscreen = ref(false);
+
+const changeChapter = (action) => {
+  if (chapters.number >= 0 && chapters.number < chapters.list?.length) {
+    // p = Previous and n = Next
+    if (action.toLowerCase() == 'p') {
+      chapters.number == 0 ? '' : chapters.number--;
+      getChapter(chapters.list[chapters.number]._id);
+    } 
+    else 
+      if (action.toLowerCase() == 'n') {
+      chapters.number == chapters.list?.length ? '' : chapters.number++;
+      getChapter(chapters.list[chapters.number]._id);
+    }
+    // Scroll Up when chapter changed
+    window.scrollTo({
+    top: 0,
+    behavior: "smooth", // Smooth scrolling effect
+  });
+  }
+}
 
 // function for toggling  experiment fullscreeen
 const fullScreen = () => {
@@ -91,14 +121,6 @@ const toggleSidebar = () => {
     sidebar.classList.toggle('right-0')
   }
 }
-
-const route = useRoute();
-const topicId = route.fullPath.split("/").pop();
-const topicTitle = String(route.fullPath.split("/")[4]).toString().replaceAll('%20', ' ');
-const topicStandard = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
-const topicLevel = String(route.fullPath.split("/")[3]).toString().replaceAll('%20', ' ');
-
-
 
 // fetch chapters information
 const getChapter = async (chapterId) => {
@@ -140,9 +162,6 @@ watch(userToken, (token) => {
     router.replace("/");
   }
 });
-
-
-
 
 onMounted(() => {
   window.MathJax.typeset(); // Fanya rendering ya MathJax
@@ -201,7 +220,7 @@ onMounted(() => {
 
               <NuxtLink to="/" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                 {{ topicStandard != null && topicStandard != undefined && topicStandard != "null" ? topicStandard :
-                `Form One` }}
+                  `Form One` }}
                 <Icon name="weui:arrow-outlined" size="18" class=" text-black" />
               </NuxtLink>
 
@@ -218,13 +237,34 @@ onMounted(() => {
           </div>
 
           <!-- Description -->
-          <div class="content-view w-full flex flex-col gap-2 py-3 justify-center" @click="toggleSidebar()">
+          <div class="content-view w-full flex flex-col gap-2 py-3 justify-center">
             <!-- <p class="notes md:px-4 max-w-7xl mx-auto"
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
             <p class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
             </p>
+
+            <!-- Next and Previous chapter Action -->
+            <div class="flex lg:hidden flex-row-reverse items-center justify-between">
+              <!-- Next Chapter -->
+              <div @click="changeChapter('n')" v-if="chapters.number != chapters.list?.length"
+                class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
+                <p class="capitalize flex gap-2">Next <span class="hidden md:flex">Chapter</span></p>
+                <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
+                  <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
+                </div>
+              </div>
+              <!-- Previous Chapter --> 
+              <div @click="changeChapter('p')" v-if="chapters.number > 0"
+                class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
+                <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
+                  <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue transform rotate-180" />
+                </div>
+                <p class="capitalize flex gap-2">Previous <span class="hidden md:flex">Chapter</span></p>
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -250,7 +290,7 @@ onMounted(() => {
           </div>
           <!-- UL list of chapters -->
           <ChapterContainer :chapters="chapters?.list" @emit-chapter-id="getChapter($event)"
-            :active-chapter-id="chapters.currentChapterId" @click="toggleSidebar"/>
+            :active-chapter-id="chapters.currentChapterId" @click="toggleSidebar" />
         </div>
       </div>
 

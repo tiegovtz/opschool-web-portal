@@ -44,7 +44,7 @@ watch(() => searchReactive.search, (newVal) => {
 
       <!-- Search Button -->
       <button type="submit" @click="search"
-        class="text-white p-2 md:flex hidden rounded-t-md rounded-b-none  bg-oceanBlue hover:bg-oceanBlue/80 transition duration-500 cursor-pointer">
+        class="text-white px-4 py-2 md:flex items-center justify-center hidden rounded-t-md rounded-b-none  bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out overflow-hidden cursor-pointer">
         Search
       </button>
     </form>
