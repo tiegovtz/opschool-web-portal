@@ -13,6 +13,7 @@ const messages = {
         registered: "Account successfully created, Please login",
         passwordReset: "Password has been reset successfully",
         passwordChanged: "Password has been changed successfully",
+        studentPasswordChanged: "Please wait. We are redirecting you to the reset password page.",
         checkEmail: "Your reset password link has been sent to your email, please visit your email to reset your password",
         emailVerified: "Email has been verified successfully",
         loggedOut: "You have been logged out successfully"

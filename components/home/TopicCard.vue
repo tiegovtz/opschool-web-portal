@@ -54,6 +54,12 @@ const props = defineProps({
     default: 'card',
   },
 
+  // progress
+  topicProgress:{
+    type:Number,
+    default:0,
+  }
+
 })
 
 const setTopicToView = () => {
@@ -91,10 +97,10 @@ const userToken = useCookie('signInUserToken')
       class="bg-white flex-1 group-hover:bg-deepBlue px-4 group-hover:text-white transition-all duration-500 ease-in-out">
       <!-- topic progress bar -->
       <div v-if="userToken && modelType === 'card'" class="flex items-center gap-2 w-full mt-2 max-w-full">
-        <progress :value="45" max="100" class="topic-card__progress-bar">
+        <progress :value="parseInt((topicProgress /100)*100,10)" max="100" class="topic-card__progress-bar">
         </progress>
         <span class="text-xs sm:text-sm font-medium text-oceanBlue whitespace-nowrap group-hover:text-white">
-          {{ 45 }}%
+          {{ parseInt((topicProgress /100)*100,10) }}%
         </span>
       </div>
       <!-- topic title and description -->
@@ -118,7 +124,7 @@ const userToken = useCookie('signInUserToken')
                 <Icon name="mdi-light:heart" class="text-medium" />
                 <p class="">{{ calculateTopicMetrics(topicLikes) + " Likes" }}</p>
               </div> -->
-        <div class="flex items-center gap-2">
+        <div :class="{'opacity-0':topicViews <= 0}" class="flex items-center gap-2">
           <Icon name="flowbite:users-outline" class="text-medium" />
           <p class="">{{ calculateTopicMetrics(topicViews) + " Views" }}</p>
         </div>
