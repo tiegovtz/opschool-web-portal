@@ -248,7 +248,8 @@ onMounted(() => {
             <!-- Next and Previous chapter Action -->
             <div class="flex lg:hidden flex-row-reverse items-center justify-between">
               <!-- Next Chapter -->
-              <div @click="changeChapter('n')" v-if="chapters.number != chapters.list?.length"
+              <div @click="changeChapter('n')"
+              :class="{'opacity-0' : chapters.number == chapters.list?.length - 1}"
                 class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
                 <p class="capitalize flex gap-2">Next <span class="hidden md:flex">Chapter</span></p>
                 <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
@@ -256,7 +257,8 @@ onMounted(() => {
                 </div>
               </div>
               <!-- Previous Chapter --> 
-              <div @click="changeChapter('p')" v-if="chapters.number > 0"
+              <div @click="changeChapter('p')"
+                :class="{'opacity-0' : chapters.number <= 0}"
                 class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
                 <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue transform rotate-180" />
