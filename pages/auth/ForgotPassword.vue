@@ -110,8 +110,7 @@ const forgotPassword = async () => {
                             :class="{ 'text-textGray/40': !userForgotPassword.type }">
                             <option value="">(eg: Student, Teacher ...)</option>
                             <option value="Student">Student</option>
-                            <option value="Teacher">Teacher</option>
-                            <option value="Education Stackeholder">Education Stackeholder</option>
+                            <option value="other">Teacher or Education Stackeholder</option>
                         </select>
                     </div>
 

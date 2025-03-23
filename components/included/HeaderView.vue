@@ -30,7 +30,7 @@ const dropDown = () => {
         class="relative w-full h-20  mt-1 bg-[url('/public/flag/Flag_of_Tanzania.gif')] bg-cover bg-center bg-no-repeat">
         <div class="absolute top-0 left-0 z-0 w-full h-full bg-[#f0f0f0f0]"></div>
         <div class="flex justify-between items-center w-full h-full absolute top-0 left-0  ">
-          <NuxtLink to="/" class="flex items-center justify-center bg-grayLight shadow-2xl shadow-grayLight h-full ">
+          <NuxtLink to="/" class="flex items-center justify-center bg-grayLight h-full ">
             <NuxtImg src="/logo/emblem.webp" alt="EMBLEM" class="w-18 h-18" />
           </NuxtLink>
           <div class="flex flex-col items-center text-center gap-1 font-tahomabd h-full uppercase">
@@ -39,7 +39,7 @@ const dropDown = () => {
               science and technology </p>
             <p class="lg:text-medium md:text-small text-smallest">Tanzania institute of education (TIE)</p>
           </div>
-          <NuxtLink to="/" class="cursor-pointer p-2 h-full bg-grayLight shadow-2xl shadow-grayLight ">
+          <NuxtLink to="/" class="cursor-pointer p-2 h-full bg-grayLight">
             <NuxtImg src="/logo/logo_tie.webp" alt="TIE LOGO" class="w-14 h-14" />
           </NuxtLink>
         </div>
