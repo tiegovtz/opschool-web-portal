@@ -85,17 +85,17 @@ const changeChapter = (action) => {
     if (action.toLowerCase() == 'p') {
       chapters.number == 1 ? '' : chapters.number--;
       getChapter(chapters.list[chapters.number - 1]._id);
-    } 
-    else 
-      if (action.toLowerCase() == 'n') {
-      chapters.number == chapters.list?.length ? '' : chapters.number++;
-      getChapter(chapters.list[chapters.number - 1]._id);
     }
+    else
+      if (action.toLowerCase() == 'n') {
+        chapters.number == chapters.list?.length ? '' : chapters.number++;
+        getChapter(chapters.list[chapters.number - 1]._id);
+      }
     // Scroll Up when chapter changed
     window.scrollTo({
-    top: 0,
-    behavior: "smooth", // Smooth scrolling effect
-  });
+      top: 0,
+      behavior: "smooth", // Smooth scrolling effect
+    });
   }
 }
 
@@ -148,17 +148,17 @@ const getQNTopicChapter = async (chapterId) => {
     const response = await $fetch(apiDocs.chapters.getTopicChapterQNs, {
       method: "GET",
       headers: {
-                'Authorization': `Bearer ${useCookie('signInAccessToken').value}`
-            },
+        'Authorization': `Bearer ${useCookie('signInAccessToken').value}`
+      },
       params: {
         topic: topicId,
         chapter: chapterId,
       }
     })
 
-      if (response) {
-        chapters.questions = response;
-      }
+    if (response) {
+      chapters.questions = response;
+    }
   } catch (error) {
     console.log(error);
   }
@@ -190,9 +190,25 @@ watch(userToken, (token) => {
   }
 });
 
-onMounted(() => {
-  window.MathJax.typeset(); // Fanya rendering ya MathJax
+onMounted(async () => {
+  // Trigger MathJax rendering
+  window.MathJax.typeset();
+
+  // Wait for MathJax to finish rendering (you can wrap this in a Promise or check for its readiness)
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  // Perform the image styling after a small delay
+  setTimeout(() => {
+    document.querySelectorAll(".notes > p").forEach((p) => {
+      let images = p.querySelectorAll("img");
+      if (images.length === 1 && p.childNodes.length === 1) {
+        images[0].style.display = "block";
+        images[0].style.margin = "0 auto";
+      }
+    });
+  }, 500);
 });
+
 </script>
 
 <template>
@@ -268,31 +284,29 @@ onMounted(() => {
             <!-- <p class="notes md:px-4 max-w-7xl mx-auto"
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
-              <!-- Chapter Notes -->
-            <p class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
+            <!-- Chapter Notes -->
+            <div class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
-            </p>
+            </div>
 
             <!-- Chapter Questions -->
-            <QuestionsContainer v-if="chapters.questions" 
-              :questions="chapters?.questions"
-              class="notes md:px-4 max-w-7xl mx-auto" 
-            />
+            <QuestionsContainer v-if="chapters.questions" :questions="chapters?.questions"
+              class="notes md:px-4 max-w-7xl mx-auto" />
 
             <!-- Next and Previous chapter Action -->
             <div class="flex lg:hidden flex-row-reverse items-center justify-between">
               <!-- Next Chapter -->
               <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length"
-              :class="{'opacity-0' : chapters.number == chapters.list?.length}"
+                :class="{ 'opacity-0': chapters.number == chapters.list?.length }"
                 class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
                 <p class="capitalize flex gap-2">Next <span class="hidden md:flex">Chapter</span></p>
                 <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
                 </div>
               </button>
-              <!-- Previous Chapter --> 
+              <!-- Previous Chapter -->
               <button @click="changeChapter('p')" :disabled="chapters.number <= 1"
-                :class="{'opacity-0' : chapters.number <= 1}"
+                :class="{ 'opacity-0': chapters.number <= 1 }"
                 class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
                 <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue transform rotate-180" />
