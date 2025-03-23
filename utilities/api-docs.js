@@ -32,6 +32,7 @@ const apiDocs = {
         getChapters: `${baseURL}/chapters`,
         getChapterId: `${baseURL}/chapters/:id`,
         getByTopicId: `${baseURL}/chapters/load-by-topic/{topicId}`,
+        getTopicChapterQNs: `${baseURL}/questions/topic-chapter`,
     },
     
     // EXPERIMENTS API

@@ -4,6 +4,8 @@ import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from '~/utilities/parsers/modelParser'
 import videoParser from "~/utilities/parsers/videoParser";
 import { experimrntUrl } from "~/utilities/controlls";
+import apiDocs from "~/utilities/api-docs";
+import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 
 
 const route = useRoute();
@@ -69,12 +71,14 @@ const chapters = reactive({
   error: null,
   currentChapterId: null,
   notesStatus: 'pending',
+  questions: null,
   number: 1,
 });
 
 // flag for toggling experiment fullscreeen
 const isFullscreen = ref(false);
 
+// Changer Chapter
 const changeChapter = (action) => {
   if (chapters.number >= 1 && chapters.number <= chapters.list?.length) {
     // p = Previous and n = Next
@@ -130,12 +134,35 @@ const getChapter = async (chapterId) => {
     .then((response) => {
       chapters.notesStatus = 'success'
       chapters.notes = response;
+      getQNTopicChapter(chapterId);
     })
     .catch((error) => {
       chapters.notesStatus = 'error'
       chapters.error = error;
     });
 };
+
+// Fetch Questions by Topic Chapter
+const getQNTopicChapter = async (chapterId) => {
+  try {
+    const response = await $fetch(apiDocs.chapters.getTopicChapterQNs, {
+      method: "GET",
+      headers: {
+                'Authorization': `Bearer ${useCookie('signInAccessToken').value}`
+            },
+      params: {
+        topic: topicId,
+        chapter: chapterId,
+      }
+    })
+
+      if (response) {
+        chapters.questions = response;
+      }
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 // pull chapters
 await useFetch(`/api/topics/${topicId}`)
@@ -241,9 +268,16 @@ onMounted(() => {
             <!-- <p class="notes md:px-4 max-w-7xl mx-auto"
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
+              <!-- Chapter Notes -->
             <p class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
             </p>
+
+            <!-- Chapter Questions -->
+            <QuestionsContainer v-if="chapters.questions" 
+              :questions="chapters?.questions"
+              class="notes md:px-4 max-w-7xl mx-auto" 
+            />
 
             <!-- Next and Previous chapter Action -->
             <div class="flex lg:hidden flex-row-reverse items-center justify-between">
