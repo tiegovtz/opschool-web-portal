@@ -1,4 +1,5 @@
 <script setup>
+import apiDocs from '~/utilities/api-docs';
 import messages from '~/utilities/messages';
 import { auth } from '~/utilities/validationInput';
 
@@ -45,25 +46,42 @@ const forgotPassword = async () => {
     if (isValid) {
         // Form is valid, proceed with submission
         userForgotPassword.controller.isDisabled = true;
-        // TODO: Implement forgot password logic
-        console.log('Forgot password for:', userForgotPassword.email)
     }
 
     // send data to server
     try {
-        const response = await $fetch('/api/auth/forgot-password', {
+        const response = await $fetch(userForgotPassword.type.toLowerCase().trim() == 'student' ?
+        apiDocs.auth.forgotPasswordStudent :
+        '/api/auth/forgot-password', 
+        {
             method: 'POST',
-            body: {
+            body: userForgotPassword.type.toLowerCase().trim() == 'student' ?
+            {
+                name: userForgotPassword.fname + ' ' + userForgotPassword.lname,
+                school: userForgotPassword.school,
+            } :
+
+            {
                 email: userForgotPassword.email
             }
         });
 
-        if (response?.message) {
+        if (userForgotPassword.type.toLowerCase().trim() == 'student') {
+            userForgotPassword.controller.isSucces = true;
+            const route = useRouter();
+            userForgotPassword.controller.feedback = messages.success.auth.studentPasswordChanged;
+            setTimeout(() => {
+                route.replace(`/auth/reset-password?token=${response?.token}`)
+                userForgotPassword.controller.feedback = null;
+            }, 3000)
+            
+        }else {
+            if (response?.message) {
                 userForgotPassword.controller.feedback = messages.success.auth.checkEmail;
                 userForgotPassword.controller.isSucces = true;
             }
-
-
+        }
+        // clear all error message feedback
             setTimeout(() => {
                 userForgotPassword.controller.feedback = null;
                 userForgotPassword.controller.isSucces = false;

@@ -20,10 +20,23 @@ const userResetPassword = reactive({
 
 const resetPassword = async () => {
 
+    // check password input is empty
+    if (!userResetPassword.password || userResetPassword.password.trim() == '') {
+        userResetPassword.controller.errors.password = messages.error.form.passwordRequired;
+        return;
+    }
+    // check confirm password input is empty
+    if (!userResetPassword.confirmPassword || userResetPassword.confirmPassword.trim() == '') {
+        userResetPassword.controller.errors.confirmPassword = messages.error.form.confirmPassword;
+        return;
+    }
+
+    // check reset token password is not empty
     if (!reset_token_password) {
         userResetPassword.controller.isSent = 'error';
         userResetPassword.controller.feedback = messages.error.auth.noToken;
 
+        // clear the error message feedback
         setTimeout(() => {
             userResetPassword.controller.isSent = null;
             userResetPassword.controller.feedback = null;
@@ -35,6 +48,7 @@ const resetPassword = async () => {
 
 
     try {
+        // sent the data to server
         const response = await $fetch(apiDocs.auth.resetPassword, {
             method: "POST",
             body: {
@@ -43,18 +57,29 @@ const resetPassword = async () => {
                 "confirmPassword": userResetPassword.confirmPassword,
             }
         })
+        // check the response with statusCode
         if (response.status >= 200 && response.status < 300) {
+            userResetPassword.controller.isSucces = true;
             userResetPassword.controller.isSent = 'success';
-            userResetPassword.controller.feedback = messages.success.auth.emailVerified;
-        }
+            userResetPassword.controller.feedback = messages.success.auth.passwordChanged;
 
+            // clear the error message feedback and redirect to auth page
+            setTimeout(() => {
+                const route = useRouter();
+                route.replace('/auth')
+
+                userResetPassword.controller.isSent = 'success';
+                userResetPassword.controller.isSucces = false;
+                userResetPassword.controller.feedback = null;
+            }, 3000);
+        }
 
     } catch (error) {
         userResetPassword.controller.isSent = 'error';
         userResetPassword.controller.feedback = messages.error.server.internalError;
     }
 
-
+    // clear all error message feedback
     setTimeout(() => {
         userResetPassword.controller.feedback = null;
         userResetPassword.controller.isSucces = false;
@@ -113,7 +138,7 @@ const toggleConfirmPassword = () => {
     <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b">
         <!-- Message Component -->
         <MessageComponent :message="userResetPassword.controller.feedback"
-            :position="userResetPassword.controller.feedback"
+            :position="userResetPassword.controller.feedback ? true : false"
             :event-type="userResetPassword.controller.isSucces ? 'success' : 'error'"
             :icon="userResetPassword.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
@@ -152,7 +177,7 @@ const toggleConfirmPassword = () => {
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                             placeholder="Confirm Password ">
                         <Icon :name="showConfirmPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
-                            class="h-5 w-5 cursor-pointer text-textGray" @click="togglePassword" />
+                            class="h-5 w-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
                     </div>
 
                     <!-- New Password error message -->

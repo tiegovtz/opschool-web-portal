@@ -7,8 +7,6 @@ import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth
 import InputsSelection from '@/components/home/InputsSelection.vue'
 import apiDocs from "~/utilities/api-docs";
 
-
-
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania Interactive Learning Platform",
@@ -35,6 +33,7 @@ useHead({
   ]
 })
 
+const userToken = useCookie('signInUserToken')
 
 // slice data to 9
 const slicedData = ref();
@@ -66,9 +65,14 @@ const topic = ref([]);
 
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params) => {
+
+  const url = userToken.value ? 
+              apiDocs.topics.filterTopicsByUser.replace('{userId}',userToken.value?._id) : 
+              apiDocs.topics.filterTopics
+        
   try {
     status.value = 'pending';
-    const response = await $fetch(apiDocs.topics.filterTopics, {
+    const response = await $fetch(url, {
       params: params
     });
 
@@ -197,7 +201,7 @@ watch(filters, (filters) => {
                 :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
                 :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
                 :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                :topic-views="topic.views ? topic.views : 100" :topic-level="level" :topic-standard="topic.level.name"
+                :topic-views="topic.views ? topic.views : 0" :topic-level="level" :topic-standard="topic.level.name"
                 :subject-name="topic.subject.name" />
             </div>
 
@@ -240,7 +244,7 @@ watch(filters, (filters) => {
             <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail"
               :topic-title="topic.name" :topic-description="topic.descriptions"
               :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
-              :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 100"
+              :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 0"
               :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name" />
 
             <!-- pagination numbers based on data length greater to 9 -->
