@@ -194,10 +194,12 @@ onMounted(async () => {
   // Trigger MathJax rendering
   window.MathJax.typeset();
 
+  // Call functin for set Pic Center
   setPicCenter();
  
 });
 
+// Watch chapter notes and Then, Set Pic Center
 watch(() => chapters.notes,(newNotes) => {
   if (newNotes) {
     setPicCenter();
