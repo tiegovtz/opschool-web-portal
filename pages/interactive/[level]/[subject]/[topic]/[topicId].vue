@@ -194,21 +194,32 @@ onMounted(async () => {
   // Trigger MathJax rendering
   window.MathJax.typeset();
 
-  // Wait for MathJax to finish rendering (you can wrap this in a Promise or check for its readiness)
-  await new Promise(resolve => setTimeout(resolve, 500));
-
-  // Perform the image styling after a small delay
-  setTimeout(() => {
-    document.querySelectorAll(".notes > p").forEach((p) => {
-      let images = p.querySelectorAll("img");
-      if (images.length === 1 && p.childNodes.length === 1) {
-        images[0].style.display = "block";
-        images[0].style.margin = "0 auto";
-      }
-    });
-  }, 500);
+  setPicCenter();
+ 
 });
 
+watch(() => chapters.notes,(newNotes) => {
+  if (newNotes) {
+    setPicCenter();
+  }
+})
+
+// set Pic center
+const setPicCenter = async () => {
+   // Wait for MathJax to finish rendering (you can wrap this in a Promise or check for its readiness)
+   await new Promise(resolve => setTimeout(resolve, 500));
+
+// Perform the image styling after a small delay
+setTimeout(() => {
+  document.querySelectorAll(".notes > p").forEach((p) => {
+    let images = p.querySelectorAll("img");
+    if (images.length === 1 && p.childNodes.length === 1) {
+      images[0].style.display = "block";
+      images[0].style.margin = "0 auto";
+    }
+  });
+}, 500);
+}
 </script>
 
 <template>
