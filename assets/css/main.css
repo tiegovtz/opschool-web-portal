@@ -238,10 +238,10 @@
 }
 
 /* ⚠ Note: :has() is not fully supported in all browsers yet. */
-/* p:has(img:only-child) img {
+p:only-child > img:only-child {
   display: block;
   margin: 0 auto;
-} */
+}
 
 
 /* title style  font tahoma important*/
