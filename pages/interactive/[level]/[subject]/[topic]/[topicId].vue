@@ -12,6 +12,8 @@ const topicTitle = String(route.fullPath.split("/")[4]).toString().replaceAll('%
 const topicStandard = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
 const topicLevel = String(route.fullPath.split("/")[3]).toString().replaceAll('%20', ' ');
 
+// reference variable for notes
+const notes = ref()
 
 // Define meta info about page
 useHead({
@@ -165,6 +167,19 @@ watch(userToken, (token) => {
 
 onMounted(() => {
   window.MathJax.typeset(); // Fanya rendering ya MathJax
+
+  // find  all paragraph with single image child and make it center
+  //  document.querySelectorAll("p").forEach((p) => {
+  //   let images = p.querySelectorAll("img");
+  //   if (images.length === 1 && p.childNodes.length === 1) {
+  //     images[0].style.display = "block";
+  //     images[0].style.margin = "0 auto";
+  //   }
+
+  //   console.log(p)
+  // });
+
+  console.log(notes.value)
 });
 </script>
 
@@ -241,9 +256,9 @@ onMounted(() => {
             <!-- <p class="notes md:px-4 max-w-7xl mx-auto"
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
-            <p class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
+            <div ref="notes" class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
-            </p>
+          </div>
 
             <!-- Next and Previous chapter Action -->
             <div class="flex lg:hidden flex-row-reverse items-center justify-between">
