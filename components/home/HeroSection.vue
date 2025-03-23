@@ -1,6 +1,6 @@
 <template>
-  <section class="hero-section lg:max-h-[600px] pt-10 overflow-hidden mb-2 md:mb-10">
-    <div class="grid grid-cols-1 lg:grid-cols-2 md:gap-4">
+  <section class="hero-section my-2">
+    <div class="grid grid-cols-1 xl:grid-cols-2 md:gap-4">
       <div class="flex-col items-center justify-center h-full flex">
         <SliderShow />
       </div>
@@ -8,7 +8,7 @@
         <h1 class="md:text-extraLarge text-large font-extrabold mb-4 hidden lg:block">
           Welcome
         </h1>
-        <p class="text-medium text-left xl:max-w-2xl text-black/80 my-2 md:mb-6">
+        <p class="text-medium text-justify xl:max-w-2xl text-black/80 my-2">
           Welcome to <b>TIE ONLINE SCHOOL</b>, a cutting-edge platform developed by the
           Tanzania Institute of Education (TIE) to help you reach your
           educational goals through innovative and engaging methods. Here,

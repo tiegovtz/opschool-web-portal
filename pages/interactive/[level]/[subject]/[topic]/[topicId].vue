@@ -4,6 +4,8 @@ import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from '~/utilities/parsers/modelParser'
 import videoParser from "~/utilities/parsers/videoParser";
 import { experimrntUrl } from "~/utilities/controlls";
+import apiDocs from "~/utilities/api-docs";
+import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 
 
 const route = useRoute();
@@ -69,29 +71,31 @@ const chapters = reactive({
   error: null,
   currentChapterId: null,
   notesStatus: 'pending',
+  questions: null,
   number: 1,
 });
 
 // flag for toggling experiment fullscreeen
 const isFullscreen = ref(false);
 
+// Changer Chapter
 const changeChapter = (action) => {
   if (chapters.number >= 1 && chapters.number <= chapters.list?.length) {
     // p = Previous and n = Next
     if (action.toLowerCase() == 'p') {
       chapters.number == 1 ? '' : chapters.number--;
       getChapter(chapters.list[chapters.number - 1]._id);
-    } 
-    else 
-      if (action.toLowerCase() == 'n') {
-      chapters.number == chapters.list?.length ? '' : chapters.number++;
-      getChapter(chapters.list[chapters.number - 1]._id);
     }
+    else
+      if (action.toLowerCase() == 'n') {
+        chapters.number == chapters.list?.length ? '' : chapters.number++;
+        getChapter(chapters.list[chapters.number - 1]._id);
+      }
     // Scroll Up when chapter changed
     window.scrollTo({
-    top: 0,
-    behavior: "smooth", // Smooth scrolling effect
-  });
+      top: 0,
+      behavior: "smooth", // Smooth scrolling effect
+    });
   }
 }
 
@@ -130,12 +134,35 @@ const getChapter = async (chapterId) => {
     .then((response) => {
       chapters.notesStatus = 'success'
       chapters.notes = response;
+      getQNTopicChapter(chapterId);
     })
     .catch((error) => {
       chapters.notesStatus = 'error'
       chapters.error = error;
     });
 };
+
+// Fetch Questions by Topic Chapter
+const getQNTopicChapter = async (chapterId) => {
+  try {
+    const response = await $fetch(apiDocs.chapters.getTopicChapterQNs, {
+      method: "GET",
+      headers: {
+        'Authorization': `Bearer ${useCookie('signInAccessToken').value}`
+      },
+      params: {
+        topic: topicId,
+        chapter: chapterId,
+      }
+    })
+
+    if (response) {
+      chapters.questions = response;
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 // pull chapters
 await useFetch(`/api/topics/${topicId}`)
@@ -257,24 +284,29 @@ onMounted(async () => {
             <!-- <p class="notes md:px-4 max-w-7xl mx-auto"
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
+            <!-- Chapter Notes -->
             <div class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
-          </div>
+            </div>
+
+            <!-- Chapter Questions -->
+            <QuestionsContainer v-if="chapters.questions" :questions="chapters?.questions"
+              class="notes md:px-4 max-w-7xl mx-auto" />
 
             <!-- Next and Previous chapter Action -->
             <div class="flex lg:hidden flex-row-reverse items-center justify-between">
               <!-- Next Chapter -->
               <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length"
-              :class="{'opacity-0' : chapters.number == chapters.list?.length}"
+                :class="{ 'opacity-0': chapters.number == chapters.list?.length }"
                 class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
                 <p class="capitalize flex gap-2">Next <span class="hidden md:flex">Chapter</span></p>
                 <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
                 </div>
               </button>
-              <!-- Previous Chapter --> 
+              <!-- Previous Chapter -->
               <button @click="changeChapter('p')" :disabled="chapters.number <= 1"
-                :class="{'opacity-0' : chapters.number <= 1}"
+                :class="{ 'opacity-0': chapters.number <= 1 }"
                 class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
                 <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue transform rotate-180" />
