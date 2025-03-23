@@ -126,6 +126,8 @@ const toggleSidebar = () => {
   }
 }
 
+
+
 // fetch chapters information
 const getChapter = async (chapterId) => {
   chapters.notesStatus = "pending";
@@ -140,6 +142,17 @@ const getChapter = async (chapterId) => {
       chapters.notesStatus = 'error'
       chapters.error = error;
     });
+};
+
+// Submit Topic viewed Read
+const topicViewedRead = async (topicId) => {
+  chapters.notesStatus = "pending";
+  chapters.currentChapterId = topicId;
+  await $fetch(apiDocs.topics.topicViewedRead.replaceAll('{id}', topicId), {
+    headers: {
+                'Authorization': `Bearer ${useCookie('signInAccessToken').value}`
+            }
+  })
 };
 
 // Fetch Questions by Topic Chapter
@@ -164,16 +177,19 @@ const getQNTopicChapter = async (chapterId) => {
   }
 }
 
-// pull chapters
+// Fetch chapters
 await useFetch(`/api/topics/${topicId}`)
   .then((response) => {
     chapters.status = "success";
     chapters.list = response.data.value;
     getChapter(response.data.value[0]?._id);
+    // Call Submit Topic Viewed Read
+    topicViewedRead(topicId);
   })
   .catch((error) => {
     (chapters.status = "error"), (chapters.error = error);
   });
+
 
 definePageMeta({
   // middleware: [ "token","auth",],
@@ -196,11 +212,11 @@ onMounted(async () => {
 
   // Call functin for set Pic Center
   setPicCenter();
- 
+
 });
 
 // Watch chapter notes and Then, Set Pic Center
-watch(() => chapters.notes,(newNotes) => {
+watch(() => chapters.notes, (newNotes) => {
   if (newNotes) {
     setPicCenter();
   }
@@ -208,19 +224,19 @@ watch(() => chapters.notes,(newNotes) => {
 
 // set Pic center
 const setPicCenter = async () => {
-   // Wait for MathJax to finish rendering (you can wrap this in a Promise or check for its readiness)
-   await new Promise(resolve => setTimeout(resolve, 500));
+  // Wait for MathJax to finish rendering (you can wrap this in a Promise or check for its readiness)
+  await new Promise(resolve => setTimeout(resolve, 500));
 
-// Perform the image styling after a small delay
-setTimeout(() => {
-  document.querySelectorAll(".notes > p").forEach((p) => {
-    let images = p.querySelectorAll("img");
-    if (images.length === 1 && p.childNodes.length === 1) {
-      images[0].style.display = "block";
-      images[0].style.margin = "0 auto";
-    }
-  });
-}, 500);
+  // Perform the image styling after a small delay
+  setTimeout(() => {
+    document.querySelectorAll(".notes > p").forEach((p) => {
+      let images = p.querySelectorAll("img");
+      if (images.length === 1 && p.childNodes.length === 1) {
+        images[0].style.display = "block";
+        images[0].style.margin = "0 auto";
+      }
+    });
+  }, 500);
 }
 </script>
 
@@ -312,7 +328,7 @@ setTimeout(() => {
               <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length"
                 :class="{ 'opacity-0': chapters.number == chapters.list?.length }"
                 class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
-                <p class="capitalize flex gap-2">Next <span class="hidden md:flex">Chapter</span></p>
+                <p class="capitalize flex gap-2">Next <span class="hidden md:flex"></span></p>
                 <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
                 </div>
@@ -341,7 +357,7 @@ setTimeout(() => {
           class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2  lg:static bg-white">
           <div class="flex items-center justify-between mb-4">
             <h1 class="text-medium font-medium capitalize pt-5">
-              Chapters
+              Sub Topic
             </h1>
             <!-- toggle menu -->
             <div

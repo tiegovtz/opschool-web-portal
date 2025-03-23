@@ -3,7 +3,6 @@ import apiDocs from "~/utilities/api-docs";
 export default defineEventHandler(async (event) => {
   
     const body = await readBody(event);
-    console.log('body', body)
     const url = apiDocs.auth.forgotPassword;
     try {
 
@@ -22,8 +21,8 @@ export default defineEventHandler(async (event) => {
             });
         }
 
-        const data = await response.json();
-        return data;
+        // return response
+        return await response.json();
     } catch (error) {
         throw createError({
             statusCode: 500,
