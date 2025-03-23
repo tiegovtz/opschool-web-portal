@@ -71,23 +71,23 @@ const chapters = reactive({
   error: null,
   currentChapterId: null,
   notesStatus: 'pending',
-  number: 0,
+  number: 1,
 });
 
 // flag for toggling experiment fullscreeen
 const isFullscreen = ref(false);
 
 const changeChapter = (action) => {
-  if (chapters.number >= 0 && chapters.number < chapters.list?.length) {
+  if (chapters.number >= 1 && chapters.number <= chapters.list?.length) {
     // p = Previous and n = Next
     if (action.toLowerCase() == 'p') {
-      chapters.number == 0 ? '' : chapters.number--;
-      getChapter(chapters.list[chapters.number]._id);
+      chapters.number == 1 ? '' : chapters.number--;
+      getChapter(chapters.list[chapters.number - 1]._id);
     } 
     else 
       if (action.toLowerCase() == 'n') {
       chapters.number == chapters.list?.length ? '' : chapters.number++;
-      getChapter(chapters.list[chapters.number]._id);
+      getChapter(chapters.list[chapters.number - 1]._id);
     }
     // Scroll Up when chapter changed
     window.scrollTo({
@@ -263,23 +263,23 @@ onMounted(() => {
             <!-- Next and Previous chapter Action -->
             <div class="flex lg:hidden flex-row-reverse items-center justify-between">
               <!-- Next Chapter -->
-              <div @click="changeChapter('n')"
-              :class="{'opacity-0' : chapters.number == chapters.list?.length - 1}"
+              <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length"
+              :class="{'opacity-0' : chapters.number == chapters.list?.length}"
                 class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
                 <p class="capitalize flex gap-2">Next <span class="hidden md:flex">Chapter</span></p>
                 <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
                 </div>
-              </div>
+              </button>
               <!-- Previous Chapter --> 
-              <div @click="changeChapter('p')"
-                :class="{'opacity-0' : chapters.number <= 0}"
+              <button @click="changeChapter('p')" :disabled="chapters.number <= 1"
+                :class="{'opacity-0' : chapters.number <= 1}"
                 class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
                 <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue transform rotate-180" />
                 </div>
                 <p class="capitalize flex gap-2">Previous <span class="hidden md:flex">Chapter</span></p>
-              </div>
+              </button>
             </div>
 
           </div>
