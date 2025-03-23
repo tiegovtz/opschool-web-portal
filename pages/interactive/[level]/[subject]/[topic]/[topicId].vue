@@ -12,8 +12,6 @@ const topicTitle = String(route.fullPath.split("/")[4]).toString().replaceAll('%
 const topicStandard = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
 const topicLevel = String(route.fullPath.split("/")[3]).toString().replaceAll('%20', ' ');
 
-// reference variable for notes
-const notes = ref()
 
 // Define meta info about page
 useHead({
@@ -165,22 +163,25 @@ watch(userToken, (token) => {
   }
 });
 
-onMounted(() => {
-  window.MathJax.typeset(); // Fanya rendering ya MathJax
+onMounted(async () => {
+  // Trigger MathJax rendering
+  window.MathJax.typeset();
 
-  // find  all paragraph with single image child and make it center
-  //  document.querySelectorAll("p").forEach((p) => {
-  //   let images = p.querySelectorAll("img");
-  //   if (images.length === 1 && p.childNodes.length === 1) {
-  //     images[0].style.display = "block";
-  //     images[0].style.margin = "0 auto";
-  //   }
+  // Wait for MathJax to finish rendering (you can wrap this in a Promise or check for its readiness)
+  await new Promise(resolve => setTimeout(resolve, 500));
 
-  //   console.log(p)
-  // });
-
-  console.log(notes.value)
+  // Perform the image styling after a small delay
+  setTimeout(() => {
+    document.querySelectorAll(".notes > p").forEach((p) => {
+      let images = p.querySelectorAll("img");
+      if (images.length === 1 && p.childNodes.length === 1) {
+        images[0].style.display = "block";
+        images[0].style.margin = "0 auto";
+      }
+    });
+  }, 500);
 });
+
 </script>
 
 <template>
@@ -256,7 +257,7 @@ onMounted(() => {
             <!-- <p class="notes md:px-4 max-w-7xl mx-auto"
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
-            <div ref="notes" class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
+            <div class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
           </div>
 
