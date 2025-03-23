@@ -61,7 +61,7 @@ const signUp = async () => {
   }
 
   if (
-    usersignUp.age &&                                  // Age must be greater than 0
+    usersignUp.age &&                                     // Age must be greater than 0
     usersignUp.confirm_password?.trim() &&                // Confirm password is required
     usersignUp.fname?.trim() &&                           // First name is required
     usersignUp.lname?.trim() &&                           // Last name is required
@@ -477,8 +477,10 @@ watch(
   }
 );
 
-// Password toggle
+// Password toggle State
 const showPassword = ref(false);
+
+// Password toggle Function
 const togglePassword = () => {
   showPassword.value = !showPassword.value;
 };
@@ -489,7 +491,6 @@ const toggleConfirmPassword = () => {
 };
 
 // input tabs control
-
 const switchTab = (tabName) => {
   if (tabName === "tabTwo") {
 
