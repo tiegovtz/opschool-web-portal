@@ -89,22 +89,53 @@ const signUp = async () => {
     // user role other,
 
     // submit data
-    await axios.post(apiDocs.auth.signUp, {
-      name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
-      password: usersignUp.password,
-      phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
-      type: usersignUp.type,
-      email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
-      gender: usersignUp.gender,
-      region: usersignUp.region,
-      school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
-      district: usersignUp.district,
-      ageGroup: usersignUp.age,
-      terms: true,
-      organization: usersignUp.organization,
-      role: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
-      username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
-    })
+    await axios.post(apiDocs.auth.signUp,
+      usersignUp.type.toLowerCase().trim() == 'student' ?
+        {
+          name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
+          password: usersignUp.password,
+          type: usersignUp.type,
+          gender: usersignUp.gender,
+          region: usersignUp.region,
+          school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
+          district: usersignUp.district,
+          ageGroup: usersignUp.age,
+          terms: true,
+          username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
+        }
+        :
+        usersignUp.type.toLowerCase().trim() == 'teacher' ?
+
+        {
+          name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
+          password: usersignUp.password,
+          phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
+          type: usersignUp.type,
+          email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
+          gender: usersignUp.gender,
+          region: usersignUp.region,
+          school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
+          district: usersignUp.district,
+          ageGroup: usersignUp.age,
+          terms: true,
+        }
+        :
+        {
+          name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
+          password: usersignUp.password,
+          phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
+          type: usersignUp.type,
+          email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
+          gender: usersignUp.gender,
+          region: usersignUp.region,
+          school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
+          district: usersignUp.district,
+          ageGroup: usersignUp.age,
+          terms: true,
+          organization: usersignUp.organization,
+          role: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
+        }
+    )
       .then((response) => {
         if (response.status >= 200 && response.status < 300) {
           usersignUp.controller.isSent = 'success';
@@ -406,7 +437,7 @@ watch(
   () => usersignUp.school, (school) => {
     if (school) {
       usersignUp.controller.errors.school = null;
-    }else {
+    } else {
       usersignUp.controller.errors.school = messages.error.form.school;
     }
   }
@@ -716,7 +747,8 @@ const switchTab = (tabName) => {
                 <option value="Child">Kids(3 - 12)</option>
                 <option value="Teen">Teens(13 - 19)</option>
                 <option value="YoungAdult">Young Adults(20 - 35)</option>
-                <option value="Adult">Middle-Aged Adults(36 - 60)</option>
+                <option value="Middle-AgedAdult">Middle-Aged Adults(36 - 60)</option>
+                <option value="Adult">Adults(60+)</option>
               </select>
             </div>
 

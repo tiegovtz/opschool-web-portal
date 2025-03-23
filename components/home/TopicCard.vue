@@ -75,8 +75,8 @@ const userToken = useCookie('signInUserToken')
     class="relative overflow-hidden rounded-lg flex flex-col shadow-md pb-4 group" @click="setTopicToView"
     :class="{ 'cursor-pointer flex-row my-2 pb-0': modelType === 'search' }">
     <!-- topic image -->
-    <div :class="{ 'relative h-56': modelType === 'card', 'md:h-20 h-10': modelType === 'search' }">
-      <NuxtImg :src="topicImage" loading="lazy" alt="book1" class="w-full h-full object-cover"
+    <div class="overflow-hidden" :class="{ 'relative h-56': modelType === 'card', 'md:h-20 h-10': modelType === 'search' }">
+      <NuxtImg :src="topicImage" loading="lazy" alt="book1" class="w-full h-full object-cover transform group-hover:scale-110 duration-1000 ease-in-out"
         :class="{ 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' }" />
       <!-- topic standard -->
       <div v-if="modelType === 'card'" class="absolute -bottom-0 right-0">
