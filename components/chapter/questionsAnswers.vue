@@ -36,7 +36,7 @@ const markQuestion = (choice) => {
         questionAnswer.selectedChoice = "";
         questionAnswer.isCorrectAnswer = false;
         questionAnswer.disableAnswer = false;
-    }, 2000);
+    }, 1000);
 };
 
 // Function to convert index to alphabetic character (0 -> A, 1 -> B, etc.)
@@ -58,15 +58,15 @@ const shuffleChoices = computed(() => {
         <div class="inline-flex">
             <p class="pr-4">{{ number + '. ' }}</p>
             <div class="flex flex-wrap items-center">
-                <p>{{ question }}</p>
-                <ol class="text-small my-2 w-full">
+                <p class="text-justify mb-4"><b>{{ question }}</b></p>
+                <ol class="text-small w-full">
                     <li v-for="(choice, index) in shuffleChoices" 
                         :key="index" 
-                        class="flex items-center justify-between w-full px-2 py-1 cursor-pointer rounded-md hover:bg-deepBlue hover:text-white transition-all duration-300"
+                        class="flex items-center justify-between w-full px-2 py-1 my-2 cursor-pointer rounded-md border hover:bg-oceanBlue hover:text-white transition-all duration-300"
                         :class="{
-                            'bg-green-200 text-green-800 hover:bg-green-200': questionAnswer.isAnswered && choice === questionProps.trueAnswer,
+                            'bg-green-200 text-green-800 hover:!bg-green-200': questionAnswer.isAnswered && choice === questionProps.trueAnswer,
                             'bg-red-200 text-red-800 hover:bg-red-200': questionAnswer.isAnswered && choice === questionAnswer.selectedChoice && choice !== questionProps.trueAnswer,
-                            'cursor-not-allowed hover:bg-white hover:!text-black': questionAnswer.disableAnswer
+                            'cursor-not-allowed': questionAnswer.disableAnswer
                         }"
                         @click="markQuestion(choice)">
 

@@ -74,6 +74,7 @@ const chapters = reactive({
   notesStatus: 'pending',
   questions: null,
   number: 1,
+  isAttemptingQuizes: false,
 });
 
 // flag for toggling experiment fullscreeen
@@ -134,15 +135,15 @@ const getChapter = async (chapterId) => {
   chapters.notesStatus = "pending";
   chapters.currentChapterId = chapterId;
 
-  const expiredSoon = isTokenExpiringSoon(userToken.value,60)
-  if(expiredSoon){
-    await refreshToken().then((response)=>{
+  const expiredSoon = isTokenExpiringSoon(userToken.value, 60)
+  if (expiredSoon) {
+    await refreshToken().then((response) => {
       console.log(response)
-      userToken.value = response?.access_token	
-    }).catch(()=>{
-     navigateTo('/auth')
+      userToken.value = response?.access_token
+    }).catch(() => {
+      navigateTo('/auth')
     })
-   
+
   }
 
   await $fetch(`/api/topics/chapters/${chapterId}`)
@@ -163,8 +164,8 @@ const topicViewedRead = async (topicId) => {
   chapters.currentChapterId = topicId;
   await $fetch(apiDocs.topics.topicViewedRead.replaceAll('{id}', topicId), {
     headers: {
-                'Authorization': `Bearer ${useCookie('signInAccessToken').value}`
-            }
+      'Authorization': `Bearer ${useCookie('signInAccessToken').value}`
+    }
   })
 };
 
@@ -270,6 +271,23 @@ definePageMeta({
         <Icon v-else name="qlementine-icons:fullscreen-16" size="24" />
       </div>
     </section>
+
+    <!-- quiz -->
+    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative">
+      <div class="flex items-center justify-end" @click="chapters.isAttemptingQuizes = false">
+        <div class="p-2 cursor-pointer h-10 w-10 rounded-full bg-red-500 flex items-center justify-center">
+          <Icon name="formkit:close" size="24" class="text-white font-bold" />
+        </div>
+      </div>
+      <!-- Chapter Questions -->
+      <QuestionsContainer :questions="chapters?.questions"
+       :is-attempting-quiz="chapters.isAttemptingQuizes"
+       :change-chapter="changeChapter"
+       :chapters-list="chapters.list?.length"
+       :chapters-number="chapters?.number"
+       />
+
+    </div>
     <section v-else class=" relative w-full h-full inline-flex center-height overflow-hidden">
       <!-- Loading state -->
       <div v-if="chapters.status == 'pending'" class="loading content-height flex items-center justify-center w-full">
@@ -322,7 +340,7 @@ definePageMeta({
           </div>
 
           <!-- Description -->
-          <div class="content-view w-full flex flex-col gap-2 py-3 justify-center">
+          <div class="content-view relative w-full flex flex-col gap-2 py-3 justify-center">
             <!-- <p class="notes md:px-4 max-w-7xl mx-auto"
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
@@ -331,9 +349,14 @@ definePageMeta({
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
             </div>
 
-            <!-- Chapter Questions -->
-            <QuestionsContainer v-if="chapters.questions" :questions="chapters?.questions"
-              class="notes md:px-4 max-w-7xl mx-auto" />
+            <!-- Chapter Button -->
+            <div v-if="chapters.questions && chapters.questions?.length > 0" class="flex items-center justify-center w-full">
+              <button
+                class="bg-oceanBlue hover:bg-deepBlue px-4 text-white h-10 rounded-md cursor-pointer transition-colors duration-500 ease-in-out uppercase"
+                @click="chapters.isAttemptingQuizes = true;">
+                Attempt This Quiz
+              </button>
+            </div>
 
             <!-- Next and Previous chapter Action -->
             <div class="flex lg:hidden flex-row-reverse items-center justify-between">
@@ -370,7 +393,7 @@ definePageMeta({
           class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2  lg:static bg-white">
           <div class="flex items-center justify-between mb-4">
             <h1 class="text-medium font-medium capitalize pt-5">
-              Sub Topic
+              Subtopic
             </h1>
             <!-- toggle menu -->
             <div

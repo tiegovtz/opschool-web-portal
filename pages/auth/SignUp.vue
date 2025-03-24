@@ -552,8 +552,10 @@ const switchTab = (tabName) => {
   <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b">
 
     <!-- Message Component -->
-    <MessageComponent :message="usersignUp.controller.feedback"
-      :position="usersignUp.controller.feedback ? true : false" :event-type="usersignUp.controller.isSent"
+    <MessageComponent 
+      :message="usersignUp.controller.feedback"
+      :position="usersignUp.controller.feedback ? true : false" 
+      :event-type="usersignUp.controller.isSent"
       :icon="usersignUp.controller.isSent == 'success' ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
     <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-2xl">
