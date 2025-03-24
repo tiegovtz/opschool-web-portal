@@ -17,7 +17,7 @@ const topicStandard = String(route.fullPath.split("/")[2]).toString().replaceAll
 const topicLevel = String(route.fullPath.split("/")[3]).toString().replaceAll('%20', ' ');
 
 // tokens
-const signInAccessToken =useCookie('signInUserToken')
+const signInAccessToken =useCookie('signInAccessToken')
 // Define meta info about page
 useHead({
   title: `TIE - Tanzania/${topicTitle}`,
