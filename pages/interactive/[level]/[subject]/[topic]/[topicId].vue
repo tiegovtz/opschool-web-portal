@@ -6,6 +6,7 @@ import videoParser from "~/utilities/parsers/videoParser";
 import { experimrntUrl } from "~/utilities/controlls";
 import apiDocs from "~/utilities/api-docs";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
+import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 
 
 const route = useRoute();
@@ -132,6 +133,18 @@ const toggleSidebar = () => {
 const getChapter = async (chapterId) => {
   chapters.notesStatus = "pending";
   chapters.currentChapterId = chapterId;
+
+  const expiredSoon = isTokenExpiringSoon(userToken.value,60)
+  if(expiredSoon){
+    await refreshToken().then((response)=>{
+      console.log(response)
+      userToken.value = response?.access_token	
+    }).catch(()=>{
+     navigateTo('/auth')
+    })
+   
+  }
+
   await $fetch(`/api/topics/chapters/${chapterId}`)
     .then((response) => {
       chapters.notesStatus = 'success'
