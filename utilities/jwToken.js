@@ -30,21 +30,27 @@ const refreshToken = async () => {
     const accessToken = useCookie("signInAccessToken");
     const refreshToken = useCookie("signInRefreshToken");
 
+    isTokenExpiringSoon(refreshToken.value,0) ? sendRedirect('/auth',301): '';
+
     if (!refreshToken.value) {
       console.warn("No refresh token available.");
       return null;
     }
 
-    const response = await $fetch(apiDocs.auth.refreshToken, {
+    const response = await fetch(apiDocs.auth.refreshToken, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken.value}`,
       },
-      body: { refresh_token: refreshToken.value },
+      body: JSON.stringify({ refresh_token: refreshToken.value }),
     });
 
-    return response || null; // Return refreshed token or null on failure
+    if(!response.ok){
+        return null
+    }
+
+    return await response.json(); // Return refreshed token json
   } catch (error) {
     console.error("Failed to refresh token", error);
     return null;
