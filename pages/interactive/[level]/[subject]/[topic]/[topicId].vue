@@ -10,12 +10,14 @@ import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 
 
 const route = useRoute();
+const router = useRouter();
 const topicId = route.fullPath.split("/").pop();
 const topicTitle = String(route.fullPath.split("/")[4]).toString().replaceAll('%20', ' ');
 const topicStandard = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
 const topicLevel = String(route.fullPath.split("/")[3]).toString().replaceAll('%20', ' ');
 
-
+// tokens
+const signInAccessToken =useCookie('signInUserToken')
 // Define meta info about page
 useHead({
   title: `TIE - Tanzania/${topicTitle}`,
@@ -135,13 +137,18 @@ const getChapter = async (chapterId) => {
   chapters.notesStatus = "pending";
   chapters.currentChapterId = chapterId;
 
-  const expiredSoon = isTokenExpiringSoon(userToken.value, 60)
-  if (expiredSoon) {
-    await refreshToken().then((response) => {
-      console.log(response)
-      userToken.value = response?.access_token
-    }).catch(() => {
-      navigateTo('/auth')
+
+  const expiredSoon = isTokenExpiringSoon(signInAccessToken.value,60)
+  if(expiredSoon){
+    await refreshToken().then((response)=>{
+      if(response){
+        signInAccessToken.value = response?.access_token	
+      }
+      else{
+        router.replace('/auth')
+      }
+    }).catch(()=>{
+     router.replace('/auth')
     })
 
   }
@@ -164,8 +171,8 @@ const topicViewedRead = async (topicId) => {
   chapters.currentChapterId = topicId;
   await $fetch(apiDocs.topics.topicViewedRead.replaceAll('{id}', topicId), {
     headers: {
-      'Authorization': `Bearer ${useCookie('signInAccessToken').value}`
-    }
+                'Authorization': `Bearer ${signInAccessToken.value}`
+            }
   })
 };
 
@@ -175,7 +182,7 @@ const getQNTopicChapter = async (chapterId) => {
     const response = await $fetch(apiDocs.chapters.getTopicChapterQNs, {
       method: "GET",
       headers: {
-        'Authorization': `Bearer ${useCookie('signInAccessToken').value}`
+        'Authorization': `Bearer ${signInAccessToken.value}`
       },
       params: {
         topic: topicId,
@@ -207,7 +214,6 @@ await useFetch(`/api/topics/${topicId}`)
 
 watch(userToken, (token) => {
   // Get the router instance
-  const router = useRouter();
 
   if (!token) {
     router.replace("/");
@@ -249,7 +255,7 @@ const setPicCenter = async () => {
 
 
 definePageMeta({
-  middleware: ["auth"],
+  middleware: "auth",
 });
 
 </script>
