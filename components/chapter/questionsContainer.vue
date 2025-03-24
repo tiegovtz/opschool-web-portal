@@ -137,7 +137,7 @@ watch(()=>props.questions,() => {
             <div v-if="quizAttempt.quizCompleted && quizAttempt.isAttempting" class="w-full">
                 <!-- Output -->
                 <div class="flex w-full mb-4">
-                    <p>Marks: {{ scoredComputed }}%</p>
+                    <p>Marks: {{ scoredComputed.toFixed(1) }}%</p>
                     <p class="flex flex-1 items-center justify-center gap-2 font-bold" :class="getScoreColor(scoredComputed)">
                         {{ getMotivationMessage(scoredComputed) }}
                     </p>
@@ -155,26 +155,26 @@ watch(()=>props.questions,() => {
                 </div>
 
                 <!-- Next and Previous chapter Action -->
-                <div class="flex flex-row-reverse items-center justify-between pt-4">
+                <!-- <div class="flex flex-row-reverse items-center justify-between pt-4"> -->
                     <!-- Next Chapter -->
-                    <button @click="changeChapter('n')" :disabled="chaptersNumber == chaptersList"
+                    <!-- <button @click="changeChapter('n')" :disabled="chaptersNumber == chaptersList"
                         :class="{ 'opacity-0': chaptersNumber == chaptersList }"
                         class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
                         <p class="capitalize flex gap-2">Next <span class="hidden md:flex">Chapter</span></p>
                         <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                             <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
                         </div>
-                    </button>
+                    </button> -->
                     <!-- Previous Chapter -->
-                    <button @click="changeChapter('p')" :disabled="chaptersNumber <= 1"
+                    <!-- <button @click="changeChapter('p')" :disabled="chaptersNumber <= 1"
                         :class="{ 'opacity-0': chaptersNumber <= 1 }"
                         class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
                         <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                             <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue transform rotate-180" />
                         </div>
                         <p class="capitalize flex gap-2">Previous <span class="hidden md:flex">Chapter</span></p>
-                    </button>
-                </div>
+                    </button> -->
+                <!-- </div> -->
             </div>
 
             <!-- Use currentQuestion instead of shuffleQuestions to determine which question to display -->
