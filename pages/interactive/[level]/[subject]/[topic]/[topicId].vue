@@ -137,8 +137,9 @@ const getChapter = async (chapterId) => {
   const expiredSoon = isTokenExpiringSoon(userToken.value,60)
   if(expiredSoon){
     await refreshToken().then((response)=>{
-      console.log(response)
-      userToken.value = response?.access_token	
+      if(response){
+        userToken.value = response?.access_token	
+      }
     }).catch(()=>{
      navigateTo('/auth')
     })
