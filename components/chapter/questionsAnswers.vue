@@ -1,6 +1,13 @@
 <script setup>
-import { ref } from "vue";
+// define states
+const questionAnswer = reactive({
+    disableAnswer: false,  // Prevents multiple answers
+    isAnswered: false,     // Indicates if an answer was chosen
+    selectedChoice: "",    // Stores the selected choice
+    isCorrectAnswer: false // True if the chosen answer is correct
+});
 
+// Define Question Props
 const questionProps = defineProps({
     questionType: String,
     question: String,
@@ -9,17 +16,41 @@ const questionProps = defineProps({
     number: String,
 });
 
-const answeredChoices = ref({}); // Stores answers for each choice
+// Define emits
+const emit = defineEmits(['questionAnswered']);
 
 // Function to check if a selected choice is correct
-const isCorrectAnswer = (index, choice) => {
-    answeredChoices.value[index] = choice === questionProps.trueAnswer ? 'correct' : 'incorrect';
+const markQuestion = (choice) => {
+    if (questionAnswer.disableAnswer) return; // Prevent multiple selections
+
+    questionAnswer.selectedChoice = choice;
+    questionAnswer.isAnswered = true;
+    questionAnswer.isCorrectAnswer = choice === questionProps.trueAnswer;
+    questionAnswer.disableAnswer = true; // Disable further clicks
+
+    emit('questionAnswered', questionAnswer.isCorrectAnswer);
+
+    // Reset after 2 seconds
+    setTimeout(() => {
+        questionAnswer.isAnswered = false;
+        questionAnswer.selectedChoice = "";
+        questionAnswer.isCorrectAnswer = false;
+        questionAnswer.disableAnswer = false;
+    }, 2000);
 };
 
 // Function to convert index to alphabetic character (0 -> A, 1 -> B, etc.)
 const indexToAlpha = (index) => {
     return String.fromCharCode(65 + index); // 65 is ASCII for 'A'
 };
+
+// Shuffle choices
+const shuffleChoices = computed(() => {
+    return questionProps.choices
+        .map(choice => ({ choice, sort: Math.random() })) // Assign a random sort key
+        .sort((a, b) => a.sort - b.sort) // Sort by random key
+        .map(({ choice }) => choice); // Extract shuffled choices
+});
 </script>
 
 <template>
@@ -28,19 +59,24 @@ const indexToAlpha = (index) => {
             <p class="pr-4">{{ number + '. ' }}</p>
             <div class="flex flex-wrap items-center">
                 <p>{{ question }}</p>
-                <ol class="inline-flex flex-wrap items-center text-small my-2">
-                    <li v-for="(choice, index) in choices" 
+                <ol class="text-small my-2 w-full">
+                    <li v-for="(choice, index) in shuffleChoices" 
                         :key="index" 
-                        class="px-2 cursor-pointer flex items-center space-x-2"
-                        @click="isCorrectAnswer(index, choice)">
-                        
+                        class="flex items-center justify-between w-full px-2 py-1 cursor-pointer rounded-md hover:bg-deepBlue hover:text-white transition-all duration-300"
+                        :class="{
+                            'bg-green-200 text-green-800 hover:bg-green-200': questionAnswer.isAnswered && choice === questionProps.trueAnswer,
+                            'bg-red-200 text-red-800 hover:bg-red-200': questionAnswer.isAnswered && choice === questionAnswer.selectedChoice && choice !== questionProps.trueAnswer,
+                            'cursor-not-allowed hover:bg-white hover:!text-black': questionAnswer.disableAnswer
+                        }"
+                        @click="markQuestion(choice)">
+
                         <span>{{ indexToAlpha(index) + ') ' + choice }}</span>
 
-                        <!-- Show checkmark for correct answer -->
-                        <span v-if="answeredChoices[index] === 'correct'" class="text-green-500 font-bold">✓</span>
+                        <!-- Correct Answer Indicator -->
+                        <span v-if="questionAnswer.isAnswered && choice === questionProps.trueAnswer" class="text-green-500 font-bold">✓</span>
 
-                        <!-- Show "X" for incorrect answer -->
-                        <span v-else-if="answeredChoices[index] === 'incorrect'" class="text-red-500 font-bold">✗</span>
+                        <!-- Incorrect Answer Indicator -->
+                        <span v-if="questionAnswer.isAnswered && choice === questionAnswer.selectedChoice && choice !== questionProps.trueAnswer" class="text-red-500 font-bold">✗</span>
                     </li>
                 </ol>
             </div>
