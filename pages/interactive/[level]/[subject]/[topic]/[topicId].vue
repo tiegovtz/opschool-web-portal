@@ -18,6 +18,7 @@ const topicLevel = String(route.fullPath.split("/")[3]).toString().replaceAll('%
 
 // tokens
 const signInAccessToken =useCookie('signInAccessToken')
+
 // Define meta info about page
 useHead({
   title: `TIE - Tanzania/${topicTitle}`,
@@ -205,7 +206,9 @@ await useFetch(`/api/topics/${topicId}`)
     chapters.list = response.data.value;
     getChapter(response.data.value[0]?._id);
     // Call Submit Topic Viewed Read
-    topicViewedRead(topicId);
+    if(useState('userViewedTopic').value){
+      topicViewedRead(topicId);
+    }
   })
   .catch((error) => {
     (chapters.status = "error"), (chapters.error = error);
