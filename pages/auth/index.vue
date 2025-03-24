@@ -150,7 +150,9 @@ watch(() => userSignIn.password, (password) => {
 <template>
     <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b">
         <!-- Message Component -->
-        <MessageComponent :message="userSignIn.controller.feedback" :position="userSignIn.controller.feedback"
+        <MessageComponent 
+            :message="userSignIn.controller.feedback" 
+            :position="userSignIn.controller.feedback ? true : false"
             :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
             :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
