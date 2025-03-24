@@ -112,7 +112,7 @@ watch(()=>props.questions,() => {
 </script>
 
 <template>
-    <section class="flex flex-col items-center justify-center px-4" v-if="isAttemptingQuiz">
+    <section class="flex flex-col items-center justify-center px-4 max-w-7xl container" v-if="isAttemptingQuiz">
         <!-- Questions -->
         <div class="w-full bg-white p-4">
             <div class="flex items-center justify-between mb-4">

@@ -279,7 +279,7 @@ definePageMeta({
     </section>
 
     <!-- quiz -->
-    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative">
+    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
       <div class="flex items-center justify-end" @click="chapters.isAttemptingQuizes = false">
         <div class="p-2 cursor-pointer h-10 w-10 rounded-full bg-red-500 flex items-center justify-center">
           <Icon name="formkit:close" size="24" class="text-white font-bold" />
@@ -360,7 +360,7 @@ definePageMeta({
               <button
                 class="bg-oceanBlue hover:bg-deepBlue px-4 text-white h-10 rounded-md cursor-pointer transition-colors duration-500 ease-in-out uppercase"
                 @click="chapters.isAttemptingQuizes = true;">
-                Attempt This Quiz
+                Test your knowledge
               </button>
             </div>
 

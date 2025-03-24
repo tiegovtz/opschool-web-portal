@@ -64,8 +64,8 @@ const shuffleChoices = computed(() => {
                         :key="index" 
                         class="flex items-center justify-between w-full px-2 py-1 my-2 cursor-pointer rounded-md border hover:bg-oceanBlue hover:text-white transition-all duration-300"
                         :class="{
-                            'bg-green-200 text-green-800 hover:!bg-green-200': questionAnswer.isAnswered && choice === questionProps.trueAnswer,
-                            'bg-red-200 text-red-800 hover:bg-red-200': questionAnswer.isAnswered && choice === questionAnswer.selectedChoice && choice !== questionProps.trueAnswer,
+                            'bg-green-500 border border-green-500 text-white hover:!bg-green-500': questionAnswer.isAnswered && choice === questionProps.trueAnswer,
+                            'bg-red-500 border border-red-500 text-white hover:bg-red-500': questionAnswer.isAnswered && choice === questionAnswer.selectedChoice && choice !== questionProps.trueAnswer,
                             'cursor-not-allowed': questionAnswer.disableAnswer
                         }"
                         @click="markQuestion(choice)">
