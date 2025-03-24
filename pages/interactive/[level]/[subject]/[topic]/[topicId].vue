@@ -191,10 +191,6 @@ await useFetch(`/api/topics/${topicId}`)
   });
 
 
-definePageMeta({
-  middleware: ["auth",],
-});
-
 watch(userToken, (token) => {
   // Get the router instance
   const router = useRouter();
@@ -236,6 +232,12 @@ const setPicCenter = async () => {
     });
   }, 500);
 }
+
+
+definePageMeta({
+  middleware: ["auth"],
+});
+
 </script>
 
 <template>
