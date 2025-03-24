@@ -57,7 +57,7 @@ const shuffleChoices = computed(() => {
     <section class="flex flex-col">
         <div class="inline-flex">
             <p class="pr-4">{{ number + '. ' }}</p>
-            <div class="flex flex-wrap items-center">
+            <div class="flex flex-wrap items-center w-full">
                 <p class="text-justify mb-4"><b>{{ question }}</b></p>
                 <ol class="text-small w-full">
                     <li v-for="(choice, index) in shuffleChoices" 
