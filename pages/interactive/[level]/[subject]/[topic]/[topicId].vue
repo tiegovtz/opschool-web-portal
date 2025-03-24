@@ -138,7 +138,6 @@ const getChapter = async (chapterId) => {
 
 
   const expiredSoon = isTokenExpiringSoon(signInAccessToken.value,60)
-  console.log(expiredSoon)
   if(expiredSoon){
     await refreshToken().then((response)=>{
       if(response){
