@@ -286,7 +286,8 @@ definePageMeta({
         </div>
       </div>
       <!-- Chapter Questions -->
-      <QuestionsContainer :questions="chapters?.questions"
+      <QuestionsContainer v-mathjax
+       :questions="chapters?.questions"
        :is-attempting-quiz="chapters.isAttemptingQuizes"
        :change-chapter="changeChapter"
        :chapters-list="chapters.list?.length"
