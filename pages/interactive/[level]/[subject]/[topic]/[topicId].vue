@@ -206,7 +206,8 @@ await useFetch(`/api/topics/${topicId}`)
     chapters.list = response.data.value;
     getChapter(response.data.value[0]?._id);
     // Call Submit Topic Viewed Read
-    if(useState('userViewedTopic').value){
+
+    if(!useState('userViewedTopic').value){
       topicViewedRead(topicId);
     }
   })
