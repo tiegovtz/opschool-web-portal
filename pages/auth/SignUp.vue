@@ -746,12 +746,12 @@ const switchTab = (tabName) => {
               <label for="age" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select Age:</label>
               <select name="age" id="age" class="w-full p-1 focus:outline-none focus:ring-0"
                 :class="{ 'text-textGray/40': !usersignUp.age }" v-model="usersignUp.age">
-                <option value="">Eg: kids(3 - 12) ...</option>
-                <option value="Child">Kids(3 - 12)</option>
-                <option value="Teen">Teens(13 - 19)</option>
+                <option value="">Eg: {{ usersignUp.type.toLowerCase().trim() == 'student' ?'kids(3 - 12)':'Young Adults(20 - 35)' }} ...</option>
+                <option v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Child">Kids(3 - 12)</option>
+                <option  v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Teen">Teens(13 - 19)</option>
                 <option value="YoungAdult">Young Adults(20 - 35)</option>
-                <option value="Middle-AgedAdult">Middle-Aged Adults(36 - 60)</option>
-                <option value="Adult">Adults(60+)</option>
+                <option  v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="Middle-AgedAdult">Middle-Aged Adults(36 - 60)</option>
+                <option  v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="Adult">Adults(60+)</option>
               </select>
             </div>
 
@@ -885,6 +885,7 @@ const switchTab = (tabName) => {
             <div class="flex w-full items-center">
               <input type="text" id="userName" v-model="usersignUp.userName" @keydown.space.prevent name="userName"
                 autocomplete="off"
+                readonly
                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Username (eg: Baraka.Minja)" />
               <Icon name="lets-icons:user-box-light" class="h-5 w-5 text-textGray" />

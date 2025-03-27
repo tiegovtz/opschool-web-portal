@@ -27,10 +27,23 @@ if (!referer || !referer?.includes('/interactive/form')) {
 
   const videoUrl = `${apiDocs.videos.getStream}${videoId}`;
 
+  // // submit progess
+  // await fetch(apiDocs.progress.video,{
+  //   headers:{
+  //     'Authorization':`Bearer ${auth_token}`
+  //   },
+  //   body:JSON.stringify(
+  //     {
+  //       "video": `${videoId }`,
+  //       "topic": `${useState('topicToView') }`
+  //     }
+  //   )
+  // });
+
   // Forward the request with headers (including the Authorization token)
   return proxyRequest(event, videoUrl, {
     headers: {
       'Authorization': `Bearer ${auth_token}`
     }
-  });
+  })
 });
