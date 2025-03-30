@@ -1,37 +1,7 @@
-<template>
-  <NuxtLayout name="home-layout">
-    <div class="container">
-      <HeroSection />
-      <HomeInputsSelection />
-      <TabBar />
-      <div class="flex w-full">
-        <NuxtLink to="/ebooks/read">
-          <div class="flex flex-col gap-4 w-80 h-80 rounded-md shadow-md overflow-hidden">
-            <!-- Display Image -->
-            <div class="h-50 w-full">
-              <NuxtImg  src="https://i.pinimg.com/1200x/2c/2f/0b/2c2f0b549007c3addf71905265112680.jpg" alt="User Profile"
-              class="w-full h-full object-cover" />
-            </div>
-            <!-- Diplay the content Author -->
-             <div class="flex flex-col px-2 w-full h-full gap-2">
-              <h2 class="text-medium font-bold">Science For Kids and Learning</h2>
-              <p></p>
-             </div>
-          </div>
-        </NuxtLink>
-      </div>
-    </div>
-  </NuxtLayout>
-</template>
-
 <script setup>
-import HeroSection from '@/components/home/HeroSection.vue'
-import TabBar from '@/components/home/TabBar.vue'
-
-
 // Define meta info about page
 useHead({
-  title: "TIE - Printed books",
+  title: "TIE - Read books",
   meta: [
     {
       name: 'description',
@@ -57,3 +27,14 @@ useHead({
 
 
 </script>
+
+<template>
+    <NuxtLayout name="home-layout">
+      <div class="container flex items-center justify-center w-full">
+        <EbookFlipBook class="w-full h-full"/>
+      </div>
+    </NuxtLayout>
+  </template>
+  
+ 
+  
