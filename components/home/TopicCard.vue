@@ -58,7 +58,8 @@ const props = defineProps({
   topicProgress: {
     type: Number,
     default: 0,
-  }
+  },
+  topicViewed:Boolean
 
 })
 
@@ -67,7 +68,8 @@ const setTopicToView = () => {
   useState('topicLevel', () => `${props.topicLevel}`);
   useState('topicTitle', () => `${props.topicTitle}`);
   useState('topicStandard', () => `${props.topicStandard}`);
-  useState('topicId', () => `${props.topicId}`)
+  useState('topicId', () => `${props.topicId}`),
+  useState('userViewedTopic', () => props.topicViewed)
 }
 
 const userToken = useCookie('signInUserToken')
@@ -99,12 +101,12 @@ const userToken = useCookie('signInUserToken')
       class="bg-white flex-1 group-hover:bg-deepBlue px-4 group-hover:text-white transition-all duration-500 ease-in-out">
       <!-- topic progress bar -->
       <div v-if="userToken && modelType === 'card'" class="flex items-center gap-2 w-full mt-2 max-w-full">
-        <progress :value="isNaN(topicProgress) ? 0 : Math.min(100, Math.max(0, parseInt(topicProgress, 10)))" max="100"
+        <progress :value="topicProgress" max="100"
           class="topic-card__progress-bar">
         </progress>
 
         <span class="text-xs sm:text-sm font-medium text-oceanBlue whitespace-nowrap group-hover:text-white">
-          {{isNaN(topicProgress) ? 0 : Math.min(100, Math.max(0, parseInt(topicProgress, 10))) }}%
+          {{ topicProgress}}%
         </span>
       </div>
       <!-- topic title and description -->
