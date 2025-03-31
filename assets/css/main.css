@@ -162,8 +162,19 @@
   font-size: var(--text-small) !important;
 }
 .notes p{
-  margin-top: 10px;
-  
+  margin: 10px 0;
+  padding: 10px 0;
+}
+
+/* Remove margin-top for paragraphs following any heading inside .notes */
+.notes h1 + p,
+.notes h2 + p,
+.notes h3 + p,
+.notes h4 + p,
+.notes h5 + p,
+.notes h6 + p {
+  margin-top: 0px !important;
+  padding-top: 0px !important ;
 }
 /* images in notes */
 .notes p img{
@@ -202,16 +213,21 @@
   object-fit: contain;
 }
 
+.notes .desc-img{
+  height: 48px !important;
+  width: 48px !important;
+  display: inline-flex !important;
+}
 
 .notes table td{
-  padding: 10px !important;
+  padding:0 5px !important;
   overflow: hidden;
   border: 1px solid #ccc;
 }
 
-/* .notes table td p{
-  text-align: center !important;
-} */
+.notes table td p{
+  margin: 0px;
+}
 
 /* table */
 
@@ -242,6 +258,21 @@ p:only-child > img:only-child {
   display: block;
   margin: 0 auto;
 }
+
+/* heading of notes */
+.notes h1 span { font-size: 2rem !important; }   /* Default: 32px */
+.notes h2 span { font-size: 1.5rem !important; }  /* Default: 24px */
+.notes h3 span { font-size: 1.17rem !important; } /* Default: 18.72px */
+.notes h4 span { font-size: 1rem !important; }    /* Default: 16px */
+.notes h5 span { font-size: 0.83rem !important; } /* Default: 13.28px */
+.notes h6 span { font-size: 0.67rem !important; } /* Default: 10.72px */
+
+.notes h1 { font-size: 2rem !important; }   /* Default: 32px */
+.notes h2 { font-size: 1.5rem !important; }  /* Default: 24px */
+.notes h3 { font-size: 1.17rem !important; } /* Default: 18.72px */
+.notes h4 { font-size: 1rem !important; }    /* Default: 16px */
+.notes h5 { font-size: 0.83rem !important; } /* Default: 13.28px */
+.notes h6 { font-size: 0.67rem !important; } /* Default: 10.72px */
 
 
 /* title style  font tahoma important*/
