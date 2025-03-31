@@ -66,10 +66,10 @@ const topic = ref([]);
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params) => {
 
-  const url = userToken.value ? 
-              apiDocs.topics.filterTopicsByUser.replace('{userId}',userToken.value?._id) : 
-              apiDocs.topics.filterTopics
-        
+  const url = userToken.value ?
+    apiDocs.topics.filterTopicsByUser.replace('{userId}', userToken.value?._id) :
+    apiDocs.topics.filterTopics
+
   try {
     status.value = 'pending';
     const response = await $fetch(url, {
@@ -200,9 +200,9 @@ watch(filters, (filters) => {
               <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
                 :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
                 :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
-                :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                :topic-views="topic.views ? topic.views : 0" :topic-level="level" :topic-standard="topic.level.name"
-                :subject-name="topic.subject.name" />
+                :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 0"
+                :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name"
+                :topic-viewed="topic.isViewed" :topic-progress="topic.progressPercent" />
             </div>
 
 
@@ -245,7 +245,8 @@ watch(filters, (filters) => {
               :topic-title="topic.name" :topic-description="topic.descriptions"
               :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
               :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 0"
-              :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name" />
+              :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name"
+              :topic-viewed="topic.isViewed" :topic-progress="topic.progressPercent" />
 
             <!-- pagination numbers based on data length greater to 9 -->
             <div class="flex justify-center mb-10">
