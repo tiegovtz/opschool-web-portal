@@ -69,6 +69,12 @@ const apiDocs = {
         getStream: `${baseURL}/video-stream/`,
     },
 
+    //  PROGRESS
+    progress:{
+        video:`${baseURL}/progress/video`,
+        notes:`${baseURL}/progress/notes`
+    }
+
 }
 
 export default apiDocs;
