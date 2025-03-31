@@ -1,33 +1,34 @@
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, onUnmounted } from "vue";
 import { PageFlip } from "page-flip";
 import { convertPdfToImages } from "~/utilities/convertPdfToImages";
 
 const pages = ref([]);
 const book = ref(null);
-const currentPage = ref(''); // Initialize at 1 for the first page
-const currentPageIndex = ref(0)
-const totalPages = ref(0); // Total pages
-const autoPlay = ref(false); // Auto-play state
-let pageFlip = null; // PageFlip instance reference
-const orientation = ref('landscape')
+const currentPage = ref(''); 
+const currentPageIndex = ref(0);
+const totalPages = ref(0);
+const autoPlay = ref(false);
+let pageFlip = null;
+let autoPlayInterval = null;
+const orientation = ref('landscape');
+const isFullScreen = ref(false);
 
 // Function to load PDF images
 const loadPages = async () => {
     try {
-        // Convert PDF to images and load them into the flipbook
         pages.value = await convertPdfToImages("/pdf/science_for_kids.pdf");
-        totalPages.value = pages.value.length; // Set to first page if multiple pages
+        totalPages.value = pages.value.length;
     } catch (error) {
         console.error("Error while initializing PageFlip:", error);
     }
 };
 
-// Wait for pages to be loaded before initializing PageFlip
-await loadPages()
+// Wait for pages to load
+await loadPages();
 
-// Initialize the flipbook and load images after the pages are loaded
-onMounted(async () => {
+// Initialize PageFlip
+onMounted(() => {
     try {
         pageFlip = new PageFlip(book.value, {
             width: 600,
@@ -42,47 +43,44 @@ onMounted(async () => {
             mobileScrollSupport: true,
         });
 
-        // Load images into the flipbook
         pageFlip.loadFromImages(pages.value);
 
-        // triggered by page turning
-        pageFlip.on('flip', (e) => {
+        pageFlip.on("flip", (e) => {
             orientation.value = e.object?.render?.orientation;
-            console.log('orientation: ', orientation.value, 'changeState flipping: ', e)
-            currentPageIndex.value = e.data
-            if (e.data > 1) {
-                if (orientation.value == 'landscape') {
-                    currentPage.value = `${e.data}-${e.data + 1}`;
-                }
-                else {
-                    currentPage.value = `${e.data}`
-                }
-            }
-        })
-
-        // triggered when the state of the book changes
-        pageFlip.on("changeState", (e) => {
-            orientation.value = e.object?.render?.orientation;
-            console.log('orientation: ', orientation.value, 'changeState: ', e)
-            currentPageIndex.value = e.data
-            if (e.data > 1) {
-                if (orientation.value == 'landscape') {
-                    currentPage.value = `${e.data}-${e.data + 1}`;
-                }
-                else {
-                    currentPage.value = `${e.data}`
-                }
-            }
+            currentPageIndex.value = e.data;
+            updateCurrentPage();
         });
 
+        pageFlip.on("changeState", (e) => {
+            orientation.value = e.object?.render?.orientation;
+            currentPageIndex.value = e.data;
+            updateCurrentPage();
+        });
+
+        document.addEventListener("keydown", handleKeyPress);
     } catch (error) {
         console.error("Error initializing PageFlip:", error);
     }
 });
 
+onUnmounted(() => {
+    document.removeEventListener("keydown", handleKeyPress);
+    clearInterval(autoPlayInterval);
+});
+
+// Update current page display
+const updateCurrentPage = () => {
+    if (currentPageIndex.value >= 1) {
+        currentPage.value = orientation.value === "landscape" ? `${currentPageIndex.value}-${currentPageIndex.value + 1}` : `${currentPageIndex.value}`;
+    } else {
+        currentPage.value = "cover";
+    }
+};
+
 // Function to go to the previous page
 const previousPage = () => {
     if (pageFlip) {
+        stopAutoPlay();
         pageFlip.flipPrev();
     }
 };
@@ -90,49 +88,74 @@ const previousPage = () => {
 // Function to go to the next page
 const nextPage = () => {
     if (pageFlip) {
-        autoPlay.value ? clearInterval(): ''
+        stopAutoPlay();
         pageFlip.flipNext();
     }
 };
 
-// Function to toggle auto-play
+// Handle AutoPlay
 const toggleAutoPlay = () => {
     autoPlay.value = !autoPlay.value;
-    startAutoPlay();
-};
-
-// Start auto-play (page flips automatically every 2 seconds)
-const startAutoPlay = () => {
-    if (autoPlay) {
-        setInterval(() => {
-        if (currentPageIndex.value < totalPages.value) {
-            pageFlip.flipNext()
-            currentPageIndex.value++
-        } else {
-            clearInterval();
-            currentPageIndex.value = 0
-        }
-    }, 1000); // Adjust the interval time as needed (2000ms = 2 seconds) 
+    if (autoPlay.value) {
+        autoPlayInterval = setInterval(() => {
+            if (currentPageIndex.value < totalPages.value - 1) {
+                pageFlip.flipNext();
+                currentPageIndex.value++;
+            } else {
+                stopAutoPlay();
+                currentPageIndex.value = 0;
+            }
+        }, 2000);
     } else {
-        // Stop auto-play
-        clearInterval();
+        stopAutoPlay();
     }
 };
 
+const stopAutoPlay = () => {
+    autoPlay.value = false;
+    clearInterval(autoPlayInterval);
+};
 
+// Handle Keyboard Shortcuts
+const handleKeyPress = (event) => {
+    if (event.key === "ArrowRight") {
+        nextPage();
+    } else if (event.key === "ArrowLeft") {
+        previousPage();
+    } else if (event.key === "f") {
+        toggleFullScreen();
+    }
+};
 
+// Toggle Fullscreen
+const toggleFullScreen = () => {
+    const elem = document.documentElement;
+    if (!document.fullscreenElement) {
+        elem.requestFullscreen().then(() => {
+            isFullScreen.value = true;
+        });
+    } else {
+        document.exitFullscreen().then(() => {
+            isFullScreen.value = false;
+        });
+    }
+};
 </script>
 
 <template>
     <section v-if="pages.length > 0" class="flipbook-container">
-        <div ref="book" class="w-[600px] h-dvh"></div>
+        <div ref="book" class="flipbook"></div>
+
+        <!-- Controls -->
         <div class="controls">
-            <button @click="previousPage" :disabled="currentPage == '' || currentPage == 'cover'">Previous</button>
+            <button @click="previousPage" :disabled="currentPageIndex <= 0">Previous</button>
             <span>Page {{ currentPage }} of {{ totalPages }}</span>
             <button @click="nextPage">Next</button>
-            <button @click="toggleAutoPlay">{{ autoPlay ? 'Stop AutoPlay' : 'Start AutoPlay' }}</button>
+            <button @click="toggleAutoPlay">{{ autoPlay ? "Stop AutoPlay" : "Start AutoPlay" }}</button>
+            <button @click="toggleFullScreen">{{ isFullScreen ? "Exit Fullscreen" : "Fullscreen" }}</button>
         </div>
     </section>
+
     <LoadingIndicator v-else />
 </template>
 
@@ -146,6 +169,14 @@ const startAutoPlay = () => {
     flex-direction: column;
 }
 
+.flipbook {
+    width: 600px;
+    height: 800px;
+    border: 2px solid #ccc;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease-in-out;
+}
+
 .controls {
     margin-top: 20px;
     display: flex;
@@ -155,13 +186,19 @@ const startAutoPlay = () => {
 }
 
 button {
-    padding: 10px;
+    padding: 10px 15px;
     background-color: #56ade8;
     color: white;
     border: none;
     cursor: pointer;
     font-size: 14px;
     border-radius: 5px;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+button:hover {
+    background-color: #428acb;
+    transform: scale(1.05);
 }
 
 button:disabled {
@@ -171,5 +208,6 @@ button:disabled {
 
 span {
     font-size: 16px;
+    font-weight: bold;
 }
 </style>
