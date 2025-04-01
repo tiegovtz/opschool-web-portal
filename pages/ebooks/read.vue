@@ -33,6 +33,11 @@
     ]
   })
   
-  
+  onMounted(()=>{
+    if(!window.location.href.includes('http://localhost:3000/') || !window.location.href.includes('http://tie.ekima.africa/')){
+      // redirect home
+      window.location.href = '/'
+    }
+  })
   </script>
   
