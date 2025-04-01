@@ -7,10 +7,11 @@
       <div v-if="client.includes('http://41.59.102.150:3000/')"
         class="loading flex flex-col items-center justify-center">
         <div>
-          <MessageTopicNotFound message="This page will be updated soon" />
+          <!-- <MessageTopicNotFound message="This page will be updated soon" /> -->
+          <p>For the e-book resources please visit the link below:</p>
           <a href="https://ol.tie.go.tz/index.php" target="_blank"
             class="flex items-center justify-center px-3 py-2 mt-4 capitalize">
-            <p class="capitalize">please visit
+            <p class="capitalize">click here
               <span
                 class="text-oceanBlue hover:text-deepBlue transition-colors duration-500 ease-in-out font-medium uppercase">TIE
                 library</span>
@@ -36,10 +37,12 @@
           </div>
         </NuxtLink>
       </div>
-      <div v-else class="loading flex flex-col items-center">
-        <MessageTopicNotFound message="This page will be updated soon" />
-        <a href="https://ol.tie.go.tz/index.php" target="_blank" class=" px-3 py-2 mt-4">
-          <p class="capitalize">please visit
+      <div v-else class="loading flex flex-col items-center justify-center">
+        <!-- <MessageTopicNotFound message="This page will be updated soon" /> -->
+        <p>For the e-book resources please visit the link below:</p>
+        <a href="https://ol.tie.go.tz/index.php" target="_blank"
+          class="flex items-center justify-center px-3 py-2 mt-4 capitalize">
+          <p class="capitalize">click here
             <span
               class="text-oceanBlue hover:text-deepBlue transition-colors duration-500 ease-in-out font-medium uppercase">TIE
               library</span>
