@@ -160,8 +160,8 @@ const signUp = async () => {
       })
       .catch((error) => {
         usersignUp.controller.isSent = 'error';
-        const errorMessage = JSON.stringify(error?.response?.data?.error);
-        console.log(errorMessage)
+        const errorMessage = JSON.stringify(error?.response?.data?.errors);
+        console.log('Error Message: ', errorMessage);
         if (error.response) {
           // The request was made, but the server responded with a status code
           switch (error.response.status) {
@@ -560,8 +560,8 @@ const switchTab = (tabName) => {
 
     <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-2xl">
       <h1 class="text-large font-bold text-center">Sign Up</h1>
-      <NuxtLink to="/">
-        <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+      <NuxtLink to="/" class="w-25 h-25 mx-auto my-6 flex items-center justify-center">
+        <NuxtImg src="/logo/logo_tie.webp" class="w-full h-full object-contain" alt="logo" />
       </NuxtLink>
       <form @submit.prevent="signUp" @keydown.enter.prevent
         class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" :class="[
@@ -750,7 +750,7 @@ const switchTab = (tabName) => {
                 <option v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Child">Kids(3 - 12)</option>
                 <option  v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Teen">Teens(13 - 19)</option>
                 <option value="YoungAdult">Young Adults(20 - 35)</option>
-                <option  v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="Middle-AgedAdult">Middle-Aged Adults(36 - 60)</option>
+                <option  v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="MiddleAgedAdult">Middle-Aged Adults(36 - 60)</option>
                 <option  v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="Adult">Adults(60+)</option>
               </select>
             </div>
@@ -816,15 +816,15 @@ const switchTab = (tabName) => {
                     usersignUp.controller.errors.organization,
                 }">
                 <div class="flex w-full items-center">
-                  <input type="text" id="email" v-model="usersignUp.organization" @keydown.space.prevent
+                  <input type="text" id="email" v-model="usersignUp.organization"
                     name="organization" autocomplete="off"
                     class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                     placeholder="Organization (eg: Ekima interctive company)" />
                   <Icon name="tdesign:institution" class="h-5 w-5 text-textGray" />
                 </div>
                 <!-- org name error message -->
-                <small v-if="usersignUp.controller.errors.email" class="text-red-500 text-smallest w-full">
-                  {{ usersignUp.controller.errors.email }}
+                <small v-if="usersignUp.controller.errors.organization" class="text-red-500 text-smallest w-full">
+                  {{ usersignUp.controller.errors.organization }}
                 </small>
               </div>
               <!-- stakeholder role -->
