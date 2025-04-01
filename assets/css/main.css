@@ -198,7 +198,7 @@
   display: block;
 } */
 
-.notes p video{
+.notes video{
   width: 100% !important;
   height: auto;
   margin: 10px auto;

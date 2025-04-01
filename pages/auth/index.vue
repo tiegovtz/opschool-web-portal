@@ -150,25 +150,23 @@ watch(() => userSignIn.password, (password) => {
 <template>
     <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b">
         <!-- Message Component -->
-        <MessageComponent 
-            :message="userSignIn.controller.feedback" 
+        <MessageComponent :message="userSignIn.controller.feedback"
             :position="userSignIn.controller.feedback ? true : false"
             :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
             :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
         <div class="w-full max-w-md px-4 md:bg-white rounded-lg md:shadow-2xl md:pt-3">
             <h1 class="text-large font-bold text-center">Welcome</h1>
-            <NuxtLink to="/">
-                <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+            <NuxtLink to="/" class="w-25 h-25 mx-auto my-6 flex items-center justify-center">
+                <NuxtImg src="/logo/logo_tie.webp" class="w-full h-full object-contain" alt="logo" />
             </NuxtLink>
             <form @submit.prevent="signIn" v-if="userSignIn.controller.attemps < 3"
-            class="px-4 text-textGray overflow-hidden text-extraSmall">
+                class="px-4 text-textGray overflow-hidden text-extraSmall">
                 <!-- Username Teacher and Stackeholder and Student -->
-                    <div 
-                    class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+                <div class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
                     :class="{ 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userSignIn.controller.errors.username }">
                     <div class="flex w-full items-center">
-                    
+
                         <input type="text" id="username" v-model="userSignIn.username" name="username"
                             autocomplete="off" @keydown.space.prevent
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
@@ -178,9 +176,8 @@ watch(() => userSignIn.password, (password) => {
                     </div>
 
                     <!-- Username error message -->
-                    <small v-if="userSignIn.controller.errors.username" 
-                    class="text-red-500 text-smallest w-full"
-                    :class="[
+                    <small v-if="userSignIn.controller.errors.username" class="text-red-500 text-smallest w-full"
+                        :class="[
                         {'mt-1': userSignIn.type.trim().toLowerCase() === 'student'},
                         {'mt-1': userSignIn.type.trim().toLowerCase() === 'teacher' || 
                         userSignIn.type.trim().toLowerCase() === 'education stackeholder'},
@@ -239,7 +236,7 @@ watch(() => userSignIn.password, (password) => {
             <div v-else class="flex flex-col gap-2 w-full items-center justify-center">
                 <div class="py-3">
                     You have attempted to sign in <span class="text-oceanBlue">{{ userSignIn.controller.attemps
-                    }}</span> times.
+                        }}</span> times.
                     Please consider to
                 </div>
                 <NuxtLink to="/auth/ForgotPassword"
