@@ -750,7 +750,7 @@ const switchTab = (tabName) => {
                 <option v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Child">Kids(3 - 12)</option>
                 <option  v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Teen">Teens(13 - 19)</option>
                 <option value="YoungAdult">Young Adults(20 - 35)</option>
-                <option  v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="Middle-AgedAdult">Middle-Aged Adults(36 - 60)</option>
+                <option  v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="MiddleAgedAdult">Middle-Aged Adults(36 - 60)</option>
                 <option  v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="Adult">Adults(60+)</option>
               </select>
             </div>
@@ -816,15 +816,15 @@ const switchTab = (tabName) => {
                     usersignUp.controller.errors.organization,
                 }">
                 <div class="flex w-full items-center">
-                  <input type="text" id="email" v-model="usersignUp.organization" @keydown.space.prevent
+                  <input type="text" id="email" v-model="usersignUp.organization"
                     name="organization" autocomplete="off"
                     class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                     placeholder="Organization (eg: Ekima interctive company)" />
                   <Icon name="tdesign:institution" class="h-5 w-5 text-textGray" />
                 </div>
                 <!-- org name error message -->
-                <small v-if="usersignUp.controller.errors.email" class="text-red-500 text-smallest w-full">
-                  {{ usersignUp.controller.errors.email }}
+                <small v-if="usersignUp.controller.errors.organization" class="text-red-500 text-smallest w-full">
+                  {{ usersignUp.controller.errors.organization }}
                 </small>
               </div>
               <!-- stakeholder role -->
