@@ -160,8 +160,8 @@ const signUp = async () => {
       })
       .catch((error) => {
         usersignUp.controller.isSent = 'error';
-        const errorMessage = JSON.stringify(error?.response?.data?.error);
-        console.log(errorMessage)
+        const errorMessage = JSON.stringify(error?.response?.data?.errors);
+        console.log('Error Message: ', errorMessage);
         if (error.response) {
           // The request was made, but the server responded with a status code
           switch (error.response.status) {
