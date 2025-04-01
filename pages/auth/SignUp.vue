@@ -560,8 +560,8 @@ const switchTab = (tabName) => {
 
     <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-2xl">
       <h1 class="text-large font-bold text-center">Sign Up</h1>
-      <NuxtLink to="/">
-        <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+      <NuxtLink to="/" class="w-25 h-25 mx-auto my-6 flex items-center justify-center">
+        <NuxtImg src="/logo/logo_tie.webp" class="w-full h-full object-contain" alt="logo" />
       </NuxtLink>
       <form @submit.prevent="signUp" @keydown.enter.prevent
         class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" :class="[
