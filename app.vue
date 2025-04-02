@@ -20,6 +20,9 @@ const handleResize = () => {
   isGreaterToMD.value  = widthGreater768.value
   isGreaterToSM.value = widthGreater640.value
   isGreaterToXS.value = widthGreater320.value
+  
+  // force page reload on resize
+  // document.location.reload()
 }
 
 window.addEventListener('resize', handleResize) //resizing window
@@ -30,10 +33,13 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('load', handleResize) // resize on loading
 })
-
+  // console.log(disableshots)
 </script>
 <template>
+
   <NuxtLayout>
-    <NuxtPage />
+    <NuxtLoadingIndicator color="#56ade8" />
+    <NuxtPage @contextmenu.prevent  />
   </NuxtLayout>
+
 </template>
