@@ -1,16 +1,3 @@
-<template>
-  <NuxtLayout name="home-layout">
-    <div class="wrapper-container">
-      <HeroSection />
-      <HomeInputsSelection />
-      <TabBar />
-      <div class="loading flex justify-center">
-        <MessageTopicNotFound message="This page will be updated soon" />
-      </div>
-    </div>
-  </NuxtLayout>
-</template>
-
 <script setup>
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
@@ -41,3 +28,20 @@ useHead({
 })
 
 </script>
+
+<template>
+  <NuxtLayout name="home-layout">
+    <section class="wrapper-container">
+      <HeroSection />
+      <HomeInputsSelection />
+      <TabBar />
+      <div class="grid lg:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-2">
+        <!-- <MessageTopicNotFound message="This page will be updated soon" /> -->
+        <VideoCard />
+        <VideoCard />
+        <VideoCard />
+        <VideoCard />
+      </div>
+    </section>
+  </NuxtLayout>
+</template>
