@@ -1,6 +1,7 @@
 <script setup>
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
+import apiDocs from '~/utilities/api-docs';
 
 useHead({
   title: "TIE - Video Resource",
@@ -27,6 +28,43 @@ useHead({
   ]
 })
 
+// Define status
+const status = ref('pending'); // Initial status
+
+// Fetch topics
+const videos = ref();
+
+// Define Cookie
+const auth_token = useCookie('signInAccessToken').value;
+
+// Fetch Videos From Server
+const fetchVideos = async () => {
+  try {
+    status.value = 'pending';
+    const response = await $fetch(apiDocs.videos.getVideos, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${auth_token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    videos.value = response;
+    status.value = 'success';
+    
+  } catch (error) {
+    status.value = 'error';
+  }
+}
+
+// Call FetchVideos Function
+fetchVideos();
+
+// Define Meta Data
+// definePageMeta({
+//   middleware: 'auth',
+// })
+
 </script>
 
 <template>
@@ -35,12 +73,18 @@ useHead({
       <HeroSection />
       <HomeInputsSelection />
       <TabBar />
-      <div class="grid lg:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-2">
-        <!-- <MessageTopicNotFound message="This page will be updated soon" /> -->
-        <VideoCard />
-        <VideoCard />
-        <VideoCard />
-        <VideoCard />
+      <div v-if="status === 'success'" class="grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4">
+        <VideoCard v-for="video in videos" :key="video._id" :video-id="video._id" :video-name="video.name"
+          :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl" :video-description="video.description" 
+          :video-subject="video.subject.name" :video-type="video.videoType" />
+      </div>
+      <!-- pending -->
+      <div v-else-if="status === 'pending'" class="flex flex-col justify-center items-center">
+        <LoadingIndicator :is-loading="true" />
+      </div>
+      <!-- error -->
+      <div v-else>
+        Error: {{ error?.message }}
       </div>
     </section>
   </NuxtLayout>
