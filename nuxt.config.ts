@@ -1,4 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
+import { resolve } from 'path';
+// import '@google/model-viewer';
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 export default defineNuxtConfig({
@@ -6,8 +9,15 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ["~/assets/css/main.css"],
 
+  plugins: [
+    { src: '~/plugins/mathjax.client.js', mode: 'client' },
+    { src: '~/plugins/mathjax-directive.client.js', mode: 'client' }
+  ],
+
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+    ],
   },
 
   modules: [
@@ -15,11 +25,15 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxt/icon",
     "nuxt-swiper",
+    '@pinia/nuxt',
+    'pinia-plugin-persistedstate/nuxt',
+    
   ],
 
 
   image: {
-    dir: "assets/images",
+    // dir: "assets/images",
+    // dirPublic: "public/images",
     quality: 80,
     format: ["webp"],
     densities: [1],
@@ -30,7 +44,13 @@ export default defineNuxtConfig({
       lg: 1024,
       xl: 1280,
       xxl: 1536,
-      "2xl": 1536,
+      "2xl": 2560,
     },
   },
+
+
+  devServer: {
+    host: ' 192.168.0.12 ',
+    port: 3000
+  }
 });
