@@ -101,11 +101,14 @@
       "#vue-router": [
         "../node_modules/vue-router"
       ],
+      "#unhead/composables": [
+        "../node_modules/nuxt/dist/head/runtime/composables/v3"
+      ],
       "#imports": [
         "./imports"
       ],
       "#app-manifest": [
-        "./manifest/meta/34e42c0c-b27e-4d6f-96c7-4afcd9d628bc"
+        "./manifest/meta/dev"
       ],
       "#components": [
         "./components"

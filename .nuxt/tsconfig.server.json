@@ -17,19 +17,15 @@
         "./types/nitro-imports"
       ],
       "~/*": [
-        "../*",
         "../*"
       ],
       "@/*": [
-        "../*",
         "../*"
       ],
       "~~/*": [
-        "../*",
         "../*"
       ],
       "@@/*": [
-        "../*",
         "../*"
       ],
       "nitropack/types": [
@@ -73,54 +69,6 @@
       ],
       "vite/client": [
         "../node_modules/vite/client"
-      ],
-      "~": [
-        "./.."
-      ],
-      "@": [
-        "./.."
-      ],
-      "~~": [
-        "./.."
-      ],
-      "@@": [
-        "./.."
-      ],
-      "#shared": [
-        "../shared"
-      ],
-      "assets": [
-        "../assets"
-      ],
-      "assets/*": [
-        "../assets/*"
-      ],
-      "public": [
-        "../public"
-      ],
-      "public/*": [
-        "../public/*"
-      ],
-      "#build": [
-        "./"
-      ],
-      "#build/*": [
-        "./*"
-      ],
-      "#internal/nuxt/paths": [
-        "../node_modules/nuxt/dist/core/runtime/nitro/paths"
-      ],
-      "#image": [
-        "../node_modules/@nuxt/image/dist/runtime"
-      ],
-      "#image/*": [
-        "../node_modules/@nuxt/image/dist/runtime/*"
-      ],
-      "#vue-router": [
-        "./vue-router"
-      ],
-      "#nuxt-icon-server-bundle": [
-        "./nuxt-icon-server-bundle"
       ]
     },
     "lib": [
