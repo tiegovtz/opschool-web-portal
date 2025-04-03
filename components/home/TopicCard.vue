@@ -35,20 +35,14 @@ const props = defineProps({
     type: String,
     default: 'Secondary',
   },
-  topicTitle: {
-    type: String,
-    default: 'Introduction to Physics',
-  },
   topicStandard: {
     type: String,
     default: 'Form One',
   },
-
   subjectName: {
     type: String,
     default: 'Physics'
   },
-
   modelType: {
     type: String,
     default: 'card',
