@@ -1,7 +1,9 @@
 <script setup>
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
-import apiDocs from '~/utilities/api-docs';
+import apiDocsFile from "~/utilities/api-docs";
+
+const apiDocs = apiDocsFile.setup()
 
 useHead({
   title: "TIE - Video Resource",
@@ -28,10 +30,9 @@ useHead({
   ]
 })
 
-// Define status
-const status = ref('pending'); // Initial status
-
-// Fetch topics
+// Define state variables
+const error = ref(null);
+const status = ref('pending');
 const videos = ref();
 
 // Define Cookie
@@ -54,6 +55,8 @@ const fetchVideos = async () => {
     
   } catch (error) {
     status.value = 'error';
+    error.value = error;
+    console.log(error);
   }
 }
 
@@ -61,9 +64,9 @@ const fetchVideos = async () => {
 fetchVideos();
 
 // Define Meta Data
-// definePageMeta({
-//   middleware: 'auth',
-// })
+definePageMeta({
+  middleware: 'auth',
+})
 
 </script>
 
