@@ -5,8 +5,9 @@ import TabBar from '@/components/home/TabBar.vue'
 import { ref, computed, onMounted, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import InputsSelection from '@/components/home/InputsSelection.vue'
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";
 
+const apiDocs = apiDocsFile.setup()
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania Interactive Learning Platform",

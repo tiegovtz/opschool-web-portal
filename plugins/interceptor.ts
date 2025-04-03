@@ -1,5 +1,7 @@
 // import { defineNuxtPlugin } from "#app";
-// import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";
+
+const apiDocs = apiDocsFile.setup()
 
 // export default defineNuxtPlugin((nuxtApp) => {
 //   const customFetch = async (url: string, options: any = {}) => {
