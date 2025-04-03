@@ -111,7 +111,7 @@ fetchVideoById();
         <!-- Videovideo Level Standard and Subject Indicator -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <NuxtLink to="/" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+            <NuxtLink to="/video" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
               {{
               videoLevel != null &&
               videoLevel != undefined &&
@@ -122,7 +122,7 @@ fetchVideoById();
               <Icon name="weui:arrow-outlined" size="18" class="text-black" />
             </NuxtLink>
 
-            <NuxtLink to="/" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+            <NuxtLink to="/video" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
               {{
               videoStandard != null &&
               videoStandard != undefined &&
