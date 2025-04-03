@@ -1,8 +1,6 @@
 <script setup>
-import apiDocsFile from "~/utilities/api-docs";
-
-const apiDocs = apiDocsFile.setup()
-
+import apiDocs from "~/utilities/api-docs";
+ 
 const userToken = useCookie('signInUserToken')
 
 const logout = () => {

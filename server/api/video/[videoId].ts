@@ -1,17 +1,13 @@
 // import { isEmptyObject } from "@tiptap/core";
-import apiDocsFile from "~/utilities/api-docs";
+import apiDocs from "~/utilities/api-docs";
 
 export default defineEventHandler(async (event) => {
   // get refferer header
   // Get the referer header
   const referer = getHeader(event, "referer");
 
-  const apiDocs = apiDocsFile.setup()
-  // Check if the referer is valid
-  // console.log(referer !== null)
-  // console.log('interactive',referer?.includes("/interactive/form"))
-  // console.log('video',referer?.includes("/video"))
-  if (
+// Check if the referer is valid
+if (
     referer &&
     (referer?.includes("/interactive/form") || referer?.includes("/video"))
   ) {

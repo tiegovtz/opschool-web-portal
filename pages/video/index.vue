@@ -1,9 +1,7 @@
 <script setup>
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
-import apiDocsFile from "~/utilities/api-docs";
-
-const apiDocs = apiDocsFile.setup()
+import apiDocs from "~/utilities/api-docs";
 
 useHead({
   title: "TIE - Video Resource",
@@ -52,7 +50,7 @@ const fetchVideos = async () => {
 
     videos.value = response;
     status.value = 'success';
-    
+
   } catch (error) {
     status.value = 'error';
     error.value = error;
@@ -76,9 +74,10 @@ definePageMeta({
       <HeroSection />
       <HomeInputsSelection />
       <TabBar />
-      <div v-if="status === 'success'" class="grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4">
+      <div v-if="status === 'success'"
+        class="grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4">
         <VideoCard v-for="video in videos" :key="video._id" :video-id="video._id" :video-name="video.name"
-          :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl" :video-description="video.description" 
+          :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl" :video-description="video.description"
           :video-subject="video.subject.name" :video-type="video.videoType" />
       </div>
       <!-- pending -->
