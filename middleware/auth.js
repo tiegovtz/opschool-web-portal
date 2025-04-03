@@ -8,15 +8,15 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   // 🔹 Redirect unauthenticated users trying to access protected routes
   const protectedRoutes = ["/interactive", "/video"];
-  if (!user.value && protectedRoutes.includes(to.path)) {
+  if (!user.value) {
     return navigateTo("/auth"); // Redirect to login page
   }
-
-  // 🔹 If trying to access "/interactive" without being logged in, check previous topic
-  if (!user.value && to.path === "/interactive") {
-    return navigateTo(path.value ? "/home" : "/auth");
+  else if (protectedRoutes.includes(to.path)) {
+    // 🔹 If trying to access "/interactive" without being logged in, check previous topic
+    if (to.path.includes("/interactive") && !path.value) {
+      return navigateTo("/home");
+    }
   }
-
   // 🔹 Check if access token is expiring soon (within 60 seconds)
   if (userAccessToken.value && isTokenExpiringSoon(userAccessToken.value, 60)) {
     const newToken = await refreshToken();
