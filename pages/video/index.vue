@@ -91,27 +91,3 @@ definePageMeta({
     </section>
   </NuxtLayout>
 </template>
-
-<template>
-  <NuxtLayout name="home-layout">
-    <section class="wrapper-container">
-      <HeroSection />
-      <HomeInputsSelection />
-      <TabBar />
-      <div v-if="status === 'success'"
-        class="grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4">
-        <VideoCard v-for="video in videos" :key="video._id" :video-id="video._id" :video-name="video.name"
-          :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl" :video-description="video.description"
-          :video-subject="video.subject.name" :video-type="video.videoType" />
-      </div>
-      <!-- pending -->
-      <div v-else-if="status === 'pending'" class="flex flex-col justify-center items-center">
-        <LoadingIndicator :is-loading="true" />
-      </div>
-      <!-- error -->
-      <div v-else>
-        Error: {{ error?.message }}
-      </div>
-    </section>
-  </NuxtLayout>
-</template>
