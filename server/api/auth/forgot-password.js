@@ -1,9 +1,9 @@
-import apiDocsFile from "~/utilities/api-docs";
+import apiDocs from "~/utilities/api-docs";
 
 
 
 export default defineEventHandler(async (event) => {
-    const apiDocs = apiDocsFile.setup()
+     
     const body = await readBody(event);
     const url = apiDocs.auth.forgotPassword;
     try {

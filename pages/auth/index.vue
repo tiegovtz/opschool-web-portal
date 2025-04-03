@@ -3,9 +3,8 @@ import messages from '~/utilities/messages';
 import { auth } from '~/utilities/validationInput';
 import { sanitize } from "~/utilities/sanitizeInput";
 import axios from 'axios'
-import apiDocsFile from "~/utilities/api-docs";
-
-const apiDocs = apiDocsFile.setup()
+import apiDocs from "~/utilities/api-docs";
+ 
 
 
 const path = useState('topicToView')

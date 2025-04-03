@@ -6,9 +6,8 @@ import videoParser from "~/utilities/parsers/videoParser";
 import { experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
-import apiDocsFile from "~/utilities/api-docs";
-
-const apiDocs = apiDocsFile.setup()
+import apiDocs from "~/utilities/api-docs";
+ 
 
 const route = useRoute();
 const router = useRouter();

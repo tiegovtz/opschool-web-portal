@@ -1,89 +1,82 @@
-export default {
-  setup() {
-    let BASE_API_URL;
-    
-    if(process.client){
-        const { $BASE_API_URL } = useNuxtApp(); 
-        BASE_API_URL=$BASE_API_URL
-    }
-    else{
-        BASE_API_URL = process.env.NUXT_API_BASE_URL
-    }
+const baseURL = "http://41.59.102.150:5001/v1"; // Define baseURL first
 
-    return {
-      baseURL: `${BASE_API_URL}`, // You can include it here for reference
+// const baseURL = "http://127.0.0.1:3003/v1" // Define baseURL first
 
-      // AUTH API
-      auth: {
-        // POST
-        signUp: `${BASE_API_URL}/auth/sign-up`,
-        login: `${BASE_API_URL}/auth/login`,
-        chooseIdentity: `${BASE_API_URL}/auth/choose-identity`,
-        refreshToken: `${BASE_API_URL}/auth/refresh-token`,
-        invalidateToken: `${BASE_API_URL}/auth/invalidate-token`,
-        requestCode: `${BASE_API_URL}/auth/request-code`,
-        verifyCode: `${BASE_API_URL}/auth/verify-code`,
-        forgotPassword: `${BASE_API_URL}/auth/forgot-password`,
-        forgotPasswordStudent: `${BASE_API_URL}/auth/forgot-password-student`,
-        resetPassword: `${BASE_API_URL}/auth/reset-password`,
-        changePassword: `${BASE_API_URL}/auth/change-password`,
-        userExists: `${BASE_API_URL}/auth/user-exists`,
+const apiDocs = {
+  baseURL: baseURL, // You can include it here for reference
 
-        // GET
-        profile: `${BASE_API_URL}/auth/profile`,
+  // AUTH API
+  auth: {
+    // POST
+    signUp: `${baseURL}/auth/sign-up`,
+    login: `${baseURL}/auth/login`,
+    chooseIdentity: `${baseURL}/auth/choose-identity`,
+    refreshToken: `${baseURL}/auth/refresh-token`,
+    invalidateToken: `${baseURL}/auth/invalidate-token`,
+    requestCode: `${baseURL}/auth/request-code`,
+    verifyCode: `${baseURL}/auth/verify-code`,
+    forgotPassword: `${baseURL}/auth/forgot-password`,
+    forgotPasswordStudent: `${baseURL}/auth/forgot-password-student`,
+    resetPassword: `${baseURL}/auth/reset-password`,
+    changePassword: `${baseURL}/auth/change-password`,
+    userExists: `${baseURL}/auth/user-exists`,
 
-        // PATCH or PUT
-        profileEdit: `${BASE_API_URL}/auth/profile/edit`,
-      },
+    // GET
+    profile: `${baseURL}/auth/profile`,
 
-      // CHAPTERS API
-      chapters: {
-        getChapters: `${BASE_API_URL}/chapters`,
-        getChapterId: `${BASE_API_URL}/chapters/:id`,
-        getByTopicId: `${BASE_API_URL}/chapters/load-by-topic/{topicId}`,
-        getTopicChapterQNs: `${BASE_API_URL}/questions/topic-chapter`,
-      },
-
-      // EXPERIMENTS API
-      experiments: {
-        getExperimentId: `${BASE_API_URL}/experiments/:id`,
-      },
-
-      // LEVELS API
-      levels: {
-        getLevels: `${BASE_API_URL}/levels`,
-        getLevelId: `${BASE_API_URL}/levels/:id`,
-      },
-
-      // SUBJECTS API
-      subjects: {
-        getSubjects: `${BASE_API_URL}/subjects`,
-        getSubjectId: `${BASE_API_URL}/subjects/:id`,
-      },
-
-      // TOPICS API
-      topics: {
-        getTopics: `${BASE_API_URL}/topics`,
-        getTopicId: `${BASE_API_URL}/topics/:id`,
-        getQuestionId: `${BASE_API_URL}/topics/{id}/questions`,
-        getSubjectId: `${BASE_API_URL}/topics/by-subject/{subjectId}`,
-        filterTopics: `${BASE_API_URL}/public-topics`,
-        filterTopicsByUser: `${BASE_API_URL}/public-topics/{userId}`,
-        topicViewedRead: `${BASE_API_URL}/topics/{id}/read`,
-      },
-
-      // VIDEO API
-      videos: {
-        getStream: `${BASE_API_URL}/video-stream/`,
-        getVideos: `${BASE_API_URL}/videos`,
-        getVideoById: `${BASE_API_URL}/videos/{id}`,
-      },
-
-      //  PROGRESS
-      progress: {
-        video: `${BASE_API_URL}/progress/video`,
-        notes: `${BASE_API_URL}/progress/notes`,
-      },
-    };
+    // PATCH or PUT
+    profileEdit: `${baseURL}/auth/profile/edit`,
   },
-};
+
+  // CHAPTERS API
+  chapters: {
+    getChapters: `${baseURL}/chapters`,
+    getChapterId: `${baseURL}/chapters/:id`,
+    getByTopicId: `${baseURL}/chapters/load-by-topic/{topicId}`,
+    getTopicChapterQNs: `${baseURL}/questions/topic-chapter`,
+  },
+
+  // EXPERIMENTS API
+  experiments: {
+    getExperimentId: `${baseURL}/experiments/:id`,
+  },
+
+  // LEVELS API
+  levels: {
+    getLevels: `${baseURL}/levels`,
+    getLevelId: `${baseURL}/levels/:id`,
+  },
+
+  // SUBJECTS API
+  subjects: {
+    getSubjects: `${baseURL}/subjects`,
+    getSubjectId: `${baseURL}/subjects/:id`,
+  },
+
+  // TOPICS API
+  topics: {
+    getTopics: `${baseURL}/topics`,
+    getTopicId: `${baseURL}/topics/:id`,
+    getQuestionId: `${baseURL}/topics/{id}/questions`,
+    getSubjectId: `${baseURL}/topics/by-subject/{subjectId}`,
+    filterTopics: `${baseURL}/public-topics`,
+    filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
+    topicViewedRead: `${baseURL}/topics/{id}/read`,
+  },
+
+  // VIDEO API 
+  videos: {
+    getStream: `${baseURL}/video-stream/`,
+    getVideos: `${baseURL}/videos`,
+    getVideoById: `${baseURL}/videos/{id}`,
+  },
+
+  //  PROGRESS
+  progress: {
+    video: `${baseURL}/progress/video`,
+    notes: `${baseURL}/progress/notes`
+  }
+
+}
+
+export default apiDocs;

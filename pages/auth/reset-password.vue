@@ -1,8 +1,7 @@
 <script setup>
 import messages from "~/utilities/messages";
-import apiDocsFile from "~/utilities/api-docs";
-
-const apiDocs = apiDocsFile.setup()
+import apiDocs from "~/utilities/api-docs";
+ 
 
 const route = useRoute();
 const reset_token_password = route.query.token;
