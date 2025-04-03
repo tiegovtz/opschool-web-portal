@@ -88,8 +88,8 @@ const signIn = async () => {
                 setTimeout(() => {
                     // router
                     const router = useRouter();
-                    const route = useRoute()
-                    console.log(route.redirectedFrom)
+                    // const route = useRoute()
+                    // console.log(route.redirectedFrom)
 
                     if (path.value) {
                         // Clears history and navigates to the new page 

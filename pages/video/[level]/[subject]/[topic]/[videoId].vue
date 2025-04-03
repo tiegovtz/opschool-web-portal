@@ -63,6 +63,38 @@ useHead({
   ],
 });
 
+// Define state variables
+const status = ref('pending');  // Initial status
+const error = ref(null);       // Initial error state
+const videoInfo = ref();      // Initial videoInfo state
+
+// Define Cookie
+const auth_token = useCookie('signInAccessToken').value;
+
+// Fetch Videos From Server
+const fetchVideoById = async () => {
+  try {
+    status.value = 'pending';
+    const response = await $fetch(apiDocs.videos.getVideoById.replaceAll('{id}', videoId), {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${auth_token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    videoInfo.value = response;
+    status.value = 'success';
+
+  } catch (error) {
+    status.value = 'error';
+    error.value = error
+  }
+}
+
+// Call FetchVideos Function
+fetchVideoById();
+
 // Toggle Sidebar
 const toggleSidebar = () => {
   if (import.meta.client) {
