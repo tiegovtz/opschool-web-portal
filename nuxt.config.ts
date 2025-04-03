@@ -29,7 +29,7 @@ export default defineNuxtConfig({
     'pinia-plugin-persistedstate/nuxt',
     
   ],
-
+  
 
   image: {
     // dir: "assets/images",
@@ -48,6 +48,11 @@ export default defineNuxtConfig({
     },
   },
 
+  runtimeConfig:{
+    public:{
+      BASE_API_URL: process.env.NUXT_API_BASE_URL
+    }
+  },
 
   devServer: {
     host: ' 192.168.0.12 ',
