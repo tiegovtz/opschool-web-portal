@@ -34,10 +34,11 @@ const dropDown = () => {
             <NuxtImg src="/logo/emblem.webp" alt="EMBLEM" class="w-18 h-18" />
           </NuxtLink>
           <div class="flex flex-col items-center text-center gap-1 font-tahomabd h-full uppercase">
-            <p class="lg:text-large md:text-medium text-extraSmall text-deepBlue text-shadow">Ministry of
+            <p class="lg:text-medium md:text-small text-smallest text-deepBlue text-shadow">Ministry of
               education,
               science and technology </p>
-            <p class="lg:text-medium md:text-small text-smallest">Tanzania institute of education (TIE)</p>
+            <p class="lg:text-large md:text-medium text-extraSmall">Tanzania
+              institute of education (TIE)</p>
           </div>
           <NuxtLink to="/" class="cursor-pointer p-2 h-full bg-grayLight">
             <NuxtImg src="/logo/logo_tie.webp" alt="TIE LOGO" class="w-14 h-14" />
