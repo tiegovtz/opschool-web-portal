@@ -1,5 +1,4 @@
 import tailwindcss from "@tailwindcss/vite";
-import { resolve } from 'path';
 // import '@google/model-viewer';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
@@ -27,7 +26,6 @@ export default defineNuxtConfig({
     "nuxt-swiper",
     '@pinia/nuxt',
     'pinia-plugin-persistedstate/nuxt',
-    
   ],
   
 
@@ -47,15 +45,8 @@ export default defineNuxtConfig({
       "2xl": 2560,
     },
   },
-
-  runtimeConfig:{
-    public:{
-      BASE_API_URL: process.env.NUXT_API_BASE_URL
-    }
-  },
-
   devServer: {
     host: ' 192.168.0.12 ',
     port: 3000
-  }
+  },
 });
