@@ -9,10 +9,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const path = useState("topicToView");
 
   // 🔹 If user is not logged in and trying to access a protected route
+  // 🔹 If user is not logged in and trying to access a protected route
   if (!user.value && to.path !== "/auth") {
     if (!path.value && from.fullPath.includes("/home")) {
       return navigateTo("/home"); // Redirect to home if no previous topic
+    if (!path.value && from.fullPath.includes("/home")) {
+      return navigateTo("/home"); // Redirect to home if no previous topic
     }
+    return navigateTo("/auth"); // Redirect to login page
     return navigateTo("/auth"); // Redirect to login page
   }
 
@@ -22,9 +26,11 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
     if (newToken?.access_token) {
       // ✅ Update access token
+      // ✅ Update access token
       userAccessToken.value = newToken.access_token;
     } else {
       return navigateTo("/auth"); // 🔴 Redirect to login if refresh fails
+      return navigateTo("/auth"); // 🔴 Redirect to login if refresh fails
     }
   }
-});
+}});
