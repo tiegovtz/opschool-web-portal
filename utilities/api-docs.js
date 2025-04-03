@@ -1,6 +1,6 @@
-const baseURL = "https://apitie.ekima.africa/v1"; // Define baseURL first
+// const baseURL = "https://apitie.ekima.africa/v1"; // Define baseURL first
 
-// const baseURL = "http://127.0.0.1:3003/v1" // Define baseURL first
+const baseURL = "http://41.59.102.150:5001/v1" // Define baseURL first
 
 const apiDocs = {
     baseURL: baseURL, // You can include it here for reference

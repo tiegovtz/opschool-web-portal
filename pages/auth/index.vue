@@ -86,12 +86,14 @@ const signIn = async () => {
                 setTimeout(() => {
                     // router
                     const router = useRouter();
+                    const route = useRoute()
+                    console.log(route.redirectedFrom)
 
                     if (path.value) {
                         // Clears history and navigates to the new page 
                         router.replace(path.value);
                     } else {
-                        router.replace('/home');
+                        // router.replace('/home');
                     }
                 }, 2000)
 

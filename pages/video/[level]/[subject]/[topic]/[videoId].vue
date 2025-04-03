@@ -67,6 +67,11 @@ const toggleSidebar = () => {
     sidebar.classList.toggle("right-0");
   }
 };
+
+// define authentication middleware
+definePageMeta({
+  middleware:'auth'
+})
 </script>
 
 <template>
