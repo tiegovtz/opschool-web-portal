@@ -35,20 +35,14 @@ const props = defineProps({
     type: String,
     default: 'Secondary',
   },
-  topicTitle: {
-    type: String,
-    default: 'Introduction to Physics',
-  },
   topicStandard: {
     type: String,
     default: 'Form One',
   },
-
   subjectName: {
     type: String,
     default: 'Physics'
   },
-
   modelType: {
     type: String,
     default: 'card',
@@ -110,7 +104,7 @@ const userToken = useCookie('signInUserToken')
         </span>
       </div>
       <!-- topic title and description -->
-      <div class="flex flex-col my-auto    transition-all duration-500 ease-in-out">
+      <div class="flex flex-col my-auto transition-all duration-500 ease-in-out">
         <p class="text-[1.2rem] font-bold text-gray-800 group-hover:text-white "
           :class="{ 'mt-2': !userToken, 'md:text-[1.2rem] text-[1rem] font-medium': modelType === 'search' }">
           {{ topicTitle }}

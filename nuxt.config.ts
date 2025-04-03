@@ -2,6 +2,7 @@ import tailwindcss from "@tailwindcss/vite";
 // import '@google/model-viewer';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
   devtools: { enabled: true },
@@ -26,6 +27,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     'pinia-plugin-persistedstate/nuxt',
   ],
+  
 
   image: {
     // dir: "assets/images",
@@ -43,7 +45,6 @@ export default defineNuxtConfig({
       "2xl": 2560,
     },
   },
-
   devServer: {
     host: ' 192.168.0.12 ',
     port: 3000

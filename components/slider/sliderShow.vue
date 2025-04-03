@@ -32,5 +32,3 @@ const swiper = useSwiper(containerRef, {
     </swiper-container>
   </ClientOnly>
 </template>
-
-<!-- styles -->
