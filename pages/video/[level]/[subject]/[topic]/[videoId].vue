@@ -1,4 +1,6 @@
 <script setup>
+import apiDocs from "~/utilities/api-docs";
+
 const route = useRoute();
 // const router = useRouter();
 const videoId = route.fullPath.split("/").pop();
@@ -12,8 +14,7 @@ const videoStandard = String(route.fullPath.split("/")[2])
 const videoLevel = String(route.fullPath.split("/")[3])
   .toString()
   .replaceAll("%20", " ");
-// const videoUrl = `/api/video/${videoId}`
-const videoUrl = `/api/video/67e974919cb81d6179cfe15b`;
+const videoUrl = `/api/video/${videoId}`
 
 // Header
 useHead({
@@ -83,7 +84,7 @@ definePageMeta({
         <!-- Videovideo Level Standard and Subject Indicator -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <NuxtLink to="/" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+            <NuxtLink to="/video" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
               {{
               videoLevel != null &&
               videoLevel != undefined &&
@@ -94,7 +95,7 @@ definePageMeta({
               <Icon name="weui:arrow-outlined" size="18" class="text-black" />
             </NuxtLink>
 
-            <NuxtLink to="/" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+            <NuxtLink to="/video" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
               {{
               videoStandard != null &&
               videoStandard != undefined &&
@@ -124,30 +125,25 @@ definePageMeta({
 
         <!-- Description -->
         <div class="notes md:px-4 max-w-7xl mx-auto">
-          <!-- <video preload="auto" controls @contextmenu.prevent @click="console.log('clicked video',videoUrl)">
+          <video preload="auto" controls @contextmenu.prevent>
             <source :src="videoUrl" type="video/mp4">
-          </video> -->
-          <video src="/public/video/Types of force.mp4" type="video/mp4" preload="auto" controls
-            @contextmenu.prevent></video>
+          </video>
+
+          <!-- <video src="/public/video/Types of force.mp4" type="video/mp4" preload="auto" controls
+            @contextmenu.prevent></video> -->
 
           <!-- Video Description and Thumbnail Image -->
           <div class="flex items-center w-full h-full gap-4 my-4">
             <!-- Thumbnail Image -->
             <div class="w-14 h-14 rounded-full overflow-hidden lg:flex hidden">
-              <NuxtImg src="https://i.pinimg.com/1200x/12/89/fc/1289fcdc3cb80e0178f5cc32ed6a4b96.jpg"
-                alt="Introduction to Physics" class="w-full h-full object-cover transition-transform duration-500" />
+              <NuxtImg :src="videoInfo?.thumbnail" :alt="videoInfo?.name"
+                class="w-full h-full object-cover transition-transform duration-500" />
             </div>
 
             <!-- Video Description -->
             <div class="flex w-full">
               <p class="text-sm text-justify">
-                If you need to use environment variables outside Vue components,
-                pass useRuntimeConfig() manually or store it in a global
-                variable.The component uses Tailwind utility classes through the
-                @apply directive for styling, which maintains the styling
-                approach while making the code more maintainable. The gradient
-                overlay creates depth, and the metadata section adds valuable
-                context for users browsing video content.
+                {{ videoInfo?.description }}
               </p>
             </div>
           </div>

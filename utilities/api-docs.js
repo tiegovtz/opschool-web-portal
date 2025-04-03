@@ -67,6 +67,8 @@ const apiDocs = {
     // VIDEO API 
     videos: {
         getStream: `${baseURL}/video-stream/`,
+        getVideos: `${baseURL}/videos`,
+        getVideoById: `${baseURL}/videos/{id}`,
     },
 
     //  PROGRESS
