@@ -95,7 +95,7 @@ const signIn = async () => {
                         // Clears history and navigates to the new page 
                         router.replace(path.value);
                     } else {
-                        // router.replace('/home');
+                        router.replace('/home');
                     }
                 }, 2000)
 
