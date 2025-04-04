@@ -54,7 +54,7 @@ export default defineNuxtConfig({
   },
 
   devServer: {
-    host: process.env.NUXT_LOCAL_NETWORK_IP || 'localhost',
+    host: process.env.NUXT_LOCAL_NETWORK_IP || '127.0.0.1',
     port: process.env.NUXT_RUNNING_PORT ? parseInt(process.env.NUXT_RUNNING_PORT) : 3000,
   },
 
