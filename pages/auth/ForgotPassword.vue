@@ -1,9 +1,9 @@
 <script setup>
 import messages from '~/utilities/messages';
 import { auth } from '~/utilities/validationInput';
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";;
  
-
+const apiDocs = apiDocsFile.setup()
 const userForgotPassword = reactive({
     type: '',
     fname: null,

@@ -3,8 +3,8 @@ import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
 import { ref, computed, onMounted, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
-import apiDocs from "~/utilities/api-docs";
-
+import apiDocsFile from "~/utilities/api-docs";;
+const apiDocs = apiDocsFile.setup()
 useHead({
   title: "TIE - Video Resource",
   meta: [
