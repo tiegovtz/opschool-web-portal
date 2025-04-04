@@ -1,5 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import { resolve } from 'path';
+//  notify user that system is using enviroment variable
+console.log('- Environment from .env');
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
