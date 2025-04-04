@@ -5,9 +5,8 @@ import TabBar from '@/components/home/TabBar.vue'
 import { ref, computed, onMounted, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import InputsSelection from '@/components/home/InputsSelection.vue'
-import apiDocsFile from "~/utilities/api-docs";
+import apiDocs from "~/utilities/api-docs";
 
-const apiDocs = apiDocsFile.setup()
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania Interactive Learning Platform",
@@ -36,8 +35,11 @@ useHead({
 
 const userToken = useCookie('signInUserToken')
 
-// slice data to 9
-const slicedData = ref();
+
+// Define Ref status
+const status = ref('pending'); // Initial Status State
+const topic = ref([]);        // Initial Topics State
+const slicedData = ref();    // Initial slice data to 9
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
@@ -57,12 +59,9 @@ const sliceData = (start, end) => {
   slicedData.value = topic.value.slice(start, end);
 };
 
-
-// Define status
-const status = ref('pending'); // Initial status
-
-// Fetch topics
-const topic = ref([]);
+// current page data
+const currentPage = ref(1);
+const pageSize = ref();
 
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params) => {
@@ -77,9 +76,10 @@ const fetchTopics = async (params) => {
       params: params
     });
 
+    // Call State Define above
     topic.value = response;
     status.value = 'success';
-    // console.log(topic.value)
+
     // Call sliceData after data is loaded
     sliceData(
       (currentPage.value - 1) * pageSize.value,
@@ -94,10 +94,6 @@ const fetchTopics = async (params) => {
 // Call Fetch Topics function
 fetchTopics({})
 
-// current page data
-const currentPage = ref(1);
-const pageSize = ref();
-
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
   pageSize.value = 12; // 12 topic cards
@@ -111,7 +107,6 @@ else if (isGreaterToMD) {
 else {
   pageSize.value = 4;// 4 topics card per page
 }
-
 
 // total pages data
 const totalPages = computed(() => {
@@ -160,7 +155,7 @@ const prevPage = () => {
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator()
 
-// define Emited
+// Define Filters Reactive State
 const filters = reactive(
   {
     level: null,
@@ -168,7 +163,7 @@ const filters = reactive(
   }
 )
 
-const level = ref()
+const level = ref()  // Initial Level State
 // watch emits changes
 watch(filters, (filters) => {
   fetchTopics({
@@ -189,15 +184,17 @@ watch(filters, (filters) => {
       <div v-if="status === 'pending'" class="flex flex-col justify-center items-center">
         <LoadingIndicator :is-loading="true" />
       </div>
+      <!-- Status Error -->
       <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
+
+      <!-- Status Success -->
       <div v-else-if="status == 'success'">
 
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
           <div class="w-full flex flex-col">
-
-
-            <div class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 xl:gap-10 mb-10">
+            <!-- Topic Cards are in Grid -->
+            <div class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 xl:gap-10 my-10">
               <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
                 :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
                 :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
@@ -208,7 +205,7 @@ watch(filters, (filters) => {
 
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div class="flex justify-center mb-10">
+            <div class="flex justify-center my-10">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
@@ -233,15 +230,16 @@ watch(filters, (filters) => {
           </div>
         </ClientOnly>
         <MessageTopicNotFound v-else />
-
       </div>
+
+      <!-- Even Data was not success should be handle here -->
       <div class="w-full flex flex-col" v-else>
         <div class="" v-if="slicedData?.length === 0">Try to refresh the page, Something went Wrong</div>
 
         <!-- client only  -->
         <ClientOnly v-else>
-          <div class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 mb-10">
-
+          <div class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-10">
+            <!-- Topic Cards are in Grid -->
             <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail"
               :topic-title="topic.name" :topic-description="topic.descriptions"
               :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
@@ -250,7 +248,7 @@ watch(filters, (filters) => {
               :topic-viewed="topic.isViewed" :topic-progress="topic.progressPercent" />
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div class="flex justify-center mb-10">
+            <div class="flex justify-center my-10">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
 
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"

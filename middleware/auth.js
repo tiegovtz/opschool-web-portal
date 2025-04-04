@@ -1,30 +1,29 @@
 import { refreshToken, isTokenExpiringSoon } from "~/utilities/jwToken";
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  // Get JWT and access token from cookies
-  const user = useCookie("signInUserToken"); 
+  const user = useCookie("signInUserToken");
   const userAccessToken = useCookie("signInAccessToken");
 
-  // Store the last visited topic page
   const path = useState("topicToView");
 
-  // 🔹 If user is not logged in and trying to access a protected route
-  if (!user.value && to.path !== "/auth") {
-    if (!path.value && from.fullPath.includes("/home")) {
-      return navigateTo("/home"); // Redirect to home if no previous topic
-    }
+  // 🔹 Redirect unauthenticated users trying to access protected routes
+  const protectedRoutes = ["/interactive", "/video"];
+  if (!user.value) {
     return navigateTo("/auth"); // Redirect to login page
   }
-
-  // 🔹 Check if access token is about to expire (within 60 seconds)
-  if (isTokenExpiringSoon(userAccessToken.value, 60)) {
+  else if (protectedRoutes.includes(to.path)) {
+    // 🔹 If trying to access "/interactive" without being logged in, check previous topic
+    if (to.path.includes("/interactive") && !path.value) {
+      return navigateTo("/home");
+    }
+  }
+  // 🔹 Check if access token is expiring soon (within 60 seconds)
+  if (userAccessToken.value && isTokenExpiringSoon(userAccessToken.value, 60)) {
     const newToken = await refreshToken();
-    
     if (newToken?.access_token) {
-      // ✅ Update access token
       userAccessToken.value = newToken.access_token;
     } else {
-      return navigateTo("/auth"); // 🔴 Redirect to login if refresh fails
+      return navigateTo("/auth"); // Redirect to login if refresh fails
     }
   }
 });

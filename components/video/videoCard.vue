@@ -58,7 +58,7 @@ const props = defineProps({
         style="height: 350px;">
         <!-- Thumbnail section -->
         <div class="relative overflow-hidden h-[280px]">
-            <NuxtImg :src="videoThumbnail" :alt="videoName.toLowerCase() "
+            <NuxtImg :src="videoThumbnail" :alt="videoName.toLowerCase()"
                 class="w-full h-full object-cover transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-70"></div>
 

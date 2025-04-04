@@ -1,9 +1,9 @@
 <script setup>
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
-import apiDocsFile from "~/utilities/api-docs";
-
-const apiDocs = apiDocsFile.setup()
+import { ref, computed, onMounted, watch } from 'vue';
+import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
+import apiDocs from "~/utilities/api-docs";
 
 useHead({
   title: "TIE - Video Resource",
@@ -30,13 +30,36 @@ useHead({
   ]
 })
 
-// Define state variables
-const error = ref(null);
-const status = ref('pending');
-const videos = ref();
+// Define Ref state variables
+const error = ref(null);        // Initial Error State
+const status = ref('pending'); // Initial Status State
+const videos = ref();         // Initial videos State
+const slicedData = ref();    // Initial slice data to 9
 
 // Define Cookie
 const auth_token = useCookie('signInAccessToken').value;
+
+// First, fix the sliceData function
+const sliceData = (start, end) => {
+
+  if (!videos.value || !Array.isArray(videos.value) || videos.value.length === 0) {
+    slicedData.value = [];
+    return;
+  }
+
+  // If only one page of data or less, return all data
+  if (videos.value.length <= pageSize.value) {
+    slicedData.value = videos.value;
+    return;
+  }
+
+  // Otherwise slice the data
+  slicedData.value = videos.value.slice(start, end);
+};
+
+// Define current page and Page size variable
+const currentPage = ref(1);
+const pageSize = ref();
 
 // Fetch Videos From Server
 const fetchVideos = async () => {
@@ -50,9 +73,16 @@ const fetchVideos = async () => {
       }
     });
 
+    // Call State Define above
     videos.value = response;
     status.value = 'success';
-    
+
+    // Call sliceData after data is loaded
+    sliceData(
+      (currentPage.value - 1) * pageSize.value,
+      currentPage.value * pageSize.value
+    );
+
   } catch (error) {
     status.value = 'error';
     error.value = error;
@@ -63,6 +93,66 @@ const fetchVideos = async () => {
 // Call FetchVideos Function
 fetchVideos();
 
+//  assigning page size based on screen sizes
+if (isGreaterToXL) {
+  pageSize.value = 12;  // 12 videos cards
+}
+else if (isGreaterToLG) {
+  pageSize.value = 9;   // 9 videos cards
+}
+else if (isGreaterToMD) {
+  pageSize.value = 6;    // 6 videos cards per page
+}
+else {
+  pageSize.value = 4; // 4 topics card per page
+}
+
+// total pages data
+const totalPages = computed(() => {
+  if (videos.value && Array.isArray(videos.value)) {
+    return Math.ceil(videos.value.length / pageSize.value);
+  }
+  return 0; // Default to 0 if no data
+});
+
+// Watch screen width and update page size accordingly
+watch(() => screenWidth.value, () => {
+  if (screenWidth.value >= 1280) {
+    pageSize.value = 12;
+
+  } else if (screenWidth.value >= 1024 && screenWidth.value < 1280) {
+    pageSize.value = 9
+  } else if (screenWidth.value >= 768 && screenWidth.value < 1024) {
+    pageSize.value = 6
+  } else if (screenWidth.value >= 640 && screenWidth.value < 768) {
+    pageSize.value = 4
+  } else {
+    pageSize.value = 4
+  }
+
+  // slice data per page size
+  sliceData(
+    (currentPage.value - 1) * pageSize.value,
+    currentPage.value * pageSize.value
+  )
+});
+
+// once pages are more than 5, handle pagination
+const nextPage = () => {
+  currentPage.value++;
+  currentPage.value = currentPage.value > totalPages.value ? totalPages.value : currentPage.value;
+  sliceData((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value);
+}
+
+const prevPage = () => {
+  currentPage.value--;
+  currentPage.value = currentPage.value < 1 ? 1 : currentPage.value;
+  sliceData((currentPage.value - 1) * pageSize.value, currentPage.value * pageSize.value);
+}
+
+// loadoing indicator
+const { progress, isLoading } = useLoadingIndicator()
+
 // Define Meta Data
 definePageMeta({
   middleware: 'auth',
@@ -72,22 +162,97 @@ definePageMeta({
 
 <template>
   <NuxtLayout name="home-layout">
-    <section class="wrapper-container">
+    <section class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
       <HeroSection />
       <HomeInputsSelection />
       <TabBar />
-      <div v-if="status === 'success'" class="grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4">
-        <VideoCard v-for="video in videos" :key="video._id" :video-id="video._id" :video-name="video.name"
-          :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl" :video-description="video.description" 
-          :video-subject="video.subject.name" :video-type="video.videoType" />
-      </div>
-      <!-- pending -->
-      <div v-else-if="status === 'pending'" class="flex flex-col justify-center items-center">
+
+      <div v-if="status === 'pending'" class="flex flex-col justify-center items-center">
         <LoadingIndicator :is-loading="true" />
       </div>
-      <!-- error -->
-      <div v-else>
-        Error: {{ error?.message }}
+      <!-- Status Error -->
+      <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
+      <!-- Status Success -->
+      <div v-else-if="status == 'success'">
+        <!-- client only -->
+        <ClientOnly v-if="slicedData?.length > 0">
+          <div class="w-full flex flex-col">
+
+            <div v-if="status === 'success'"
+              class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4 mt-10">
+              <!-- Video Cards are in Grid -->
+              <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
+                :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
+                :video-description="video.description" :video-subject="video.subject.name"
+                :video-type="video.videoType" />
+            </div>
+
+            <!-- pagination numbers based on data length greater to 9 -->
+            <div class="flex justify-center my-10">
+              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+              </div>
+              <div v-else class="flex justify-center gap-2">
+                <!-- previous -->
+                <div class="flex justify-center items-center" v-if="currentPage > 5">
+                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+                </div>
+
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+
+                <!-- next button -->
+                <div class="flex justify-center items-center" v-if="currentPage > 4">
+                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </ClientOnly>
+        <MessageTopicNotFound v-else />
+      </div>
+
+      <!-- Even Data was not success should be handle here -->
+      <div class="w-full flex flex-col" v-else>
+        <div class="" v-if="slicedData?.length === 0">Try to refresh the page, Something went Wrong</div>
+
+        <!-- client only  -->
+        <ClientOnly v-else>
+          <div class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 mb-10">
+            <!-- Video Cards are in Grid -->
+            <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
+              :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
+              :video-description="video.description" :video-subject="video.subject.name"
+              :video-type="video.videoType" />
+
+            <!-- pagination numbers based on data length greater to 9 -->
+            <div class="flex justify-center my-10">
+              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
+
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+              </div>
+
+              <div v-else class="flex justify-center gap-2">
+                <!-- previous -->
+                <div class="flex justify-center items-center" v-if="currentPage > 5">
+                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+                </div>
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                <!-- next button -->
+                <div class="flex justify-center items-center" v-if="currentPage > 4">
+                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </ClientOnly>
       </div>
     </section>
   </NuxtLayout>
