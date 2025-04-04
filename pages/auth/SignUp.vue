@@ -564,7 +564,8 @@ const switchTab = (tabName) => {
         <NuxtImg src="/logo/logo_tie.webp" class="w-full h-full object-contain" alt="logo" />
       </NuxtLink>
       <form @submit.prevent="signUp" @keydown.enter.prevent
-        class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" :class="[
+        class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" 
+        :class="[
           {
             'md:h-[600px]':
               usersignUp.controller.errors.age ||
@@ -580,13 +581,11 @@ const switchTab = (tabName) => {
         <div class="flex flex-col absolute -left-150 top-0 px-6 transition-all duration-500"
           :class="inputTabs === 'tabOne' ? 'left-0 w-full' : ''">
           <!-- Select User Type -->
-          <div class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue" :class="{
-            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-              usersignUp.controller.errors.type,
-          }">
+          <div class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue" 
+             :class="{'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.type,}">
             <div class="flex flex-col w-full items-start">
-              <label for="type" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select User
-                Type:</label>
+              <label for="type" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select User Type:</label>
               <select name="type" id="type" v-model="usersignUp.type" class="w-full p-1 focus:outline-none focus:ring-0"
                 :class="{ 'text-textGray/40': !usersignUp.type }">
                 <option value="">(eg: Student, Teacher ...)</option>
