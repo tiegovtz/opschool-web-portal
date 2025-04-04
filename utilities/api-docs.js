@@ -38,6 +38,7 @@ const apiDocs = {
 
   // EXPERIMENTS API
   experiments: {
+    getExperiments: `${baseURL}/experiments`,
     getExperimentId: `${baseURL}/experiments/:id`,
   },
 
