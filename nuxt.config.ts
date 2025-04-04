@@ -5,7 +5,7 @@ console.log('- Environment from .env');
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
-  devtools: { enabled: process.env.NUXT_DEV_TOOLS === 'true' },
+  devtools: { enabled: true },
   css: ["~/assets/css/main.css"],
 
   plugins: [
@@ -72,7 +72,7 @@ export default defineNuxtConfig({
         'script-src': process.env.NUXT_CSP_SCRIPT_SRC?.split(" ") || ["'self'", 'https:', "'unsafe-inline'", 'https://www.google-analytics.com'],
         'style-src': process.env.NUXT_CSP_STYLE_SRC?.split(" ") || ["'self'", 'https:', "'unsafe-inline'"],
         'img-src': process.env.NUXT_CSP_IMG_SRC?.split(" ") || ["'self'", 'data:', 'https://apitie.ekima.africa', 'http://41.59.102.150:3000', 'blob:'],
-        'media-src': ["'self'", 'https://apitier.ekima.africa', 'http://41.59.102.150:3000', 'blob:'],
+        'media-src': ["'self'", 'https://apitie.ekima.africa', 'http://41.59.102.150:3000', 'blob:'],
         'object-src': process.env.NUXT_CSP_OBJECT_SRC || "'none'",
         'form-action': process.env.NUXT_CSP_FORM_ACTION || "'self'",
         'frame-ancestors': process.env.NUXT_CSP_FRAME_ANCESTORS || "'self'",
@@ -85,7 +85,7 @@ export default defineNuxtConfig({
       crossOriginOpenerPolicy: 'same-origin',
       crossOriginEmbedderPolicy: 'credentialless',
       originAgentCluster: '?1',
-      referrerPolicy: 'no-referrer',
+      referrerPolicy: 'strict-origin-when-cross-origin',
       strictTransportSecurity: {
         maxAge: 15552000,
         includeSubdomains: true,
