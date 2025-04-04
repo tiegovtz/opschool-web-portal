@@ -7,7 +7,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const path = useState("topicToView");
 
   // 🔹 Redirect unauthenticated users trying to access protected routes
-  const protectedRoutes = ["/interactive", "/video"];
+  const protectedRoutes = ["/interactive", "/video", "/experiments"];
   if (!user.value) {
     return navigateTo("/auth"); // Redirect to login page
   }

@@ -12,15 +12,14 @@
         Interactive Books
       </NuxtLink>
 
-
-      <!-- Audio -->
-      <NuxtLink to="/audio"
+      <!-- Experiments -->
+      <NuxtLink to="/experiments"
         class="flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
-          <Icon name="famicons:headset-sharp" size="20" />
+          <Icon name="icon-park-solid:experiment-one" size="20" />
         </div>
-        Audio
+        Experiments
       </NuxtLink>
 
       <!-- Video -->
@@ -32,6 +31,18 @@
         </div>
         Video
       </NuxtLink>
+
+      <!-- Audio -->
+      <NuxtLink to="/audio"
+        class="flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2"
+        active-class="text-white !bg-deepBlue">
+        <div class="flex items-center justify-center">
+          <Icon name="famicons:headset-sharp" size="20" />
+        </div>
+        Audio
+      </NuxtLink>
+
+
     </div>
   </section>
 </template>
