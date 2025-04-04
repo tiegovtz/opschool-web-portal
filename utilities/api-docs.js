@@ -1,13 +1,20 @@
+// This file contains the API endpoints for the application.
+
+import { _BASE_API_URL } from "./controlls.js"; // Import the _BASE_API_URL from controlls.js
+
 export default {
   setup() {
     let BASE_API_URL;
-    
-    if(process.client){
-        const { $BASE_API_URL } = useNuxtApp(); 
-        BASE_API_URL=$BASE_API_URL
+    // Check if the code is running on the client-side or server-side
+    // and set the BASE_API_URL accordingly
+    // In Nuxt 3, you can use the `useNuxtApp` function to access the app context
+    // and retrieve the environment variable for the API URL
+    if(_BASE_API_URL.value){
+        BASE_API_URL = _BASE_API_URL.value // Use the value from the controlls.js file
     }
     else{
-        BASE_API_URL = process.env.NUXT_API_BASE_URL
+      const { $BASE_API_URL } = useNuxtApp(); 
+      BASE_API_URL=$BASE_API_URL
     }
 
     return {

@@ -20,6 +20,7 @@ const popMessage= ref()
 const screenWidth = ref(0)
 
 const experimrntUrl = ref();
+const _BASE_API_URL = ref()
 
 export {
     isGreaterToXL,
@@ -31,4 +32,5 @@ export {
     isPopUp,
     popMessage,
     experimrntUrl,
+    _BASE_API_URL
 }
