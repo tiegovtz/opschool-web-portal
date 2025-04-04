@@ -63,6 +63,9 @@ export default defineNuxtConfig({
     enabled: process.env.NUXT_ENABLE_SECURITY === 'true',
     hidePoweredBy: true,
     removeLoggers: true,
+    csp:{
+      hashAlgorithm: 'sha256',
+    },
 
     headers: {
       contentSecurityPolicy: {
