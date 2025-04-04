@@ -37,7 +37,7 @@ const signIn = async () => {
     let isValid = true;
 
     // Check for empty fields first
-    if (!auth.checkEmailPhoneOrUsername(userSignIn.username) ) {
+    if (!auth.checkEmailPhoneOrUsername(userSignIn.username.trim()) ) {
         userSignIn.controller.errors.username = messages.error.form.usernameValid;
         isValid = false;
     }
@@ -131,7 +131,7 @@ const togglePassword = () => {
 // Clear validation errors when user types
 watch(() => userSignIn.username, (username) => {
     if (username) {
-        if (auth.checkEmailPhoneOrUsername(username)) {
+        if (auth.checkEmailPhoneOrUsername(username.trim())) {
             userSignIn.controller.errors.username = '';
         } else {
             userSignIn.controller.errors.username = messages.error.form.usernameValid;
