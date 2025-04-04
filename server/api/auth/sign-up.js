@@ -5,8 +5,9 @@ export default defineEventHandler(async (event) => {
          
         // Parse request body
         const body = await readBody(event);
-        const url = apiDocs.auth.signUp;  
         const apiDocs = apiDocsFile.setup()
+        const url = apiDocs.auth.signUp;  
+       
         // Make the request to the external API
         const response = await fetch(url, {
             method: "POST",

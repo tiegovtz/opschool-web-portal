@@ -6,9 +6,9 @@ import videoParser from "~/utilities/parsers/videoParser";
 import { experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";
  
-
+const apiDocs = apiDocsFile.setup();
 const route = useRoute();
 const router = useRouter();
 const topicId = route.fullPath.split("/").pop();
@@ -127,7 +127,7 @@ const fullScreen = () => {
 const toggleSidebar = () => {
   if (import.meta.client) {
     const sidebar = document.querySelector('.sidebar');
-    sidebar.classList.toggle('right-0')
+    sidebar.classList.toggle('righapiDocst-0')
   }
 }
 
@@ -180,6 +180,7 @@ const topicViewedRead = async (topicId) => {
 // Fetch Questions by Topic Chapter
 const getQNTopicChapter = async (chapterId) => {
   try {
+    
     const response = await $fetch(apiDocs.chapters.getTopicChapterQNs, {
       method: "GET",
       headers: {

@@ -1,9 +1,10 @@
 // import { isEmptyObject } from "@tiptap/core";
 
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";
 
 export default defineEventHandler(async (event) => {
-   ;
+
+  const apiDocs = apiDocsFile.setup(); // Get the API documentation
   const { chapterId } = getRouterParams(event); // Get query parameters
   const auth_token = getCookie(event, "signInAccessToken");
 
