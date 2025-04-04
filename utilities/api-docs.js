@@ -10,10 +10,16 @@ export default {
     // and retrieve the environment variable for the API URL
     if (_BASE_API_URL.value) {
       baseURL = _BASE_API_URL.value; // Use the value from the controlls.js file
-    } else {
-      const { $BASE_API_URL } = useNuxtApp();
-      baseURL = $BASE_API_URL;
     }
+    else{
+      baseURL = process.env.NUXT_API_BASE_URL 
+    }
+
+    //  else {
+    //   const { $BASE_API_URL } = useNuxtApp();
+    //   baseURL = $BASE_API_URL;
+    //   console.log('sis',import.meta.env.SSR);
+    // }
 
     return {
       baseURL: `${baseURL}`, // You can include it here for reference

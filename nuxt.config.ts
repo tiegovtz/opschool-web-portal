@@ -1,7 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 import { resolve } from 'path';
 
-export const BASE_API_URL = process.env.NUXT_API_BASE_URL || 'https://apitie.ekima.africa/v1';
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
   devtools: { enabled: process.env.NUXT_DEV_TOOLS === 'true' },
