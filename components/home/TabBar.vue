@@ -12,15 +12,6 @@
         Interactive Books
       </NuxtLink>
 
-      <!-- Electronics Books -->
-      <NuxtLink to="/ebooks"
-        class="flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2"
-        active-class="text-white !bg-deepBlue">
-        <div class="flex items-center justify-center">
-          <Icon name="ph:notebook-fill" size="20" />
-        </div>
-        eBooks
-      </NuxtLink>
 
       <!-- Audio -->
       <NuxtLink to="/audio"

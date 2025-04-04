@@ -1,8 +1,8 @@
 <script setup>
 import axios from 'axios';
-import apiDocs from '@/utilities/api-docs';
 import TopicCard from './TopicCard.vue';
-
+import apiDocsFile from "~/utilities/api-docs";;
+const apiDocs = apiDocsFile.setup()
 const searchReactive = reactive({
   search: null,
   searchResult: null

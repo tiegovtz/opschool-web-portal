@@ -4,11 +4,11 @@ import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from '~/utilities/parsers/modelParser'
 import videoParser from "~/utilities/parsers/videoParser";
 import { experimrntUrl } from "~/utilities/controlls";
-import apiDocs from "~/utilities/api-docs";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
-
-
+import apiDocsFile from "~/utilities/api-docs";
+ 
+const apiDocs = apiDocsFile.setup();
 const route = useRoute();
 const router = useRouter();
 const topicId = route.fullPath.split("/").pop();
@@ -127,7 +127,7 @@ const fullScreen = () => {
 const toggleSidebar = () => {
   if (import.meta.client) {
     const sidebar = document.querySelector('.sidebar');
-    sidebar.classList.toggle('right-0')
+    sidebar.classList.toggle('righapiDocst-0')
   }
 }
 
@@ -180,6 +180,7 @@ const topicViewedRead = async (topicId) => {
 // Fetch Questions by Topic Chapter
 const getQNTopicChapter = async (chapterId) => {
   try {
+    
     const response = await $fetch(apiDocs.chapters.getTopicChapterQNs, {
       method: "GET",
       headers: {
@@ -290,13 +291,8 @@ definePageMeta({
         </div>
       </div>
       <!-- Chapter Questions -->
-      <QuestionsContainer v-mathjax
-       :questions="chapters?.questions"
-       :is-attempting-quiz="chapters.isAttemptingQuizes"
-       :change-chapter="changeChapter"
-       :chapters-list="chapters.list?.length"
-       :chapters-number="chapters?.number"
-       />
+      <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
+        :change-chapter="changeChapter" :chapters-list="chapters.list?.length" :chapters-number="chapters?.number" />
 
     </div>
     <section v-else class=" relative w-full h-full inline-flex center-height overflow-hidden">
@@ -313,7 +309,7 @@ definePageMeta({
 
       <!-- Success state -->
       <div v-else-if="chapters.status == 'success'" class="success w-full flex justify-center">
-        <!-- Notes loading -->
+        <!-- Notes loading w-3/4 -->
         <div v-if="chapters.notesStatus == 'pending'"
           class="flex w-full items-center justify-center lg:w-3/4 lg:scroll-height lg:overflow-y-scroll p-5 flex-col h-full">
           <div class="flex-1 flex items-center justify-center">
@@ -334,7 +330,7 @@ definePageMeta({
 
               <NuxtLink to="/" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                 {{ topicStandard != null && topicStandard != undefined && topicStandard != "null" ? topicStandard :
-                  `Form One` }}
+                `Form One` }}
                 <Icon name="weui:arrow-outlined" size="18" class=" text-black" />
               </NuxtLink>
 
@@ -360,8 +356,9 @@ definePageMeta({
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
             </div>
 
-            <!-- Chapter Button -->
-            <div v-if="chapters.questions && chapters.questions?.length > 0" class="flex items-center justify-center w-full">
+            <!-- Chapter Button - (Test your knowledge) -->
+            <div v-if="chapters.questions && chapters.questions?.length > 0"
+              class="flex items-center justify-center w-full">
               <button
                 class="bg-oceanBlue hover:bg-deepBlue px-4 text-white h-10 rounded-md cursor-pointer transition-colors duration-500 ease-in-out uppercase"
                 @click="chapters.isAttemptingQuizes = true;">
@@ -399,7 +396,7 @@ definePageMeta({
           <MessageTopicNotFound message="This chapter currently not available" />
         </div>
 
-        <!-- Sidebar -->
+        <!-- Sidebar w-1/4 -->
         <div
           class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2  lg:static bg-white">
           <div class="flex items-center justify-between mb-4">

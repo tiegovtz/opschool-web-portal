@@ -1,7 +1,10 @@
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";;
+
+
 
 export default defineEventHandler(async (event) => {
     try {
+        const apiDocs = apiDocsFile.setup() 
         const body = readBody(event);
         const url = apiDocs.auth.resetPassword;
 

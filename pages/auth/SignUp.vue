@@ -1,11 +1,11 @@
 <script setup>
-import apiDocs from "~/utilities/api-docs";
 import messages from "~/utilities/messages";
 import { sanitize } from "~/utilities/sanitizeInput";
 import { auth } from "~/utilities/validationInput";
 import axios from 'axios'
 import { generateRandomID } from "~/utilities/generateRandomNumber";
-
+import apiDocsFile from "~/utilities/api-docs";;
+const apiDocs = apiDocsFile.setup() 
 // input tabs control
 const inputTabs = ref("tabOne");
 

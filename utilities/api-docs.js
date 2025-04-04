@@ -1,12 +1,31 @@
-const baseURL = "https://apitie.ekima.africa/v1"; // Define baseURL first
+// This file contains the API endpoints for the application.
 
-// const baseURL = "http://127.0.0.1:3003/v1" // Define baseURL first
+import { _BASE_API_URL } from "./controlls.js"; // Import the _BASE_API_URL from controlls.js
+export default {
+  setup() {
+    let baseURL;
+    // Check if the code is running on the client-side or server-side
+    // and set the BASE_API_URL accordingly
+    // In Nuxt 3, you can use the `useNuxtApp` function to access the app context
+    // and retrieve the environment variable for the API URL
+    if (_BASE_API_URL.value) {
+      baseURL = _BASE_API_URL.value; // Use the value from the controlls.js file
+    }
+    else{
+      baseURL = process.env.NUXT_API_BASE_URL 
+    }
 
-const apiDocs = {
-    baseURL: baseURL, // You can include it here for reference
+    //  else {
+    //   const { $BASE_API_URL } = useNuxtApp();
+    //   baseURL = $BASE_API_URL;
+    //   console.log('sis',import.meta.env.SSR);
+    // }
 
-    // AUTH API
-    auth: {
+    return {
+      baseURL: `${baseURL}`, // You can include it here for reference
+
+      // AUTH API
+      auth: {
         // POST
         signUp: `${baseURL}/auth/sign-up`,
         login: `${baseURL}/auth/login`,
@@ -26,35 +45,35 @@ const apiDocs = {
 
         // PATCH or PUT
         profileEdit: `${baseURL}/auth/profile/edit`,
-    },
+      },
 
-    // CHAPTERS API
-    chapters: {
+      // CHAPTERS API
+      chapters: {
         getChapters: `${baseURL}/chapters`,
         getChapterId: `${baseURL}/chapters/:id`,
         getByTopicId: `${baseURL}/chapters/load-by-topic/{topicId}`,
         getTopicChapterQNs: `${baseURL}/questions/topic-chapter`,
-    },
-    
-    // EXPERIMENTS API
-    experiments: {
-        getExperimentId: `${baseURL}/experiments/:id`,
-    },
+      },
 
-    // LEVELS API
-    levels: {
+      // EXPERIMENTS API
+      experiments: {
+        getExperimentId: `${baseURL}/experiments/:id`,
+      },
+
+      // LEVELS API
+      levels: {
         getLevels: `${baseURL}/levels`,
         getLevelId: `${baseURL}/levels/:id`,
-    },
+      },
 
-    // SUBJECTS API
-    subjects: {
+      // SUBJECTS API
+      subjects: {
         getSubjects: `${baseURL}/subjects`,
         getSubjectId: `${baseURL}/subjects/:id`,
-    },
+      },
 
-    // TOPICS API
-    topics: {
+      // TOPICS API
+      topics: {
         getTopics: `${baseURL}/topics`,
         getTopicId: `${baseURL}/topics/:id`,
         getQuestionId: `${baseURL}/topics/{id}/questions`,
@@ -62,19 +81,20 @@ const apiDocs = {
         filterTopics: `${baseURL}/public-topics`,
         filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
         topicViewedRead: `${baseURL}/topics/{id}/read`,
-    },
+      },
 
-    // VIDEO API 
-    videos: {
+      // VIDEO API
+      videos: {
         getStream: `${baseURL}/video-stream/`,
-    },
+        getVideos: `${baseURL}/videos`,
+        getVideoById: `${baseURL}/videos/{id}`,
+      },
 
-    //  PROGRESS
-    progress:{
-        video:`${baseURL}/progress/video`,
-        notes:`${baseURL}/progress/notes`
-    }
-
-}
-
-export default apiDocs;
+      //  PROGRESS
+      progress: {
+        video: `${baseURL}/progress/video`,
+        notes: `${baseURL}/progress/notes`,
+      },
+    };
+  },
+};

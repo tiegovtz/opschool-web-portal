@@ -1,11 +1,12 @@
 <script setup>
 import messages from '~/utilities/messages';
 import { auth } from '~/utilities/validationInput';
-import apiDocs from '~/utilities/api-docs';
 import { sanitize } from "~/utilities/sanitizeInput";
 import axios from 'axios'
+import apiDocsFile from "~/utilities/api-docs";;
+ 
 
-
+const apiDocs = apiDocsFile.setup()
 const path = useState('topicToView')
 // User Sign In Function
 const userSignIn = reactive({
@@ -36,7 +37,7 @@ const signIn = async () => {
     let isValid = true;
 
     // Check for empty fields first
-    if (!auth.checkEmailPhoneOrUsername(userSignIn.username) ) {
+    if (!auth.checkEmailPhoneOrUsername(userSignIn.username.trim()) ) {
         userSignIn.controller.errors.username = messages.error.form.usernameValid;
         isValid = false;
     }
@@ -86,6 +87,8 @@ const signIn = async () => {
                 setTimeout(() => {
                     // router
                     const router = useRouter();
+                    // const route = useRoute()
+                    // console.log(route.redirectedFrom)
 
                     if (path.value) {
                         // Clears history and navigates to the new page 
@@ -128,7 +131,7 @@ const togglePassword = () => {
 // Clear validation errors when user types
 watch(() => userSignIn.username, (username) => {
     if (username) {
-        if (auth.checkEmailPhoneOrUsername(username)) {
+        if (auth.checkEmailPhoneOrUsername(username.trim())) {
             userSignIn.controller.errors.username = '';
         } else {
             userSignIn.controller.errors.username = messages.error.form.usernameValid;

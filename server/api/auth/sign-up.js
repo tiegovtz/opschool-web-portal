@@ -1,11 +1,13 @@
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";;
 
 export default defineEventHandler(async (event) => {
     try {
+         
         // Parse request body
         const body = await readBody(event);
+        const apiDocs = apiDocsFile.setup()
         const url = apiDocs.auth.signUp;  
-
+       
         // Make the request to the external API
         const response = await fetch(url, {
             method: "POST",

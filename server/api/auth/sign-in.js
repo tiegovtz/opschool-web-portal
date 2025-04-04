@@ -1,7 +1,8 @@
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";;
 
 export default defineEventHandler(async (event) => {
     try {
+        const apiDocs = apiDocsFile.setup() 
         // Parse request body
         const body = await readBody(event);
         const url = apiDocs.auth.login;  

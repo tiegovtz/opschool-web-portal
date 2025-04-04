@@ -4,6 +4,7 @@
  * @version 1.0.0
  * @since 1.0.0
  */
+import { ref } from "vue";
 
 const isGreaterToXL = ref(false); // check if the screen size is greater to xl
 const isGreaterToLG = ref(false); // check if the screen size is greater to lg
@@ -19,6 +20,7 @@ const popMessage= ref()
 const screenWidth = ref(0)
 
 const experimrntUrl = ref();
+const _BASE_API_URL = ref()
 
 export {
     isGreaterToXL,
@@ -29,5 +31,6 @@ export {
     screenWidth,
     isPopUp,
     popMessage,
-    experimrntUrl
+    experimrntUrl,
+    _BASE_API_URL
 }

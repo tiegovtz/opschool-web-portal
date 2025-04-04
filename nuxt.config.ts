@@ -1,10 +1,8 @@
 import tailwindcss from "@tailwindcss/vite";
 import { resolve } from 'path';
-import apiDocs from "./utilities/api-docs";
-// import '@google/model-viewer';
+//  notify user that system is using enviroment variable
+console.log('- Environment from .env');
 
-// https://nuxt.com/docs/api/configuration/nuxt-config
-const isProd = process.env.NODE_ENV?.toString().toLowerCase() === 'production';
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
   devtools: { enabled: true },
@@ -31,6 +29,7 @@ export default defineNuxtConfig({
     'nuxt-security'
   ],
 
+
   image: {
     // dir: "assets/images",
     // dirPublic: "public/images",
@@ -48,93 +47,88 @@ export default defineNuxtConfig({
     },
   },
 
-  devServer: {
-    host: ' 192.168.0.12 ',
-    port: 3001
-  },
   runtimeConfig: {
     public: {
-      enableSecurity: isProd // ✅ Control security dynamically
-    }
+      BASE_API_URL: process.env.NUXT_API_BASE_URL || 'https://apitie.ekima.africa/v1',
+    },
   },
+
+  devServer: {
+    host: process.env.NUXT_LOCAL_NETWORK_IP || '127.0.0.1',
+    port: process.env.NUXT_RUNNING_PORT ? parseInt(process.env.NUXT_RUNNING_PORT) : 3000,
+  },
+
   security: {
     strict: false,
-    enabled: isProd,
+    enabled: process.env.NUXT_ENABLE_SECURITY === 'true',
     hidePoweredBy: true,
     removeLoggers: true,
+    csp:{
+      hashAlgorithm: 'sha256',
+    },
 
     headers: {
       contentSecurityPolicy: {
-        'base-uri': ["'none'"],
-        'font-src': ["'self'", 'https:', 'data:'],
-        'form-action': ["'self'"],
-        'frame-ancestors': ["'self'"],
-        'img-src': ["'self'", 'data:'],
-        'object-src': ["'none'"],
-        'script-src-attr': ["'none'"],
-        'style-src': ["'self'", 'https:', "'unsafe-inline'"],
-        'script-src': [
-          "'self'", 'https:', "'unsafe-inline'",
-          "'strict-dynamic'", "'nonce-{{nonce}}'"
-        ],
-        'upgrade-insecure-requests': true
+        'script-src': process.env.NUXT_CSP_SCRIPT_SRC?.split(" ") || ["'self'", 'https:', "'unsafe-inline'", 'https://www.google-analytics.com'],
+        'style-src': process.env.NUXT_CSP_STYLE_SRC?.split(" ") || ["'self'", 'https:', "'unsafe-inline'"],
+        'img-src': process.env.NUXT_CSP_IMG_SRC?.split(" ") || ["'self'", 'data:', 'https://apitie.ekima.africa', 'http://41.59.102.150:3000', 'blob:'],
+        'media-src': ["'self'", 'https://apitie.ekima.africa', 'http://41.59.102.150:3000', 'blob:'],
+        'object-src': process.env.NUXT_CSP_OBJECT_SRC || "'none'",
+        'form-action': process.env.NUXT_CSP_FORM_ACTION || "'self'",
+        'frame-ancestors': process.env.NUXT_CSP_FRAME_ANCESTORS || "'self'",
+        'font-src': process.env.NUXT_CSP_FONT_SRC?.split(" ") || ["'self'", 'https:', 'data:'],
+        'connect-src': process.env.NUXT_CORS_ALLOWED_ORIGIN?.split(",").map(domain => domain.trim()) || ['self'],
+        'upgrade-insecure-requests': process.env.NUXT_CSP_UPGRADE_INSECURE_REQUESTS === 'true',
       },
 
       crossOriginResourcePolicy: 'same-origin',
       crossOriginOpenerPolicy: 'same-origin',
       crossOriginEmbedderPolicy: 'credentialless',
       originAgentCluster: '?1',
-      referrerPolicy: 'no-referrer',
+      referrerPolicy: 'strict-origin-when-cross-origin',
       strictTransportSecurity: {
-        maxAge: 15552000, // 180 days
-        includeSubdomains: true
+        maxAge: 15552000,
+        includeSubdomains: true,
       },
       xContentTypeOptions: 'nosniff',
       xDNSPrefetchControl: 'off',
       xDownloadOptions: 'noopen',
       xFrameOptions: 'SAMEORIGIN',
       xPermittedCrossDomainPolicies: 'none',
-      xXSSProtection: '0'
+      xXSSProtection: '0',
     },
 
     requestSizeLimiter: {
-      maxRequestSizeInBytes: 2000000,
-      maxUploadFileRequestInBytes: 8000000,
-      throwError: true
+      maxRequestSizeInBytes: parseInt(process.env.NUXT_MAX_REQUEST_SIZE || '2000000'),
+      maxUploadFileRequestInBytes: parseInt(process.env.NUXT_MAX_UPLOAD_SIZE || '8000000'),
+      throwError: true,
     },
+
     rateLimiter: {
-      tokensPerInterval: 150,
-      interval: 300000,
+      tokensPerInterval: parseInt(process.env.NUXT_RATE_LIMIT_TOKENS_PER_INTERVAL || '150'),
+      interval: parseInt(process.env.NUXT_RATE_LIMIT_INTERVAL || '300000'),
       headers: false,
       driver: { name: 'lruCache' },
-      throwError: true
+      throwError: true,
     },
 
     corsHandler: {
-      origin: apiDocs.baseURL,
-      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-      preflight: { statusCode: 204 }
+      origin: process.env.NUXT_CORS_ALLOWED_ORIGIN || '*',
+      methods: process.env.NUXT_CORS_ALLOWED_METHODS?.split(',') || ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+      preflight: { statusCode: parseInt(process.env.NUXT_CORS_PREFLIGHT_STATUS || '204') },
     },
 
     allowedMethodsRestricter: {
       methods: '*',
-      throwError: true
+      throwError: true,
     },
 
     xssValidator: {
-      throwError: true
+      throwError: true,
     },
 
-    csrf: true,
-    nonce: true,
-    sri: true,
-
-    ssg: {
-      meta: true,
-      hashScripts: true,
-      hashStyles: false,
-      nitroHeaders: true,
-      exportToPresets: true
-    }
-  } // 🔹 Disable security in development
+    csrf: process.env.NUXT_CSRF === 'true',
+    nonce: process.env.NUXT_NONCE === 'true',
+    sri: process.env.NUXT_SRI === 'true',
+  },
 });
