@@ -14,7 +14,7 @@ export default defineNuxtConfig({
     { src: '~/plugins/dom-guard.client.js', mode: 'client' },
     { src: '~/plugins/harden-ui.client.js', mode: 'client' },
   ]
-
+,
   vite: {
     plugins: [
       tailwindcss(),
