@@ -10,8 +10,10 @@ export default defineNuxtConfig({
 
   plugins: [
     { src: '~/plugins/mathjax.client.js', mode: 'client' },
-    { src: '~/plugins/mathjax-directive.client.js', mode: 'client' }
-  ],
+    { src: '~/plugins/mathjax-directive.client.js', mode: 'client' },
+    { src: '~/plugins/dom-guard.client.js', mode: 'client' },
+    { src: '~/plugins/harden-ui.client.js', mode: 'client' },
+  ]
 
   vite: {
     plugins: [
