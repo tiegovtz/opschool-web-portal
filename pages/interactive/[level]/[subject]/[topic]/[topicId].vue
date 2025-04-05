@@ -91,12 +91,20 @@ const changeChapter = (action) => {
     if (action.toLowerCase() == 'p') {
       chapters.number == 1 ? '' : chapters.number--;
       getChapter(chapters.list[chapters.number - 1]._id);
+      chapters.isAttemptingQuizes = false; //close quiz
     }
     else
       if (action.toLowerCase() == 'n') {
+        // n = Next Chapter
         chapters.number == chapters.list?.length ? '' : chapters.number++;
         getChapter(chapters.list[chapters.number - 1]._id);
+        chapters.isAttemptingQuizes = false; //close quiz
       }
+      else 
+        if(action.toLowerCase() == 'r'){ 
+          // Read again
+          chapters.isAttemptingQuizes = false; //close quiz
+        }
     // Scroll Up when chapter changed
     window.scrollTo({
       top: 0,
@@ -283,12 +291,8 @@ definePageMeta({
     </section>
 
     <!-- quiz -->
-    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
-      <div class="flex items-center justify-end" @click="chapters.isAttemptingQuizes = false">
-        <div class="p-2 cursor-pointer h-10 w-10 rounded-full bg-red-500 flex items-center justify-center">
-          <Icon name="formkit:close" size="24" class="text-white font-bold" />
-        </div>
-      </div>
+    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center bg-[url('/public/images/QuizBackground.jpeg')] bg-cover bg-center bg-no-repeat">
+     
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :change-chapter="changeChapter" :chapters-list="chapters.list?.length" :chapters-number="chapters?.number" />
@@ -371,7 +375,7 @@ definePageMeta({
               <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length"
                 :class="{ 'opacity-0': chapters.number == chapters.list?.length }"
                 class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
-                <p class="capitalize flex gap-2">Next <span class="hidden md:flex"></span></p>
+                <p class="capitalize flex gap-2">Next <span class="hidden md:flex">Chapter</span></p>
                 <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
                 </div>
