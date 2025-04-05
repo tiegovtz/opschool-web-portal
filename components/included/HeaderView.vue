@@ -5,6 +5,8 @@ const userToken = useCookie('signInUserToken')
 
 const logout = () => {
   userToken.value = null;
+  const router = useRoute();
+  router.replace('/');
   // Dismiss Drop Down
   dropDown();
 }
@@ -61,7 +63,9 @@ const dropDown = () => {
 
           <!-- title (TIE online public school) -->
           <div class="flex-1">
-            <p class="uppercase lg:text-large text-medium text-shadow text-center">TIE online public school</p>
+            <NuxtLink to="/" class="uppercase lg:text-large text-medium text-shadow text-center block">
+              TIE online public school
+            </NuxtLink>
           </div>
 
           <!-- Profile and Sign Up -->
@@ -127,7 +131,9 @@ const dropDown = () => {
             </div>
 
             <!-- Paragraph Text -->
-            <p class="font-medium uppercase text-shadow ">TIE online public school</p>
+            <NuxtLink to="/" class="uppercase lg:text-large text-medium text-shadow text-center block">
+              TIE online public school
+            </NuxtLink>
 
             <!-- Logout and Sign in -->
             <div class="flex items-center">
