@@ -58,9 +58,7 @@ const setExperimentUrl =()=>{
     <NuxtLink
         :to="`/experiments/${experimentStandard.toLowerCase()}/${experimentSubject.toLowerCase()}/${experimentName.toLowerCase()}/${experimentId.toLowerCase()}`"
         class="relative flex flex-col rounded-lg overflow-hidden bg-white hover:bg-deepBlue shadow-md hover:shadow-xl transition-all duration-500 ease-in-out group cursor-pointer"
-        style="height: 350px;"
-        @click="setExperimentUrl()"
-        >
+        style="height: 350px;" @click="setExperimentUrl()">
         <!-- Thumbnail section -->
         <div class="relative overflow-hidden h-[280px]">
             <NuxtImg :src="experimentThumbnail" :alt="experimentName"
@@ -80,14 +78,14 @@ const setExperimentUrl =()=>{
 
         <!-- Content section -->
         <div class="flex flex-col p-4 flex-grow">
-            <!-- <h3
-                class="text-lg font-semibold mb-2 group-hover:text-white transition-colors duration-500 ease-in-out capitalize">
-                {{ experimentName }}
-            </h3> -->
             <p
                 class="text-sm text-gray-600  group-hover:text-white transition-colors duration-500 ease-in-out mb-4 line-clamp-2">
-                {{ experimentDescription }}
+                {{ experimentName }}
             </p>
+            <!-- <p
+                class="text-sm text-gray-600  group-hover:text-white transition-colors duration-500 ease-in-out mb-4 line-clamp-2">
+                {{ experimentDescription }}
+            </p> -->
 
             <!-- Metadata footer -->
             <!-- <div

@@ -90,12 +90,14 @@ const signIn = async () => {
                     // const route = useRoute()
                     // console.log(route.redirectedFrom)
 
-                    if (path.value) {
-                        // Clears history and navigates to the new page 
-                        router.replace(path.value);
-                    } else {
-                        router.replace('/home');
-                    }
+                    // if (path.value) {
+                    //     // Clears history and navigates to the new page 
+                    //     router.replace(path.value);
+                    // } else {
+                    //     router.replace('/home');
+                    // }
+
+                    router.back();
                 }, 2000)
 
 

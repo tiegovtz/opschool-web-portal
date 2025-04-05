@@ -20,6 +20,8 @@ const popMessage= ref()
 const screenWidth = ref(0)
 
 const experimrntUrl = ref();
+
+const currentTopic = ref();
 const _BASE_API_URL = ref()
 
 export {
@@ -33,4 +35,5 @@ export {
     popMessage,
     experimrntUrl,
     _BASE_API_URL
+    currentTopic,
 }
