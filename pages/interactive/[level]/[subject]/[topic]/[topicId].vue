@@ -3,7 +3,7 @@ import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from '~/utilities/parsers/modelParser'
 import videoParser from "~/utilities/parsers/videoParser";
-import { experimrntUrl } from "~/utilities/controlls";
+import { currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 import apiDocs from "~/utilities/api-docs";
@@ -15,6 +15,7 @@ const topicId = route.fullPath.split("/").pop();
 const topicTitle = String(route.fullPath.split("/")[4]).toString().replaceAll('%20', ' ');
 const topicStandard = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
 const topicLevel = String(route.fullPath.split("/")[3]).toString().replaceAll('%20', ' ');
+currentTopic.value = topicTitle;
 
 // tokens
 const signInAccessToken =useCookie('signInAccessToken')
@@ -106,7 +107,6 @@ const changeChapter = (action) => {
 
 // function for toggling  experiment fullscreeen
 const fullScreen = () => {
-
   // experiment container
   const experimentContainer = document.getElementById(`experiment-container`);
   if (import.meta.client) {
@@ -216,9 +216,9 @@ await useFetch(`/api/topics/${topicId}`)
   });
 
 
-watch(userToken, (token) => {
+watch(() => userToken.value, (token) => {
   // Get the router instance
-
+  console.log(token)
   if (!token) {
     router.replace("/");
   }

@@ -14,7 +14,6 @@ const experimentStandard = String(route.fullPath.split("/")[2])
 const experimentLevel = String(route.fullPath.split("/")[3])
     .toString()
     .replaceAll("%20", " ");
-const experimentUrl = `/api/experiment/${experimentId}`
 
 // Header
 useHead({
@@ -62,9 +61,10 @@ useHead({
 });
 
 // Define state variables
-const status = ref('pending');  // Initial status
-const error = ref(null);       // Initial error state
+const status = ref('pending');       // Initial status
+const error = ref(null);            // Initial error state
 const experimentInfo = ref();      // Initial experimentInfo state
+const isFullscreen = ref(false);    // Initial isFullscreen state
 
 // Define Cookie
 const auth_token = useCookie('signInAccessToken').value;
@@ -73,7 +73,7 @@ const auth_token = useCookie('signInAccessToken').value;
 const fetchExperimentById = async () => {
     try {
         status.value = 'pending';
-        const response = await $fetch(apiDocs.experiments.getExperimentId.replaceAll('{id}', experimentId), {
+        const response = await $fetch(apiDocs.experiments.getExperimentId.replaceAll(':id', experimentId), {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${auth_token}`,
@@ -101,6 +101,24 @@ const toggleSidebar = () => {
     }
 };
 
+// function for toggling  experiment fullscreeen
+const fullScreen = () => {
+  // experiment container
+  const experimentContainer = document.getElementById(`experiment-container`);
+  if (import.meta.client) {
+    if (!isFullscreen.value) {
+      experimentContainer.requestFullscreen();
+
+    } else {
+      document.exitFullscreen();
+
+    }
+    // set flag to opposite
+    isFullscreen.value = !isFullscreen.value;
+  }
+}
+
+
 // define authentication middleware
 definePageMeta({
     middleware: 'auth'
@@ -112,42 +130,42 @@ definePageMeta({
             <!-- w-3/4 -->
             <div
                 class="lg:w-3/4 w-full lg:scroll-height lg:overflow-y-scroll py-5 lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
-                <!-- Videovideo Level Standard and Subject Indicator -->
+                <!-- Experiments Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink to="/video"
+                        <NuxtLink to="/experiments"
                             class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                             {{
-                                experimentLevel != null &&
-                                    experimentLevel != undefined &&
-                                    experimentLevel != "null"
-                                    ? experimentLevel
-                                    : `Secondary`
+                            experimentLevel != null &&
+                            experimentLevel != undefined &&
+                            experimentLevel != "null"
+                            ? experimentLevel
+                            : `Secondary`
                             }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <NuxtLink to="/video"
+                        <NuxtLink to="/experiments"
                             class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
                             {{
-                                    experimentStandard != null &&
-                                        experimentStandard != undefined &&
-                                        experimentStandard != "null"
-                                        ? experimentStandard
-                                        : `Form One`
-                                }}
+                            experimentStandard != null &&
+                            experimentStandard != undefined &&
+                            experimentStandard != "null"
+                            ? experimentStandard
+                            : `Form One`
+                            }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
                         <p class="text-medium uppercase md:capitalize font-medium">
                             {{
-                                    experimentLevel != null &&
-                                        experimentLevel != undefined &&
-                                        experimentLevel != "null"
-                                        ? experimentLevel
-                                        : `Introduction to
+                            experimentTitle != null &&
+                            experimentTitle != undefined &&
+                            experimentTitle != "null"
+                            ? experimentTitle
+                            : `Introduction to
                             Physics`
-                                }}
+                            }}
                         </p>
                     </div>
                     <!-- Header Description -->
@@ -158,9 +176,23 @@ definePageMeta({
 
                 <!-- Description -->
                 <div class="notes md:px-4 max-w-7xl mx-auto">
-                    <iframe class="center-height w-full" :src="useState('experimentUrl').value" frameborder="0"></iframe>
+                    <LoadingIndicator :is-loading="status == 'pending'" v-if="status == 'pending'" />
+                    <MessagePageNotFound v-else-if="status == 'error'" message="Error while loading experiment"
+                        subMessage="Make sure you are connected to the stable internet or try to reload the page" />
 
-                    <!-- Video Description and Thumbnail Image -->
+                    <div class="relative w-full center-height rounded-md overflow-y-scroll" id="experiment-container"
+                        v-else-if="status == 'success'">
+                        <iframe class="center-height w-full rounded-md" :src="experimentInfo.stepsFileUrl"
+                            frameborder="0"></iframe>
+                        <!-- full screen controls -->
+                        <div class="screen-control absolute bottom-0 right-0 p-2 cursor-pointer h-10 w-10 bg-oceanBlue hover:bg-white hover:text-oceanBlue transition-all duration-500 text-white flex items-center justify-center rounded-md"
+                            :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" @click="fullScreen">
+                            <Icon v-if="isFullscreen" name="qlementine-icons:fullscreen-exit-16" size="24" />
+                            <Icon v-else name="qlementine-icons:fullscreen-16" size="24" />
+                        </div>
+                    </div>
+
+                    <!-- experiment Description and Thumbnail Image -->
                     <div class="flex items-center w-full h-full gap-4 my-4">
                         <!-- Thumbnail Image -->
                         <div class="w-14 h-14 rounded-full overflow-hidden lg:flex hidden">
@@ -168,7 +200,7 @@ definePageMeta({
                                 class="w-full h-full object-cover transition-transform duration-500" />
                         </div>
 
-                        <!-- Video Description -->
+                        <!-- experiment Description -->
                         <div class="flex w-full">
                             <p class="text-sm text-justify">
                                 {{ experimentInfo?.description }}
@@ -182,7 +214,7 @@ definePageMeta({
             <div
                 class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full h-full lg:w-1/4 p-2 lg:static center-height overflow-y-scroll bg-white">
                 <div class="flex flex-col mb-4 h-full">
-                    <h1 class="text-medium font-medium capitalize pt-5">Related Video</h1>
+                    <h1 class="text-medium font-medium capitalize pt-5">Related Experiments</h1>
                     <!-- toggle menu -->
                     <div class="hover:bg-oceanBlue cursor-pointer rounded-full w-5 h-5 flex lg:hidden items-center justify-center group transition-all duration-500 ease-in-out"
                         @click="toggleSidebar()">

@@ -1,5 +1,7 @@
 // import { isEmptyObject } from "@tiptap/core";
+import { response } from "express";
 import apiDocs from "~/utilities/api-docs";
+import { currentTopic } from "~/utilities/controlls";
 
 export default defineEventHandler(async (event) => {
   // get refferer header
@@ -29,19 +31,25 @@ if (
     }
 
     const videoUrl = `${apiDocs.videos.getStream}${videoId}`;
-
-    // // submit progess
-    // await fetch(apiDocs.progress.video,{
-    //   headers:{
-    //     'Authorization':`Bearer ${auth_token}`
-    //   },
-    //   body:JSON.stringify(
-    //     {
-    //       "video": `${videoId }`,
-    //       "topic": `${useState('topicToView') }`
-    //     }
-    //   )
-    // });
+    // console.log('video ID && Current Topic: ',videoId,referer.split('/')[6].replaceAll('%20',' '))
+    // submit progess
+    await fetch(apiDocs.progress.video,{
+      method:"POST",
+      headers:{
+        'Authorization':`Bearer ${auth_token}`
+      },
+      body:JSON.stringify(
+        {
+          "video": `${videoId }`,
+          "topic": `${referer.split('/').pop()}`
+        }
+      )
+    }).then(async (response) => {
+      console.log('Response',await response.json());
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
 
     // Forward the request with headers (including the Authorization token)
     return proxyRequest(event, videoUrl, {

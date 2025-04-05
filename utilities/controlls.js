@@ -21,6 +21,8 @@ const screenWidth = ref(0)
 
 const experimrntUrl = ref();
 
+const currentTopic = ref();
+
 export {
     isGreaterToXL,
     isGreaterToLG,
@@ -31,4 +33,5 @@ export {
     isPopUp,
     popMessage,
     experimrntUrl,
+    currentTopic,
 }
