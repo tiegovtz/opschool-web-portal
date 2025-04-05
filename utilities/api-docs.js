@@ -57,7 +57,8 @@ export default {
 
       // EXPERIMENTS API
       experiments: {
-        getExperimentId: `${baseURL}/experiments/:id`,
+        getExperiments: `${baseURL}/experiments`,
+    getExperimentId: `${baseURL}/experiments/:id`,
       },
 
       // LEVELS API
