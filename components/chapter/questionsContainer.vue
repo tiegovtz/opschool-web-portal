@@ -126,10 +126,10 @@ watch(
 
 <template>
   <section
-    class="flex flex-col items-center justify-center bg-black/40 center-height py-4 rounded-md"
+    class="flex flex-col items-center justify-center bg-white/70 center-height py-4 rounded-md"
   >
     <!-- Questions -->
-    <div class="w-full md:p-8 max-w-5xl container bg-white rounded-md"
+    <div class="w-full md:p-8 max-w-5xl container bg-white rounded-md custom-box-shadow"
     v-if="isAttemptingQuiz">
      <!-- Close Button -->
       <div class="flex items-center justify-end mb-2">

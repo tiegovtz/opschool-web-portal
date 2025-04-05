@@ -240,6 +240,11 @@ onMounted(async () => {
   // Call functin for set Pic Center
   setPicCenter();
 
+  // scroll
+  window.addEventListener("scroll", (event) => {
+    console.log(event)
+  })
+
 });
 
 // Watch chapter notes and Then, Set Pic Center
@@ -292,7 +297,7 @@ definePageMeta({
     </section>
 
     <!-- quiz -->
-    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center bg-[url('/public/images/QuizBackground.jpeg')] bg-cover bg-center bg-no-repeat">
+    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center bg-[url('/public/images/background2.png')] bg-cover bg-center bg-no-repeat">
      
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
