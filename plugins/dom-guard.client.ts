@@ -1,7 +1,13 @@
 export default defineNuxtPlugin(() => {
     if (import.meta.server) return;
   
-    // 1. 🧬 Mutation Observer to detect suspicious <script> tags
+    // ✅ Allow-list trusted script sources
+    const isTrustedScript = (node: Node) =>
+      node.nodeType === Node.ELEMENT_NODE &&
+      node.nodeName === 'SCRIPT' &&
+      (node as HTMLElement).hasAttribute('data-trusted');
+  
+    // 🚨 Monitor for suspicious <script> tags
     const scriptObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
@@ -10,7 +16,7 @@ export default defineNuxtPlugin(() => {
             node.nodeName === 'SCRIPT' &&
             !(node as HTMLElement).hasAttribute('data-trusted')
           ) {
-            console.warn('🚨 Blocked suspicious script injection:', node);
+            console.warn('🚨 Removed suspicious script:', node);
             node.parentNode?.removeChild(node);
           }
         }
@@ -22,45 +28,48 @@ export default defineNuxtPlugin(() => {
       subtree: true,
     });
   
-    // 2. 🔒 Lock down critical DOM node (Nuxt root)
-    const appRoot = document.getElementById('__nuxt');
-    const originalHTML = appRoot?.innerHTML;
+    // 🧩 Observe changes only outside the Nuxt dynamic region
+    const protectedRegions = ['header', 'footer']; // Add more selectors if needed
+    protectedRegions.forEach((selector) => {
+      const region = document.querySelector(selector);
+      if (region) {
+        const original = region.innerHTML;
   
-    if (appRoot && originalHTML) {
-      const domLock = new MutationObserver(() => {
-        if (appRoot.innerHTML !== originalHTML) {
-          console.warn('⚠️ App root was tampered with! Reverting changes.');
-          appRoot.innerHTML = originalHTML;
-        }
-      });
+        const regionObserver = new MutationObserver(() => {
+          if (region.innerHTML !== original) {
+            console.warn(`⚠️ Protected region <${selector}> was changed! Reverting.`);
+            region.innerHTML = original;
+          }
+        });
   
-      domLock.observe(appRoot, {
-        childList: true,
-        subtree: true,
-      });
-    }
+        regionObserver.observe(region, {
+          childList: true,
+          subtree: true,
+        });
+      }
+    });
   
-    // 3. 🧨 Disable dangerous global APIs
+    // 🧱 Block dangerous APIs
     try {
       window.eval = () => {
-        console.warn('❌ eval() is blocked by dom-guard.');
+        console.warn('❌ eval() is disabled');
         return null;
       };
   
       // @ts-ignore
       window.Function = () => {
-        console.warn('❌ Function constructor is blocked by dom-guard.');
+        console.warn('❌ Function constructor is disabled');
         return () => {};
       };
     } catch (err) {
-      console.error('Failed to override dangerous globals:', err);
+      console.error('Failed to override globals:', err);
     }
   
-    // 4. 🕵️‍♂️ Detect common extension clues
+    // 🔍 Detect common browser extension hints
     if (document.querySelector('[id^="crx"]') || (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__) {
-      console.warn('👀 Extension or DevTools hook detected!');
+      console.warn('👀 Extension or DevTools hook detected');
     }
   
-    console.log('[DOM Guard] Protection active ✅');
+    console.log('[DOM Guard] Running in safe mode ✅');
   });
   
