@@ -241,9 +241,13 @@ onMounted(async () => {
   setPicCenter();
 
   // scroll
-  window.addEventListener("scroll", (event) => {
+  const notes = document.querySelector('#notes-container');
+  if (notes) {
+    console.log(notes)
+     notes.addEventListener("scroll", (event) => {
     console.log(event)
   })
+  }
 
 });
 
@@ -297,7 +301,7 @@ definePageMeta({
     </section>
 
     <!-- quiz -->
-    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center bg-[url('/public/images/background2.png')] bg-cover bg-center bg-no-repeat">
+    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat">
      
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
@@ -327,7 +331,7 @@ definePageMeta({
         </div>
 
         <!-- Notes loaded successfully -->
-        <div v-else-if="chapters.notesStatus == 'success'"
+        <div id='notes-container' v-else-if="chapters.notesStatus == 'success'"
           class="lg:w-3/4 w-full lg:scroll-height lg:overflow-y-scroll py-5 lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between ">
@@ -361,7 +365,7 @@ definePageMeta({
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
             <!-- Chapter Notes -->
-            <div class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
+            <div  class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
             </div>
 
