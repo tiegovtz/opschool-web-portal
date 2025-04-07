@@ -18,6 +18,13 @@ const search = async () => {
     })
 }
 
+defineProps({
+  apperence: {
+    type: String,
+    default: 'border-b'
+  }
+})
+
 // watch search
 watch(() => searchReactive.search, (newVal) => {
   if (newVal && newVal.trim() !== '') {

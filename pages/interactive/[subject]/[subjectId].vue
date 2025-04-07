@@ -1,4 +1,5 @@
 <script setup>
+import TopicCard from "@/components/home/TopicCard.vue";
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import { ref, computed, onMounted, watch } from "vue";
@@ -11,6 +12,11 @@ import {
 } from "@/utilities/controlls";
 import InputsSelection from "@/components/home/InputsSelection.vue";
 import apiDocs from "~/utilities/api-docs";
+
+// Defin Route
+const route = useRoute();
+const topicId = route.fullPath.split("/").pop();
+const subjectTitle = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
 
 // Define meta info about page
 useHead({
@@ -59,176 +65,26 @@ useHead({
 
 const userToken = useCookie("signInUserToken");
 
-// Define Ref state
-// const status = ref('pending'); // Initial Status State
-const status = ref("success"); // Initial Status State
+// Define Ref State
+const status = ref("pending"); // Initial Status State
 const topic = ref([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
-const hideFilter = ref(false);   // Initial Hide Filters
-const activeTab =ref('home')
-
-// Define Subjects Data
-const subjects = [
-  {
-    _id: "s1",
-    name: "Mathematics",
-    thumbnail: "https://picsum.photos/300/200",
-    description: "Explore numbers, equations, and problem-solving strategies.",
-    total_topics: 12,
-    total_views: 1500,
-    total_likes: 340,
-    level: {
-      name: "Form 1",
-    },
-    isViewed: true,
-    progressPercent: 75,
-  },
-  {
-    _id: "s2",
-    name: "Physics",
-    thumbnail: "https://picsum.photos/300/201",
-    description: "Dive into the laws of motion, energy, and electricity.",
-    total_topics: 10,
-    total_views: 1200,
-    total_likes: 280,
-    level: {
-      name: "Form 2",
-    },
-    isViewed: false,
-    progressPercent: 40,
-  },
-  {
-    _id: "s3",
-    name: "Biology",
-    thumbnail: "https://picsum.photos/300/202",
-    description: "Understand life, cells, plants, and ecosystems.",
-    total_topics: 8,
-    total_views: 1000,
-    total_likes: 300,
-    level: {
-      name: "Form 1",
-    },
-    isViewed: true,
-    progressPercent: 90,
-  },
-  {
-    _id: "s4",
-    name: "Chemistry",
-    thumbnail: "https://picsum.photos/300/203",
-    description: "Learn about atoms, molecules, reactions, and experiments.",
-    total_topics: 9,
-    total_views: 950,
-    total_likes: 210,
-    level: {
-      name: "Form 3",
-    },
-    isViewed: false,
-    progressPercent: 20,
-  },
-  {
-    _id: "s5",
-    name: "Geography",
-    thumbnail: "https://picsum.photos/300/204",
-    description: "Study the Earth’s structure, climate, and human geography.",
-    total_topics: 11,
-    total_views: 890,
-    total_likes: 170,
-    level: {
-      name: "Form 2",
-    },
-    isViewed: true,
-    progressPercent: 60,
-  },
-  {
-    _id: "s6",
-    name: "History",
-    thumbnail: "https://picsum.photos/300/209",
-    description:
-      "Learn about ancient civilizations, colonization, and independence.",
-    total_topics: 7,
-    total_views: 780,
-    total_likes: 150,
-    level: {
-      name: "Form 3",
-    },
-    isViewed: false,
-    progressPercent: 30,
-  },
-  {
-    _id: "s7",
-    name: "Civics",
-    thumbnail: "https://picsum.photos/300/208",
-    description: "Understand rights, responsibilities, and government systems.",
-    total_topics: 5,
-    total_views: 640,
-    total_likes: 130,
-    level: {
-      name: "Form 1",
-    },
-    isViewed: true,
-    progressPercent: 95,
-  },
-  {
-    _id: "s8",
-    name: "English Language",
-    thumbnail: "https://picsum.photos/300/207",
-    description:
-      "Improve grammar, vocabulary, comprehension, and writing skills.",
-    total_topics: 14,
-    total_views: 1600,
-    total_likes: 400,
-    level: {
-      name: "Form 2",
-    },
-    isViewed: true,
-    progressPercent: 88,
-  },
-  {
-    _id: "s9",
-    name: "Kiswahili",
-    thumbnail: "https://picsum.photos/300/206",
-    description: "Enhance speaking, reading, and writing in Kiswahili.",
-    total_topics: 10,
-    total_views: 1100,
-    total_likes: 275,
-    level: {
-      name: "Form 1",
-    },
-    isViewed: false,
-    progressPercent: 55,
-  },
-  {
-    _id: "s10",
-    name: "Computer Studies",
-    thumbnail: "https://picsum.photos/300/205",
-    description:
-      "Learn the basics of computers, software, and digital literacy.",
-    total_topics: 6,
-    total_views: 720,
-    total_likes: 200,
-    level: {
-      name: "Form 3",
-    },
-    isViewed: true,
-    progressPercent: 70,
-  },
-];
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
-  if (!subjects || !Array.isArray(subjects) || subjects.length === 0) {
+  if (!topic.value || !Array.isArray(topic.value) || topic.value.length === 0) {
     slicedData.value = [];
     return;
   }
 
   // If only one page of data or less, return all data
-  if (subjects.length <= pageSize.value) {
-    slicedData.value = subjects;
+  if (topic.value.length <= pageSize.value) {
+    slicedData.value = topic.value;
     return;
   }
 
   // Otherwise slice the data
-  slicedData.value = subjects.slice(start, end);
+  slicedData.value = topic.value.slice(start, end);
 };
 
 // current page data
@@ -251,7 +107,7 @@ const fetchTopics = async (params) => {
     });
 
     // Call State Define above
-    // topic.value = response;
+    topic.value = response;
     status.value = "success";
 
     // Call sliceData after data is loaded
@@ -266,7 +122,7 @@ const fetchTopics = async (params) => {
 };
 
 // Call Fetch Topics function
-// fetchTopics({})
+fetchTopics({});
 
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
@@ -281,7 +137,7 @@ if (isGreaterToXL) {
 
 // total pages data
 const totalPages = computed(() => {
-  if (subjects && Array.isArray(subjects)) {
+  if (topic.value && Array.isArray(topic.value)) {
     return Math.ceil(topic.value.length / pageSize.value);
   }
   return 0; // Default to 0 if no data
@@ -348,34 +204,21 @@ watch(filters, (filters) => {
     subject: filters.subject.toString(),
   });
 });
-
-// Call sliceData after data is loaded
-sliceData(
-  (currentPage.value - 1) * pageSize.value,
-  currentPage.value * pageSize.value
-);
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <section class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
-      <!-- User Token Not Available -->
-      <div v-if="!userToken">
-        <HeroSection />
+    <div class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
+      <HeroSection />
         <InputsSelection
           @emit-level="level = $event"
           @emit-standard="filters.level = $event"
           @emit-subject="filters.subject = $event"
         />
-        <TabBar />
-      </div>
-
-      <!-- User Token Available -->
-      <div v-else class="flex flex-col items-center justify-center w-full pt-4 gap-4">
-        <HomeSearchbar />
-         <TabBar :is-logged-in="true"  @emit-active-tab="activeTab = $event" />
-      </div>
-
+        <TabBar 
+          :subject-title="subjectTitle"
+          :topic-id="topicId"
+        />
       <div
         v-if="status === 'pending'"
         class="flex flex-col justify-center items-center"
@@ -390,77 +233,28 @@ sliceData(
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
           <div class="w-full flex flex-col">
-            <!-- container filter Mobile -->
-            <div class="flex xl:hidden justify-between items-center py-2">
-              <p class="text-small font-medium">
-                Viewing {{ topic.length }} Results
-              </p>
-              <div
-                class="flex items-center gap-2 text-deepBlue cursor-pointer"
-                @click="hideFilter = !hideFilter"
-              >
-                <Icon name="mage:filter-fill" size="24" class="" />
-                <p class="text-medium">Filters</p>
-              </div>
-
-              <!-- Side Bar Container Filter For Mobile View Only -->
-              <div
-                class="fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40"
-                :class="hideFilter ? 'z-30' : '-z-30'"
-              >
-                <div class="bg-white h-full md:w-80 w-full">
-                  <!-- Close Button -->
-                  <div class="flex justify-end items-center">
-                    <button
-                      class="p-2 cursor-pointer h-10 w-10 rounded-bl-md bg-deepBlue flex items-center justify-center"
-                      @click="hideFilter = !hideFilter"
-                    >
-                      <Icon
-                        name="formkit:close"
-                        size="24"
-                        class="text-white font-bold"
-                      />
-                    </button>
-                  </div>
-
-                  <div class="flex flex-col mt-10 gap-4">
-                    <h2 class="text-medium font-bold tracking-wider px-3 py-2">
-                      Filters
-                    </h2>
-                    <!-- Home Drop Down Menu -->
-                    <HomeDropDownMenu :active-tab="activeTab" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <div class="flex items-start gap-4">
-              <!-- container filter Desktop -->
-              <div
-                class="sticky top-0 z-10 xl:flex hidden flex-col items-start my-5 w-1/4 rounded-md p-2 pb-4 bg-white custom-box-shadow"
-                v-if="userToken">
-                <h2 class="text-medium font-bold tracking-wider px-3 py-2">
-                  Filters
-                </h2>
-                <!-- Home Drop Down Menu -->
-                <HomeDropDownMenu :active-tab="activeTab" :filter-value="[]" />
-              </div>
               <!-- Topic Cards are in Grid -->
-              <div class="flex flex-col items-start container"
-                  :class="{'xl:w-3/4' : userToken}">
+              <div class="flex flex-col items-start container">
                 <div
-                  class="!grid 3xl:grid-cols-5 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
-                >
-                  <!-- Subject Cards are in Grid -->
-                  <HomeSubjectCard
-                    v-for="subject in subjects"
-                    :key="subject._id"
-                    :subject-id="subject._id"
-                    :subject-name="subject.name"
-                    :subject-image="subject.thumbnail"
-                    :total-views="subject.total_views"
-                    :is-logged-in="userToken != null || userToken != undefined"
-                    @emit-subject-name="activeTab = $event"
+                  class="!grid 3xl:grid-cols-4 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5">
+                  <TopicCard
+                    v-for="topic in slicedData"
+                    :key="topic._id"
+                    :topic-id="topic._id"
+                    :topic-image="topic.thumbnail"
+                    :topic-title="topic.name"
+                    :topic-description="topic.descriptions"
+                    :topic-duration="
+                      topic.topic_duration ? topic.topic_duration : '10 min'
+                    "
+                    :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
+                    :topic-views="topic.views ? topic.views : 0"
+                    :topic-level="level"
+                    :topic-standard="topic.level.name"
+                    :subject-name="topic.subject.name"
+                    :topic-viewed="topic.isViewed"
+                    :topic-progress="topic.progressPercent"
                   />
                 </div>
               </div>
@@ -522,10 +316,99 @@ sliceData(
 
       <!-- Even Data was not success should be handle here -->
       <div class="w-full flex flex-col" v-else>
-        <p class="text-center text-medium">
+        <div class="" v-if="slicedData?.length === 0">
           Try to refresh the page, Something went Wrong
-        </p>
+        </div>
+
+        <!-- client only  -->
+        <ClientOnly v-else>
+          <div
+            class="!grid 3xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+          >
+            <!-- container filter -->
+            <div
+              class="sticky top-0 z-10 xl:flex flex-col hidden items-start px-4 py-2 my-5 w-1/4 bg-white custom-box-shadow"
+            >
+              <h2 class="text-medium font-bold tracking-wider">Filters</h2>
+            </div>
+            <!-- Topic Cards are in Grid -->
+            <div class="flex flex-col items-start">
+             <p class="text-small font-medium">Viewing {{ topic.length }} Results</p>
+              <div
+                class="!grid 3xl:grid-cols-4 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+              >
+                <TopicCard
+                  v-for="topic in slicedData"
+                  :key="topic._id"
+                  :topic-id="topic._id"
+                  :topic-image="topic.thumbnail"
+                  :topic-title="topic.name"
+                  :topic-description="topic.descriptions"
+                  :topic-duration="
+                    topic.topic_duration ? topic.topic_duration : '10 min'
+                  "
+                  :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
+                  :topic-views="topic.views ? topic.views : 0"
+                  :topic-level="level"
+                  :topic-standard="topic.level.name"
+                  :subject-name="topic.subject.name"
+                  :topic-viewed="topic.isViewed"
+                  :topic-progress="topic.progressPercent"
+                />
+              </div>
+            </div>
+
+            <!-- pagination numbers based on data length greater to 9 -->
+            <div class="flex justify-center my-5">
+              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
+                <PaginationBtn
+                  v-for="page in totalPages"
+                  :key="page"
+                  :page-number="page"
+                  :is-active="page === currentPage"
+                  :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                  @send-page-number="currentPage = $event"
+                />
+              </div>
+
+              <div v-else class="flex justify-center gap-2">
+                <!-- previous -->
+                <div
+                  class="flex justify-center items-center"
+                  v-if="currentPage > 5"
+                >
+                  <Icon
+                    name="iconamoon:arrow-left-2-fill"
+                    size="2rem"
+                    @click="prevPage"
+                  />
+                </div>
+                <PaginationBtn
+                  v-for="page in totalPages"
+                  :key="page"
+                  :page-number="page"
+                  :is-active="page === currentPage"
+                  :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                  @send-page-number="currentPage = $event"
+                />
+                <!-- next button -->
+                <div
+                  class="flex justify-center items-center"
+                  v-if="currentPage > 4"
+                >
+                  <Icon
+                    name="iconamoon:arrow-right-2-fill"
+                    size="2rem"
+                    @click="nextPage"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </ClientOnly>
       </div>
-    </section>
+    </div>
   </NuxtLayout>
 </template>

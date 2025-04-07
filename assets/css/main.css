@@ -114,8 +114,10 @@
    --text-small: 1rem; /* 16px */
    --text-extraSmall: 0.8rem; /* 14px */
    --text-smallest: 0.6rem; /* 12px */
+
+   /* Screen Size */
+   --breakpoint-3xl: 125rem;
    
-  
    --animate-bounce-horizontal: bounce-horizontal 1s infinite;
    @keyframes bounce-horizontal {
      0%, 100% {
