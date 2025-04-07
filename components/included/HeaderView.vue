@@ -50,7 +50,13 @@ const dropDown = () => {
 
       <div class="info w-full">
         <!-- Media Screen -->
-        <div class="md:flex hidden md:flex-row flex-col items-center bg-oceanBlue w-full rounded-xs text-white">
+        <div class="md:flex hidden md:flex-row flex-col items-center bg-oceanBlue w-full rounded-xs text-white gap-2">
+          <NuxtLink to="/" class="flex pl-2 gap-2">
+            <div class="flex items-center justify-center">
+              <Icon name="ant-design:home-filled" size="20" />
+            </div>
+            <p class="capitalize">Home</p>
+            </NuxtLink>
           <!-- TIE Library Books -->
           <a href="https://ol.tie.go.tz/index.php" target="_blank"
             class="flex items-center cursor-pointer px-2 text-white text-medium text-center gap-2"
@@ -58,13 +64,15 @@ const dropDown = () => {
             <div class="flex items-center justify-center">
               <Icon name="ph:notebook-fill" size="20" />
             </div>
-            TIE Library
+            <p>TIE Library</p>
           </a>
 
           <!-- title (TIE online public school) -->
           <div class="flex-1">
-            <NuxtLink to="/" class="uppercase lg:text-large text-medium text-shadow text-center block">
-              TIE online public school
+            <NuxtLink to="/">
+              <p class="uppercase lg:text-large text-medium text-shadow text-center block">
+                TIE online public school
+              </p>
             </NuxtLink>
           </div>
 
@@ -131,8 +139,10 @@ const dropDown = () => {
             </div>
 
             <!-- Paragraph Text -->
-            <NuxtLink to="/" class="uppercase lg:text-large text-medium text-shadow text-center block">
-              TIE online public school
+            <NuxtLink to="/">
+              <p class="uppercase lg:text-large text-medium text-shadow text-center block">
+                TIE online public school
+              </p>
             </NuxtLink>
 
             <!-- Logout and Sign in -->
