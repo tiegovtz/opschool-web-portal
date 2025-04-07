@@ -99,8 +99,7 @@ const checkbox = (event) => {
 </script>
 
 <template>
-  <form action="">
-    <div class="w-full flex flex-col bg-white cursor-pointer">
+  <div class="w-full flex flex-col bg-white cursor-pointer">
       <div
         v-for="(filters, index) in filterNameGroup"
         :key="index"
@@ -109,6 +108,10 @@ const checkbox = (event) => {
         <!-- Dropdown Header -->
         <div
           class="flex justify-between items-center border-b border-deepBlue w-full px-5 py-2"
+          :class="{
+              '!border-b-0':
+                dropDownMenu.isOpen && dropDownMenu.currentIndex === index,
+            }"
           @click="toggleMenu(index)"
           v-if="
             filters.visibility === 'all' ||
@@ -150,8 +153,9 @@ const checkbox = (event) => {
               :name="filters.name.toLowerCase().replaceAll(' ', '-')"
               :id="filter.name.replaceAll(' ', '-').toLowerCase()"
               :value="filter.name"
+              :checked="filters.visibility == activeTab.toLowerCase()"
+              
             />
-
             <label class="cursor-pointer" :for="filter.name.replaceAll(' ', '-').toLowerCase()">{{
               filter.name
             }}</label>
@@ -159,5 +163,4 @@ const checkbox = (event) => {
         </div>
       </div>
     </div>
-  </form>
 </template>

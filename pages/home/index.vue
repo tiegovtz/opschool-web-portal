@@ -1,5 +1,6 @@
 <script setup>
 import HeroSection from "@/components/home/HeroSection.vue";
+import TopicCard from "@/components/home/TopicCard.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import { ref, computed, onMounted, watch } from "vue";
 import {
@@ -62,7 +63,7 @@ const userToken = useCookie("signInUserToken");
 // Define Ref state
 // const status = ref('pending'); // Initial Status State
 const status = ref("success"); // Initial Status State
-const topic = ref([]); // Initial Topics State
+const data = ref([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
 const hideFilter = ref(false);   // Initial Hide Filters
 const activeTab =ref('home')
@@ -216,19 +217,19 @@ const subjects = [
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
-  if (!subjects || !Array.isArray(subjects) || subjects.length === 0) {
+  if (!subjects || !data || !Array.isArray(subjects) || !Array.isArray(data.value) || subjects.length === 0 || data.value.length === 0) {
     slicedData.value = [];
     return;
   }
 
   // If only one page of data or less, return all data
-  if (subjects.length <= pageSize.value) {
-    slicedData.value = subjects;
+  if (subjects.length <= pageSize.value || data.value?.length <= pageSize.value) {
+    slicedData.value = data.value || subjects;
     return;
   }
 
   // Otherwise slice the data
-  slicedData.value = subjects.slice(start, end);
+  slicedData.value = data.value?.slice(start, end) || subjects.slice(start, end);
 };
 
 // current page data
@@ -237,21 +238,30 @@ const pageSize = ref();
 
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params) => {
-  const url = userToken.value
+  let url = userToken.value
     ? apiDocs.topics.filterTopicsByUser.replace(
         "{userId}",
         userToken.value?._id
       )
     : apiDocs.topics.filterTopics;
 
+  activeTab.value.toLowerCase() == 'experiments' ? url = apiDocs.experiments.getExperiments:''
+  activeTab.value.toLowerCase() == 'video' ? url = apiDocs.videos.getVideos:''
+  // activeTab.value.toLowerCase() = 'audio' ? url = apiDocs.experiments:''
+
+
+
   try {
     status.value = "pending";
     const response = await $fetch(url, {
       params: params,
+       headers:{
+        'Authorization':`Bearer ${useCookie('signInAccessToken').value}`
+      }
     });
 
     // Call State Define above
-    // topic.value = response;
+    data.value = response;
     status.value = "success";
 
     // Call sliceData after data is loaded
@@ -261,12 +271,12 @@ const fetchTopics = async (params) => {
     );
   } catch (error) {
     status.value = "error";
-    slicedData.value = [];
+   sendRedirect('/auth',301)
   }
 };
 
 // Call Fetch Topics function
-// fetchTopics({})
+fetchTopics({})
 
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
@@ -282,7 +292,7 @@ if (isGreaterToXL) {
 // total pages data
 const totalPages = computed(() => {
   if (subjects && Array.isArray(subjects)) {
-    return Math.ceil(topic.value.length / pageSize.value);
+    return Math.ceil(data.value?.length / pageSize.value);
   }
   return 0; // Default to 0 if no data
 });
@@ -354,6 +364,27 @@ sliceData(
   (currentPage.value - 1) * pageSize.value,
   currentPage.value * pageSize.value
 );
+
+// watch current tab
+watch(()=>activeTab.value, (activeTab) => {
+  if(activeTab){
+    if(activeTab.toLowerCase() === 'home'){
+      fetchTopics({})
+    }
+    else if(activeTab.toLowerCase() === 'interactive books'){
+      fetchTopics({})
+    }
+    else if(activeTab.toLowerCase() === 'experiments'){
+      fetchTopics({})
+    }
+    else if(activeTab.toLowerCase() === 'video'){
+      fetchTopics({})
+    }
+    else if(activeTab.toLowerCase() === 'audio'){
+      fetchTopics({})
+    }
+  }
+})
 </script>
 
 <template>
@@ -371,9 +402,12 @@ sliceData(
       </div>
 
       <!-- User Token Available -->
-      <div v-else class="flex flex-col items-center justify-center w-full pt-4 gap-4">
-        <HomeSearchbar />
-         <TabBar :is-logged-in="true"  @emit-active-tab="activeTab = $event" />
+      <div
+        v-else
+        class="flex flex-col items-center justify-center w-full pt-4 gap-4"
+      >
+        <HomeSearchbar appearance="rounded"/>
+        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
       </div>
 
       <div
@@ -393,7 +427,7 @@ sliceData(
             <!-- container filter Mobile -->
             <div class="flex xl:hidden justify-between items-center py-2">
               <p class="text-small font-medium">
-                Viewing {{ topic.length }} Results
+                Viewing {{ data?.length }} Results
               </p>
               <div
                 class="flex items-center gap-2 text-deepBlue cursor-pointer"
@@ -438,7 +472,8 @@ sliceData(
               <!-- container filter Desktop -->
               <div
                 class="sticky top-0 z-10 xl:flex hidden flex-col items-start my-5 w-1/4 rounded-md p-2 pb-4 bg-white custom-box-shadow"
-                v-if="userToken">
+                v-if="userToken"
+              >
                 <h2 class="text-medium font-bold tracking-wider px-3 py-2">
                   Filters
                 </h2>
@@ -446,10 +481,13 @@ sliceData(
                 <HomeDropDownMenu :active-tab="activeTab" :filter-value="[]" />
               </div>
               <!-- Topic Cards are in Grid -->
-              <div class="flex flex-col items-start container"
-                  :class="{'xl:w-3/4' : userToken}">
+              <div
+                class="flex flex-col items-start container"
+                :class="{ 'xl:w-3/4': userToken }"
+              >
                 <div
-                  class="!grid 3xl:grid-cols-5 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+                  class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+                  v-if="activeTab.toLowerCase() === 'home'"
                 >
                   <!-- Subject Cards are in Grid -->
                   <HomeSubjectCard
@@ -462,6 +500,71 @@ sliceData(
                     :is-logged-in="userToken != null || userToken != undefined"
                     @emit-subject-name="activeTab = $event"
                   />
+                </div>
+                <div
+                  v-else-if="activeTab.toLowerCase() === 'interactive books'"
+                  class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+                >
+                  <!-- Topic Cards are in Grid -->
+                  <TopicCard
+                    v-for="topic in slicedData"
+                    :key="topic._id"
+                    :topic-id="topic._id"
+                    :topic-image="topic.thumbnail"
+                    :topic-title="topic.name"
+                    :topic-description="topic.descriptions"
+                    :topic-duration="
+                      topic.topic_duration ? topic.topic_duration : '10 min'
+                    "
+                    :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
+                    :topic-views="topic.views ? topic.views : 0"
+                    :topic-level="level"
+                    :topic-standard="topic.level.name"
+                    :subject-name="topic.subject.name"
+                    :topic-viewed="topic.isViewed"
+                    :topic-progress="topic.progressPercent"
+                  />
+                </div>
+                <div
+                  v-else-if="activeTab.toLowerCase() === 'experiments'"
+                  class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+                >
+                  <ExperimentsCard
+                    v-for="experiment in slicedData"
+                    :key="experiment._id"
+                    :experiment-id="experiment._id"
+                    :experiment-thumbnail="experiment.thumbnail"
+                    :experiment-title="experiment.title"
+                    :experiment-description="experiment.description"
+                    :experiment-type="experiment.category"
+                    :experiment-subject="experiment.subject.name"
+                    :experiment-level="experiment.level.name"
+                    :experiment-name="experiment.name"
+                    :experiment-file-url="experiment.stepsFileUrl"
+                  />
+                </div>
+                <div
+                  v-else-if="activeTab.toLowerCase() === 'video'"
+                  class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+                >
+                  <!-- Video Cards are in Grid -->
+                  <VideoCard
+                    v-for="video in slicedData"
+                    :key="video._id"
+                    :video-id="video._id"
+                    :video-name="video.name"
+                    :video-thumbnail="video.thumbnail"
+                    :video-file-url="video.videoFileUrl"
+                    :video-description="video.description"
+                    :video-subject="video.subject.name"
+                    :video-type="video.videoType"
+                  />
+                </div>
+                <div
+                  v-else-if="activeTab.toLowerCase() === 'audio'"
+                  class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+                >
+                  <MessageTopicNotFound />
                 </div>
               </div>
             </div>
