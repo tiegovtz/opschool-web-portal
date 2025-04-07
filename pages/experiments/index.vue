@@ -231,7 +231,7 @@ definePageMeta({
               class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4 mt-10">
               <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
                 :experiment-thumbnail="experiment.thumbnail" :experiment-title="experiment.title"
-                :experiment-description="experiment.description" :experiment-type="experiment.type"
+                :experiment-description="experiment.description" :experiment-type="experiment.category"
                 :experiment-subject="experiment.subject.name" :experiment-level="experiment.level.name"
                 :experiment-name="experiment.name" :experiment-file-url="experiment.stepsFileUrl" />
             </div>

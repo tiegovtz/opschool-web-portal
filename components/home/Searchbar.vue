@@ -19,9 +19,9 @@ const search = async () => {
 }
 
 defineProps({
-  apperence: {
+  appearance: {
     type: String,
-    default: 'border-b'
+    default: 'normal'
   }
 })
 
@@ -36,9 +36,11 @@ watch(() => searchReactive.search, (newVal) => {
 </script>
 
 <template>
-  <div class="relative flex items-center justify-center w-full max-w-md">
+  <div  class="relative flex items-center justify-center w-full"
+  :class="appearance === 'normal' ? 'max-w-md':'px-40 py-20 rounded-md bg-gray-400'"
+  >
     <!-- Search Form -->
-    <form action="" @submit.prevent="search"
+    <form v-if="appearance === 'normal'" action="" @submit.prevent="search"
       class="flex w-full h-10 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
       <div class="flex items-center w-full">
         <!-- Search Icon -->
@@ -55,6 +57,23 @@ watch(() => searchReactive.search, (newVal) => {
         Search
       </button>
     </form>
+     <form v-else action="" class="w-full max-w-6xl bg-white rounded-md flex items-center h-15 "
+      @submit.prevent="search">
+      <div class="flex items-center w-full">
+        <!-- Search Icon -->
+        <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" />
+
+        <!-- Search Input -->
+        <input type="text" v-model="searchReactive.search" placeholder="What do you want to learn?"
+          class="flex flex-1 h-full px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue" />
+      </div>
+
+      <!-- Search Button -->
+      <button type="submit" @click="search"
+        class="text-white px-4 py-2 h-full md:flex items-center justify-center hidden rounded-r-md rounded-b-none  bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out overflow-hidden cursor-pointer">
+        Search
+      </button>
+    </form>
     <!-- Result Search -->
     <div class="absolute z-50 top-10 left-0 w-full max-w-md bg-white shadow-md rounded-md">
       <TopicCard v-for="result in searchReactive.searchResult" :key="result._id" model-type="search"
@@ -63,4 +82,5 @@ watch(() => searchReactive.search, (newVal) => {
         :topic-level="result.level.name" :topic-likes="0" :topic-views="0" topic-duration="0" />
     </div>
   </div>
+  
 </template>
