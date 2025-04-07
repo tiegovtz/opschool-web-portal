@@ -5,6 +5,8 @@ const userToken = useCookie('signInUserToken')
 
 const logout = () => {
   userToken.value = null;
+  const router = useRoute();
+  router.replace('/');
   // Dismiss Drop Down
   dropDown();
 }
@@ -28,7 +30,7 @@ const dropDown = () => {
       <!-- Header -->
       <div
         class="relative w-full h-24 mt-1 bg-[url('/public/flag/Flag_of_Tanzania.gif')] bg-cover bg-center bg-no-repeat">
-        <div class="absolute top-0 left-0 z-0 w-full h-full bg-[#f0f0f0f0]"></div>
+        <div class="absolute top-0 left-0 z-0 w-full h-full bg-white/75"></div>
         <div class="flex justify-between items-center w-full h-full absolute top-0 left-0  ">
           <NuxtLink to="/" class="flex items-center justify-center bg-grayLight h-full ">
             <NuxtImg src="/logo/emblem.webp" alt="EMBLEM" class="w-18 h-18" />
@@ -51,7 +53,7 @@ const dropDown = () => {
         <div class="md:flex hidden md:flex-row flex-col items-center bg-oceanBlue w-full rounded-xs text-white">
           <!-- TIE Library Books -->
           <a href="https://ol.tie.go.tz/index.php" target="_blank"
-            class="flex items-center justify-center cursor-pointer px-2 text-white text-medium lg:w-45 text-center gap-2"
+            class="flex items-center cursor-pointer px-2 text-white text-medium text-center gap-2"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
               <Icon name="ph:notebook-fill" size="20" />
@@ -61,7 +63,9 @@ const dropDown = () => {
 
           <!-- title (TIE online public school) -->
           <div class="flex-1">
-            <p class="uppercase lg:text-large text-medium text-shadow text-center">TIE online public school</p>
+            <NuxtLink to="/" class="uppercase lg:text-large text-medium text-shadow text-center block">
+              TIE online public school
+            </NuxtLink>
           </div>
 
           <!-- Profile and Sign Up -->
@@ -127,7 +131,9 @@ const dropDown = () => {
             </div>
 
             <!-- Paragraph Text -->
-            <p class="font-medium uppercase text-shadow ">TIE online public school</p>
+            <NuxtLink to="/" class="uppercase lg:text-large text-medium text-shadow text-center block">
+              TIE online public school
+            </NuxtLink>
 
             <!-- Logout and Sign in -->
             <div class="flex items-center">

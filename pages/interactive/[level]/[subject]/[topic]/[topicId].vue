@@ -3,7 +3,7 @@ import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from '~/utilities/parsers/modelParser'
 import videoParser from "~/utilities/parsers/videoParser";
-import { experimrntUrl } from "~/utilities/controlls";
+import { currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 import apiDocsFile from "~/utilities/api-docs";
@@ -15,6 +15,7 @@ const topicId = route.fullPath.split("/").pop();
 const topicTitle = String(route.fullPath.split("/")[4]).toString().replaceAll('%20', ' ');
 const topicStandard = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
 const topicLevel = String(route.fullPath.split("/")[3]).toString().replaceAll('%20', ' ');
+currentTopic.value = topicTitle;
 
 // tokens
 const signInAccessToken =useCookie('signInAccessToken')
@@ -90,12 +91,20 @@ const changeChapter = (action) => {
     if (action.toLowerCase() == 'p') {
       chapters.number == 1 ? '' : chapters.number--;
       getChapter(chapters.list[chapters.number - 1]._id);
+      chapters.isAttemptingQuizes = false; //close quiz
     }
     else
       if (action.toLowerCase() == 'n') {
+        // n = Next Chapter
         chapters.number == chapters.list?.length ? '' : chapters.number++;
         getChapter(chapters.list[chapters.number - 1]._id);
+        chapters.isAttemptingQuizes = false; //close quiz
       }
+      else 
+        if(action.toLowerCase() == 'r'){ 
+          // Read again
+          chapters.isAttemptingQuizes = false; //close quiz
+        }
     // Scroll Up when chapter changed
     window.scrollTo({
       top: 0,
@@ -106,7 +115,6 @@ const changeChapter = (action) => {
 
 // function for toggling  experiment fullscreeen
 const fullScreen = () => {
-
   // experiment container
   const experimentContainer = document.getElementById(`experiment-container`);
   if (import.meta.client) {
@@ -217,9 +225,9 @@ await useFetch(`/api/topics/${topicId}`)
   });
 
 
-watch(userToken, (token) => {
+watch(() => userToken.value, (token) => {
   // Get the router instance
-
+  console.log(token)
   if (!token) {
     router.replace("/");
   }
@@ -231,6 +239,15 @@ onMounted(async () => {
 
   // Call functin for set Pic Center
   setPicCenter();
+
+  // scroll
+  const notes = document.querySelector('#notes-container');
+  if (notes) {
+    console.log(notes)
+     notes.addEventListener("scroll", (event) => {
+    console.log(event)
+  })
+  }
 
 });
 
@@ -284,12 +301,8 @@ definePageMeta({
     </section>
 
     <!-- quiz -->
-    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
-      <div class="flex items-center justify-end" @click="chapters.isAttemptingQuizes = false">
-        <div class="p-2 cursor-pointer h-10 w-10 rounded-full bg-red-500 flex items-center justify-center">
-          <Icon name="formkit:close" size="24" class="text-white font-bold" />
-        </div>
-      </div>
+    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat">
+     
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :change-chapter="changeChapter" :chapters-list="chapters.list?.length" :chapters-number="chapters?.number" />
@@ -318,7 +331,7 @@ definePageMeta({
         </div>
 
         <!-- Notes loaded successfully -->
-        <div v-else-if="chapters.notesStatus == 'success'"
+        <div id='notes-container' v-else-if="chapters.notesStatus == 'success'"
           class="lg:w-3/4 w-full lg:scroll-height lg:overflow-y-scroll py-5 lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between ">
@@ -352,7 +365,7 @@ definePageMeta({
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
             <!-- Chapter Notes -->
-            <div class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
+            <div  class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
             </div>
 
@@ -372,7 +385,7 @@ definePageMeta({
               <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length"
                 :class="{ 'opacity-0': chapters.number == chapters.list?.length }"
                 class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
-                <p class="capitalize flex gap-2">Next <span class="hidden md:flex"></span></p>
+                <p class="capitalize flex gap-2">Next <span class="hidden md:flex">Chapter</span></p>
                 <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
                 </div>

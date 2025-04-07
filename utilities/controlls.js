@@ -16,10 +16,11 @@ const isGreaterToXS = ref(false); // check if the screen size is greater to xs
 // restriction message control
 const isPopUp = ref(false)
 const popMessage= ref()
-
 const screenWidth = ref(0)
 
 const experimrntUrl = ref();
+
+const currentTopic = ref();
 const _BASE_API_URL = ref()
 
 export {
@@ -32,5 +33,6 @@ export {
     isPopUp,
     popMessage,
     experimrntUrl,
-    _BASE_API_URL
+    _BASE_API_URL,
+    currentTopic,
 }
