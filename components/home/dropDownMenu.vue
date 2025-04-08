@@ -12,9 +12,11 @@ const filterNameGroup = [
     visibility: "all",
     inputType: "radio",
     filterGroup: [
+      { name: "Pre primary School" },
       { name: "Primary School" },
-      { name: "Secondary School" },
-      { name: "High School" },
+      { name: "Lower Secondary School" },
+      { name: "Upper Secondary School" },
+      { name: "Teacher Education" },
     ],
   },
   {
@@ -79,6 +81,12 @@ const toggleMenu = (index) => {
   }
 };
 
+// Define Emits
+const emit = defineEmits([
+  'emitUpdatefilterName',
+  'emitUpdateFilterValue'
+]);
+
 // Define Props
 defineProps({
   filterName: {
@@ -91,9 +99,15 @@ defineProps({
 //
 const checkbox = (event) => {
   const container = event.currentTarget;
-  const input = container.querySelector('input[type="checkbox"]') || container.querySelector('input[type="radio"]');
+  const input = container.querySelector('input[type="checkbox"]') ?? container.querySelector('input[type="radio"]');
   if (input) {
     input.checked = !input.checked;
+    if (input.checked) {
+      emit(
+        'emitUpdateFilterValue',
+        input.value
+      )
+    }
   }
 };
 </script>
@@ -107,11 +121,13 @@ const checkbox = (event) => {
       >
         <!-- Dropdown Header -->
         <div
-          class="flex justify-between items-center border-b border-deepBlue w-full px-5 py-2"
-          :class="{
+          :class="[
+            'flex justify-between items-center border-b border-deepBlue w-full px-5 py-2',
+          {
               '!border-b-0':
                 dropDownMenu.isOpen && dropDownMenu.currentIndex === index,
-            }"
+            }
+          ]"
           @click="toggleMenu(index)"
           v-if="
             filters.visibility === 'all' ||
@@ -124,21 +140,25 @@ const checkbox = (event) => {
           <Icon
             name="iconoir:nav-arrow-down"
             size="20"
-            class="text-deepBlue transition-transform duration-500 ease-in-out"
-            :class="{
+            :class="[
+              'text-deepBlue transition-transform duration-500 ease-in-out',
+            {
               'transform rotate-180':
                 dropDownMenu.isOpen && dropDownMenu.currentIndex === index,
-            }"
+            }
+            ]"
           />
         </div>
 
         <!-- Dropdown Content -->
         <div
-          class="flex flex-col overflow-hidden justify-between transition-all duration-500 ease-in-out items-center w-full px-5"
           :class="
-            dropDownMenu.isOpen && dropDownMenu.currentIndex === index
+           [
+              'flex flex-col overflow-hidden justify-between transition-all duration-500 ease-in-out items-center w-full px-5',
+             dropDownMenu.isOpen && dropDownMenu.currentIndex === index
               ? 'h-auto'
               : 'h-0 p-0'
+           ]
           "
         >
           <div
@@ -156,9 +176,9 @@ const checkbox = (event) => {
               :checked="filters.visibility == activeTab.toLowerCase()"
               
             />
-            <label class="cursor-pointer" :for="filter.name.replaceAll(' ', '-').toLowerCase()">{{
+            {{
               filter.name
-            }}</label>
+            }}
           </div>
         </div>
       </div>

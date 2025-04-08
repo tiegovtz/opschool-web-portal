@@ -560,9 +560,9 @@ const switchTab = (tabName) => {
 
     <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-2xl">
       <h1 class="text-large font-bold text-center">Sign Up</h1>
-      <NuxtLink to="/" class="w-25 h-25 mx-auto my-6 flex items-center justify-center">
-        <NuxtImg src="/logo/logo_tie.webp" class="w-full h-full object-contain" alt="logo" />
-      </NuxtLink>
+           <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
+                <NuxtImg src="/logo/logo_tie.webp" class="w-full h-full object-contain" alt="logo" />
+            </NuxtLink>
       <form @submit.prevent="signUp" @keydown.enter.prevent
         class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" 
         :class="[
@@ -733,8 +733,8 @@ const switchTab = (tabName) => {
         </div>
 
         <!-- Second Input Group -->
-        <div class="flex flex-col absolute -right-150 top-0 px-6 transition-all duration-500"
-          :class="inputTabs === 'tabTwo' ? 'right-0 w-full h-full' : ''">
+        <div class="absolute top-0 px-6 flex flex-col transition-all duration-500 -right-full"
+           :class="inputTabs === 'tabTwo' ? 'right-0 w-full h-full' : ''">
           <!-- Select Age -->
           <div class="focus-input-icon mb-3 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col"
             :class="{

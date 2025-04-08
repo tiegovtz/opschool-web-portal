@@ -162,7 +162,7 @@ watch(() => userSignIn.password, (password) => {
 
         <div class="w-full max-w-md px-4 md:bg-white rounded-lg md:shadow-2xl md:pt-3">
             <h1 class="text-large font-bold text-center">Welcome</h1>
-            <NuxtLink to="/" class="w-25 h-25 mx-auto my-6 flex items-center justify-center">
+            <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
                 <NuxtImg src="/logo/logo_tie.webp" class="w-full h-full object-contain" alt="logo" />
             </NuxtLink>
             <form @submit.prevent="signIn" v-if="userSignIn.controller.attemps < 3"

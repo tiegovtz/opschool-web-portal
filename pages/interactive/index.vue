@@ -33,8 +33,8 @@ useHead({
   ]
 })
 
-const userToken = useCookie('signInUserToken')
-
+// Define Cookie
+const userToken = useCookie('signInUserToken');
 
 // Define Ref status
 const status = ref('pending'); // Initial Status State
@@ -175,11 +175,30 @@ watch(filters, (filters) => {
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="lg:px-4" :class="{ ' animate-pulse': isLoading }">
-      <HeroSection />
-      <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
-        @emit-subject="filters.subject = $event" />
-      <TabBar />
+    <div :class="[
+      'wrapper-container',
+      { ' animate-pulse': isLoading }
+    ]">
+
+      <!-- User Token Available -->
+      <div
+        v-if="userToken"
+        class="flex flex-col items-center justify-center w-full pt-4 gap-4"
+      >
+        <HomeSearchbar appearance="rounded" />
+        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
+      </div>
+
+      <!-- User Token Not Available -->
+      <div v-else>
+        <HeroSection />
+        <InputsSelection
+          @emit-level="level = $event"
+          @emit-standard="filters.level = $event"
+          @emit-subject="filters.subject = $event"
+        />
+        <TabBar />
+      </div>
 
       <div v-if="status === 'pending'" class="flex flex-col justify-center items-center">
         <LoadingIndicator :is-loading="true" />

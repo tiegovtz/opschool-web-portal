@@ -237,7 +237,7 @@ watch(filters, (filters) => {
               <!-- Topic Cards are in Grid -->
               <div class="flex flex-col items-start container">
                 <div
-                  class="!grid 3xl:grid-cols-4 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5">
+                  class="!grid 3xl:grid-cols-4 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5 grid-col">
                   <TopicCard
                     v-for="topic in slicedData"
                     :key="topic._id"
@@ -335,7 +335,7 @@ watch(filters, (filters) => {
             <div class="flex flex-col items-start">
              <p class="text-small font-medium">Viewing {{ topic.length }} Results</p>
               <div
-                class="!grid 3xl:grid-cols-4 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+                class="!grid 3xl:grid-cols-4 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5 grid-col"
               >
                 <TopicCard
                   v-for="topic in slicedData"

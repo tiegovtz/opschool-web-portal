@@ -30,10 +30,10 @@ const dropDown = () => {
       <!-- Header -->
       <div
         class="relative w-full h-24 mt-1 bg-[url('/public/flag/Flag_of_Tanzania.gif')] bg-cover bg-center bg-no-repeat">
-        <div class="absolute top-0 left-0 z-0 w-full h-full bg-white/75"></div>
+        <div class="absolute top-0 left-0 z-0 w-full h-full bg-white opacity-75"></div>
         <div class="flex justify-between items-center w-full h-full absolute top-0 left-0  ">
-          <NuxtLink to="/" class="flex items-center justify-center bg-grayLight h-full ">
-            <NuxtImg src="/logo/emblem.webp" alt="EMBLEM" class="w-18 h-18" />
+          <NuxtLink to="/" class="flex items-center justify-center bg-grayLight w-18 h-[96px]">
+            <NuxtImg src="/logo/emblem.webp" alt="EMBLEM" class="w-full h-full object-cover" />
           </NuxtLink>
           <div class="flex flex-col items-center text-center gap-1 font-tahomabd h-full uppercase">
             <p class="md:text-small text-extraSmall text-deepBlue text-shadow">Ministry of
@@ -42,7 +42,7 @@ const dropDown = () => {
             <p class="lg:text-[1.8rem] md:text-[1.4rem] text-small">Tanzania
               institute of education (TIE)</p>
           </div>
-          <NuxtLink to="/" class="cursor-pointer p-2 h-full bg-grayLight">
+          <NuxtLink to="/" class="flex items-center justify-center cursor-pointer p-2 h-full bg-grayLight">
             <NuxtImg src="/logo/logo_tie.webp" alt="TIE LOGO" class="w-14 h-14" />
           </NuxtLink>
         </div>

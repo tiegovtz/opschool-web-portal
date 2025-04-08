@@ -80,6 +80,7 @@ const slicedData = ref(); // Initial slice data to 9
 
 // Define Cookie
 const auth_token = useCookie("signInAccessToken").value;
+const userToken = useCookie("signInUserToken");
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
@@ -110,12 +111,8 @@ const pageSize = ref();
 const fetchExperiments = async () => {
   try {
     status.value = "pending";
-    const response = await $fetch(apiDocs.experiments.getExperiments, {
+    const response = await $fetch(apiDocs.experiments.getPublicExperiments, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${auth_token}`,
-        "Content-Type": "application/json",
-      },
     });
 
     // Call State Define above
@@ -203,18 +200,33 @@ const prevPage = () => {
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
 
-// Define Meta Data
-definePageMeta({
-  middleware: "auth",
-});
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <section class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
-      <HeroSection />
-      <HomeInputsSelection />
-      <TabBar />
+    <section :class="[
+      'wrapper-container',
+      { ' animate-pulse': isLoading }
+    ]">
+    <!-- User Token Available -->
+      <div
+        v-if="userToken"
+        class="flex flex-col items-center justify-center w-full pt-4 gap-4"
+      >
+        <HomeSearchbar appearance="rounded" />
+        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
+      </div>
+
+      <!-- User Token Not Available -->
+      <div v-else>
+        <HeroSection />
+        <InputsSelection
+          @emit-level="level = $event"
+          @emit-standard="filters.level = $event"
+          @emit-subject="filters.subject = $event"
+        />
+        <TabBar />
+      </div>
 
       <div v-if="status === 'pending'" class="flex flex-col justify-center items-center">
         <LoadingIndicator :is-loading="true" />
