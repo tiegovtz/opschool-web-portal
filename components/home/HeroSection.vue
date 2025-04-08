@@ -1,7 +1,7 @@
 <template>
   <section class="hero-section my-2">
     <div class="grid grid-cols-1 xl:grid-cols-2 md:gap-4">
-      <div class="flex-col items-center justify-center h-full flex">
+      <div class="flex flex-col items-center justify-center h-full">
         <SliderShow />
       </div>
       <div class="flex flex-col justify-center xl:ml-10">

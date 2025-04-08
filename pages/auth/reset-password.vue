@@ -145,8 +145,8 @@ const toggleConfirmPassword = () => {
 
         <div class="w-full max-w-md md:bg-white rounded-lg md:shadow-2xl md:pt-3">
             <h1 class="text-large font-bold text-center">Reset Password</h1>
-            <NuxtLink to="/">
-                <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+           <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
+                <NuxtImg src="/logo/logo_tie.webp" class="w-full h-full object-contain" alt="logo" />
             </NuxtLink>
             <form @submit.prevent="resetPassword"
                 class="px-4 md:h-[200px] h-dvh text-textGray overflow-hidden text-extraSmall">

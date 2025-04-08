@@ -108,7 +108,9 @@ const forgotPassword = async () => {
 
         <div class="w-full max-w-md p-4 bg-white rounded-lg shadow-md">
             <h1 class="text-large font-bold text-center">Forgot Password</h1>
-            <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+            <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
+                <NuxtImg src="/logo/logo_tie.webp" class="w-full h-full object-contain" alt="logo" />
+            </NuxtLink>
             <form @submit.prevent="forgotPassword"
                 class="px-4 text-textGray md:h-[150px] h-dvh relative overflow-hidden text-extraSmall" 
                 :class="[

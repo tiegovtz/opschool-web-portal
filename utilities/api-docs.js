@@ -42,6 +42,12 @@ const apiDocs = {
   experiments: {
     getExperiments: `${baseURL}/experiments`,
     getExperimentId: `${baseURL}/experiments/:id`,
+    getPublicExperiments: `${baseURL}/public-experiments`,
+  },
+
+  // NOTES API
+  notes: {
+    getNotes: `${baseURL}/notes`,
   },
 
   // LEVELS API
@@ -72,6 +78,7 @@ const apiDocs = {
     getStream: `${baseURL}/video-stream/`,
     getVideos: `${baseURL}/videos`,
     getVideoById: `${baseURL}/videos/{id}`,
+    getPublicVideo: `${baseURL}/public-videos`,
   },
 
   //  PROGRESS

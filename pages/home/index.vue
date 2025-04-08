@@ -2,6 +2,7 @@
 import HeroSection from "@/components/home/HeroSection.vue";
 import TopicCard from "@/components/home/TopicCard.vue";
 import TabBar from "@/components/home/TabBar.vue";
+import { filterContentBySearch } from "@/utilities/filterJson.ts";
 import { ref, computed, onMounted, watch } from "vue";
 import {
   isGreaterToXL,
@@ -58,6 +59,7 @@ useHead({
   ],
 });
 
+// Define Cookie
 const userToken = useCookie("signInUserToken");
 
 // Define Ref state
@@ -65,8 +67,9 @@ const userToken = useCookie("signInUserToken");
 const status = ref("success"); // Initial Status State
 const data = ref([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
-const hideFilter = ref(false);   // Initial Hide Filters
-const activeTab =ref('home')
+const hideFilter = ref(false); // Initial Hide Filters
+const activeTab = ref("home"); // Initial Active Tab State
+const filterValue = ref(); // Initial Filter Value State
 
 // Define Subjects Data
 const subjects = [
@@ -217,27 +220,38 @@ const subjects = [
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
-  if (!subjects || !data || !Array.isArray(subjects) || !Array.isArray(data.value) || subjects.length === 0 || data.value.length === 0) {
+  if (
+    !subjects ||
+    !data ||
+    !Array.isArray(subjects) ||
+    !Array.isArray(data.value) ||
+    subjects.length === 0 ||
+    data.value.length === 0
+  ) {
     slicedData.value = [];
     return;
   }
 
   // If only one page of data or less, return all data
-  if (subjects.length <= pageSize.value || data.value?.length <= pageSize.value) {
+  if (
+    subjects.length <= pageSize.value ||
+    data.value?.length <= pageSize.value
+  ) {
     slicedData.value = data.value || subjects;
     return;
   }
 
   // Otherwise slice the data
-  slicedData.value = data.value?.slice(start, end) || subjects.slice(start, end);
+  slicedData.value =
+    data.value?.slice(start, end) || subjects.slice(start, end);
 };
 
 // current page data
 const currentPage = ref(1);
 const pageSize = ref();
 
-// Then, update fetchTopics to call sliceData after data is loaded
-const fetchTopics = async (params) => {
+// Then, update fetchData to call sliceData after data is loaded
+const fetchData = async (params) => {
   let url = userToken.value
     ? apiDocs.topics.filterTopicsByUser.replace(
         "{userId}",
@@ -245,19 +259,21 @@ const fetchTopics = async (params) => {
       )
     : apiDocs.topics.filterTopics;
 
-  activeTab.value.toLowerCase() == 'experiments' ? url = apiDocs.experiments.getExperiments:''
-  activeTab.value.toLowerCase() == 'video' ? url = apiDocs.videos.getVideos:''
+  activeTab.value.toLowerCase() == "experiments"
+    ? (url = apiDocs.experiments.getExperiments)
+    : "";
+  activeTab.value.toLowerCase() == "video"
+    ? (url = apiDocs.videos.getVideos)
+    : "";
   // activeTab.value.toLowerCase() = 'audio' ? url = apiDocs.experiments:''
-
-
 
   try {
     status.value = "pending";
     const response = await $fetch(url, {
       params: params,
-       headers:{
-        'Authorization':`Bearer ${useCookie('signInAccessToken').value}`
-      }
+      headers: {
+        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+      },
     });
 
     // Call State Define above
@@ -271,12 +287,12 @@ const fetchTopics = async (params) => {
     );
   } catch (error) {
     status.value = "error";
-   sendRedirect('/auth',301)
+    sendRedirect("/auth", 301);
   }
 };
 
 // Call Fetch Topics function
-fetchTopics({})
+fetchData({});
 
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
@@ -351,9 +367,10 @@ const filters = reactive({
 });
 
 const level = ref(); // Initial Level State
+
 // watch emits changes
 watch(filters, (filters) => {
-  fetchTopics({
+  fetchData({
     level: filters.level.toString(),
     subject: filters.subject.toString(),
   });
@@ -366,32 +383,61 @@ sliceData(
 );
 
 // watch current tab
-watch(()=>activeTab.value, (activeTab) => {
-  if(activeTab){
-    if(activeTab.toLowerCase() === 'home'){
-      fetchTopics({})
-    }
-    else if(activeTab.toLowerCase() === 'interactive books'){
-      fetchTopics({})
-    }
-    else if(activeTab.toLowerCase() === 'experiments'){
-      fetchTopics({})
-    }
-    else if(activeTab.toLowerCase() === 'video'){
-      fetchTopics({})
-    }
-    else if(activeTab.toLowerCase() === 'audio'){
-      fetchTopics({})
+watch(
+  () => activeTab.value,
+  (activeTab) => {
+    if (activeTab) {
+      if (activeTab.toLowerCase() === "home") {
+        fetchData({});
+      } else if (activeTab.toLowerCase() === "interactive books") {
+        fetchData({});
+      } else if (activeTab.toLowerCase() === "experiments") {
+        fetchData({});
+      } else if (activeTab.toLowerCase() === "video") {
+        fetchData({});
+      } else if (activeTab.toLowerCase() === "audio") {
+        fetchData({});
+      }
     }
   }
-})
+);
+
+// Watch User Token
+watch(
+  () => userToken.value,
+  (userToken) => {
+    if (userToken == null || userToken == undefined) {
+      activeTab.value = "home";
+      fetchData({});
+    }
+  }
+);
+
+// Watch Filter Value
+watch(
+  () => filterValue.value,
+  (filterValue) => {
+    if (filterValue) {
+      sliceData.value = filterContentBySearch(data.value, filterValue);
+    }
+  }
+);
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <section class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
+    <section :class="['wrapper-container', { ' animate-pulse': isLoading }]">
+      <!-- User Token Available -->
+      <div
+        v-if="userToken"
+        class="flex flex-col items-center justify-center w-full pt-4 gap-4"
+      >
+        <HomeSearchbar appearance="rounded" />
+        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
+      </div>
+
       <!-- User Token Not Available -->
-      <div v-if="!userToken">
+      <div v-else>
         <HeroSection />
         <InputsSelection
           @emit-level="level = $event"
@@ -399,15 +445,6 @@ watch(()=>activeTab.value, (activeTab) => {
           @emit-subject="filters.subject = $event"
         />
         <TabBar />
-      </div>
-
-      <!-- User Token Available -->
-      <div
-        v-else
-        class="flex flex-col items-center justify-center w-full pt-4 gap-4"
-      >
-        <HomeSearchbar appearance="rounded"/>
-        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
       </div>
 
       <div
@@ -439,8 +476,10 @@ watch(()=>activeTab.value, (activeTab) => {
 
               <!-- Side Bar Container Filter For Mobile View Only -->
               <div
-                class="fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40"
-                :class="hideFilter ? 'z-30' : '-z-30'"
+                :class="[
+                  'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
+                  hideFilter ? 'z-30' : '-z-30',
+                ]"
               >
                 <div class="bg-white h-full md:w-80 w-full">
                   <!-- Close Button -->
@@ -462,7 +501,10 @@ watch(()=>activeTab.value, (activeTab) => {
                       Filters
                     </h2>
                     <!-- Home Drop Down Menu -->
-                    <HomeDropDownMenu :active-tab="activeTab" />
+                    <HomeDropDownMenu
+                      :active-tab="activeTab"
+                      @emit-update-filter-value="filterValue = $event"
+                    />
                   </div>
                 </div>
               </div>
@@ -478,15 +520,26 @@ watch(()=>activeTab.value, (activeTab) => {
                   Filters
                 </h2>
                 <!-- Home Drop Down Menu -->
-                <HomeDropDownMenu :active-tab="activeTab" :filter-value="[]" />
+                <HomeDropDownMenu
+                  @emit-update-filter-value="filterValue = $event"
+                  :active-tab="activeTab"
+                  :filter-value="[]"
+                />
               </div>
               <!-- Topic Cards are in Grid -->
               <div
-                class="flex flex-col items-start container"
-                :class="{ 'xl:w-3/4': userToken }"
+                :class="[
+                  'flex flex-col items-center container',
+                  userToken ? 'xl:w-3/4' : 'w-full',
+                ]"
               >
                 <div
-                  class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+                  :class="[
+                    '!grid md:grid-cols-2 grid-cols-1 gap-4 my-5',
+                    userToken
+                      ? '3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3'
+                      : '3xl:grid-cols-5 xl:grid-cols-4 lg:grid-cols-3',
+                  ]"
                   v-if="activeTab.toLowerCase() === 'home'"
                 >
                   <!-- Subject Cards are in Grid -->
@@ -502,7 +555,9 @@ watch(()=>activeTab.value, (activeTab) => {
                   />
                 </div>
                 <div
-                  v-else-if="activeTab.toLowerCase() === 'interactive books'"
+                  v-else-if="
+                    activeTab.toLowerCase() === 'interactive books' && userToken
+                  "
                   class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
                 >
                   <!-- Topic Cards are in Grid -->
@@ -526,7 +581,9 @@ watch(()=>activeTab.value, (activeTab) => {
                   />
                 </div>
                 <div
-                  v-else-if="activeTab.toLowerCase() === 'experiments'"
+                  v-else-if="
+                    activeTab.toLowerCase() === 'experiments' && userToken
+                  "
                   class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
                 >
                   <ExperimentsCard
@@ -544,7 +601,7 @@ watch(()=>activeTab.value, (activeTab) => {
                   />
                 </div>
                 <div
-                  v-else-if="activeTab.toLowerCase() === 'video'"
+                  v-else-if="activeTab.toLowerCase() === 'video' && userToken"
                   class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
                 >
                   <!-- Video Cards are in Grid -->
@@ -561,7 +618,7 @@ watch(()=>activeTab.value, (activeTab) => {
                   />
                 </div>
                 <div
-                  v-else-if="activeTab.toLowerCase() === 'audio'"
+                  v-else-if="activeTab.toLowerCase() === 'audio' && userToken"
                   class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
                 >
                   <MessageTopicNotFound />

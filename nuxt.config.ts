@@ -1,4 +1,4 @@
-import tailwindcss from "@tailwindcss/vite";
+import ViteLegacy from '@vitejs/plugin-legacy'
 // import '@google/model-viewer';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
@@ -8,14 +8,49 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ["~/assets/css/main.css"],
 
+  postcss: {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
+  },
+
+  app: {
+
+    head: {
+      meta: [
+        {
+          name: "viewport",
+          content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+        },
+      ]
+    }
+  },
+  
   plugins: [
     { src: '~/plugins/mathjax.client.js', mode: 'client' },
-    { src: '~/plugins/mathjax-directive.client.js', mode: 'client' }
+    { src: '~/plugins/mathjax-directive.client.js', mode: 'client' },
   ],
 
   vite: {
     plugins: [
-      tailwindcss(),
+      ViteLegacy({
+        targets: [
+          'defaults',
+          'last 2 versions',
+          'Firefox ESR',
+          'not IE 11',
+          'not dead',
+          'Chrome >= 49',
+          'Safari >= 10',
+          'Edge >= 16',
+          'iOS >= 10',
+          'Android >= 5',
+          'Opera >= 36',
+          'Chromium >= 49'
+        ],
+        additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
+      }),
     ],
   },
 

@@ -37,7 +37,7 @@ watch(() => searchReactive.search, (newVal) => {
 
 <template>
   <div  class="relative flex items-center justify-center w-full"
-  :class="appearance === 'normal' ? 'max-w-md':'px-40 py-20 rounded-md bg-gray-400'"
+  :class="appearance === 'normal' ? 'max-w-md':'h-72 md:px-10 rounded-md bg-gray-400'"
   >
     <!-- Search Form -->
     <form v-if="appearance === 'normal'" action="" @submit.prevent="search"
@@ -57,7 +57,7 @@ watch(() => searchReactive.search, (newVal) => {
         Search
       </button>
     </form>
-     <form v-else action="" class="w-full max-w-6xl bg-white rounded-md flex items-center h-15 "
+     <form v-else action="" class="w-full max-w-5xl bg-white rounded-md flex items-center h-15 "
       @submit.prevent="search">
       <div class="flex items-center w-full">
         <!-- Search Icon -->
@@ -75,7 +75,9 @@ watch(() => searchReactive.search, (newVal) => {
       </button>
     </form>
     <!-- Result Search -->
-    <div class="absolute z-50 top-10 left-0 w-full max-w-md bg-white shadow-md rounded-md">
+    <div class="absolute z-50  w-full bg-white shadow-md rounded-md"
+          :class="appearance === 'normal' ? 'top-10 left-0 max-w-md' : 'top-36 max-w-5xl'"
+    >
       <TopicCard v-for="result in searchReactive.searchResult" :key="result._id" model-type="search"
         :topic-id="result._id" :topic-title="result.name" :topic-image="result.thumbnail"
         :topic-standard="result.standard" :topic-subject="result.subject.name" :topic-description="result.descriptions"
