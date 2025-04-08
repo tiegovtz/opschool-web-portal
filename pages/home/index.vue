@@ -13,6 +13,7 @@ import {
 } from "@/utilities/controlls";
 import InputsSelection from "@/components/home/InputsSelection.vue";
 import apiDocs from "~/utilities/api-docs";
+import { extractNestedKeysAndValues } from "~/utilities/filterJson";
 
 // Define meta info about page
 useHead({
@@ -63,169 +64,20 @@ useHead({
 const userToken = useCookie("signInUserToken");
 
 // Define Ref state
-// const status = ref('pending'); // Initial Status State
-const status = ref("success"); // Initial Status State
+const error = ref(); // Initial Error State
+const status = ref("pending"); // Initial Status State
 const data = ref([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
 const hideFilter = ref(false); // Initial Hide Filters
 const activeTab = ref("home"); // Initial Active Tab State
 const filterValue = ref(); // Initial Filter Value State
-
-// Define Subjects Data
-const subjects = [
-  {
-    _id: "s1",
-    name: "Mathematics",
-    thumbnail: "https://picsum.photos/300/200",
-    description: "Explore numbers, equations, and problem-solving strategies.",
-    total_topics: 12,
-    total_views: 1500,
-    total_likes: 340,
-    level: {
-      name: "Form 1",
-    },
-    isViewed: true,
-    progressPercent: 75,
-  },
-  {
-    _id: "s2",
-    name: "Physics",
-    thumbnail: "https://picsum.photos/300/201",
-    description: "Dive into the laws of motion, energy, and electricity.",
-    total_topics: 10,
-    total_views: 1200,
-    total_likes: 280,
-    level: {
-      name: "Form 2",
-    },
-    isViewed: false,
-    progressPercent: 40,
-  },
-  {
-    _id: "s3",
-    name: "Biology",
-    thumbnail: "https://picsum.photos/300/202",
-    description: "Understand life, cells, plants, and ecosystems.",
-    total_topics: 8,
-    total_views: 1000,
-    total_likes: 300,
-    level: {
-      name: "Form 1",
-    },
-    isViewed: true,
-    progressPercent: 90,
-  },
-  {
-    _id: "s4",
-    name: "Chemistry",
-    thumbnail: "https://picsum.photos/300/203",
-    description: "Learn about atoms, molecules, reactions, and experiments.",
-    total_topics: 9,
-    total_views: 950,
-    total_likes: 210,
-    level: {
-      name: "Form 3",
-    },
-    isViewed: false,
-    progressPercent: 20,
-  },
-  {
-    _id: "s5",
-    name: "Geography",
-    thumbnail: "https://picsum.photos/300/204",
-    description: "Study the Earth’s structure, climate, and human geography.",
-    total_topics: 11,
-    total_views: 890,
-    total_likes: 170,
-    level: {
-      name: "Form 2",
-    },
-    isViewed: true,
-    progressPercent: 60,
-  },
-  {
-    _id: "s6",
-    name: "History",
-    thumbnail: "https://picsum.photos/300/209",
-    description:
-      "Learn about ancient civilizations, colonization, and independence.",
-    total_topics: 7,
-    total_views: 780,
-    total_likes: 150,
-    level: {
-      name: "Form 3",
-    },
-    isViewed: false,
-    progressPercent: 30,
-  },
-  {
-    _id: "s7",
-    name: "Civics",
-    thumbnail: "https://picsum.photos/300/208",
-    description: "Understand rights, responsibilities, and government systems.",
-    total_topics: 5,
-    total_views: 640,
-    total_likes: 130,
-    level: {
-      name: "Form 1",
-    },
-    isViewed: true,
-    progressPercent: 95,
-  },
-  {
-    _id: "s8",
-    name: "English Language",
-    thumbnail: "https://picsum.photos/300/207",
-    description:
-      "Improve grammar, vocabulary, comprehension, and writing skills.",
-    total_topics: 14,
-    total_views: 1600,
-    total_likes: 400,
-    level: {
-      name: "Form 2",
-    },
-    isViewed: true,
-    progressPercent: 88,
-  },
-  {
-    _id: "s9",
-    name: "Kiswahili",
-    thumbnail: "https://picsum.photos/300/206",
-    description: "Enhance speaking, reading, and writing in Kiswahili.",
-    total_topics: 10,
-    total_views: 1100,
-    total_likes: 275,
-    level: {
-      name: "Form 1",
-    },
-    isViewed: false,
-    progressPercent: 55,
-  },
-  {
-    _id: "s10",
-    name: "Computer Studies",
-    thumbnail: "https://picsum.photos/300/205",
-    description:
-      "Learn the basics of computers, software, and digital literacy.",
-    total_topics: 6,
-    total_views: 720,
-    total_likes: 200,
-    level: {
-      name: "Form 3",
-    },
-    isViewed: true,
-    progressPercent: 70,
-  },
-];
+const keys = ref()
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
   if (
-    !subjects ||
     !data ||
-    !Array.isArray(subjects) ||
     !Array.isArray(data.value) ||
-    subjects.length === 0 ||
     data.value.length === 0
   ) {
     slicedData.value = [];
@@ -234,16 +86,15 @@ const sliceData = (start, end) => {
 
   // If only one page of data or less, return all data
   if (
-    subjects.length <= pageSize.value ||
     data.value?.length <= pageSize.value
   ) {
-    slicedData.value = data.value || subjects;
+    slicedData.value = data.value;
     return;
   }
 
   // Otherwise slice the data
   slicedData.value =
-    data.value?.slice(start, end) || subjects.slice(start, end);
+    data.value?.slice(start, end);
 };
 
 // current page data
@@ -259,12 +110,21 @@ const fetchData = async (params) => {
       )
     : apiDocs.topics.filterTopics;
 
+  // Experiments
   activeTab.value.toLowerCase() == "experiments"
     ? (url = apiDocs.experiments.getExperiments)
     : "";
+
+  // Video
   activeTab.value.toLowerCase() == "video"
     ? (url = apiDocs.videos.getVideos)
     : "";
+
+  // Home
+  activeTab.value.toLowerCase() == "home"
+      ? (url = apiDocs.subjects.getPublicSubjects)
+      : "";
+
   // activeTab.value.toLowerCase() = 'audio' ? url = apiDocs.experiments:''
 
   try {
@@ -281,12 +141,14 @@ const fetchData = async (params) => {
     status.value = "success";
 
     // Call sliceData after data is loaded
+    keys.value = extractNestedKeysAndValues(data.value);
     sliceData(
       (currentPage.value - 1) * pageSize.value,
       currentPage.value * pageSize.value
     );
-  } catch (error) {
+  } catch (err) {
     status.value = "error";
+    error.value = err
     sendRedirect("/auth", 301);
   }
 };
@@ -307,7 +169,7 @@ if (isGreaterToXL) {
 
 // total pages data
 const totalPages = computed(() => {
-  if (subjects && Array.isArray(subjects)) {
+  if (data && Array.isArray(data.value)) {
     return Math.ceil(data.value?.length / pageSize.value);
   }
   return 0; // Default to 0 if no data
@@ -418,7 +280,13 @@ watch(
   () => filterValue.value,
   (filterValue) => {
     if (filterValue) {
-      sliceData.value = filterContentBySearch(data.value, filterValue);
+      slicedData.value = filterContentBySearch(data.value, filterValue);
+    }else {
+    // Call sliceData after data is loaded
+    sliceData(
+      (currentPage.value - 1) * pageSize.value,
+      currentPage.value * pageSize.value
+    );
     }
   }
 );
@@ -459,7 +327,7 @@ watch(
       <!-- Status Success -->
       <div v-else-if="status == 'success'" class="">
         <!-- client only -->
-        <ClientOnly v-if="slicedData?.length > 0">
+        <ClientOnly v-if="data.length > 0">
           <div class="w-full flex flex-col">
             <!-- container filter Mobile -->
             <div class="flex xl:hidden justify-between items-center py-2">
@@ -513,7 +381,7 @@ watch(
             <div class="flex items-start gap-4">
               <!-- container filter Desktop -->
               <div
-                class="sticky top-0 z-10 xl:flex hidden flex-col items-start my-5 w-1/4 rounded-md p-2 pb-4 bg-white custom-box-shadow"
+                class="sticky top-10 z-10 xl:flex hidden flex-col items-start my-5 w-1/4 rounded-md p-2 pb-4 bg-white custom-box-shadow"
                 v-if="userToken"
               >
                 <h2 class="text-medium font-bold tracking-wider px-3 py-2">
@@ -525,6 +393,8 @@ watch(
                   :active-tab="activeTab"
                   :filter-value="[]"
                 />
+
+                <!-- <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" /> -->
               </div>
               <!-- Topic Cards are in Grid -->
               <div
@@ -537,14 +407,14 @@ watch(
                   :class="[
                     '!grid md:grid-cols-2 grid-cols-1 gap-4 my-5',
                     userToken
-                      ? '3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3'
-                      : '3xl:grid-cols-5 xl:grid-cols-4 lg:grid-cols-3',
+                      ? '3xl:grid-cols-4 2xl:grid-cols-3'
+                      : '3xl:grid-cols-5 2xl:grid-cols-4 xl:grid-cols-3',
                   ]"
                   v-if="activeTab.toLowerCase() === 'home'"
                 >
                   <!-- Subject Cards are in Grid -->
                   <HomeSubjectCard
-                    v-for="subject in subjects"
+                    v-for="subject in slicedData"
                     :key="subject._id"
                     :subject-id="subject._id"
                     :subject-name="subject.name"
@@ -558,7 +428,12 @@ watch(
                   v-else-if="
                     activeTab.toLowerCase() === 'interactive books' && userToken
                   "
-                  class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+                   :class="[
+                    '!grid md:grid-cols-2 grid-cols-1 gap-4 my-5',
+                    userToken
+                      ? '3xl:grid-cols-4 2xl:grid-cols-3'
+                      : '3xl:grid-cols-5 2xl:grid-cols-4 xl:grid-cols-3',
+                  ]"
                 >
                   <!-- Topic Cards are in Grid -->
                   <TopicCard
@@ -584,7 +459,12 @@ watch(
                   v-else-if="
                     activeTab.toLowerCase() === 'experiments' && userToken
                   "
-                  class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+                   :class="[
+                    '!grid md:grid-cols-2 grid-cols-1 gap-4 my-5',
+                    userToken
+                      ? '3xl:grid-cols-4 2xl:grid-cols-3'
+                      : '3xl:grid-cols-5 2xl:grid-cols-4 xl:grid-cols-3',
+                  ]"
                 >
                   <ExperimentsCard
                     v-for="experiment in slicedData"
@@ -602,7 +482,12 @@ watch(
                 </div>
                 <div
                   v-else-if="activeTab.toLowerCase() === 'video' && userToken"
-                  class="!grid 3xl:grid-cols-4 xl:grid-cols-3 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5"
+                   :class="[
+                    '!grid md:grid-cols-2 grid-cols-1 gap-4 my-5',
+                    userToken
+                      ? '3xl:grid-cols-4 2xl:grid-cols-3'
+                      : '3xl:grid-cols-5 2xl:grid-cols-4 xl:grid-cols-3',
+                  ]"
                 >
                   <!-- Video Cards are in Grid -->
                   <VideoCard

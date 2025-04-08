@@ -27,7 +27,7 @@ defineProps({
   </div>
 </template>
 
-<style lang="css"  nonce="kisomoWebAppStyles" scoped>
+<style lang="css"  nonce="tie" scoped>
 .dot {
   border-radius: 50%;
 }

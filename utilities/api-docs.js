@@ -60,6 +60,7 @@ const apiDocs = {
   subjects: {
     getSubjects: `${baseURL}/subjects`,
     getSubjectId: `${baseURL}/subjects/:id`,
+    getPublicSubjects: `${baseURL}/public-subjects`,
   },
 
   // TOPICS API

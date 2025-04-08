@@ -36,10 +36,16 @@ watch(() => searchReactive.search, (newVal) => {
 </script>
 
 <template>
-  <div  class="relative flex items-center justify-center w-full"
-  :class="appearance === 'normal' ? 'max-w-md':'h-72 md:px-10 rounded-md bg-gray-400'"
+  <div :class="[
+    ' flex items-center justify-center w-full',
+    appearance === 'normal' ? 'max-w-md':`h-72 bg-[url('/public/images/background1.webp')] bg-cover bg-center bg-no-repeat`
+  ]"
   >
-    <!-- Search Form -->
+   <div :class="[
+    ' relative flex items-center justify-center w-full h-full rounded-md',
+     appearance === 'normal' ? 'md:px-0 lg:px-0': 'bg-textGray bg-opacity-40 md:px-10 lg:px-[100px]'
+   ]">
+     <!-- Apperance Normal -->
     <form v-if="appearance === 'normal'" action="" @submit.prevent="search"
       class="flex w-full h-10 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
       <div class="flex items-center w-full">
@@ -57,9 +63,11 @@ watch(() => searchReactive.search, (newVal) => {
         Search
       </button>
     </form>
-     <form v-else action="" class="w-full max-w-5xl bg-white rounded-md flex items-center h-15 "
+    
+    <!-- Apperance Not Normal -->
+     <form v-else action="" class="w-full max-w-3xl bg-white rounded-md flex items-center h-15 "
       @submit.prevent="search">
-      <div class="flex items-center w-full">
+      <div class="flex items-center w-full pl-4">
         <!-- Search Icon -->
         <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" />
 
@@ -75,14 +83,17 @@ watch(() => searchReactive.search, (newVal) => {
       </button>
     </form>
     <!-- Result Search -->
-    <div class="absolute z-50  w-full bg-white shadow-md rounded-md"
-          :class="appearance === 'normal' ? 'top-10 left-0 max-w-md' : 'top-36 max-w-5xl'"
+    <div :class="[
+            'absolute z-50  w-full bg-white shadow-md rounded-md',
+            appearance === 'normal' ? 'top-10 left-0 max-w-md' : 'top-36 max-w-5xl'
+          ]"
     >
       <TopicCard v-for="result in searchReactive.searchResult" :key="result._id" model-type="search"
         :topic-id="result._id" :topic-title="result.name" :topic-image="result.thumbnail"
         :topic-standard="result.standard" :topic-subject="result.subject.name" :topic-description="result.descriptions"
         :topic-level="result.level.name" :topic-likes="0" :topic-views="0" topic-duration="0" />
     </div>
+   </div>
   </div>
   
 </template>

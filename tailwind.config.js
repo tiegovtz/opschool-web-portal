@@ -24,20 +24,20 @@ export default {
         normalGreener: "#4db139",
         grayLight: "#f0f0f0",
       },
-    },
-    fontFamily: {
-      tahoma: ["tahoma", "sans-serif"],
-      tahomabd: ["tahomabd", "sans-serif"],
-      poppins: ["Poppins", "sans-serif"],
-      ptserif: ["PT Serif", "serif"],
-    },
-    fontSize: {
-      extraLarge: "2.5rem", // 40px
-      large: "1.5rem", // 24px
-      medium: "1.1rem", // 18px
-      small: "1rem", // 16px
-      extraSmall: "0.8rem", // 14px
-      smallest: "0.6rem", // 12px
+      fontFamily: {
+        tahoma: ["tahoma", "sans-serif"],
+        tahomabd: ["tahomabd", "sans-serif"],
+        poppins: ["Poppins", "sans-serif"],
+        ptserif: ["PT Serif", "serif"],
+      },
+      fontSize: {
+        extraLarge: "2.5rem", // 40px
+        large: "1.5rem", // 24px
+        medium: "1.1rem", // 18px
+        small: "1rem", // 16px
+        extraSmall: "0.8rem", // 14px
+        smallest: "0.6rem", // 12px
+      },
     },
     screens: {
       xs: "320px",
