@@ -13,7 +13,7 @@ const props = defineProps({
   },
   subjectImage: {
     type: String,
-    required: true,
+    default: '/images/background2.webp'
   },
   totalViews: {
     type: Number,
