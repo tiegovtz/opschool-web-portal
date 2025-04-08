@@ -102,18 +102,24 @@ const checkbox = (event) => {
   const input = container.querySelector('input[type="checkbox"]') ?? container.querySelector('input[type="radio"]');
   if (input) {
     input.checked = !input.checked;
-    if (input.checked) {
-      emit(
-        'emitUpdateFilterValue',
-        input.value
-      )
-    }
+
+    input.checked ? emit(
+      'emitUpdateFilterValue',
+      input.value
+    ) : emit(
+      'emitUpdateFilterValue',
+      null
+    );
   }
 };
 </script>
 
 <template>
-  <div class="w-full flex flex-col bg-white cursor-pointer">
+  <form class="w-full flex flex-col bg-white cursor-pointer" @reset="emit('emitUpdateFilterValue',null);">
+    <div class="flex justify-end w-full">
+      <button type="reset">Reset</button>
+    </div>
+    <!-- Dropdown Header -->
       <div
         v-for="(filters, index) in filterNameGroup"
         :key="index"
@@ -122,7 +128,7 @@ const checkbox = (event) => {
         <!-- Dropdown Header -->
         <div
           :class="[
-            'flex justify-between items-center border-b border-deepBlue w-full px-5 py-2',
+            'flex justify-between items-center border-b border-deepBlue border-opacity-10 w-full px-5 py-2',
           {
               '!border-b-0':
                 dropDownMenu.isOpen && dropDownMenu.currentIndex === index,
@@ -138,16 +144,10 @@ const checkbox = (event) => {
             {{ filters.name }}
           </h2>
           <Icon
-            name="iconoir:nav-arrow-down"
-            size="20"
-            :class="[
-              'text-deepBlue transition-transform duration-500 ease-in-out',
-            {
-              'transform rotate-180':
-                dropDownMenu.isOpen && dropDownMenu.currentIndex === index,
-            }
-            ]"
-          />
+            :name="dropDownMenu.isOpen && dropDownMenu.currentIndex === index ? 
+            'lets-icons:remove-duotone' : 
+            'lets-icons:add-duotone'"
+            size="24" class="text-deepBlue"/>
         </div>
 
         <!-- Dropdown Content -->
@@ -165,7 +165,7 @@ const checkbox = (event) => {
             v-for="(filter, i) in filters.filterGroup"
             :key="i"
             @click="checkbox"
-            class="flex gap-4 cursor-pointer items-center border-b border-deepBlue pl-6 w-full"
+            class="flex gap-4 cursor-pointer items-center border-b border-deepBlue border-opacity-10 pl-6 w-full"
           >
             <!-- <Icon name="gridicons:add" size="20" class="text-normalGreener" /> -->
             <input
@@ -182,5 +182,5 @@ const checkbox = (event) => {
           </div>
         </div>
       </div>
-    </div>
+    </form>
 </template>
