@@ -1,4 +1,4 @@
-import ViteLegacy from '@vitejs/plugin-legacy'
+import legacy from '@vitejs/plugin-legacy'
 // import '@google/model-viewer';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
@@ -34,7 +34,7 @@ export default defineNuxtConfig({
 
   vite: {
     plugins: [
-      ViteLegacy({
+      legacy({
         targets: [
           'defaults',
           'last 2 versions',
