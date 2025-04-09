@@ -19,6 +19,7 @@ currentTopic.value = topicTitle;
 
 // tokens
 const signInAccessToken =useCookie('signInAccessToken')
+useState("topicToView",()=> null)
 
 // Define meta info about page
 useHead({
@@ -226,9 +227,8 @@ await useFetch(`/api/topics/${topicId}`)
 
 watch(() => userToken.value, (token) => {
   // Get the router instance
-  console.log(token)
   if (!token) {
-    router.replace("/");
+    router.replace("/home");
   }
 });
 
@@ -274,7 +274,6 @@ const setPicCenter = async () => {
   }, 500);
 }
 
-
 definePageMeta({
   middleware: "auth",
 });
@@ -285,14 +284,14 @@ definePageMeta({
   <NuxtLayout name="home-layout">
     <section v-if="experimrntUrl" class="relative w-full center-height" id="experiment-container">
       <div
-        class="absolute top-0 right-0 p-2 cursor-pointer h-10 w-10 rounded-full bg-red-500 flex items-center justify-center"
+        class="absolute top-0 right-0 flex items-center justify-center w-10 h-10 p-2 bg-red-500 rounded-full cursor-pointer"
         @click="experimrntUrl = null">
-        <Icon name="formkit:close" size="24" class="text-white font-bold" />
+        <Icon name="formkit:close" size="24" class="font-bold text-white" />
       </div>
       <iframe :src="experimrntUrl" frameborder="0" class="h-full w-full center-height rounded-md !bg-white "></iframe>
       <!-- full screen controls -->
       <div
-        class="screen-control absolute bottom-0 right-0 p-2 cursor-pointer h-10 w-10 bg-oceanBlue hover:bg-white hover:text-oceanBlue transition-all duration-500 text-white flex items-center justify-center rounded-md"
+        class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"
         :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" @click="fullScreen">
         <Icon v-if="isFullscreen" name="qlementine-icons:fullscreen-exit-16" size="24" />
         <Icon v-else name="qlementine-icons:fullscreen-16" size="24" />
@@ -300,53 +299,54 @@ definePageMeta({
     </section>
 
     <!-- quiz -->
-    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat">
+    <!-- bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat -->
+    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
      
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :change-chapter="changeChapter" :chapters-list="chapters.list?.length" :chapters-number="chapters?.number" />
 
     </div>
-    <section v-else class=" relative w-full h-full inline-flex center-height overflow-hidden">
+    <section v-else class="relative inline-flex w-full h-full overflow-hidden center-height">
       <!-- Loading state -->
-      <div v-if="chapters.status == 'pending'" class="loading content-height flex items-center justify-center w-full">
+      <div v-if="chapters.status == 'pending'" class="flex items-center justify-center w-full loading content-height">
         <LoadingIndicator :is-loading="true" />
       </div>
 
       <!-- Error state -->
-      <div v-else-if="chapters.status == 'error'" class="error flex w-full items-center justify-center gap-2 flex-col">
+      <div v-else-if="chapters.status == 'error'" class="flex flex-col items-center justify-center w-full gap-2 error">
         <MessagePageNotFound message="Error while loading chapter"
           subMessage="Make sure you are connected to the stable internet or try to reload the page" />
       </div>
 
       <!-- Success state -->
-      <div v-else-if="chapters.status == 'success'" class="success w-full flex justify-center">
+      <div v-else-if="chapters.status == 'success'" class="flex justify-center w-full success">
         <!-- Notes loading w-3/4 -->
         <div v-if="chapters.notesStatus == 'pending'"
-          class="flex w-full items-center justify-center lg:w-3/4 lg:scroll-height lg:overflow-y-scroll p-5 flex-col h-full">
-          <div class="flex-1 flex items-center justify-center">
+          class="flex flex-col items-center justify-center w-full h-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
+          <div class="flex items-center justify-center flex-1">
             <LoadingIndicator :is-loading="true" />
           </div>
         </div>
 
         <!-- Notes loaded successfully -->
         <div id='notes-container' v-else-if="chapters.notesStatus == 'success'"
-          class="lg:w-3/4 w-full lg:scroll-height lg:overflow-y-scroll py-5 lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+          class="w-full py-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between ">
             <div class="flex items-center gap-2">
-              <NuxtLink to="/" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+              <NuxtLink to="/" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                 {{ topicLevel != null && topicLevel != undefined && topicLevel != "null" ? topicLevel : `Secondary` }}
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </NuxtLink>
 
-              <NuxtLink to="/" class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+              <NuxtLink to="/" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                 {{ topicStandard != null && topicStandard != undefined && topicStandard != "null" ? topicStandard :
                 `Form One` }}
-                <Icon name="weui:arrow-outlined" size="18" class=" text-black" />
+                <Icon name="weui:arrow-outlined" size="18" class="text-black " />
               </NuxtLink>
 
-              <p class="text-medium uppercase md:capitalize font-medium">
+              <p class="font-medium uppercase text-medium md:capitalize">
                 {{ topicTitle != null && topicTitle != undefined && topicTitle != "null" ? topicTitle : `Introduction to
                 Physics` }}
               </p>
@@ -359,12 +359,12 @@ definePageMeta({
           </div>
 
           <!-- Description -->
-          <div class="content-view relative w-full flex flex-col gap-2 py-3 justify-center">
-            <!-- <p class="notes md:px-4 max-w-7xl mx-auto"
+          <div class="relative flex flex-col justify-center w-full gap-2 py-3 content-view">
+            <!-- <p class="mx-auto notes md:px-4 max-w-7xl"
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
             <!-- Chapter Notes -->
-            <div  class="notes md:px-4 max-w-7xl mx-auto" v-mathjax
+            <div  class="mx-auto notes md:px-4 max-w-7xl" v-mathjax
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
             </div>
 
@@ -372,31 +372,31 @@ definePageMeta({
             <div v-if="chapters.questions && chapters.questions?.length > 0"
               class="flex items-center justify-center w-full">
               <button
-                class="bg-oceanBlue hover:bg-deepBlue px-4 text-white h-10 rounded-md cursor-pointer transition-colors duration-500 ease-in-out uppercase"
+                class="h-10 px-4 text-white uppercase transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
                 @click="chapters.isAttemptingQuizes = true;">
                 Test your knowledge
               </button>
             </div>
 
             <!-- Next and Previous chapter Action -->
-            <div class="flex lg:hidden flex-row-reverse items-center justify-between">
+            <div class="flex flex-row-reverse items-center justify-between lg:hidden">
               <!-- Next Chapter -->
               <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length"
                 :class="{ 'opacity-0': chapters.number == chapters.list?.length }"
-                class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
-                <p class="capitalize flex gap-2">Next <span class="hidden md:flex">Chapter</span></p>
-                <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
+                class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
+                <p class="flex gap-2 capitalize">Next <span class="hidden md:flex">Chapter</span></p>
+                <div class="flex items-center justify-center w-4 h-4 bg-white rounded-full animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
                 </div>
               </button>
               <!-- Previous Chapter -->
               <button @click="changeChapter('p')" :disabled="chapters.number <= 1"
                 :class="{ 'opacity-0': chapters.number <= 1 }"
-                class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
-                <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
-                  <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue transform rotate-180" />
+                class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
+                <div class="flex items-center justify-center w-4 h-4 bg-white rounded-full animate-bounce-horizontal">
+                  <Icon name="weui:arrow-filled" size="20" class="transform rotate-180 text-oceanBlue" />
                 </div>
-                <p class="capitalize flex gap-2">Previous <span class="hidden md:flex">Chapter</span></p>
+                <p class="flex gap-2 capitalize">Previous <span class="hidden md:flex">Chapter</span></p>
               </button>
             </div>
 
@@ -404,7 +404,7 @@ definePageMeta({
         </div>
 
         <!-- Notes failed to load -->
-        <div v-else class="flex w-full items-center justify-center lg:w-3/4 lg:scroll-height lg:overflow-y-scroll p-5">
+        <div v-else class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
           <MessageTopicNotFound message="This chapter currently not available" />
         </div>
 
@@ -412,12 +412,12 @@ definePageMeta({
         <div
           class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2  lg:static bg-white">
           <div class="flex items-center justify-between mb-4">
-            <h1 class="text-medium font-medium capitalize pt-5">
+            <h1 class="pt-5 font-medium capitalize text-medium">
               Subtopic
             </h1>
             <!-- toggle menu -->
             <div
-              class="hover:bg-oceanBlue cursor-pointer rounded-full w-5 h-5 flex lg:hidden items-center justify-center group transition-all duration-500 ease-in-out"
+              class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"
               @click="toggleSidebar">
               <!-- Cancel Icon -->
               <Icon name="iconoir:cancel" size="18" class="group-hover:text-white" />

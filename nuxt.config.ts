@@ -1,4 +1,3 @@
-// import '@google/model-viewer';
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
@@ -17,6 +16,7 @@ export default defineNuxtConfig({
   plugins: [
     { src: '~/plugins/mathjax.client.js', mode: 'client' },
     { src: '~/plugins/mathjax-directive.client.js', mode: 'client' },
+    { src: '~/plugins/block-navigation.client.ts', mode: 'client' },
   ],
 
   modules: [
@@ -27,7 +27,6 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     'pinia-plugin-persistedstate/nuxt',
   ],
-  
 
   image: {
     // dir: "assets/images",

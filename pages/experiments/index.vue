@@ -1,6 +1,7 @@
 <script setup>
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
+import InputsSelection from "@/components/home/InputsSelection.vue";
 import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
 import { ref, computed, onMounted, watch } from "vue";
 import {
@@ -211,7 +212,7 @@ const { progress, isLoading } = useLoadingIndicator();
     <!-- User Token Available -->
       <div
         v-if="userToken"
-        class="flex flex-col items-center justify-center w-full pt-4 gap-4"
+        class="flex flex-col items-center justify-center w-full gap-4 pt-4"
       >
         <HomeSearchbar appearance="rounded" />
         <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
@@ -228,7 +229,7 @@ const { progress, isLoading } = useLoadingIndicator();
         <TabBar />
       </div>
 
-      <div v-if="status === 'pending'" class="flex flex-col justify-center items-center">
+      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />
       </div>
 
@@ -238,7 +239,7 @@ const { progress, isLoading } = useLoadingIndicator();
       <div v-else-if="status == 'success'">
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
-          <div class="w-full flex flex-col">
+          <div class="flex flex-col w-full">
             <div v-if="status === 'success'"
               class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4 mt-10">
               <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
@@ -256,7 +257,7 @@ const { progress, isLoading } = useLoadingIndicator();
               </div>
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
-                <div class="flex justify-center items-center" v-if="currentPage > 5">
+                <div class="flex items-center justify-center" v-if="currentPage > 5">
                   <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
                 </div>
 
@@ -265,7 +266,7 @@ const { progress, isLoading } = useLoadingIndicator();
                   @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
 
                 <!-- next button -->
-                <div class="flex justify-center items-center" v-if="currentPage > 4">
+                <div class="flex items-center justify-center" v-if="currentPage > 4">
                   <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
                 </div>
               </div>

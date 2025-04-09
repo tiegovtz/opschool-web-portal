@@ -52,21 +52,21 @@ const setSubjectToView = () => {
   <button
     v-if="isLoggedIn"
     @click="setSubjectToView()"
-    class="relative overflow-hidden rounded-lg flex flex-col shadow-md pb-4 group hover:bg-deepBlue transition-all duration-500 ease-in-out"
+    class="relative flex flex-col pb-4 overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue"
   >
     <!-- image -->
-    <div class="overflow-hidden relative h-56">
+    <div class="relative h-56 overflow-hidden">
       <NuxtImg
         :src="subjectImage"
         loading="lazy"
         alt="subject-image"
-        class="w-full h-full object-cover transform group-hover:scale-110 duration-1000 ease-in-out"
+        class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
       />
     </div>
 
     <!-- content -->
     <div
-      class="flex flex-wrap item-center justify-between group-hover:text-white transition-all duration-500 ease-in-out px-4 pt-2"
+      class="flex flex-wrap justify-between px-4 pt-2 transition-all duration-500 ease-in-out item-center group-hover:text-white"
     >
       <!-- title & description -->
       <p
@@ -76,7 +76,7 @@ const setSubjectToView = () => {
       </p>
       <!-- metrics -->
       <small :class="{ 'opacity-0': totalViews <= 0 }"
-        class="flex justify-end p-2 items-center gap-2 text-oceanBlue group-hover:text-white">
+        class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white">
         <Icon name="flowbite:users-outline" class="text-medium" />
         <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
       </small>
@@ -87,21 +87,21 @@ const setSubjectToView = () => {
     v-else
     :to="`/interactive/${subjectName.toLowerCase()}/${subjectId.toLowerCase()}`"
     @click="setSubjectToView()"
-    class="relative overflow-hidden rounded-lg flex flex-col shadow-md pb-4 group hover:bg-deepBlue transition-all duration-500 ease-in-out"
+    class="relative flex flex-col pb-4 overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue"
   >
     <!-- image -->
-    <div class="overflow-hidden relative h-56">
+    <div class="relative h-56 overflow-hidden">
       <NuxtImg
         :src="subjectImage"
         loading="lazy"
         alt="subject-image"
-        class="w-full h-full object-cover transform group-hover:scale-110 duration-1000 ease-in-out"
+        class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
       />
     </div>
 
     <!-- content -->
     <div
-      class="flex flex-wrap item-center justify-between group-hover:text-white transition-all duration-500 ease-in-out px-4 pt-2"
+      class="flex flex-wrap justify-between px-4 pt-2 transition-all duration-500 ease-in-out item-center group-hover:text-white"
     >
       <!-- title & description -->
       <p
@@ -112,7 +112,7 @@ const setSubjectToView = () => {
       <!-- metrics -->
       <small
         :class="{ 'opacity-0': totalViews <= 0 }"
-        class="flex justify-end p-2 items-center gap-2 text-oceanBlue group-hover:text-white"
+        class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white"
       >
         <Icon name="flowbite:users-outline" class="text-medium" />
         <p>{{ calculateTopicMetrics(totalViews) }} Views</p>

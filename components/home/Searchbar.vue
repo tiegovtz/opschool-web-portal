@@ -38,7 +38,7 @@ watch(() => searchReactive.search, (newVal) => {
 <template>
   <div :class="[
     ' flex items-center justify-center w-full',
-    appearance === 'normal' ? 'max-w-md':`h-72 bg-[url('/public/images/background1.webp')] bg-cover bg-center bg-no-repeat`
+    appearance === 'normal' ? 'max-w-md':`h-72 bg-[url('/public/images/background3.webp')] bg-cover bg-center bg-no-repeat rounded-md`
   ]"
   >
    <div :class="[
@@ -59,13 +59,13 @@ watch(() => searchReactive.search, (newVal) => {
 
       <!-- Search Button -->
       <button type="submit" @click="search"
-        class="text-white px-4 py-2 md:flex items-center justify-center hidden rounded-t-md rounded-b-none  bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out overflow-hidden cursor-pointer">
+        class="items-center justify-center hidden px-4 py-2 overflow-hidden text-white transition-colors duration-500 ease-in-out rounded-b-none cursor-pointer md:flex rounded-t-md bg-oceanBlue hover:bg-deepBlue">
         Search
       </button>
     </form>
     
     <!-- Apperance Not Normal -->
-     <form v-else action="" class="w-full max-w-3xl bg-white rounded-md flex items-center h-15 "
+     <form v-else action="" class="flex items-center w-full max-w-3xl bg-white rounded-md h-15 "
       @submit.prevent="search">
       <div class="flex items-center w-full pl-4">
         <!-- Search Icon -->
@@ -78,7 +78,7 @@ watch(() => searchReactive.search, (newVal) => {
 
       <!-- Search Button -->
       <button type="submit" @click="search"
-        class="text-white px-4 py-2 h-full md:flex items-center justify-center hidden rounded-r-md rounded-b-none  bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out overflow-hidden cursor-pointer">
+        class="items-center justify-center hidden h-full px-4 py-2 overflow-hidden text-white transition-colors duration-500 ease-in-out rounded-b-none cursor-pointer md:flex rounded-r-md bg-oceanBlue hover:bg-deepBlue">
         Search
       </button>
     </form>

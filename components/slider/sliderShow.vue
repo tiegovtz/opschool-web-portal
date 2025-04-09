@@ -7,7 +7,6 @@ const slides = [
   "/images/7.TIE-Interactive.webp",
   "/images/6.TIE-Interactive.webp",
   "/images/5.TIE-Interactive.webp",
-  "/images/4.TIE-Interactive.webp",
   "/images/3.TIE-Interactive.webp",
   "/images/2.TIE-Interactive.jpg",
 ]
@@ -29,7 +28,7 @@ const swiper = useSwiper(containerRef, {
     <swiper-container ref="containerRef" :init="false" class="w-full h-full max-h-[550px] overflow-hidden">
       <swiper-slide v-for="(slide, idx) in slides" :key="idx">
         <!-- Slide {{ idx + 1 }} -->
-        <NuxtImg :src="`${slide}`" alt="Slider Image" class="rounded-md w-full h-full object-cover" />
+        <NuxtImg :src="`${slide}`" alt="Slider Image" class="object-cover w-full h-full rounded-md" />
       </swiper-slide>
     </swiper-container>
   </ClientOnly>
