@@ -15,7 +15,8 @@ import apiDocs from "~/utilities/api-docs";
 
 // Defin Route
 const route = useRoute();
-const topicId = route.fullPath.split("/").pop();
+const router = useRouter();
+const subjectId = route.fullPath.split("/").pop();
 const subjectTitle = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
 
 // Define meta info about page
@@ -94,19 +95,23 @@ const pageSize = ref();
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params) => {
   const url = userToken.value
-    ? apiDocs.topics.filterTopicsByUser.replace(
-        "{userId}",
-        userToken.value?._id
+    ? apiDocs.topics.getSubjectId.replace(
+        "{subjectId}",
+        subjectId
       )
-    : apiDocs.topics.filterTopics;
+    : apiDocs.topics;
 
   try {
     status.value = "pending";
     const response = await $fetch(url, {
-      params: params,
+        params: params,
+      headers: {
+        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+      },
     });
 
     // Call State Define above
+    console.log(response)
     topic.value = response;
     status.value = "success";
 
@@ -118,6 +123,7 @@ const fetchTopics = async (params) => {
   } catch (error) {
     status.value = "error";
     slicedData.value = [];
+    router.replace("/auth");
   }
 };
 
@@ -221,7 +227,7 @@ watch(filters, (filters) => {
         />
       <div
         v-if="status === 'pending'"
-        class="flex flex-col justify-center items-center"
+        class="flex flex-col items-center justify-center"
       >
         <LoadingIndicator :is-loading="true" />
       </div>
@@ -232,10 +238,10 @@ watch(filters, (filters) => {
       <div v-else-if="status == 'success'" class="">
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
-          <div class="w-full flex flex-col">
+          <div class="flex flex-col w-full">
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class="flex flex-col items-start container">
+              <div class="container flex flex-col items-start">
                 <div
                   class="!grid 3xl:grid-cols-4 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5 grid-col">
                   <TopicCard
@@ -276,7 +282,7 @@ watch(filters, (filters) => {
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
                 <div
-                  class="flex justify-center items-center"
+                  class="flex items-center justify-center"
                   v-if="currentPage > 5"
                 >
                   <Icon
@@ -298,7 +304,7 @@ watch(filters, (filters) => {
 
                 <!-- next button -->
                 <div
-                  class="flex justify-center items-center"
+                  class="flex items-center justify-center"
                   v-if="currentPage > 4"
                 >
                   <Icon
@@ -315,7 +321,7 @@ watch(filters, (filters) => {
       </div>
 
       <!-- Even Data was not success should be handle here -->
-      <div class="w-full flex flex-col" v-else>
+      <div class="flex flex-col w-full" v-else>
         <div class="" v-if="slicedData?.length === 0">
           Try to refresh the page, Something went Wrong
         </div>
@@ -327,13 +333,13 @@ watch(filters, (filters) => {
           >
             <!-- container filter -->
             <div
-              class="sticky top-0 z-10 xl:flex flex-col hidden items-start px-4 py-2 my-5 w-1/4 bg-white custom-box-shadow"
+              class="sticky top-0 z-10 flex-col items-start hidden w-1/4 px-4 py-2 my-5 bg-white xl:flex custom-box-shadow"
             >
-              <h2 class="text-medium font-bold tracking-wider">Filters</h2>
+              <h2 class="font-bold tracking-wider text-medium">Filters</h2>
             </div>
             <!-- Topic Cards are in Grid -->
             <div class="flex flex-col items-start">
-             <p class="text-small font-medium">Viewing {{ topic.length }} Results</p>
+             <p class="font-medium text-small">Viewing {{ topic.length }} Results</p>
               <div
                 class="!grid 3xl:grid-cols-4 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5 grid-col"
               >
@@ -375,7 +381,7 @@ watch(filters, (filters) => {
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
                 <div
-                  class="flex justify-center items-center"
+                  class="flex items-center justify-center"
                   v-if="currentPage > 5"
                 >
                   <Icon
@@ -395,7 +401,7 @@ watch(filters, (filters) => {
                 />
                 <!-- next button -->
                 <div
-                  class="flex justify-center items-center"
+                  class="flex items-center justify-center"
                   v-if="currentPage > 4"
                 >
                   <Icon

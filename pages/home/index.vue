@@ -149,7 +149,7 @@ const fetchData = async (params) => {
   } catch (err) {
     status.value = "error";
     error.value = err
-    sendRedirect("/auth", 301);
+    router.replace("/auth");
   }
 };
 
@@ -383,13 +383,13 @@ watch(
                 v-if="userToken"
               >
                 <!-- Home Drop Down Menu -->
-                <!-- <HomeDropDownMenu
+                <HomeDropDownMenu
                   @emit-update-filter-value="filterValue = $event"
                   :active-tab="activeTab"
                   :filter-value="[]"
-                /> -->
+                />
 
-                <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" />
+                <!-- <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" /> -->
               </div>
               <!-- Topic Cards are in Grid -->
               <div
