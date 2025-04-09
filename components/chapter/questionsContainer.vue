@@ -126,21 +126,21 @@ watch(
 
 <template>
   <section
-    class="flex flex-col items-center justify-center bg-white/70 center-height py-4 rounded-md"
+    class="flex flex-col items-center justify-center py-4 rounded-md bg-gradient-to-b from-deepBlue to-white center-height"
   >
     <!-- Questions -->
-    <div class="w-full md:p-8 max-w-5xl container bg-white rounded-md custom-box-shadow"
+    <div class="container w-full max-w-5xl bg-white rounded-md md:p-8 custom-box-shadow"
     v-if="isAttemptingQuiz">
      <!-- Close Button -->
       <div class="flex items-center justify-end mb-2">
-        <div class="p-2 cursor-pointer h-8 w-8 rounded-full bg-red-500 flex items-center justify-center" @click="changeChapter('R')">
-          <Icon name="formkit:close" size="24" class="text-white font-bold" />
+        <div class="flex items-center justify-center w-8 h-8 p-2 bg-red-500 rounded-full cursor-pointer" @click="changeChapter('R')">
+          <Icon name="formkit:close" size="24" class="font-bold text-white" />
         </div>
       </div>
 
       <!-- Header and Button -->
       <div class="flex items-center justify-between">
-        <h1 class="text-large underline tracking-wide"
+        <h1 class="tracking-wide underline text-large"
           v-if="questions.length > 0">
           Quiz
         </h1>
@@ -168,7 +168,7 @@ watch(
         <div class="flex flex-col items-center w-full mb-4">
           <p>Scores: <b>{{ scoredComputed.toFixed(1) }}%</b> </p>
           <p
-            class="flex flex-1 items-center justify-center gap-2 font-bold"
+            class="flex items-center justify-center flex-1 gap-2 font-bold"
             :class="getScoreColor(scoredComputed)"
           >
             {{ getMotivationMessage(scoredComputed) }}
@@ -196,8 +196,8 @@ watch(
 
                 <!-- Mark Tick and Wrong -->
                  <span v-if="quizAttempt.clickedAnswer[index] == question.answer"
-                            class="text-normalGreener font-bold">✓</span>
-                        <span v-else class="text-red-600 font-bold">✗</span>
+                            class="font-bold text-normalGreener">✓</span>
+                        <span v-else class="font-bold text-red-600">✗</span>
               </p>
             </div>
           </div>
@@ -209,7 +209,7 @@ watch(
           <button
             v-if="quizAttempt.quizCompleted"
             @click="resetQuiz()"
-            class="flex items-center justify-center px-4 py-1 rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-white transition-colors duration-500 ease-in-out"
+            class="flex items-center justify-center px-4 py-1 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
           >
             <span v-if="scoredComputed < 50" class="capitalize">Read notes again</span>
             <span v-else class="capitalize">next topic</span>
@@ -221,20 +221,20 @@ watch(
         <!-- Next Chapter -->
         <!-- <button @click="changeChapter('n')" :disabled="chaptersNumber == chaptersList"
                         :class="{ 'opacity-0': chaptersNumber == chaptersList }"
-                        class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
-                        <p class="capitalize flex gap-2">Next <span class="hidden md:flex">Chapter</span></p>
-                        <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
+                        class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
+                        <p class="flex gap-2 capitalize">Next <span class="hidden md:flex">Chapter</span></p>
+                        <div class="flex items-center justify-center w-4 h-4 bg-white rounded-full animate-bounce-horizontal">
                             <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
                         </div>
                     </button> -->
         <!-- Previous Chapter -->
         <!-- <button @click="changeChapter('p')" :disabled="chaptersNumber <= 1"
                         :class="{ 'opacity-0': chaptersNumber <= 1 }"
-                        class="flex items-center justify-center gap-4 bg-oceanBlue hover:bg-deepBlue rounded-md h-10 px-4 text-white">
-                        <div class="flex items-center justify-center h-4 w-4 rounded-full bg-white animate-bounce-horizontal">
-                            <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue transform rotate-180" />
+                        class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
+                        <div class="flex items-center justify-center w-4 h-4 bg-white rounded-full animate-bounce-horizontal">
+                            <Icon name="weui:arrow-filled" size="20" class="transform rotate-180 text-oceanBlue" />
                         </div>
-                        <p class="capitalize flex gap-2">Previous <span class="hidden md:flex">Chapter</span></p>
+                        <p class="flex gap-2 capitalize">Previous <span class="hidden md:flex">Chapter</span></p>
                     </button> -->
         <!-- </div> -->
       </div>

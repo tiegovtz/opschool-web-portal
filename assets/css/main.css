@@ -25,7 +25,7 @@
 
 @layer base {
   html {
-    @apply scroll-smooth overflow-auto bg-white min-h-dvh leading-relaxed m-0 p-0 box-border select-none;
+    @apply box-border p-0 m-0 overflow-auto leading-relaxed bg-white select-none scroll-smooth min-h-dvh;
   }
 
   .title {
@@ -33,13 +33,13 @@
   }
 
   /* ::selection {
-    @apply bg-darkBlue text-white;
+    @apply text-white bg-darkBlue;
   } */
 }
 
 @layer components {
   .topic-card__progress-bar {
-    @apply w-full h-2 rounded-full bg-gray-200;
+    @apply w-full h-2 bg-gray-200 rounded-full;
     @apply [&::-webkit-progress-bar]:bg-gray-200;
     @apply [&::-webkit-progress-value]:bg-oceanBlue [&::-webkit-progress-value]:rounded-full;
     @apply [&::-moz-progress-bar]:bg-oceanBlue [&::-moz-progress-bar]:rounded-full;
@@ -80,7 +80,7 @@
   }
 
   .custom-box-shadow {
-    box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, 0.03) !important;
+    box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, 0.1) !important;
   }
 }
 

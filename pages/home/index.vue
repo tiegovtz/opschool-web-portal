@@ -13,7 +13,7 @@ import {
 } from "@/utilities/controlls";
 import InputsSelection from "@/components/home/InputsSelection.vue";
 import apiDocs from "~/utilities/api-docs";
-import { extractNestedKeysAndValues } from "~/utilities/filterJson";
+import { extractNestedKeysAndValues, filterDataByValues } from "~/utilities/filterJson";
 
 // Define meta info about page
 useHead({
@@ -280,7 +280,8 @@ watch(
   () => filterValue.value,
   (filterValue) => {
     if (filterValue) {
-      slicedData.value = filterContentBySearch(data.value, filterValue);
+      console.log(filterValue)
+      slicedData.value = filterDataByValues(data.value, filterValue);
     }else {
     // Call sliceData after data is loaded
     sliceData(
@@ -298,7 +299,7 @@ watch(
       <!-- User Token Available -->
       <div
         v-if="userToken"
-        class="flex flex-col items-center justify-center w-full pt-4 gap-4"
+        class="flex flex-col items-center justify-center w-full gap-4 pt-4"
       >
         <HomeSearchbar appearance="rounded" />
         <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
@@ -317,7 +318,7 @@ watch(
 
       <div
         v-if="status === 'pending'"
-        class="flex flex-col justify-center items-center"
+        class="flex flex-col items-center justify-center"
       >
         <LoadingIndicator :is-loading="true" />
       </div>
@@ -328,14 +329,14 @@ watch(
       <div v-else-if="status == 'success'" class="">
         <!-- client only -->
         <ClientOnly v-if="data.length > 0">
-          <div class="w-full flex flex-col">
+          <div class="flex flex-col w-full">
             <!-- container filter Mobile -->
-            <div class="flex xl:hidden justify-between items-center py-2">
-              <p class="text-small font-medium">
+            <div class="flex items-center justify-between py-2 xl:hidden">
+              <p class="font-medium text-small">
                 Viewing {{ data?.length }} Results
               </p>
               <div
-                class="flex items-center gap-2 text-deepBlue cursor-pointer"
+                class="flex items-center gap-2 cursor-pointer text-deepBlue"
                 @click="hideFilter = !hideFilter"
               >
                 <Icon name="mage:filter-fill" size="24" class="" />
@@ -349,25 +350,22 @@ watch(
                   hideFilter ? 'z-30' : '-z-30',
                 ]"
               >
-                <div class="bg-white h-full md:w-80 w-full">
+                <div class="w-full h-full bg-white md:w-80">
                   <!-- Close Button -->
-                  <div class="flex justify-end items-center">
+                  <div class="flex items-center justify-end">
                     <button
-                      class="p-2 cursor-pointer h-10 w-10 rounded-bl-md bg-deepBlue flex items-center justify-center"
+                      class="flex items-center justify-center w-10 h-10 p-2 cursor-pointer rounded-bl-md bg-deepBlue"
                       @click="hideFilter = !hideFilter"
                     >
                       <Icon
                         name="formkit:close"
                         size="24"
-                        class="text-white font-bold"
+                        class="font-bold text-white"
                       />
                     </button>
                   </div>
 
-                  <div class="flex flex-col mt-10 gap-4">
-                    <h2 class="text-medium font-bold tracking-wider px-3 py-2">
-                      Filters
-                    </h2>
+                  <div class="flex flex-col gap-4 mt-10">
                     <!-- Home Drop Down Menu -->
                     <HomeDropDownMenu
                       :active-tab="activeTab"
@@ -381,20 +379,17 @@ watch(
             <div class="flex items-start gap-4">
               <!-- container filter Desktop -->
               <div
-                class="sticky top-10 z-10 xl:flex hidden flex-col items-start my-5 w-1/4 rounded-md p-2 pb-4 bg-white custom-box-shadow"
+                class="sticky z-10 flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md top-10 xl:flex custom-box-shadow"
                 v-if="userToken"
               >
-                <h2 class="text-medium font-bold tracking-wider px-3 py-2">
-                  Filters
-                </h2>
                 <!-- Home Drop Down Menu -->
-                <HomeDropDownMenu
+                <!-- <HomeDropDownMenu
                   @emit-update-filter-value="filterValue = $event"
                   :active-tab="activeTab"
                   :filter-value="[]"
-                />
+                /> -->
 
-                <!-- <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" /> -->
+                <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" />
               </div>
               <!-- Topic Cards are in Grid -->
               <div
@@ -527,7 +522,7 @@ watch(
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
                 <div
-                  class="flex justify-center items-center"
+                  class="flex items-center justify-center"
                   v-if="currentPage > 5"
                 >
                   <Icon
@@ -549,7 +544,7 @@ watch(
 
                 <!-- next button -->
                 <div
-                  class="flex justify-center items-center"
+                  class="flex items-center justify-center"
                   v-if="currentPage > 4"
                 >
                   <Icon
@@ -566,7 +561,7 @@ watch(
       </div>
 
       <!-- Even Data was not success should be handle here -->
-      <div class="w-full flex flex-col" v-else>
+      <div class="flex flex-col w-full" v-else>
         <p class="text-center text-medium">
           Try to refresh the page, Something went Wrong
         </p>

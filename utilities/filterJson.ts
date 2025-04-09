@@ -57,7 +57,6 @@ const filterContentBySearch = (content: any[],searchValue:String) => {
  * //   }
  * // ]
  */
-
 type InputObject = Record<string, any>;
 
 type KeyValues = {
@@ -65,16 +64,16 @@ type KeyValues = {
   values: any[];
 };
 
-
-const extractNestedKeysAndValues = (data: InputObject[]): KeyValues[] =>{
-  const map = new Map<string, Set<any>>();
+const extractNestedKeysAndValues = (data: InputObject[]): KeyValues[] => {
+  const map = new Map<string, Set<string>>();
 
   for (const obj of data) {
     for (const key in obj) {
+      const value = JSON.stringify(obj[key]); // Serialize value
       if (!map.has(key)) {
         map.set(key, new Set());
       }
-      map.get(key)!.add(obj[key]);
+      map.get(key)!.add(value);
     }
   }
 
@@ -83,15 +82,50 @@ const extractNestedKeysAndValues = (data: InputObject[]): KeyValues[] =>{
   for (const [key, valueSet] of map.entries()) {
     result.push({
       key,
-      values: Array.from(valueSet),
+      values: Array.from(valueSet).map((v) => JSON.parse(v)), // Deserialize back
     });
   }
 
   return result;
-}
+};
+// ////////
+type DataItem = Record<string, any>;
+
+type Filters = {
+  [key: string]: any[];
+};
+
+const extractFilterValue = (value: any): any => {
+  // Unwrap Vue Devtools _custom reactive wrapper (if present)
+  if (value && value._custom?.value) {
+    return value._custom.value;
+  }
+  return value;
+};
+
+const filterDataByValues = <T extends DataItem>(
+  data: T[],
+  filters: Filters
+): T[] => {
+  return data.filter(item => {
+    return Object.entries(filters).every(([key, rawValues]) => {
+      const values = rawValues.map(extractFilterValue);
+
+      // If item[key] is an object with _id, compare by _id
+      if (typeof item[key] === 'object' && item[key]?._id) {
+        return values.some(v => v._id === item[key]._id);
+      }
+
+      // Otherwise, do a direct match
+      return values.includes(item[key]);
+    });
+  });
+};
+
 
 
 export {
     filterContentBySearch,
-    extractNestedKeysAndValues
+    extractNestedKeysAndValues,
+    filterDataByValues
 }

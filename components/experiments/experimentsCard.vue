@@ -1,5 +1,5 @@
 <script setup>
-
+const navigationStore = useNavigationStore()
 const props = defineProps({
     experimentId: {
         type: String,
@@ -48,48 +48,54 @@ const props = defineProps({
 
 })
 
-// "`/experiments/${experimentStandard.toLowerCase()}/${experimentSubject.toLowerCase()}/${experimentName.toLowerCase()}/${experimentId.toLowerCase()}`"
+// ""
 const setExperimentUrl =()=>{
-    useState('experimentUrl',()=>props.experimentFileUrl)
+    navigationStore.setExperiment(`/experiments/${props.experimentStandard.toLowerCase()}/${props.experimentSubject.toLowerCase()}/${props.experimentName.toLowerCase()}/${props.experimentId.toLowerCase()}`)
+    useState('experimentToView', () => (
+           {
+            route:`/experiments/${props.experimentStandard.toLowerCase()}/${props.experimentSubject.toLowerCase()}/${props.experimentName.toLowerCase()}/${props.experimentId.toLowerCase()}`,
+            updatedAt:Date.now()
+        })
+    );
 }
 </script>
 
 <template>
     <NuxtLink
-        :to="`/experiments/${experimentStandard.toLowerCase()}/${experimentSubject.toLowerCase()}/${experimentName.toLowerCase()}/${experimentId.toLowerCase()}`"
-        class="relative flex flex-col rounded-lg overflow-hidden bg-white hover:bg-deepBlue shadow-md hover:shadow-xl transition-all duration-500 ease-in-out group cursor-pointer"
-        style="height: 350px;" @click="setExperimentUrl()">
+        :to="`/experiments/${experimentStandard.toLowerCase()}/${experimentSubject.toLowerCase()}/${experimentName.toLowerCase()}/${experimentId.toLowerCase()}`" @click="setExperimentUrl()"
+        class="relative flex flex-col overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group"
+        style="height: 350px;">
         <!-- Thumbnail section -->
         <div class="relative overflow-hidden h-[280px]">
             <NuxtImg :src="experimentThumbnail" :alt="experimentName"
-                class="w-full h-full object-cover transition-transform duration-500" />
+                class="object-cover w-full h-full transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-70"></div>
 
             <!-- Play button -->
             <div
-                class="absolute inset-0 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity cursor-pointer">
+                class="absolute inset-0 flex items-center justify-center transition-opacity cursor-pointer opacity-90 group-hover:opacity-100">
                 <button
-                    class="flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm p-3 border border-white/30 transition-transform duration-300 group-hover:scale-110 cursor-pointer"
+                    class="flex items-center justify-center p-3 transition-transform duration-300 border rounded-full cursor-pointer bg-white/20 backdrop-blur-sm border-white/30 group-hover:scale-110"
                     aria-label="Play experiment">
-                    <Icon name="icon-park-solid:experiment-one" class="text-white text-3xl" />
+                    <Icon name="icon-park-solid:experiment-one" class="text-3xl text-white" />
                 </button>
             </div>
         </div>
 
         <!-- Content section -->
-        <div class="flex flex-col p-4 flex-grow">
+        <div class="flex flex-col flex-grow p-4">
             <p
-                class="text-sm text-gray-600  group-hover:text-white transition-colors duration-500 ease-in-out mb-4 line-clamp-2">
+                class="mb-4 text-sm text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
                 {{ experimentName }}
             </p>
             <!-- <p
-                class="text-sm text-gray-600  group-hover:text-white transition-colors duration-500 ease-in-out mb-4 line-clamp-2">
+                class="mb-4 text-sm text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
                 {{ experimentDescription }}
             </p> -->
 
             <!-- Metadata footer -->
             <!-- <div
-                class="mt-auto flex items-center justify-end text-xs text-gray-500 group-hover:text-white transition-colors duration-500 ease-in-out">
+                class="flex items-center justify-end mt-auto text-xs text-gray-500 transition-colors duration-500 ease-in-out group-hover:text-white">
                 <span class="flex items-center">
                     <Icon name="heroicons:eye" class="mr-1 text-sm" />
                     1.2k views

@@ -2,7 +2,7 @@
 import messages from '~/utilities/messages';
 import { auth } from '~/utilities/validationInput';
 import apiDocs from "~/utilities/api-docs";
- 
+
 
 const userForgotPassword = reactive({
     type: '',
@@ -12,7 +12,7 @@ const userForgotPassword = reactive({
     email: null,
     controller: {
         isDisabled: false,
-        feedback:null,
+        feedback: null,
         isSucces: false,
         position: false,
         errors: {
@@ -31,7 +31,7 @@ const forgotPassword = async () => {
     userForgotPassword.controller.errors.type = '';
     userForgotPassword.controller.errors.fname = '';
     userForgotPassword.controller.errors.lname = '';
-    userForgotPassword.controller.errors.school = '';   
+    userForgotPassword.controller.errors.school = '';
 
     let isValid = true;
 
@@ -51,20 +51,20 @@ const forgotPassword = async () => {
     // send data to server
     try {
         const response = await $fetch(userForgotPassword.type.toLowerCase().trim() == 'student' ?
-        apiDocs.auth.forgotPasswordStudent :
-        '/api/auth/forgot-password', 
-        {
-            method: 'POST',
-            body: userForgotPassword.type.toLowerCase().trim() == 'student' ?
+            apiDocs.auth.forgotPasswordStudent :
+            '/api/auth/forgot-password',
             {
-                name: userForgotPassword.fname + ' ' + userForgotPassword.lname,
-                school: userForgotPassword.school,
-            } :
+                method: 'POST',
+                body: userForgotPassword.type.toLowerCase().trim() == 'student' ?
+                    {
+                        name: userForgotPassword.fname + ' ' + userForgotPassword.lname,
+                        school: userForgotPassword.school,
+                    } :
 
-            {
-                email: userForgotPassword.email
-            }
-        });
+                    {
+                        email: userForgotPassword.email
+                    }
+            });
 
         if (userForgotPassword.type.toLowerCase().trim() == 'student') {
             userForgotPassword.controller.isSucces = true;
@@ -74,19 +74,19 @@ const forgotPassword = async () => {
                 route.replace(`/auth/reset-password?token=${response?.token}`)
                 userForgotPassword.controller.feedback = null;
             }, 3000)
-            
-        }else {
+
+        } else {
             if (response?.message) {
                 userForgotPassword.controller.feedback = messages.success.auth.checkEmail;
                 userForgotPassword.controller.isSucces = true;
             }
         }
         // clear all error message feedback
-            setTimeout(() => {
-                userForgotPassword.controller.feedback = null;
-                userForgotPassword.controller.isSucces = false;
-                userForgotPassword.controller.isDisabled = false;
-            }, 3000)
+        setTimeout(() => {
+            userForgotPassword.controller.feedback = null;
+            userForgotPassword.controller.isSucces = false;
+            userForgotPassword.controller.isDisabled = false;
+        }, 3000)
     } catch (error) {
         userForgotPassword.controller.feedback = messages.error.auth.invalidCredentials;
         userForgotPassword.controller.isSucces = false;
@@ -99,31 +99,28 @@ const forgotPassword = async () => {
 <template>
     <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b">
         <!-- Message Component -->
-        <MessageComponent 
-        :message="userForgotPassword.controller.feedback" 
-        :position="userForgotPassword.controller.feedback ? true : false"
-        :event-type="userForgotPassword.controller.isSucces ? 'success' : 'error'"
-        :icon="userForgotPassword.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" 
-        />
+        <MessageComponent :message="userForgotPassword.controller.feedback"
+            :position="userForgotPassword.controller.feedback ? true : false"
+            :event-type="userForgotPassword.controller.isSucces ? 'success' : 'error'"
+            :icon="userForgotPassword.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
         <div class="w-full max-w-md p-4 bg-white rounded-lg shadow-md">
-            <h1 class="text-large font-bold text-center">Forgot Password</h1>
+            <h1 class="font-bold text-center text-large">Forgot Password</h1>
             <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
-                <NuxtImg src="/logo/logo_tie.webp" class="w-full h-full object-contain" alt="logo" />
+                <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
             </NuxtLink>
             <form @submit.prevent="forgotPassword"
-                class="px-4 text-textGray md:h-[150px] h-dvh relative overflow-hidden text-extraSmall" 
-                :class="[
-                    {'md:h-[200px]':userForgotPassword.controller.errors.type},
-                    {'md:h-[300px]': userForgotPassword.type.toLowerCase() === 'student'},
-                ]">
+                class="px-4 text-textGray md:h-[150px] h-dvh relative overflow-hidden text-extraSmall" :class="[
+            { 'md:h-[200px]': userForgotPassword.controller.errors.type },
+            { 'md:h-[300px]': userForgotPassword.type.toLowerCase() === 'student' },
+        ]">
                 <!-- Select User Type -->
-                <div class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue" :class="{
-                    'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                        userForgotPassword.controller.errors.type
-                }">
-                    <div class="flex flex-col w-full items-start">
-                        <label for="type" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select User
+                <div class="mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue" :class="{
+            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                userForgotPassword.controller.errors.type
+        }">
+                    <div class="flex flex-col items-start w-full">
+                        <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select User
                             Type:</label>
                         <select name="type" id="type" v-model="userForgotPassword.type"
                             class="w-full p-1 focus:outline-none focus:ring-0"
@@ -135,91 +132,93 @@ const forgotPassword = async () => {
                     </div>
 
                     <!-- Select User Type error message -->
-                    <small v-if="userForgotPassword.controller.errors.type" class="text-red-500 text-smallest w-full">
+                    <small v-if="userForgotPassword.controller.errors.type" class="w-full text-red-500 text-smallest">
                         {{ userForgotPassword.controller.errors.type }}
                     </small>
                 </div>
                 <!-- Student -->
                 <div v-if="userForgotPassword.type.toLowerCase() === 'student'">
                     <!-- First Name -->
-                    <div class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+                    <div class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
                         :class="{
-                            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                                userForgotPassword.controller.errors.fname,
-                        }">
-                        <div class="flex w-full items-center">
+            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                userForgotPassword.controller.errors.fname,
+        }">
+                        <div class="flex items-center w-full">
                             <input type="text" id="fname" v-model="userForgotPassword.fname" @keydown.space.prevent
                                 name="fname" autocomplete="off"
                                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                                 placeholder="First Name (eg: Baraka)" />
-                            <Icon name="lets-icons:user-box-light" class="h-5 w-5 text-textGray" />
+                            <Icon name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
                         </div>
 
                         <!-- First Name error message -->
                         <small v-if="userForgotPassword.controller.errors.fname"
-                            class="text-red-500 text-smallest w-full">
+                            class="w-full text-red-500 text-smallest">
                             {{ userForgotPassword.controller.errors.fname }}
                         </small>
                     </div>
 
                     <!-- Last Name -->
-                    <div class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+                    <div class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
                         :class="{
-                            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                                userForgotPassword.controller.errors.lname,
-                        }">
-                        <div class="flex w-full items-center">
+            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                userForgotPassword.controller.errors.lname,
+        }">
+                        <div class="flex items-center w-full">
                             <input type="text" id="lname" v-model="userForgotPassword.lname" @keydown.space.prevent
                                 name="lname" autocomplete="off"
                                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                                 placeholder="Last Name ( eg: Minja )" />
-                            <Icon name="lets-icons:user-box-light" class="h-5 w-5 text-textGray" />
+                            <Icon name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
                         </div>
 
                         <!-- Last Name error message -->
                         <small v-if="userForgotPassword.controller.errors.lname"
-                            class="text-red-500 text-smallest w-full">
+                            class="w-full text-red-500 text-smallest">
                             {{ userForgotPassword.controller.errors.lname }}
                         </small>
                     </div>
 
                     <!-- School -->
-                    <div class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+                    <div class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
                         :class="{
-                            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                                userForgotPassword.controller.errors.school,
-                        }">
-                        <div class="flex w-full items-center">
+            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                userForgotPassword.controller.errors.school,
+        }">
+                        <div class="flex items-center w-full">
                             <input type="text" id="school" v-model="userForgotPassword.school" @keydown.space.prevent
                                 name="school" autocomplete="off"
                                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                                 placeholder="School ( eg: Taifa Secondary School )" />
-                            <Icon name="tdesign:institution" class="h-5 w-5 text-textGray" />
+                            <Icon name="tdesign:institution" class="w-5 h-5 text-textGray" />
                         </div>
 
                         <!-- Last Name error message -->
                         <small v-if="userForgotPassword.controller.errors.school"
-                            class="text-red-500 text-smallest w-full">
+                            class="w-full text-red-500 text-smallest">
                             {{ userForgotPassword.controller.errors.school }}
                         </small>
                     </div>
 
                 </div>
                 <div v-else
-                    class="focus-input-icon mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex items-center gap-2">
-                    <input type="email" id="email" :disabled="userForgotPassword.type.toLowerCase().trim() === ''" v-model="userForgotPassword.email" name="email" autocomplete="off"
+                    class="flex items-center gap-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue">
+                    <input type="email" id="email" :disabled="userForgotPassword.type.toLowerCase().trim() === ''"
+                        v-model="userForgotPassword.email" name="email" autocomplete="off"
                         class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                         placeholder="Email ( eg:example@gmail.com )">
-                    <Icon name="mdi-light:email" class="h-5 w-5 text-textGray focus:text-oceanBlue" />
+                    <Icon name="mdi-light:email" class="w-5 h-5 text-textGray focus:text-oceanBlue" />
                 </div>
                 <button type="submit" :disabled="userForgotPassword.controller.isDisabled"
-                class="w-full p-2 bg-oceanBlue text-white disabled:bg-gray-500/40 disabled:cursor-not-allowed gap-3 flex items-center justify-center rounded-md cursor-pointer hover:bg-oceanBlue/80 transition-all duration-500 capitalize">
+                    class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
                     Forgot Password
-                    <Icon name="eos-icons:loading" class="text-white" size="20" v-if="userForgotPassword.controller.isDisabled" />
+                    <Icon name="eos-icons:loading" class="text-white" size="20"
+                        v-if="userForgotPassword.controller.isDisabled" />
                 </button>
             </form>
             <div class="mt-4 text-center">
-                <p class="text-sm text-textGray">Back to <NuxtLink to="/auth" class="text-oceanBlue cursor-pointer">Sign
+                <p class="text-sm text-textGray">Back to <NuxtLink to="/auth" class="cursor-pointer text-oceanBlue">Sign
                         In</NuxtLink>
                 </p>
             </div>
