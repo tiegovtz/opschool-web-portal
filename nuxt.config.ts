@@ -1,13 +1,18 @@
-import tailwindcss from "@tailwindcss/vite";
-import { resolve } from 'path';
-//  notify user that system is using enviroment variable
-console.log('- Environment from .env');
+
+// https://nuxt.com/docs/api/configuration/nuxt-config
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
   devtools: { enabled: true },
   css: ["~/assets/css/main.css"],
 
+  postcss: {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
+  },
+  
   plugins: [
     { src: '~/plugins/mathjax.client.js', mode: 'client' },
     { src: '~/plugins/mathjax-directive.client.js', mode: 'client' },
@@ -17,7 +22,7 @@ export default defineNuxtConfig({
 ,
   vite: {
     plugins: [
-      tailwindcss(),
+      tailwindcss{},
     ],
   },
 

@@ -143,54 +143,54 @@ const toggleConfirmPassword = () => {
             :event-type="userResetPassword.controller.isSucces ? 'success' : 'error'"
             :icon="userResetPassword.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
-        <div class="w-full max-w-md md:bg-white rounded-lg md:shadow-2xl md:pt-3">
-            <h1 class="text-large font-bold text-center">Reset Password</h1>
-            <NuxtLink to="/">
-                <NuxtImg src="/logo/logo_tie.webp" class="w-20 h-20 mx-auto my-6" alt="logo" />
+        <div class="w-full max-w-md rounded-lg md:bg-white md:shadow-2xl md:pt-3">
+            <h1 class="font-bold text-center text-large">Reset Password</h1>
+            <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
+                <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
             </NuxtLink>
             <form @submit.prevent="resetPassword"
                 class="px-4 md:h-[200px] h-dvh text-textGray overflow-hidden text-extraSmall">
                 <!-- New Password -->
-                <div class="focus-input-icon px-2 mb-4 flex flex-col items-start justify-between border-b border-gray-300 focus-within:border-oceanBlue"
+                <div class="flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
                     :class="{ 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userResetPassword.controller.errors.password }">
-                    <div class="flex w-full items-center">
+                    <div class="flex items-center w-full">
                         <input :type="showPassword ? 'text' : 'password'" id="password"
                             v-model="userResetPassword.password" name="password"
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                             placeholder="New Password ">
                         <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
-                            class="h-5 w-5 cursor-pointer text-textGray" @click="togglePassword" />
+                            class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
                     </div>
 
                     <!-- New Password error message -->
                     <small v-if="userResetPassword.controller.errors.password"
-                        class="text-red-500 text-smallest w-full">
+                        class="w-full text-red-500 text-smallest">
                         {{ userResetPassword.controller.errors.password }}
                     </small>
                 </div>
 
                 <!-- Confirm Password -->
-                <div class="focus-input-icon px-2 mb-4 flex flex-col items-start justify-between border-b border-gray-300 focus-within:border-oceanBlue"
+                <div class="flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
                     :class="{ 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userResetPassword.controller.errors.password }">
-                    <div class="flex w-full items-center">
+                    <div class="flex items-center w-full">
                         <input :type="showConfirmPassword ? 'text' : 'password'" id="password"
                             v-model="userResetPassword.confirmPassword" name="password"
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                             placeholder="Confirm Password ">
                         <Icon :name="showConfirmPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
-                            class="h-5 w-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
+                            class="w-5 h-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
                     </div>
 
                     <!-- New Password error message -->
                     <small v-if="userResetPassword.controller.errors.confirmPassword"
-                        class="text-red-500 text-smallest w-full">
+                        class="w-full text-red-500 text-smallest">
                         {{ userResetPassword.controller.errors.confirmPassword }}
                     </small>
                 </div>
 
                 <!-- Reset Password Button -->
                 <button type="submit" :disabled="isDisable"
-                    class="w-full p-2 bg-oceanBlue text-white disabled:bg-gray-500/40 disabled:cursor-not-allowed gap-3 flex items-center justify-center rounded-md cursor-pointer hover:bg-oceanBlue/80 transition-all duration-500 capitalize">
+                    class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
                     Reset Password
                     <Icon name="eos-icons:loading" class="text-white" size="20" v-if="isDisable" />
                 </button>

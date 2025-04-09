@@ -1,7 +1,7 @@
 <script setup>
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
 
-
+const navigationStore = useNavigationStore()
 const props = defineProps({
   topicId: {
     type: String,
@@ -53,16 +53,19 @@ const props = defineProps({
     type: Number,
     default: 0,
   },
-  topicViewed:Boolean
+  topicViewed: Boolean
 
 })
 
 const setTopicToView = () => {
-  useState('topicToView', () => `/interactive/${props.topicStandard.toLowerCase()}/${props.subjectName.toLowerCase()}/${props.topicTitle.toLowerCase()}/${props.topicId.toLowerCase()}`);
-  useState('topicLevel', () => `${props.topicLevel}`);
-  useState('topicTitle', () => `${props.topicTitle}`);
-  useState('topicStandard', () => `${props.topicStandard}`);
-  useState('topicId', () => `${props.topicId}`),
+  navigationStore.setTopic(`/interactive/${props.topicStandard.toLowerCase()}/${props.subjectName.toLowerCase()}/${props.topicTitle.toLowerCase()}/${props.topicId.toLowerCase()}`)
+  useState('topicToView',
+    () => (
+      {
+        route: `/interactive/${props.topicStandard.toLowerCase()}/${props.subjectName.toLowerCase()}/${props.topicTitle.toLowerCase()}/${props.topicId.toLowerCase()}`,
+        updatedAt: Date.now()
+      })
+  );
   useState('userViewedTopic', () => props.topicViewed)
 }
 
@@ -74,33 +77,32 @@ const userToken = useCookie('signInUserToken')
 
   <NuxtLink
     :to="`/interactive/${topicStandard.toLowerCase()}/${subjectName.toLowerCase()}/${topicTitle.toLowerCase()}/${topicId.toLowerCase()}`"
-    class="relative overflow-hidden rounded-lg flex flex-col shadow-md pb-4 group" @click="setTopicToView"
+    class="relative flex flex-col pb-4 overflow-hidden rounded-lg shadow-md group" @click="setTopicToView()"
     :class="{ 'cursor-pointer flex-row my-2 pb-0': modelType === 'search' }">
     <!-- topic image -->
     <div class="overflow-hidden"
       :class="{ 'relative h-56': modelType === 'card', 'md:h-20 h-10': modelType === 'search' }">
       <NuxtImg :src="topicImage" loading="lazy" alt="book1"
-        class="w-full h-full object-cover transform group-hover:scale-110 duration-1000 ease-in-out"
+        class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
         :class="{ 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' }" />
       <!-- topic standard -->
-      <div v-if="modelType === 'card'" class="absolute -bottom-0 right-0">
+      <div v-if="modelType === 'card'" class="absolute right-0 -bottom-0">
         <div
-          class="bg-oceanBlue group-hover:bg-deepBlue rounded-tl-md  h-8 w-20 flex items-center justify-center transition-color duration-500 ease-in-out">
-          <p class="text-extraSmall font-medium text-white">{{ topicStandard }}</p>
+          class="flex items-center justify-center w-20 h-8 duration-500 ease-in-out bg-oceanBlue group-hover:bg-deepBlue rounded-tl-md transition-color">
+          <p class="font-medium text-white text-extraSmall">{{ topicStandard }}</p>
         </div>
       </div>
     </div>
     <!-- topic information -->
     <div
-      class="bg-white flex-1 group-hover:bg-deepBlue px-4 group-hover:text-white transition-all duration-500 ease-in-out">
+      class="flex-1 px-4 transition-all duration-500 ease-in-out bg-white group-hover:bg-deepBlue group-hover:text-white">
       <!-- topic progress bar -->
-      <div v-if="userToken && modelType === 'card'" class="flex items-center gap-2 w-full mt-2 max-w-full">
-        <progress :value="topicProgress" max="100"
-          class="topic-card__progress-bar">
+      <div v-if="userToken && modelType === 'card'" class="flex items-center w-full max-w-full gap-2 mt-2">
+        <progress :value="topicProgress" max="100" class="topic-card__progress-bar">
         </progress>
 
-        <span class="text-xs sm:text-sm font-medium text-oceanBlue whitespace-nowrap group-hover:text-white">
-          {{ topicProgress}}%
+        <span class="text-xs font-medium sm:text-sm text-oceanBlue whitespace-nowrap group-hover:text-white">
+          {{ topicProgress }}%
         </span>
       </div>
       <!-- topic title and description -->
@@ -109,13 +111,13 @@ const userToken = useCookie('signInUserToken')
           :class="{ 'mt-2': !userToken, 'md:text-[1.2rem] text-[1rem] font-medium': modelType === 'search' }">
           {{ topicTitle }}
         </p>
-        <p v-if="modelType === 'card'" class="text-small text-black/80 group-hover:text-white  line-clamp-2">
+        <p v-if="modelType === 'card'" class="text-small text-black/80 group-hover:text-white line-clamp-2">
           {{ topicDescription }}
         </p>
       </div>
       <!-- topic subject name and metrics -->
       <div v-if="modelType === 'card'"
-        class="flex items-center justify-between pt-2 lg:pb-0 pb-2 whitespace-nowrap text-extraSmall text-oceanBlue">
+        class="flex items-center justify-between pt-2 pb-2 lg:pb-0 whitespace-nowrap text-extraSmall text-oceanBlue">
         <div class="flex items-center gap-2">
           <Icon name="material-symbols-light:menu-book-outline-rounded" class="text-medium" />
           <p class="capitalize">{{ subjectName }}</p>
@@ -133,18 +135,18 @@ const userToken = useCookie('signInUserToken')
     <div>
       <!-- learn more -->
       <div v-if="modelType == 'card'"
-        class="absolute z-10 bottom-0 opacity-0 lg:flex hidden items-center justify-between px-4 w-full h-10 bg-gradient-to-b from-deepBlue to-gray-800 text-white group-hover:opacity-100 transition-all duration-500 ease-in-out">
-        <p class="text-small capitalize">Start learning</p>
-        <div class="flex items-center justify-center h-6 w-6 rounded-full bg-white animate-bounce-horizontal">
+        class="absolute bottom-0 z-10 items-center justify-between hidden w-full h-10 px-4 text-white transition-all duration-500 ease-in-out opacity-0 lg:flex bg-gradient-to-b from-deepBlue to-gray-800 group-hover:opacity-100">
+        <p class="capitalize text-small">Start learning</p>
+        <div class="flex items-center justify-center w-6 h-6 bg-white rounded-full animate-bounce-horizontal">
           <Icon name="weui:arrow-filled" size="20" class="text-deepBlue" />
         </div>
       </div>
     </div>
     <!-- learn more -->
     <div v-if="modelType == 'card'"
-      class="flex lg:hidden items-center justify-between px-4 w-full h-8 bg-gradient-to-b from-deepBlue to-gray-800 text-white ">
-      <p class="text-small capitalize">Start learning</p>
-      <div class="flex items-center justify-center h-6 w-6 rounded-full bg-white animate-bounce-horizontal">
+      class="flex items-center justify-between w-full h-8 px-4 text-white lg:hidden bg-gradient-to-b from-deepBlue to-gray-800 ">
+      <p class="capitalize text-small">Start learning</p>
+      <div class="flex items-center justify-center w-6 h-6 bg-white rounded-full animate-bounce-horizontal">
         <Icon name="weui:arrow-filled" size="20" class="text-deepBlue" />
       </div>
     </div>

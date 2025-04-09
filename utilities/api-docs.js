@@ -59,7 +59,13 @@ export default {
       experiments: {
         getExperiments: `${baseURL}/experiments`,
     getExperimentId: `${baseURL}/experiments/:id`,
-      },
+    getPublicExperiments: `${baseURL}/public-experiments`,
+  },
+
+  // NOTES API
+  notes: {
+    getNotes: `${baseURL}/notes`,
+  },
 
       // LEVELS API
       levels: {
@@ -67,11 +73,12 @@ export default {
         getLevelId: `${baseURL}/levels/:id`,
       },
 
-      // SUBJECTS API
-      subjects: {
-        getSubjects: `${baseURL}/subjects`,
-        getSubjectId: `${baseURL}/subjects/:id`,
-      },
+  // SUBJECTS API
+  subjects: {
+    getSubjects: `${baseURL}/subjects`,
+    getSubjectId: `${baseURL}/subjects/:id`,
+    getPublicSubjects: `${baseURL}/public-subjects`,
+  },
 
       // TOPICS API
       topics: {
@@ -84,12 +91,13 @@ export default {
         topicViewedRead: `${baseURL}/topics/{id}/read`,
       },
 
-      // VIDEO API
-      videos: {
-        getStream: `${baseURL}/video-stream/`,
-        getVideos: `${baseURL}/videos`,
-        getVideoById: `${baseURL}/videos/{id}`,
-      },
+  // VIDEO API 
+  videos: {
+    getStream: `${baseURL}/video-stream/`,
+    getVideos: `${baseURL}/videos`,
+    getVideoById: `${baseURL}/videos/{id}`,
+    getPublicVideo: `${baseURL}/public-videos`,
+  },
 
       //  PROGRESS
       progress: {
