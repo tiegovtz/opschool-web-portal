@@ -363,7 +363,7 @@ watch(() =>  subjectId.value, (valueId) => {
               </button>
             </div>
 
-            <div class="flex flex-col gap-4 mt-10">
+            <div class="flex flex-col gap-4 mt-10 ">
               <!-- Home Drop Down Menu -->
               <DropDownMenu :active-tab="activeTab" @emit-update-filter-value="filterValue = $event" />
             </div>
@@ -386,7 +386,7 @@ watch(() =>  subjectId.value, (valueId) => {
       <div class="flex items-start gap-4">
         <!-- container filter Desktop -->
         <div
-          class="flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
+          class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow ">
           <!-- Home Drop Down Menu -->
           <DropDownMenu @emit-update-filter-value="filterValue = $event" :active-tab="activeTab"
             :filter-value="[]" />

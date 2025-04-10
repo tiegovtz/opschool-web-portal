@@ -36,6 +36,19 @@ const tabCheck = (checkValue) => {
   <section class="my-5">
     <div
       class="flex items-center justify-start gap-3 mb-6 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center">
+      
+      <!-- subject tab -->
+      <button v-if="isLoggedIn"
+        :class="[
+          'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Home' || activeTab == 'Home'}
+        ]"
+        @click="tabCheck('Home')" >
+        <div class="flex items-center justify-center">
+          <Icon name="mdi:notebook-edit" size="20" class="" />
+        </div>
+        Subjects
+      </button>
       <!-- Interactive Books -->
       <button v-if="isLoggedIn"
         :class="[
