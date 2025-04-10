@@ -9,12 +9,10 @@ export default defineNuxtPlugin((nuxtApp) => {
     
     // Check route state
     const routesStates = navigationStore.getLatestRoute()
-
-    console.log('Route States: ',routesStates)
   
     // If no page state and not navigating to /home, redirect to /home
     if (!routesStates && to.fullPath !== "/home") {
-      return navigateTo("/home");
+      return navigateTo('/home', { replace: true });
     }
     // else if(routesStates &&  from.fullPath.includes(routesStates)){
     //   return navigateTo("/home");

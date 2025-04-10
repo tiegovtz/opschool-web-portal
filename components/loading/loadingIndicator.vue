@@ -1,4 +1,4 @@
-<script setup lang="js">
+<script setup>
 defineProps({
     isLoading:{
         type:Boolean,
@@ -12,22 +12,22 @@ defineProps({
 </script>
 
 <template>
-  <div class="flex flex-col justify-center items-center">
+  <div class="flex flex-col items-center justify-center">
    
     <div class="doting">
-      <div :class="isLoading ? 'dot-animate' : ''" class="dot w-2 h-2 mx-1 inline-block "></div>
-      <div :class="isLoading ? 'dot-animate' : ''" class="dot w-3 h-3 mx-1 inline-block" ></div>
-      <div :class="isLoading ? 'dot-animate' : ''" class="dot w-2 h-2 mx-1 inline-block"></div>
-      <div :class="isLoading ? 'dot-animate' : ''" class="dot w-3 h-3 mx-1 inline-block"></div>
-      <div :class="isLoading ? 'dot-animate' : ''" class="dot w-2 h-2 mx-1 inline-block"></div>
+      <div :class="isLoading ? 'dot-animate' : ''" class="inline-block w-2 h-2 mx-1 dot "></div>
+      <div :class="isLoading ? 'dot-animate' : ''" class="inline-block w-3 h-3 mx-1 dot" ></div>
+      <div :class="isLoading ? 'dot-animate' : ''" class="inline-block w-2 h-2 mx-1 dot"></div>
+      <div :class="isLoading ? 'dot-animate' : ''" class="inline-block w-3 h-3 mx-1 dot"></div>
+      <div :class="isLoading ? 'dot-animate' : ''" class="inline-block w-2 h-2 mx-1 dot"></div>
     </div>
-    <div class="text p-1 lowercase text-oceanBlue fade-in">
+    <div class="p-1 lowercase text text-oceanBlue fade-in">
       {{ somo.toLowerCase() == "kiswahili " ? " .. Tafadhali subiri .." : ".. Please wait .." }}
     </div>
   </div>
 </template>
 
-<style lang="css"  nonce="tie" scoped>
+<style scoped>
 .dot {
   border-radius: 50%;
 }

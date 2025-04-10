@@ -10,7 +10,7 @@ import {
   isGreaterToSM,
   screenWidth,
 } from "@/utilities/controlls";
-import InputsSelection from "@/components/home/InputsSelection.vue";
+import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
 import apiDocs from "~/utilities/api-docs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 
@@ -97,7 +97,7 @@ const pageSize = ref();
 const fetchTopics = async (params) => {
   try {
     status.value = "pending";
-    const response = await $fetch(apiDocs.topics.getSubjectId.replace(
+    const response = await $fetch(apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
         "{subjectId}",
         subjectId
       ), {
@@ -192,20 +192,6 @@ const prevPage = () => {
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
 
-// Define Filters Reactive State
-const filters = reactive({
-  level: null,
-  subject: null,
-});
-
-const level = ref(); // Initial Level State
-// watch emits changes
-watch(filters, (filters) => {
-  fetchTopics({
-    level: filters.level.toString(),
-    subject: filters.subject.toString(),
-  });
-});
 </script>
 
 <template>
@@ -233,26 +219,13 @@ watch(filters, (filters) => {
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
               <div class="container flex flex-col items-start">
-                <customGridTwo>
+                 <customGridTwo>
                   <template #data>
-                    <TopicCard
-                    v-for="topic in slicedData"
-                    :key="topic._id"
-                    :topic-id="topic._id"
-                    :topic-image="topic.thumbnail"
-                    :topic-title="topic.name"
-                    :topic-description="topic.descriptions"
-                    :topic-duration="
-                      topic.topic_duration ? topic.topic_duration : '10 min'
-                    "
-                    :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                    :topic-views="topic.views ? topic.views : 0"
-                    :topic-level="level"
-                    :topic-standard="topic.level.name"
-                    :subject-name="topic.subject.name"
-                    :topic-viewed="topic.isViewed"
-                    :topic-progress="topic.progressPercent"
-                  />
+                    <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
+                :experiment-thumbnail="experiment.thumbnail" :experiment-title="experiment.title"
+                :experiment-description="experiment.description" :experiment-type="experiment.category"
+                :experiment-subject="experiment.subject.name" :experiment-level="experiment.level.name"
+                :experiment-name="experiment.name" :experiment-file-url="experiment.stepsFileUrl" />
                   </template>
                 </customGridTwo>
               </div>

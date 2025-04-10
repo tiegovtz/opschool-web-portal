@@ -1,21 +1,7 @@
-
-<template>
-  <NuxtLayout name="home-layout">
-    <div class="wrapper-container ">
-      <HeroSection />
-      <HomeInputsSelection />
-      <TabBar />
-      <div class="loading flex justify-center">
-        <MessageTopicNotFound message="This page will be updated soon" />
-      </div>
-      <!-- render books -->
-    </div>
-  </NuxtLayout>
-</template>
-
 <script setup>
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
+import  LoadingIndicator  from "@/components/loading/loadingIndicator.vue";
 
 // Define meta info about page
 useHead({
@@ -43,3 +29,18 @@ useHead({
   ]
 })
 </script>
+
+
+<template>
+  <NuxtLayout name="home-layout">
+    <div class="wrapper-container ">
+      <HeroSection />
+      <HomeInputsSelection />
+      <TabBar />
+      <div class="flex justify-center loading">
+        <MessageTopicNotFound message="This page will be updated soon" />
+      </div>
+      <!-- render books -->
+    </div>
+  </NuxtLayout>
+</template>

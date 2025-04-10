@@ -109,15 +109,15 @@ definePageMeta({
 
 <template>
     <NuxtLayout name="home-layout">
-        <section class="relative w-full inline-flex center-height overflow-hidden">
+        <section class="relative inline-flex w-full overflow-hidden center-height">
             <!-- w-3/4 -->
             <div
-                class="lg:w-3/4 w-full lg:scroll-height lg:overflow-y-scroll py-5 lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+                class="w-full py-5 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
                 <!-- Videovideo Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink to="/video"
-                            class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+                        <NuxtLink to="/"
+                            class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                                 videoLevel != null &&
                                     videoLevel != undefined &&
@@ -128,8 +128,8 @@ definePageMeta({
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <NuxtLink to="/video"
-                            class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+                        <NuxtLink to="/"
+                            class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                                     videoStandard != null &&
                                         videoStandard != undefined &&
@@ -140,7 +140,7 @@ definePageMeta({
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <p class="text-medium uppercase md:capitalize font-medium">
+                        <p class="font-medium uppercase text-medium md:capitalize">
                             {{
                                     videoTitle != null &&
                                         videoTitle != undefined &&
@@ -152,26 +152,23 @@ definePageMeta({
                         </p>
                     </div>
                     <!-- Header Description -->
-                    <div class="flex lg:hidden" @click="toggleSidebar()">
+                    <!-- <div class="flex lg:hidden" @click="toggleSidebar()">
                         <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" />
-                    </div>
+                    </div> -->
                 </div>
 
                 <!-- Description -->
-                <div class="notes md:px-4 max-w-7xl mx-auto">
+                <div class="mx-auto notes md:px-4 max-w-7xl">
                     <video preload="auto" controls @contextmenu.prevent>
                         <source :src="videoUrl" type="video/mp4">
                     </video>
 
-                    <!-- <video src="/public/video/Types of force.mp4" type="video/mp4" preload="auto" controls
-            @contextmenu.prevent></video> -->
-
                     <!-- Video Description and Thumbnail Image -->
                     <div class="flex items-center w-full h-full gap-4 my-4">
                         <!-- Thumbnail Image -->
-                        <div class="w-14 h-14 rounded-full overflow-hidden lg:flex hidden">
+                        <div class="hidden overflow-hidden rounded-full w-14 h-14 lg:flex">
                             <NuxtImg :src="videoInfo?.thumbnail" :alt="videoInfo?.name"
-                                class="w-full h-full object-cover transition-transform duration-500" />
+                                class="object-cover w-full h-full transition-transform duration-500" />
                         </div>
 
                         <!-- Video Description -->
@@ -185,26 +182,26 @@ definePageMeta({
             </div>
 
             <!-- Sidebar w-1/4 -->
-            <div
+            <!-- <div
                 class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full h-full lg:w-1/4 p-2 lg:static center-height overflow-y-scroll bg-white">
-                <div class="flex flex-col mb-4 h-full">
-                    <h1 class="text-medium font-medium capitalize pt-5">Related Video</h1>
-                    <!-- toggle menu -->
-                    <div class="hover:bg-oceanBlue cursor-pointer rounded-full w-5 h-5 flex lg:hidden items-center justify-center group transition-all duration-500 ease-in-out"
+                <div class="flex flex-col h-full mb-4">
+                    <h1 class="pt-5 font-medium capitalize text-medium">Related Video</h1>
+                    toggle menu
+                    <div class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"
                         @click="toggleSidebar()">
-                        <!-- Cancel Icon -->
+                        Cancel Icon
                         <Icon name="iconoir:cancel" size="18" class="group-hover:text-white" />
                     </div>
 
-                    <!-- UL list of chapters -->
+                    UL list of chapters
                     <ul class="flex flex-col gap-3 md:pl-4">
-                        <li class="flex items-center gap-3 cursor-pointer p-3 rounded-md bg-containerGray">
+                        <li class="flex items-center gap-3 p-3 rounded-md cursor-pointer bg-containerGray">
                             <div class="">
                                 <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
                             </div>
                             <div class="line-clamp-2">Introduction to Physics</div>
                         </li>
-                        <li class="flex items-center gap-3 cursor-pointer p-3 rounded-md bg-containerGray">
+                        <li class="flex items-center gap-3 p-3 rounded-md cursor-pointer bg-containerGray">
                             <div class="">
                                 <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
                             </div>
@@ -212,7 +209,7 @@ definePageMeta({
                         </li>
                     </ul>
                 </div>
-            </div>
+            </div> -->
         </section>
     </NuxtLayout>
 </template>
