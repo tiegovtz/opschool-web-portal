@@ -13,7 +13,8 @@ defineProps({
   isLoggedIn:{
     type: Boolean,
     default: false
-  }
+  },
+  activeTab: String,
 })
 
 // Define State
@@ -39,7 +40,7 @@ const tabCheck = (checkValue) => {
       <button v-if="isLoggedIn"
         :class="[
           'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Interactive Books'}
+          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Interactive Books' || activeTab == 'Interactive Books'}
         ]"
         @click="tabCheck('Interactive Books')" >
         <div class="flex items-center justify-center">
@@ -61,7 +62,7 @@ const tabCheck = (checkValue) => {
       <button v-if="isLoggedIn"
          :class="[
         'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Experiments'}
+         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Experiments' || activeTab == 'Experiments'}
          ]"
         @click="tabCheck('Experiments')" >
         <div class="flex items-center justify-center">
@@ -83,7 +84,7 @@ const tabCheck = (checkValue) => {
       <button v-if="isLoggedIn"   
         :class="[
         'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Video'}
+         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Video' || activeTab == 'Video'}
          ]"
         @click="tabCheck('Video')" >
         <div class="flex items-center justify-center">
@@ -105,7 +106,7 @@ const tabCheck = (checkValue) => {
       <button v-if="isLoggedIn" 
       :class="[
         'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Audio'}
+         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Audio' || activeTab == 'Audio'}
          ]"
         @click="tabCheck('Audio')" >
         <div class="flex items-center justify-center">

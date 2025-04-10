@@ -43,6 +43,7 @@ const apiDocs = {
     getExperiments: `${baseURL}/experiments`,
     getExperimentId: `${baseURL}/experiments/:id`,
     getPublicExperiments: `${baseURL}/public-experiments`,
+    getPublicExperimentsBySubjectId: `${baseURL}/public-experiments/by-subject/{subjectId}`,
   },
 
   // NOTES API
@@ -68,7 +69,7 @@ const apiDocs = {
     getTopics: `${baseURL}/topics`,
     getTopicId: `${baseURL}/topics/:id`,
     getQuestionId: `${baseURL}/topics/{id}/questions`,
-    getSubjectId: `${baseURL}/topics/by-subject/{subjectId}`,
+    getSubjectId: `${baseURL}/public-topics/by-subject/{subjectId}`,
     filterTopics: `${baseURL}/public-topics`,
     filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
     topicViewedRead: `${baseURL}/topics/{id}/read`,
@@ -80,12 +81,13 @@ const apiDocs = {
     getVideos: `${baseURL}/videos`,
     getVideoById: `${baseURL}/videos/{id}`,
     getPublicVideo: `${baseURL}/public-videos`,
+    getPublicVideoBySubjectId: `${baseURL}/public-videos/by-subject/{subjectId}`,
   },
 
-  //  PROGRESS
-  progress: {
-    video: `${baseURL}/progress/video`,
-    notes: `${baseURL}/progress/notes`
+  //  PROGRESS TRACKING API
+  progressTracking: {
+    postProgress: `${baseURL}/progress`,
+    getProgress: `${baseURL}/progress`,
   }
 
 }

@@ -1,4 +1,5 @@
 <script setup>
+import { layoutEffect } from "~/utilities/controlls";
 const navigationStore = useNavigationStore()
 const props = defineProps({
     experimentId: {
@@ -63,13 +64,18 @@ const setExperimentUrl =()=>{
 <template>
     <NuxtLink
         :to="`/experiments/${experimentStandard.toLowerCase()}/${experimentSubject.toLowerCase()}/${experimentName.toLowerCase()}/${experimentId.toLowerCase()}`" @click="setExperimentUrl()"
-        class="relative flex flex-col overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group"
-        style="height: 350px;">
+        :class="[
+            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group',
+            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-[100px]'
+        ]">
         <!-- Thumbnail section -->
-        <div class="relative overflow-hidden h-[280px]">
+        <div :class="[
+            'relative overflow-hidden transition-all duration-500 ease-in-out',
+            layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-[200px]'
+        ]">
             <NuxtImg :src="experimentThumbnail" :alt="experimentName"
                 class="object-cover w-full h-full transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-70"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black bg-opacity-70 to-transparent opacity-70"></div>
 
             <!-- Play button -->
             <div

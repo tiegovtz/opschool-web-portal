@@ -85,7 +85,7 @@ watch(() => searchReactive.search, (newVal) => {
     <!-- Result Search -->
     <div :class="[
             'absolute z-50  w-full bg-white shadow-md rounded-md',
-            appearance === 'normal' ? 'top-10 left-0 max-w-md' : 'top-36 max-w-5xl'
+            appearance === 'normal' ? 'top-10 left-0 max-w-md' : 'top-[170px] max-w-3xl px-1'
           ]"
     >
       <TopicCard v-for="result in searchReactive.searchResult" :key="result._id" model-type="search"

@@ -23,6 +23,8 @@ const experimrntUrl = ref();
 
 const currentTopic = ref();
 
+const layoutEffect = ref('grid');
+
 export {
     isGreaterToXL,
     isGreaterToLG,
@@ -34,4 +36,5 @@ export {
     popMessage,
     experimrntUrl,
     currentTopic,
+    layoutEffect,
 }

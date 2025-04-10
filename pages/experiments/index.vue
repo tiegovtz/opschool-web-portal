@@ -1,6 +1,7 @@
 <script setup>
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
+import  LoadingIndicator  from "@/components/loading/loadingIndicator.vue";
 import InputsSelection from "@/components/home/InputsSelection.vue";
 import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
 import { ref, computed, onMounted, watch } from "vue";
@@ -221,11 +222,6 @@ const { progress, isLoading } = useLoadingIndicator();
       <!-- User Token Not Available -->
       <div v-else>
         <HeroSection />
-        <InputsSelection
-          @emit-level="level = $event"
-          @emit-standard="filters.level = $event"
-          @emit-subject="filters.subject = $event"
-        />
         <TabBar />
       </div>
 
@@ -249,7 +245,7 @@ const { progress, isLoading } = useLoadingIndicator();
                 :experiment-name="experiment.name" :experiment-file-url="experiment.stepsFileUrl" />
             </div>
             <!-- pagination numbers based on data length greater to 9 -->
-            <div class="flex justify-center my-10">
+            <div v-if="totalPages > 1" class="flex justify-center my-10">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"

@@ -1,4 +1,5 @@
 <script setup>
+import { layoutEffect } from "~/utilities/controlls";
 import { calculateTopicMetrics } from "~/utilities/topicMetrics.js";
 
 // Define Props
@@ -42,20 +43,29 @@ const setSubjectToView = () => {
 
   emit(
     'emitSubjectName',
-    props.subjectName
-  )
+    props.subjectName,
+  );
+  emit(
+    'emitSubjectId',
+    props.subjectId,
+  );
+  
 };
 </script>
 
 <template>
-  <!-- Is Logged In = True -->
   <button
     v-if="isLoggedIn"
-    @click="setSubjectToView()"
-    class="relative flex flex-col pb-4 overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue"
-  >
+    :class="[
+      'relative flex  w-full  overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue',
+      layoutEffect == 'grid' ? 'flex-col pb-4' : 'flex-row'
+    ]"
+    @click="setSubjectToView()">
     <!-- image -->
-    <div class="relative h-56 overflow-hidden">
+    <div :class="[
+      'relative overflow-hidden transition-all duration-500 ease-in-out',
+      layoutEffect == 'grid' ? 'h-56' : 'w-24 h-20'
+    ]">
       <NuxtImg
         :src="subjectImage"
         loading="lazy"
@@ -66,8 +76,10 @@ const setSubjectToView = () => {
 
     <!-- content -->
     <div
-      class="flex flex-wrap justify-between px-4 pt-2 transition-all duration-500 ease-in-out item-center group-hover:text-white"
-    >
+      :class="[
+        'flex px-4 pt-2 transition-all duration-500 ease-in-out group-hover:text-white',
+        layoutEffect == 'grid' ? 'flex-wrap justify-between item-center' : 'flex-col  flex-1'
+      ]">
       <!-- title & description -->
       <p
         class="flex text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out"
@@ -75,8 +87,11 @@ const setSubjectToView = () => {
         {{ subjectName }}
       </p>
       <!-- metrics -->
-      <small :class="{ 'opacity-0': totalViews <= 0 }"
-        class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white">
+      <small 
+        :class="[
+          'flex items-center  gap-2  text-oceanBlue group-hover:text-white',
+          layoutEffect == 'grid' ? 'justify-end p-2' : 'justify-start mt-auto pb-2'
+        ]">
         <Icon name="flowbite:users-outline" class="text-medium" />
         <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
       </small>
@@ -87,10 +102,15 @@ const setSubjectToView = () => {
     v-else
     :to="`/interactive/${subjectName.toLowerCase()}/${subjectId.toLowerCase()}`"
     @click="setSubjectToView()"
-    class="relative flex flex-col pb-4 overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue"
-  >
+    :class="[
+      'relative flex  w-full  overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue',
+      layoutEffect == 'grid' ? 'flex-col pb-4' : 'flex-row'
+    ]">
     <!-- image -->
-    <div class="relative h-56 overflow-hidden">
+     <div :class="[
+      'relative overflow-hidden transition-all duration-500 ease-in-out',
+      layoutEffect == 'grid' ? 'h-56' : 'w-24 h-24'
+    ]">
       <NuxtImg
         :src="subjectImage"
         loading="lazy"
@@ -101,8 +121,10 @@ const setSubjectToView = () => {
 
     <!-- content -->
     <div
-      class="flex flex-wrap justify-between px-4 pt-2 transition-all duration-500 ease-in-out item-center group-hover:text-white"
-    >
+      :class="[
+        'flex px-4 pt-2 transition-all duration-500 ease-in-out group-hover:text-white',
+        layoutEffect == 'grid' ? 'flex-wrap justify-between item-center' : 'flex-col  flex-1'
+      ]">
       <!-- title & description -->
       <p
         class="flex text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out"
@@ -111,7 +133,6 @@ const setSubjectToView = () => {
       </p>
       <!-- metrics -->
       <small
-        :class="{ 'opacity-0': totalViews <= 0 }"
         class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white"
       >
         <Icon name="flowbite:users-outline" class="text-medium" />
