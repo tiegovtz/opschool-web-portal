@@ -20,12 +20,6 @@ export default defineNuxtConfig({
     { src: '~/plugins/harden-ui.client.ts', mode: 'client' },
   ]
 ,
-  vite: {
-    plugins: [
-      tailwindcss{},
-    ],
-  },
-
   modules: [
     "@nuxtjs/google-fonts",
     "@nuxt/image",
@@ -70,10 +64,6 @@ export default defineNuxtConfig({
     enabled: process.env.NUXT_ENABLE_SECURITY === 'true',
     hidePoweredBy: true,
     removeLoggers: true,
-    csp:{
-      hashAlgorithm: 'sha256',
-    },
-
     headers: {
       contentSecurityPolicy: {
         'script-src': process.env.NUXT_CSP_SCRIPT_SRC?.split(" ") || ["'self'", 'https:', "'unsafe-inline'", 'https://www.google-analytics.com'],
@@ -103,7 +93,7 @@ export default defineNuxtConfig({
       xFrameOptions: 'SAMEORIGIN',
       xPermittedCrossDomainPolicies: 'none',
       xXSSProtection: '0',
-    },
+    }, 
 
     requestSizeLimiter: {
       maxRequestSizeInBytes: parseInt(process.env.NUXT_MAX_REQUEST_SIZE || '2000000'),
@@ -121,7 +111,7 @@ export default defineNuxtConfig({
 
     corsHandler: {
       origin: process.env.NUXT_CORS_ALLOWED_ORIGIN || '*',
-      methods: process.env.NUXT_CORS_ALLOWED_METHODS?.split(',') || ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+      methods: process.env.NUXT_CORS_ALLOWED_METHODS?.split(',').filter((method): method is 'GET' | 'HEAD' | 'PUT' | 'PATCH' | 'POST' | 'DELETE' => ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'].includes(method)) || ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
       preflight: { statusCode: parseInt(process.env.NUXT_CORS_PREFLIGHT_STATUS || '204') },
     },
 
