@@ -16,7 +16,7 @@ import apiDocs from "~/utilities/api-docs";
 import { extractNestedKeysAndValues, filterDataByValues } from "~/utilities/filterJson";
 import customGridOne from "~/components/home/customGridOne.vue";
 import customGridTwo from "~/components/home/customGridTwo.vue";
-import DropDownMenu  from "~/components/home/dropDownMenu.vue";
+import DropDownMenu from "~/components/home/dropDownMenu.vue";
 import SubjectCard from "~/components/home/SubjectCard.vue";
 import { layoutEffect } from "~/utilities/controlls";
 
@@ -83,11 +83,11 @@ const keys = ref()  // Initial Keys Value State
 const subjectId = ref();  // Initial subjectId Value State
 
 // Checking Tab if is corresponde to route
-if(tab){
-  tab=='experiments' ? activeTab.value = 'Experiments' : '';
-  tab=='video' ? activeTab.value = 'Video' : '';
-  tab=='audio' ? activeTab.value = 'Audio' : '';
-  tab=='interactive' ? activeTab.value = 'Interactive Books' : '';
+if (tab) {
+  tab == 'experiments' ? activeTab.value = 'Experiments' : '';
+  tab == 'video' ? activeTab.value = 'Video' : '';
+  tab == 'audio' ? activeTab.value = 'Audio' : '';
+  tab == 'interactive' ? activeTab.value = 'Interactive Books' : '';
 }
 
 // First, fix the sliceData function
@@ -145,29 +145,29 @@ const fetchData = async (params) => {
   // activeTab.value.toLowerCase() = 'audio' ? url = apiDocs.experiments:''
   if (subjectId.value) {
     // Experiments
-  activeTab.value.toLowerCase() == "experiments"
-    ? (url = apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
+    activeTab.value.toLowerCase() == "experiments"
+      ? (url = apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
         "{subjectId}",
         subjectId.value
       ))
-    : "";
+      : "";
 
-  // Video
-  activeTab.value.toLowerCase() == "video"
-    ? (url = apiDocs.videos.getPublicVideoBySubjectId.replace(
+    // Video
+    activeTab.value.toLowerCase() == "video"
+      ? (url = apiDocs.videos.getPublicVideoBySubjectId.replace(
         "{subjectId}",
         subjectId.value
       ))
-    : "";
-    
+      : "";
+
     // Interactive
-  activeTab.value.toLowerCase() == "interactive books"
-    ? (url = apiDocs.topics.getSubjectId.replace(
+    activeTab.value.toLowerCase() == "interactive books"
+      ? (url = apiDocs.topics.getSubjectId.replace(
         "{subjectId}",
         subjectId.value
       ))
-    : "";
-  
+      : "";
+
   }
 
   try {
@@ -180,7 +180,10 @@ const fetchData = async (params) => {
     });
 
     // Call State Define above
-    data.value = response;
+    data.value = response
+      .filter(item => item)
+      .sort((a, b) => a._id.localeCompare(b._id));
+
     status.value = "success";
 
     // Call sliceData after data is loaded
@@ -335,7 +338,7 @@ watch(
 );
 
 // watch Subject Id
-watch(() =>  subjectId.value, (valueId) => {
+watch(() => subjectId.value, (valueId) => {
   if (valueId) {
     activeTab.value = "Interactive Books";
   }
@@ -348,7 +351,7 @@ watch(() =>  subjectId.value, (valueId) => {
     <section v-if="userToken" :class="['wrapper-container', { ' animate-pulse': isLoading }]">
 
       <HomeSearchbar appearance="rounded" />
-      <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" :active-tab="activeTab"/>
+      <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" :active-tab="activeTab" />
 
       <!-- container filter Mobile -->
       <div class="flex items-center justify-between py-2 xl:hidden">
@@ -362,9 +365,9 @@ watch(() =>  subjectId.value, (valueId) => {
 
         <!-- Side Bar Container Filter For Mobile View Only -->
         <div :class="[
-            'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
-            hideFilter ? 'z-30' : '-z-30',
-          ]">
+      'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
+      hideFilter ? 'z-30' : '-z-30',
+    ]">
           <div class="w-full h-full bg-white md:w-80">
             <!-- Close Button -->
             <div class="flex items-center justify-end">
@@ -381,26 +384,23 @@ watch(() =>  subjectId.value, (valueId) => {
           </div>
         </div>
       </div>
-       <!-- LayoutEffect  -->
-              <div class="flex items-center justify-end gap-2">
-                <Icon name="bxs:grid-alt" size="1.5rem" @click="layoutEffect = 'grid'" 
-                :class="[
-                  ' cursor-pointer transition-all duration-500 ease-in-out',
-                  layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue'
-                ]" />
-                <Icon name="fa-solid:list" size="1.5rem" @click="layoutEffect = 'list'" 
-                :class="[
-                  'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
-                  layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue'
-                ]" />
-              </div>
+      <!-- LayoutEffect  -->
+      <div class="flex items-center justify-end gap-2">
+        <Icon name="bxs:grid-alt" size="1.5rem" @click="layoutEffect = 'grid'" :class="[
+      ' cursor-pointer transition-all duration-500 ease-in-out',
+      layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue'
+    ]" />
+        <Icon name="fa-solid:list" size="1.5rem" @click="layoutEffect = 'list'" :class="[
+      'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
+      layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue'
+    ]" />
+      </div>
       <div class="flex items-start gap-4">
         <!-- container filter Desktop -->
         <div
           class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow ">
           <!-- Home Drop Down Menu -->
-          <DropDownMenu @emit-update-filter-value="filterValue = $event" :active-tab="activeTab"
-            :filter-value="[]" />
+          <DropDownMenu @emit-update-filter-value="filterValue = $event" :active-tab="activeTab" :filter-value="[]" />
 
           <!-- <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" /> -->
         </div>
@@ -420,11 +420,9 @@ watch(() =>  subjectId.value, (valueId) => {
                 <template #data>
                   <!-- Subject Cards are in Grid -->
                   <SubjectCard v-for="subject in slicedData" :key="subject._id" :subject-id="subject._id"
-                    :subject-name="subject.name" :subject-image="subject.thumbnail" :total-views="subject.total_views ?? 0"
-                    :is-logged-in="userToken != null || userToken != undefined"
-                    @emit-subject-name="activeTab = $event"
-                    @emit-subject-id="subjectId = $event"
-                    />
+                    :subject-name="subject.name" :subject-image="subject.thumbnail"
+                    :total-views="subject.total_views ?? 0" :is-logged-in="userToken != null || userToken != undefined"
+                    @emit-subject-name="activeTab = $event" @emit-subject-id="subjectId = $event" />
                 </template>
               </customGridOne>
 
@@ -435,7 +433,7 @@ watch(() =>  subjectId.value, (valueId) => {
                     :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
                     :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
                     :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                    :topic-views="topic.views ? topic.views : 0" :topic-level="level" :topic-standard="topic.level.name"
+                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : 0" :topic-level="level" :topic-standard="topic.level.name"
                     :subject-name="topic.subject.name" :topic-viewed="topic.isViewed"
                     :topic-progress="topic.progressPercent" />
                 </template>

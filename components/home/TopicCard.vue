@@ -135,7 +135,7 @@ const userToken = useCookie('signInUserToken')
                 <Icon name="mdi-light:heart" class="text-medium" />
                 <p class="">{{ calculateTopicMetrics(topicLikes) + " Likes" }}</p>
               </div> -->
-        <div :class="{ 'opacity-0': topicViews <= 0 }" class="flex items-center gap-2">
+        <div  class="flex items-center gap-2">
           <Icon name="flowbite:users-outline" class="text-medium" />
           <p class="">{{ calculateTopicMetrics(topicViews) + " Views" }}</p>
         </div>

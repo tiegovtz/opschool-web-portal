@@ -219,7 +219,7 @@ watch(filters, (filters) => {
                  <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
                 :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
                 :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
-                :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.views ? topic.views : 0"
+                :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : 0"
                 :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name"
                 :topic-viewed="topic.isViewed" :topic-progress="topic.progressPercent" />
                   </template>

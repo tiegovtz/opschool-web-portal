@@ -1,4 +1,5 @@
 <script setup>
+import e from "express";
 import apiDocs from "~/utilities/api-docs";
 
 const route = useRoute();
@@ -133,7 +134,7 @@ definePageMeta({
                 <!-- Experiments Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink :to="{path: '/',query: {tab:'experiments'}}"
+                        <NuxtLink :to="{path: '/',query: {tab:'experiments',subject: experimentLevel, class: experimentStandard }}"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                             experimentLevel != null &&
@@ -145,7 +146,7 @@ definePageMeta({
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <NuxtLink :to="{path: '/',query: {tab:'experiments'}}"
+                        <NuxtLink :to="{path: '/',query: {tab:'experiments', subject: experimentLevel, class: experimentStandard }}"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                             experimentStandard != null &&
