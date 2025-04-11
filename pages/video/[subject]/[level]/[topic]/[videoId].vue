@@ -116,7 +116,7 @@ definePageMeta({
                 <!-- Videovideo Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink :to="{path: '/',query: {tab:'video'}}"
+                        <NuxtLink :to="{path: '/',query: {tab:'video', subject: videoLevel, class: videoStandard}}"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                                 videoLevel != null &&
@@ -128,7 +128,7 @@ definePageMeta({
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <NuxtLink :to="{path: '/',query: {tab:'video'}}"
+                        <NuxtLink :to="{path: '/',query: {tab:'video', subject: videoLevel, class: videoStandard}}"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                                     videoStandard != null &&

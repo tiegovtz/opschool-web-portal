@@ -1,5 +1,5 @@
 <script setup>
-import TopicCard from "@/components/home/TopicCard.vue";
+
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import { ref, computed, onMounted, watch } from "vue";

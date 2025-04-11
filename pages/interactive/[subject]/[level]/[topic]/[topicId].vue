@@ -335,13 +335,13 @@ definePageMeta({
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between ">
             <div class="flex items-center gap-2">
-              <NuxtLink :to="{ path: '/', query: { tab: 'interactive' } }"
+              <NuxtLink :to="{ path: '/', query: { tab: 'interactive', subject: topicLevel, class: topicStandard } }"
                 class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                 {{ topicLevel != null && topicLevel != undefined && topicLevel != "null" ? topicLevel : `Secondary` }}
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </NuxtLink>
 
-              <NuxtLink :to="{ path: '/', query: { tab: 'interactive' } }"
+              <NuxtLink :to="{ path: '/', query: { tab: 'interactive', subject: topicLevel, class: topicStandard } }"
                 class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                 {{ topicStandard != null && topicStandard != undefined && topicStandard != "null" ? topicStandard : `Form One` }}
                 <Icon name="weui:arrow-outlined" size="18" class="text-black " />

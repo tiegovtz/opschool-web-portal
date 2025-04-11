@@ -246,7 +246,7 @@ watch(filters, (filters) => {
                       topic.topic_duration ? topic.topic_duration : '10 min'
                     "
                     :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                    :topic-views="topic.views ? topic.views : 0"
+                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : 0"
                     :topic-level="level"
                     :topic-standard="topic.level.name"
                     :subject-name="topic.subject.name"
