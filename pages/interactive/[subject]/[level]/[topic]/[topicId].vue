@@ -19,7 +19,6 @@ currentTopic.value = topicTitle;
 
 // tokens
 const signInAccessToken = useCookie('signInAccessToken')
-useState("topicToView", () => null)
 
 // Define meta info about page
 useHead({
@@ -69,6 +68,7 @@ useHead({
 
 // Define State
 const userToken = useCookie("signInUserToken");
+
 //  chapters informations
 const chapters = reactive({
   list: null,
@@ -140,13 +140,10 @@ const toggleSidebar = () => {
   }
 }
 
-
-
 // fetch chapters information
 const getChapter = async (chapterId) => {
   chapters.notesStatus = "pending";
   chapters.currentChapterId = chapterId;
-
 
   const expiredSoon = isTokenExpiringSoon(signInAccessToken.value, 60)
   if (expiredSoon) {
@@ -164,10 +161,28 @@ const getChapter = async (chapterId) => {
   }
 
   await $fetch(`/api/topics/chapters/${chapterId}`)
-    .then((response) => {
+    .then(async (response) => {
       chapters.notesStatus = 'success'
       chapters.notes = response;
       getQNTopicChapter(chapterId);
+      
+      // Post Progress (Create New Record)
+      await $fetch('/api/progress/post-progress', {
+        method: "POST",
+        body:{
+          "userId": userToken.value?._id,
+          "chapterId": chapterId,
+          "videoProgress": 0,
+          "notesProgress": 0,
+          "experimentsAttempted": 0,
+          "totalExperiments": 0,
+          "assessmentsAttempted": 0,
+          "totalAssessments": 0,
+        }
+      }).catch((error) => {
+        chapters.notesStatus = 'success'
+      });
+      
     })
     .catch((error) => {
       chapters.notesStatus = 'error'
@@ -240,7 +255,7 @@ onMounted(async () => {
   setPicCenter();
 
   // scroll
-  const notes = document.querySelector('#notes-container');
+  const notes = document.getElementById('notes-container');
   if (notes) {
     console.log(notes)
     notes.addEventListener("scroll", (event) => {
