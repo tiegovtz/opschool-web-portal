@@ -1,5 +1,6 @@
 <script setup>
-
+import { layoutEffect } from "~/utilities/controlls";
+const navigationStore = useNavigationStore()
 const props = defineProps({
     videoId: {
         type: String,
@@ -38,7 +39,6 @@ const props = defineProps({
         default: 'Physics'
     },
 
-
     // progress
     topicProgress: {
         type: Number,
@@ -48,45 +48,65 @@ const props = defineProps({
 
 })
 
-
+// Define Function
+const setVideoToView = () => {
+    navigationStore.setVideo(`/video/${props.videoStandard.toLowerCase()}/${props.videoSubject.toLowerCase()}/${props.videoName.toLowerCase()}/${props.videoId.toLowerCase()}`)
+    useState('videoToView',
+      () =>(
+         {
+            route:`/video/${props.videoStandard.toLowerCase()}/${props.videoSubject.toLowerCase()}/${props.videoName.toLowerCase()}/${props.videoId.toLowerCase()}`,
+            updatedAt:Date.now()
+        }
+      ));
+}
 </script>
 
 <template>
     <NuxtLink
-        :to="`/video/${videoStandard.toLowerCase()}/${videoSubject.toLowerCase()}/${videoName.toLowerCase()}/${videoId.toLowerCase()}`"
-        class="relative flex flex-col rounded-lg overflow-hidden bg-white hover:bg-deepBlue shadow-md hover:shadow-xl transition-all duration-500 ease-in-out group cursor-pointer"
-        style="height: 350px;">
+        :to="`/video/${videoStandard.toLowerCase()}/${videoSubject.toLowerCase()}/${videoName.toLowerCase()}/${videoId.toLowerCase()}`" @click="setVideoToView()"
+        :class="[
+            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group',
+            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-[100px]'
+        ]">
+        
         <!-- Thumbnail section -->
-        <div class="relative overflow-hidden h-[280px]">
+        <div :class="[
+            'relative overflow-hidden transition-all duration-500 ease-in-out',
+            layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-[200px]'
+        ]">
             <NuxtImg :src="videoThumbnail" :alt="videoName.toLowerCase()"
-                class="w-full h-full object-cover transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-70"></div>
+                :class="[
+                    'object-cover w-full h-full transition-transform duration-500',
+                ]" />
 
+                <div class="absolute inset-0 bg-gradient-to-t from-black bg-opacity-70 to-transparent opacity-70"></div>
             <!-- Play button -->
             <div
-                class="absolute inset-0 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity cursor-pointer">
+                class="absolute top-0 left-0 flex items-center justify-center w-full h-full transition-opacity cursor-pointer topitems-center opacity-90 group-hover:opacity-scale-100">
                 <button
-                    class="flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm p-3 border border-white/30 transition-transform duration-300 group-hover:scale-110 cursor-pointer"
+                    class="flex items-center justify-center p-3 transition-transform duration-300 border rounded-full cursor-pointer bg-white/20 backdrop-blur-sm border-white/30 group-hover:scale-110"
                     aria-label="Play video">
-                    <Icon name="heroicons:play-solid" class="text-white text-3xl" />
+                    <Icon name="heroicons:play-solid" class="text-3xl text-white" />
                 </button>
             </div>
         </div>
-
         <!-- Content section -->
-        <div class="flex flex-col p-4 flex-grow">
+        <div :class="[
+            'flex flex-col',
+            layoutEffect == 'grid' ? 'p-4' : 'px-2'
+        ]">
             <h3
-                class="text-lg font-semibold mb-2 group-hover:text-white transition-colors duration-500 ease-in-out capitalize">
+                class="mb-2 text-lg font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white">
                 {{ videoName }}
             </h3>
             <p
-                class="text-sm text-gray-600  group-hover:text-white transition-colors duration-500 ease-in-out mb-4 line-clamp-2">
+                class="mb-4 text-sm text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
                 {{ videoDescription }}
             </p>
 
             <!-- Metadata footer -->
             <!-- <div
-                class="mt-auto flex items-center justify-end text-xs text-gray-500 group-hover:text-white transition-colors duration-500 ease-in-out">
+                class="flex items-center justify-end mt-auto text-xs text-gray-500 transition-colors duration-500 ease-in-out group-hover:text-white">
                 <span class="flex items-center">
                     <Icon name="heroicons:eye" class="mr-1 text-sm" />
                     1.2k views

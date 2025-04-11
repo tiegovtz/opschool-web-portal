@@ -1,5 +1,6 @@
 <script setup>
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";
+const apiDocs = apiDocsFile.setup()
 
 const route = useRoute();
 // const router = useRouter();
@@ -126,15 +127,15 @@ definePageMeta({
 </script>
 <template>
     <NuxtLayout name="home-layout">
-        <section class="relative w-full inline-flex center-height overflow-hidden">
+        <section class="relative inline-flex w-full overflow-hidden center-height">
             <!-- w-3/4 -->
             <div
-                class="lg:w-3/4 w-full lg:scroll-height lg:overflow-y-scroll py-5 lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+                class="w-full py-5 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
                 <!-- Experiments Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink to="/experiments"
-                            class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+                        <NuxtLink :to="{path: '/',query: {tab:'experiments',subject: experimentLevel, class: experimentStandard }}"
+                            class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                             experimentLevel != null &&
                             experimentLevel != undefined &&
@@ -145,8 +146,8 @@ definePageMeta({
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <NuxtLink to="/experiments"
-                            class="capitalize text-oceanBlue text-small hidden md:flex items-center gap-2">
+                        <NuxtLink :to="{path: '/',query: {tab:'experiments', subject: experimentLevel, class: experimentStandard }}"
+                            class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                             experimentStandard != null &&
                             experimentStandard != undefined &&
@@ -157,7 +158,7 @@ definePageMeta({
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <p class="text-medium uppercase md:capitalize font-medium">
+                        <p class="font-medium uppercase text-medium md:capitalize">
                             {{
                             experimentTitle != null &&
                             experimentTitle != undefined &&
@@ -175,17 +176,17 @@ definePageMeta({
                 </div>
 
                 <!-- Description -->
-                <div class="notes md:px-4 max-w-7xl mx-auto">
+                <div class="mx-auto notes md:px-4">
                     <LoadingIndicator :is-loading="status == 'pending'" v-if="status == 'pending'" />
                     <MessagePageNotFound v-else-if="status == 'error'" message="Error while loading experiment"
                         subMessage="Make sure you are connected to the stable internet or try to reload the page" />
 
-                    <div class="relative w-full center-height rounded-md overflow-y-scroll" id="experiment-container"
+                    <div class="relative w-full overflow-y-scroll rounded-md center-height" id="experiment-container"
                         v-else-if="status == 'success'">
-                        <iframe class="center-height w-full rounded-md" :src="experimentInfo.stepsFileUrl"
+                        <iframe class="w-full rounded-md center-height" :src="experimentInfo.stepsFileUrl"
                             frameborder="0"></iframe>
                         <!-- full screen controls -->
-                        <div class="screen-control absolute bottom-0 right-0 p-2 cursor-pointer h-10 w-10 bg-oceanBlue hover:bg-white hover:text-oceanBlue transition-all duration-500 text-white flex items-center justify-center rounded-md"
+                        <div class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"
                             :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" @click="fullScreen">
                             <Icon v-if="isFullscreen" name="qlementine-icons:fullscreen-exit-16" size="24" />
                             <Icon v-else name="qlementine-icons:fullscreen-16" size="24" />
@@ -195,9 +196,9 @@ definePageMeta({
                     <!-- experiment Description and Thumbnail Image -->
                     <div class="flex items-center w-full h-full gap-4 my-4">
                         <!-- Thumbnail Image -->
-                        <div class="w-14 h-14 rounded-full overflow-hidden lg:flex hidden">
+                        <div class="hidden overflow-hidden rounded-full w-14 h-14 lg:flex">
                             <NuxtImg :src="experimentInfo?.thumbnail" :alt="experimentInfo?.name"
-                                class="w-full h-full object-cover transition-transform duration-500" />
+                                class="object-cover w-full h-full transition-transform duration-500" />
                         </div>
 
                         <!-- experiment Description -->
@@ -211,26 +212,26 @@ definePageMeta({
             </div>
 
             <!-- Sidebar w-1/4 -->
-            <div
+            <!-- <div
                 class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full h-full lg:w-1/4 p-2 lg:static center-height overflow-y-scroll bg-white">
-                <div class="flex flex-col mb-4 h-full">
-                    <h1 class="text-medium font-medium capitalize pt-5">Related Experiments</h1>
+                <div class="flex flex-col h-full mb-4">
+                    <h1 class="pt-5 font-medium capitalize text-medium">Related Experiments</h1> -->
                     <!-- toggle menu -->
-                    <div class="hover:bg-oceanBlue cursor-pointer rounded-full w-5 h-5 flex lg:hidden items-center justify-center group transition-all duration-500 ease-in-out"
-                        @click="toggleSidebar()">
+                    <!-- <div class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"
+                        @click="toggleSidebar()"> -->
                         <!-- Cancel Icon -->
-                        <Icon name="iconoir:cancel" size="18" class="group-hover:text-white" />
-                    </div>
+                        <!-- <Icon name="iconoir:cancel" size="18" class="group-hover:text-white" />
+                    </div> -->
 
                     <!-- UL list of chapters -->
-                    <ul class="flex flex-col gap-3 md:pl-4">
-                        <li class="flex items-center gap-3 cursor-pointer p-3 rounded-md bg-containerGray">
+                    <!-- <ul class="flex flex-col gap-3 md:pl-4">
+                        <li class="flex items-center gap-3 p-3 rounded-md cursor-pointer bg-containerGray">
                             <div class="">
                                 <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
                             </div>
                             <div class="line-clamp-2">Introduction to Physics</div>
                         </li>
-                        <li class="flex items-center gap-3 cursor-pointer p-3 rounded-md bg-containerGray">
+                        <li class="flex items-center gap-3 p-3 rounded-md cursor-pointer bg-containerGray">
                             <div class="">
                                 <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
                             </div>
@@ -238,7 +239,7 @@ definePageMeta({
                         </li>
                     </ul>
                 </div>
-            </div>
+            </div> -->
         </section>
     </NuxtLayout>
 </template>

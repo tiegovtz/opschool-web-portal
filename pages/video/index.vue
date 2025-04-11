@@ -1,6 +1,7 @@
 <script setup>
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
+import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import { ref, computed, onMounted, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import apiDocsFile from "~/utilities/api-docs";;
@@ -38,6 +39,7 @@ const slicedData = ref();    // Initial slice data to 9
 
 // Define Cookie
 const auth_token = useCookie('signInAccessToken').value;
+const userToken = useCookie("signInUserToken");
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
@@ -65,12 +67,8 @@ const pageSize = ref();
 const fetchVideos = async () => {
   try {
     status.value = 'pending';
-    const response = await $fetch(apiDocs.videos.getVideos, {
+    const response = await $fetch(apiDocs.videos.getPublicVideo, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${auth_token}`,
-        'Content-Type': 'application/json'
-      }
     });
 
     // Call State Define above
@@ -153,21 +151,30 @@ const prevPage = () => {
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator()
 
-// Define Meta Data
-definePageMeta({
-  middleware: 'auth',
-})
-
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <section class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
-      <HeroSection />
-      <HomeInputsSelection />
-      <TabBar />
+    <section :class="[
+      'wrapper-container',
+      { ' animate-pulse': isLoading }
+    ]">
 
-      <div v-if="status === 'pending'" class="flex flex-col justify-center items-center">
+      <!-- User Token Available -->
+      <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
+        <HomeSearchbar appearance="rounded" />
+        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
+      </div>
+
+      <!-- User Token Not Available -->
+      <div v-else>
+        <HeroSection />
+        <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+          @emit-subject="filters.subject = $event" />
+        <TabBar />
+      </div>
+
+      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />
       </div>
       <!-- Status Error -->
@@ -176,19 +183,19 @@ definePageMeta({
       <div v-else-if="status == 'success'">
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
-          <div class="w-full flex flex-col">
-
-            <div v-if="status === 'success'"
-              class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4 mt-10">
-              <!-- Video Cards are in Grid -->
-              <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
-                :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
-                :video-description="video.description" :video-subject="video.subject.name"
-                :video-type="video.videoType" />
-            </div>
+          <div class="flex flex-col w-full">
+            <customGridTwo>
+              <template #data>
+                <!-- Video Cards are in Grid -->
+                <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
+                  :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
+                  :video-description="video.description" :video-subject="video.subject.name"
+                  :video-type="video.videoType" />
+              </template>
+            </customGridTwo>
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div class="flex justify-center my-10">
+            <div v-if="totalPages > 1" class="flex justify-center my-10">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
@@ -196,7 +203,7 @@ definePageMeta({
               </div>
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
-                <div class="flex justify-center items-center" v-if="currentPage > 5">
+                <div class="flex items-center justify-center" v-if="currentPage > 5">
                   <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
                 </div>
 
@@ -205,7 +212,7 @@ definePageMeta({
                   @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
 
                 <!-- next button -->
-                <div class="flex justify-center items-center" v-if="currentPage > 4">
+                <div class="flex items-center justify-center" v-if="currentPage > 4">
                   <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
                 </div>
               </div>
@@ -216,43 +223,8 @@ definePageMeta({
       </div>
 
       <!-- Even Data was not success should be handle here -->
-      <div class="w-full flex flex-col" v-else>
-        <div class="" v-if="slicedData?.length === 0">Try to refresh the page, Something went Wrong</div>
-
-        <!-- client only  -->
-        <ClientOnly v-else>
-          <div class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 mb-10">
-            <!-- Video Cards are in Grid -->
-            <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
-              :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
-              :video-description="video.description" :video-subject="video.subject.name"
-              :video-type="video.videoType" />
-
-            <!-- pagination numbers based on data length greater to 9 -->
-            <div class="flex justify-center my-10">
-              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
-              </div>
-
-              <div v-else class="flex justify-center gap-2">
-                <!-- previous -->
-                <div class="flex justify-center items-center" v-if="currentPage > 5">
-                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
-                </div>
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
-                <!-- next button -->
-                <div class="flex justify-center items-center" v-if="currentPage > 4">
-                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </ClientOnly>
+      <div class="flex flex-col w-full" v-else>
+        <div class="">Try to refresh the page, Something went Wrong</div>
       </div>
     </section>
   </NuxtLayout>

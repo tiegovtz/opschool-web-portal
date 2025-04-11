@@ -23,6 +23,8 @@ const experimrntUrl = ref();
 const currentTopic = ref();
 const _BASE_API_URL = ref()
 
+const layoutEffect = ref('grid');
+
 export {
     isGreaterToXL,
     isGreaterToLG,
@@ -35,4 +37,5 @@ export {
     experimrntUrl,
     _BASE_API_URL,
     currentTopic,
+    layoutEffect,
 }

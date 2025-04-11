@@ -1,9 +1,7 @@
 <script setup>
+
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
-import  LoadingIndicator  from "@/components/loading/loadingIndicator.vue";
-import InputsSelection from "@/components/home/InputsSelection.vue";
-import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
 import { ref, computed, onMounted, watch } from "vue";
 import {
   isGreaterToXL,
@@ -12,27 +10,20 @@ import {
   isGreaterToSM,
   screenWidth,
 } from "@/utilities/controlls";
+import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
 import apiDocsFile from "~/utilities/api-docs";
 const apiDocs = apiDocsFile.setup()
+import customGridTwo from "~/components/home/customGridTwo.vue";
 
+// Defin Route
 const route = useRoute();
-// const router = useRouter();
-const experimentId = route.fullPath.split("/").pop();
-const experimentTitle = String(route.fullPath.split("/")[4])
-  .toString()
-  .replaceAll("%20", " ")
-  .replaceAll("-", " ");
-const experimentStandard = String(route.fullPath.split("/")[2])
-  .toString()
-  .replaceAll("%20", " ");
-const experimentLevel = String(route.fullPath.split("/")[3])
-  .toString()
-  .replaceAll("%20", " ");
-const experimentUrl = `/api/experiments/${experimentId}`;
+const router = useRouter();
+const subjectId = route.fullPath.split("/").pop();
+const subjectTitle = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
 
-// Header
+// Define meta info about page
 useHead({
-  title: `TIE - Tanzania/${experimentTitle}`,
+  title: "TIE - Tanzania Interactive Learning Platform",
   meta: [
     {
       name: "description",
@@ -75,51 +66,50 @@ useHead({
   ],
 });
 
-// Define Ref state variables
-const error = ref(null); // Initial Error State
-const status = ref("pending"); // Initial Status State
-const experiments = ref(); // Initial experiments State
-const slicedData = ref(); // Initial slice data to 9
-
-// Define Cookie
-const auth_token = useCookie("signInAccessToken").value;
 const userToken = useCookie("signInUserToken");
+
+// Define Ref State
+const status = ref("pending"); // Initial Status State
+const topic = ref([]); // Initial Topics State
+const slicedData = ref(); // Initial slice data to 9
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
-  if (
-    !experiments.value ||
-    !Array.isArray(experiments.value) ||
-    experiments.value.length === 0
-  ) {
+  if (!topic.value || !Array.isArray(topic.value) || topic.value.length === 0) {
     slicedData.value = [];
     return;
   }
 
   // If only one page of data or less, return all data
-  if (experiments.value.length <= pageSize.value) {
-    slicedData.value = experiments.value;
+  if (topic.value.length <= pageSize.value) {
+    slicedData.value = topic.value;
     return;
   }
 
   // Otherwise slice the data
-  slicedData.value = experiments.value.slice(start, end);
+  slicedData.value = topic.value.slice(start, end);
 };
 
-// Define current page and Page size variable
+// current page data
 const currentPage = ref(1);
 const pageSize = ref();
 
-// Fetch Experiments From Server
-const fetchExperiments = async () => {
+// Then, update fetchTopics to call sliceData after data is loaded
+const fetchTopics = async (params) => {
   try {
     status.value = "pending";
-    const response = await $fetch(apiDocs.experiments.getPublicExperiments, {
-      method: "GET",
+    const response = await $fetch(apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
+        "{subjectId}",
+        subjectId
+      ), {
+        params: params,
+      headers: {
+        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+      },
     });
 
     // Call State Define above
-    experiments.value = response;
+    topic.value = response;
     status.value = "success";
 
     // Call sliceData after data is loaded
@@ -129,29 +119,29 @@ const fetchExperiments = async () => {
     );
   } catch (error) {
     status.value = "error";
-    error.value = error;
-    console.log(error);
+    slicedData.value = [];
+    router.replace("/auth");
   }
 };
 
-// Call FetchExperiments Function
-fetchExperiments();
+// Call Fetch Topics function
+fetchTopics({});
 
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
-  pageSize.value = 12; // 12 experiments cards
+  pageSize.value = 12; // 12 topic cards
 } else if (isGreaterToLG) {
-  pageSize.value = 9; // 9 experiments cards
+  pageSize.value = 9; // 9 topic cards
 } else if (isGreaterToMD) {
-  pageSize.value = 6; // 6 experiments cards per page
+  pageSize.value = 6; // 6 topic cards per page
 } else {
   pageSize.value = 4; // 4 topics card per page
 }
 
 // total pages data
 const totalPages = computed(() => {
-  if (experiments.value && Array.isArray(experiments.value)) {
-    return Math.ceil(experiments.value.length / pageSize.value);
+  if (topic.value && Array.isArray(topic.value)) {
+    return Math.ceil(topic.value.length / pageSize.value);
   }
   return 0; // Default to 0 if no data
 });
@@ -207,64 +197,87 @@ const { progress, isLoading } = useLoadingIndicator();
 
 <template>
   <NuxtLayout name="home-layout">
-    <section :class="[
-      'wrapper-container',
-      { ' animate-pulse': isLoading }
-    ]">
-    <!-- User Token Available -->
+    <div class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
+      <HeroSection />
+        <TabBar 
+          :subject-title="subjectTitle"
+          :topic-id="subjectId"
+        />
       <div
-        v-if="userToken"
-        class="flex flex-col items-center justify-center w-full gap-4 pt-4"
+        v-if="status === 'pending'"
+        class="flex flex-col items-center justify-center"
       >
-        <HomeSearchbar appearance="rounded" />
-        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
-      </div>
-
-      <!-- User Token Not Available -->
-      <div v-else>
-        <HeroSection />
-        <TabBar />
-      </div>
-
-      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />
       </div>
-
       <!-- Status Error -->
       <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
+
       <!-- Status Success -->
-      <div v-else-if="status == 'success'">
+      <div v-else-if="status == 'success'" class="">
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
           <div class="flex flex-col w-full">
-            <div v-if="status === 'success'"
-              class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4 mt-10">
-              <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
+            <div class="flex items-start gap-4">
+              <!-- Topic Cards are in Grid -->
+              <div class="container flex flex-col items-start">
+                 <customGridTwo>
+                  <template #data>
+                    <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
                 :experiment-thumbnail="experiment.thumbnail" :experiment-title="experiment.title"
                 :experiment-description="experiment.description" :experiment-type="experiment.category"
                 :experiment-subject="experiment.subject.name" :experiment-level="experiment.level.name"
                 :experiment-name="experiment.name" :experiment-file-url="experiment.stepsFileUrl" />
+                  </template>
+                </customGridTwo>
+              </div>
             </div>
+
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-10">
+            <div v-if="totalPages > 1" class="flex justify-center my-5">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                <PaginationBtn
+                  v-for="page in totalPages"
+                  :key="page"
+                  :page-number="page"
+                  :is-active="page === currentPage"
+                  :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                  @send-page-number="currentPage = $event"
+                />
               </div>
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
-                <div class="flex items-center justify-center" v-if="currentPage > 5">
-                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+                <div
+                  class="flex items-center justify-center"
+                  v-if="currentPage > 5"
+                >
+                  <Icon
+                    name="iconamoon:arrow-left-2-fill"
+                    size="2rem"
+                    @click="prevPage"
+                  />
                 </div>
 
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                <PaginationBtn
+                  v-for="page in totalPages"
+                  :key="page"
+                  :page-number="page"
+                  :is-active="page === currentPage"
+                  :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                  @send-page-number="currentPage = $event"
+                />
 
                 <!-- next button -->
-                <div class="flex items-center justify-center" v-if="currentPage > 4">
-                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+                <div
+                  class="flex items-center justify-center"
+                  v-if="currentPage > 4"
+                >
+                  <Icon
+                    name="iconamoon:arrow-right-2-fill"
+                    size="2rem"
+                    @click="nextPage"
+                  />
                 </div>
               </div>
             </div>
@@ -272,6 +285,13 @@ const { progress, isLoading } = useLoadingIndicator();
         </ClientOnly>
         <MessageTopicNotFound v-else />
       </div>
-    </section>
+
+      <!-- Even Data was not success should be handle here -->
+      <div class="flex flex-col w-full" v-else>
+        <div class="">
+          Try to refresh the page, Something went Wrong
+        </div>
+      </div>
+    </div>
   </NuxtLayout>
 </template>

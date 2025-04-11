@@ -15,12 +15,6 @@ export default {
       baseURL = process.env.NUXT_API_BASE_URL 
     }
 
-    //  else {
-    //   const { $BASE_API_URL } = useNuxtApp();
-    //   baseURL = $BASE_API_URL;
-    //   console.log('sis',import.meta.env.SSR);
-    // }
-
     return {
       baseURL: `${baseURL}`, // You can include it here for reference
 
@@ -59,7 +53,14 @@ export default {
       experiments: {
         getExperiments: `${baseURL}/experiments`,
     getExperimentId: `${baseURL}/experiments/:id`,
-      },
+    getPublicExperiments: `${baseURL}/public-experiments`,
+    getPublicExperimentsBySubjectId: `${baseURL}/public-experiments/by-subject/{subjectId}`,
+  },
+
+  // NOTES API
+  notes: {
+    getNotes: `${baseURL}/notes`,
+  },
 
       // LEVELS API
       levels: {
@@ -67,35 +68,42 @@ export default {
         getLevelId: `${baseURL}/levels/:id`,
       },
 
-      // SUBJECTS API
-      subjects: {
-        getSubjects: `${baseURL}/subjects`,
-        getSubjectId: `${baseURL}/subjects/:id`,
-      },
-
-      // TOPICS API
-      topics: {
-        getTopics: `${baseURL}/topics`,
-        getTopicId: `${baseURL}/topics/:id`,
-        getQuestionId: `${baseURL}/topics/{id}/questions`,
-        getSubjectId: `${baseURL}/topics/by-subject/{subjectId}`,
-        filterTopics: `${baseURL}/public-topics`,
-        filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
-        topicViewedRead: `${baseURL}/topics/{id}/read`,
-      },
-
-      // VIDEO API
-      videos: {
-        getStream: `${baseURL}/video-stream/`,
-        getVideos: `${baseURL}/videos`,
-        getVideoById: `${baseURL}/videos/{id}`,
-      },
-
-      //  PROGRESS
-      progress: {
-        video: `${baseURL}/progress/video`,
-        notes: `${baseURL}/progress/notes`,
-      },
-    };
+  // SUBJECTS API
+  subjects: {
+    getSubjects: `${baseURL}/subjects`,
+    getSubjectId: `${baseURL}/subjects/:id`,
+    getPublicSubjects: `${baseURL}/public-subjects`,
   },
-};
+
+  // TOPICS API
+  topics: {
+    getTopics: `${baseURL}/topics`,
+    getTopicId: `${baseURL}/topics/:id`,
+    getQuestionId: `${baseURL}/topics/{id}/questions`,
+    getSubjectId: `${baseURL}/public-topics/by-subject/{subjectId}`,
+    filterTopics: `${baseURL}/public-topics`,
+    filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
+    topicViewedRead: `${baseURL}/topics/{id}/read`,
+  },
+
+  // VIDEO API 
+  videos: {
+    getStream: `${baseURL}/video-stream/`,
+    getVideos: `${baseURL}/videos`,
+    getVideoById: `${baseURL}/videos/{id}`,
+    getPublicVideo: `${baseURL}/public-videos`,
+    getPublicVideoBySubjectId: `${baseURL}/public-videos/by-subject/{subjectId}`,
+  },
+
+  //  PROGRESS TRACKING API
+  progressTracking: {
+    postProgress: `${baseURL}/progress`,
+    getProgress: `${baseURL}/progress`,
+    getProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
+    putProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
+    putProgresschapterIdVideoProgress : `${baseURL}/progress/chapters/{chapterId}/video-progress`,
+  }
+
+}
+    }
+  }

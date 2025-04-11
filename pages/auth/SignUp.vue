@@ -106,35 +106,35 @@ const signUp = async () => {
         :
         usersignUp.type.toLowerCase().trim() == 'teacher' ?
 
-        {
-          name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
-          password: usersignUp.password,
-          phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
-          type: usersignUp.type,
-          email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
-          gender: usersignUp.gender,
-          region: usersignUp.region,
-          school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
-          district: usersignUp.district,
-          ageGroup: usersignUp.age,
-          terms: true,
-        }
-        :
-        {
-          name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
-          password: usersignUp.password,
-          phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
-          type: usersignUp.type,
-          email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
-          gender: usersignUp.gender,
-          region: usersignUp.region,
-          school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
-          district: usersignUp.district,
-          ageGroup: usersignUp.age,
-          terms: true,
-          organization: usersignUp.organization,
-          role: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
-        }
+          {
+            name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
+            password: usersignUp.password,
+            phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
+            type: usersignUp.type,
+            email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
+            gender: usersignUp.gender,
+            region: usersignUp.region,
+            school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
+            district: usersignUp.district,
+            ageGroup: usersignUp.age,
+            terms: true,
+          }
+          :
+          {
+            name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
+            password: usersignUp.password,
+            phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
+            type: usersignUp.type,
+            email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
+            gender: usersignUp.gender,
+            region: usersignUp.region,
+            school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
+            district: usersignUp.district,
+            ageGroup: usersignUp.age,
+            terms: true,
+            organization: usersignUp.organization,
+            role: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
+          }
     )
       .then((response) => {
         if (response.status >= 200 && response.status < 300) {
@@ -552,40 +552,42 @@ const switchTab = (tabName) => {
   <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b">
 
     <!-- Message Component -->
-    <MessageComponent 
-      :message="usersignUp.controller.feedback"
-      :position="usersignUp.controller.feedback ? true : false" 
-      :event-type="usersignUp.controller.isSent"
+    <MessageComponent :message="usersignUp.controller.feedback"
+      :position="usersignUp.controller.feedback ? true : false" :event-type="usersignUp.controller.isSent"
       :icon="usersignUp.controller.isSent == 'success' ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
-    <div class="w-full max-w-md px-4 py-10 md:bg-white rounded-lg md:shadow-2xl">
-      <h1 class="text-large font-bold text-center">Sign Up</h1>
-      <NuxtLink to="/" class="w-25 h-25 mx-auto my-6 flex items-center justify-center">
-        <NuxtImg src="/logo/logo_tie.webp" class="w-full h-full object-contain" alt="logo" />
+    <div class="w-full max-w-md px-4 py-10 rounded-lg md:bg-white md:shadow-2xl">
+      <h1 class="font-bold text-center text-large">Sign Up</h1>
+      <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
+        <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
       </NuxtLink>
       <form @submit.prevent="signUp" @keydown.enter.prevent
-        class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" 
-        :class="[
-          {
-            'md:h-[600px]':
-              usersignUp.controller.errors.age ||
-              usersignUp.controller.errors.fname ||
-              usersignUp.controller.errors.gender ||
-              usersignUp.controller.errors.lname ||
-              usersignUp.controller.errors.password ||
-              usersignUp.controller.errors.confirm_password,
-          },
-          { 'md:h-[650px]': usersignUp.userOrgRole.toLowerCase() === 'others' }
-        ]">
+        class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" :class="[
+      {
+        'md:h-[600px]':
+          usersignUp.controller.errors.age ||
+          usersignUp.controller.errors.fname ||
+          usersignUp.controller.errors.gender ||
+          usersignUp.controller.errors.lname ||
+          usersignUp.controller.errors.password ||
+          usersignUp.controller.errors.confirm_password,
+      },
+      { 'md:h-[650px]': usersignUp.userOrgRole.toLowerCase() === 'others' }
+    ]">
         <!-- First Input Group -->
-        <div class="flex flex-col absolute -left-150 top-0 px-6 transition-all duration-500"
-          :class="inputTabs === 'tabOne' ? 'left-0 w-full' : ''">
+        <div
+          :class="[
+          'absolute top-0 flex flex-col px-6 transition-all duration-500 ',
+          inputTabs === 'tabOne' ? 'left-0 w-full' : '-left-full'
+          ]">
           <!-- Select User Type -->
-          <div class="focus-input-icon mb-2 border-b border-gray-300 focus-within:border-oceanBlue" 
-             :class="{'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.type,}">
-            <div class="flex flex-col w-full items-start">
-              <label for="type" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select User Type:</label>
+          <div class="mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue" :class="{
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.type,
+    }">
+            <div class="flex flex-col items-start w-full">
+              <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select User
+                Type:</label>
               <select name="type" id="type" v-model="usersignUp.type" class="w-full p-1 focus:outline-none focus:ring-0"
                 :class="{ 'text-textGray/40': !usersignUp.type }">
                 <option value="">(eg: Student, Teacher ...)</option>
@@ -596,71 +598,71 @@ const switchTab = (tabName) => {
             </div>
 
             <!-- Select User Type error message -->
-            <small v-if="usersignUp.controller.errors.type" class="text-red-500 text-smallest w-full">
+            <small v-if="usersignUp.controller.errors.type" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.type }}
             </small>
           </div>
 
           <!-- First Name -->
           <div
-            class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
             :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.fname,
-            }">
-            <div class="flex w-full items-center">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.fname,
+    }">
+            <div class="flex items-center w-full">
               <input type="text" id="fname" v-model="usersignUp.fname" @keydown.space.prevent name="fname"
                 autocomplete="off"
                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="First Name (eg: Baraka)" />
-              <Icon name="lets-icons:user-box-light" class="h-5 w-5 text-textGray" />
+              <Icon name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
             </div>
 
             <!-- First Name error message -->
-            <small v-if="usersignUp.controller.errors.fname" class="text-red-500 text-smallest w-full">
+            <small v-if="usersignUp.controller.errors.fname" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.fname }}
             </small>
           </div>
 
           <!-- Last Name -->
           <div
-            class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
             :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.lname,
-            }">
-            <div class="flex w-full items-center">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.lname,
+    }">
+            <div class="flex items-center w-full">
               <input type="text" id="lname" v-model="usersignUp.lname" @keydown.space.prevent name="lname"
                 autocomplete="off"
                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Last Name ( eg: Minja )" />
-              <Icon name="lets-icons:user-box-light" class="h-5 w-5 text-textGray" />
+              <Icon name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
             </div>
 
             <!-- Last Name error message -->
-            <small v-if="usersignUp.controller.errors.lname" class="text-red-500 text-smallest w-full">
+            <small v-if="usersignUp.controller.errors.lname" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.lname }}
             </small>
           </div>
 
           <!-- region -->
           <div
-            class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
             :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.region,
-            }">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.region,
+    }">
             <SelectionRegionSelection :error="usersignUp.controller.errors.region"
               @update-region="usersignUp.region = $event" />
           </div>
 
           <!-- District -->
           <div
-            class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
             :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.district,
-            }">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.district,
+    }">
             <!-- select district -->
             <SelectionDistrictSelection :error="usersignUp.controller.errors.district" :region="usersignUp.region"
               @update-district="usersignUp.district = $event" />
@@ -668,11 +670,11 @@ const switchTab = (tabName) => {
 
           <!-- school -->
           <div v-if="usersignUp.type.toLowerCase() === 'student' || usersignUp.type.toLowerCase() === 'teacher'"
-            class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
             :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.school,
-            }">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.school,
+    }">
 
             <!-- select school -->
             <SelectionSchoolSelection :district="usersignUp.district" :region="usersignUp.region"
@@ -681,12 +683,12 @@ const switchTab = (tabName) => {
           </div>
 
           <!-- gender input radio -->
-          <div class="mb-4 border-b border-gray-300 focus-within:border-oceanBlue py-2" :class="{
-            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-              usersignUp.controller.errors.gender,
-          }">
-            <div class="flex md:flex-row flex-col items-center justify-start md:gap-10">
-              <div class="text-oceanBlue font-semibold text-extraSmall capitalize">
+          <div class="py-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue" :class="{
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.gender,
+    }">
+            <div class="flex flex-col items-center justify-start md:flex-row md:gap-10">
+              <div class="font-semibold capitalize text-oceanBlue text-extraSmall">
                 Select Sex:
               </div>
 
@@ -695,20 +697,20 @@ const switchTab = (tabName) => {
                   <input type="radio" name="gender" id="male" value="male" v-model="usersignUp.gender"
                     class="w-4 h-4 checked:bg-oceanBlue" />
                   <label for="male" :class="{
-                    'text-textGray/40': usersignUp.gender !== 'male',
-                  }">Male</label>
+      'text-textGray/40': usersignUp.gender !== 'male',
+    }">Male</label>
                 </div>
                 <div class="flex items-center gap-2">
                   <input type="radio" name="gender" id="female" value="female" v-model="usersignUp.gender"
                     class="w-4 h-4 checked:bg-oceanBlue" />
                   <label for="female" :class="{
-                    'text-textGray/40': usersignUp.gender !== 'female',
-                  }">Female</label>
+      'text-textGray/40': usersignUp.gender !== 'female',
+    }">Female</label>
                 </div>
               </div>
             </div>
             <!-- Gender error message -->
-            <small v-if="usersignUp.controller.errors.gender" class="text-red-500 text-smallest w-full">
+            <small v-if="usersignUp.controller.errors.gender" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.gender }}
             </small>
           </div>
@@ -716,14 +718,14 @@ const switchTab = (tabName) => {
           <!-- Next Button -->
           <div class="flex items-center justify-center px-2">
             <button type="button" @click="switchTab('tabTwo')"
-              class="rounded-full h-8 w-auto px-4 gap-2 hover:bg-oceanBlue hover:text-white text-oceanBlue border border-oceanBlue animate-bounce-horizontal cursor-pointer transition-all duration-500 flex items-center group">
+              class="flex items-center w-auto h-8 gap-2 px-4 transition-all duration-500 border rounded-full cursor-pointer hover:bg-oceanBlue hover:text-white text-oceanBlue border-oceanBlue animate-bounce-horizontal group">
               <p class="text-small group-hover:text-white">Next</p>
               <Icon name="f7:arrow-right" class="group-hover:text-white" size="16" />
             </button>
           </div>
 
           <!-- Already have an account -->
-          <div class="mt-4 flex items-center justify-center gap-2">
+          <div class="flex items-center justify-center gap-2 mt-4">
             <p class="text-sm text-textGray">
               Already have an account?
               <NuxtLink to="/auth" class="w-full p-1 text-center cursor-pointer text-oceanBlue">
@@ -733,29 +735,30 @@ const switchTab = (tabName) => {
         </div>
 
         <!-- Second Input Group -->
-        <div class="flex flex-col absolute -right-150 top-0 px-6 transition-all duration-500"
+        <div class="absolute top-0 flex flex-col px-6 transition-all duration-500 -right-full"
           :class="inputTabs === 'tabTwo' ? 'right-0 w-full h-full' : ''">
           <!-- Select Age -->
-          <div class="focus-input-icon mb-3 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col"
+          <div class="flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
             :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.age,
-            }">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.age,
+    }">
             <div class="flex flex-col">
-              <label for="age" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select Age:</label>
+              <label for="age" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select Age:</label>
               <select name="age" id="age" class="w-full p-1 focus:outline-none focus:ring-0"
                 :class="{ 'text-textGray/40': !usersignUp.age }" v-model="usersignUp.age">
-                <option value="">Eg: {{ usersignUp.type.toLowerCase().trim() == 'student' ?'kids(3 - 12)':'Young Adults(20 - 35)' }} ...</option>
+                <option value="">Eg: {{ usersignUp.type.toLowerCase().trim() == 'student' ? 'kids(3 - 12)' : 'YoungAdults(20 - 35)' }} ...</option>
                 <option v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Child">Kids(3 - 12)</option>
-                <option  v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Teen">Teens(13 - 19)</option>
+                <option v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Teen">Teens(13 - 19)</option>
                 <option value="YoungAdult">Young Adults(20 - 35)</option>
-                <option  v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="MiddleAgedAdult">Middle-Aged Adults(36 - 60)</option>
-                <option  v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="Adult">Adults(60+)</option>
+                <option v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="MiddleAgedAdult">Middle-Aged
+                  Adults(36 - 60)</option>
+                <option v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="Adult">Adults(60+)</option>
               </select>
             </div>
 
             <!-- Age error message -->
-            <small v-if="usersignUp.controller.errors.age" class="text-red-500 text-smallest w-full">
+            <small v-if="usersignUp.controller.errors.age" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.age }}
             </small>
           </div>
@@ -765,42 +768,42 @@ const switchTab = (tabName) => {
 
             <!-- Email -->
             <div
-              class="focus-input-icon px-2 mb-3 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+              class="flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
               :class="{
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.email,
-              }">
-              <div class="flex w-full items-center">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.email,
+    }">
+              <div class="flex items-center w-full">
                 <input type="text" id="email" v-model="usersignUp.email" @keydown.space.prevent name="username"
                   autocomplete="off"
                   class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                   placeholder="Email (eg: example@gmail.com)" />
-                <Icon name="mdi-light:email" class="h-5 w-5 text-textGray" />
+                <Icon name="mdi-light:email" class="w-5 h-5 text-textGray" />
               </div>
 
               <!-- Email error message -->
-              <small v-if="usersignUp.controller.errors.email" class="text-red-500 text-smallest w-full">
+              <small v-if="usersignUp.controller.errors.email" class="w-full text-red-500 text-smallest">
                 {{ usersignUp.controller.errors.email }}
               </small>
             </div>
 
             <!-- Phone Number -->
             <div
-              class="focus-input-icon px-2 mb-3 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+              class="flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
               :class="{
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.phone,
-              }">
-              <div class="flex w-full items-center">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.phone,
+    }">
+              <div class="flex items-center w-full">
                 <input type="tel" id="phone" v-model="usersignUp.phone" @keydown.space.prevent name="phone"
                   autocomplete="off"
                   class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                   placeholder="Phone Number (eg: 0622***722 or +255622***722)" />
-                <Icon name="iconamoon:phone-thin" class="h-5 w-5 text-textGray" />
+                <Icon name="iconamoon:phone-thin" class="w-5 h-5 text-textGray" />
               </div>
 
               <!-- Phone Number error message -->
-              <small v-if="usersignUp.controller.errors.phone" class="text-red-500 text-smallest w-full">
+              <small v-if="usersignUp.controller.errors.phone" class="w-full text-red-500 text-smallest">
                 {{ usersignUp.controller.errors.phone }}
               </small>
             </div>
@@ -809,31 +812,30 @@ const switchTab = (tabName) => {
             <div class="" id="organization" v-if="usersignUp.type.toLowerCase() === 'education stackeholder'">
               <!-- org name -->
               <div
-                class="focus-input-icon px-2 mb-3 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+                class="flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
                 :class="{
-                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                    usersignUp.controller.errors.organization,
-                }">
-                <div class="flex w-full items-center">
-                  <input type="text" id="email" v-model="usersignUp.organization"
-                    name="organization" autocomplete="off"
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.organization,
+    }">
+                <div class="flex items-center w-full">
+                  <input type="text" id="email" v-model="usersignUp.organization" name="organization" autocomplete="off"
                     class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                     placeholder="Organization (eg: Ekima interctive company)" />
-                  <Icon name="tdesign:institution" class="h-5 w-5 text-textGray" />
+                  <Icon name="tdesign:institution" class="w-5 h-5 text-textGray" />
                 </div>
                 <!-- org name error message -->
-                <small v-if="usersignUp.controller.errors.organization" class="text-red-500 text-smallest w-full">
+                <small v-if="usersignUp.controller.errors.organization" class="w-full text-red-500 text-smallest">
                   {{ usersignUp.controller.errors.organization }}
                 </small>
               </div>
               <!-- stakeholder role -->
-              <div class="focus-input-icon mb-3 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col"
+              <div class="flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
                 :class="{
-                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                    usersignUp.controller.errors.age,
-                }">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.age,
+    }">
                 <div class="flex flex-col">
-                  <label for="userOrgRole" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select role
+                  <label for="userOrgRole" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select role
                     in your Organization:</label>
                   <select name="userOrgRole" id="userOrgRole" class="w-full p-1 focus:outline-none focus:ring-0"
                     :class="{ 'text-textGray/40': !usersignUp.userOrgRole }" v-model="usersignUp.userOrgRole">
@@ -847,27 +849,27 @@ const switchTab = (tabName) => {
                 </div>
 
                 <!-- Age error message -->
-                <small v-if="usersignUp.controller.errors.userOrgRole" class="text-red-500 text-smallest w-full">
+                <small v-if="usersignUp.controller.errors.userOrgRole" class="w-full text-red-500 text-smallest">
                   {{ usersignUp.controller.errors.userOrgRole }}
                 </small>
               </div>
 
               <!-- other user role in their org -->
               <div v-if="usersignUp.userOrgRole.toLowerCase() === 'others'"
-                class="focus-input-icon px-2 mb-3 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+                class="flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
                 :class="{
-                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                    usersignUp.controller.errors.userOrgRole,
-                }">
-                <div class="flex w-full items-center">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.userOrgRole,
+    }">
+                <div class="flex items-center w-full">
                   <input type="text" id="userOrgRole" v-model="usersignUp.otherRole" @keydown.space.prevent
                     name="organization" autocomplete="off"
                     class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                     placeholder="Please specify role in your organization" />
-                  <Icon name="mdi-light:shield" class="h-5 w-5 text-textGray" />
+                  <Icon name="mdi-light:shield" class="w-5 h-5 text-textGray" />
                 </div>
                 <!-- org name error message -->
-                <small v-if="usersignUp.controller.errors.otherRole" class="text-red-500 text-smallest w-full">
+                <small v-if="usersignUp.controller.errors.otherRole" class="w-full text-red-500 text-smallest">
                   {{ usersignUp.controller.errors.otherRole }}
                 </small>
               </div>
@@ -876,101 +878,100 @@ const switchTab = (tabName) => {
 
           <!-- username student -->
           <div v-if="usersignUp.type.toLowerCase() === 'student'"
-            class="focus-input-icon px-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-start justify-start gap-2"
+            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
             :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.userName,
-            }">
-            <div class="flex w-full items-center">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.userName,
+    }">
+            <div class="flex items-center w-full">
               <input type="text" id="userName" v-model="usersignUp.userName" @keydown.space.prevent name="userName"
-                autocomplete="off"
-                readonly
+                autocomplete="off" readonly
                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Username (eg: Baraka.Minja)" />
-              <Icon name="lets-icons:user-box-light" class="h-5 w-5 text-textGray" />
+              <Icon name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
             </div>
 
             <!-- username error message -->
-            <small v-if="usersignUp.controller.errors.userName" class="text-red-500 text-smallest w-full">
+            <small v-if="usersignUp.controller.errors.userName" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.userName }}
             </small>
           </div>
 
           <!-- Password -->
           <div
-            class="focus-input-icon mb-3 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-center gap-2"
+            class="flex flex-col items-center gap-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
             :class="{
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.password,
-            }">
+      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+        usersignUp.controller.errors.password,
+    }">
             <div class="flex items-center w-full">
               <input :type="showPassword ? 'text' : 'password'" id="password" v-model="usersignUp.password"
                 name="password" autocomplete="off"
                 class="w-full p-1 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Password" />
               <Icon :name="showPassword
-                ? 'iconamoon:eye-off-light'
-                : 'iconamoon:eye-thin'
-                " class="h-5 w-5 cursor-pointer text-textGray" @click="togglePassword" />
+      ? 'iconamoon:eye-off-light'
+      : 'iconamoon:eye-thin'
+      " class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
             </div>
             <!-- Password error message -->
-            <small v-if="usersignUp.controller.errors.password" class="text-red-500 text-smallest w-full">
+            <small v-if="usersignUp.controller.errors.password" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.password }}
             </small>
           </div>
 
           <!-- Confirm Password -->
           <div
-            class="focus-input-icon mb-3 border-b border-gray-300 focus-within:border-oceanBlue flex flex-col items-center gap-2">
+            class="flex flex-col items-center gap-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue">
             <div class="flex items-center justify-between w-full">
               <input :type="showConfirmPassword ? 'text' : 'password'" id="confirm_password"
                 v-model="usersignUp.confirm_password" name="confirm_password" autocomplete="off"
                 class="w-full p-1 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Confirm Password" />
               <Icon :name="showConfirmPassword
-                ? 'iconamoon:eye-off-light'
-                : 'iconamoon:eye-thin'
-                " class="h-5 w-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
+      ? 'iconamoon:eye-off-light'
+      : 'iconamoon:eye-thin'
+      " class="w-5 h-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
             </div>
             <!-- Password error message -->
-            <small v-if="usersignUp.controller.errors.confirm_password" class="text-red-500 text-smallest w-full">
+            <small v-if="usersignUp.controller.errors.confirm_password" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.confirm_password }}
             </small>
           </div>
 
           <!-- Sign Up Button -->
           <button type="submit"
-            class="w-full p-2 bg-oceanBlue text-white rounded-md cursor-pointer hover:bg-oceanBlue/80 transition-all duration-500">
+            class="w-full p-2 text-white transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
             <!-- submited successful -->
             <div class="flex items-center justify-center gap-2"
               v-if="usersignUp.controller.isSent === 'success' && usersignUp.controller.isSubmitted">
               Submitted
-              <Icon name="icons8:checked" class="h-5 w-5 cursor-pointer text-white" size="16" />
+              <Icon name="icons8:checked" class="w-5 h-5 text-white cursor-pointer" size="16" />
             </div>
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'pending' && usersignUp.controller.isSubmitted">
               Please Wait
-              <Icon name="eos-icons:loading" class="h-5 w-5 cursor-pointer text-white" size="16" />
+              <Icon name="eos-icons:loading" class="w-5 h-5 text-white cursor-pointer" size="16" />
             </div>
 
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'failed' && usersignUp.controller.isSubmitted">
               Failed
-              <Icon name="oui:cross-in-circle-empty" class="h-5 w-5 cursor-pointer text-white" size="16" />
+              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" />
             </div>
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'error' && usersignUp.controller.isSubmitted">
               Internal Error
-              <Icon name="oui:cross-in-circle-empty" class="h-5 w-5 cursor-pointer text-white" size="16" />
+              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" />
             </div>
             <div class="flex items-center justify-center gap-2" v-else>
               Sign Up
-              <Icon name="mynaui:send" class="h-5 w-5 cursor-pointer text-white" size="16" />
+              <Icon name="mynaui:send" class="w-5 h-5 text-white cursor-pointer" size="16" />
             </div>
           </button>
 
           <!-- Already have an account -->
-          <div class="mt-4 flex items-center justify-center gap-2 mb-4">
+          <div class="flex items-center justify-center gap-2 mt-4 mb-4">
             <p class="text-sm text-textGray">
               Already have an account?
               <NuxtLink to="/auth" class="w-full p-1 text-center cursor-pointer text-oceanBlue">
@@ -981,7 +982,7 @@ const switchTab = (tabName) => {
           <!-- Previous Button -->
           <div class="flex items-center justify-center px-2 ">
             <button type="button" @click="switchTab('tabOne')"
-              class="rounded-full h-8 w-auto px-4 gap-2 hover:bg-oceanBlue hover:text-white text-oceanBlue border border-oceanBlue animate-bounce-horizontal cursor-pointer transition-all duration-500 flex items-center group">
+              class="flex items-center w-auto h-8 gap-2 px-4 transition-all duration-500 border rounded-full cursor-pointer hover:bg-oceanBlue hover:text-white text-oceanBlue border-oceanBlue animate-bounce-horizontal group">
               <Icon name="f7:arrow-left" class="group-hover:text-white" size="16" />
               <p class="text-small group-hover:text-white">Back</p>
             </button>
