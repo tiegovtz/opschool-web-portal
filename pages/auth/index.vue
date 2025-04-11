@@ -5,10 +5,9 @@ import { sanitize } from "~/utilities/sanitizeInput";
 import axios from "axios";
 import apiDocsFile from "~/utilities/api-docs";;
 
-// Use the State
-const topic = useState("topicToView");
-const video = useState("videoToView");
-const experiment = useState("experimentToView");
+// // Use the State
+const navigationStore = useNavigationStore()
+const returnPath = navigationStore.getLatestRoute()
 const apiDocs = apiDocsFile.setup()
 // User Sign In Function
 const userSignIn = reactive({
@@ -90,28 +89,12 @@ const signIn = async () => {
         setTimeout(() => {
           // router
           const router = useRouter();
-
-          const routeTargets = [
-            topic.value,
-            video.value,
-            experiment.value,
-          ]
-            .filter((r) => r && r.route && r.updatedAt)
-            .sort((a, b) => b.updatedAt - a.updatedAt);
-
-          if (routeTargets.length > 0) {
-            const latest = routeTargets[0];
-            router.replace(latest.route);
-
-            // Optionally reset the used one
-            if (latest === topic.value) topic.value = null;
-            else if (latest === video.value) video.value = null;
-            else if (latest === experiment.value)
-              experiment.value = null;
+          console.log(returnPath)
+          if (returnPath) {
+            router.replace(returnPath);
           } else {
             router.replace("/home");
           }
-
           // router.back();
         }, 2000);
       } else {
