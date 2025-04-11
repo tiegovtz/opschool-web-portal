@@ -15,12 +15,6 @@ export default {
       baseURL = process.env.NUXT_API_BASE_URL 
     }
 
-    //  else {
-    //   const { $BASE_API_URL } = useNuxtApp();
-    //   baseURL = $BASE_API_URL;
-    //   console.log('sis',import.meta.env.SSR);
-    // }
-
     return {
       baseURL: `${baseURL}`, // You can include it here for reference
 
@@ -111,5 +105,5 @@ export default {
   }
 
 }
-
-export default apiDocs;
+    }
+  }
