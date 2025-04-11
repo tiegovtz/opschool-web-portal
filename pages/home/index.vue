@@ -67,6 +67,9 @@ useHead({
 
 // Define Cookie
 const userToken = useCookie("signInUserToken");
+const route = useRoute();
+const tab = route.query?.tab;
+
 
 // Define Ref state
 const error = ref(); // Initial Error State
@@ -78,6 +81,14 @@ const activeTab = ref("home"); // Initial Active Tab State
 const filterValue = ref(); // Initial Filter Value State
 const keys = ref()  // Initial Keys Value State
 const subjectId = ref();  // Initial subjectId Value State
+
+// Checking Tab if is corresponde to route
+if(tab){
+  tab=='experiments' ? activeTab.value = 'Experiments' : '';
+  tab=='video' ? activeTab.value = 'Video' : '';
+  tab=='audio' ? activeTab.value = 'Audio' : '';
+  tab=='interactive' ? activeTab.value = 'Interactive Books' : '';
+}
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {

@@ -88,6 +88,9 @@ const apiDocs = {
   progressTracking: {
     postProgress: `${baseURL}/progress`,
     getProgress: `${baseURL}/progress`,
+    getProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
+    putProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
+    putProgresschapterIdVideoProgress : `${baseURL}/progress/chapters/{chapterId}/video-progress`,
   }
 
 }
