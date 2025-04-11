@@ -84,14 +84,14 @@ watch(() => searchReactive.search, (newVal) => {
     </form>
     <!-- Result Search -->
     <div :class="[
-            'absolute z-50  w-full bg-white shadow-md rounded-md',
-            appearance === 'normal' ? 'top-10 left-0 max-w-md' : 'top-36 max-w-5xl'
+            'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
+            appearance === 'normal' ? 'top-10 left-0 max-w-md' : 'top-[170px] max-w-3xl px-1'
           ]"
     >
       <TopicCard v-for="result in searchReactive.searchResult" :key="result._id" model-type="search"
         :topic-id="result._id" :topic-title="result.name" :topic-image="result.thumbnail"
         :topic-standard="result.standard" :topic-subject="result.subject.name" :topic-description="result.descriptions"
-        :topic-level="result.level.name" :topic-likes="0" :topic-views="0" topic-duration="0" />
+        :topic-level="result.level.name" :topic-likes="0" :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : 0" topic-duration="0" />
     </div>
    </div>
   </div>

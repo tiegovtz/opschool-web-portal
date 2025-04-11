@@ -60,6 +60,7 @@ export default {
         getExperiments: `${baseURL}/experiments`,
     getExperimentId: `${baseURL}/experiments/:id`,
     getPublicExperiments: `${baseURL}/public-experiments`,
+    getPublicExperimentsBySubjectId: `${baseURL}/public-experiments/by-subject/{subjectId}`,
   },
 
   // NOTES API
@@ -80,16 +81,16 @@ export default {
     getPublicSubjects: `${baseURL}/public-subjects`,
   },
 
-      // TOPICS API
-      topics: {
-        getTopics: `${baseURL}/topics`,
-        getTopicId: `${baseURL}/topics/:id`,
-        getQuestionId: `${baseURL}/topics/{id}/questions`,
-        getSubjectId: `${baseURL}/topics/by-subject/{subjectId}`,
-        filterTopics: `${baseURL}/public-topics`,
-        filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
-        topicViewedRead: `${baseURL}/topics/{id}/read`,
-      },
+  // TOPICS API
+  topics: {
+    getTopics: `${baseURL}/topics`,
+    getTopicId: `${baseURL}/topics/:id`,
+    getQuestionId: `${baseURL}/topics/{id}/questions`,
+    getSubjectId: `${baseURL}/public-topics/by-subject/{subjectId}`,
+    filterTopics: `${baseURL}/public-topics`,
+    filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
+    topicViewedRead: `${baseURL}/topics/{id}/read`,
+  },
 
   // VIDEO API 
   videos: {
@@ -97,13 +98,18 @@ export default {
     getVideos: `${baseURL}/videos`,
     getVideoById: `${baseURL}/videos/{id}`,
     getPublicVideo: `${baseURL}/public-videos`,
+    getPublicVideoBySubjectId: `${baseURL}/public-videos/by-subject/{subjectId}`,
   },
 
-      //  PROGRESS
-      progress: {
-        video: `${baseURL}/progress/video`,
-        notes: `${baseURL}/progress/notes`,
-      },
-    };
-  },
-};
+  //  PROGRESS TRACKING API
+  progressTracking: {
+    postProgress: `${baseURL}/progress`,
+    getProgress: `${baseURL}/progress`,
+    getProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
+    putProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
+    putProgresschapterIdVideoProgress : `${baseURL}/progress/chapters/{chapterId}/video-progress`,
+  }
+
+}
+
+export default apiDocs;

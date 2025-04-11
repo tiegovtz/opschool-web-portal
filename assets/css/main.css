@@ -258,6 +258,14 @@ p:only-child > img:only-child {
   font-size: 0.67rem !important;
 } /* Default: 10.72px */
 
+.notes div > table > tbody > tr > td > table{
+  display:flex !important;
+  justify-items: center !important;
+  align-items: center !important;
+  width: max-content !important;
+  border-radius: 0 0 12px 12px !important;
+}
+
 /* title style  font tahoma important*/
 /* .title{
   font-family: Tahoma !important;

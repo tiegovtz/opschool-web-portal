@@ -575,8 +575,11 @@ const switchTab = (tabName) => {
       { 'md:h-[650px]': usersignUp.userOrgRole.toLowerCase() === 'others' }
     ]">
         <!-- First Input Group -->
-        <div class="absolute top-0 flex flex-col px-6 transition-all duration-500 -left-150"
-          :class="inputTabs === 'tabOne' ? 'left-0 w-full' : ''">
+        <div
+          :class="[
+          'absolute top-0 flex flex-col px-6 transition-all duration-500 ',
+          inputTabs === 'tabOne' ? 'left-0 w-full' : '-left-full'
+          ]">
           <!-- Select User Type -->
           <div class="mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue" :class="{
       'focus-input-icon-warning border-red-500 focus-within:border-red-500':

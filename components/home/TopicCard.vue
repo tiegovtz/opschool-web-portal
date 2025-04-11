@@ -1,5 +1,6 @@
 <script setup>
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
+import { layoutEffect } from '~/utilities/controlls'
 
 const navigationStore = useNavigationStore()
 const props = defineProps({
@@ -77,11 +78,19 @@ const userToken = useCookie('signInUserToken')
 
   <NuxtLink
     :to="`/interactive/${topicStandard.toLowerCase()}/${subjectName.toLowerCase()}/${topicTitle.toLowerCase()}/${topicId.toLowerCase()}`"
-    class="relative flex flex-col pb-4 overflow-hidden rounded-lg shadow-md group" @click="setTopicToView()"
-    :class="{ 'cursor-pointer flex-row my-2 pb-0': modelType === 'search' }">
+    @click="setTopicToView()"
+    :class="[
+      'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out',
+      layoutEffect == 'grid' && modelType === 'card' ? 'flex-col pb-4' : 'flex-row h-32',
+      { 'cursor-pointer flex-row my-2 pb-0 md:h-20 h-10 ': modelType === 'search' },
+    ]">
     <!-- topic image -->
-    <div class="overflow-hidden"
-      :class="{ 'relative h-56': modelType === 'card', 'md:h-20 h-10': modelType === 'search' }">
+    <div
+      :class="[
+        'relative overflow-hidden transition-all duration-500 ease-in-out',
+        layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-[200px]',
+        { 'md:h-20 h-10 ': modelType === 'search', },
+      ]">
       <NuxtImg :src="topicImage" loading="lazy" alt="book1"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
         :class="{ 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' }" />
@@ -97,7 +106,7 @@ const userToken = useCookie('signInUserToken')
     <div
       class="flex-1 px-4 transition-all duration-500 ease-in-out bg-white group-hover:bg-deepBlue group-hover:text-white">
       <!-- topic progress bar -->
-      <div v-if="userToken && modelType === 'card'" class="flex items-center w-full max-w-full gap-2 mt-2">
+      <div v-if="userToken && modelType === 'card' && layoutEffect === 'grid'" class="flex items-center w-full max-w-full gap-2 mt-2">
         <progress :value="topicProgress" max="100" class="topic-card__progress-bar">
         </progress>
 
@@ -126,7 +135,7 @@ const userToken = useCookie('signInUserToken')
                 <Icon name="mdi-light:heart" class="text-medium" />
                 <p class="">{{ calculateTopicMetrics(topicLikes) + " Likes" }}</p>
               </div> -->
-        <div :class="{ 'opacity-0': topicViews <= 0 }" class="flex items-center gap-2">
+        <div  class="flex items-center gap-2">
           <Icon name="flowbite:users-outline" class="text-medium" />
           <p class="">{{ calculateTopicMetrics(topicViews) + " Views" }}</p>
         </div>

@@ -12,10 +12,12 @@ import {
 } from "@/utilities/controlls";
 import InputsSelection from "@/components/home/InputsSelection.vue";
 import apiDocs from "~/utilities/api-docs";
+import customGridTwo from "~/components/home/customGridTwo.vue";
 
 // Defin Route
 const route = useRoute();
-const topicId = route.fullPath.split("/").pop();
+const router = useRouter();
+const subjectId = route.fullPath.split("/").pop();
 const subjectTitle = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
 
 // Define meta info about page
@@ -93,17 +95,16 @@ const pageSize = ref();
 
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params) => {
-  const url = userToken.value
-    ? apiDocs.topics.filterTopicsByUser.replace(
-        "{userId}",
-        userToken.value?._id
-      )
-    : apiDocs.topics.filterTopics;
-
   try {
     status.value = "pending";
-    const response = await $fetch(url, {
-      params: params,
+    const response = await $fetch(apiDocs.topics.getSubjectId.replace(
+        "{subjectId}",
+        subjectId
+      ), {
+        params: params,
+      headers: {
+        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+      },
     });
 
     // Call State Define above
@@ -118,6 +119,7 @@ const fetchTopics = async (params) => {
   } catch (error) {
     status.value = "error";
     slicedData.value = [];
+    router.replace("/auth");
   }
 };
 
@@ -210,18 +212,13 @@ watch(filters, (filters) => {
   <NuxtLayout name="home-layout">
     <div class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
       <HeroSection />
-        <InputsSelection
-          @emit-level="level = $event"
-          @emit-standard="filters.level = $event"
-          @emit-subject="filters.subject = $event"
-        />
         <TabBar 
           :subject-title="subjectTitle"
-          :topic-id="topicId"
+          :topic-id="subjectId"
         />
       <div
         v-if="status === 'pending'"
-        class="flex flex-col justify-center items-center"
+        class="flex flex-col items-center justify-center"
       >
         <LoadingIndicator :is-loading="true" />
       </div>
@@ -232,13 +229,13 @@ watch(filters, (filters) => {
       <div v-else-if="status == 'success'" class="">
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
-          <div class="w-full flex flex-col">
+          <div class="flex flex-col w-full">
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class="flex flex-col items-start container">
-                <div
-                  class="!grid 3xl:grid-cols-4 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5 grid-col">
-                  <TopicCard
+              <div class="container flex flex-col items-start">
+                <customGridTwo>
+                  <template #data>
+                    <TopicCard
                     v-for="topic in slicedData"
                     :key="topic._id"
                     :topic-id="topic._id"
@@ -249,19 +246,20 @@ watch(filters, (filters) => {
                       topic.topic_duration ? topic.topic_duration : '10 min'
                     "
                     :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                    :topic-views="topic.views ? topic.views : 0"
+                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : 0"
                     :topic-level="level"
                     :topic-standard="topic.level.name"
                     :subject-name="topic.subject.name"
                     :topic-viewed="topic.isViewed"
                     :topic-progress="topic.progressPercent"
                   />
-                </div>
+                  </template>
+                </customGridTwo>
               </div>
             </div>
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div class="flex justify-center my-5">
+            <div v-if="totalPages > 1" class="flex justify-center my-5">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn
                   v-for="page in totalPages"
@@ -276,7 +274,7 @@ watch(filters, (filters) => {
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
                 <div
-                  class="flex justify-center items-center"
+                  class="flex items-center justify-center"
                   v-if="currentPage > 5"
                 >
                   <Icon
@@ -298,7 +296,7 @@ watch(filters, (filters) => {
 
                 <!-- next button -->
                 <div
-                  class="flex justify-center items-center"
+                  class="flex items-center justify-center"
                   v-if="currentPage > 4"
                 >
                   <Icon
@@ -315,99 +313,10 @@ watch(filters, (filters) => {
       </div>
 
       <!-- Even Data was not success should be handle here -->
-      <div class="w-full flex flex-col" v-else>
-        <div class="" v-if="slicedData?.length === 0">
+      <div class="flex flex-col w-full" v-else>
+        <div class="">
           Try to refresh the page, Something went Wrong
         </div>
-
-        <!-- client only  -->
-        <ClientOnly v-else>
-          <div
-            class="!grid 3xl:grid-cols-5 lg:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4 my-5"
-          >
-            <!-- container filter -->
-            <div
-              class="sticky top-0 z-10 xl:flex flex-col hidden items-start px-4 py-2 my-5 w-1/4 bg-white custom-box-shadow"
-            >
-              <h2 class="text-medium font-bold tracking-wider">Filters</h2>
-            </div>
-            <!-- Topic Cards are in Grid -->
-            <div class="flex flex-col items-start">
-             <p class="text-small font-medium">Viewing {{ topic.length }} Results</p>
-              <div
-                class="!grid 3xl:grid-cols-4 xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 my-5 grid-col"
-              >
-                <TopicCard
-                  v-for="topic in slicedData"
-                  :key="topic._id"
-                  :topic-id="topic._id"
-                  :topic-image="topic.thumbnail"
-                  :topic-title="topic.name"
-                  :topic-description="topic.descriptions"
-                  :topic-duration="
-                    topic.topic_duration ? topic.topic_duration : '10 min'
-                  "
-                  :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                  :topic-views="topic.views ? topic.views : 0"
-                  :topic-level="level"
-                  :topic-standard="topic.level.name"
-                  :subject-name="topic.subject.name"
-                  :topic-viewed="topic.isViewed"
-                  :topic-progress="topic.progressPercent"
-                />
-              </div>
-            </div>
-
-            <!-- pagination numbers based on data length greater to 9 -->
-            <div class="flex justify-center my-5">
-              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
-              </div>
-
-              <div v-else class="flex justify-center gap-2">
-                <!-- previous -->
-                <div
-                  class="flex justify-center items-center"
-                  v-if="currentPage > 5"
-                >
-                  <Icon
-                    name="iconamoon:arrow-left-2-fill"
-                    size="2rem"
-                    @click="prevPage"
-                  />
-                </div>
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
-                <!-- next button -->
-                <div
-                  class="flex justify-center items-center"
-                  v-if="currentPage > 4"
-                >
-                  <Icon
-                    name="iconamoon:arrow-right-2-fill"
-                    size="2rem"
-                    @click="nextPage"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </ClientOnly>
       </div>
     </div>
   </NuxtLayout>

@@ -10,13 +10,13 @@ import {
   isGreaterToSM,
   screenWidth,
 } from "@/utilities/controlls";
+import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
 import apiDocs from "~/utilities/api-docs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
-import VideoCard from "~/components/video/videoCard.vue";
-
 
 // Defin Route
 const route = useRoute();
+const router = useRouter();
 const subjectId = route.fullPath.split("/").pop();
 const subjectTitle = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
 
@@ -95,14 +95,16 @@ const pageSize = ref();
 
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params) => {
-
   try {
     status.value = "pending";
-    const response = await $fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
+    const response = await $fetch(apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
         "{subjectId}",
         subjectId
       ), {
-      params: params,
+        params: params,
+      headers: {
+        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+      },
     });
 
     // Call State Define above
@@ -117,6 +119,7 @@ const fetchTopics = async (params) => {
   } catch (error) {
     status.value = "error";
     slicedData.value = [];
+    router.replace("/auth");
   }
 };
 
@@ -189,28 +192,11 @@ const prevPage = () => {
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
 
-// Define Filters Reactive State
-const filters = reactive({
-  level: null,
-  subject: null,
-});
-
-const level = ref(); // Initial Level State
-// watch emits changes
-watch(filters, (filters) => {
-  fetchTopics({
-    level: filters.level.toString(),
-    subject: filters.subject.toString(),
-  });
-});
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <div :class="[
-      'wrapper-container',
-      { ' animate-pulse': isLoading }
-    ]">
+    <div class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
       <HeroSection />
         <TabBar 
           :subject-title="subjectTitle"
@@ -235,11 +221,11 @@ watch(filters, (filters) => {
               <div class="container flex flex-col items-start">
                  <customGridTwo>
                   <template #data>
-                   <!-- Video Cards are in Grid -->
-              <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
-                :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
-                :video-description="video.description" :video-subject="video.subject.name"
-                :video-type="video.videoType" />
+                    <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
+                :experiment-thumbnail="experiment.thumbnail" :experiment-title="experiment.title"
+                :experiment-description="experiment.description" :experiment-type="experiment.category"
+                :experiment-subject="experiment.subject.name" :experiment-level="experiment.level.name"
+                :experiment-name="experiment.name" :experiment-file-url="experiment.stepsFileUrl" />
                   </template>
                 </customGridTwo>
               </div>

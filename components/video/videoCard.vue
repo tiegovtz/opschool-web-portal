@@ -1,4 +1,5 @@
 <script setup>
+import { layoutEffect } from "~/utilities/controlls";
 const navigationStore = useNavigationStore()
 const props = defineProps({
     videoId: {
@@ -63,17 +64,25 @@ const setVideoToView = () => {
 <template>
     <NuxtLink
         :to="`/video/${videoStandard.toLowerCase()}/${videoSubject.toLowerCase()}/${videoName.toLowerCase()}/${videoId.toLowerCase()}`" @click="setVideoToView()"
-        class="relative flex flex-col overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group"
-        style="height: 350px;">
+        :class="[
+            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group',
+            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-[100px]'
+        ]">
+        
         <!-- Thumbnail section -->
-        <div class="relative overflow-hidden h-[280px]">
+        <div :class="[
+            'relative overflow-hidden transition-all duration-500 ease-in-out',
+            layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-[200px]'
+        ]">
             <NuxtImg :src="videoThumbnail" :alt="videoName.toLowerCase()"
-                class="object-cover w-full h-full transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-70"></div>
+                :class="[
+                    'object-cover w-full h-full transition-transform duration-500',
+                ]" />
 
+                <div class="absolute inset-0 bg-gradient-to-t from-black bg-opacity-70 to-transparent opacity-70"></div>
             <!-- Play button -->
             <div
-                class="absolute inset-0 flex items-center justify-center transition-opacity cursor-pointer opacity-90 group-hover:opacity-100">
+                class="absolute top-0 left-0 flex items-center justify-center w-full h-full transition-opacity cursor-pointer topitems-center opacity-90 group-hover:opacity-scale-100">
                 <button
                     class="flex items-center justify-center p-3 transition-transform duration-300 border rounded-full cursor-pointer bg-white/20 backdrop-blur-sm border-white/30 group-hover:scale-110"
                     aria-label="Play video">
@@ -81,9 +90,11 @@ const setVideoToView = () => {
                 </button>
             </div>
         </div>
-
         <!-- Content section -->
-        <div class="flex flex-col flex-grow p-4">
+        <div :class="[
+            'flex flex-col',
+            layoutEffect == 'grid' ? 'p-4' : 'px-2'
+        ]">
             <h3
                 class="mb-2 text-lg font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white">
                 {{ videoName }}
