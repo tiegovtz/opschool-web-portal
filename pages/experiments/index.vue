@@ -12,7 +12,8 @@ import {
   isGreaterToSM,
   screenWidth,
 } from "@/utilities/controlls";
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";
+const apiDocs = apiDocsFile.setup()
 
 const route = useRoute();
 // const router = useRouter();

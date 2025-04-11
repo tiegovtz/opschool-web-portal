@@ -12,7 +12,8 @@ import {
   screenWidth,
 } from "@/utilities/controlls";
 import InputsSelection from "~/components/home/InputsSelection.vue";
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";
+const apiDocs = apiDocsFile.setup()
 import { extractNestedKeysAndValues, filterDataByValues } from "~/utilities/filterJson";
 import customGridOne from "~/components/home/customGridOne.vue";
 import customGridTwo from "~/components/home/customGridTwo.vue";

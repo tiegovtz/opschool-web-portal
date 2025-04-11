@@ -11,7 +11,8 @@ import {
   screenWidth,
 } from "@/utilities/controlls";
 import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";
+const apiDocs = apiDocsFile.setup()
 import customGridTwo from "~/components/home/customGridTwo.vue";
 
 // Defin Route

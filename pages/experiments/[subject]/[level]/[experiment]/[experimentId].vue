@@ -1,6 +1,7 @@
 <script setup>
 import e from "express";
-import apiDocs from "~/utilities/api-docs";
+import apiDocsFile from "~/utilities/api-docs";
+const apiDocs = apiDocsFile.setup()
 
 const route = useRoute();
 // const router = useRouter();
