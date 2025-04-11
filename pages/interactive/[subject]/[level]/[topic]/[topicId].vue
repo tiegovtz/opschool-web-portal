@@ -7,7 +7,7 @@ import { currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 import apiDocs from "~/utilities/api-docs";
- 
+
 
 const route = useRoute();
 const router = useRouter();
@@ -18,8 +18,8 @@ const topicLevel = String(route.fullPath.split("/")[3]).toString().replaceAll('%
 currentTopic.value = topicTitle;
 
 // tokens
-const signInAccessToken =useCookie('signInAccessToken')
-useState("topicToView",()=> null)
+const signInAccessToken = useCookie('signInAccessToken')
+useState("topicToView", () => null)
 
 // Define meta info about page
 useHead({
@@ -101,8 +101,8 @@ const changeChapter = (action) => {
         getChapter(chapters.list[chapters.number - 1]._id);
         chapters.isAttemptingQuizes = false; //close quiz
       }
-      else 
-        if(action.toLowerCase() == 'r'){ 
+      else
+        if (action.toLowerCase() == 'r') {
           // Read again
           chapters.isAttemptingQuizes = false; //close quiz
         }
@@ -148,17 +148,17 @@ const getChapter = async (chapterId) => {
   chapters.currentChapterId = chapterId;
 
 
-  const expiredSoon = isTokenExpiringSoon(signInAccessToken.value,60)
-  if(expiredSoon){
-    await refreshToken().then((response)=>{
-      if(response){
-        signInAccessToken.value = response?.access_token	
+  const expiredSoon = isTokenExpiringSoon(signInAccessToken.value, 60)
+  if (expiredSoon) {
+    await refreshToken().then((response) => {
+      if (response) {
+        signInAccessToken.value = response?.access_token
       }
-      else{
+      else {
         router.replace('/auth')
       }
-    }).catch(()=>{
-     router.replace('/auth')
+    }).catch(() => {
+      router.replace('/auth')
     })
 
   }
@@ -181,8 +181,8 @@ const topicViewedRead = async (topicId) => {
   chapters.currentChapterId = topicId;
   await $fetch(apiDocs.topics.topicViewedRead.replaceAll('{id}', topicId), {
     headers: {
-                'Authorization': `Bearer ${signInAccessToken.value}`
-            }
+      'Authorization': `Bearer ${signInAccessToken.value}`
+    }
   })
 };
 
@@ -216,7 +216,7 @@ await useFetch(`/api/topics/${topicId}`)
     getChapter(response.data.value[0]?._id);
     // Call Submit Topic Viewed Read
 
-    if(!useState('userViewedTopic').value){
+    if (!useState('userViewedTopic').value) {
       topicViewedRead(topicId);
     }
   })
@@ -243,9 +243,9 @@ onMounted(async () => {
   const notes = document.querySelector('#notes-container');
   if (notes) {
     console.log(notes)
-     notes.addEventListener("scroll", (event) => {
-    console.log(event)
-  })
+    notes.addEventListener("scroll", (event) => {
+      console.log(event)
+    })
   }
 
 });
@@ -301,7 +301,7 @@ definePageMeta({
     <!-- quiz -->
     <!-- bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat -->
     <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
-     
+
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :change-chapter="changeChapter" :chapters-list="chapters.list?.length" :chapters-number="chapters?.number" />
@@ -335,14 +335,15 @@ definePageMeta({
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between ">
             <div class="flex items-center gap-2">
-              <NuxtLink to="/" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
+              <NuxtLink :to="{ path: '/', query: { tab: 'interactive' } }"
+                class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                 {{ topicLevel != null && topicLevel != undefined && topicLevel != "null" ? topicLevel : `Secondary` }}
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </NuxtLink>
 
-              <NuxtLink to="/" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
-                {{ topicStandard != null && topicStandard != undefined && topicStandard != "null" ? topicStandard :
-                `Form One` }}
+              <NuxtLink :to="{ path: '/', query: { tab: 'interactive' } }"
+                class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
+                {{ topicStandard != null && topicStandard != undefined && topicStandard != "null" ? topicStandard : `Form One` }}
                 <Icon name="weui:arrow-outlined" size="18" class="text-black " />
               </NuxtLink>
 
@@ -364,7 +365,7 @@ definePageMeta({
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
             <!-- Chapter Notes -->
-            <div  class="mx-auto notes md:px-4 max-w-7xl" v-mathjax
+            <div class="mx-auto notes md:px-4 max-w-7xl" v-mathjax
               v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))">
             </div>
 

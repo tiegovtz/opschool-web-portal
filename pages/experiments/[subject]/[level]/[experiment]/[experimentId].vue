@@ -133,7 +133,7 @@ definePageMeta({
                 <!-- Experiments Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink to="/"
+                        <NuxtLink :to="{path: '/',query: {tab:'experiments'}}"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                             experimentLevel != null &&
@@ -145,7 +145,7 @@ definePageMeta({
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <NuxtLink to="/"
+                        <NuxtLink :to="{path: '/',query: {tab:'experiments'}}"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                             experimentStandard != null &&
@@ -175,7 +175,7 @@ definePageMeta({
                 </div>
 
                 <!-- Description -->
-                <div class="mx-auto notes md:px-4 max-w-7xl">
+                <div class="mx-auto notes md:px-4">
                     <LoadingIndicator :is-loading="status == 'pending'" v-if="status == 'pending'" />
                     <MessagePageNotFound v-else-if="status == 'error'" message="Error while loading experiment"
                         subMessage="Make sure you are connected to the stable internet or try to reload the page" />
