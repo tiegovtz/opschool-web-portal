@@ -91,6 +91,10 @@ const apiDocs = {
     getProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
     putProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
     putProgresschapterIdVideoProgress : `${baseURL}/progress/chapters/{chapterId}/video-progress`,
+    putProgresschapterIdNotesProgress: `${baseURL}/progress/chapters/{chapterId}/notes-progress`,
+    postProgresschapterIdExperimentAttempts: `${baseURL}/progress/chapters/{chapterId}/experiment-attempts`,
+    getProgressSubjectsSubjectId: `${baseURL}/progress/subjects/{subjectId}`,
+    getProgressTopicsTopicId: `${baseURL}/progress/topics/{topicId}`,
   }
 
 }

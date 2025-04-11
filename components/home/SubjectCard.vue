@@ -29,7 +29,7 @@ const props = defineProps({
 
 // Define Emits
 const emit = defineEmits([
-  'emitSubjectName'
+  'emitSubjectName', 'emitSubjectId'
 ])
 
 // Define Function
