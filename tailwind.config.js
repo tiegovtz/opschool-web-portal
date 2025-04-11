@@ -32,11 +32,11 @@ export default {
       },
       fontSize: {
         extraLarge: "2.5rem", // 40px
-        large: "1.5rem", // 24px
-        medium: "1.1rem", // 18px
-        small: "1rem", // 16px
+        large: "1.5rem",      // 24px
+        medium: "1.1rem",     // 18px
+        small: "1rem",        // 16px
         extraSmall: "0.8rem", // 14px
-        smallest: "0.6rem", // 12px
+        smallest: "0.6rem",   // 12px
       },
     },
     screens: {
@@ -48,6 +48,7 @@ export default {
       "2xl": "1536px",
       "3xl": "2000px",
     },
+
     animation: {
       "bounce-horizontal": "bounce-horizontal 1s infinite",
     },

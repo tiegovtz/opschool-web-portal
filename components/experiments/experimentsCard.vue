@@ -1,6 +1,7 @@
 <script setup>
 import { layoutEffect } from "~/utilities/controlls";
 const navigationStore = useNavigationStore()
+
 const props = defineProps({
     experimentId: {
         type: String,
@@ -39,7 +40,6 @@ const props = defineProps({
         default: 'Physics'
     },
 
-
     // progress
     topicProgress: {
         type: Number,
@@ -49,9 +49,9 @@ const props = defineProps({
 
 })
 
-// ""
+// Define Set Experiment URL Function
 const setExperimentUrl =()=>{
-    navigationStore.setExperiment(`/experiments/${props.experimentStandard.toLowerCase()}/${props.experimentSubject.toLowerCase()}/${props.experimentName.toLowerCase()}/${props.experimentId.toLowerCase()}`)
+    navigationStore.setExperiment(`/experiments/${props.experimentStandard.toLowerCase()}/${props.experimentSubject.toLowerCase()}/${props.experimentName.toLowerCase()}/${props.experimentId.toLowerCase()}`);
     useState('experimentToView', () => (
            {
             route:`/experiments/${props.experimentStandard.toLowerCase()}/${props.experimentSubject.toLowerCase()}/${props.experimentName.toLowerCase()}/${props.experimentId.toLowerCase()}`,
@@ -63,7 +63,8 @@ const setExperimentUrl =()=>{
 
 <template>
     <NuxtLink
-        :to="`/experiments/${experimentStandard.toLowerCase()}/${experimentSubject.toLowerCase()}/${experimentName.toLowerCase()}/${experimentId.toLowerCase()}`" @click="setExperimentUrl()"
+        :to="`/experiments/${experimentStandard.toLowerCase()}/${experimentSubject.toLowerCase()}/${experimentName.toLowerCase()}/${experimentId.toLowerCase()}`" 
+        @click="setExperimentUrl()"
         :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group',
             layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-[100px]'
