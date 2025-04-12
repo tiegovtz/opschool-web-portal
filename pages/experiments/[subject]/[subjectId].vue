@@ -208,8 +208,16 @@ const { progress, isLoading } = useLoadingIndicator();
       >
         <LoadingIndicator :is-loading="true" />
       </div>
-      <!-- Status Error -->
-      <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
+     <!-- Status Error -->
+          <div
+            v-else-if="status === 'error'"
+            class="md:min-h-[342px] flex flex-col justify-center items-center">
+            <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+            <p class="text-center">
+              Oops! Something went wrong.<br />
+              Try refreshing the page or check your internet connection.
+            </p>
+          </div>
 
       <!-- Status Success -->
       <div v-else-if="status == 'success'" class="">
