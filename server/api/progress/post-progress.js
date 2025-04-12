@@ -37,7 +37,6 @@ export default defineEventHandler(async (event) => {
         }
 
     } catch (error) {
-        console.error("Error fetching topics:", error);
         return createError({
             statusCode: 500,
             message: error.message || "Internal server error",
