@@ -118,7 +118,7 @@ const liveFilledSentence = computed(() => {
         <p class="text-justify mb-4">
           <b>{{ question }}</b>
         </p>
-        <p v-if="thumbnail" class="w-full h-auto overflow-hidden rounded-md my-2 ">
+        <p v-if="thumbnail" class="w-full h-auto overflow-hidden rounded-md my-2 max-h-[400px]">
           <NuxtImg :src="thumbnail" alt="thumbnail" class="object-cover w-full h-full" />
         </p>
         <ol class="text-small w-full">
