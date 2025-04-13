@@ -10,7 +10,7 @@ const props = defineProps({
   },
   topicImage: {
     type: String,
-    required: true,
+    default: '/images/background2.webp',
   },
   topicTitle: {
     type: String,
