@@ -56,7 +56,7 @@
   }
 
   .center-height {
-    @apply min-h-[calc(100vh-138px)];
+    @apply min-h-[calc(100vh-200px)];
   }
 
   .scroll-height {

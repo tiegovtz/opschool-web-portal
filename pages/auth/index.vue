@@ -74,7 +74,7 @@ const signIn = async () => {
 
         const accessToken = useCookie('signInAccessToken', {
           httpOnly: false, // Accessible in browser
-          secure: import.meta.env.PROD, // ✅ uses Nuxt's client env detection
+          // secure: import.meta.env.PROD, // ✅ uses Nuxt's client env detection
           maxAge: 60 * 60 * 24, // 24 hours
           sameSite: 'lax',
           path: '/',
@@ -82,7 +82,7 @@ const signIn = async () => {
 
         const refreshToken = useCookie('signInRefreshToken', {
           httpOnly: false, // Accessible in browser
-          secure: import.meta.env.PROD,
+          // secure: import.meta.env.PROD,
           maxAge: 60 * 60 * 24,
           sameSite: 'lax',
           path: '/',
@@ -90,7 +90,7 @@ const signIn = async () => {
 
         const userToken = useCookie('signInUserToken', {
           httpOnly: false, // Accessible in browser
-          secure: import.meta.env.PROD,
+          // secure: import.meta.env.PROD,
           maxAge: 60 * 60 * 24,
           sameSite: 'lax',
           path: '/',
@@ -104,8 +104,6 @@ const signIn = async () => {
             }
           },
         });
-
-
 
         accessToken.value = response.data.access_token;
         refreshToken.value = response.data.refresh_token;
