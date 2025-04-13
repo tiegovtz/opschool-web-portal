@@ -198,7 +198,13 @@ watch(
           <div class="flex w-full">
             <p class="flex">{{ index + 1 }}.</p>
             <div class="pl-4 text-justify">
-              <p class="mb-2">{{ question.question }}</p>
+              <p class="mb-2">
+                {{ 
+                  question.questionType === 'drag_and_drop'
+                  ? question.question.replace(/(_\$blank)/g, '..........')
+                  : question.question 
+                }}
+            </p>
               <p
                 :class="
                   quizAttempt.clickedAnswer[index] == question.answer
@@ -206,8 +212,8 @@ watch(
                     : 'text-red-600'
                 "
               >
-                <b class="text-black">Your choice:</b>
-                {{ quizAttempt.clickedAnswer[index] }}
+                <b :class="['text-black',{'capitalize':question.questionType === 'drag_and_drop'}]">Your choice: </b>
+                <span :class="[ question.questionType === 'drag_and_drop'?'capitalize':'']">{{ quizAttempt.clickedAnswer[index].replaceAll('-', ' ,') }}</span>
 
                 <!-- Mark Tick and Wrong -->
                 <span
@@ -267,6 +273,7 @@ watch(
         :question-type="
           shuffleQuestions[quizAttempt.currentQuestion].questionType
         "
+        :thumbnail="shuffleQuestions[quizAttempt.currentQuestion].thumbnail"
         :true-answer="shuffleQuestions[quizAttempt.currentQuestion].answer"
         :choices="shuffleQuestions[quizAttempt.currentQuestion].choices"
         :question="shuffleQuestions[quizAttempt.currentQuestion].question"

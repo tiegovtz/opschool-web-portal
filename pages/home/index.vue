@@ -292,6 +292,7 @@ watch(
   (activeTab) => {
     if (activeTab) {
       if (activeTab.toLowerCase() === "home") {
+        subjectId.value = "";
         fetchData({});
       } else if (activeTab.toLowerCase() === "interactive books") {
         fetchData({});

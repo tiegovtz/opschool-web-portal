@@ -433,6 +433,7 @@ watch(scrollPercent, async (newPercent) => {
 definePageMeta({
   middleware: "auth",
 });
+
 </script>
 
 <template>

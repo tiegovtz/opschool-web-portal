@@ -1,11 +1,68 @@
 <script setup>
-// Define State
+import { reactive, ref, computed, nextTick, toRaw } from 'vue';
+import debounce from 'lodash/debounce';
+
 const dropDownMenu = reactive({
-  isOpen: false,
-  currentIndex: null,
+  openMenus: [0, 1, 2],
 });
 
-// Define Filters with visibility scope
+const selectedFilters = reactive({});
+
+const emit = defineEmits(["emitUpdatefilterName", "emitUpdateFilterValue"]);
+
+const props = defineProps({
+  filterName: String,
+  filterValue: Array,
+  activeTab: String,
+});
+
+const setMenuOpen = (index) => {
+  const i = dropDownMenu.openMenus.indexOf(index);
+  if (i > -1) {
+    dropDownMenu.openMenus.splice(i, 1);
+  } else {
+    dropDownMenu.openMenus.push(index);
+  }
+};
+
+const resetFilters = () => {
+  Object.keys(selectedFilters).forEach((key) => delete selectedFilters[key]);
+  emitFilterPayload();
+};
+
+const selectLevel = async (levelName) => {
+  selectedFilters.level = levelName;
+  selectedFilters.class = [];
+  selectedFilters.subject = [];
+  await nextTick();
+  emitFilterPayload();
+};
+
+const toggleCheckbox = (key, value) => {
+  if (!selectedFilters[key]) selectedFilters[key] = [];
+  const index = selectedFilters[key].indexOf(value);
+  if (index > -1) {
+    selectedFilters[key].splice(index, 1);
+    if (selectedFilters[key].length === 0) delete selectedFilters[key];
+  } else {
+    selectedFilters[key].push(value);
+  }
+  emitFilterPayload();
+};
+
+const emitFilterPayload = debounce(() => {
+  const rawFilters = toRaw(selectedFilters);
+  const queryArray = [];
+  for (const [key, val] of Object.entries(rawFilters)) {
+    if (Array.isArray(val)) {
+      val.forEach((v) => queryArray.push(`${key}=${v}`));
+    } else {
+      queryArray.push(`${key}=${val}`);
+    }
+  }
+  emit("emitUpdateFilterValue", queryArray);
+}, 100);
+
 const filterNameGroup = [
   {
     name: "Level",
@@ -20,10 +77,69 @@ const filterNameGroup = [
     ],
   },
   {
+    name: "Class",
+    visibility: "all",
+    inputType: "checkbox",
+    filterGroup: [
+      {
+        level: "Pre primary School",
+        classes: ["pre primary 1", "pre primary 2", "pre primary 3"],
+      },
+      {
+        level: "Primary School",
+        classes: [
+          "standard 1",
+          "standard 2",
+          "standard 3",
+          "standard 4",
+          "standard 5",
+          "standard 6",
+        ],
+      },
+      {
+        level: "Lower Secondary School",
+        classes: ["form 1", "form 2", "form 3", "form 4"],
+      },
+      {
+        level: "Upper Secondary School",
+        classes: ["form 5", "form 6"],
+      },
+      {
+        level: "Teacher Education",
+        classes: ["level 1", "level 2", "level 3", "level 4"],
+      },
+    ],
+  },
+  {
     name: "Subject",
     visibility: "all",
-    inputType: "radio",
-    filterGroup: [{ name: "Physics" }, { name: "Chemistry" }],
+    inputType: "checkbox",
+    filterGroup: [
+      { level: "Pre primary School", list: ["counting", "writting"] },
+      {
+        level: "Primary School",
+        list: ["kiswahili", "mathematics", "science", "social studies"],
+      },
+      {
+        level: "Lower Secondary School",
+        list: [
+          "kiswahili",
+          "mathematics",
+          "physics",
+          "chemistry",
+          "biology",
+          "geography",
+          "history",
+          "English",
+          "French",
+          "Food Nutrition",
+        ],
+      },
+      {
+        level: "Upper Secondary School",
+        list: ["kiswahili", "mathematics", "physics", "chemistry", "biology"],
+      },
+    ],
   },
   {
     name: "Category",
@@ -32,32 +148,14 @@ const filterNameGroup = [
     filterGroup: [{ name: "General" }, { name: "Vocational" }],
   },
   {
-    name: "Class",
-    visibility: "all",
-    inputType: "radio",
-    filterGroup: [
-      { name: "Form one" },
-      { name: "Form Two" },
-      { name: "Form Three" },
-      { name: "Form Four" },
-    ],
-  },
-  {
-    name: "Format",
-    visibility: "all",
-    inputType: "radio",
-    filterGroup: [
-      { name: "Interactive Books" },
-      { name: "Experiments" },
-      { name: "Videos" },
-      { name: "Audio" },
-    ],
-  },
-  {
     name: "Language",
     visibility: "all",
     inputType: "checkbox",
-    filterGroup: [{ name: "English" }, { name: "French" }, { name: "Swahili" }],
+    filterGroup: [
+      { name: "English" },
+      { name: "French" },
+      { name: "Swahili" },
+    ],
   },
   {
     name: "Skills",
@@ -71,117 +169,135 @@ const filterNameGroup = [
   },
 ];
 
-// Toggle dropdown
-const toggleMenu = (index) => {
-  if (dropDownMenu.currentIndex === index) {
-    dropDownMenu.isOpen = !dropDownMenu.isOpen;
-  } else {
-    dropDownMenu.currentIndex = index;
-    dropDownMenu.isOpen = true;
-  }
-};
-
-// Define Emits
-const emit = defineEmits(["emitUpdatefilterName", "emitUpdateFilterValue"]);
-
-// Define Props
-defineProps({
-  filterName: {
-    type: String,
-  },
-  filterValue: Array,
-  activeTab: String,
+const visibleFilters = computed(() => {
+  return filterNameGroup.filter(
+    (filter) => filter.visibility === "all" || filter.visibility === props.activeTab
+  );
 });
-
-//
-const checkbox = (event) => {
-  const container = event.currentTarget;
-  const input =
-    container.querySelector('input[type="checkbox"]') ??
-    container.querySelector('input[type="radio"]');
-  if (input) {
-    input.checked = !input.checked;
-
-    input.checked
-      ? emit("emitUpdateFilterValue", input.value)
-      : emit("emitUpdateFilterValue", null);
-  }
-};
 </script>
+
 
 <template>
   <form
-    class="flex flex-col w-full bg-white cursor-pointer"
-    @reset="emit('emitUpdateFilterValue', null)"
+    class="flex flex-col w-full bg-white cursor-pointer divide-y divide-gray-200"
+    @reset="resetFilters"
   >
-    <!-- Header and Reset Button -->
-    <div class="flex justify-between w-full px-3 py-2">
-      <h2 class="font-bold tracking-wider text-medium">Filters</h2>
-      <button type="reset" class="underline transition-all duration-500 ease-in-out hover:text-deepBlue text-oceanBlue">
-        Reset
+    <!-- Filter legend and reset button -->
+    <div class="flex items-center justify-between p-4 bg-gray-50 border-b">
+      <h2 class="text-lg font-bold text-gray-700">Filter</h2>
+      <button
+        type="reset"
+        class="px-3 py-1 text-sm text-oceanBlue border border-oceanBlue rounded-md hover:bg-deepBlue hover:text-white hover:border-deepBlue transition-all duration-500 ease-in-out"
+      >
+        Reset Filters
       </button>
     </div>
-    <!-- Dropdown Header -->
+
     <div
-      v-for="(filters, index) in filterNameGroup"
+      v-for="(filter, index) in visibleFilters"
       :key="index"
-      class="flex flex-col items-center w-full"
+      class="p-4"
     >
-      <!-- Dropdown Header -->
-      <div
-        :class="[
-          'flex justify-between items-center border-b border-deepBlue border-opacity-10 w-full px-5 py-2',
-          {
-            '!border-b-0':
-              dropDownMenu.isOpen && dropDownMenu.currentIndex === index,
-          },
-        ]"
-        @click="toggleMenu(index)"
-        v-if="
-          filters.visibility === 'all' ||
-          filters.visibility == activeTab.toLowerCase()
-        "
-      >
-        <h2 class="font-medium tracking-wider text-medium">
-          {{ filters.name }}
-        </h2>
-        <Icon
-          :name="
-            dropDownMenu.isOpen && dropDownMenu.currentIndex === index
-              ? 'lets-icons:remove-duotone'
-              : 'lets-icons:add-duotone'
-          "
-          size="24"
-          class="text-deepBlue"
-        />
+      <div @click="setMenuOpen(index)" class="flex items-center justify-between">
+        <h3 class="font-semibold text-lg">{{ filter.name }}</h3>
+        <span>
+            <Icon
+            :name="dropDownMenu.openMenus.includes(index) ? 
+            'lets-icons:remove-duotone' : 
+            'lets-icons:add-duotone'"
+            size="1.2rem" class="text-deepBlue"/>
+        </span>
       </div>
 
-      <!-- Dropdown Content -->
-      <div
-        :class="[
-          'flex flex-col overflow-hidden justify-between transition-all duration-500 ease-in-out items-center w-full px-5',
-          dropDownMenu.isOpen && dropDownMenu.currentIndex === index
-            ? 'h-auto'
-            : 'h-0 p-0',
-        ]"
-      >
-        <div
-          v-for="(filter, i) in filters.filterGroup"
-          :key="i"
-          @click="checkbox"
-          class="flex items-center w-full gap-4 pl-6 border-b cursor-pointer border-deepBlue border-opacity-10"
-        >
-          <!-- <Icon name="gridicons:add" size="20" class="text-normalGreener" /> -->
-          <input
-            :type="filters.inputType"
-            :name="filters.name.toLowerCase().replaceAll(' ', '-')"
-            :id="filter.name.replaceAll(' ', '-').toLowerCase()"
-            :value="filter.name"
-            :checked="filters.visibility == activeTab.toLowerCase()"
-          />
-          {{ filter.name }}
+      <transition name="fade">
+        <div v-if="dropDownMenu.openMenus.includes(index)" class="mt-2 space-y-2">
+          <!-- LEVEL -->
+          <div v-if="filter.name === 'Level'">
+            <label
+              v-for="option in filter.filterGroup"
+              :key="option.name"
+              class="flex items-center gap-2"
+            >
+              <input
+                type="radio"
+                :value="option.name"
+                name="level"
+                @change="selectLevel(option.name)"
+                :checked="selectedFilters.level === option.name"
+              />
+              {{ option.name }}
+            </label>
+          </div>
+
+          <!-- CLASS -->
+          <div v-else-if="filter.name === 'Class'">
+            <div v-if="!selectedFilters.level" class="text-sm text-red-500">
+              Please select a level first.
+            </div>
+            <div v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
+              <div v-if="group.level.toLowerCase() === selectedFilters.level?.toLowerCase()">
+                <label
+                  v-for="className in group.classes"
+                  :key="className"
+                  class="flex items-center gap-2"
+                  @click.prevent="toggleCheckbox('class', className)"
+                >
+                  <input type="checkbox" :value="className" :checked="selectedFilters.class?.includes(className)" />
+                  {{ className }}
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBJECT -->
+          <div v-else-if="filter.name === 'Subject'">
+            <div v-if="!selectedFilters.level" class="text-sm text-red-500">
+              Please select a level first.
+            </div>
+            <div v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
+              <div v-if="group.level === selectedFilters.level">
+                <label
+                  v-for="subject in group.list"
+                  :key="subject"
+                  class="flex items-center gap-2"
+                  @click.prevent="toggleCheckbox('subject', subject)"
+                >
+                  <input type="checkbox" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />
+                  {{ subject }}
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- GENERAL FILTER (Category, Language, Skills) -->
+          <div v-else>
+            <label
+              v-for="option in filter.filterGroup"
+              :key="option.name"
+              class="flex items-center gap-2"
+              @click.prevent="toggleCheckbox(filter.name.toLowerCase(), option.name)"
+            >
+              <input
+                :type="filter.inputType"
+                :value="option.name"
+                :checked="selectedFilters[filter.name.toLowerCase()]?.includes(option.name)"
+              />
+              {{ option.name }}
+            </label>
+          </div>
         </div>
-      </div>
+      </transition>
     </div>
   </form>
 </template>
+
+
+<style scoped>
+.fade-enter-active, .fade-leave-active {
+  transition: all 0.2s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+</style>
