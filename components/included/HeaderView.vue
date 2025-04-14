@@ -28,12 +28,9 @@ const dropDown = () => {
   <header class="relative shadow-sm bg-[url('/public/flag/tenor.gif')] bg-cover bg-center bg-no-repeat">
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->
-      <div class="relative w-full h-24 pt-1">
-        <!-- <div
-          class="absolute top-0 left-0 z-0 w-full h-full bg-white bg-opacity-75"
-        ></div> -->
+      <div class="relative w-full h-24 pt-1 flex justify-center">
         <div class="flex items-center justify-between w-full h-full wrapper-container">
-          <NuxtLink to="/" class="flex items-center justify-center h-full cursor-pointer w-18">
+          <NuxtLink to="/" class="flex items-center justify-center h-full cursor-pointer max-w-[64px]">
             <NuxtImg src="/logo/emblem.webp" alt="EMBLEM" class="object-contain w-full h-full" />
           </NuxtLink>
           <div class="flex flex-col items-center h-full gap-1 text-center uppercase font-tahomabd">

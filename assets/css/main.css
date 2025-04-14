@@ -56,7 +56,7 @@
   }
 
   .center-height {
-    @apply min-h-[calc(100vh-138px)];
+    @apply min-h-[calc(100vh-200px)];
   }
 
   .scroll-height {
@@ -124,7 +124,6 @@
   font-size: var(--text-small) !important;
 }
 .notes p {
-  margin: 10px 0;
   padding: 10px 0;
 }
 
@@ -264,6 +263,10 @@ p:only-child > img:only-child {
   align-items: center !important;
   width: max-content !important;
   border-radius: 0 0 12px 12px !important;
+}
+
+.notes div > table > tbody > tr > td > table span {
+  padding:10px !important;
 }
 
 /* title style  font tahoma important*/

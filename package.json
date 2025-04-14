@@ -19,6 +19,7 @@
     "axios": "^1.8.2",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
+    "lodash": "^4.17.21",
     "mathjax": "^3.2.2",
     "nuxt": "^3.15.4",
     "nuxt-security": "^2.2.0",
@@ -30,7 +31,8 @@
     "tailwind-scrollbar": "^3.1.0",
     "vue": "latest",
     "vue-pdf-embed": "^2.1.2",
-    "vue-router": "latest"
+    "vue-router": "latest",
+    "vuedraggable": "^2.24.3"
   },
   "devDependencies": {
     "@iconify-json/mdi": "^1.2.3",

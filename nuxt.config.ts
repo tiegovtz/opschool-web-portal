@@ -17,6 +17,7 @@ export default defineNuxtConfig({
     { src: "~/plugins/mathjax-directive.client.js", mode: "client" },
     { src: "~/plugins/dom-guard.client.ts", mode: "client" },
     { src: "~/plugins/harden-ui.client.ts", mode: "client" },
+    {src: '~/plugins/init-chapter-progress.client.js', mode: 'client'},
   ],
   modules: [
     "@nuxtjs/google-fonts",
