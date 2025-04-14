@@ -434,113 +434,6 @@ definePageMeta({
   middleware: "auth",
 });
 
-const questions = [
-  {
-    _id: "q1",
-    isActive: true,
-    isDeleted: false,
-    thumbnail: "",
-    topic: "introduction_to_physics",
-    question: "Measurement of _$blank, _$blank and _$blank are essential in physics experiments.",
-    answer: "length-mass-time",
-    blanks: 3,
-    chapter: "form_one_physics",
-    questionType: "drag_and_drop",
-    choices: ["length", "mass", "time", "temperature", "volume", "pressure"],
-    createdAt: "2025-04-13T00:00:00.000Z",
-    updatedAt: "2025-04-13T00:00:00.000Z",
-    __v: 0
-  },
-  {
-    _id: "q2",
-    isActive: true,
-    isDeleted: false,
-    thumbnail: "",
-    topic: "introduction_to_physics",
-    question: "Physics helps us understand _$blank such as force, energy and _$blank.",
-    answer: "concepts-motion",
-    blanks: 2,
-    chapter: "form_one_physics",
-    questionType: "drag_and_drop",
-    choices: ["concepts", "biology", "motion", "life"],
-    createdAt: "2025-04-13T00:00:00.000Z",
-    updatedAt: "2025-04-13T00:00:00.000Z",
-    __v: 0
-  },
-  {
-    _id: "q3",
-    isActive: true,
-    isDeleted: false,
-    thumbnail: "",
-    topic: "introduction_to_physics",
-    question: "A good physicist must be _$blank, _$blank and always curious.",
-    answer: "observant-accurate",
-    blanks: 2,
-    chapter: "form_one_physics",
-    questionType: "drag_and_drop",
-    choices: ["observant", "lazy", "accurate", "impatient", "confused"],
-    createdAt: "2025-04-13T00:00:00.000Z",
-    updatedAt: "2025-04-13T00:00:00.000Z",
-    __v: 0
-  },
-  {
-    _id: "q4",
-    isActive: true,
-    isDeleted: false,
-    thumbnail: "",
-    topic: "introduction_to_physics",
-    question: "The study of _$blank and _$blank is a key part of physics.",
-    answer: "matter-energy",
-    blanks: 2,
-    chapter: "form_one_physics",
-    questionType: "drag_and_drop",
-    choices: ["matter", "energy", "trees", "machines", "sounds"],
-    createdAt: "2025-04-13T00:00:00.000Z",
-    updatedAt: "2025-04-13T00:00:00.000Z",
-    __v: 0
-  },
-  {
-    _id: "q5",
-    isActive: true,
-    isDeleted: false,
-    thumbnail: "",
-    topic: "introduction_to_physics",
-    question: "Which instrument is used to measure temperature?",
-    answer: "Thermometer",
-    chapter: "form_one_physics",
-    questionType: "multiple_choice",
-    choices: [
-      "Barometer",
-      "Thermometer",
-      "Stopwatch",
-      "Voltmeter"
-    ],
-    createdAt: "2025-04-13T00:00:00.000Z",
-    updatedAt: "2025-04-13T00:00:00.000Z",
-    __v: 0
-  },
-  {
-    _id: "q6",
-    isActive: true,
-    isDeleted: false,
-    thumbnail: "",
-    topic: "introduction_to_physics",
-    question: "Which branch of physics deals with motion and forces?",
-    answer: "Mechanics",
-    chapter: "form_one_physics",
-    questionType: "multiple_choice",
-    choices: [
-      "Thermodynamics",
-      "Mechanics",
-      "Optics",
-      "Electromagnetism"
-    ],
-    createdAt: "2025-04-13T00:00:00.000Z",
-    updatedAt: "2025-04-13T00:00:00.000Z",
-    __v: 0
-  }
-];
-
 </script>
 
 <template>
@@ -565,7 +458,7 @@ const questions = [
     <!-- bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat -->
     <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
       <!-- Chapter Questions -->
-      <QuestionsContainer v-mathjax :questions="chapters.currentChapterId =='67d6a82553661731a20dc48e' ? questions : chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
+      <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :change-chapter="changeChapter" :chapters-list="chapters.list?.length" :chapters-number="chapters?.number" />
     </div>
     <section v-else class="relative inline-flex w-full h-full overflow-hidden center-height">
