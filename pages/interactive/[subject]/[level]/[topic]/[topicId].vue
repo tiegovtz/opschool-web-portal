@@ -117,6 +117,7 @@ const changeChapter = (action) => {
     } else if (action.toLowerCase() == "r") {
       // Read again
       chapters.isAttemptingQuizes = false; //close quiz
+      setPicCenter()
     }
     // Scroll Up when chapter changed
     window.scrollTo({
@@ -442,7 +443,7 @@ definePageMeta({
     <section v-if="experimrntUrl" class="relative w-full center-height" id="experiment-container" v-trusted>
       <div
         class="absolute top-0 right-0 flex items-center justify-center w-10 h-10 p-2 bg-red-500 rounded-full cursor-pointer"
-        @click="experimrntUrl = null">
+        @click="experimrntUrl = null;setPicCenter()">
         <Icon name="formkit:close" size="24" class="font-bold text-white" />
       </div>
       <iframe :src="experimrntUrl" frameborder="0" class="h-full w-full center-height rounded-md !bg-white"></iframe>
