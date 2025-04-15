@@ -32,4 +32,4 @@ const videoParser = (query: string): string => {
 //     });
 // }
 
-// export default videoParser;
+export default videoParser;
