@@ -190,7 +190,7 @@ watch(
       <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
         <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
       </NuxtLink>
-      <form @submit.prevent="signIn" v-if="userSignIn.controller.attemps < 3"
+      <form @submit.prevent="signIn" v-if="userSignIn.controller.attemps < 3" v-trusted
         class="px-4 overflow-hidden text-textGray text-extraSmall">
         <!-- Username Teacher and Stackeholder and Student -->
         <div
@@ -211,7 +211,7 @@ watch(
           </div>
 
           <!-- Username error message -->
-          <small v-if="userSignIn.controller.errors.username" :class="[
+          <small v-if="userSignIn.controller.errors.username" v-trusted :class="[
                 'w-full text-red-500 text-smallest',
                 { 'mt-1': userSignIn.type.trim().toLowerCase() === 'student' },
                 {
@@ -245,7 +245,7 @@ watch(
           </div>
 
           <!-- Password error message -->
-          <small v-if="userSignIn.controller.errors.password" class="w-full text-red-500 text-smallest">
+          <small v-if="userSignIn.controller.errors.password" v-trusted class="w-full text-red-500 text-smallest">
             {{ userSignIn.controller.errors.password }}
           </small>
         </div>
@@ -265,7 +265,7 @@ watch(
         <button type="submit" :disabled="isDisable"
           class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
           Sign In
-          <Icon name="eos-icons:loading" class="text-white" size="20" v-if="isDisable" />
+          <Icon name="eos-icons:loading" class="text-white" size="20" v-trusted v-if="isDisable" />
         </button>
 
         <!-- sign up -->
@@ -277,7 +277,7 @@ watch(
           </NuxtLink>
         </div>
       </form>
-      <div v-else class="flex flex-col items-center justify-center w-full gap-2">
+      <div v-trusted v-else class="flex flex-col items-center justify-center w-full gap-2">
         <div class="py-3">
           You have attempted to sign in
           <span class="text-oceanBlue">{{
