@@ -136,7 +136,7 @@ const toggleConfirmPassword = () => {
 </script>
 
 <template>
-    <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b">
+    <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b" v-trusted>
         <!-- Message Component -->
         <MessageComponent :message="userResetPassword.controller.feedback"
             :position="userResetPassword.controller.feedback ? true : false"

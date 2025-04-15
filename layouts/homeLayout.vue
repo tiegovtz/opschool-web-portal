@@ -1,5 +1,12 @@
+
+<script setup>
+import FooterView from '@/components/included/FooterView.vue'
+import HeaderView from '@/components/included/HeaderView.vue'
+</script>
+
+
 <template>
-  <div class="bg-white">
+<div class="bg-white" v-trusted>
     <!-- Header -->
     <HeaderView />
 
@@ -14,9 +21,3 @@
     <FooterView />
   </div>
 </template>
-
-<script setup>
-import FooterView from '@/components/included/FooterView.vue'
-import HeaderView from '~/components/included/HeaderView.vue'
-
-</script>

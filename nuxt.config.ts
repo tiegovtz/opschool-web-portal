@@ -13,11 +13,13 @@ export default defineNuxtConfig({
   },
 
   plugins: [
+    { src: '~/plugins/trusted-directive.ts'},
     { src: "~/plugins/mathjax.client.js", mode: "client" },
     { src: "~/plugins/mathjax-directive.client.js", mode: "client" },
     { src: "~/plugins/dom-guard.client.ts", mode: "client" },
     { src: "~/plugins/harden-ui.client.ts", mode: "client" },
-    {src: '~/plugins/init-chapter-progress.client.js', mode: 'client'},
+    { src: '~/plugins/init-chapter-progress.client.js', mode: 'client' },
+    { src: '~/plugins/iconify.ts', mode: 'client' },
   ],
   modules: [
     "@nuxtjs/google-fonts",
@@ -50,6 +52,17 @@ export default defineNuxtConfig({
     public: {
       BASE_API_URL:
         process.env.NUXT_API_BASE_URL || "https://apitie.ekima.africa/v1",
+      cspScriptSrc: process.env.NUXT_CSP_SCRIPT_SRC,
+      cspStyleSrc: process.env.NUXT_CSP_STYLE_SRC,
+      cspImgSrc: process.env.NUXT_CSP_IMG_SRC,
+      cspObjectSrc: process.env.NUXT_CSP_OBJECT_SRC,
+      cspFormAction: process.env.NUXT_CSP_FORM_ACTION,
+      cspFrameAncestors: process.env.NUXT_CSP_FRAME_ANCESTORS,
+      cspFontSrc: process.env.NUXT_CSP_FONT_SRC,
+      cspBaseUri: process.env.NUXT_CSP_BASE_URI,
+      cspConnectSrc: process.env.NUXT_CSP_CONNECT_SRC,
+      cspUpgradeInsecureRequests: process.env.NUXT_CSP_UPGRADE_INSECURE_REQUESTS === "true",
+
     },
   },
 
@@ -120,7 +133,7 @@ export default defineNuxtConfig({
       xDownloadOptions: "noopen",
       xFrameOptions: "SAMEORIGIN",
       xPermittedCrossDomainPolicies: "none",
-      xXSSProtection: "0",
+      xXSSProtection: "X-XSS-Protection: 1; mode=block",
     },
 
     requestSizeLimiter: {
@@ -130,16 +143,6 @@ export default defineNuxtConfig({
       maxUploadFileRequestInBytes: parseInt(
         process.env.NUXT_MAX_UPLOAD_SIZE || "8000000"
       ),
-      throwError: true,
-    },
-
-    rateLimiter: {
-      tokensPerInterval: parseInt(
-        process.env.NUXT_RATE_LIMIT_TOKENS_PER_INTERVAL || "150"
-      ),
-      interval: parseInt(process.env.NUXT_RATE_LIMIT_INTERVAL || "300000"),
-      headers: false,
-      driver: { name: "lruCache" },
       throwError: true,
     },
 

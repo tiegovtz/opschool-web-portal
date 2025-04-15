@@ -1,5 +1,5 @@
 <template>
-    <div class="flex items-center justify-center min-h-screen bg-gray-100">
+    <div class="flex items-center justify-center min-h-screen bg-gray-100" v-trusted>
         <div class="bg-white p-8 w-72 rounded-lg shadow-lg text-center">
             <NuxtImg src="/logo/logo_tie.webp" class="w-24 h-24 mx-auto mb-6" alt="logo" />
             <h1 class="text-4xl font-bold text-red-500 mb-4">404</h1>

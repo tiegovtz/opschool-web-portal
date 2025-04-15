@@ -25,6 +25,8 @@ const _BASE_API_URL = ref()
 
 const layoutEffect = ref('grid');
 
+const isVtrusted = ref(false);
+
 export {
     isGreaterToXL,
     isGreaterToLG,
@@ -38,4 +40,5 @@ export {
     _BASE_API_URL,
     currentTopic,
     layoutEffect,
+    isVtrusted
 }

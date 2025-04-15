@@ -1,7 +1,7 @@
 <template>
     <NuxtLayout name="home-layout">
       <div class="container flex items-center justify-center w-full center-height">
-        <EbookFlipBook class="w-full h-full"/>
+        <EbookFlipBook class="w-full h-full" v-trusted/>
       </div>
     </NuxtLayout>
   </template>

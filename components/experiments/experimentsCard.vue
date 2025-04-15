@@ -65,6 +65,7 @@ const setExperimentUrl =()=>{
     <NuxtLink
         :to="`/experiments/${experimentStandard.toLowerCase()}/${experimentSubject.toLowerCase()}/${experimentName.toLowerCase()}/${experimentId.toLowerCase()}`" 
         @click="setExperimentUrl()"
+        v-trusted
         :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group',
             layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-[100px]'

@@ -7,6 +7,12 @@
 @tailwind utilities;
 
 
+body {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+
 /* @font-tahomabd declarations */
 @font-face {
   font-family: "tahomabd";
@@ -25,7 +31,7 @@
 
 @layer base {
   html {
-    @apply box-border p-0 m-0 overflow-auto leading-relaxed bg-white select-none scroll-smooth min-h-dvh;
+    @apply box-border p-0 m-0 overflow-auto leading-relaxed bg-white !select-none scroll-smooth min-h-dvh;
   }
 
   .title {

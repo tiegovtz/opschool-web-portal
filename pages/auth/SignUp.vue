@@ -549,7 +549,7 @@ const switchTab = (tabName) => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b">
+  <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b" v-trusted>
 
     <!-- Message Component -->
     <MessageComponent :message="usersignUp.controller.feedback"

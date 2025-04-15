@@ -197,21 +197,21 @@ const { progress, isLoading } = useLoadingIndicator();
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
+    <div class="wrapper-container" :class="{ ' animate-pulse': isLoading }" >
       <HeroSection />
         <TabBar 
           :subject-title="subjectTitle"
           :topic-id="subjectId"
         />
       <div
-        v-if="status === 'pending'"
+        v-if="status === 'pending'" v-trusted
         class="flex flex-col items-center justify-center"
       >
         <LoadingIndicator :is-loading="true" />
       </div>
      <!-- Status Error -->
           <div
-            v-else-if="status === 'error'"
+            v-else-if="status === 'error'" v-trusted
             class="md:min-h-[342px] flex flex-col justify-center items-center">
             <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
             <p class="text-center">
@@ -221,9 +221,9 @@ const { progress, isLoading } = useLoadingIndicator();
           </div>
 
       <!-- Status Success -->
-      <div v-else-if="status == 'success'" class="">
+      <div v-else-if="status == 'success'" class="" v-trusted>
         <!-- client only -->
-        <ClientOnly v-if="slicedData?.length > 0">
+        <ClientOnly v-if="slicedData?.length > 0" v-trusted>
           <div class="flex flex-col w-full">
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
@@ -241,7 +241,7 @@ const { progress, isLoading } = useLoadingIndicator();
             </div>
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-5">
+            <div v-if="totalPages > 1" class="flex justify-center my-5" v-trusted>
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn
                   v-for="page in totalPages"
@@ -295,7 +295,7 @@ const { progress, isLoading } = useLoadingIndicator();
       </div>
 
       <!-- Even Data was not success should be handle here -->
-      <div class="flex flex-col w-full" v-else>
+      <div class="flex flex-col w-full" v-else v-trusted>
         <div class="">
           Try to refresh the page, Something went Wrong
         </div>

@@ -159,6 +159,10 @@ const liveFilledSentence = computed(() => {
             </span>
           </template>
         </p>
+
+        <p v-if="thumbnail" class="w-full h-auto overflow-hidden rounded-md my-2 max-h-[400px]">
+          <NuxtImg :src="thumbnail" alt="thumbnail" class="object-cover w-full h-full" />
+        </p>
       </div>
 
       <!-- Choices to Drag -->

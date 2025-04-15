@@ -60,6 +60,7 @@ const setSubjectToView = () => {
       'relative flex  w-full  overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue',
       layoutEffect == 'grid' ? 'flex-col pb-4' : 'flex-row'
     ]"
+    v-trusted
     @click="setSubjectToView()">
     <!-- image -->
     <div :class="[
@@ -101,6 +102,7 @@ const setSubjectToView = () => {
   <NuxtLink
     v-else
     :to="`/interactive/${subjectName.toLowerCase()}/${subjectId.toLowerCase()}`"
+    v-trusted
     @click="setSubjectToView()"
     :class="[
       'relative flex  w-full  overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue',

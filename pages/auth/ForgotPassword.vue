@@ -97,7 +97,7 @@ const forgotPassword = async () => {
 </script>
 
 <template>
-    <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b">
+    <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b" v-trusted>
         <!-- Message Component -->
         <MessageComponent :message="userForgotPassword.controller.feedback"
             :position="userForgotPassword.controller.feedback ? true : false"

@@ -25,8 +25,8 @@ const swiper = useSwiper(containerRef, {
 
 <template>
   <ClientOnly>
-    <swiper-container ref="containerRef" :init="false" class="w-full h-full max-h-[550px] overflow-hidden">
-      <swiper-slide v-for="(slide, idx) in slides" :key="idx">
+    <swiper-container v-trusted ref="containerRef" :init="false" class="w-full h-full max-h-[550px] overflow-hidden">
+      <swiper-slide  v-for="(slide, idx) in slides" :key="idx">
         <!-- Slide {{ idx + 1 }} -->
         <NuxtImg :src="`${slide}`" alt="Slider Image" class="object-cover w-full h-full rounded-md" />
       </swiper-slide>

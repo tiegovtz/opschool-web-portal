@@ -64,6 +64,7 @@ const setVideoToView = () => {
 <template>
     <NuxtLink
         :to="`/video/${videoStandard.toLowerCase()}/${videoSubject.toLowerCase()}/${videoName.toLowerCase()}/${videoId.toLowerCase()}`" @click="setVideoToView()"
+        v-trusted
         :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group',
             layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-[100px]'

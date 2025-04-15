@@ -4,7 +4,12 @@ import TabBar from '@/components/home/TabBar.vue'
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import { ref, computed, onMounted, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
-import apiDocsFile from "~/utilities/api-docs";;
+import apiDocsFile from "~/utilities/api-docs";
+import VideoCard from '@/components/video/videoCard.vue'
+import InputsSelection from '~/components/home/InputsSelection.vue';
+import CustomGridTwo from '~/components/home/customGridTwo.vue';
+
+
 const apiDocs = apiDocsFile.setup()
 useHead({
   title: "TIE - Video Resource",
@@ -161,25 +166,25 @@ const { progress, isLoading } = useLoadingIndicator()
     ]">
 
       <!-- User Token Available -->
-      <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
+      <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4" v-trusted>
         <HomeSearchbar appearance="rounded" />
         <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
       </div>
 
       <!-- User Token Not Available -->
-      <div v-else>
+      <div v-else v-trusted>
         <HeroSection />
         <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
           @emit-subject="filters.subject = $event" />
         <TabBar />
       </div>
 
-      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
+      <div v-if="status === 'pending'" v-trusted class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />
       </div>
      <!-- Status Error -->
           <div
-            v-else-if="status === 'error'"
+            v-else-if="status === 'error' " v-trusted
             class="md:min-h-[342px] flex flex-col justify-center items-center">
             <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
             <p class="text-center">
@@ -188,11 +193,11 @@ const { progress, isLoading } = useLoadingIndicator()
             </p>
           </div>
       <!-- Status Success -->
-      <div v-else-if="status == 'success'">
+      <div v-else-if="status == 'success'" v-trusted>
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
-          <div class="flex flex-col w-full">
-            <customGridTwo>
+          <div class="flex flex-col w-full" v-trusted>
+            <customGridTwo v-trusted>
               <template #data>
                 <!-- Video Cards are in Grid -->
                 <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
@@ -203,13 +208,13 @@ const { progress, isLoading } = useLoadingIndicator()
             </customGridTwo>
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-10">
+            <div v-if="totalPages > 1" class="flex justify-center my-10" v-trusted>
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
                   @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
               </div>
-              <div v-else class="flex justify-center gap-2">
+              <div v-else class="flex justify-center gap-2" v-trusted>
                 <!-- previous -->
                 <div class="flex items-center justify-center" v-if="currentPage > 5">
                   <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
@@ -227,11 +232,11 @@ const { progress, isLoading } = useLoadingIndicator()
             </div>
           </div>
         </ClientOnly>
-        <MessageTopicNotFound v-else />
+        <MessageTopicNotFound v-else v-trusted />
       </div>
 
       <!-- Even Data was not success should be handle here -->
-      <div class="flex flex-col w-full" v-else>
+      <div class="flex flex-col w-full" v-trusted v-else>
         <div class="">Try to refresh the page, Something went Wrong</div>
       </div>
     </section>

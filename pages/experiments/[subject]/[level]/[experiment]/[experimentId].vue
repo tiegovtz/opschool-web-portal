@@ -177,19 +177,19 @@ definePageMeta({
 
                 <!-- Description -->
                 <div class="mx-auto notes md:px-4">
-                    <LoadingIndicator :is-loading="status == 'pending'" v-if="status == 'pending'" />
+                    <LoadingIndicator :is-loading="status == 'pending'" v-if="status == 'pending'" v-trusted/>
                     <MessagePageNotFound v-else-if="status == 'error'" message="Error while loading experiment"
-                        subMessage="Make sure you are connected to the stable internet or try to reload the page" />
+                        subMessage="Make sure you are connected to the stable internet or try to reload the page" v-trusted/>
 
                     <div class="relative w-full overflow-y-scroll rounded-md center-height" id="experiment-container"
-                        v-else-if="status == 'success'">
+                        v-else-if="status == 'success'" v-trusted>
                         <iframe class="w-full rounded-md center-height" :src="experimentInfo.stepsFileUrl"
-                            frameborder="0"></iframe>
+                            frameborder="0"></iframe v-trusted>
                         <!-- full screen controls -->
                         <div class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"
                             :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" @click="fullScreen">
-                            <Icon v-if="isFullscreen" name="qlementine-icons:fullscreen-exit-16" size="24" />
-                            <Icon v-else name="qlementine-icons:fullscreen-16" size="24" />
+                            <Icon v-if="isFullscreen" name="qlementine-icons:fullscreen-exit-16" size="24" v-trusted/>
+                            <Icon v-else name="qlementine-icons:fullscreen-16" size="24" v-trusted/>
                         </div>
                     </div>
 
@@ -202,7 +202,7 @@ definePageMeta({
                         </div>
 
                         <!-- experiment Description -->
-                        <div class="flex w-full">
+                        <div class="flex w-full" v-trusted>
                             <p class="text-sm text-justify">
                                 {{ experimentInfo?.description }}
                             </p>
