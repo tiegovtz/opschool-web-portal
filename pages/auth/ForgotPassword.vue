@@ -109,22 +109,28 @@ const forgotPassword = async () => {
             <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
                 <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
             </NuxtLink>
-            <form @submit.prevent="forgotPassword"
-                class="px-4 text-textGray md:h-[150px] h-dvh relative overflow-hidden text-extraSmall" :class="[
-            { 'md:h-[200px]': userForgotPassword.controller.errors.type },
-            { 'md:h-[300px]': userForgotPassword.type.toLowerCase() === 'student' },
-        ]">
+            <form @submit.prevent="forgotPassword" :class="[
+                    'px-4 text-textGray md:h-[150px] h-dvh relative overflow-hidden text-extraSmall',
+                    { 'md:h-[200px]': userForgotPassword.controller.errors.type },
+                    { 'md:h-[300px]': userForgotPassword.type.toLowerCase() === 'student' },
+                ]">
                 <!-- Select User Type -->
-                <div class="mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue" :class="{
-            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                userForgotPassword.controller.errors.type
-        }">
+                <div 
+                :class="[
+                    'mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                    {
+                        'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                            userForgotPassword.controller.errors.type
+                    }
+                ]">
                     <div class="flex flex-col items-start w-full">
-                        <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select User
-                            Type:</label>
+                        <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+                            Select User Type:</label>
                         <select name="type" id="type" v-model="userForgotPassword.type"
-                            class="w-full p-1 focus:outline-none focus:ring-0"
-                            :class="{ 'text-textGray/40': !userForgotPassword.type }">
+                            :class="[
+                                'w-full p-1 focus:outline-none focus:ring-0',
+                                {'text-textGray/40': !userForgotPassword.type }
+                            ]">
                             <option value="">(eg: Student, Teacher ...)</option>
                             <option value="Student">Student</option>
                             <option value="other">Teacher or Education Stackeholder</option>
@@ -139,11 +145,14 @@ const forgotPassword = async () => {
                 <!-- Student -->
                 <div v-if="userForgotPassword.type.toLowerCase() === 'student'">
                     <!-- First Name -->
-                    <div class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-                        :class="{
-            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                userForgotPassword.controller.errors.fname,
-        }">
+                    <div
+                        :class="[
+                                'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                            {
+                                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                                    userForgotPassword.controller.errors.fname,
+                            }
+                        ]">
                         <div class="flex items-center w-full">
                             <input type="text" id="fname" v-model="userForgotPassword.fname" @keydown.space.prevent
                                 name="fname" autocomplete="off"
@@ -160,11 +169,14 @@ const forgotPassword = async () => {
                     </div>
 
                     <!-- Last Name -->
-                    <div class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-                        :class="{
-            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                userForgotPassword.controller.errors.lname,
-        }">
+                    <div
+                        :class="[
+                                'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                            {
+                                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                                    userForgotPassword.controller.errors.lname,
+                            }
+                        ]">
                         <div class="flex items-center w-full">
                             <input type="text" id="lname" v-model="userForgotPassword.lname" @keydown.space.prevent
                                 name="lname" autocomplete="off"
@@ -181,11 +193,14 @@ const forgotPassword = async () => {
                     </div>
 
                     <!-- School -->
-                    <div class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-                        :class="{
-            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                userForgotPassword.controller.errors.school,
-        }">
+                    <div
+                        :class="[
+                            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                            {
+                            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                                userForgotPassword.controller.errors.school,
+                            }
+                        ]">
                         <div class="flex items-center w-full">
                             <input type="text" id="school" v-model="userForgotPassword.school" @keydown.space.prevent
                                 name="school" autocomplete="off"
@@ -218,8 +233,8 @@ const forgotPassword = async () => {
                 </button>
             </form>
             <div class="mt-4 text-center">
-                <p class="text-sm text-textGray">Back to <NuxtLink to="/auth" class="cursor-pointer text-oceanBlue">Sign
-                        In</NuxtLink>
+                <p class="text-sm text-textGray">Back to 
+                    <NuxtLink to="/auth" class="cursor-pointer text-oceanBlue">Sign In</NuxtLink>
                 </p>
             </div>
         </div>

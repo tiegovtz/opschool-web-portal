@@ -194,11 +194,13 @@ watch(
         class="px-4 overflow-hidden text-textGray text-extraSmall">
         <!-- Username Teacher and Stackeholder and Student -->
         <div
-          class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-          :class="{
-      'focus-input-icon-warning focus-within:border-red-500 border-red-500':
-        userSignIn.controller.errors.username,
-    }">
+          :class="[
+              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning focus-within:border-red-500 border-red-500':
+                userSignIn.controller.errors.username,
+            }
+          ]">
           <div class="flex items-center w-full">
             <input type="text" id="username" v-model="userSignIn.username" name="username" autocomplete="off"
               @keydown.space.prevent
@@ -209,34 +211,37 @@ watch(
           </div>
 
           <!-- Username error message -->
-          <small v-if="userSignIn.controller.errors.username" class="w-full text-red-500 text-smallest" :class="[
-      { 'mt-1': userSignIn.type.trim().toLowerCase() === 'student' },
-      {
-        'mt-1':
-          userSignIn.type.trim().toLowerCase() === 'teacher' ||
-          userSignIn.type.trim().toLowerCase() ===
-          'education stackeholder',
-      },
-      { 'mt-0': userSignIn.type.trim().toLowerCase() === '' },
-    ]">
+          <small v-if="userSignIn.controller.errors.username" :class="[
+                'w-full text-red-500 text-smallest',
+                { 'mt-1': userSignIn.type.trim().toLowerCase() === 'student' },
+                {
+                  'mt-1':
+                    userSignIn.type.trim().toLowerCase() === 'teacher' ||
+                    userSignIn.type.trim().toLowerCase() ===
+                    'education stackeholder',
+                },
+                { 'mt-0': userSignIn.type.trim().toLowerCase() === '' },
+              ]">
             {{ userSignIn.controller.errors.username }}
           </small>
         </div>
 
         <!-- Password -->
         <div
-          class="flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-          :class="{
-      'focus-input-icon-warning focus-within:border-red-500 border-red-500':
-        userSignIn.controller.errors.password,
-    }">
+          :class="[
+              'flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning focus-within:border-red-500 border-red-500':
+                userSignIn.controller.errors.password,
+            }
+          ]">
           <div class="flex items-center w-full">
             <input :type="showPassword ? 'text' : 'password'" id="password" v-model="userSignIn.password"
               name="password"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
               placeholder="Password" />
-            <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'
-      " class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
+            <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'" 
+            class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
           </div>
 
           <!-- Password error message -->
