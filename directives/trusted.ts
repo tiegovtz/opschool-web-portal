@@ -1,11 +1,12 @@
 import type { Directive } from 'vue';
+import { isVtrustedValue } from '~/utilities/controlls';
 
 // This directive adds a 'data-origin' attribute to all elements within the bound element
 const trusted: Directive = {
-
+  
     mounted(el: HTMLElement) {
-        const TRUSTED_ATTR = 'data-origin';
-        const TRUSTED_VAL = 'app';
+        const TRUSTED_ATTR = 'data-origin-tms';
+        const TRUSTED_VAL = String(isVtrustedValue.value);
 
         // Function to add 'data-origin' to the element if it does not already have it
         const tagElement = (node: Element) => {

@@ -7,7 +7,7 @@ const videoParser = (query: string): string => {
     return query.replace(regex, (match, videoAttrs, sourceSrc) => {
         return `
             <video id='video-player' ${videoAttrs} controls controlslist="nodownload" oncontextmenu="return false;" preload="auto">
-              <source src="${`/api/video/`+sourceSrc}" type="video/mp4">
+              <source src="${`/api/video/`+sourceSrc}" type="application/x-mpegURL">
               Your browser does not support the video tag.
             </video>
         `;

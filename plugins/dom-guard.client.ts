@@ -1,9 +1,11 @@
+import { isVtrustedValue } from "~/utilities/controlls";
+
 // ~/plugins/dom-guard.client.ts
 export default defineNuxtPlugin(() => {
   if (import.meta.server) return;
   // This plugin is only for client-side use
-  const TRUSTED_ATTR = 'data-origin';
-  const TRUSTED_VAL = 'app';
+  const TRUSTED_ATTR = 'data-origin-tms';
+  const TRUSTED_VAL = String(isVtrustedValue.value);
 
   // ✅ Helper: Check if element is trusted
   const isTrusted = (el: Node): boolean =>
