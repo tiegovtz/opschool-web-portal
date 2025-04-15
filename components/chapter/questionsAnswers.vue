@@ -115,17 +115,17 @@ const liveFilledSentence = computed(() => {
     <div class="inline-flex">
       <p class="pr-4">{{ number + ". " }}</p>
       <div class="flex flex-wrap items-center w-full">
-        <p class="text-justify mb-4">
+        <p class="mb-4 text-justify">
           <b>{{ question }}</b>
         </p>
         <p v-if="thumbnail" class="w-full h-auto overflow-hidden rounded-md my-2 max-h-[400px]">
           <NuxtImg :src="thumbnail" alt="thumbnail" class="object-cover w-full h-full" />
         </p>
-        <ol class="text-small w-full">
+        <ol class="w-full text-small">
           <li
             v-for="(choice, index) in shuffleChoices"
             :key="index"
-            class="flex items-center justify-between w-full px-3 py-2 my-2 cursor-pointer rounded-md custom-box-shadow hover:bg-oceanBlue hover:text-white transition-all duration-500 ease-in-out"
+            class="flex items-center justify-between w-full px-3 py-2 my-2 transition-all duration-500 ease-in-out rounded-md cursor-pointer custom-box-shadow hover:bg-oceanBlue hover:text-white"
             :class="{
               'bg-deepBlue hover:!bg-deepBlue text-white': questionAnswer.isAnswered && choice === questionAnswer.clickedChoice,
               'cursor-not-allowed': questionAnswer.disableAnswer,
@@ -164,13 +164,15 @@ const liveFilledSentence = computed(() => {
           <NuxtImg :src="thumbnail" alt="thumbnail" class="object-cover w-full h-full" />
         </p>
       </div>
-
+        <p v-if="thumbnail" class="w-full h-auto overflow-hidden rounded-md my-2 max-h-[400px]">
+          <NuxtImg :src="thumbnail" alt="thumbnail" class="object-contain w-full h-full" />
+        </p>
       <!-- Choices to Drag -->
-      <div class="flex gap-4 flex-wrap mt-4 pl-6">
+      <div class="flex flex-wrap gap-4 pl-6 mt-4">
         <div
           v-for="(choice, index) in shuffleChoices"
           :key="index"
-          class="p-2 bg-oceanBlue bg-opacity-20 rounded-md cursor-move hover:bg-oceanBlue hover:text-white shadow transition-all duration-500 ease-in-out"
+          class="p-2 transition-all duration-500 ease-in-out rounded-md shadow cursor-move bg-oceanBlue bg-opacity-20 hover:bg-oceanBlue hover:text-white"
           draggable="true"
           @dragstart="(e) => e.dataTransfer.setData('text', choice)"
         >
@@ -181,9 +183,9 @@ const liveFilledSentence = computed(() => {
   </section>
 </template>
 
-  <!-- <ol class="text-small w-full">
+  <!-- <ol class="w-full text-small">
                     <li v-for="(choice, index) in shuffleChoices" :key="index"
-                        class="flex items-center justify-between w-full px-3 py-2 my-2 cursor-pointer rounded-md custom-box-shadow hover:bg-oceanBlue hover:text-white transition-all duration-500 ease-in-out"
+                        class="flex items-center justify-between w-full px-3 py-2 my-2 transition-all duration-500 ease-in-out rounded-md cursor-pointer custom-box-shadow hover:bg-oceanBlue hover:text-white"
                         :class="{
                             'bg-green-500 border border-green-500 text-white hover:!bg-green-500': questionAnswer.isAnswered && choice === questionProps.trueAnswer,
                             'bg-red-500 border border-red-500 text-white hover:bg-red-500': questionAnswer.isAnswered && choice === questionAnswer.selectedChoice && choice !== questionProps.trueAnswer,
@@ -192,9 +194,9 @@ const liveFilledSentence = computed(() => {
 
                         <span>{{ indexToAlpha(index) + ') ' + choice }}</span>
                         <span v-if="questionAnswer.isAnswered && choice === questionProps.trueAnswer"
-                            class="text-green-500 font-bold">✓</span>
+                            class="font-bold text-green-500">✓</span>
                         <span
                             v-if="questionAnswer.isAnswered && choice === questionAnswer.selectedChoice && choice !== questionProps.trueAnswer"
-                            class="text-red-500 font-bold">✗</span>
+                            class="font-bold text-red-500">✗</span>
                     </li>
                 </ol> -->

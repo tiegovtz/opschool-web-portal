@@ -28,7 +28,7 @@ const dropDown = () => {
   <header class="relative shadow-sm bg-[url('/public/flag/tenor.gif')] bg-cover bg-center bg-no-repeat">
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->
-      <div class="relative w-full h-24 pt-1 flex justify-center">
+      <div class="relative flex justify-center w-full h-24 pt-1">
         <div class="flex items-center justify-between w-full h-full wrapper-container">
           <NuxtLink to="/" class="flex items-center justify-center h-full cursor-pointer max-w-[64px]">
             <NuxtImg src="/logo/emblem.webp" alt="EMBLEM" class="object-contain w-full h-full" />
@@ -79,21 +79,23 @@ const dropDown = () => {
           <!-- Profile and Sign Up -->
           <div class="subInfo">
             <div class="flex items-center gap-4 px-2 py-1" v-if="userToken">
-              <div class="flex items-center justify-center overflow-hidden rounded-full">
-                <div class="flex items-center gap-1 cursor-pointer">
-                  <NuxtImg v-if="userToken?.profilePic" :src="apiDocs.baseURL" alt="User Profile"
-                    class="object-cover w-full h-full" />
-                  <Icon v-else name="iconamoon:profile-circle-thin" class="" size="2rem" />
-                  <p class="capitalize text-medium line-clamp-1 max-w-60">
-                    Hello,
-                    {{
-              userToken?.name
-                ? String(userToken.name).split(" ")[0]
-                : "friend"
-            }}
-                  </p>
+
+              <!-- Profile -->
+              <NuxtLink to="/profile"  >
+                <div class="flex items-center justify-center overflow-hidden rounded-full">
+                  <div class="flex items-center gap-1 cursor-pointer">
+                    <NuxtImg v-if="userToken?.profilePic" :src="apiDocs.baseURL" alt="User Profile"
+                      class="object-cover w-full h-full" />
+                    <Icon v-else name="iconamoon:profile-circle-thin" class="" size="2rem" />
+                    <p class="capitalize text-medium line-clamp-1 max-w-60">
+                      Hello,
+                      {{ String(userToken.name).split(" ")[0] }}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </NuxtLink>
+
+              <!-- Logout -->
               <div
                 class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
                 @click="logout">

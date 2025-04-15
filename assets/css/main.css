@@ -44,6 +44,27 @@ body {
 }
 
 @layer components {
+  /* Learn Statistics */
+  .stat-card {
+  @apply flex flex-col items-center gap-2 p-3 transition-all duration-500 bg-white rounded-md cursor-pointer md:flex-row hover:bg-gray-50 md:gap-0;
+}
+
+.stat-icon {
+  @apply flex items-center justify-center w-10 h-10 mr-3 rounded-full;
+}
+
+.stat-content {
+  @apply flex flex-col items-center;
+}
+
+.stat-label {
+  @apply text-xs font-medium text-gray-500;
+}
+
+.stat-value {
+  @apply text-lg font-bold text-gray-800;
+}
+
   .topic-card__progress-bar {
     @apply w-full h-2 bg-gray-200 rounded-full;
     @apply [&::-webkit-progress-bar]:bg-gray-200;

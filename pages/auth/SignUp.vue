@@ -479,11 +479,11 @@ watch(
 
 // Password toggle State
 const showPassword = ref(false);
-
 // Password toggle Function
 const togglePassword = () => {
   showPassword.value = !showPassword.value;
 };
+
 // Confirm Password toggle
 const showConfirmPassword = ref(false);
 const toggleConfirmPassword = () => {
@@ -581,15 +581,22 @@ const switchTab = (tabName) => {
           inputTabs === 'tabOne' ? 'left-0 w-full' : '-left-full'
           ]">
           <!-- Select User Type -->
-          <div class="mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue" :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.type,
-    }">
+          <div
+          :class="[
+            'mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.type,
+            }
+          ]">
             <div class="flex flex-col items-start w-full">
               <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select User
                 Type:</label>
-              <select name="type" id="type" v-model="usersignUp.type" class="w-full p-1 focus:outline-none focus:ring-0"
-                :class="{ 'text-textGray/40': !usersignUp.type }">
+              <select name="type" id="type" v-model="usersignUp.type"
+                :class="[
+                    'w-full p-1 focus:outline-none focus:ring-0',
+                  { 'text-textGray/40': !usersignUp.type }
+                ]">
                 <option value="">(eg: Student, Teacher ...)</option>
                 <option value="Student">Student</option>
                 <option value="Teacher">Teacher</option>
@@ -605,11 +612,13 @@ const switchTab = (tabName) => {
 
           <!-- First Name -->
           <div
-            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-            :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.fname,
-    }">
+            :class="[
+              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.fname,
+              }
+            ]">
             <div class="flex items-center w-full">
               <input type="text" id="fname" v-model="usersignUp.fname" @keydown.space.prevent name="fname"
                 autocomplete="off"
@@ -626,11 +635,13 @@ const switchTab = (tabName) => {
 
           <!-- Last Name -->
           <div
-            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-            :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.lname,
-    }">
+            :class="[
+              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.lname,
+              }
+            ]">
             <div class="flex items-center w-full">
               <input type="text" id="lname" v-model="usersignUp.lname" @keydown.space.prevent name="lname"
                 autocomplete="off"
@@ -647,22 +658,26 @@ const switchTab = (tabName) => {
 
           <!-- region -->
           <div
-            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-            :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.region,
-    }">
+            :class="[
+                'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.region,
+              }
+            ]">
             <SelectionRegionSelection :error="usersignUp.controller.errors.region"
               @update-region="usersignUp.region = $event" />
           </div>
 
           <!-- District -->
           <div
-            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-            :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.district,
-    }">
+            :class="[
+                'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.district,
+              }
+            ]">
             <!-- select district -->
             <SelectionDistrictSelection :error="usersignUp.controller.errors.district" :region="usersignUp.region"
               @update-district="usersignUp.district = $event" />
@@ -670,11 +685,13 @@ const switchTab = (tabName) => {
 
           <!-- school -->
           <div v-if="usersignUp.type.toLowerCase() === 'student' || usersignUp.type.toLowerCase() === 'teacher'"
-            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-            :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.school,
-    }">
+            :class="[
+              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.school,
+              }
+            ]">
 
             <!-- select school -->
             <SelectionSchoolSelection :district="usersignUp.district" :region="usersignUp.region"
@@ -683,10 +700,13 @@ const switchTab = (tabName) => {
           </div>
 
           <!-- gender input radio -->
-          <div class="py-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue" :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.gender,
-    }">
+          <div :class="[
+            'py-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue',
+             {
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.gender,
+              }
+              ]">
             <div class="flex flex-col items-center justify-start md:flex-row md:gap-10">
               <div class="font-semibold capitalize text-oceanBlue text-extraSmall">
                 Select Sex:
@@ -696,16 +716,19 @@ const switchTab = (tabName) => {
                 <div class="flex items-center gap-2">
                   <input type="radio" name="gender" id="male" value="male" v-model="usersignUp.gender"
                     class="w-4 h-4 checked:bg-oceanBlue" />
-                  <label for="male" :class="{
-      'text-textGray/40': usersignUp.gender !== 'male',
-    }">Male</label>
+                  <label for="male" 
+                  :class="{'text-textGray/40': usersignUp.gender !== 'male',}">
+                  Male
+                  </label>
                 </div>
                 <div class="flex items-center gap-2">
                   <input type="radio" name="gender" id="female" value="female" v-model="usersignUp.gender"
                     class="w-4 h-4 checked:bg-oceanBlue" />
-                  <label for="female" :class="{
-      'text-textGray/40': usersignUp.gender !== 'female',
-    }">Female</label>
+                  <label for="female" 
+                  :class="{
+                        'text-textGray/40': usersignUp.gender !== 'female',
+                      }">Female
+                    </label>
                 </div>
               </div>
             </div>
@@ -735,18 +758,27 @@ const switchTab = (tabName) => {
         </div>
 
         <!-- Second Input Group -->
-        <div class="absolute top-0 flex flex-col px-6 transition-all duration-500 -right-full"
-          :class="inputTabs === 'tabTwo' ? 'right-0 w-full h-full' : ''">
+        <div
+          :class="[
+            'absolute top-0 flex flex-col px-6 transition-all duration-500 -right-full',
+            inputTabs === 'tabTwo' ? 'right-0 w-full h-full' : ''
+          ]">
           <!-- Select Age -->
-          <div class="flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-            :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.age,
-    }">
+          <div
+            :class="[
+                'flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.age,
+              }
+            ]">
             <div class="flex flex-col">
               <label for="age" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select Age:</label>
-              <select name="age" id="age" class="w-full p-1 focus:outline-none focus:ring-0"
-                :class="{ 'text-textGray/40': !usersignUp.age }" v-model="usersignUp.age">
+              <select name="age" id="age"
+                :class="[
+                    'w-full p-1 focus:outline-none focus:ring-0',
+                    {'text-textGray/40': !usersignUp.age }
+                  ]" v-model="usersignUp.age">
                 <option value="">Eg: {{ usersignUp.type.toLowerCase().trim() == 'student' ? 'kids(3 - 12)' : 'YoungAdults(20 - 35)' }} ...</option>
                 <option v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Child">Kids(3 - 12)</option>
                 <option v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Teen">Teens(13 - 19)</option>
@@ -768,11 +800,13 @@ const switchTab = (tabName) => {
 
             <!-- Email -->
             <div
-              class="flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-              :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.email,
-    }">
+              :class="[
+              'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.email,
+              }
+              ]">
               <div class="flex items-center w-full">
                 <input type="text" id="email" v-model="usersignUp.email" @keydown.space.prevent name="username"
                   autocomplete="off"
@@ -789,11 +823,13 @@ const switchTab = (tabName) => {
 
             <!-- Phone Number -->
             <div
-              class="flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-              :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.phone,
-    }">
+              :class="[
+                'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                {
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.phone,
+              }
+              ]">
               <div class="flex items-center w-full">
                 <input type="tel" id="phone" v-model="usersignUp.phone" @keydown.space.prevent name="phone"
                   autocomplete="off"
@@ -810,15 +846,17 @@ const switchTab = (tabName) => {
 
             <!-- organization informations for stakeholders -->
             <div class="" id="organization" v-if="usersignUp.type.toLowerCase() === 'education stackeholder'">
-              <!-- org name -->
+              <!-- organization name -->
               <div
-                class="flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-                :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.organization,
-    }">
+                :class="[
+                  'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                  {
+                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                    usersignUp.controller.errors.organization,
+                }
+                ]">
                 <div class="flex items-center w-full">
-                  <input type="text" id="email" v-model="usersignUp.organization" name="organization" autocomplete="off"
+                  <input type="text" id="organization" v-model="usersignUp.organization" name="organization" autocomplete="off"
                     class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                     placeholder="Organization (eg: Ekima interctive company)" />
                   <Icon name="tdesign:institution" class="w-5 h-5 text-textGray" />
@@ -829,11 +867,14 @@ const switchTab = (tabName) => {
                 </small>
               </div>
               <!-- stakeholder role -->
-              <div class="flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-                :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.age,
-    }">
+              <div
+                :class="[
+                'flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                {
+                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                    usersignUp.controller.errors.age,
+                }
+                ]">
                 <div class="flex flex-col">
                   <label for="userOrgRole" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select role
                     in your Organization:</label>
@@ -856,11 +897,13 @@ const switchTab = (tabName) => {
 
               <!-- other user role in their org -->
               <div v-if="usersignUp.userOrgRole.toLowerCase() === 'others'"
-                class="flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-                :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.userOrgRole,
-    }">
+                :class="[
+                    'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                  {
+                    'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                      usersignUp.controller.errors.userOrgRole,
+                  }
+                ]">
                 <div class="flex items-center w-full">
                   <input type="text" id="userOrgRole" v-model="usersignUp.otherRole" @keydown.space.prevent
                     name="organization" autocomplete="off"
@@ -878,11 +921,13 @@ const switchTab = (tabName) => {
 
           <!-- username student -->
           <div v-if="usersignUp.type.toLowerCase() === 'student'"
-            class="flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-            :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.userName,
-    }">
+            :class="[
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.userName,
+              }
+            ]">
             <div class="flex items-center w-full">
               <input type="text" id="userName" v-model="usersignUp.userName" @keydown.space.prevent name="userName"
                 autocomplete="off" readonly
@@ -899,20 +944,22 @@ const switchTab = (tabName) => {
 
           <!-- Password -->
           <div
-            class="flex flex-col items-center gap-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-            :class="{
-      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-        usersignUp.controller.errors.password,
-    }">
+            :class="[
+              'flex flex-col items-center gap-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.password,
+            }
+            ]">
             <div class="flex items-center w-full">
               <input :type="showPassword ? 'text' : 'password'" id="password" v-model="usersignUp.password"
                 name="password" autocomplete="off"
                 class="w-full p-1 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Password" />
               <Icon :name="showPassword
-      ? 'iconamoon:eye-off-light'
-      : 'iconamoon:eye-thin'
-      " class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
+                ? 'iconamoon:eye-off-light'
+                : 'iconamoon:eye-thin'
+                " class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
             </div>
             <!-- Password error message -->
             <small v-if="usersignUp.controller.errors.password" class="w-full text-red-500 text-smallest">
@@ -929,9 +976,9 @@ const switchTab = (tabName) => {
                 class="w-full p-1 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Confirm Password" />
               <Icon :name="showConfirmPassword
-      ? 'iconamoon:eye-off-light'
-      : 'iconamoon:eye-thin'
-      " class="w-5 h-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
+                ? 'iconamoon:eye-off-light'
+                : 'iconamoon:eye-thin'
+                " class="w-5 h-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
             </div>
             <!-- Password error message -->
             <small v-if="usersignUp.controller.errors.confirm_password" class="w-full text-red-500 text-smallest">

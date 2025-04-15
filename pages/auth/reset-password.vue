@@ -151,8 +151,11 @@ const toggleConfirmPassword = () => {
             <form @submit.prevent="resetPassword"
                 class="px-4 md:h-[200px] h-dvh text-textGray overflow-hidden text-extraSmall">
                 <!-- New Password -->
-                <div class="flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-                    :class="{ 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userResetPassword.controller.errors.password }">
+                <div
+                    :class="[
+                    'flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                    { 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userResetPassword.controller.errors.password }
+                    ]">
                     <div class="flex items-center w-full">
                         <input :type="showPassword ? 'text' : 'password'" id="password"
                             v-model="userResetPassword.password" name="password"
@@ -170,8 +173,11 @@ const toggleConfirmPassword = () => {
                 </div>
 
                 <!-- Confirm Password -->
-                <div class="flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
-                    :class="{ 'focus-input-icon-warning focus-within:border-red-500 border-red-500': userResetPassword.controller.errors.password }">
+                <div
+                    :class="[
+                    'flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                    {'focus-input-icon-warning focus-within:border-red-500 border-red-500': userResetPassword.controller.errors.password }
+                    ]">
                     <div class="flex items-center w-full">
                         <input :type="showConfirmPassword ? 'text' : 'password'" id="password"
                             v-model="userResetPassword.confirmPassword" name="password"
