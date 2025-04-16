@@ -5,7 +5,7 @@ const userToken = useCookie("signInUserToken");
 
 const logout = () => {
   userToken.value = null;
-  const router = useRoute();
+  const router = useRouter();
   // Use the State
   // useState("topicToView", () => null);
   // useState("videoToView", () => null);

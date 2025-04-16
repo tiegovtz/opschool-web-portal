@@ -42,11 +42,10 @@ const fetchSchools = async (region, district) => {
     }
 };
 
-// Watch for changes in region or district
+// Watch for changes in region or district (School)
 watch(() => props.district, (district) => {
     if (district) {
         fetchSchools(props.region, district);
-
     }
 });
 
@@ -58,10 +57,10 @@ watch(() => props.region, (region) => {
 </script>
 
 <template>
-    <div class="flex w-full flex-col items-start">
-        <label for="school" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select School:</label>
+    <div class="flex flex-col items-start w-full">
+        <label for="school" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select School:</label>
 
-        <select name="school" id="school" class="w-full p-2 focus:outline-none focus:ring-0 capitalize"
+        <select name="school" id="school" class="w-full p-2 capitalize focus:outline-none focus:ring-0"
             :class="{ 'text-textGray/40': error }" @change="$emit('updateSchool', $event.target.value)">
             <option value="" v-if="data.status === 'idle'">Select Region and District First</option>
             <option value="" v-if="data.status === 'pending'">Loading...</option>
@@ -78,7 +77,7 @@ watch(() => props.region, (region) => {
         </select>
 
         <!-- Error message -->
-        <small v-if="error" class="text-red-500 text-smallest w-full">
+        <small v-if="error" class="w-full text-red-500 text-smallest">
             {{ error }}
         </small>
     </div>
