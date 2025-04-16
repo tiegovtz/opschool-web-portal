@@ -203,19 +203,28 @@ watch(filters, (filters) => {
         <TabBar />
       </div>
 
-      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
+      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center" v-trusted>
         <LoadingIndicator :is-loading="true" />
       </div>
-      <!-- Status Error -->
-      <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
+     <!-- Status Error -->
+          <div
+            v-else-if="status === 'error'"
+            v-trusted
+            class="md:min-h-[342px] flex flex-col justify-center items-center">
+            <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+            <p class="text-center">
+              Oops! Something went wrong.<br />
+              Try refreshing the page or check your internet connection.
+            </p>
+          </div>
 
       <!-- Status Success -->
-      <div v-else-if="status == 'success'">
+      <div v-else-if="status == 'success'" v-trusted>
         <!-- client only -->
-        <ClientOnly v-if="slicedData?.length > 0">
-          <div class="flex flex-col w-full">
+        <ClientOnly v-if="slicedData?.length > 0" >
+          <div class="flex flex-col w-full" v-trusted>
             <!-- Topic Cards are in Grid -->
-             <customGridTwo>
+             <customGridTwo v-trusted>
                   <template #data>
                  <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
                 :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
@@ -227,35 +236,36 @@ watch(filters, (filters) => {
                 </customGridTwo>
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-10">
-              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
+            <div v-if="totalPages > 1" v-trusted class="flex justify-center my-10">
+              <div v-if="totalPages <= 5" class="flex justify-center gap-2" v-trusted>
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
                   @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
               </div>
-              <div v-else class="flex justify-center gap-2">
+              <div v-else class="flex justify-center gap-2" v-trusted>
                 <!-- previous -->
-                <div class="flex items-center justify-center" v-if="currentPage > 5">
+                <div class="flex items-center justify-center" v-if="currentPage > 5" v-trusted>
                   <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
                 </div>
 
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
+                  v-trusted
                   @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
 
                 <!-- next button -->
-                <div class="flex items-center justify-center" v-if="currentPage > 4">
+                <div class="flex items-center justify-center" v-if="currentPage > 4" v-trusted>
                   <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
                 </div>
               </div>
             </div>
           </div>
         </ClientOnly>
-        <MessageTopicNotFound v-else />
+        <MessageTopicNotFound v-else  v-trusted/>
       </div>
 
       <!-- Even Data was not success should be handle here -->
-      <div class="flex flex-col w-full" v-else>
+      <div class="flex flex-col w-full" v-else v-trusted>
         <div class="">Try to refresh the page, Something went Wrong</div>
       </div>
     </div>

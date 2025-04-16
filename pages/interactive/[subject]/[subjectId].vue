@@ -219,22 +219,32 @@ watch(filters, (filters) => {
         />
       <div
         v-if="status === 'pending'"
+        v-trusted
         class="flex flex-col items-center justify-center"
       >
         <LoadingIndicator :is-loading="true" />
       </div>
-      <!-- Status Error -->
-      <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
+     <!-- Status Error -->
+          <div
+            v-else-if="status === 'error'"
+            v-trusted
+            class="md:min-h-[342px] flex flex-col justify-center items-center">
+            <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+            <p class="text-center">
+              Oops! Something went wrong.<br />
+              Try refreshing the page or check your internet connection.
+            </p>
+          </div>
 
       <!-- Status Success -->
-      <div v-else-if="status == 'success'" class="">
+      <div v-else-if="status == 'success'" class="" v-trusted>
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
-          <div class="flex flex-col w-full">
+          <div class="flex flex-col w-full" v-trusted>
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
               <div class="container flex flex-col items-start">
-                <customGridTwo>
+                <customGridTwo v-trusted>
                   <template #data>
                     <TopicCard
                     v-for="topic in slicedData"
@@ -260,7 +270,7 @@ watch(filters, (filters) => {
             </div>
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-5">
+            <div v-if="totalPages > 1" v-trusted class="flex justify-center my-5">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn
                   v-for="page in totalPages"
@@ -272,7 +282,7 @@ watch(filters, (filters) => {
                   @send-page-number="currentPage = $event"
                 />
               </div>
-              <div v-else class="flex justify-center gap-2">
+              <div v-else class="flex justify-center gap-2" v-trusted>
                 <!-- previous -->
                 <div
                   class="flex items-center justify-center"
@@ -299,6 +309,7 @@ watch(filters, (filters) => {
                 <div
                   class="flex items-center justify-center"
                   v-if="currentPage > 4"
+                  v-trusted
                 >
                   <Icon
                     name="iconamoon:arrow-right-2-fill"
@@ -310,11 +321,11 @@ watch(filters, (filters) => {
             </div>
           </div>
         </ClientOnly>
-        <MessageTopicNotFound v-else />
+        <MessageTopicNotFound v-else v-trusted />
       </div>
 
       <!-- Even Data was not success should be handle here -->
-      <div class="flex flex-col w-full" v-else>
+      <div class="flex flex-col w-full" v-else v-trusted>
         <div class="">
           Try to refresh the page, Something went Wrong
         </div>

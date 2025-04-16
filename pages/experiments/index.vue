@@ -226,17 +226,26 @@ const { progress, isLoading } = useLoadingIndicator();
         <TabBar />
       </div>
 
-      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
+      <div v-if="status === 'pending'" v-trusted class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />
       </div>
 
-      <!-- Status Error -->
-      <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
+     <!-- Status Error -->
+          <div
+            v-else-if="status === 'error'"
+            v-trusted
+            class="md:min-h-[342px] flex flex-col justify-center items-center">
+            <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+            <p class="text-center">
+              Oops! Something went wrong.<br />
+              Try refreshing the page or check your internet connection.
+            </p>
+          </div>
       <!-- Status Success -->
-      <div v-else-if="status == 'success'">
+      <div v-else-if="status == 'success'" v-trusted>
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
-          <div class="flex flex-col w-full">
+          <div class="flex flex-col w-full" v-trusted>
             <div v-if="status === 'success'"
               class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4 mt-10">
               <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
@@ -246,7 +255,7 @@ const { progress, isLoading } = useLoadingIndicator();
                 :experiment-name="experiment.name" :experiment-file-url="experiment.stepsFileUrl" />
             </div>
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-10">
+            <div v-if="totalPages > 1" class="flex justify-center my-10" v-trusted>
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
@@ -258,9 +267,9 @@ const { progress, isLoading } = useLoadingIndicator();
                   <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
                 </div>
 
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                <PaginationBtn v-for="page in totalPages"  :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" v-trusted />
 
                 <!-- next button -->
                 <div class="flex items-center justify-center" v-if="currentPage > 4">
@@ -270,7 +279,7 @@ const { progress, isLoading } = useLoadingIndicator();
             </div>
           </div>
         </ClientOnly>
-        <MessageTopicNotFound v-else />
+        <MessageTopicNotFound v-else  v-trusted/>
       </div>
     </section>
   </NuxtLayout>

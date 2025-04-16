@@ -55,7 +55,9 @@ const getScoreColor = (score) => {
 // Reset All Quiz
 const resetQuiz = () => {
   // Check Student If Score above 50
-  scoredComputed.value < 50 ? props.changeChapter("R") : props.changeChapter("N");
+  scoredComputed.value < 50
+    ? props.changeChapter("R")
+    : props.changeChapter("N");
   quizAttempt.totalQuestions = props.questions.length;
   quizAttempt.answeredQuestions = 0;
   quizAttempt.currentQuestion = 0;
@@ -63,8 +65,6 @@ const resetQuiz = () => {
   quizAttempt.isAttempting = false;
   quizAttempt.quizCompleted = false;
   quizAttempt.clickedAnswer = [];
-
-
 };
 
 // Quize Attempt Answered Questions Function
@@ -122,6 +122,13 @@ watch(
     resetQuiz();
   }
 );
+
+// watch progress QUIZ
+// watch(quizAttempt.quizCompleted, (isCompleted) => {
+//   if (isCompleted == true) {
+
+//   }
+// });
 </script>
 
 <template>
@@ -129,19 +136,26 @@ watch(
     class="flex flex-col items-center justify-center py-4 rounded-md bg-gradient-to-b from-deepBlue to-white center-height"
   >
     <!-- Questions -->
-    <div class="container w-full max-w-5xl bg-white rounded-md md:p-8 custom-box-shadow"
-    v-if="isAttemptingQuiz">
-     <!-- Close Button -->
+    <div
+      class="container w-full max-w-5xl bg-white rounded-md md:p-8 custom-box-shadow"
+      v-if="isAttemptingQuiz"
+    >
+      <!-- Close Button -->
       <div class="flex items-center justify-end mb-2">
-        <div class="flex items-center justify-center w-8 h-8 p-2 bg-red-500 rounded-full cursor-pointer" @click="changeChapter('R')">
+        <div
+          class="flex items-center justify-center w-8 h-8 p-2 bg-red-500 rounded-full cursor-pointer"
+          @click="changeChapter('R')"
+        >
           <Icon name="formkit:close" size="24" class="font-bold text-white" />
         </div>
       </div>
 
       <!-- Header and Button -->
       <div class="flex items-center justify-between">
-        <h1 class="tracking-wide underline text-large"
-          v-if="questions.length > 0">
+        <h1
+          class="tracking-wide underline text-large"
+          v-if="questions.length > 0"
+        >
           Quiz
         </h1>
 
@@ -154,8 +168,6 @@ watch(
               >{{ quizAttempt.answeredQuestions }}/{{ questions.length }}</span
             >
           </p>
-
-         
         </div>
       </div>
 
@@ -166,7 +178,9 @@ watch(
       >
         <!-- Scores -->
         <div class="flex flex-col items-center w-full mb-4">
-          <p>Scores: <b>{{ scoredComputed.toFixed(1) }}%</b> </p>
+          <p>
+            Scores: <b>{{ scoredComputed.toFixed(1) }}%</b>
+          </p>
           <p
             class="flex items-center justify-center flex-1 gap-2 font-bold"
             :class="getScoreColor(scoredComputed)"
@@ -179,11 +193,18 @@ watch(
         <div
           class="flex items-center w-full gap-2 my-2"
           v-for="(question, index) in shuffleQuestions"
-          :key="index">
+          :key="index"
+        >
           <div class="flex w-full">
             <p class="flex">{{ index + 1 }}.</p>
             <div class="pl-4 text-justify">
-              <p class="mb-2">{{ question.question }}</p>
+              <p class="mb-2">
+                {{ 
+                  question.questionType === 'drag_and_drop'
+                  ? question.question.replace(/(_\$blank)/g, '..........')
+                  : question.question 
+                }}
+            </p>
               <p
                 :class="
                   quizAttempt.clickedAnswer[index] == question.answer
@@ -191,30 +212,35 @@ watch(
                     : 'text-red-600'
                 "
               >
-                <b class="text-black">Your choice:</b>
-                {{ quizAttempt.clickedAnswer[index] }}
+                <b :class="['text-black',{'capitalize':question.questionType === 'drag_and_drop'}]">Your choice: </b>
+                <span :class="[ question.questionType === 'drag_and_drop'?'capitalize':'']">{{ quizAttempt.clickedAnswer[index].replaceAll('-', ' ,') }}</span>
 
                 <!-- Mark Tick and Wrong -->
-                 <span v-if="quizAttempt.clickedAnswer[index] == question.answer"
-                            class="font-bold text-normalGreener">✓</span>
-                        <span v-else class="font-bold text-red-600">✗</span>
+                <span
+                  v-if="quizAttempt.clickedAnswer[index] == question.answer"
+                  class="font-bold text-normalGreener"
+                  >✓</span
+                >
+                <span v-else class="font-bold text-red-600">✗</span>
               </p>
             </div>
           </div>
         </div>
 
         <!-- Read notes again and Read next topic -->
-     <div class="flex items-center justify-end w-full gap-2">
-        <small>Recommendation:</small>
+        <div class="flex items-center justify-end w-full gap-2">
+          <small>Recommendation:</small>
           <button
             v-if="quizAttempt.quizCompleted"
             @click="resetQuiz()"
             class="flex items-center justify-center px-4 py-1 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
           >
-            <span v-if="scoredComputed < 50" class="capitalize">Read notes again</span>
+            <span v-if="scoredComputed < 50" class="capitalize"
+              >Read notes again</span
+            >
             <span v-else class="capitalize">next topic</span>
           </button>
-     </div>
+        </div>
 
         <!-- Next and Previous chapter Action -->
         <!-- <div class="flex flex-row-reverse items-center justify-between pt-4"> -->
@@ -247,6 +273,7 @@ watch(
         :question-type="
           shuffleQuestions[quizAttempt.currentQuestion].questionType
         "
+        :thumbnail="shuffleQuestions[quizAttempt.currentQuestion].thumbnail"
         :true-answer="shuffleQuestions[quizAttempt.currentQuestion].answer"
         :choices="shuffleQuestions[quizAttempt.currentQuestion].choices"
         :question="shuffleQuestions[quizAttempt.currentQuestion].question"

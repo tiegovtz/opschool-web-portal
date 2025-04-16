@@ -10,7 +10,7 @@ const props = defineProps({
   },
   topicImage: {
     type: String,
-    required: true,
+    default: '/images/background2.webp',
   },
   topicTitle: {
     type: String,
@@ -78,6 +78,7 @@ const userToken = useCookie('signInUserToken')
 
   <NuxtLink
     :to="`/interactive/${topicStandard.toLowerCase()}/${subjectName.toLowerCase()}/${topicTitle.toLowerCase()}/${topicId.toLowerCase()}`"
+    v-trusted
     @click="setTopicToView()"
     :class="[
       'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out',
@@ -125,7 +126,7 @@ const userToken = useCookie('signInUserToken')
         </p>
       </div>
       <!-- topic subject name and metrics -->
-      <div v-if="modelType === 'card'"
+      <div v-if="modelType === 'card'" v-trusted
         class="flex items-center justify-between pt-2 pb-2 lg:pb-0 whitespace-nowrap text-extraSmall text-oceanBlue">
         <div class="flex items-center gap-2">
           <Icon name="material-symbols-light:menu-book-outline-rounded" class="text-medium" />
@@ -143,7 +144,7 @@ const userToken = useCookie('signInUserToken')
     </div>
     <div>
       <!-- learn more -->
-      <div v-if="modelType == 'card'"
+      <div v-if="modelType == 'card'" v-trusted
         class="absolute bottom-0 z-10 items-center justify-between hidden w-full h-10 px-4 text-white transition-all duration-500 ease-in-out opacity-0 lg:flex bg-gradient-to-b from-deepBlue to-gray-800 group-hover:opacity-100">
         <p class="capitalize text-small">Start learning</p>
         <div class="flex items-center justify-center w-6 h-6 bg-white rounded-full animate-bounce-horizontal">
@@ -152,7 +153,7 @@ const userToken = useCookie('signInUserToken')
       </div>
     </div>
     <!-- learn more -->
-    <div v-if="modelType == 'card'"
+    <div v-if="modelType == 'card'" v-trusted
       class="flex items-center justify-between w-full h-8 px-4 text-white lg:hidden bg-gradient-to-b from-deepBlue to-gray-800 ">
       <p class="capitalize text-small">Start learning</p>
       <div class="flex items-center justify-center w-6 h-6 bg-white rounded-full animate-bounce-horizontal">

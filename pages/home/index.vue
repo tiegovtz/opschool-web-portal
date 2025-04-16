@@ -71,7 +71,6 @@ const userToken = useCookie("signInUserToken");
 const route = useRoute();
 const tab = route.query?.tab;
 
-
 // Define Ref state
 const error = ref(); // Initial Error State
 const status = ref("pending"); // Initial Status State
@@ -80,39 +79,32 @@ const slicedData = ref(); // Initial slice data to 9
 const hideFilter = ref(false); // Initial Hide Filters
 const activeTab = ref("home"); // Initial Active Tab State
 const filterValue = ref(); // Initial Filter Value State
-const keys = ref()  // Initial Keys Value State
-const subjectId = ref();  // Initial subjectId Value State
+const keys = ref(); // Initial Keys Value State
+const subjectId = ref(); // Initial subjectId Value State
 
 // Checking Tab if is corresponde to route
 if (tab) {
-  tab == 'experiments' ? activeTab.value = 'Experiments' : '';
-  tab == 'video' ? activeTab.value = 'Video' : '';
-  tab == 'audio' ? activeTab.value = 'Audio' : '';
-  tab == 'interactive' ? activeTab.value = 'Interactive Books' : '';
+  tab == "experiments" ? (activeTab.value = "Experiments") : "";
+  tab == "video" ? (activeTab.value = "Video") : "";
+  tab == "audio" ? (activeTab.value = "Audio") : "";
+  tab == "interactive" ? (activeTab.value = "Interactive Books") : "";
 }
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
-  if (
-    !data ||
-    !Array.isArray(data.value) ||
-    data.value.length === 0
-  ) {
+  if (!data || !Array.isArray(data.value) || data.value.length === 0) {
     slicedData.value = [];
     return;
   }
 
   // If only one page of data or less, return all data
-  if (
-    data.value?.length <= pageSize.value
-  ) {
+  if (data.value?.length <= pageSize.value) {
     slicedData.value = data.value;
     return;
   }
 
   // Otherwise slice the data
-  slicedData.value =
-    data.value?.slice(start, end);
+  slicedData.value = data.value?.slice(start, end);
 };
 
 // current page data
@@ -169,6 +161,8 @@ const fetchData = async (params) => {
       ))
       : "";
 
+    // Reset Subject ID
+    // subjectId.value = "";
   }
 
   try {
@@ -182,7 +176,7 @@ const fetchData = async (params) => {
 
     // Call State Define above
     data.value = response
-      .filter(item => item)
+      .filter((item) => item)
       .sort((a, b) => a._id.localeCompare(b._id));
 
     status.value = "success";
@@ -195,7 +189,7 @@ const fetchData = async (params) => {
     );
   } catch (err) {
     status.value = "error";
-    error.value = err
+    error.value = err;
   }
 };
 
@@ -296,6 +290,7 @@ watch(
   (activeTab) => {
     if (activeTab) {
       if (activeTab.toLowerCase() === "home") {
+        subjectId.value = "";
         fetchData({});
       } else if (activeTab.toLowerCase() === "interactive books") {
         fetchData({});
@@ -305,6 +300,7 @@ watch(
         fetchData({});
       } else if (activeTab.toLowerCase() === "audio") {
         // fetchData({});
+        data.value = []
       }
     }
   }
@@ -326,7 +322,7 @@ watch(
   () => filterValue.value,
   (filterValue) => {
     if (filterValue) {
-      console.log(filterValue)
+      console.log(filterValue);
       slicedData.value = filterDataByValues(data.value, filterValue);
     } else {
       // Call sliceData after data is loaded
@@ -339,26 +335,27 @@ watch(
 );
 
 // watch Subject Id
-watch(() => subjectId.value, (valueId) => {
-  if (valueId) {
-    activeTab.value = "Interactive Books";
+watch(
+  () => subjectId.value,
+  (valueId) => {
+    if (valueId) {
+      activeTab.value = "Interactive Books";
+
+    }
   }
-});
+);
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
     <!-- User Has a Token -->
-    <section v-if="userToken" :class="['wrapper-container', { ' animate-pulse': isLoading }]">
-
+    <section v-if="userToken" :class="['wrapper-container', { ' animate-pulse': isLoading }]" v-trusted>
       <HomeSearchbar appearance="rounded" />
       <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" :active-tab="activeTab" />
 
       <!-- container filter Mobile -->
       <div class="flex items-center justify-between py-2 xl:hidden">
-        <p class="font-medium text-small">
-          Viewing {{ data?.length }} Results
-        </p>
+        <p class="font-medium text-small">Viewing {{ data?.length }} Results</p>
         <div class="flex items-center gap-2 cursor-pointer text-deepBlue" @click="hideFilter = !hideFilter">
           <Icon name="mage:filter-fill" size="24" class="" />
           <p class="text-medium">Filters</p>
@@ -366,9 +363,9 @@ watch(() => subjectId.value, (valueId) => {
 
         <!-- Side Bar Container Filter For Mobile View Only -->
         <div :class="[
-      'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
-      hideFilter ? 'z-30' : '-z-30',
-    ]">
+          'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
+          hideFilter ? 'z-30' : '-z-30',
+        ]">
           <div class="w-full h-full bg-white md:w-80">
             <!-- Close Button -->
             <div class="flex items-center justify-end">
@@ -378,7 +375,7 @@ watch(() => subjectId.value, (valueId) => {
               </button>
             </div>
 
-            <div class="flex flex-col gap-4 mt-10 ">
+            <div class="flex flex-col gap-4 mt-10">
               <!-- Home Drop Down Menu -->
               <DropDownMenu :active-tab="activeTab" @emit-update-filter-value="filterValue = $event" />
             </div>
@@ -388,18 +385,18 @@ watch(() => subjectId.value, (valueId) => {
       <!-- LayoutEffect  -->
       <div class="flex items-center justify-end gap-2">
         <Icon name="bxs:grid-alt" size="1.5rem" @click="layoutEffect = 'grid'" :class="[
-      ' cursor-pointer transition-all duration-500 ease-in-out',
-      layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue'
-    ]" />
+          'cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]" />
         <Icon name="fa-solid:list" size="1.5rem" @click="layoutEffect = 'list'" :class="[
-      'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
-      layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue'
-    ]" />
+          'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]" />
       </div>
       <div class="flex items-start gap-4">
         <!-- container filter Desktop -->
         <div
-          class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow ">
+          class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
           <!-- Home Drop Down Menu -->
           <DropDownMenu @emit-update-filter-value="filterValue = $event" :active-tab="activeTab" :filter-value="[]" />
 
@@ -407,17 +404,24 @@ watch(() => subjectId.value, (valueId) => {
         </div>
 
         <!-- data are in Grid -->
-        <div class="xl:w-3/4 ">
-          <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
+        <div class="xl:w-3/4">
+          <div v-if="status === 'pending'" class="flex flex-col items-center justify-center" v-trusted>
             <LoadingIndicator :is-loading="true" />
           </div>
           <!-- Status Error -->
-          <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
+          <div v-else-if="status === 'error'" v-trusted
+            class="md:min-h-[342px] flex flex-col justify-center items-center">
+            <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+            <p class="text-center">
+              Oops! Something went wrong.<br />
+              Try refreshing the page or check your internet connection.
+            </p>
+          </div>
 
           <!-- Status Success -->
-          <div v-else-if="status == 'success'" class="">
+          <div v-else-if="status == 'success'" class="" v-trusted>
             <ClientOnly>
-              <customGridOne v-if="activeTab.toLowerCase() === 'home'">
+              <customGridOne v-if="activeTab.toLowerCase() === 'home'" v-trusted>
                 <template #data>
                   <!-- Subject Cards are in Grid -->
                   <SubjectCard v-for="subject in slicedData" :key="subject._id" :subject-id="subject._id"
@@ -427,20 +431,19 @@ watch(() => subjectId.value, (valueId) => {
                 </template>
               </customGridOne>
 
-              <customGridOne v-else-if="activeTab.toLowerCase() === 'interactive books'">
+              <customGridOne v-else-if="activeTab.toLowerCase() === 'interactive books'" v-trusted>
                 <template #data>
                   <!-- Topic Cards are in Grid -->
                   <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
                     :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
-                    :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
-                    :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : 0" :topic-level="level" :topic-standard="topic.level.name"
-                    :subject-name="topic.subject.name" :topic-viewed="topic.isViewed"
-                    :topic-progress="topic.progressPercent" />
+                    :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'
+                      " :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : 0
+                      " :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name"
+                    :topic-viewed="topic.isViewed" :topic-progress="topic.progressPercent" />
                 </template>
               </customGridOne>
 
-              <customGridOne v-else-if="activeTab.toLowerCase() === 'experiments'">
+              <customGridOne v-else-if="activeTab.toLowerCase() === 'experiments'" v-trusted>
                 <template #data>
                   <!-- Experiment Cards are in Grid -->
                   <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id"
@@ -452,7 +455,7 @@ watch(() => subjectId.value, (valueId) => {
                 </template>
               </customGridOne>
 
-              <customGridOne v-else-if="activeTab.toLowerCase() === 'video'">
+              <customGridOne v-else-if="activeTab.toLowerCase() === 'video'" v-trusted>
                 <template #data>
                   <!-- Video Cards are in Grid -->
                   <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
@@ -461,13 +464,13 @@ watch(() => subjectId.value, (valueId) => {
                     :video-type="video.videoType" />
                 </template>
               </customGridOne>
-              <div v-else-if="activeTab.toLowerCase() === 'audio'">
+              <div v-else-if="activeTab.toLowerCase() === 'audio'" v-trusted>
                 <MessageTopicNotFound />
               </div>
             </ClientOnly>
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-5">
+            <div v-if="totalPages > 1" class="flex justify-center my-5" v-trusted>
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
@@ -490,31 +493,35 @@ watch(() => subjectId.value, (valueId) => {
               </div>
             </div>
           </div>
-          <MessageTopicNotFound v-else />
+          <MessageTopicNotFound v-else v-trusted />
         </div>
-
       </div>
     </section>
 
     <!-- User has no token -->
-    <section v-else :class="['wrapper-container', { ' animate-pulse': isLoading }]">
+    <section v-else :class="['wrapper-container', { ' animate-pulse': isLoading }]" v-trusted>
       <HeroSection />
       <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
         @emit-subject="filters.subject = $event" />
       <TabBar />
 
-      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
+      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center" v-trusted>
         <LoadingIndicator :is-loading="true" />
       </div>
       <!-- Status Error -->
-      <div v-else-if="status === 'error'">Error: {{ error?.message }}</div>
+      <div v-trusted v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center">
+        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+        <p class="text-center">
+          Oops! Something went wrong.<br />
+          Try refreshing the page or check your internet connection.
+        </p>
+      </div>
 
       <!-- Status Success -->
-      <div v-else-if="status == 'success'" class="">
+      <div v-else-if="status == 'success'" class="" v-trusted>
         <!-- client only -->
         <ClientOnly v-if="data.length > 0">
-          <div class="flex flex-col w-full">
-
+          <div class="flex flex-col w-full" v-trusted>
             <customGridTwo>
               <template #data>
                 <!-- Subject Cards are in Grid -->
@@ -525,13 +532,13 @@ watch(() => subjectId.value, (valueId) => {
             </customGridTwo>
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-5">
-              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
+            <div v-if="totalPages > 1" class="flex justify-center my-5" v-trusted>
+              <div v-if="totalPages <= 5" class="flex justify-center gap-2" v-trusted>
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
                   @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
               </div>
-              <div v-else class="flex justify-center gap-2">
+              <div v-else class="flex justify-center gap-2" v-trusted>
                 <!-- previous -->
                 <div class="flex items-center justify-center" v-if="currentPage > 5">
                   <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
@@ -542,18 +549,18 @@ watch(() => subjectId.value, (valueId) => {
                   @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
 
                 <!-- next button -->
-                <div class="flex items-center justify-center" v-if="currentPage > 4">
+                <div class="flex items-center justify-center" v-if="currentPage > 4" v-trusted>
                   <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
                 </div>
               </div>
             </div>
           </div>
         </ClientOnly>
-        <MessageTopicNotFound v-else />
+        <MessageTopicNotFound v-else v-trusted />
       </div>
 
       <!-- Even Data was not success should be handle here -->
-      <div class="flex flex-col w-full" v-else>
+      <div class="flex flex-col w-full" v-trusted v-else>
         <p class="text-center text-medium">
           Try to refresh the page, Something went Wrong
         </p>
