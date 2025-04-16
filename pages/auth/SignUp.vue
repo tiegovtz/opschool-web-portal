@@ -207,7 +207,6 @@ const signUp = async () => {
         }
       });
 
-
     setTimeout(() => {
       usersignUp.controller.isSent = null;
       usersignUp.controller.feedback = null;

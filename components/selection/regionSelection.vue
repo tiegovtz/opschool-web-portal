@@ -17,8 +17,8 @@ const data = reactive({
 // Emit
 defineEmits(["updateRegion"]);
 
-// Fetch district function
-const fetchDistricts = async () => {
+// Fetch Region function
+const fetchRegion = async () => {
    
     data.error = null;
 
@@ -33,15 +33,15 @@ const fetchDistricts = async () => {
     }
 };
 
-// Initial fetch
-fetchDistricts();
+// Initial Fetch
+fetchRegion();
 </script>
 
 <template>
-    <div class="flex w-full flex-col items-start">
-        <label for="region" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select Region:</label>
+    <div class="flex flex-col items-start w-full">
+        <label for="region" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select Region:</label>
 
-        <select name="region" id="region" class="w-full p-2 focus:outline-none focus:ring-0 capitalize"
+        <select name="region" id="region" class="w-full p-2 capitalize focus:outline-none focus:ring-0"
             :class="{ 'text-textGray/40': region }" @change="$emit('updateRegion',$event.target.value)">
             <option value="" v-if="data.status === 'pending'">Loading...</option>
             <option value="" v-else-if="data.status === 'error'">{{ data.error }}</option>
@@ -53,7 +53,7 @@ fetchDistricts();
         </select>
 
         <!-- Error message -->
-        <small v-if="error" class="text-red-500 text-smallest w-full">
+        <small v-if="error" class="w-full text-red-500 text-smallest">
             {{ error }}
         </small>
     </div>

@@ -38,7 +38,7 @@ watch(() => searchReactive.search, (newVal) => {
 <template>
   <div :class="[
     ' flex items-center justify-center w-full',
-    appearance === 'normal' ? 'max-w-md':`h-72 bg-[url('/public/images/background3.webp')] bg-cover bg-center bg-no-repeat rounded-md`
+    appearance === 'normal' ? 'max-w-md':`h-72 bg-background3 bg-cover bg-center bg-no-repeat rounded-md`
   ]"
   >
    <div :class="[
