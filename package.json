@@ -20,8 +20,6 @@
     "@pinia/nuxt": "^0.10.1",
     "@primeuix/themes": "^1.0.0",
     "axios": "^1.8.2",
-    "child_process": "^1.0.2",
-    "hls.js": "^1.6.2",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
