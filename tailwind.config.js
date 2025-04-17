@@ -40,7 +40,7 @@ export default {
       },
       backgroundImage: {
         // OptionImage
-        'optionImage': "url('/images/default.png')",
+        'optionImage': "url('/images/default.webp')",
         
         // BackGround
         'background3': "url('/public/images/background3.webp')",

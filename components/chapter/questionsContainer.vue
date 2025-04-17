@@ -27,6 +27,8 @@ const quizAttempt = reactive({
   quizCompleted: false, // New property to track if the quiz is completed
 });
 
+const emits = defineEmits(["emitQuizScore"])
+
 // Result Scored Computed
 const scoredComputed = computed(() => {
   return (quizAttempt.scored / quizAttempt.totalQuestions) * 100;
@@ -124,38 +126,30 @@ watch(
 );
 
 // watch progress QUIZ
-// watch(quizAttempt.quizCompleted, (isCompleted) => {
-//   if (isCompleted == true) {
-
-//   }
-// });
+watch(quizAttempt.quizCompleted, (isCompleted) => {
+  if (isCompleted == true) {
+   emits("emitQuizScore", scoredComputed.value)
+   useCookie("chapterProgress").value.assessmentsAttempted = 1;
+  }
+});
 </script>
 
 <template>
   <section
-    class="flex flex-col items-center justify-center py-4 rounded-md bg-gradient-to-b from-deepBlue to-white center-height"
-  >
+    class="flex flex-col items-center justify-center py-4 rounded-md bg-gradient-to-b from-deepBlue to-white center-height">
     <!-- Questions -->
-    <div
-      class="container w-full max-w-5xl bg-white rounded-md md:p-8 custom-box-shadow"
-      v-if="isAttemptingQuiz"
-    >
+    <div class="container w-full max-w-5xl bg-white rounded-md md:p-8 custom-box-shadow" v-if="isAttemptingQuiz">
       <!-- Close Button -->
       <div class="flex items-center justify-end mb-2">
-        <div
-          class="flex items-center justify-center w-8 h-8 p-2 bg-red-500 rounded-full cursor-pointer"
-          @click="changeChapter('R')"
-        >
+        <div class="flex items-center justify-center w-8 h-8 p-2 bg-red-500 rounded-full cursor-pointer"
+          @click="changeChapter('R')">
           <Icon name="formkit:close" size="24" class="font-bold text-white" />
         </div>
       </div>
 
       <!-- Header and Button -->
       <div class="flex items-center justify-between">
-        <h1
-          class="tracking-wide underline text-large"
-          v-if="questions.length > 0"
-        >
+        <h1 class="tracking-wide underline text-large" v-if="questions.length > 0">
           Quiz
         </h1>
 
@@ -164,63 +158,46 @@ watch(
           <!-- Simplified counter display -->
           <p class="flex gap-2 font-bold">
             Answered
-            <span class="font-normal"
-              >{{ quizAttempt.answeredQuestions }}/{{ questions.length }}</span
-            >
+            <span class="font-normal">{{ quizAttempt.answeredQuestions }}/{{ questions.length }}</span>
           </p>
         </div>
       </div>
 
       <!-- Outputs or results or Marks -->
-      <div
-        v-if="quizAttempt.quizCompleted && quizAttempt.isAttempting"
-        class="w-full"
-      >
+      <div v-if="quizAttempt.quizCompleted && quizAttempt.isAttempting" class="w-full">
         <!-- Scores -->
         <div class="flex flex-col items-center w-full mb-4">
           <p>
             Scores: <b>{{ scoredComputed.toFixed(1) }}%</b>
           </p>
-          <p
-            class="flex items-center justify-center flex-1 gap-2 font-bold"
-            :class="getScoreColor(scoredComputed)"
-          >
+          <p class="flex items-center justify-center flex-1 gap-2 font-bold" :class="getScoreColor(scoredComputed)">
             {{ getMotivationMessage(scoredComputed) }}
           </p>
         </div>
 
         <!-- Question with Answers -->
-        <div
-          class="flex items-center w-full gap-2 my-2"
-          v-for="(question, index) in shuffleQuestions"
-          :key="index"
-        >
+        <div class="flex items-center w-full gap-2 my-2" v-for="(question, index) in shuffleQuestions" :key="index">
           <div class="flex w-full">
             <p class="flex">{{ index + 1 }}.</p>
             <div class="pl-4 text-justify">
               <p class="mb-2">
-                {{ 
-                  question.questionType === 'drag_and_drop'
-                  ? question.question.replace(/(_\$blank)/g, '..........')
-                  : question.question 
-                }}
-            </p>
-              <p
-                :class="
-                  quizAttempt.clickedAnswer[index] == question.answer
-                    ? 'text-normalGreener'
-                    : 'text-red-600'
-                "
-              >
-                <b :class="['text-black',{'capitalize':question.questionType === 'drag_and_drop'}]">Your choice: </b>
-                <span :class="[ question.questionType === 'drag_and_drop'?'capitalize':'']">{{ quizAttempt.clickedAnswer[index].replaceAll('-', ' ,') }}</span>
+                {{
+      question.questionType === 'drag_and_drop'
+        ? question.question.replace(/(_\$blank)/g, ' __________ ')
+        : question.question
+    }}
+              </p>
+              <p :class="quizAttempt.clickedAnswer[index] == question.answer
+        ? 'text-normalGreener'
+        : 'text-red-600'
+      ">
+                <b :class="['text-black', { 'capitalize': question.questionType === 'drag_and_drop' }]">Your choice: </b>
+                <span :class="[question.questionType === 'drag_and_drop' ? 'capitalize' : '']">{{
+      quizAttempt.clickedAnswer[index].replaceAll('-', ' ,') }}</span>
 
                 <!-- Mark Tick and Wrong -->
-                <span
-                  v-if="quizAttempt.clickedAnswer[index] == question.answer"
-                  class="font-bold text-normalGreener"
-                  >✓</span
-                >
+                <span v-if="quizAttempt.clickedAnswer[index] == question.answer"
+                  class="font-bold text-normalGreener">✓</span>
                 <span v-else class="font-bold text-red-600">✗</span>
               </p>
             </div>
@@ -230,14 +207,9 @@ watch(
         <!-- Read notes again and Read next topic -->
         <div class="flex items-center justify-end w-full gap-2">
           <small>Recommendation:</small>
-          <button
-            v-if="quizAttempt.quizCompleted"
-            @click="resetQuiz()"
-            class="flex items-center justify-center px-4 py-1 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
-          >
-            <span v-if="scoredComputed < 50" class="capitalize"
-              >Read notes again</span
-            >
+          <button v-if="quizAttempt.quizCompleted" @click="resetQuiz()"
+            class="flex items-center justify-center px-4 py-1 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
+            <span v-if="scoredComputed < 50" class="capitalize">Read notes again</span>
             <span v-else class="capitalize">next topic</span>
           </button>
         </div>
@@ -266,19 +238,13 @@ watch(
       </div>
 
       <!-- Use currentQuestion instead of shuffleQuestions to determine which question to display -->
-      <questionsAnswers
-        v-else
-        @question-answered="answeredAttempt($event)"
-        @clicked-choice="quizAttempt.clickedAnswer.push($event)"
-        :question-type="
-          shuffleQuestions[quizAttempt.currentQuestion].questionType
-        "
-        :thumbnail="shuffleQuestions[quizAttempt.currentQuestion].thumbnail"
+      <questionsAnswers v-else @question-answered="answeredAttempt($event)"
+        @clicked-choice="quizAttempt.clickedAnswer.push($event)" :question-type="shuffleQuestions[quizAttempt.currentQuestion].questionType
+      " :thumbnail="shuffleQuestions[quizAttempt.currentQuestion].thumbnail"
         :true-answer="shuffleQuestions[quizAttempt.currentQuestion].answer"
         :choices="shuffleQuestions[quizAttempt.currentQuestion].choices"
         :question="shuffleQuestions[quizAttempt.currentQuestion].question"
-        :number="`${quizAttempt.currentQuestion + 1}`.toString()"
-      />
+        :number="`${quizAttempt.currentQuestion + 1}`.toString()" />
     </div>
   </section>
 </template>

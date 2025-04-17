@@ -8,7 +8,10 @@ const dropDownMenu = reactive({
 
 const selectedFilters = reactive({});
 
-const emit = defineEmits(["emitUpdatefilterName", "emitUpdateFilterValue"]);
+const emit = defineEmits([
+  "emitUpdatefilterName", 
+  "emitUpdateFilterValue"
+]);
 
 const props = defineProps({
   filterName: String,
@@ -51,17 +54,22 @@ const toggleCheckbox = (key, value) => {
 };
 
 const emitFilterPayload = debounce(() => {
-  const rawFilters = toRaw(selectedFilters);
-  const queryArray = [];
-  for (const [key, val] of Object.entries(rawFilters)) {
+  const rawFilters = JSON.parse(JSON.stringify(selectedFilters)); // deep clone (like toRaw)
+  const queryObject = {};
+
+  for (const key in rawFilters) {
+    const val = rawFilters[key];
     if (Array.isArray(val)) {
-      val.forEach((v) => queryArray.push(`${key}=${v}`));
+      queryObject[key.toLowerCase()] = val.toString().toLowerCase(); // or val.join(',') if backend expects comma-separated
     } else {
-      queryArray.push(`${key}=${val}`);
+      queryObject[key.toLowerCase()] = val.toString().toLowerCase();
     }
   }
-  emit("emitUpdateFilterValue", queryArray);
+
+  emit("emitUpdateFilterValue", queryObject);
 }, 100);
+
+
 
 const filterNameGroup = [
   {
@@ -69,11 +77,11 @@ const filterNameGroup = [
     visibility: "all",
     inputType: "radio",
     filterGroup: [
-      { name: "Pre primary School" },
-      { name: "Primary School" },
-      { name: "Lower Secondary School" },
-      { name: "Upper Secondary School" },
-      { name: "Teacher Education" },
+      { name: "Pre primary" },
+      { name: "Primary" },
+      { name: "Lower Secondary" },
+      { name: "Upper Secondary" },
+      { name: "Teachers Education" },
     ],
   },
   {
@@ -82,31 +90,31 @@ const filterNameGroup = [
     inputType: "checkbox",
     filterGroup: [
       {
-        level: "Pre primary School",
+        level: "Pre primary",
         classes: ["pre primary 1", "pre primary 2", "pre primary 3"],
       },
       {
-        level: "Primary School",
+        level: "Primary",
         classes: [
-          "standard 1",
-          "standard 2",
-          "standard 3",
-          "standard 4",
-          "standard 5",
-          "standard 6",
+          "standard one",
+          "standard two",
+          "standard three",
+          "standard four",
+          "standard five",
+          "standard six",
         ],
       },
       {
-        level: "Lower Secondary School",
-        classes: ["form 1", "form 2", "form 3", "form 4"],
+        level: "Lower Secondary",
+        classes: ["form one", "form two", "form three", "form four"],
       },
       {
-        level: "Upper Secondary School",
-        classes: ["form 5", "form 6"],
+        level: "Upper Secondary",
+        classes: ["form five", "form six"],
       },
       {
         level: "Teacher Education",
-        classes: ["level 1", "level 2", "level 3", "level 4"],
+        classes: ["level one", "level two", "level three", "level four"],
       },
     ],
   },
@@ -115,13 +123,13 @@ const filterNameGroup = [
     visibility: "all",
     inputType: "checkbox",
     filterGroup: [
-      { level: "Pre primary School", list: ["counting", "writting"] },
+      { level: "Pre primary", list: ["counting", "writting"] },
       {
-        level: "Primary School",
+        level: "Primary",
         list: ["kiswahili", "mathematics", "science", "social studies"],
       },
       {
-        level: "Lower Secondary School",
+        level: "Lower Secondary",
         list: [
           "kiswahili",
           "mathematics",
@@ -136,7 +144,7 @@ const filterNameGroup = [
         ],
       },
       {
-        level: "Upper Secondary School",
+        level: "Upper Secondary",
         list: ["kiswahili", "mathematics", "physics", "chemistry", "biology"],
       },
     ],
@@ -176,18 +184,17 @@ const visibleFilters = computed(() => {
 });
 </script>
 
-
 <template>
   <form
-    class="flex flex-col w-full bg-white cursor-pointer divide-y divide-gray-200"
+    class="flex flex-col w-full bg-white divide-y divide-gray-200 cursor-pointer"
     @reset="resetFilters"
   >
     <!-- Filter legend and reset button -->
-    <div class="flex items-center justify-between p-4 bg-gray-50 border-b">
+    <div class="flex items-center justify-between p-4 border-b bg-gray-50">
       <h2 class="text-lg font-bold text-gray-700">Filter</h2>
       <button
         type="reset"
-        class="px-3 py-1 text-sm text-oceanBlue border border-oceanBlue rounded-md hover:bg-deepBlue hover:text-white hover:border-deepBlue transition-all duration-500 ease-in-out"
+        class="px-3 py-1 text-sm transition-all duration-500 ease-in-out border rounded-md text-oceanBlue border-oceanBlue hover:bg-deepBlue hover:text-white hover:border-deepBlue"
       >
         Reset Filters
       </button>
@@ -199,7 +206,7 @@ const visibleFilters = computed(() => {
       class="p-4"
     >
       <div @click="setMenuOpen(index)" class="flex items-center justify-between">
-        <h3 class="font-semibold text-lg">{{ filter.name }}</h3>
+        <h3 class="text-lg font-semibold">{{ filter.name }}</h3>
         <span>
             <Icon
             :name="dropDownMenu.openMenus.includes(index) ? 

@@ -224,7 +224,7 @@ const { progress, isLoading } = useLoadingIndicator();
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
           <div class="flex flex-col w-full">
-            <div class="flex items-start gap-4">
+            <div class="flex items-center gap-4">
               <!-- Topic Cards are in Grid -->
               <div class="container flex flex-col items-start">
                  <customGridTwo>
