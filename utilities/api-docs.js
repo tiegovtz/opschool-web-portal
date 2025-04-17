@@ -1,6 +1,6 @@
-const baseURL = "http://41.59.102.150:5001/v1"; // Define baseURL first
+// const baseURL = "http://41.59.102.150:5001/v1"; // Define baseURL first
 
-// const baseURL = "https://apitie.ekima.africa/v1" // Define baseURL first
+const baseURL = "https://apitie.ekima.africa/v1" // Define baseURL first
 
 // const baseURL = "http://127.0.0.1:3003/v1" // Define baseURL first
 
@@ -72,6 +72,7 @@ const apiDocs = {
     getSubjectId: `${baseURL}/public-topics/by-subject/{subjectId}`,
     filterTopics: `${baseURL}/public-topics`,
     filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
+    publicTopicsFilterAll: `${baseURL}/public-topics/filter-all`,
     topicViewedRead: `${baseURL}/topics/{id}/read`,
   },
 
