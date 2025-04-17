@@ -14,6 +14,7 @@ export default defineNuxtConfig({
 
   plugins: [
     { src: '~/plugins/trusted-directive.ts'},
+    { src: '~/plugins/nonce.client.ts'},
     { src: "~/plugins/mathjax.client.js", mode: "client" },
     { src: "~/plugins/mathjax-directive.client.js", mode: "client" },
     { src: "~/plugins/dom-guard.client.ts", mode: "client" },
