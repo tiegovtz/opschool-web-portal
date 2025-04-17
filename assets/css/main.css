@@ -54,11 +54,11 @@ body {
 }
 
 .stat-content {
-  @apply flex flex-col items-center;
+  @apply flex flex-col items-center ml-2;
 }
 
 .stat-label {
-  @apply text-xs font-medium text-gray-500;
+  @apply flex flex-wrap font-medium text-textGray text-extraSmall;
 }
 
 .stat-value {
@@ -193,7 +193,7 @@ body {
 
 /*  */
 .notes table td img {
-  height: 231px;
+  height: 120px;
   width: 100%;
   border-radius: 12px;
   object-fit: contain;
@@ -285,15 +285,51 @@ p:only-child > img:only-child {
 } /* Default: 10.72px */
 
 .notes div > table > tbody > tr > td > table{
-  display:flex !important;
-  justify-items: center !important;
-  align-items: center !important;
   width: max-content !important;
   border-radius: 0 0 12px 12px !important;
 }
 
 .notes div > table > tbody > tr > td > table span {
   padding:10px !important;
+}
+
+/* Resivion Exercise */
+.notes .rev-exer-tbl> p  ~table > tbody > tr {
+  display: block !important;
+  width: 100% !important;
+  height: max-content !important;
+  border-radius:0 !important;
+  border: 0 !important;
+}
+
+.notes .rev-exer-tbl> p  ~table  {
+  border: 0 !important;
+    height: max-content !important;
+}
+
+.notes .rev-exer-tbl> p  ~table table {
+  border: 0 !important;
+  display: block !important;
+  width: 100% !important;
+
+}
+.notes .rev-exer-tbl table > tbody > tr > td > table{
+  height: max-content !important;
+  border-radius:0 !important;
+}
+
+.notes .rev-exer-tbl table > tbody > tr > td > table table{ 
+  display: block !important;
+  width: 100% !important;
+  height: max-content !important;
+  border-radius:0 !important;
+}
+
+.notes .rev-exer-tbl table > tbody > tr > td > table table colgroup{ 
+  display: block !important;
+  width: 100% !important;
+  height: max-content !important;
+  border-radius:0 !important;
 }
 
 /* title style  font tahoma important*/

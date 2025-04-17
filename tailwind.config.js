@@ -38,7 +38,17 @@ export default {
         extraSmall: "0.8rem", // 14px
         smallest: "0.6rem",   // 12px
       },
+      backgroundImage: {
+        // OptionImage
+        'optionImage': "url('/images/default.png')",
+        
+        // BackGround
+        'background3': "url('/public/images/background3.webp')",
+        'background2': "url('/public/images/background2.webp')",
+        'background1': "url('/public/images/background1.webp')",
+      },
     },
+    
     screens: {
       xs: "320px",
       sm: "640px",

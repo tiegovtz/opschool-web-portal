@@ -14,12 +14,12 @@ defineProps({
 <template>
   <div class="flex flex-col items-center justify-center">
    
-    <div class="doting">
-      <div :class="isLoading ? 'dot-animate' : ''" class="inline-block w-2 h-2 mx-1 dot "></div>
-      <div :class="isLoading ? 'dot-animate' : ''" class="inline-block w-3 h-3 mx-1 dot" ></div>
-      <div :class="isLoading ? 'dot-animate' : ''" class="inline-block w-2 h-2 mx-1 dot"></div>
-      <div :class="isLoading ? 'dot-animate' : ''" class="inline-block w-3 h-3 mx-1 dot"></div>
-      <div :class="isLoading ? 'dot-animate' : ''" class="inline-block w-2 h-2 mx-1 dot"></div>
+    <div class="doting ">
+      <div  class="inline-block w-2 h-2 mx-1 dot dot-animate"></div>
+      <div  class="inline-block w-3 h-3 mx-1 dot dot-animate" ></div>
+      <div  class="inline-block w-2 h-2 mx-1 dot dot-animate"></div>
+      <div  class="inline-block w-3 h-3 mx-1 dot dot-animate"></div>
+      <div  class="inline-block w-2 h-2 mx-1 dot dot-animate"></div>
     </div>
     <div class="p-1 lowercase text text-oceanBlue fade-in">
       {{ somo.toLowerCase() == "kiswahili " ? " .. Tafadhali subiri .." : ".. Please wait .." }}
@@ -59,7 +59,7 @@ defineProps({
   }
   60% {
     transform: translateY(-15px); /* Dots move up by 10px */
-    background:var(--color-oceanBlue);
+    background:#56ade8;
     animation-delay: 0.15s;
   }
 }
@@ -67,10 +67,10 @@ defineProps({
 /*  */
 @keyframes fade-in {
     0%,100% {
-      color:var(--color-grayLight);
+      color:#f0f0f0;
     }
     60% {
-      color: var(--color-oceanBlue);
+      color: #56ade8;
     }
   }
 
