@@ -27,6 +27,8 @@ const layoutEffect = ref('grid');
 
 const isVtrustedValue = ref(Date.now()*Math.random().toString()+'tie-tz');
 
+const nonceValue = ref()
+
 export {
     isGreaterToXL,
     isGreaterToLG,
@@ -40,5 +42,6 @@ export {
     _BASE_API_URL,
     currentTopic,
     layoutEffect,
-    isVtrustedValue
+    isVtrustedValue,
+    nonceValue
 }
