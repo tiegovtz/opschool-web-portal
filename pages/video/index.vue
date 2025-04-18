@@ -158,7 +158,7 @@ const { progress, isLoading } = useLoadingIndicator()
 <template>
   <NuxtLayout name="home-layout">
     <section :class="[
-      'wrapper-container',
+      ' ',
       { ' animate-pulse': isLoading }
     ]">
 

@@ -129,14 +129,14 @@ const fetchData = async (params) => {
   const tab = activeTab.value.toLowerCase();
 
   // Default Topics by User or Public
-  if (userToken.value) {
-    url = apiDocs.topics.filterTopicsByUser.replace(
-      "{userId}",
-      userToken.value?._id
-    );
-  } else {
-    url = apiDocs.topics.filterTopics;
-  }
+  // if (userToken.value) {
+  //   url = apiDocs.topics.filterTopicsByUser.replace(
+  //     "{userId}",
+  //   );
+  // } else {
+    
+  // }
+  url = apiDocs.topics.filterTopics;
 
   // Check for specific tabs
   if (tab === "experiments") {
@@ -168,10 +168,10 @@ const fetchData = async (params) => {
     url = apiDocs.topics.publicTopicsFilterAll;
   }
 
+      userToken.value?._id
   try {
-    status.value = "pending";
     const response = await $fetch(url, {
-      params: params,
+      params:  {...params, userId: userToken.value?._id},
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
@@ -341,7 +341,7 @@ watch(
     <!-- User Has a Token -->
     <section
       v-if="userToken"
-      :class="['wrapper-container', { ' animate-pulse': isLoading }]"
+      :class="[' ', { ' animate-pulse': isLoading }]"
     >
       <HomeSearchbar appearance="rounded" />
       <TabBar
@@ -500,7 +500,7 @@ watch(
                     :topic-standard="topic.level.name"
                     :subject-name="topic.subject.name"
                     :topic-viewed="topic.isViewed"
-                    :topic-progress="topic.progressPercent"
+                    :topic-progress="topic.avgProgress"
                   />
                 </template>
               </customGridOne>
@@ -605,7 +605,7 @@ watch(
     <!-- User has no token -->
     <section
       v-else
-      :class="['wrapper-container', { ' animate-pulse': isLoading }]"
+      :class="[' ', { ' animate-pulse': isLoading }]"
     >
       <HeroSection />
       <InputsSelection

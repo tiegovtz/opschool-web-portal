@@ -3,7 +3,7 @@ const containerRef = ref(null)
 const slides = [
   "/images/8.TIE-Interactive.webp",
   "/images/1.TIE-Interactive.jpg",
-  "https://www.tie.go.tz/uploads/sliders/bebb7c4be734635443eb6fff5aa43a91.jpeg",
+  "/images/9.TIE-Interactive.webp",
   "/images/7.TIE-Interactive.webp",
   "/images/6.TIE-Interactive.webp",
   "/images/5.TIE-Interactive.webp",
