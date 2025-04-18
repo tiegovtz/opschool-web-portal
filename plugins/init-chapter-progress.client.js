@@ -2,7 +2,7 @@
 
 export default defineNuxtPlugin(() => {
   const chapterProgress = useCookie('chapterProgress', {
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: 60 * 60 * 24 * 1, // 1 days
     httpOnly: false,
     sameSite: 'strict',
     secure: process.env.NODE_ENV === 'production',

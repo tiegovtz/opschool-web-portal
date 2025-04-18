@@ -36,8 +36,7 @@ export default defineEventHandler(async (event) => {
     }
   )
     .then((response) => {
-      // console.log(response)
-      return true
+      return response;
     })
     .catch((error) => {
       return createError({

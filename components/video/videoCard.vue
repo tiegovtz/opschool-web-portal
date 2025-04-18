@@ -12,7 +12,7 @@ const props = defineProps({
     },
     videoThumbnail: {
         type: String,
-       default: '/images/background2.webp',
+       default: '/public/images/default.webp',
     },
     videoFileUrl: {
         type: String,

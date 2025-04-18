@@ -83,6 +83,7 @@ export default {
     getSubjectId: `${baseURL}/public-topics/by-subject/{subjectId}`,
     filterTopics: `${baseURL}/public-topics`,
     filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
+    publicTopicsFilterAll: `${baseURL}/public-topics/filter-all`,
     topicViewedRead: `${baseURL}/topics/{id}/read`,
   },
 

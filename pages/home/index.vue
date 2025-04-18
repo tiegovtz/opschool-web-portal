@@ -82,6 +82,15 @@ const filterValue = ref(); // Initial Filter Value State
 const keys = ref(); // Initial Keys Value State
 const subjectId = ref(); // Initial subjectId Value State
 
+// Define Filters Reactive State
+const filters = reactive({
+  level: null,
+  subject: null,
+});
+
+// loadoing indicator
+const { progress, isLoading } = useLoadingIndicator();
+
 // Checking Tab if is corresponde to route
 if (tab) {
   tab == "experiments" ? (activeTab.value = "Experiments") : "";
@@ -113,56 +122,48 @@ const pageSize = ref();
 
 // Then, update fetchData to call sliceData after data is loaded
 const fetchData = async (params) => {
-  let url = userToken.value
-    ? apiDocs.topics.filterTopicsByUser.replace(
+  let url;
+
+  const tab = activeTab.value.toLowerCase();
+
+  // Default Topics by User or Public
+  if (userToken.value) {
+    url = apiDocs.topics.filterTopicsByUser.replace(
       "{userId}",
       userToken.value?._id
-    )
-    : apiDocs.topics.filterTopics;
+    );
+  } else {
+    url = apiDocs.topics.filterTopics;
+  }
 
-  // Experiments
-  activeTab.value.toLowerCase() == "experiments"
-    ? (url = apiDocs.experiments.getExperiments)
-    : "";
+  // Check for specific tabs
+  if (tab === "experiments") {
+    url = apiDocs.experiments.getExperiments;
+  } else if (tab === "video") {
+    url = apiDocs.videos.getVideos;
+  } else if (tab === "home") {
+    url = apiDocs.subjects.getPublicSubjects;
+  }
 
-  // Video
-  activeTab.value.toLowerCase() == "video"
-    ? (url = apiDocs.videos.getVideos)
-    : "";
-
-  // Home
-  activeTab.value.toLowerCase() == "home"
-    ? (url = apiDocs.subjects.getPublicSubjects)
-    : "";
-
-  // activeTab.value.toLowerCase() = 'audio' ? url = apiDocs.experiments:''
+  // Subject-specific tab overrides
   if (subjectId.value) {
-    // Experiments
-    activeTab.value.toLowerCase() == "experiments"
-      ? (url = apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
+    if (tab === "experiments") {
+      url = apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
         "{subjectId}",
         subjectId.value
-      ))
-      : "";
-
-    // Video
-    activeTab.value.toLowerCase() == "video"
-      ? (url = apiDocs.videos.getPublicVideoBySubjectId.replace(
+      );
+    } else if (tab === "video") {
+      url = apiDocs.videos.getPublicVideoBySubjectId.replace(
         "{subjectId}",
         subjectId.value
-      ))
-      : "";
+      );
+    } else if (tab === "interactive books") {
+      url = apiDocs.topics.getSubjectId.replace("{subjectId}", subjectId.value);
+    }
+  }
 
-    // Interactive
-    activeTab.value.toLowerCase() == "interactive books"
-      ? (url = apiDocs.topics.getSubjectId.replace(
-        "{subjectId}",
-        subjectId.value
-      ))
-      : "";
-
-    // Reset Subject ID
-    // subjectId.value = "";
+  if (params) {
+    url = apiDocs.topics.publicTopicsFilterAll;
   }
 
   try {
@@ -176,13 +177,9 @@ const fetchData = async (params) => {
 
     // Call State Define above
     data.value = response
-      .filter((item) => item)
-      .sort((a, b) => a._id.localeCompare(b._id));
-
     status.value = "success";
 
     // Call sliceData after data is loaded
-    keys.value = extractNestedKeysAndValues(data.value);
     sliceData(
       (currentPage.value - 1) * pageSize.value,
       currentPage.value * pageSize.value
@@ -194,7 +191,7 @@ const fetchData = async (params) => {
 };
 
 // Call Fetch Topics function
-fetchData({});
+fetchData();
 
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
@@ -259,15 +256,6 @@ const prevPage = () => {
   );
 };
 
-// loadoing indicator
-const { progress, isLoading } = useLoadingIndicator();
-
-// Define Filters Reactive State
-const filters = reactive({
-  level: null,
-  subject: null,
-});
-
 const level = ref(); // Initial Level State
 
 // watch emits changes
@@ -291,16 +279,16 @@ watch(
     if (activeTab) {
       if (activeTab.toLowerCase() === "home") {
         subjectId.value = "";
-        fetchData({});
+        fetchData();
       } else if (activeTab.toLowerCase() === "interactive books") {
-        fetchData({});
+        fetchData();
       } else if (activeTab.toLowerCase() === "experiments") {
-        fetchData({});
+        fetchData();
       } else if (activeTab.toLowerCase() === "video") {
-        fetchData({});
+        fetchData();
       } else if (activeTab.toLowerCase() === "audio") {
-        // fetchData({});
-        data.value = []
+        // fetchData();
+        data.value = [];
       }
     }
   }
@@ -312,7 +300,7 @@ watch(
   (userToken) => {
     if (userToken == null || userToken == undefined) {
       activeTab.value = "home";
-      fetchData({});
+      fetchData();
     }
   }
 );
@@ -320,16 +308,17 @@ watch(
 // Watch Filter Value
 watch(
   () => filterValue.value,
-  (filterValue) => {
-    if (filterValue) {
-      console.log(filterValue);
-      slicedData.value = filterDataByValues(data.value, filterValue);
+  (newfilterValue) => {
+    if (Object.keys(newfilterValue).length > 0) {
+      // Remove empty or falsy values
+      const filteredParams = Object.fromEntries(
+        Object.entries(newfilterValue).filter(([_, v]) => v)
+      );
+      fetchData(filteredParams);
+      data.value = [];
     } else {
       // Call sliceData after data is loaded
-      sliceData(
-        (currentPage.value - 1) * pageSize.value,
-        currentPage.value * pageSize.value
-      );
+      fetchData()
     }
   }
 );
@@ -340,7 +329,6 @@ watch(
   (valueId) => {
     if (valueId) {
       activeTab.value = "Interactive Books";
-
     }
   }
 );
@@ -393,7 +381,7 @@ watch(
           layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
         ]" />
       </div>
-      <div class="flex items-start gap-4">
+      <div class="flex items-center justify-center w-full gap-4 xl:items-start">
         <!-- container filter Desktop -->
         <div
           class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
@@ -416,6 +404,13 @@ watch(
               Oops! Something went wrong.<br />
               Try refreshing the page or check your internet connection.
             </p>
+            
+            <span v-if=" ( Array.isArray(filterValue) && filterValue.length > 0) ||  
+              ( typeof filterValue == 'object' && Object.keys(filterValue).length > 0  )" 
+              @click="filterValue = []"
+               class="cursor-pointer text-oceanBlue">
+                    Reset filters
+            </span>
           </div>
 
           <!-- Status Success -->
@@ -434,12 +429,27 @@ watch(
               <customGridOne v-else-if="activeTab.toLowerCase() === 'interactive books'" v-trusted>
                 <template #data>
                   <!-- Topic Cards are in Grid -->
-                  <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
-                    :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
-                    :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'
-                      " :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : 0
-                      " :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name"
-                    :topic-viewed="topic.isViewed" :topic-progress="topic.progressPercent" />
+                  <TopicCard
+                    v-for="topic in slicedData"
+                    :key="topic._id"
+                    :topic-id="topic._id"
+                    :topic-image="topic.thumbnail"
+                    :topic-title="topic.name"
+                    :topic-description="topic.descriptions"
+                    :topic-duration="
+                      topic.topic_duration ? topic.topic_duration : '10 min'
+                    "
+                    :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
+                    :topic-views="
+                      topic.viewedBy?.length ? topic.viewedBy?.length : 
+                      topic.views ? topic.views: 0
+                    "
+                    :topic-level="level"
+                    :topic-standard="topic.level.name"
+                    :subject-name="topic.subject.name"
+                    :topic-viewed="topic.isViewed"
+                    :topic-progress="topic.progressPercent"
+                  />
                 </template>
               </customGridOne>
 
