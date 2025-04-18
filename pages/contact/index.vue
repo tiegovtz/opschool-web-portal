@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout name="home-layout">
-    <div class="wrapper-container">
+    <div class=" ">
       <h1>Contact</h1>
     </div>
   </NuxtLayout>

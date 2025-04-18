@@ -208,7 +208,7 @@ watch(filters, (filters) => {
 <template>
   <NuxtLayout name="home-layout">
     <div :class="[
-      'wrapper-container',
+      ' ',
       { ' animate-pulse': isLoading }
     ]">
       <HeroSection />

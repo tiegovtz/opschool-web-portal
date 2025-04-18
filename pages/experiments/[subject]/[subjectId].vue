@@ -196,7 +196,7 @@ const { progress, isLoading } = useLoadingIndicator();
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
+    <div class=" " :class="{ ' animate-pulse': isLoading }">
       <HeroSection />
         <TabBar 
           :subject-title="subjectTitle"

@@ -1,9 +1,11 @@
 <script setup>
 import messages from "~/utilities/messages";
 import { MessageComponent, ProfileDrawInitialLater } from "#components";
+import apiDocs from "~/utilities/api-docs";
 
 // Define Cookie
 const userToken = useCookie("signInUserToken").value;
+let uploadedPic;
 
 // Define One State
 const profile = reactive({
@@ -60,6 +62,51 @@ const data = reactive({
   status: "idle",
   error: null,
 });
+
+// Define Update Function
+const updatedProfile = async () => {
+  let formData = new FormData();
+  formData.append("name", profile.fname + " " + profile.lname);
+  formData.append("email", profile.email);
+  formData.append("phoneNumber", profile.phone);
+  formData.append("organization", profile.organization);
+  formData.append("region", profile.region);
+  formData.append("district", profile.district);
+  formData.append("school", profile.school);
+  formData.append("level", profile.level);
+  formData.append("type", profile.type);
+
+  if (uploadedPic) {
+    formData.append("profilePic", uploadedPic);
+  }
+
+  try {
+    const response = await $fetch(apiDocs.auth.profileEdit, {
+      method: "PATCH",
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+      },
+    });
+
+    if (response) {
+      // Only update values if remote is valid (non-empty)
+      for (const key in response) {
+        if (Object.prototype.hasOwnProperty.call(response, key)) {
+          const remoteValue = response[key];
+          if (remoteValue !== undefined && remoteValue !== null && remoteValue !== "") {
+            profile[key] = remoteValue;
+          }
+        }
+      }
+      isModified.value = false;
+      console.log("Updated profile:", profile);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 
 // Fetch Region function
 const fetchRegion = async () => {
@@ -225,12 +272,36 @@ const choosePict = (event) => {
     return;
   }
 
+  uploadedPic = file;
   profile.profilePic = URL.createObjectURL(file);
   profile.controller.errors.profilePic = "Profile updated";
   profile.controller.status = true;
   onValueChanged("profilePic");
 
 };
+
+// Define  Discard Changes Button
+const discardChanges = () => {
+ profile.fname = userToken.name.split(" ")[0];
+ profile.lname = userToken.name.split(" ")[1];
+ profile.email = userToken.email;
+ profile.phone = userToken.phoneNumber;
+ profile.organization = userToken.organization;
+ profile.region = userToken.region?.toLowerCase();
+ profile.district = userToken.district == null || userToken.district == undefined
+      ? ""
+      : userToken.district.toString().toLowerCase();
+ profile.school = 
+    userToken.school == null || userToken.school == undefined
+      ? ""
+      : userToken.school.toString().toLowerCase();
+ profile.level = userToken.level;
+ profile.type = userToken.type;
+ profile.profilePic = userToken.profilePic;
+ isModified.value = false;
+ 
+}
+
 </script>
 
 <template>
@@ -744,8 +815,8 @@ const choosePict = (event) => {
       v-if="isModified"
     >
       <button
-        type="submit"
-        @click="isModified = false"
+        type="reset"
+        @click="discardChanges"
         class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium transition-colors duration-500 ease-in-out border-2 rounded-md hover:text-white text-deepBlue border-oceanBlue hover:bg-gradient-to-r from-deepBlue to-oceanBlue hover:shadow-md"
       >
         Discard Changes
@@ -753,7 +824,7 @@ const choosePict = (event) => {
       </button>
       <button
         type="submit"
-        @click="isModified = false"
+        @click="updatedProfile()"
         class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium text-white transition-all duration-500 rounded-md bg-gradient-to-r to-oceanBlue from-deepBlue hover:shadow-md"
       >
         Save Changes
