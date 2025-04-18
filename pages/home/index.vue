@@ -493,7 +493,8 @@ watch(
                     "
                     :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
                     :topic-views="
-                      topic.viewedBy?.length ? topic.viewedBy?.length : 0
+                      topic.viewedBy?.length ? topic.viewedBy?.length : 
+                      topic.views ? topic.views: 0
                     "
                     :topic-level="level"
                     :topic-standard="topic.level.name"
