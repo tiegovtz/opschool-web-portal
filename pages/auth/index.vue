@@ -76,7 +76,7 @@ const signIn = async () => {
           httpOnly: false, // Accessible in browser
           // secure: import.meta.env.PROD, // ✅ uses Nuxt's client env detection
           maxAge: 60 * 60 * 24, // 24 hours
-          sameSite: 'lax',
+          sameSite: 'strict',
           path: '/',
         });
 
@@ -84,7 +84,7 @@ const signIn = async () => {
           httpOnly: false, // Accessible in browser
           // secure: import.meta.env.PROD,
           maxAge: 60 * 60 * 24,
-          sameSite: 'lax',
+          sameSite: 'strict',
           path: '/',
         });
 
@@ -92,7 +92,7 @@ const signIn = async () => {
           httpOnly: false, // Accessible in browser
           // secure: import.meta.env.PROD,
           maxAge: 60 * 60 * 24,
-          sameSite: 'lax',
+          sameSite: 'strict',
           path: '/',
           default: () => ({}),
           encode: (value) => JSON.stringify(value),
