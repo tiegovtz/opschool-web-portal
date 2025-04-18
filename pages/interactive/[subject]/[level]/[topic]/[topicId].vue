@@ -238,7 +238,7 @@ const getChapter = async (chapterId) => {
             maxAge: 60 * 60 * 24 * 1, // 1 days
             httpOnly: false,
             sameSite: 'strict',
-            secure: process.env.NODE_ENV === 'production',
+            // secure: process.env.NODE_ENV === 'production',
             path: '/',
           }).value = {
             userId: userToken.value?._id,
