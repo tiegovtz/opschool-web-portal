@@ -118,10 +118,15 @@ const fullScreen = () => {
     }
 }
 
-
 // define authentication middleware
 definePageMeta({
     middleware: 'auth'
+})
+
+// Define OnMounted
+onMounted(() => {
+    //Add event listener to window screen /full/exit
+    
 })
 </script>
 <template>
