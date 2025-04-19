@@ -497,8 +497,8 @@ watch(
                       topic.views ? topic.views: 0
                     "
                     :topic-level="level"
-                    :topic-standard="topic.level.name"
-                    :subject-name="topic.subject.name"
+                    :topic-standard="topic.level?.name"
+                    :subject-name="topic.subject?.name"
                     :topic-viewed="topic.isViewed"
                     :topic-progress="topic.avgProgress"
                   />
@@ -518,8 +518,8 @@ watch(
                     :experiment-title="experiment.title"
                     :experiment-description="experiment.description"
                     :experiment-type="experiment.category"
-                    :experiment-subject="experiment.subject.name"
-                    :experiment-level="experiment.level.name"
+                    :experiment-subject="experiment.subject?.name"
+                    :experiment-level="experiment.level?.name"
                     :experiment-name="experiment.name"
                     :experiment-file-url="experiment.stepsFileUrl"
                   />
@@ -537,7 +537,7 @@ watch(
                     :video-thumbnail="video.thumbnail"
                     :video-file-url="video.videoFileUrl"
                     :video-description="video.description"
-                    :video-subject="video.subject.name"
+                    :video-subject="video.subject?.name"
                     :video-type="video.videoType"
                   />
                 </template>
