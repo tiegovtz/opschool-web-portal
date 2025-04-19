@@ -238,7 +238,7 @@ const { progress, isLoading } = useLoadingIndicator();
       <div v-else-if="status == 'success'">
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
-          <div class="flex flex-col w-full">
+          <div class="flex flex-col w-full px-2 lg:px-4">
             <HomeCustomGridTwo>
               <template #data>
                 <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"

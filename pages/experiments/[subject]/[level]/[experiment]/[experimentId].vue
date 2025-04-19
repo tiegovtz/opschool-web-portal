@@ -103,19 +103,19 @@ const toggleSidebar = () => {
 
 // function for toggling  experiment fullscreeen
 const fullScreen = () => {
-  // experiment container
-  const experimentContainer = document.getElementById(`experiment-container`);
-  if (import.meta.client) {
-    if (!isFullscreen.value) {
-      experimentContainer.requestFullscreen();
+    // experiment container
+    const experimentContainer = document.getElementById(`experiment-container`);
+    if (import.meta.client) {
+        if (!isFullscreen.value) {
+            experimentContainer.requestFullscreen();
 
-    } else {
-      document.exitFullscreen();
+        } else {
+            document.exitFullscreen();
 
+        }
+        // set flag to opposite
+        isFullscreen.value = !isFullscreen.value;
     }
-    // set flag to opposite
-    isFullscreen.value = !isFullscreen.value;
-  }
 }
 
 
@@ -133,39 +133,41 @@ definePageMeta({
                 <!-- Experiments Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink :to="{path: '/',query: {tab:'experiments',subject: experimentLevel, class: experimentStandard }}"
+                        <NuxtLink
+                            :to="{ path: '/', query: { tab: 'experiments', subject: experimentLevel, class: experimentStandard } }"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
-                            experimentLevel != null &&
-                            experimentLevel != undefined &&
-                            experimentLevel != "null"
-                            ? experimentLevel
-                            : `Secondary`
+                                experimentLevel != null &&
+                                    experimentLevel != undefined &&
+                                    experimentLevel != "null"
+                                    ? experimentLevel
+                                    : `Secondary`
                             }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <NuxtLink :to="{path: '/',query: {tab:'experiments', subject: experimentLevel, class: experimentStandard }}"
+                        <NuxtLink
+                            :to="{ path: '/', query: { tab: 'experiments', subject: experimentLevel, class: experimentStandard } }"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
-                            experimentStandard != null &&
-                            experimentStandard != undefined &&
-                            experimentStandard != "null"
-                            ? experimentStandard
-                            : `Form One`
+                                experimentStandard != null &&
+                                    experimentStandard != undefined &&
+                                    experimentStandard != "null"
+                                    ? experimentStandard
+                                    : `Form One`
                             }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
                         <p class="font-medium uppercase text-medium md:capitalize">
                             {{
-                            experimentTitle != null &&
-                            experimentTitle != undefined &&
-                            experimentTitle != "null"
-                            ? experimentTitle
-                            : `Introduction to
+                                    experimentTitle != null &&
+                                        experimentTitle != undefined &&
+                                        experimentTitle != "null"
+                                        ? experimentTitle
+                                        : `Introduction to
                             Physics`
-                            }}
+                                }}
                         </p>
                     </div>
                     <!-- Header Description -->
@@ -182,8 +184,10 @@ definePageMeta({
 
                     <div class="relative w-full overflow-y-scroll rounded-md center-height" id="experiment-container"
                         v-else-if="status == 'success'">
-                        <iframe class="w-full rounded-md center-height" :src="experimentInfo.stepsFileUrl"
-                            frameborder="0"></iframe>
+                        <iframe :class="[
+                                ' w-full  rounded-md',
+                                isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
+                            ]" :src="experimentInfo.stepsFileUrl" frameborder="0"></iframe>
                         <!-- full screen controls -->
                         <div class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"
                             :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" @click="fullScreen">
@@ -215,15 +219,15 @@ definePageMeta({
                 class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full h-full lg:w-1/4 p-2 lg:static center-height overflow-y-scroll bg-white">
                 <div class="flex flex-col h-full mb-4">
                     <h1 class="pt-5 font-medium capitalize text-medium">Related Experiments</h1> -->
-                    <!-- toggle menu -->
-                    <!-- <div class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"
+            <!-- toggle menu -->
+            <!-- <div class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"
                         @click="toggleSidebar()"> -->
-                        <!-- Cancel Icon -->
-                        <!-- <Icon name="iconoir:cancel" size="18" class="group-hover:text-white" />
+            <!-- Cancel Icon -->
+            <!-- <Icon name="iconoir:cancel" size="18" class="group-hover:text-white" />
                     </div> -->
 
-                    <!-- UL list of chapters -->
-                    <!-- <ul class="flex flex-col gap-3 md:pl-4">
+            <!-- UL list of chapters -->
+            <!-- <ul class="flex flex-col gap-3 md:pl-4">
                         <li class="flex items-center gap-3 p-3 rounded-md cursor-pointer bg-containerGray">
                             <div class="">
                                 <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />

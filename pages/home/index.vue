@@ -134,18 +134,32 @@ const fetchData = async (params) => {
   //     "{userId}",
   //   );
   // } else {
-    
   // }
-  url = apiDocs.topics.filterTopics;
+  // url = apiDocs.topics.filterTopics;
 
   // Check for specific tabs
   if (tab === "experiments") {
     url = apiDocs.experiments.getExperiments;
+    params = {
+        ...params
+      };
   } else if (tab === "video") {
     url = apiDocs.videos.getVideos;
+    params = {
+        ...params
+      };
   } else if (tab === "home") {
     url = apiDocs.subjects.getPublicSubjects;
-  }
+    params = {
+        ...params
+      };
+  }else if (tab === "interactive books") {
+        url = apiDocs.topics.filterTopics;
+      params = {
+        ...params,
+       userId: userToken.value?._id,
+      };
+    }
 
   // Subject-specific tab overrides
   if (subjectId.value) {
@@ -154,24 +168,35 @@ const fetchData = async (params) => {
         "{subjectId}",
         subjectId.value
       );
+
+      params = {
+        ...params
+      };
     } else if (tab === "video") {
       url = apiDocs.videos.getPublicVideoBySubjectId.replace(
         "{subjectId}",
         subjectId.value
       );
+
+      params = {
+        ...params
+      };
     } else if (tab === "interactive books") {
       url = apiDocs.topics.getSubjectId.replace("{subjectId}", subjectId.value);
+      params = {
+        ...params,
+       userId: userToken.value?._id,
+      };
     }
   }
 
-  if (params) {
-    url = apiDocs.topics.publicTopicsFilterAll;
-  }
-
-      userToken.value?._id
+  // if (params) {
+  //   url = apiDocs.topics.publicTopicsFilterAll;
+  // }
+  // ...params, userId: userToken.value?._id
   try {
     const response = await $fetch(url, {
-      params:  {...params, userId: userToken.value?._id},
+      params:  {...params},
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },

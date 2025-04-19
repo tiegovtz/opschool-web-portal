@@ -232,7 +232,7 @@ watch(filters, (filters) => {
           <div class="flex flex-col w-full">
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class="container flex flex-col items-start">
+              <div class="flex flex-col items-start">
                 <customGridTwo>
                   <template #data>
                     <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
