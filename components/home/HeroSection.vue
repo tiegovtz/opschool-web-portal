@@ -1,5 +1,5 @@
 <template>
-  <section class="my-2 hero-section">
+  <section class="my-2 hero-section container">
     <div class="grid grid-cols-1 xl:grid-cols-2 md:gap-4">
       <div class="flex flex-col items-center justify-center h-full">
         <SliderShow />
