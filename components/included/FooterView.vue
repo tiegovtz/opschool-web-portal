@@ -5,7 +5,7 @@ import { screenWidth} from '~/utilities/controlls';
 <template>
     <!-- Footer -->
     <footer class="p-4 text-white bg-oceanBlue">
-      <div class="flex flex-col items-center justify-between gap-2  xl:flex-row">
+      <div class="flex flex-col items-center justify-between gap-2  xl:flex-row wrapper-container">
         <p class="text-center">
             All Rights Reserved &copy; <span v-if="screenWidth >= 640">Tanzania Institute of Education</span> 
             <span v-else>TIE</span> 

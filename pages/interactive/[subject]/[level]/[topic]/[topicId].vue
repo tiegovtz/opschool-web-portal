@@ -521,7 +521,10 @@ definePageMeta({
         @click="experimrntUrl = null">
         <Icon name="formkit:close" size="24" class="font-bold text-white" />
       </div>
-      <iframe :src="experimrntUrl" frameborder="0" class="h-full w-full center-height rounded-md !bg-white"></iframe>
+      <iframe :src="experimrntUrl" frameborder="0" :class="[
+        ' w-full  rounded-md !bg-white',
+        isFullscreen ?' min-h-dvh min-w-full':'h-full center-height',
+      ]"></iframe>
       <!-- full screen controls -->
       <div
         class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"

@@ -377,18 +377,18 @@ const discardChanges = () => {
     </div>
 
     <!-- Learning Statistics -->
-    <div
+    <!-- <div
       class="w-full mx-auto my-4 overflow-hidden bg-white rounded-md shadow-md"
-    >
-      <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
+    > -->
+      <!-- <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
         <h3 class="text-lg font-semibold text-white">Learning Statistics</h3>
-      </div>
+      </div> -->
 
-      <div
+      <!-- <div
         class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5"
-      >
+      > -->
         <!-- Topic Opened -->
-        <div class="stat-card">
+        <!-- <div class="stat-card">
           <div class="bg-blue-100 stat-icon">
             <Icon
               name="fa6-solid:book-open-reader"
@@ -400,10 +400,10 @@ const discardChanges = () => {
             <span class="stat-label">Topics Opened</span>
             <span class="stat-value">9</span>
           </div>
-        </div>
+        </div> -->
 
         <!-- Favorite Subject -->
-        <div class="stat-card">
+        <!-- <div class="stat-card">
           <div class="bg-green-100 stat-icon">
             <Icon
               name="material-symbols:favorite-rounded"
@@ -412,13 +412,13 @@ const discardChanges = () => {
             />
           </div>
           <div class="stat-content">
-            <span class="stat-label">Most Viewed Subject</span>
+            <span class="stat-label">Subject Opened</span>
             <span class="stat-value">English</span>
           </div>
-        </div>
+        </div> -->
 
         <!-- Time Spent -->
-        <div class="stat-card">
+        <!-- <div class="stat-card">
           <div class="bg-red-100 stat-icon">
             <Icon
               name="stash:clock-solid"
@@ -430,10 +430,10 @@ const discardChanges = () => {
             <span class="stat-label">Time Spent</span>
             <span class="stat-value">0</span>
           </div>
-        </div>
+        </div> -->
 
         <!-- Quiz Attempts -->
-        <div class="stat-card">
+        <!-- <div class="stat-card">
           <div class="bg-purple-100 stat-icon">
             <Icon
               name="solar:notebook-bold"
@@ -445,10 +445,10 @@ const discardChanges = () => {
             <span class="stat-label">Quiz Attempts</span>
             <span class="stat-value">9</span>
           </div>
-        </div>
+        </div> -->
 
         <!-- Average Score -->
-        <div class="stat-card">
+        <!-- <div class="stat-card">
           <div class="bg-indigo-100 stat-icon">
             <Icon
               name="heroicons:chart-bar-16-solid"
@@ -460,9 +460,9 @@ const discardChanges = () => {
             <span class="stat-label">Average Quiz Score</span>
             <span class="stat-value">51.00%</span>
           </div>
-        </div>
-      </div>
-    </div>
+        </div> -->
+      <!-- </div>
+    </div> -->
 
  
     <!-- Personal Information -->

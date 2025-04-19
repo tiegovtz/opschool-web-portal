@@ -5,7 +5,7 @@
 
     <!-- Main content -->
     <main class="wrapper-container">
-     <div class="md:shadow-2xl md:p-2 p-2 bg-white !center-height">
+     <div class="md:shadow-2xl md:p-4 p-2 bg-white !center-height">
       <slot />
      </div>
     </main>
