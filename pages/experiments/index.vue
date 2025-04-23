@@ -1,7 +1,7 @@
 <script setup>
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
-import  LoadingIndicator  from "@/components/loading/loadingIndicator.vue";
+import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import InputsSelection from "@/components/home/InputsSelection.vue";
 import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
 import { ref, computed, onMounted, watch } from "vue";
@@ -208,14 +208,11 @@ const { progress, isLoading } = useLoadingIndicator();
 <template>
   <NuxtLayout name="home-layout">
     <section :class="[
-      'wrapper-container',
+      ' ',
       { ' animate-pulse': isLoading }
     ]">
-    <!-- User Token Available -->
-      <div
-        v-if="userToken"
-        class="flex flex-col items-center justify-center w-full gap-4 pt-4"
-      >
+      <!-- User Token Available -->
+      <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
         <HomeSearchbar appearance="rounded" />
         <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
       </div>
@@ -245,15 +242,16 @@ const { progress, isLoading } = useLoadingIndicator();
       <div v-else-if="status == 'success'" v-trusted>
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
-          <div class="flex flex-col w-full" v-trusted>
-            <div v-if="status === 'success'"
-              class="!grid xl:grid-cols-4 lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-2 xl:gap-4 mt-10">
-              <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
-                :experiment-thumbnail="experiment.thumbnail" :experiment-title="experiment.title"
-                :experiment-description="experiment.description" :experiment-type="experiment.category"
-                :experiment-subject="experiment.subject.name" :experiment-level="experiment.level.name"
-                :experiment-name="experiment.name" :experiment-file-url="experiment.stepsFileUrl" />
-            </div>
+          <div class="flex flex-col w-full px-2 lg:px-4" v-trusted>
+            <HomeCustomGridTwo>
+              <template #data>
+                <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
+                  :experiment-thumbnail="experiment.thumbnail" :experiment-title="experiment.title"
+                  :experiment-description="experiment.description" :experiment-type="experiment.category"
+                  :experiment-subject="experiment.subject.name" :experiment-level="experiment.level.name"
+                  :experiment-name="experiment.name" :experiment-file-url="experiment.stepsFileUrl" />
+              </template>
+            </HomeCustomGridTwo>
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" class="flex justify-center my-10" v-trusted>
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">

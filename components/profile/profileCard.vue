@@ -1,9 +1,11 @@
 <script setup>
 import messages from "~/utilities/messages";
 import { MessageComponent, ProfileDrawInitialLater } from "#components";
+import apiDocs from "~/utilities/api-docs";
 
 // Define Cookie
 const userToken = useCookie("signInUserToken").value;
+let uploadedPic;
 
 // Define One State
 const profile = reactive({
@@ -60,6 +62,51 @@ const data = reactive({
   status: "idle",
   error: null,
 });
+
+// Define Update Function
+const updatedProfile = async () => {
+  let formData = new FormData();
+  formData.append("name", profile.fname + " " + profile.lname);
+  formData.append("email", profile.email);
+  formData.append("phoneNumber", profile.phone);
+  formData.append("organization", profile.organization);
+  formData.append("region", profile.region);
+  formData.append("district", profile.district);
+  formData.append("school", profile.school);
+  formData.append("level", profile.level);
+  formData.append("type", profile.type);
+
+  if (uploadedPic) {
+    formData.append("profilePic", uploadedPic);
+  }
+
+  try {
+    const response = await $fetch(apiDocs.auth.profileEdit, {
+      method: "PATCH",
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+      },
+    });
+
+    if (response) {
+      // Only update values if remote is valid (non-empty)
+      for (const key in response) {
+        if (Object.prototype.hasOwnProperty.call(response, key)) {
+          const remoteValue = response[key];
+          if (remoteValue !== undefined && remoteValue !== null && remoteValue !== "") {
+            profile[key] = remoteValue;
+          }
+        }
+      }
+      isModified.value = false;
+      console.log("Updated profile:", profile);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 
 // Fetch Region function
 const fetchRegion = async () => {
@@ -225,12 +272,36 @@ const choosePict = (event) => {
     return;
   }
 
+  uploadedPic = file;
   profile.profilePic = URL.createObjectURL(file);
   profile.controller.errors.profilePic = "Profile updated";
   profile.controller.status = true;
   onValueChanged("profilePic");
 
 };
+
+// Define  Discard Changes Button
+const discardChanges = () => {
+ profile.fname = userToken.name.split(" ")[0];
+ profile.lname = userToken.name.split(" ")[1];
+ profile.email = userToken.email;
+ profile.phone = userToken.phoneNumber;
+ profile.organization = userToken.organization;
+ profile.region = userToken.region?.toLowerCase();
+ profile.district = userToken.district == null || userToken.district == undefined
+      ? ""
+      : userToken.district.toString().toLowerCase();
+ profile.school = 
+    userToken.school == null || userToken.school == undefined
+      ? ""
+      : userToken.school.toString().toLowerCase();
+ profile.level = userToken.level;
+ profile.type = userToken.type;
+ profile.profilePic = userToken.profilePic;
+ isModified.value = false;
+ 
+}
+
 </script>
 
 <template>
@@ -306,18 +377,18 @@ const choosePict = (event) => {
     </div>
 
     <!-- Learning Statistics -->
-    <div
+    <!-- <div
       class="w-full mx-auto my-4 overflow-hidden bg-white rounded-md shadow-md"
-    >
-      <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
+    > -->
+      <!-- <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
         <h3 class="text-lg font-semibold text-white">Learning Statistics</h3>
-      </div>
+      </div> -->
 
-      <div
+      <!-- <div
         class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5"
-      >
+      > -->
         <!-- Topic Opened -->
-        <div class="stat-card">
+        <!-- <div class="stat-card">
           <div class="bg-blue-100 stat-icon">
             <Icon
               name="fa6-solid:book-open-reader"
@@ -329,10 +400,10 @@ const choosePict = (event) => {
             <span class="stat-label">Topics Opened</span>
             <span class="stat-value">9</span>
           </div>
-        </div>
+        </div> -->
 
         <!-- Favorite Subject -->
-        <div class="stat-card">
+        <!-- <div class="stat-card">
           <div class="bg-green-100 stat-icon">
             <Icon
               name="material-symbols:favorite-rounded"
@@ -341,13 +412,13 @@ const choosePict = (event) => {
             />
           </div>
           <div class="stat-content">
-            <span class="stat-label">Most Viewed Subject</span>
+            <span class="stat-label">Subject Opened</span>
             <span class="stat-value">English</span>
           </div>
-        </div>
+        </div> -->
 
         <!-- Time Spent -->
-        <div class="stat-card">
+        <!-- <div class="stat-card">
           <div class="bg-red-100 stat-icon">
             <Icon
               name="stash:clock-solid"
@@ -359,10 +430,10 @@ const choosePict = (event) => {
             <span class="stat-label">Time Spent</span>
             <span class="stat-value">0</span>
           </div>
-        </div>
+        </div> -->
 
         <!-- Quiz Attempts -->
-        <div class="stat-card">
+        <!-- <div class="stat-card">
           <div class="bg-purple-100 stat-icon">
             <Icon
               name="solar:notebook-bold"
@@ -374,10 +445,10 @@ const choosePict = (event) => {
             <span class="stat-label">Quiz Attempts</span>
             <span class="stat-value">9</span>
           </div>
-        </div>
+        </div> -->
 
         <!-- Average Score -->
-        <div class="stat-card">
+        <!-- <div class="stat-card">
           <div class="bg-indigo-100 stat-icon">
             <Icon
               name="heroicons:chart-bar-16-solid"
@@ -389,9 +460,9 @@ const choosePict = (event) => {
             <span class="stat-label">Average Quiz Score</span>
             <span class="stat-value">51.00%</span>
           </div>
-        </div>
-      </div>
-    </div>
+        </div> -->
+      <!-- </div>
+    </div> -->
 
  
     <!-- Personal Information -->
@@ -744,8 +815,8 @@ const choosePict = (event) => {
       v-if="isModified"
     >
       <button
-        type="submit"
-        @click="isModified = false"
+        type="reset"
+        @click="discardChanges"
         class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium transition-colors duration-500 ease-in-out border-2 rounded-md hover:text-white text-deepBlue border-oceanBlue hover:bg-gradient-to-r from-deepBlue to-oceanBlue hover:shadow-md"
       >
         Discard Changes
@@ -753,7 +824,7 @@ const choosePict = (event) => {
       </button>
       <button
         type="submit"
-        @click="isModified = false"
+        @click="updatedProfile()"
         class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium text-white transition-all duration-500 rounded-md bg-gradient-to-r to-oceanBlue from-deepBlue hover:shadow-md"
       >
         Save Changes

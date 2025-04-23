@@ -26,13 +26,15 @@ defineProps({
 })
 
 // watch search
-watch(() => searchReactive.search, (newVal) => {
+const inputSearch =(event)=>{
+   const newVal = event.target.value;
+
   if (newVal && newVal.trim() !== '') {
     search();
   }else {
     searchReactive.searchResult = null;
   }
-})
+}
 </script>
 
 <template>
@@ -43,7 +45,7 @@ watch(() => searchReactive.search, (newVal) => {
   >
    <div :class="[
     ' relative flex items-center justify-center w-full h-full rounded-md',
-     appearance === 'normal' ? 'md:px-0 lg:px-0': 'bg-textGray bg-opacity-40 md:px-10 lg:px-[100px]'
+     appearance === 'normal' ? 'md:px-0 lg:px-0': 'bg-textGray bg-opacity-40 md:px-10 lg:px-[100px] p-1'
    ]">
      <!-- Apperance Normal -->
     <form v-if="appearance === 'normal'" action="" @submit.prevent="search"
@@ -53,7 +55,7 @@ watch(() => searchReactive.search, (newVal) => {
         <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" />
 
         <!-- Search Input -->
-        <input type="text" v-model="searchReactive.search" placeholder="What do you want to learn?"
+        <input type="text" @input="inputSearch"  v-model="searchReactive.search" placeholder="What do you want to learn?"
           class="flex flex-1 h-full px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue" />
       </div>
 
@@ -65,14 +67,14 @@ watch(() => searchReactive.search, (newVal) => {
     </form>
     
     <!-- Apperance Not Normal -->
-     <form v-else action="" class="flex items-center w-full max-w-3xl bg-white rounded-md h-15 "
+     <form v-else action="" class="flex items-center w-full max-w-3xl bg-white rounded-md h-15 p-2"
       @submit.prevent="search">
       <div class="flex items-center w-full pl-4">
         <!-- Search Icon -->
         <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" />
 
         <!-- Search Input -->
-        <input type="text" v-model="searchReactive.search" placeholder="What do you want to learn?"
+        <input type="text" @input="inputSearch"  v-model="searchReactive.search" placeholder="What do you want to learn?"
           class="flex flex-1 h-full px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue" />
       </div>
 
@@ -83,7 +85,7 @@ watch(() => searchReactive.search, (newVal) => {
       </button>
     </form>
     <!-- Result Search -->
-    <div :class="[
+    <div v-if="searchReactive.searchResult" :class="[
             'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
             appearance === 'normal' ? 'top-10 left-0 max-w-md' : 'top-[170px] max-w-3xl px-1'
           ]"
@@ -91,7 +93,7 @@ watch(() => searchReactive.search, (newVal) => {
       <TopicCard v-for="result in searchReactive.searchResult" :key="result._id" model-type="search"
         :topic-id="result._id" :topic-title="result.name" :topic-image="result.thumbnail"
         :topic-standard="result.standard" :topic-subject="result.subject.name" :topic-description="result.descriptions"
-        :topic-level="result.level.name" :topic-likes="0" :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : 0" topic-duration="0" />
+        :topic-level="result.level.name" :topic-likes="0" :topic-views="topic?.viewedBy?.length ? topic?.viewedBy?.length : 0" topic-duration="0" />
     </div>
    </div>
   </div>

@@ -1,6 +1,5 @@
 <script setup>
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
-import apiDocs from '~/utilities/api-docs'
 import { layoutEffect } from '~/utilities/controlls'
 
 // Define State
@@ -75,27 +74,6 @@ const setTopicToView = () => {
 }
 
 const userToken = useCookie('signInUserToken')
-
-const fetchProgress = async () => {
-  try {
-    const response = await $fetch(apiDocs.progressTracking.getProgressTopicsTopicId.replaceAll("{topicId}", props.topicId), {
-      headers: {
-        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
-      },
-    })
-
-    if (response?.length > 0) {
-      progress.value = response[0]
-    }
-
-  } catch (error) {
-    console.log(error)
-  }
-}
-
-// Call Fuction
-fetchProgress();
-
 </script>
 
 
@@ -108,13 +86,13 @@ fetchProgress();
     :class="[
       'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out',
       layoutEffect == 'grid' && modelType === 'card' ? 'flex-col pb-4' : 'flex-row h-32',
-      { 'cursor-pointer flex-row my-2 pb-0 md:h-20 h-10 ': modelType === 'search' },
+      { 'cursor-pointer flex-row my-2 pb-0 md:h-20 !max-h-14 ': modelType === 'search' },
     ]">
     <!-- topic image -->
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
       layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-[200px]',
-      { 'md:h-20 h-10 ': modelType === 'search', },
+      { 'md:h-20 !h-full ': modelType === 'search', },
     ]">
       <NuxtImg :src="topicImage" loading="lazy" alt="book1"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
@@ -133,11 +111,11 @@ fetchProgress();
       <!-- topic progress bar -->
       <div v-if="userToken && modelType === 'card' && layoutEffect === 'grid'"
         class="flex items-center w-full max-w-full gap-2 mt-2">
-        <progress :value="Math.min(progress?.avgProgress ?? 0, 100)" max="100" class="transition-all duration-500 ease-in-out topic-card__progress-bar">
+        <progress :value="Math.min(topicProgress ?? 0, 100)" max="100" class="transition-all duration-500 ease-in-out topic-card__progress-bar">
         </progress>
 
         <span class="text-xs font-medium sm:text-sm text-oceanBlue whitespace-nowrap group-hover:text-white">
-          {{ Math.min(progress?.avgProgress ?? 0, 100)  }}%
+          {{ Math.min(topicProgress ?? 0, 100).toFixed(1)  }}%
         </span>
       </div>
       <!-- topic title and description -->

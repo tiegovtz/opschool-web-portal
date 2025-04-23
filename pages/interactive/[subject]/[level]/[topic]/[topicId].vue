@@ -23,8 +23,10 @@ const topicLevel = String(route.fullPath.split("/")[3])
   .replaceAll("%20", " ");
 currentTopic.value = topicTitle;
 
-// tokens
+// tokens cookies
 const signInAccessToken = useCookie("signInAccessToken");
+const userToken = useCookie("signInUserToken");
+
 const chapterProgress = useCookie("chapterProgress");
 
 // Define meta info about page
@@ -72,8 +74,6 @@ useHead({
   ],
 });
 
-// Define State
-const userToken = useCookie("signInUserToken");
 
 //  chapters informations
 const chapters = reactive({
@@ -96,7 +96,6 @@ const clientHeight = ref(0);
 const scrollPercent = ref(0);
 // Track previous scrollTop
 let previousScrollTop = 0;
-
 
 // flag for toggling experiment fullscreeen
 const isFullscreen = ref(false);
@@ -151,125 +150,119 @@ const toggleSidebar = () => {
   }
 };
 
-// fetch chapters information
+// Helper functions 
+const ensureAccessTokenValid = async () => {
+  if (isTokenExpiringSoon(signInAccessToken.value, 60)) {
+    const response = await refreshToken().catch(() => null);
+
+    if (response?.access_token) {
+      signInAccessToken.value = response.access_token;
+    } else {
+      router.replace("/auth");
+    }
+  }
+};
+
+const initializeChapterProgress = (chapterId) => {
+  chapterProgress.value = {
+    userId: userToken.value?._id,
+    chapterId:chapterId,
+    videoProgress: 0,
+    notesProgress: 0,
+    experimentsAttempted: 0,
+    totalExperiments: 0,
+    assessmentsAttempted: 0,
+    totalAssessments: 0,
+  };
+};
+
+const postInitialProgressIfNeeded = async (chapterId) => {
+  try {
+    await $fetch("/api/progress/post-progress", {
+      method: "POST",
+      body: {
+        userId: userToken.value?._id,
+        chapterId,
+        videoProgress: 0,
+        notesProgress: 0,
+        experimentsAttempted: 0,
+        totalExperiments: 0,
+        assessmentsAttempted: 0,
+        totalAssessments: 0,
+      },
+    });
+
+    initializeChapterProgress(chapterId);
+  } catch (error) {
+    console.error("Error posting initial progress:", error);
+  }
+};
+
+const syncRemoteProgress = async (chapterId) => {
+  try {
+    const remoteProgress = await $fetch(
+      apiDocs.progressTracking.getProgresschapterId.replace("{chapterId}", chapterId),
+      { headers: { Authorization: `Bearer ${signInAccessToken.value}` } }
+    );
+
+    if (
+      remoteProgress.userId === chapterProgress.value?.userId &&
+      remoteProgress.chapterId === chapterProgress.value?.chapterId
+    ) {
+      Object.keys(remoteProgress).forEach((key) => {
+        if (
+          typeof remoteProgress[key] === "number" &&
+          remoteProgress[key] > chapterProgress.value[key]
+        ) {
+          chapterProgress.value[key] = remoteProgress[key];
+        }
+      });
+    } else {
+      console.warn("Progress belongs to a different user or chapter. Ignored.");
+      initializeChapterProgress(chapterId);
+    }
+  } catch (error) {
+    console.error("Error fetching remote progress:", error);
+  }
+};
+
+// Main function 
 const getChapter = async (chapterId) => {
   chapters.notesStatus = "pending";
   chapters.currentChapterId = chapterId;
 
-  const expiredSoon = isTokenExpiringSoon(signInAccessToken.value, 60);
-  if (expiredSoon) {
-    await refreshToken()
-      .then((response) => {
-        if (response) {
-          signInAccessToken.value = response?.access_token;
-        } else {
-          router.replace("/auth");
-        }
-      })
-      .catch(() => {
-        router.replace("/auth");
-      });
+  await ensureAccessTokenValid();
+
+  try {
+    const response = await $fetch(`/api/topics/chapters/${chapterId}`);
+    chapters.notesStatus = "success";
+    chapters.notes = response;
+
+    const tasks = [
+      getQNTopicChapter(chapterId),
+      postInitialProgressIfNeeded(chapterId),
+      syncRemoteProgress(chapterId),
+    ];
+
+    if (
+      chapterProgress.value?.userId === userToken.value?._id &&
+      chapterProgress.value?.chapterId === chapterId
+    ) {
+      tasks.push(updateChapterProgress());
+    }
+
+    await Promise.allSettled(tasks);
+  } catch (error) {
+    chapters.notesStatus = "error";
+    chapters.error = error;
+    console.error("Error fetching chapter details:", error);
   }
-
-  await $fetch(`/api/topics/chapters/${chapterId}`)
-    .then(async (response) => {
-      chapters.notesStatus = "success";
-      chapters.notes = response;
-
-      const tasks = [];
-      // Add related QN fetch
-      tasks.push(getQNTopicChapter(chapterId));
-
-      tasks.push(
-        $fetch(apiDocs.progressTracking.getProgresschapterId.replaceAll("{chapterId}", chapterId), {
-          headers: {
-            Authorization: `Bearer ${signInAccessToken.value}`,
-          },
-        })
-          .then((remoteProgress) => {
-            // Make sure userId and chapterId match before comparing values
-            if (
-              remoteProgress.userId === chapterProgress.value.userId &&
-              remoteProgress.chapterId === chapterProgress.value.chapterId
-            ) {
-              // Only update values if remote is greater
-              for (const key in remoteProgress) {
-                if (
-                  Object.prototype.hasOwnProperty.call(chapterProgress.value, key) &&
-                  typeof remoteProgress[key] === "number" &&
-                  remoteProgress[key] > chapterProgress.value[key]
-                ) {
-                  chapterProgress.value[key] = remoteProgress[key];
-                }
-              }
-            } else {
-              console.warn("Progress belongs to a different user or chapter. Ignored.");
-            }
-          })
-          .catch((error) => {
-            chapters.notesStatus = "success";
-            console.error("Error fetching progress:", error);
-          })
-      )
-
-
-      // Conditionally update progress
-      if (
-        chapterProgress?.value.userId === userToken.value?._id &&
-        chapterProgress?.value.chapterId === chapterId
-      ) {
-        tasks.push(updateChapterProgress());
-      }
-      // Always attempt to post initial progress (if needed)
-      tasks.push(
-        $fetch("/api/progress/post-progress", {
-          method: "POST",
-          body: {
-            userId: userToken.value?._id,
-            chapterId: chapterId,
-            videoProgress: 0,
-            notesProgress: 0,
-            experimentsAttempted: 0,
-            totalExperiments: 0,
-            assessmentsAttempted: 0,
-            totalAssessments: 0,
-          },
-        }).then(() => {
-          useCookie('chapterProgress', {
-            maxAge: 60 * 60 * 24 * 1, // 1 days
-            httpOnly: false,
-            sameSite: 'strict',
-            secure: process.env.NODE_ENV === 'production',
-            path: '/',
-          }).value = {
-            userId: userToken.value?._id,
-            chapterId: chapterId,
-            videoProgress: 0,
-            notesProgress: 0,
-            experimentsAttempted: 0,
-            totalExperiments: 0,
-            assessmentsAttempted: 0,
-            totalAssessments: 0,
-          };
-
-
-        }).catch((error) => {
-          chapters.notesStatus = "success";
-        })
-      );
-
-      await Promise.allSettled(tasks);
-    })
-    .catch((error) => {
-      chapters.notesStatus = "error";
-      chapters.error = error;
-    });
 };
+
 
 // Submit Topic viewed Read
 const topicViewedRead = async (topicId) => {
   chapters.notesStatus = "pending";
-  chapters.currentChapterId = topicId;
   await $fetch(apiDocs.topics.topicViewedRead.replaceAll("{id}", topicId), {
     headers: {
       Authorization: `Bearer ${signInAccessToken.value}`,
@@ -306,6 +299,8 @@ await useFetch(`/api/topics/${topicId}`)
     chapters.status = "success";
     chapters.list = response.data.value;
     getChapter(response.data.value[0]?._id);
+    chapters.currentChapterId = response.data.value[0]?._id;
+
     // Call Submit Topic Viewed Read
 
     if (!useState("userViewedTopic").value) {
@@ -313,7 +308,8 @@ await useFetch(`/api/topics/${topicId}`)
     }
   })
   .catch((error) => {
-    (chapters.status = "error"), (chapters.error = error);
+    (chapters.status = "error"), 
+    (chapters.error = error);
   });
 
 watch(
@@ -380,28 +376,37 @@ const handleScroll = () => {
   clientHeight.value = el.clientHeight;
 
   // Scroll percentage (0 - 100)
-  scrollPercent.value = Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100);
+  scrollPercent.value = Math.round(
+    (el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100
+  );
   // Update the previous scroll position
   previousScrollTop = currentScrollTop;
 };
-
 
 // Define Watch
 watch(
   () => chapters.notesStatus,
   async (newStatus) => {
     if (newStatus === "success") {
-      await nextTick()
+      await nextTick();
 
       if (notesContainer.value) {
         notesContainer.value.addEventListener("scroll", handleScroll);
         const videoPlayer = notesContainer.value.querySelector("#video-player");
         if (videoPlayer) {
           //setting user id and chapter id on play
-          if (!chapterProgress?.value?.userId != userToken.value?._id || chapterProgress?.value?.chapterId != chapters.currentChapterId) {
+         if(chapterProgress){
+           if (
+            chapterProgress?.value?.userId !== userToken.value?._id ||
+            chapterProgress?.value?.chapterId !== chapters.currentChapterId
+          ) {
             chapterProgress.value.userId = userToken.value?._id;
             chapterProgress.value.chapterId = chapters.currentChapterId;
           }
+         }
+         else{
+          initializeChapterProgress(chapters.currentChapterId)
+         }
 
           // returning to previous progress is are available when video loaded
           videoPlayer.addEventListener("loadedmetadata", () => {
@@ -410,7 +415,10 @@ watch(
               chapterProgress?.value?.userId === userToken.value?._id &&
               chapterProgress?.value?.chapterId === chapters.currentChapterId
             ) {
-              const targetTime = Math.floor((chapterProgress?.value?.videoProgress / 100) * videoPlayer.duration);
+              const targetTime = Math.floor(
+                (chapterProgress?.value?.videoProgress / 100) *
+                videoPlayer.duration
+              );
 
               // FastSeek Is Same To Resume a video player
               if (typeof videoPlayer.fastSeek === "function") {
@@ -419,26 +427,35 @@ watch(
                 videoPlayer.currentTime = targetTime;
               }
             }
+
+            else{
+              chapterProgress.value.userId = userToken.value?._id 
+              chapterProgress.value.chapterId = chapters.currentChapterId
+            }
           });
 
           // tracking video playing
           videoPlayer.addEventListener("timeupdate", () => {
-            const progress = Math.floor((videoPlayer.currentTime / videoPlayer.duration) * 100)
-            chapterProgress?.value?.videoProgress < progress ? chapterProgress.value.videoProgress = progress : '';
+            const progress = Math.floor(
+              (videoPlayer.currentTime / videoPlayer.duration) * 100
+            );
+            chapterProgress?.value?.videoProgress < progress
+              ? (chapterProgress.value.videoProgress = progress)
+              : "";
 
             // update progress
             switch (progress) {
               case 25:
-                updateChapterProgress()
+                updateChapterProgress();
                 break;
               case 50:
-                updateChapterProgress()
+                updateChapterProgress();
                 break;
               case 75:
-                updateChapterProgress()
+                updateChapterProgress();
                 break;
               case 100:
-                updateChapterProgress()
+                updateChapterProgress();
                 break;
               default:
                 break;
@@ -451,7 +468,6 @@ watch(
           });
 
           videoPlayer.controlsList = "nodownload";
-
         }
       }
     }
@@ -462,23 +478,32 @@ watch(
 watch(scrollPercent, async (newPercent) => {
   // Submit to cookies only when scrolling down
   if (chapterProgress) {
-    !chapterProgress?.value?.userId == '' ? chapterProgress.value.userId = userToken.value?._id : '';
-    !chapterProgress?.value?.chapterId == '' ? chapterProgress.value.chapterId = chapters.currentChapterId : '';
-    chapterProgress?.value?.notesProgress < newPercent ? chapterProgress.value.notesProgress = newPercent : '';
+    chapterProgress?.value?.userId.toString().trim() == ""
+      ? (chapterProgress.value.userId = userToken.value?._id)
+      : "";
+    chapterProgress?.value?.chapterId.toString().trim() == ""
+      ? (chapterProgress.value.chapterId = chapters.currentChapterId)
+      : "";
+    chapterProgress?.value?.notesProgress < newPercent
+      ? (chapterProgress.value.notesProgress = newPercent)
+      : "";
+  }
+  else{
+    initializeChapterProgress(chapters.currentChapterId);
   }
 
   switch (newPercent) {
     case 25:
-      updateChapterProgress()
+      updateChapterProgress();
       break;
     case 50:
-      updateChapterProgress()
+      updateChapterProgress();
       break;
     case 75:
-      updateChapterProgress()
+      updateChapterProgress();
       break;
     case 100:
-      updateChapterProgress()
+      updateChapterProgress();
       break;
     default:
       break;
@@ -488,7 +513,6 @@ watch(scrollPercent, async (newPercent) => {
 definePageMeta({
   middleware: "auth",
 });
-
 </script>
 
 <template>
@@ -499,7 +523,10 @@ definePageMeta({
         @click="experimrntUrl = null;setPicCenter()">
         <Icon name="formkit:close" size="24" class="font-bold text-white" />
       </div>
-      <iframe :src="experimrntUrl" frameborder="0" class="h-full w-full center-height rounded-md !bg-white"></iframe>
+      <iframe :src="experimrntUrl" frameborder="0" :class="[
+        ' w-full  rounded-md !bg-white',
+        isFullscreen ?' min-h-dvh min-w-full':'h-full center-height',
+      ]"></iframe>
       <!-- full screen controls -->
       <div
         class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"
@@ -515,8 +542,7 @@ definePageMeta({
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax v-trusted :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :change-chapter="changeChapter" :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
-        @emit-quiz-score="updateChapterProgress"
-        />
+        @emit-quiz-score="updateChapterProgress" />
     </div>
     <section v-else v-trusted class="relative inline-flex w-full h-full overflow-hidden center-height">
       <!-- Loading state -->
@@ -628,7 +654,8 @@ definePageMeta({
               <!-- Next Chapter -->
               <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length" :class="{
       'opacity-0': chapters.number == chapters.list?.length,
-    }" class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
+    }"
+                class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
                 <p class="flex gap-2 capitalize">
                   Next <span class="hidden md:flex">Topic</span>
                 </p>

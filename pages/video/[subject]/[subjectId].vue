@@ -209,7 +209,7 @@ watch(filters, (filters) => {
 <template>
   <NuxtLayout name="home-layout">
     <div :class="[
-      'wrapper-container',
+      ' ',
       { ' animate-pulse': isLoading }
     ]">
       <HeroSection />
@@ -241,7 +241,7 @@ watch(filters, (filters) => {
           <div class="flex flex-col w-full">
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class="container flex flex-col items-start">
+              <div class=" flex flex-col items-start">
                  <customGridTwo>
                   <template #data>
                    <!-- Video Cards are in Grid -->

@@ -33,7 +33,7 @@ useHead({
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="wrapper-container ">
+    <div class="  ">
       <HeroSection />
       <HomeInputsSelection />
       <TabBar />

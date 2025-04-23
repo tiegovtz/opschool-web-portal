@@ -99,10 +99,10 @@ const fetchTopics = async (params) => {
   try {
     status.value = "pending";
     const response = await $fetch(apiDocs.topics.getSubjectId.replace(
-        "{subjectId}",
-        subjectId
-      ), {
-        params: params,
+      "{subjectId}",
+      subjectId
+    ), {
+      params: params,
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
@@ -211,7 +211,7 @@ watch(filters, (filters) => {
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="wrapper-container" :class="{ ' animate-pulse': isLoading }">
+    <div class=" " :class="{ ' animate-pulse': isLoading }">
       <HeroSection />
         <TabBar 
           :subject-title="subjectTitle"
@@ -243,27 +243,20 @@ watch(filters, (filters) => {
           <div class="flex flex-col w-full" v-trusted>
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class="container flex flex-col items-start">
+              <div class="flex flex-col items-start">
                 <customGridTwo v-trusted>
                   <template #data>
-                    <TopicCard
-                    v-for="topic in slicedData"
-                    :key="topic._id"
-                    :topic-id="topic._id"
-                    :topic-image="topic.thumbnail"
-                    :topic-title="topic.name"
-                    :topic-description="topic.descriptions"
-                    :topic-duration="
-                      topic.topic_duration ? topic.topic_duration : '10 min'
-                    "
-                    :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : 0"
-                    :topic-level="level"
-                    :topic-standard="topic.level.name"
-                    :subject-name="topic.subject.name"
-                    :topic-viewed="topic.isViewed"
-                    :topic-progress="topic.progressPercent"
-                  />
+                    <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
+                      :topic-image="topic.thumbnail" :topic-title="topic.name" 
+                      :topic-description="topic.descriptions"
+                      :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'" 
+                      :topic-likes="topic.topic_likes ? topic.topic_likes : 100" 
+                      :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length 
+                      :topic.views ? topic.views : 0" 
+                      :topic-level="level" :topic-standard="topic.level.name" 
+                      :subject-name="topic.subject.name"
+                      :topic-viewed="topic.isViewed" 
+                      :topic-progress="topic.progressPercent" />
                   </template>
                 </customGridTwo>
               </div>
@@ -272,38 +265,19 @@ watch(filters, (filters) => {
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" v-trusted class="flex justify-center my-5">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
               </div>
               <div v-else class="flex justify-center gap-2" v-trusted>
                 <!-- previous -->
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage > 5"
-                >
-                  <Icon
-                    name="iconamoon:arrow-left-2-fill"
-                    size="2rem"
-                    @click="prevPage"
-                  />
+                <div class="flex items-center justify-center" v-if="currentPage > 5">
+                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
                 </div>
 
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
 
                 <!-- next button -->
                 <div

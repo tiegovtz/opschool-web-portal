@@ -127,23 +127,37 @@ const fetchData = async (params) => {
   const tab = activeTab.value.toLowerCase();
 
   // Default Topics by User or Public
-  if (userToken.value) {
-    url = apiDocs.topics.filterTopicsByUser.replace(
-      "{userId}",
-      userToken.value?._id
-    );
-  } else {
-    url = apiDocs.topics.filterTopics;
-  }
+  // if (userToken.value) {
+  //   url = apiDocs.topics.filterTopicsByUser.replace(
+  //     "{userId}",
+  //   );
+  // } else {
+  // }
+  // url = apiDocs.topics.filterTopics;
 
   // Check for specific tabs
   if (tab === "experiments") {
     url = apiDocs.experiments.getExperiments;
+    params = {
+        ...params
+      };
   } else if (tab === "video") {
     url = apiDocs.videos.getVideos;
+    params = {
+        ...params
+      };
   } else if (tab === "home") {
     url = apiDocs.subjects.getPublicSubjects;
-  }
+    params = {
+        ...params
+      };
+  }else if (tab === "interactive books") {
+        url = apiDocs.topics.filterTopics;
+      params = {
+        ...params,
+       userId: userToken.value?._id,
+      };
+    }
 
   // Subject-specific tab overrides
   if (subjectId.value) {
@@ -152,24 +166,35 @@ const fetchData = async (params) => {
         "{subjectId}",
         subjectId.value
       );
+
+      params = {
+        ...params
+      };
     } else if (tab === "video") {
       url = apiDocs.videos.getPublicVideoBySubjectId.replace(
         "{subjectId}",
         subjectId.value
       );
+
+      params = {
+        ...params
+      };
     } else if (tab === "interactive books") {
       url = apiDocs.topics.getSubjectId.replace("{subjectId}", subjectId.value);
+      params = {
+        ...params,
+       userId: userToken.value?._id,
+      };
     }
   }
 
-  if (params) {
-    url = apiDocs.topics.publicTopicsFilterAll;
-  }
-
+  // if (params) {
+  //   url = apiDocs.topics.publicTopicsFilterAll;
+  // }
+  // ...params, userId: userToken.value?._id
   try {
-    status.value = "pending";
     const response = await $fetch(url, {
-      params: params,
+      params:  {...params},
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
@@ -337,7 +362,7 @@ watch(
 <template>
   <NuxtLayout name="home-layout">
     <!-- User Has a Token -->
-    <section v-if="userToken" :class="['wrapper-container', { ' animate-pulse': isLoading }]" v-trusted>
+    <section v-if="userToken" :class="[' ', { ' animate-pulse': isLoading }]" v-trusted>
       <HomeSearchbar appearance="rounded" />
       <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" :active-tab="activeTab" />
 
@@ -445,10 +470,10 @@ watch(
                       topic.views ? topic.views: 0
                     "
                     :topic-level="level"
-                    :topic-standard="topic.level.name"
-                    :subject-name="topic.subject.name"
+                    :topic-standard="topic.level?.name"
+                    :subject-name="topic.subject?.name"
                     :topic-viewed="topic.isViewed"
-                    :topic-progress="topic.progressPercent"
+                    :topic-progress="topic.avgProgress"
                   />
                 </template>
               </customGridOne>
@@ -459,8 +484,8 @@ watch(
                   <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id"
                     :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
                     :experiment-title="experiment.title" :experiment-description="experiment.description"
-                    :experiment-type="experiment.category" :experiment-subject="experiment.subject.name"
-                    :experiment-level="experiment.level.name" :experiment-name="experiment.name"
+                    :experiment-type="experiment.category" :experiment-subject="experiment.subject?.name"
+                    :experiment-level="experiment.level?.name" :experiment-name="experiment.name"
                     :experiment-file-url="experiment.stepsFileUrl" />
                 </template>
               </customGridOne>
@@ -470,7 +495,7 @@ watch(
                   <!-- Video Cards are in Grid -->
                   <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
                     :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
-                    :video-description="video.description" :video-subject="video.subject.name"
+                    :video-description="video.description" :video-subject="video.subject?.name"
                     :video-type="video.videoType" />
                 </template>
               </customGridOne>
@@ -509,7 +534,7 @@ watch(
     </section>
 
     <!-- User has no token -->
-    <section v-else :class="['wrapper-container', { ' animate-pulse': isLoading }]" v-trusted>
+    <section v-else :class="[' ', { ' animate-pulse': isLoading }]" v-trusted>
       <HeroSection />
       <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
         @emit-subject="filters.subject = $event" />
