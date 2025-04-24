@@ -4,6 +4,7 @@ import { MessageComponent, ProfileDrawInitialLater } from "#components";
 import apiDocs from "~/utilities/api-docs";
 
 // Define Cookie
+const signInAccessToken = useCookie("signInAccessToken");
 const userToken = useCookie("signInUserToken").value;
 let uploadedPic;
 
@@ -106,6 +107,13 @@ const updatedProfile = async () => {
     console.log(error);
   }
 };
+
+// Fetch Profile Data
+const {data:profileData, status, error} = await useFetch(apiDocs.auth.profile, {
+  headers: { 
+    Authorization: `Bearer ${signInAccessToken.value}` 
+  }
+});
 
 
 // Fetch Region function
@@ -305,7 +313,11 @@ const discardChanges = () => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center w-full max-w-7xl">
+  <div v-if="status == 'pending'" class="flex items-center justify-center w-full max-w-7xl'">
+    <LoadingIndicator :is-loading="true"/>
+  </div>
+  
+  <div  v-else-if="status == 'success'" class="flex flex-col items-center justify-center w-full max-w-7xl">
     <!-- Message Component -->
     <MessageComponent
       :message="profile.controller.errors.profilePic"
@@ -377,18 +389,17 @@ const discardChanges = () => {
     </div>
 
     <!-- Learning Statistics -->
-    <!-- <div
-      class="w-full mx-auto my-4 overflow-hidden bg-white rounded-md shadow-md"
-    > -->
-      <!-- <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
+    <div
+      class="w-full mx-auto my-4 overflow-hidden bg-white rounded-md shadow-md">
+      <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
         <h3 class="text-lg font-semibold text-white">Learning Statistics</h3>
-      </div> -->
+      </div>
 
-      <!-- <div
+      <div
         class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5"
-      > -->
+      >
         <!-- Topic Opened -->
-        <!-- <div class="stat-card">
+        <div class="stat-card">
           <div class="bg-blue-100 stat-icon">
             <Icon
               name="fa6-solid:book-open-reader"
@@ -398,12 +409,12 @@ const discardChanges = () => {
           </div>
           <div class="stat-content">
             <span class="stat-label">Topics Opened</span>
-            <span class="stat-value">9</span>
+            <span class="stat-value">{{ profileData.totalTopicsOpened }}</span>
           </div>
-        </div> -->
+        </div>
 
         <!-- Favorite Subject -->
-        <!-- <div class="stat-card">
+        <div class="stat-card">
           <div class="bg-green-100 stat-icon">
             <Icon
               name="material-symbols:favorite-rounded"
@@ -415,10 +426,10 @@ const discardChanges = () => {
             <span class="stat-label">Subject Opened</span>
             <span class="stat-value">English</span>
           </div>
-        </div> -->
+        </div>
 
         <!-- Time Spent -->
-        <!-- <div class="stat-card">
+        <div class="stat-card">
           <div class="bg-red-100 stat-icon">
             <Icon
               name="stash:clock-solid"
@@ -428,12 +439,12 @@ const discardChanges = () => {
           </div>
           <div class="stat-content">
             <span class="stat-label">Time Spent</span>
-            <span class="stat-value">0</span>
+            <span class="stat-value">{{ profileData.timeSpentFormatted ?? 0}}</span>
           </div>
-        </div> -->
+        </div>
 
         <!-- Quiz Attempts -->
-        <!-- <div class="stat-card">
+        <div class="stat-card">
           <div class="bg-purple-100 stat-icon">
             <Icon
               name="solar:notebook-bold"
@@ -443,12 +454,12 @@ const discardChanges = () => {
           </div>
           <div class="stat-content">
             <span class="stat-label">Quiz Attempts</span>
-            <span class="stat-value">9</span>
+            <span class="stat-value">{{ profileData.questionStats.totalAttempted?.toFixed(1) }}</span>
           </div>
-        </div> -->
+        </div>
 
         <!-- Average Score -->
-        <!-- <div class="stat-card">
+        <div class="stat-card">
           <div class="bg-indigo-100 stat-icon">
             <Icon
               name="heroicons:chart-bar-16-solid"
@@ -458,12 +469,31 @@ const discardChanges = () => {
           </div>
           <div class="stat-content">
             <span class="stat-label">Average Quiz Score</span>
-            <span class="stat-value">51.00%</span>
+            <span class="stat-value">{{ profileData.questionStats.averageScore?.toFixed(1) }}%</span>
           </div>
-        </div> -->
-      <!-- </div>
-    </div> -->
+        </div>
+      </div>
+    </div>
 
+         <!-- Learning Subject Statistics -->
+    <div class="w-full mx-auto my-4 overflow-hidden bg-white rounded-md shadow-md"
+    v-if="profileData?.recentTopics?.length > 0">
+            <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
+                <h3 class="text-lg font-semibold text-white">Learning Topics Statistics</h3>
+            </div>
+            <div class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5">
+                <div class="stat-card" v-for="(topic, index) in profileData.recentTopics" :key="index">
+                    <div class="w-10 h-10 overflow-hidden rounded-full">
+                        <NuxtImg :src="apiDocs.baseURL.replace('/v1', '') + '/' + topic.thumbnail" :alt="topic.name" class="object-cover w-full h-full" />
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-label">{{ topic.name }}</span>
+                        <span class="stat-value">{{ Math.min(topic.progress.avgProgress ?? 0, 100).toFixed(1)  }}%</span>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
  
     <!-- Personal Information -->
     <div class="w-full mx-auto my-6">
@@ -831,6 +861,14 @@ const discardChanges = () => {
         <Icon name="heroicons:arrow-right" class="w-4 h-4" />
       </button>
     </div>
+  </div>
+   <div v-else-if="status == 'error'" class="flex items-center justify-center w-full max-w-7xl'">
+  <MessagePageNotFound />
+  </div>
+     <div v-else class="flex items-center justify-center w-full max-w-7xl'">
+    <p class="text-center text-medium">
+      Try to refresh the page, Something went Wrong
+    </p>
   </div>
 </template>
 
