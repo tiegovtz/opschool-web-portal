@@ -104,13 +104,13 @@ const forgotPassword = async () => {
             :event-type="userForgotPassword.controller.isSucces ? 'success' : 'error'"
             :icon="userForgotPassword.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
-        <div class="w-full max-w-md p-4 bg-white rounded-lg shadow-md">
+        <div class="w-full max-w-md px-4 rounded-lg md:bg-white md:shadow-2xl md:pt-3">
             <h1 class="font-bold text-center text-large">Forgot Password</h1>
             <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
                 <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
             </NuxtLink>
             <form @submit.prevent="forgotPassword" :class="[
-                    'px-4 text-textGray md:h-[150px] h-dvh relative overflow-hidden text-extraSmall',
+                    'px-4 text-textGray md:h-[150px] relative overflow-hidden text-extraSmall',
                     { 'md:h-[200px]': userForgotPassword.controller.errors.type },
                     { 'md:h-[300px]': userForgotPassword.type.toLowerCase() === 'student' },
                 ]">
@@ -232,7 +232,7 @@ const forgotPassword = async () => {
                         v-if="userForgotPassword.controller.isDisabled" />
                 </button>
             </form>
-            <div class="mt-4 text-center">
+            <div class="my-4 text-center">
                 <p class="text-sm text-textGray">Back to 
                     <NuxtLink to="/auth" class="cursor-pointer text-oceanBlue">Sign In</NuxtLink>
                 </p>
