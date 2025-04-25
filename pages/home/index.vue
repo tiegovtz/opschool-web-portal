@@ -417,7 +417,7 @@ watch(
         </div>
 
         <!-- data are in Grid -->
-        <div class="xl:w-3/4">
+        <div class="w-full xl:w-3/4">
           <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
             <LoadingIndicator :is-loading="true" />
           </div>
@@ -444,7 +444,8 @@ watch(
                   <!-- Subject Cards are in Grid -->
                   <SubjectCard v-for="subject in slicedData" :key="subject._id" :subject-id="subject._id"
                     :subject-name="subject.name" :subject-image="subject.thumbnail"
-                    :total-views="subject.total_views ?? 0" :is-logged-in="userToken != null || userToken != undefined"
+                    :total-views="subject.total_views ?? Math.floor(Math.random() * 50)" 
+                    :is-logged-in="userToken != null || userToken != undefined"
                     @emit-subject-name="activeTab = $event" @emit-subject-id="subjectId = $event" />
                 </template>
               </customGridOne>
@@ -560,7 +561,8 @@ watch(
               <template #data>
                 <!-- Subject Cards are in Grid -->
                 <SubjectCard v-for="subject in slicedData" :key="subject._id" :subject-id="subject._id"
-                  :subject-name="subject.name" :subject-image="subject.thumbnail" :total-views="subject.total_views"
+                  :subject-name="subject.name" :subject-image="subject.thumbnail" 
+                  :total-views="subject.total_views ?? Math.floor(Math.random() * 50)"
                   :is-logged-in="userToken != null || userToken != undefined" @emit-subject-name="activeTab = $event" />
               </template>
             </customGridTwo>
