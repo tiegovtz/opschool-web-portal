@@ -1,11 +1,13 @@
 <script setup>
 import apiDocs from "~/utilities/api-docs";
+import { layoutEffect } from "~/utilities/controlls";
 
 const userToken = useCookie("signInUserToken");
 
 const logout = () => {
   userToken.value = null;
   const router = useRouter();
+  layoutEffect.value = "grid";
   // Use the State
   // useState("topicToView", () => null);
   // useState("videoToView", () => null);
