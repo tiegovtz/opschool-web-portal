@@ -1,7 +1,7 @@
 // 🔍 Filter function
 const filterContentBySearch = (content: any[],searchValue:String) => {
-    if(content.length == 0 ) return content;
-    if(!searchValue.trim()) return content;
+    if(content?.length == 0 ) return content;
+    if(!searchValue?.trim()) return content;
     return content.filter(item =>
         Object.values(item).some(val =>
             val && typeof (val) == 'string' && val.toString().toLowerCase().includes(searchValue.toLowerCase())
@@ -122,10 +122,69 @@ const filterDataByValues = <T extends DataItem>(
   });
 };
 
+/**
+ * Groups an array of objects by a specific key and structures the result.
+ *
+ * @template T - The type of the objects inside the array.
+ * @param {T[]} data - Array of objects to group.
+ * @param {keyof T} key - The key to group the objects by.
+ * @returns {Array<{ dataOfKey: Pick<T, keyof T>; data: T[] }>}
+ *   - Each grouped object contains:
+ *     - `dataOfKey`: the key and its value.
+ *     - `data`: an array of all objects matching that key.
+ *
+ * @example
+ * const students = [
+ *   { name: "Baraka", age: 20 },
+ *   { name: "George", age: 21 },
+ *   { name: "Elisante", age: 20 },
+ *   { name: "Xyden", age: 22 },
+ * ];
+ *
+ * const result = fillterKeyDataFromArrayOfJson(students, "age");
+ * console.log(result);
+ *
+ * // Output:
+ * [
+ *   { dataOfKey: { age: 20 }, data: [{...}, {...}] },
+ *   { dataOfKey: { age: 21 }, data: [{...}] },
+ *   { dataOfKey: { age: 22 }, data: [{...}] }
+ * ]
+ */
+const filterKeyDataFromArrayOfJson= <T>(data: T[], key: string): { dataOfKey: any; data: T[] }[] =>{
+  if (!Array.isArray(data) || !key) return [];
+
+  const groupedMap = new Map<string, T[]>();
+
+  for (const item of data) {
+    const keys = key.split(".");
+    let keyValue: any = item;
+
+    for (const k of keys) {
+      keyValue = keyValue?.[k];
+    }
+
+    if (keyValue !== undefined) {
+      const keyStr = String(keyValue); // always use string as map key
+      if (!groupedMap.has(keyStr)) {
+        groupedMap.set(keyStr, []);
+      }
+      groupedMap.get(keyStr)!.push(item);
+    }
+  }
+
+  const result = Array.from(groupedMap.entries()).map(([keyStr, items]) => ({
+    dataOfKey: keyStr,
+    data: items,
+  }));
+
+  return result;
+}
 
 
 export {
     filterContentBySearch,
     extractNestedKeysAndValues,
-    filterDataByValues
+    filterDataByValues,
+    filterKeyDataFromArrayOfJson,
 }
