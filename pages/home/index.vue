@@ -325,6 +325,7 @@ watch(
   (userToken) => {
     if (userToken == null || userToken == undefined) {
       activeTab.value = "home";
+      layoutEffect.value = "grid";
       fetchData();
     }
   }
