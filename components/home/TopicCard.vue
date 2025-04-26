@@ -89,7 +89,7 @@ const userToken = useCookie('signInUserToken')
     <!-- topic image -->
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
-      layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-[200px]',
+      layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-full max-w-[200px]',
       { 'md:h-20 !h-full ': modelType === 'search', },
     ]">
       <NuxtImg :src="topicImage" loading="lazy" alt="book1"

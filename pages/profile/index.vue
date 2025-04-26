@@ -1,6 +1,11 @@
 <script setup>
 import  ProfileCard  from "@/components/profile/profileCard.vue";
 
+
+definePageMeta({
+  middleware: "auth",
+});
+
 </script>
 
 <template>
