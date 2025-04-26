@@ -444,7 +444,7 @@ watch(
                   <!-- Subject Cards are in Grid -->
                   <SubjectCard v-for="subject in slicedData" :key="subject._id" :subject-id="subject._id"
                     :subject-name="subject.name" :subject-image="subject.thumbnail"
-                    :total-views="subject.total_views ?? Math.floor(Math.random() * 50)" 
+                    :total-views="subject.total_views ?? (30 + Math.floor(Math.random() * 33))" 
                     :is-logged-in="userToken != null || userToken != undefined"
                     @emit-subject-name="activeTab = $event" @emit-subject-id="subjectId = $event" />
                 </template>
@@ -562,7 +562,7 @@ watch(
                 <!-- Subject Cards are in Grid -->
                 <SubjectCard v-for="subject in slicedData" :key="subject._id" :subject-id="subject._id"
                   :subject-name="subject.name" :subject-image="subject.thumbnail" 
-                  :total-views="subject.total_views ?? Math.floor(Math.random() * 50)"
+                  :total-views="subject.total_views ?? (30 + Math.floor(Math.random() * 33))"
                   :is-logged-in="userToken != null || userToken != undefined" @emit-subject-name="activeTab = $event" />
               </template>
             </customGridTwo>
