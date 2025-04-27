@@ -521,7 +521,8 @@ definePageMeta({
         @click="experimrntUrl = null">
         <Icon name="formkit:close" size="24" class="font-bold text-white" />
       </div>
-      <iframe :src="experimrntUrl" frameborder="0" :class="[
+      <iframe :src="experimrntUrl" frameborder="0" 
+      :class="[
         ' w-full  rounded-md !bg-white',
         isFullscreen ?' min-h-dvh min-w-full':'h-full center-height',
       ]"></iframe>
@@ -571,50 +572,52 @@ definePageMeta({
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <NuxtLink :to="{
-      path: '/',
-      query: {
-        tab: 'interactive',
-        subject: topicLevel,
-        class: topicStandard,
-      },
-    }" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
+                  path: '/',
+                  query: {
+                    tab: 'interactive',
+                    subject: topicLevel,
+                    class: topicStandard,
+                  },
+                }" 
+                class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                 {{
-      topicLevel != null &&
-        topicLevel != undefined &&
-        topicLevel != "null"
-        ? topicLevel
-        : `Secondary`
-    }}
+                  topicLevel != null &&
+                    topicLevel != undefined &&
+                    topicLevel != "null"
+                    ? topicLevel
+                    : `Secondary`
+                }}
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </NuxtLink>
 
               <NuxtLink :to="{
-        path: '/',
-        query: {
-          tab: 'interactive',
-          subject: topicLevel,
-          class: topicStandard,
-        },
-      }" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
+                  path: '/',
+                  query: {
+                    tab: 'interactive',
+                    subject: topicLevel,
+                    class: topicStandard,
+                  },
+                }" 
+                class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                 {{
-      topicStandard != null &&
-        topicStandard != undefined &&
-        topicStandard != "null"
-        ? topicStandard
-        : `Form One`
-    }}
+                topicStandard != null &&
+                topicStandard != undefined &&
+                topicStandard != "null"
+                ? topicStandard
+                : `Form One`
+            }}
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </NuxtLink>
 
               <p class="font-medium uppercase text-medium md:capitalize">
                 {{
-        topicTitle != null &&
-          topicTitle != undefined &&
-          topicTitle != "null"
-          ? topicTitle
-          : `Introduction to
-                Physics`
-      }}
+                  topicTitle != null &&
+                    topicTitle != undefined &&
+                    topicTitle != "null"
+                    ? topicTitle
+                    : `Introduction to
+                          Physics`
+                }}
               </p>
             </div>
 
@@ -630,10 +633,8 @@ definePageMeta({
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
             <!-- Chapter Notes -->
-            <div class="mx-auto notes md:px-4 max-w-7xl" v-mathjax v-html="experimentParser(
-      modelParser(videoParser(chapters.notes?.content))
-    )
-      "></div>
+            <div class="mx-auto notes md:px-4 max-w-7xl" v-mathjax 
+              v-html="experimentParser( modelParser(videoParser(chapters.notes?.content)))"></div>
 
             <!-- Chapter Button - (Test your knowledge) -->
             <div v-if="chapters.questions && chapters.questions?.length > 0"
@@ -648,12 +649,13 @@ definePageMeta({
             <!-- Next and Previous chapter Action -->
             <div class="flex flex-row-reverse items-center justify-between lg:hidden">
               <!-- Next Chapter -->
-              <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length" :class="{
-      'opacity-0': chapters.number == chapters.list?.length,
-    }"
+              <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length" 
+              :class="{
+                 'opacity-0': chapters.number == chapters.list?.length,
+              }"
                 class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
                 <p class="flex gap-2 capitalize">
-                  Next <span class="hidden md:flex">Topic</span>
+                  Next
                 </p>
                 <div class="flex items-center justify-center w-4 h-4 bg-white rounded-full animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
@@ -667,7 +669,7 @@ definePageMeta({
                   <Icon name="weui:arrow-filled" size="20" class="transform rotate-180 text-oceanBlue" />
                 </div>
                 <p class="flex gap-2 capitalize">
-                  Previous <span class="hidden md:flex">Topic</span>
+                  Previous
                 </p>
               </button>
             </div>
@@ -683,7 +685,7 @@ definePageMeta({
         <div
           class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2 lg:static bg-white">
           <div class="flex items-center justify-between mb-4">
-            <h1 class="pt-5 font-medium capitalize text-medium">Subtopic</h1>
+            <h1 class="pt-5 font-medium capitalize text-medium">Competencies</h1>
             <!-- toggle menu -->
             <div
               class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"
