@@ -95,7 +95,7 @@ const renderQuestionWithBlanks = computed(() => {
       return {
         isBlank: false,
         text: part,
-        key: `text-${Math.random().toString(36).substr(2, 9)}`
+        key: `text-${Math.random().toString(36).substring(2, 9)}`
       };
     }
   });
@@ -151,7 +151,7 @@ const liveFilledSentence = computed(() => {
             <span
               v-else
               :key="part.key + i"
-              class="inline-block min-w-[100px] px-2 py-1 border-b border-dashed border-oceanBlue text-center text-sm bg-blue-50 rounded-sm"
+              class="inline-block min-w-[100px] px-2 py-1 border-b border-dashed border-oceanBlue text-center text-sm bg-blue-50 rounded-sm font-bold"
               @drop.prevent="handleDrop(part.index, $event)"
               @dragover.prevent
             >

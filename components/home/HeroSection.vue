@@ -52,10 +52,10 @@ const toggleReadMore = () => {
           {{ isExpanded ? 'Show Less' : 'Read More' }}
         </button>
         <div :class="[
-          'overflow-hidden rounded-md mt-2 transition-all duration-500 ease-in-out',
-          isExpanded ? 'h-0' : 'h-72'
+          'overflow-hidden rounded-md mt-2 transition-all duration-500 ease-in-out bg-gradient-to-b',
+          isExpanded ? 'h-0' : 'h-44'
         ]">
-          <NuxtImg src="/images/1.banner_miaka_50.gif" alt="banner_miaka_50" class="object-cover w-full h-full" />
+          <NuxtImg src="/images/3.banner_miaka_50_transparent.gif" alt="banner_miaka_50" class="object-contain w-full h-full" />
         </div>
       </div>
     </div>
