@@ -162,13 +162,16 @@ watch(quizAttempt.quizCompleted, (isCompleted) => {
           </p>
         </div>
       </div>
+      <p class="my-2">
+        Answer all questions.
+      </p>
 
       <!-- Outputs or results or Marks -->
       <div v-if="quizAttempt.quizCompleted && quizAttempt.isAttempting" class="w-full">
         <!-- Scores -->
         <div class="flex flex-col items-center w-full mb-4">
           <p>
-            Scores: <b>{{ scoredComputed.toFixed(1) }}%</b>
+            Total scores: <b>{{ quizAttempt.scored +'/'+ quizAttempt.totalQuestions}}</b>
           </p>
           <p class="flex items-center justify-center flex-1 gap-2 font-bold" :class="getScoreColor(scoredComputed)">
             {{ getMotivationMessage(scoredComputed) }}
@@ -182,11 +185,11 @@ watch(quizAttempt.quizCompleted, (isCompleted) => {
             <div class="pl-4 text-justify">
               <p class="mb-2">
                 {{
-      question.questionType === 'drag_and_drop'
-        ? question.question.replace(/(_\$blank)/g, ' __________ ')
-        : question.question
-    }}
-              </p>
+              question.questionType === 'drag_and_drop'
+                ? question.question.replace(/(_\$blank)/g, ' __________ ')
+                : question.question
+            }}
+                </p>
               <p :class="quizAttempt.clickedAnswer[index] == question.answer
         ? 'text-normalGreener'
         : 'text-red-600'
@@ -204,13 +207,13 @@ watch(quizAttempt.quizCompleted, (isCompleted) => {
           </div>
         </div>
 
-        <!-- Read notes again and Read next topic -->
+        <!-- Read notes again and Read next -->
         <div class="flex items-center justify-end w-full gap-2">
           <small>Recommendation:</small>
           <button v-if="quizAttempt.quizCompleted" @click="resetQuiz()"
             class="flex items-center justify-center px-4 py-1 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
             <span v-if="scoredComputed < 50" class="capitalize">Read notes again</span>
-            <span v-else class="capitalize">next topic</span>
+            <span v-else class="capitalize">next</span>
           </button>
         </div>
 
