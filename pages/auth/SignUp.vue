@@ -599,7 +599,7 @@ const switchTab = (tabName) => {
                 <option value="">(eg: Student, Teacher ...)</option>
                 <option value="Student">Student</option>
                 <option value="Teacher">Teacher</option>
-                <option value="Education Stackeholder">Education Stackeholder</option>
+                <option value="Education Stackeholder">Education Stakeholder</option>
               </select>
             </div>
 
