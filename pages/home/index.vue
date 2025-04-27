@@ -670,7 +670,10 @@ watch(
                   <div class="py-2">
                     {{ topics?.dataOfKey }}
                   </div>
-                  <div v-if="data.length > 1">
+                  <div v-if="data.length > 1" :class="[
+                    'flex gap-4 overflow-x-scroll scrollbar-none',
+                    layoutEffect == 'list' ? 'flex-col' : 'flex-row',
+                  ]">
                     <!-- Topic Cards  -->
                     <TopicCard
                       v-for="topic in topics?.data"
@@ -717,7 +720,10 @@ watch(
                   <div class="py-2">
                     {{ experiments?.dataOfKey }}
                   </div>
-                  <div v-if="data.length > 1">
+                  <div v-if="data.length > 1" :class="[
+                    'flex gap-4 overflow-x-scroll scrollbar-none',
+                    layoutEffect == 'list' ? 'flex-col' : 'flex-row',
+                  ]">
                     <!-- Experiment Cards  -->
                     <ExperimentsCard
                       v-for="experiment in experiments?.data"
@@ -756,10 +762,14 @@ watch(
               <div v-else-if="activeTab.toLowerCase() === 'video'">
                 <div v-for="(videos, index) in data" :key="index">
                   <div class="py-2">
-                    {{ videos?.dataOfKey }}
+                    <p class="">
+                      {{ videos?.dataOfKey }}
+                    </p>
                   </div>
-                  <div v-if="data.length > 1">
-                    <!-- Video Cards are in Grid -->
+                  <div v-if="data.length > 1" :class="[
+                    'flex gap-4 overflow-x-scroll scrollbar-none',
+                    layoutEffect == 'list' ? 'flex-col' : 'flex-row',
+                  ]">
                     <VideoCard
                       v-for="video in videos?.data"
                       :key="video._id"
