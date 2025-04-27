@@ -636,13 +636,13 @@ definePageMeta({
             <div class="mx-auto notes md:px-4 max-w-7xl" v-mathjax 
               v-html="experimentParser( modelParser(videoParser(chapters.notes?.content)))"></div>
 
-            <!-- Chapter Button - (Test your knowledge) -->
+            <!-- Chapter Button - (Quiz) -->
             <div v-if="chapters.questions && chapters.questions?.length > 0"
               class="flex items-center justify-center w-full">
               <button
                 class="h-10 px-4 text-white uppercase transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
                 @click="chapters.isAttemptingQuizes = true">
-                Test your knowledge
+                Quiz
               </button>
             </div>
 

@@ -9,7 +9,7 @@ const dropDownMenu = reactive({
 const selectedFilters = reactive({});
 
 const emit = defineEmits([
-  "emitUpdatefilterName", 
+  "emitUpdatefilterName",
   "emitUpdateFilterValue"
 ]);
 
@@ -77,8 +77,6 @@ const filterNameGroup = [
     visibility: "all",
     inputType: "radio",
     filterGroup: [
-      { name: "Pre Primary" },
-      { name: "Primary" },
       { name: "Lower Secondary" },
       { name: "Upper Secondary" },
       { name: "Teachers Education" },
@@ -89,21 +87,6 @@ const filterNameGroup = [
     visibility: "all",
     inputType: "checkbox",
     filterGroup: [
-      {
-        level: "Pre Primary",
-        classes: ["Pre Primary 1", "Pre Primary 2", "Pre Primary 3"],
-      },
-      {
-        level: "Primary",
-        classes: [
-          "Standard One",
-          "Standard Two",
-          "Standard Three",
-          "Standard Four",
-          "Standard Five",
-          "Standard Six",
-        ],
-      },
       {
         level: "Lower Secondary",
         classes: ["Form One", "Form Two", "Form Three", "Form Four"],
@@ -131,21 +114,22 @@ const filterNameGroup = [
       {
         level: "Lower Secondary",
         list: [
-          "Kiswahili",
           "Mathematics",
           "Physics",
           "Chemistry",
           "Biology",
           "Geography",
-          "History",
-          "English",
-          "French",
-          "Food Nutrition",
         ],
       },
       {
         level: "Upper Secondary",
-        list: ["kiswahili", "Mathematics", "Physics", "Chemistry", "Biology"],
+        list: [
+          "Mathematics",
+          "Physics",
+          "Chemistry",
+          "Biology",
+          "Geography",
+        ],
       },
     ],
   },
@@ -185,34 +169,23 @@ const visibleFilters = computed(() => {
 </script>
 
 <template>
-  <form
-    class="flex flex-col w-full bg-white divide-y divide-gray-200 cursor-pointer"
-    @reset="resetFilters"
-  >
+  <form class="flex flex-col w-full bg-white divide-y divide-gray-200 cursor-pointer" @reset="resetFilters">
     <!-- Filter legend and reset button -->
     <div class="flex items-center justify-between p-4 border-b bg-gray-50">
       <h2 class="text-lg font-bold text-gray-700">Filter</h2>
-      <button
-        type="reset"
-        class="px-3 py-1 text-sm transition-all duration-500 ease-in-out border rounded-md text-oceanBlue border-oceanBlue hover:bg-deepBlue hover:text-white hover:border-deepBlue"
-      >
+      <button type="reset"
+        class="px-3 py-1 text-sm transition-all duration-500 ease-in-out border rounded-md text-oceanBlue border-oceanBlue hover:bg-deepBlue hover:text-white hover:border-deepBlue">
         Reset Filters
       </button>
     </div>
 
-    <div
-      v-for="(filter, index) in visibleFilters"
-      :key="index"
-      class="p-4"
-    >
+    <div v-for="(filter, index) in visibleFilters" :key="index" class="p-4">
       <div @click="setMenuOpen(index)" class="flex items-center justify-between">
         <h3 class="text-lg font-semibold">{{ filter.name }}</h3>
         <span>
-            <Icon
-            :name="dropDownMenu.openMenus.includes(index) ? 
-            'lets-icons:remove-duotone' : 
-            'lets-icons:add-duotone'"
-            size="1.2rem" class="text-deepBlue"/>
+          <Icon :name="dropDownMenu.openMenus.includes(index) ?
+    'lets-icons:remove-duotone' :
+    'lets-icons:add-duotone'" size="1.2rem" class="text-deepBlue" />
         </span>
       </div>
 
@@ -220,18 +193,9 @@ const visibleFilters = computed(() => {
         <div v-if="dropDownMenu.openMenus.includes(index)" class="mt-2 space-y-2">
           <!-- LEVEL -->
           <div v-if="filter.name === 'Level'">
-            <label
-              v-for="option in filter.filterGroup"
-              :key="option.name"
-              class="flex items-center gap-2"
-            >
-              <input
-                type="radio"
-                :value="option.name"
-                name="level"
-                @change="selectLevel(option.name)"
-                :checked="selectedFilters.level === option.name"
-              />
+            <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2">
+              <input type="radio" :value="option.name" name="level" @change="selectLevel(option.name)"
+                :checked="selectedFilters.level === option.name" />
               {{ option.name }}
             </label>
           </div>
@@ -243,12 +207,8 @@ const visibleFilters = computed(() => {
             </div>
             <div v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
               <div v-if="group.level.toLowerCase() === selectedFilters.level?.toLowerCase()">
-                <label
-                  v-for="className in group.classes"
-                  :key="className"
-                  class="flex items-center gap-2"
-                  @click.prevent="toggleCheckbox('class', className)"
-                >
+                <label v-for="className in group.classes" :key="className" class="flex items-center gap-2"
+                  @click.prevent="toggleCheckbox('class', className)">
                   <input type="checkbox" :value="className" :checked="selectedFilters.class?.includes(className)" />
                   {{ className }}
                 </label>
@@ -263,12 +223,8 @@ const visibleFilters = computed(() => {
             </div>
             <div v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
               <div v-if="group.level === selectedFilters.level">
-                <label
-                  v-for="subject in group.list"
-                  :key="subject"
-                  class="flex items-center gap-2"
-                  @click.prevent="toggleCheckbox('subject', subject)"
-                >
+                <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
+                  @click.prevent="toggleCheckbox('subject', subject)">
                   <input type="checkbox" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />
                   {{ subject }}
                 </label>
@@ -278,17 +234,10 @@ const visibleFilters = computed(() => {
 
           <!-- GENERAL FILTER (Category, Language, Skills) -->
           <div v-else>
-            <label
-              v-for="option in filter.filterGroup"
-              :key="option.name"
-              class="flex items-center gap-2"
-              @click.prevent="toggleCheckbox(filter.name.toLowerCase(), option.name)"
-            >
-              <input
-                :type="filter.inputType"
-                :value="option.name"
-                :checked="selectedFilters[filter.name.toLowerCase()]?.includes(option.name)"
-              />
+            <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2"
+              @click.prevent="toggleCheckbox(filter.name.toLowerCase(), option.name)">
+              <input :type="filter.inputType" :value="option.name"
+                :checked="selectedFilters[filter.name.toLowerCase()]?.includes(option.name)" />
               {{ option.name }}
             </label>
           </div>
@@ -300,10 +249,13 @@ const visibleFilters = computed(() => {
 
 
 <style scoped>
-.fade-enter-active, .fade-leave-active {
+.fade-enter-active,
+.fade-leave-active {
   transition: all 0.2s ease;
 }
-.fade-enter-from, .fade-leave-to {
+
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
   transform: translateY(-5px);
 }
