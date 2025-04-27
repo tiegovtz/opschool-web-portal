@@ -474,13 +474,13 @@ const setSeeMore = (seeMore) => {
                   <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
                     :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
                     :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'
-      " :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.viewedBy?.length
-        ? topic.viewedBy?.length
-        : topic.views
-          ? topic.views
-          : 0
-      " :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
-                    :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
+                    " :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.viewedBy?.length
+                      ? topic.viewedBy?.length
+                      : topic.views
+                        ? topic.views
+                        : 0
+                    " :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
+                                  :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
                 </template>
               </customGridOne>
 
@@ -588,7 +588,7 @@ const setSeeMore = (seeMore) => {
                     </customGridOne>
                     <!-- Topic Cards  -->
                     <div v-else-if="!seeMoreDetails" :class="[
-                        'flex gap-4 overflow-x-scroll scrollbar-none',
+                        'flex gap-4 overflow-x-scroll scrollbar-none py-2',
                         layoutEffect == 'list' ? 'flex-col' : 'flex-row',
                       ]">
                       <TopicCard v-for="topic in topics?.data" :key="topic._id" :topic-id="topic._id"
@@ -599,7 +599,6 @@ const setSeeMore = (seeMore) => {
                         :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
                         :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
                     </div>
-
                   </div>
 
                   <customGridOne v-else>
@@ -651,7 +650,7 @@ const setSeeMore = (seeMore) => {
                     </customGridOne>
                     <!-- Topic Cards  -->
                     <div v-else-if="!seeMoreDetails" :class="[
-                        'flex gap-4 overflow-x-scroll scrollbar-none',
+                        'flex gap-4 overflow-x-scroll scrollbar-none py-2',
                         layoutEffect == 'list' ? 'flex-col' : 'flex-row',
                       ]"><!-- Experiment Cards  -->
                     <ExperimentsCard v-for="experiment in experiments?.data" :key="experiment._id"
@@ -709,7 +708,7 @@ const setSeeMore = (seeMore) => {
                     </customGridOne>
                   
                     <div v-else-if="!seeMoreDetails" :class="[
-                        'flex gap-4 overflow-x-scroll scrollbar-none',
+                        'flex gap-4 overflow-x-scroll scrollbar-none py-2',
                         layoutEffect == 'list' ? 'flex-col' : 'flex-row',
                       ]">
                        <VideoCard v-for="video in videos?.data" :key="video._id" :video-id="video._id"
