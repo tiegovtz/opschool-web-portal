@@ -667,8 +667,11 @@ watch(
               </div>
               <div v-else-if="activeTab.toLowerCase() === 'interactive books'">
                 <div v-for="(topics, index) in data" :key="index">
-                  <div class="py-2">
-                    {{ topics?.dataOfKey }}
+                  <div class="flex items-center justify-between py-4">
+                    <p class="font-bold text-[1.3rem]">
+                      {{ topics?.dataOfKey }}
+                    </p>
+                    <small class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">See All</small>
                   </div>
                   <div v-if="data.length > 1" :class="[
                     'flex gap-4 overflow-x-scroll scrollbar-none',
@@ -717,8 +720,11 @@ watch(
               </div>
               <div v-else-if="activeTab.toLowerCase() === 'experiments'">
                 <div v-for="(experiments, index) in data" :key="index">
-                  <div class="py-2">
-                    {{ experiments?.dataOfKey }}
+                  <div class="flex items-center justify-between py-4">
+                    <p class="font-bold text-[1.3rem]">
+                      {{ experiments?.dataOfKey }}
+                    </p>
+                    <small class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">See All</small>
                   </div>
                   <div v-if="data.length > 1" :class="[
                     'flex gap-4 overflow-x-scroll scrollbar-none',
@@ -761,10 +767,11 @@ watch(
               </div>
               <div v-else-if="activeTab.toLowerCase() === 'video'">
                 <div v-for="(videos, index) in data" :key="index">
-                  <div class="py-2">
-                    <p class="">
+                  <div class="flex items-center justify-between py-4">
+                    <p class="font-bold text-[1.3rem]">
                       {{ videos?.dataOfKey }}
                     </p>
+                    <small class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">See All</small>
                   </div>
                   <div v-if="data.length > 1" :class="[
                     'flex gap-4 overflow-x-scroll scrollbar-none',

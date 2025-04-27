@@ -16,7 +16,7 @@
     </div>
     
     <!-- 50 Years -->
-    <div class="fixed z-10 w-32 h-32 bottom-20 right-6 animate-bounce">
+    <div class="fixed z-10 w-16 h-2w-16 bottom-20 right-6 animate-bounce">
       <NuxtImg src="/images/2.kitabukimoja.png" alt="EMBLEM" class="object-contain w-full h-full" />
     </div> 
     <!-- Footer -->
