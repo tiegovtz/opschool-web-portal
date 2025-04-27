@@ -151,7 +151,7 @@ const filterDataByValues = <T extends DataItem>(
  *   { dataOfKey: { age: 22 }, data: [{...}] }
  * ]
  */
-const filterKeyDataFromArrayOfJson= <T>(data: T[], key: string): { dataOfKey: any; data: T[] }[] =>{
+const filterKeyDataFromArrayOfJson = <T>(data: T[], key: string): { dataOfKey: any; data: T[] }[] => {
   if (!Array.isArray(data) || !key) return [];
 
   const groupedMap = new Map<string, T[]>();
@@ -165,7 +165,7 @@ const filterKeyDataFromArrayOfJson= <T>(data: T[], key: string): { dataOfKey: an
     }
 
     if (keyValue !== undefined) {
-      const keyStr = String(keyValue); // always use string as map key
+      const keyStr = String(keyValue);
       if (!groupedMap.has(keyStr)) {
         groupedMap.set(keyStr, []);
       }
@@ -173,13 +173,17 @@ const filterKeyDataFromArrayOfJson= <T>(data: T[], key: string): { dataOfKey: an
     }
   }
 
-  const result = Array.from(groupedMap.entries()).map(([keyStr, items]) => ({
-    dataOfKey: keyStr,
-    data: items,
-  }));
+  // 🧠 Sort by key alphabetically
+  const result = Array.from(groupedMap.entries())
+    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) // 👈 Sorting step
+    .map(([keyStr, items]) => ({
+      dataOfKey: keyStr,
+      data: items,
+    }));
 
   return result;
-}
+};
+
 
 
 export {

@@ -16,9 +16,10 @@
     </div>
     
     <!-- 50 Years -->
-    <div class="fixed z-10 w-16 h-2w-16 bottom-20 right-6 animate-bounce">
-      <NuxtImg src="/images/2.kitabukimoja.png" alt="KITABU KIMOJA MWANAFUNZI MMOJA" class="object-contain w-full h-full" />
-    </div> 
+    <!-- <div class="fixed z-10 w-16 h-2w-16 bottom-20 right-6 animate-bounce">
+      <NuxtImg src="/images/2.KitabuKimoja.webp" alt="KITABU KIMOJA MWANAFUNZI MMOJA" class="object-contain w-full h-full" />
+    </div>  -->
+    
     <!-- Footer -->
     <FooterView />
   </div>
