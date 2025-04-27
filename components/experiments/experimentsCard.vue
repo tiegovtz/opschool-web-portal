@@ -66,8 +66,8 @@ const setExperimentUrl =()=>{
         :to="`/experiments/${experimentStandard.toLowerCase()}/${experimentSubject.toLowerCase()}/${experimentName.toLowerCase()}/${experimentId.toLowerCase()}`" 
         @click="setExperimentUrl()"
         :class="[
-            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group',
-            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h- h-32'
+            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
+            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32'
         ]">
         <!-- Thumbnail section -->
         <div :class="[
