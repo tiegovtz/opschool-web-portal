@@ -340,6 +340,15 @@ p:only-child > img:only-child {
 /* wrapper-container media querries  */
 /* phones media query */
 
+/* video canvas */
+.canvas-video-wrapper canvas {
+  width: 100% !important;
+  height: auto !important;
+  margin: 10px auto;
+  border-radius: 12px;
+}
+/* video canvas */
+
 @media (min-width: 320px) {
   .wrapper-container {
     padding: 0 1rem;

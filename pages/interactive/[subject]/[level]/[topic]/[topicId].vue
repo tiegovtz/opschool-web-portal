@@ -1,13 +1,16 @@
 <script setup>
+const { $initCanvasVideoPlayers } = useNuxtApp();
+
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from "~/utilities/parsers/modelParser";
-import videoParser from "~/utilities/parsers/videoParser";
+import { videoParser, videoParserBlob } from "~/utilities/parsers/videoParser";
 import { currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 import apiDocsFile from "~/utilities/api-docs";
- import { updateChapterProgress } from "~/utilities/progress";
+import { updateChapterProgress } from "~/utilities/progress";
+
 const apiDocs = apiDocsFile.setup();
 const route = useRoute();
 const router = useRouter();
@@ -166,7 +169,7 @@ const ensureAccessTokenValid = async () => {
 const initializeChapterProgress = (chapterId) => {
   chapterProgress.value = {
     userId: userToken.value?._id,
-    chapterId:chapterId,
+    chapterId: chapterId,
     videoProgress: 0,
     notesProgress: 0,
     experimentsAttempted: 0,
@@ -273,7 +276,7 @@ const topicViewedRead = async (topicId) => {
 // Fetch Questions by Topic Chapter
 const getQNTopicChapter = async (chapterId) => {
   try {
-    
+
     const response = await $fetch(apiDocs.chapters.getTopicChapterQNs, {
       method: "GET",
       headers: {
@@ -308,8 +311,8 @@ await useFetch(`/api/topics/${topicId}`)
     }
   })
   .catch((error) => {
-    (chapters.status = "error"), 
-    (chapters.error = error);
+    (chapters.status = "error"),
+      (chapters.error = error);
   });
 
 watch(
@@ -389,24 +392,24 @@ watch(
   async (newStatus) => {
     if (newStatus === "success") {
       await nextTick();
-
+      $initCanvasVideoPlayers();
       if (notesContainer.value) {
         notesContainer.value.addEventListener("scroll", handleScroll);
         const videoPlayer = notesContainer.value.querySelector("#video-player");
         if (videoPlayer) {
           //setting user id and chapter id on play
-         if(chapterProgress){
-           if (
-            chapterProgress?.value?.userId !== userToken.value?._id ||
-            chapterProgress?.value?.chapterId !== chapters.currentChapterId
-          ) {
-            chapterProgress.value.userId = userToken.value?._id;
-            chapterProgress.value.chapterId = chapters.currentChapterId;
+          if (chapterProgress) {
+            if (
+              chapterProgress?.value?.userId !== userToken.value?._id ||
+              chapterProgress?.value?.chapterId !== chapters.currentChapterId
+            ) {
+              chapterProgress.value.userId = userToken.value?._id;
+              chapterProgress.value.chapterId = chapters.currentChapterId;
+            }
           }
-         }
-         else{
-          initializeChapterProgress(chapters.currentChapterId)
-         }
+          else {
+            initializeChapterProgress(chapters.currentChapterId)
+          }
 
           // returning to previous progress is are available when video loaded
           videoPlayer.addEventListener("loadedmetadata", () => {
@@ -428,8 +431,8 @@ watch(
               }
             }
 
-            else{
-              chapterProgress.value.userId = userToken.value?._id 
+            else {
+              chapterProgress.value.userId = userToken.value?._id
               chapterProgress.value.chapterId = chapters.currentChapterId
             }
           });
@@ -488,7 +491,7 @@ watch(scrollPercent, async (newPercent) => {
       ? (chapterProgress.value.notesProgress = newPercent)
       : "";
   }
-  else{
+  else {
     initializeChapterProgress(chapters.currentChapterId);
   }
 
@@ -520,38 +523,42 @@ definePageMeta({
     <section v-if="experimrntUrl" class="relative w-full center-height" id="experiment-container" v-trusted>
       <div
         class="absolute top-0 right-0 flex items-center justify-center w-10 h-10 p-2 bg-red-500 rounded-full cursor-pointer"
-        @click="experimrntUrl = null;setPicCenter()">
+        @click="experimrntUrl = null; setPicCenter()">
         <Icon name="formkit:close" size="24" class="font-bold text-white" />
       </div>
       <iframe :src="experimrntUrl" frameborder="0" :class="[
         ' w-full  rounded-md !bg-white',
-        isFullscreen ?' min-h-dvh min-w-full':'h-full center-height',
+        isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
       ]"></iframe>
       <!-- full screen controls -->
       <div
         class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"
         :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" @click="fullScreen">
         <Icon v-if="isFullscreen" name="qlementine-icons:fullscreen-exit-16" size="24" v-trusted />
-        <Icon v-else name="qlementine-icons:fullscreen-16" size="24"  v-trusted/>
+        <Icon v-else name="qlementine-icons:fullscreen-16" size="24" v-trusted />
       </div>
     </section>
 
     <!-- quiz -->
     <!-- bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat -->
-    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center" v-trusted>
+    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center"
+      v-trusted>
       <!-- Chapter Questions -->
-      <QuestionsContainer v-mathjax v-trusted :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
-        :change-chapter="changeChapter" :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
+      <QuestionsContainer v-mathjax v-trusted :questions="chapters?.questions"
+        :is-attempting-quiz="chapters.isAttemptingQuizes" :change-chapter="changeChapter"
+        :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
         @emit-quiz-score="updateChapterProgress" />
     </div>
     <section v-else v-trusted class="relative inline-flex w-full h-full overflow-hidden center-height">
       <!-- Loading state -->
-      <div v-if="chapters.status == 'pending'" v-trusted class="flex items-center justify-center w-full loading content-height">
+      <div v-if="chapters.status == 'pending'" v-trusted
+        class="flex items-center justify-center w-full loading content-height">
         <LoadingIndicator :is-loading="true" />
       </div>
 
       <!-- Error state -->
-      <div v-else-if="chapters.status == 'error'" v-trusted class="flex flex-col items-center justify-center w-full gap-2 error">
+      <div v-else-if="chapters.status == 'error'" v-trusted
+        class="flex flex-col items-center justify-center w-full gap-2 error">
         <MessagePageNotFound message="Error while loading chapter"
           subMessage="Make sure you are connected to the stable internet or try to reload the page" />
       </div>
@@ -559,8 +566,7 @@ definePageMeta({
       <!-- Success state -->
       <div v-else-if="chapters.status == 'success'" v-trusted class="flex justify-center w-full success">
         <!-- Notes loading w-3/4 -->
-        <div v-if="chapters.notesStatus == 'pending'"
-        v-trusted
+        <div v-if="chapters.notesStatus == 'pending'" v-trusted
           class="flex flex-col items-center justify-center w-full h-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
           <div class="flex items-center justify-center flex-1">
             <LoadingIndicator :is-loading="true" />
@@ -574,50 +580,50 @@ definePageMeta({
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <NuxtLink :to="{
-      path: '/',
-      query: {
-        tab: 'interactive',
-        subject: topicLevel,
-        class: topicStandard,
-      },
-    }" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
+                path: '/',
+                query: {
+                  tab: 'interactive',
+                  subject: topicLevel,
+                  class: topicStandard,
+                },
+              }" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                 {{
-      topicLevel != null &&
-        topicLevel != undefined &&
-        topicLevel != "null"
-        ? topicLevel
-        : `Secondary`
-    }}
+                  topicLevel != null &&
+                    topicLevel != undefined &&
+                    topicLevel != "null"
+                    ? topicLevel
+                    : `Secondary`
+                }}
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </NuxtLink>
 
               <NuxtLink :to="{
-        path: '/',
-        query: {
-          tab: 'interactive',
-          subject: topicLevel,
-          class: topicStandard,
-        },
-      }" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
+                path: '/',
+                query: {
+                  tab: 'interactive',
+                  subject: topicLevel,
+                  class: topicStandard,
+                },
+              }" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                 {{
-      topicStandard != null &&
-        topicStandard != undefined &&
-        topicStandard != "null"
-        ? topicStandard
-        : `Form One`
-    }}
+                  topicStandard != null &&
+                    topicStandard != undefined &&
+                    topicStandard != "null"
+                    ? topicStandard
+                    : `Form One`
+                }}
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </NuxtLink>
 
               <p class="font-medium uppercase text-medium md:capitalize">
                 {{
-        topicTitle != null &&
-          topicTitle != undefined &&
-          topicTitle != "null"
-          ? topicTitle
-          : `Introduction to
+                  topicTitle != null &&
+                    topicTitle != undefined &&
+                    topicTitle != "null"
+                    ? topicTitle
+                    : `Introduction to
                 Physics`
-      }}
+                }}
               </p>
             </div>
 
@@ -633,14 +639,17 @@ definePageMeta({
               v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
             <!-- Chapter Notes -->
-            <div class="mx-auto notes md:px-4 max-w-7xl" v-mathjax  v-trusted v-html="experimentParser(
-      modelParser(videoParser(chapters.notes?.content))
-    )
-      "></div>
+            <div class="mx-auto notes md:px-4 max-w-7xl"
+             v-mathjax v-trusted 
+             v-html="experimentParser(
+              modelParser(videoParser(chapters.notes?.content)))"></div>
+            <!-- Chapter Video -->
+            <div v-trusted
+              v-html="videoParserBlob(`<video width='300' height='150' controls='controls'> <source src='680a286e77e0837a702449bb'/></video>`)">
+            </div>
 
             <!-- Chapter Button - (Test your knowledge) -->
-            <div v-if="chapters.questions && chapters.questions?.length > 0"
-              v-trusted
+            <div v-if="chapters.questions && chapters.questions?.length > 0" v-trusted
               class="flex items-center justify-center w-full">
               <button
                 class="h-10 px-4 text-white uppercase transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
@@ -653,8 +662,8 @@ definePageMeta({
             <div class="flex flex-row-reverse items-center justify-between lg:hidden">
               <!-- Next Chapter -->
               <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length" :class="{
-      'opacity-0': chapters.number == chapters.list?.length,
-    }"
+                'opacity-0': chapters.number == chapters.list?.length,
+              }"
                 class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
                 <p class="flex gap-2 capitalize">
                   Next <span class="hidden md:flex">Topic</span>
@@ -679,7 +688,8 @@ definePageMeta({
         </div>
 
         <!-- Notes failed to load -->
-        <div v-else v-trusted class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
+        <div v-else v-trusted
+          class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
           <MessageTopicNotFound message="This chapter currently not available" />
         </div>
 
@@ -706,6 +716,7 @@ definePageMeta({
       <div v-else class="idle" v-trusted>
         <p>Try to reload the page, something went wrong</p>
       </div>
+
     </section>
   </NuxtLayout>
 </template>

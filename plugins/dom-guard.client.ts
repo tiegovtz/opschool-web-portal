@@ -8,7 +8,7 @@ export default defineNuxtPlugin(() => {
   const TRUSTED_ATTR = 'data-origin-tms';
   const TRUSTED_VAL = String(isVtrustedValue.value);
   const globalNonce = nonceValue.value;
- console.log('globalNonce', globalNonce);
+  console.log('globalNonce', globalNonce);
   // ✅ Check if element is trusted
   const isTrusted = (el: Node): boolean =>
     el.nodeType === Node.ELEMENT_NODE &&
@@ -23,7 +23,11 @@ export default defineNuxtPlugin(() => {
     const tag = el.nodeName.toUpperCase();
     const htmlEl = el as HTMLElement;
 
-    if (['SCRIPT', 'STYLE'].includes(tag) && !hasValidNonce(htmlEl)) {
+    // ✅ Skip META tags — allow them through
+    if (tag === 'META') return false;
+
+    if (['SCRIPT', 'STYLE'].includes(tag) && !hasValidNonce(htmlEl) && import.meta.env.PROD) {
+      // Remove <script> or <style> elements without the correct nonce
       console.warn(`🚨 Removed <${tag.toLowerCase()}> with invalid nonce`, htmlEl);
       return true;
     }
@@ -63,7 +67,7 @@ export default defineNuxtPlugin(() => {
     // @ts-ignore
     window.Function = () => {
       console.warn('❌ Function constructor is disabled');
-      return () => {};
+      return () => { };
     };
   } catch (err) {
     console.error('💥 Failed to override unsafe globals:', err);

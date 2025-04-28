@@ -20,6 +20,7 @@ export default defineNuxtConfig({
     { src: "~/plugins/dom-guard.client.ts", mode: "client" },
     { src: "~/plugins/harden-ui.client.ts", mode: "client" },
     { src: '~/plugins/init-chapter-progress.client.js', mode: 'client' },
+    { src: "~/plugins/canvas-video.client.ts", mode: "client" },
   ],
   modules: [
     "@nuxtjs/google-fonts",

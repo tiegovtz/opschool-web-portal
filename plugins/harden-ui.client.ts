@@ -22,7 +22,7 @@ export default defineNuxtPlugin(() => {
   
     // Disable key combinations (F12, Ctrl+Shift+I/J/C/U, etc.)
     document.addEventListener('keydown', (e) => {
-      const key = e.key.toLowerCase();
+      const key = e.key?.toLowerCase();
       if (
         e.key === 'F12' ||
         (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(key)) ||
