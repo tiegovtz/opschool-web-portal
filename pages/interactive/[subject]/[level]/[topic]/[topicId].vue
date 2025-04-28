@@ -300,7 +300,6 @@ await useFetch(`/api/topics/${topicId}`)
     chapters.currentChapterId = response.data.value[0]?._id;
 
     // Call Submit Topic Viewed Read
-
     if (!useState("userViewedTopic").value) {
       topicViewedRead(topicId);
     }
@@ -381,14 +380,9 @@ const handleScroll = () => {
   previousScrollTop = currentScrollTop;
 };
 
-// Define Watch
-watch(
-  () => chapters.notesStatus,
-  async (newStatus) => {
-    if (newStatus === "success") {
-      await nextTick();
-
-      if (notesContainer.value) {
+// Observer Content
+const observerContent = () => {
+  if (notesContainer.value) {
         notesContainer.value.addEventListener("scroll", handleScroll);
         const videoPlayer = notesContainer.value.querySelector("#video-player");
         if (videoPlayer) {
@@ -505,6 +499,17 @@ watch(
         })
         });
       }
+}
+
+// Define Watch
+watch(
+  () => chapters.notesStatus,
+  async (newStatus) => {
+    if (newStatus === "success") {
+      await nextTick();
+
+      // Call Observer Content Function
+      observerContent();
     }
   }
 );
@@ -544,6 +549,28 @@ watch(scrollPercent, async (newPercent) => {
       break;
   }
 });
+
+// Watch Quiz
+watch(() => chapters.isAttemptingQuizes, async (newAttemptingQuizes) => {
+  if (!newAttemptingQuizes) {
+    await nextTick();
+    
+    // Call Function
+       setPicCenter();
+      observerContent();
+  }
+})
+
+// Watch Exit experiment
+watch(() => experimrntUrl.value, async (newExperimentUrl) => {
+  if (!newExperimentUrl) {
+    await nextTick();
+    
+    // Call Function
+       setPicCenter();
+      observerContent();
+  }
+})
 
 definePageMeta({
   middleware: "auth",
