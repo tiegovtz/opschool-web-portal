@@ -54,7 +54,7 @@ function extractValueFromArray(array, key) {
  * you can specify a `subKey` to extract a specific value from that object. If the key or subkey does not exist,
  * it returns `undefined`.
  * 
- * @param {Object} json - The JSON object to search through.
+ * @param {Object} json - The JSON object to search through.filterKeyDataFromArrayOfJson(response,
  * @param {string} key - The key whose value needs to be extracted from the JSON object.
  * @param {string} [subKey] - Optional. The key whose value should be extracted from the nested object (if the value of the main key is an object).
  * 

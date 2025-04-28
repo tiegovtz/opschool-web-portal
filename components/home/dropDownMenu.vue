@@ -145,8 +145,7 @@ const filterNameGroup = [
     inputType: "checkbox",
     filterGroup: [
       { name: "English" },
-      { name: "French" },
-      { name: "Swahili" },
+      { name: "Kiswahili" },
     ],
   },
   {

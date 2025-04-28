@@ -13,7 +13,7 @@ import {
 } from "@/utilities/controlls";
 import InputsSelection from "~/components/home/InputsSelection.vue";
 import apiDocs from "~/utilities/api-docs";
-import { filterKeyDataFromArrayOfJson } from "~/utilities/filterJson";
+import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import customGridOne from "~/components/home/customGridOne.vue";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import DropDownMenu from "~/components/home/dropDownMenu.vue";
@@ -199,11 +199,11 @@ const fetchData = async (params) => {
 
     // Call State Define above
     if (subjectId.value) {
-      data.value = response;
+      data.value = removeDataFromArrayOfJson(response, "isDeleted", true);
     } else if (!subjectId.value && tab !== "home") {
       data.value = filterKeyDataFromArrayOfJson(response, "subject.name",['physics','chemistry','mathematics','biology','geography']);
     } else {
-      data.value = response;
+      data.value = removeDataFromArrayOfJson(response, "isDeleted", true);;
     }
 
     status.value = "success";
@@ -501,6 +501,7 @@ const setSeeMore = (seeMore) => {
                   <!-- Video Cards are in Grid -->
                   <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
                     :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
+                    :is-deleted="video.isDeleted"
                     :video-description="video.description" :video-subject="video.subject?.name"
                     :video-type="video.videoType" />
                 </template>
@@ -701,6 +702,7 @@ const setSeeMore = (seeMore) => {
                       <template #data>
                         <!-- Experiment Cards  -->
                      <VideoCard v-for="video in videos?.data" :key="video._id" :video-id="video._id"
+                     :is-deleted="video.isDeleted"
                       :video-name="video.name" :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
                       :video-description="video.description" :video-subject="video.subject?.name"
                       :video-type="video.videoType" />
@@ -712,6 +714,7 @@ const setSeeMore = (seeMore) => {
                         layoutEffect == 'list' ? 'flex-col' : 'flex-row',
                       ]">
                        <VideoCard v-for="video in videos?.data" :key="video._id" :video-id="video._id"
+                       :is-deleted="video.isDeleted"
                       :video-name="video.name" :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
                       :video-description="video.description" :video-subject="video.subject?.name"
                       :video-type="video.videoType" />
@@ -721,6 +724,7 @@ const setSeeMore = (seeMore) => {
                     <template #data>
                       <!-- Topic Cards  -->
                       <VideoCard v-for="video in videos?.data" :key="video._id" :video-id="video._id"
+                      :is-deleted="video.isDeleted"
                         :video-name="video.name" :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
                         :video-description="video.description" :video-subject="video.subject?.name"
                         :video-type="video.videoType" />
