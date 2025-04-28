@@ -201,7 +201,7 @@ const fetchData = async (params) => {
     if (subjectId.value) {
       data.value = response;
     } else if (!subjectId.value && tab !== "home") {
-      data.value = filterKeyDataFromArrayOfJson(response, "subject.name");
+      data.value = filterKeyDataFromArrayOfJson(response, "subject.name",['physics','chemistry','mathematics','biology','geography']);
     } else {
       data.value = response;
     }

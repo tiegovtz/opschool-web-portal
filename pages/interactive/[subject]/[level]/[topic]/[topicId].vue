@@ -469,11 +469,13 @@ watch(
         }
 
         // zoom 3d models
-        // const modelViewer = notesContainer?.value?.querySelector('model-viewer')
+        const modelViewer = notesContainer?.value?.querySelectorAll('model-viewer')
         
-        // modelViewer.addEventListener('click',()=>{
-          
-        // })
+        modelViewer.forEach(element => {
+          element.addEventListener('click',()=>{
+          alert('ok')
+        })
+        });
       }
     }
   }

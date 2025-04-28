@@ -151,7 +151,11 @@ const filterDataByValues = <T extends DataItem>(
  *   { dataOfKey: { age: 22 }, data: [{...}] }
  * ]
  */
-const filterKeyDataFromArrayOfJson = <T>(data: T[], key: string): { dataOfKey: any; data: T[] }[] => {
+const filterKeyDataFromArrayOfJson = <T>(
+  data: T[],
+  key: string,
+  order: string[] = []
+): { dataOfKey: any; data: T[] }[] => {
   if (!Array.isArray(data) || !key) return [];
 
   const groupedMap = new Map<string, T[]>();
@@ -165,7 +169,7 @@ const filterKeyDataFromArrayOfJson = <T>(data: T[], key: string): { dataOfKey: a
     }
 
     if (keyValue !== undefined) {
-      const keyStr = String(keyValue);
+      const keyStr = String(keyValue); // always use string as map key
       if (!groupedMap.has(keyStr)) {
         groupedMap.set(keyStr, []);
       }
@@ -173,18 +177,31 @@ const filterKeyDataFromArrayOfJson = <T>(data: T[], key: string): { dataOfKey: a
     }
   }
 
-  // 🧠 Sort by key alphabetically
-  const result = Array.from(groupedMap.entries())
-    .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) // 👈 Sorting step
-    .map(([keyStr, items]) => ({
-      dataOfKey: keyStr,
-      data: items,
-    }));
+  // Convert Map to array
+  let result = Array.from(groupedMap.entries()).map(([keyStr, items]) => ({
+    dataOfKey: keyStr,
+    data: items,
+  }));
+
+  // Sort based on custom order array
+  result.sort((a, b) => {
+    const indexA = order.indexOf(a.dataOfKey.toLowerCase());
+    const indexB = order.indexOf(b.dataOfKey.toLowerCase());
+
+    // If both found in order array, sort by their index
+    if (indexA !== -1 && indexB !== -1) {
+      return indexA - indexB;
+    }
+    // If only A found, A comes first
+    if (indexA !== -1) return -1;
+    // If only B found, B comes first
+    if (indexB !== -1) return 1;
+    // Otherwise sort alphabetically
+    return a.dataOfKey.localeCompare(b.dataOfKey);
+  });
 
   return result;
 };
-
-
 
 export {
     filterContentBySearch,

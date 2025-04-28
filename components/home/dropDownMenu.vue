@@ -79,7 +79,7 @@ const filterNameGroup = [
     filterGroup: [
       { name: "Lower Secondary" },
       { name: "Upper Secondary" },
-      { name: "Teachers Education" },
+      { name: "Teacher Education" },
     ],
   },
   {
