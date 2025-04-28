@@ -13,6 +13,7 @@ import {
   screenWidth,
 } from "@/utilities/controlls";
 import apiDocs from "~/utilities/api-docs";
+import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 
 const route = useRoute();
 // const router = useRouter();
@@ -118,7 +119,7 @@ const fetchExperiments = async () => {
     });
 
     // Call State Define above
-    experiments.value = response;
+    experiments.value = removeDataFromArrayOfJson(response, "isDeleted", true);
     status.value = "success";
 
     // Call sliceData after data is loaded
@@ -201,17 +202,16 @@ const prevPage = () => {
 
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
-
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <section :class="[
-      ' ',
-      { ' animate-pulse': isLoading }
-    ]">
+    <section :class="[' ', { ' animate-pulse': isLoading }]">
       <!-- User Token Available -->
-      <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
+      <div
+        v-if="userToken"
+        class="flex flex-col items-center justify-center w-full gap-4 pt-4"
+      >
         <HomeSearchbar appearance="rounded" />
         <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
       </div>
@@ -222,12 +222,18 @@ const { progress, isLoading } = useLoadingIndicator();
         <TabBar />
       </div>
 
-      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
+      <div
+        v-if="status === 'pending'"
+        class="flex flex-col items-center justify-center"
+      >
         <LoadingIndicator :is-loading="true" />
       </div>
 
       <!-- Status Error -->
-      <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center">
+      <div
+        v-else-if="status === 'error'"
+        class="md:min-h-[342px] flex flex-col justify-center items-center"
+      >
         <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
         <p class="text-center">
           Oops! Something went wrong.<br />
@@ -241,33 +247,67 @@ const { progress, isLoading } = useLoadingIndicator();
           <div class="flex flex-col w-full px-2 lg:px-4">
             <HomeCustomGridTwo>
               <template #data>
-                <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
-                  :experiment-thumbnail="experiment.thumbnail" :experiment-title="experiment.title"
-                  :experiment-description="experiment.description" :experiment-type="experiment.category"
-                  :experiment-subject="experiment.subject.name" :experiment-level="experiment.level.name"
-                  :experiment-name="experiment.name" :experiment-file-url="experiment.stepsFileUrl" />
+                <ExperimentsCard
+                  v-for="experiment in slicedData"
+                  :key="experiment._id"
+                  :experiment-id="experiment._id"
+                  :experiment-thumbnail="experiment.thumbnail"
+                  :experiment-title="experiment.title"
+                  :experiment-description="experiment.description"
+                  :experiment-type="experiment.category"
+                  :experiment-subject="experiment.subject.name"
+                  :experiment-level="experiment.level.name"
+                  :experiment-name="experiment.name"
+                  :experiment-file-url="experiment.stepsFileUrl"
+                />
               </template>
             </HomeCustomGridTwo>
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" class="flex justify-center my-10">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                <PaginationBtn
+                  v-for="page in totalPages"
+                  :key="page"
+                  :page-number="page"
+                  :is-active="page === currentPage"
+                  :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                  @send-page-number="currentPage = $event"
+                />
               </div>
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
-                <div class="flex items-center justify-center" v-if="currentPage > 5">
-                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+                <div
+                  class="flex items-center justify-center"
+                  v-if="currentPage > 5"
+                >
+                  <Icon
+                    name="iconamoon:arrow-left-2-fill"
+                    size="2rem"
+                    @click="prevPage"
+                  />
                 </div>
 
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                <PaginationBtn
+                  v-for="page in totalPages"
+                  :key="page"
+                  :page-number="page"
+                  :is-active="page === currentPage"
+                  :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                  @send-page-number="currentPage = $event"
+                />
 
                 <!-- next button -->
-                <div class="flex items-center justify-center" v-if="currentPage > 4">
-                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+                <div
+                  class="flex items-center justify-center"
+                  v-if="currentPage > 4"
+                >
+                  <Icon
+                    name="iconamoon:arrow-right-2-fill"
+                    size="2rem"
+                    @click="nextPage"
+                  />
                 </div>
               </div>
             </div>

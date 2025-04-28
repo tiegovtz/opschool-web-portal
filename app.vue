@@ -38,7 +38,7 @@ onUnmounted(() => {
 <template>
 
   <NuxtLayout>
-    <NuxtLoadingIndicator color="#56ade8" />
+    <NuxtLoadingIndicator color="#56ade8" errorColor="#f00"/>
     <NuxtPage @contextmenu.prevent  />
   </NuxtLayout>
 

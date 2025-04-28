@@ -7,6 +7,7 @@ import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth
 import apiDocs from "~/utilities/api-docs";
 import InputsSelection from '@/components/home/InputsSelection.vue'
 import customGridTwo from "~/components/home/customGridTwo.vue";
+import { removeDataFromArrayOfJson } from '~/utilities/filterJson';
 
 useHead({
   title: "TIE - Video Resource",
@@ -74,7 +75,7 @@ const fetchVideos = async () => {
     });
 
     // Call State Define above
-    videos.value = response;
+    videos.value = removeDataFromArrayOfJson(response, 'isDeleted', true);
     status.value = 'success';
 
     // Call sliceData after data is loaded
@@ -198,6 +199,7 @@ const { progress, isLoading } = useLoadingIndicator()
               <template #data>
                 <!-- Video Cards are in Grid -->
                 <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
+                  :is-deleted="video.isDeleted"
                   :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
                   :video-description="video.description" :video-subject="video.subject.name"
                   :video-type="video.videoType" />

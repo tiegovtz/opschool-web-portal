@@ -8,6 +8,7 @@ import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth
 import InputsSelection from '@/components/home/InputsSelection.vue'
 import apiDocs from "~/utilities/api-docs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
+import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 
 // Define meta info about page
 useHead({
@@ -79,7 +80,7 @@ const fetchTopics = async (params) => {
     });
 
     // Call State Define above
-    topic.value = response;
+    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);;
     status.value = 'success';
 
     // Call sliceData after data is loaded

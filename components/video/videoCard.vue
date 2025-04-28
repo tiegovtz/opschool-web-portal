@@ -44,7 +44,11 @@ const props = defineProps({
         type: Number,
         default: 0,
     },
-    topicViewed: Boolean
+    topicViewed: Boolean,
+    isDeleted:{
+        type: Boolean,
+        default: false,
+    }
 
 })
 
@@ -62,7 +66,8 @@ const setVideoToView = () => {
 </script>
 
 <template>
-    <NuxtLink
+    <NuxtLink 
+        v-if="!isDeleted"
         :to="`/video/${videoStandard.toLowerCase()}/${videoSubject.toLowerCase()}/${videoName.toLowerCase()}/${videoId.toLowerCase()}`" @click="setVideoToView()"
         :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',

@@ -1,12 +1,12 @@
 // 🔍 Filter function
-const filterContentBySearch = (content: any[],searchValue:String) => {
-    if(content?.length == 0 ) return content;
-    if(!searchValue?.trim()) return content;
-    return content.filter(item =>
-        Object.values(item).some(val =>
-            val && typeof (val) == 'string' && val.toString().toLowerCase().includes(searchValue.toLowerCase())
-        )
+const filterContentBySearch = (content: any[], searchValue: String) => {
+  if (content?.length == 0) return content;
+  if (!searchValue?.trim()) return content;
+  return content.filter(item =>
+    Object.values(item).some(val =>
+      val && typeof (val) == 'string' && val.toString().toLowerCase().includes(searchValue.toLowerCase())
     )
+  )
 };
 
 /**
@@ -203,9 +203,58 @@ const filterKeyDataFromArrayOfJson = <T>(
   return result;
 };
 
+
+/**
+ * Removes objects from an array where the given key matches one or more specified values.
+ *
+ * @template T - The type of the array elements.
+ * @param {T[]} array - The array of objects to filter.
+ * @param {keyof T} key - The key to check in each object.
+ * @param {any | any[]} values - A single value or an array of values to remove.
+ * @returns {T[]} - A new array without the matching objects.
+ *
+ * @example
+ * const students = [
+ *   { name: "Baraka", age: 20 },
+ *   { name: "George", age: 21 },
+ *   { name: "Elisante", age: 22 },
+ *   { name: "Xyden", age: 20 },
+ * ];
+ *
+ * const result = removeDataFromArrayOfJson(students, "age", [20, 22]);
+ * console.log(result);
+ * 
+ * // Output:
+ * [
+ *   { name: "George", age: 21 }
+ * ]
+ */
+const removeDataFromArrayOfJson = <T>(array: T[], key: string, value: any): T[] => {
+  if (!Array.isArray(array) || !key) return array;
+
+  return array.filter(item => {
+    const keys = key.split(".");
+    let target: any = item;
+
+    for (const k of keys) {
+      if (target && typeof target === "object" && k in target) {
+        target = target[k];
+      } else {
+        // Key not found → KEEP the item
+        return true;
+      }
+    }
+
+    // Key found, now compare value
+    return target !== value;
+  });
+};
+
+
 export {
-    filterContentBySearch,
-    extractNestedKeysAndValues,
-    filterDataByValues,
-    filterKeyDataFromArrayOfJson,
+  filterContentBySearch,
+  extractNestedKeysAndValues,
+  filterDataByValues,
+  filterKeyDataFromArrayOfJson,
+  removeDataFromArrayOfJson
 }

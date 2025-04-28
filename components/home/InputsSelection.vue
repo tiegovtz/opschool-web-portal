@@ -1,5 +1,5 @@
 <script setup>
-const level = ref('secondary')
+const level = ref('')
 const standard = ref('')
 const subject = ref('')
 
@@ -27,15 +27,15 @@ const sendEmits =()=>{
     <select v-model="level" name="" id=""
       class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue"
       @change="sendEmits">
-      <option value="all">Select Level</option>
-      <option value="primary">Primary School</option>
-      <option value="secondary">Secondary School</option>
-      <option value="high">High School</option>
+      <option value="">Select Level</option>
+      <option value="secondary">Lower Secondary</option>
+      <option value="high">Upper Secondary</option>
+      <option value="teacher">Teacher Education</option>
     </select>
 
 
     <!-- Primary School Class Level Selection -->
-    <select v-model="standard" v-if="level === 'primary'" name="" id="" @change="sendEmits"
+    <!-- <select v-model="standard" v-if="level === 'primary'" name="" id="" @change="sendEmits"
       class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
       <option value="">Select Class</option>
       <option value="Standard1">Standard 1</option>
@@ -44,10 +44,10 @@ const sendEmits =()=>{
       <option value="Standard4">Standard 4</option>
       <option value="Standard5">Standard 5</option>
       <option value="Standard6">Standard 6</option>
-    </select>
+    </select> -->
 
     <!-- Secondary School Level Selection -->
-    <select v-model="standard" v-else-if="level === 'secondary' || level === 'all'" name="" id="" @change="sendEmits"
+    <select v-model="standard" v-if="level === 'secondary' || level === 'all'" name="" id="" @change="sendEmits"
       class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
       <option value="">Select Class</option>
       <option value="Form 1">Form 1</option>
@@ -62,6 +62,17 @@ const sendEmits =()=>{
       <option value="">Select Class</option>
       <option value="Form 5">Form 5</option>
       <option value="Form 6">Form 6</option>
+    </select>
+
+    <!-- Teacher Level Selection -->
+     <select v-model="standard" v-else-if="level === 'teacher'" name="" id="" @change="sendEmits"
+      class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
+      <option value="">Teacher Education</option>
+    </select>
+     <!-- Level Selection -->
+    <select v-model="standard" v-else name="" id="" @change="sendEmits"
+      class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
+      <option value="">Select Level First</option>
     </select>
 
     <!-- Subject -->
