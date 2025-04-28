@@ -472,8 +472,28 @@ watch(
         const modelViewer = notesContainer?.value?.querySelectorAll('model-viewer')
         
         modelViewer.forEach(element => {
-          element.addEventListener('click',()=>{
-          alert('ok')
+          let zoomButton = document.createElement('button');
+          var isZoomed = false
+
+          zoomButton.innerText='Zoom In'
+          zoomButton.classList.add('zoom-button')
+          zoomButton.style.backgroundColor='#56ade8'
+          element.appendChild(zoomButton)
+
+          zoomButton.addEventListener('click',(event)=>{ 
+            event.stopPropagation(); 
+            isZoomed = !isZoomed; // Toggle the zoomed state
+
+            if (isZoomed) {
+              element.classList.add('zoomed');
+              zoomButton.innerText = 'Zoom Out';
+              zoomButton.style.backgroundColor = '#f00';
+            } else {
+              element.classList.remove('zoomed');
+              zoomButton.innerText = 'Zoom In';
+              zoomButton.style.backgroundColor = '#56ade8';
+            }
+
         })
         });
       }
