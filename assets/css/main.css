@@ -6,7 +6,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 /* @font-tahomabd declarations */
 @font-face {
   font-family: "tahomabd";
@@ -40,24 +39,24 @@
 @layer components {
   /* Learn Statistics */
   .stat-card {
-  @apply flex flex-col items-center gap-2 p-3 transition-all duration-500 bg-white rounded-md cursor-pointer md:flex-row hover:bg-gray-50 md:gap-0;
-}
+    @apply flex flex-col items-center gap-2 p-3 transition-all duration-500 bg-white rounded-md cursor-pointer md:flex-row hover:bg-gray-50 md:gap-0;
+  }
 
-.stat-icon {
-  @apply flex items-center justify-center w-10 h-10 mr-3 rounded-full;
-}
+  .stat-icon {
+    @apply flex items-center justify-center w-10 h-10 mr-3 rounded-full;
+  }
 
-.stat-content {
-  @apply flex flex-col items-center ml-2;
-}
+  .stat-content {
+    @apply flex flex-col items-center ml-2;
+  }
 
-.stat-label {
-  @apply flex flex-wrap font-medium text-textGray text-extraSmall;
-}
+  .stat-label {
+    @apply flex flex-wrap font-medium text-textGray text-extraSmall;
+  }
 
-.stat-value {
-  @apply text-lg font-bold text-gray-800;
-}
+  .stat-value {
+    @apply text-lg font-bold text-gray-800;
+  }
 
   .topic-card__progress-bar {
     @apply w-full h-2 bg-gray-200 rounded-full;
@@ -91,17 +90,20 @@
   .bg-gradient-to-b {
     @apply from-oceanBlue to-darkBlue;
   }
-  
+
   /* Define a zoomed style instead of many toggles */
-.zoomed {
-  @apply absolute left-0 z-10 min-w-full bg-white center-height;
-}
+  .zoomed {
+    @apply !min-w-full !center-height;
+  }
 
-/* zoom button */
-.zoom-button{
-  @apply absolute top-0 right-0 p-2 text-white rounded-md;
-}
+  /* zoom button */
+  .zoom-button {
+    @apply absolute top-0 right-0 p-2 text-white rounded-md;
+  }
 
+  .span-3D{
+    @apply absolute bottom-0 right-0 rounded-md text-oceanBlue;
+  }
 
   .content-view {
     font-size: var(--text-extraSmall) !important;
@@ -114,7 +116,6 @@
   .custom-box-shadow {
     box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, 0.1) !important;
   }
-  
 }
 
 /* Focus input icon */
@@ -132,7 +133,6 @@
   color: var(--color-normalRed);
   /* color: #0077c7; */
 }
-
 
 /* swiper-pagination-bullet 
 <span part="bullet" class="swiper-pagination-bullet" tabindex="0" role="button" aria-label="Go to slide 7"></span>
@@ -183,7 +183,8 @@
   height: 300px;
   width: 50%;
   padding: 3px;
-  background-image: url('/images/360.png');
+  position: relative;
+  /* background-image: url("/images/360.png"); */
   background-size: contain;
   background-repeat: no-repeat;
   background-position: bottom;
@@ -294,52 +295,51 @@ p:only-child > img:only-child {
   font-size: 0.67rem !important;
 } /* Default: 10.72px */
 
-.notes div > table > tbody > tr > td > table{
+.notes div > table > tbody > tr > td > table {
   width: max-content !important;
   border-radius: 0 0 12px 12px !important;
 }
 
 .notes div > table > tbody > tr > td > table span {
-  padding:10px !important;
+  padding: 10px !important;
 }
 
 /* Resivion Exercise */
-.notes .rev-exer-tbl> p  ~table > tbody > tr {
+.notes .rev-exer-tbl > p ~ table > tbody > tr {
   display: block !important;
   width: 100% !important;
   height: max-content !important;
-  border-radius:0 !important;
+  border-radius: 0 !important;
   border: 0 !important;
 }
 
-.notes .rev-exer-tbl> p  ~table  {
+.notes .rev-exer-tbl > p ~ table {
   border: 0 !important;
-    height: max-content !important;
+  height: max-content !important;
 }
 
-.notes .rev-exer-tbl> p  ~table table {
+.notes .rev-exer-tbl > p ~ table table {
   border: 0 !important;
   display: block !important;
   width: 100% !important;
-
 }
-.notes .rev-exer-tbl table > tbody > tr > td > table{
+.notes .rev-exer-tbl table > tbody > tr > td > table {
   height: max-content !important;
-  border-radius:0 !important;
+  border-radius: 0 !important;
 }
 
-.notes .rev-exer-tbl table > tbody > tr > td > table table{ 
+.notes .rev-exer-tbl table > tbody > tr > td > table table {
   display: block !important;
   width: 100% !important;
   height: max-content !important;
-  border-radius:0 !important;
+  border-radius: 0 !important;
 }
 
-.notes .rev-exer-tbl table > tbody > tr > td > table table colgroup{ 
+.notes .rev-exer-tbl table > tbody > tr > td > table table colgroup {
   display: block !important;
   width: 100% !important;
   height: max-content !important;
-  border-radius:0 !important;
+  border-radius: 0 !important;
 }
 
 /* title style  font tahoma important*/
