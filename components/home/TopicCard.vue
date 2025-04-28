@@ -84,14 +84,14 @@ const userToken = useCookie('signInUserToken')
     v-trusted
     @click="setTopicToView()"
     :class="[
-      'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out',
+      'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out min-w-[300px]',
       layoutEffect == 'grid' && modelType === 'card' ? 'flex-col pb-4' : 'flex-row h-32',
       { 'cursor-pointer flex-row my-2 pb-0 md:h-20 !max-h-14 ': modelType === 'search' },
     ]">
     <!-- topic image -->
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
-      layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-[200px]',
+      layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-full max-w-[200px]',
       { 'md:h-20 !h-full ': modelType === 'search', },
     ]">
       <NuxtImg :src="topicImage" loading="lazy" alt="book1"

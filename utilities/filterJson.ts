@@ -1,12 +1,12 @@
 // 🔍 Filter function
-const filterContentBySearch = (content: any[],searchValue:String) => {
-    if(content.length == 0 ) return content;
-    if(!searchValue.trim()) return content;
-    return content.filter(item =>
-        Object.values(item).some(val =>
-            val && typeof (val) == 'string' && val.toString().toLowerCase().includes(searchValue.toLowerCase())
-        )
+const filterContentBySearch = (content: any[], searchValue: String) => {
+  if (content?.length == 0) return content;
+  if (!searchValue?.trim()) return content;
+  return content.filter(item =>
+    Object.values(item).some(val =>
+      val && typeof (val) == 'string' && val.toString().toLowerCase().includes(searchValue.toLowerCase())
     )
+  )
 };
 
 /**
@@ -122,10 +122,139 @@ const filterDataByValues = <T extends DataItem>(
   });
 };
 
+/**
+ * Groups an array of objects by a specific key and structures the result.
+ *
+ * @template T - The type of the objects inside the array.
+ * @param {T[]} data - Array of objects to group.
+ * @param {keyof T} key - The key to group the objects by.
+ * @returns {Array<{ dataOfKey: Pick<T, keyof T>; data: T[] }>}
+ *   - Each grouped object contains:
+ *     - `dataOfKey`: the key and its value.
+ *     - `data`: an array of all objects matching that key.
+ *
+ * @example
+ * const students = [
+ *   { name: "Baraka", age: 20 },
+ *   { name: "George", age: 21 },
+ *   { name: "Elisante", age: 20 },
+ *   { name: "Xyden", age: 22 },
+ * ];
+ *
+ * const result = fillterKeyDataFromArrayOfJson(students, "age");
+ * console.log(result);
+ *
+ * // Output:
+ * [
+ *   { dataOfKey: { age: 20 }, data: [{...}, {...}] },
+ *   { dataOfKey: { age: 21 }, data: [{...}] },
+ *   { dataOfKey: { age: 22 }, data: [{...}] }
+ * ]
+ */
+const filterKeyDataFromArrayOfJson = <T>(
+  data: T[],
+  key: string,
+  order: string[] = []
+): { dataOfKey: any; data: T[] }[] => {
+  if (!Array.isArray(data) || !key) return [];
+
+  const groupedMap = new Map<string, T[]>();
+
+  for (const item of data) {
+    const keys = key.split(".");
+    let keyValue: any = item;
+
+    for (const k of keys) {
+      keyValue = keyValue?.[k];
+    }
+
+    if (keyValue !== undefined) {
+      const keyStr = String(keyValue); // always use string as map key
+      if (!groupedMap.has(keyStr)) {
+        groupedMap.set(keyStr, []);
+      }
+      groupedMap.get(keyStr)!.push(item);
+    }
+  }
+
+  // Convert Map to array
+  let result = Array.from(groupedMap.entries()).map(([keyStr, items]) => ({
+    dataOfKey: keyStr,
+    data: items,
+  }));
+
+  // Sort based on custom order array
+  result.sort((a, b) => {
+    const indexA = order.indexOf(a.dataOfKey.toLowerCase());
+    const indexB = order.indexOf(b.dataOfKey.toLowerCase());
+
+    // If both found in order array, sort by their index
+    if (indexA !== -1 && indexB !== -1) {
+      return indexA - indexB;
+    }
+    // If only A found, A comes first
+    if (indexA !== -1) return -1;
+    // If only B found, B comes first
+    if (indexB !== -1) return 1;
+    // Otherwise sort alphabetically
+    return a.dataOfKey.localeCompare(b.dataOfKey);
+  });
+
+  return result;
+};
+
+
+/**
+ * Removes objects from an array where the given key matches one or more specified values.
+ *
+ * @template T - The type of the array elements.
+ * @param {T[]} array - The array of objects to filter.
+ * @param {keyof T} key - The key to check in each object.
+ * @param {any | any[]} values - A single value or an array of values to remove.
+ * @returns {T[]} - A new array without the matching objects.
+ *
+ * @example
+ * const students = [
+ *   { name: "Baraka", age: 20 },
+ *   { name: "George", age: 21 },
+ *   { name: "Elisante", age: 22 },
+ *   { name: "Xyden", age: 20 },
+ * ];
+ *
+ * const result = removeDataFromArrayOfJson(students, "age", [20, 22]);
+ * console.log(result);
+ * 
+ * // Output:
+ * [
+ *   { name: "George", age: 21 }
+ * ]
+ */
+const removeDataFromArrayOfJson = <T>(array: T[], key: string, value: any): T[] => {
+  if (!Array.isArray(array) || !key) return array;
+
+  return array.filter(item => {
+    const keys = key.split(".");
+    let target: any = item;
+
+    for (const k of keys) {
+      if (target && typeof target === "object" && k in target) {
+        target = target[k];
+      } else {
+        // Key not found → KEEP the item
+        return true;
+      }
+    }
+
+    // Key found, now compare value
+    return target !== value;
+  });
+};
 
 
 export {
-    filterContentBySearch,
-    extractNestedKeysAndValues,
-    filterDataByValues
+  filterContentBySearch,
+  extractNestedKeysAndValues,
+  filterDataByValues,
+  filterKeyDataFromArrayOfJson,
+  removeDataFromArrayOfJson
 }

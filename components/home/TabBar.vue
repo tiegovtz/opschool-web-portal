@@ -49,7 +49,7 @@ const tabCheck = (checkValue) => {
         </div>
         Subjects
       </button>
-      <!-- Interactive Books -->
+      <!-- Interactive Content -->
       <button v-if="isLoggedIn"
         :class="[
           'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
@@ -59,7 +59,7 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
         </div>
-        Interactive Books
+        Interactive Content
       </button>
       <NuxtLink v-else :to="subjectTitle ? topicId ? `/interactive/${subjectTitle}/${topicId}` : `/interactive/${subjectTitle}` : `/interactive`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
@@ -67,11 +67,11 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
         </div>
-        Interactive Books
+        Interactive Content
       </NuxtLink>
       
 
-      <!-- Experiments -->
+      <!-- Learning Activities -->
       <button v-if="isLoggedIn"
          :class="[
         'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
@@ -81,7 +81,7 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="icon-park-solid:experiment-one" size="20" />
         </div>
-        Experiments
+        Learning Activities
       </button>
       <NuxtLink v-else  :to="subjectTitle ? topicId ? `/experiments/${subjectTitle}/${topicId}` : `/experiments/${subjectTitle}` : `/experiments`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
@@ -89,7 +89,7 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="icon-park-solid:experiment-one" size="20" />
         </div>
-        Experiments
+        Learning Activities
       </NuxtLink>
       
 
@@ -114,7 +114,6 @@ const tabCheck = (checkValue) => {
         Video
       </NuxtLink>
       
-
       <!-- Audio -->
       <button v-if="isLoggedIn" 
       :class="[

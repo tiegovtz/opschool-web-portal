@@ -24,10 +24,6 @@ function extractValueFromArray(array, key) {
     return array.map(item => item[key]).filter(value => value !== undefined);
   }
   
-
-
-
-
   /**
    * Extracts the value of a specified key from a JSON object.
    * 
@@ -51,10 +47,6 @@ function extractValueFromArray(array, key) {
     return json.hasOwnProperty(key) ? json[key] : undefined;
   }
   
-
-
-
-
   /**
  * Extracts the value of a specified key (or a subkey within an object) from a JSON object.
  * 
@@ -62,7 +54,7 @@ function extractValueFromArray(array, key) {
  * you can specify a `subKey` to extract a specific value from that object. If the key or subkey does not exist,
  * it returns `undefined`.
  * 
- * @param {Object} json - The JSON object to search through.
+ * @param {Object} json - The JSON object to search through.filterKeyDataFromArrayOfJson(response,
  * @param {string} key - The key whose value needs to be extracted from the JSON object.
  * @param {string} [subKey] - Optional. The key whose value should be extracted from the nested object (if the value of the main key is an object).
  * 
@@ -87,8 +79,6 @@ function extractValueFromJson(json, key, subKey) {
     return value;
   }
   
-
-
   export {
     extractValueFromArray,
     extractValueFromJson,

@@ -24,12 +24,14 @@ export default {
         normalGreener: "#4db139",
         grayLight: "#f0f0f0",
       },
+      
       fontFamily: {
         tahoma: ["tahoma", "sans-serif"],
         tahomabd: ["tahomabd", "sans-serif"],
         poppins: ["Poppins", "sans-serif"],
         ptserif: ["PT Serif", "serif"],
       },
+
       fontSize: {
         extraLarge: "2.5rem", // 40px
         large: "1.5rem",      // 24px
@@ -38,6 +40,7 @@ export default {
         extraSmall: "0.8rem", // 14px
         smallest: "0.6rem",   // 12px
       },
+
       backgroundImage: {
         // OptionImage
         'optionImage': "url('/images/default.webp')",
@@ -46,6 +49,17 @@ export default {
         'background3': "url('/public/images/background3.webp')",
         'background2': "url('/public/images/background2.webp')",
         'background1': "url('/public/images/background1.webp')",
+      },
+
+      animation: {
+        "bounce-horizontal": "bounce-horizontal 1s infinite",
+      },
+
+      keyframes: {
+        "bounce-horizontal": {
+          "0%, 100%": { transform: "translateX(-5px)" },
+          "50%": { transform: "translateX(5px)" },
+        },
       },
     },
     
@@ -59,16 +73,6 @@ export default {
       "3xl": "2000px",
     },
 
-    animation: {
-      "bounce-horizontal": "bounce-horizontal 1s infinite",
-    },
-
-    keyframes: {
-      "bounce-horizontal": {
-        "0%, 100%": { transform: "translateX(-5px)" },
-        "50%": { transform: "translateX(5px)" },
-      },
-    },
   },
   plugins: [require("tailwind-scrollbar")],
 };

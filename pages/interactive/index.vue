@@ -2,13 +2,14 @@
 import TopicCard from "@/components/home/TopicCard.vue";
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
-import  LoadingIndicator  from "@/components/loading/loadingIndicator.vue";
+import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import { ref, computed, onMounted, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import InputsSelection from '@/components/home/InputsSelection.vue'
 import apiDocsFile from "~/utilities/api-docs";
 const apiDocs = apiDocsFile.setup()
 import customGridTwo from "~/components/home/customGridTwo.vue";
+import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 
 // Define meta info about page
 useHead({
@@ -80,7 +81,7 @@ const fetchTopics = async (params) => {
     });
 
     // Call State Define above
-    topic.value = response;
+    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);;
     status.value = 'success';
 
     // Call sliceData after data is loaded
@@ -184,10 +185,7 @@ watch(filters, (filters) => {
     ]">
 
       <!-- User Token Available -->
-      <div
-        v-if="userToken"
-        class="flex flex-col items-center justify-center w-full gap-4 pt-4"
-      >
+      <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
         <HomeSearchbar appearance="rounded" />
         <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
       </div>
@@ -195,11 +193,8 @@ watch(filters, (filters) => {
       <!-- User Token Not Available -->
       <div v-else>
         <HeroSection />
-        <InputsSelection
-          @emit-level="level = $event"
-          @emit-standard="filters.level = $event"
-          @emit-subject="filters.subject = $event"
-        />
+        <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+          @emit-subject="filters.subject = $event" />
         <TabBar />
       </div>
 
@@ -224,16 +219,17 @@ watch(filters, (filters) => {
         <ClientOnly v-if="slicedData?.length > 0" >
           <div class="flex flex-col w-full" v-trusted>
             <!-- Topic Cards are in Grid -->
-             <customGridTwo v-trusted>
-                  <template #data>
-                 <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
-                :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
-                :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
-                :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : 0"
-                :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name"
-                :topic-viewed="topic.isViewed" :topic-progress="topic.progressPercent" />
-                  </template>
-                </customGridTwo>
+            <customGridTwo v-trusted>
+              <template #data>
+                <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
+                  :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
+                  :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
+                  :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
+                  :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0"
+                  :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name"
+                  :topic-viewed="topic.isViewed" :topic-progress="topic.progressPercent" />
+              </template>
+            </customGridTwo>
 
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" v-trusted class="flex justify-center my-10">

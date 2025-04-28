@@ -1,11 +1,14 @@
 <script setup>
 import apiDocsFile from "~/utilities/api-docs";;
 const apiDocs = apiDocsFile.setup()
+import { layoutEffect } from "~/utilities/controlls";
+
 const userToken = useCookie('signInUserToken')
 
 const logout = () => {
   userToken.value = null;
   const router = useRouter();
+  layoutEffect.value = "grid";
   // Use the State
   // useState("topicToView", () => null);
   // useState("videoToView", () => null);
@@ -42,7 +45,7 @@ const dropDown = () => {
             </p>
           </div>
           <NuxtLink to="/" class="flex items-center justify-center h-full p-2 cursor-pointer">
-            <NuxtImg src="/logo/logo_tie.webp" alt="TIE LOGO" class="w-14 h-14" />
+            <NuxtImg  src="/logo/logo_tie.gif" alt="TIE LOGO" class="w-14 h-14" />
           </NuxtLink>
         </div>
       </div>

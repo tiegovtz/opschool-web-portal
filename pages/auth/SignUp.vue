@@ -499,7 +499,7 @@ const switchTab = (tabName) => {
     if (!usersignUp.fname || usersignUp.fname.trim() == " ") {
       usersignUp.controller.errors.fname = messages.error.form.firstName;
     }
-    if (!usersignUp.lname || usersignUp.lname.trim() == "") {
+    if (!usersignUp.lname || usersignUp.lname.trim() == " ") {
       usersignUp.controller.errors.lname = messages.error.form.lastName;
     }
 
@@ -516,7 +516,7 @@ const switchTab = (tabName) => {
 
     // school for student and teacher
     if ((!usersignUp.school || usersignUp.school.trim() == " ") &&
-      (usersignUp.type.toLowerCase() === "student" || usersignUp.type.toLowerCase() === "teacher")) {
+      usersignUp.type.toLowerCase() !== "education stackeholder") {
       usersignUp.controller.errors.school = messages.error.form.school;
       return;
     }
@@ -527,9 +527,41 @@ const switchTab = (tabName) => {
       usersignUp.lname &&
       usersignUp.gender &&
       usersignUp.region &&
-      usersignUp.district ||
-      usersignUp.school
+      usersignUp.district &&
+      (usersignUp.type.toLowerCase() === "education stackeholder" ? true : usersignUp.school)
     ) {
+
+      // Validate first name
+      const fname = auth.isValidName(usersignUp.fname);
+      if (!fname.isMinLength) {
+        usersignUp.controller.errors.fname = messages.error.form.isMinLength;
+        return;
+      } else if (!fname.hasNoSpecialChars) {
+        usersignUp.controller.errors.fname = messages.error.form.hasSpecialChars;
+           return;
+      } else if (!fname.hasNoRepeatedChars) {
+        usersignUp.controller.errors.fname = messages.error.form.hasRepeatedChars;
+         return;
+      } else {
+        usersignUp.controller.errors.fname = null;
+      }
+      
+
+        // Validate Last name
+      const lname = auth.isValidName(usersignUp.lname);
+      if (!lname.isMinLength) {
+        usersignUp.controller.errors.lname = messages.error.form.isMinLength;
+        return;
+      } else if (!lname.hasNoSpecialChars) {
+        usersignUp.controller.errors.lname = messages.error.form.hasSpecialChars;
+           return;
+      } else if (!lname.hasNoRepeatedChars) {
+        usersignUp.controller.errors.lname = messages.error.form.hasRepeatedChars;
+         return;
+      } else {
+        usersignUp.controller.errors.lname = null;
+      }
+      
       usersignUp.userName = usersignUp.fname + "." + usersignUp.lname;
 
       // One-liner equivalent to the if statement, use a logical && operator:
@@ -541,7 +573,7 @@ const switchTab = (tabName) => {
 
       inputTabs.value = tabName;
     }
-  } else {
+  } else if (tabName === "tabOne") {
     inputTabs.value = tabName;
   }
 };
@@ -599,7 +631,7 @@ const switchTab = (tabName) => {
                 <option value="">(eg: Student, Teacher ...)</option>
                 <option value="Student">Student</option>
                 <option value="Teacher">Teacher</option>
-                <option value="Education Stackeholder">Education Stackeholder</option>
+                <option value="Education Stackeholder">Education Stakeholder</option>
               </select>
             </div>
 

@@ -14,6 +14,7 @@ import apiDocsFile from "~/utilities/api-docs";
 const apiDocs = apiDocsFile.setup()
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import VideoCard from "~/components/video/videoCard.vue";
+import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 
 
 // Defin Route
@@ -107,7 +108,7 @@ const fetchTopics = async (params) => {
     });
 
     // Call State Define above
-    topic.value = response;
+    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);
     status.value = "success";
 
     // Call sliceData after data is loaded
@@ -241,11 +242,12 @@ watch(filters, (filters) => {
           <div class="flex flex-col w-full">
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class=" flex flex-col items-start">
+              <div class="flex flex-col items-start ">
                  <customGridTwo>
                   <template #data>
                    <!-- Video Cards are in Grid -->
               <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
+                :is-deleted="video.isDeleted"
                 :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
                 :video-description="video.description" :video-subject="video.subject.name"
                 :video-type="video.videoType" />

@@ -67,13 +67,13 @@ const setExperimentUrl =()=>{
         @click="setExperimentUrl()"
         v-trusted
         :class="[
-            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group',
-            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-[100px]'
+            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
+            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32'
         ]">
         <!-- Thumbnail section -->
         <div :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-[200px]'
+            layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
             <NuxtImg :src="experimentThumbnail" :alt="experimentName"
                 class="object-cover w-full h-full transition-transform duration-500" />
@@ -96,10 +96,10 @@ const setExperimentUrl =()=>{
                 class="mb-4 text-sm text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
                 {{ experimentName }}
             </p>
-            <!-- <p
+            <p
                 class="mb-4 text-sm text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
                 {{ experimentDescription }}
-            </p> -->
+            </p>
 
             <!-- Metadata footer -->
             <!-- <div

@@ -14,6 +14,7 @@ import InputsSelection from "@/components/home/InputsSelection.vue";
 import apiDocsFile from "~/utilities/api-docs";
 const apiDocs = apiDocsFile.setup()
 import customGridTwo from "~/components/home/customGridTwo.vue";
+import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 
 // Defin Route
 const route = useRoute();
@@ -109,7 +110,7 @@ const fetchTopics = async (params) => {
     });
 
     // Call State Define above
-    topic.value = response;
+    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);
     status.value = "success";
 
     // Call sliceData after data is loaded
@@ -211,7 +212,7 @@ watch(filters, (filters) => {
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class=" " :class="{ ' animate-pulse': isLoading }">
+    <div class="" :class="{ ' animate-pulse': isLoading }">
       <HeroSection />
         <TabBar 
           :subject-title="subjectTitle"

@@ -14,6 +14,7 @@ import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
 import apiDocsFile from "~/utilities/api-docs";
 const apiDocs = apiDocsFile.setup()
 import customGridTwo from "~/components/home/customGridTwo.vue";
+import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 
 // Defin Route
 const route = useRoute();
@@ -109,7 +110,7 @@ const fetchTopics = async (params) => {
     });
 
     // Call State Define above
-    topic.value = response;
+    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);
     status.value = "success";
 
     // Call sliceData after data is loaded
@@ -197,7 +198,7 @@ const { progress, isLoading } = useLoadingIndicator();
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class=" " :class="{ ' animate-pulse': isLoading }" >
+    <div class="" :class="{ ' animate-pulse': isLoading }" >
       <HeroSection />
         <TabBar 
           :subject-title="subjectTitle"
@@ -227,7 +228,7 @@ const { progress, isLoading } = useLoadingIndicator();
           <div class="flex flex-col w-full">
             <div class="flex items-center gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class=" flex flex-col items-start">
+              <div class="flex flex-col items-start ">
                  <customGridTwo>
                   <template #data>
                     <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
