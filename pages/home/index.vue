@@ -16,7 +16,7 @@ import apiDocs from "~/utilities/api-docs";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import customGridOne from "~/components/home/customGridOne.vue";
 import customGridTwo from "~/components/home/customGridTwo.vue";
-import DropDownMenu from "~/components/home/dropDownMenu.vue";
+import DropDownMenu from "~/components/customDropDown/dropDownMenu.vue";
 import SubjectCard from "~/components/home/SubjectCard.vue";
 import { layoutEffect } from "~/utilities/controlls";
 

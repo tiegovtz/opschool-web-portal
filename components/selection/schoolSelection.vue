@@ -1,4 +1,5 @@
 <script setup>
+import { CustomDropDownList } from "#components";
 import axios from 'axios';
 
 // Props
@@ -17,7 +18,7 @@ const data = reactive({
 });
 
 // Emit
-defineEmits(["updateSchool"]);
+const emit = defineEmits(["updateSchool"]);
 
 // Fetch schools function
 const fetchSchools = async (region, district) => {
@@ -54,31 +55,37 @@ watch(() => props.region, (region) => {
         fetchSchools(region, props.district);
     }
 });
+
 </script>
 
 <template>
-    <div class="flex flex-col items-start w-full">
-        <label for="school" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select School:</label>
+  <div class="flex flex-col items-start w-full">
+    <label for="school" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+      Select School:
+    </label>
+    
+      <CustomDropDownList
+        v-if="data.status === 'success' && data.schools.length"
+        :list="data.schools.map(school => ({ id: school._id, name: school.name }))"
+        :placeholder="'Choose a school'"
+        @updateModelValue="emit('updateSchool',$event)"
+      />
 
-        <select name="school" id="school" class="w-full p-2 capitalize focus:outline-none focus:ring-0"
-            :class="{ 'text-textGray/40': error }" @change="$emit('updateSchool', $event.target.value)">
-            <option value="" v-if="data.status === 'idle'">Select Region and District First</option>
-            <option value="" v-if="data.status === 'pending'">Loading...</option>
-            <option value="" v-if="data.status === 'error'">{{ data.error }}</option>
-            <option value="" v-else-if="data.schools && data.status === 'success'">Eg (Taifa Secondary School) ...
-            </option>
-            <option v-for="school in data.schools" :key="school._id" :value="school._id">
-                {{school.name
-                    .split(" ")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-                    .join(" ")
-                }}
-            </option>
-        </select>
+      <div v-else-if="data.status === 'idle'" class="mt-2 text-textGray/40">
+        Select Region and District First
+      </div>
 
-        <!-- Error message -->
-        <small v-if="error" class="w-full text-red-500 text-smallest">
-            {{ error }}
-        </small>
-    </div>
+      <div v-else-if="data.status === 'pending'" class="mt-2 text-textGray/40">
+        Loading...
+      </div>
+
+      <div v-else-if="data.status === 'error'" class="mt-2 text-red-500">
+        {{ data.error }}
+      </div>
+
+    <!-- Error message -->
+    <small v-if="error" class="w-full mt-1 text-red-500 text-smallest">
+      {{ error }}
+    </small>
+  </div>
 </template>

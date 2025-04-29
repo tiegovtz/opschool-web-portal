@@ -5,6 +5,7 @@ import { auth } from "~/utilities/validationInput";
 import axios from 'axios'
 import { generateRandomID } from "~/utilities/generateRandomNumber";
 import apiDocs from "~/utilities/api-docs";
+import { CustomDropDownList } from "#components";
 
 // input tabs control
 const inputTabs = ref("tabOne");
@@ -365,6 +366,7 @@ watch(
     }
   }
 );
+
 // Phone watching
 watch(
   () => usersignUp.phone,
@@ -382,6 +384,7 @@ watch(
     }
   }
 );
+
 // type watching
 watch(
   () => usersignUp.type,
@@ -394,6 +397,7 @@ watch(
     }
   }
 );
+
 // Region watching
 watch(
   () => usersignUp.region,
@@ -406,6 +410,7 @@ watch(
     }
   }
 );
+
 // Age watching
 watch(
   () => usersignUp.age,
@@ -418,6 +423,7 @@ watch(
     }
   }
 );
+
 // genger watching
 watch(
   () => usersignUp.gender,
@@ -577,6 +583,32 @@ const switchTab = (tabName) => {
     inputTabs.value = tabName;
   }
 };
+
+// Age Options
+const ageOptions = computed(() => {
+  const type = usersignUp.type.toLowerCase().trim();
+
+  if (type === "student") {
+    return [
+      { id: "Child", name: "Kids (3 - 12)" },
+      { id: "Teen", name: "Teens (13 - 19)" },
+      { id: "YoungAdult", name: "Young Adults (20 - 35)" },
+    ];
+  }
+
+  return [
+    { id: "YoungAdult", name: "Young Adults (20 - 35)" },
+    { id: "MiddleAgedAdult", name: "Middle-Aged Adults (36 - 60)" },
+    { id: "Adult", name: "Adults (60+)" },
+  ];
+});
+
+const userTypes = [
+  {id: 'Student', name: 'Student'},
+  {id: 'Teacher', name: 'Teacher'},
+  {id: 'Education Stackeholder', name: 'Education Stakeholder'},
+];
+
 </script>
 
 <template>
@@ -621,18 +653,16 @@ const switchTab = (tabName) => {
             }
           ]">
             <div class="flex flex-col items-start w-full">
-              <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select User
-                Type:</label>
-              <select name="type" id="type" v-model="usersignUp.type"
-                :class="[
-                    'w-full p-1 focus:outline-none focus:ring-0',
-                  { 'text-textGray/40': !usersignUp.type }
-                ]">
-                <option value="">(eg: Student, Teacher ...)</option>
-                <option value="Student">Student</option>
-                <option value="Teacher">Teacher</option>
-                <option value="Education Stackeholder">Education Stakeholder</option>
-              </select>
+              <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+                Select User Type:</label>
+                
+                  <!-- Use the Custom Dropdown instead of <select> -->
+                  <CustomDropDownList
+                    v-model="usersignUp.type"
+                    :list="userTypes"
+                    placeholder="(eg: Student, Teacher ...)"
+                    @update-model-value="usersignUp.type = $event"
+                  />
             </div>
 
             <!-- Select User Type error message -->
@@ -747,18 +777,15 @@ const switchTab = (tabName) => {
                 <div class="flex items-center gap-2">
                   <input type="radio" name="gender" id="male" value="male" v-model="usersignUp.gender"
                     class="w-4 h-4 checked:bg-oceanBlue" />
-                  <label for="male" 
-                  :class="{'text-textGray/40': usersignUp.gender !== 'male',}">
+                  <label for="male" :class="{'text-textGray/40': usersignUp.gender !== 'male',}">
                   Male
                   </label>
                 </div>
                 <div class="flex items-center gap-2">
                   <input type="radio" name="gender" id="female" value="female" v-model="usersignUp.gender"
                     class="w-4 h-4 checked:bg-oceanBlue" />
-                  <label for="female" 
-                  :class="{
-                        'text-textGray/40': usersignUp.gender !== 'female',
-                      }">Female
+                  <label for="female" :class="{'text-textGray/40': usersignUp.gender !== 'female',}">
+                    Female
                     </label>
                 </div>
               </div>
@@ -805,7 +832,16 @@ const switchTab = (tabName) => {
             ]">
             <div class="flex flex-col">
               <label for="age" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select Age:</label>
-              <select name="age" id="age"
+              
+              <CustomDropDownList 
+                v-model="usersignUp.age"
+                :list="ageOptions"
+                :placeholder="usersignUp.type.toLowerCase().trim() === 'student' 
+                    ? 'Eg: kids(3 - 12)' 
+                    : 'Eg: YoungAdults(20 - 35)'"
+              />
+              
+              <!-- <select name="age" id="age"
                 :class="[
                     'w-full p-1 focus:outline-none focus:ring-0',
                     {'text-textGray/40': !usersignUp.age }
@@ -817,7 +853,7 @@ const switchTab = (tabName) => {
                 <option v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="MiddleAgedAdult">Middle-Aged
                   Adults(36 - 60)</option>
                 <option v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="Adult">Adults(60+)</option>
-              </select>
+              </select> -->
             </div>
 
             <!-- Age error message -->
