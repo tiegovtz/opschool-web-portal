@@ -583,16 +583,16 @@ const switchTab = (tabName) => {
   <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b" v-trusted>
 
     <!-- Message Component -->
-    <MessageComponent :message="usersignUp.controller.feedback"
+    <MessageComponent :message="usersignUp.controller.feedback" v-trusted
       :position="usersignUp.controller.feedback ? true : false" :event-type="usersignUp.controller.isSent"
       :icon="usersignUp.controller.isSent == 'success' ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
-    <div class="w-full max-w-md px-4 py-10 rounded-lg md:bg-white md:shadow-2xl">
+    <div class="w-full max-w-md px-4 py-10 rounded-lg md:bg-white md:shadow-2xl" v-trusted>
       <h1 class="font-bold text-center text-large">Sign Up</h1>
       <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
         <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
       </NuxtLink>
-      <form @submit.prevent="signUp" @keydown.enter.prevent
+      <form @submit.prevent="signUp" @keydown.enter.prevent v-trusted
         class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" :class="[
       {
         'md:h-[600px]':
@@ -607,6 +607,7 @@ const switchTab = (tabName) => {
     ]">
         <!-- First Input Group -->
         <div
+        v-trusted
           :class="[
           'absolute top-0 flex flex-col px-6 transition-all duration-500 ',
           inputTabs === 'tabOne' ? 'left-0 w-full' : '-left-full'
@@ -620,10 +621,11 @@ const switchTab = (tabName) => {
                 usersignUp.controller.errors.type,
             }
           ]">
-            <div class="flex flex-col items-start w-full">
+            <div class="flex flex-col items-start w-full" v-trusted>
               <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select User
                 Type:</label>
               <select name="type" id="type" v-model="usersignUp.type"
+
                 :class="[
                     'w-full p-1 focus:outline-none focus:ring-0',
                   { 'text-textGray/40': !usersignUp.type }
@@ -636,13 +638,13 @@ const switchTab = (tabName) => {
             </div>
 
             <!-- Select User Type error message -->
-            <small v-if="usersignUp.controller.errors.type" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.type" v-trusted class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.type }}
             </small>
           </div>
 
           <!-- First Name -->
-          <div
+          <div v-trusted
             :class="[
               'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
               {
@@ -650,7 +652,7 @@ const switchTab = (tabName) => {
                 usersignUp.controller.errors.fname,
               }
             ]">
-            <div class="flex items-center w-full">
+            <div class="flex items-center w-full" v-trusted>
               <input type="text" id="fname" v-model="usersignUp.fname" @keydown.space.prevent name="fname"
                 autocomplete="off"
                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
@@ -659,13 +661,14 @@ const switchTab = (tabName) => {
             </div>
 
             <!-- First Name error message -->
-            <small v-if="usersignUp.controller.errors.fname" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.fname" v-trusted class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.fname }}
             </small>
           </div>
 
           <!-- Last Name -->
           <div
+          v-trusted
             :class="[
               'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
               {
@@ -673,22 +676,22 @@ const switchTab = (tabName) => {
                 usersignUp.controller.errors.lname,
               }
             ]">
-            <div class="flex items-center w-full">
+            <div class="flex items-center w-full" v-trusted>
               <input type="text" id="lname" v-model="usersignUp.lname" @keydown.space.prevent name="lname"
                 autocomplete="off"
                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Last Name ( eg: Minja )" />
-              <Icon name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
+              <Icon  name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
             </div>
 
             <!-- Last Name error message -->
-            <small v-if="usersignUp.controller.errors.lname" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.lname" v-trusted class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.lname }}
             </small>
           </div>
 
           <!-- region -->
-          <div
+          <div v-trusted
             :class="[
                 'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
               {
@@ -701,7 +704,7 @@ const switchTab = (tabName) => {
           </div>
 
           <!-- District -->
-          <div
+          <div v-trusted
             :class="[
                 'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
               {
@@ -715,7 +718,7 @@ const switchTab = (tabName) => {
           </div>
 
           <!-- school -->
-          <div v-if="usersignUp.type.toLowerCase() === 'student' || usersignUp.type.toLowerCase() === 'teacher'"
+          <div v-trusted v-if="usersignUp.type.toLowerCase() === 'student' || usersignUp.type.toLowerCase() === 'teacher'"
             :class="[
               'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
               {
@@ -731,7 +734,7 @@ const switchTab = (tabName) => {
           </div>
 
           <!-- gender input radio -->
-          <div :class="[
+          <div v-trusted :class="[
             'py-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue',
              {
                 'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -764,13 +767,13 @@ const switchTab = (tabName) => {
               </div>
             </div>
             <!-- Gender error message -->
-            <small v-if="usersignUp.controller.errors.gender" class="w-full text-red-500 text-smallest">
+            <small v-trusted  v-if="usersignUp.controller.errors.gender" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.gender }}
             </small>
           </div>
 
           <!-- Next Button -->
-          <div class="flex items-center justify-center px-2">
+          <div v-trusted class="flex items-center justify-center px-2">
             <button type="button" @click="switchTab('tabTwo')"
               class="flex items-center w-auto h-8 gap-2 px-4 transition-all duration-500 border rounded-full cursor-pointer hover:bg-oceanBlue hover:text-white text-oceanBlue border-oceanBlue animate-bounce-horizontal group">
               <p class="text-small group-hover:text-white">Next</p>
@@ -779,7 +782,7 @@ const switchTab = (tabName) => {
           </div>
 
           <!-- Already have an account -->
-          <div class="flex items-center justify-center gap-2 mt-4">
+          <div  class="flex items-center justify-center gap-2 mt-4">
             <p class="text-sm text-textGray">
               Already have an account?
               <NuxtLink to="/auth" class="w-full p-1 text-center cursor-pointer text-oceanBlue">
@@ -811,23 +814,23 @@ const switchTab = (tabName) => {
                     {'text-textGray/40': !usersignUp.age }
                   ]" v-model="usersignUp.age">
                 <option value="">Eg: {{ usersignUp.type.toLowerCase().trim() == 'student' ? 'kids(3 - 12)' : 'YoungAdults(20 - 35)' }} ...</option>
-                <option v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Child">Kids(3 - 12)</option>
-                <option v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Teen">Teens(13 - 19)</option>
-                <option value="YoungAdult">Young Adults(20 - 35)</option>
-                <option v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="MiddleAgedAdult">Middle-Aged
+                <option v-trusted v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Child">Kids(3 - 12)</option>
+                <option v-trusted v-if="usersignUp.type.toLowerCase().trim() == 'student'" value="Teen">Teens(13 - 19)</option>
+                <option v-trusted value="YoungAdult">Young Adults(20 - 35)</option>
+                <option v-trusted v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="MiddleAgedAdult">Middle-Aged
                   Adults(36 - 60)</option>
-                <option v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="Adult">Adults(60+)</option>
+                <option v-trusted v-if="usersignUp.type.toLowerCase().trim() !== 'student'" value="Adult">Adults(60+)</option>
               </select>
             </div>
 
             <!-- Age error message -->
-            <small v-if="usersignUp.controller.errors.age" class="w-full text-red-500 text-smallest">
+            <small v-trusted v-if="usersignUp.controller.errors.age" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.age }}
             </small>
           </div>
 
           <!-- Select email and phone for non student -->
-          <div v-if="usersignUp.type.toLowerCase() !== 'student'">
+          <div v-trusted v-if="usersignUp.type.toLowerCase() !== 'student'">
 
             <!-- Email -->
             <div
@@ -847,13 +850,13 @@ const switchTab = (tabName) => {
               </div>
 
               <!-- Email error message -->
-              <small v-if="usersignUp.controller.errors.email" class="w-full text-red-500 text-smallest">
+              <small v-trusted v-if="usersignUp.controller.errors.email" class="w-full text-red-500 text-smallest">
                 {{ usersignUp.controller.errors.email }}
               </small>
             </div>
 
             <!-- Phone Number -->
-            <div
+            <div v-trusted
               :class="[
                 'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
                 {
@@ -870,13 +873,13 @@ const switchTab = (tabName) => {
               </div>
 
               <!-- Phone Number error message -->
-              <small v-if="usersignUp.controller.errors.phone" class="w-full text-red-500 text-smallest">
+              <small v-trusted v-if="usersignUp.controller.errors.phone" class="w-full text-red-500 text-smallest">
                 {{ usersignUp.controller.errors.phone }}
               </small>
             </div>
 
             <!-- organization informations for stakeholders -->
-            <div class="" id="organization" v-if="usersignUp.type.toLowerCase() === 'education stackeholder'">
+            <div class="" id="organization" v-if="usersignUp.type.toLowerCase() === 'education stackeholder'" v-trusted>
               <!-- organization name -->
               <div
                 :class="[
@@ -921,13 +924,13 @@ const switchTab = (tabName) => {
                 </div>
 
                 <!-- Age error message -->
-                <small v-if="usersignUp.controller.errors.userOrgRole" class="w-full text-red-500 text-smallest">
+                <small v-trusted v-if="usersignUp.controller.errors.userOrgRole" class="w-full text-red-500 text-smallest">
                   {{ usersignUp.controller.errors.userOrgRole }}
                 </small>
               </div>
 
               <!-- other user role in their org -->
-              <div v-if="usersignUp.userOrgRole.toLowerCase() === 'others'"
+              <div v-trusted v-if="usersignUp.userOrgRole.toLowerCase() === 'others'"
                 :class="[
                     'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
                   {
@@ -951,7 +954,7 @@ const switchTab = (tabName) => {
           </div>
 
           <!-- username student -->
-          <div v-if="usersignUp.type.toLowerCase() === 'student'"
+          <div v-trusted v-if="usersignUp.type.toLowerCase() === 'student'"
             :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
@@ -968,7 +971,7 @@ const switchTab = (tabName) => {
             </div>
 
             <!-- username error message -->
-            <small v-if="usersignUp.controller.errors.userName" class="w-full text-red-500 text-smallest">
+            <small v-trusted v-if="usersignUp.controller.errors.userName" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.userName }}
             </small>
           </div>
@@ -993,7 +996,7 @@ const switchTab = (tabName) => {
                 " class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
             </div>
             <!-- Password error message -->
-            <small v-if="usersignUp.controller.errors.password" class="w-full text-red-500 text-smallest">
+            <small v-trusted v-if="usersignUp.controller.errors.password" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.password }}
             </small>
           </div>
@@ -1021,28 +1024,28 @@ const switchTab = (tabName) => {
           <button type="submit"
             class="w-full p-2 text-white transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
             <!-- submited successful -->
-            <div class="flex items-center justify-center gap-2"
+            <div v-trusted  class="flex items-center justify-center gap-2"
               v-if="usersignUp.controller.isSent === 'success' && usersignUp.controller.isSubmitted">
               Submitted
               <Icon name="icons8:checked" class="w-5 h-5 text-white cursor-pointer" size="16" />
             </div>
-            <div class="flex items-center justify-center gap-2"
+            <div v-trusted class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'pending' && usersignUp.controller.isSubmitted">
               Please Wait
               <Icon name="eos-icons:loading" class="w-5 h-5 text-white cursor-pointer" size="16" />
             </div>
 
-            <div class="flex items-center justify-center gap-2"
+            <div v-trusted class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'failed' && usersignUp.controller.isSubmitted">
               Failed
               <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" />
             </div>
-            <div class="flex items-center justify-center gap-2"
+            <div v-trusted class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'error' && usersignUp.controller.isSubmitted">
               Internal Error
               <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" />
             </div>
-            <div class="flex items-center justify-center gap-2" v-else>
+            <div v-trusted class="flex items-center justify-center gap-2" v-else>
               Sign Up
               <Icon name="mynaui:send" class="w-5 h-5 text-white cursor-pointer" size="16" />
             </div>

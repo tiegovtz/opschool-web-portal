@@ -44,23 +44,23 @@ watch(() => props.region, (region) => {
 </script>
 
 <template>
-    <div class="flex w-full flex-col items-start">
+    <div class="flex w-full flex-col items-start" v-trusted>
         <label for="district" class="text-oceanBlue font-semibold text-extraSmall capitalize">Select District:</label>
 
-        <select name="district" id="district" class="w-full p-2 focus:outline-none focus:ring-0 capitalize"
+        <select name="district" id="district" class="w-full p-2 focus:outline-none focus:ring-0 capitalize" v-trusted
             :class="{ 'text-textGray/40': error }" @change="$emit('updateDistrict', $event.target.value)">
-            <option value="" v-if="data.status === 'idle'">Select Region First</option>
-            <option value="" v-if="data.status === 'pending'">Loading...</option>
-            <option value="" v-if="data.status === 'error'">{{ data.error }}</option>
-            <option value="" v-else-if="data.district && data.status === 'success'">Eg (Arusha CC) ...</option>
-            <option v-for="(district, index) in data.district" :key="index" :value="district">
+            <option v-trusted value="" v-if="data.status === 'idle'">Select Region First</option>
+            <option v-trusted value="" v-if="data.status === 'pending'">Loading...</option>
+            <option v-trusted value="" v-if="data.status === 'error'">{{ data.error }}</option>
+            <option v-trusted value="" v-else-if="data.district && data.status === 'success'">Eg (Arusha CC) ...</option>
+            <option v-trusted v-for="(district, index) in data.district" :key="index" :value="district">
                 {{ `${district}`.charAt(0).toUpperCase() + `${district}`.slice(1).toLowerCase() }}
             </option>
 
         </select>
 
         <!-- Error message -->
-        <small v-if="error" class="text-red-500 text-smallest w-full">
+        <small v-if="error" v-trusted class="text-red-500 text-smallest w-full">
             {{ error }}
         </small>
     </div>

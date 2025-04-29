@@ -38,7 +38,7 @@ fetchRegion();
 </script>
 
 <template>
-    <div class="flex flex-col items-start w-full">
+    <div class="flex flex-col items-start w-full" v-trusted>
         <label for="region" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select Region:</label>
 
         <select name="region" id="region" class="w-full p-2 capitalize focus:outline-none focus:ring-0"
@@ -46,14 +46,14 @@ fetchRegion();
             <option value="" v-if="data.status === 'pending'">Loading...</option>
             <option value="" v-else-if="data.status === 'error'">{{ data.error }}</option>
             <option value="" v-else-if="data.regions && data.status === 'success'">Eg ( Arusha ) ...</option>
-            <option v-for="(region, index) in data.regions" :key="index" :value="region">
+            <option v-for="(region, index) in data.regions" :key="index" v-trusted :value="region">
                 {{ `${region}`.charAt(0).toUpperCase() + `${region}`.slice(1).toLowerCase() }}
             </option>
 
         </select>
 
         <!-- Error message -->
-        <small v-if="error" class="w-full text-red-500 text-smallest">
+        <small v-if="error" v-trusted class="w-full text-red-500 text-smallest">
             {{ error }}
         </small>
     </div>

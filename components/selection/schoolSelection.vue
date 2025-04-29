@@ -57,17 +57,17 @@ watch(() => props.region, (region) => {
 </script>
 
 <template>
-    <div class="flex flex-col items-start w-full">
+    <div class="flex flex-col items-start w-full" v-trusted>
         <label for="school" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select School:</label>
 
         <select name="school" id="school" class="w-full p-2 capitalize focus:outline-none focus:ring-0"
             :class="{ 'text-textGray/40': error }" @change="$emit('updateSchool', $event.target.value)">
-            <option value="" v-if="data.status === 'idle'">Select Region and District First</option>
-            <option value="" v-if="data.status === 'pending'">Loading...</option>
-            <option value="" v-if="data.status === 'error'">{{ data.error }}</option>
-            <option value="" v-else-if="data.schools && data.status === 'success'">Eg (Taifa Secondary School) ...
+            <option v-trusted value="" v-if="data.status === 'idle'">Select Region and District First</option>
+            <option v-trusted value="" v-if="data.status === 'pending'">Loading...</option>
+            <option v-trusted value="" v-if="data.status === 'error'">{{ data.error }}</option>
+            <option v-trusted value="" v-else-if="data.schools && data.status === 'success'">Eg (Taifa Secondary School) ...
             </option>
-            <option v-for="school in data.schools" :key="school._id" :value="school._id">
+            <option v-trusted v-for="school in data.schools" :key="school._id" :value="school._id">
                 {{school.name
                     .split(" ")
                     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -77,7 +77,7 @@ watch(() => props.region, (region) => {
         </select>
 
         <!-- Error message -->
-        <small v-if="error" class="w-full text-red-500 text-smallest">
+        <small v-if="error" v-trusted class="w-full text-red-500 text-smallest">
             {{ error }}
         </small>
     </div>
