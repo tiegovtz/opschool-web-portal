@@ -322,7 +322,7 @@ watch(
 onMounted(async () => {
   // Trigger MathJax rendering
   window.MathJax.typeset();
-
+  
   // Call functin for set Pic Center
   setPicCenter();
 });
