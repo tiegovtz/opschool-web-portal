@@ -76,7 +76,7 @@ const sendEmits =()=>{
     </select>
 
     <!-- Subject -->
-    <select name="" v-model="subject" id="" @change="sendEmits"
+    <select name="" v-if="level === 'secondary'"  v-model="subject" id="" @change="sendEmits"
       class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
       <option value="">Select Subject</option>
       <option value="Physics">Physics</option>
@@ -84,6 +84,12 @@ const sendEmits =()=>{
       <option value="Chemistry">Chemistry</option>
       <option value="Biology">Biology</option>
       <option value="Geography">Geography</option>
+    </select>
+
+     <!-- Subject -->
+    <select name="" v-else v-model="subject" id="" @change="sendEmits"
+      class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
+      <option value="">Select Subject</option>
     </select>
   </form>
 

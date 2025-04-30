@@ -203,7 +203,7 @@ const fetchData = async (params) => {
     } else if (!subjectId.value && tab !== "home") {
       data.value = filterKeyDataFromArrayOfJson(response, "subject.name",['physics','chemistry','mathematics','biology','geography']);
     } else {
-      data.value = removeDataFromArrayOfJson(response, "isDeleted", true);;
+      data.value = removeDataFromArrayOfJson(response, "isDeleted", true);
     }
 
     status.value = "success";
@@ -294,7 +294,6 @@ watch(filters, (newFilters) => {
       level: filters.level.toString(),
       subject: filters.subject.toString(),
     });
-    console.log("Filters: ", filters);
   }
 });
 
@@ -369,6 +368,7 @@ watch(
 
 // modify see more 
 const setSeeMore = (seeMore) => {
+  console.log(seeMore)
   if (seeMoreDetails.value === seeMore) {
     seeMoreDetails.value = null;
   } else {
@@ -394,9 +394,9 @@ const setSeeMore = (seeMore) => {
 
         <!-- Side Bar Container Filter For Mobile View Only -->
         <div :class="[
-      'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
-      hideFilter ? 'z-30' : '-z-30',
-    ]">
+            'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
+            hideFilter ? 'z-30' : '-z-30',
+          ]">
           <div class="w-full h-full bg-white md:w-80">
             <!-- Close Button -->
             <div class="flex items-center justify-end">
@@ -415,14 +415,16 @@ const setSeeMore = (seeMore) => {
       </div>
       <!-- LayoutEffect  -->
       <div class="flex items-center justify-end gap-2">
-        <Icon name="bxs:grid-alt" size="1.5rem" @click="layoutEffect = 'grid'" :class="[
-      'cursor-pointer transition-all duration-500 ease-in-out',
-      layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
-    ]" />
-        <Icon name="fa-solid:list" size="1.5rem" @click="layoutEffect = 'list'" :class="[
-      'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
-      layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
-    ]" />
+        <Icon name="bxs:grid-alt" size="1.5rem" @click="layoutEffect = 'grid'" 
+        :class="[
+          'cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]" />
+        <Icon name="fa-solid:list" size="1.5rem" @click="layoutEffect = 'list'" 
+        :class="[
+          'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]" />
       </div>
       <div class="flex items-center justify-center w-full gap-4 xl:items-start">
         <!-- container filter Desktop -->
@@ -448,9 +450,8 @@ const setSeeMore = (seeMore) => {
             </p>
 
             <span v-if="(Array.isArray(filterValue) && filterValue.length > 0) ||
-      (typeof filterValue == 'object' &&
-        Object.keys(filterValue).length > 0)
-      " @click="filterValue = []" class="cursor-pointer text-oceanBlue">
+              (typeof filterValue == 'object' && Object.keys(filterValue).length > 0)" 
+              @click="filterValue = []" class="cursor-pointer text-oceanBlue">
               Reset filters
             </span>
           </div>
@@ -462,8 +463,9 @@ const setSeeMore = (seeMore) => {
                 <template #data>
                   <!-- Subject Cards are in Grid -->
                   <SubjectCard v-for="subject in slicedData" :key="subject._id" :subject-id="subject._id"
-                    :subject-name="subject.name" :subject-image="subject.thumbnail" :total-views="subject.total_views ?? 30 + Math.floor(Math.random() * 33)
-                     " :is-logged-in="userToken != null || userToken != undefined"
+                    :subject-name="subject.name" :subject-image="subject.thumbnail" 
+                    :total-views="subject.views ?? 0" 
+                    :is-logged-in="userToken != null || userToken != undefined"
                     @emit-subject-name="activeTab = $event" @emit-subject-id="subjectId = $event" />
                 </template>
               </customGridOne>
@@ -473,14 +475,11 @@ const setSeeMore = (seeMore) => {
                   <!-- Topic Cards are in Grid -->
                   <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
                     :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
-                    :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'
-                    " :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.viewedBy?.length
-                      ? topic.viewedBy?.length
-                      : topic.views
-                        ? topic.views
-                        : 0
-                    " :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
-                                  :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
+                    :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'" 
+                    :topic-likes="topic.topic_likes ? topic.topic_likes : 100" 
+                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0 " 
+                    :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
+                    :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
                 </template>
               </customGridOne>
 
@@ -499,9 +498,9 @@ const setSeeMore = (seeMore) => {
               <customGridOne v-else-if="activeTab.toLowerCase() === 'video'">
                 <template #data>
                   <!-- Video Cards are in Grid -->
-                  <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
-                    :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
-                    :is-deleted="video.isDeleted"
+                  <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" 
+                    :video-name="video.name" :video-thumbnail="video.thumbnail" 
+                    :video-file-url="video.videoFileUrl" :is-deleted="video.isDeleted"
                     :video-description="video.description" :video-subject="video.subject?.name"
                     :video-type="video.videoType" />
                 </template>
@@ -516,7 +515,8 @@ const setSeeMore = (seeMore) => {
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" 
+                  @send-page-number="currentPage = $event" />
               </div>
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
@@ -526,7 +526,8 @@ const setSeeMore = (seeMore) => {
 
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" 
+                  @send-page-number="currentPage = $event" />
 
                 <!-- next button -->
                 <div class="flex items-center justify-center" v-if="currentPage > 4">
@@ -544,11 +545,13 @@ const setSeeMore = (seeMore) => {
                 <customGridOne v-if="activeTab.toLowerCase() === 'home'">
                   <template #data>
                     <!-- Subject Cards are in Grid -->
-                    <SubjectCard v-for="subject in slicedData" :key="subject._id" :subject-id="subject._id"
-                      :subject-name="subject.name" :subject-image="subject.thumbnail" :total-views="subject.total_views ??
-      30 + Math.floor(Math.random() * 33)
-      " :is-logged-in="userToken != null || userToken != undefined
-      " @emit-subject-name="activeTab = $event" @emit-subject-id="subjectId = $event" />
+                    <SubjectCard v-for="subject in slicedData" :key="subject._id" 
+                      :subject-id="subject._id"
+                      :subject-name="subject.name" :subject-image="subject.thumbnail" 
+                      :total-views="subject.views ?? 0 " 
+                      :is-logged-in="userToken != null || userToken != undefined" 
+                      @emit-subject-name="activeTab = $event" 
+                      @emit-subject-id="subjectId = $event" />
                   </template>
                 </customGridOne>
               </div>
@@ -573,25 +576,28 @@ const setSeeMore = (seeMore) => {
                       {{ seeMoreDetails && seeMoreDetails === topics?.dataOfKey ? 'See Less' : 'See All' }}
                     </small>
                   </div>
+                  
                   <div v-if="data.length > 1">
                     <customGridOne v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey">
                       <template #data>
                         <!-- Topic Cards  -->
                         <TopicCard v-for="topic in topics?.data" :key="topic._id" :topic-id="topic._id"
                           :topic-image="topic.thumbnail" :topic-title="topic.name"
-                          :topic-description="topic.descriptions"
+                          :topic-description="topic.descriptions" :subject-name="topic.subject?.name"
                           :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
                           :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
                           :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0"
-                          :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
+                          :topic-level="level" :topic-standard="topic.level?.name"
                           :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
                       </template>
                     </customGridOne>
-                    <!-- Topic Cards  -->
+
+                    
                     <div v-else-if="!seeMoreDetails" :class="[
-                        'flex gap-4 overflow-x-scroll scrollbar-none py-2',
-                        layoutEffect == 'list' ? 'flex-col' : 'flex-row',
+                      'flex gap-4 overflow-x-scroll scrollbar-none py-2 scroll-view scroll-view',
+                      layoutEffect == 'list' ? 'flex-col' : 'flex-row',
                       ]">
+                      <!-- Topic Cards  -->
                       <TopicCard v-for="topic in topics?.data" :key="topic._id" :topic-id="topic._id"
                         :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
                         :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
@@ -614,6 +620,7 @@ const setSeeMore = (seeMore) => {
                         :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
                     </template>
                   </customGridOne>
+                  
                 </div>
               </div>
               <div v-else-if="activeTab.toLowerCase() === 'experiments'">
@@ -637,11 +644,12 @@ const setSeeMore = (seeMore) => {
                       {{ seeMoreDetails && seeMoreDetails === experiments?.dataOfKey ? 'See Less' : 'See All' }}
                     </small>
                   </div>
+                  
                   <div v-if="data.length > 1">
                     <customGridOne v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey">
                       <template #data>
-                        <!-- Experiment Cards  -->
-                    <ExperimentsCard v-for="experiment in experiments?.data" :key="experiment._id"
+                      <!-- Experiment Cards  -->
+                      <ExperimentsCard v-for="experiment in experiments?.data" :key="experiment._id"
                       :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
                       :experiment-title="experiment.title" :experiment-description="experiment.description"
                       :experiment-type="experiment.category" :experiment-subject="experiment.subject?.name"
@@ -649,12 +657,13 @@ const setSeeMore = (seeMore) => {
                       :experiment-file-url="experiment.stepsFileUrl" />
                       </template>
                     </customGridOne>
-                    <!-- Topic Cards  -->
+                    
                     <div v-else-if="!seeMoreDetails" :class="[
-                        'flex gap-4 overflow-x-scroll scrollbar-none py-2',
+                        'flex gap-4 overflow-x-scroll scrollbar-none py-2 scroll-view',
                         layoutEffect == 'list' ? 'flex-col' : 'flex-row',
-                      ]"><!-- Experiment Cards  -->
-                    <ExperimentsCard v-for="experiment in experiments?.data" :key="experiment._id"
+                      ]">
+                      <!-- Experiment Cards  -->
+                      <ExperimentsCard v-for="experiment in experiments?.data" :key="experiment._id"
                       :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
                       :experiment-title="experiment.title" :experiment-description="experiment.description"
                       :experiment-type="experiment.category" :experiment-subject="experiment.subject?.name"
@@ -665,7 +674,7 @@ const setSeeMore = (seeMore) => {
                   </div>
                   <customGridOne v-else>
                     <template #data>
-                      <!-- Topic Cards  -->
+                      <!-- Experiments Cards  -->
                       <ExperimentsCard v-for="experiment in experiments?.data" :key="experiment._id"
                         :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
                         :experiment-title="experiment.title" :experiment-description="experiment.description"
@@ -700,34 +709,31 @@ const setSeeMore = (seeMore) => {
                   <div v-if="data.length > 1">
                       <customGridOne v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey">
                       <template #data>
-                        <!-- Experiment Cards  -->
+                        <!-- Video Cards  -->
                      <VideoCard v-for="video in videos?.data" :key="video._id" :video-id="video._id"
-                     :is-deleted="video.isDeleted"
-                      :video-name="video.name" :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
-                      :video-description="video.description" :video-subject="video.subject?.name"
-                      :video-type="video.videoType" />
+                      :is-deleted="video.isDeleted" :video-name="video.name" :video-thumbnail="video.thumbnail" 
+                      :video-file-url="video.videoFileUrl" :video-description="video.description" 
+                      :video-subject="video.subject?.name" :video-type="video.videoType" />
                       </template>
                     </customGridOne>
                   
                     <div v-else-if="!seeMoreDetails" :class="[
-                        'flex gap-4 overflow-x-scroll scrollbar-none py-2',
+                        'flex gap-4 overflow-x-scroll scrollbar-none py-2 scroll-view',
                         layoutEffect == 'list' ? 'flex-col' : 'flex-row',
                       ]">
-                       <VideoCard v-for="video in videos?.data" :key="video._id" :video-id="video._id"
-                       :is-deleted="video.isDeleted"
-                      :video-name="video.name" :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
-                      :video-description="video.description" :video-subject="video.subject?.name"
-                      :video-type="video.videoType" />
+                      <VideoCard v-for="video in videos?.data" :key="video._id" :video-id="video._id"
+                      :is-deleted="video.isDeleted" :video-name="video.name" :video-thumbnail="video.thumbnail" 
+                      :video-file-url="video.videoFileUrl" :video-description="video.description" 
+                      :video-subject="video.subject?.name" :video-type="video.videoType" />
                     </div>
                   </div>
                   <customGridOne v-else>
                     <template #data>
-                      <!-- Topic Cards  -->
+                      <!-- Video Cards  -->
                       <VideoCard v-for="video in videos?.data" :key="video._id" :video-id="video._id"
-                      :is-deleted="video.isDeleted"
-                        :video-name="video.name" :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
-                        :video-description="video.description" :video-subject="video.subject?.name"
-                        :video-type="video.videoType" />
+                      :is-deleted="video.isDeleted" :video-name="video.name" :video-thumbnail="video.thumbnail" 
+                      :video-file-url="video.videoFileUrl" :video-description="video.description" 
+                      :video-subject="video.subject?.name" :video-type="video.videoType" />
                     </template>
                   </customGridOne>
                 </div>
@@ -774,16 +780,13 @@ const setSeeMore = (seeMore) => {
           <div class="flex flex-col w-full">
             <customGridTwo v-if="filters.level !== null && filters.subject !== null">
               <template #data>
-                <!-- Topic Cards are in Grid -->
+                <!-- Topic Cards -->
                 <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
                   :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
-                  :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'
-      " :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.viewedBy?.length
-        ? topic.viewedBy?.length
-        : topic.views
-          ? topic.views
-          : 0
-      " :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
+                  :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'" 
+                  :topic-likes="topic.topic_likes ? topic.topic_likes : 100" 
+                  :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0" 
+                  :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
                   :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
               </template>
             </customGridTwo>
@@ -791,9 +794,10 @@ const setSeeMore = (seeMore) => {
             <customGridTwo v-else>
               <template #data>
                 <!-- Subject Cards are in Grid -->
-                <SubjectCard v-for="subject in slicedData" :key="subject._id" :subject-id="subject._id"
-                  :subject-name="subject.name" :subject-image="subject.thumbnail" :total-views="subject.total_views ?? 30 + Math.floor(Math.random() * 33)
-      " :is-logged-in="userToken != null || userToken != undefined"
+                <SubjectCard v-for="subject in slicedData" :key="subject._id" 
+                  :subject-id="subject._id" :subject-name="subject.name" 
+                  :subject-image="subject.thumbnail" :total-views="subject.views ?? 0" 
+                  :is-logged-in="userToken != null || userToken != undefined"
                   @emit-subject-name="activeTab = $event" />
               </template>
             </customGridTwo>
@@ -813,7 +817,8 @@ const setSeeMore = (seeMore) => {
 
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" 
+                  @send-page-number="currentPage = $event" />
 
                 <!-- next button -->
                 <div class="flex items-center justify-center" v-if="currentPage > 4">
