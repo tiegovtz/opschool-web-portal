@@ -3,8 +3,6 @@ import { calculateTopicMetrics } from '@/utilities/topicMetrics'
 import { layoutEffect } from '~/utilities/controlls'
 
 // Define State
-const progress = ref() //Initial progress state
-
 const navigationStore = useNavigationStore()
 const props = defineProps({
   topicId: {
@@ -92,7 +90,7 @@ const userToken = useCookie('signInUserToken')
       layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-full max-w-[200px]',
       { 'md:h-20 !h-full ': modelType === 'search', },
     ]">
-      <NuxtImg :src="topicImage" loading="lazy" alt="book1"
+      <NuxtImg :src="topicImage" loading="lazy" :alt="'Image of ' + topicTitle"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
         :class="{ 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' }" />
       <!-- topic standard -->

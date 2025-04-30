@@ -834,11 +834,11 @@ const userTypes = [
               <label for="age" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select Age:</label>
               
               <CustomDropDownList 
-                v-model="usersignUp.age"
                 :list="ageOptions"
                 :placeholder="usersignUp.type.toLowerCase().trim() === 'student' 
                     ? 'Eg: kids(3 - 12)' 
                     : 'Eg: YoungAdults(20 - 35)'"
+                @update-model-value="usersignUp.age = $event"
               />
               
               <!-- <select name="age" id="age"
