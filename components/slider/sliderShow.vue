@@ -10,7 +10,6 @@ const slides = [
   "/images/3.TIE-Interactive.webp",
   "/images/2.TIE-Interactive.webp",
   "/images/10.TIE-Interactive.webp",
-  "/images/11.TIE-Interactive.webp",
 ]
 const swiper = useSwiper(containerRef, {
   effect: 'fade',
