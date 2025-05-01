@@ -15,14 +15,13 @@ export default defineNuxtPlugin((nuxtApp) => {
     if (allowList.includes(to.fullPath)) return true;
 
     else if (!routesStates && to.fullPath !== '/home') {
-      // return navigateTo('/home', { replace: true });
-     return false;
+     return '/home';
 
     }
     
-    else if(routesStates &&  from.fullPath == routesStates && to.fullPath !== '/home'){
-          return '/home';
-    }
+    // else if(routesStates &&  from.fullPath == routesStates && to.fullPath !== '/home'){
+    //       return '/home';
+    // }
 
     return true; // allow navigation
   });
