@@ -19,6 +19,7 @@ import customGridTwo from "~/components/home/customGridTwo.vue";
 import DropDownMenu from "~/components/customDropDown/dropDownMenu.vue";
 import SubjectCard from "~/components/home/SubjectCard.vue";
 import { layoutEffect } from "~/utilities/controlls";
+import { PaginationSliderBtn } from "#components";
 
 // Define meta info about page
 useHead({
@@ -266,7 +267,7 @@ watch(
 );
 
 // once pages are more than 5, handle pagination
-const nextPage = () => {
+const nextPage = (event) => {
   currentPage.value++;
   currentPage.value =
     currentPage.value > totalPages.value ? totalPages.value : currentPage.value;
@@ -275,8 +276,8 @@ const nextPage = () => {
     currentPage.value * pageSize.value
   );
 };
-
-const prevPage = () => {
+ 
+const prevPage = (event) => {
   currentPage.value--;
   currentPage.value = currentPage.value < 1 ? 1 : currentPage.value;
   sliceData(
@@ -517,24 +518,33 @@ const setSeeMore = (seeMore) => {
                   :is-active="page === currentPage" :disabled="page === currentPage"
                   @click="sliceData((page - 1) * pageSize, page * pageSize)" 
                   @send-page-number="currentPage = $event" />
+              
               </div>
-              <div v-else class="flex justify-center gap-2">
-                <!-- previous -->
+              <div v-else class="flex items-center gap-2 ">
+                
                 <div class="flex items-center justify-center" v-if="currentPage > 5">
                   <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
                 </div>
+                
+                <div class="overflow-x-scroll scrollbar-none max-w-[250px] flex items-center  justify-start gap-2">
+                  <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                    :is-active="page === currentPage" :disabled="page === currentPage"
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)" 
+                    @send-page-number="currentPage = $event" />  
+                </div>
 
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" 
-                  @send-page-number="currentPage = $event" />
-
-                <!-- next button -->
+                
                 <div class="flex items-center justify-center" v-if="currentPage > 4">
                   <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
                 </div>
               </div>
             </div>
+            
+              <!-- <PaginationSliderBtn  v-if="totalPages > 1"
+                  :pages="totalPages" :current-page="currentPage"
+                  @send-slider-page-number="currentPage = $event"
+                  @sendSliderCurrentPageNumber="sliceData(($event - 1) * pageSize, $event * pageSize)"
+                /> -->
           </div>
 
           <!-- data sorted if no subject -->

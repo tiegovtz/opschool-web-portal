@@ -116,37 +116,37 @@ definePageMeta({
                 <!-- Videovideo Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink :to="{path: '/',query: {tab:'video', subject: videoLevel, class: videoStandard}}"
+                        <NuxtLink :to="{ path: '/', query: { tab: 'video', subject: videoLevel, class: videoStandard } }"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
-                                videoLevel != null &&
-                                    videoLevel != undefined &&
-                                    videoLevel != "null"
-                                    ? videoLevel
-                                    : `Secondary`
-                            }}
+                            videoLevel != null &&
+                                videoLevel != undefined &&
+                                videoLevel != "null"
+                                ? videoLevel
+                                : `Secondary`
+                        }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <NuxtLink :to="{path: '/',query: {tab:'video', subject: videoLevel, class: videoStandard}}"
+                        <NuxtLink :to="{ path: '/', query: { tab: 'video', subject: videoLevel, class: videoStandard } }"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
-                                    videoStandard != null &&
-                                        videoStandard != undefined &&
-                                        videoStandard != "null"
-                                        ? videoStandard
-                                        : `Form One`
-                                }}
+                            videoStandard != null &&
+                                videoStandard != undefined &&
+                                videoStandard != "null"
+                                ? videoStandard
+                                : `Form One`
+                        }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
                         <p class="font-medium uppercase text-medium md:capitalize">
                             {{
-                                    videoTitle != null &&
-                                        videoTitle != undefined &&
-                                        videoTitle != "null"
-                                        ? videoTitle
-                            : `Introduction to
+                                videoTitle != null &&
+                                    videoTitle != undefined &&
+                                    videoTitle != "null"
+                                    ? videoTitle
+                                    : `Introduction to
                             Physics`
                             }}
                         </p>
@@ -158,8 +158,8 @@ definePageMeta({
                 </div>
 
                 <!-- Description -->
-                <div class="mx-auto notes md:px-4">
-                    <video preload="auto" controls @contextmenu.prevent>
+                <div class=" md:px-4">
+                    <video preload="auto" controls @contextmenu.prevent class="mx-auto rounded-md center-height">
                         <source :src="videoUrl" type="video/mp4">
                     </video>
 

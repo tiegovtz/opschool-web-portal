@@ -28,7 +28,7 @@ secondary education, thoughtfully made to give you the best experience. <br /><b
 `;
 
 // Track if the user has clicked "Read More"
-const isExpanded = ref(true);
+const isExpanded = ref(false);
 
 // Toggle function
 const toggleReadMore = () => {
@@ -49,19 +49,19 @@ const toggleReadMore = () => {
         
         <p class="my-2 text-justify text-black text-medium text-opacity-80" v-html="isExpanded ? fullText : shortText"></p>
 
-        <!-- <button
+        <button
           @click="toggleReadMore"
           class="self-start text-sm underline cursor-pointer text-oceanBlue"
         >
           {{ isExpanded ? 'Show Less' : 'Read More' }}
-        </button> -->
+        </button>
         
-        <!-- <div :class="[
+        <div :class="[
           'overflow-hidden rounded-md mt-2 transition-all duration-500 ease-in-out bg-gradient-to-b',
           isExpanded ? 'h-0' : 'h-44'
         ]">
           <NuxtImg src="/images/4.banner_miaka_50_transparent.gif" alt="banner_miaka_50" class="object-contain w-full h-full" />
-        </div> -->
+        </div>
       </div>
     </div>
   </section>
