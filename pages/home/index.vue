@@ -594,8 +594,8 @@ const setSeeMore = (seeMore) => {
 
                     
                     <div v-else-if="!seeMoreDetails" :class="[
-                      'flex gap-4 overflow-x-scroll scrollbar-none py-2 scroll-view scroll-view',
-                      layoutEffect == 'list' ? 'flex-col' : 'flex-row',
+                      'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+                      layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
                       ]">
                       <!-- Topic Cards  -->
                       <TopicCard v-for="topic in topics?.data" :key="topic._id" :topic-id="topic._id"
@@ -659,8 +659,8 @@ const setSeeMore = (seeMore) => {
                     </customGridOne>
                     
                     <div v-else-if="!seeMoreDetails" :class="[
-                        'flex gap-4 overflow-x-scroll scrollbar-none py-2 scroll-view',
-                        layoutEffect == 'list' ? 'flex-col' : 'flex-row',
+                        'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+                        layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
                       ]">
                       <!-- Experiment Cards  -->
                       <ExperimentsCard v-for="experiment in experiments?.data" :key="experiment._id"
@@ -718,8 +718,8 @@ const setSeeMore = (seeMore) => {
                     </customGridOne>
                   
                     <div v-else-if="!seeMoreDetails" :class="[
-                        'flex gap-4 overflow-x-scroll scrollbar-none py-2 scroll-view',
-                        layoutEffect == 'list' ? 'flex-col' : 'flex-row',
+                        'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+                        layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
                       ]">
                       <VideoCard v-for="video in videos?.data" :key="video._id" :video-id="video._id"
                       :is-deleted="video.isDeleted" :video-name="video.name" :video-thumbnail="video.thumbnail" 

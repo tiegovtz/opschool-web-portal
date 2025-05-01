@@ -3,24 +3,26 @@ export default defineNuxtPlugin((nuxtApp) => {
   const navigationStore = useNavigationStore()
   router.beforeEach((to, from) => {
     const user = useCookie("signInUserToken");
-
+    
     // User must be logged in
     if (!user.value) return true; // allow navigation if not logged in
     
     // Check route state
     const routesStates = navigationStore.getLatestRoute()
+    const allowList = ['/profile', '/feedback'];
+
     // If no page state and not navigating to /home, redirect to /home
-    if(to.fullPath === '/profile') return true;
-    else if(to.fullPath === '/feedback') return true;
+    if (allowList.includes(to.fullPath)) return true;
+
     else if (!routesStates && to.fullPath !== '/home') {
       // return navigateTo('/home', { replace: true });
-
      return false;
 
     }
-    // else if(routesStates &&  from.fullPath.includes(routesStates)){
-    //   return navigateTo("/home");
-    // }
+    
+    else if(routesStates &&  from.fullPath == routesStates && to.fullPath !== '/home'){
+          return '/home';
+    }
 
     return true; // allow navigation
   });
