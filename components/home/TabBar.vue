@@ -93,7 +93,7 @@ const tabCheck = (checkValue) => {
       </NuxtLink>
       
 
-      <!-- Video -->
+      <!-- Conceptual Video -->
       <button v-if="isLoggedIn"   
         :class="[
         'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
@@ -103,7 +103,7 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="fluent:video-24-filled" size="20" />
         </div>
-        Video
+        Conceptual Video
       </button>
       <NuxtLink v-else :to="subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
@@ -111,7 +111,28 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="fluent:video-24-filled" size="20" />
         </div>
-        Video
+        Conceptual Video
+      </NuxtLink>
+
+      <!-- Other Video -->
+      <button v-if="isLoggedIn"   
+        :class="[
+        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Video' || activeTab == 'Video'}
+         ]"
+        @click="tabCheck('otherVideo')" >
+        <div class="flex items-center justify-center">
+          <Icon name="fluent:video-24-filled" size="20" />
+        </div>
+        Other Video
+      </button>
+      <NuxtLink v-else :to="subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`"
+        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
+        active-class="text-white !bg-deepBlue">
+        <div class="flex items-center justify-center">
+          <Icon name="fluent:video-24-filled" size="20" />
+        </div>
+        Other Video
       </NuxtLink>
       
       <!-- Audio -->
