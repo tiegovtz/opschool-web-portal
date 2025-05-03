@@ -42,7 +42,7 @@ const toggleReadMore = () => {
       <div class="flex flex-col items-center justify-center h-full">
         <SliderShow />
       </div>
-      <div class="flex flex-col xl:ml-10">
+      <div class="flex flex-col h-full xl:ml-10">
         <h1 class="hidden mb-4 font-extrabold md:text-extraLarge text-large xl:block">
           Welcome
         </h1>
@@ -57,7 +57,7 @@ const toggleReadMore = () => {
         </button>
         
         <div :class="[
-          'overflow-hidden rounded-md mt-2 transition-all duration-500 ease-in-out bg-gradient-to-b',
+          'overflow-hidden rounded-md mt-auto transition-all duration-500 ease-in-out bg-gradient-to-b',
           isExpanded ? 'h-0' : 'h-44'
         ]">
           <NuxtImg src="/images/4.banner_miaka_50_transparent.gif" alt="banner_miaka_50" class="object-contain w-full h-full" />
