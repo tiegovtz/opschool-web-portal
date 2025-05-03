@@ -6,8 +6,8 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import apiDocs from "~/utilities/api-docs";
 import InputsSelection from '@/components/home/InputsSelection.vue'
-import customGridTwo from "~/components/home/customGridTwo.vue";
-import { removeDataFromArrayOfJson } from '~/utilities/filterJson';
+import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
+import { HomeCustomScrollView } from "#components";
 
 useHead({
   title: "TIE - Video Resource",
@@ -39,6 +39,8 @@ const error = ref(null);        // Initial Error State
 const status = ref('pending'); // Initial Status State
 const videos = ref();         // Initial videos State
 const slicedData = ref();    // Initial slice data to 9
+const route = useRoute();
+const videoType = route.query?.type;
 
 // Define Cookie
 const auth_token = useCookie('signInAccessToken').value;
@@ -67,15 +69,26 @@ const currentPage = ref(1);
 const pageSize = ref();
 
 // Fetch Videos From Server
-const fetchVideos = async () => {
+const fetchVideos = async (param) => {
+
+  if(!param){
+    param = {
+      videoType: 'Conceptual'
+    }
+  }
+  
   try {
     status.value = 'pending';
     const response = await $fetch(apiDocs.videos.getPublicVideo, {
       method: 'GET',
+      params: {
+       ...param
+      },
     });
 
     // Call State Define above
     videos.value = removeDataFromArrayOfJson(response, 'isDeleted', true);
+    videos.value = filterKeyDataFromArrayOfJson( videos.value,"subject.name",['physics','chemistry','mathematics','biology','geography'])
     status.value = 'success';
 
     // Call sliceData after data is loaded
@@ -153,7 +166,12 @@ const prevPage = () => {
 
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator()
-
+watch (()=>route.query?.type,()=>{
+  
+  fetchVideos({
+    videoType: route.query?.type == 'conc'? 'Conceptual' : 'others'
+  })
+})
 </script>
 
 <template>
@@ -195,16 +213,7 @@ const { progress, isLoading } = useLoadingIndicator()
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
           <div class="flex flex-col w-full">
-            <customGridTwo>
-              <template #data>
-                <!-- Video Cards are in Grid -->
-                <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
-                  :is-deleted="video.isDeleted"
-                  :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
-                  :video-description="video.description" :video-subject="video.subject.name"
-                  :video-type="video.videoType" />
-              </template>
-            </customGridTwo>
+            <HomeCustomScrollView :data="videos" active-tab="video" />
 
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" class="flex justify-center my-10">
