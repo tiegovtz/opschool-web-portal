@@ -192,7 +192,10 @@ const fetchData = async (params) => {
 
   try {
     const response = await $fetch(url, {
-      params: { ...params },
+      params: { 
+        ...params,
+         
+       },
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
@@ -201,10 +204,13 @@ const fetchData = async (params) => {
     // Call State Define above
     if (subjectId.value) {
       data.value = removeDataFromArrayOfJson(response, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(data.value, "name", 'Geography');
     } else if (!subjectId.value && tab !== "home") {
       data.value = filterKeyDataFromArrayOfJson(response, "subject.name",['physics','chemistry','mathematics','biology','geography']);
+      data.value = removeDataFromArrayOfJson(data.value, "name", 'Geography');
     } else {
       data.value = removeDataFromArrayOfJson(response, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(data.value, "name", 'Geography');
     }
 
     status.value = "success";

@@ -53,23 +53,28 @@ const toggleCheckbox = (key, value) => {
   emitFilterPayload();
 };
 
+// Emit Filter Payload Function
 const emitFilterPayload = debounce(() => {
-  const rawFilters = JSON.parse(JSON.stringify(selectedFilters)); // deep clone (like toRaw)
+  const rawFilters = JSON.parse(JSON.stringify(selectedFilters));
   const queryObject = {};
 
   for (const key in rawFilters) {
+    let apiKey = key;
+    
+    // Check and convert specific keys to lowercase
+    if (key === 'level') apiKey = 'educationLevel';
+    else if (key === 'class') apiKey = 'level';
+
     const val = rawFilters[key];
     if (Array.isArray(val)) {
-      queryObject[key.toLowerCase()] = val.toString().toLowerCase(); // or val.join(',') if backend expects comma-separated
+      queryObject[apiKey.toLowerCase()] = val.toString().toLowerCase();
     } else {
-      queryObject[key.toLowerCase()] = val.toString().toLowerCase();
+      queryObject[apiKey.toLowerCase()] = val.toString().toLowerCase();
     }
   }
 
   emit("emitUpdateFilterValue", queryObject);
 }, 100);
-
-
 
 const filterNameGroup = [
   {
@@ -85,26 +90,26 @@ const filterNameGroup = [
   {
     name: "Class",
     visibility: "all",
-    inputType: "checkbox",
+    inputType: "radio",
     filterGroup: [
       {
         level: "Lower Secondary",
-        classes: ["Form One", "Form Two", "Form Three", "Form Four"],
+        classes: ["Form 1", "Form 2", "Form 3", "Form 4"],
       },
       {
         level: "Upper Secondary",
-        classes: ["Form Five", "Form Six"],
+        classes: ["Form 5", "Form 6"],
       },
       {
         level: "Teacher Education",
-        classes: ["Level One", "Level Two", "Level Three", "Level Four"],
+        classes: ["Level 1", "Level 2", "Level 3", "Level 4"],
       },
     ],
   },
   {
     name: "Subject",
     visibility: "all",
-    inputType: "checkbox",
+    inputType: "radio",
     filterGroup: [
       { level: "Pre Primary", list: ["Counting", "Writting"] },
       {
@@ -118,7 +123,7 @@ const filterNameGroup = [
           "Physics",
           "Chemistry",
           "Biology",
-          "Geography",
+          // "Geography",
         ],
       },
       {
@@ -128,7 +133,7 @@ const filterNameGroup = [
           "Physics",
           "Chemistry",
           "Biology",
-          "Geography",
+          // "Geography",
         ],
       },
     ],
@@ -142,7 +147,7 @@ const filterNameGroup = [
   {
     name: "Language",
     visibility: "all",
-    inputType: "checkbox",
+    inputType: "radio",
     filterGroup: [
       { name: "English" },
       { name: "Kiswahili" },
@@ -151,7 +156,7 @@ const filterNameGroup = [
   {
     name: "Skills",
     visibility: "all",
-    inputType: "checkbox",
+    inputType: "radio",
     filterGroup: [
       { name: "Child Protection" },
       { name: "Social Policy" },
@@ -208,7 +213,7 @@ const visibleFilters = computed(() => {
               <div v-if="group.level.toLowerCase() === selectedFilters.level?.toLowerCase()">
                 <label v-for="className in group.classes" :key="className" class="flex items-center gap-2"
                   @click.prevent="toggleCheckbox('class', className)">
-                  <input type="checkbox" :value="className" :checked="selectedFilters.class?.includes(className)" />
+                  <input type="radio" :value="className" :checked="selectedFilters.class?.includes(className)" />
                   {{ className }}
                 </label>
               </div>
@@ -224,7 +229,7 @@ const visibleFilters = computed(() => {
               <div v-if="group.level === selectedFilters.level">
                 <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
                   @click.prevent="toggleCheckbox('subject', subject)">
-                  <input type="checkbox" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />
+                  <input type="radio" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />
                   {{ subject }}
                 </label>
               </div>
