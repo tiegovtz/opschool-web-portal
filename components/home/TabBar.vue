@@ -103,7 +103,7 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="fluent:video-24-filled" size="20" />
         </div>
-        Conceptual Video
+        Video
       </button>
       <NuxtLink v-else :to="subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
@@ -111,7 +111,7 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="fluent:video-24-filled" size="20" />
         </div>
-        Conceptual Video
+        Video
       </NuxtLink>
 
       <!-- Other Video -->
@@ -122,17 +122,17 @@ const tabCheck = (checkValue) => {
          ]"
         @click="tabCheck('otherVideo')" >
         <div class="flex items-center justify-center">
-          <Icon name="fluent:video-24-filled" size="20" />
+          <Icon name="icon-park-solid:blackboard" size="20" />
         </div>
-        Other Video
+        Class Videos
       </button>
       <NuxtLink v-else :to="subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
-          <Icon name="fluent:video-24-filled" size="20" />
+          <Icon name="icon-park-solid:blackboard" size="20" />
         </div>
-        Other Video
+        Class Videos
       </NuxtLink>
       
       <!-- Audio -->

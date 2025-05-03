@@ -128,6 +128,8 @@ const liveFilledSentence = computed(() => {
 // playDemoAnimation and flyToTarget Function
 const flyToTarget = (sourceEl, targetEl, index) => {
   const clone = sourceEl.cloneNode(true);
+  clone.innerText = "example";
+ 
   const sourceRect = sourceEl.getBoundingClientRect();
   const targetRect = targetEl.getBoundingClientRect();
 
@@ -180,7 +182,7 @@ const playDemoAnimation = async () => {
 
   // Set value after delay
   setTimeout(() => {
-    dropZoneAnswers.value[randomIndex] = sourceEl.textContent;
+    dropZoneAnswers.value[randomIndex] = 'example';
 
     // Clean up after 2 sec
     setTimeout(() => {
@@ -287,7 +289,6 @@ const playDemoAnimation = async () => {
           <p
             :class="[
               'max-w-2xl text-textGray transition-all duration-500 ease-in-out',
-              isTips ? 'text-opacity-100' : 'text-opacity-0',
             ]"
           >
             Drag each answer choice into the blank space by clicking and

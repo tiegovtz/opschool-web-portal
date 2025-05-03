@@ -83,7 +83,7 @@ const sendEmits =()=>{
       <option value="Mathematics">Mathematics</option>
       <option value="Chemistry">Chemistry</option>
       <option value="Biology">Biology</option>
-      <option value="Geography">Geography</option>
+      <!-- <option value="Geography">Geography</option> -->
     </select>
 
      <!-- Subject -->
