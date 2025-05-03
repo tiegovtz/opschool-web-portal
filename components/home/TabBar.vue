@@ -22,6 +22,7 @@ const tabState = reactive({
   isChecked: false,
   checkedValueButton: null,
 });
+const videoType = ref('conceptual') //Conceptual and other initial
 
 // Define a Function
 const tabCheck = (checkValue) => {
@@ -105,9 +106,15 @@ const tabCheck = (checkValue) => {
         </div>
         Video
       </button>
-      <NuxtLink v-else :to="subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`"
+      <NuxtLink v-else :to="{
+        path:subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`,
+        query:  {
+          type: 'conc'
+        }
+      }"
+        @click="videoType = 'conceptual'"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
-        active-class="text-white !bg-deepBlue">
+        :active-class=" videoType == 'conceptual' ? 'text-white !bg-deepBlue': 'text-white !bg-oceanBlue'">
         <div class="flex items-center justify-center">
           <Icon name="fluent:video-24-filled" size="20" />
         </div>
@@ -118,7 +125,7 @@ const tabCheck = (checkValue) => {
       <button v-if="isLoggedIn"   
         :class="[
         'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Video' || activeTab == 'Video'}
+         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'otherVideo' || activeTab == 'otherVideo'}
          ]"
         @click="tabCheck('otherVideo')" >
         <div class="flex items-center justify-center">
@@ -126,9 +133,16 @@ const tabCheck = (checkValue) => {
         </div>
         Class Videos
       </button>
-      <NuxtLink v-else :to="subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`"
+      <NuxtLink v-else :to="{
+        path:subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`,
+        query: {
+          type: 'oth'
+        }
+      }"
+       @click="videoType = 'other'"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
-        active-class="text-white !bg-deepBlue">
+         :active-class=" videoType == 'other' ? 'text-white !bg-deepBlue': 'text-white !bg-oceanBlue'
+         ">
         <div class="flex items-center justify-center">
           <Icon name="icon-park-solid:blackboard" size="20" />
         </div>
