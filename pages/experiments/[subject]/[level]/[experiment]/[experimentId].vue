@@ -11,7 +11,7 @@ const experimentTitle = String(route.fullPath.split("/")[4])
 const experimentStandard = String(route.fullPath.split("/")[2])
     .toString()
     .replaceAll("%20", " ");
-const experimentLevel = String(route.fullPath.split("/")[3])
+const experimentSubject = String(route.fullPath.split("/")[3])
     .toString()
     .replaceAll("%20", " ");
 
@@ -126,6 +126,9 @@ definePageMeta({
 // Define OnMounted
 onMounted(() => {
     //Add event listener to window screen /full/exit
+    document.addEventListener('fullscreenchange', () =>{
+        isFullscreen.value = document.fullscreenElement !== null;
+    })
     
 })
 </script>
@@ -139,20 +142,20 @@ onMounted(() => {
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <NuxtLink
-                            :to="{ path: '/', query: { tab: 'experiments', subject: experimentLevel, class: experimentStandard } }"
+                            :to="{ path: '/', query: { tab: 'experiments', subject: experimentSubject, class: experimentStandard } }"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
-                                experimentLevel != null &&
-                                    experimentLevel != undefined &&
-                                    experimentLevel != "null"
-                                    ? experimentLevel
+                                experimentSubject != null &&
+                                    experimentSubject != undefined &&
+                                    experimentSubject != "null"
+                                    ? experimentSubject
                                     : `Secondary`
                             }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
                         <NuxtLink
-                            :to="{ path: '/', query: { tab: 'experiments', subject: experimentLevel, class: experimentStandard } }"
+                            :to="{ path: '/', query: { tab: 'experiments', subject: experimentSubject, class: experimentStandard } }"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                                 experimentStandard != null &&
@@ -216,6 +219,16 @@ onMounted(() => {
                             </p>
                         </div>
                     </div>
+
+                      <!-- Next and Prev BUTTON -->
+                     <div class="flex items-center justify-between w-full">
+                        <NuxtLink :to="{path:`/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.previous?.name}/${experimentInfo?.previous?._id}`}" v-if="experimentInfo?.previous" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
+                            Prev experiment
+                        </NuxtLink>
+                        <NuxtLink :to="{path:`/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.next?.name}/${experimentInfo?.next?._id}`}" v-if="experimentInfo?.next" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
+                            Next experiment
+                        </NuxtLink>
+                     </div>
                 </div>
             </div>
 

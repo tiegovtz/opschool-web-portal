@@ -37,7 +37,7 @@ const setSubjectToView = () => {
   useState(
     "subjectToView",
     () =>
-      `/interactive/${props.subjectName.toLowerCase()}/${props.subjectId.toLowerCase()}`
+      `/interactive/${props.subjectName?.toLowerCase()}/${props.subjectId?.toLowerCase()}`
   );
   useState("subjectName", () => props.subjectName);
 
@@ -100,7 +100,7 @@ const setSubjectToView = () => {
   <!-- Is Logged In = False -->
   <NuxtLink
     v-else
-    :to="`/interactive/${subjectName.toLowerCase()}/${subjectId.toLowerCase()}`"
+    :to="`/interactive/${subjectName?.toLowerCase()}/${subjectId?.toLowerCase()}`"
     @click="setSubjectToView()"
     :class="[
       'relative flex  w-full  overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue',
