@@ -123,7 +123,7 @@ const forgotPassword = async () => {
                             userForgotPassword.controller.errors.type
                     }
                 ]">
-                    <div class="flex flex-col items-start w-full">
+                    <div class="flex flex-col items-start w-full"  v-trusted>
                         <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">
                             Select User Type:</label>
                         <select name="type" id="type" v-model="userForgotPassword.type"
@@ -138,12 +138,12 @@ const forgotPassword = async () => {
                     </div>
 
                     <!-- Select User Type error message -->
-                    <small v-if="userForgotPassword.controller.errors.type" class="w-full text-red-500 text-smallest">
+                    <small v-trusted v-if="userForgotPassword.controller.errors.type" class="w-full text-red-500 text-smallest">
                         {{ userForgotPassword.controller.errors.type }}
                     </small>
                 </div>
                 <!-- Student -->
-                <div v-if="userForgotPassword.type.toLowerCase() === 'student'">
+                <div v-if="userForgotPassword.type.toLowerCase() === 'student'" v-trusted>
                     <!-- First Name -->
                     <div
                         :class="[
@@ -153,7 +153,7 @@ const forgotPassword = async () => {
                                     userForgotPassword.controller.errors.fname,
                             }
                         ]">
-                        <div class="flex items-center w-full">
+                        <div class="flex items-center w-full" >
                             <input type="text" id="fname" v-model="userForgotPassword.fname" @keydown.space.prevent
                                 name="fname" autocomplete="off"
                                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
@@ -163,7 +163,7 @@ const forgotPassword = async () => {
 
                         <!-- First Name error message -->
                         <small v-if="userForgotPassword.controller.errors.fname"
-                            class="w-full text-red-500 text-smallest">
+                            class="w-full text-red-500 text-smallest" v-trusted>
                             {{ userForgotPassword.controller.errors.fname }}
                         </small>
                     </div>
@@ -186,7 +186,7 @@ const forgotPassword = async () => {
                         </div>
 
                         <!-- Last Name error message -->
-                        <small v-if="userForgotPassword.controller.errors.lname"
+                        <small v-if="userForgotPassword.controller.errors.lname" v-trusted
                             class="w-full text-red-500 text-smallest">
                             {{ userForgotPassword.controller.errors.lname }}
                         </small>
@@ -218,7 +218,9 @@ const forgotPassword = async () => {
 
                 </div>
                 <div v-else
-                    class="flex items-center gap-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue">
+                    class="flex items-center gap-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue"
+                    v-trusted
+                    >
                     <input type="email" id="email" :disabled="userForgotPassword.type.toLowerCase().trim() === ''"
                         v-model="userForgotPassword.email" name="email" autocomplete="off"
                         class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
@@ -229,7 +231,7 @@ const forgotPassword = async () => {
                     class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
                     Forgot Password
                     <Icon name="eos-icons:loading" class="text-white" size="20"
-                        v-if="userForgotPassword.controller.isDisabled" />
+                        v-if="userForgotPassword.controller.isDisabled" v-trusted/>
                 </button>
             </form>
             <div class="my-4 text-center">
