@@ -587,9 +587,9 @@ const setSeeMore = (seeMore) => {
           </div>
 
           <!-- data sorted if no subject -->
-          <div v-else-if="status == 'success' && !subjectId && data.length > 0" class="">
+          <div v-else-if="status == 'success' && !subjectId && data.length > 0" class="" v-trusted>
             <ClientOnly>
-              <HomeCustomScrollView :data="data" :active-tab="activeTab" />
+              <HomeCustomScrollView :data="data" :active-tab="activeTab" v-trusted />
             </ClientOnly>
           </div>
           <MessageTopicNotFound v-else v-trusted />
