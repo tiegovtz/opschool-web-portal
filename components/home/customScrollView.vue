@@ -5,6 +5,7 @@ import ExperimentsCard from "~/components/experiments/experimentsCard.vue";
 import TopicCard from "~/components/home/TopicCard.vue";
 import SubjectCard from "~/components/home/SubjectCard.vue";
 import { VideoCard } from "#components";
+import { layoutEffect } from "~/utilities/controlls";
 
 defineProps({
   data: {

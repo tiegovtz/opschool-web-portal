@@ -27,9 +27,6 @@ const swiper = useSwiper(containerRef, {
     prev: {
       shadow: true,
       translate: [0, 0, -400],
-      transition:{
-        
-      }
     },
     next: {
       translate: ['100%', 0, 0],
