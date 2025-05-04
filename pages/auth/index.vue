@@ -281,17 +281,7 @@ watch(
                 {
                   'mt-1':
                     userSignIn.type.trim().toLowerCase() === 'teacher' ||
-                    userSignIn.type.trim().toLowerCase() ===
-          <small
-            v-if="userSignIn.controller.errors.username"
-            :class="[
-              'w-full text-red-500 text-smallest',
-              { 'mt-1': userSignIn.type.trim().toLowerCase() === 'student' },
-              {
-                'mt-1':
-                  userSignIn.type.trim().toLowerCase() === 'teacher' ||
-                  userSignIn.type.trim().toLowerCase() ===
-                    'education stackeholder',
+                    userSignIn.type.trim().toLowerCase() ==='education stackeholder' 
               },
               { 'mt-0': userSignIn.type.trim().toLowerCase() === '' },
             ]"
