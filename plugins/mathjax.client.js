@@ -9,7 +9,8 @@ export default function() {
         inlineMath: [['$', '$'], ['\\(', '\\)']],
         displayMath: [['$$', '$$'], ['\\[', '\\]']],
         processEscapes: true,
-        processEnvironments: true
+        processEnvironments: true,
+        packages: { '[+]': ['mhchem'] }
       },
       options: {
         skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
@@ -19,6 +20,9 @@ export default function() {
             // console.log('MathJax rendering completed');
           }]
         }
+      },
+      loader: {
+        load: ['[tex]/mhchem']
       },
       startup: {
         ready: () => {
@@ -42,7 +46,7 @@ export default function() {
         
         // Fallback to CDN if local file fails
         const fallbackScript = document.createElement('script');
-        fallbackScript.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+        fallbackScript.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js?config=tex-mhchem';
         fallbackScript.async = true;
         fallbackScript.onload = resolve;
         fallbackScript.onerror = reject;

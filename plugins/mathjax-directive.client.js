@@ -2,11 +2,13 @@
 export default defineNuxtPlugin((nuxtApp) => {
     nuxtApp.vueApp.directive('mathjax', {
       mounted(el) {
-        if (window.mathJaxLoaded && window.MathJaxRender) {
-          window.mathJaxLoaded.then(() => {
-            window.MathJaxRender([el]);
-          });
-        }
+        nextTick(() => {
+          if (window.mathJaxLoaded && window.MathJaxRender) {
+            window.mathJaxLoaded.then(() => {
+              window.MathJaxRender([el]);
+            });
+          }
+        });
       },
       updated(el) {
         if (window.mathJaxLoaded && window.MathJaxRender) {

@@ -37,7 +37,7 @@ const setSubjectToView = () => {
   useState(
     "subjectToView",
     () =>
-      `/interactive/${props.subjectName.toLowerCase()}/${props.subjectId.toLowerCase()}`
+      `/interactive/${props.subjectName?.toLowerCase()}/${props.subjectId?.toLowerCase()}`
   );
   useState("subjectName", () => props.subjectName);
 
@@ -101,7 +101,7 @@ const setSubjectToView = () => {
   <!-- Is Logged In = False -->
   <NuxtLink
     v-else
-    :to="`/interactive/${subjectName.toLowerCase()}/${subjectId.toLowerCase()}`"
+    :to="`/interactive/${subjectName?.toLowerCase()}/${subjectId?.toLowerCase()}`"
     v-trusted
     @click="setSubjectToView()"
     :class="[

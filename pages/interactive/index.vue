@@ -9,7 +9,8 @@ import InputsSelection from '@/components/home/InputsSelection.vue'
 import apiDocsFile from "~/utilities/api-docs";
 const apiDocs = apiDocsFile.setup()
 import customGridTwo from "~/components/home/customGridTwo.vue";
-import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
+import { HomeCustomScrollView } from "#components";
+import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 
 // Define meta info about page
 useHead({
@@ -81,7 +82,8 @@ const fetchTopics = async (params) => {
     });
 
     // Call State Define above
-    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);;
+    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);
+    topic.value = filterKeyDataFromArrayOfJson( removeDataFromArrayOfJson(topic.value, "subject.name", 'Geography'),"subject.name",['physics','chemistry','mathematics','biology','geography']);
     status.value = 'success';
 
     // Call sliceData after data is loaded
@@ -216,20 +218,9 @@ watch(filters, (filters) => {
       <!-- Status Success -->
       <div v-else-if="status == 'success'" v-trusted>
         <!-- client only -->
-        <ClientOnly v-if="slicedData?.length > 0" >
-          <div class="flex flex-col w-full" v-trusted>
-            <!-- Topic Cards are in Grid -->
-            <customGridTwo v-trusted>
-              <template #data>
-                <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
-                  :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
-                  :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
-                  :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                  :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0"
-                  :topic-level="level" :topic-standard="topic.level.name" :subject-name="topic.subject.name"
-                  :topic-viewed="topic.isViewed" :topic-progress="topic.progressPercent" />
-              </template>
-            </customGridTwo>
+        <ClientOnly v-if="slicedData?.length > 0">
+          <div class="flex flex-col w-full"v-trusted >
+           <HomeCustomScrollView :data="topic" active-tab="interactive books" />
 
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" v-trusted class="flex justify-center my-10">

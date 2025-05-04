@@ -2,8 +2,6 @@
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
-import InputsSelection from "@/components/home/InputsSelection.vue";
-import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
 import { ref, computed, onMounted, watch } from "vue";
 import {
   isGreaterToXL,
@@ -14,7 +12,8 @@ import {
 } from "@/utilities/controlls";
 import apiDocsFile from "~/utilities/api-docs";
 const apiDocs = apiDocsFile.setup()
-import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
+import { HomeCustomScrollView } from "#components";
+import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 
 const route = useRoute();
 // const router = useRouter();
@@ -121,7 +120,8 @@ const fetchExperiments = async () => {
 
     // Call State Define above
     experiments.value = removeDataFromArrayOfJson(response, "isDeleted", true);
-    status.value = "success";
+    experiments.value = filterKeyDataFromArrayOfJson( experiments.value,"subject.name",['physics','chemistry','mathematics','biology','geography']);
+    status.value = 'success';
 
     // Call sliceData after data is loaded
     sliceData(
@@ -249,23 +249,8 @@ const { progress, isLoading } = useLoadingIndicator();
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
           <div class="flex flex-col w-full px-2 lg:px-4" v-trusted>
-            <HomeCustomGridTwo>
-              <template #data>
-                <ExperimentsCard
-                  v-for="experiment in slicedData"
-                  :key="experiment._id"
-                  :experiment-id="experiment._id"
-                  :experiment-thumbnail="experiment.thumbnail"
-                  :experiment-title="experiment.title"
-                  :experiment-description="experiment.description"
-                  :experiment-type="experiment.category"
-                  :experiment-subject="experiment.subject.name"
-                  :experiment-level="experiment.level.name"
-                  :experiment-name="experiment.name"
-                  :experiment-file-url="experiment.stepsFileUrl"
-                />
-              </template>
-            </HomeCustomGridTwo>
+           <HomeCustomScrollView :data="experiments" active-tab="experiments" />
+           
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" class="flex justify-center my-10" v-trusted>
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">

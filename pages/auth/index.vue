@@ -4,18 +4,21 @@ import { auth } from "~/utilities/validationInput";
 import { sanitize } from "~/utilities/sanitizeInput";
 import axios from "axios";
 import apiDocsFile from "~/utilities/api-docs";;
+import { dataEncrypt, dataDecrypt } from "~/utilities/encryption";
 
 // // Use the State
-const navigationStore = useNavigationStore()
-const returnPath = navigationStore.getLatestRoute()
+const navigationStore = useNavigationStore();
+const returnPath = navigationStore.getLatestRoute();
+const userRememberMe = useCookie("userRememberMe");
+const pass =  userRememberMe?.value?.password?.length > 0 ? await dataDecrypt(userRememberMe?.value?.password) : null
 const apiDocs = apiDocsFile.setup()
 // User Sign In Function
 const userSignIn = reactive({
   type: "",
   status: "idle",
-  username: null,
-  password: null,
-  rememberMe: false,
+  username: userRememberMe.value?.username ?? null,
+  password: pass ?? null,
+  rememberMe: userRememberMe.value?.rememberMe ?? false,
   controller: {
     isSubmitted: false,
     isSucces: false,
@@ -72,15 +75,15 @@ const signIn = async () => {
         userSignIn.controller.feedback = messages.success.auth.authenticated;
         userSignIn.controller.isSucces = true;
 
-        const accessToken = useCookie('signInAccessToken', {
+        const accessToken = useCookie("signInAccessToken", {
           httpOnly: false, // Accessible in browser
           // secure: import.meta.env.PROD, // ✅ uses Nuxt's client env detection
           maxAge: 60 * 60 * 2, // 2 hours
-          sameSite: 'strict',
-          path: '/',
+          sameSite: "strict",
+          path: "/",
         });
 
-        const refreshToken = useCookie('signInRefreshToken', {
+        const refreshToken = useCookie("signInRefreshToken", {
           httpOnly: false, // Accessible in browser
           // secure: import.meta.env.PROD,
           maxAge: 60 * 60 * 2,
@@ -88,7 +91,7 @@ const signIn = async () => {
           path: '/',
         });
 
-        const userToken = useCookie('signInUserToken', {
+        const userToken = useCookie("signInUserToken", {
           httpOnly: false, // Accessible in browser
           // secure: import.meta.env.PROD,
           maxAge: 60 * 60 * 2,
@@ -104,6 +107,42 @@ const signIn = async () => {
             }
           },
         });
+
+        // create user remember me cookie
+        if (userSignIn.rememberMe) {
+          if (!userRememberMe.value) {
+            useCookie("userRememberMe", {
+              httpOnly: false, // Accessible in browser
+              // secure: import.meta.env.PROD,
+              maxAge: 60 * 60 * 24 * 7,
+              sameSite: "strict",
+              path: "/",
+              default: () => ({}),
+              encode: (value) => JSON.stringify(value),
+              decode: (value) => {
+                try {
+                  return JSON.parse(value);
+                } catch (e) {
+                  return {};
+                }
+              },
+            });
+
+            userRememberMe.value = {
+              username: userSignIn.username,
+              password: await dataEncrypt(userSignIn.password),
+              rememberMe: userSignIn.rememberMe,
+            };
+          } else {
+            userRememberMe.value = {
+              username: userSignIn.username,
+              password: await dataEncrypt(userSignIn.password),
+              rememberMe: userSignIn.rememberMe,
+            };
+          }
+        } else {
+          userRememberMe.value = null;
+        }
 
         accessToken.value = response.data.access_token;
         refreshToken.value = response.data.refresh_token;
@@ -176,36 +215,61 @@ watch(
 </script>
 
 <template>
-  <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b" v-trusted>
+  <section
+    class="flex items-center justify-center min-h-screen md:bg-gradient-to-b" v-trusted
+  >
     <!-- Message Component -->
-    <MessageComponent :message="userSignIn.controller.feedback"
+    <MessageComponent
+      :message="userSignIn.controller.feedback"
       :position="userSignIn.controller.feedback ? true : false"
-      :event-type="userSignIn.controller.isSucces ? 'success' : 'error'" :icon="userSignIn.controller.isSucces
-      ? 'icons8:checked'
-      : 'oui:cross-in-circle-empty'
-      " />
+      :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
+      :icon="
+        userSignIn.controller.isSucces
+          ? 'icons8:checked'
+          : 'oui:cross-in-circle-empty'
+      "
+    />
 
-    <div class="w-full max-w-md px-4 rounded-lg md:bg-white md:shadow-2xl md:pt-3">
+    <div
+      class="w-full max-w-md px-4 rounded-lg md:bg-white md:shadow-2xl md:pt-3"
+    >
       <h1 class="font-bold text-center text-large">Welcome</h1>
-      <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
-        <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
+      <NuxtLink
+        to="/"
+        class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center"
+      >
+        <NuxtImg
+          src="/logo/logo_tie.gif"
+          class="object-contain w-full h-full"
+          alt="logo"
+        />
       </NuxtLink>
-      <form @submit.prevent="signIn" v-if="userSignIn.controller.attemps < 3" v-trusted
-        class="px-4 overflow-hidden text-textGray text-extraSmall">
+      <form
+        @submit.prevent="signIn"
+        v-if="userSignIn.controller.attemps < 3" v-trusted
+        class="px-4 overflow-hidden text-textGray text-extraSmall"
+      >
         <!-- Username Teacher and Stackeholder and Student -->
         <div
           :class="[
-              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning focus-within:border-red-500 border-red-500':
                 userSignIn.controller.errors.username,
-            }
-          ]">
+            },
+          ]"
+        >
           <div class="flex items-center w-full">
-            <input type="text" id="username" v-model="userSignIn.username" name="username" autocomplete="off"
+            <input
+              type="text"
+              id="username"
+              v-model="userSignIn.username"
+              name="username"
+              autocomplete="off"
               @keydown.space.prevent
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-              placeholder="(e.g. example@gmail.com /0622***722 /Baraka.Minja)" />
+              placeholder="(e.g. example@gmail.com /0622***722 /Baraka.Minja)"
+            />
 
             <Icon name="solar:user-outline" class="w-5 h-5 text-textGray" />
           </div>
@@ -218,10 +282,20 @@ watch(
                   'mt-1':
                     userSignIn.type.trim().toLowerCase() === 'teacher' ||
                     userSignIn.type.trim().toLowerCase() ===
+          <small
+            v-if="userSignIn.controller.errors.username"
+            :class="[
+              'w-full text-red-500 text-smallest',
+              { 'mt-1': userSignIn.type.trim().toLowerCase() === 'student' },
+              {
+                'mt-1':
+                  userSignIn.type.trim().toLowerCase() === 'teacher' ||
+                  userSignIn.type.trim().toLowerCase() ===
                     'education stackeholder',
-                },
-                { 'mt-0': userSignIn.type.trim().toLowerCase() === '' },
-              ]">
+              },
+              { 'mt-0': userSignIn.type.trim().toLowerCase() === '' },
+            ]"
+          >
             {{ userSignIn.controller.errors.username }}
           </small>
         </div>
@@ -229,69 +303,107 @@ watch(
         <!-- Password -->
         <div
           :class="[
-              'flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            'flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning focus-within:border-red-500 border-red-500':
                 userSignIn.controller.errors.password,
-            }
-          ]">
+            },
+          ]"
+        >
           <div class="flex items-center w-full">
-            <input :type="showPassword ? 'text' : 'password'" id="password" v-model="userSignIn.password"
+            <input
+              :type="showPassword ? 'text' : 'password'"
+              id="password"
+              v-model="userSignIn.password"
               name="password"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-              placeholder="Password" />
-            <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'" 
-            class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
+              placeholder="Password"
+            />
+            <Icon
+              :name="
+                showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'
+              "
+              class="w-5 h-5 cursor-pointer text-textGray"
+              @click="togglePassword"
+            />
           </div>
 
           <!-- Password error message -->
-          <small v-if="userSignIn.controller.errors.password" v-trusted class="w-full text-red-500 text-smallest">
+          <small
+            v-if="userSignIn.controller.errors.password" v-trusted
+            class="w-full text-red-500 text-smallest"
+          >
             {{ userSignIn.controller.errors.password }}
           </small>
         </div>
 
         <div class="flex items-center justify-between my-6">
-          <NuxtLink to="/auth/ForgotPassword" class="text-sm cursor-pointer text-textGray">
+          <NuxtLink
+            to="/auth/ForgotPassword"
+            class="text-sm cursor-pointer text-textGray"
+          >
             Forgot Password?
           </NuxtLink>
           <div class="flex items-center gap-2">
-            <input type="checkbox" id="remember" v-model="userSignIn.rememberMe" class="w-4 h-4 cursor-pointer" />
+            <input
+              type="checkbox"
+              id="remember"
+              v-model="userSignIn.rememberMe"
+              class="w-4 h-4 cursor-pointer"
+            />
             <label for="remember" class="text-sm cursor-pointer text-textGray">
               Remember me
             </label>
           </div>
         </div>
 
-        <button type="submit" :disabled="isDisable"
-          class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
+        <button
+          type="submit"
+          :disabled="isDisable"
+          class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80"
+        >
           Sign In
-          <Icon name="eos-icons:loading" class="text-white" size="20" v-trusted v-if="isDisable" />
+          <Icon
+            name="eos-icons:loading"
+            class="text-white"
+            size="20" v-trusted
+            v-if="isDisable"
+          />
         </button>
 
         <!-- sign up -->
         <div class="flex flex-col items-center gap-4 my-4">
           <p class="text-sm text-textGray">Don't have an account?</p>
-          <NuxtLink to="/auth/SignUp"
-            class="w-full p-2 text-center text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-darkBlue hover:bg-darkBlue/80">
+          <NuxtLink
+            to="/auth/SignUp"
+            class="w-full p-2 text-center text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-darkBlue hover:bg-darkBlue/80"
+          >
             Sign Up
           </NuxtLink>
         </div>
       </form>
-      <div v-trusted v-else class="flex flex-col items-center justify-center w-full gap-2">
+      <div v-trusted
+        v-else
+        class="flex flex-col items-center justify-center w-full gap-2"
+      >
         <div class="py-3">
           You have attempted to sign in
           <span class="text-oceanBlue">{{
-      userSignIn.controller.attemps
-            }}</span>
+            userSignIn.controller.attemps
+          }}</span>
           times. Please consider to
         </div>
-        <NuxtLink to="/auth/ForgotPassword"
-          class="flex items-center justify-center w-full p-2 text-white capitalize rounded-md cursor-pointer bg-oceanBlue">
+        <NuxtLink
+          to="/auth/ForgotPassword"
+          class="flex items-center justify-center w-full p-2 text-white capitalize rounded-md cursor-pointer bg-oceanBlue"
+        >
           reset your password
         </NuxtLink>
         or
-        <NuxtLink to="/auth/SignUp"
-          class="flex items-center justify-center w-full p-2 mb-3 text-white capitalize rounded-md cursor-pointer bg-oceanBlue">
+        <NuxtLink
+          to="/auth/SignUp"
+          class="flex items-center justify-center w-full p-2 mb-3 text-white capitalize rounded-md cursor-pointer bg-oceanBlue"
+        >
           Register a new account.
         </NuxtLink>
       </div>

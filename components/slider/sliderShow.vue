@@ -10,16 +10,30 @@ const slides = [
   "/images/3.TIE-Interactive.webp",
   "/images/2.TIE-Interactive.webp",
   "/images/10.TIE-Interactive.webp",
-  "/images/11.TIE-Interactive.webp",
 ]
+
 const swiper = useSwiper(containerRef, {
-  effect: 'fade',
+  effect: 'creative',
+  loop: true,
   pagination: {
     clickable: true,
   },
-  loop: true,
+  grabCursor: true,
   autoplay: {
     delay: 5000,
+  },
+  speed: 800,
+  creativeEffect: {
+    prev: {
+      shadow: true,
+      translate: [0, 0, -400],
+      transition:{
+        
+      }
+    },
+    next: {
+      translate: ['100%', 0, 0],
+    },
   },
 })
 

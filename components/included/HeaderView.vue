@@ -4,9 +4,15 @@ const apiDocs = apiDocsFile.setup()
 import { layoutEffect } from "~/utilities/controlls";
 
 const userToken = useCookie('signInUserToken')
+const accessToken = useCookie("signInAccessToken");
+const refreshToken = useCookie("signInRefreshToken");
 
 const logout = () => {
+  // Clear All Cookies
   userToken.value = null;
+  accessToken.value = null;
+  refreshToken.value = null;
+  
   const router = useRouter();
   layoutEffect.value = "grid";
   // Use the State

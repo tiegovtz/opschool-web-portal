@@ -12,7 +12,7 @@ const videoTitle = String(route.fullPath.split("/")[4])
 const videoStandard = String(route.fullPath.split("/")[2])
     .toString()
     .replaceAll("%20", " ");
-const videoLevel = String(route.fullPath.split("/")[3])
+const videoSubject = String(route.fullPath.split("/")[3])
     .toString()
     .replaceAll("%20", " ");
 const videoUrl = `/api/video/${videoId}`
@@ -117,37 +117,37 @@ definePageMeta({
                 <!-- Videovideo Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink :to="{path: '/',query: {tab:'video', subject: videoLevel, class: videoStandard}}"
+                        <NuxtLink :to="{ path: '/', query: { tab: 'video', subject: videoSubject, class: videoStandard } }"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
-                                videoLevel != null &&
-                                    videoLevel != undefined &&
-                                    videoLevel != "null"
-                                    ? videoLevel
-                                    : `Secondary`
-                            }}
+                            videoSubject != null &&
+                                videoSubject != undefined &&
+                                videoSubject != "null"
+                                ? videoSubject
+                                : `Secondary`
+                        }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <NuxtLink :to="{path: '/',query: {tab:'video', subject: videoLevel, class: videoStandard}}"
+                        <NuxtLink :to="{ path: '/', query: { tab: 'video', subject: videoSubject, class: videoStandard } }"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
-                                    videoStandard != null &&
-                                        videoStandard != undefined &&
-                                        videoStandard != "null"
-                                        ? videoStandard
-                                        : `Form One`
-                                }}
+                            videoStandard != null &&
+                                videoStandard != undefined &&
+                                videoStandard != "null"
+                                ? videoStandard
+                                : `Form One`
+                        }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
                         <p class="font-medium uppercase text-medium md:capitalize">
                             {{
-                                    videoTitle != null &&
-                                        videoTitle != undefined &&
-                                        videoTitle != "null"
-                                        ? videoTitle
-                            : `Introduction to
+                                videoTitle != null &&
+                                    videoTitle != undefined &&
+                                    videoTitle != "null"
+                                    ? videoTitle
+                                    : `Introduction to
                             Physics`
                             }}
                         </p>
@@ -159,8 +159,8 @@ definePageMeta({
                 </div>
 
                 <!-- Description -->
-                <div class="mx-auto notes md:px-4">
-                    <video preload="auto" controls @contextmenu.prevent>
+                <div class=" md:px-4 notes">
+                    <video preload="auto" controls @contextmenu.prevent class="mx-auto rounded-md">
                         <source :src="videoUrl" type="video/mp4">
                     </video>
 
@@ -179,6 +179,16 @@ definePageMeta({
                             </p>
                         </div>
                     </div>
+                    
+                    <!-- Next and Prev BUTTON -->
+                     <div class="flex items-center justify-between w-full">
+                        <NuxtLink :to="{path:`/video/${videoStandard}/${videoSubject}/${videoInfo?.previous?.name}/${videoInfo?.previous?._id}`}" v-if="videoInfo?.previous" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
+                            Prev Video
+                        </NuxtLink>
+                        <NuxtLink :to="{path:`/video/${videoStandard}/${videoSubject}/${videoInfo?.next?.name}/${videoInfo?.next?._id}`}" v-if="videoInfo?.next" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
+                            Next Video
+                        </NuxtLink>
+                     </div>
                 </div>
             </div>
 

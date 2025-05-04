@@ -1,4 +1,5 @@
 <script setup>
+import { CustomDropDownList } from "#components";
 import axios from 'axios';
 
 // Props
@@ -15,7 +16,7 @@ const data = reactive({
 });
 
 // Emit
-defineEmits(["updateRegion"]);
+const emit = defineEmits(["updateRegion"]);
 
 // Fetch Region function
 const fetchRegion = async () => {
@@ -41,16 +42,17 @@ fetchRegion();
     <div class="flex flex-col items-start w-full" v-trusted>
         <label for="region" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select Region:</label>
 
-        <select name="region" id="region" class="w-full p-2 capitalize focus:outline-none focus:ring-0"
-            :class="{ 'text-textGray/40': region }" @change="$emit('updateRegion',$event.target.value)">
-            <option value="" v-if="data.status === 'pending'">Loading...</option>
-            <option value="" v-else-if="data.status === 'error'">{{ data.error }}</option>
-            <option value="" v-else-if="data.regions && data.status === 'success'">Eg ( Arusha ) ...</option>
-            <option v-for="(region, index) in data.regions" :key="index" v-trusted :value="region">
-                {{ `${region}`.charAt(0).toUpperCase() + `${region}`.slice(1).toLowerCase() }}
-            </option>
+          <CustomDropDownList
+          v-trusted
+                v-if="data.status === 'success' && data.regions.length"
+                :list="data.regions.map(region => ({ id: region, name: region }))"
+                :placeholder="data.status === 'pending' ? 'Loading...' : (data.status === 'error' ? error : 'Eg ( Arusha ) ...')"
+                :model-value="region"
+                @updateModelValue="emit('updateRegion', $event)"
+            />
 
-        </select>
+            <p v-else-if="data.status === 'pending'" v-trusted>Loading...</p>
+            <p v-else-if="data.status === 'error'" class="text-normalRed text-smallest" v-trusted>Failed to Fetch data</p>
 
         <!-- Error message -->
         <small v-if="error" v-trusted class="w-full text-red-500 text-smallest">
