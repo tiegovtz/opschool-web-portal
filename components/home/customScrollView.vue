@@ -7,6 +7,8 @@ import SubjectCard from "~/components/home/SubjectCard.vue";
 import { VideoCard } from "#components";
 import { layoutEffect } from "~/utilities/controlls";
 
+const emits = defineEmits(['emittedSubjectId','emittedActiveTab','emittedSubjectName']);
+
 defineProps({
   data: {
     type: Array,
@@ -44,8 +46,8 @@ const setSeeMore = (seeMore) => {
             :subject-image="subject.thumbnail"
             :total-views="subject.views ?? 0"
             :is-logged-in="userToken != null || userToken != undefined"
-            @emit-subject-name="activeTab = $event"
-            @emit-subject-id="subjectId = $event"
+            @emit-subject-name="emits('emittedSubjectName',$event)"
+            @emit-subject-id="emits('emittedSubjectId',$event)"
           />
         </template>
       </customGridOne>
@@ -420,8 +422,8 @@ const setSeeMore = (seeMore) => {
             :subject-image="subject.thumbnail"
             :total-views="subject.views ?? 0"
             :is-logged-in="userToken != null || userToken != undefined"
-            @emit-subject-name="activeTab = $event"
-            @emit-subject-id="subjectId = $event"
+            @emit-subject-name="emits('emittedSubjectName',$event)"
+            @emit-subject-id="emits('emittedSubjectId',$event)"
           />
         </template>
       </customGridTwo>
