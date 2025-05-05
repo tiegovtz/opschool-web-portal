@@ -1,7 +1,7 @@
 <script setup>
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
 import { layoutEffect } from '~/utilities/controlls'
-
+import apiDocs from '~/utilities/api-docs'
 // Define State
 const navigationStore = useNavigationStore()
 const props = defineProps({
@@ -76,8 +76,21 @@ const userToken = useCookie('signInUserToken')
 
 
 <template>
+  <NuxtLink class="stat-card" v-if="modelType.toLowerCase() === 'profile'"
+  @click="setTopicToView()"
+    :to="`/interactive/${topicStandard.toLowerCase()}/${subjectName.toLowerCase()}/${topicTitle.toLowerCase()}/${topicId.toLowerCase()}`">
+    <!-- profile view -->
+    <div class="w-10 h-10 overflow-hidden rounded-full">
+      <NuxtImg :src="apiDocs.baseURL.replace('/v1', '') + '/' + topicImage" :alt="topicTitle"
+        class="object-cover w-full h-full" />
+    </div>
+    <div class="stat-content">
+      <span class="stat-label">{{ topicTitle }}</span>
+      <span class="stat-value">{{ Math.min(topicProgress ?? 0, 100).toFixed(1) }}%</span>
+    </div>
+  </NuxtLink>
 
-  <NuxtLink
+  <NuxtLink v-else
     :to="`/interactive/${topicStandard.toLowerCase()}/${subjectName.toLowerCase()}/${topicTitle.toLowerCase()}/${topicId.toLowerCase()}`"
     @click="setTopicToView()" :class="[
       'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out min-w-[300px]',
@@ -107,11 +120,12 @@ const userToken = useCookie('signInUserToken')
       <!-- topic progress bar -->
       <div v-if="userToken && modelType === 'card' && layoutEffect === 'grid'"
         class="flex items-center w-full max-w-full gap-2 mt-2">
-        <progress :value="Math.min(topicProgress ?? 0, 100)" max="100" class="transition-all duration-500 ease-in-out topic-card__progress-bar">
+        <progress :value="Math.min(topicProgress ?? 0, 100)" max="100"
+          class="transition-all duration-500 ease-in-out topic-card__progress-bar">
         </progress>
 
         <span class="text-xs font-medium sm:text-sm text-oceanBlue whitespace-nowrap group-hover:text-white">
-          {{ Math.min(topicProgress ?? 0, 100).toFixed(1)  }}%
+          {{ Math.min(topicProgress ?? 0, 100).toFixed(1) }}%
         </span>
       </div>
       <!-- topic title and description -->
@@ -160,5 +174,7 @@ const userToken = useCookie('signInUserToken')
       </div>
     </div>
   </NuxtLink>
+
+
 
 </template>

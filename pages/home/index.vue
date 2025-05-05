@@ -123,7 +123,9 @@ const pageSize = ref();
 // Then, update fetchData to call sliceData after data is loaded
 const fetchData = async (params) => {
   let url;
-
+  data.value = [];
+  status.value = "pending";
+  error.value = null;
   const tab = activeTab.value.toLowerCase();
 
   if (userToken.value) {
@@ -134,14 +136,14 @@ const fetchData = async (params) => {
         ...params,
       };
     } else if (tab === "video") {
-      url = apiDocs.videos.getVideos;
+      url = apiDocs.videos.getPublicVideo;
       params = {
         ...params,
         videoType: "Conceptual",
       };
     } 
     else if (tab === "othervideo") {
-        url = apiDocs.videos.getVideos;
+        url = apiDocs.videos.getPublicVideo;
         params = {
           ...params,
           videoType: "others",

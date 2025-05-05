@@ -90,10 +90,12 @@ const dropDown = () => {
 
               <!-- Profile -->
               <NuxtLink to="/profile"  >
-                <div class="flex items-center justify-center overflow-hidden rounded-full">
-                  <div class="flex items-center gap-1 cursor-pointer">
-                    <NuxtImg v-if="userToken?.profilePic" :src="apiDocs.baseURL" alt="User Profile"
-                      class="object-cover w-full h-full" />
+                <div class="flex items-center justify-center overflow-hidden">
+                  <div class="flex items-center gap-1 cursor-pointer" >
+                    <div v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''" class="w-8 h-8">
+                      <NuxtImg  :src="apiDocs.baseURL.replace('v1','')+userToken?.profilePic" alt="User Profile"
+                      class="object-cover w-full h-full rounded-full" />
+                    </div>
                     <Icon v-else name="iconamoon:profile-circle-thin" class="" size="2rem" />
                     <p class="capitalize text-medium line-clamp-1 max-w-60">
                       Hello,
