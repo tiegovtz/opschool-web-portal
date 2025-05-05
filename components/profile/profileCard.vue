@@ -347,7 +347,7 @@ const discardChanges = () => {
           class="relative overflow-hidden transition-all duration-500 ease-in-out rounded-full cursor-pointer w-36 h-36 group">
           <!-- Profile Image -->
           <NuxtImg :src="profile.profilePic && profile.profilePic.trim() !== ''
-              ? apiDocs.baseURL.replace('v1', '') + profile.profilePic
+              ? uploadedPic ?profile.profilePic : apiDocs.baseURL.replace('v1', '') + profile.profilePic
               : '/profile/profile2.jpeg'
             " alt="User Profile"
             class="object-cover w-full h-full transition-all duration-500 ease-in-out transform group-hover:scale-110 group-hover:opacity-10" />
