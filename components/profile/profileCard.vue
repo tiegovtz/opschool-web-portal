@@ -293,7 +293,7 @@ const choosePict = async (event) => {
     if (response) {
       // profile.profilePic = response;
       profile.controller.status = true;
-      profile.controller.errors.profilePic = response;
+      profile.controller.errors.profilePic = 'profile picture updated successfully';
     }
   }).catch((error) => {
     profile.controller.status = false;
