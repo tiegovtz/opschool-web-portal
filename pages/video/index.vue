@@ -73,7 +73,7 @@ const fetchVideos = async (param) => {
 
   if(!param){
     param = {
-      videoType: 'Conceptual'
+      videoType:videoType?videoType: 'Conceptual'
     }
   }
   

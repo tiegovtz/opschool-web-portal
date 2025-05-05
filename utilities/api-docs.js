@@ -30,6 +30,8 @@ const apiDocs = {
 
     // PATCH or PUT
     profileEdit: `${baseURL}/auth/profile/edit`,
+
+    profilePicture: `${baseURL}/auth/profile/update-picture`,
   },
 
   // CHAPTERS API
