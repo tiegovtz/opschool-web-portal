@@ -140,7 +140,7 @@ const userToken = useCookie('signInUserToken')
       </div>
       <!-- topic subject name and metrics -->
       <div v-if="modelType === 'card'"
-        class="flex items-center justify-between pt-2 pb-2 lg:pb-0 whitespace-nowrap text-extraSmall text-oceanBlue">
+        class="flex items-center justify-between pt-2 pb-2 lg:pb-0 whitespace-nowrap text-extraSmall text-oceanBlue  group-hover:text-white">
         <div class="flex items-center gap-2">
           <Icon name="material-symbols-light:menu-book-outline-rounded" class="text-medium" />
           <p class="capitalize">{{ subjectName }}</p>
