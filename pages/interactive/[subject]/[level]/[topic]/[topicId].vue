@@ -237,7 +237,8 @@ const getChapter = async (chapterId) => {
 
   try {
     const response = await $fetch(`/api/topics/chapters/${chapterId}`);
-    chapters.notesStatus = "success";
+    if(response){
+      chapters.notesStatus = "success";
     chapters.notes = response;
 
     const tasks = [
@@ -254,6 +255,7 @@ const getChapter = async (chapterId) => {
     }
 
     await Promise.allSettled(tasks);
+    }
   } catch (error) {
     chapters.notesStatus = "error";
     chapters.error = error;
@@ -297,7 +299,7 @@ const getQNTopicChapter = async (chapterId) => {
 // Fetch chapters
 await useFetch(`/api/topics/${topicId}`)
   .then((response) => {
-    chapters.status = "success";
+    chapters.status = response.status;
     chapters.list = response.data.value;
     getChapter(response.data.value[0]?._id);
     chapters.currentChapterId = response.data.value[0]?._id;
@@ -501,6 +503,23 @@ const observerContent = () => {
 
       })
     });
+
+    // 
+    // Run this after DOM is rendered
+document.querySelectorAll('.notes td span').forEach((span) => {
+  const text = span.textContent.trim().toLowerCase();
+
+  // Match common patterns like "task 1.1", "activity 2.2", etc.
+  const match = text.match(/^(task|activity|revision (exercise|exercice))\s*\d+(\.\d+)?/i);
+
+  if (match) {
+    const table = span.closest('table');
+    if (table) {
+      table.classList.add('highlighted-task-table');
+    }
+  }
+});
+
   }
 }
 
@@ -615,6 +634,7 @@ definePageMeta({
         :change-chapter="changeChapter" :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
         @emit-quiz-score="updateChapterProgress" />
     </div>
+    
     <section v-else class="relative inline-flex w-full h-full overflow-hidden center-height">
       <!-- Loading state -->
       <div v-if="chapters.status == 'pending'" class="flex items-center justify-center w-full loading content-height">
@@ -650,17 +670,18 @@ definePageMeta({
                   subject: topicLevel,
                   class: topicStandard,
                 },
-              }" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
-                {{
+              }" class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
+                <!-- {{
                   topicLevel != null &&
                     topicLevel != undefined &&
                     topicLevel != "null"
                     ? topicLevel
                     : `Secondary`
-                }}
-                <Icon name="weui:arrow-outlined" size="18" class="text-black" />
+                }} -->
+                <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
+                <!-- <span>Back</span> -->
               </NuxtLink>
-
+<!-- 
               <NuxtLink :to="{
                 path: '/',
                 query: {
@@ -677,7 +698,7 @@ definePageMeta({
                     : `Form One`
                 }}
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
-              </NuxtLink>
+              </NuxtLink> -->
 
               <p class="font-medium uppercase text-medium md:capitalize">
                 {{

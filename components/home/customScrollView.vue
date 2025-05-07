@@ -9,7 +9,7 @@ import { layoutEffect } from "~/utilities/controlls";
 
 const emits = defineEmits(['emittedSubjectId','emittedActiveTab','emittedSubjectName']);
 
-defineProps({
+const props=defineProps({
   data: {
     type: Array,
     required: true,
@@ -18,9 +18,10 @@ defineProps({
     type: String,
     required: true,
   },
+  seeMoreDetails: String
 });
 
-const seeMoreDetails = ref(null); // Initial See More
+const seeMoreDetails = ref(props.seeMoreDetails ?? null); // Initial See More
 const userToken = useCookie("signInUserToken");
 // modify see more
 const setSeeMore = (seeMore) => {
@@ -55,18 +56,18 @@ const setSeeMore = (seeMore) => {
     <div v-else-if="activeTab.toLowerCase() === 'interactive books'">
       <div v-for="(topics, index) in data" :key="index">
         <div
-          v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey"
+          v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
-            {{ topics?.dataOfKey }}
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ topics?.dataOfKey.toLowerCase() }}
           </p>
           <small
-            @click="setSeeMore(topics?.dataOfKey)"
+            @click="setSeeMore(topics?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
           >
             {{
-              seeMoreDetails && seeMoreDetails === topics?.dataOfKey
+              seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
@@ -76,15 +77,15 @@ const setSeeMore = (seeMore) => {
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
-            {{ topics?.dataOfKey }}
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ topics?.dataOfKey.toLowerCase() }}
           </p>
           <small
-            @click="setSeeMore(topics?.dataOfKey)"
+            @click="setSeeMore(topics?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
           >
             {{
-              seeMoreDetails && seeMoreDetails === topics?.dataOfKey
+              seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
@@ -93,7 +94,7 @@ const setSeeMore = (seeMore) => {
 
         <div v-if="data.length > 1">
           <customGridOne
-            v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey"
+            v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
           >
             <template #data>
               <!-- Topic Cards  -->
@@ -116,7 +117,7 @@ const setSeeMore = (seeMore) => {
                     ? topic.views
                     : 0
                 "
-                :topic-level="level"
+
                 :topic-standard="topic.level?.name"
                 :topic-viewed="topic.isViewed"
                 :topic-progress="topic.avgProgress"
@@ -150,7 +151,6 @@ const setSeeMore = (seeMore) => {
                   ? topic.views
                   : 0
               "
-              :topic-level="level"
               :topic-standard="topic.level?.name"
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
@@ -180,7 +180,6 @@ const setSeeMore = (seeMore) => {
                   ? topic.views
                   : 0
               "
-              :topic-level="level"
               :topic-standard="topic.level?.name"
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
@@ -193,18 +192,18 @@ const setSeeMore = (seeMore) => {
     <div v-else-if="activeTab.toLowerCase() === 'experiments'">
       <div v-for="(experiments, index) in data" :key="index">
         <div
-          v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey"
+          v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
-            {{ experiments?.dataOfKey }}
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ experiments?.dataOfKey.toLowerCase() }}
           </p>
           <small
-            @click="setSeeMore(experiments?.dataOfKey)"
+            @click="setSeeMore(experiments?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
           >
             {{
-              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey
+              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
@@ -214,15 +213,15 @@ const setSeeMore = (seeMore) => {
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
-            {{ experiments?.dataOfKey }}
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ experiments?.dataOfKey.toLowerCase() }}
           </p>
           <small
-            @click="setSeeMore(experiments?.dataOfKey)"
+            @click="setSeeMore(experiments?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
           >
             {{
-              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey
+              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
@@ -231,7 +230,7 @@ const setSeeMore = (seeMore) => {
 
         <div v-if="data.length > 1">
           <customGridOne
-            v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey"
+            v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
           >
             <template #data>
               <!-- Experiment Cards  -->
@@ -302,18 +301,18 @@ const setSeeMore = (seeMore) => {
     >
       <div v-for="(videos, index) in data" :key="index">
         <div
-          v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey"
+          v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
-            {{ videos?.dataOfKey }}
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ videos?.dataOfKey.toLowerCase() }}
           </p>
           <small
-            @click="setSeeMore(videos?.dataOfKey)"
+            @click="setSeeMore(videos?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
           >
             {{
-              seeMoreDetails && seeMoreDetails === videos?.dataOfKey
+              seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
@@ -323,15 +322,15 @@ const setSeeMore = (seeMore) => {
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
-            {{ videos?.dataOfKey }}
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ videos?.dataOfKey.toLowerCase() }}
           </p>
           <small
-            @click="setSeeMore(videos?.dataOfKey)"
+            @click="setSeeMore(videos?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
           >
             {{
-              seeMoreDetails && seeMoreDetails === videos?.dataOfKey
+              seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
@@ -339,7 +338,7 @@ const setSeeMore = (seeMore) => {
         </div>
         <div v-if="data.length > 1">
           <customGridOne
-            v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey"
+            v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()"
           >
             <template #data>
               <!-- Video Cards  -->
@@ -431,18 +430,18 @@ const setSeeMore = (seeMore) => {
     <div v-else-if="activeTab.toLowerCase() === 'interactive books'">
       <div v-for="(topics, index) in data" :key="index">
         <div
-          v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey"
+          v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
-            {{ topics?.dataOfKey }}
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ topics?.dataOfKey.toLowerCase() }}
           </p>
           <small
-            @click="setSeeMore(topics?.dataOfKey)"
+            @click="setSeeMore(topics?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
           >
             {{
-              seeMoreDetails && seeMoreDetails === topics?.dataOfKey
+              seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
@@ -452,15 +451,15 @@ const setSeeMore = (seeMore) => {
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
-            {{ topics?.dataOfKey }}
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ topics?.dataOfKey.toLowerCase() }}
           </p>
           <small
-            @click="setSeeMore(topics?.dataOfKey)"
+            @click="setSeeMore(topics?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
           >
             {{
-              seeMoreDetails && seeMoreDetails === topics?.dataOfKey
+              seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
@@ -469,7 +468,7 @@ const setSeeMore = (seeMore) => {
 
         <div v-if="data.length > 1">
           <customGridTwo
-            v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey"
+            v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
           >
             <template #data>
               <!-- Topic Cards  -->
@@ -492,7 +491,7 @@ const setSeeMore = (seeMore) => {
                     ? topic.views
                     : 0
                 "
-                :topic-level="level"
+
                 :topic-standard="topic.level?.name"
                 :topic-viewed="topic.isViewed"
                 :topic-progress="topic.avgProgress"
@@ -526,7 +525,6 @@ const setSeeMore = (seeMore) => {
                   ? topic.views
                   : 0
               "
-              :topic-level="level"
               :topic-standard="topic.level?.name"
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
@@ -556,7 +554,6 @@ const setSeeMore = (seeMore) => {
                   ? topic.views
                   : 0
               "
-              :topic-level="level"
               :topic-standard="topic.level?.name"
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
@@ -569,18 +566,18 @@ const setSeeMore = (seeMore) => {
     <div v-else-if="activeTab.toLowerCase() === 'experiments'">
       <div v-for="(experiments, index) in data" :key="index">
         <div
-          v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey"
+          v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
-            {{ experiments?.dataOfKey }}
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ experiments?.dataOfKey.toLowerCase() }}
           </p>
           <small
-            @click="setSeeMore(experiments?.dataOfKey)"
+            @click="setSeeMore(experiments?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
           >
             {{
-              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey
+              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
@@ -590,15 +587,15 @@ const setSeeMore = (seeMore) => {
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
-            {{ experiments?.dataOfKey }}
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ experiments?.dataOfKey.toLowerCase() }}
           </p>
           <small
-            @click="setSeeMore(experiments?.dataOfKey)"
+            @click="setSeeMore(experiments?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
           >
             {{
-              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey
+              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
@@ -681,7 +678,7 @@ const setSeeMore = (seeMore) => {
           v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
+          <p class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey }}
           </p>
           <small
@@ -699,7 +696,7 @@ const setSeeMore = (seeMore) => {
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem]">
+          <p class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey }}
           </p>
           <small
