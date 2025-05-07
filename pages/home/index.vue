@@ -72,7 +72,7 @@ useHead({
 // Define Cookie
 const userToken = useCookie("signInUserToken");
 const route = useRoute();
-const tab = route.query?.tab;
+let tab = route.query?.tab;
 
 // Define Ref state
 const error = ref(); // Initial Error State
@@ -83,7 +83,7 @@ const hideFilter = ref(false); // Initial Hide Filters
 const activeTab = ref("home"); // Initial Active Tab State
 const filterValue = ref(); // Initial Filter Value State
 const subjectId = ref(); // Initial subjectId Value State
-const seeMoreDetails = computed(()=>route.query?.subject ?? null); // Initial See More
+const seeMoreDetails = ref(route.query?.subject ?? null); // Initial See More
 
 // Define Filters Reactive State
 const filters = reactive({
