@@ -81,7 +81,7 @@ const userToken = useCookie('signInUserToken')
     :to="`/interactive/${topicStandard.toLowerCase()}/${subjectName.toLowerCase()}/${topicTitle.toLowerCase()}/${topicId.toLowerCase()}`">
     <!-- profile view -->
     <div class="w-10 h-10 overflow-hidden rounded-full">
-      <NuxtImg :src="apiDocs.baseURL.replace('/v1', '') + '/' + topicImage" :alt="topicTitle"
+      <NuxtImg :src="topicImage" :alt="topicTitle"
         class="object-cover w-full h-full" />
     </div>
     <div class="stat-content">
@@ -140,7 +140,7 @@ const userToken = useCookie('signInUserToken')
       </div>
       <!-- topic subject name and metrics -->
       <div v-if="modelType === 'card'"
-        class="flex items-center justify-between pt-2 pb-2 lg:pb-0 whitespace-nowrap text-extraSmall text-oceanBlue  group-hover:text-white">
+        class="flex items-center justify-between pt-2 pb-2 lg:pb-0 whitespace-nowrap text-extraSmall text-oceanBlue group-hover:text-white">
         <div class="flex items-center gap-2">
           <Icon name="material-symbols-light:menu-book-outline-rounded" class="text-medium" />
           <p class="capitalize">{{ subjectName }}</p>

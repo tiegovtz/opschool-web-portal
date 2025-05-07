@@ -98,7 +98,7 @@ const filterNameGroup = computed(() => {
   if (isLoading.value) return [];
   const filters = [];
 
-  if (Array.isArray(educationLevels?.value)) {
+  if (Array.isArray(educationLevels?.value) && educationLevels.value.length > 0) {
     filters.push({
       name: 'Level',
       visibility: 'all',
@@ -140,7 +140,7 @@ const filterNameGroup = computed(() => {
       }, [])
     });
   }
-
+  
   if (Array.isArray(languages?.value)) {
     filters.push({
       name: 'Language',
@@ -158,7 +158,9 @@ const filterNameGroup = computed(() => {
       filterGroup: skills.value.map((skill) => ({ name: skill.name }))
     });
   }
-
+  
+  console.log('Filters: ', filters);  
+  
   return filters;
 });
 
@@ -171,7 +173,7 @@ const visibleFilters = computed(() => {
 
 <template>
   <div v-if="isLoading">
-      <p class="animate-pulse text-gray-400">Loading filters...</p>
+      <p class="text-gray-400 animate-pulse">Loading filters...</p>
     </div>
      <!-- Actual dropdown rendering logic here -->
      <form v-else class="flex flex-col w-full bg-white divide-y divide-gray-200 cursor-pointer" @reset="resetFilters">
@@ -197,7 +199,7 @@ const visibleFilters = computed(() => {
           <transition name="fade">
             <div v-if="dropDownMenu.openMenus.includes(index)" class="mt-2 space-y-2">
               <!-- LEVEL -->
-              <div v-if="filter.name === 'Level'">
+              <div v-if="filter.name.toLowerCase() === 'level'">
                 <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2">
                   <input type="radio" :value="option.name" name="level" @change="selectLevel(option.name)"
                     :checked="selectedFilters.level === option.name" />
@@ -211,8 +213,15 @@ const visibleFilters = computed(() => {
                   Please select a level first.
                 </div>
                 <div v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
-                  <div v-if="group.level.toLowerCase() === selectedFilters.level?.toLowerCase()">
+                  <div v-if="group.level?.toLowerCase() === selectedFilters.level?.toLowerCase()">
                     <label v-for="className in group.classes" :key="className" class="flex items-center gap-2"
+                      @click.prevent="toggleCheckbox('class', className)">
+                      <input type="radio" :value="className" :checked="selectedFilters.class?.includes(className)" />
+                      {{ className }}
+                    </label>
+                  </div>
+                  <div v-else>
+                     <label v-for="className in group.classes" :key="className" class="flex items-center gap-2"
                       @click.prevent="toggleCheckbox('class', className)">
                       <input type="radio" :value="className" :checked="selectedFilters.class?.includes(className)" />
                       {{ className }}
@@ -228,6 +237,13 @@ const visibleFilters = computed(() => {
                 </div>
                 <div v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
                   <div v-if="group.level === selectedFilters.level">
+                    <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
+                      @click.prevent="toggleCheckbox('subject', subject)">
+                      <input type="radio" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />
+                      {{ subject }}
+                    </label>
+                  </div>
+                  <div v-else>
                     <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
                       @click.prevent="toggleCheckbox('subject', subject)">
                       <input type="radio" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />

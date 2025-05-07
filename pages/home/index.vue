@@ -229,13 +229,10 @@ const fetchData = async (params) => {
     // Call State Define above
     if (subjectId.value) {
       data.value = removeDataFromArrayOfJson(response, "isDeleted", true);
-      data.value = removeDataFromArrayOfJson(data.value, "name", 'Geography');
     } else if (!subjectId.value && tab !== "home") {
-      data.value = filterKeyDataFromArrayOfJson(removeDataFromArrayOfJson(response, "subject.name", 'Geography'), "subject.name",['physics','chemistry','mathematics','biology','geography']);
-      // data.value = removeDataFromArrayOfJson(response, "name", 'Geography');
+      data.value = filterKeyDataFromArrayOfJson(response, "subject.name",['physics','chemistry','mathematics','biology','geography']);
     } else {
       data.value = removeDataFromArrayOfJson(response, "isDeleted", true);
-      data.value = removeDataFromArrayOfJson(data.value, "name", 'Geography');
     }
 
     status.value = "success";
@@ -585,7 +582,6 @@ const setSeeMore = (seeMore) => {
           <div v-else-if="status == 'success' && !subjectId && data.length > 0" class="">
             <ClientOnly>
               <HomeCustomScrollView :data="data" :active-tab="activeTab"
-                  @emittedSubjectName=""
                   @emittedSubjectId="subjectId = $event"
                   @emittedActiveTab="activeTab = $event"
 

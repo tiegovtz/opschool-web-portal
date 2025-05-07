@@ -57,8 +57,8 @@ const apiDocs = {
 
   // education level
   educationLevel: {
-    getEducationLevels: `${baseURL}/education-levels`,
-    getEducationLevelId: `${baseURL}/education-levels/:id`,
+    getEducationLevels: `${baseURL}/educationLevels`,
+    getEducationLevelId: `${baseURL}/educationLevels/:id`,
   },
 
   // languages API

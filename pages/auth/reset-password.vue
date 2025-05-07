@@ -9,6 +9,7 @@ const reset_token_password = route.query.token;
 const userResetPassword = reactive({
     password: null,
     confirmPassword: null,
+    isDisable: false,
     controller: {
         feedback: null,
         isSucces: false,
@@ -34,12 +35,12 @@ const resetPassword = async () => {
 
     // check reset token password is not empty
     if (!reset_token_password) {
-        userResetPassword.controller.isSent = 'error';
+        userResetPassword.controller.isSucces = false;
         userResetPassword.controller.feedback = messages.error.auth.noToken;
 
         // clear the error message feedback
         setTimeout(() => {
-            userResetPassword.controller.isSent = null;
+            userResetPassword.controller.isSucces = null;
             userResetPassword.controller.feedback = null;
 
         }, 4000)
@@ -47,7 +48,8 @@ const resetPassword = async () => {
         return;
     }
 
-
+        userResetPassword.isDisable = true;
+        
     try {
         // sent the data to server
         const response = await $fetch(apiDocs.auth.resetPassword, {
@@ -58,25 +60,25 @@ const resetPassword = async () => {
                 "confirmPassword": userResetPassword.confirmPassword,
             }
         })
+        
         // check the response with statusCode
-        if (response.status >= 200 && response.status < 300) {
+        if (response.message === 'Password has been reset successfully') {
             userResetPassword.controller.isSucces = true;
-            userResetPassword.controller.isSent = 'success';
             userResetPassword.controller.feedback = messages.success.auth.passwordChanged;
 
             // clear the error message feedback and redirect to auth page
             setTimeout(() => {
                 const route = useRouter();
                 route.replace('/auth')
-
-                userResetPassword.controller.isSent = 'success';
+                
+                userResetPassword.isDisable = false;
                 userResetPassword.controller.isSucces = false;
                 userResetPassword.controller.feedback = null;
-            }, 3000);
+            }, 2000);
         }
 
     } catch (error) {
-        userResetPassword.controller.isSent = 'error';
+        userResetPassword.controller.isSucces = false;
         userResetPassword.controller.feedback = messages.error.server.internalError;
     }
 
@@ -87,7 +89,6 @@ const resetPassword = async () => {
         userResetPassword.controller.isDisabled = false;
     }, 4000);
 }
-
 
 // password watching
 watch(
@@ -106,6 +107,7 @@ watch(
         }
     }
 );
+
 // confirm password watching
 watch(
     () => userResetPassword.confirmPassword,
@@ -123,16 +125,19 @@ watch(
     }
 );
 
-// Password toggle
+// Password toggle State
 const showPassword = ref(false);
+// Password toggle Function
 const togglePassword = () => {
-    showPassword.value = !showPassword.value;
+  showPassword.value = !showPassword.value;
 };
+
 // Confirm Password toggle
 const showConfirmPassword = ref(false);
 const toggleConfirmPassword = () => {
-    showConfirmPassword.value = !showConfirmPassword.value;
+  showConfirmPassword.value = !showConfirmPassword.value;
 };
+
 </script>
 
 <template>
@@ -176,7 +181,7 @@ const toggleConfirmPassword = () => {
                 <div
                     :class="[
                     'flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                    {'focus-input-icon-warning focus-within:border-red-500 border-red-500': userResetPassword.controller.errors.password }
+                    {'focus-input-icon-warning focus-within:border-red-500 border-red-500': userResetPassword.controller.errors.confirmPassword }
                     ]">
                     <div class="flex items-center w-full">
                         <input :type="showConfirmPassword ? 'text' : 'password'" id="password"
@@ -195,10 +200,11 @@ const toggleConfirmPassword = () => {
                 </div>
 
                 <!-- Reset Password Button -->
-                <button type="submit" :disabled="isDisable"
+                <button type="submit" :disabled="userResetPassword.isDisable"
                     class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
-                    Reset Password
-                    <Icon name="eos-icons:loading" class="text-white" size="20" v-if="isDisable" />
+                    {{ userResetPassword.isDisable ? 'Loading...' : userResetPassword.isDisable && userResetPassword.controller.isSucces  ? 'Success' : 'Reset Password' }}
+                    <Icon name="eos-icons:loading" class="text-white" size="20" v-if="userResetPassword.isDisable" />
+                    
                 </button>
 
             </form>
