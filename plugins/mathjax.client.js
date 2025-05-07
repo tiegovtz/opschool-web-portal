@@ -37,7 +37,7 @@ export default function() {
     window.mathJaxLoaded = new Promise((resolve, reject) => {
       // Load MathJax from local source
       const script = document.createElement('script');
-      script.src = '/mathjax/tex-mml-chtml.js'; // Path to your local MathJax file
+      script.src = '/assets/libs/mathjax/tex-mml-chtml.js'; // Path to your local MathJax file
       script.async = true;
       script.onload = resolve;
       script.onerror = (err) => {
@@ -46,7 +46,7 @@ export default function() {
         
         // Fallback to CDN if local file fails
         const fallbackScript = document.createElement('script');
-        fallbackScript.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js?config=tex-mhchem';
+        fallbackScript.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
         fallbackScript.async = true;
         fallbackScript.onload = resolve;
         fallbackScript.onerror = reject;
