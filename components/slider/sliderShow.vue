@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SwiperContainer } from 'swiper/element'
+
 const containerRef = ref<SwiperContainer | null>(null)
 const slides = [
   "/images/8.TIE-Interactive.webp",

@@ -236,7 +236,7 @@ watch(
             <input type="text" id="username" v-model="userSignIn.username" name="username" autocomplete="off"
               @keydown.space.prevent
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-              placeholder="(e.g. example@gmail.com /0622***722 /Baraka.Minja)" />
+              placeholder="(e.g. example@email.com /0622***722 /Student.Name)" />
 
             <Icon name="solar:user-outline" class="w-5 h-5 text-textGray" />
           </div>

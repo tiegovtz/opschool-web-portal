@@ -7,7 +7,6 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import InputsSelection from '@/components/home/InputsSelection.vue'
 import apiDocs from "~/utilities/api-docs";
-import customGridTwo from "~/components/home/customGridTwo.vue";
 import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 
@@ -82,7 +81,7 @@ const fetchTopics = async (params) => {
 
     // Call State Define above
     topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);
-    topic.value = filterKeyDataFromArrayOfJson( removeDataFromArrayOfJson(topic.value, "subject.name", 'Geography'),"subject.name",['physics','chemistry','mathematics','biology','geography']);
+    topic.value = filterKeyDataFromArrayOfJson(topic.value,"subject.name",['physics','chemistry','mathematics','biology','geography']);
     status.value = 'success';
 
     // Call sliceData after data is loaded
