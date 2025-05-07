@@ -218,10 +218,11 @@
 
 /*  */
 .notes table td img {
-  height: 120px;
-  width: 100%;
+  display: inline-flex;
+  height: min(auto,300px);
   border-radius: 12px;
   object-fit: contain;
+  width: min(auto,100%);
 }
 
 .notes .desc-img {
@@ -309,14 +310,16 @@ p:only-child > img:only-child {
   font-size: 0.67rem !important;
 } /* Default: 10.72px */
 
-/* .notes div > table > tbody > tr > td > table {
-  width: max-content !important;
-  border-radius: 0 0 12px 12px !important;
+/* highlited headers , tasks ,activity , revition exercise */
+.highlighted-task-table {
+  max-width: max-content !important;
+  border-radius: 0 0 12px 12px;
 }
 
-.notes div > table > tbody > tr > td > table span {
+.highlighted-task-table span {
   padding: 10px !important;
-} */
+}
+
 
 /* Resivion Exercise */
 .notes .rev-exer-tbl > p ~ table > tbody > tr {

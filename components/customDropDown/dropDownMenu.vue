@@ -159,8 +159,6 @@ const filterNameGroup = computed(() => {
     });
   }
   
-  console.log('Filters: ', filters);  
-  
   return filters;
 });
 
