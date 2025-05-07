@@ -55,6 +55,24 @@ const apiDocs = {
     getNotes: `${baseURL}/notes`,
   },
 
+  // education level
+  educationLevel: {
+    getEducationLevels: `${baseURL}/education-levels`,
+    getEducationLevelId: `${baseURL}/education-levels/:id`,
+  },
+
+  // languages API
+  languages: {
+    getLanguages: `${baseURL}/languages`,
+    getLanguageId: `${baseURL}/languages/:id`,
+  },
+
+  // skills API
+  skills: {
+    getSkills: `${baseURL}/skills`,
+    getSkillId: `${baseURL}/skills/:id`,
+  },
+
   // LEVELS API
   levels: {
     getLevels: `${baseURL}/levels`,
@@ -100,6 +118,9 @@ const apiDocs = {
     postProgresschapterIdExperimentAttempts: `${baseURL}/progress/chapters/{chapterId}/experiment-attempts`,
     getProgressSubjectsSubjectId: `${baseURL}/progress/subjects/{subjectId}`,
     getProgressTopicsTopicId: `${baseURL}/progress/topics/{topicId}`,
+  },
+  users:{
+    updateTimeSpent: `${baseURL}/users/update-time-spent`,// Update time spent on the platform
   }
 
 }
