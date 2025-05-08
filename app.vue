@@ -16,8 +16,8 @@ const userTimeSpent = ref(0)
 const isUserActive = ref(false)
 
 // Time and interval refs
-let activityInterval
-let timeTick
+let activityInterval;
+let timeTick;
 
 if (import.meta.client) {
   // Resize state
@@ -47,7 +47,7 @@ if (import.meta.client) {
 
   // Update server with time spent
   const updateTimeSpent = async () => {
-    if (userToken.value) {
+    if (userToken.value && isUserActive.value) {
       try {
         await $fetch(apiDocs.users.updateTimeSpent, {
           method: 'PATCH',
@@ -74,6 +74,13 @@ if (import.meta.client) {
     const events = ['mousemove', 'keypress', 'click', 'scroll']
     events.forEach(e => window.addEventListener(e, activityHandler))
 
+    document.onvisibilitychange = () => {
+      if (document.visibilityState === 'visible') {
+        updateTimeSpent();
+        isUserActive.value = false;
+      }
+    };
+
     // Time update interval (every 2 mins)
     activityInterval = setInterval(() => {
       if (userToken.value && isUserActive.value) {
@@ -95,6 +102,13 @@ if (import.meta.client) {
 
     const events = ['mousemove', 'keypress', 'click', 'scroll']
     events.forEach(e => window.removeEventListener(e, activityHandler))
+
+    window.removeEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        updateTimeSpent();
+        isUserActive.value = false;
+      }
+    });
 
     clearInterval(activityInterval)
     clearInterval(timeTick)

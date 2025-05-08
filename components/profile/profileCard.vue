@@ -402,7 +402,7 @@ const discardChanges = () => {
           </div>
           <div class="stat-content">
             <span class="stat-label">Subject Opened</span>
-            <span class="stat-value">English</span>
+            <span class="stat-value">{{ profileData.openedSubjects }}</span>
           </div>
         </div>
 
