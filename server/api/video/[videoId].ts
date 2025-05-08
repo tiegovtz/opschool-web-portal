@@ -1,7 +1,4 @@
-// import { isEmptyObject } from "@tiptap/core";
-import { response } from "express";
 import apiDocs from "~/utilities/api-docs";
-import { currentTopic } from "~/utilities/controlls";
 
 export default defineEventHandler(async (event) => {
   // get refferer header
