@@ -240,6 +240,11 @@
 .notes table td p {
   margin: 0px;
 }
+/*  */
+.pic-center{
+  display: block !important;
+  margin: 0 auto !important;
+}
 
 /* table */
 
