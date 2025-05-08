@@ -117,18 +117,20 @@ definePageMeta({
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <NuxtLink :to="{ path: '/', query: { tab: 'video', subject: videoSubject, class: videoStandard } }"
-                            class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
-                            {{
+                            class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
+                            <!-- {{
                             videoSubject != null &&
                                 videoSubject != undefined &&
                                 videoSubject != "null"
                                 ? videoSubject
                                 : `Secondary`
                         }}
-                            <Icon name="weui:arrow-outlined" size="18" class="text-black" />
+                            <Icon name="weui:arrow-outlined" size="18" class="text-black" /> -->
+                            
+                            <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
                         </NuxtLink>
 
-                        <NuxtLink :to="{ path: '/', query: { tab: 'video', subject: videoSubject, class: videoStandard } }"
+                        <!-- <NuxtLink :to="{ path: '/', query: { tab: 'video', subject: videoSubject, class: videoStandard } }"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
                             videoStandard != null &&
@@ -138,9 +140,9 @@ definePageMeta({
                                 : `Form One`
                         }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
-                        </NuxtLink>
+                        </NuxtLink> -->
 
-                        <p class="font-medium uppercase text-medium md:capitalize">
+                        <p class="font-medium text-medium">
                             {{
                                 videoTitle != null &&
                                     videoTitle != undefined &&
@@ -164,7 +166,7 @@ definePageMeta({
                     </video>
 
                     <!-- Video Description and Thumbnail Image -->
-                    <div class="flex items-center w-full h-full gap-4 my-4">
+                    <div class="flex items-center w-full h-full gap-4 my-4" v-if="videoInfo">
                         <!-- Thumbnail Image -->
                         <div class="hidden overflow-hidden rounded-full w-14 h-14 lg:flex">
                             <NuxtImg :src="videoInfo?.thumbnail" :alt="videoInfo?.name"
@@ -180,12 +182,19 @@ definePageMeta({
                     </div>
                     
                     <!-- Next and Prev BUTTON -->
-                     <div class="flex items-center justify-between w-full">
-                        <NuxtLink :to="{path:`/video/${videoStandard}/${videoSubject}/${videoInfo?.previous?.name}/${videoInfo?.previous?._id}`}" v-if="videoInfo?.previous" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
-                            Prev Video
+                     <div :class="[
+                        'flex items-center w-full',
+                        videoInfo?.previous && videoInfo?.next ? 'justify-between' 
+                        : !videoInfo?.previous && videoInfo?.next ? 'justify-end' 
+                        : !videoInfo?.next && videoInfo?.previous ? 'justify-start' : '',
+                         ]">
+                        <NuxtLink :to="{path:`/video/${videoStandard}/${videoSubject}/${videoInfo?.previous?.name}/${videoInfo?.previous?._id}`}" 
+                        v-if="videoInfo?.previous" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
+                            Previous video
                         </NuxtLink>
-                        <NuxtLink :to="{path:`/video/${videoStandard}/${videoSubject}/${videoInfo?.next?.name}/${videoInfo?.next?._id}`}" v-if="videoInfo?.next" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
-                            Next Video
+                        <NuxtLink :to="{path:`/video/${videoStandard}/${videoSubject}/${videoInfo?.next?.name}/${videoInfo?.next?._id}`}" 
+                        v-if="videoInfo?.next" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
+                            Next video
                         </NuxtLink>
                      </div>
                 </div>

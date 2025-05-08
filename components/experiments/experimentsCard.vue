@@ -51,10 +51,10 @@ const props = defineProps({
 
 // Define Set Experiment URL Function
 const setExperimentUrl =()=>{
-    navigationStore.setExperiment(`/experiments/${props.experimentStandard.toLowerCase()}/${props.experimentSubject.toLowerCase()}/${props.experimentName.toLowerCase()}/${props.experimentId.toLowerCase()}`);
+    navigationStore.setExperiment(`/experiments/${props.experimentStandard}/${props.experimentSubject}/${props.experimentName}/${props.experimentId}`);
     useState('experimentToView', () => (
            {
-            route:`/experiments/${props.experimentStandard.toLowerCase()}/${props.experimentSubject.toLowerCase()}/${props.experimentName.toLowerCase()}/${props.experimentId.toLowerCase()}`,
+            route:`/experiments/${props.experimentStandard}/${props.experimentSubject}/${props.experimentName}/${props.experimentId}`,
             updatedAt:Date.now()
         })
     );
@@ -63,7 +63,7 @@ const setExperimentUrl =()=>{
 
 <template>
     <NuxtLink
-        :to="`/experiments/${experimentStandard.toLowerCase()}/${experimentSubject.toLowerCase()}/${experimentName.toLowerCase()}/${experimentId.toLowerCase()}`" 
+        :to="`/experiments/${experimentStandard}/${experimentSubject}/${experimentName}/${experimentId}`" 
         @click="setExperimentUrl()"
         :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',

@@ -22,7 +22,6 @@ import customGridTwo from "~/components/home/customGridTwo.vue";
 import DropDownMenu from "~/components/customDropDown/dropDownMenu.vue";
 import SubjectCard from "~/components/home/SubjectCard.vue";
 import { layoutEffect } from "~/utilities/controlls";
-import { HomeCustomScrollView, PaginationSliderBtn } from "#components";
 
 // Define meta info about page
 useHead({
@@ -83,7 +82,7 @@ const hideFilter = ref(false); // Initial Hide Filters
 const activeTab = ref("home"); // Initial Active Tab State
 const filterValue = ref(); // Initial Filter Value State
 const subjectId = ref(); // Initial subjectId Value State
-const seeMoreDetails = ref(route.query?.subject ?? null); // Initial See More
+const seeMoreDetails = ref(route.query?.subject?.toLowerCase() ?? null); // Initial See More
 
 // Define Filters Reactive State
 const filters = reactive({
@@ -253,6 +252,14 @@ const fetchData = async (params) => {
 
 // Call Fetch Topics function
 fetchData();
+
+// shuffle Subject
+const shuffleSubject = (subjects) => {
+  return subjects
+    .map((subject) => ({ subject, sort: Math.random() })) // Assign a random sort key
+    .sort((a, b) => a.sort - b.sort) // Sort by random key
+    .map(({ subject }) => subject); // Extract shuffled choices
+};
 
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
@@ -533,7 +540,7 @@ watch(
                 <template #data>
                   <!-- Subject Cards are in Grid -->
                   <SubjectCard
-                    v-for="subject in slicedData"
+                    v-for="subject in shuffleSubject(slicedData)"
                     :key="subject._id"
                     :subject-id="subject._id"
                     :subject-name="subject.name"
@@ -553,27 +560,15 @@ watch(
                   <!-- Topic Cards are in Grid -->
                   <TopicCard
                     v-for="topic in slicedData"
-                    :key="topic._id"
-                    :topic-id="topic._id"
-                    :topic-image="topic.thumbnail"
-                    :topic-title="topic.name"
+                    :key="topic._id" :topic-id="topic._id"
+                    :topic-image="topic.thumbnail" :topic-title="topic.name"
                     :topic-description="topic.descriptions"
-                    :topic-duration="
-                      topic.topic_duration ? topic.topic_duration : '10 min'
-                    "
+                    :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
                     :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                    :topic-views="
-                      topic.viewedBy?.length
-                        ? topic.viewedBy?.length
-                        : topic.views
-                        ? topic.views
-                        : 0
-                    "
-                    :topic-level="level"
-                    :topic-standard="topic.level?.name"
-                    :subject-name="topic.subject?.name"
-                    :topic-viewed="topic.isViewed"
+                    :topic-level="level" :topic-standard="topic.level?.name"
+                    :subject-name="topic.subject?.name" :topic-viewed="topic.isViewed"
                     :topic-progress="topic.avgProgress"
+                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0"
                   />
                 </template>
               </customGridOne>
@@ -694,6 +689,7 @@ watch(
           >
             <ClientOnly>
               <HomeCustomScrollView
+                :shuffle-subject="shuffleSubject"
                 :see-more-details="seeMoreDetails"
                 :data="data"
                 :active-tab="activeTab"
@@ -776,7 +772,7 @@ watch(
               <template #data>
                 <!-- Subject Cards are in Grid -->
                 <SubjectCard
-                  v-for="subject in slicedData"
+                  v-for="subject in shuffleSubject(slicedData)"
                   :key="subject._id"
                   :subject-id="subject._id"
                   :subject-name="subject.name"

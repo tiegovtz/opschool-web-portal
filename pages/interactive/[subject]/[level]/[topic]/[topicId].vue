@@ -681,8 +681,8 @@ definePageMeta({
                 <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
                 <!-- <span>Back</span> -->
               </NuxtLink>
-<!-- 
-              <NuxtLink :to="{
+              
+        <!-- <NuxtLink :to="{
                 path: '/',
                 query: {
                   tab: 'interactive',
@@ -700,7 +700,7 @@ definePageMeta({
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </NuxtLink> -->
 
-              <p class="font-medium uppercase text-medium md:capitalize">
+              <p class="font-medium text-medium">
                 {{
                   topicTitle != null &&
                     topicTitle != undefined &&
