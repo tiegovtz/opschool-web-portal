@@ -237,24 +237,24 @@ const getChapter = async (chapterId) => {
 
   try {
     const response = await $fetch(`/api/topics/chapters/${chapterId}`);
-    if(response){
+    if (response) {
       chapters.notesStatus = "success";
-    chapters.notes = response;
+      chapters.notes = response;
 
-    const tasks = [
-      getQNTopicChapter(chapterId),
-      postInitialProgressIfNeeded(chapterId),
-      syncRemoteProgress(chapterId),
-    ];
+      const tasks = [
+        getQNTopicChapter(chapterId),
+        postInitialProgressIfNeeded(chapterId),
+        syncRemoteProgress(chapterId),
+      ];
 
-    if (
-      chapterProgress.value?.userId === userToken.value?._id &&
-      chapterProgress.value?.chapterId === chapterId
-    ) {
-      tasks.push(updateChapterProgress());
-    }
+      if (
+        chapterProgress.value?.userId === userToken.value?._id &&
+        chapterProgress.value?.chapterId === chapterId
+      ) {
+        tasks.push(updateChapterProgress());
+      }
 
-    await Promise.allSettled(tasks);
+      await Promise.allSettled(tasks);
     }
   } catch (error) {
     chapters.notesStatus = "error";
@@ -352,10 +352,16 @@ const setPicCenter = async () => {
     document.querySelectorAll(".notes > p").forEach((p) => {
       let images = p.querySelectorAll("img");
       if (images.length === 1 && p.childNodes.length === 1) {
-        images[0].style.display = "block";
-        images[0].style.margin = "0 auto";
+        images[0].classList.add("pic-center");
       }
     });
+
+    const img = document.querySelectorAll(".notes td p + img");
+    if (img.length === 1) {
+      img[0].classList.add("pic-center");
+    }
+
+
   }, 500);
 };
 
@@ -506,19 +512,19 @@ const observerContent = () => {
 
     // 
     // Run this after DOM is rendered
-document.querySelectorAll('.notes td span').forEach((span) => {
-  const text = span.textContent.trim().toLowerCase();
+    document.querySelectorAll('.notes td span').forEach((span) => {
+      const text = span.textContent.trim().toLowerCase();
 
-  // Match common patterns like "task 1.1", "activity 2.2", etc.
-  const match = text.match(/^(task|activity|revision (exercise|exercice))\s*\d+(\.\d+)?/i);
+      // Match common patterns like "task 1.1", "activity 2.2", etc.
+      const match = text.match(/^(task|activity|revision (exercise|exercice))\s*\d+(\.\d+)?/i);
 
-  if (match) {
-    const table = span.closest('table');
-    if (table) {
-      table.classList.add('highlighted-task-table');
-    }
-  }
-});
+      if (match) {
+        const table = span.closest('table');
+        if (table) {
+          table.classList.add('highlighted-task-table');
+        }
+      }
+    });
 
   }
 }
@@ -634,7 +640,7 @@ definePageMeta({
         :change-chapter="changeChapter" :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
         @emit-quiz-score="updateChapterProgress" />
     </div>
-    
+
     <section v-else class="relative inline-flex w-full h-full overflow-hidden center-height">
       <!-- Loading state -->
       <div v-if="chapters.status == 'pending'" class="flex items-center justify-center w-full loading content-height">
@@ -670,7 +676,8 @@ definePageMeta({
                   subject: topicLevel,
                   class: topicStandard,
                 },
-              }" class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
+              }"
+                class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
                 <!-- {{
                   topicLevel != null &&
                     topicLevel != undefined &&
@@ -681,8 +688,8 @@ definePageMeta({
                 <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
                 <!-- <span>Back</span> -->
               </NuxtLink>
-              
-        <!-- <NuxtLink :to="{
+
+              <!-- <NuxtLink :to="{
                 path: '/',
                 query: {
                   tab: 'interactive',
@@ -786,7 +793,7 @@ definePageMeta({
           </div>
           <!-- UL list of chapters -->
           <ChapterContainer :chapters="chapters?.list" @emit-chapter-id="getChapter($event)"
-            :active-chapter-id="chapters.notes?._id  ?? chapters.currentChapterId" @click="toggleSidebar" />
+            :active-chapter-id="chapters.notes?._id ?? chapters.currentChapterId" @click="toggleSidebar" />
         </div>
       </div>
 
