@@ -18,7 +18,8 @@ const props=defineProps({
     type: String,
     required: true,
   },
-  seeMoreDetails: String
+  seeMoreDetails: String,
+  shuffleSubject: Function,
 });
 
 const seeMoreDetails = ref(props.seeMoreDetails ?? null); // Initial See More
@@ -40,7 +41,7 @@ const setSeeMore = (seeMore) => {
         <template #data>
           <!-- Subject Cards are in Grid -->
           <SubjectCard
-            v-for="subject in data"
+            v-for="subject in shuffleSubject(data)"
             :key="subject._id"
             :subject-id="subject._id"
             :subject-name="subject.name"

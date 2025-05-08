@@ -120,7 +120,7 @@ const apiDocs = {
     getProgressTopicsTopicId: `${baseURL}/progress/topics/{topicId}`,
   },
   users:{
-    updateTimeSpent: `${baseURL}/users/update-time-spent`,// Update time spent on the platform
+    updateTimeSpent: `${baseURL}/users/update-time-spent`, // Update time spent on the platform
   }
 
 }

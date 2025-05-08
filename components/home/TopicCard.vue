@@ -60,11 +60,11 @@ const props = defineProps({
 })
 
 const setTopicToView = () => {
-  navigationStore.setTopic(`/interactive/${props.topicStandard.toLowerCase()}/${props.subjectName.toLowerCase()}/${props.topicTitle.toLowerCase()}/${props.topicId.toLowerCase()}`)
+  navigationStore.setTopic(`/interactive/${props.topicStandard}/${props.subjectName}/${props.topicTitle}/${props.topicId}`)
   useState('topicToView',
     () => (
       {
-        route: `/interactive/${props.topicStandard.toLowerCase()}/${props.subjectName.toLowerCase()}/${props.topicTitle.toLowerCase()}/${props.topicId.toLowerCase()}`,
+        route: `/interactive/${props.topicStandard}/${props.subjectName}/${props.topicTitle}/${props.topicId}`,
         updatedAt: Date.now()
       })
   );
@@ -78,7 +78,7 @@ const userToken = useCookie('signInUserToken')
 <template>
   <NuxtLink class="stat-card" v-if="modelType.toLowerCase() === 'profile'"
   @click="setTopicToView()"
-    :to="`/interactive/${topicStandard.toLowerCase()}/${subjectName.toLowerCase()}/${topicTitle.toLowerCase()}/${topicId.toLowerCase()}`">
+    :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`">
     <!-- profile view -->
     <div class="w-10 h-10 overflow-hidden rounded-full">
       <NuxtImg :src="topicImage" :alt="topicTitle"
@@ -91,7 +91,7 @@ const userToken = useCookie('signInUserToken')
   </NuxtLink>
 
   <NuxtLink v-else
-    :to="`/interactive/${topicStandard.toLowerCase()}/${subjectName.toLowerCase()}/${topicTitle.toLowerCase()}/${topicId.toLowerCase()}`"
+    :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`"
     @click="setTopicToView()" :class="[
       'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out min-w-[300px]',
       layoutEffect == 'grid' && modelType === 'card' ? 'flex-col pb-4' : 'flex-row h-32',
