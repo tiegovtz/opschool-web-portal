@@ -529,6 +529,9 @@ const observerContent = () => {
     if (parent && !text.includes(':')) {
       parent.classList.add('highlighted-task-table');
     }
+
+
+
   }
 });
 

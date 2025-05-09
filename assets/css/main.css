@@ -235,6 +235,7 @@
   padding:5px !important;
   overflow: hidden;
   height: max-content !important;
+  border: 1px solid #ccc !important;
 }
 
 /*  */
@@ -250,7 +251,7 @@
   border-collapse: collapse ;
   overflow-x: scroll;
   overflow: hidden;
-  border: none !important;
+  /* border: none !important; */
   border-collapse: collapse;
   border-spacing: 0;
   vertical-align: top;
@@ -259,7 +260,7 @@
 
 .notes table tr {
   padding: 10px;
-  border: none !important;
+  /* border: none !important; */
 }
 
 /* sidebar shadow left only */
