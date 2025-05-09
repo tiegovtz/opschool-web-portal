@@ -232,14 +232,11 @@
 }
 
 .notes table td {
-  padding: 0 5px !important;
+  padding:5px !important;
   overflow: hidden;
-  border: 1px solid #ccc;
+  height: max-content !important;
 }
 
-.notes table td p {
-  margin: 0px;
-}
 /*  */
 .pic-center{
   display: block !important;
@@ -250,13 +247,19 @@
 
 .notes table {
   width: 100% !important;
-  border-collapse: collapse;
+  border-collapse: collapse ;
   overflow-x: scroll;
   overflow: hidden;
+  border: none !important;
+  border-collapse: collapse;
+  border-spacing: 0;
+  vertical-align: top;
+  padding: 5px !important;
 }
 
 .notes table tr {
   padding: 10px;
+  border: none !important;
 }
 
 /* sidebar shadow left only */
@@ -323,45 +326,6 @@ p:only-child > img:only-child {
 
 .highlighted-task-table span {
   padding: 10px !important;
-}
-
-
-/* Resivion Exercise */
-.notes .rev-exer-tbl > p ~ table > tbody > tr {
-  display: block !important;
-  width: 100% !important;
-  height: max-content !important;
-  border-radius: 0 !important;
-  border: 0 !important;
-}
-
-.notes .rev-exer-tbl > p ~ table {
-  border: 0 !important;
-  height: max-content !important;
-}
-
-.notes .rev-exer-tbl > p ~ table table {
-  border: 0 !important;
-  display: block !important;
-  width: 100% !important;
-}
-.notes .rev-exer-tbl table > tbody > tr > td > table {
-  height: max-content !important;
-  border-radius: 0 !important;
-}
-
-.notes .rev-exer-tbl table > tbody > tr > td > table table {
-  display: block !important;
-  width: 100% !important;
-  height: max-content !important;
-  border-radius: 0 !important;
-}
-
-.notes .rev-exer-tbl table > tbody > tr > td > table table colgroup {
-  display: block !important;
-  width: 100% !important;
-  height: max-content !important;
-  border-radius: 0 !important;
 }
 
 /* title style  font tahoma important*/
