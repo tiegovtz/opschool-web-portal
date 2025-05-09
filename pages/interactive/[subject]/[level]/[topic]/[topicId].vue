@@ -510,21 +510,28 @@ const observerContent = () => {
       })
     });
 
-    // 
-    // Run this after DOM is rendered
-    document.querySelectorAll('.notes td span').forEach((span) => {
-      const text = span.textContent.trim().toLowerCase();
 
-      // Match common patterns like "task 1.1", "activity 2.2", etc.
-      const match = text.match(/^(task|activity|revision (exercise|exercice))\s*\d+(\.\d+)?/i);
+    document.querySelectorAll('.notes span').forEach((span) => {
+  const text = span.textContent.trim().toLowerCase();
 
-      if (match) {
-        const table = span.closest('table');
-        if (table) {
-          table.classList.add('highlighted-task-table');
-        }
-      }
-    });
+  // Match common patterns like "task 1.1", "activity 2.2", etc.
+  const match = text.match(/^(task|activity|exercise|revision (exercise|exercice))\s*\d+(\.\d+)?/i);
+
+  if (match) {
+    let parent = span.parentElement;
+
+    // Traverse up the DOM to find the nearest parent with a background color in its inline style
+    while (parent && !parent.style.backgroundColor) {
+      parent = parent.parentElement;
+    }
+
+    // If a parent with an inline background color is found
+    if (parent && !text.includes(':')) {
+      parent.classList.add('highlighted-task-table');
+    }
+  }
+});
+
 
   }
 }
