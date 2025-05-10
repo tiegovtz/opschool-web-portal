@@ -8,6 +8,7 @@ import apiDocs from "~/utilities/api-docs";
 import InputsSelection from '@/components/home/InputsSelection.vue'
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { HomeCustomScrollView } from "#components";
+import { fetchAsyncData } from '~/composable/useAsyncFetch';
 
 useHead({
   title: "TIE - Video Resource",
@@ -79,17 +80,17 @@ const fetchVideos = async (param) => {
   
   try {
     status.value = 'pending';
-    const response = await $fetch(apiDocs.videos.getPublicVideo, {
+    const {data:response,status:fetchStatus} = await fetchAsyncData('videos',()=>$fetch(apiDocs.videos.getPublicVideo, {
       method: 'GET',
       params: {
        ...param
       },
-    });
+    }));
 
     // Call State Define above
-    videos.value = removeDataFromArrayOfJson(response, 'isDeleted', true);
+    videos.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
     videos.value = filterKeyDataFromArrayOfJson( videos.value,"subject.name",['physics','chemistry','mathematics','biology','geography'])
-    status.value = 'success';
+    status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
     sliceData(

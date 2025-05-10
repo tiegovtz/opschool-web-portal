@@ -9,6 +9,7 @@ import InputsSelection from '@/components/home/InputsSelection.vue'
 import apiDocs from "~/utilities/api-docs";
 import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
+import { fetchAsyncData } from "~/composable/useAsyncFetch";
 
 // Define meta info about page
 useHead({
@@ -75,14 +76,14 @@ const fetchTopics = async (params) => {
 
   try {
     status.value = 'pending';
-    const response = await $fetch(url, {
+    const {data:response,status:fetchStatus} = await  fetchAsyncData('interactive',()=>$fetch(url, {
       params: params
-    });
+    }))
 
     // Call State Define above
-    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);
+    topic.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
     topic.value = filterKeyDataFromArrayOfJson(topic.value,"subject.name",['physics','chemistry','mathematics','biology','geography']);
-    status.value = 'success';
+    status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
     sliceData(

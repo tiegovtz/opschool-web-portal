@@ -14,6 +14,7 @@ import apiDocs from "~/utilities/api-docs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import VideoCard from "~/components/video/videoCard.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
+import { fetchAsyncData } from "~/composable/useAsyncFetch";
 
 
 // Defin Route
@@ -99,16 +100,16 @@ const fetchTopics = async (params) => {
 
   try {
     status.value = "pending";
-    const response = await $fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`videos-${subjectId}`,()=>$fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
         "{subjectId}",
         subjectId
       ), {
       params: params,
-    });
+    }));
 
     // Call State Define above
-    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);
-    status.value = "success";
+    topic.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+    status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
     sliceData(
