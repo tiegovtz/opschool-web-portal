@@ -4,7 +4,7 @@ const baseURL = "https://opschool.tie.go.tz:5001/v1"; // Define baseURL first
 
 // const baseURL = "http://127.0.0.1:3003/v1" // Define baseURL first
 
-// const baseURL = "http://192.168.1.172:5500/v1" // Define baseURL first
+// const baseURL = "http://127.0.0.1:5500/v1" // Define baseURL first
 
 const apiDocs = {
   baseURL: baseURL, // You can include it here for reference
@@ -24,13 +24,13 @@ const apiDocs = {
     resetPassword: `${baseURL}/auth/reset-password`,
     changePassword: `${baseURL}/auth/change-password`,
     userExists: `${baseURL}/auth/user-exists`,
-
+    
     // GET
     profile: `${baseURL}/auth/profile`,
-
+    
     // PATCH or PUT
     profileEdit: `${baseURL}/auth/profile/edit`,
-
+    updateTimeSpent: `${baseURL}/auth/update-time-spent`, // Update time spent on the platform
     profilePicture: `${baseURL}/auth/profile/update-picture`,
   },
 
@@ -116,13 +116,10 @@ const apiDocs = {
     putProgresschapterIdVideoProgress : `${baseURL}/progress/chapters/{chapterId}/video-progress`,
     putProgresschapterIdNotesProgress: `${baseURL}/progress/chapters/{chapterId}/notes-progress`,
     postProgresschapterIdExperimentAttempts: `${baseURL}/progress/chapters/{chapterId}/experiment-attempts`,
+    postQuizAssessment:`${baseURL}/progress/chapters/{chapterId}/assessment-attempts`,
     getProgressSubjectsSubjectId: `${baseURL}/progress/subjects/{subjectId}`,
     getProgressTopicsTopicId: `${baseURL}/progress/topics/{topicId}`,
   },
-  users:{
-    updateTimeSpent: `${baseURL}/users/update-time-spent`, // Update time spent on the platform
-  }
-
 }
 
 export default apiDocs;

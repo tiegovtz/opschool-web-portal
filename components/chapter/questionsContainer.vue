@@ -1,4 +1,5 @@
 <script setup>
+import apiDocs from "~/utilities/api-docs";
 import questionsAnswers from "./questionsAnswers.vue";
 
 // define Props
@@ -14,6 +15,7 @@ const props = defineProps({
   chaptersList: Number,
   chaptersNumber: Number,
   changeChapter: Function,
+  chapterId: String
 });
 
 // Define states
@@ -70,11 +72,12 @@ const resetQuiz = () => {
 };
 
 // Quize Attempt Answered Questions Function
-const answeredAttempt = (isAnswered) => {
+const answeredAttempt = async (isAnswered) => {
   // If Is answer the question
   if (isAnswered) {
     quizAttempt.scored++;
   }
+
   setTimeout(() => {
     // Increment answered questions only if not already answered
     if (quizAttempt.answeredQuestions < quizAttempt.currentQuestion + 1) {
@@ -104,7 +107,7 @@ onMounted(() => {
 // Watch for quiz completion
 watch(
   () => quizAttempt.answeredQuestions,
-  (newQues) => {
+  async (newQues) => {
     if (newQues) {
       if (
         quizAttempt.answeredQuestions === quizAttempt.totalQuestions &&
@@ -112,6 +115,18 @@ watch(
       ) {
         quizAttempt.isAttempting = true;
         quizAttempt.quizCompleted = true; // Set quiz as completed when all questions are answered
+
+        // if quiz ended submmit the score
+        await $fetch(apiDocs.progressTracking.postQuizAssessment.replace('{chapterId}', props.chapterId), {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${useCookie('signInAccessToken').value}`,
+            'Content-Type': 'application/json',
+          },
+          body: {
+            score: scoredComputed.value,
+          }
+        })
       }
     }
   }
@@ -125,13 +140,6 @@ watch(
   }
 );
 
-// watch progress QUIZ
-watch(quizAttempt.quizCompleted, (isCompleted) => {
-  if (isCompleted == true) {
-   emits("emitQuizScore", scoredComputed.value)
-   useCookie("chapterProgress").value.assessmentsAttempted = 1;
-  }
-});
 </script>
 
 <template>
@@ -171,7 +179,7 @@ watch(quizAttempt.quizCompleted, (isCompleted) => {
         <!-- Scores -->
         <div class="flex flex-col items-center w-full mb-4">
           <p>
-            Total scores: <b>{{ quizAttempt.scored +'/'+ quizAttempt.totalQuestions}}</b>
+            Total scores: <b>{{ quizAttempt.scored + '/' + quizAttempt.totalQuestions }}</b>
           </p>
           <p class="flex items-center justify-center flex-1 gap-2 font-bold" :class="getScoreColor(scoredComputed)">
             {{ getMotivationMessage(scoredComputed) }}
@@ -185,18 +193,19 @@ watch(quizAttempt.quizCompleted, (isCompleted) => {
             <div class="pl-4 text-justify">
               <p class="mb-2">
                 {{
-              question.questionType === 'drag_and_drop'
-                ? question.question.replace(/(_\$blank)/g, ' __________ ')
-                : question.question
-            }}
-                </p>
+                  question.questionType === 'drag_and_drop'
+                    ? question.question.replace(/(_\$blank)/g, ' __________ ')
+                    : question.question
+                }}
+              </p>
               <p :class="quizAttempt.clickedAnswer[index] == question.answer
-        ? 'text-normalGreener'
-        : 'text-red-600'
-      ">
-                <b :class="['text-black', { 'capitalize': question.questionType === 'drag_and_drop' }]">Your choice: </b>
+                ? 'text-normalGreener'
+                : 'text-red-600'
+                ">
+                <b :class="['text-black', { 'capitalize': question.questionType === 'drag_and_drop' }]">Your choice:
+                </b>
                 <span :class="[question.questionType === 'drag_and_drop' ? 'capitalize' : '']">{{
-      quizAttempt.clickedAnswer[index].replaceAll('-', ' ,') }}</span>
+                  quizAttempt.clickedAnswer[index].replaceAll('-', ' ,') }}</span>
 
                 <!-- Mark Tick and Wrong -->
                 <span v-if="quizAttempt.clickedAnswer[index] == question.answer"
@@ -243,7 +252,7 @@ watch(quizAttempt.quizCompleted, (isCompleted) => {
       <!-- Use currentQuestion instead of shuffleQuestions to determine which question to display -->
       <questionsAnswers v-else @question-answered="answeredAttempt($event)"
         @clicked-choice="quizAttempt.clickedAnswer.push($event)" :question-type="shuffleQuestions[quizAttempt.currentQuestion].questionType
-      " :thumbnail="shuffleQuestions[quizAttempt.currentQuestion].thumbnail"
+          " :thumbnail="shuffleQuestions[quizAttempt.currentQuestion].thumbnail"
         :true-answer="shuffleQuestions[quizAttempt.currentQuestion].answer"
         :choices="shuffleQuestions[quizAttempt.currentQuestion].choices"
         :question="shuffleQuestions[quizAttempt.currentQuestion].question"

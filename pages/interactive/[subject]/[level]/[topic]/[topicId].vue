@@ -8,6 +8,7 @@ import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 import apiDocs from "~/utilities/api-docs";
 import { updateChapterProgress } from "~/utilities/progress";
+import { fetchAsyncData } from "~/composable/useAsyncFetch";
 
 const route = useRoute();
 const router = useRouter();
@@ -236,9 +237,13 @@ const getChapter = async (chapterId) => {
   await ensureAccessTokenValid();
 
   try {
-    const response = await $fetch(`/api/topics/chapters/${chapterId}`);
+    const {data:response,status} = await fetchAsyncData(
+      `chapter-${chapterId}`,
+      () => $fetch(`/api/topics/chapters/${chapterId}`)
+    );
+      
     if (response) {
-      chapters.notesStatus = "success";
+      chapters.notesStatus = status.value;
       chapters.notes = response;
 
       const tasks = [
@@ -277,22 +282,21 @@ const topicViewedRead = async (topicId) => {
 // Fetch Questions by Topic Chapter
 const getQNTopicChapter = async (chapterId) => {
   try {
-    const response = await $fetch(apiDocs.chapters.getTopicChapterQNs, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${signInAccessToken.value}`,
-      },
-      params: {
-        topic: topicId,
-        chapter: chapterId,
-      },
-    });
-
+    const response  = await $fetch(apiDocs.chapters.getTopicChapterQNs, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${signInAccessToken.value}`,
+          },
+          params: {
+            topic: topicId,
+            chapter: chapterId,
+          },
+        })
     if (response) {
       chapters.questions = response;
     }
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 };
 
@@ -326,7 +330,7 @@ watch(
 
 onMounted(async () => {
   // Trigger MathJax rendering
-  window.MathJax.typeset();
+  window.MathJax?.typeset();
 
   // Call functin for set Pic Center
   setPicCenter();
@@ -512,28 +516,25 @@ const observerContent = () => {
 
 
     document.querySelectorAll('.notes span').forEach((span) => {
-  const text = span.textContent.trim().toLowerCase();
+      const text = span.textContent.trim().toLowerCase();
 
-  // Match common patterns like "task 1.1", "activity 2.2", etc.
-  const match = text.match(/^(task|activity|exercise|revision (exercise|exercice))\s*\d+(\.\d+)?/i);
+      // Match common patterns like "task 1.1", "activity 2.2", etc.
+      const match = text.match(/^(task|activity|exercise|revision (exercise|exercice))\s*\d+(\.\d+)?/i);
 
-  if (match) {
-    let parent = span.parentElement;
+      if (match) {
+        let parent = span.parentElement;
 
-    // Traverse up the DOM to find the nearest parent with a background color in its inline style
-    while (parent && !parent.style.backgroundColor) {
-      parent = parent.parentElement;
-    }
+        // Traverse up the DOM to find the nearest parent with a background color in its inline style
+        while (parent && !parent.style.backgroundColor) {
+          parent = parent.parentElement;
+        }
 
-    // If a parent with an inline background color is found
-    if (parent && !text.includes(':')) {
-      parent.classList.add('highlighted-task-table');
-    }
-
-
-
-  }
-});
+        // If a parent with an inline background color is found
+        if (parent && !text.includes(':')) {
+          parent.classList.add('highlighted-task-table');
+        }
+      }
+    });
 
 
   }
@@ -647,7 +648,8 @@ definePageMeta({
     <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
-        :change-chapter="changeChapter" :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
+        :chapter-id="chapters.notes?._id ?? chapters.currentChapterId" :change-chapter="changeChapter"
+        :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
         @emit-quiz-score="updateChapterProgress" />
     </div>
 
