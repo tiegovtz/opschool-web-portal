@@ -14,6 +14,7 @@ import ExperimentsCard from "@/components/experiments/experimentsCard.vue";
 import apiDocs from "~/utilities/api-docs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
+import { fetchAsyncData } from "~/composable/useAsyncFetch";
 
 // Defin Route
 const route = useRoute();
@@ -98,19 +99,19 @@ const pageSize = ref();
 const fetchTopics = async (params) => {
   try {
     status.value = "pending";
-    const response = await $fetch(apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
-        "{subjectId}",
-        subjectId
-      ), {
-        params: params,
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`experiments-${subjectId}`, () => $fetch(apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
+      "{subjectId}",
+      subjectId
+    ), {
+      params: params,
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
-    });
+    }));
 
     // Call State Define above
-    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);
-    status.value = "success";
+    topic.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+    status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
     sliceData(
@@ -199,26 +200,18 @@ const { progress, isLoading } = useLoadingIndicator();
   <NuxtLayout name="home-layout">
     <div class="" :class="{ ' animate-pulse': isLoading }">
       <HeroSection />
-        <TabBar 
-          :subject-title="subjectTitle"
-          :topic-id="subjectId"
-        />
-      <div
-        v-if="status === 'pending'"
-        class="flex flex-col items-center justify-center"
-      >
+      <TabBar :subject-title="subjectTitle" :topic-id="subjectId" />
+      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />
       </div>
-     <!-- Status Error -->
-          <div
-            v-else-if="status === 'error'"
-            class="md:min-h-[342px] flex flex-col justify-center items-center">
-            <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
-            <p class="text-center">
-              Oops! Something went wrong.<br />
-              Try refreshing the page or check your internet connection.
-            </p>
-          </div>
+      <!-- Status Error -->
+      <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center">
+        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+        <p class="text-center">
+          Oops! Something went wrong.<br />
+          Try refreshing the page or check your internet connection.
+        </p>
+      </div>
 
       <!-- Status Success -->
       <div v-else-if="status == 'success'" class="">
@@ -228,13 +221,14 @@ const { progress, isLoading } = useLoadingIndicator();
             <div class="flex items-center gap-4">
               <!-- Topic Cards are in Grid -->
               <div class="flex flex-col items-start ">
-                 <customGridTwo>
+                <customGridTwo>
                   <template #data>
-                    <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id" :experiment-id="experiment._id"
-                :experiment-thumbnail="experiment.thumbnail" :experiment-title="experiment.title"
-                :experiment-description="experiment.description" :experiment-type="experiment.category"
-                :experiment-subject="experiment.subject.name" :experiment-level="experiment.level.name"
-                :experiment-name="experiment.name" :experiment-file-url="experiment.stepsFileUrl" />
+                    <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id"
+                      :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
+                      :experiment-title="experiment.title" :experiment-description="experiment.description"
+                      :experiment-type="experiment.category" :experiment-subject="experiment.subject.name"
+                      :experiment-level="experiment.level.name" :experiment-name="experiment.name"
+                      :experiment-file-url="experiment.stepsFileUrl" />
                   </template>
                 </customGridTwo>
               </div>
@@ -243,49 +237,23 @@ const { progress, isLoading } = useLoadingIndicator();
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" class="flex justify-center my-5">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
               </div>
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage > 5"
-                >
-                  <Icon
-                    name="iconamoon:arrow-left-2-fill"
-                    size="2rem"
-                    @click="prevPage"
-                  />
+                <div class="flex items-center justify-center" v-if="currentPage > 5">
+                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
                 </div>
 
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
 
                 <!-- next button -->
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage > 4"
-                >
-                  <Icon
-                    name="iconamoon:arrow-right-2-fill"
-                    size="2rem"
-                    @click="nextPage"
-                  />
+                <div class="flex items-center justify-center" v-if="currentPage > 4">
+                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
                 </div>
               </div>
             </div>
