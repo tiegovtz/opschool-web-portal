@@ -22,6 +22,7 @@ import customGridTwo from "~/components/home/customGridTwo.vue";
 import DropDownMenu from "~/components/customDropDown/dropDownMenu.vue";
 import SubjectCard from "~/components/home/SubjectCard.vue";
 import { layoutEffect } from "~/utilities/controlls";
+import { fetchAsyncData } from "~/composable/useAsyncFetch";
 
 // Define meta info about page
 useHead({
@@ -213,20 +214,21 @@ const fetchData = async (params) => {
   }
 
   try {
-    const response = await $fetch(url, {
+    const {data:response, status:fetchStatus} = await fetchAsyncData(`tab-${tab}`,()=> $fetch(url, {
       params: {
         ...params,
       },
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
-    });
+    }));
+    
 
     // Call State Define above
     if (subjectId.value) {
-      data.value = removeDataFromArrayOfJson(response, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
     } else if (!subjectId.value && tab !== "home") {
-      data.value = filterKeyDataFromArrayOfJson(response, "subject.name", [
+      data.value = filterKeyDataFromArrayOfJson(response.value, "subject.name", [
         "physics",
         "chemistry",
         "mathematics",
@@ -234,10 +236,10 @@ const fetchData = async (params) => {
         "geography",
       ]);
     } else {
-      data.value = removeDataFromArrayOfJson(response, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
     }
 
-    status.value = "success";
+    status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
     sliceData(

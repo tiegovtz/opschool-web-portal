@@ -16,8 +16,8 @@ const userTimeSpent = ref(0)
 const isUserActive = ref(false)
 
 // Time and interval refs
-let activityInterval;
-let timeTick;
+let activityInterval
+let timeTick
 
 if (import.meta.client) {
   // Resize state
@@ -36,7 +36,6 @@ if (import.meta.client) {
     isGreaterToXS.value = widthGreater320.value
   }
 
-  // Handle user activity
   const activityHandler = () => {
     isUserActive.value = true
     clearTimeout(window.userInactiveTimeout)
@@ -45,11 +44,10 @@ if (import.meta.client) {
     }, 120000)
   }
 
-  // Update server with time spent
   const updateTimeSpent = async () => {
-    if (userToken.value && isUserActive.value) {
+    if (userToken.value && userTimeSpent.value > 0) {
       try {
-        await $fetch(apiDocs.users.updateTimeSpent, {
+        await $fetch(apiDocs.auth.updateTimeSpent, {
           method: 'PATCH',
           body: {
             duration: userTimeSpent.value
@@ -59,13 +57,22 @@ if (import.meta.client) {
             Authorization: `Bearer ${accessToken.value}`
           }
         })
+        userTimeSpent.value = 0
       } catch (error) {
         console.error('Error updating time spent:', error)
       }
     }
   }
 
-  // Mount lifecycle
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      updateTimeSpent()
+      isUserActive.value = false
+    } else {
+      isUserActive.value = false
+    }
+  }
+
   onMounted(() => {
     screenWidth.value = window.innerWidth
     handleResize()
@@ -74,41 +81,30 @@ if (import.meta.client) {
     const events = ['mousemove', 'keypress', 'click', 'scroll']
     events.forEach(e => window.addEventListener(e, activityHandler))
 
-    document.onvisibilitychange = () => {
-      if (document.visibilityState === 'visible') {
-        updateTimeSpent();
-        isUserActive.value = false;
-      }
-    };
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     // Time update interval (every 2 mins)
     activityInterval = setInterval(() => {
-      if (userToken.value && isUserActive.value) {
+      if (userToken.value && isUserActive.value && userTimeSpent.value > 0) {
         updateTimeSpent()
       }
     }, 120000)
 
     // Increment time while user is active (every second)
     timeTick = setInterval(() => {
-      if (isUserActive.value) {
+      if (userToken.value && isUserActive.value && document.visibilityState === 'visible') {
         userTimeSpent.value += 1000
       }
     }, 1000)
   })
 
-  // Cleanup on unmount
   onBeforeUnmount(() => {
     window.removeEventListener('resize', handleResize)
 
     const events = ['mousemove', 'keypress', 'click', 'scroll']
     events.forEach(e => window.removeEventListener(e, activityHandler))
 
-    window.removeEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
-        updateTimeSpent();
-        isUserActive.value = false;
-      }
-    });
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
 
     clearInterval(activityInterval)
     clearInterval(timeTick)
