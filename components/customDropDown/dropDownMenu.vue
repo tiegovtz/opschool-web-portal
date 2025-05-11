@@ -85,9 +85,9 @@ const emitFilterPayload = debounce(() => {
 
     const val = rawFilters[key];
     if (Array.isArray(val)) {
-      queryObject[apiKey.toLowerCase()] = val.toString().toLowerCase();
+      queryObject[apiKey] = val.toString().toLowerCase();
     } else {
-      queryObject[apiKey.toLowerCase()] = val.toString().toLowerCase();
+      queryObject[apiKey] = val.toString().toLowerCase();
     }
   }
 
@@ -100,7 +100,7 @@ const filterNameGroup = computed(() => {
 
   if (Array.isArray(educationLevels?.value) && educationLevels.value.length > 0) {
     filters.push({
-      name: 'Level',
+      name: 'level',
       visibility: 'all',
       inputType: 'radio',
       filterGroup: educationLevels.value.map((level) => ({ name: level.name }))
@@ -109,15 +109,15 @@ const filterNameGroup = computed(() => {
 
   if (Array.isArray(classes?.value)) {
     filters.push({
-      name: 'Class',
+      name: 'class',
       visibility: 'all',
       inputType: 'radio',
       filterGroup: classes.value.reduce((acc, cls) => {
-        const existing = acc.find((g) => g.level === cls.educationLevel);
+        const existing = acc.find((g) => g.level === cls.educationLevel?.name);
         if (existing) {
           existing.classes.push(cls.name);
         } else {
-          acc.push({ level: cls.educationLevel, classes: [cls.name] });
+          acc.push({ level: cls.educationLevel?.name, classes: [cls.name] });
         }
         return acc;
       }, [])
@@ -126,7 +126,7 @@ const filterNameGroup = computed(() => {
 
   if (Array.isArray(subjects?.value)) {
     filters.push({
-      name: 'Subject',
+      name: 'subject',
       visibility: 'all',
       inputType: 'radio',
       filterGroup: subjects.value.reduce((acc, subj) => {
@@ -143,7 +143,7 @@ const filterNameGroup = computed(() => {
   
   if (Array.isArray(languages?.value)) {
     filters.push({
-      name: 'Language',
+      name: 'language',
       visibility: 'all',
       inputType: 'radio',
       filterGroup: languages.value.map((lang) => ({ name: lang.name }))
@@ -152,7 +152,7 @@ const filterNameGroup = computed(() => {
 
   if (Array.isArray(skills?.value)) {
     filters.push({
-      name: 'Skills',
+      name: 'skills',
       visibility: 'all',
       inputType: 'radio',
       filterGroup: skills.value.map((skill) => ({ name: skill.name }))
@@ -199,14 +199,14 @@ const visibleFilters = computed(() => {
               <!-- LEVEL -->
               <div v-if="filter.name.toLowerCase() === 'level'">
                 <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2">
-                  <input type="radio" :value="option.name" name="level" @change="selectLevel(option.name)"
-                    :checked="selectedFilters.level === option.name" />
+                  <input :type="filter.inputType" :value="option.name" name="level" @change="selectLevel(option.name)"
+                    :checked="selectedFilters.level === option.name" class="capitalize"/>
                   {{ option.name }}
                 </label>
               </div>
 
               <!-- CLASS -->
-              <div v-else-if="filter.name === 'Class'">
+              <div v-else-if="filter.name === 'class'">
                 <div v-if="!selectedFilters.level" class="text-sm text-red-500">
                   Please select a level first.
                 </div>
@@ -214,22 +214,18 @@ const visibleFilters = computed(() => {
                   <div v-if="group.level?.toLowerCase() === selectedFilters.level?.toLowerCase()">
                     <label v-for="className in group.classes" :key="className" class="flex items-center gap-2"
                       @click.prevent="toggleCheckbox('class', className)">
-                      <input type="radio" :value="className" :checked="selectedFilters.class?.includes(className)" />
+                      <input :type="filter.inputType" :value="className" :checked="selectedFilters.class?.includes(className)" />
                       {{ className }}
                     </label>
                   </div>
-                  <div v-else>
-                     <label v-for="className in group.classes" :key="className" class="flex items-center gap-2"
-                      @click.prevent="toggleCheckbox('class', className)">
-                      <input type="radio" :value="className" :checked="selectedFilters.class?.includes(className)" />
-                      {{ className }}
-                    </label>
+                  <div v-else class="flex items-center gap-2" >
+                    no content
                   </div>
                 </div>
               </div>
 
               <!-- SUBJECT -->
-              <div v-else-if="filter.name === 'Subject'">
+              <div v-else-if="filter.name === 'subject'">
                 <div v-if="!selectedFilters.level" class="text-sm text-red-500">
                   Please select a level first.
                 </div>
@@ -237,14 +233,14 @@ const visibleFilters = computed(() => {
                   <div v-if="group.level === selectedFilters.level">
                     <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
                       @click.prevent="toggleCheckbox('subject', subject)">
-                      <input type="radio" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />
+                      <input :type="filter.inputType" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />
                       {{ subject }}
                     </label>
                   </div>
                   <div v-else>
                     <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
                       @click.prevent="toggleCheckbox('subject', subject)">
-                      <input type="radio" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />
+                      <input :type="filter.inputType" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />
                       {{ subject }}
                     </label>
                   </div>
@@ -255,7 +251,7 @@ const visibleFilters = computed(() => {
               <div v-else>
                 <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2"
                   @click.prevent="toggleCheckbox(filter.name.toLowerCase(), option.name)">
-                  <input :type="filter.inputType" :value="option.name"
+                  <input :type="filter.inputType" :value="option.name" class="capitalize"
                     :checked="selectedFilters[filter.name.toLowerCase()]?.includes(option.name)" />
                   {{ option.name }}
                 </label>
