@@ -134,7 +134,7 @@ const fetchData = async (params) => {
   if (userToken.value) {
     // Check for specific tabs
     if (tab === "experiments") {
-      url = apiDocs.experiments.getExperiments;
+      url = apiDocs.experiments.getPublicExperiments;
       params = {
         ...params,
       };
