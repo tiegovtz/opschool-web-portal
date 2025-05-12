@@ -74,7 +74,6 @@ const setTopicToView = () => {
 const userToken = useCookie('signInUserToken')
 </script>
 
-
 <template>
   <NuxtLink class="stat-card" v-if="modelType.toLowerCase() === 'profile'"
   @click="setTopicToView()"
@@ -101,7 +100,7 @@ const userToken = useCookie('signInUserToken')
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
       layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-full max-w-[200px]',
-      { 'md:h-20 !h-full ': modelType === 'search', },
+      { 'md:h-20 !h-full max-w-[80px]': modelType === 'search', },
     ]">
       <NuxtImg :src="topicImage" loading="lazy" :alt="'Image of ' + topicTitle"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
@@ -174,7 +173,4 @@ const userToken = useCookie('signInUserToken')
       </div>
     </div>
   </NuxtLink>
-
-
-
 </template>
