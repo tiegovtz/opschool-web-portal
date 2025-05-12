@@ -192,7 +192,7 @@ const fetchData = async (params) => {
 
         params = {
           ...params,
-          videoType: "others",
+          videoType: "Others",
         };
       } else if (tab === "interactive books") {
         url = apiDocs.topics.getSubjectId.replace(
@@ -214,7 +214,7 @@ const fetchData = async (params) => {
   }
 
   try {
-    const {data:response, status:fetchStatus} = await fetchAsyncData(`tab-${tab}`,()=> $fetch(url, {
+    const {data:response, status:fetchStatus} = await fetchAsyncData(`tab-${tab}-${subjectId.value ? subjectId.value :'' }`,()=> $fetch(url, {
       params: {
         ...params,
       },

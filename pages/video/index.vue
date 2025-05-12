@@ -80,7 +80,7 @@ const fetchVideos = async (param) => {
   
   try {
     status.value = 'pending';
-    const {data:response,status:fetchStatus} = await fetchAsyncData('videos',()=>$fetch(apiDocs.videos.getPublicVideo, {
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`videos-${param?.toString()}`,()=>$fetch(apiDocs.videos.getPublicVideo, {
       method: 'GET',
       params: {
        ...param
