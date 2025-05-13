@@ -108,8 +108,6 @@ const fetchVideos = async (params) => {
     delete params?.type
   }
 
-  console.log(params)
-  
 
 // remove key type from params
   if(params){
