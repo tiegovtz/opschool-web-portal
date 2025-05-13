@@ -323,7 +323,7 @@ watch(
   (token) => {
     // Get the router instance
     if (!token) {
-      router.replace("/home");
+      router.replace("/auth");
     }
   }
 );
