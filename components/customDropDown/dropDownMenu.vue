@@ -62,6 +62,22 @@ const selectLevel = async (levelName) => {
   emitFilterPayload();
 };
 
+
+const selectClass = async (className) => {
+  if (!selectedFilters.class) selectedFilters.class = [];
+  selectedFilters.class.push(className);
+  await nextTick();
+  emitFilterPayload();
+};
+
+const selectSubject = async (subjectName) => {
+  if (!selectedFilters.subject) selectedFilters.subject = [];
+  selectedFilters.subject.push(subjectName);
+  await nextTick();
+  emitFilterPayload();
+};
+
+
 const toggleCheckbox = (key, value) => {
   if (!selectedFilters[key]) selectedFilters[key] = [];
   const index = selectedFilters[key].indexOf(value);
@@ -212,9 +228,9 @@ const visibleFilters = computed(() => {
                 </div>
                 <div v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
                   <div v-if="group.level?.toLowerCase() === selectedFilters.level?.toLowerCase()">
-                    <label v-for="className in group.classes" :key="className" class="flex items-center gap-2"
-                      @click.prevent="toggleCheckbox('class', className)">
-                      <input :type="filter.inputType" :value="className" :checked="selectedFilters.class?.includes(className)" />
+                    <label v-for="className in group.classes" :key="className" class="flex items-center gap-2">
+                      <input :type="filter.inputType" :value="className" name="class" @change="selectClass(className)"
+                      :checked="selectedFilters.class?.includes(className)" />
                       {{ className }}
                     </label>
                   </div>
@@ -233,14 +249,14 @@ const visibleFilters = computed(() => {
                   <div v-if="group.level === selectedFilters.level">
                     <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
                       @click.prevent="toggleCheckbox('subject', subject)">
-                      <input :type="filter.inputType" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />
+                      <input :type="filter.inputType" :value="subject" :checked="selectedFilters.subject?.includes(subject)" @change="selectSubject(subject)" />
                       {{ subject }}
                     </label>
                   </div>
                   <div v-else>
                     <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
                       @click.prevent="toggleCheckbox('subject', subject)">
-                      <input :type="filter.inputType" :value="subject" :checked="selectedFilters.subject?.includes(subject)" />
+                      <input :type="filter.inputType" :value="subject" :checked="selectedFilters.subject?.includes(subject)"  @change="selectSubject(subject)" />
                       {{ subject }}
                     </label>
                   </div>
