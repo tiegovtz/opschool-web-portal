@@ -10,7 +10,9 @@ import { dataEncrypt, dataDecrypt } from "~/utilities/encryption";
 const navigationStore = useNavigationStore();
 const returnPath = navigationStore.getLatestRoute();
 const userRememberMe = useCookie("userRememberMe");
-const pass = userRememberMe?.value?.password?.length > 0 ? await dataDecrypt(userRememberMe?.value?.password) : null
+const pass = userRememberMe?.value?.password?.length > 0 ? dataDecrypt(userRememberMe?.value?.password) : null
+useCookie("signInUserToken").value ? useCookie("signInUserToken").value = null : '';
+useCookie("signInAccessToken").value ? useCookie("signInAccessToken").value = null : '';
 
 // User Sign In Function
 const userSignIn = reactive({
@@ -86,7 +88,7 @@ const signIn = async () => {
         const refreshToken = useCookie("signInRefreshToken", {
           httpOnly: false, // Accessible in browser
           secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 2,
+          maxAge: 60 * 60 * 2, // 2 hours
           sameSite: "strict",
           path: "/",
         });
@@ -94,7 +96,7 @@ const signIn = async () => {
         const userToken = useCookie("signInUserToken", {
           httpOnly: false, // Accessible in browser
           secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 2,
+          maxAge: 60 * 60 * 2, // 2 hours
           sameSite: "strict",
           path: "/",
           default: () => ({}),
@@ -110,9 +112,9 @@ const signIn = async () => {
 
         // create user remember me cookie
         const userRememberMe = useCookie("userRememberMe", {
-          httpOnly: false,
+          httpOnly: false, // Accessible in browser
           secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 24 * 7,
+          maxAge: 60 * 60 * 24 * 7, // 1 week
           sameSite: "strict",
           path: "/",
           default: () => null,
@@ -135,7 +137,6 @@ const signIn = async () => {
         } else {
           userRememberMe.value = null; // Clear the cookie
         }
-
 
         accessToken.value = response.data.access_token;
         refreshToken.value = response.data.refresh_token;
