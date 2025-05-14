@@ -41,7 +41,7 @@ const tabCheck = (checkValue) => {
       <!-- subject tab -->
       <button v-if="isLoggedIn"
         :class="[
-          'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+          'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
           {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Home' || activeTab == 'Home'}
         ]"
         @click="tabCheck('Home')" >
@@ -53,7 +53,7 @@ const tabCheck = (checkValue) => {
       <!-- Interactive Content -->
       <button v-if="isLoggedIn"
         :class="[
-          'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+          'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
           {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Interactive Books' || activeTab == 'Interactive Books'}
         ]"
         @click="tabCheck('Interactive Books')" >
@@ -63,7 +63,7 @@ const tabCheck = (checkValue) => {
         Interactive Content
       </button>
       <NuxtLink v-else :to="subjectTitle ? topicId ? `/interactive/${subjectTitle}/${topicId}` : `/interactive/${subjectTitle}` : `/interactive`"
-        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
+        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"
         active-class="text-white !bg-deepBlue ">
         <div class="flex items-center justify-center">
           <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
@@ -75,7 +75,7 @@ const tabCheck = (checkValue) => {
       <!-- Learning Activities -->
       <button v-if="isLoggedIn"
          :class="[
-        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Experiments' || activeTab == 'Experiments'}
          ]"
         @click="tabCheck('Experiments')" >
@@ -85,7 +85,7 @@ const tabCheck = (checkValue) => {
         Learning Activities
       </button>
       <NuxtLink v-else  :to="subjectTitle ? topicId ? `/experiments/${subjectTitle}/${topicId}` : `/experiments/${subjectTitle}` : `/experiments`"
-        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
+        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
           <Icon name="icon-park-solid:experiment-one" size="20" />
@@ -97,7 +97,7 @@ const tabCheck = (checkValue) => {
       <!-- Conceptual Video -->
       <button v-if="isLoggedIn"   
         :class="[
-        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Video' || activeTab == 'Video'}
          ]"
         @click="tabCheck('Video')" >
@@ -113,7 +113,7 @@ const tabCheck = (checkValue) => {
         }
       }"
         @click="videoType = 'conceptual'"
-        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
+        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"
         :active-class=" videoType == 'conceptual' ? 'text-white !bg-deepBlue': 'text-white !bg-oceanBlue'">
         <div class="flex items-center justify-center">
           <Icon name="fluent:video-24-filled" size="20" />
@@ -124,7 +124,7 @@ const tabCheck = (checkValue) => {
       <!-- Other Video -->
       <button v-if="isLoggedIn"   
         :class="[
-        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'otherVideo' || activeTab == 'otherVideo'}
          ]"
         @click="tabCheck('otherVideo')" >
@@ -140,7 +140,7 @@ const tabCheck = (checkValue) => {
         }
       }"
        @click="videoType = 'other'"
-        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
+        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"
          :active-class=" videoType == 'other' ? 'text-white !bg-deepBlue': 'text-white !bg-oceanBlue'
          ">
         <div class="flex items-center justify-center">
@@ -152,7 +152,7 @@ const tabCheck = (checkValue) => {
       <!-- Audio -->
       <button v-if="isLoggedIn" 
       :class="[
-        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-deepBlue transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Audio' || activeTab == 'Audio'}
          ]"
         @click="tabCheck('Audio')" >
@@ -162,7 +162,7 @@ const tabCheck = (checkValue) => {
         Audio
       </button>
       <NuxtLink v-else :to="subjectTitle ? topicId ? `/audio/${subjectTitle}/${topicId}` : `/audio/${subjectTitle}` : `/audio`"
-        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue text-medium lg:w-45"
+        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
           <Icon name="famicons:headset-sharp" size="20" />
