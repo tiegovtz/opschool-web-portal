@@ -16,11 +16,15 @@ const props = defineProps({
     type: String,
     default: '/images/background2.webp'
   },
+  subjectDescription: {
+    type: String,
+    required: true,
+  },
   totalViews: {
     type: Number,
     default: 0,
   },
-
+  
   isLoggedIn: {
     type: Boolean,
     default: false,
@@ -78,23 +82,33 @@ const setSubjectToView = () => {
     <div
       :class="[
         'flex px-4 pt-2 transition-all duration-500 ease-in-out group-hover:text-white',
-        layoutEffect == 'grid' ? 'flex-wrap justify-between item-center' : 'flex-col  flex-1'
+        layoutEffect == 'grid' ? 'flex-col' : 'flex-col flex-1'
       ]">
-      <!-- title & description -->
-      <p
-        class="flex text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out"
-      >
-        {{ subjectName }}
+      
+      <!-- title and metrics -->
+     <div  :class="[
+      'flex justify-between item-center transition-all duration-500 ease-in-out group-hover:text-white w-full',
+     ]">
+       <p
+       class="flex text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out"
+     >
+       {{ subjectName }}
+     </p>
+  
+     <small 
+       :class="[
+         'flex items-center  gap-2  text-oceanBlue group-hover:text-white',
+         layoutEffect == 'grid' ? 'justify-end p-2' : 'justify-start mt-auto pb-2'
+       ]">
+       <Icon name="flowbite:users-outline" class="text-medium" />
+       <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
+     </small>
+     </div>
+      
+      <!-- description -->
+      <p class="text-start text-small text-black/80 group-hover:text-white line-clamp-2">
+        {{ subjectDescription }}
       </p>
-      <!-- metrics -->
-      <small 
-        :class="[
-          'flex items-center  gap-2  text-oceanBlue group-hover:text-white',
-          layoutEffect == 'grid' ? 'justify-end p-2' : 'justify-start mt-auto pb-2'
-        ]">
-        <Icon name="flowbite:users-outline" class="text-medium" />
-        <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
-      </small>
     </div>
   </button>
   <!-- Is Logged In = False -->
