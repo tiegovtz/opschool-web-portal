@@ -57,11 +57,15 @@ const markQuestion = (choice) => {
 const indexToAlpha = (index) => String.fromCharCode(65 + index);
 
 const shuffleChoices = computed(() => {
-  return questionProps.choices
+  const shuffled = questionProps.choices
     .map((choice) => ({ choice, sort: Math.random() }))
     .sort((a, b) => a.sort - b.sort)
     .map(({ choice }) => choice);
+
+  // Remove duplicates
+  return shuffled.filter((item, index, self) => self.indexOf(item) === index);
 });
+
 
 const dropZoneAnswers = ref([]);
 const isDropped = ref(false);
