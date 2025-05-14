@@ -109,8 +109,7 @@ definePageMeta({
 
 <template>
     <NuxtLayout name="home-layout">
-        <section class="relative inline-flex w-full overflow-hidden center-height">
-            <!-- w-3/4 -->
+        <section class="relative w-full overflow-hidden center-height">
             <div
                 class="w-full py-5 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
                 <!-- Videovideo Level Standard and Subject Indicator -->
@@ -199,36 +198,6 @@ definePageMeta({
                      </div>
                 </div>
             </div>
-
-            <!-- Sidebar w-1/4 -->
-            <!-- <div
-                class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full h-full lg:w-1/4 p-2 lg:static center-height overflow-y-scroll bg-white">
-                <div class="flex flex-col h-full mb-4">
-                    <h1 class="pt-5 font-medium capitalize text-medium">Related Video</h1>
-                    toggle menu
-                    <div class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"
-                        @click="toggleSidebar()">
-                        Cancel Icon
-                        <Icon name="iconoir:cancel" size="18" class="group-hover:text-white" />
-                    </div>
-
-                    UL list of chapters
-                    <ul class="flex flex-col gap-3 md:pl-4">
-                        <li class="flex items-center gap-3 p-3 rounded-md cursor-pointer bg-containerGray">
-                            <div class="">
-                                <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
-                            </div>
-                            <div class="line-clamp-2">Introduction to Physics</div>
-                        </li>
-                        <li class="flex items-center gap-3 p-3 rounded-md cursor-pointer bg-containerGray">
-                            <div class="">
-                                <Icon name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
-                            </div>
-                            <div class="line-clamp-2">Learn motion</div>
-                        </li>
-                    </ul>
-                </div>
-            </div> -->
         </section>
     </NuxtLayout>
 </template>
