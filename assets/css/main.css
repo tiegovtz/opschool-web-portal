@@ -147,22 +147,6 @@
   /* color: #0077c7; */
 }
 
-/* swiper-pagination-bullet 
-<span part="bullet" class="swiper-pagination-bullet" tabindex="0" role="button" aria-label="Go to slide 7"></span>
-*/
-.swiper-container .swiper-pagination-bullet {
-  height: 10px !important;
-  width: 10px !important;
-  border-radius: 50%;
-  background-color: white !important;
-}
-
-.swiper-container .swiper-pagination-bullet-active {
-  height: 14px !important;
-  width: 14px !important;
-  border-radius: 50%;
-  background-color: var(--color-oceanBlue) !important;
-}
 
 /*  notes styles */
 .notes span,

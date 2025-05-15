@@ -17,52 +17,65 @@ const slides = [
 const swiper = useSwiper(containerRef, {
   effect: 'creative',
   loop: true,
-  pagination: {
-    clickable: true,
-  },
+  navigation: true,
   grabCursor: true,
   autoplay: {
     delay: 5000,
   },
-  speed: 800,
+  speed: 2000,
+
   creativeEffect: {
     prev: {
-      shadow: true,
-      translate: [0, 0, -400],
+      opacity: 0,
       scale: 0.8,
+      rotate: [20, 30, 20],  // leftward bend
+      origin: "center",
     },
     next: {
-      translate: ['100%', 0, 0],
+      opacity: 0,
+      scale: 1.2,
+      rotate: [20, 30, 20],  // rightward bend
+      origin: "center",
     },
   },
-})
 
-onMounted( async() => {
- await nextTick()
+});
 
- //find the swiper pagination
- if(containerRef.value) {
-   const swiperInstance = containerRef.value.swiper
-   const paginationBullets = swiperInstance.pagination.bullets
 
-   // add styles to the active bullet
-   swiperInstance.on('paginationUpdate', () => {
-     paginationBullets.forEach((bullet: HTMLElement) => {
-       bullet.style.width = '10px'
-       bullet.style.height = '10px'
-       bullet.style.borderRadius = '50%'
-       bullet.style.backgroundColor = '#56ade8'
-       bullet.style.opacity = '0.8'
-       bullet.style.transition = 'all 0.5s ease-in-out'
-     })
-     const activeBullet = paginationBullets[swiperInstance.realIndex]
-     activeBullet.style.width = '20px'
-      activeBullet.style.borderRadius = '4px'
-      activeBullet.style.opacity = '1'
-     activeBullet.style.backgroundColor = '#fff'
-   })
-   // add styles to the bullets on init
- }
+onMounted(async () => {
+  await nextTick()
+
+  //find the swiper pagination
+  if (containerRef.value) {
+    const swiperInstance = containerRef.value.swiper
+    const navigationBtn = swiperInstance.navigation
+
+    const prevEl = navigationBtn.prevEl
+    const nextEl = navigationBtn.nextEl
+
+    const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 18.5l7.265 2.463c.196.077.42.032.57-.116a.55.55 0 0 0 .134-.572L12 3L4.03 20.275c-.07.2-.017.424.135.572c.15.148.374.193.57.116z"/></svg>`
+
+    prevEl.innerHTML = svgIcon
+    nextEl.innerHTML = svgIcon
+
+    prevEl.style.rotate = "-90deg"
+    nextEl.style.rotate = "90deg"
+
+    // Shared styles
+    const buttonStyles: Partial<CSSStyleDeclaration> = {
+      width: "48px",
+      height: "42px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer",
+      bottom: "10px",
+      top: "unset",
+    };
+
+    Object.assign(prevEl.style, buttonStyles);
+    Object.assign(nextEl.style, buttonStyles);
+  }
 })
 
 </script>
