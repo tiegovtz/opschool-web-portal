@@ -44,7 +44,7 @@ const inputSearch = (event) => {
   ]">
     <div :class="[
       ' relative flex items-center justify-center w-full h-full rounded-md',
-      appearance === 'normal' ? 'md:px-0 lg:px-0' : 'bg-textGray bg-opacity-40 md:px-10 lg:px-[100px] p-1'
+      appearance === 'normal' ? 'md:px-0 lg:px-0' : 'backdrop-blur-sm  md:px-10 lg:px-[100px] p-1'
     ]">
       <!-- Apperance Normal -->
       <form v-if="appearance === 'normal'" action="" @submit.prevent="search"
