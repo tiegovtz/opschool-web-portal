@@ -50,7 +50,7 @@ const dropDown = () => {
             </p>
           </div>
           <NuxtLink to="/" class="flex items-center justify-center h-full p-2 cursor-pointer">
-            <NuxtImg  src="/logo/logo_tie.gif" alt="TIE LOGO" class="w-14 h-14" />
+            <NuxtImg  src="/logo/logo_tie.gif" alt="TIE LOGO" class="w-16 h-16" />
           </NuxtLink>
         </div>
       </div>
