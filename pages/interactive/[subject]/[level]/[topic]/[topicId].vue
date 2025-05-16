@@ -474,6 +474,13 @@ const observerContent = () => {
         e.preventDefault(); // disables right-click menu
       });
 
+    // controll to pause video while scrolling height exceesed video height
+    notesContainer.value.addEventListener("scroll", ()=>{
+      if(scrollTop.value > (videoPlayer?.clientHeight/2)){
+        videoPlayer.pause()
+      }
+    });
+
       videoPlayer.controlsList = "nodownload";
     }
 
