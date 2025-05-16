@@ -63,19 +63,29 @@ onMounted(async () => {
 
     // Shared styles
     const buttonStyles: Partial<CSSStyleDeclaration> = {
-      width: "48px",
-      height: "42px",
+      width: "38px",
+      height: "32px",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: "#0077c5",
+      backgroundColor: "#0077c599",
       color: "white",
       padding: "5px 0px",
       borderRadius: "5px",
       cursor: "pointer",
-      bottom: "10px",
-      top: "unset",
+      opacity:"0",
+      transition:"all .5s ease-in-out"
     };
+
+    containerRef.value.addEventListener('mouseover',()=>{
+      prevEl.style.opacity="1"
+      nextEl.style.opacity="1"
+    })
+
+    containerRef.value.addEventListener('mouseout',()=>{
+      prevEl.style.opacity="0"
+      nextEl.style.opacity="0"
+    })
 
     Object.assign(prevEl.style, buttonStyles);
     Object.assign(nextEl.style, buttonStyles);
