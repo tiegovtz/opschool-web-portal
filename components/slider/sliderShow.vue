@@ -28,13 +28,13 @@ const swiper = useSwiper(containerRef, {
     prev: {
       opacity: 0,
       scale: 0.8,
-      rotate: [20, 30, 20],  // leftward bend
+      rotate: [-10, -15, -30],  // leftward bend
       origin: "center",
     },
     next: {
       opacity: 0,
-      scale: 1.2,
-      rotate: [20, 30, 20],  // rightward bend
+      scale: 1.4,
+      rotate: [10, 15, 30],  // rightward bend
       origin: "center",
     },
   },
@@ -68,6 +68,10 @@ onMounted(async () => {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
+      backgroundColor: "#0077c5",
+      color: "white",
+      padding: "5px 0px",
+      borderRadius: "5px",
       cursor: "pointer",
       bottom: "10px",
       top: "unset",
