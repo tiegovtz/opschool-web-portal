@@ -726,14 +726,9 @@ definePageMeta({
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </NuxtLink> -->
 
-              <p class="font-medium text-medium">
+              <p class="font-medium text-medium" v-if="chapters.status == 'success'">
                 {{
-                  topicTitle != null &&
-                    topicTitle != undefined &&
-                    topicTitle != "null"
-                    ? topicTitle
-                    : `Introduction to
-                Physics`
+                  chapters.notes?.name
                 }}
               </p>
             </div>
