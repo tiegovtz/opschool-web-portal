@@ -135,9 +135,12 @@ const dropDown = () => {
         <div class="flex flex-col items-center w-full text-white md:hidden md:flex-row bg-oceanBlue rounded-b-md">
           <!-- Profile and Sign Up and Home -->
           <div class="flex items-center justify-between w-full">
-            <div class="flex items-center gap-2">
+            <div class="flex">
 
-              <Icon v-if="userToken" name="iconamoon:profile-circle-thin" class="" size="1.2rem" />
+              <NuxtLink to="/profile" v-if="userToken" class="flex items-center pl-1">
+                <Icon name="iconamoon:profile-circle-thin" class="" size="1.2rem" />
+              </NuxtLink>
+              
               <NuxtLink to="/auth/SignUp" title="Sign Up" v-else
                 class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                 <Icon name="iconamoon:profile-thin" class="" size="1.2rem" />

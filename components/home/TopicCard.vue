@@ -93,7 +93,7 @@ const userToken = useCookie('signInUserToken')
     :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`"
     @click="setTopicToView()" :class="[
       'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out min-w-[300px]',
-      layoutEffect == 'grid' && modelType === 'card' ? 'flex-col pb-4' : 'flex-row h-32',
+      layoutEffect == 'grid' && modelType === 'card' ? 'flex-col' : 'flex-row h-32',
       { 'cursor-pointer flex-row my-2 pb-0 md:h-20 !max-h-14 ': modelType === 'search' },
     ]">
     <!-- topic image -->
@@ -156,7 +156,7 @@ const userToken = useCookie('signInUserToken')
     </div>
     <div>
       <!-- learn more -->
-      <div v-if="modelType == 'card'"
+      <div v-if="modelType == 'card' && layoutEffect == 'grid' "
         class="absolute bottom-0 z-10 items-center justify-between hidden w-full h-10 px-4 text-white transition-all duration-500 ease-in-out opacity-0 lg:flex bg-gradient-to-b from-deepBlue to-gray-800 group-hover:opacity-100">
         <p class="capitalize text-small">Start learning</p>
         <div class="flex items-center justify-center w-6 h-6 bg-white rounded-full animate-bounce-horizontal">
