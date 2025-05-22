@@ -202,11 +202,11 @@
 
 /*  */
 .notes table td img {
-  display: inline-flex;
   height: min(auto,300px);
   border-radius: 12px;
   object-fit: contain;
   width: min(auto,100%);
+  margin: 0 auto;
 }
 
 .notes .desc-img {
