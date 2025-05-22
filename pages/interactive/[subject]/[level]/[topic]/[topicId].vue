@@ -228,6 +228,11 @@ const syncRemoteProgress = async (chapterId) => {
 
 // Main function 
 const getChapter = async (chapterId) => {
+  // validate if chapterId is null or undefined
+  if (!chapterId) {
+    console.error("Chapter ID is null or undefined");
+    return;
+  }
   chapters.notesStatus = "pending";
   chapters.notes = null;
   chapters.questions = null;
@@ -237,11 +242,11 @@ const getChapter = async (chapterId) => {
   await ensureAccessTokenValid();
 
   try {
-    const {data:response,status} = await fetchAsyncData(
+    const { data: response, status } = await fetchAsyncData(
       `chapter-${chapterId}`,
       () => $fetch(`/api/topics/chapters/${chapterId}`)
     );
-      
+
     if (response) {
       chapters.notesStatus = status.value;
       chapters.notes = response;
@@ -282,16 +287,16 @@ const topicViewedRead = async (topicId) => {
 // Fetch Questions by Topic Chapter
 const getQNTopicChapter = async (chapterId) => {
   try {
-    const response  = await $fetch(apiDocs.chapters.getTopicChapterQNs, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${signInAccessToken.value}`,
-          },
-          params: {
-            topic: topicId,
-            chapter: chapterId,
-          },
-        })
+    const response = await $fetch(apiDocs.chapters.getTopicChapterQNs, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${signInAccessToken.value}`,
+      },
+      params: {
+        topic: topicId,
+        chapter: chapterId,
+      },
+    })
     if (response) {
       chapters.questions = response;
     }
@@ -303,10 +308,24 @@ const getQNTopicChapter = async (chapterId) => {
 // Fetch chapters
 await useFetch(`/api/topics/${topicId}`)
   .then((response) => {
-    chapters.status = response.status;
-    chapters.list = response.data.value;
-    getChapter(response.data.value[0]?._id);
-    chapters.currentChapterId = response.data.value[0]?._id;
+    //  Check if the response is successful
+    if (response) {
+      // extracting data ,status  from response
+      const { data, status } = response;
+      // on sucess save data to chapters
+      if (status.value === 'success') {
+        chapters.status = status.value;
+        chapters.list = data.value;
+        getChapter(data.value[0]?._id);
+        chapters.currentChapterId = data.value[0]?._id;
+      }
+      else if (status.value === 'error') {
+        chapters.status = status.value;
+        signInAccessToken.value = null;
+        userToken.value = null;
+        return navigateTo('/auth', { replace: true });
+      }
+    }
 
     // Call Submit Topic Viewed Read
     if (!useState("userViewedTopic").value) {
@@ -316,6 +335,11 @@ await useFetch(`/api/topics/${topicId}`)
   .catch((error) => {
     (chapters.status = "error"),
       (chapters.error = error);
+    // clear all cookies
+    signInAccessToken.value = null;
+    userToken.value = null;
+    return navigateTo('/auth', { replace: true });
+
   });
 
 watch(
@@ -353,12 +377,40 @@ const setPicCenter = async () => {
 
   // Perform the image styling after a small delay
   setTimeout(() => {
-    document.querySelectorAll(".notes > p").forEach((p) => {
-      let images = p.querySelectorAll("img");
-      if (images.length === 1 && p.childNodes.length === 1) {
+    document.querySelectorAll(".notes p").forEach((p) => {
+      const images = p.querySelectorAll("img");
+
+      // Skip if <p> has no images
+      if (images.length === 0) return;
+
+      // If exactly one image and it's the only (element) child
+      if (
+        images.length === 1 &&
+        p.childNodes.length === 1
+      ) {
         images[0].classList.add("pic-center");
+      } else {
+        // Style spans only if they (or their descendants) contain <img>
+        p.querySelectorAll("span").forEach((span) => {
+          if (span.querySelector("img")) {
+            const images = span.querySelectorAll("img")
+            if (images.length === 1 &&
+              images[0].classList.contains('desc-img'))
+              return;
+
+            span.className = "flex justify-center flex-wrap gap-2";
+          }
+        });
+
+        // Style <b> only if it (or its descendants) contains <img>
+        p.querySelectorAll("b").forEach((b) => {
+          if (b.querySelector("img")) {
+            b.className = "flex justify-center flex-wrap gap-2";
+          }
+        });
       }
     });
+
 
     const img = document.querySelectorAll(".notes td p + img");
     if (img.length === 1) {
@@ -474,12 +526,12 @@ const observerContent = () => {
         e.preventDefault(); // disables right-click menu
       });
 
-    // controll to pause video while scrolling height exceesed video height
-    notesContainer.value.addEventListener("scroll", ()=>{
-      if(scrollTop.value > (videoPlayer?.clientHeight/2)){
-        videoPlayer.pause()
-      }
-    });
+      // controll to pause video while scrolling height exceesed video height
+      notesContainer.value.addEventListener("scroll", () => {
+        if (scrollTop.value > (videoPlayer?.clientHeight / 2)) {
+          videoPlayer.pause()
+        }
+      });
 
       videoPlayer.controlsList = "nodownload";
     }
@@ -493,33 +545,57 @@ const observerContent = () => {
 
     modelViewer.forEach(element => {
       let zoomButton = document.createElement('button');
-      let span = document.createElement('span')
-      var isZoomed = false
+      let label = document.createElement('button');
+      let span = document.createElement('span');
+      let isZoomed = false;
+      let coverImg = document.createElement('img');
 
-      zoomButton.innerHTML = zoomInIcon
-      span.innerHTML = icon3D
-      zoomButton.classList.add('zoom-button')
-      span.classList.add('span-3D')
-      zoomButton.style.backgroundColor = '#56ade8'
-      element.appendChild(zoomButton)
-      element.appendChild(span)
+      // Setup cover image
+      coverImg.setAttribute('src', element.getAttribute('poster'));
+      coverImg.className = "absolute top-0 left-0 h-full w-full z-4 transition-all duration-500 ease-in-out"; // Enable smooth hiding
 
+      // Setup label button
+      label.textContent = 'labels';
+      label.className = 'flex items-center justify-center absolute bottom-0 left-0 bg-oceanBlue text-white px-2 py-1 rounded-md z-10';
+
+      // Setup zoom and 3D icon
+      zoomButton.innerHTML = zoomInIcon;
+      span.innerHTML = icon3D;
+      zoomButton.classList.add('zoom-button');
+      span.classList.add('span-3D');
+      zoomButton.style.backgroundColor = '#56ade8';
+
+      // Append everything
+      element.append(zoomButton, span, coverImg, label);
+
+      // Zoom click
       zoomButton.addEventListener('click', (event) => {
         event.stopPropagation();
-        isZoomed = !isZoomed; // Toggle the zoomed state
+        isZoomed = !isZoomed;
         element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
         if (isZoomed) {
           element.classList.add('zoomed');
           zoomButton.innerHTML = zoomOutIcon;
           zoomButton.style.backgroundColor = '#f00';
         } else {
           element.classList.remove('zoomed');
-          zoomButton.innerHTML = zoomInIcon
+          zoomButton.innerHTML = zoomInIcon;
           zoomButton.style.backgroundColor = '#56ade8';
         }
+      });
 
-      })
+      // Label button hides the cover image from left to right
+      label.addEventListener('click', (event) => {
+        event.stopPropagation();
+
+        // Trigger shrink animation
+        coverImg.style.width = "0";
+        coverImg.style.opacity = "0";
+        coverImg.style.transition = "all 0.5s ease-in-out";
+      });
     });
+
 
 
     document.querySelectorAll('.notes span').forEach((span) => {
@@ -726,9 +802,14 @@ definePageMeta({
                 <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </NuxtLink> -->
 
-              <p class="font-medium text-medium" v-if="chapters.status == 'success'">
+              <p class="font-medium text-medium">
                 {{
-                  chapters.notes?.name
+                  topicTitle != null &&
+                    topicTitle != undefined &&
+                    topicTitle != "null"
+                    ? topicTitle
+                    : `Introduction to
+                Physics`
                 }}
               </p>
             </div>
