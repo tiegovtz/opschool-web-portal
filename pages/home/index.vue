@@ -465,7 +465,7 @@ watch(
         </div>
       </div>
       <!-- LayoutEffect  -->
-      <div class="flex items-center justify-end gap-2">
+      <div class="items-center justify-end hidden gap-2 md:flex">
         <Icon
           name="bxs:grid-alt"
           size="1.5rem"
