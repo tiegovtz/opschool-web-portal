@@ -14,6 +14,7 @@ import apiDocsFile from "~/utilities/api-docs";
 const apiDocs = apiDocsFile.setup()
 import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
+import { fetchAsyncData } from "~/composable/useAsyncFetch";
 
 const route = useRoute();
 // const router = useRouter();
@@ -114,14 +115,14 @@ const pageSize = ref();
 const fetchExperiments = async () => {
   try {
     status.value = "pending";
-    const response = await $fetch(apiDocs.experiments.getPublicExperiments, {
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`experiments`,()=>$fetch(apiDocs.experiments.getPublicExperiments, {
       method: "GET",
-    });
+    }));
 
     // Call State Define above
-    experiments.value = removeDataFromArrayOfJson(response, "isDeleted", true);
+    experiments.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
     experiments.value = filterKeyDataFromArrayOfJson( experiments.value,"subject.name",['physics','chemistry','mathematics','biology','geography']);
-    status.value = 'success';
+    status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
     sliceData(

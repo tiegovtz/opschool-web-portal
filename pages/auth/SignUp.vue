@@ -11,7 +11,6 @@ import { CustomDropDownList } from "#components";
 // input tabs control
 const inputTabs = ref("tabOne");
 
-
 const usersignUp = reactive({
   type: "",
   fname: null,
@@ -688,7 +687,7 @@ const organization = [
               <input type="text" id="fname" v-model="usersignUp.fname" @keydown.space.prevent name="fname"
                 autocomplete="off"
                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                placeholder="First Name (eg: Baraka)" />
+                placeholder="First Name" />
               <Icon name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
             </div>
 
@@ -712,7 +711,7 @@ const organization = [
               <input type="text" id="lname" v-model="usersignUp.lname" @keydown.space.prevent name="lname"
                 autocomplete="off"
                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                placeholder="Last Name ( eg: Minja )" />
+                placeholder="Last Name" />
               <Icon  name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
             </div>
 
@@ -868,7 +867,7 @@ const organization = [
                 <input type="text" id="email" v-model="usersignUp.email" @keydown.space.prevent 
                    name="username" autocomplete="off"
                   class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                  placeholder="Email (eg: example@gmail.com)" />
+                  placeholder="Email (eg: example@email.com)" />
                 <Icon name="mdi-light:email" class="w-5 h-5 text-textGray" />
               </div>
 

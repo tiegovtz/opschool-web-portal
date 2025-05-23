@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
 // Check if the referer is valid
 if (
     referer &&
-    (referer?.includes("/interactive/form") || referer?.includes("/video"))
+    (referer?.toLowerCase().includes("/interactive/form") || referer?.toLowerCase().includes("/video"))
   ) {
     const { videoId } = getRouterParams(event); // Get query parameters
     const auth_token = getCookie(event, "signInAccessToken");

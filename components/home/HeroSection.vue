@@ -25,6 +25,11 @@ Welcome to <b>TIE ONLINE PUBLIC SCHOOL</b>, an innovative platform developed by 
 Tanzania Institute of Education (TIE) to assist you in reaching your educational goals
 through engaging methods. Here, you will access high-quality learning resources for
 secondary education, thoughtfully made to give you the best experience. <br /><br />
+
+These resources will enable you to learn efficiently and effectively while inspiring you to
+reach your full potential. This platform has been designed carefully to offer you the
+necessary knowledge, skills, and competencies for your learning progress and prepare
+you for the challenges ahead. <br/><br />
 `;
 
 // Track if the user has clicked "Read More"
@@ -47,7 +52,7 @@ const toggleReadMore = () => {
           Welcome
         </h1>
         
-        <p class="my-2 text-justify text-black text-medium text-opacity-80" v-html="isExpanded ? fullText : shortText"></p>
+        <p class="mt-2 text-justify text-black text-medium text-opacity-80" v-html="isExpanded ? fullText : shortText"></p>
 
         <button
           @click="toggleReadMore"

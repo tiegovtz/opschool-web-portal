@@ -1,6 +1,7 @@
 <script setup>
 import messages from '~/utilities/messages';
 import { auth } from '~/utilities/validationInput';
+import { CustomDropDownList } from "#components";
 import apiDocsFile from "~/utilities/api-docs";;
  
 const apiDocs = apiDocsFile.setup()
@@ -48,6 +49,16 @@ const forgotPassword = async () => {
         userForgotPassword.controller.isDisabled = true;
     }
 
+    const schoolName = userForgotPassword.school.toLowerCase();
+    const cutoffIndexes = [
+        schoolName.indexOf('secondary'),
+        schoolName.indexOf('sekondari')
+    ].filter(i => i !== -1); // remove not found
+
+    const cutoff = cutoffIndexes.length > 0 ? Math.min(...cutoffIndexes) : schoolName.length;
+
+    const school = userForgotPassword.school.substring(0, cutoff).trim();
+
     // send data to server
     try {
         const response = await $fetch(userForgotPassword.type.toLowerCase().trim() == 'student' ?
@@ -58,7 +69,7 @@ const forgotPassword = async () => {
                 body: userForgotPassword.type.toLowerCase().trim() == 'student' ?
                     {
                         name: userForgotPassword.fname + ' ' + userForgotPassword.lname,
-                        school: userForgotPassword.school,
+                        school: school,
                     } :
 
                     {
@@ -86,14 +97,19 @@ const forgotPassword = async () => {
             userForgotPassword.controller.feedback = null;
             userForgotPassword.controller.isSucces = false;
             userForgotPassword.controller.isDisabled = false;
-        }, 3000)
+        }, 1000)
     } catch (error) {
         userForgotPassword.controller.feedback = messages.error.auth.invalidCredentials;
         userForgotPassword.controller.isSucces = false;
         userForgotPassword.controller.isDisabled = false;
         console.error('Error sending forgot password request:', error);
     }
-}
+};
+
+const userTypes = [
+    { id: 'Student', name: 'Student' },
+    { id: 'other', name: 'Teacher or Education Stakeholder' },
+];
 </script>
 
 <template>
@@ -110,13 +126,12 @@ const forgotPassword = async () => {
                 <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
             </NuxtLink>
             <form @submit.prevent="forgotPassword" :class="[
-                    'px-4 text-textGray md:h-[150px] relative overflow-hidden text-extraSmall',
-                    { 'md:h-[200px]': userForgotPassword.controller.errors.type },
-                    { 'md:h-[300px]': userForgotPassword.type.toLowerCase() === 'student' },
-                ]">
+                'px-4 text-textGray md:h-[150px] relative overflow-hidden text-extraSmall',
+                { 'md:h-[200px]': userForgotPassword.controller.errors.type },
+                { 'md:h-[300px]': userForgotPassword.type.toLowerCase() === 'student' },
+            ]">
                 <!-- Select User Type -->
-                <div 
-                :class="[
+                <div :class="[
                     'mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
                     {
                         'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -126,15 +141,12 @@ const forgotPassword = async () => {
                     <div class="flex flex-col items-start w-full"  v-trusted>
                         <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">
                             Select User Type:</label>
-                        <select name="type" id="type" v-model="userForgotPassword.type"
-                            :class="[
-                                'w-full p-1 focus:outline-none focus:ring-0',
-                                {'text-textGray/40': !userForgotPassword.type }
-                            ]">
-                            <option value="">(eg: Student, Teacher ...)</option>
-                            <option value="Student">Student</option>
-                            <option value="other">Teacher or Education Stackeholder</option>
-                        </select>
+
+                        <!-- Use the Custom Dropdown instead of <select> -->
+                        <CustomDropDownList v-model="userForgotPassword.type" :list="userTypes"
+                            placeholder="(eg: Student, Teacher ...)"
+                            @update-model-value="userForgotPassword.type = $event" />
+
                     </div>
 
                     <!-- Select User Type error message -->
@@ -142,22 +154,22 @@ const forgotPassword = async () => {
                         {{ userForgotPassword.controller.errors.type }}
                     </small>
                 </div>
+
                 <!-- Student -->
                 <div v-if="userForgotPassword.type.toLowerCase() === 'student'" v-trusted>
                     <!-- First Name -->
-                    <div
-                        :class="[
-                                'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                            {
-                                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                                    userForgotPassword.controller.errors.fname,
-                            }
-                        ]">
+                    <div :class="[
+                        'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                        {
+                            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                                userForgotPassword.controller.errors.fname,
+                        }
+                    ]">
                         <div class="flex items-center w-full" >
                             <input type="text" id="fname" v-model="userForgotPassword.fname" @keydown.space.prevent
                                 name="fname" autocomplete="off"
                                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                                placeholder="First Name (eg: Baraka)" />
+                                placeholder="First Name" />
                             <Icon name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
                         </div>
 
@@ -169,19 +181,18 @@ const forgotPassword = async () => {
                     </div>
 
                     <!-- Last Name -->
-                    <div
-                        :class="[
-                                'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                            {
-                                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                                    userForgotPassword.controller.errors.lname,
-                            }
-                        ]">
+                    <div :class="[
+                        'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                        {
+                            'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                                userForgotPassword.controller.errors.lname,
+                        }
+                    ]">
                         <div class="flex items-center w-full">
                             <input type="text" id="lname" v-model="userForgotPassword.lname" @keydown.space.prevent
                                 name="lname" autocomplete="off"
                                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                                placeholder="Last Name ( eg: Minja )" />
+                                placeholder="Last Name" />
                             <Icon name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
                         </div>
 
@@ -193,16 +204,15 @@ const forgotPassword = async () => {
                     </div>
 
                     <!-- School -->
-                    <div
-                        :class="[
-                            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                            {
+                    <div :class="[
+                        'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                        {
                             'focus-input-icon-warning border-red-500 focus-within:border-red-500':
                                 userForgotPassword.controller.errors.school,
-                            }
-                        ]">
+                        }
+                    ]">
                         <div class="flex items-center w-full">
-                            <input type="text" id="school" v-model="userForgotPassword.school" @keydown.space.prevent
+                            <input type="text" id="school" v-model="userForgotPassword.school"
                                 name="school" autocomplete="off"
                                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                                 placeholder="School ( eg: Taifa Secondary School )" />
@@ -224,7 +234,7 @@ const forgotPassword = async () => {
                     <input type="email" id="email" :disabled="userForgotPassword.type.toLowerCase().trim() === ''"
                         v-model="userForgotPassword.email" name="email" autocomplete="off"
                         class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                        placeholder="Email ( eg:example@gmail.com )">
+                        placeholder="Email ( eg:example@email.com )">
                     <Icon name="mdi-light:email" class="w-5 h-5 text-textGray focus:text-oceanBlue" />
                 </div>
                 <button type="submit" :disabled="userForgotPassword.controller.isDisabled"
@@ -235,7 +245,7 @@ const forgotPassword = async () => {
                 </button>
             </form>
             <div class="my-4 text-center">
-                <p class="text-sm text-textGray">Back to 
+                <p class="text-sm text-textGray">Back to
                     <NuxtLink to="/auth" class="cursor-pointer text-oceanBlue">Sign In</NuxtLink>
                 </p>
             </div>

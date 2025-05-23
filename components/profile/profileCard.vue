@@ -66,25 +66,22 @@ const data = reactive({
 
 // Define Update Function
 const updatedProfile = async () => {
-  let formData = new FormData();
-  formData.append("name", profile.fname + " " + profile.lname);
-  formData.append("email", profile.email);
-  formData.append("phoneNumber", profile.phone);
-  formData.append("organization", profile.organization);
-  formData.append("region", profile.region);
-  formData.append("district", profile.district);
-  formData.append("school", profile.school);
-  formData.append("level", profile.level);
-  formData.append("type", profile.type);
-
-  if (uploadedPic) {
-    formData.append("profilePic", uploadedPic);
-  }
 
   try {
     const response = await $fetch(apiDocs.auth.profileEdit, {
       method: "PATCH",
-      body: formData,
+      body: {
+        name: profile.fname + " " + profile.lname,
+        email: profile.email,
+        phoneNumber: profile.phone,
+        organization: profile.organization,
+        region: profile.region,
+        district: profile.district,
+        school: profile.school,
+        level: profile.level,
+        type: profile.type,
+      },
+
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
@@ -101,7 +98,6 @@ const updatedProfile = async () => {
         }
       }
       isModified.value = false;
-      console.log("Updated profile:", profile);
     }
   } catch (error) {
     console.log(error);
@@ -109,9 +105,9 @@ const updatedProfile = async () => {
 };
 
 // Fetch Profile Data
-const {data:profileData, status, error} = await useFetch(apiDocs.auth.profile, {
-  headers: { 
-    Authorization: `Bearer ${signInAccessToken.value}` 
+const { data: profileData, status, error } = await useFetch(apiDocs.auth.profile, {
+  headers: {
+    Authorization: `Bearer ${signInAccessToken.value}`
   }
 });
 
@@ -254,19 +250,19 @@ const onValueChanged = (inputName) => {
   }
 };
 
-const choosePict = (event) => {
+const choosePict = async (event) => {
   const file = event.target.files?.[0];
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
   const maxSize = 2 * 1024 * 1024; // 2MB
 
   if (!file) return;
-  
+
   setTimeout(() => {
     profile.controller.errors.profilePic = null;
     profile.controller.status = false;
   }, 4000)
-  
+
   if (!allowedTypes.includes(file.type)) {
     profile.controller.errors.profilePic =
       "Only JPG, PNG, or WEBP images are allowed.";
@@ -282,102 +278,95 @@ const choosePict = (event) => {
 
   uploadedPic = file;
   profile.profilePic = URL.createObjectURL(file);
-  profile.controller.errors.profilePic = "Profile updated";
-  profile.controller.status = true;
-  onValueChanged("profilePic");
 
+  // Update profile picture in server
+  const formData = new FormData();
+  formData.append("profilePic", file);
+
+  await $fetch(apiDocs.auth.profilePicture, {
+    method: "PATCH",
+    body: formData,
+    headers: {
+      Authorization: `Bearer ${signInAccessToken.value}`,
+    },
+  }).then((response) => {
+    if (response) {
+      // profile.profilePic = response;
+      profile.controller.status = true;
+      profile.controller.errors.profilePic = 'profile picture updated successfully';
+    }
+  }).catch((error) => {
+    profile.controller.status = false;
+    profile.controller.errors.profilePic = error.message;
+  });
 };
 
 // Define  Discard Changes Button
 const discardChanges = () => {
- profile.fname = userToken.name.split(" ")[0];
- profile.lname = userToken.name.split(" ")[1];
- profile.email = userToken.email;
- profile.phone = userToken.phoneNumber;
- profile.organization = userToken.organization;
- profile.region = userToken.region?.toLowerCase();
- profile.district = userToken.district == null || userToken.district == undefined
-      ? ""
-      : userToken.district.toString().toLowerCase();
- profile.school = 
+  profile.fname = userToken.name.split(" ")[0];
+  profile.lname = userToken.name.split(" ")[1];
+  profile.email = userToken.email;
+  profile.phone = userToken.phoneNumber;
+  profile.organization = userToken.organization;
+  profile.region = userToken.region?.toLowerCase();
+  profile.district = userToken.district == null || userToken.district == undefined
+    ? ""
+    : userToken.district.toString().toLowerCase();
+  profile.school =
     userToken.school == null || userToken.school == undefined
       ? ""
       : userToken.school.toString().toLowerCase();
- profile.level = userToken.level;
- profile.type = userToken.type;
- profile.profilePic = userToken.profilePic;
- isModified.value = false;
- 
+  profile.level = userToken.level;
+  profile.type = userToken.type;
+  profile.profilePic = userToken.profilePic;
+  isModified.value = false;
+
 }
 
 </script>
 
 <template>
   <div v-if="status == 'pending'" class="flex items-center justify-center w-full max-w-7xl'">
-    <LoadingIndicator :is-loading="true"/>
+    <LoadingIndicator :is-loading="true" />
   </div>
-  
-  <div  v-else-if="status == 'success'" class="flex flex-col items-center justify-center w-full max-w-7xl">
+
+  <div v-else-if="status == 'success'" class="flex flex-col items-center justify-center w-full max-w-7xl">
     <!-- Message Component -->
-    <MessageComponent
-      :message="profile.controller.errors.profilePic"
+    <MessageComponent :message="profile.controller.errors.profilePic"
       :position="profile.controller.errors.profilePic ? true : false"
-      :event-type="profile.controller.status ? 'success' : 'error'"
-      :icon="
-        profile.controller.status
+      :event-type="profile.controller.status ? 'success' : 'error'" :icon="profile.controller.status
           ? 'icons8:checked'
           : 'oui:cross-in-circle-empty'
-      "
-    />
+        " />
 
     <!-- Profile Card -->
     <div class="flex flex-col items-center justify-center w-full">
       <div class="relative inline-flex items-center justify-center">
         <!-- Profile Image Container -->
         <div
-          class="relative overflow-hidden transition-all duration-500 ease-in-out rounded-full cursor-pointer w-36 h-36 group"
-        >
+          class="relative overflow-hidden transition-all duration-500 ease-in-out rounded-full cursor-pointer w-36 h-36 group">
           <!-- Profile Image -->
-          <NuxtImg
-            :src="
-              profile.profilePic && profile.profilePic.trim() !== ''
-                ? profile.profilePic
-                : '/profile/profile2.jpeg'
-            "
-            alt="User Profile"
-            class="object-cover w-full h-full transition-all duration-500 ease-in-out transform group-hover:scale-110 group-hover:opacity-10"
-          />
+          <NuxtImg :src="profile.profilePic && profile.profilePic.trim() !== ''
+              ? uploadedPic ?profile.profilePic : apiDocs.baseURL.replace('v1', '') + profile.profilePic
+              : '/profile/profile2.jpeg'
+            " alt="User Profile"
+            class="object-cover w-full h-full transition-all duration-500 ease-in-out transform group-hover:scale-110 group-hover:opacity-10" />
 
           <!-- Overlay with Initials -->
           <ProfileDrawInitialLater
-            class="absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out opacity-0 group-hover:opacity-100"
-          />
+            class="absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out opacity-0 group-hover:opacity-100" />
         </div>
 
         <!-- Camera Button -->
-        <label
-          for="picture_input"
+        <label for="picture_input"
           class="absolute rounded-full bottom-2 right-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-oceanBlue"
-          aria-label="Upload new profile picture"
-        >
-          <div
-            class="flex items-center justify-center p-2 bg-white rounded-full shadow-md"
-          >
-            <Icon
-              name="fluent:camera-add-48-filled"
-              class="w-6 h-6 text-deepBlue"
-            />
+          aria-label="Upload new profile picture">
+          <div class="flex items-center justify-center p-2 bg-white rounded-full shadow-md">
+            <Icon name="fluent:camera-add-48-filled" class="w-6 h-6 text-deepBlue" />
           </div>
         </label>
-        <input
-          type="file"
-          id="picture_input"
-          @change="choosePict"
-          class="hidden"
-          accept="image/*"
-          style="display: none"
-          hidden
-        />
+        <input type="file" id="picture_input" @change="choosePict" class="hidden" accept="image/*" style="display: none"
+          hidden />
       </div>
       <!-- Profile Name and Type -->
       <div class="flex flex-col items-center justify-center mt-4">
@@ -389,23 +378,16 @@ const discardChanges = () => {
     </div>
 
     <!-- Learning Statistics -->
-    <div
-      class="w-full mx-auto my-4 overflow-hidden bg-white rounded-md shadow-md">
+    <div class="w-full mx-auto my-4 overflow-hidden bg-white rounded-md shadow-md">
       <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
         <h3 class="text-lg font-semibold text-white">Learning Statistics</h3>
       </div>
 
-      <div
-        class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5"
-      >
+      <div class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5">
         <!-- Topic Opened -->
         <div class="stat-card">
           <div class="bg-blue-100 stat-icon">
-            <Icon
-              name="fa6-solid:book-open-reader"
-              size="20"
-              class="w-6 h-6 text-deepBlue"
-            />
+            <Icon name="fa6-solid:book-open-reader" size="20" class="w-6 h-6 text-deepBlue" />
           </div>
           <div class="stat-content">
             <span class="stat-label">Topics Opened</span>
@@ -416,41 +398,29 @@ const discardChanges = () => {
         <!-- Favorite Subject -->
         <div class="stat-card">
           <div class="bg-green-100 stat-icon">
-            <Icon
-              name="material-symbols:favorite-rounded"
-              size="20"
-              class="w-6 h-6 text-normalGreener"
-            />
+            <Icon name="material-symbols:favorite-rounded" size="20" class="w-6 h-6 text-normalGreener" />
           </div>
           <div class="stat-content">
             <span class="stat-label">Subject Opened</span>
-            <span class="stat-value">English</span>
+            <span class="stat-value">{{ profileData.openedSubjects > 0 ? profileData.openedSubjects : 5 }}</span>
           </div>
         </div>
 
         <!-- Time Spent -->
         <div class="stat-card">
           <div class="bg-red-100 stat-icon">
-            <Icon
-              name="stash:clock-solid"
-              size="20"
-              class="w-6 h-6 text-red-600"
-            />
+            <Icon name="stash:clock-solid" size="20" class="w-6 h-6 text-red-600" />
           </div>
           <div class="stat-content">
             <span class="stat-label">Time Spent</span>
-            <span class="stat-value">{{ profileData.timeSpentFormatted ?? 0}}</span>
+            <span class="stat-value">{{ profileData.timeSpentFormatted ?? 0 }}</span>
           </div>
         </div>
 
         <!-- Quiz Attempts -->
         <div class="stat-card">
           <div class="bg-purple-100 stat-icon">
-            <Icon
-              name="solar:notebook-bold"
-              size="20"
-              class="w-6 h-6 text-purple-600"
-            />
+            <Icon name="solar:notebook-bold" size="20" class="w-6 h-6 text-purple-600" />
           </div>
           <div class="stat-content">
             <span class="stat-label">Quiz Attempts</span>
@@ -461,11 +431,7 @@ const discardChanges = () => {
         <!-- Average Score -->
         <div class="stat-card">
           <div class="bg-indigo-100 stat-icon">
-            <Icon
-              name="heroicons:chart-bar-16-solid"
-              size="20"
-              class="w-6 h-6 text-indigo-600"
-            />
+            <Icon name="heroicons:chart-bar-16-solid" size="20" class="w-6 h-6 text-indigo-600" />
           </div>
           <div class="stat-content">
             <span class="stat-label">Average Quiz Score</span>
@@ -475,31 +441,29 @@ const discardChanges = () => {
       </div>
     </div>
 
-         <!-- Learning Subject Statistics -->
+    <!-- Learning Subject Statistics -->
     <div class="w-full mx-auto my-4 overflow-hidden bg-white rounded-md shadow-md"
-    v-if="profileData?.recentTopics?.length > 0">
-            <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
-                <h3 class="text-lg font-semibold text-white">Learning Topics Statistics</h3>
-            </div>
-            <div class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5">
-                <div class="stat-card" v-for="(topic, index) in profileData.recentTopics" :key="index">
-                    <div class="w-10 h-10 overflow-hidden rounded-full">
-                        <NuxtImg :src="apiDocs.baseURL.replace('/v1', '') + '/' + topic.thumbnail" :alt="topic.name" class="object-cover w-full h-full" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-label">{{ topic.name }}</span>
-                        <span class="stat-value">{{ Math.min(topic.progress.avgProgress ?? 0, 100).toFixed(1)  }}%</span>
-                        
-                    </div>
-                </div>
-            </div>
-        </div>
- 
+      v-if="profileData?.recentTopics?.length > 0">
+      <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
+        <h3 class="text-lg font-semibold text-white">Learning Topics Statistics</h3>
+      </div>
+      <div class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5">
+        <HomeTopicCard v-for="topic in profileData.recentTopics" :key="topic?._id" :topic-id="topic?._id"
+          :topic-image="topic?.thumbnail" :topic-title="topic?.name" :topic-description="topic?.descriptions"
+          :topic-duration="topic?.topic_duration ? topic?.topic_duration : '10 min'"
+          :topic-likes="topic?.topic_likes ? topic?.topic_likes : 100"
+          :topic-views="topic?.viewedBy?.length ? topic?.viewedBy?.length : topic?.views ? topic?.views : 0"
+          topic-level="lower secondary" :topic-standard="topic?.level?.name" :subject-name="topic?.subject?.name"
+          :topic-viewed="topic?.isViewed" :topic-progress="topic?.progress?.avgProgress" 
+          model-type="profile"
+          
+          />
+      </div>
+    </div>
+
     <!-- Personal Information -->
     <div class="w-full mx-auto my-6">
-      <div
-        class="overflow-hidden bg-white border border-gray-100 rounded-md shadow-md"
-      >
+      <div class="overflow-hidden bg-white border border-gray-100 rounded-md shadow-md">
         <!-- Header -->
         <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
           <h3 class="text-lg font-semibold text-white">Personal Information</h3>
@@ -507,213 +471,118 @@ const discardChanges = () => {
 
         <!-- Form Fields - Modified for full width -->
         <div class="p-6">
-          <div
-            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-5"
-          >
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-5">
             <!-- First Name -->
             <div class="relative group">
-              <label
-                for="fname"
-                class="block mb-1 ml-1 text-xs font-medium text-textGray"
-              >
+              <label for="fname" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 First Name
               </label>
               <div class="relative flex items-center w-full">
-                <span
-                  class="absolute flex items-center pointer-events-none left-3"
-                >
-                  <Icon
-                    name="heroicons:user"
-                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue"
-                  />
+                <span class="absolute flex items-center pointer-events-none left-3">
+                  <Icon name="heroicons:user"
+                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue" />
                 </span>
-                <input
-                  type="text"
-                  id="fname"
-                  name="fname"
-                  autocomplete="off-name"
-                  @input="onValueChanged('fname')"
+                <input type="text" id="fname" name="fname" autocomplete="off-name" @input="onValueChanged('fname')"
                   v-model="profile.fname"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                  placeholder="Enter your first name"
-                  @keydown.space.prevent
-                />
+                  placeholder="Enter your first name" @keydown.space.prevent />
               </div>
             </div>
 
             <!-- Last Name -->
             <div class="relative group">
-              <label
-                for="lname"
-                class="block mb-1 ml-1 text-xs font-medium text-textGray"
-              >
+              <label for="lname" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 Last Name
               </label>
               <div class="relative flex items-center w-full">
-                <span
-                  class="absolute flex items-center pointer-events-none left-3"
-                >
-                  <Icon
-                    name="heroicons:user"
-                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue"
-                  />
+                <span class="absolute flex items-center pointer-events-none left-3">
+                  <Icon name="heroicons:user"
+                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue" />
                 </span>
-                <input
-                  type="text"
-                  id="lname"
-                  name="lname"
-                  autocomplete="off-name"
-                  @input="onValueChanged('lname')"
+                <input type="text" id="lname" name="lname" autocomplete="off-name" @input="onValueChanged('lname')"
                   v-model="profile.lname"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                  placeholder="Enter your last name"
-                  @keydown.space.prevent
-                />
+                  placeholder="Enter your last name" @keydown.space.prevent />
               </div>
             </div>
 
             <!-- Email Address -->
-            <div
-              class="relative group"
-              v-if="profile.type.toLowerCase() !== 'student'"
-            >
-              <label
-                for="email"
-                class="block mb-1 ml-1 text-xs font-medium text-textGray"
-              >
+            <div class="relative group" v-if="profile.type.toLowerCase() !== 'student'">
+              <label for="email" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 Email Address
               </label>
               <div class="relative flex items-center w-full">
-                <span
-                  class="absolute flex items-center pointer-events-none left-3"
-                >
-                  <Icon
-                    name="heroicons:envelope"
-                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue"
-                  />
+                <span class="absolute flex items-center pointer-events-none left-3">
+                  <Icon name="heroicons:envelope"
+                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue" />
                 </span>
-                <input
-                  type="email"
-                  id="email"
-                  name="username"
-                  autocomplete="off"
-                  @input="onValueChanged('email')"
+                <input type="email" id="email" name="username" autocomplete="off" @input="onValueChanged('email')"
                   v-model="profile.email"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                  placeholder="Enter your email address"
-                />
+                  placeholder="Enter your email address" />
               </div>
             </div>
 
             <!-- Phone Number -->
-            <div
-              class="relative group"
-              v-if="profile.type.toLowerCase() !== 'student'"
-            >
-              <label
-                for="phone"
-                class="block mb-1 ml-1 text-xs font-medium text-textGray"
-              >
+            <div class="relative group" v-if="profile.type.toLowerCase() !== 'student'">
+              <label for="phone" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 Phone Number
               </label>
               <div class="relative flex items-center w-full">
-                <span
-                  class="absolute flex items-center pointer-events-none left-3"
-                >
-                  <Icon
-                    name="heroicons:phone"
-                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue"
-                  />
+                <span class="absolute flex items-center pointer-events-none left-3">
+                  <Icon name="heroicons:phone"
+                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue" />
                 </span>
 
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  autocomplete="off"
-                  v-model="profile.phone"
+                <input type="tel" id="phone" name="phone" autocomplete="off" v-model="profile.phone"
                   @input="onValueChanged('phone')"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                  placeholder="Enter your phone number"
-                />
+                  placeholder="Enter your phone number" />
               </div>
             </div>
 
             <!-- Organization -->
-            <div
-              class="relative group"
-              v-if="profile.type.toLowerCase() !== 'student'"
-            >
-              <label
-                for="organization"
-                class="block mb-1 ml-1 text-xs font-medium text-textGray"
-              >
+            <div class="relative group" v-if="profile.type.toLowerCase() !== 'student'">
+              <label for="organization" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 Organization
               </label>
               <div class="relative flex items-center w-full">
-                <span
-                  class="absolute flex items-center pointer-events-none left-3"
-                >
-                  <Icon
-                    name="tdesign:institution"
-                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue"
-                  />
+                <span class="absolute flex items-center pointer-events-none left-3">
+                  <Icon name="tdesign:institution"
+                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue" />
                 </span>
-                <input
-                  type="text"
-                  id="organization"
-                  name="organization"
-                  autocomplete="off"
-                  @input="onValueChanged('organization')"
-                  v-model="profile.organization"
+                <input type="text" id="organization" name="organization" autocomplete="off"
+                  @input="onValueChanged('organization')" v-model="profile.organization"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                  placeholder="Organization (eg: Ekima interctive company)"
-                  @keydown.space.prevent
-                />
+                  placeholder="Organization (eg: Ekima interctive company)" @keydown.space.prevent />
               </div>
             </div>
 
             <!-- Region -->
             <div class="relative group">
-              <label
-                for="region"
-                class="block mb-1 ml-1 text-xs font-medium text-textGray"
-              >
+              <label for="region" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 Region
               </label>
               <div class="relative flex items-center">
                 <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
-                  <Icon
-                    name="heroicons:map"
-                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue"
-                  />
+                  <Icon name="heroicons:map"
+                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue" />
                 </span>
 
                 <!-- Select input with space for the icon -->
-                <select
-                  name="region"
-                  id="region"
-                  v-model="profile.region"
-                  class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                >
+                <select name="region" id="region" v-model="profile.region"
+                  class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
                   <option value="" v-if="data.status === 'pending'">
                     Loading...
                   </option>
                   <option value="" v-else-if="data.status === 'error'">
                     {{ data.error }}
                   </option>
-                  <option
-                    value=""
-                    v-else-if="data.regions && data.status === 'success'"
-                  >
+                  <option value="" v-else-if="data.regions && data.status === 'success'">
                     Eg ( Arusha ) ...
                   </option>
-                  <option
-                    v-for="(region, index) in data.regions"
-                    :key="index"
-                    :value="region.toLowerCase()"
-                  >
+                  <option v-for="(region, index) in data.regions" :key="index" :value="region.toLowerCase()">
                     {{
                       `${region}`.charAt(0).toUpperCase() +
                       `${region}`.slice(1).toLowerCase()
@@ -725,28 +594,19 @@ const discardChanges = () => {
 
             <!-- District -->
             <div class="relative group">
-              <label
-                for="district"
-                class="block mb-1 ml-1 text-xs font-medium text-textGray"
-              >
+              <label for="district" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 District
               </label>
               <div class="relative flex items-center">
                 <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
-                  <Icon
-                    name="heroicons:map"
-                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue"
-                  />
+                  <Icon name="heroicons:map"
+                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue" />
                 </span>
 
                 <!-- Select input with space for the icon -->
-                <select
-                  name="district"
-                  id="district"
-                  v-model="profile.district"
-                  class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                >
+                <select name="district" id="district" v-model="profile.district"
+                  class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
                   <option value="" v-if="data.status === 'idle'">
                     Select Region First
                   </option>
@@ -756,17 +616,10 @@ const discardChanges = () => {
                   <option value="" v-if="data.status === 'error'">
                     {{ data.error }}
                   </option>
-                  <option
-                    value=""
-                    v-else-if="data.district && data.status === 'success'"
-                  >
+                  <option value="" v-else-if="data.district && data.status === 'success'">
                     Eg (Arusha CC) ...
                   </option>
-                  <option
-                    v-for="(district, index) in data.district"
-                    :key="index"
-                    :value="district.toLowerCase()"
-                  >
+                  <option v-for="(district, index) in data.district" :key="index" :value="district.toLowerCase()">
                     {{
                       `${district}`.charAt(0).toUpperCase() +
                       `${district}`.slice(1).toLowerCase()
@@ -778,28 +631,19 @@ const discardChanges = () => {
 
             <!-- School -->
             <div class="relative group">
-              <label
-                for="school"
-                class="block mb-1 ml-1 text-xs font-medium text-textGray"
-              >
+              <label for="school" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 School
               </label>
               <div class="relative flex items-center">
                 <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
-                  <Icon
-                    name="tdesign:institution"
-                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue"
-                  />
+                  <Icon name="tdesign:institution"
+                    class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue" />
                 </span>
 
                 <!-- Select input with space for the icon -->
-                <select
-                  name="school"
-                  id="school"
-                  v-model="profile.school"
-                  class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                >
+                <select name="school" id="school" v-model="profile.school"
+                  class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
                   <option value="" v-if="data.status === 'idle'">
                     Select Region and District First
                   </option>
@@ -809,17 +653,10 @@ const discardChanges = () => {
                   <option value="" v-if="data.status === 'error'">
                     {{ data.error }}
                   </option>
-                  <option
-                    value=""
-                    v-else-if="data.schools && data.status === 'success'"
-                  >
+                  <option value="" v-else-if="data.schools && data.status === 'success'">
                     Eg (Taifa Secondary School) ...
                   </option>
-                  <option
-                    v-for="school in data.schools"
-                    :key="school._id"
-                    :value="school._id"
-                  >
+                  <option v-for="school in data.schools" :key="school._id" :value="school._id">
                     {{
                       school.name
                         .split(" ")
@@ -840,93 +677,25 @@ const discardChanges = () => {
     </div>
 
     <!-- Submit Button -->
-    <div
-      class="flex items-center justify-between w-full gap-4 mt-8"
-      v-if="isModified"
-    >
-      <button
-        type="reset"
-        @click="discardChanges"
-        class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium transition-colors duration-500 ease-in-out border-2 rounded-md hover:text-white text-deepBlue border-oceanBlue hover:bg-gradient-to-r from-deepBlue to-oceanBlue hover:shadow-md"
-      >
+    <div class="flex items-center justify-between w-full gap-4 mt-8" v-if="isModified">
+      <button type="reset" @click="discardChanges"
+        class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium transition-colors duration-500 ease-in-out border-2 rounded-md hover:text-white text-deepBlue border-oceanBlue hover:bg-gradient-to-r from-deepBlue to-oceanBlue hover:shadow-md">
         Discard Changes
         <Icon name="heroicons:arrow-right" class="w-4 h-4" />
       </button>
-      <button
-        type="submit"
-        @click="updatedProfile()"
-        class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium text-white transition-all duration-500 rounded-md bg-gradient-to-r to-oceanBlue from-deepBlue hover:shadow-md"
-      >
+      <button type="submit" @click="updatedProfile()"
+        class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium text-white transition-all duration-500 rounded-md bg-gradient-to-r to-oceanBlue from-deepBlue hover:shadow-md">
         Save Changes
         <Icon name="heroicons:arrow-right" class="w-4 h-4" />
       </button>
     </div>
   </div>
-   <div v-else-if="status == 'error'" class="flex items-center justify-center w-full max-w-7xl'">
-  <MessagePageNotFound />
+  <div v-else-if="status == 'error'" class="flex items-center justify-center w-full max-w-7xl'">
+    <MessagePageNotFound />
   </div>
-     <div v-else class="flex items-center justify-center w-full max-w-7xl'">
+  <div v-else class="flex items-center justify-center w-full max-w-7xl'">
     <p class="text-center text-medium">
       Try to refresh the page, Something went Wrong
     </p>
   </div>
 </template>
-
-
-   <!-- Learning Subject Statistics -->
-    <!-- <div class="w-full mx-auto my-4 overflow-hidden bg-white rounded-md shadow-md">
-            <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
-                <h3 class="text-lg font-semibold text-white">Learning Topics Statistics</h3>
-            </div>
-            <div class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5">
-                <div class="stat-card">
-                    <div class="w-10 h-10 overflow-hidden rounded-full">
-                        <NuxtImg src="/images/physics.jpeg" alt="physics" class="object-cover w-full h-full" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-label">Introduction to physics</span>
-                        <span class="stat-value">51.00%</span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="w-10 h-10 overflow-hidden rounded-full">
-                        <NuxtImg src="/images/physics.jpeg" alt="physics" class="object-cover w-full h-full" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-label">Measurement</span>
-                        <span class="stat-value">20.00%</span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="w-10 h-10 overflow-hidden rounded-full">
-                        <NuxtImg src="/images/physics.jpeg" alt="physics" class="object-cover w-full h-full" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-label">Introduction to Force</span>
-                        <span class="stat-value">34.00%</span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="w-10 h-10 overflow-hidden rounded-full">
-                        <NuxtImg src="/images/physics.jpeg" alt="physics" class="object-cover w-full h-full" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-label">Sinking and Float</span>
-                        <span class="stat-value">43.00%</span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="w-10 h-10 overflow-hidden rounded-full">
-                        <NuxtImg src="/images/physics.jpeg" alt="physics" class="object-cover w-full h-full" />
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-label">Pressure</span>
-                        <span class="stat-value">29.00%</span>
-                    </div>
-                </div>
-            </div>
-        </div> -->

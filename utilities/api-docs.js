@@ -33,12 +33,14 @@ export default {
         resetPassword: `${baseURL}/auth/reset-password`,
         changePassword: `${baseURL}/auth/change-password`,
         userExists: `${baseURL}/auth/user-exists`,
-
+    
         // GET
         profile: `${baseURL}/auth/profile`,
-
+    
         // PATCH or PUT
         profileEdit: `${baseURL}/auth/profile/edit`,
+    updateTimeSpent: `${baseURL}/auth/update-time-spent`, // Update time spent on the platform
+    profilePicture: `${baseURL}/auth/profile/update-picture`,
       },
 
       // CHAPTERS API
@@ -60,6 +62,24 @@ export default {
   // NOTES API
   notes: {
     getNotes: `${baseURL}/notes`,
+  },
+
+  // education level
+  educationLevel: {
+    getEducationLevels: `${baseURL}/educationLevels`,
+    getEducationLevelId: `${baseURL}/educationLevels/:id`,
+  },
+
+  // languages API
+  languages: {
+    getLanguages: `${baseURL}/languages`,
+    getLanguageId: `${baseURL}/languages/:id`,
+  },
+
+  // skills API
+  skills: {
+    getSkills: `${baseURL}/skills`,
+    getSkillId: `${baseURL}/skills/:id`,
   },
 
       // LEVELS API
@@ -105,10 +125,11 @@ export default {
     putProgresschapterIdVideoProgress : `${baseURL}/progress/chapters/{chapterId}/video-progress`,
     putProgresschapterIdNotesProgress: `${baseURL}/progress/chapters/{chapterId}/notes-progress`,
     postProgresschapterIdExperimentAttempts: `${baseURL}/progress/chapters/{chapterId}/experiment-attempts`,
+    postQuizAssessment:`${baseURL}/progress/chapters/{chapterId}/assessment-attempts`,
     getProgressSubjectsSubjectId: `${baseURL}/progress/subjects/{subjectId}`,
     getProgressTopicsTopicId: `${baseURL}/progress/topics/{topicId}`,
   }
 
 }
-    }
-  }
+}
+}
