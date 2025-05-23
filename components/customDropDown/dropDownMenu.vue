@@ -1,7 +1,8 @@
 <script setup>
 import { reactive, ref, computed, nextTick } from 'vue';
 import debounce from 'lodash/debounce';
-import apiDocs from '~/utilities/api-docs';
+import apiDocsFile from '~/utilities/api-docs';
+const apiDocs = apiDocsFile.setup();
 
 const token = useCookie('signInAccessToken').value;
 const headers = {
