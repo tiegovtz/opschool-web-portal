@@ -576,7 +576,7 @@ const observerContent = () => {
       coverImg.setAttribute('src', element.getAttribute('poster'));
       coverImg.className = `
     absolute top-0 -left-full h-full w-full z-4
-    transition-all duration-500 ease-in-out 
+    transition-all duration-500 ease-in-out  object-contain
   `.trim();
 
       // === Label Button Setup ===

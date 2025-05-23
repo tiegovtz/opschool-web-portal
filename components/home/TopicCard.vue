@@ -95,7 +95,7 @@ const userToken = useCookie('signInUserToken')
     @click="setTopicToView()"
     :class="[
       'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out min-w-[300px]',
-      layoutEffect == 'grid' && modelType === 'card' ? 'flex-col' : 'flex-row h-32',
+      layoutEffect == 'grid' && modelType === 'card' ? 'flex-col lg:pb-4' : 'flex-row h-32',
       { 'cursor-pointer flex-row my-2 pb-0 md:h-20 !max-h-14 ': modelType === 'search' },
     ]">
     <!-- topic image -->
