@@ -10,9 +10,8 @@ export default {
     // and retrieve the environment variable for the API URL
     if (_BASE_API_URL.value) {
       baseURL = _BASE_API_URL.value; // Use the value from the controlls.js file
-    }
-    else{
-      baseURL = process.env.NUXT_API_BASE_URL 
+    } else {
+      baseURL = process.env.NUXT_API_BASE_URL;
     }
 
     return {
@@ -33,14 +32,14 @@ export default {
         resetPassword: `${baseURL}/auth/reset-password`,
         changePassword: `${baseURL}/auth/change-password`,
         userExists: `${baseURL}/auth/user-exists`,
-    
+
         // GET
         profile: `${baseURL}/auth/profile`,
-    
+
         // PATCH or PUT
         profileEdit: `${baseURL}/auth/profile/edit`,
-    updateTimeSpent: `${baseURL}/auth/update-time-spent`, // Update time spent on the platform
-    profilePicture: `${baseURL}/auth/profile/update-picture`,
+        updateTimeSpent: `${baseURL}/auth/update-time-spent`, // Update time spent on the platform
+        profilePicture: `${baseURL}/auth/profile/update-picture`,
       },
 
       // CHAPTERS API
@@ -54,33 +53,33 @@ export default {
       // EXPERIMENTS API
       experiments: {
         getExperiments: `${baseURL}/experiments`,
-    getExperimentId: `${baseURL}/experiments/:id`,
-    getPublicExperiments: `${baseURL}/public-experiments`,
-    getPublicExperimentsBySubjectId: `${baseURL}/public-experiments/by-subject/{subjectId}`,
-  },
+        getExperimentId: `${baseURL}/experiments/:id`,
+        getPublicExperiments: `${baseURL}/public-experiments`,
+        getPublicExperimentsBySubjectId: `${baseURL}/public-experiments/by-subject/{subjectId}`,
+      },
 
-  // NOTES API
-  notes: {
-    getNotes: `${baseURL}/notes`,
-  },
+      // NOTES API
+      notes: {
+        getNotes: `${baseURL}/notes`,
+      },
 
-  // education level
-  educationLevel: {
-    getEducationLevels: `${baseURL}/educationLevels`,
-    getEducationLevelId: `${baseURL}/educationLevels/:id`,
-  },
+      // education level
+      educationLevel: {
+        getEducationLevels: `${baseURL}/educationLevels`,
+        getEducationLevelId: `${baseURL}/educationLevels/:id`,
+      },
 
-  // languages API
-  languages: {
-    getLanguages: `${baseURL}/languages`,
-    getLanguageId: `${baseURL}/languages/:id`,
-  },
+      // languages API
+      languages: {
+        getLanguages: `${baseURL}/languages`,
+        getLanguageId: `${baseURL}/languages/:id`,
+      },
 
-  // skills API
-  skills: {
-    getSkills: `${baseURL}/skills`,
-    getSkillId: `${baseURL}/skills/:id`,
-  },
+      // skills API
+      skills: {
+        getSkills: `${baseURL}/skills`,
+        getSkillId: `${baseURL}/skills/:id`,
+      },
 
       // LEVELS API
       levels: {
@@ -88,48 +87,47 @@ export default {
         getLevelId: `${baseURL}/levels/:id`,
       },
 
-  // SUBJECTS API
-  subjects: {
-    getSubjects: `${baseURL}/subjects`,
-    getSubjectId: `${baseURL}/subjects/:id`,
-    getPublicSubjects: `${baseURL}/public-subjects`,
+      // SUBJECTS API
+      subjects: {
+        getSubjects: `${baseURL}/subjects`,
+        getSubjectId: `${baseURL}/subjects/:id`,
+        getPublicSubjects: `${baseURL}/public-subjects`,
+      },
+
+      // TOPICS API
+      topics: {
+        getTopics: `${baseURL}/topics`,
+        getTopicId: `${baseURL}/topics/:id`,
+        getQuestionId: `${baseURL}/topics/{id}/questions`,
+        getSubjectId: `${baseURL}/public-topics/by-subject/{subjectId}`,
+        filterTopics: `${baseURL}/public-topics`,
+        filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
+        publicTopicsFilterAll: `${baseURL}/public-topics/filter-all`,
+        topicViewedRead: `${baseURL}/topics/{id}/read`,
+      },
+
+      // VIDEO API
+      videos: {
+        getStream: `${baseURL}/video-stream/`,
+        getVideos: `${baseURL}/videos`,
+        getVideoById: `${baseURL}/videos/{id}`,
+        getPublicVideo: `${baseURL}/public-videos`,
+        getPublicVideoBySubjectId: `${baseURL}/public-videos/by-subject/{subjectId}`,
+      },
+
+      //  PROGRESS TRACKING API
+      progressTracking: {
+        postProgress: `${baseURL}/progress`,
+        getProgress: `${baseURL}/progress`,
+        getProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
+        putProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
+        putProgresschapterIdVideoProgress: `${baseURL}/progress/chapters/{chapterId}/video-progress`,
+        putProgresschapterIdNotesProgress: `${baseURL}/progress/chapters/{chapterId}/notes-progress`,
+        postProgresschapterIdExperimentAttempts: `${baseURL}/progress/chapters/{chapterId}/experiment-attempts`,
+        postQuizAssessment: `${baseURL}/progress/chapters/{chapterId}/assessment-attempts`,
+        getProgressSubjectsSubjectId: `${baseURL}/progress/subjects/{subjectId}`,
+        getProgressTopicsTopicId: `${baseURL}/progress/topics/{topicId}`,
+      },
+    };
   },
-
-  // TOPICS API
-  topics: {
-    getTopics: `${baseURL}/topics`,
-    getTopicId: `${baseURL}/topics/:id`,
-    getQuestionId: `${baseURL}/topics/{id}/questions`,
-    getSubjectId: `${baseURL}/public-topics/by-subject/{subjectId}`,
-    filterTopics: `${baseURL}/public-topics`,
-    filterTopicsByUser: `${baseURL}/public-topics/{userId}`,
-    publicTopicsFilterAll: `${baseURL}/public-topics/filter-all`,
-    topicViewedRead: `${baseURL}/topics/{id}/read`,
-  },
-
-  // VIDEO API 
-  videos: {
-    getStream: `${baseURL}/video-stream/`,
-    getVideos: `${baseURL}/videos`,
-    getVideoById: `${baseURL}/videos/{id}`,
-    getPublicVideo: `${baseURL}/public-videos`,
-    getPublicVideoBySubjectId: `${baseURL}/public-videos/by-subject/{subjectId}`,
-  },
-
-  //  PROGRESS TRACKING API
-  progressTracking: {
-    postProgress: `${baseURL}/progress`,
-    getProgress: `${baseURL}/progress`,
-    getProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
-    putProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
-    putProgresschapterIdVideoProgress : `${baseURL}/progress/chapters/{chapterId}/video-progress`,
-    putProgresschapterIdNotesProgress: `${baseURL}/progress/chapters/{chapterId}/notes-progress`,
-    postProgresschapterIdExperimentAttempts: `${baseURL}/progress/chapters/{chapterId}/experiment-attempts`,
-    postQuizAssessment:`${baseURL}/progress/chapters/{chapterId}/assessment-attempts`,
-    getProgressSubjectsSubjectId: `${baseURL}/progress/subjects/{subjectId}`,
-    getProgressTopicsTopicId: `${baseURL}/progress/topics/{topicId}`,
-  }
-
-}
-}
-}
+};

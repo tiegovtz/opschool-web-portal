@@ -457,10 +457,10 @@ watch(
 
             <div class="flex flex-col gap-4 mt-10">
               <!-- Home Drop Down Menu -->
-              <DropDownMenu
+              <!-- <DropDownMenu
                 :active-tab="activeTab"
                 @emit-update-filter-value="filterValue = $event"
-              />
+              /> -->
             </div>
           </div>
         </div>
@@ -492,11 +492,11 @@ watch(
           class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow"
         >
           <!-- Home Drop Down Menu -->
-          <DropDownMenu
+          <!-- <DropDownMenu
             @emit-update-filter-value="filterValue = $event"
             :active-tab="activeTab"
             :filter-value="[]"
-          />
+          /> -->
 
           <!-- <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" /> -->
         </div>
@@ -528,6 +528,7 @@ watch(
               "
               @click="filterValue = []"
               class="cursor-pointer text-oceanBlue"
+              v-trusted
             >
               Reset filters
             </span>
@@ -635,7 +636,7 @@ watch(
 
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" class="flex justify-center my-5" v-trusted>
-              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
+              <div v-if="totalPages <= 5" class="flex justify-center gap-2" v-trusted>
                 <PaginationBtn
                   v-for="page in totalPages"
                   :key="page"
@@ -646,10 +647,11 @@ watch(
                   @send-page-number="currentPage = $event"
                 />
               </div>
-              <div v-else class="flex items-center gap-2">
+              <div v-else class="flex items-center gap-2" v-trusted>
                 <div
                   class="flex items-center justify-center"
                   v-if="currentPage > 5"
+                  v-trusted
                 >
                   <Icon
                     name="iconamoon:arrow-left-2-fill"
@@ -728,6 +730,7 @@ watch(
       <div v-trusted
         v-else-if="status === 'error'"
         class="md:min-h-[342px] flex flex-col justify-center items-center"
+        
       >
         <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
         <p class="text-center">
@@ -739,10 +742,11 @@ watch(
       <!-- Status Success -->
       <div v-else-if="status == 'success'" class="" v-trusted>
         <!-- client only -->
-        <ClientOnly v-if="data.length > 0">
+        <ClientOnly v-if="data.length > 0" >
           <div class="flex flex-col w-full" v-trusted>
             <customGridTwo
               v-if="filters.level !== null && filters.subject !== null"
+              v-trusted
             >
               <template #data>
                 <!-- Topic Cards -->
@@ -808,6 +812,7 @@ watch(
                 <div
                   class="flex items-center justify-center"
                   v-if="currentPage > 5"
+                  v-trusted
                 >
                   <Icon
                     name="iconamoon:arrow-left-2-fill"
