@@ -570,7 +570,7 @@ const observerContent = () => {
 
       // === Label Button Setup ===
       label.innerHTML = showIcon;
-      label.title = 'Click to view labels';
+      label.title = 'Click to view image';
       label.className = `
     flex items-center justify-center
     absolute bottom-0 left-0
