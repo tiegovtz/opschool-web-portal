@@ -187,11 +187,11 @@ const visibleFilters = computed(() => {
 </script>
 
 <template>
-  <div v-if="isLoading">
+  <div v-if="isLoading" v-trusted>
       <p class="text-gray-400 animate-pulse">Loading filters...</p>
     </div>
      <!-- Actual dropdown rendering logic here -->
-     <form v-else class="flex flex-col w-full bg-white divide-y divide-gray-200 cursor-pointer" @reset="resetFilters">
+     <form v-else v-trusted class="flex flex-col w-full bg-white divide-y divide-gray-200 cursor-pointer" @reset="resetFilters">
         <!-- Filter legend and reset button -->
         <div class="flex items-center justify-between p-4 border-b bg-gray-50">
           <h2 class="text-lg font-bold text-gray-700">Filter</h2>
@@ -212,7 +212,7 @@ const visibleFilters = computed(() => {
           </div>
 
           <transition name="fade">
-            <div v-if="dropDownMenu.openMenus.includes(index)" class="mt-2 space-y-2">
+            <div v-trusted v-if="dropDownMenu.openMenus.includes(index)" class="mt-2 space-y-2">
               <!-- LEVEL -->
               <div v-if="filter.name.toLowerCase() === 'level'">
                 <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2">
@@ -223,38 +223,38 @@ const visibleFilters = computed(() => {
               </div>
 
               <!-- CLASS -->
-              <div v-else-if="filter.name === 'class'">
+              <div v-trusted v-else-if="filter.name === 'class'">
                 <div v-if="!selectedFilters.level" class="text-sm text-red-500">
                   Please select a level first.
                 </div>
-                <div v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
-                  <div v-if="group.level?.toLowerCase() === selectedFilters.level?.toLowerCase()">
+                <div v-else v-trusted v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
+                  <div v-trusted v-if="group.level?.toLowerCase() === selectedFilters.level?.toLowerCase()">
                     <label v-for="className in group.classes" :key="className" class="flex items-center gap-2">
                       <input :type="filter.inputType" :value="className" name="class" @change="selectClass(className)"
                       :checked="selectedFilters.class?.includes(className)" />
                       {{ className }}
                     </label>
                   </div>
-                  <div v-else class="flex items-center gap-2" >
+                  <div v-trusted v-else class="flex items-center gap-2" >
                     no content
                   </div>
                 </div>
               </div>
 
               <!-- SUBJECT -->
-              <div v-else-if="filter.name === 'subject'">
-                <div v-if="!selectedFilters.level" class="text-sm text-red-500">
+              <div v-trusted v-else-if="filter.name === 'subject'">
+                <div v-trusted v-if="!selectedFilters.level" class="text-sm text-red-500">
                   Please select a level first.
                 </div>
-                <div v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
-                  <div v-if="group.level === selectedFilters.level">
+                <div v-trusted v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
+                  <div v-trusted v-if="group.level === selectedFilters.level">
                     <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
                       @click.prevent="toggleCheckbox('subject', subject)">
                       <input :type="filter.inputType" :value="subject" :checked="selectedFilters.subject?.includes(subject)" @change="selectSubject(subject)" />
                       {{ subject }}
                     </label>
                   </div>
-                  <div v-else>
+                  <div v-trusted v-else>
                     <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
                       @click.prevent="toggleCheckbox('subject', subject)">
                       <input :type="filter.inputType" :value="subject" :checked="selectedFilters.subject?.includes(subject)"  @change="selectSubject(subject)" />
@@ -265,7 +265,7 @@ const visibleFilters = computed(() => {
               </div>
 
               <!-- GENERAL FILTER (Category, Language, Skills) -->
-              <div v-else>
+              <div v-trusted v-else>
                 <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2"
                   @click.prevent="toggleCheckbox(filter.name.toLowerCase(), option.name)">
                   <input :type="filter.inputType" :value="option.name" class="capitalize"

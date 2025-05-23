@@ -34,10 +34,10 @@ const setSeeMore = (seeMore) => {
 };
 </script>
 <template>
-  <div v-if="userToken">
-    <div v-if="activeTab.toLowerCase() === 'home'">
+  <div v-if="userToken" v-trusted>
+    <div v-trusted v-if="activeTab.toLowerCase() === 'home'">
       <!-- Subject Cards are in Grid -->
-      <customGridOne v-if="activeTab.toLowerCase() === 'home'">
+      <customGridOne v-trusted v-if="activeTab.toLowerCase() === 'home'">
         <template #data>
           <!-- Subject Cards are in Grid -->
           <SubjectCard
@@ -55,9 +55,10 @@ const setSeeMore = (seeMore) => {
         </template>
       </customGridOne>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'interactive books'">
+    <div v-trusted v-else-if="activeTab.toLowerCase() === 'interactive books'">
       <div v-for="(topics, index) in data" :key="index">
         <div
+          v-trusted
           v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
         >
@@ -78,6 +79,7 @@ const setSeeMore = (seeMore) => {
         <div
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
+          v-trusted
         >
           <p class="font-bold text-[1.3rem] capitalize">
             {{ topics?.dataOfKey.toLowerCase() }}
@@ -94,9 +96,10 @@ const setSeeMore = (seeMore) => {
           </small>
         </div>
 
-        <div v-if="data.length > 1">
+        <div v-trusted v-if="data.length > 1">
           <customGridOne
             v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
+            v-trusted
           >
             <template #data>
               <!-- Topic Cards  -->
@@ -128,7 +131,8 @@ const setSeeMore = (seeMore) => {
           </customGridOne>
 
           <div
-            v-else-if="!seeMoreDetails"
+            v-else-if="!seeMoreDetails" 
+            v-trusted
             :class="[
               'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
               layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
@@ -161,7 +165,7 @@ const setSeeMore = (seeMore) => {
           </div>
         </div>
 
-        <customGridOne v-else>
+        <customGridOne v-trusted v-else>
           <template #data>
             <!-- Topic Cards  -->
             <TopicCard
@@ -191,11 +195,12 @@ const setSeeMore = (seeMore) => {
         </customGridOne>
       </div>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'experiments'">
+    <div v-trusted v-else-if="activeTab.toLowerCase() === 'experiments'">
       <div v-for="(experiments, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
+          v-trusted
         >
           <p class="font-bold text-[1.3rem] capitalize">
             {{ experiments?.dataOfKey.toLowerCase() }}
@@ -214,6 +219,7 @@ const setSeeMore = (seeMore) => {
         <div
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
+          v-trusted
         >
           <p class="font-bold text-[1.3rem] capitalize">
             {{ experiments?.dataOfKey.toLowerCase() }}
@@ -230,9 +236,10 @@ const setSeeMore = (seeMore) => {
           </small>
         </div>
 
-        <div v-if="data.length > 1">
+        <div v-if="data.length > 1" v-trusted>
           <customGridOne
             v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
+            v-trusted
           >
             <template #data>
               <!-- Experiment Cards  -->
@@ -254,6 +261,7 @@ const setSeeMore = (seeMore) => {
 
           <div
             v-else-if="!seeMoreDetails"
+            v-trusted
             :class="[
               'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
               layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
@@ -275,7 +283,7 @@ const setSeeMore = (seeMore) => {
             />
           </div>
         </div>
-        <customGridOne v-else>
+        <customGridOne v-else v-trusted>
           <template #data>
             <!-- Experiments Cards  -->
             <ExperimentsCard
@@ -300,11 +308,13 @@ const setSeeMore = (seeMore) => {
         activeTab.toLowerCase() === 'video' ||
         activeTab.toLowerCase() === 'othervideo'
       "
+      v-trusted
     >
       <div v-for="(videos, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
+          v-trusted
         >
           <p class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey.toLowerCase() }}
@@ -323,6 +333,7 @@ const setSeeMore = (seeMore) => {
         <div
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
+          v-trusted
         >
           <p class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey.toLowerCase() }}
@@ -338,9 +349,12 @@ const setSeeMore = (seeMore) => {
             }}
           </small>
         </div>
-        <div v-if="data.length > 1">
+        <div v-if="data.length > 1"
+          v-trusted
+          >
           <customGridOne
             v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()"
+            v-trusted
           >
             <template #data>
               <!-- Video Cards  -->
@@ -365,6 +379,7 @@ const setSeeMore = (seeMore) => {
               'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
               layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
             ]"
+            v-trusted
           >
             <VideoCard
               v-for="video in videos?.data"
@@ -380,7 +395,7 @@ const setSeeMore = (seeMore) => {
             />
           </div>
         </div>
-        <customGridOne v-else>
+        <customGridOne v-else v-trusted>
           <template #data>
             <!-- Video Cards  -->
             <VideoCard
@@ -399,20 +414,23 @@ const setSeeMore = (seeMore) => {
         </customGridOne>
       </div>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'audio'">
+    <div v-else-if="activeTab.toLowerCase() === 'audio'" 
+    v-trusted
+    >
       <div></div>
       <div>
         <MessageTopicNotFound message="This page will be updated soon" />
       </div>
     </div>
-    <div v-else>
+    <div v-else v-trusted
+    >
       <MessageTopicNotFound message="This page will be updated soon" />
     </div>
   </div>
-  <div v-else>
-     <div v-if="activeTab.toLowerCase() === 'home'">
+  <div v-else v-trusted>
+     <div v-if="activeTab.toLowerCase() === 'home'" v-trusted>
       <!-- Subject Cards are in Grid -->
-      <customGridTwo v-if="activeTab.toLowerCase() === 'home'">
+      <customGridTwo v-if="activeTab.toLowerCase() === 'home'" v-trusted>
         <template #data>
           <!-- Subject Cards are in Grid -->
           <SubjectCard
@@ -430,11 +448,12 @@ const setSeeMore = (seeMore) => {
         </template>
       </customGridTwo>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'interactive books'">
+    <div v-else-if="activeTab.toLowerCase() === 'interactive books'" v-trusted>
       <div v-for="(topics, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
+          v-trusted
         >
           <p class="font-bold text-[1.3rem] capitalize">
             {{ topics?.dataOfKey.toLowerCase() }}
@@ -453,6 +472,7 @@ const setSeeMore = (seeMore) => {
         <div
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
+          v-trusted
         >
           <p class="font-bold text-[1.3rem] capitalize">
             {{ topics?.dataOfKey.toLowerCase() }}
@@ -469,9 +489,10 @@ const setSeeMore = (seeMore) => {
           </small>
         </div>
 
-        <div v-if="data.length > 1">
+        <div v-if="data.length > 1" v-trusted>
           <customGridTwo
             v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
+            v-trusted
           >
             <template #data>
               <!-- Topic Cards  -->
@@ -504,6 +525,7 @@ const setSeeMore = (seeMore) => {
 
           <div
             v-else-if="!seeMoreDetails"
+            v-trusted
             :class="[
               'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
               layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
@@ -536,7 +558,7 @@ const setSeeMore = (seeMore) => {
           </div>
         </div>
 
-        <customGridTwo v-else>
+        <customGridTwo v-else v-trusted>
           <template #data>
             <!-- Topic Cards  -->
             <TopicCard
@@ -566,11 +588,12 @@ const setSeeMore = (seeMore) => {
         </customGridTwo>
       </div>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'experiments'">
+    <div v-else-if="activeTab.toLowerCase() === 'experiments'" v-trusted>
       <div v-for="(experiments, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
+          v-trusted
         >
           <p class="font-bold text-[1.3rem] capitalize">
             {{ experiments?.dataOfKey.toLowerCase() }}
@@ -589,6 +612,7 @@ const setSeeMore = (seeMore) => {
         <div
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
+          v-trusted
         >
           <p class="font-bold text-[1.3rem] capitalize">
             {{ experiments?.dataOfKey.toLowerCase() }}
@@ -605,9 +629,10 @@ const setSeeMore = (seeMore) => {
           </small>
         </div>
 
-        <div v-if="data.length > 1">
+        <div v-if="data.length > 1" v-trusted>
           <customGridTwo
             v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey"
+            v-trusted
           >
             <template #data>
               <!-- Experiment Cards  -->
@@ -633,6 +658,7 @@ const setSeeMore = (seeMore) => {
               'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
               layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
             ]"
+            v-trusted
           >
             <!-- Experiment Cards  -->
             <ExperimentsCard
@@ -650,7 +676,7 @@ const setSeeMore = (seeMore) => {
             />
           </div>
         </div>
-        <customGridTwo v-else>
+        <customGridTwo v-else v-trusted>
           <template #data>
             <!-- Experiments Cards  -->
             <ExperimentsCard
@@ -675,11 +701,13 @@ const setSeeMore = (seeMore) => {
         activeTab.toLowerCase() === 'video' ||
         activeTab.toLowerCase() === 'othervideo'
       "
+      v-trusted
     >
       <div v-for="(videos, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey"
           class="flex items-center justify-between py-4"
+          v-trusted
         >
           <p class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey }}
@@ -698,6 +726,7 @@ const setSeeMore = (seeMore) => {
         <div
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
+          v-trusted
         >
           <p class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey }}
@@ -713,9 +742,12 @@ const setSeeMore = (seeMore) => {
             }}
           </small>
         </div>
-        <div v-if="data.length > 1">
+        <div v-if="data.length > 1"
+          v-trusted
+          >
           <customGridTwo
             v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey"
+            v-trusted
           >
             <template #data>
               <!-- Video Cards  -->
@@ -740,6 +772,7 @@ const setSeeMore = (seeMore) => {
               'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
               layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
             ]"
+            v-trusted
           >
             <VideoCard
               v-for="video in videos?.data"
@@ -755,7 +788,9 @@ const setSeeMore = (seeMore) => {
             />
           </div>
         </div>
-        <customGridTwo v-else>
+        <customGridTwo v-else
+        v-trusted
+        >
           <template #data>
             <!-- Video Cards  -->
             <VideoCard
@@ -774,13 +809,17 @@ const setSeeMore = (seeMore) => {
         </customGridTwo>
       </div>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'audio'">
+    <div v-else-if="activeTab.toLowerCase() === 'audio'"
+    v-trusted
+    >
       <div></div>
       <div>
         <MessageTopicNotFound message="This page will be updated soon" />
       </div>
     </div>
-    <div v-else>
+    <div v-else
+    v-trusted
+    >
       <MessageTopicNotFound message="This page will be updated soon" />
     </div>
   </div>

@@ -1,3 +1,5 @@
 export default defineNuxtPlugin(() => {
-  import('@google/model-viewer');
+  if (import.meta.client) {
+    import('@google/model-viewer');
+  }
 });
