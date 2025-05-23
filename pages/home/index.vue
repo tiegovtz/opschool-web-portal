@@ -675,6 +675,7 @@ watch(
                 <div
                   class="flex items-center justify-center"
                   v-if="currentPage > 4"
+                  v-trusted
                 >
                   <Icon
                     name="iconamoon:arrow-right-2-fill"
@@ -684,12 +685,6 @@ watch(
                 </div>
               </div>
             </div>
-
-            <!-- <PaginationSliderBtn  v-if="totalPages > 1"
-                  :pages="totalPages" :current-page="currentPage"
-                  @send-slider-page-number="currentPage = $event"
-                  @sendSliderCurrentPageNumber="sliceData(($event - 1) * pageSize, $event * pageSize)"
-                /> -->
           </div>
 
           <!-- data sorted if no subject -->
