@@ -412,10 +412,18 @@ const setPicCenter = async () => {
     });
 
 
-    const img = document.querySelectorAll(".notes td p + img");
-    if (img.length === 1) {
-      img[0].classList.add("pic-center");
-    }
+    document.querySelectorAll(".notes td").forEach((el)=>{
+      const images = el.querySelectorAll('img')
+
+      if(images.length === 0) return;
+      el.querySelectorAll('p').forEach((p)=>{
+        if(p.querySelector('img')){
+          p.className= "flex items-center justify-center flex-wrap"
+        }
+      })
+
+    })
+    
 
 
   }, 500);
@@ -544,34 +552,47 @@ const observerContent = () => {
 
 
     modelViewer.forEach(element => {
-      let zoomButton = document.createElement('button');
-      let label = document.createElement('button');
-      let span = document.createElement('span');
+      // === Elements Creation ===
+      const zoomButton = document.createElement('button');
+      const label = document.createElement('button');
+      const span = document.createElement('span');
+      const coverImg = document.createElement('img');
+
       let isZoomed = false;
-      let coverImg = document.createElement('img');
+      let isCovered = true; // Initially covered
 
-      // Setup cover image
+      // === Cover Image Setup ===
       coverImg.setAttribute('src', element.getAttribute('poster'));
-      coverImg.className = "absolute top-0 left-0 h-full w-full z-4 transition-all duration-500 ease-in-out"; // Enable smooth hiding
+      coverImg.className = `
+    absolute top-0 -left-full h-full w-full z-4
+    transition-all duration-500 ease-in-out
+  `.trim();
 
-      // Setup label button
+      // === Label Button Setup ===
       label.textContent = 'labels';
-      label.className = 'flex items-center justify-center absolute bottom-0 left-0 bg-oceanBlue text-white px-2 py-1 rounded-md z-10';
+      label.title = 'Click to view labels';
+      label.className = `
+    flex items-center justify-center
+    absolute bottom-0 left-0
+    bg-oceanBlue text-white px-2 py-1
+    rounded-md z-10 capitalize
+  `.trim();
 
-      // Setup zoom and 3D icon
+      // === Zoom & 3D Button Setup ===
       zoomButton.innerHTML = zoomInIcon;
       span.innerHTML = icon3D;
-      zoomButton.classList.add('zoom-button');
-      span.classList.add('span-3D');
+      zoomButton.className = 'zoom-button';
       zoomButton.style.backgroundColor = '#56ade8';
+      span.className = 'span-3D';
 
-      // Append everything
+      // === Append Elements to <model-viewer> ===
       element.append(zoomButton, span, coverImg, label);
 
-      // Zoom click
-      zoomButton.addEventListener('click', (event) => {
+      // === Zoom Button Logic ===
+      zoomButton.addEventListener('click', event => {
         event.stopPropagation();
         isZoomed = !isZoomed;
+
         element.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
         if (isZoomed) {
@@ -585,16 +606,16 @@ const observerContent = () => {
         }
       });
 
-      // Label button hides the cover image from left to right
-      label.addEventListener('click', (event) => {
+      // === Label Button Logic (Toggle Cover) ===
+      label.addEventListener('click', event => {
         event.stopPropagation();
+        isCovered = !isCovered;
 
-        // Trigger shrink animation
-        coverImg.style.width = "0";
-        coverImg.style.opacity = "0";
-        coverImg.style.transition = "all 0.5s ease-in-out";
+        coverImg.classList.toggle('left-0', !isCovered);
+        coverImg.classList.toggle('-left-full', isCovered);
       });
     });
+
 
 
 
@@ -784,32 +805,9 @@ definePageMeta({
                 <!-- <span>Back</span> -->
               </NuxtLink>
 
-              <!-- <NuxtLink :to="{
-                path: '/',
-                query: {
-                  tab: 'interactive',
-                  subject: topicLevel,
-                  class: topicStandard,
-                },
-              }" class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
+              <p class="font-medium text-medium" v-if="chapters.status === 'success'">
                 {{
-                  topicStandard != null &&
-                    topicStandard != undefined &&
-                    topicStandard != "null"
-                    ? topicStandard
-                    : `Form One`
-                }}
-                <Icon name="weui:arrow-outlined" size="18" class="text-black" />
-              </NuxtLink> -->
-
-              <p class="font-medium text-medium">
-                {{
-                  topicTitle != null &&
-                    topicTitle != undefined &&
-                    topicTitle != "null"
-                    ? topicTitle
-                    : `Introduction to
-                Physics`
+                  chapters.notes?.name
                 }}
               </p>
             </div>
@@ -822,8 +820,6 @@ definePageMeta({
 
           <!-- Description -->
           <div class="relative flex flex-col justify-center w-full gap-2 py-3 content-view">
-            <!-- <p class="mx-auto notes md:px-4 max-w-7xl"
-              v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
             <!-- Chapter Notes -->
             <div class="mx-auto notes md:px-4 max-w-7xl" v-mathjax
