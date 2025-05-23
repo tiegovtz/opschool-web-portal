@@ -225,7 +225,7 @@ const playDemoAnimation = async () => {
         <p class="mb-4 text-justify">
           <b>{{ question }}</b>
         </p>
-        <p
+        <!-- <p
           v-if="thumbnail"
           class="w-full h-auto overflow-hidden rounded-md my-2 max-h-[400px]"
         >
@@ -234,7 +234,7 @@ const playDemoAnimation = async () => {
             alt="thumbnail"
             class="object-cover w-full h-full"
           />
-        </p>
+        </p> -->
         <ol class="w-full text-small">
           <li
             v-for="(choice, index) in shuffleChoices"
@@ -276,7 +276,7 @@ const playDemoAnimation = async () => {
           </template>
         </p>
       </div>
-      <p
+      <!-- <p
         v-if="thumbnail"
         class="w-full h-auto overflow-hidden rounded-md my-2 max-h-[400px]"
       >
@@ -285,7 +285,7 @@ const playDemoAnimation = async () => {
           alt="thumbnail"
           class="object-contain w-full h-full"
         />
-      </p>
+      </p> -->
       <!-- Choices to Drag -->
       <div class="flex flex-wrap gap-4 pl-6 mt-4">
         <div
