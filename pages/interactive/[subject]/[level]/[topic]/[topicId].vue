@@ -412,18 +412,24 @@ const setPicCenter = async () => {
     });
 
 
-    document.querySelectorAll(".notes td").forEach((el)=>{
+    document.querySelectorAll(".notes td").forEach((el) => {
       const images = el.querySelectorAll('img')
 
-      if(images.length === 0) return;
-      el.querySelectorAll('p').forEach((p)=>{
-        if(p.querySelector('img')){
-          p.className= "flex items-center justify-center flex-wrap"
+      if (images.length === 0) return;
+      el.querySelectorAll('p').forEach((p) => {
+        if (p.querySelector('img')) {
+
+          const images = p.querySelectorAll("img")
+          if (images.length === 1 &&
+            images[0].classList.contains('desc-img'))
+            return;
+
+          p.className = "flex items-center justify-center flex-wrap"
         }
       })
 
     })
-    
+
 
 
   }, 500);
