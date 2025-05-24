@@ -14,10 +14,6 @@ const modelParser = (query:String) => {
               shadow-softness="0.5"
               shadow="true"
               exposure="0.7"
-              ar
-              ar-modes="webxr scene-viewer quick-look"
-              ar-scale="auto"
-              ar-placement="floor"
               autoplay
               >
             </model-viewer>`;
