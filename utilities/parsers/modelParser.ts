@@ -5,7 +5,6 @@ const modelParser = (query:String) => {
     // Replace matching patterns with <model-viewer> element
     return query.replace(regex, (match, modelSrc, imgSrc, altText) => {
         return `<model-viewer
-             
               src="${modelSrc}"
               poster="${imgSrc}"
               alt="${altText}"
@@ -15,6 +14,11 @@ const modelParser = (query:String) => {
               shadow-softness="0.5"
               shadow="true"
               exposure="0.7"
+              ar
+              ar-modes="webxr scene-viewer quick-look"
+              ar-scale="auto"
+              ar-placement="floor"
+              autoplay
               >
             </model-viewer>`;
     });
