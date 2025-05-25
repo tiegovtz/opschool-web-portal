@@ -742,7 +742,8 @@ definePageMeta({
         @click="experimrntUrl = null">
         <Icon name="formkit:close" size="24" class="font-bold text-white" />
       </div>
-      <iframe :src="experimrntUrl" frameborder="0" :class="[
+      <iframe :src="experimrntUrl" frameborder="0" 
+      :class="[
         ' w-full  rounded-md !bg-white',
         isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
       ]"></iframe>
@@ -846,10 +847,10 @@ definePageMeta({
             <!-- Next and Previous chapter Action -->
             <div class="flex flex-row-reverse items-center justify-between lg:hidden">
               <!-- Next Chapter -->
-              <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length" :class="{
-                'opacity-0': chapters.number == chapters.list?.length,
-              }"
-                class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
+              <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length" 
+              :class="[
+                'flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue',
+                { 'opacity-0': chapters.number == chapters.list?.length }]">
                 <p class="flex gap-2 capitalize">
                   Next
                 </p>
@@ -857,10 +858,13 @@ definePageMeta({
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
                 </div>
               </button>
+              
               <!-- Previous Chapter -->
               <button @click="changeChapter('p')" :disabled="chapters.number <= 1"
-                :class="{ 'opacity-0': chapters.number <= 1 }"
-                class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
+                :class="[
+                'flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue',
+                { 'opacity-0': chapters.number <= 1 }
+                ]">
                 <div class="flex items-center justify-center w-4 h-4 bg-white rounded-full animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="transform rotate-180 text-oceanBlue" />
                 </div>
