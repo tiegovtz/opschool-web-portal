@@ -160,6 +160,14 @@ const fetchData = async (params) => {
         userId: userToken.value?._id,
       };
     }
+    else if(tab === "audio") {
+      url = apiDocs.audio.getPublicAudio;
+      params = {
+        ...params,
+        // audioType: "",
+      };
+
+    }
     
     else if(tab === "audio") {
       url = apiDocs.audio.getPublicAudio;
@@ -380,6 +388,8 @@ watch(
         fetchData();
       }
       else if (activeTab.toLowerCase() === "audio") {
+        fetchData();
+      } else if (activeTab.toLowerCase() === "audio") {
         fetchData();
       }
       else{

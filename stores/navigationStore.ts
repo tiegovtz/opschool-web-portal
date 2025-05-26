@@ -6,6 +6,7 @@ export const useNavigationStore = defineStore('navigation', {
     videoToView: null as { route: string; updatedAt: number } | null,
     experimentToView: null as { route: string; updatedAt: number } | null,
     audioToListen: null as { route: string; updatedAt: number } | null,
+    audioToListen: null as { route: string; updatedAt: number } | null,
   }),
 
   actions: {
@@ -25,6 +26,7 @@ export const useNavigationStore = defineStore('navigation', {
       this.topicToView = null
       this.videoToView = null
       this.experimentToView = null
+      this.audioToListen = null
     },
     getLatestRoute() {
       const routes = [this.topicToView, this.videoToView, this.experimentToView, this.audioToListen]

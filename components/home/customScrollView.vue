@@ -7,6 +7,7 @@ import SubjectCard from "~/components/home/SubjectCard.vue";
 import { VideoCard } from "#components";
 import { layoutEffect } from "~/utilities/controlls";
 import AudioCard from "../audio/audioCard.vue";
+import AudioCard from "../audio/audioCard.vue";
 
 defineProps({
   data: {
@@ -412,9 +413,7 @@ const setSeeMore = (seeMore) => {
         </customGridOne>
       </div>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'audio'" 
-    v-trusted
-    >
+    <div v-else-if="activeTab.toLowerCase() === 'audio'">
        <div v-for="(audios, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()"
@@ -513,8 +512,7 @@ const setSeeMore = (seeMore) => {
         </customGridOne>
       </div>
     </div>
-    <div v-else v-trusted
-    >
+    <div v-else>
       <MessageTopicNotFound message="This page will be updated soon" />
     </div>
   </div>
@@ -901,9 +899,7 @@ const setSeeMore = (seeMore) => {
         </customGridTwo>
       </div>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'audio'"
-    v-trusted
-    >
+    <div v-else-if="activeTab.toLowerCase() === 'audio'">
       <div v-for="(audios, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey"
@@ -1002,9 +998,7 @@ const setSeeMore = (seeMore) => {
         </customGridTwo>
       </div>
     </div>
-    <div v-else
-    v-trusted
-    >
+    <div v-else>
       <MessageTopicNotFound message="This page will be updated soon" />
     </div>
   </div>
