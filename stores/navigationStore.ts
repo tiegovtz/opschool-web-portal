@@ -4,7 +4,8 @@ export const useNavigationStore = defineStore('navigation', {
   state: () => ({
     topicToView: null as { route: string; updatedAt: number } | null,
     videoToView: null as { route: string; updatedAt: number } | null,
-    experimentToView: null as { route: string; updatedAt: number } | null
+    experimentToView: null as { route: string; updatedAt: number } | null,
+    audioToListen: null as { route: string; updatedAt: number } | null
   }),
 
   actions: {
@@ -16,6 +17,10 @@ export const useNavigationStore = defineStore('navigation', {
     },
     setExperiment(route: string) {
       this.experimentToView = { route, updatedAt: Date.now() }
+    },
+    setAudio(route: string) {
+      
+      this.audioToListen = { route, updatedAt: Date.now() }
     },
     clearAll() {
       this.topicToView = null

@@ -120,6 +120,14 @@ const apiDocs = {
     getProgressSubjectsSubjectId: `${baseURL}/progress/subjects/{subjectId}`,
     getProgressTopicsTopicId: `${baseURL}/progress/topics/{topicId}`,
   },
+
+  // audio API
+  audio: {
+    getPublicAudio: `${baseURL}/public-audios`,
+    getPublicAudioBySubjectId: `${baseURL}/public-audios/by-subject/{subjectId}`,
+    streamAudio: `${baseURL}/audio-stream/{id}`,
+    getById: `${baseURL}/audios/{id}`,
+  },
 }
 
 export default apiDocs;
