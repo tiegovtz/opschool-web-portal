@@ -57,15 +57,11 @@ const markQuestion = (choice) => {
 const indexToAlpha = (index) => String.fromCharCode(65 + index);
 
 const shuffleChoices = computed(() => {
-  const shuffled = questionProps.choices
+  return questionProps.choices
     .map((choice) => ({ choice, sort: Math.random() }))
     .sort((a, b) => a.sort - b.sort)
     .map(({ choice }) => choice);
-
-  // Remove duplicates
-  return shuffled.filter((item, index, self) => self.indexOf(item) === index);
 });
-
 
 const dropZoneAnswers = ref([]);
 const isDropped = ref(false);
@@ -133,48 +129,31 @@ const liveFilledSentence = computed(() => {
 const flyToTarget = (sourceEl, targetEl, index) => {
   const clone = sourceEl.cloneNode(true);
   clone.innerText = "example";
-
+ 
   const sourceRect = sourceEl.getBoundingClientRect();
   const targetRect = targetEl.getBoundingClientRect();
 
-  // Setup styles
-  Object.assign(clone.style, {
-    position: 'fixed',
-    top: `${sourceRect.top}px`,
-    left: `${sourceRect.left}px`,
-    width: `${sourceRect.width}px`,
-    height: `${sourceRect.height}px`,
-    backgroundColor: '#0077c5',
-    color: '#fff',
-    zIndex: 9999,
-    transition: 'all 1s ease-in-out',
-    pointerEvents: 'none',
-    display:'flex',
-    justifyContent:'center',
-    alignItems:'center'
-  });
+  clone.style.position = "fixed";
+  clone.style.zIndex = "9999";
+  clone.style.top = sourceRect.top + "px";
+  clone.style.left = sourceRect.left + "px";
+  clone.style.width = sourceRect.width + "px";
+  clone.style.transition = "all 1s ease-in-out";
 
   document.body.appendChild(clone);
 
-  // Force reflow (ensure styles are applied before animation)
-  clone.getBoundingClientRect(); // ⬅️ Triggers layout
-
   // Trigger animation
   requestAnimationFrame(() => {
-    clone.style.top = `${targetRect.top}px`;
-    clone.style.left = `${targetRect.left}px`;
-    clone.style.width = `${targetRect.width}px`;
-    clone.style.height = `${targetRect.height}px`;
+    clone.style.top = targetRect.top + "px";
+    clone.style.left = targetRect.left + "px";
+    clone.style.opacity = 1;
   });
 
-  // Cleanup after animation
+  // After animation completes
   setTimeout(() => {
-    if (clone.parentNode) {
-      clone.parentNode.removeChild(clone);
-    }
+    document.body.removeChild(clone);
   }, 1000);
 };
-
 
 const playDemoAnimation = async () => {
   if (!shuffleChoices.value.length) return;

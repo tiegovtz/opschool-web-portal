@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { SwiperContainer } from 'swiper/element'
-
-const containerRef = ref<SwiperContainer | null>(null)
+const containerRef = ref(null)
 const slides = [
   "/images/8.TIE-Interactive.webp",
   "/images/1.TIE-Interactive.webp",
@@ -17,79 +15,24 @@ const slides = [
 const swiper = useSwiper(containerRef, {
   effect: 'creative',
   loop: true,
-  navigation: true,
+  pagination: {
+    clickable: true,
+  },
   grabCursor: true,
   autoplay: {
     delay: 5000,
   },
-  speed: 2000,
-
+  speed: 800,
   creativeEffect: {
     prev: {
-      opacity: 0,
+      shadow: true,
+      translate: [0, 0, -400],
       scale: 0.8,
-      rotate: [-10, -15, -30],  // leftward bend
-      origin: "center",
     },
     next: {
-      opacity: 0,
-      scale: 1.4,
-      rotate: [10, 15, 30],  // rightward bend
-      origin: "center",
+      translate: ['100%', 0, 0],
     },
   },
-
-});
-
-
-onMounted(async () => {
-  await nextTick()
-
-  //find the swiper pagination
-  if (containerRef.value) {
-    const swiperInstance = containerRef.value.swiper
-    const navigationBtn = swiperInstance.navigation
-
-    const prevEl = navigationBtn.prevEl
-    const nextEl = navigationBtn.nextEl
-
-    const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m12 18.5l7.265 2.463c.196.077.42.032.57-.116a.55.55 0 0 0 .134-.572L12 3L4.03 20.275c-.07.2-.017.424.135.572c.15.148.374.193.57.116z"/></svg>`
-
-    prevEl.innerHTML = svgIcon
-    nextEl.innerHTML = svgIcon
-
-    prevEl.style.rotate = "-90deg"
-    nextEl.style.rotate = "90deg"
-
-    // Shared styles
-    const buttonStyles: Partial<CSSStyleDeclaration> = {
-      width: "38px",
-      height: "32px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#0077c599",
-      color: "white",
-      padding: "5px 0px",
-      borderRadius: "5px",
-      cursor: "pointer",
-      opacity:"0",
-      transition:"all .5s ease-in-out"
-    };
-
-    containerRef.value.addEventListener('mouseover',()=>{
-      prevEl.style.opacity="1"
-      nextEl.style.opacity="1"
-    })
-
-    containerRef.value.addEventListener('mouseout',()=>{
-      prevEl.style.opacity="0"
-      nextEl.style.opacity="0"
-    })
-
-    Object.assign(prevEl.style, buttonStyles);
-    Object.assign(nextEl.style, buttonStyles);
-  }
 })
 
 </script>

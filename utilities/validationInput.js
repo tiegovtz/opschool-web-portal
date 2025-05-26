@@ -87,7 +87,7 @@ const auth = {
  * @returns {boolean} True if valid, false otherwise.
  * 
  * @example
- * console.log(auth.checkEmailPhoneOrUsername("example@email.com")); // true (valid email)
+ * console.log(auth.checkEmailPhoneOrUsername("example@gmail.com")); // true (valid email)
  * console.log(auth.checkEmailPhoneOrUsername("+255622660722")); // true (valid Tanzanian phone number)
  * console.log(auth.checkEmailPhoneOrUsername("John.Doe")); // true (valid username)
  * console.log(auth.checkEmailPhoneOrUsername("invalid@com")); // false (invalid email)

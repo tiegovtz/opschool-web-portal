@@ -51,10 +51,10 @@ const props = defineProps({
 
 // Define Set Experiment URL Function
 const setExperimentUrl =()=>{
-    navigationStore.setExperiment(`/experiments/${props.experimentStandard}/${props.experimentSubject}/${props.experimentName}/${props.experimentId}`);
+    navigationStore.setExperiment(`/experiments/${props.experimentStandard.toLowerCase()}/${props.experimentSubject.toLowerCase()}/${props.experimentName.toLowerCase()}/${props.experimentId.toLowerCase()}`);
     useState('experimentToView', () => (
            {
-            route:`/experiments/${props.experimentStandard}/${props.experimentSubject}/${props.experimentName}/${props.experimentId}`,
+            route:`/experiments/${props.experimentStandard.toLowerCase()}/${props.experimentSubject.toLowerCase()}/${props.experimentName.toLowerCase()}/${props.experimentId.toLowerCase()}`,
             updatedAt:Date.now()
         })
     );
@@ -63,7 +63,7 @@ const setExperimentUrl =()=>{
 
 <template>
     <NuxtLink
-        :to="`/experiments/${experimentStandard}/${experimentSubject}/${experimentName}/${experimentId}`" 
+        :to="`/experiments/${experimentStandard.toLowerCase()}/${experimentSubject.toLowerCase()}/${experimentName.toLowerCase()}/${experimentId.toLowerCase()}`" 
         @click="setExperimentUrl()"
         v-trusted
         :class="[

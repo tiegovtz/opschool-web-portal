@@ -15,7 +15,6 @@ const apiDocs = apiDocsFile.setup()
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import VideoCard from "~/components/video/videoCard.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
-import { fetchAsyncData } from "~/composable/useAsyncFetch";
 
 
 // Defin Route
@@ -74,7 +73,6 @@ const userToken = useCookie("signInUserToken");
 const status = ref("pending"); // Initial Status State
 const topic = ref([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
-const videoType = route.query?.type ? route.query?.type === 'conc' ? "Conceptual":'Other' :'Conceptual'; // Initial video type state
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
@@ -97,36 +95,21 @@ const sliceData = (start, end) => {
 const currentPage = ref(1);
 const pageSize = ref();
 
-// Then, update fetchVideos to call sliceData after data is loaded
-const fetchVideos = async (params) => {
-
-  if(!params){
-    params = {
-      ...params,
-      videoType:videoType?videoType: 'Conceptual'
-    }
-
-    delete params?.type
-  }
-
-
-// remove key type from params
-  if(params){
-    delete params?.type
-  }
+// Then, update fetchTopics to call sliceData after data is loaded
+const fetchTopics = async (params) => {
 
   try {
     status.value = "pending";
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`videos-${subjectId}-${params?.toString()}`,()=>$fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
+    const response = await $fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
         "{subjectId}",
         subjectId
       ), {
       params: params,
-    }));
+    });
 
     // Call State Define above
-    topic.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
-    status.value = fetchStatus.value;
+    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);
+    status.value = "success";
 
     // Call sliceData after data is loaded
     sliceData(
@@ -140,7 +123,7 @@ const fetchVideos = async (params) => {
 };
 
 // Call Fetch Topics function
-fetchVideos();
+fetchTopics({});
 
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
@@ -217,18 +200,11 @@ const filters = reactive({
 const level = ref(); // Initial Level State
 // watch emits changes
 watch(filters, (filters) => {
-  fetchVideos({
+  fetchTopics({
     level: filters.level.toString(),
     subject: filters.subject.toString(),
   });
 });
-
-watch (()=>route.query?.type,()=>{
-  
-  fetchVideos({
-    videoType: route.query?.type == 'conc'? 'Conceptual' : 'others'
-  })
-})
 </script>
 
 <template>

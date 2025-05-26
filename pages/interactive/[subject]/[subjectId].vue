@@ -15,7 +15,6 @@ import apiDocsFile from "~/utilities/api-docs";
 const apiDocs = apiDocsFile.setup()
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
-import { fetchAsyncData } from "~/composable/useAsyncFetch";
 
 // Defin Route
 const route = useRoute();
@@ -100,7 +99,7 @@ const pageSize = ref();
 const fetchTopics = async (params) => {
   try {
     status.value = "pending";
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`interactive-${subjectId}`,()=>$fetch(apiDocs.topics.getSubjectId.replace(
+    const response = await $fetch(apiDocs.topics.getSubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
@@ -108,11 +107,11 @@ const fetchTopics = async (params) => {
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
-    }))
+    });
 
     // Call State Define above
-    topic.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
-    status.value = fetchStatus.value;
+    topic.value = removeDataFromArrayOfJson(response, "isDeleted", true);
+    status.value = "success";
 
     // Call sliceData after data is loaded
     sliceData(

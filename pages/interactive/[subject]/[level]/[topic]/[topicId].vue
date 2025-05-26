@@ -10,7 +10,6 @@ import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 import apiDocsFile from "~/utilities/api-docs";
 import { updateChapterProgress } from "~/utilities/progress";
-import { fetchAsyncData } from "~/composable/useAsyncFetch";
 
 const apiDocs = apiDocsFile.setup();
 const route = useRoute();
@@ -170,7 +169,7 @@ const ensureAccessTokenValid = async () => {
 const initializeChapterProgress = (chapterId) => {
   chapterProgress.value = {
     userId: userToken.value?._id,
-    chapterId:  chapterId,
+    chapterId: chapterId,
     videoProgress: 0,
     notesProgress: 0,
     experimentsAttempted: 0,
@@ -232,44 +231,30 @@ const syncRemoteProgress = async (chapterId) => {
 
 // Main function 
 const getChapter = async (chapterId) => {
-  // validate if chapterId is null or undefined
-  if (!chapterId) {
-    console.error("Chapter ID is null or undefined");
-    return;
-  }
   chapters.notesStatus = "pending";
-  chapters.notes = null;
-  chapters.questions = null;
-  chapters.isAttemptingQuizes = false; //close quiz
   chapters.currentChapterId = chapterId;
 
   await ensureAccessTokenValid();
 
   try {
-    const { data: response, status } = await fetchAsyncData(
-      `chapter-${chapterId}`,
-      () => $fetch(`/api/topics/chapters/${chapterId}`)
-    );
+    const response = await $fetch(`/api/topics/chapters/${chapterId}`);
+    chapters.notesStatus = "success";
+    chapters.notes = response;
 
-    if (response) {
-      chapters.notesStatus = status.value;
-      chapters.notes = response;
+    const tasks = [
+      getQNTopicChapter(chapterId),
+      postInitialProgressIfNeeded(chapterId),
+      syncRemoteProgress(chapterId),
+    ];
 
-      const tasks = [
-        getQNTopicChapter(chapterId),
-        postInitialProgressIfNeeded(chapterId),
-        syncRemoteProgress(chapterId),
-      ];
-
-      if (
-        chapterProgress.value?.userId === userToken.value?._id &&
-        chapterProgress.value?.chapterId === chapterId
-      ) {
-        tasks.push(updateChapterProgress());
-      }
-
-      await Promise.allSettled(tasks);
+    if (
+      chapterProgress.value?.userId === userToken.value?._id &&
+      chapterProgress.value?.chapterId === chapterId
+    ) {
+      tasks.push(updateChapterProgress());
     }
+
+    await Promise.allSettled(tasks);
   } catch (error) {
     chapters.notesStatus = "error";
     chapters.error = error;
@@ -301,36 +286,23 @@ const getQNTopicChapter = async (chapterId) => {
         topic: topicId,
         chapter: chapterId,
       },
-    })
+    });
+
     if (response) {
       chapters.questions = response;
     }
   } catch (error) {
-    console.error(error);
+    console.log(error);
   }
 };
 
 // Fetch chapters
 await useFetch(`/api/topics/${topicId}`)
   .then((response) => {
-    //  Check if the response is successful
-    if (response) {
-      // extracting data ,status  from response
-      const { data, status } = response;
-      // on sucess save data to chapters
-      if (status.value === 'success') {
-        chapters.status = status.value;
-        chapters.list = data.value;
-        getChapter(data.value[0]?._id);
-        chapters.currentChapterId = data.value[0]?._id;
-      }
-      else if (status.value === 'error') {
-        chapters.status = status.value;
-        signInAccessToken.value = null;
-        userToken.value = null;
-        return navigateTo('/auth', { replace: true });
-      }
-    }
+    chapters.status = "success";
+    chapters.list = response.data.value;
+    getChapter(response.data.value[0]?._id);
+    chapters.currentChapterId = response.data.value[0]?._id;
 
     // Call Submit Topic Viewed Read
     if (!useState("userViewedTopic").value) {
@@ -340,11 +312,6 @@ await useFetch(`/api/topics/${topicId}`)
   .catch((error) => {
     (chapters.status = "error"),
       (chapters.error = error);
-    // clear all cookies
-    signInAccessToken.value = null;
-    userToken.value = null;
-    return navigateTo('/auth', { replace: true });
-
   });
 
 watch(
@@ -352,15 +319,15 @@ watch(
   (token) => {
     // Get the router instance
     if (!token) {
-      router.replace("/auth");
+      router.replace("/home");
     }
   }
 );
 
 onMounted(async () => {
   // Trigger MathJax rendering
-  window.MathJax?.typeset();
-
+  window.MathJax.typeset();
+  
   // Call functin for set Pic Center
   setPicCenter();
 });
@@ -469,98 +436,91 @@ const handleScroll = () => {
 // Observer Content
 const observerContent = () => {
   if (notesContainer.value) {
-    notesContainer.value.addEventListener("scroll", handleScroll);
-    const videoPlayer = notesContainer.value.querySelector("#video-player");
-    if (videoPlayer) {
-      //setting user id and chapter id on play
-       if  (chapterProgress)  {
-         if (
-            chapterProgress?.value?.userId !== userToken.value?._id ||
-            chapterProgress?.value?.chapterId !== chapters.currentChapterId
-          ) {
-            chapterProgress.value.userId = userToken.value?._id;
-            chapterProgress.value.chapterId = chapters.currentChapterId;
+        notesContainer.value.addEventListener("scroll", handleScroll);
+        const videoPlayer = notesContainer.value.querySelector("#video-player");
+        if (videoPlayer) {
+          //setting user id and chapter id on play
+          if (chapterProgress) {
+            if (
+              chapterProgress?.value?.userId !== userToken.value?._id ||
+              chapterProgress?.value?.chapterId !== chapters.currentChapterId
+            ) {
+              chapterProgress.value.userId = userToken.value?._id;
+              chapterProgress.value.chapterId = chapters.currentChapterId;
+            }
           }
-       }
-       else  {
-          initializeChapterProgress(chapters.currentChapterId)
-       }
-
-      // returning to previous progress is are available when video loaded
-      videoPlayer.addEventListener("loadedmetadata", () => {
-        if (
-          chapterProgress?.value &&
-          chapterProgress?.value?.userId === userToken.value?._id &&
-          chapterProgress?.value?.chapterId === chapters.currentChapterId
-        ) {
-          const targetTime = Math.floor(
-            (chapterProgress?.value?.videoProgress / 100) *
-            videoPlayer.duration
-          );
-
-          // FastSeek Is Same To Resume a video player
-          if (typeof videoPlayer.fastSeek === "function") {
-            videoPlayer.fastSeek(targetTime);
-          } else {
-            videoPlayer.currentTime = targetTime;
+          else {
+            initializeChapterProgress(chapters.currentChapterId)
           }
+
+          // returning to previous progress is are available when video loaded
+          videoPlayer.addEventListener("loadedmetadata", () => {
+            if (
+              chapterProgress?.value &&
+              chapterProgress?.value?.userId === userToken.value?._id &&
+              chapterProgress?.value?.chapterId === chapters.currentChapterId
+            ) {
+              const targetTime = Math.floor(
+                (chapterProgress?.value?.videoProgress / 100) *
+                videoPlayer.duration
+              );
+
+              // FastSeek Is Same To Resume a video player
+              if (typeof videoPlayer.fastSeek === "function") {
+                videoPlayer.fastSeek(targetTime);
+              } else {
+                videoPlayer.currentTime = targetTime;
+              }
+            }
+
+            else {
+              chapterProgress.value.userId = userToken.value?._id
+              chapterProgress.value.chapterId = chapters.currentChapterId
+            }
+          });
+
+          // tracking video playing
+          videoPlayer.addEventListener("timeupdate", () => {
+            const progress = Math.floor(
+              (videoPlayer.currentTime / videoPlayer.duration) * 100
+            );
+            chapterProgress?.value?.videoProgress < progress
+              ? (chapterProgress.value.videoProgress = progress)
+              : "";
+
+            // update progress
+            switch (progress) {
+              case 25:
+                updateChapterProgress();
+                break;
+              case 50:
+                updateChapterProgress();
+                break;
+              case 75:
+                updateChapterProgress();
+                break;
+              case 100:
+                updateChapterProgress();
+                break;
+              default:
+                break;
+            }
+          });
+
+          // contols no download
+          videoPlayer.addEventListener("contextmenu", (e) => {
+            e.preventDefault(); // disables right-click menu
+          });
+
+          videoPlayer.controlsList = "nodownload";
         }
 
-        else {
-          chapterProgress.value.userId = userToken.value?._id
-          chapterProgress.value.chapterId = chapters.currentChapterId
-        }
-      });
-
-      // tracking video playing
-      videoPlayer.addEventListener("timeupdate", () => {
-        const progress = Math.floor(
-          (videoPlayer.currentTime / videoPlayer.duration) * 100
-        );
-        chapterProgress?.value?.videoProgress < progress
-          ? (chapterProgress.value.videoProgress = progress)
-          : "";
-
-        // update progress
-        switch (progress) {
-          case 25:
-            updateChapterProgress();
-            break;
-          case 50:
-            updateChapterProgress();
-            break;
-          case 75:
-            updateChapterProgress();
-            break;
-          case 100:
-            updateChapterProgress();
-            break;
-          default:
-            break;
-        }
-      });
-
-      // contols no download
-      videoPlayer.addEventListener("contextmenu", (e) => {
-        e.preventDefault(); // disables right-click menu
-      });
-
-      // controll to pause video while scrolling height exceesed video height
-      notesContainer.value.addEventListener("scroll", () => {
-        if (scrollTop.value > (videoPlayer?.clientHeight / 2)) {
-          videoPlayer.pause()
-        }
-      });
-
-      videoPlayer.controlsList = "nodownload";
-    }
-
-    // zoom 3d models
-    const modelViewer = notesContainer?.value?.querySelectorAll('model-viewer')
-    const zoomInIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M8.195 0c4.527 0 8.196 3.62 8.196 8.084a8 8 0 0 1-1.977 5.267l5.388 5.473a.686.686 0 0 1-.015.98a.71.71 0 0 1-.993-.014l-5.383-5.47a8.23 8.23 0 0 1-5.216 1.849C3.67 16.169 0 12.549 0 8.084C0 3.62 3.67 0 8.195 0m0 1.386c-3.75 0-6.79 2.999-6.79 6.698s3.04 6.699 6.79 6.699s6.791-3 6.791-6.699c0-3.7-3.04-6.698-6.79-6.698m.11 2.19c.383 0 .693.314.693.702v2.976h2.976c.388 0 .703.31.703.693a.7.7 0 0 1-.703.693l-2.976-.001v2.977c0 .388-.31.703-.693.703a.7.7 0 0 1-.693-.703V8.64H4.636a.7.7 0 0 1-.702-.692c0-.383.314-.693.702-.693h2.976V4.278c0-.388.31-.703.693-.703"/></svg>`
-    const zoomOutIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M8.195 0c4.527 0 8.196 3.62 8.196 8.084a8 8 0 0 1-1.977 5.267l5.388 5.473a.686.686 0 0 1-.015.98a.71.71 0 0 1-.993-.014l-5.383-5.47a8.23 8.23 0 0 1-5.216 1.849C3.67 16.169 0 12.549 0 8.084C0 3.62 3.67 0 8.195 0m0 1.386c-3.75 0-6.79 2.999-6.79 6.698s3.04 6.699 6.79 6.699s6.791-3 6.791-6.699c0-3.7-3.04-6.698-6.79-6.698m3.78 5.868c.387 0 .702.31.702.693a.7.7 0 0 1-.703.693H4.636a.7.7 0 0 1-.702-.693c0-.383.314-.693.702-.693z"/></svg>`
-    const icon3D = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M7.47 21.5C4.2 19.94 1.86 16.76 1.5 13H0c.5 6.16 5.66 11 11.95 11l.66-.03l-3.81-3.81zm.89-6.54c-.19 0-.36-.03-.52-.08a1.1 1.1 0 0 1-.4-.24c-.11-.1-.2-.22-.26-.37c-.06-.14-.09-.3-.09-.47h-1.3c0 .36.07.7.21.95s.33.5.56.69c.24.18.51.32.82.41q.45.15.96.15c.37 0 .72-.05 1.03-.15c.32-.1.6-.25.83-.44s.42-.41.55-.72c.13-.29.2-.61.2-.97c0-.19-.02-.38-.07-.56c-.05-.16-.12-.35-.23-.51c-.1-.15-.24-.3-.4-.43c-.17-.13-.37-.22-.61-.31a2.07 2.07 0 0 0 .89-.75c.1-.16.17-.3.22-.46s.07-.32.07-.48q0-.54-.18-.96c-.14-.26-.29-.51-.51-.69c-.2-.19-.47-.33-.77-.43C9.05 8.05 8.71 8 8.34 8c-.34 0-.69.05-1 .16c-.3.11-.57.26-.79.45c-.21.19-.38.39-.51.67c-.12.26-.18.54-.18.85h1.3q0-.255.09-.45a.94.94 0 0 1 .25-.34c.11-.09.23-.17.38-.22s.3-.08.48-.08c.4 0 .7.1.89.31c.19.2.29.49.29.86c0 .18-.04.34-.08.49a.87.87 0 0 1-.25.37c-.11.1-.25.18-.41.24s-.36.09-.58.09h-.77v1.03h.77c.22 0 .42.02.6.07s.33.13.45.23c.12.11.23.24.29.4c.07.16.1.37.1.57c0 .41-.12.72-.35.93c-.23.23-.55.33-.95.33m8.55-5.92c-.32-.33-.7-.59-1.14-.77c-.43-.18-.92-.27-1.46-.27h-2.36v8h2.3c.55 0 1.06-.09 1.51-.27s.84-.43 1.16-.76s.58-.73.74-1.19c.17-.47.26-.99.26-1.57v-.4c0-.58-.09-1.1-.26-1.57c-.16-.47-.43-.87-.75-1.2m-.41 3.16c0 .42-.03.8-.12 1.13c-.1.33-.24.62-.43.85s-.45.41-.71.53q-.435.18-.99.18h-.91V9.12h.97c.72 0 1.27.23 1.64.69c.38.46.55 1.12.55 1.99M11.95 0l-.66.03l3.81 3.81l1.33-1.34c3.27 1.56 5.61 4.73 5.96 8.5h1.5c-.5-6.16-5.65-11-11.94-11"/></svg>`
-    const showIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M17 8q-.425 0-.712-.288T16 7t.288-.712T17 6t.713.288T18 7t-.288.713T17 8m-8 6l2.7-3.5l1.55 2l2.3-3L19 14zm-5 8q-.825 0-1.412-.587T2 20V6h2v14h14v2zM6 9.375V4q0-.825.588-1.412T8 2h5v2H8v5.375zM8 18q-.825 0-1.412-.587T6 16v-4.625h2V16h5v2zm7 0v-2h5v-4.625h2V16q0 .825-.587 1.413T20 18zm5-8.625V4h-5V2h5q.825 0 1.413.588T22 4v5.375z"/></svg>`
+        // zoom 3d models
+        const modelViewer = notesContainer?.value?.querySelectorAll('model-viewer')
+        const zoomInIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M8.195 0c4.527 0 8.196 3.62 8.196 8.084a8 8 0 0 1-1.977 5.267l5.388 5.473a.686.686 0 0 1-.015.98a.71.71 0 0 1-.993-.014l-5.383-5.47a8.23 8.23 0 0 1-5.216 1.849C3.67 16.169 0 12.549 0 8.084C0 3.62 3.67 0 8.195 0m0 1.386c-3.75 0-6.79 2.999-6.79 6.698s3.04 6.699 6.79 6.699s6.791-3 6.791-6.699c0-3.7-3.04-6.698-6.79-6.698m.11 2.19c.383 0 .693.314.693.702v2.976h2.976c.388 0 .703.31.703.693a.7.7 0 0 1-.703.693l-2.976-.001v2.977c0 .388-.31.703-.693.703a.7.7 0 0 1-.693-.703V8.64H4.636a.7.7 0 0 1-.702-.692c0-.383.314-.693.702-.693h2.976V4.278c0-.388.31-.703.693-.703"/></svg>`
+        const zoomOutIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M8.195 0c4.527 0 8.196 3.62 8.196 8.084a8 8 0 0 1-1.977 5.267l5.388 5.473a.686.686 0 0 1-.015.98a.71.71 0 0 1-.993-.014l-5.383-5.47a8.23 8.23 0 0 1-5.216 1.849C3.67 16.169 0 12.549 0 8.084C0 3.62 3.67 0 8.195 0m0 1.386c-3.75 0-6.79 2.999-6.79 6.698s3.04 6.699 6.79 6.699s6.791-3 6.791-6.699c0-3.7-3.04-6.698-6.79-6.698m3.78 5.868c.387 0 .702.31.702.693a.7.7 0 0 1-.703.693H4.636a.7.7 0 0 1-.702-.693c0-.383.314-.693.702-.693z"/></svg>`
+        const icon3D =`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M7.47 21.5C4.2 19.94 1.86 16.76 1.5 13H0c.5 6.16 5.66 11 11.95 11l.66-.03l-3.81-3.81zm.89-6.54c-.19 0-.36-.03-.52-.08a1.1 1.1 0 0 1-.4-.24c-.11-.1-.2-.22-.26-.37c-.06-.14-.09-.3-.09-.47h-1.3c0 .36.07.7.21.95s.33.5.56.69c.24.18.51.32.82.41q.45.15.96.15c.37 0 .72-.05 1.03-.15c.32-.1.6-.25.83-.44s.42-.41.55-.72c.13-.29.2-.61.2-.97c0-.19-.02-.38-.07-.56c-.05-.16-.12-.35-.23-.51c-.1-.15-.24-.3-.4-.43c-.17-.13-.37-.22-.61-.31a2.07 2.07 0 0 0 .89-.75c.1-.16.17-.3.22-.46s.07-.32.07-.48q0-.54-.18-.96c-.14-.26-.29-.51-.51-.69c-.2-.19-.47-.33-.77-.43C9.05 8.05 8.71 8 8.34 8c-.34 0-.69.05-1 .16c-.3.11-.57.26-.79.45c-.21.19-.38.39-.51.67c-.12.26-.18.54-.18.85h1.3q0-.255.09-.45a.94.94 0 0 1 .25-.34c.11-.09.23-.17.38-.22s.3-.08.48-.08c.4 0 .7.1.89.31c.19.2.29.49.29.86c0 .18-.04.34-.08.49a.87.87 0 0 1-.25.37c-.11.1-.25.18-.41.24s-.36.09-.58.09h-.77v1.03h.77c.22 0 .42.02.6.07s.33.13.45.23c.12.11.23.24.29.4c.07.16.1.37.1.57c0 .41-.12.72-.35.93c-.23.23-.55.33-.95.33m8.55-5.92c-.32-.33-.7-.59-1.14-.77c-.43-.18-.92-.27-1.46-.27h-2.36v8h2.3c.55 0 1.06-.09 1.51-.27s.84-.43 1.16-.76s.58-.73.74-1.19c.17-.47.26-.99.26-1.57v-.4c0-.58-.09-1.1-.26-1.57c-.16-.47-.43-.87-.75-1.2m-.41 3.16c0 .42-.03.8-.12 1.13c-.1.33-.24.62-.43.85s-.45.41-.71.53q-.435.18-.99.18h-.91V9.12h.97c.72 0 1.27.23 1.64.69c.38.46.55 1.12.55 1.99M11.95 0l-.66.03l3.81 3.81l1.33-1.34c3.27 1.56 5.61 4.73 5.96 8.5h1.5c-.5-6.16-5.65-11-11.94-11"/></svg>`
+        
 
     modelViewer.forEach(element => {
       // === Elements Creation ===
@@ -662,18 +622,12 @@ watch(
   () => chapters.notesStatus,
   async (newStatus) => {
     if (newStatus === "success") {
-
-      if (chapters.notes?._id !== chapters.currentChapterId) {
-        getChapter(chapters.currentChapterId);
-      }
-
       await nextTick();
 
       // Call Observer Content Function
       observerContent();
     }
-  },
-  { immediate: true }
+  }
 );
 
 // wacth over scroll percent
@@ -716,10 +670,10 @@ watch(scrollPercent, async (newPercent) => {
 watch(() => chapters.isAttemptingQuizes, async (newAttemptingQuizes) => {
   if (!newAttemptingQuizes) {
     await nextTick();
-
+    
     // Call Function
-    setPicCenter();
-    observerContent();
+       setPicCenter();
+      observerContent();
   }
 })
 
@@ -727,10 +681,10 @@ watch(() => chapters.isAttemptingQuizes, async (newAttemptingQuizes) => {
 watch(() => experimrntUrl.value, async (newExperimentUrl) => {
   if (!newExperimentUrl) {
     await nextTick();
-
+    
     // Call Function
-    setPicCenter();
-    observerContent();
+       setPicCenter();
+      observerContent();
   }
 })
 
@@ -767,12 +721,10 @@ definePageMeta({
       v-trusted>
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax v-trusted :questions="chapters?.questions"
-        :is-attempting-quiz="chapters.isAttemptingQuizes" :chapter-id="chapters.notes?._id ?? chapters.currentChapterId" :change-chapter="changeChapter"
-       
+        :is-attempting-quiz="chapters.isAttemptingQuizes" :change-chapter="changeChapter"
         :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
         @emit-quiz-score="updateChapterProgress" />
     </div>
-
     <section v-else v-trusted class="relative inline-flex w-full h-full overflow-hidden center-height">
       <!-- Loading state -->
       <div v-if="chapters.status == 'pending'" v-trusted
@@ -804,29 +756,52 @@ definePageMeta({
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <NuxtLink :to="{
+                            path: '/',
+                            query: {
+                              tab: 'interactive',
+                              subject: topicLevel,
+                              class: topicStandard,
+                            },
+                          }" 
+                class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
+                {{
+                  topicLevel != null &&
+                    topicLevel != undefined &&
+                    topicLevel != "null"
+                    ? topicLevel
+                    : `Secondary`
+                }}
+                <Icon name="weui:arrow-outlined" size="18" class="text-black" />
+              </NuxtLink>
+
+              <NuxtLink :to="{
                           path: '/',
                           query: {
                             tab: 'interactive',
                             subject: topicLevel,
                             class: topicStandard,
                           },
-                        }"
-                class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
-                <!-- {{
-                  topicLevel != null &&
-                    topicLevel != undefined &&
-                    topicLevel != "null"
-                    ? topicLevel
-                    : `Secondary`
-                }} -->
-                <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
-                <!-- <span>Back</span> -->
+                        }" 
+                class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
+                {{
+                            topicStandard != null &&
+                            topicStandard != undefined &&
+                            topicStandard != "null"
+                            ? topicStandard
+                            : `Form One`
+                        }}
+                <Icon name="weui:arrow-outlined" size="18" class="text-black" />
               </NuxtLink>
 
-              <p class="font-medium text-medium" v-trusted v-if="chapters.status === 'success'">
+              <p class="font-medium uppercase text-medium md:capitalize">
                 {{
-                  chapters.notes?.name
-                }}
+                            topicTitle != null &&
+                              topicTitle != undefined &&
+                              topicTitle != "null"
+                              ? topicTitle
+                              : `Introduction to
+                          Physics`
+                          }}
               </p>
             </div>
 
@@ -838,10 +813,18 @@ definePageMeta({
 
           <!-- Description -->
           <div class="relative flex flex-col justify-center w-full gap-2 py-3 content-view">
+            <!-- <p class="mx-auto notes md:px-4 max-w-7xl"
+              v-math-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></p> -->
 
             <!-- Chapter Notes -->
-            <div class="mx-auto notes md:px-4 max-w-7xl" v-mathjax
-              v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></div>
+            <div class="mx-auto notes md:px-4 max-w-7xl"
+             v-mathjax v-trusted 
+             v-html="experimentParser(
+              modelParser(videoParser(chapters.notes?.content)))"></div>
+            {/* <!-- Chapter Video -->
+            <div v-trusted
+              v-html="videoParserBlob(`<video width='300' height='150' controls='controls'> <source src='680a286e77e0837a702449bb'/></video>`)">
+            </div> */}
 
             <!-- Chapter Button - (Quiz) -->
             <div v-if="chapters.questions && chapters.questions?.length > 0" v-trusted
@@ -857,7 +840,8 @@ definePageMeta({
             <div class="flex flex-row-reverse items-center justify-between lg:hidden">
               <!-- Next Chapter -->
               <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length" 
-              :class="[
+              
+               :class="[
                 'flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue',
                 { 'opacity-0': chapters.number == chapters.list?.length }]">
                 <p class="flex gap-2 capitalize">
@@ -906,7 +890,7 @@ definePageMeta({
           </div>
           <!-- UL list of chapters -->
           <ChapterContainer :chapters="chapters?.list" @emit-chapter-id="getChapter($event)"
-            :active-chapter-id="chapters.notes?._id ?? chapters.currentChapterId" @click="toggleSidebar" />
+            :active-chapter-id="chapters.currentChapterId" @click="toggleSidebar" />
         </div>
       </div>
 

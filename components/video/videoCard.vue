@@ -54,11 +54,11 @@ const props = defineProps({
 
 // Define Function
 const setVideoToView = () => {
-    navigationStore.setVideo(`/video/${props.videoStandard}/${props.videoSubject}/${props.videoName}/${props.videoId}`)
+    navigationStore.setVideo(`/video/${props.videoStandard.toLowerCase()}/${props.videoSubject.toLowerCase()}/${props.videoName.toLowerCase()}/${props.videoId.toLowerCase()}`)
     useState('videoToView',
       () =>(
          {
-            route:`/video/${props.videoStandard}/${props.videoSubject}/${props.videoName}/${props.videoId}`,
+            route:`/video/${props.videoStandard.toLowerCase()}/${props.videoSubject.toLowerCase()}/${props.videoName.toLowerCase()}/${props.videoId.toLowerCase()}`,
             updatedAt:Date.now()
         }
       ));
@@ -68,7 +68,7 @@ const setVideoToView = () => {
 <template>
     <NuxtLink 
         v-if="!isDeleted"
-        :to="`/video/${videoStandard}/${videoSubject}/${videoName}/${videoId}`" @click="setVideoToView()"
+        :to="`/video/${videoStandard.toLowerCase()}/${videoSubject.toLowerCase()}/${videoName.toLowerCase()}/${videoId.toLowerCase()}`" @click="setVideoToView()"
         v-trusted
         :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',

@@ -51,7 +51,7 @@ const dropDown = () => {
             </p>
           </div>
           <NuxtLink to="/" class="flex items-center justify-center h-full p-2 cursor-pointer">
-            <NuxtImg  src="/logo/logo_tie.gif" alt="TIE LOGO" class="w-16 h-16" />
+            <NuxtImg  src="/logo/logo_tie.gif" alt="TIE LOGO" class="w-14 h-14" />
           </NuxtLink>
         </div>
       </div>
@@ -91,12 +91,10 @@ const dropDown = () => {
 
               <!-- Profile -->
               <NuxtLink to="/profile"  >
-                <div class="flex items-center justify-center overflow-hidden">
-                  <div class="flex items-center gap-1 cursor-pointer" >
-                    <div v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''" class="w-8 h-8">
-                      <NuxtImg  :src="apiDocs.baseURL.replace('v1','')+userToken?.profilePic" alt="User Profile"
-                      class="object-cover w-full h-full rounded-full" />
-                    </div>
+                <div class="flex items-center justify-center overflow-hidden rounded-full">
+                  <div class="flex items-center gap-1 cursor-pointer">
+                    <NuxtImg v-if="userToken?.profilePic" :src="apiDocs.baseURL" alt="User Profile"
+                      class="object-cover w-full h-full" />
                     <Icon v-else name="iconamoon:profile-circle-thin" class="" size="2rem" />
                     <p class="capitalize text-medium line-clamp-1 max-w-60">
                       Hello,
@@ -136,12 +134,9 @@ const dropDown = () => {
         <div class="flex flex-col items-center w-full text-white md:hidden md:flex-row bg-oceanBlue rounded-b-md">
           <!-- Profile and Sign Up and Home -->
           <div class="flex items-center justify-between w-full">
-            <div class="flex">
+            <div class="flex items-center gap-2">
 
-              <NuxtLink to="/profile" v-if="userToken" class="flex items-center pl-1">
-                <Icon name="iconamoon:profile-circle-thin" class="" size="1.2rem" />
-              </NuxtLink>
-              
+              <Icon v-if="userToken" name="iconamoon:profile-circle-thin" class="" size="1.2rem" />
               <NuxtLink to="/auth/SignUp" title="Sign Up" v-else
                 class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                 <Icon name="iconamoon:profile-thin" class="" size="1.2rem" />

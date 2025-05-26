@@ -144,20 +144,18 @@ onMounted(() => {
                     <div class="flex items-center gap-2">
                         <NuxtLink
                             :to="{ path: '/', query: { tab: 'experiments', subject: experimentSubject, class: experimentStandard } }"
-                            class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
-                            <!-- {{
+                            class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
+                            {{
                                 experimentSubject != null &&
                                     experimentSubject != undefined &&
                                     experimentSubject != "null"
                                     ? experimentSubject
                                     : `Secondary`
                             }}
-                            <Icon name="weui:arrow-outlined" size="18" class="text-black" /> -->
-
-                            <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
+                            <Icon name="weui:arrow-outlined" size="18" class="text-black" />
                         </NuxtLink>
 
-                        <!-- <NuxtLink
+                        <NuxtLink
                             :to="{ path: '/', query: { tab: 'experiments', subject: experimentSubject, class: experimentStandard } }"
                             class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
                             {{
@@ -168,9 +166,9 @@ onMounted(() => {
                                     : `Form One`
                             }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" />
-                        </NuxtLink> -->
+                        </NuxtLink>
 
-                        <p class="font-medium text-medium">
+                        <p class="font-medium uppercase text-medium md:capitalize">
                             {{
                                     experimentTitle != null &&
                                         experimentTitle != undefined &&
@@ -196,7 +194,7 @@ onMounted(() => {
                     <div class="relative w-full overflow-y-scroll rounded-md center-height" id="experiment-container"
                         v-else-if="status == 'success'" v-trusted>
                         <iframe :class="[
-                                ' w-full  rounded-md mt-6',
+                                ' w-full  rounded-md',
                                 isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
                             ]" :src="experimentInfo.stepsFileUrl" frameborder="0"></iframe v-trusted>
                         <!-- full screen controls -->
@@ -208,7 +206,7 @@ onMounted(() => {
                     </div>
 
                     <!-- experiment Description and Thumbnail Image -->
-                    <div class="flex items-center w-full h-full gap-4 my-4" v-if="experimentInfo">
+                    <div class="flex items-center w-full h-full gap-4 my-4">
                         <!-- Thumbnail Image -->
                         <div class="hidden overflow-hidden rounded-full w-14 h-14 lg:flex">
                             <NuxtImg :src="experimentInfo?.thumbnail" :alt="experimentInfo?.name"
@@ -223,19 +221,12 @@ onMounted(() => {
                         </div>
                     </div>
 
-                      <!-- Next and Previous BUTTON -->
-                     <div :class="[
-                        'flex items-center w-full',
-                        experimentInfo?.previous && experimentInfo?.next ? 'justify-between' 
-                        : !experimentInfo?.previous && experimentInfo?.next ? 'justify-end' 
-                        : !experimentInfo?.next && experimentInfo?.previous ? 'justify-start' : '',
-                         ]">
-                        <NuxtLink :to="{path:`/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.previous?.name}/${experimentInfo?.previous?._id}`}" 
-                        v-if="experimentInfo?.previous" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
-                            Previous experiment
+                      <!-- Next and Prev BUTTON -->
+                     <div class="flex items-center justify-between w-full">
+                        <NuxtLink :to="{path:`/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.previous?.name}/${experimentInfo?.previous?._id}`}" v-if="experimentInfo?.previous" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
+                            Prev experiment
                         </NuxtLink>
-                        <NuxtLink :to="{path:`/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.next?.name}/${experimentInfo?.next?._id}`}" 
-                        v-if="experimentInfo?.next" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
+                        <NuxtLink :to="{path:`/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.next?.name}/${experimentInfo?.next?._id}`}" v-if="experimentInfo?.next" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
                             Next experiment
                         </NuxtLink>
                      </div>

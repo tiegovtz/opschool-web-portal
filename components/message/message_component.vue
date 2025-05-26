@@ -22,7 +22,7 @@ defineProps({
 </script>
 
 <template>
-    <div :class="position ? 'top-10' : '-top-32 opacity-0'"
+    <div :class="position ? 'top-10' : '-top-30 opacity-0'"
         class="fixed flex items-center justify-center md:w-full w-auto max-w-md px-4 py-3 gap-3 bg-white rounded-lg shadow-md transition-all duration-500 ease-in-out">
         <div v-if="message" class="flex items-center" v-trusted>
             <Icon :name="icon" :class="eventType == 'success' ? 'text-green-500' : 'text-red-500'"

@@ -154,6 +154,21 @@ body {
   /* color: #0077c7; */
 }
 
+/* swiper-pagination-bullet 
+<span part="bullet" class="swiper-pagination-bullet" tabindex="0" role="button" aria-label="Go to slide 7"></span>
+*/
+.swiper-pagination-bullet{
+  height: 10px !important;
+  width: 10px !important;
+  border-radius: 50%;
+  background-color: white !important;
+  transition: all 0.5s ease-in-out;
+}
+
+.swiper-pagination-bullet-active {
+  height: 14px !important;
+  background-color: var(--color-oceanBlue) !important;
+}
 
 /*  notes styles */
 .notes span,
@@ -206,11 +221,10 @@ body {
 
 /*  */
 .notes table td img {
-  height: min(auto,300px);
+  height: 120px;
+  width: 100%;
   border-radius: 12px;
   object-fit: contain;
-  width: min(auto,100%);
-  margin: 0 auto;
 }
 
 .notes .desc-img {
@@ -220,35 +234,26 @@ body {
 }
 
 .notes table td {
-  padding:5px !important;
+  padding: 0 5px !important;
   overflow: hidden;
-  height: max-content !important;
-  border: 1px solid #ccc !important;
+  border: 1px solid #ccc;
 }
 
-/*  */
-.pic-center{
-  display: block !important;
-  margin: 0 auto !important;
+.notes table td p {
+  margin: 0px;
 }
 
 /* table */
 
 .notes table {
   width: 100% !important;
-  border-collapse: collapse ;
+  border-collapse: collapse;
   overflow-x: scroll;
   overflow: hidden;
-  /* border: none !important; */
-  border-collapse: collapse;
-  border-spacing: 0;
-  vertical-align: top;
-  padding: 5px !important;
 }
 
 .notes table tr {
   padding: 10px;
-  /* border: none !important; */
 }
 
 /* sidebar shadow left only */
@@ -307,14 +312,51 @@ p:only-child > img:only-child {
   font-size: 0.67rem !important;
 } /* Default: 10.72px */
 
-/* highlited headers , tasks ,activity , revition exercise */
-.highlighted-task-table {
-  max-width: max-content !important;
-  border-radius: 0 0 12px 12px;
+.notes div > table > tbody > tr > td > table {
+  width: max-content !important;
+  border-radius: 0 0 12px 12px !important;
 }
 
-.highlighted-task-table span {
+.notes div > table > tbody > tr > td > table span {
   padding: 10px !important;
+}
+
+/* Resivion Exercise */
+.notes .rev-exer-tbl > p ~ table > tbody > tr {
+  display: block !important;
+  width: 100% !important;
+  height: max-content !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+}
+
+.notes .rev-exer-tbl > p ~ table {
+  border: 0 !important;
+  height: max-content !important;
+}
+
+.notes .rev-exer-tbl > p ~ table table {
+  border: 0 !important;
+  display: block !important;
+  width: 100% !important;
+}
+.notes .rev-exer-tbl table > tbody > tr > td > table {
+  height: max-content !important;
+  border-radius: 0 !important;
+}
+
+.notes .rev-exer-tbl table > tbody > tr > td > table table {
+  display: block !important;
+  width: 100% !important;
+  height: max-content !important;
+  border-radius: 0 !important;
+}
+
+.notes .rev-exer-tbl table > tbody > tr > td > table table colgroup {
+  display: block !important;
+  width: 100% !important;
+  height: max-content !important;
+  border-radius: 0 !important;
 }
 
 /* title style  font tahoma important*/

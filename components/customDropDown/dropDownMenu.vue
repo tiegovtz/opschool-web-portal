@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, computed, nextTick } from 'vue';
+import { reactive, ref, computed, nextTick, toRaw } from 'vue';
 import debounce from 'lodash/debounce';
 import apiDocsFile from '~/utilities/api-docs';
 const apiDocs = apiDocsFile.setup();
@@ -63,22 +63,6 @@ const selectLevel = async (levelName) => {
   emitFilterPayload();
 };
 
-
-const selectClass = async (className) => {
-  if (!selectedFilters.class) selectedFilters.class = [];
-  selectedFilters.class.push(className);
-  await nextTick();
-  emitFilterPayload();
-};
-
-const selectSubject = async (subjectName) => {
-  if (!selectedFilters.subject) selectedFilters.subject = [];
-  selectedFilters.subject.push(subjectName);
-  await nextTick();
-  emitFilterPayload();
-};
-
-
 const toggleCheckbox = (key, value) => {
   if (!selectedFilters[key]) selectedFilters[key] = [];
   const index = selectedFilters[key].indexOf(value);
@@ -91,96 +75,120 @@ const toggleCheckbox = (key, value) => {
   emitFilterPayload();
 };
 
+// Emit Filter Payload Function
 const emitFilterPayload = debounce(() => {
   const rawFilters = JSON.parse(JSON.stringify(selectedFilters));
   const queryObject = {};
 
   for (const key in rawFilters) {
     let apiKey = key;
+    
+    // Check and convert specific keys to lowercase
     if (key === 'level') apiKey = 'educationLevel';
     else if (key === 'class') apiKey = 'level';
 
     const val = rawFilters[key];
     if (Array.isArray(val)) {
-      queryObject[apiKey] = val.toString().toLowerCase();
+      queryObject[apiKey.toLowerCase()] = val.toString().toLowerCase();
     } else {
-      queryObject[apiKey] = val.toString().toLowerCase();
+      queryObject[apiKey.toLowerCase()] = val.toString().toLowerCase();
     }
   }
 
   emit("emitUpdateFilterValue", queryObject);
 }, 100);
 
-const filterNameGroup = computed(() => {
-  if (isLoading.value) return [];
-  const filters = [];
-
-  if (Array.isArray(educationLevels?.value) && educationLevels.value.length > 0) {
-    filters.push({
-      name: 'level',
-      visibility: 'all',
-      inputType: 'radio',
-      filterGroup: educationLevels.value.map((level) => ({ name: level.name }))
-    });
-  }
-
-  if (Array.isArray(classes?.value)) {
-    filters.push({
-      name: 'class',
-      visibility: 'all',
-      inputType: 'radio',
-      filterGroup: classes.value.reduce((acc, cls) => {
-        const existing = acc.find((g) => g.level === cls.educationLevel?.name);
-        if (existing) {
-          existing.classes.push(cls.name);
-        } else {
-          acc.push({ level: cls.educationLevel?.name, classes: [cls.name] });
-        }
-        return acc;
-      }, [])
-    });
-  }
-
-  if (Array.isArray(subjects?.value)) {
-    filters.push({
-      name: 'subject',
-      visibility: 'all',
-      inputType: 'radio',
-      filterGroup: subjects.value.reduce((acc, subj) => {
-        const existing = acc.find((g) => g.level === subj.educationLevel);
-        if (existing) {
-          existing.list.push(subj.name);
-        } else {
-          acc.push({ level: subj.educationLevel, list: [subj.name] });
-        }
-        return acc;
-      }, [])
-    });
-  }
-  
-  if (Array.isArray(languages?.value)) {
-    filters.push({
-      name: 'language',
-      visibility: 'all',
-      inputType: 'radio',
-      filterGroup: languages.value.map((lang) => ({ name: lang.name }))
-    });
-  }
-
-  if (Array.isArray(skills?.value)) {
-    filters.push({
-      name: 'skills',
-      visibility: 'all',
-      inputType: 'radio',
-      filterGroup: skills.value.map((skill) => ({ name: skill.name }))
-    });
-  }
-  
-  return filters;
-});
+const filterNameGroup = [
+  {
+    name: "Level",
+    visibility: "all",
+    inputType: "radio",
+    filterGroup: [
+      { name: "Lower Secondary" },
+      { name: "Upper Secondary" },
+      { name: "Teacher Education" },
+    ],
+  },
+  {
+    name: "Class",
+    visibility: "all",
+    inputType: "radio",
+    filterGroup: [
+      {
+        level: "Lower Secondary",
+        classes: ["Form 1", "Form 2", "Form 3", "Form 4"],
+      },
+      {
+        level: "Upper Secondary",
+        classes: ["Form 5", "Form 6"],
+      },
+      {
+        level: "Teacher Education",
+        classes: ["Level 1", "Level 2", "Level 3", "Level 4"],
+      },
+    ],
+  },
+  {
+    name: "Subject",
+    visibility: "all",
+    inputType: "radio",
+    filterGroup: [
+      { level: "Pre Primary", list: ["Counting", "Writting"] },
+      {
+        level: "Primary",
+        list: ["Kiswahili", "Mathematics", "Science", "Social Studies"],
+      },
+      {
+        level: "Lower Secondary",
+        list: [
+          "Mathematics",
+          "Physics",
+          "Chemistry",
+          "Biology",
+          // "Geography",
+        ],
+      },
+      {
+        level: "Upper Secondary",
+        list: [
+          "Mathematics",
+          "Physics",
+          "Chemistry",
+          "Biology",
+          // "Geography",
+        ],
+      },
+    ],
+  },
+  {
+    name: "Category",
+    visibility: "video",
+    inputType: "radio",
+    filterGroup: [{ name: "General" }, { name: "Vocational" }],
+  },
+  {
+    name: "Language",
+    visibility: "all",
+    inputType: "radio",
+    filterGroup: [
+      { name: "English" },
+      { name: "Kiswahili" },
+    ],
+  },
+  {
+    name: "Skills",
+    visibility: "all",
+    inputType: "radio",
+    filterGroup: [
+      { name: "Child Protection" },
+      { name: "Social Policy" },
+      { name: "Knowledge Management" },
+    ],
+  },
+];
 
 const visibleFilters = computed(() => {
-  return filterNameGroup.value.filter(
+  return filterNameGroup.filter(
     (filter) => filter.visibility === "all" || filter.visibility === props.activeTab
   );
 });
@@ -201,15 +209,15 @@ const visibleFilters = computed(() => {
           </button>
         </div>
 
-        <div v-for="(filter, index) in visibleFilters" :key="index" class="p-4">
-          <div @click="setMenuOpen(index)" class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">{{ filter.name }}</h3>
-            <span>
-              <Icon :name="dropDownMenu.openMenus.includes(index) ?
-                'lets-icons:remove-duotone' :
-                'lets-icons:add-duotone'" size="1.2rem" class="text-deepBlue" />
-            </span>
-          </div>
+    <div v-for="(filter, index) in visibleFilters" :key="index" class="p-4">
+      <div @click="setMenuOpen(index)" class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">{{ filter.name }}</h3>
+        <span>
+          <Icon :name="dropDownMenu.openMenus.includes(index) ?
+    'lets-icons:remove-duotone' :
+    'lets-icons:add-duotone'" size="1.2rem" class="text-deepBlue" />
+        </span>
+      </div>
 
           <transition name="fade">
             <div v-trusted v-if="dropDownMenu.openMenus.includes(index)" class="mt-2 space-y-2">

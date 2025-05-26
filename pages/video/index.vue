@@ -9,7 +9,6 @@ import InputsSelection from '@/components/home/InputsSelection.vue'
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { HomeCustomScrollView } from "#components";
-import { fetchAsyncData } from '~/composable/useAsyncFetch';
 
 
 const apiDocs = apiDocsFile.setup()
@@ -77,23 +76,23 @@ const fetchVideos = async (param) => {
 
   if(!param){
     param = {
-      videoType:videoType?videoType: 'Conceptual'
+      videoType: 'Conceptual'
     }
   }
   
   try {
     status.value = 'pending';
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`videos-${param?.toString()}`,()=>$fetch(apiDocs.videos.getPublicVideo, {
+    const response = await $fetch(apiDocs.videos.getPublicVideo, {
       method: 'GET',
       params: {
        ...param
       },
-    }));
+    });
 
     // Call State Define above
-    videos.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
+    videos.value = removeDataFromArrayOfJson(response, 'isDeleted', true);
     videos.value = filterKeyDataFromArrayOfJson( videos.value,"subject.name",['physics','chemistry','mathematics','biology','geography'])
-    status.value = fetchStatus.value;
+    status.value = 'success';
 
     // Call sliceData after data is loaded
     sliceData(

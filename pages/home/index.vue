@@ -14,16 +14,13 @@ import {
 import InputsSelection from "~/components/home/InputsSelection.vue";
 import apiDocsFile from "~/utilities/api-docs";
 const apiDocs = apiDocsFile.setup()
-import {
-  filterKeyDataFromArrayOfJson,
-  removeDataFromArrayOfJson,
-} from "~/utilities/filterJson";
+import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import customGridOne from "~/components/home/customGridOne.vue";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import DropDownMenu from "~/components/customDropDown/dropDownMenu.vue";
 import SubjectCard from "~/components/home/SubjectCard.vue";
 import { layoutEffect } from "~/utilities/controlls";
-import { fetchAsyncData } from "~/composable/useAsyncFetch";
+import { HomeCustomScrollView, PaginationSliderBtn } from "#components";
 
 // Define meta info about page
 useHead({
@@ -73,7 +70,7 @@ useHead({
 // Define Cookie
 const userToken = useCookie("signInUserToken");
 const route = useRoute();
-let tab = route.query?.tab;
+const tab = route.query?.tab;
 
 // Define Ref state
 const error = ref(); // Initial Error State
@@ -84,7 +81,7 @@ const hideFilter = ref(false); // Initial Hide Filters
 const activeTab = ref("home"); // Initial Active Tab State
 const filterValue = ref(); // Initial Filter Value State
 const subjectId = ref(); // Initial subjectId Value State
-const seeMoreDetails = ref(route.query?.subject?.toLowerCase() ?? null); // Initial See More
+const seeMoreDetails = ref(null); // Initial See More
 
 // Define Filters Reactive State
 const filters = reactive({
@@ -127,31 +124,31 @@ const pageSize = ref();
 // Then, update fetchData to call sliceData after data is loaded
 const fetchData = async (params) => {
   let url;
-  data.value = [];
-  status.value = "pending";
-  error.value = null;
+
   const tab = activeTab.value.toLowerCase();
 
   if (userToken.value) {
     // Check for specific tabs
     if (tab === "experiments") {
-      url = apiDocs.experiments.getPublicExperiments;
+      url = apiDocs.experiments.getExperiments;
       params = {
         ...params,
       };
     } else if (tab === "video") {
-      url = apiDocs.videos.getPublicVideo;
+      url = apiDocs.videos.getVideos;
       params = {
         ...params,
         videoType: "Conceptual",
       };
-    } else if (tab === "othervideo") {
-      url = apiDocs.videos.getPublicVideo;
-      params = {
-        ...params,
-        videoType: "others",
-      };
-    } else if (tab === "home") {
+    } 
+    else if (tab === "othervideo") {
+        url = apiDocs.videos.getVideos;
+        params = {
+          ...params,
+          videoType: "others",
+        };
+      }
+    else if (tab === "home") {
       url = apiDocs.subjects.getPublicSubjects;
       params = {
         ...params,
@@ -163,6 +160,7 @@ const fetchData = async (params) => {
         userId: userToken.value?._id,
       };
     }
+    
 
     // Subject-specific tab overrides
     if (subjectId.value) {
@@ -185,7 +183,8 @@ const fetchData = async (params) => {
           ...params,
           videoType: "Conceptual",
         };
-      } else if (tab === "othervideo") {
+      } 
+      else if (tab === "othervideo") {
         url = apiDocs.videos.getPublicVideoBySubjectId.replace(
           "{subjectId}",
           subjectId.value
@@ -193,9 +192,10 @@ const fetchData = async (params) => {
 
         params = {
           ...params,
-          videoType: "Others",
+          videoType: "others",
         };
-      } else if (tab === "interactive books") {
+      }
+      else if (tab === "interactive books") {
         url = apiDocs.topics.getSubjectId.replace(
           "{subjectId}",
           subjectId.value
@@ -215,14 +215,15 @@ const fetchData = async (params) => {
   }
 
   try {
-    const {data:response, status:fetchStatus} = await fetchAsyncData(`tab-${tab}-${subjectId.value ? subjectId.value :'' }`,()=> $fetch(url, {
-      params: {
+    const response = await $fetch(url, {
+      params: { 
         ...params,
-      },
+         
+       },
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
-    }));
+    });
     
 
     if(response.value.length > 0 ){
@@ -238,10 +239,11 @@ const fetchData = async (params) => {
         "geography",
       ]);
     } else {
-      data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(response, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(data.value, "name", 'Geography');
     }
 
-    status.value = fetchStatus.value;
+    status.value = "success";
 
     // Call sliceData after data is loaded
     sliceData(
@@ -258,14 +260,6 @@ const fetchData = async (params) => {
 
 // Call Fetch Topics function
 fetchData();
-
-// shuffle Subject
-const shuffleSubject = (subjects) => {
-  return subjects
-    .map((subject) => ({ subject, sort: Math.random() })) // Assign a random sort key
-    .sort((a, b) => a.sort - b.sort) // Sort by random key
-    .map(({ subject }) => subject); // Extract shuffled choices
-};
 
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
@@ -320,7 +314,7 @@ const nextPage = (event) => {
     currentPage.value * pageSize.value
   );
 };
-
+ 
 const prevPage = (event) => {
   currentPage.value--;
   currentPage.value = currentPage.value < 1 ? 1 : currentPage.value;
@@ -363,9 +357,11 @@ watch(
         fetchData();
       } else if (activeTab.toLowerCase() === "video") {
         fetchData();
-      } else if (activeTab.toLowerCase() === "othervideo") {
+      } 
+      else if (activeTab.toLowerCase() === "othervideo") {
         fetchData();
-      } else if (activeTab.toLowerCase() === "audio") {
+      }
+      else if (activeTab.toLowerCase() === "audio") {
         // fetchData();
         data.value = [];
       }
@@ -412,6 +408,15 @@ watch(
     }
   }
 );
+
+// modify see more 
+const setSeeMore = (seeMore) => {
+  if (seeMoreDetails.value === seeMore) {
+    seeMoreDetails.value = null;
+  } else {
+    seeMoreDetails.value = seeMore;
+  }
+}
 </script>
 
 <template>
@@ -419,104 +424,67 @@ watch(
     <!-- User Has a Token -->
     <section v-if="userToken" :class="[' ', { ' animate-pulse': isLoading }]" v-trusted>
       <HomeSearchbar appearance="rounded" />
-      <TabBar
-        :is-logged-in="true"
-        @emit-active-tab="activeTab = $event"
-        :active-tab="activeTab"
-      />
+      <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" :active-tab="activeTab" />
 
       <!-- container filter Mobile -->
       <div class="flex items-center justify-between py-2 xl:hidden">
         <p class="font-medium text-small">Viewing {{ data?.length }} Results</p>
-        <div
-          class="flex items-center gap-2 cursor-pointer text-deepBlue"
-          @click="hideFilter = !hideFilter"
-        >
+        <div class="flex items-center gap-2 cursor-pointer text-deepBlue" @click="hideFilter = !hideFilter">
           <Icon name="mage:filter-fill" size="24" class="" />
           <p class="text-medium">Filters</p>
         </div>
 
         <!-- Side Bar Container Filter For Mobile View Only -->
-        <div
-          :class="[
+        <div :class="[
                 'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
                 hideFilter ? 'z-30' : '-z-30',
-              ]"
-        >
+              ]">
           <div class="w-full h-full bg-white md:w-80">
             <!-- Close Button -->
             <div class="flex items-center justify-end">
-              <button
-                class="flex items-center justify-center w-10 h-10 p-2 cursor-pointer rounded-bl-md bg-deepBlue"
-                @click="hideFilter = !hideFilter"
-              >
-                <Icon
-                  name="formkit:close"
-                  size="24"
-                  class="font-bold text-white"
-                />
+              <button class="flex items-center justify-center w-10 h-10 p-2 cursor-pointer rounded-bl-md bg-deepBlue"
+                @click="hideFilter = !hideFilter">
+                <Icon name="formkit:close" size="24" class="font-bold text-white" />
               </button>
             </div>
 
             <div class="flex flex-col gap-4 mt-10">
               <!-- Home Drop Down Menu -->
-              <DropDownMenu
-                :active-tab="activeTab"
-                @emit-update-filter-value="filterValue = $event"
-              />
+              <DropDownMenu :active-tab="activeTab" @emit-update-filter-value="filterValue = $event" />
             </div>
           </div>
         </div>
       </div>
       <!-- LayoutEffect  -->
-      <div class="items-center justify-end hidden gap-2 md:flex">
-        <Icon
-          name="bxs:grid-alt"
-          size="1.5rem"
-          @click="layoutEffect = 'grid'"
-          :class="[
-                'cursor-pointer transition-all duration-500 ease-in-out',
-                layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
-              ]"
-        />
-        <Icon
-          name="fa-solid:list"
-          size="1.5rem"
-          @click="layoutEffect = 'list'"
-          :class="[
-                'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
-                layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
-              ]"
-        />
+      <div class="flex items-center justify-end gap-2">
+        <Icon name="bxs:grid-alt" size="1.5rem" @click="layoutEffect = 'grid'" 
+        :class="[
+              'cursor-pointer transition-all duration-500 ease-in-out',
+              layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+            ]" />
+        <Icon name="fa-solid:list" size="1.5rem" @click="layoutEffect = 'list'" 
+        :class="[
+              'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
+              layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+            ]" />
       </div>
       <div class="flex items-center justify-center w-full gap-4 xl:items-start">
         <!-- container filter Desktop -->
         <div
-          class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow"
-        >
+          class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
           <!-- Home Drop Down Menu -->
-          <DropDownMenu
-            @emit-update-filter-value="filterValue = $event"
-            :active-tab="activeTab"
-            :filter-value="[]"
-          />
+          <DropDownMenu @emit-update-filter-value="filterValue = $event" :active-tab="activeTab" :filter-value="[]" />
 
           <!-- <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" /> -->
         </div>
 
         <!-- data are in Grid -->
         <div class="w-full xl:w-3/4">
-          <div
-            v-if="status === 'pending'"
-            class="flex flex-col items-center justify-center" v-trusted
-          >
+          <div v-if="status === 'pending'" class="flex flex-col items-center justify-center" v-trusted>
             <LoadingIndicator :is-loading="true"/>
           </div>
           <!-- Status Error -->
-          <div
-            v-else-if="status === 'error'" v-trusted
-            class="md:min-h-[342px] flex flex-col justify-center items-center"
-          >
+          <div v-else-if="status === 'error'" v-trusted class="md:min-h-[342px] flex flex-col justify-center items-center">
             <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
             <p class="text-center">
               Oops! Something went wrong.<br />
@@ -538,52 +506,33 @@ watch(
           </div>
 
           <!-- Status Success -->
-          <div
-            v-else-if="status == 'success' && subjectId && data.length > 0"
-            class="" v-trusted
-          >
+          <div v-else-if="status == 'success' && subjectId && data.length > 0" class="" v-trusted>
             <ClientOnly>
               <customGridOne v-if="activeTab.toLowerCase() === 'home'" v-trusted>
                 <template #data>
                   <!-- Subject Cards are in Grid -->
-                  <SubjectCard
-                    v-for="subject in shuffleSubject(slicedData)"
-                    :key="subject._id"
-                    :subject-id="subject._id"
-                    :subject-name="subject.name"
-                    :subject-image="subject.thumbnail"
-                    :subject-description="subject.description"
-                    :total-views="subject.views ?? 0"
+                  <SubjectCard v-for="subject in slicedData" :key="subject._id" :subject-id="subject._id"
+                    :subject-name="subject.name" :subject-image="subject.thumbnail" 
+                    :total-views="subject.views ?? 0" 
                     :is-logged-in="userToken != null || userToken != undefined"
-                    @emit-subject-name="activeTab = $event"
-                    @emit-subject-id="subjectId = $event"
-                  />
+                    @emit-subject-name="activeTab = $event" @emit-subject-id="subjectId = $event" />
                 </template>
               </customGridOne>
 
-              <customGridOne
-                v-else-if="activeTab.toLowerCase() === 'interactive books'" v-trusted
-              >
+              <customGridOne v-else-if="activeTab.toLowerCase() === 'interactive books'" v-trusted>
                 <template #data>
                   <!-- Topic Cards are in Grid -->
-                  <TopicCard
-                    v-for="topic in slicedData"
-                    :key="topic._id" :topic-id="topic._id"
-                    :topic-image="topic.thumbnail" :topic-title="topic.name"
-                    :topic-description="topic.descriptions"
-                    :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
-                    :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                    :topic-level="level" :topic-standard="topic.level?.name"
-                    :subject-name="topic.subject?.name" :topic-viewed="topic.isViewed"
-                    :topic-progress="topic.avgProgress"
-                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0"
-                  />
+                  <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
+                    :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
+                    :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'" 
+                    :topic-likes="topic.topic_likes ? topic.topic_likes : 100" 
+                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0 " 
+                    :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
+                    :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
                 </template>
               </customGridOne>
 
-              <customGridOne
-                v-else-if="activeTab.toLowerCase() === 'experiments'" v-trusted
-              >
+              <customGridOne v-else-if="activeTab.toLowerCase() === 'experiments'" v-trusted>
                 <template #data>
                   <!-- Experiment Cards are in Grid -->
                   <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id"
@@ -592,63 +541,38 @@ watch(
                     :experiment-type="experiment.category" :experiment-subject="experiment.subject?.name"
                     :experiment-level="experiment.level?.name" :experiment-name="experiment.name"
                     :experiment-file-url="experiment.stepsFileUrl" />
-                  <ExperimentsCard
-                    v-for="experiment in slicedData"
-                    :key="experiment._id"
-                    :experiment-id="experiment._id"
-                    :experiment-thumbnail="experiment.thumbnail"
-                    :experiment-title="experiment.title"
-                    :experiment-description="experiment.description"
-                    :experiment-type="experiment.category"
-                    :experiment-subject="experiment.subject?.name"
-                    :experiment-level="experiment.level?.name"
-                    :experiment-name="experiment.name"
-                    :experiment-file-url="experiment.stepsFileUrl"
-                  />
+                  <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id"
+                    :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
+                    :experiment-title="experiment.title" :experiment-description="experiment.description"
+                    :experiment-type="experiment.category" :experiment-subject="experiment.subject?.name"
+                    :experiment-level="experiment.level?.name" :experiment-name="experiment.name"
+                    :experiment-file-url="experiment.stepsFileUrl" />
                 </template>
               </customGridOne>
 
-              <customGridOne
-                v-else-if="
-                  activeTab.toLowerCase() === 'video' ||
-                  activeTab.toLowerCase() === 'othervideo'
-                "
-               v-trusted>
+              <customGridOne v-else-if="activeTab.toLowerCase() === 'video' || activeTab.toLowerCase() === 'othervideo'" v-trusted>
                 <template #data>
                   <!-- Video Cards are in Grid -->
-                  <VideoCard
-                    v-for="video in slicedData"
-                    :key="video._id"
-                    :video-id="video._id"
-                    :video-name="video.name"
-                    :video-thumbnail="video.thumbnail"
-                    :video-file-url="video.videoFileUrl"
-                    :is-deleted="video.isDeleted"
-                    :video-description="video.description"
-                    :video-subject="video.subject?.name"
-                    :video-type="video.videoType"
-                  />
+                  <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" 
+                    :video-name="video.name" :video-thumbnail="video.thumbnail" 
+                    :video-file-url="video.videoFileUrl" :is-deleted="video.isDeleted"
+                    :video-description="video.description" :video-subject="video.subject?.name"
+                    :video-type="video.videoType" />
                 </template>
               </customGridOne>
               <div v-else-if="activeTab.toLowerCase() === 'audio'" v-trusted>
-                <MessageTopicNotFound
-                  message="This page will be updated soon"
-                />
+                <MessageTopicNotFound message="This page will be updated soon" />
               </div>
             </ClientOnly>
 
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" class="flex justify-center my-5" v-trusted>
               <div v-if="totalPages <= 5" class="flex justify-center gap-2" v-trusted>
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" 
+                  @send-page-number="currentPage = $event" />
+              
               </div>
               <div v-else class="flex items-center gap-2" v-trusted>
                 <div
@@ -662,19 +586,12 @@ watch(
                     @click="prevPage"
                   />
                 </div>
-
-                <div
-                  class="overflow-x-scroll scrollbar-none max-w-[250px] flex items-center justify-start gap-2"
-                >
-                  <PaginationBtn
-                    v-for="page in totalPages"
-                    :key="page"
-                    :page-number="page"
-                    :is-active="page === currentPage"
-                    :disabled="page === currentPage"
-                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                    @send-page-number="currentPage = $event"
-                  />
+                
+                <div class="overflow-x-scroll scrollbar-none max-w-[250px] flex items-center  justify-start gap-2">
+                  <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                    :is-active="page === currentPage" :disabled="page === currentPage"
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)" 
+                    @send-page-number="currentPage = $event" />  
                 </div>
 
                 <div
@@ -693,19 +610,9 @@ watch(
           </div>
 
           <!-- data sorted if no subject -->
-          <div
-            v-else-if="status == 'success' && !subjectId && data.length > 0"
-            class="" v-trusted
-          >
+          <div v-else-if="status == 'success' && !subjectId && data.length > 0" class="" v-trusted>
             <ClientOnly>
-              <HomeCustomScrollView
-                :shuffle-subject="shuffleSubject"
-                :see-more-details="seeMoreDetails"
-                :data="data"
-                :active-tab="activeTab" v-trusted
-                @emittedSubjectId="subjectId = $event"
-                @emittedActiveTab="activeTab = $event"
-              />
+              <HomeCustomScrollView :data="data" :active-tab="activeTab" v-trusted />
             </ClientOnly>
           </div>
           <MessageTopicNotFound v-else v-trusted />
@@ -716,17 +623,11 @@ watch(
     <!-- User has no token -->
     <section v-else :class="[' ', { ' animate-pulse': isLoading }]" v-trusted>
       <HeroSection />
-      <InputsSelection
-        @emit-level="level = $event"
-        @emit-standard="filters.level = $event"
-        @emit-subject="filters.subject = $event"
-      />
+      <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+        @emit-subject="filters.subject = $event" />
       <TabBar />
 
-      <div
-        v-if="status === 'pending'"
-        class="flex flex-col items-center justify-center" v-trusted
-      >
+      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center" v-trusted>
         <LoadingIndicator :is-loading="true" />
       </div>
       <!-- Status Error -->
@@ -753,62 +654,33 @@ watch(
             >
               <template #data v-trusted>
                 <!-- Topic Cards -->
-                <TopicCard
-                  v-for="topic in slicedData"
-                  :key="topic._id"
-                  :topic-id="topic._id"
-                  :topic-image="topic.thumbnail"
-                  :topic-title="topic.name"
-                  :topic-description="topic.descriptions"
-                  :topic-duration="
-                    topic.topic_duration ? topic.topic_duration : '10 min'
-                  "
-                  :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                  :topic-views="
-                    topic.viewedBy?.length
-                      ? topic.viewedBy?.length
-                      : topic.views
-                      ? topic.views
-                      : 0
-                  "
-                  :topic-level="level"
-                  :topic-standard="topic.level?.name"
-                  :subject-name="topic.subject?.name"
-                  :topic-viewed="topic.isViewed"
-                  :topic-progress="topic.avgProgress"
-                />
+                <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
+                  :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
+                  :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'" 
+                  :topic-likes="topic.topic_likes ? topic.topic_likes : 100" 
+                  :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0" 
+                  :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
+                  :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
               </template>
             </customGridTwo>
 
             <customGridTwo v-trusted v-else>
               <template #data v-trusted>
                 <!-- Subject Cards are in Grid -->
-                <SubjectCard
-                  v-for="subject in shuffleSubject(slicedData)"
-                  :key="subject._id"
-                  :subject-id="subject._id"
-                  :subject-name="subject.name"
-                  :subject-image="subject.thumbnail"
-                  :subject-description="subject.description"
-                  :total-views="subject.views ?? 0"
+                <SubjectCard v-for="subject in slicedData" :key="subject._id" 
+                  :subject-id="subject._id" :subject-name="subject.name" 
+                  :subject-image="subject.thumbnail" :total-views="subject.views ?? 0" 
                   :is-logged-in="userToken != null || userToken != undefined"
-                  @emit-subject-name="activeTab = $event"
-                />
+                  @emit-subject-name="activeTab = $event" />
               </template>
             </customGridTwo>
 
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" class="flex justify-center my-5" v-trusted>
               <div v-if="totalPages <= 5" class="flex justify-center gap-2" v-trusted>
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
               </div>
               <div v-else class="flex justify-center gap-2" v-trusted>
                 <!-- previous -->
@@ -824,26 +696,14 @@ watch(
                   />
                 </div>
 
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" 
+                  @send-page-number="currentPage = $event" />
 
                 <!-- next button -->
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage > 4" v-trusted
-                >
-                  <Icon
-                    name="iconamoon:arrow-right-2-fill"
-                    size="2rem"
-                    @click="nextPage"
-                  />
+                <div class="flex items-center justify-center" v-if="currentPage > 4" v-trusted>
+                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
                 </div>
               </div>
             </div>
