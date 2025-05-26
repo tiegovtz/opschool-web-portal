@@ -4,10 +4,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const user = useCookie("signInUserToken");
   const userAccessToken = useCookie("signInAccessToken");
 
-  // const path = useState("topicToView");
-
-  // 🔹 Redirect unauthenticated users trying to access protected routes
-  // const protectedRoutes = ["/interactive", "/video", "/experiments"];
   if (!user.value) {
     return navigateTo("/auth"); // Redirect to login page
   }
