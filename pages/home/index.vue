@@ -225,10 +225,11 @@ const fetchData = async (params) => {
     }));
     
 
-    // Call State Define above
+    if(response.value.length > 0 ){
+      // Call State Define above
     if (subjectId.value) {
       data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
-    } else if (!subjectId.value && tab !== "home") {
+    } else if (!subjectId.value && tab !== "home" ) {
       data.value = filterKeyDataFromArrayOfJson(response.value, "subject.name", [
         "physics",
         "chemistry",
@@ -247,6 +248,8 @@ const fetchData = async (params) => {
       (currentPage.value - 1) * pageSize.value,
       currentPage.value * pageSize.value
     );
+    }
+
   } catch (err) {
     status.value = "error";
     error.value = err;
@@ -507,7 +510,7 @@ watch(
             v-if="status === 'pending'"
             class="flex flex-col items-center justify-center" v-trusted
           >
-            <LoadingIndicator :is-loading="true" />
+            <LoadingIndicator :is-loading="true"/>
           </div>
           <!-- Status Error -->
           <div
@@ -748,7 +751,7 @@ watch(
               v-if="filters.level !== null && filters.subject !== null"
               v-trusted
             >
-              <template #data>
+              <template #data v-trusted>
                 <!-- Topic Cards -->
                 <TopicCard
                   v-for="topic in slicedData"
@@ -777,8 +780,8 @@ watch(
               </template>
             </customGridTwo>
 
-            <customGridTwo v-else>
-              <template #data>
+            <customGridTwo v-trusted v-else>
+              <template #data v-trusted>
                 <!-- Subject Cards are in Grid -->
                 <SubjectCard
                   v-for="subject in shuffleSubject(slicedData)"

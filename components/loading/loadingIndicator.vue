@@ -12,7 +12,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center">
+  <div class="flex flex-col items-center justify-center" v-trusted>
    
     <div class="doting ">
       <div  class="inline-block w-2 h-2 mx-1 dot dot-animate"></div>
