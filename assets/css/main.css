@@ -188,7 +188,8 @@ body {
   width: 50%;
   padding: 3px;
   position: relative;
-  transition: all 500ms ease-in-out;
+  will-change: transform;
+  transition:all 1s ease-in-out;
 }
 
 /*  */
