@@ -19,7 +19,6 @@ export const useNavigationStore = defineStore('navigation', {
       this.experimentToView = { route, updatedAt: Date.now() }
     },
     setAudio(route: string) {
-      
       this.audioToListen = { route, updatedAt: Date.now() }
     },
     clearAll() {
@@ -28,7 +27,7 @@ export const useNavigationStore = defineStore('navigation', {
       this.experimentToView = null
     },
     getLatestRoute() {
-      const routes = [this.topicToView, this.videoToView, this.experimentToView]
+      const routes = [this.topicToView, this.videoToView, this.experimentToView, this.audioToListen]
         .filter(Boolean)
         .sort((a, b) => b!.updatedAt - a!.updatedAt)
 

@@ -12,7 +12,7 @@ const props = defineProps({
     },
     audioThumbnail: {
         type: String,
-       default: '/public/images/default.webp',
+        default: '/public/images/default.webp',
     },
     audioFileUrl: {
         type: String,
@@ -45,7 +45,7 @@ const props = defineProps({
         default: 0,
     },
     topicViewed: Boolean,
-    isDeleted:{
+    isDeleted: {
         type: Boolean,
         default: false,
     }
@@ -56,35 +56,32 @@ const props = defineProps({
 const setAudioToListen = () => {
     navigationStore.setAudio(`/audio/${props.audioStandard}/${props.audioSubject}/${props.audioName}/${props.audioId}`)
     useState('audioToView',
-      () =>(
-         {
-            route:`/audio/${props.audioStandard}/${props.audioSubject}/${props.audioName}/${props.audioId}`,
-            updatedAt:Date.now()
-        }
-      ));
+        () => (
+            {
+                route: `/audio/${props.audioStandard}/${props.audioSubject}/${props.audioName}/${props.audioId}`,
+                updatedAt: Date.now()
+            }
+        ));
 }
 </script>
 
 <template>
-    <NuxtLink 
-        v-if="!isDeleted"
-        :to="`/audio/${audioStandard}/${audioSubject}/${audioName}/${audioId}`" @click="setAudioToListen()"
-        :class="[
+    <NuxtLink v-if="!isDeleted" :to="`/audio/${audioStandard}/${audioSubject}/${audioName}/${audioId}`"
+        @click="setAudioToListen()" :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
             layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32'
         ]">
-        
+
         <!-- Thumbnail section -->
         <div :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
             layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
-            <NuxtImg :src="audioThumbnail" :alt="audioName.toLowerCase()"
-                :class="[
-                    'object-cover w-full h-full transition-transform duration-500',
-                ]" />
+            <NuxtImg :src="audioThumbnail" :alt="audioName.toLowerCase()" :class="[
+                'object-cover w-full h-full transition-transform duration-500',
+            ]" />
 
-                <div class="absolute inset-0 bg-gradient-to-t from-black bg-opacity-70 to-transparent opacity-70"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black bg-opacity-70 to-transparent opacity-70"></div>
             <!-- Play button -->
             <div
                 class="absolute top-0 left-0 flex items-center justify-center w-full h-full transition-opacity cursor-pointer topitems-center opacity-90 group-hover:opacity-scale-100">
