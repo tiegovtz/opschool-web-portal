@@ -6,6 +6,7 @@ import TopicCard from "~/components/home/TopicCard.vue";
 import SubjectCard from "~/components/home/SubjectCard.vue";
 import { VideoCard } from "#components";
 import { layoutEffect } from "~/utilities/controlls";
+import AudioCard from "../audio/audioCard.vue";
 
 defineProps({
   data: {
@@ -414,9 +415,102 @@ const setSeeMore = (seeMore) => {
     <div v-else-if="activeTab.toLowerCase() === 'audio'" 
     v-trusted
     >
-      <div></div>
-      <div>
-        <MessageTopicNotFound message="This page will be updated soon" />
+       <div v-for="(audios, index) in data" :key="index">
+        <div
+          v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()"
+          class="flex items-center justify-between py-4"
+        >
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ audios?.dataOfKey.toLowerCase() }}
+          </p>
+          <small
+            @click="setSeeMore(audios?.dataOfKey.toLowerCase())"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+          >
+            {{
+              seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()
+                ? "See Less"
+                : "See All"
+            }}
+          </small>
+        </div>
+        <div
+          v-else-if="!seeMoreDetails"
+          class="flex items-center justify-between py-4"
+        >
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ audios?.dataOfKey.toLowerCase() }}
+          </p>
+          <small
+            @click="setSeeMore(audios?.dataOfKey.toLowerCase())"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+          >
+            {{
+              seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()
+                ? "See Less"
+                : "See All"
+            }}
+          </small>
+        </div>
+        <div v-if="data.length > 1">
+          <customGridOne
+            v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()"
+          >
+            <template #data>
+              <!-- audio Cards  -->
+              <AudioCard
+                v-for="audio in audios?.data"
+                :key="audio._id"
+                :audio-id="audio._id"
+                :is-deleted="audio.isDeleted"
+                :audio-name="audio.name"
+                :audio-thumbnail="audio.thumbnail"
+                :audio-file-url="audio.audioFileUrl"
+                :audio-description="audio.description"
+                :audio-subject="audio.subject?.name"
+                :audio-type="audio.audioType"
+              />
+            </template>
+          </customGridOne>
+
+          <div
+            v-else-if="!seeMoreDetails"
+            :class="[
+              'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+              layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+            ]"
+          >
+            <AudioCard
+                v-for="audio in audios?.data"
+                :key="audio._id"
+                :audio-id="audio._id"
+                :is-deleted="audio.isDeleted"
+                :audio-name="audio.name"
+                :audio-thumbnail="audio.thumbnail"
+                :audio-file-url="audio.audioFileUrl"
+                :audio-description="audio.description"
+                :audio-subject="audio.subject?.name"
+                :audio-type="audio.audioType"
+              />
+          </div>
+        </div>
+        <customGridOne v-else>
+          <template #data>
+            <!-- Video Cards  -->
+            <AudioCard
+                v-for="audio in audios?.data"
+                :key="audio._id"
+                :audio-id="audio._id"
+                :is-deleted="audio.isDeleted"
+                :audio-name="audio.name"
+                :audio-thumbnail="audio.thumbnail"
+                :audio-file-url="audio.audioFileUrl"
+                :audio-description="audio.description"
+                :audio-subject="audio.subject?.name"
+                :audio-type="audio.audioType"
+              />
+          </template>
+        </customGridOne>
       </div>
     </div>
     <div v-else v-trusted
@@ -810,9 +904,102 @@ const setSeeMore = (seeMore) => {
     <div v-else-if="activeTab.toLowerCase() === 'audio'"
     v-trusted
     >
-      <div></div>
-      <div>
-        <MessageTopicNotFound message="This page will be updated soon" />
+      <div v-for="(audios, index) in data" :key="index">
+        <div
+          v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey"
+          class="flex items-center justify-between py-4"
+        >
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ audios?.dataOfKey }}
+          </p>
+          <small
+            @click="setSeeMore(audios?.dataOfKey)"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+          >
+            {{
+              seeMoreDetails && seeMoreDetails === audios?.dataOfKey
+                ? "See Less"
+                : "See All"
+            }}
+          </small>
+        </div>
+        <div
+          v-else-if="!seeMoreDetails"
+          class="flex items-center justify-between py-4"
+        >
+          <p class="font-bold text-[1.3rem] capitalize">
+            {{ audios?.dataOfKey }}
+          </p>
+          <small
+            @click="setSeeMore(audios?.dataOfKey)"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+          >
+            {{
+              seeMoreDetails && seeMoreDetails === audios?.dataOfKey
+                ? "See Less"
+                : "See All"
+            }}
+          </small>
+        </div>
+        <div v-if="data.length > 1">
+          <customGridTwo
+            v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey"
+          >
+            <template #data>
+              <!-- audio Cards  -->
+               <AudioCard
+                v-for="audio in audios?.data"
+                :key="audio._id"
+                :audio-id="audio._id"
+                :is-deleted="audio.isDeleted"
+                :audio-name="audio.name"
+                :audio-thumbnail="audio.thumbnail"
+                :audio-file-url="audio.audioFileUrl"
+                :audio-description="audio.description"
+                :audio-subject="audio.subject?.name"
+                :audio-type="audio.audioType"
+              />
+            </template>
+          </customGridTwo>
+
+          <div
+            v-else-if="!seeMoreDetails"
+            :class="[
+              'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+              layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+            ]"
+          >
+              <AudioCard
+                v-for="audio in audios?.data"
+                :key="audio._id"
+                :audio-id="audio._id"
+                :is-deleted="audio.isDeleted"
+                :audio-name="audio.name"
+                :audio-thumbnail="audio.thumbnail"
+                :audio-file-url="audio.audioFileUrl"
+                :audio-description="audio.description"
+                :audio-subject="audio.subject?.name"
+                :audio-type="audio.audioType"
+              />
+          </div>
+        </div>
+        <customGridTwo v-else>
+          <template #data>
+            <!-- audio Cards  -->
+              <AudioCard
+                v-for="audio in audios?.data"
+                :key="audio._id"
+                :audio-id="audio._id"
+                :is-deleted="audio.isDeleted"
+                :audio-name="audio.name"
+                :audio-thumbnail="audio.thumbnail"
+                :audio-file-url="audio.audioFileUrl"
+                :audio-description="audio.description"
+                :audio-subject="audio.subject?.name"
+                :audio-type="audio.audioType"
+              />
+          </template>
+        </customGridTwo>
       </div>
     </div>
     <div v-else

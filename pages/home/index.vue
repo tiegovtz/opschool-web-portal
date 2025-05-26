@@ -161,6 +161,14 @@ const fetchData = async (params) => {
       };
     }
     
+    else if(tab === "audio") {
+      url = apiDocs.audio.getPublicAudio;
+      params = {
+        ...params,
+        // audioType: "",
+      };
+
+    }
 
     // Subject-specific tab overrides
     if (subjectId.value) {
@@ -203,6 +211,16 @@ const fetchData = async (params) => {
         params = {
           ...params,
           userId: userToken.value?._id,
+        };
+      }
+      else if (tab === "audio") {
+        url = apiDocs.audio.getPublicAudioBySubjectId.replace(
+          "{subjectId}",
+          subjectId.value
+        );
+        params = {
+          ...params,
+          // audioType: "",
         };
       }
     }
@@ -362,8 +380,10 @@ watch(
         fetchData();
       }
       else if (activeTab.toLowerCase() === "audio") {
-        // fetchData();
-        data.value = [];
+        fetchData();
+      }
+      else{
+          data.value = [];
       }
     }
   }
