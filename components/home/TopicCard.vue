@@ -1,7 +1,6 @@
 <script setup>
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
 import { layoutEffect } from '~/utilities/controlls'
-import apiDocs from '~/utilities/api-docs'
 
 // Define Stores
 const navigationStore = useNavigationStore()
@@ -94,13 +93,15 @@ const userToken = useCookie('signInUserToken')
 
   <NuxtLink v-else
     :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`"
-    @click="setTopicToView()" :class="[
+    @click="setTopicToView()" 
+    :class="[
       'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out min-w-[300px]',
       layoutEffect == 'grid' && modelType === 'card' ? 'flex-col lg:pb-4' : 'flex-row h-32',
       { 'cursor-pointer flex-row my-2 pb-0 md:h-20 !max-h-14 ': modelType === 'search' },
     ]">
     <!-- topic image -->
-    <div :class="[
+    <div 
+    :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
       layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-full max-w-[200px]',
       { 'md:h-20 !h-full max-w-[80px]': modelType === 'search', },
@@ -118,12 +119,14 @@ const userToken = useCookie('signInUserToken')
         </div>
       </div>
     </div>
+    
     <!-- topic information -->
     <div
       class="flex-1 px-4 transition-all duration-500 ease-in-out bg-white group-hover:bg-deepBlue group-hover:text-white">
       <!-- topic progress bar -->
       <div v-if="userToken && modelType === 'card' && layoutEffect === 'grid'"
         class="flex items-center w-full max-w-full gap-2 mt-2">
+        
         <progress :value="Math.min(topicProgress ?? 0, 100)" max="100"
           class="transition-all duration-500 ease-in-out topic-card__progress-bar">
         </progress>
@@ -145,6 +148,7 @@ const userToken = useCookie('signInUserToken')
           {{ topicDescription }}
         </p>
       </div>
+      
       <!-- topic subject name and metrics -->
       <div v-if="modelType === 'card'"
         class="flex items-center justify-between pt-2 pb-2 lg:pb-0 whitespace-nowrap text-extraSmall text-oceanBlue group-hover:text-white">
@@ -163,6 +167,7 @@ const userToken = useCookie('signInUserToken')
       </div>
     </div>
     <div>
+      
       <!-- learn more -->
       <div v-if="modelType == 'card' && layoutEffect == 'grid' "
         class="absolute bottom-0 z-10 items-center justify-between hidden w-full h-10 px-4 text-white transition-all duration-500 ease-in-out opacity-0 lg:flex bg-gradient-to-b from-deepBlue to-gray-800 group-hover:opacity-100">
@@ -172,6 +177,7 @@ const userToken = useCookie('signInUserToken')
         </div>
       </div>
     </div>
+    
     <!-- learn more -->
     <div v-if="modelType == 'card'"
       class="flex items-center justify-between w-full h-8 px-4 text-white lg:hidden bg-gradient-to-b from-deepBlue to-gray-800 ">
