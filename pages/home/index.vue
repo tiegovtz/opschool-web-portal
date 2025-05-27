@@ -515,7 +515,6 @@ const setSeeMore = (seeMore) => {
         <!-- container filter Desktop -->
         <div
           class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
-          class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
           <!-- Home Drop Down Menu -->
           <DropDownMenu
             @emit-update-filter-value="filterValue = $event"
