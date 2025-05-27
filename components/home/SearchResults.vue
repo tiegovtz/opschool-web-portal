@@ -74,6 +74,14 @@ const setPageToView = () => {
     <h2 class="mb-2 text-xl font-semibold">{{ title }}</h2>
     <p class="mb-2 text-gray-600"> {{ level }}</p>
     <p class="mb-2 text-gray-600"> {{ subject }}</p>
+    <Icon
+      :icon="[
+        {'chevron-right' : type.toLocaleLowerCase() === 'topic'},
+        {'play-circle' : type.toLocaleLowerCase() === 'activity'},
+        {'video-camera' : type.toLocaleLowerCase() === 'video'},
+        {'headphones' : type.toLocaleLowerCase() === 'audio'}
+        ]"
+      class="text-gray-500 transition-transform duration-300 ease-in-out transform hover:translate-x-1" />
    </div>
   </NuxtLink>
 </template>
