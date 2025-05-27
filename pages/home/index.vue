@@ -457,20 +457,17 @@ watch(
           :class="[
             'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
             hideFilter ? 'z-30' : '-z-30',
-          ]"
-        >
+          ]">
           <div class="w-full h-full bg-white md:w-80">
             <!-- Close Button -->
             <div class="flex items-center justify-end">
               <button
                 class="flex items-center justify-center w-10 h-10 p-2 cursor-pointer rounded-bl-md bg-deepBlue"
-                @click="hideFilter = !hideFilter"
-              >
+                @click="hideFilter = !hideFilter">
                 <Icon
                   name="formkit:close"
                   size="24"
-                  class="font-bold text-white"
-                />
+                  class="font-bold text-white"/>
               </button>
             </div>
 
@@ -478,8 +475,7 @@ watch(
               <!-- Home Drop Down Menu -->
               <DropDownMenu
                 :active-tab="activeTab"
-                @emit-update-filter-value="filterValue = $event"
-              />
+                @emit-update-filter-value="filterValue = $event"/>
             </div>
           </div>
         </div>
@@ -493,8 +489,7 @@ watch(
           :class="[
             'cursor-pointer transition-all duration-500 ease-in-out',
             layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
-          ]"
-        />
+          ]"/>
         <Icon
           name="fa-solid:list"
           size="1.5rem"
@@ -502,20 +497,17 @@ watch(
           :class="[
             'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
             layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
-          ]"
-        />
+          ]"/>
       </div>
       <div class="flex items-center justify-center w-full gap-4 xl:items-start">
         <!-- container filter Desktop -->
         <div
-          class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow"
-        >
+          class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
           <!-- Home Drop Down Menu -->
           <DropDownMenu
             @emit-update-filter-value="filterValue = $event"
             :active-tab="activeTab"
-            :filter-value="[]"
-          />
+            :filter-value="[]"/>
 
           <!-- <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" /> -->
         </div>
@@ -524,15 +516,13 @@ watch(
         <div class="w-full xl:w-3/4">
           <div
             v-if="status === 'pending'"
-            class="flex flex-col items-center justify-center"
-          >
+            class="flex flex-col items-center justify-center">
             <LoadingIndicator :is-loading="true" />
           </div>
           <!-- Status Error -->
           <div
             v-else-if="status === 'error'"
-            class="md:min-h-[342px] flex flex-col justify-center items-center"
-          >
+            class="md:min-h-[342px] flex flex-col justify-center items-center">
             <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
             <p class="text-center">
               Oops! Something went wrong.<br />
@@ -543,20 +533,16 @@ watch(
               v-if="
                 (Array.isArray(filterValue) && filterValue.length > 0) ||
                 (typeof filterValue == 'object' &&
-                  Object.keys(filterValue).length > 0)
-              "
+                  Object.keys(filterValue).length > 0)"
               @click="filterValue = []"
-              class="cursor-pointer text-oceanBlue"
-            >
+              class="cursor-pointer text-oceanBlue">
               Reset filters
             </span>
           </div>
 
           <!-- Status Success -->
           <div
-            v-else-if="status == 'success' && subjectId && data.length > 0"
-            class=""
-          >
+            v-else-if="status == 'success' && subjectId && data.length > 0">
             <ClientOnly>
               <customGridOne v-if="activeTab.toLowerCase() === 'home'">
                 <template #data>
@@ -577,8 +563,7 @@ watch(
               </customGridOne>
 
               <customGridOne
-                v-else-if="activeTab.toLowerCase() === 'interactive books'"
-              >
+                v-else-if="activeTab.toLowerCase() === 'interactive books'">
                 <template #data>
                   <!-- Topic Cards are in Grid -->
                   <TopicCard
@@ -597,8 +582,7 @@ watch(
               </customGridOne>
 
               <customGridOne
-                v-else-if="activeTab.toLowerCase() === 'experiments'"
-              >
+                v-else-if="activeTab.toLowerCase() === 'experiments'">
                 <template #data>
                   <!-- Experiment Cards are in Grid -->
                   <ExperimentsCard
@@ -621,8 +605,7 @@ watch(
                 v-else-if="
                   activeTab.toLowerCase() === 'video' ||
                   activeTab.toLowerCase() === 'othervideo'
-                "
-              >
+                ">
                 <template #data>
                   <!-- Video Cards are in Grid -->
                   <VideoCard
@@ -641,8 +624,7 @@ watch(
               </customGridOne>
               <div v-else-if="activeTab.toLowerCase() === 'audio'">
                 <MessageTopicNotFound
-                  message="This page will be updated soon"
-                />
+                  message="This page will be updated soon"/>
               </div>
             </ClientOnly>
 
@@ -662,18 +644,15 @@ watch(
               <div v-else class="flex items-center gap-2">
                 <div
                   class="flex items-center justify-center"
-                  v-if="currentPage > 5"
-                >
+                  v-if="currentPage > 5">
                   <Icon
                     name="iconamoon:arrow-left-2-fill"
                     size="2rem"
-                    @click="prevPage"
-                  />
+                    @click="prevPage"/>
                 </div>
 
                 <div
-                  class="overflow-x-scroll scrollbar-none max-w-[250px] flex items-center justify-start gap-2"
-                >
+                  class="overflow-x-scroll scrollbar-none max-w-[250px] flex items-center justify-start gap-2">
                   <PaginationBtn
                     v-for="page in totalPages"
                     :key="page"
@@ -687,8 +666,7 @@ watch(
 
                 <div
                   class="flex items-center justify-center"
-                  v-if="currentPage > 4"
-                >
+                  v-if="currentPage > 4">
                   <Icon
                     name="iconamoon:arrow-right-2-fill"
                     size="2rem"
@@ -707,9 +685,7 @@ watch(
 
           <!-- data sorted if no subject -->
           <div
-            v-else-if="status == 'success' && !subjectId && data.length > 0"
-            class=""
-          >
+            v-else-if="status == 'success' && !subjectId && data.length > 0">
             <ClientOnly>
               <HomeCustomScrollView
                 :shuffle-subject="shuffleSubject"
@@ -738,15 +714,13 @@ watch(
 
       <div
         v-if="status === 'pending'"
-        class="flex flex-col items-center justify-center"
-      >
+        class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />
       </div>
       <!-- Status Error -->
       <div
         v-else-if="status === 'error'"
-        class="md:min-h-[342px] flex flex-col justify-center items-center"
-      >
+        class="md:min-h-[342px] flex flex-col justify-center items-center">
         <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
         <p class="text-center">
           Oops! Something went wrong.<br />
@@ -760,8 +734,7 @@ watch(
         <ClientOnly v-if="data.length > 0">
           <div class="flex flex-col w-full">
             <customGridTwo
-              v-if="filters.level !== null && filters.subject !== null"
-            >
+              v-if="filters.level !== null && filters.subject !== null">
               <template #data>
                 <!-- Topic Cards -->
                 <TopicCard
@@ -825,8 +798,7 @@ watch(
                 <!-- previous -->
                 <div
                   class="flex items-center justify-center"
-                  v-if="currentPage > 5"
-                >
+                  v-if="currentPage > 5">
                   <Icon
                     name="iconamoon:arrow-left-2-fill"
                     size="2rem"
