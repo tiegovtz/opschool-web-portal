@@ -1,10 +1,6 @@
 <script setup>
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
 import { layoutEffect } from '~/utilities/controlls'
-<<<<<<< HEAD
-=======
-import apiDocs from '~/utilities/api-docs'
->>>>>>> 15ba4c35 (5:37PM)
 
 // Define Stores
 const navigationStore = useNavigationStore()
@@ -121,7 +117,8 @@ const userToken = useCookie('signInUserToken')
       <div v-if="userToken && modelType === 'card' && layoutEffect === 'grid'"
         class="flex items-center w-full max-w-full gap-2 mt-2">
         
-        <progress :value="Math.min(topicProgress ?? 0, 100)" max="100" class="transition-all duration-500 ease-in-out topic-card__progress-bar">
+        <progress :value="Math.min(topicProgress ?? 0, 100)" max="100"
+          class="transition-all duration-500 ease-in-out topic-card__progress-bar">
         </progress>
 
         <span class="text-xs font-medium sm:text-sm text-oceanBlue whitespace-nowrap group-hover:text-white">

@@ -5,8 +5,7 @@ export const useNavigationStore = defineStore('navigation', {
     topicToView: null as { route: string; updatedAt: number } | null,
     videoToView: null as { route: string; updatedAt: number } | null,
     experimentToView: null as { route: string; updatedAt: number } | null,
-    audioToListen: null as { route: string; updatedAt: number } | null,
-    audioToListen: null as { route: string; updatedAt: number } | null,
+    audioToListen: null as { route: string; updatedAt: number } | null
   }),
 
   actions: {
