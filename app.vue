@@ -1,15 +1,33 @@
 <script setup>
-import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, isGreaterToXS, screenWidth } from './utilities/controlls';
+import apiDocs from './utilities/api-docs'
+import {
+  isGreaterToXL,
+  isGreaterToLG,
+  isGreaterToMD,
+  isGreaterToSM,
+  isGreaterToXS,
+  screenWidth
+} from './utilities/controlls'
+import { webVisitor } from './utilities/platform'
 
 
- if(import.meta.client){
-     screenWidth.value = window.innerWidth
-// various screen dimensions
-const widthGreater1280 = computed(() => screenWidth.value >=  1280)
-const widthGreater1024 = computed(() => screenWidth.value >= 1024 && screenWidth.value < 1280)
-const widthGreater768 = computed(() => screenWidth.value >= 768 && screenWidth.value < 1024)
-const widthGreater640 = computed(() => screenWidth.value >= 640 && screenWidth.value < 768)
-const widthGreater320 = computed(() => screenWidth.value >= 320 && screenWidth.value < 640)
+// User and session state
+const userToken = useCookie('signInUserToken')
+const accessToken = useCookie('signInAccessToken')
+const userTimeSpent = ref(0)
+const isUserActive = ref(false)
+
+// Time and interval refs
+let activityInterval
+let timeTick
+
+if (import.meta.client) {
+  // Resize state
+  const widthGreater1280 = computed(() => screenWidth.value >= 1280)
+  const widthGreater1024 = computed(() => screenWidth.value >= 1024 && screenWidth.value < 1280)
+  const widthGreater768 = computed(() => screenWidth.value >= 768 && screenWidth.value < 1024)
+  const widthGreater640 = computed(() => screenWidth.value >= 640 && screenWidth.value < 768)
+  const widthGreater320 = computed(() => screenWidth.value >= 320 && screenWidth.value < 640)
 
 
 // function for resizing
@@ -22,18 +40,45 @@ const handleResize = () => {
   isGreaterToXS.value = widthGreater320.value
 }
 
-onMounted(() => {
+  onMounted(async () => {
+    screenWidth.value = window.innerWidth
+    handleResize()
+    window.addEventListener('resize', handleResize)
 
-window.addEventListener('resize', handleResize) //resizing window
-window.addEventListener('load', handleResize) // resize on loading
-});
+    const events = ['mousemove', 'keypress', 'click', 'scroll']
+    events.forEach(e => window.addEventListener(e, activityHandler))
 
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-  window.removeEventListener('load', handleResize) // resize on loading
-})
- }
-  // console.log(disableshots)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // Time update interval (every 2 mins)
+    activityInterval = setInterval(() => {
+      if (userToken.value && isUserActive.value && userTimeSpent.value > 0) {
+        updateTimeSpent()
+      }
+    }, 120000)
+
+    // Increment time while user is active (every second)
+    timeTick = setInterval(() => {
+      if (userToken.value && isUserActive.value && document.visibilityState === 'visible') {
+        userTimeSpent.value += 1000
+      }
+    }, 1000);
+
+    webVisitor();
+  })
+
+  onBeforeUnmount(() => {
+    window.removeEventListener('resize', handleResize)
+
+    const events = ['mousemove', 'keypress', 'click', 'scroll']
+    events.forEach(e => window.removeEventListener(e, activityHandler))
+
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+
+    clearInterval(activityInterval)
+    clearInterval(timeTick)
+  });
+}
 </script>
 <template>
 
