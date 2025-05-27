@@ -137,6 +137,11 @@ export default {
     getById: `${baseURL}/audios/{id}`,
   },
 
+  // Visitors
+  visitors: {
+    postVisitors: `${baseURL}/visitors`,
+  },
+
   // audio API
   audio: {
     getPublicAudio: `${baseURL}/public-audios`,

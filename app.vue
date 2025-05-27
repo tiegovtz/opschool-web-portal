@@ -9,6 +9,8 @@ import {
 } from './utilities/controlls'
 import { webVisitor } from './utilities/platform'
 
+import { webVisitor } from './utilities/platform'
+
 
 // User and session state
 const userToken = useCookie('signInUserToken')
@@ -38,6 +40,43 @@ const handleResize = () => {
   isGreaterToSM.value = widthGreater640.value
   isGreaterToXS.value = widthGreater320.value
 }
+
+  const activityHandler = () => {
+    isUserActive.value = true
+    clearTimeout(window.userInactiveTimeout)
+    window.userInactiveTimeout = setTimeout(() => {
+      isUserActive.value = false
+    }, 120000)
+  }
+
+  const updateTimeSpent = async () => {
+    if (userToken.value && userTimeSpent.value > 0) {
+      try {
+        await $fetch(apiDocs.auth.updateTimeSpent, {
+          method: 'PATCH',
+          body: {
+            duration: userTimeSpent.value
+          },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken.value}`
+          }
+        })
+        userTimeSpent.value = 0
+      } catch (error) {
+        console.error('Error updating time spent:', error)
+      }
+    }
+  }
+
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      updateTimeSpent()
+      isUserActive.value = false
+    } else {
+      isUserActive.value = false
+    }
+  }
 
   onMounted(async () => {
     screenWidth.value = window.innerWidth
