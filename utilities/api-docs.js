@@ -141,6 +141,11 @@ export default {
   visitors: {
     postVisitors: `${baseURL}/visitors`,
   },
+
+  // Search
+  search: {
+    getSearch: `${baseURL}/search`,
+  },
     };
   },
 };
