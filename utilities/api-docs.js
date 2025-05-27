@@ -128,6 +128,11 @@ const apiDocs = {
     streamAudio: `${baseURL}/audio-stream/{id}`,
     getById: `${baseURL}/audios/{id}`,
   },
+
+  // Visitors
+  visitors: {
+    postVisitors: `${baseURL}/visitors`,
+  },
 }
 
 export default apiDocs;

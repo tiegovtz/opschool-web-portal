@@ -8,6 +8,8 @@ import {
   isGreaterToXS,
   screenWidth
 } from './utilities/controlls'
+import { webVisitor } from './utilities/platform'
+
 
 // User and session state
 const userToken = useCookie('signInUserToken')
@@ -73,7 +75,7 @@ if (import.meta.client) {
     }
   }
 
-  onMounted(() => {
+  onMounted(async () => {
     screenWidth.value = window.innerWidth
     handleResize()
     window.addEventListener('resize', handleResize)
@@ -95,7 +97,9 @@ if (import.meta.client) {
       if (userToken.value && isUserActive.value && document.visibilityState === 'visible') {
         userTimeSpent.value += 1000
       }
-    }, 1000)
+    }, 1000);
+
+    webVisitor();
   })
 
   onBeforeUnmount(() => {
@@ -108,7 +112,7 @@ if (import.meta.client) {
 
     clearInterval(activityInterval)
     clearInterval(timeTick)
-  })
+  });
 }
 </script>
 
