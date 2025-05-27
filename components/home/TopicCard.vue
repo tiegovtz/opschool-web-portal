@@ -2,8 +2,11 @@
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
 import { layoutEffect } from '~/utilities/controlls'
 import apiDocs from '~/utilities/api-docs'
-// Define State
+
+// Define Stores
 const navigationStore = useNavigationStore()
+
+// Define Props
 const props = defineProps({
   topicId: {
     type: String,
@@ -103,8 +106,10 @@ const userToken = useCookie('signInUserToken')
       { 'md:h-20 !h-full max-w-[80px]': modelType === 'search', },
     ]">
       <NuxtImg :src="topicImage" loading="lazy" :alt="'Image of ' + topicTitle"
-        class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
-        :class="{ 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' }" />
+        :class="[
+          'object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110',
+          { 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' },
+        ]" />
       <!-- topic standard -->
       <div v-if="modelType === 'card'" class="absolute right-0 -bottom-0">
         <div
@@ -129,8 +134,11 @@ const userToken = useCookie('signInUserToken')
       </div>
       <!-- topic title and description -->
       <div class="flex flex-col my-auto transition-all duration-500 ease-in-out">
-        <p class="text-[1.2rem] font-bold text-gray-800 group-hover:text-white "
-          :class="{ 'mt-2': !userToken, 'md:text-[1.2rem] text-[1rem] font-medium': modelType === 'search' }">
+        <p
+          :class="[
+            'text-[1.2rem] font-bold text-gray-800 group-hover:text-white',
+          { 'mt-2': !userToken, 'md:text-[1.2rem] text-[1rem] font-medium': modelType === 'search' }
+          ]">
           {{ topicTitle }}
         </p>
         <p v-if="modelType === 'card'" class="text-small text-black/80 group-hover:text-white line-clamp-2">

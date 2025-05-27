@@ -133,6 +133,11 @@ const apiDocs = {
   visitors: {
     postVisitors: `${baseURL}/visitors`,
   },
+
+  // Search
+  search: {
+    getSearch: `${baseURL}/search`,
+  },
 }
 
 export default apiDocs;

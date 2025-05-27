@@ -65,6 +65,12 @@ const status = ref('pending');       // Initial status
 const error = ref(null);            // Initial error state
 const experimentInfo = ref();      // Initial experimentInfo state
 const isFullscreen = ref(false);    // Initial isFullscreen state
+const webglSupported = ref(true);   // Initial webglSupported state
+
+// Check if WebGL is supported
+if (import.meta.client) {
+    webglSupported.value = !!window.WebGLRenderingContext;
+}
 
 // Define Cookie
 const auth_token = useCookie('signInAccessToken').value;
@@ -193,7 +199,7 @@ onMounted(() => {
                         subMessage="Make sure you are connected to the stable internet or try to reload the page" />
 
                     <div class="relative w-full overflow-y-scroll rounded-md center-height" id="experiment-container"
-                        v-else-if="status == 'success'">
+                        v-else-if="status == 'success' && webglSupported">
                         <iframe :class="[
                                 ' w-full  rounded-md mt-6',
                                 isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
@@ -204,6 +210,14 @@ onMounted(() => {
                             <Icon v-if="isFullscreen" name="qlementine-icons:fullscreen-exit-16" size="24" />
                             <Icon v-else name="qlementine-icons:fullscreen-16" size="24" />
                         </div>
+                    </div>
+
+                    <div v-else-if="status == 'success' && !webglSupported"
+                        class="flex items-center justify-center w-full h-full">
+                        <p class="text-lg text-red-500">
+                            This feature is not supported in your browser. Please try a different
+                            browser or device.
+                        </p>
                     </div>
 
                     <!-- experiment Description and Thumbnail Image -->
