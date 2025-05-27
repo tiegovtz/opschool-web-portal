@@ -154,6 +154,15 @@ export default {
   visitors: {
     postVisitors: `${baseURL}/visitors`,
   },
+<<<<<<< HEAD
+=======
+
+  // Search
+  search: {
+    getSearch: `${baseURL}/search`,
+  },
+}
+>>>>>>> 15ba4c35 (5:37PM)
 
   // Search
   search: {

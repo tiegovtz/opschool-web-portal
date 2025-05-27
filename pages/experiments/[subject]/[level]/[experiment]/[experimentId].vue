@@ -198,7 +198,11 @@ onMounted(() => {
                         subMessage="Make sure you are connected to the stable internet or try to reload the page" v-trusted/>
 
                     <div class="relative w-full overflow-y-scroll rounded-md center-height" id="experiment-container"
+<<<<<<< HEAD
                         v-else-if="status == 'success' && webglSupported" v-trusted>
+=======
+                        v-else-if="status == 'success' && webglSupported">
+>>>>>>> 15ba4c35 (5:37PM)
                         <iframe :class="[
                                 ' w-full  rounded-md',
                                 isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',

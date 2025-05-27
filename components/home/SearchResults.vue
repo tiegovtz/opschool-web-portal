@@ -35,7 +35,11 @@ let page;
 if (props.type.toLocaleLowerCase() === 'topic') {
     page = 'interactive';
   } else if (props.type.toLocaleLowerCase() === 'activity') {
+<<<<<<< HEAD
     page = 'experiments';
+=======
+    page = 'experiment';
+>>>>>>> 15ba4c35 (5:37PM)
   } else if (props.type.toLocaleLowerCase() === 'video') {
     page = 'video';
   } else if (props.type.toLocaleLowerCase() === 'audio') {
@@ -74,12 +78,15 @@ const setPageToView = () => {
     <h2 class="mb-2 text-xl font-semibold">{{ title }}</h2>
     <p class="mb-2 text-gray-600"> {{ level }}</p>
     <p class="mb-2 text-gray-600"> {{ subject }}</p>
+<<<<<<< HEAD
     <Icon
       :name="type.toLocaleLowerCase() === 'topic' ? 'chevron-right' :
          type.toLocaleLowerCase() === 'activity' ? 'play-circle' :
          type.toLocaleLowerCase() === 'video' ? 'video-camera' :
          type.toLocaleLowerCase() === 'audio' ? 'headphones' : 'chevron-right'"
       class="text-gray-500 transition-transform duration-300 ease-in-out transform hover:translate-x-1" />
+=======
+>>>>>>> 15ba4c35 (5:37PM)
    </div>
   </NuxtLink>
 </template>
