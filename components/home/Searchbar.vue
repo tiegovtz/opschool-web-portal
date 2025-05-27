@@ -59,23 +59,22 @@ const inputSearch = (event) => {
       appearance === 'normal'
         ? 'max-w-md'
         : `md:h-72 h-32 bg-background3 bg-cover bg-center bg-no-repeat rounded-md`,
-    ]"
-  >
+    ]">
     <div
       :class="[
         ' relative flex items-center justify-center w-full h-full rounded-md',
         appearance === 'normal'
           ? 'md:px-0 lg:px-0'
           : 'bg-textGray bg-opacity-40 md:px-10 lg:px-[100px] p-1',
-      ]"
-    >
+      ]">
+      
       <!-- Apperance Normal -->
       <form
         v-if="appearance === 'normal'"
         action=""
         @submit.prevent="search"
-        class="flex w-full h-10 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue"
-      >
+        class="flex w-full h-10 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
+        
         <div class="flex items-center w-full">
           <!-- Search Icon -->
           <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" />
@@ -93,9 +92,8 @@ const inputSearch = (event) => {
         <!-- Search Button -->
         <button
           type="submit"
-          @click="search"
           class="items-center justify-center hidden px-4 py-2 overflow-hidden text-white transition-colors duration-500 ease-in-out rounded-b-none cursor-pointer md:flex rounded-t-md bg-oceanBlue hover:bg-deepBlue"
-        >
+          @click="search">
           Search
         </button>
       </form>
@@ -105,8 +103,8 @@ const inputSearch = (event) => {
         v-else
         action=""
         class="flex items-center w-full max-w-3xl p-2 bg-white rounded-md h-15"
-        @submit.prevent="search"
-      >
+        @submit.prevent="search">
+        
         <div class="flex items-center w-full pl-4">
           <!-- Search Icon -->
           <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" />
@@ -116,17 +114,15 @@ const inputSearch = (event) => {
             type="text"
             @input="inputSearch"
             v-model="searchReactive.search"
-            placeholder="What do you want to learn?"
             class="flex flex-1 h-full px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue"
-          />
+            placeholder="What do you want to learn?"/>
         </div>
 
         <!-- Search Button -->
         <button
           type="submit"
-          @click="search"
           class="items-center justify-center hidden h-full px-4 py-2 overflow-hidden text-white transition-colors duration-500 ease-in-out rounded-b-none cursor-pointer md:flex rounded-r-md bg-oceanBlue hover:bg-deepBlue"
-        >
+          @click="search">
           Search
         </button>
       </form>
@@ -138,8 +134,8 @@ const inputSearch = (event) => {
           appearance === 'normal'
             ? 'top-10 left-0 max-w-md'
             : 'top-[96px] max-w-3xl px-1',
-        ]"
-      >
+        ]">
+        
         <TopicCard
           v-for="result in searchReactive.searchResult"
           :key="result._id"
@@ -165,8 +161,8 @@ const inputSearch = (event) => {
           appearance === 'normal'
             ? 'top-10 left-0 max-w-md'
             : 'top-[180px] max-w-3xl px-1',
-        ]"
-      >
+        ]">
+        
        <SearchResults
           v-for="result in searchReactive.searchResult"
           :key="result._id"
@@ -175,6 +171,7 @@ const inputSearch = (event) => {
           :thumbnail="result.thumbnail"
           :level="result?.level ?? 'Form 1'"
           :subject="result?.subject ?? 'N/A'"
+          :type="result?.type ?? 'topic'"
         />
         
       </div>
