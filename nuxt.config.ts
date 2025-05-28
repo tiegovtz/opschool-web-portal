@@ -3,7 +3,8 @@
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
-  devtools: { enabled: true },
+  devtools: { enabled: false },
+  debug: false,
   css: ["~/assets/css/main.css"],
 
   postcss: {
@@ -49,4 +50,13 @@ export default defineNuxtConfig({
     host: ' 192.168.0.12 ',
     port: 3000
   },
+
+app:{
+  head:{
+    meta:[
+      { name: 'generator', content: '' },
+    ]
+  }
+}
+
 });
