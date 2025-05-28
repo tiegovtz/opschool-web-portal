@@ -1,6 +1,10 @@
 <script setup>
 definePageMeta({
-  redirect: '/home',
+  redirect: {
+    path: '/home',
+    statusCode: 301,
+    replace: true,             
+  },
 })
 </script>
 
