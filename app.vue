@@ -1,5 +1,4 @@
 <script setup>
-import apiDocs from './utilities/api-docs'
 import {
   isGreaterToXL,
   isGreaterToLG,
