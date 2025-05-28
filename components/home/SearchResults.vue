@@ -4,46 +4,46 @@ const navigationStore = useNavigationStore()
 
 // Define Props
 const props = defineProps({
-  id: {
-    type: String,
-    required: true,
-  },
-  title: {
-    type: String,
-    required: true,
-  },
-  thumbnail: {
-    type: String,
-    default: '/images/background2.webp',
-  },
-  level: {
-    type: String,
-    required: true,
-  },
-  subject: {
-    type: String,
-    required: true,
-  },
-  type: {
-    type: String,
-    required: true,
-  },
+    id: {
+        type: String,
+        required: true,
+    },
+    title: {
+        type: String,
+        required: true,
+    },
+    thumbnail: {
+        type: String,
+        default: '/images/background2.webp',
+    },
+    level: {
+        type: String,
+        required: true,
+    },
+    subject: {
+        type: String,
+        required: true,
+    },
+    type: {
+        type: String,
+        required: true,
+    },
 });
 
-const pageToView =  computed(() => {
-let page;
-if (props.type.toLocaleLowerCase() === 'topic') {
-    page = 'interactive';
-  } else if (props.type.toLocaleLowerCase() === 'activity') {
-    page = 'experiments';
-  } else if (props.type.toLocaleLowerCase() === 'video') {
-    page = 'video';
-  } else if (props.type.toLocaleLowerCase() === 'audio') {
-    page = 'audio';
-  } else {
-    page = 'topic';
-  }
-  return page;
+const pageToView = computed(() => {
+    let page;
+    if (props.type.toLocaleLowerCase() === 'topic') {
+        page = 'interactive';
+    } else if (props.type.toLocaleLowerCase() === 'activity') {
+        page = 'experiments';
+    } else if (props.type.toLocaleLowerCase() === 'video') {
+        page = 'video';
+    } else if (props.type.toLocaleLowerCase() === 'audio') {
+        page = 'audio';
+    } else {
+        page = 'topic';
+    }
+    return page;
 });
 
 const setPageToView = () => {
@@ -63,23 +63,22 @@ const setPageToView = () => {
 </script>
 
 <template>
-  <NuxtLink
-  @click="setPageToView()"
-  :to="`/${pageToView}/${level}/${subject}/${title}/${id}`"
-  class="flex items-center p-4 transition-shadow duration-500 ease-in-out bg-white rounded-lg shadow-md hover:shadow-lg">
-    <div class="max-w-[100px] h-20 mb-4 overflow-hidden rounded-md">
-      <NuxtImg :src="thumbnail" loading="lazy" :alt="'Image of ' + thumbnail" class="object-cover w-full h-full" />
-    </div>
-   <div class="flex flex-col justify-between flex-1 ml-4">
-    <h2 class="mb-2 text-xl font-semibold">{{ title }}</h2>
-    <p class="mb-2 text-gray-600"> {{ level }}</p>
-    <p class="mb-2 text-gray-600"> {{ subject }}</p>
-    <Icon
-      :name="type.toLocaleLowerCase() === 'topic' ? 'chevron-right' :
-         type.toLocaleLowerCase() === 'activity' ? 'play-circle' :
-         type.toLocaleLowerCase() === 'video' ? 'video-camera' :
-         type.toLocaleLowerCase() === 'audio' ? 'headphones' : 'chevron-right'"
-      class="text-gray-500 transition-transform duration-300 ease-in-out transform hover:translate-x-1" />
-   </div>
-  </NuxtLink>
+    <NuxtLink @click="setPageToView()" :to="`/${pageToView}/${level}/${subject}/${title}/${id}`"
+        class="flex items-center p-4 transition-shadow duration-500 ease-in-out bg-white rounded-lg shadow-md hover:shadow-lg">
+        <div class="max-w-[100px] h-20 mb-4 overflow-hidden rounded-md">
+            <NuxtImg :src="thumbnail" loading="lazy" :alt="'Image of ' + thumbnail"
+                class="object-cover w-full h-full" />
+        </div>
+        <div class="flex flex-col justify-between flex-1 ml-4">
+            <h2 class="mb-2 text-xl font-semibold">{{ title }}</h2>
+            <div class="flex items-center gap-4">
+                <p class="text-gray-600 "> {{ subject }} - {{ level }}</p>
+                <Icon :name="type.toLocaleLowerCase() === 'topic' ? 'mdi:notebook-edit' :
+                    type.toLocaleLowerCase() === 'activity' ? 'icon-park-solid:experiment-one' :
+                        type.toLocaleLowerCase() === 'video' ? 'fluent:video-24-filled' :
+                            type.toLocaleLowerCase() === 'audio' ? 'famicons:headset-sharp' : 'icon-park-solid:blackboard'"
+                    class="text-gray-500 transition-transform duration-300 ease-in-out transform hover:translate-x-1" />
+            </div>
+        </div>
+    </NuxtLink>
 </template>

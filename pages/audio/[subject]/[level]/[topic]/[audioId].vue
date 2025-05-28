@@ -185,14 +185,14 @@ onUnmounted(() => {
                     <LoadingIndicator :is-loading="true" />
                 </div>
                 <div v-else-if="audioInfo && status == 'success'" class="md:px-4 notes">
-                    <div class="flex flex-col items-center w-full h-full my-4  max-w-xl mx-auto rounded-md gap-4">
-                        <canvas ref="canvasRef" class="w-full h-32 md:h-40 mt-4 bg-white rounded-md"></canvas>
+                    <div class="flex flex-col items-center w-full h-full max-w-xl gap-4 mx-auto my-4 rounded-md">
+                        <canvas ref="canvasRef" class="w-full h-32 mt-4 bg-white rounded-md md:h-40"></canvas>
                         <audio ref="audioRef" preload="auto" controls @contextmenu.prevent
-                            class="mx-auto w-full bg-white rounded-md" nodownload controlslist="nodownload"
+                            class="w-full mx-auto bg-white rounded-md" nodownload controlslist="nodownload"
                             crossorigin="anonymous">
-                            <source :src="audioInfo?.audioFileUrl"
+                            <source :src="audioUrl"
                                 type="audio/mp3" />
-                            <source :src="audioInfo?.audioFileUrl"
+                            <source :src="audioUrl"
                                 type="audio/wav" />
                         </audio>
                     </div>
