@@ -631,7 +631,7 @@ const observerContent = () => {
       const text = span.textContent.trim().toLowerCase();
 
       // Match common patterns like "task 1.1", "activity 2.2", etc.
-      const match = text.match(/^(task|activity|exercise|revision (exercise|exercice))\s*\d+(\.\d+)?/i);
+      const match = text.match(/^(task|activity|example|exercise|revision (exercise|exercice))\s*\d+(\.\d+)?/i);
 
       if (match) {
         let parent = span.parentElement;
