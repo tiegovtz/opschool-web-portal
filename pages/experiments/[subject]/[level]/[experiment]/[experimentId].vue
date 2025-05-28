@@ -109,20 +109,31 @@ const toggleSidebar = () => {
 
 // function for toggling  experiment fullscreeen
 const fullScreen = () => {
-    // experiment container
-    const experimentContainer = document.getElementById(`experiment-container`);
-    if (import.meta.client) {
-        if (!isFullscreen.value) {
-            experimentContainer.requestFullscreen();
+  const experimentContainer = document.getElementById("experiment-container");
 
-        } else {
-            document.exitFullscreen();
+  if (!experimentContainer) return;
 
-        }
-        // set flag to opposite
-        isFullscreen.value = !isFullscreen.value;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  if (isIOS) {
+    // Simulate fullscreen for iOS by applying styles
+    if (!isFullscreen.value) {
+      experimentContainer.classList.add("ios-fullscreen");
+    } else {
+      experimentContainer.classList.remove("ios-fullscreen");
     }
-}
+    isFullscreen.value = !isFullscreen.value;
+  } else if (document.fullscreenElement) {
+    document.exitFullscreen();
+    isFullscreen.value = false;
+  } else {
+    experimentContainer.requestFullscreen().then(() => {
+      isFullscreen.value = true;
+    }).catch((err) => {
+      console.error("Fullscreen error:", err);
+    });
+  }
+};
 
 // define authentication middleware
 definePageMeta({
