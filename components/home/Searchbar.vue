@@ -59,6 +59,10 @@ const inputSearch =(event)=>{
     searchReactive.searchResult = null;
   }
 };
+
+const mouseOut = () => {
+  searchReactive.searchResult = null;
+}
 </script>
 
 <template>
@@ -66,14 +70,12 @@ const inputSearch =(event)=>{
     ' flex items-center justify-center w-full',
     appearance === 'normal'
       ? 'max-w-md'
-      : `md:h-72 h-32 bg-background3 bg-cover bg-center bg-no-repeat rounded-md`,
-  ]">
+      : `md:h-72 h-32 bg-background3 bg-cover bg-center bg-no-repeat rounded-md`,]">
     <div :class="[
       ' relative flex items-center justify-center w-full h-full rounded-md',
       appearance === 'normal'
         ? 'md:px-0 lg:px-0'
-        : 'bg-textGray bg-opacity-40 md:px-10 lg:px-[100px] p-1',
-    ]">
+        : 'bg-textGray bg-opacity-40 md:px-10 lg:px-[100px] p-1',]">
 
       <!-- Apperance Normal -->
       <form v-if="appearance === 'normal'" action="" @submit.prevent="search"
@@ -118,13 +120,13 @@ const inputSearch =(event)=>{
           Search
         </button>
       </form>
+
       <!-- Result Search with NO userToken -->
       <div v-if="searchReactive.searchResult && searchReactive.search && !userToken" :class="[
         'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
         appearance === 'normal'
           ? 'top-10 left-0 max-w-md'
-          : 'top-[96px] max-w-3xl px-1',
-      ]">
+          : 'top-[96px] max-w-3xl px-1',]">
 
         <TopicCard v-for="result in searchReactive.searchResult" model-type="search" :key="result._id"
           :topic-id="result._id" :topic-title="result.name" :topic-image="result.thumbnail"
@@ -138,14 +140,14 @@ const inputSearch =(event)=>{
         'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
         appearance === 'normal'
           ? 'top-10 left-0 max-w-md'
-          : 'top-[180px] max-w-3xl px-1',
-      ]">
+          : 'top-[180px] max-w-3xl px-1',]">
 
         <SearchResults v-for="result in searchReactive.searchResult" :key="result._id" :id="result._id"
           :title="result.name" :thumbnail="result.thumbnail" :level="result?.level ?? 'Form 1'"
           :subject="result?.subject ?? 'N/A'" :type="result?.type ?? 'topic'" />
 
       </div>
+
     </div>
   </div>
 </template>
