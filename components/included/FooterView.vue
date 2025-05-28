@@ -4,12 +4,22 @@ import { screenWidth } from '~/utilities/controlls';
 
 <template>
   <!-- Footer -->
-  <footer class="p-4 text-white bg-oceanBlue">
+  <footer class="text-white bg-oceanBlue">
+   <div class="p-4">
     <div class="flex flex-col items-center justify-between gap-2 xl:flex-row wrapper-container">
-      <p class="text-center">
-        All Rights Reserved &copy; <span v-if="screenWidth >= 640">Tanzania Institute of Education</span>
-        <span v-else>TIE</span>
-      </p>
+      <div class="flex flex-col items-start gap-1 text-center">
+        <p class="">
+          P.O. Box 35094, Dar es Salaam, Tanzania
+        </p>
+        <div class="inline-flex flex-wrap items-center gap-2">
+           <a href="tel:+255735041168" class="flex items-center gap-1 cursor-pointer"> 
+            <Icon name="fa:phone" class=""/>+255-735-041168
+          </a> | 
+           <a href="mailto:director.general@tie.go.tz" class="flex items-center gap-1 cursor-pointer">
+            <Icon name="ic:round-email" class=""/> director.general@tie.go.tz 
+          </a>
+        </div>
+      </div>
       <!-- Canada and unicef Logo -->
       <div class="flex items-center justify-center h-12 gap-2 px-4 bg-white rounded-md">
         <a href="http://www.canada.ca/" target="_blank"
@@ -38,5 +48,12 @@ import { screenWidth } from '~/utilities/controlls';
         <HomeAppDownload />
       </div>
     </div>
+   </div>
+   <div class="p-2 bg-deepBlue">
+    <p class="text-center">
+      All Rights Reserved &copy; <span v-if="screenWidth >= 640">Tanzania Institute of Education</span>
+      <span v-else>TIE</span>
+    </p>
+   </div>
   </footer>
 </template>
