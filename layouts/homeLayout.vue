@@ -15,6 +15,11 @@
       <NuxtLink to="/feedback" class="px-4 py-2 text-white">feedback</NuxtLink>
     </div>
     
+    <!-- PDF Reader -->
+     <div  v-if="route.path !== '/pdf'" class="fixed right-2 z-10 top-[55%] transform -rotate-90 origin-bottom-right bg-oceanBlue hover:bg-deepBlue transition-all duration-500 ease-in-out rounded-md cursor-pointer">
+      <NuxtLink to="/pdf" class="px-4 py-2 text-white">PDF Reader</NuxtLink>
+     </div>
+    
     <!-- 50 Years -->
     <!-- <div class="fixed z-10 w-16 h-2w-16 bottom-20 right-6 animate-bounce">
       <NuxtImg src="/images/2.KitabuKimoja.webp" alt="KITABU KIMOJA MWANAFUNZI MMOJA" class="object-contain w-full h-full" />

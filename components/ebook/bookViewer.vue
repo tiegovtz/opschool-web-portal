@@ -1,23 +1,3 @@
-<template>
-    <div class="flex flex-col items-center justify-center ">
-        <div class="flex items-center justify-center w-full ">
-            <canvas ref="pdfCanvas" class=""></canvas>
-        </div>
-        <div v-if="errorMessage" class="text-red-500">{{ errorMessage }}</div>
-
-
-        <div class="flex items-center justify-center">
-            <button class="flex items-center justify-center" @click="previousPage" :disabled="currentPage === 1">
-                <Icon name="iconamoon:arrow-left-2-duotone" class="" size="1.5rem" />
-            </button>
-            <p>Page {{ currentPage }} of {{ totalPages }}</p>
-            <button @click="nextPage" class="flex items-center justify-center">
-                <Icon name="iconamoon:arrow-right-2-duotone" class="" size="1.5rem" />
-            </button>
-        </div>
-    </div>
-</template>
-
 <script setup>
 import { ref, watch } from "vue";
 import * as pdfjsLib from "pdfjs-dist";
@@ -119,3 +99,23 @@ watch(
     }
 );
 </script>
+
+<template>
+    <div class="flex flex-col items-center justify-center w-full p-4 bg-white">
+        <div class="relative w-full h-full overflow-hidden">
+            <canvas ref="pdfCanvas" class="block mx-auto max-h-[80vh]"></canvas>
+        </div>
+        <div v-if="errorMessage" class="text-red-500">{{ errorMessage }}</div>
+
+        <div class="flex items-center justify-center">
+            <button class="flex items-center justify-center" @click="previousPage" :disabled="currentPage === 1">
+                <Icon name="iconamoon:arrow-left-2-duotone" class="" size="1.5rem" />
+            </button>
+            <p>Page {{ currentPage }} of {{ totalPages }}</p>
+            <button @click="nextPage" class="flex items-center justify-center">
+                <Icon name="iconamoon:arrow-right-2-duotone" class="" size="1.5rem" />
+            </button>
+        </div>
+    </div>
+</template>
+
