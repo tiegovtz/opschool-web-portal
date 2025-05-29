@@ -17,7 +17,7 @@ const isFullScreen = ref(false);
 // Function to load PDF images
 const loadPages = async () => {
     try {
-        pages.value = await convertPdfToImages("/pdf/science_for_kids.pdf");
+        pages.value = await convertPdfToImages("/pdf/TAHASUSI.pdf");
         totalPages.value = pages.value.length;
     } catch (error) {
         console.error("Error while initializing PageFlip:", error);
