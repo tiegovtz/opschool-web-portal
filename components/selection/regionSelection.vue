@@ -24,7 +24,7 @@ const fetchRegion = async () => {
     data.error = null;
 
     try {
-        const response = await axios.get(`https://apitie.ekima.africa/v1/schools/regions`);
+        const response = await axios.get(`https://opschool.tie.go.tz:5001/v1/schools/regions`);
 
         data.status = "success";
         data.regions = response.data;

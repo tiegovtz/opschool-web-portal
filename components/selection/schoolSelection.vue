@@ -30,7 +30,7 @@ const fetchSchools = async (region, district) => {
     }
 
     try {
-        const response = await axios.post("https://apitie.ekima.africa/v1/schools", {
+        const response = await axios.post("https://opschool.tie.go.tz:5001/v1/schools", {
             region: `${region}`.toUpperCase(),
             district: `${district}`.toUpperCase(),
         });

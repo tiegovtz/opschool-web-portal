@@ -118,7 +118,7 @@ const fetchRegion = async () => {
 
   try {
     const response = await $fetch(
-      `https://apitie.ekima.africa/v1/schools/regions`
+      `https://opschool.tie.go.tz:5001/v1/schools/regions`
     );
 
     data.status = "success";
@@ -136,7 +136,7 @@ const fetchDistricts = async (region) => {
 
   try {
     const response = await $fetch(
-      `https://apitie.ekima.africa/v1/schools/districts/${String(
+      `https://opschool.tie.go.tz:5001/v1/schools/districts/${String(
         region
       ).toUpperCase()}`
     );
@@ -159,7 +159,7 @@ const fetchSchools = async (region, district) => {
   }
 
   try {
-    const response = await $fetch("https://apitie.ekima.africa/v1/schools", {
+    const response = await $fetch("https://opschool.tie.go.tz:5001/v1/schools", {
       method: "POST",
       body: {
         region: `${region}`.toUpperCase(),
