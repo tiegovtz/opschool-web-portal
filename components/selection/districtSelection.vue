@@ -26,7 +26,7 @@ const fetchDistricts = async (region) => {
 
   try {
     const response = await axios.get(
-      `https://apitie.ekima.africa/v1/schools/districts/${String(
+      `https://opschool.tie.go.tz:5001/v1/schools/districts/${String(
         region
       ).toUpperCase()}`
     );
