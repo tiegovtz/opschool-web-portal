@@ -173,19 +173,8 @@ const tabCheck = (checkValue) => {
 
 
       <!-- Smart Class -->
-      <!-- Smart Class -->
-      <NuxtLink v-if="isLoggedIn" to='/smart-class' target="_blank"
-      :class="[
-        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-       
-         ]"
-         >
-        <div class="flex items-center justify-center">
-          <Icon name="famicons:headset-sharp" size="20" />
-        </div>
-        Smartclass
-      </NuxtLink>
-      <NuxtLink v-else to='/smart-class' target="_blank"
+     
+      <NuxtLink to='/smart-class'
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">

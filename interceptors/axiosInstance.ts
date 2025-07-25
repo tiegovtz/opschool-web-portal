@@ -1,30 +1,32 @@
-import axios from 'axios';
- import { Config } from '../constants/config';
-import {useAuthStore} from "../store/auth";
+import axios from "axios";
+import { Config } from "../constants/config";
+import { useAuthStore } from "../stores/auth";
 
 const axiosInstance = axios.create({
-    baseURL: Config.BASE_URL,
+  baseURL: Config.BASE_URL,
 });
 
-const excludedEndpoints = ['/login'];
+const excludedEndpoints = ["/login"];
 
 axiosInstance.interceptors.request.use(
-    (config) => {
-        const authStore = useAuthStore();
-        const token = authStore.token || localStorage.getItem('auth_token');
+  (config) => {
+    const authStore = useAuthStore();
+    const token = authStore.token || localStorage.getItem("auth_token");
 
-        const isExcluded = excludedEndpoints.some((endpoint) => config.url?.endsWith(endpoint));
+    const isExcluded = excludedEndpoints.some((endpoint) =>
+      config.url?.endsWith(endpoint)
+    );
 
-        if (!isExcluded && token) {
-            config.headers = {
-                ...config.headers,
-                Authorization: `Bearer ${token}`,
-            };
-        }
+    if (!isExcluded && token) {
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${token}`,
+      };
+    }
 
-        return config;
-    },
-    (error) => Promise.reject(error)
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
 
 export default axiosInstance;
