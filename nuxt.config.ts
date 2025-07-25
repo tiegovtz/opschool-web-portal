@@ -6,10 +6,7 @@ export default defineNuxtConfig({
   debug: false,
 
   // Add Vuetify styles here along with your existing CSS
-  css: [
-    'vuetify/styles',
-    '~/assets/css/main.css'
-  ],
+  css: ["vuetify/styles", "~/assets/css/main.css"],
 
   postcss: {
     plugins: {
@@ -19,10 +16,10 @@ export default defineNuxtConfig({
   },
 
   plugins: [
-    { src: '~/plugins/mathjax.client.js', mode: 'client' },
-    { src: '~/plugins/mathjax-directive.client.js', mode: 'client' },
-    { src: '~/plugins/block-navigation.client.ts', mode: 'client' },
-    { src: '~/plugins/init-chapter-progress.client.js', mode: 'client' },
+    { src: "~/plugins/mathjax.client.js", mode: "client" },
+    { src: "~/plugins/mathjax-directive.client.js", mode: "client" },
+    { src: "~/plugins/block-navigation.client.ts", mode: "client" },
+    { src: "~/plugins/init-chapter-progress.client.js", mode: "client" },
   ],
 
   modules: [
@@ -30,8 +27,8 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxt/icon",
     "nuxt-swiper",
-    '@pinia/nuxt',
-    'pinia-plugin-persistedstate/nuxt',
+    "@pinia/nuxt",
+    "pinia-plugin-persistedstate/nuxt",
   ],
 
   image: {
@@ -49,13 +46,13 @@ export default defineNuxtConfig({
     },
   },
 
-  devServer: {
-    host: '192.168.0.12',
-    port: 3000
-  },
+  // devServer: {
+  //   host: '192.168.0.12',
+  //   port: 3000
+  // },
 
   build: {
-    transpile: ['vuetify'],
+    transpile: ["vuetify"],
   },
 
   vite: {
@@ -70,16 +67,10 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      meta: [
-        { name: 'generator', content: '' },
-      ]
-    }
-  }
+      meta: [{ name: "generator", content: "" }],
+    },
+  },
 });
-
-
-
-
 
 //
 // // https://nuxt.com/docs/api/configuration/nuxt-config
