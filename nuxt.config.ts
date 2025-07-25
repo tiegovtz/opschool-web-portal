@@ -23,7 +23,6 @@ export default defineNuxtConfig({
     { src: '~/plugins/mathjax-directive.client.js', mode: 'client' },
     { src: '~/plugins/block-navigation.client.ts', mode: 'client' },
     { src: '~/plugins/init-chapter-progress.client.js', mode: 'client' },
-    // Your Vuetify plugin will be auto-loaded from plugins/vuetify.ts
   ],
 
   modules: [
