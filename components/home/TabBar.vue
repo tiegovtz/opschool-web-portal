@@ -173,16 +173,16 @@ const tabCheck = (checkValue) => {
 
 
       <!-- Smart Class -->
-     
-      <NuxtLink to='/smart-class'
-        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"
-        active-class="text-white !bg-deepBlue">
+      <NuxtLink
+          :to="'/smart-class'"
+          class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"
+          active-class="text-white !bg-deepBlue"
+      >
         <div class="flex items-center justify-center">
           <Icon name="famicons:headset-sharp" size="20" />
         </div>
-        Smartclass
+        Smart Class
       </NuxtLink>
-
 
       <!--      <NuxtLink v-else :to="subjectTitle ? topicId ? `/audio/${subjectTitle}/${topicId}` : `/audio/${subjectTitle}` : `/audio`"-->
 <!--        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"-->

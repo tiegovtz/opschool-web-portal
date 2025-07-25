@@ -7,6 +7,7 @@ export const useNavigationStore = defineStore("navigation", {
     experimentToView: null as { route: string; updatedAt: number } | null,
     audioToListen: null as { route: string; updatedAt: number } | null,
     smartClass: null as { route: string; updatedAt: number } | null,
+    liveTV: null as { route: string; updatedAt: number } | null,
   }),
 
   actions: {
@@ -25,10 +26,14 @@ export const useNavigationStore = defineStore("navigation", {
     setSmartClass(route: string) {
       this.smartClass = { route, updatedAt: Date.now() };
     },
+    setLiveTV(route: string) {
+      this.liveTV = { route, updatedAt: Date.now() };
+    },
     clearAll() {
       this.topicToView = null;
       this.videoToView = null;
       this.experimentToView = null;
+      this.liveTV = null;
       this.smartClass = null;
     },
     getLatestRoute() {
@@ -38,6 +43,7 @@ export const useNavigationStore = defineStore("navigation", {
         this.experimentToView,
         this.audioToListen,
         this.smartClass,
+        this.liveTV,
       ]
         .filter(Boolean)
         .sort((a, b) => b!.updatedAt - a!.updatedAt);
