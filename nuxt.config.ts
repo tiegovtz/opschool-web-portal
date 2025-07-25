@@ -1,11 +1,15 @@
-
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
   devtools: { enabled: false },
   debug: false,
-  css: ["~/assets/css/main.css"],
+
+  // Add Vuetify styles here along with your existing CSS
+  css: [
+    'vuetify/styles',
+    '~/assets/css/main.css'
+  ],
 
   postcss: {
     plugins: {
@@ -13,12 +17,13 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
-  
+
   plugins: [
     { src: '~/plugins/mathjax.client.js', mode: 'client' },
     { src: '~/plugins/mathjax-directive.client.js', mode: 'client' },
     { src: '~/plugins/block-navigation.client.ts', mode: 'client' },
-    {src: '~/plugins/init-chapter-progress.client.js', mode: 'client'},
+    { src: '~/plugins/init-chapter-progress.client.js', mode: 'client' },
+    // Your Vuetify plugin will be auto-loaded from plugins/vuetify.ts
   ],
 
   modules: [
@@ -31,8 +36,6 @@ export default defineNuxtConfig({
   ],
 
   image: {
-    // dir: "assets/images",
-    // dirPublic: "public/images",
     quality: 80,
     format: ["webp"],
     densities: [1],
@@ -46,17 +49,98 @@ export default defineNuxtConfig({
       "2xl": 2560,
     },
   },
+
   devServer: {
-    host: ' 192.168.0.12 ',
+    host: '192.168.0.12',
     port: 3000
   },
 
-app:{
-  head:{
-    meta:[
-      { name: 'generator', content: '' },
-    ]
-  }
-}
+  build: {
+    transpile: ['vuetify'],
+  },
 
+  vite: {
+    css: {
+      preprocessorOptions: {
+        sass: {
+          additionalData: '@use "vuetify/styles" as *;',
+        },
+      },
+    },
+  },
+
+  app: {
+    head: {
+      meta: [
+        { name: 'generator', content: '' },
+      ]
+    }
+  }
 });
+
+
+
+
+
+//
+// // https://nuxt.com/docs/api/configuration/nuxt-config
+//
+// export default defineNuxtConfig({
+//   compatibilityDate: "2024-11-01",
+//   devtools: { enabled: false },
+//   debug: false,
+//   css: ["~/assets/css/main.css"],
+//
+//   postcss: {
+//     plugins: {
+//       tailwindcss: {},
+//       autoprefixer: {},
+//     },
+//   },
+//
+//   plugins: [
+//     { src: '~/plugins/mathjax.client.js', mode: 'client' },
+//     { src: '~/plugins/mathjax-directive.client.js', mode: 'client' },
+//     { src: '~/plugins/block-navigation.client.ts', mode: 'client' },
+//     {src: '~/plugins/init-chapter-progress.client.js', mode: 'client'},
+//   ],
+//
+//   modules: [
+//     "@nuxtjs/google-fonts",
+//     "@nuxt/image",
+//     "@nuxt/icon",
+//     "nuxt-swiper",
+//     '@pinia/nuxt',
+//     'pinia-plugin-persistedstate/nuxt',
+//   ],
+//
+//   image: {
+//     // dir: "assets/images",
+//     // dirPublic: "public/images",
+//     quality: 80,
+//     format: ["webp"],
+//     densities: [1],
+//     screens: {
+//       xs: 320,
+//       sm: 640,
+//       md: 768,
+//       lg: 1024,
+//       xl: 1280,
+//       xxl: 1536,
+//       "2xl": 2560,
+//     },
+//   },
+//   devServer: {
+//     host: ' 192.168.0.12 ',
+//     port: 3000
+//   },
+//
+// app:{
+//   head:{
+//     meta:[
+//       { name: 'generator', content: '' },
+//     ]
+//   }
+// }
+//
+// });
