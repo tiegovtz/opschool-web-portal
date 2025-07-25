@@ -29,6 +29,7 @@ const tabCheck = (checkValue) => {
   tabState.isChecked = true;
   tabState.checkedValueButton = checkValue;
   emit('emitActiveTab',tabState.checkedValueButton);
+
 }
 
 </script>
@@ -169,6 +170,30 @@ const tabCheck = (checkValue) => {
         </div>
         Audio
       </NuxtLink>
+
+
+      <!-- Smart Class -->
+      <!-- Smart Class -->
+      <NuxtLink
+          :to="'/smart-class'"
+          class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"
+          active-class="text-white !bg-deepBlue"
+      >
+        <div class="flex items-center justify-center">
+          <Icon name="famicons:headset-sharp" size="20" />
+        </div>
+        Smart Class
+      </NuxtLink>
+
+
+      <!--      <NuxtLink v-else :to="subjectTitle ? topicId ? `/audio/${subjectTitle}/${topicId}` : `/audio/${subjectTitle}` : `/audio`"-->
+<!--        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"-->
+<!--        active-class="text-white !bg-deepBlue">-->
+<!--        <div class="flex items-center justify-center">-->
+<!--          <Icon name="famicons:headset-sharp" size="20" />-->
+<!--        </div>-->
+<!--        Smart Class-->
+<!--      </NuxtLink>-->
     </div>
   </section>
 </template>

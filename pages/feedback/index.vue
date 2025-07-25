@@ -1,3 +1,4 @@
+
 <template>
    <NuxtLayout name="home-layout">
    <div class="flex items-center justify-center">
