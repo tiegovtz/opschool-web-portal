@@ -12,12 +12,9 @@
             <v-col cols="12" sm="6">
               <v-select
                   v-model="formData.school_class"
-                  :items="[
-                { id: 1, name: 'Form One' },
-                { id: 2, name: 'Form Two' }
-              ]"
+                  :items="schoolClasses"
                   item-title="name"
-                  item-value="id"
+                  item-value="_id"
                   label="Select Class"
                   :rules="[v => !!v || 'Class is required']"
               />
@@ -26,15 +23,13 @@
             <v-col cols="12" sm="6">
               <v-select
                   v-model="formData.subject"
-                  :items="[
-                { id: 1, name: 'Geography' },
-                { id: 2, name: 'Physics' }
-              ]"
+                  :items="schoolSubjects"
                   item-title="name"
-                  item-value="id"
-                  label="Subject"
-                  :rules="[v => !!v || 'Subject is required']"
+                  item-value="_id"
+              label="Subject"
+              :rules="[v => !!v || 'Subject is required']"
               />
+
             </v-col>
           </v-row>
 
@@ -181,7 +176,7 @@
             @click="selectClass(classItem)"
         >
           <div class="card-image">
-            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop" :alt="classItem.title" />
+            <img src="https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop" :alt="classItem.title" />
             <div class="card-overlay">
               <div class="live-badge" v-if="classItem.isLive">
                 <span class="live-dot"></span>
@@ -297,8 +292,20 @@ import {ref, reactive, computed, onMounted} from 'vue';
 import { useRouter } from 'vue-router';
 import axios from "axios";
 import {useSessionsSetup} from "../../../../composable/usesSessions.js";
+import apiDocs from "../../../../utilities/api-docs.js";
 
 const router = useRouter();
+
+const token = useCookie('signInAccessToken').value;
+const headers = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${token}`,
+};
+
+
+definePageMeta({
+  middleware: 'auth'
+})
 
 function getDuration(start, end) {
   if (!start || !end) return 'Unknown duration';
@@ -325,7 +332,7 @@ const mapSessionToClass = (session) => ({
   meet_link: session.meet_link || 'https://tv.somakwanza.tz',
   instructor: session.teacher ? `Instructor ${session.teacher}` : 'Unknown Instructor',
   category: session.subject ? `${session.subject.name}` : 'General',
-  thumbnail: 'https://via.placeholder.com/400x225.png?text=Class+Thumbnail',
+  thumbnail: 'https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop',
   scheduledTime: session.start_time ? new Date(session.created_at) : null, // or session.start_time if valid ISO
   duration: getDuration(session.start_time, session.end_time),
   viewers: Math.floor(Math.random() * 1000),
@@ -358,8 +365,17 @@ const loadClasses = async () => {
   }
 };
 
-onMounted(() => {
-   // loadClasses();
+onMounted(async () => {
+  // loadClasses();
+
+  const {data: subjects} = await useFetch(apiDocs.subjects.getPublicSubjects, {headers});
+  // console.log("Subjects " + JSON.stringify(subjects));
+  schoolSubjects.value = subjects.value || [];
+
+  const {data: levels} = await useFetch(apiDocs.levels.getLevels, {headers});
+  // console.log("Subjects " + JSON.stringify(subjects));
+  schoolClasses.value = levels.value || [];
+
 });
 
 // Refs and reactive state
@@ -369,6 +385,7 @@ const selectedClassItem = ref(null);
 const dialog = ref(false);
 const toasts = ref([]);
 const school_classes = ref([]);
+const schoolSubjects = ref([]);
 const isValid = ref(false);
 
 // Form state
@@ -402,10 +419,10 @@ const categories = ref(['Programming', 'Design', 'Business', 'Marketing', 'Photo
 const classes = ref([
   {
     id: 1,
-    title: 'TET SomaKwanza TV',
+    title: 'Introduction to PHP',
     instructor: '',
     category: 'Programming',
-    thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop',
+    thumbnail: 'https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop',
     scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     duration: '2h 30m',
     viewers: 1247,
@@ -415,10 +432,10 @@ const classes = ref([
     description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
   }, {
     id: 1,
-    title: 'TET SomaKwanza TV',
+    title: 'Introduction to Java',
     instructor: '',
     category: 'Programming',
-    thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop',
+    thumbnail: 'https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop',
     scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     duration: '2h 30m',
     viewers: 1247,
@@ -428,10 +445,10 @@ const classes = ref([
     description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
   }, {
     id: 1,
-    title: 'TET SomaKwanza TV',
+    title: 'Introduction to Python',
     instructor: '',
     category: 'Programming',
-    thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop',
+    thumbnail: 'https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop',
     scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     duration: '2h 30m',
     viewers: 1247,
@@ -439,21 +456,7 @@ const classes = ref([
     isLive: true,
     isSubscribed: false,
     description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
-  }, {
-    id: 1,
-    title: 'TET SomaKwanza TV',
-    instructor: '',
-    category: 'Programming',
-    thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop',
-    scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-    duration: '2h 30m',
-    viewers: 1247,
-    rating: 4.9,
-    isLive: true,
-    isSubscribed: false,
-    description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
-  },
-
+  }
 ]);
 
 // Import your composable
@@ -643,7 +646,7 @@ const showToast = (message, type = 'info') => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&h=600&fit=crop') center/cover;
+  background: url('https://images.unsplash.com/photo-1567057419565-4349c49d8a04?w=1200&h=600&fit=crop') center/cover;
   opacity: 0.3;
   z-index: 1;
 }

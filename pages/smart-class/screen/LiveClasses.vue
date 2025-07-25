@@ -603,7 +603,7 @@ const showToast = (message, type = 'info') => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&h=600&fit=crop') center/cover;
+  background: url('https://images.unsplash.com/photo-1567057419565-4349c49d8a04?w=1200&h=600&fit=crop') center/cover;
   opacity: 0.3;
   z-index: 1;
 }
