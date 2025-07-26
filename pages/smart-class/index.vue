@@ -96,6 +96,10 @@
                 <div class="text-2xl font-bold text-white mb-1">{{ stat.number }}</div>
                 <div class="text-white/70 text-sm">{{ stat.label }}</div>
               </div>
+<!--              <div>-->
+<!--                <div class="text-2xl font-bold text-white mb-1">{{ stat.number }}</div>-->
+<!--                <div class="text-white/70 text-sm">{{ stat.label }}</div>-->
+<!--              </div>-->
             </div>
           </div>
         </div>
