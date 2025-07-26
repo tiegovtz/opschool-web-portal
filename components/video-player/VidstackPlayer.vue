@@ -1,4 +1,5 @@
 <template>
+
   <div class="vidstack-wrapper">
     <ClientOnly>
       <media-player :title="title" .src="src">
