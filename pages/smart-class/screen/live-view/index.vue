@@ -4,56 +4,61 @@
       <h1 class="title">Now Streaming</h1>
       <p class="subtitle">Enjoy your scheduled live class</p>
     </div>
-
     <div class="iframe-wrapper">
-      <iframe
-          v-if="iframeSrc"
-          :src="iframeSrc"
-          frameborder="0"
-          allow="camera; microphone; fullscreen; display-capture; clipboard-read; clipboard-write"
-          allowfullscreen
-      ></iframe>
-
-      <div v-else class="no-class-msg">
-        No class is currently scheduled. Please check back later.
-      </div>
+      <ClientOnly>
+        <template v-if="streamUrl">
+<!--          <VidstackPlayer-->
+<!--              v-if="streamUrl"-->
+<!--              :src="streamUrl"-->
+<!--              title="Live Class"-->
+<!--          />-->
+<!--          -->
+          <VidstackPlayer
+              v-if="streamUrl"
+              :src="streamUrl"
+              title="Live Class"
+          />
+        </template>
+        <template v-else>
+          <div class="no-class-msg">
+            No class is currently scheduled. Please check back later.
+          </div>
+        </template>
+      </ClientOnly>
     </div>
   </div>
 </template>
-<script>
-import {useRouter} from "vue-router";
-import {onMounted, ref} from "vue";
-export default {
-  name: "LiveClasses",
-  setup() {
-    const iframeSrc = ref("https://tv.somakwanza.tz"); // Default fallback
 
-    onMounted(() => {
-      const stored = localStorage.getItem('classData');
-      if (stored) {
-        try {
-          const classData = JSON.parse(stored);
-          console.log('Received class data:', classData);
-          if (classData?.meet_link) {
-            iframeSrc.value = classData.meet_link;
-            console.log('Received meeting link:', classData.meet_link);
-          }
-        } catch (e) {
-          console.error("Failed to parse classData from localStorage:", e);
-        }
-      } else {
-        console.warn("No classData found in localStorage.");
+
+
+<script setup>
+import { onMounted, ref } from 'vue'
+import VidstackPlayer from '~/components/video-player/VidstackPlayer.vue'
+
+const streamUrl = ref('')  // will be set dynamically
+
+onMounted(() => {
+  streamUrl.value = 'https://tv.somakwanza.tz/hls/stream.m3u8'
+  const stored = localStorage.getItem('classData')
+  if (stored) {
+    try {
+      const classData = JSON.parse(stored)
+      if (classData?.meet_link) {
+        streamUrl.value = classData.meet_link
       }
-    });
-
-
-    return {
-      iframeSrc
-    };
+    } catch (e) {
+      console.error('Failed to parse classData:', e)
+    }
+  } else {
+    console.log("SOMAKWANZA TV");
+    streamUrl.value = 'https://tv.somakwanza.tz'
   }
-}
+  console.log("somakwanza : " + streamUrl.value);
+})
 </script>
+
 <style scoped>
+/* keep your existing styles */
 .iframe-screen {
   min-height: 100vh;
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
@@ -91,11 +96,6 @@ export default {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-}
-
-iframe {
-  width: 100%;
-  height: 100%;
 }
 
 .no-class-msg {

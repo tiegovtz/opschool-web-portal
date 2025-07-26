@@ -8,13 +8,19 @@
     </div>
 
     <div class="iframe-wrapper">
-      <iframe
+
+      <VidstackPlayer
           v-if="iframeSrc"
           :src="iframeSrc"
-          frameborder="0"
-          allow="camera; microphone; fullscreen; display-capture; clipboard-read; clipboard-write"
-          allowfullscreen
-      ></iframe>
+          title="SomaKwanza TV"
+      />
+<!--      <iframe-->
+<!--          v-if="iframeSrc"-->
+<!--          :src="iframeSrc"-->
+<!--          frameborder="0"-->
+<!--          allow="camera; microphone; fullscreen; display-capture; clipboard-read; clipboard-write"-->
+<!--          allowfullscreen-->
+<!--      ></iframe>-->
 
       <div v-else class="no-class-msg">
         No class is currently scheduled. Please check back later.
@@ -26,11 +32,12 @@
 
 <script setup>
 import {onMounted} from "vue";
+import VidstackPlayer from '~/components/video-player/VidstackPlayer.vue'
 
-const iframeSrc = ref("https://tv.somakwanza.tz");
+const iframeSrc = ref("https://tv.somakwanza.tz/hls/stream.m3u8");
 
 onMounted(() => {
-  iframeSrc.value = "https://tv.somakwanza.tz";
+  iframeSrc.value = "https://tv.somakwanza.tz/hls/stream.m3u8";
 });
 </script>
 
