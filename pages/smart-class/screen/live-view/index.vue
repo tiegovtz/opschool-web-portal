@@ -90,13 +90,16 @@ onMounted(() => {
 
 .iframe-wrapper {
   width: 100%;
-  max-width: 960px;
+  max-width: 1200px; /* Optional: Limit the max width */
   aspect-ratio: 16 / 9;
+  margin: 0 auto; /* ✅ This centers it horizontally */
   background: black;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
 }
+
+
 
 .no-class-msg {
   display: flex;

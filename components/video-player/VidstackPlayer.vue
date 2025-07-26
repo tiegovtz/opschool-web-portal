@@ -27,7 +27,6 @@ defineProps({
 <style scoped>
 .vidstack-wrapper {
   width: 100%;
-  max-width: 960px;
   aspect-ratio: 16 / 9;
   background: black;
   border-radius: 12px;
