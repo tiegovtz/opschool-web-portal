@@ -129,14 +129,14 @@ const goBack = () => {
 }
 
 const items = [
-  {
-    title: 'Dashboard',
-    value: 'smart-class',
-    icon: 'mdi:view-dashboard',
-    description: 'Overview of your learning progress and achievements',
-    notifications: null,
-    isLive: false
-  },
+  // {
+  //   title: 'Dashboard',
+  //   value: 'smart-class',
+  //   icon: 'mdi:view-dashboard',
+  //   description: 'Overview of your learning progress and achievements',
+  //   notifications: null,
+  //   isLive: false
+  // },
   {
     title: 'Live Classes',
     value: 'live-classes',

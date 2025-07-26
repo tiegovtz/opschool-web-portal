@@ -428,6 +428,7 @@ const classes = ref([
     viewers: 1247,
     rating: 4.9,
     isLive: true,
+    meet_link: '',
     isSubscribed: false,
     description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
   }, {
@@ -440,6 +441,7 @@ const classes = ref([
     duration: '2h 30m',
     viewers: 1247,
     rating: 4.9,
+    meet_link: '',
     isLive: true,
     isSubscribed: false,
     description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
@@ -452,6 +454,7 @@ const classes = ref([
     scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     duration: '2h 30m',
     viewers: 1247,
+    meet_link: '',
     rating: 4.9,
     isLive: true,
     isSubscribed: false,
