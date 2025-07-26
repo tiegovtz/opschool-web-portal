@@ -23,14 +23,15 @@
       <!-- Main Content -->
       <div class="container mx-auto px-4 py-12 max-w-7xl">
         <!-- Back Button -->
-        <button
+        <NuxtLink
             v-if="canGoBack"
-            @click="goBack"
-            class="mb-8 flex items-center gap-3 px-6 py-3 bg-white/10 backdrop-blur-lg border-2 border-white/20 rounded-full text-white hover:bg-white/20 hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl"
+            to="/"
+            class="inline-flex items-center gap-3 px-6 py-3 mb-8 bg-white/10 backdrop-blur-lg border-2 border-white/20 rounded-full text-white hover:bg-white/20 hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl no-underline"
         >
           <Icon name="mdi:arrow-left" size="20" />
           Back
-        </button>
+        </NuxtLink>
+
 
         <!-- Navigation Cards Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
@@ -145,14 +146,14 @@ const items = [
     notifications: 3,
     isLive: true
   },
-  {
-    title: 'Upcoming Classes',
-    value: 'upcoming-classes',
-    icon: 'mdi:calendar-clock',
-    description: 'View your scheduled learning sessions and events',
-    notifications: 5,
-    isLive: false
-  },
+  // {
+  //   title: 'Upcoming Classes',
+  //   value: 'upcoming-classes',
+  //   icon: 'mdi:calendar-clock',
+  //   description: 'View your scheduled learning sessions and events',
+  //   notifications: 5,
+  //   isLive: false
+  // },
   {
     title: 'SomaKwanza TV',
     value: 'live-tv',

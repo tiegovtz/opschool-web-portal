@@ -37,7 +37,7 @@ const tabCheck = (checkValue) => {
 <template>
   <section class="my-5">
     <div
-      class="flex items-center justify-start gap-3 mb-6 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center">
+      class="flex items-center text-center justify-start gap-3 mb-6 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center">
       
       <!-- subject tab -->
       <button v-if="isLoggedIn"
