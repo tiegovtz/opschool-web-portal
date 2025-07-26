@@ -1,97 +1,220 @@
 <template>
 
+
+  <v-dialog v-model="dialog" max-width="800px" scrollable>
+    <v-container class="upload-container" fluid>
+      <v-row justify="center">
+        <v-col cols="12" md="10" lg="8">
+          <v-card class="upload-card" elevation="0">
+            <v-card-text class="pa-8">
+              <v-form ref="uploadForm" v-model="formValid" lazy-validation>
+                <!-- Class Title -->
+                <v-text-field
+                    v-model="classData.title"
+                    label="Class Title"
+                    placeholder="Enter an engaging title for your class"
+                    variant="outlined"
+                    :rules="titleRules"
+                    class="custom-input mb-6"
+                    prepend-inner-icon="mdi-book-open-variant"
+                    required
+                ></v-text-field>
+
+                <!-- Instructor Name -->
+                <v-text-field
+                    v-model="classData.instructor"
+                    label="Instructor Name"
+                    placeholder="Your name or instructor name"
+                    variant="outlined"
+                    :rules="instructorRules"
+                    class="custom-input mb-6"
+                    prepend-inner-icon="mdi-account-tie"
+                    required
+                ></v-text-field>
+
+                <!-- Class Category -->
+                <v-select
+                    v-model="classData.category"
+                    :items="categories"
+                    label="Class Category"
+                    placeholder="Select a category for your class"
+                    variant="outlined"
+                    :rules="categoryRules"
+                    class="custom-select mb-6"
+                    prepend-inner-icon="mdi-tag"
+                    required
+                ></v-select>
+
+                <!-- Class Duration -->
+                <v-select
+                    v-model="classData.duration"
+                    :items="durations"
+                    label="Class Duration"
+                    placeholder="Select class duration"
+                    variant="outlined"
+                    :rules="durationRules"
+                    class="custom-select mb-6"
+                    prepend-inner-icon="mdi-clock-outline"
+                    required
+                ></v-select>
+
+                <!-- Class Description -->
+                <v-textarea
+                    v-model="classData.description"
+                    label="Class Description"
+                    placeholder="Describe what students will learn in this class..."
+                    variant="outlined"
+                    :rules="descriptionRules"
+                    class="custom-textarea mb-6"
+                    prepend-inner-icon="mdi-text"
+                    rows="4"
+                    required
+                ></v-textarea>
+
+                <!-- Video Upload Section -->
+                <div class="upload-section mb-6">
+                  <h3 class="upload-section-title">
+                    <v-icon class="mr-2">mdi-video</v-icon>
+                    Class Video
+                  </h3>
+                  <v-file-input
+                      v-model="classData.video"
+                      label="Upload Video File"
+                      placeholder="Choose video file"
+                      accept="video/*"
+                      variant="outlined"
+                      :rules="videoRules"
+                      class="custom-file-input"
+                      prepend-icon=""
+                      prepend-inner-icon="mdi-cloud-upload"
+                      show-size
+                      @change="handleVideoUpload"
+                  >
+                    <template #selection="{ fileNames }">
+                      <template v-for="fileName in fileNames" :key="fileName">
+                        <v-chip
+                            class="file-chip"
+                            color="primary"
+                            variant="flat"
+                            prepend-icon="mdi-video"
+                        >
+                          {{ fileName }}
+                        </v-chip>
+                      </template>
+                    </template>
+                  </v-file-input>
+
+                  <!-- Video Preview -->
+                  <div v-if="videoPreview" class="video-preview mt-4">
+                    <video
+                        :src="videoPreview"
+                        controls
+                        class="preview-video"
+                        preload="metadata"
+                    ></video>
+                  </div>
+                </div>
+
+                <!-- Thumbnail Upload Section -->
+                <div class="upload-section mb-6">
+                  <h3 class="upload-section-title">
+                    <v-icon class="mr-2">mdi-image</v-icon>
+                    Class Thumbnail
+                  </h3>
+                  <v-file-input
+                      v-model="classData.thumbnail"
+                      label="Upload Thumbnail Image"
+                      placeholder="Choose thumbnail image"
+                      accept="image/*"
+                      variant="outlined"
+                      :rules="thumbnailRules"
+                      class="custom-file-input"
+                      prepend-icon=""
+                      prepend-inner-icon="mdi-image-plus"
+                      show-size
+                      @change="handleThumbnailUpload"
+                  >
+                    <template #selection="{ fileNames }">
+                      <template v-for="fileName in fileNames" :key="fileName">
+                        <v-chip
+                            class="file-chip"
+                            color="secondary"
+                            variant="flat"
+                            prepend-icon="mdi-image"
+                        >
+                          {{ fileName }}
+                        </v-chip>
+                      </template>
+                    </template>
+                  </v-file-input>
+
+                  <!-- Thumbnail Preview -->
+                  <div v-if="thumbnailPreview" class="thumbnail-preview mt-4">
+                    <img
+                        :src="thumbnailPreview"
+                        alt="Thumbnail preview"
+                        class="preview-thumbnail"
+                    />
+                  </div>
+                </div>
+
+                <!-- Upload Progress -->
+                <v-progress-linear
+                    v-if="uploading"
+                    :model-value="uploadProgress"
+                    color="primary"
+                    height="8"
+                    class="mb-6"
+                    striped
+                ></v-progress-linear>
+
+                <!-- Action Buttons -->
+                <div class="upload-actions">
+                  <v-btn
+                      variant="outlined"
+                      size="large"
+                      class="secondary-btn mr-4"
+                      @click="resetForm"
+                  >
+                    <v-icon start>mdi-refresh</v-icon>
+                    Reset
+                  </v-btn>
+
+                  <v-btn
+                      color="primary"
+                      size="large"
+                      class="primary-btn"
+                      :loading="uploading"
+                      :disabled="!formValid"
+                      @click="submitForm"
+                  >
+                    <v-icon start>mdi-cloud-upload</v-icon>
+                    {{ uploading ? 'Uploading...' : 'Upload Class' }}
+                  </v-btn>
+                </div>
+              </v-form>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+
+
+  </v-dialog>
+  <!-- Success Snackbar -->
+  <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="4000"
+      location="top right"
+      elevation="6"
+  >
+    <div class="d-flex align-center">
+      <v-icon class="mr-2">{{ snackbar.icon }}</v-icon>
+      {{ snackbar.message }}
+    </div>
+  </v-snackbar>
   <NuxtLayout name="home-layout">
-    <v-dialog v-model="dialog" max-width="600px">
-      <v-card>
-        <v-card-title>Create Session</v-card-title>
-
-        <v-card-text>
-          <v-form ref="formRef" v-model="isValid">
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-select
-                    v-model="formData.school_class"
-                    :items="[
-                { id: 1, name: 'Form One' },
-                { id: 2, name: 'Form Two' }
-              ]"
-                    item-title="name"
-                    item-value="id"
-                    label="Select Class"
-                    :rules="[v => !!v || 'Class is required']"
-                />
-              </v-col>
-
-              <v-col cols="12" sm="6">
-                <v-select
-                    v-model="formData.subject"
-                    :items="[
-                { id: 1, name: 'Geography' },
-                { id: 2, name: 'Physics' }
-              ]"
-                    item-title="name"
-                    item-value="id"
-                    label="Subject"
-                    :rules="[v => !!v || 'Subject is required']"
-                />
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                    v-model="formData.start_time"
-                    label="Start Time"
-                    type="time"
-                    :rules="[v => !!v || 'Required']"
-                />
-              </v-col>
-
-              <v-col cols="12" sm="6">
-                <v-text-field
-                    v-model="formData.end_time"
-                    label="End Time"
-                    type="time"
-                    :rules="[v => !!v || 'Required']"
-                />
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                    v-model="formData.topic"
-                    label="Topic"
-                    :rules="[v => !!v || 'Required']"
-                />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field
-                    v-model="formData.room_name"
-                    label="Room Name"
-                    :rules="[v => !!v || 'Required']"
-                />
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12" sm="12">
-                <v-text-field
-                    v-model="formData.details"
-                    label="Details"
-                    :rules="[v => !!v || 'Required']"
-                />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer />
-          <v-btn color="blue darken-1" text @click="dialog = false">Cancel</v-btn>
-          <v-btn color="blue darken-1" text @click="submit">Submit</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
     <div class="live-classes">
       <!-- Header Section -->
@@ -108,11 +231,12 @@
         <v-container fluid class="filters-section pa-4" elevation="1">
           <v-row>
             <v-col cols="12" class="d-flex justify-end">
-              <!--            <v-btn color="primary" prepend-icon="mdi-plus" @click="onCreate">-->
-              <!--              Create-->
-              <!--            </v-btn>-->
+                          <v-btn color="primary" prepend-icon="mdi-plus" @click="onCreate">
+                            Create
+                          </v-btn>
             </v-col>
           </v-row>
+
           <v-row dense align="center" class="pa-2">
             <!-- Search Field -->
             <v-col cols="12" sm="6" md="4" lg="3">
@@ -150,22 +274,8 @@
                   hide-details
               />
             </v-col>
-
-            <!-- Category Dropdown 3 -->
-            <v-col cols="12" sm="6" md="4" lg="3">
-              <v-select
-                  v-model="selectedCategory"
-                  :items="['all', ...categories]"
-                  label="Category"
-                  variant="outlined"
-                  dense
-                  hide-details
-              />
-            </v-col>
-
-            <br>
-
           </v-row>
+
         </v-container>
       </div>
 
@@ -316,6 +426,185 @@ function getDuration(start, end) {
   return `${hours > 0 ? hours + 'h ' : ''}${minutes}m`;
 }
 
+
+// Form validation
+const formValid = ref(false)
+const uploadForm = ref(null)
+
+// Form data
+const classData = reactive({
+  title: '',
+  instructor: '',
+  category: '',
+  duration: '',
+  description: '',
+  video: [],
+  thumbnail: []
+})
+
+// Upload states
+const uploading = ref(false)
+const uploadProgress = ref(0)
+const videoPreview = ref(null)
+const thumbnailPreview = ref(null)
+
+// Snackbar
+const snackbar = reactive({
+  show: false,
+  message: '',
+  color: 'success',
+  icon: 'mdi-check-circle'
+})
+
+// Form options
+const categories = [
+  'Fitness & Wellness',
+  'Technology',
+  'Business',
+  'Arts & Design',
+  'Music',
+  'Language Learning',
+  'Cooking',
+  'Photography',
+  'Marketing',
+  'Personal Development'
+]
+
+const durations = [
+  '15 minutes',
+  '30 minutes',
+  '45 minutes',
+  '1 hour',
+  '1.5 hours',
+  '2 hours',
+  '2+ hours'
+]
+
+// Validation rules
+const titleRules = [
+  v => !!v || 'Class title is required',
+  v => (v && v.length >= 5) || 'Title must be at least 5 characters long',
+  v => (v && v.length <= 100) || 'Title must be less than 100 characters'
+]
+
+const instructorRules = [
+  v => !!v || 'Instructor name is required',
+  v => (v && v.length >= 2) || 'Name must be at least 2 characters long'
+]
+
+const categoryRules = [
+  v => !!v || 'Please select a category'
+]
+
+const durationRules = [
+  v => !!v || 'Please select duration'
+]
+
+const descriptionRules = [
+  v => !!v || 'Description is required',
+  v => (v && v.length >= 20) || 'Description must be at least 20 characters long',
+  v => (v && v.length <= 1000) || 'Description must be less than 1000 characters'
+]
+
+const videoRules = [
+  v => !!(v && v.length > 0) || 'Video file is required',
+  v => {
+    if (!v || v.length === 0) return true
+    const file = v[0]
+    return file.size < 500000000 || 'Video file must be less than 500MB'
+  }
+]
+
+const thumbnailRules = [
+  v => !!(v && v.length > 0) || 'Thumbnail image is required',
+  v => {
+    if (!v || v.length === 0) return true
+    const file = v[0]
+    return file.size < 5000000 || 'Image file must be less than 5MB'
+  }
+]
+
+// File upload handlers
+const handleVideoUpload = (event) => {
+  const files = event.target.files || event
+  if (files && files.length > 0) {
+    const file = files[0]
+    videoPreview.value = URL.createObjectURL(file)
+  }
+}
+
+const handleThumbnailUpload = (event) => {
+  const files = event.target.files || event
+  if (files && files.length > 0) {
+    const file = files[0]
+    thumbnailPreview.value = URL.createObjectURL(file)
+  }
+}
+
+// Form submission
+const submitForm = async () => {
+  if (!uploadForm.value) return
+
+  const { valid } = await uploadForm.value.validate()
+  if (!valid) return
+
+  uploading.value = true
+  uploadProgress.value = 0
+
+  try {
+    // Simulate upload progress
+    const interval = setInterval(() => {
+      uploadProgress.value += Math.random() * 10
+      if (uploadProgress.value >= 100) {
+        clearInterval(interval)
+        uploadProgress.value = 100
+
+        setTimeout(() => {
+          uploading.value = false
+          showSnackbar('Class uploaded successfully!', 'success', 'mdi-check-circle')
+          resetForm()
+        }, 500)
+      }
+    }, 200)
+
+    // Here you would implement actual upload logic
+    console.log('Uploading class data:', classData)
+
+  } catch (error) {
+    uploading.value = false
+    showSnackbar('Upload failed. Please try again.', 'error', 'mdi-alert-circle')
+    console.error('Upload error:', error)
+  }
+}
+
+// Reset form
+const resetForm = () => {
+  if (uploadForm.value) {
+    uploadForm.value.reset()
+  }
+
+  Object.assign(classData, {
+    title: '',
+    instructor: '',
+    category: '',
+    duration: '',
+    description: '',
+    video: [],
+    thumbnail: []
+  })
+
+  videoPreview.value = null
+  thumbnailPreview.value = null
+  uploadProgress.value = 0
+}
+
+// Show snackbar
+const showSnackbar = (message, color = 'success', icon = 'mdi-check-circle') => {
+  snackbar.message = message
+  snackbar.color = color
+  snackbar.icon = icon
+  snackbar.show = true
+}
 const mapSessionToClass = (session) => ({
   id: session.id,
   title: session.topic || 'Untitled Session',
@@ -394,7 +683,7 @@ const subjects = ref([
   { id: 2, name: 'Science' }
 ]);
 
-const categories = ref(['Programming', 'Design', 'Business', 'Marketing', 'Photography']);
+// const categories = ref(['Programming', 'Design', 'Business', 'Marketing', 'Photography']);
 
 const classes = ref([
   {
@@ -1400,4 +1689,424 @@ const showToast = (message, type = 'info') => {
     border: 2px solid white;
   }
 }
+
+
+
+
+
+
+
+.live-classes-upload {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header Styles */
+.header {
+  position: relative;
+  height: 40vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+  overflow: hidden;
+}
+
+.header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=600&fit=crop') center/cover;
+  opacity: 0.3;
+  z-index: 1;
+}
+
+.header-content {
+  text-align: center;
+  z-index: 2;
+  position: relative;
+}
+
+.title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin: 0 0 1rem 0;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  background: linear-gradient(45deg, #ff6b6b, #ffd93d, #6bcf7f, #4ecdc4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 3s ease-in-out infinite;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(180deg); }
+}
+
+.subtitle {
+  font-size: 1.3rem;
+  opacity: 0.9;
+  margin: 0;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  color: white;
+}
+
+.header-gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(transparent, #0f0f23);
+  z-index: 2;
+}
+
+/* Container Styles */
+.upload-container {
+  padding: 3rem 2rem;
+  position: relative;
+  z-index: 3;
+}
+
+.upload-card {
+  background: rgba(255,255,255,0.05) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+}
+
+/* Custom Input Styles */
+:deep(.custom-input .v-field) {
+  background: rgba(255,255,255,0.08) !important;
+  border: 2px solid rgba(255,255,255,0.15) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+:deep(.custom-input .v-field:hover) {
+  background: rgba(255,255,255,0.12) !important;
+  border-color: rgba(102, 126, 234, 0.5) !important;
+}
+
+:deep(.custom-input .v-field--focused) {
+  background: rgba(255,255,255,0.15) !important;
+  border-color: #667eea !important;
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3) !important;
+}
+
+:deep(.custom-input .v-field__input) {
+  color: white !important;
+  font-size: 1rem;
+}
+
+:deep(.custom-input .v-label) {
+  color: rgba(255,255,255,0.7) !important;
+  font-weight: 500;
+}
+
+:deep(.custom-input .v-field__prepend-inner .v-icon) {
+  color: rgba(255,255,255,0.6) !important;
+}
+
+/* Custom Select Styles */
+:deep(.custom-select .v-field) {
+  background: rgba(255,255,255,0.08) !important;
+  border: 2px solid rgba(255,255,255,0.15) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+:deep(.custom-select .v-field:hover) {
+  background: rgba(255,255,255,0.12) !important;
+  border-color: rgba(102, 126, 234, 0.5) !important;
+}
+
+:deep(.custom-select .v-field--focused) {
+  background: rgba(255,255,255,0.15) !important;
+  border-color: #667eea !important;
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3) !important;
+}
+
+:deep(.custom-select .v-field__input) {
+  color: white !important;
+}
+
+:deep(.custom-select .v-label) {
+  color: rgba(255,255,255,0.7) !important;
+  font-weight: 500;
+}
+
+:deep(.custom-select .v-field__prepend-inner .v-icon) {
+  color: rgba(255,255,255,0.6) !important;
+}
+
+/* Custom Textarea Styles */
+:deep(.custom-textarea .v-field) {
+  background: rgba(255,255,255,0.08) !important;
+  border: 2px solid rgba(255,255,255,0.15) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+:deep(.custom-textarea .v-field:hover) {
+  background: rgba(255,255,255,0.12) !important;
+  border-color: rgba(102, 126, 234, 0.5) !important;
+}
+
+:deep(.custom-textarea .v-field--focused) {
+  background: rgba(255,255,255,0.15) !important;
+  border-color: #667eea !important;
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3) !important;
+}
+
+:deep(.custom-textarea .v-field__input) {
+  color: white !important;
+}
+
+:deep(.custom-textarea .v-label) {
+  color: rgba(255,255,255,0.7) !important;
+  font-weight: 500;
+}
+
+:deep(.custom-textarea .v-field__prepend-inner .v-icon) {
+  color: rgba(255,255,255,0.6) !important;
+}
+
+/* File Input Styles */
+:deep(.custom-file-input .v-field) {
+  background: rgba(255,255,255,0.08) !important;
+  border: 2px dashed rgba(255,255,255,0.3) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  min-height: 80px;
+}
+
+:deep(.custom-file-input .v-field:hover) {
+  background: rgba(255,255,255,0.12) !important;
+  border-color: rgba(102, 126, 234, 0.6) !important;
+  transform: translateY(-2px);
+}
+
+:deep(.custom-file-input .v-field__input) {
+  color: white !important;
+  padding: 1rem;
+}
+
+:deep(.custom-file-input .v-label) {
+  color: rgba(255,255,255,0.7) !important;
+  font-weight: 500;
+}
+
+:deep(.custom-file-input .v-field__prepend-inner .v-icon) {
+  color: rgba(255,255,255,0.6) !important;
+  font-size: 1.5rem;
+}
+
+/* Upload Section Styles */
+.upload-section {
+  padding: 2rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+}
+
+.upload-section-title {
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.upload-section-title .v-icon {
+  color: #667eea;
+}
+
+/* File Chip Styles */
+.file-chip {
+  background: linear-gradient(45deg, #667eea, #764ba2) !important;
+  color: white !important;
+  font-weight: 500;
+  border-radius: 20px !important;
+}
+
+/* Preview Styles */
+.video-preview {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.preview-video {
+  max-width: 100%;
+  max-height: 300px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.thumbnail-preview {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0,0,0,0.3);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.preview-thumbnail {
+  max-width: 300px;
+  max-height: 200px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  object-fit: cover;
+}
+
+/* Button Styles */
+.upload-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+:deep(.primary-btn.v-btn) {
+  background: linear-gradient(45deg, #667eea, #764ba2) !important;
+  color: white !important;
+  border-radius: 30px !important;
+  padding: 0 2rem !important;
+  font-weight: 600;
+  text-transform: none;
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3) !important;
+  transition: all 0.3s ease;
+}
+
+:deep(.primary-btn.v-btn:hover) {
+  background: linear-gradient(45deg, #5a6fd8, #6a42a0) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4) !important;
+}
+
+:deep(.secondary-btn.v-btn) {
+  background: rgba(255,255,255,0.1) !important;
+  color: white !important;
+  border: 2px solid rgba(255,255,255,0.3) !important;
+  border-radius: 30px !important;
+  padding: 0 2rem !important;
+  font-weight: 600;
+  text-transform: none;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+:deep(.secondary-btn.v-btn:hover) {
+  background: rgba(255,255,255,0.2) !important;
+  border-color: rgba(255,255,255,0.5) !important;
+  transform: translateY(-2px);
+}
+
+/* Progress Bar Styles */
+:deep(.v-progress-linear) {
+  border-radius: 10px !important;
+  background: rgba(255,255,255,0.1) !important;
+}
+
+:deep(.v-progress-linear__determinate) {
+  background: linear-gradient(45deg, #667eea, #764ba2) !important;
+}
+
+/* Error Message Styles */
+:deep(.v-messages__message) {
+  color: #ff6b6b !important;
+  font-size: 0.875rem;
+}
+
+/* Dropdown Menu Styles */
+:deep(.v-overlay__content .v-list) {
+  background: rgba(15,15,35,0.95) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px !important;
+}
+
+:deep(.v-list-item) {
+  color: white !important;
+}
+
+:deep(.v-list-item:hover) {
+  background: rgba(102, 126, 234, 0.2) !important;
+}
+
+:deep(.v-list-item--active) {
+  background: linear-gradient(45deg, #667eea, #764ba2) !important;
+  color: white !important;
+}
+
+/* Snackbar Styles */
+:deep(.v-snackbar .v-snackbar__wrapper) {
+  background: rgba(15,15,35,0.95) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+}
+
+:deep(.v-snackbar .v-snackbar__content) {
+  color: white !important;
+  font-weight: 500;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .subtitle {
+    font-size: 1.1rem;
+  }
+
+  .upload-container {
+    padding: 2rem 1rem;
+  }
+
+  .upload-card {
+    margin: 0 0.5rem;
+  }
+
+  :deep(.upload-card .v-card-text) {
+    padding: 2rem 1.5rem !important;
+  }
+
+  .upload-section {
+    padding: 1.5rem;
+  }
+
+  .upload-actions {
+    flex-direction: column;
+  }
+
+  :deep(.primary-btn.v-btn),
+  :deep(.secondary-btn.v-btn) {
+    width: 100%;
+    margin: 0.5rem 0;
+  }
+
+  .header {
+    height: 35vh;
+  }}
 </style>
