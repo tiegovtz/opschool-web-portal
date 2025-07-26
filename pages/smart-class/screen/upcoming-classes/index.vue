@@ -97,7 +97,7 @@
     <!-- Header Section -->
     <div class="header">
       <div class="header-content">
-        <h1 class="title">Live Classes</h1>
+        <h1 class="title">Upcoming Classes</h1>
         <p class="subtitle">Discover amazing live streaming sessions</p>
       </div>
       <div class="header-gradient"></div>
