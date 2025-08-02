@@ -59,7 +59,7 @@
 
 <div
   v-if="dialog"
-  class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
+  class="fixed inset-0 flex items-center justify-center z-[100] bg-black bg-opacity-50"
 >
   <!-- Modal Card -->
   <div class="bg-tranparent w-full max-w-xl rounded-lg shadow-lg overflow-y-scroll backdrop-blur-md scrollbar-none">
@@ -74,31 +74,13 @@
         <!-- Select Class -->
         <div class="w-full text-white">
           <label class="block mb-1 text-sm font-medium text-white">Select Class</label>
-          <select
-            v-model="formData.school_class"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
-            required
-          >
-            <option disabled value="">Select...</option>
-            <option v-for="cls in schoolClasses" :key="cls._id" :value="cls._id">
-              {{ cls.name }}
-            </option>
-          </select>
+           <CustomDropDownList @update-model-value="formData.school_class = $event" placeholder="select class" class="w-full !text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolClasses"/>         
         </div>
 
         <!-- Select Subject -->
         <div class="w-full text-white">
           <label class="block mb-1 text-sm font-medium text-white">Subject</label>
-          <select
-            v-model="formData.subject"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
-            required
-          >
-            <option disabled value="">Select...</option>
-            <option v-for="sub in schoolSubjects" :key="sub._id" :value="sub._id">
-              {{ sub.name }}
-            </option>
-          </select>
+         <CustomDropDownList @update-model-value="formData.subject=$event" placeholder="select subject" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolSubjects"/>
         </div>
 
         <!-- Start Time -->
@@ -230,8 +212,8 @@
         </v-container> -->
 
         <div class="p-4">
-          <!-- Create Button -->
-          <div v-if="userToken?.type.toLowerCase() === 'teacher'" class="flex justify-end mb-4">
+          <!-- Create Button  -->
+          <div  v-if="userToken?.type.toLowerCase() === 'teacher'" class="flex justify-end mb-4">
             <button @click="onCreate"
               class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -258,12 +240,12 @@
 
             <!-- Classes Dropdowns -->
             <div class="w-full md:w-1/3 lg:w-1/4">
-               <CustomDropDownList @update-model-value="selectedCategory = $event" placeholder="select class" class="w-full !text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolClasses.map((c)=>({id:c?._id,name:c.name}))"/>
+               <CustomDropDownList @update-model-value="selectedCategory = $event" placeholder="select class" class="w-full !text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolClasses"/>
             </div>
 
             <!-- subject Dropdowns -->
             <div class="w-full md:w-1/3 lg:w-1/4">
-               <CustomDropDownList @update-model-value="selectedSubject=$event" placeholder="select subject" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolSubjects.map((s)=>({id:s?._id,name:s.name}))"/>
+               <CustomDropDownList @update-model-value="selectedSubject=$event" placeholder="select subject" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolSubjects"/>
             </div>
           </div>
         </div>
@@ -439,38 +421,20 @@ const mapSessionToClass = (session) => ({
 const loadClasses = async () => {
   loading.value = true;
   try {
-    const tokenRes = await axios.post('/api/auth/token/', {
-      username: 'Nick',
-      password: 1234
-    });
-    const { access } = tokenRes.data;
 
-    const sessions = await getData(access);
-    if (Array.isArray(sessions)) {
-      classes.value = sessions.map(mapSessionToClass);
-    } else {
-      console.error('Expected array of sessions but got:', sessions);
-      classes.value = [];
-    }
+    // const sessions = await getData(token);
+    // if (Array.isArray(sessions)) {
+    //   classes.value = sessions.map(mapSessionToClass);
+    // } else {
+    //   console.error('Expected array of sessions but got:', sessions);
+    //   classes.value = [];
+    // }
   } catch (error) {
     console.error('Error fetching sessions:', error);
   } finally {
     loading.value = false;
   }
 };
-
-onMounted(async () => {
-  // loadClasses();
-
-  const { data: subjects } = await useFetch(apiDocs.subjects.getPublicSubjects, { headers });
-  // console.log("Subjects " + JSON.stringify(subjects));
-  schoolSubjects.value = subjects.value || [];
-
-  const { data: levels } = await useFetch(apiDocs.levels.getLevels, { headers });
-  // console.log("Subjects " + JSON.stringify(subjects));
-  schoolClasses.value = levels.value || [];
-
-});
 
 // Refs and reactive state
 const searchQuery = ref('');
@@ -479,8 +443,6 @@ const selectedSubject = ref(null);
 const selectedClassItem = ref(null);
 const dialog = ref(false);
 const toasts = ref([]);
-const school_classes = ref([]);
-const schoolSubjects = ref([]);
 const isValid = ref(false);
 
 // Form state
@@ -498,16 +460,6 @@ const formData = reactive({
   session_end: false
 });
 
-// Sample data
-const schoolClasses = ref([
-  { id: 1, name: 'Class 1' },
-  { id: 2, name: 'Class 2' }
-]);
-
-const subjects = ref([
-  { id: 1, name: 'Mathematics' },
-  { id: 2, name: 'Science' }
-]);
 
 const categories = ref(['Form 1', 'Form 2']);
 
@@ -570,8 +522,12 @@ const { postData, loading, error, getData } = useSessionsSetup();
 const filteredClasses = computed(() => {
   let filtered = classes.value;
 
-  const selectedCategoryName = filterContentBySearch(schoolClasses.value,selectedCategory.value ?? '')[0]?.name.toLowerCase();
-  const selectedSubjectName = filterContentBySearch(schoolSubjects.value,selectedSubject.value ?? '')[0]?.name.toLowerCase();
+  const selectedCategoryName = computed(()=>{
+    return filterContentBySearch(schoolClasses.value,selectedCategory.value ?? '')[0]?.name.toLowerCase() ?? '';
+  });
+  const selectedSubjectName = computed(()=>{
+    return filterContentBySearch(schoolSubjects.value,selectedSubject.value ?? '')[0]?.name.toLowerCase() ?? '';
+  });
   
   filtered = filtered.filter(cls => {
     const categoryMatch = selectedCategory.value ? cls.category.toLowerCase() === selectedCategoryName : true;
@@ -605,34 +561,11 @@ const submit = async () => {
   // }
 
   try {
-    // const payload = {
-    //   // Build your payload matching API expected fields
-    //   school_class: formData.value.school_class,
-    //   subject: formData.value.subject,
-    //   school_registration_number: formData.value.school_registration_number,
-    //   start_time: formData.value.start_time,
-    //   end_time: formData.value.end_time,
-    //   topic: formData.value.topic,
-    //   room_name: formData.value.room_name,
-    //   meet_link: formData.value.meet_link,
-    //   session_start: formData.value.session_start,
-    //   session_end: formData.value.session_end,
-    // };
     const payload = JSON.parse(JSON.stringify(formData)); // deep clone, usually unnecessary here
 
-
     try {
-      const response = await axios.post('/api/auth/token/', {
-        username: 'Nick',
-        password: 1234
-      });
-
-
-      const { access } = response.data;
-      console.log("adceds" + access);
-
       // Call API
-      await postData(payload, access);
+      await postData(payload, token);
 
       showToast('Session created successfully!', 'success');
       // dialog.value = false;
@@ -719,6 +652,19 @@ const showToast = (message, type = 'info') => {
     toasts.value = toasts.value.filter(t => t.id !== toast.id);
   }, 3000);
 };
+
+
+  const { data:schoolSubjects,status:sStatus } = await useAsyncData('public-subjects',()=>$fetch(apiDocs.subjects.getPublicSubjects, { headers }).then((res)=>{
+    if(res)
+    return res.map(s=>({id:s?._id,name:s?.name}))
+  }));
+ 
+
+  const { data:schoolClasses,status:clStatus } = await useAsyncData('class-levels',()=>$fetch(apiDocs.levels.getLevels, { headers }).then((res)=>{
+    if(res)
+    return res.map(c=>({id:c?._id,name:c?.name}))
+  }));
+
 </script>
 
 

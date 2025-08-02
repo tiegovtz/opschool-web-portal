@@ -234,15 +234,14 @@ const loadClasses = async () => {
     //   username: 'Nick',
     //   password: 1234
     // });
-    const { access } = tokenRes.data;
 
-    const sessions = await getData(access);
-    if (Array.isArray(sessions)) {
-      classes.value = sessions.map(mapSessionToClass);
-    } else {
-      console.error('Expected array of sessions but got:', sessions);
-      classes.value = [];
-    }
+    const sessions = await getData(token);
+    // if (Array.isArray(sessions)) {
+    //   classes.value = sessions.map(mapSessionToClass);
+    // } else {
+    //   console.error('Expected array of sessions but got:', sessions);
+    //   classes.value = [];
+    // }
   } catch (error) {
     console.error('Error fetching sessions:', error);
   } finally {
@@ -250,9 +249,7 @@ const loadClasses = async () => {
   }
 };
 
-onMounted(() => {
-  loadClasses();
-});
+
 
 // Refs and reactive state
 const searchQuery = ref('');
@@ -261,7 +258,6 @@ const selectedSubject = ref(null);
 const selectedClassItem = ref(null);
 const dialog = ref(false);
 const toasts = ref([]);
-const school_classes = ref([]);
 const isValid = ref(false);
 
 // Form state
@@ -279,16 +275,6 @@ const formData = reactive({
   session_end: false
 });
 
-// Sample data
-const schoolClasses = ref([
-  { id: 1, name: 'Class 1' },
-  { id: 2, name: 'Class 2' }
-]);
-
-const subjects = ref([
-  { id: 1, name: 'Mathematics' },
-  { id: 2, name: 'Science' }
-]);
 
 // const categories = ref(['Programming', 'Design', 'Business', 'Marketing', 'Photography']);
 
@@ -363,34 +349,12 @@ const submit = async () => {
   // }
 
   try {
-    // const payload = {
-    //   // Build your payload matching API expected fields
-    //   school_class: formData.value.school_class,
-    //   subject: formData.value.subject,
-    //   school_registration_number: formData.value.school_registration_number,
-    //   start_time: formData.value.start_time,
-    //   end_time: formData.value.end_time,
-    //   topic: formData.value.topic,
-    //   room_name: formData.value.room_name,
-    //   meet_link: formData.value.meet_link,
-    //   session_start: formData.value.session_start,
-    //   session_end: formData.value.session_end,
-    // };
     const payload = JSON.parse(JSON.stringify(formData)); // deep clone, usually unnecessary here
 
 
     try {
-      const response = await axios.post('/api/auth/token/', {
-        username: 'Nick',
-        password: 1234
-      });
-
-
-      const { access } = response.data;
-      console.log("adceds" + access);
-
       // Call API
-      await postData(payload, access);
+      await postData(payload, token);
 
       showToast('Session created successfully!', 'success');
       // dialog.value = false;
@@ -479,26 +443,38 @@ const showToast = (message, type = 'info') => {
 };
 
 
+loadClasses();
+
 const { data: classLevels, status: clsStatus } = useAsyncData('class-levels', () => $fetch(apiDocs.levels.getLevels, { headers }).then((response) => {
   if (response)
-    return response.map((c) => ({ id: c?._id, name: c?.name }))
+    return response.map((c) => ({ id: c?._id, name: c?.name }));
+   
 }))
 
 const { data: pubSubject, status: subStatus } = useAsyncData('public-subjects', () => $fetch(apiDocs.subjects.getPublicSubjects, { headers }).then((response) => {
   if (response)
-    return response.map((c) => ({ id: c?._id, name: c?.name }))
+    return response.map((c) => ({ id: c?._id, name: c?.name }));    
 }))
 
 
 const filteredClasses = computed(() => {
   let filtered = classes.value;
 
-  const selectedCategoryName = filterContentBySearch(classLevels.value,selectedCategory.value ?? '')[0]?.name.toLowerCase();
-  const selectedSubjectName = filterContentBySearch(pubSubject.value,selectedSubject.value ?? '')[0]?.name.toLowerCase();
   
+const selectedCategoryName = computed(() => {
+  const match = filterContentBySearch(classLevels.value || [], selectedCategory.value ?? '');
+  return match?.[0]?.name?.toLowerCase?.() || '';
+});
+
+const selectedSubjectName = computed(() => {
+  const match = filterContentBySearch(pubSubject.value || [], selectedSubject.value ?? '');
+  return match?.[0]?.name?.toLowerCase?.() || '';
+});
+
+
   filtered = filtered.filter(cls => {
-    const categoryMatch = selectedCategory.value ? cls.category.toLowerCase() === selectedCategoryName : true;
-    const subjectMatch = selectedSubject.value ? cls.subject.toLowerCase() === selectedSubjectName : true;
+    const categoryMatch = selectedCategory.value ? cls.category.toLowerCase() === selectedCategoryName.value : true;
+    const subjectMatch = selectedSubject.value ? cls.subject.toLowerCase() === selectedSubjectName.value : true;
     return categoryMatch && subjectMatch;
   });
 
@@ -735,19 +711,19 @@ const filteredClasses = computed(() => {
     </div>
   </v-snackbar> -->
 
-  <!-- Dialog Container -->
-  <div v-if="dialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-auto">
+  <!-- Dialog Container  -->
+  <div  v-if="dialog" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 overflow-auto">
     <div
-      class="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 bg-transparent backdrop-blur-md overflow-y-scroll scrollbar-none">
+      class=" rounded-lg shadow-lg w-full max-w-4xl p-6 bg-transparent backdrop-blur-md overflow-y-scroll scrollbar-none">
 
       <form @submit.prevent="submitForm" ref="uploadForm" class="space-y-6">
 
         <!-- Class Title -->
         <div>
-          <label class="block text-sm font-medium text-white">Class Title</label>
+          <label class="block text-sm text-white font-medium">Class Title</label>
           <div class="relative mt-1">
             <input v-model="classData.title" type="text" placeholder="Enter an engaging title for your class"
-              class="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
+              class="w-full border border-gray-300 text-white rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
               required />
           </div>
         </div>
@@ -757,7 +733,7 @@ const filteredClasses = computed(() => {
           <label class="block text-sm font-medium text-white">Instructor Name</label>
           <div class="relative mt-1">
             <input v-model="classData.instructor" type="text" placeholder="Your name or instructor name"
-              class="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
+              class="w-full border border-gray-300 text-white rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
               required />
           </div>
         </div>
@@ -765,21 +741,21 @@ const filteredClasses = computed(() => {
         <!-- Class Category -->
         <div>
           <label class="block text-sm font-medium text-white">Class Category</label>
-          <select v-model="classData.category"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 bg-transparent text-white" required>
-            <option disabled value="">Select a category</option>
-            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
-          </select>
+           <CustomDropDownList 
+            @update-model-value="classData.category =$event"
+              :placeholder="clsStatus === 'pending' ? 'Loading' : clsStatus === 'success' ? 'Select class' : 'something went wrong'"
+              class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
+              :list="classLevels ?? [{ id: 0, name: '' }]" />
         </div>
 
         <!-- Class Duration -->
         <div>
           <label class="block text-sm font-medium text-white">Class Duration</label>
-          <select v-model="classData.duration"
-            class="w-full border border-gray-300 rounded-md px-3 py-2 bg-transparent text-white" required>
-            <option disabled value="">Select duration</option>
-            <option v-for="dur in durations" :key="dur" :value="dur">{{ dur }}</option>
-          </select>
+          <CustomDropDownList 
+            @update-model-value="classData.duration =durations[$event]"
+              :placeholder="'Select duration'"
+              class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
+              :list="durations.map((d,i)=>({id:i,name:d})) ?? [{ id: 0, name: '' }]" />
         </div>
 
         <!-- Class Description -->
@@ -822,7 +798,7 @@ const filteredClasses = computed(() => {
         <!-- Actions -->
         <div class="flex justify-end gap-4">
           <button type="button" @click="resetForm"
-            class="border border-gray-400 text-white px-4 py-2 rounded hover:bg-gray-100">
+            class="border border-gray-40 px-4 py-2 text-white rounded hover:bg-gray-100">
             <i class="mdi mdi-refresh mr-2"></i> Reset
           </button>
           <button type="submit" :disabled="!formValid || uploading"
