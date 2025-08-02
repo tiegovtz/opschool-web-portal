@@ -2,300 +2,388 @@
 
   <NuxtLayout name="home-layout">
 
-  <v-dialog v-model="dialog" max-width="600px">
-    <v-card>
-      <v-card-title>Create Session</v-card-title>
+    <!-- <v-dialog v-model="dialog" max-width="600px">
+      <v-card>
+        <v-card-title>Create Session</v-card-title>
 
-      <v-card-text>
-        <v-form ref="formRef" v-model="isValid">
-          <v-row>
-            <v-col cols="12" sm="6">
-              <v-select
-                  v-model="formData.school_class"
-                  :items="schoolClasses"
-                  item-title="name"
-                  item-value="_id"
-                  label="Select Class"
-                  :rules="[v => !!v || 'Class is required']"
-              />
-            </v-col>
+        <v-card-text>
+          <v-form ref="formRef" v-model="isValid">
+            <v-row>
+              <v-col cols="12" sm="6">
+                <v-select v-model="formData.school_class" :items="schoolClasses" item-title="name" item-value="_id"
+                  label="Select Class" :rules="[v => !!v || 'Class is required']" />
+              </v-col>
 
-            <v-col cols="12" sm="6">
-              <v-select
-                  v-model="formData.subject"
-                  :items="schoolSubjects"
-                  item-title="name"
-                  item-value="_id"
-              label="Subject"
-              :rules="[v => !!v || 'Subject is required']"
-              />
+              <v-col cols="12" sm="6">
+                <v-select v-model="formData.subject" :items="schoolSubjects" item-title="name" item-value="_id"
+                  label="Subject" :rules="[v => !!v || 'Subject is required']" />
 
-            </v-col>
-          </v-row>
+              </v-col>
+            </v-row>
 
-          <v-row>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                  v-model="formData.start_time"
-                  label="Start Time"
-                  type="time"
-                  :rules="[v => !!v || 'Required']"
-              />
-            </v-col>
+            <v-row>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="formData.start_time" label="Start Time" type="time"
+                  :rules="[v => !!v || 'Required']" />
+              </v-col>
 
-            <v-col cols="12" sm="6">
-              <v-text-field
-                  v-model="formData.end_time"
-                  label="End Time"
-                  type="time"
-                  :rules="[v => !!v || 'Required']"
-              />
-            </v-col>
-          </v-row>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="formData.end_time" label="End Time" type="time"
+                  :rules="[v => !!v || 'Required']" />
+              </v-col>
+            </v-row>
 
-          <v-row>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                  v-model="formData.topic"
-                  label="Topic"
-                  :rules="[v => !!v || 'Required']"
-              />
-            </v-col>
-            <v-col cols="12" sm="6">
-              <v-text-field
-                  v-model="formData.room_name"
-                  label="Room Name"
-                  :rules="[v => !!v || 'Required']"
-              />
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12" sm="12">
-              <v-text-field
-                  v-model="formData.details"
-                  label="Details"
-                  :rules="[v => !!v || 'Required']"
-              />
-            </v-col>
-          </v-row>
-        </v-form>
-      </v-card-text>
+            <v-row>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="formData.topic" label="Topic" :rules="[v => !!v || 'Required']" />
+              </v-col>
+              <v-col cols="12" sm="6">
+                <v-text-field v-model="formData.room_name" label="Room Name" :rules="[v => !!v || 'Required']" />
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col cols="12" sm="12">
+                <v-text-field v-model="formData.details" label="Details" :rules="[v => !!v || 'Required']" />
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card-text>
 
-      <v-card-actions>
-        <v-spacer />
-        <v-btn color="blue darken-1" text @click="dialog = false">Cancel</v-btn>
-        <v-btn color="blue darken-1" text @click="submit">Submit</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn color="blue darken-1" text @click="dialog = false">Cancel</v-btn>
+          <v-btn color="blue darken-1" text @click="submit">Submit</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog> -->
 
-  <div class="live-classes">
-    <!-- Header Section -->
-    <div class="header">
-      <div class="header-content">
-        <h1 class="title">Live Classes</h1>
-        <p class="subtitle">Discover amazing live streaming sessions</p>
-      </div>
-      <div class="header-gradient"></div>
+<div
+  v-if="dialog"
+  class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50"
+>
+  <!-- Modal Card -->
+  <div class="bg-tranparent w-full max-w-xl rounded-lg shadow-lg overflow-y-scroll backdrop-blur-md scrollbar-none">
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h3 class="text-lg font-semibold text-white">Create Session</h3>
     </div>
 
-    <!-- Filter Section -->
-     <div class="filters-section">
-       <v-container fluid class="filters-section pa-4" elevation="1">
-         <v-row>
-           <v-col cols="12" class="d-flex justify-end">
-             <v-btn color="primary" prepend-icon="mdi-plus" @click="onCreate">
-               Create
-             </v-btn>
-           </v-col>
-         </v-row>
-         <v-row dense align="center" class="pa-2">
-           <!-- Search Field -->
-           <v-col cols="12" sm="6" md="4" lg="3">
-             <v-text-field
-                 v-model="searchQuery"
-                 label="Search classes..."
-                 prepend-inner-icon="mdi-magnify"
-                 variant="outlined"
-                 dense
-                 clearable
-                 hide-details
-             />
-           </v-col>
-
-           <!-- Category Dropdown 1 -->
-           <v-col cols="12" sm="6" md="4" lg="3">
-             <v-select
-                 v-model="selectedCategory"
-                 :items="['all', ...categories]"
-                 label="Category"
-                 variant="outlined"
-                 dense
-                 hide-details
-             />
-           </v-col>
-
-           <!-- Category Dropdown 2 -->
-           <v-col cols="12" sm="6" md="4" lg="3">
-             <v-select
-                 v-model="selectedCategory"
-                 :items="['all', ...categories]"
-                 label="Category"
-                 variant="outlined"
-                 dense
-                 hide-details
-             />
-           </v-col>
-
-           <!-- Category Dropdown 3 -->
-           <v-col cols="12" sm="6" md="4" lg="3">
-             <v-select
-                 v-model="selectedCategory"
-                 :items="['all', ...categories]"
-                 label="Category"
-                 variant="outlined"
-                 dense
-                 hide-details
-             />
-           </v-col>
-
-          <br>
-
-         </v-row>
-       </v-container>
-     </div>
-
-
-    <!-- Classes Grid -->
-    <div class="classes-container">
-      <div class="classes-grid">
-        <div
-            v-for="classItem in filteredClasses"
-            :key="classItem.id"
-            class="class-card"
-            @click="selectClass(classItem)"
-        >
-          <div class="card-image">
-            <img src="https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop" :alt="classItem.title" />
-            <div class="card-overlay">
-              <div class="live-badge" v-if="classItem.isLive">
-                <span class="live-dot"></span>
-                LIVE
-              </div>
-              <div class="duration-badge">{{ classItem.duration }}</div>
-            </div>
-            <div class="hover-actions">
-              <button class="action-btn play-btn">
-                <svg viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z"/>
-                </svg>
-              </button>
-              <button
-                  class="action-btn subscribe-btn"
-                  @click.stop="toggleSubscription(classItem)"
-                  :class="{ subscribed: classItem.isSubscribed }"
-              >
-                <svg viewBox="0 0 24 24">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="card-content">
-            <h3 class="class-title">{{ classItem.title }}</h3>
-            <p class="class-instructor">{{ classItem.instructor }}</p>
-            <div class="class-meta">
-              <span class="class-category">{{ classItem.category }}</span>
-              <span class="class-time">{{ formatTime(classItem.scheduledTime) }}</span>
-            </div>
-            <div class="class-stats">
-              <span class="viewers">{{ classItem.viewers }} viewers</span>
-              <span class="rating">
-                <svg class="star-icon" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
-                {{ classItem.rating }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Class Modal -->
-    <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
-        <button class="close-btn" @click="closeModal">
-          <svg viewBox="0 0 24 24">
-            <path d="M6 6l12 12M6 18L18 6"/>
-          </svg>
-        </button>
-
-        <div class="modal-header">
-          <img :src="selectedClassItem.thumbnail" :alt="selectedClassItem.title" />
-          <div class="modal-info">
-            <h2>{{ selectedClassItem.title }}</h2>
-            <p class="modal-instructor">with {{ selectedClassItem.instructor }}</p>
-            <div class="modal-meta">
-              <span class="modal-category">{{ selectedClassItem.category }}</span>
-              <span class="modal-time">{{ formatTime(selectedClassItem.scheduledTime) }}</span>
-              <span class="modal-duration">{{ selectedClassItem.duration }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-description">
-          <p>{{ selectedClassItem.description }}</p>  <br>
-          <p>{{ selectedClassItem.details }}</p>
-        </div>
-
-        <div class="modal-actions">
-          <button class="primary-btn" @click="joinClass(selectedClassItem)">
-            <svg viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-            Join Class
-          </button>
-          <button
-              class="secondary-btn"
-              @click="toggleSubscription(selectedClassItem)"
-              :class="{ subscribed: selectedClassItem.isSubscribed }"
+    <!-- Form Body -->
+    <form @submit.prevent="submit" ref="formRef" class="px-6 py-4 space-y-4 ">
+      <div class="flex flex-wrap gap-4">
+        <!-- Select Class -->
+        <div class="w-full text-white">
+          <label class="block mb-1 text-sm font-medium text-white">Select Class</label>
+          <select
+            v-model="formData.school_class"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
+            required
           >
-            <svg viewBox="0 0 24 24">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            {{ selectedClassItem.isSubscribed ? 'Subscribed' : 'Subscribe' }}
-          </button>
+            <option disabled value="">Select...</option>
+            <option v-for="cls in schoolClasses" :key="cls._id" :value="cls._id">
+              {{ cls.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Select Subject -->
+        <div class="w-full text-white">
+          <label class="block mb-1 text-sm font-medium text-white">Subject</label>
+          <select
+            v-model="formData.subject"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
+            required
+          >
+            <option disabled value="">Select...</option>
+            <option v-for="sub in schoolSubjects" :key="sub._id" :value="sub._id">
+              {{ sub.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Start Time -->
+        <div class="w-full text-white">
+          <label class="block mb-1 text-sm font-medium text-white">Start Time</label>
+          <input
+            type="time"
+            v-model="formData.start_time"
+            required
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
+          />
+        </div>
+
+        <!-- End Time -->
+        <div class="w-full text-white">
+          <label class="block mb-1 text-sm font-medium text-white">End Time</label>
+          <input
+            type="time"
+            v-model="formData.end_time"
+            required
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
+          />
+        </div>
+
+        <!-- Topic -->
+        <div class="w-full text-white">
+          <label class="block mb-1 text-sm font-medium text-white">Topic</label>
+          <input
+            type="text"
+            v-model="formData.topic"
+            required
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
+          />
+        </div>
+
+        <!-- Room Name -->
+        <div class="w-full text-white">
+          <label class="block mb-1 text-sm font-medium text-white">Room Name</label>
+          <input
+            type="text"
+            v-model="formData.room_name"
+            required
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
+          />
+        </div>
+
+        <!-- Details -->
+        <div class="w-full text-white">
+          <label class="block mb-1 text-sm font-medium text-white">Details</label>
+          <input
+            type="text"
+            v-model="formData.details"
+            required
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
+          />
         </div>
       </div>
-    </div>
+    </form>
 
-    <!-- Toast Notifications -->
-    <div class="toast-container">
-      <div
-          v-for="toast in toasts"
-          :key="toast.id"
-          class="toast"
-          :class="toast.type"
+    <!-- Footer -->
+    <div class="px-6 py-4 flex justify-end gap-2 border-t border-gray-200">
+      <button
+        type="button"
+        @click="dialog = false"
+        class="px-4 py-2 rounded-md border border-gray-300 text-white hover:bg-gray-100 bg-red-500"
       >
-        {{ toast.message }}
-      </div>
+        Cancel
+      </button>
+      <button
+        type="submit"
+        form="formRef"
+        class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+      >
+        Submit
+      </button>
     </div>
   </div>
+</div>
+
+
+    <div class="live-classes">
+      <!-- Header Section -->
+      <div class="header">
+        <div class="header-content">
+          <h1 class="title">Live Classes</h1>
+          <p class="subtitle">Discover amazing live streaming sessions</p>
+        </div>
+        <div class="header-gradient"></div>
+      </div>
+
+      <!-- Filter Section -->
+      <div class="filters-section">
+        <!-- <v-container fluid class="filters-section pa-4" elevation="1">
+          <v-row>
+            <v-col cols="12" class="d-flex justify-end">
+              <v-btn color="primary" prepend-icon="mdi-plus" @click="onCreate">
+                Create
+              </v-btn>
+            </v-col>
+          </v-row>
+          <v-row dense align="center" class="pa-2"> -->
+            <!-- Search Field -->
+            <!-- <v-col cols="12" sm="6" md="4" lg="3">
+              <v-text-field v-model="searchQuery" label="Search classes..." prepend-inner-icon="mdi-magnify"
+                variant="outlined" dense clearable hide-details />
+            </v-col> -->
+
+            <!-- Category Dropdown 1 -->
+            <!-- <v-col cols="12" sm="6" md="4" lg="3">
+              <v-select v-model="selectedCategory" :items="['all', ...categories]" label="Category" variant="outlined"
+                dense hide-details />
+            </v-col> -->
+
+            <!-- Category Dropdown 2 -->
+            <!-- <v-col cols="12" sm="6" md="4" lg="3">
+              <v-select v-model="selectedCategory" :items="['all', ...categories]" label="Category" variant="outlined"
+                dense hide-details />
+            </v-col> -->
+
+            <!-- Category Dropdown 3 -->
+            <!-- <v-col cols="12" sm="6" md="4" lg="3">
+              <v-select v-model="selectedCategory" :items="['all', ...categories]" label="Category" variant="outlined"
+                dense hide-details />
+            </v-col>
+
+            <br>
+
+          </v-row>
+        </v-container> -->
+
+        <div class="p-4">
+          <!-- Create Button -->
+          <div v-if="userToken?.type.toLowerCase() === 'teacher'" class="flex justify-end mb-4">
+            <button @click="onCreate"
+              class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Create
+            </button>
+          </div>
+
+          <!-- Filter Section -->
+          <div class="flex flex-wrap gap-4 justify-center">
+            <!-- Search Field -->
+            <div class="w-full md:w-1/3 lg:w-1/4">
+              <div class="relative">
+                <input type="text" v-model="searchQuery" placeholder="Search classes..."
+                  class="w-full border border-gray-300 rounded-md px-10 py-2 focus:outline-none bg-transparent focus:ring-2 focus:ring-blue-500 h-14" />
+                <svg class="absolute left-3 top-4 w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                  stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Category Dropdowns -->
+            <div v-for="i in 2" :key="i" class="w-full md:w-1/3 lg:w-1/4">
+               <CustomDropDownList v-model="selectedCategory" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="categories.map((c,i)=>({id:i,name:c}))"/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Classes Grid -->
+      <div class="classes-container">
+        <div class="classes-grid">
+          <div v-for="classItem in filteredClasses" :key="classItem.id" class="class-card"
+            @click="selectClass(classItem)">
+            <div class="card-image">
+              <img :src="classItem.thumbnail"
+                :alt="classItem.title" />
+              <div class="card-overlay">
+                <div class="live-badge" v-if="classItem.isLive">
+                  <span class="live-dot"></span>
+                  LIVE
+                </div>
+                <div class="duration-badge">{{ classItem.duration }}</div>
+              </div>
+              <div class="hover-actions">
+                <button class="action-btn play-btn">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </button>
+                <button class="action-btn subscribe-btn" @click.stop="toggleSubscription(classItem)"
+                  :class="{ subscribed: classItem.isSubscribed }">
+                  <svg viewBox="0 0 24 24">
+                    <path
+                      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="card-content">
+              <h3 class="class-title">{{ classItem.title }}</h3>
+              <p class="class-instructor">{{ classItem.instructor }}</p>
+              <div class="class-meta">
+                <span class="class-category">{{ classItem.category }}</span>
+                <span class="class-time">{{ formatTime(classItem.scheduledTime) }}</span>
+              </div>
+              <div class="class-stats">
+                <span class="viewers">{{ classItem.viewers }} viewers</span>
+                <!-- <span class="rating">
+                  <svg class="star-icon" viewBox="0 0 24 24">
+                    <path
+                      d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                  {{ classItem.rating }}
+                </span> -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Class Modal -->
+      <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal">
+        <div class="modal-content" @click.stop>
+          <button class="close-btn" @click="closeModal">
+            <svg viewBox="0 0 24 24">
+              <path d="M6 6l12 12M6 18L18 6" />
+            </svg>
+          </button>
+
+          <div class="modal-header">
+            <img :src="selectedClassItem.thumbnail" :alt="selectedClassItem.title" />
+            <div class="modal-info">
+              <h2>{{ selectedClassItem.title }}</h2>
+              <p class="modal-instructor">with {{ selectedClassItem.instructor }}</p>
+              <div class="modal-meta">
+                <span class="modal-category">{{ selectedClassItem.category }}</span>
+                <span class="modal-time">{{ formatTime(selectedClassItem.scheduledTime) }}</span>
+                <span class="modal-duration">{{ selectedClassItem.duration }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-description">
+            <p>{{ selectedClassItem.description }}</p> <br>
+            <p>{{ selectedClassItem.details }}</p>
+          </div>
+
+          <div class="modal-actions">
+            <button class="primary-btn" @click="joinClass(selectedClassItem)">
+              <svg viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              Join Class
+            </button>
+            <button class="secondary-btn" @click="toggleSubscription(selectedClassItem)"
+              :class="{ subscribed: selectedClassItem.isSubscribed }">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              {{ selectedClassItem.isSubscribed ? 'Subscribed' : 'Subscribe' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toast Notifications -->
+      <div class="toast-container">
+        <div v-for="toast in toasts" :key="toast.id" class="toast" :class="toast.type">
+          {{ toast.message }}
+        </div>
+      </div>
+    </div>
 
   </NuxtLayout>
 </template>
 
 <script setup>
-import {ref, reactive, computed, onMounted} from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from "axios";
-import {useSessionsSetup} from "../../../../composable/usesSessions.js";
+import { useSessionsSetup } from "../../../../composable/usesSessions.js";
 import apiDocs from "../../../../utilities/api-docs.js";
 
 const router = useRouter();
-
+const userToken = useCookie("signInUserToken");
 const token = useCookie('signInAccessToken').value;
 const headers = {
   'Content-Type': 'application/json',
@@ -327,7 +415,7 @@ function getDuration(start, end) {
 const mapSessionToClass = (session) => ({
   id: session.id,
   title: session.topic || 'Untitled Session',
-    details: session.details || 'Karibu  sana',
+  details: session.details || 'Karibu  sana',
 
   meet_link: session.meet_link || 'https://tv.somakwanza.tz',
   instructor: session.teacher ? `Instructor ${session.teacher}` : 'Unknown Instructor',
@@ -368,11 +456,11 @@ const loadClasses = async () => {
 onMounted(async () => {
   // loadClasses();
 
-  const {data: subjects} = await useFetch(apiDocs.subjects.getPublicSubjects, {headers});
+  const { data: subjects } = await useFetch(apiDocs.subjects.getPublicSubjects, { headers });
   // console.log("Subjects " + JSON.stringify(subjects));
   schoolSubjects.value = subjects.value || [];
 
-  const {data: levels} = await useFetch(apiDocs.levels.getLevels, {headers});
+  const { data: levels } = await useFetch(apiDocs.levels.getLevels, { headers });
   // console.log("Subjects " + JSON.stringify(subjects));
   schoolClasses.value = levels.value || [];
 
@@ -419,10 +507,10 @@ const categories = ref(['Programming', 'Design', 'Business', 'Marketing', 'Photo
 const classes = ref([
   {
     id: 1,
-    title: 'Introduction to PHP',
-    instructor: '',
-    category: 'Programming',
-    thumbnail: 'https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop',
+    title: 'Eaths Movements',
+    instructor: 'TET Studio',
+    category: 'Form 1',
+    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1748011759393-169009829.webp',
     scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     duration: '2h 30m',
     viewers: 1247,
@@ -433,10 +521,10 @@ const classes = ref([
     description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
   }, {
     id: 1,
-    title: 'Introduction to Java',
-    instructor: '',
-    category: 'Programming',
-    thumbnail: 'https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop',
+    title: 'Introduction to physics',
+    instructor: 'TET Studio',
+    category: 'Form 1',
+    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/subjects/1744186746730-324675569.jpeg',
     scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     duration: '2h 30m',
     viewers: 1247,
@@ -447,10 +535,10 @@ const classes = ref([
     description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
   }, {
     id: 1,
-    title: 'Introduction to Python',
-    instructor: '',
-    category: 'Programming',
-    thumbnail: 'https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop',
+    title: 'Fire Fighting',
+    instructor: 'TET Studio',
+    category: 'Form 1',
+    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1746029937249-12872049.jpg',
     scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     duration: '2h 30m',
     viewers: 1247,
@@ -463,7 +551,7 @@ const classes = ref([
 ]);
 
 // Import your composable
-const { postData, loading, error ,getData} = useSessionsSetup();
+const { postData, loading, error, getData } = useSessionsSetup();
 // Show toast function (replace with your UI lib's toast/snackbar)
 
 
@@ -479,9 +567,9 @@ const filteredClasses = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(cls =>
-        cls.title.toLowerCase().includes(query) ||
-        cls.instructor.toLowerCase().includes(query) ||
-        cls.category.toLowerCase().includes(query)
+      cls.title.toLowerCase().includes(query) ||
+      cls.instructor.toLowerCase().includes(query) ||
+      cls.category.toLowerCase().includes(query)
     );
   }
 
@@ -529,7 +617,7 @@ const submit = async () => {
       console.log("adceds" + access);
 
       // Call API
-      await postData(payload,access);
+      await postData(payload, access);
 
       showToast('Session created successfully!', 'success');
       // dialog.value = false;
@@ -563,7 +651,7 @@ const submit = async () => {
 
     loadClasses();
 
-dialog.value = false;
+    dialog.value = false;
   } catch (err) {
     showToast(error.value || 'Failed to create session.', 'error');
   }
@@ -581,8 +669,8 @@ const closeModal = () => {
 const toggleSubscription = (classItem) => {
   classItem.isSubscribed = !classItem.isSubscribed;
   showToast(
-      classItem.isSubscribed ? 'Subscribed successfully!' : 'Unsubscribed',
-      classItem.isSubscribed ? 'success' : 'info'
+    classItem.isSubscribed ? 'Subscribed successfully!' : 'Unsubscribed',
+    classItem.isSubscribed ? 'success' : 'info'
   );
 };
 
@@ -599,7 +687,7 @@ const joinClass = (selectedClassItem) => {
 
 const onCreate = () => {
   console.log("Sdefdsdf");
-   dialog.value = true;
+  dialog.value = true;
 };
 
 const formatTime = (date) => {
@@ -664,7 +752,7 @@ const showToast = (message, type = 'info') => {
   font-size: 4rem;
   font-weight: 800;
   margin: 0 0 1rem 0;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   background: linear-gradient(45deg, #ff6b6b, #ffd93d, #6bcf7f, #4ecdc4);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -673,15 +761,22 @@ const showToast = (message, type = 'info') => {
 }
 
 @keyframes gradient-shift {
-  0%, 100% { filter: hue-rotate(0deg); }
-  50% { filter: hue-rotate(180deg); }
+
+  0%,
+  100% {
+    filter: hue-rotate(0deg);
+  }
+
+  50% {
+    filter: hue-rotate(180deg);
+  }
 }
 
 .subtitle {
   font-size: 1.5rem;
   opacity: 0.9;
   margin: 0;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .header-gradient {
@@ -697,9 +792,9 @@ const showToast = (message, type = 'info') => {
 /* Filter Styles */
 .filters-section {
   padding: 2rem 0;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .filters-container {
@@ -721,7 +816,7 @@ const showToast = (message, type = 'info') => {
   transform: translateY(-50%);
   width: 20px;
   height: 20px;
-  stroke: rgba(255,255,255,0.5);
+  stroke: rgba(255, 255, 255, 0.5);
   stroke-width: 2;
   fill: none;
   z-index: 1;
@@ -730,8 +825,8 @@ const showToast = (message, type = 'info') => {
 .search-input {
   width: 100%;
   padding: 1rem 1rem 1rem 3rem;
-  background: rgba(255,255,255,0.1);
-  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 50px;
   color: white;
   font-size: 1rem;
@@ -742,12 +837,12 @@ const showToast = (message, type = 'info') => {
 .search-input:focus {
   outline: none;
   border-color: #667eea;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
 }
 
 .search-input::placeholder {
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .filter-chips {
@@ -759,8 +854,8 @@ const showToast = (message, type = 'info') => {
 
 .filter-chip {
   padding: 0.75rem 1.5rem;
-  background: rgba(255,255,255,0.1);
-  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 30px;
   color: white;
   font-size: 0.9rem;
@@ -770,7 +865,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .filter-chip:hover {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
 }
 
@@ -794,19 +889,19 @@ const showToast = (message, type = 'info') => {
 }
 
 .class-card {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .class-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-  background: rgba(255,255,255,0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .card-image {
@@ -858,12 +953,19 @@ const showToast = (message, type = 'info') => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .duration-badge {
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.75rem;
@@ -898,7 +1000,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .play-btn {
-  background: rgba(255,255,255,0.9);
+  background: rgba(255, 255, 255, 0.9);
   color: #333;
 }
 
@@ -908,12 +1010,12 @@ const showToast = (message, type = 'info') => {
 }
 
 .subscribe-btn {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
 }
 
 .subscribe-btn:hover {
-  background: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.3);
   transform: scale(1.1);
 }
 
@@ -946,7 +1048,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .class-instructor {
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.7);
   margin: 0 0 1rem 0;
   font-size: 0.9rem;
 }
@@ -966,7 +1068,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .class-time {
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
 }
 
@@ -974,7 +1076,7 @@ const showToast = (message, type = 'info') => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.85rem;
 }
 
@@ -998,7 +1100,7 @@ const showToast = (message, type = 'info') => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1008,7 +1110,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .modal-content {
-  background: rgba(15,15,35,0.95);
+  background: rgba(15, 15, 35, 0.95);
   border-radius: 20px;
   padding: 2rem;
   max-width: 600px;
@@ -1017,7 +1119,7 @@ const showToast = (message, type = 'info') => {
   overflow-y: auto;
   position: relative;
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .close-btn {
@@ -1038,7 +1140,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .close-btn:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .close-btn svg {
@@ -1067,7 +1169,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .modal-instructor {
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.7);
   margin: 0 0 1rem 0;
 }
 
@@ -1084,15 +1186,16 @@ const showToast = (message, type = 'info') => {
   font-size: 0.8rem;
 }
 
-.modal-time, .modal-duration {
-  color: rgba(255,255,255,0.6);
+.modal-time,
+.modal-duration {
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
 }
 
 .modal-description {
   margin-bottom: 2rem;
   line-height: 1.6;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .modal-actions {
@@ -1101,7 +1204,8 @@ const showToast = (message, type = 'info') => {
   flex-wrap: wrap;
 }
 
-.primary-btn, .secondary-btn {
+.primary-btn,
+.secondary-btn {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 30px;
@@ -1128,13 +1232,13 @@ const showToast = (message, type = 'info') => {
 }
 
 .secondary-btn {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: white;
-  border: 2px solid rgba(255,255,255,0.2);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .secondary-btn:hover {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
 }
 
@@ -1143,7 +1247,8 @@ const showToast = (message, type = 'info') => {
   border-color: #ff6b6b;
 }
 
-.primary-btn svg, .secondary-btn svg {
+.primary-btn svg,
+.secondary-btn svg {
   width: 16px;
   height: 16px;
   stroke: currentColor;
@@ -1167,12 +1272,12 @@ const showToast = (message, type = 'info') => {
 }
 
 .toast {
-  background: rgba(15,15,35,0.95);
+  background: rgba(15, 15, 35, 0.95);
   color: white;
   padding: 1rem 1.5rem;
   border-radius: 10px;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   animation: slideIn 0.3s ease;
 }
 
@@ -1189,6 +1294,7 @@ const showToast = (message, type = 'info') => {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -1249,7 +1355,8 @@ const showToast = (message, type = 'info') => {
     flex-direction: column;
   }
 
-  .primary-btn, .secondary-btn {
+  .primary-btn,
+  .secondary-btn {
     min-width: auto;
   }
 
@@ -1316,12 +1423,17 @@ const showToast = (message, type = 'info') => {
 
 /* Loading Animation */
 @keyframes shimmer {
-  0% { background-position: -200px 0; }
-  100% { background-position: calc(200px + 100%) 0; }
+  0% {
+    background-position: -200px 0;
+  }
+
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
 }
 
 .loading-shimmer {
-  background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.1) 75%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.1) 75%);
   background-size: 200px 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -1332,17 +1444,17 @@ const showToast = (message, type = 'info') => {
 }
 
 .modal-content::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
 }
 
 .modal-content::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 10px;
 }
 
 .modal-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.5);
+  background: rgba(255, 255, 255, 0.5);
 }
 
 /* Custom Focus Styles */
