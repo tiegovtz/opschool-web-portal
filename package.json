@@ -47,8 +47,7 @@
     "vue": "latest",
     "vue-pdf-embed": "^2.1.2",
     "vue-router": "latest",
-    "vuedraggable": "^2.24.3",
-    "vuetify": "^3.9.2"
+    "vuedraggable": "^2.24.3"
   },
   "devDependencies": {
     "@nuxt/devtools": "^2.1.3",

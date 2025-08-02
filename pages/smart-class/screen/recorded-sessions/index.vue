@@ -1,15 +1,15 @@
 <template>
 
 
-  <v-dialog v-model="dialog" max-width="800px" scrollable>
-    <v-container class="upload-container" fluid>
+  <!-- <v-dialog v-model="dialog" max-width="800px" scrollable> -->
+  <!-- <v-container class="upload-container" fluid>
       <v-row justify="center">
         <v-col cols="12" md="10" lg="8">
           <v-card class="upload-card" elevation="0">
             <v-card-text class="pa-8">
-              <v-form ref="uploadForm" v-model="formValid" lazy-validation>
-                <!-- Class Title -->
-                <v-text-field
+              <v-form ref="uploadForm" v-model="formValid" lazy-validation> -->
+  <!-- Class Title -->
+  <!-- <v-text-field
                     v-model="classData.title"
                     label="Class Title"
                     placeholder="Enter an engaging title for your class"
@@ -18,10 +18,10 @@
                     class="custom-input mb-6"
                     prepend-inner-icon="mdi-book-open-variant"
                     required
-                ></v-text-field>
+                ></v-text-field> -->
 
-                <!-- Instructor Name -->
-                <v-text-field
+  <!-- Instructor Name -->
+  <!-- <v-text-field
                     v-model="classData.instructor"
                     label="Instructor Name"
                     placeholder="Your name or instructor name"
@@ -30,10 +30,10 @@
                     class="custom-input mb-6"
                     prepend-inner-icon="mdi-account-tie"
                     required
-                ></v-text-field>
+                ></v-text-field> -->
 
-                <!-- Class Category -->
-                <v-select
+  <!-- Class Category -->
+  <!-- <v-select
                     v-model="classData.category"
                     :items="categories"
                     label="Class Category"
@@ -43,10 +43,10 @@
                     class="custom-select mb-6"
                     prepend-inner-icon="mdi-tag"
                     required
-                ></v-select>
+                ></v-select> -->
 
-                <!-- Class Duration -->
-                <v-select
+  <!-- Class Duration -->
+  <!-- <v-select
                     v-model="classData.duration"
                     :items="durations"
                     label="Class Duration"
@@ -56,10 +56,10 @@
                     class="custom-select mb-6"
                     prepend-inner-icon="mdi-clock-outline"
                     required
-                ></v-select>
+                ></v-select> -->
 
-                <!-- Class Description -->
-                <v-textarea
+  <!-- Class Description -->
+  <!-- <v-textarea
                     v-model="classData.description"
                     label="Class Description"
                     placeholder="Describe what students will learn in this class..."
@@ -69,10 +69,10 @@
                     prepend-inner-icon="mdi-text"
                     rows="4"
                     required
-                ></v-textarea>
+                ></v-textarea> -->
 
-                <!-- Video Upload Section -->
-                <div class="upload-section mb-6">
+  <!-- Video Upload Section -->
+  <!-- <div class="upload-section mb-6">
                   <h3 class="upload-section-title">
                     <v-icon class="mr-2">mdi-video</v-icon>
                     Class Video
@@ -89,8 +89,8 @@
                       prepend-inner-icon="mdi-cloud-upload"
                       show-size
                       @change="handleVideoUpload"
-                  >
-                    <template #selection="{ fileNames }">
+                  > -->
+  <!-- <template #selection="{ fileNames }">
                       <template v-for="fileName in fileNames" :key="fileName">
                         <v-chip
                             class="file-chip"
@@ -101,11 +101,11 @@
                           {{ fileName }}
                         </v-chip>
                       </template>
-                    </template>
-                  </v-file-input>
+</template>
+</v-file-input> -->
 
-                  <!-- Video Preview -->
-                  <div v-if="videoPreview" class="video-preview mt-4">
+  <!-- Video Preview -->
+  <!-- <div v-if="videoPreview" class="video-preview mt-4">
                     <video
                         :src="videoPreview"
                         controls
@@ -113,10 +113,10 @@
                         preload="metadata"
                     ></video>
                   </div>
-                </div>
+                </div> -->
 
-                <!-- Thumbnail Upload Section -->
-                <div class="upload-section mb-6">
+  <!-- Thumbnail Upload Section -->
+  <!-- <div class="upload-section mb-6">
                   <h3 class="upload-section-title">
                     <v-icon class="mr-2">mdi-image</v-icon>
                     Class Thumbnail
@@ -133,8 +133,8 @@
                       prepend-inner-icon="mdi-image-plus"
                       show-size
                       @change="handleThumbnailUpload"
-                  >
-                    <template #selection="{ fileNames }">
+                  > -->
+  <!-- <template #selection="{ fileNames }">
                       <template v-for="fileName in fileNames" :key="fileName">
                         <v-chip
                             class="file-chip"
@@ -146,30 +146,30 @@
                         </v-chip>
                       </template>
                     </template>
-                  </v-file-input>
+                  </v-file-input> -->
 
-                  <!-- Thumbnail Preview -->
-                  <div v-if="thumbnailPreview" class="thumbnail-preview mt-4">
+  <!-- Thumbnail Preview -->
+  <!-- <div v-if="thumbnailPreview" class="thumbnail-preview mt-4">
                     <img
                         :src="thumbnailPreview"
                         alt="Thumbnail preview"
                         class="preview-thumbnail"
                     />
                   </div>
-                </div>
+                </div> -->
 
-                <!-- Upload Progress -->
-                <v-progress-linear
+  <!-- Upload Progress -->
+  <!-- <v-progress-linear
                     v-if="uploading"
                     :model-value="uploadProgress"
                     color="primary"
                     height="8"
                     class="mb-6"
                     striped
-                ></v-progress-linear>
+                ></v-progress-linear> -->
 
-                <!-- Action Buttons -->
-                <div class="upload-actions">
+  <!-- Action Buttons -->
+  <!-- <div class="upload-actions">
                   <v-btn
                       variant="outlined"
                       size="large"
@@ -178,9 +178,9 @@
                   >
                     <v-icon start>mdi-refresh</v-icon>
                     Reset
-                  </v-btn>
+                  </v-btn> -->
 
-                  <v-btn
+  <!-- <v-btn
                       color="primary"
                       size="large"
                       class="primary-btn"
@@ -200,9 +200,9 @@
     </v-container>
 
 
-  </v-dialog>
+  </v-dialog> -->
   <!-- Success Snackbar -->
-  <v-snackbar
+  <!-- <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
       :timeout="4000"
@@ -213,7 +213,115 @@
       <v-icon class="mr-2">{{ snackbar.icon }}</v-icon>
       {{ snackbar.message }}
     </div>
-  </v-snackbar>
+  </v-snackbar> -->
+
+  <!-- Dialog Container -->
+  <div v-if="dialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 overflow-auto">
+    <div
+      class="bg-white rounded-lg shadow-lg w-full max-w-4xl p-6 bg-transparent backdrop-blur-md overflow-y-scroll scrollbar-none">
+
+      <form @submit.prevent="submitForm" ref="uploadForm" class="space-y-6">
+
+        <!-- Class Title -->
+        <div>
+          <label class="block text-sm font-medium text-white">Class Title</label>
+          <div class="relative mt-1">
+            <input v-model="classData.title" type="text" placeholder="Enter an engaging title for your class"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
+              required />
+          </div>
+        </div>
+
+        <!-- Instructor Name -->
+        <div>
+          <label class="block text-sm font-medium text-white">Instructor Name</label>
+          <div class="relative mt-1">
+            <input v-model="classData.instructor" type="text" placeholder="Your name or instructor name"
+              class="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent"
+              required />
+          </div>
+        </div>
+
+        <!-- Class Category -->
+        <div>
+          <label class="block text-sm font-medium text-white">Class Category</label>
+          <select v-model="classData.category"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 bg-transparent text-white" required>
+            <option disabled value="">Select a category</option>
+            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+          </select>
+        </div>
+
+        <!-- Class Duration -->
+        <div>
+          <label class="block text-sm font-medium text-white">Class Duration</label>
+          <select v-model="classData.duration"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 bg-transparent text-white" required>
+            <option disabled value="">Select duration</option>
+            <option v-for="dur in durations" :key="dur" :value="dur">{{ dur }}</option>
+          </select>
+        </div>
+
+        <!-- Class Description -->
+        <div>
+          <label class="block text-sm font-medium text-white">Class Description</label>
+          <textarea v-model="classData.description" rows="4"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-transparent text-white"
+            placeholder="Describe what students will learn..." required></textarea>
+        </div>
+
+        <!-- Video Upload -->
+        <div>
+          <label class="text-sm font-medium text-white flex items-center gap-2">
+            <i class="mdi mdi-video text-blue-500"></i> Class Video
+          </label>
+          <input type="file" @change="handleVideoUpload" accept="video/*"
+            class="w-full mt-2 border border-gray-300 rounded-md px-3 py-2 text-white" required />
+          <div v-if="videoPreview" class="mt-4">
+            <video :src="videoPreview" controls class="w-full rounded shadow"></video>
+          </div>
+        </div>
+
+        <!-- Thumbnail Upload -->
+        <div>
+          <label class="text-sm font-medium text-white flex items-center gap-2">
+            <i class="mdi mdi-image text-green-500"></i> Class Thumbnail
+          </label>
+          <input type="file" @change="handleThumbnailUpload" accept="image/*"
+            class="w-full mt-2 border border-gray-300 rounded-md px-3 py-2 tw" required />
+          <div v-if="thumbnailPreview" class="mt-4">
+            <img :src="thumbnailPreview" alt="Thumbnail preview" class="w-full rounded shadow" />
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div v-if="uploading" class="w-full bg-gray-200 rounded-full h-3">
+          <div class="bg-blue-600 h-3 rounded-full" :style="{ width: uploadProgress + '%' }"></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-4">
+          <button type="button" @click="resetForm"
+            class="border border-gray-400 text-white px-4 py-2 rounded hover:bg-gray-100">
+            <i class="mdi mdi-refresh mr-2"></i> Reset
+          </button>
+          <button type="submit" :disabled="!formValid || uploading"
+            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2">
+            <i class="mdi mdi-cloud-upload"></i>
+            {{ uploading ? 'Uploading...' : 'Upload Class' }}
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Snackbar -->
+  <div v-if="snackbar.show"
+    :class="['fixed top-4 right-4 px-4 py-3 rounded shadow text-white flex items-center gap-2', snackbar.color === 'success' ? 'bg-green-600' : 'bg-red-600']">
+    <i :class="['mdi', snackbar.icon]"></i> {{ snackbar.message }}
+  </div>
+
   <NuxtLayout name="home-layout">
 
     <div class="live-classes">
@@ -227,70 +335,55 @@
       </div>
 
       <!-- Filter Section -->
-      <div class="filters-section">
-        <v-container fluid class="filters-section pa-4" elevation="1">
-          <v-row>
-            <v-col cols="12" class="d-flex justify-end">
-                          <v-btn color="primary" prepend-icon="mdi-plus" @click="onCreate">
-                            Create
-                          </v-btn>
-            </v-col>
-          </v-row>
+      <div class="filters-section relative">
+        <!-- Create Button -->
+        <div v-if="userToken?.type.toLowerCase() === 'teacher'" class="flex justify-end mb-4 px-2">
+          <button @click="onCreate"
+            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2">
+            <i class="mdi mdi-plus"></i>
+            Create
+          </button>
+        </div>
 
-          <v-row dense align="center" class="pa-2">
-            <!-- Search Field -->
-            <v-col cols="12" sm="6" md="4" lg="3">
-              <v-text-field
-                  v-model="searchQuery"
-                  label="Search classes..."
-                  prepend-inner-icon="mdi-magnify"
-                  variant="outlined"
-                  dense
-                  clearable
-                  hide-details
-              />
-            </v-col>
+        <!-- Filter Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 px-2  max-w-screen-xl mx-auto">
+          <!-- Search Field -->
+          <div>
+            <label class="block text-sm font-medium text-white mb-1">Search classes...</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                <i class="mdi mdi-magnify"></i>
+              </span>
+              <input v-model="searchQuery" type="text" placeholder="Search..."
+                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" />
+            </div>
+          </div>
 
-            <!-- Category Dropdown 1 -->
-            <v-col cols="12" sm="6" md="4" lg="3">
-              <v-select
-                  v-model="selectedCategory"
-                  :items="['all', ...categories]"
-                  label="Category"
-                  variant="outlined"
-                  dense
-                  hide-details
-              />
-            </v-col>
+          <!-- Category Dropdown 1 -->
+          <div>
+            <label class="block text-sm font-medium text-white mb-1">Category</label>
+            <CustomDropDownList v-model="selectedCategory"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
+              :list="categories.map((c, i) => ({ id: i, name: c }))" />
+          </div>
 
-            <!-- Category Dropdown 2 -->
-            <v-col cols="12" sm="6" md="4" lg="3">
-              <v-select
-                  v-model="selectedCategory"
-                  :items="['all', ...categories]"
-                  label="Category"
-                  variant="outlined"
-                  dense
-                  hide-details
-              />
-            </v-col>
-          </v-row>
-
-        </v-container>
+          <!-- Category Dropdown 2 -->
+          <div>
+            <label class="block text-sm font-medium text-white mb-1">Category</label>
+            <CustomDropDownList v-model="selectedCategory"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
+              :list="categories.map((c, i) => ({ id: i, name: c }))" />
+          </div>
+        </div>
       </div>
-
 
       <!-- Classes Grid -->
       <div class="classes-container">
         <div class="classes-grid">
-          <div
-              v-for="classItem in filteredClasses"
-              :key="classItem.id"
-              class="class-card"
-              @click="selectClass(classItem)"
-          >
+          <div v-for="classItem in filteredClasses" :key="classItem.id" class="class-card"
+            @click="selectClass(classItem)">
             <div class="card-image">
-              <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop" :alt="classItem.title" />
+              <img :src="classItem.thumbnail" :alt="classItem.title" />
               <div class="card-overlay">
                 <div class="live-badge" v-if="classItem.isLive">
                   <span class="live-dot"></span>
@@ -301,16 +394,14 @@
               <div class="hover-actions">
                 <button class="action-btn play-btn">
                   <svg viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
+                    <path d="M8 5v14l11-7z" />
                   </svg>
                 </button>
-                <button
-                    class="action-btn subscribe-btn"
-                    @click.stop="toggleSubscription(classItem)"
-                    :class="{ subscribed: classItem.isSubscribed }"
-                >
+                <button class="action-btn subscribe-btn" @click.stop="toggleSubscription(classItem)"
+                  :class="{ subscribed: classItem.isSubscribed }">
                   <svg viewBox="0 0 24 24">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                    <path
+                      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
                 </button>
               </div>
@@ -325,12 +416,6 @@
               </div>
               <div class="class-stats">
                 <span class="viewers">{{ classItem.viewers }} viewers</span>
-                <span class="rating">
-                <svg class="star-icon" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
-                {{ classItem.rating }}
-              </span>
               </div>
             </div>
           </div>
@@ -342,7 +427,7 @@
         <div class="modal-content" @click.stop>
           <button class="close-btn" @click="closeModal">
             <svg viewBox="0 0 24 24">
-              <path d="M6 6l12 12M6 18L18 6"/>
+              <path d="M6 6l12 12M6 18L18 6" />
             </svg>
           </button>
 
@@ -360,24 +445,22 @@
           </div>
 
           <div class="modal-description">
-            <p>{{ selectedClassItem.description }}</p>  <br>
+            <p>{{ selectedClassItem.description }}</p> <br>
             <p>{{ selectedClassItem.details }}</p>
           </div>
 
           <div class="modal-actions">
             <button class="primary-btn" @click="joinClass(selectedClassItem)">
               <svg viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
+                <path d="M8 5v14l11-7z" />
               </svg>
               Join Class
             </button>
-            <button
-                class="secondary-btn"
-                @click="toggleSubscription(selectedClassItem)"
-                :class="{ subscribed: selectedClassItem.isSubscribed }"
-            >
+            <button class="secondary-btn" @click="toggleSubscription(selectedClassItem)"
+              :class="{ subscribed: selectedClassItem.isSubscribed }">
               <svg viewBox="0 0 24 24">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
               {{ selectedClassItem.isSubscribed ? 'Subscribed' : 'Subscribe' }}
             </button>
@@ -387,12 +470,7 @@
 
       <!-- Toast Notifications -->
       <div class="toast-container">
-        <div
-            v-for="toast in toasts"
-            :key="toast.id"
-            class="toast"
-            :class="toast.type"
-        >
+        <div v-for="toast in toasts" :key="toast.id" class="toast" :class="toast.type">
           {{ toast.message }}
         </div>
       </div>
@@ -402,12 +480,13 @@
 </template>
 
 <script setup>
-import {ref, reactive, computed, onMounted} from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from "axios";
-import {useSessionsSetup} from "../../../../composable/usesSessions.js";
+import { useSessionsSetup } from "../../../../composable/usesSessions.js";
 
 const router = useRouter();
+const userToken = useCookie("signInUserToken");
 
 function getDuration(start, end) {
   if (!start || !end) return 'Unknown duration';
@@ -624,10 +703,10 @@ const mapSessionToClass = (session) => ({
 const loadClasses = async () => {
   loading.value = true;
   try {
-    const tokenRes = await axios.post('/api/auth/token/', {
-      username: 'Nick',
-      password: 1234
-    });
+    // const tokenRes = await axios.post('/api/auth/token/', {
+    //   username: 'Nick',
+    //   password: 1234
+    // });
     const { access } = tokenRes.data;
 
     const sessions = await getData(access);
@@ -688,10 +767,10 @@ const subjects = ref([
 const classes = ref([
   {
     id: 1,
-    title: 'Advanced Vue.js Masterclass',
-    instructor: 'Sarah Chen',
-    category: 'Programming',
-    thumbnail: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop',
+    title: 'Numbers',
+    instructor: 'TET Studio',
+    category: 'Form 1',
+    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1745417330621-661767195.jpg',
     scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     duration: '2h 30m',
     viewers: 1247,
@@ -702,10 +781,10 @@ const classes = ref([
   },
   {
     id: 2,
-    title: 'UI/UX Design Principles',
-    instructor: 'Marcus Rodriguez',
-    category: 'Design',
-    thumbnail: 'https://images.unsplash.com/photo-1558655146-d09347e92766?w=400&h=225&fit=crop',
+    title: 'Introduction to Biology',
+    instructor: 'TET Studio',
+    category: 'Form 1',
+    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1745820321892-41054422.webp',
     scheduledTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
     duration: '1h 45m',
     viewers: 892,
@@ -716,10 +795,10 @@ const classes = ref([
   },
   {
     id: 3,
-    title: 'Digital Marketing Strategy',
-    instructor: 'Emma Watson',
-    category: 'Marketing',
-    thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=225&fit=crop',
+    title: 'Force energy and work',
+    instructor: 'TET Studio',
+    category: 'Form 1',
+    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1742375348123-474943153.webp',
     scheduledTime: new Date(Date.now() + 6 * 60 * 60 * 1000),
     duration: '2h 15m',
     viewers: 634,
@@ -727,53 +806,11 @@ const classes = ref([
     isLive: false,
     isSubscribed: false,
     description: 'Comprehensive guide to digital marketing strategies including social media, content marketing, and analytics.'
-  },
-  {
-    id: 4,
-    title: 'Photography Composition',
-    instructor: 'David Kim',
-    category: 'Photography',
-    thumbnail: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&h=225&fit=crop',
-    scheduledTime: new Date(Date.now() + 8 * 60 * 60 * 1000),
-    duration: '1h 30m',
-    viewers: 445,
-    rating: 4.6,
-    isLive: false,
-    isSubscribed: false,
-    description: 'Master the art of photography composition with rules of thirds, leading lines, and creative framing techniques.'
-  },
-  {
-    id: 5,
-    title: 'Business Analytics',
-    instructor: 'Jennifer Lee',
-    category: 'Business',
-    thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=225&fit=crop',
-    scheduledTime: new Date(Date.now() + 10 * 60 * 60 * 1000),
-    duration: '3h 00m',
-    viewers: 723,
-    rating: 4.9,
-    isLive: false,
-    isSubscribed: true,
-    description: 'Learn how to analyze business data, create meaningful insights, and make data-driven decisions for your organization.'
-  },
-  {
-    id: 6,
-    title: 'React Native Development',
-    instructor: 'Alex Thompson',
-    category: 'Programming',
-    thumbnail: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=225&fit=crop',
-    scheduledTime: new Date(Date.now() + 12 * 60 * 60 * 1000),
-    duration: '2h 45m',
-    viewers: 956,
-    rating: 4.8,
-    isLive: true,
-    isSubscribed: false,
-    description: 'Build cross-platform mobile applications using React Native with hands-on examples and best practices.'
   }
 ]);
 
 // Import your composable
-const { postData, loading, error ,getData} = useSessionsSetup();
+const { postData, loading, error, getData } = useSessionsSetup();
 // Show toast function (replace with your UI lib's toast/snackbar)
 
 
@@ -789,9 +826,9 @@ const filteredClasses = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(cls =>
-        cls.title.toLowerCase().includes(query) ||
-        cls.instructor.toLowerCase().includes(query) ||
-        cls.category.toLowerCase().includes(query)
+      cls.title.toLowerCase().includes(query) ||
+      cls.instructor.toLowerCase().includes(query) ||
+      cls.category.toLowerCase().includes(query)
     );
   }
 
@@ -839,7 +876,7 @@ const submit = async () => {
       console.log("adceds" + access);
 
       // Call API
-      await postData(payload,access);
+      await postData(payload, access);
 
       showToast('Session created successfully!', 'success');
       // dialog.value = false;
@@ -891,8 +928,8 @@ const closeModal = () => {
 const toggleSubscription = (classItem) => {
   classItem.isSubscribed = !classItem.isSubscribed;
   showToast(
-      classItem.isSubscribed ? 'Subscribed successfully!' : 'Unsubscribed',
-      classItem.isSubscribed ? 'success' : 'info'
+    classItem.isSubscribed ? 'Subscribed successfully!' : 'Unsubscribed',
+    classItem.isSubscribed ? 'success' : 'info'
   );
 };
 
@@ -902,7 +939,7 @@ const toggleSubscription = (classItem) => {
 
 const joinClass = (selectedClassItem) => {
   localStorage.setItem('classData', JSON.stringify(selectedClassItem));
-  router.push({ path: '/main/live-view' });
+  router.push({ path: '/smart-class/screen/live-view' });
 };
 
 
@@ -959,7 +996,7 @@ const showToast = (message, type = 'info') => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&h=600&fit=crop') center/cover;
+  background: url('../../../../public/images/background3.webp') center/cover;
   opacity: 0.3;
   z-index: 1;
 }
@@ -974,7 +1011,7 @@ const showToast = (message, type = 'info') => {
   font-size: 4rem;
   font-weight: 800;
   margin: 0 0 1rem 0;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   background: linear-gradient(45deg, #ff6b6b, #ffd93d, #6bcf7f, #4ecdc4);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -983,15 +1020,22 @@ const showToast = (message, type = 'info') => {
 }
 
 @keyframes gradient-shift {
-  0%, 100% { filter: hue-rotate(0deg); }
-  50% { filter: hue-rotate(180deg); }
+
+  0%,
+  100% {
+    filter: hue-rotate(0deg);
+  }
+
+  50% {
+    filter: hue-rotate(180deg);
+  }
 }
 
 .subtitle {
   font-size: 1.5rem;
   opacity: 0.9;
   margin: 0;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .header-gradient {
@@ -1007,9 +1051,9 @@ const showToast = (message, type = 'info') => {
 /* Filter Styles */
 .filters-section {
   padding: 2rem 0;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .filters-container {
@@ -1031,7 +1075,7 @@ const showToast = (message, type = 'info') => {
   transform: translateY(-50%);
   width: 20px;
   height: 20px;
-  stroke: rgba(255,255,255,0.5);
+  stroke: rgba(255, 255, 255, 0.5);
   stroke-width: 2;
   fill: none;
   z-index: 1;
@@ -1040,8 +1084,8 @@ const showToast = (message, type = 'info') => {
 .search-input {
   width: 100%;
   padding: 1rem 1rem 1rem 3rem;
-  background: rgba(255,255,255,0.1);
-  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 50px;
   color: white;
   font-size: 1rem;
@@ -1052,12 +1096,12 @@ const showToast = (message, type = 'info') => {
 .search-input:focus {
   outline: none;
   border-color: #667eea;
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
   box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
 }
 
 .search-input::placeholder {
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .filter-chips {
@@ -1069,8 +1113,8 @@ const showToast = (message, type = 'info') => {
 
 .filter-chip {
   padding: 0.75rem 1.5rem;
-  background: rgba(255,255,255,0.1);
-  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 30px;
   color: white;
   font-size: 0.9rem;
@@ -1080,7 +1124,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .filter-chip:hover {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
 }
 
@@ -1104,19 +1148,19 @@ const showToast = (message, type = 'info') => {
 }
 
 .class-card {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .class-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-  background: rgba(255,255,255,0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .card-image {
@@ -1168,12 +1212,19 @@ const showToast = (message, type = 'info') => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .duration-badge {
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.75rem;
@@ -1208,7 +1259,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .play-btn {
-  background: rgba(255,255,255,0.9);
+  background: rgba(255, 255, 255, 0.9);
   color: #333;
 }
 
@@ -1218,12 +1269,12 @@ const showToast = (message, type = 'info') => {
 }
 
 .subscribe-btn {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   color: white;
 }
 
 .subscribe-btn:hover {
-  background: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.3);
   transform: scale(1.1);
 }
 
@@ -1256,7 +1307,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .class-instructor {
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.7);
   margin: 0 0 1rem 0;
   font-size: 0.9rem;
 }
@@ -1276,7 +1327,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .class-time {
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
 }
 
@@ -1284,7 +1335,7 @@ const showToast = (message, type = 'info') => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.85rem;
 }
 
@@ -1308,7 +1359,7 @@ const showToast = (message, type = 'info') => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1318,7 +1369,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .modal-content {
-  background: rgba(15,15,35,0.95);
+  background: rgba(15, 15, 35, 0.95);
   border-radius: 20px;
   padding: 2rem;
   max-width: 600px;
@@ -1327,7 +1378,7 @@ const showToast = (message, type = 'info') => {
   overflow-y: auto;
   position: relative;
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .close-btn {
@@ -1348,7 +1399,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .close-btn:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .close-btn svg {
@@ -1377,7 +1428,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .modal-instructor {
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.7);
   margin: 0 0 1rem 0;
 }
 
@@ -1394,15 +1445,16 @@ const showToast = (message, type = 'info') => {
   font-size: 0.8rem;
 }
 
-.modal-time, .modal-duration {
-  color: rgba(255,255,255,0.6);
+.modal-time,
+.modal-duration {
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
 }
 
 .modal-description {
   margin-bottom: 2rem;
   line-height: 1.6;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .modal-actions {
@@ -1411,7 +1463,8 @@ const showToast = (message, type = 'info') => {
   flex-wrap: wrap;
 }
 
-.primary-btn, .secondary-btn {
+.primary-btn,
+.secondary-btn {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 30px;
@@ -1438,13 +1491,13 @@ const showToast = (message, type = 'info') => {
 }
 
 .secondary-btn {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   color: white;
-  border: 2px solid rgba(255,255,255,0.2);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .secondary-btn:hover {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
 }
 
@@ -1453,7 +1506,8 @@ const showToast = (message, type = 'info') => {
   border-color: #ff6b6b;
 }
 
-.primary-btn svg, .secondary-btn svg {
+.primary-btn svg,
+.secondary-btn svg {
   width: 16px;
   height: 16px;
   stroke: currentColor;
@@ -1477,12 +1531,12 @@ const showToast = (message, type = 'info') => {
 }
 
 .toast {
-  background: rgba(15,15,35,0.95);
+  background: rgba(15, 15, 35, 0.95);
   color: white;
   padding: 1rem 1.5rem;
   border-radius: 10px;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   animation: slideIn 0.3s ease;
 }
 
@@ -1499,6 +1553,7 @@ const showToast = (message, type = 'info') => {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -1559,7 +1614,8 @@ const showToast = (message, type = 'info') => {
     flex-direction: column;
   }
 
-  .primary-btn, .secondary-btn {
+  .primary-btn,
+  .secondary-btn {
     min-width: auto;
   }
 
@@ -1626,12 +1682,17 @@ const showToast = (message, type = 'info') => {
 
 /* Loading Animation */
 @keyframes shimmer {
-  0% { background-position: -200px 0; }
-  100% { background-position: calc(200px + 100%) 0; }
+  0% {
+    background-position: -200px 0;
+  }
+
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
 }
 
 .loading-shimmer {
-  background: linear-gradient(90deg, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0.1) 75%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1) 25%, rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.1) 75%);
   background-size: 200px 100%;
   animation: shimmer 1.5s infinite;
 }
@@ -1642,17 +1703,17 @@ const showToast = (message, type = 'info') => {
 }
 
 .modal-content::-webkit-scrollbar-track {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
 }
 
 .modal-content::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.3);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 10px;
 }
 
 .modal-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.5);
+  background: rgba(255, 255, 255, 0.5);
 }
 
 /* Custom Focus Styles */
@@ -1713,18 +1774,6 @@ const showToast = (message, type = 'info') => {
   overflow: hidden;
 }
 
-.header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=600&fit=crop') center/cover;
-  opacity: 0.3;
-  z-index: 1;
-}
-
 .header-content {
   text-align: center;
   z-index: 2;
@@ -1735,7 +1784,7 @@ const showToast = (message, type = 'info') => {
   font-size: 3.5rem;
   font-weight: 800;
   margin: 0 0 1rem 0;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   background: linear-gradient(45deg, #ff6b6b, #ffd93d, #6bcf7f, #4ecdc4);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1744,15 +1793,22 @@ const showToast = (message, type = 'info') => {
 }
 
 @keyframes gradient-shift {
-  0%, 100% { filter: hue-rotate(0deg); }
-  50% { filter: hue-rotate(180deg); }
+
+  0%,
+  100% {
+    filter: hue-rotate(0deg);
+  }
+
+  50% {
+    filter: hue-rotate(180deg);
+  }
 }
 
 .subtitle {
   font-size: 1.3rem;
   opacity: 0.9;
   margin: 0;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
   color: white;
 }
 
@@ -1774,29 +1830,29 @@ const showToast = (message, type = 'info') => {
 }
 
 .upload-card {
-  background: rgba(255,255,255,0.05) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 24px !important;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Custom Input Styles */
 :deep(.custom-input .v-field) {
-  background: rgba(255,255,255,0.08) !important;
-  border: 2px solid rgba(255,255,255,0.15) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 2px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 16px !important;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
 
 :deep(.custom-input .v-field:hover) {
-  background: rgba(255,255,255,0.12) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
   border-color: rgba(102, 126, 234, 0.5) !important;
 }
 
 :deep(.custom-input .v-field--focused) {
-  background: rgba(255,255,255,0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
   border-color: #667eea !important;
   box-shadow: 0 0 20px rgba(102, 126, 234, 0.3) !important;
 }
@@ -1807,30 +1863,30 @@ const showToast = (message, type = 'info') => {
 }
 
 :deep(.custom-input .v-label) {
-  color: rgba(255,255,255,0.7) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   font-weight: 500;
 }
 
 :deep(.custom-input .v-field__prepend-inner .v-icon) {
-  color: rgba(255,255,255,0.6) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 /* Custom Select Styles */
 :deep(.custom-select .v-field) {
-  background: rgba(255,255,255,0.08) !important;
-  border: 2px solid rgba(255,255,255,0.15) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 2px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 16px !important;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
 
 :deep(.custom-select .v-field:hover) {
-  background: rgba(255,255,255,0.12) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
   border-color: rgba(102, 126, 234, 0.5) !important;
 }
 
 :deep(.custom-select .v-field--focused) {
-  background: rgba(255,255,255,0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
   border-color: #667eea !important;
   box-shadow: 0 0 20px rgba(102, 126, 234, 0.3) !important;
 }
@@ -1840,30 +1896,30 @@ const showToast = (message, type = 'info') => {
 }
 
 :deep(.custom-select .v-label) {
-  color: rgba(255,255,255,0.7) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   font-weight: 500;
 }
 
 :deep(.custom-select .v-field__prepend-inner .v-icon) {
-  color: rgba(255,255,255,0.6) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 /* Custom Textarea Styles */
 :deep(.custom-textarea .v-field) {
-  background: rgba(255,255,255,0.08) !important;
-  border: 2px solid rgba(255,255,255,0.15) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 2px solid rgba(255, 255, 255, 0.15) !important;
   border-radius: 16px !important;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
 
 :deep(.custom-textarea .v-field:hover) {
-  background: rgba(255,255,255,0.12) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
   border-color: rgba(102, 126, 234, 0.5) !important;
 }
 
 :deep(.custom-textarea .v-field--focused) {
-  background: rgba(255,255,255,0.15) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
   border-color: #667eea !important;
   box-shadow: 0 0 20px rgba(102, 126, 234, 0.3) !important;
 }
@@ -1873,18 +1929,18 @@ const showToast = (message, type = 'info') => {
 }
 
 :deep(.custom-textarea .v-label) {
-  color: rgba(255,255,255,0.7) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   font-weight: 500;
 }
 
 :deep(.custom-textarea .v-field__prepend-inner .v-icon) {
-  color: rgba(255,255,255,0.6) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 /* File Input Styles */
 :deep(.custom-file-input .v-field) {
-  background: rgba(255,255,255,0.08) !important;
-  border: 2px dashed rgba(255,255,255,0.3) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 2px dashed rgba(255, 255, 255, 0.3) !important;
   border-radius: 16px !important;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
@@ -1892,7 +1948,7 @@ const showToast = (message, type = 'info') => {
 }
 
 :deep(.custom-file-input .v-field:hover) {
-  background: rgba(255,255,255,0.12) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
   border-color: rgba(102, 126, 234, 0.6) !important;
   transform: translateY(-2px);
 }
@@ -1903,21 +1959,21 @@ const showToast = (message, type = 'info') => {
 }
 
 :deep(.custom-file-input .v-label) {
-  color: rgba(255,255,255,0.7) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   font-weight: 500;
 }
 
 :deep(.custom-file-input .v-field__prepend-inner .v-icon) {
-  color: rgba(255,255,255,0.6) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
   font-size: 1.5rem;
 }
 
 /* Upload Section Styles */
 .upload-section {
   padding: 2rem;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
 }
 
@@ -1947,32 +2003,32 @@ const showToast = (message, type = 'info') => {
   display: flex;
   justify-content: center;
   padding: 1rem;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .preview-video {
   max-width: 100%;
   max-height: 300px;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .thumbnail-preview {
   display: flex;
   justify-content: center;
   padding: 1rem;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 16px;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .preview-thumbnail {
   max-width: 300px;
   max-height: 200px;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   object-fit: cover;
 }
 
@@ -2002,9 +2058,9 @@ const showToast = (message, type = 'info') => {
 }
 
 :deep(.secondary-btn.v-btn) {
-  background: rgba(255,255,255,0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
   color: white !important;
-  border: 2px solid rgba(255,255,255,0.3) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
   border-radius: 30px !important;
   padding: 0 2rem !important;
   font-weight: 600;
@@ -2014,15 +2070,15 @@ const showToast = (message, type = 'info') => {
 }
 
 :deep(.secondary-btn.v-btn:hover) {
-  background: rgba(255,255,255,0.2) !important;
-  border-color: rgba(255,255,255,0.5) !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
   transform: translateY(-2px);
 }
 
 /* Progress Bar Styles */
 :deep(.v-progress-linear) {
   border-radius: 10px !important;
-  background: rgba(255,255,255,0.1) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 :deep(.v-progress-linear__determinate) {
@@ -2037,9 +2093,9 @@ const showToast = (message, type = 'info') => {
 
 /* Dropdown Menu Styles */
 :deep(.v-overlay__content .v-list) {
-  background: rgba(15,15,35,0.95) !important;
+  background: rgba(15, 15, 35, 0.95) !important;
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px !important;
 }
 
@@ -2058,11 +2114,11 @@ const showToast = (message, type = 'info') => {
 
 /* Snackbar Styles */
 :deep(.v-snackbar .v-snackbar__wrapper) {
-  background: rgba(15,15,35,0.95) !important;
+  background: rgba(15, 15, 35, 0.95) !important;
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px !important;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
 }
 
 :deep(.v-snackbar .v-snackbar__content) {
@@ -2108,5 +2164,6 @@ const showToast = (message, type = 'info') => {
 
   .header {
     height: 35vh;
-  }}
+  }
+}
 </style>

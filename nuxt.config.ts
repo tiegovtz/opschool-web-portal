@@ -3,11 +3,11 @@ import { vite as vidstack } from 'vidstack/plugins';
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
-  devtools: { enabled: false },
+  devtools: { enabled: true },
   debug: false,
 
   // Add Vuetify styles here along with your existing CSS
-  css: ["vuetify/styles", "~/assets/css/main.css"],
+  css: ["~/assets/css/main.css"],
 
   postcss: {
     plugins: {
@@ -66,7 +66,7 @@ export default defineNuxtConfig({
     css: {
       preprocessorOptions: {
         sass: {
-          additionalData: '@use "vuetify/styles" as *;',
+          // additionalData: '@use "vuetify/styles" as *;',
         },
       },
     },
