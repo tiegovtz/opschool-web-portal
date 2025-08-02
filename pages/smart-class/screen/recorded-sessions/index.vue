@@ -1,6 +1,526 @@
+<script setup>
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from "axios";
+import { useSessionsSetup } from "../../../../composable/usesSessions.js";
+import apiDocs from '~/utilities/api-docs.js';
+import { filterContentBySearch } from '~/utilities/filterJson.js';
+
+const router = useRouter();
+const userToken = useCookie("signInUserToken");
+
+const token = useCookie('signInAccessToken').value;
+const headers = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${token}`,
+};
+
+function getDuration(start, end) {
+  if (!start || !end) return 'Unknown duration';
+
+  const startDate = new Date(`1970-01-01T${start}`);  // Assuming time strings only
+  const endDate = new Date(`1970-01-01T${end}`);
+  if (isNaN(startDate) || isNaN(endDate)) return 'Unknown duration';
+
+  let diffMs = endDate - startDate;
+  if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;  // handle overnight sessions
+
+  const diffMins = Math.floor(diffMs / 60000);
+  const hours = Math.floor(diffMins / 60);
+  const minutes = diffMins % 60;
+
+  return `${hours > 0 ? hours + 'h ' : ''}${minutes}m`;
+}
+
+
+// Form validation
+const formValid = ref(false)
+const uploadForm = ref(null)
+
+// Form data
+const classData = reactive({
+  title: '',
+  instructor: '',
+  category: '',
+  duration: '',
+  description: '',
+  video: [],
+  thumbnail: []
+})
+
+// Upload states
+const uploading = ref(false)
+const uploadProgress = ref(0)
+const videoPreview = ref(null)
+const thumbnailPreview = ref(null)
+
+// Snackbar
+const snackbar = reactive({
+  show: false,
+  message: '',
+  color: 'success',
+  icon: 'mdi-check-circle'
+})
+
+// Form options
+const categories = [
+  'Fitness & Wellness',
+  'Technology',
+  'Business',
+  'Arts & Design',
+  'Music',
+  'Language Learning',
+  'Cooking',
+  'Photography',
+  'Marketing',
+  'Personal Development'
+]
+
+const durations = [
+  '15 minutes',
+  '30 minutes',
+  '45 minutes',
+  '1 hour',
+  '1.5 hours',
+  '2 hours',
+  '2+ hours'
+]
+
+// Validation rules
+const titleRules = [
+  v => !!v || 'Class title is required',
+  v => (v && v.length >= 5) || 'Title must be at least 5 characters long',
+  v => (v && v.length <= 100) || 'Title must be less than 100 characters'
+]
+
+const instructorRules = [
+  v => !!v || 'Instructor name is required',
+  v => (v && v.length >= 2) || 'Name must be at least 2 characters long'
+]
+
+const categoryRules = [
+  v => !!v || 'Please select a category'
+]
+
+const durationRules = [
+  v => !!v || 'Please select duration'
+]
+
+const descriptionRules = [
+  v => !!v || 'Description is required',
+  v => (v && v.length >= 20) || 'Description must be at least 20 characters long',
+  v => (v && v.length <= 1000) || 'Description must be less than 1000 characters'
+]
+
+const videoRules = [
+  v => !!(v && v.length > 0) || 'Video file is required',
+  v => {
+    if (!v || v.length === 0) return true
+    const file = v[0]
+    return file.size < 500000000 || 'Video file must be less than 500MB'
+  }
+]
+
+const thumbnailRules = [
+  v => !!(v && v.length > 0) || 'Thumbnail image is required',
+  v => {
+    if (!v || v.length === 0) return true
+    const file = v[0]
+    return file.size < 5000000 || 'Image file must be less than 5MB'
+  }
+]
+
+// File upload handlers
+const handleVideoUpload = (event) => {
+  const files = event.target.files || event
+  if (files && files.length > 0) {
+    const file = files[0]
+    videoPreview.value = URL.createObjectURL(file)
+  }
+}
+
+const handleThumbnailUpload = (event) => {
+  const files = event.target.files || event
+  if (files && files.length > 0) {
+    const file = files[0]
+    thumbnailPreview.value = URL.createObjectURL(file)
+  }
+}
+
+// Form submission
+const submitForm = async () => {
+  if (!uploadForm.value) return
+
+  const { valid } = await uploadForm.value.validate()
+  if (!valid) return
+
+  uploading.value = true
+  uploadProgress.value = 0
+
+  try {
+    // Simulate upload progress
+    const interval = setInterval(() => {
+      uploadProgress.value += Math.random() * 10
+      if (uploadProgress.value >= 100) {
+        clearInterval(interval)
+        uploadProgress.value = 100
+
+        setTimeout(() => {
+          uploading.value = false
+          showSnackbar('Class uploaded successfully!', 'success', 'mdi-check-circle')
+          resetForm()
+        }, 500)
+      }
+    }, 200)
+
+    // Here you would implement actual upload logic
+    console.log('Uploading class data:', classData)
+
+  } catch (error) {
+    uploading.value = false
+    showSnackbar('Upload failed. Please try again.', 'error', 'mdi-alert-circle')
+    console.error('Upload error:', error)
+  }
+}
+
+// Reset form
+const resetForm = () => {
+  if (uploadForm.value) {
+    uploadForm.value.reset()
+  }
+
+  Object.assign(classData, {
+    title: '',
+    instructor: '',
+    category: '',
+    duration: '',
+    description: '',
+    video: [],
+    thumbnail: []
+  })
+
+  videoPreview.value = null
+  thumbnailPreview.value = null
+  uploadProgress.value = 0
+}
+
+// Show snackbar
+const showSnackbar = (message, color = 'success', icon = 'mdi-check-circle') => {
+  snackbar.message = message
+  snackbar.color = color
+  snackbar.icon = icon
+  snackbar.show = true
+}
+const mapSessionToClass = (session) => ({
+  id: session.id,
+  title: session.topic || 'Untitled Session',
+  meet_link: session.meet_link || 'https://tv.somakwanza.tz',
+  instructor: session.teacher ? `Instructor ${session.teacher}` : 'Unknown Instructor',
+  category: session.subject ? `${session.subject.name}` : 'General',
+  thumbnail: 'https://via.placeholder.com/400x225.png?text=Class+Thumbnail',
+  scheduledTime: session.start_time ? new Date(session.created_at) : null, // or session.start_time if valid ISO
+  duration: getDuration(session.start_time, session.end_time),
+  viewers: Math.floor(Math.random() * 1000),
+  rating: (Math.random() * 2 + 3).toFixed(1),
+  isLive: session.session_start || false,
+  isSubscribed: false,
+  description: `Room: ${session.room_name || 'N/A'}${session.meet_link ? ', Meet Link available' : ''}`
+});
+
+const loadClasses = async () => {
+  loading.value = true;
+  try {
+    // const tokenRes = await axios.post('/api/auth/token/', {
+    //   username: 'Nick',
+    //   password: 1234
+    // });
+    const { access } = tokenRes.data;
+
+    const sessions = await getData(access);
+    if (Array.isArray(sessions)) {
+      classes.value = sessions.map(mapSessionToClass);
+    } else {
+      console.error('Expected array of sessions but got:', sessions);
+      classes.value = [];
+    }
+  } catch (error) {
+    console.error('Error fetching sessions:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+  loadClasses();
+});
+
+// Refs and reactive state
+const searchQuery = ref('');
+const selectedCategory = ref(null);
+const selectedSubject = ref(null);
+const selectedClassItem = ref(null);
+const dialog = ref(false);
+const toasts = ref([]);
+const school_classes = ref([]);
+const isValid = ref(false);
+
+// Form state
+const formData = reactive({
+  school_class: null,
+  subject: null,
+  school_registration_number: '',
+  start_time: '',
+  end_time: '',
+  topic: '',
+  details: '',
+  room_name: '',
+  meet_link: '',
+  session_start: false,
+  session_end: false
+});
+
+// Sample data
+const schoolClasses = ref([
+  { id: 1, name: 'Class 1' },
+  { id: 2, name: 'Class 2' }
+]);
+
+const subjects = ref([
+  { id: 1, name: 'Mathematics' },
+  { id: 2, name: 'Science' }
+]);
+
+// const categories = ref(['Programming', 'Design', 'Business', 'Marketing', 'Photography']);
+
+const classes = ref([
+  {
+    id: 1,
+    title: 'Numbers',
+    instructor: 'TET Studio',
+    category: 'Form 1',
+    subject: 'Mathematics',
+    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1745417330621-661767195.jpg',
+    scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
+    duration: '2h 30m',
+    viewers: 1247,
+    rating: 4.9,
+    isLive: true,
+    isSubscribed: false,
+    description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
+  },
+  {
+    id: 2,
+    title: 'Introduction to Biology',
+    instructor: 'TET Studio',
+    category: 'Form 1',
+    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1745820321892-41054422.webp',
+    scheduledTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
+    duration: '1h 45m',
+    viewers: 892,
+    subject: 'Biology',
+    rating: 4.8,
+    isLive: false,
+    isSubscribed: true,
+    description: 'Learn the fundamental principles of user interface and user experience design with practical examples and case studies.'
+  },
+  {
+    id: 3,
+    title: 'Force energy and work',
+    instructor: 'TET Studio',
+    category: 'Form 1',
+    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1742375348123-474943153.webp',
+    scheduledTime: new Date(Date.now() + 6 * 60 * 60 * 1000),
+    duration: '2h 15m',
+    viewers: 634,
+    rating: 4.7,
+    subject: 'Physics',
+    isLive: false,
+    isSubscribed: false,
+    description: 'Comprehensive guide to digital marketing strategies including social media, content marketing, and analytics.'
+  }
+]);
+
+// Import your composable
+const { postData, loading, error, getData } = useSessionsSetup();
+// Show toast function (replace with your UI lib's toast/snackbar)
+
+
+
+// Computed
+
+
+// Validation rules
+const required = v => !!v || 'This field is required';
+const minLength = min => v => (v && v.length >= min) || `Min ${min} characters`;
+
+// Form submit
+// Submit handler
+const submit = async () => {
+  console.log("Sdsfe");
+  // if (!isValid.value) {
+  //   showToast('Please fill the form correctly.', 'error');
+  //   return;
+  // }
+
+  try {
+    // const payload = {
+    //   // Build your payload matching API expected fields
+    //   school_class: formData.value.school_class,
+    //   subject: formData.value.subject,
+    //   school_registration_number: formData.value.school_registration_number,
+    //   start_time: formData.value.start_time,
+    //   end_time: formData.value.end_time,
+    //   topic: formData.value.topic,
+    //   room_name: formData.value.room_name,
+    //   meet_link: formData.value.meet_link,
+    //   session_start: formData.value.session_start,
+    //   session_end: formData.value.session_end,
+    // };
+    const payload = JSON.parse(JSON.stringify(formData)); // deep clone, usually unnecessary here
+
+
+    try {
+      const response = await axios.post('/api/auth/token/', {
+        username: 'Nick',
+        password: 1234
+      });
+
+
+      const { access } = response.data;
+      console.log("adceds" + access);
+
+      // Call API
+      await postData(payload, access);
+
+      showToast('Session created successfully!', 'success');
+      // dialog.value = false;
+
+      // Reset form
+      Object.assign(formData.value, {
+        school_class: null,
+        subject: null,
+        school_registration_number: '',
+        start_time: '',
+        end_time: '',
+        details: '',
+        topic: '',
+        room_name: '',
+        meet_link: '',
+        session_start: false,
+        session_end: false,
+      });
+
+
+      if (response.data) {
+
+
+      }
+    } catch (error) {
+      // Handle error and show failure message
+      // alertType.value = 'error';
+      // alertMessage.value = error.response.data.message || 'Login failed. Please try again.';
+    }
+
+
+    loadClasses();
+
+    dialog.value = false;
+  } catch (err) {
+    showToast(error.value || 'Failed to create session.', 'error');
+  }
+};
+
+
+const selectClass = (classItem) => {
+  selectedClassItem.value = classItem;
+};
+
+const closeModal = () => {
+  selectedClassItem.value = null;
+};
+
+const toggleSubscription = (classItem) => {
+  classItem.isSubscribed = !classItem.isSubscribed;
+  showToast(
+    classItem.isSubscribed ? 'Subscribed successfully!' : 'Unsubscribed',
+    classItem.isSubscribed ? 'success' : 'info'
+  );
+};
+
+// const joinClass = (selectedClassItem) => {
+//   router.push({ path: '/main/live-view' });
+// };
+
+const joinClass = (selectedClassItem) => {
+  localStorage.setItem('classData', JSON.stringify(selectedClassItem));
+  router.push({ path: '/smart-class/screen/live-view' });
+};
+
+
+
+const onCreate = () => {
+  console.log("Sdefdsdf");
+  dialog.value = true;
+};
+
+const formatTime = (date) => {
+  if (!date) return 'N/A';  // or '' or '--:--', whatever you prefer as fallback
+  const d = new Date(date);
+  if (isNaN(d)) return 'Invalid Date';  // in case date is malformed
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+const showToast = (message, type = 'info') => {
+  const toast = { id: Date.now(), message, type };
+  toasts.value.push(toast);
+  setTimeout(() => {
+    toasts.value = toasts.value.filter(t => t.id !== toast.id);
+  }, 3000);
+};
+
+
+const { data: classLevels, status: clsStatus } = useAsyncData('class-levels', () => $fetch(apiDocs.levels.getLevels, { headers }).then((response) => {
+  if (response)
+    return response.map((c) => ({ id: c?._id, name: c?.name }))
+}))
+
+const { data: pubSubject, status: subStatus } = useAsyncData('public-subjects', () => $fetch(apiDocs.subjects.getPublicSubjects, { headers }).then((response) => {
+  if (response)
+    return response.map((c) => ({ id: c?._id, name: c?.name }))
+}))
+
+
+const filteredClasses = computed(() => {
+  let filtered = classes.value;
+
+  const selectedCategoryName = filterContentBySearch(classLevels.value,selectedCategory.value ?? '')[0]?.name.toLowerCase();
+  const selectedSubjectName = filterContentBySearch(pubSubject.value,selectedSubject.value ?? '')[0]?.name.toLowerCase();
+  
+  filtered = filtered.filter(cls => {
+    const categoryMatch = selectedCategory.value ? cls.category.toLowerCase() === selectedCategoryName : true;
+    const subjectMatch = selectedSubject.value ? cls.subject.toLowerCase() === selectedSubjectName : true;
+    return categoryMatch && subjectMatch;
+  });
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter(cls =>
+      cls.title.toLowerCase().includes(query) ||
+      cls.instructor.toLowerCase().includes(query) ||
+      cls.category.toLowerCase().includes(query)
+    );
+  }
+
+  return filtered;
+});
+
+
+</script>
+
+
+
+
 <template>
-
-
   <!-- <v-dialog v-model="dialog" max-width="800px" scrollable> -->
   <!-- <v-container class="upload-container" fluid>
       <v-row justify="center">
@@ -335,7 +855,7 @@
       </div>
 
       <!-- Filter Section -->
-      <div class="filters-section relative">
+      <div class="filters-section relative z-50">
         <!-- Create Button -->
         <div v-if="userToken?.type.toLowerCase() === 'teacher'" class="flex justify-end mb-4 px-2">
           <button @click="onCreate"
@@ -361,18 +881,22 @@
 
           <!-- Category Dropdown 1 -->
           <div>
-            <label class="block text-sm font-medium text-white mb-1">Category</label>
-            <CustomDropDownList v-model="selectedCategory"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
-              :list="categories.map((c, i) => ({ id: i, name: c }))" />
+            <label class="block text-sm font-medium text-white mb-1">Class</label>
+            <CustomDropDownList 
+            @update-model-value="selectedCategory =$event"
+              :placeholder="clsStatus === 'pending' ? 'Loading' : clsStatus === 'success' ? 'Select class' : 'something went wrong'"
+              class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
+              :list="classLevels ?? [{ id: 0, name: '' }]" />
           </div>
 
           <!-- Category Dropdown 2 -->
           <div>
-            <label class="block text-sm font-medium text-white mb-1">Category</label>
-            <CustomDropDownList v-model="selectedCategory"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
-              :list="categories.map((c, i) => ({ id: i, name: c }))" />
+            <label class="block text-sm font-medium text-white mb-1">Subject</label>
+            <CustomDropDownList
+              @update-model-value="selectedSubject = $event"
+              :placeholder="subStatus === 'pending' ? 'Loading' : subStatus === 'success' ? 'Select subject' : 'something went wrong'"
+              class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
+              :list="pubSubject ?? [{ id: 0, name: '' }]" />
           </div>
         </div>
       </div>
@@ -479,491 +1003,6 @@
 
 </template>
 
-<script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import axios from "axios";
-import { useSessionsSetup } from "../../../../composable/usesSessions.js";
-
-const router = useRouter();
-const userToken = useCookie("signInUserToken");
-
-function getDuration(start, end) {
-  if (!start || !end) return 'Unknown duration';
-
-  const startDate = new Date(`1970-01-01T${start}`);  // Assuming time strings only
-  const endDate = new Date(`1970-01-01T${end}`);
-  if (isNaN(startDate) || isNaN(endDate)) return 'Unknown duration';
-
-  let diffMs = endDate - startDate;
-  if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;  // handle overnight sessions
-
-  const diffMins = Math.floor(diffMs / 60000);
-  const hours = Math.floor(diffMins / 60);
-  const minutes = diffMins % 60;
-
-  return `${hours > 0 ? hours + 'h ' : ''}${minutes}m`;
-}
-
-
-// Form validation
-const formValid = ref(false)
-const uploadForm = ref(null)
-
-// Form data
-const classData = reactive({
-  title: '',
-  instructor: '',
-  category: '',
-  duration: '',
-  description: '',
-  video: [],
-  thumbnail: []
-})
-
-// Upload states
-const uploading = ref(false)
-const uploadProgress = ref(0)
-const videoPreview = ref(null)
-const thumbnailPreview = ref(null)
-
-// Snackbar
-const snackbar = reactive({
-  show: false,
-  message: '',
-  color: 'success',
-  icon: 'mdi-check-circle'
-})
-
-// Form options
-const categories = [
-  'Fitness & Wellness',
-  'Technology',
-  'Business',
-  'Arts & Design',
-  'Music',
-  'Language Learning',
-  'Cooking',
-  'Photography',
-  'Marketing',
-  'Personal Development'
-]
-
-const durations = [
-  '15 minutes',
-  '30 minutes',
-  '45 minutes',
-  '1 hour',
-  '1.5 hours',
-  '2 hours',
-  '2+ hours'
-]
-
-// Validation rules
-const titleRules = [
-  v => !!v || 'Class title is required',
-  v => (v && v.length >= 5) || 'Title must be at least 5 characters long',
-  v => (v && v.length <= 100) || 'Title must be less than 100 characters'
-]
-
-const instructorRules = [
-  v => !!v || 'Instructor name is required',
-  v => (v && v.length >= 2) || 'Name must be at least 2 characters long'
-]
-
-const categoryRules = [
-  v => !!v || 'Please select a category'
-]
-
-const durationRules = [
-  v => !!v || 'Please select duration'
-]
-
-const descriptionRules = [
-  v => !!v || 'Description is required',
-  v => (v && v.length >= 20) || 'Description must be at least 20 characters long',
-  v => (v && v.length <= 1000) || 'Description must be less than 1000 characters'
-]
-
-const videoRules = [
-  v => !!(v && v.length > 0) || 'Video file is required',
-  v => {
-    if (!v || v.length === 0) return true
-    const file = v[0]
-    return file.size < 500000000 || 'Video file must be less than 500MB'
-  }
-]
-
-const thumbnailRules = [
-  v => !!(v && v.length > 0) || 'Thumbnail image is required',
-  v => {
-    if (!v || v.length === 0) return true
-    const file = v[0]
-    return file.size < 5000000 || 'Image file must be less than 5MB'
-  }
-]
-
-// File upload handlers
-const handleVideoUpload = (event) => {
-  const files = event.target.files || event
-  if (files && files.length > 0) {
-    const file = files[0]
-    videoPreview.value = URL.createObjectURL(file)
-  }
-}
-
-const handleThumbnailUpload = (event) => {
-  const files = event.target.files || event
-  if (files && files.length > 0) {
-    const file = files[0]
-    thumbnailPreview.value = URL.createObjectURL(file)
-  }
-}
-
-// Form submission
-const submitForm = async () => {
-  if (!uploadForm.value) return
-
-  const { valid } = await uploadForm.value.validate()
-  if (!valid) return
-
-  uploading.value = true
-  uploadProgress.value = 0
-
-  try {
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      uploadProgress.value += Math.random() * 10
-      if (uploadProgress.value >= 100) {
-        clearInterval(interval)
-        uploadProgress.value = 100
-
-        setTimeout(() => {
-          uploading.value = false
-          showSnackbar('Class uploaded successfully!', 'success', 'mdi-check-circle')
-          resetForm()
-        }, 500)
-      }
-    }, 200)
-
-    // Here you would implement actual upload logic
-    console.log('Uploading class data:', classData)
-
-  } catch (error) {
-    uploading.value = false
-    showSnackbar('Upload failed. Please try again.', 'error', 'mdi-alert-circle')
-    console.error('Upload error:', error)
-  }
-}
-
-// Reset form
-const resetForm = () => {
-  if (uploadForm.value) {
-    uploadForm.value.reset()
-  }
-
-  Object.assign(classData, {
-    title: '',
-    instructor: '',
-    category: '',
-    duration: '',
-    description: '',
-    video: [],
-    thumbnail: []
-  })
-
-  videoPreview.value = null
-  thumbnailPreview.value = null
-  uploadProgress.value = 0
-}
-
-// Show snackbar
-const showSnackbar = (message, color = 'success', icon = 'mdi-check-circle') => {
-  snackbar.message = message
-  snackbar.color = color
-  snackbar.icon = icon
-  snackbar.show = true
-}
-const mapSessionToClass = (session) => ({
-  id: session.id,
-  title: session.topic || 'Untitled Session',
-  meet_link: session.meet_link || 'https://tv.somakwanza.tz',
-  instructor: session.teacher ? `Instructor ${session.teacher}` : 'Unknown Instructor',
-  category: session.subject ? `${session.subject.name}` : 'General',
-  thumbnail: 'https://via.placeholder.com/400x225.png?text=Class+Thumbnail',
-  scheduledTime: session.start_time ? new Date(session.created_at) : null, // or session.start_time if valid ISO
-  duration: getDuration(session.start_time, session.end_time),
-  viewers: Math.floor(Math.random() * 1000),
-  rating: (Math.random() * 2 + 3).toFixed(1),
-  isLive: session.session_start || false,
-  isSubscribed: false,
-  description: `Room: ${session.room_name || 'N/A'}${session.meet_link ? ', Meet Link available' : ''}`
-});
-
-const loadClasses = async () => {
-  loading.value = true;
-  try {
-    // const tokenRes = await axios.post('/api/auth/token/', {
-    //   username: 'Nick',
-    //   password: 1234
-    // });
-    const { access } = tokenRes.data;
-
-    const sessions = await getData(access);
-    if (Array.isArray(sessions)) {
-      classes.value = sessions.map(mapSessionToClass);
-    } else {
-      console.error('Expected array of sessions but got:', sessions);
-      classes.value = [];
-    }
-  } catch (error) {
-    console.error('Error fetching sessions:', error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-onMounted(() => {
-  loadClasses();
-});
-
-// Refs and reactive state
-const searchQuery = ref('');
-const selectedCategory = ref('all');
-const selectedClassItem = ref(null);
-const dialog = ref(false);
-const toasts = ref([]);
-const school_classes = ref([]);
-const isValid = ref(false);
-
-// Form state
-const formData = reactive({
-  school_class: null,
-  subject: null,
-  school_registration_number: '',
-  start_time: '',
-  end_time: '',
-  topic: '',
-  details: '',
-  room_name: '',
-  meet_link: '',
-  session_start: false,
-  session_end: false
-});
-
-// Sample data
-const schoolClasses = ref([
-  { id: 1, name: 'Class 1' },
-  { id: 2, name: 'Class 2' }
-]);
-
-const subjects = ref([
-  { id: 1, name: 'Mathematics' },
-  { id: 2, name: 'Science' }
-]);
-
-// const categories = ref(['Programming', 'Design', 'Business', 'Marketing', 'Photography']);
-
-const classes = ref([
-  {
-    id: 1,
-    title: 'Numbers',
-    instructor: 'TET Studio',
-    category: 'Form 1',
-    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1745417330621-661767195.jpg',
-    scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-    duration: '2h 30m',
-    viewers: 1247,
-    rating: 4.9,
-    isLive: true,
-    isSubscribed: false,
-    description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
-  },
-  {
-    id: 2,
-    title: 'Introduction to Biology',
-    instructor: 'TET Studio',
-    category: 'Form 1',
-    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1745820321892-41054422.webp',
-    scheduledTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
-    duration: '1h 45m',
-    viewers: 892,
-    rating: 4.8,
-    isLive: false,
-    isSubscribed: true,
-    description: 'Learn the fundamental principles of user interface and user experience design with practical examples and case studies.'
-  },
-  {
-    id: 3,
-    title: 'Force energy and work',
-    instructor: 'TET Studio',
-    category: 'Form 1',
-    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1742375348123-474943153.webp',
-    scheduledTime: new Date(Date.now() + 6 * 60 * 60 * 1000),
-    duration: '2h 15m',
-    viewers: 634,
-    rating: 4.7,
-    isLive: false,
-    isSubscribed: false,
-    description: 'Comprehensive guide to digital marketing strategies including social media, content marketing, and analytics.'
-  }
-]);
-
-// Import your composable
-const { postData, loading, error, getData } = useSessionsSetup();
-// Show toast function (replace with your UI lib's toast/snackbar)
-
-
-
-// Computed
-const filteredClasses = computed(() => {
-  let filtered = classes.value;
-
-  if (selectedCategory.value !== 'all') {
-    filtered = filtered.filter(cls => cls.category === selectedCategory.value);
-  }
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(cls =>
-      cls.title.toLowerCase().includes(query) ||
-      cls.instructor.toLowerCase().includes(query) ||
-      cls.category.toLowerCase().includes(query)
-    );
-  }
-
-  return filtered;
-});
-
-// Validation rules
-const required = v => !!v || 'This field is required';
-const minLength = min => v => (v && v.length >= min) || `Min ${min} characters`;
-
-// Form submit
-// Submit handler
-const submit = async () => {
-  console.log("Sdsfe");
-  // if (!isValid.value) {
-  //   showToast('Please fill the form correctly.', 'error');
-  //   return;
-  // }
-
-  try {
-    // const payload = {
-    //   // Build your payload matching API expected fields
-    //   school_class: formData.value.school_class,
-    //   subject: formData.value.subject,
-    //   school_registration_number: formData.value.school_registration_number,
-    //   start_time: formData.value.start_time,
-    //   end_time: formData.value.end_time,
-    //   topic: formData.value.topic,
-    //   room_name: formData.value.room_name,
-    //   meet_link: formData.value.meet_link,
-    //   session_start: formData.value.session_start,
-    //   session_end: formData.value.session_end,
-    // };
-    const payload = JSON.parse(JSON.stringify(formData)); // deep clone, usually unnecessary here
-
-
-    try {
-      const response = await axios.post('/api/auth/token/', {
-        username: 'Nick',
-        password: 1234
-      });
-
-
-      const { access } = response.data;
-      console.log("adceds" + access);
-
-      // Call API
-      await postData(payload, access);
-
-      showToast('Session created successfully!', 'success');
-      // dialog.value = false;
-
-      // Reset form
-      Object.assign(formData.value, {
-        school_class: null,
-        subject: null,
-        school_registration_number: '',
-        start_time: '',
-        end_time: '',
-        details: '',
-        topic: '',
-        room_name: '',
-        meet_link: '',
-        session_start: false,
-        session_end: false,
-      });
-
-
-      if (response.data) {
-
-
-      }
-    } catch (error) {
-      // Handle error and show failure message
-      // alertType.value = 'error';
-      // alertMessage.value = error.response.data.message || 'Login failed. Please try again.';
-    }
-
-
-    loadClasses();
-
-    dialog.value = false;
-  } catch (err) {
-    showToast(error.value || 'Failed to create session.', 'error');
-  }
-};
-
-
-const selectClass = (classItem) => {
-  selectedClassItem.value = classItem;
-};
-
-const closeModal = () => {
-  selectedClassItem.value = null;
-};
-
-const toggleSubscription = (classItem) => {
-  classItem.isSubscribed = !classItem.isSubscribed;
-  showToast(
-    classItem.isSubscribed ? 'Subscribed successfully!' : 'Unsubscribed',
-    classItem.isSubscribed ? 'success' : 'info'
-  );
-};
-
-// const joinClass = (selectedClassItem) => {
-//   router.push({ path: '/main/live-view' });
-// };
-
-const joinClass = (selectedClassItem) => {
-  localStorage.setItem('classData', JSON.stringify(selectedClassItem));
-  router.push({ path: '/smart-class/screen/live-view' });
-};
-
-
-
-const onCreate = () => {
-  console.log("Sdefdsdf");
-  dialog.value = true;
-};
-
-const formatTime = (date) => {
-  if (!date) return 'N/A';  // or '' or '--:--', whatever you prefer as fallback
-  const d = new Date(date);
-  if (isNaN(d)) return 'Invalid Date';  // in case date is malformed
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
-
-const showToast = (message, type = 'info') => {
-  const toast = { id: Date.now(), message, type };
-  toasts.value.push(toast);
-  setTimeout(() => {
-    toasts.value = toasts.value.filter(t => t.id !== toast.id);
-  }, 3000);
-};
-</script>
 
 
 <style scoped>
