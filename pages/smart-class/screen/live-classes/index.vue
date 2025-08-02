@@ -190,7 +190,7 @@
       </div>
 
       <!-- Filter Section -->
-      <div class="filters-section">
+      <div class="filters-section relative z-50">
         <!-- <v-container fluid class="filters-section pa-4" elevation="1">
           <v-row>
             <v-col cols="12" class="d-flex justify-end">
@@ -256,9 +256,14 @@
               </div>
             </div>
 
-            <!-- Category Dropdowns -->
-            <div v-for="i in 2" :key="i" class="w-full md:w-1/3 lg:w-1/4">
-               <CustomDropDownList v-model="selectedCategory" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="categories.map((c,i)=>({id:i,name:c}))"/>
+            <!-- Classes Dropdowns -->
+            <div class="w-full md:w-1/3 lg:w-1/4">
+               <CustomDropDownList @update-model-value="selectedCategory = $event" placeholder="select class" class="w-full !text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolClasses.map((c)=>({id:c?._id,name:c.name}))"/>
+            </div>
+
+            <!-- subject Dropdowns -->
+            <div class="w-full md:w-1/3 lg:w-1/4">
+               <CustomDropDownList @update-model-value="selectedSubject=$event" placeholder="select subject" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolSubjects.map((s)=>({id:s?._id,name:s.name}))"/>
             </div>
           </div>
         </div>
@@ -381,6 +386,7 @@ import { useRouter } from 'vue-router';
 import axios from "axios";
 import { useSessionsSetup } from "../../../../composable/usesSessions.js";
 import apiDocs from "../../../../utilities/api-docs.js";
+import { filterContentBySearch } from '~/utilities/filterJson.js';
 
 const router = useRouter();
 const userToken = useCookie("signInUserToken");
@@ -468,7 +474,8 @@ onMounted(async () => {
 
 // Refs and reactive state
 const searchQuery = ref('');
-const selectedCategory = ref('all');
+const selectedCategory = ref(null);
+const selectedSubject = ref(null);
 const selectedClassItem = ref(null);
 const dialog = ref(false);
 const toasts = ref([]);
@@ -502,7 +509,7 @@ const subjects = ref([
   { id: 2, name: 'Science' }
 ]);
 
-const categories = ref(['Programming', 'Design', 'Business', 'Marketing', 'Photography']);
+const categories = ref(['Form 1', 'Form 2']);
 
 const classes = ref([
   {
@@ -514,6 +521,7 @@ const classes = ref([
     scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     duration: '2h 30m',
     viewers: 1247,
+     subject:'Geography',
     rating: 4.9,
     isLive: true,
     meet_link: '',
@@ -528,6 +536,7 @@ const classes = ref([
     scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     duration: '2h 30m',
     viewers: 1247,
+    subject:'Physics',
     rating: 4.9,
     meet_link: '',
     isLive: true,
@@ -543,6 +552,7 @@ const classes = ref([
     duration: '2h 30m',
     viewers: 1247,
     meet_link: '',
+     subject:'Chemistry',
     rating: 4.9,
     isLive: true,
     isSubscribed: false,
@@ -560,9 +570,14 @@ const { postData, loading, error, getData } = useSessionsSetup();
 const filteredClasses = computed(() => {
   let filtered = classes.value;
 
-  if (selectedCategory.value !== 'all') {
-    filtered = filtered.filter(cls => cls.category === selectedCategory.value);
-  }
+  const selectedCategoryName = filterContentBySearch(schoolClasses.value,selectedCategory.value ?? '')[0]?.name.toLowerCase();
+  const selectedSubjectName = filterContentBySearch(schoolSubjects.value,selectedSubject.value ?? '')[0]?.name.toLowerCase();
+  
+  filtered = filtered.filter(cls => {
+    const categoryMatch = selectedCategory.value ? cls.category.toLowerCase() === selectedCategoryName : true;
+    const subjectMatch = selectedSubject.value ? cls.subject.toLowerCase() === selectedSubjectName : true;
+    return categoryMatch && subjectMatch;
+  });
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
