@@ -1,110 +1,110 @@
+
 import { ref } from 'vue';
-import axiosInstance from "../interceptors/axiosInstance";
-
-import axios from "axios";
-
+import apiDocs from '~/utilities/api-docs';
 
 export function useSessionsSetup() {
+  const loading = ref(false);
+  const error = ref<string | null>(null);
 
-    const axiosInstance = axios.create({
-        baseURL: '/api/', // ✅ now becomes '/api/'
-    });
+  const baseUrl = apiDocs.baseURL;
+const token = useCookie('signInAccessToken').value;
+  // POST create session
+  const postData = async (payload: any,endpoint:string) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await $fetch(`${baseUrl}/${endpoint}`, {
+        method: 'POST',
+        body: payload,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return data;
+    } catch (err: any) {
+      error.value = err?.data?.message || err.message || 'An error occurred';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
-    const loading = ref(false);
-    const error = ref(null);
+  // PUT update session by ID
+  const editData = async (payload: any,endpoint:string) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await $fetch(`${baseUrl}/${endpoint}`, {
+        method: 'PUT',
+        body: payload,
+      });
+      return data;
+    } catch (err: any) {
+      error.value = err?.data?.message || err.message || 'An error occurred';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
+  // GET sessions list
+  const getData = async (endpoint:string) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await $fetch(`${baseUrl}/${endpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return data;
+    } catch (err: any) {
+      error.value = err?.data?.message || err.message || 'An error occurred';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
-    const postData = async (payload, token) => {
-        loading.value = true;
-        error.value = null;
-        try {
-            const response = await axiosInstance.post('sessions/', payload, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            loading.value = false;
-            return response.data;
-        } catch (err) {
-            error.value = err.message || 'An error occurred';
-            loading.value = false;
-            throw err;
-        }
-    };
+  // GET all sessions (alternative endpoint)
+  const getDataList = async (endpoint:string) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await $fetch(`${baseUrl}/${endpoint}`);
+      return data;
+    } catch (err: any) {
+      error.value = err?.data?.message || err.message || 'An error occurred';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
+  // DELETE session by ID
+  const deleteData = async (endpoint:string) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const data = await $fetch(`${baseUrl}/${endpoint}`, {
+        method: 'DELETE',
+      });
+      return data;
+    } catch (err: any) {
+      error.value = err?.data?.message || err.message || 'An error occurred';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
 
-    // PUT update session by ID
-    const editData = async (id, payload) => {
-        loading.value = true;
-        error.value = null;
-        try {
-            const response = await axiosInstance.put(`sessions/${id}`, payload);
-            loading.value = false;
-            return response.data;
-        } catch (err) {
-            error.value = err.message || 'An error occurred';
-            loading.value = false;
-            throw err;
-        }
-    };
-
-    // GET sessions list with pagination and sorting
-    const getData = async (access) => {
-        loading.value = true;
-        error.value = null;
-        try {
-            const response = await axiosInstance.get('sessions', {
-                headers: {
-                    Authorization: `Bearer ${access}`,  // Pass token here
-                },
-            });
-            loading.value = false;
-            return response.data;
-        } catch (err) {
-            error.value = err.message || 'An error occurred';
-            loading.value = false;
-            throw err;
-        }
-    };
-
-
-    // GET all sessions without pagination (if supported)
-    const getDataList = async () => {
-        loading.value = true;
-        error.value = null;
-        try {
-            const response = await axiosInstance.get('all'); // change if your API endpoint differs
-            loading.value = false;
-            return response.data;
-        } catch (err) {
-            error.value = err.message || 'An error occurred';
-            loading.value = false;
-            throw err;
-        }
-    };
-
-    // DELETE session by ID
-    const deleteData = async (id) => {
-        loading.value = true;
-        error.value = null;
-        try {
-            const response = await axiosInstance.delete(`sessions/${id}`);
-            loading.value = false;
-            return response.data;
-        } catch (err) {
-            error.value = err.message || 'An error occurred';
-            loading.value = false;
-            throw err;
-        }
-    };
-
-    return {
-        loading,
-        error,
-        postData,
-        editData,
-        getData,
-        getDataList,
-        deleteData,
-    };
+  return {
+    loading,
+    error,
+    postData,
+    editData,
+    getData,
+    getDataList,
+    deleteData,
+  };
 }

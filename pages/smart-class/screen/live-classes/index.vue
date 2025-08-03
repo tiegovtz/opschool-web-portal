@@ -87,7 +87,7 @@
         <div class="w-full text-white">
           <label class="block mb-1 text-sm font-medium text-white">Start Time</label>
           <input
-            type="time"
+            type="datetime-local"
             v-model="formData.start_time"
             required
             class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
@@ -98,7 +98,7 @@
         <div class="w-full text-white">
           <label class="block mb-1 text-sm font-medium text-white">End Time</label>
           <input
-            type="time"
+            type="datetime-local"
             v-model="formData.end_time"
             required
             class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
@@ -151,7 +151,7 @@
       </button>
       <button
         type="submit"
-        form="formRef"
+        @click="submit"
         class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
       >
         Submit
@@ -255,7 +255,7 @@
       <!-- Classes Grid -->
       <div class="classes-container">
         <div class="classes-grid">
-          <div v-for="classItem in filteredClasses" :key="classItem.id" class="class-card"
+          <div v-for="classItem in filteredClasses" :key="classItem?.id ?? classItem?._id" class="class-card"
             @click="selectClass(classItem)">
             <div class="card-image">
               <img :src="classItem.thumbnail"
@@ -287,8 +287,8 @@
               <h3 class="class-title">{{ classItem.title }}</h3>
               <p class="class-instructor">{{ classItem.instructor }}</p>
               <div class="class-meta">
-                <span class="class-category">{{ classItem.category }}</span>
-                <span class="class-time">{{ formatTime(classItem.scheduledTime) }}</span>
+                <span class="class-category">{{ classItem?.category || classItem?.class }}</span>
+                <span class="class-time">{{ formatTime(classItem.scheduledTime || classItem?.start_time) }}</span>
               </div>
               <div class="class-stats">
                 <span class="viewers">{{ classItem.viewers }} viewers</span>
@@ -320,7 +320,7 @@
               <h2>{{ selectedClassItem.title }}</h2>
               <p class="modal-instructor">with {{ selectedClassItem.instructor }}</p>
               <div class="modal-meta">
-                <span class="modal-category">{{ selectedClassItem.category }}</span>
+                <span class="modal-category">{{ selectedClassItem.category ?? selectedClassItem?.class  }}</span>
                 <span class="modal-time">{{ formatTime(selectedClassItem.scheduledTime) }}</span>
                 <span class="modal-duration">{{ selectedClassItem.duration }}</span>
               </div>
@@ -333,20 +333,20 @@
           </div>
 
           <div class="modal-actions">
-            <button class="primary-btn" @click="joinClass(selectedClassItem)">
+            <button class="primary-btn max-w-xs mx-auto" @click="joinClass(selectedClassItem)">
               <svg viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
               Join Class
             </button>
-            <button class="secondary-btn" @click="toggleSubscription(selectedClassItem)"
+            <!-- <button class="secondary-btn" @click="toggleSubscription(selectedClassItem)"
               :class="{ subscribed: selectedClassItem.isSubscribed }">
               <svg viewBox="0 0 24 24">
                 <path
                   d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
               {{ selectedClassItem.isSubscribed ? 'Subscribed' : 'Subscribe' }}
-            </button>
+            </button> -->
           </div>
         </div>
       </div>
@@ -378,6 +378,10 @@ const headers = {
   'Authorization': `Bearer ${token}`,
 };
 
+// Import your composable
+const { postData, loading, error, getData } = useSessionsSetup();
+// Show toast function (replace with your UI lib's toast/snackbar)
+
 
 definePageMeta({
   middleware: 'auth'
@@ -386,12 +390,12 @@ definePageMeta({
 function getDuration(start, end) {
   if (!start || !end) return 'Unknown duration';
 
-  const startDate = new Date(`1970-01-01T${start}`);  // Assuming time strings only
-  const endDate = new Date(`1970-01-01T${end}`);
+  const startDate = new Date(start); 
+  const endDate = new Date(end);
   if (isNaN(startDate) || isNaN(endDate)) return 'Unknown duration';
 
   let diffMs = endDate - startDate;
-  if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;  // handle overnight sessions
+  if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000; 
 
   const diffMins = Math.floor(diffMs / 60000);
   const hours = Math.floor(diffMins / 60);
@@ -401,34 +405,33 @@ function getDuration(start, end) {
 }
 
 const mapSessionToClass = (session) => ({
-  id: session.id,
+  id: session.id ?? session._id,
   title: session.topic || 'Untitled Session',
   details: session.details || 'Karibu  sana',
-
   meet_link: session.meet_link || 'https://tv.somakwanza.tz',
-  instructor: session.teacher ? `Instructor ${session.teacher}` : 'Unknown Instructor',
-  category: session.subject ? `${session.subject.name}` : 'General',
+  subject: session.subject ? `${session.subject.name}` : 'General',
   thumbnail: 'https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop',
-  scheduledTime: session.start_time ? new Date(session.created_at) : null, // or session.start_time if valid ISO
-  duration: getDuration(session.start_time, session.end_time),
+  scheduledTime: session.start_time ? new Date(session?.start_time) : null, // or session.start_time if valid ISO
+  duration: getDuration(session.start_time, session?.end_time),
   viewers: Math.floor(Math.random() * 1000),
   rating: (Math.random() * 2 + 3).toFixed(1),
-  isLive: session.session_start || false,
+  isLive: session.session_start ? new Date(session.session_start) > new Date() : false,
   isSubscribed: false,
-  description: `Room: ${session.room_name || 'N/A'}${session.meet_link ? ', Meet Link available' : ''}`
+  class:session?.school_class?.name ?? session?.school_class ?? 'Form 1',
+  description: `Room: ${session?.room_name || 'N/A'}${session.meet_link ? ', Meet Link available' : ''}`
 });
 
 const loadClasses = async () => {
   loading.value = true;
   try {
 
-    // const sessions = await getData(token);
-    // if (Array.isArray(sessions)) {
-    //   classes.value = sessions.map(mapSessionToClass);
-    // } else {
-    //   console.error('Expected array of sessions but got:', sessions);
-    //   classes.value = [];
-    // }
+    const sessions = await getData('live-classrooms/sessions');
+    if (Array.isArray(sessions)) {
+      classes.value = sessions.map(mapSessionToClass);
+    } else {
+      console.error('Expected array of sessions but got:', sessions);
+      classes.value = [];
+    }
   } catch (error) {
     console.error('Error fetching sessions:', error);
   } finally {
@@ -512,11 +515,7 @@ const classes = ref([
   }
 ]);
 
-// Import your composable
-const { postData, loading, error, getData } = useSessionsSetup();
-// Show toast function (replace with your UI lib's toast/snackbar)
-
-
+loadClasses();
 
 // Computed
 const filteredClasses = computed(() => {
@@ -554,18 +553,34 @@ const minLength = min => v => (v && v.length >= min) || `Min ${min} characters`;
 // Form submit
 // Submit handler
 const submit = async () => {
-  console.log("Sdsfe");
-  // if (!isValid.value) {
-  //   showToast('Please fill the form correctly.', 'error');
-  //   return;
-  // }
+
+  if(formData.details === null || formData.details.trim() === ''){
+    isValid.value === true;
+  }
+
+   if(formData.school_class === null || formData.school_class.trim() === ''){
+    isValid.value === true;
+  }
+
+   if(formData.details === null || formData.details.trim() === ''){
+    isValid.value === true;
+  }
+
+    if(formData.end_time === null || formData.start_time === null || formData.start_time.trim() === '' || formData.end_time.trim() === ''){
+    isValid.value === true;
+  }
+
+  if (isValid.value) {
+    showToast('Please fill the form correctly.', 'error');
+    return;
+  }
 
   try {
-    const payload = JSON.parse(JSON.stringify(formData)); // deep clone, usually unnecessary here
+    const payload = JSON.parse(JSON.stringify({...formData,teacherId:userToken?.value?._id,teacherName:userToken.value?.name})); 
 
     try {
       // Call API
-      await postData(payload, token);
+      await postData(payload,'live-classrooms/session');
 
       showToast('Session created successfully!', 'success');
       // dialog.value = false;
@@ -627,21 +642,18 @@ const toggleSubscription = (classItem) => {
 // };
 
 const joinClass = (selectedClassItem) => {
-  localStorage.setItem('classData', JSON.stringify(selectedClassItem));
-  router.push({ path: '/smart-class/screen/live-view' });
+  // router.push({ path: '/smart-class/screen/live-view' });
+  window.open(selectedClassItem?.meet_link, '_blank');
 };
 
 
-
 const onCreate = () => {
-  console.log("Sdefdsdf");
   dialog.value = true;
 };
 
 const formatTime = (date) => {
   if (!date) return 'N/A';  // or '' or '--:--', whatever you prefer as fallback
   const d = new Date(date);
-  if (isNaN(d)) return 'Invalid Date';  // in case date is malformed
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
