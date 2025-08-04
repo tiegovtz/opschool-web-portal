@@ -190,19 +190,19 @@
 
             <!-- Category Dropdown 1 -->
             <!-- <v-col cols="12" sm="6" md="4" lg="3">
-              <v-select v-model="selectedCategory" :items="['all', ...categories]" label="Category" variant="outlined"
+              <v-select v-model="selectedClass" :items="['all', ...categories]" label="Category" variant="outlined"
                 dense hide-details />
             </v-col> -->
 
             <!-- Category Dropdown 2 -->
             <!-- <v-col cols="12" sm="6" md="4" lg="3">
-              <v-select v-model="selectedCategory" :items="['all', ...categories]" label="Category" variant="outlined"
+              <v-select v-model="selectedClass" :items="['all', ...categories]" label="Category" variant="outlined"
                 dense hide-details />
             </v-col> -->
 
             <!-- Category Dropdown 3 -->
             <!-- <v-col cols="12" sm="6" md="4" lg="3">
-              <v-select v-model="selectedCategory" :items="['all', ...categories]" label="Category" variant="outlined"
+              <v-select v-model="selectedClass" :items="['all', ...categories]" label="Category" variant="outlined"
                 dense hide-details />
             </v-col>
 
@@ -212,8 +212,8 @@
         </v-container> -->
 
         <div class="p-4">
-          <!-- Create Button  -->
-          <div  v-if="userToken?.type.toLowerCase() === 'teacher'" class="flex justify-end mb-4">
+          <!-- Create Button v-if="userToken?.type.toLowerCase() === 'teacher'" -->
+          <div   class="flex justify-end mb-4">
             <button @click="onCreate"
               class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -240,7 +240,7 @@
 
             <!-- Classes Dropdowns -->
             <div class="w-full md:w-1/3 lg:w-1/4">
-               <CustomDropDownList @update-model-value="selectedCategory = $event" placeholder="select class" class="w-full !text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolClasses"/>
+               <CustomDropDownList @update-model-value="selectedClass = $event" placeholder="select class" class="w-full !text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolClasses"/>
             </div>
 
             <!-- subject Dropdowns -->
@@ -287,7 +287,7 @@
               <h3 class="class-title">{{ classItem.title }}</h3>
               <p class="class-instructor">{{ classItem.instructor }}</p>
               <div class="class-meta">
-                <span class="class-category">{{ classItem?.category || classItem?.class }}</span>
+                <span class="class-category">{{ classItem?.class || classItem?.class }}</span>
                 <span class="class-time">{{ formatTime(classItem.scheduledTime || classItem?.start_time) }}</span>
               </div>
               <div class="class-stats">
@@ -320,7 +320,7 @@
               <h2>{{ selectedClassItem.title }}</h2>
               <p class="modal-instructor">with {{ selectedClassItem.instructor }}</p>
               <div class="modal-meta">
-                <span class="modal-category">{{ selectedClassItem.category ?? selectedClassItem?.class  }}</span>
+                <span class="modal-category">{{ selectedClassItem.class ?? selectedClassItem?.class  }}</span>
                 <span class="modal-time">{{ formatTime(selectedClassItem.scheduledTime) }}</span>
                 <span class="modal-duration">{{ selectedClassItem.duration }}</span>
               </div>
@@ -365,7 +365,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from "axios";
 import { useSessionsSetup } from "../../../../composable/usesSessions.js";
 import apiDocs from "../../../../utilities/api-docs.js";
 import { filterContentBySearch } from '~/utilities/filterJson.js';
@@ -409,7 +408,7 @@ const mapSessionToClass = (session) => ({
   title: session.topic || 'Untitled Session',
   details: session.details || 'Karibu  sana',
   meet_link: session.meet_link || 'https://tv.somakwanza.tz',
-  subject: session.subject ? `${session.subject.name}` : 'General',
+  subject:session.subject.name ?? session.subject ??  'General',
   thumbnail: 'https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop',
   scheduledTime: session.start_time ? new Date(session?.start_time) : null, // or session.start_time if valid ISO
   duration: getDuration(session.start_time, session?.end_time),
@@ -441,7 +440,7 @@ const loadClasses = async () => {
 
 // Refs and reactive state
 const searchQuery = ref('');
-const selectedCategory = ref(null);
+const selectedClass = ref(null);
 const selectedSubject = ref(null);
 const selectedClassItem = ref(null);
 const dialog = ref(false);
@@ -520,17 +519,22 @@ loadClasses();
 // Computed
 const filteredClasses = computed(() => {
   let filtered = classes.value;
-
-  const selectedCategoryName = computed(()=>{
-    return filterContentBySearch(schoolClasses.value,selectedCategory.value ?? '')[0]?.name.toLowerCase() ?? '';
-  });
-  const selectedSubjectName = computed(()=>{
-    return filterContentBySearch(schoolSubjects.value,selectedSubject.value ?? '')[0]?.name.toLowerCase() ?? '';
-  });
+  console.log(filtered)
+  if(selectedClass.value && selectedClass.value.trim() !==''){
+    const className = filterContentBySearch(schoolClasses.value,selectedClass.value ?? '')[0]?.name.toLowerCase() ?? '';
+    return filterContentBySearch(filtered,className);
+  }
   
+    if(selectedSubject.value && selectedClass.value.trim() !==''){
+    const subjectName = filterContentBySearch(schoolSubjects.value,selectedSubject.value ?? '')[0]?.name.toLowerCase() ?? '';
+    return filterContentBySearch(filtered,subjectName);
+  }
+
   filtered = filtered.filter(cls => {
-    const categoryMatch = selectedCategory.value ? cls.category.toLowerCase() === selectedCategoryName : true;
-    const subjectMatch = selectedSubject.value ? cls.subject.toLowerCase() === selectedSubjectName : true;
+    const className = filterContentBySearch(schoolClasses.value,selectedClass.value ?? '')[0]?.name.toLowerCase() ?? '';
+    const subjectName = filterContentBySearch(schoolSubjects.value,selectedSubject.value ?? '')[0]?.name.toLowerCase() ?? '';
+    const categoryMatch = selectedClass.value ? cls.class.toLowerCase() === className : true;
+    const subjectMatch = selectedSubject.value ? cls.subject.toLowerCase() === subjectName : true;
     return categoryMatch && subjectMatch;
   });
 
@@ -539,7 +543,7 @@ const filteredClasses = computed(() => {
     filtered = filtered.filter(cls =>
       cls.title.toLowerCase().includes(query) ||
       cls.instructor.toLowerCase().includes(query) ||
-      cls.category.toLowerCase().includes(query)
+      cls.class.toLowerCase().includes(query)
     );
   }
 
@@ -667,14 +671,18 @@ const showToast = (message, type = 'info') => {
 
 
   const { data:schoolSubjects,status:sStatus } = await useAsyncData('public-subjects',()=>$fetch(apiDocs.subjects.getPublicSubjects, { headers }).then((res)=>{
-    if(res)
-    return res.map(s=>({id:s?._id,name:s?.name}))
+    if(res){
+    const mapped = res.map(s=>({id:s?._id,name:s?.name}));
+    return [{id:'',name:'all'},...mapped]
+    }
   }));
  
 
   const { data:schoolClasses,status:clStatus } = await useAsyncData('class-levels',()=>$fetch(apiDocs.levels.getLevels, { headers }).then((res)=>{
-    if(res)
-    return res.map(c=>({id:c?._id,name:c?.name}))
+    if(res){
+    const mapped = res.map(c=>({id:c?._id,name:c?.name}));
+    return [{id:'',name:'all'},...mapped]
+    }
   }));
 
 </script>
