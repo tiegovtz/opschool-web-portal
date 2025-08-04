@@ -212,8 +212,8 @@
         </v-container> -->
 
         <div class="p-4">
-          <!-- Create Button v-if="userToken?.type.toLowerCase() === 'teacher'" -->
-          <div   class="flex justify-end mb-4">
+          <!-- Create Button " -->
+          <div v-if="userToken?.type.toLowerCase() === 'teacher'"  class="flex justify-end mb-4">
             <button @click="onCreate"
               class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -405,19 +405,19 @@ function getDuration(start, end) {
 
 const mapSessionToClass = (session) => ({
   id: session.id ?? session._id,
-  title: session.topic || 'Untitled Session',
+  title: session?.topic || 'Untitled Session',
   details: session.details || 'Karibu  sana',
   meet_link: session.meet_link || 'https://tv.somakwanza.tz',
-  subject:session.subject.name ?? session.subject ??  'General',
+  subject:session?.subject?.name ?? session?.subject ??  'General',
   thumbnail: 'https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop',
-  scheduledTime: session.start_time ? new Date(session?.start_time) : null, // or session.start_time if valid ISO
-  duration: getDuration(session.start_time, session?.end_time),
+  scheduledTime: session?.start_time ? new Date(session?.start_time) : null, // or session.start_time if valid ISO
+  duration: getDuration(session?.start_time, session?.end_time),
   viewers: Math.floor(Math.random() * 1000),
   rating: (Math.random() * 2 + 3).toFixed(1),
-  isLive: session.session_start ? new Date(session.session_start) > new Date() : false,
+  isLive: session?.session_start ? new Date(session?.session_start) > new Date() : false,
   isSubscribed: false,
   class:session?.school_class?.name ?? session?.school_class ?? 'Form 1',
-  description: `Room: ${session?.room_name || 'N/A'}${session.meet_link ? ', Meet Link available' : ''}`
+  description: `Room: ${session?.room_name || 'N/A'}${session?.meet_link ? ', Meet Link available' : ''}`
 });
 
 const loadClasses = async () => {
@@ -425,12 +425,9 @@ const loadClasses = async () => {
   try {
 
     const sessions = await getData('live-classrooms/sessions');
-    if (Array.isArray(sessions)) {
-      classes.value = sessions.map(mapSessionToClass);
-    } else {
-      console.error('Expected array of sessions but got:', sessions);
-      classes.value = [];
-    }
+   if(sessions){
+    classes.value = sessions.map(mapSessionToClass);
+   }
   } catch (error) {
     console.error('Error fetching sessions:', error);
   } finally {
@@ -519,26 +516,24 @@ loadClasses();
 // Computed
 const filteredClasses = computed(() => {
   let filtered = classes.value;
-  console.log(filtered)
-  if(selectedClass.value && selectedClass.value.trim() !==''){
-    const className = filterContentBySearch(schoolClasses.value,selectedClass.value ?? '')[0]?.name.toLowerCase() ?? '';
-    return filterContentBySearch(filtered,className);
-  }
-  
-    if(selectedSubject.value && selectedClass.value.trim() !==''){
-    const subjectName = filterContentBySearch(schoolSubjects.value,selectedSubject.value ?? '')[0]?.name.toLowerCase() ?? '';
-    return filterContentBySearch(filtered,subjectName);
+
+  const className = selectedClass.value?.trim()
+    ? filterContentBySearch(schoolClasses.value, selectedClass.value)[0]?.name.toLowerCase() ?? ''
+    : '';
+
+  const subjectName = selectedSubject.value?.trim()
+    ? filterContentBySearch(schoolSubjects.value, selectedSubject.value)[0]?.name.toLowerCase() ?? ''
+    : '';
+
+  if (className || subjectName) {
+    filtered = filtered.filter(cls => {
+      const matchClass = className ? cls.class.toLowerCase() === className : true;
+      const matchSubject = subjectName ? cls.subject.toLowerCase() === subjectName : true;
+      return matchClass && matchSubject;
+    });
   }
 
-  filtered = filtered.filter(cls => {
-    const className = filterContentBySearch(schoolClasses.value,selectedClass.value ?? '')[0]?.name.toLowerCase() ?? '';
-    const subjectName = filterContentBySearch(schoolSubjects.value,selectedSubject.value ?? '')[0]?.name.toLowerCase() ?? '';
-    const categoryMatch = selectedClass.value ? cls.class.toLowerCase() === className : true;
-    const subjectMatch = selectedSubject.value ? cls.subject.toLowerCase() === subjectName : true;
-    return categoryMatch && subjectMatch;
-  });
-
-  if (searchQuery.value) {
+  if (searchQuery.value?.trim()) {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(cls =>
       cls.title.toLowerCase().includes(query) ||
@@ -549,6 +544,7 @@ const filteredClasses = computed(() => {
 
   return filtered;
 });
+
 
 // Validation rules
 const required = v => !!v || 'This field is required';
