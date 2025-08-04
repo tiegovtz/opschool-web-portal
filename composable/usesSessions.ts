@@ -52,12 +52,12 @@ const token = useCookie('signInAccessToken').value;
     loading.value = true;
     error.value = null;
     try {
-      const data = await $fetch(`${baseUrl}/${endpoint}`, {
+      const {data }= await useAsyncData(`data-for-${endpoint}`,()=> $fetch(`${baseUrl}/${endpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      });
-      return data;
+      }))
+      return data.value;
     } catch (err: any) {
       error.value = err?.data?.message || err.message || 'An error occurred';
       throw err;
