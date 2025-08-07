@@ -1,8 +1,10 @@
 <template>
-
   <div class="vidstack-wrapper">
-    <ClientOnly>
-      <media-player :title="title" .src="src">
+    <div v-if="error" class="error-message">
+      {{ error }}
+    </div>
+    <ClientOnly v-else>
+      <media-player :title="title" :src="src">
         <media-provider />
         <media-video-layout />
       </media-player>
@@ -10,20 +12,27 @@
   </div>
 </template>
 
+
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
+
+const error = ref(null)
 
 onMounted(async () => {
-  await import('vidstack/bundle');
-
+  try {
+    await import('vidstack/bundle')
+  } catch (err) {
+    console.error('Failed to load vidstack:', err)
+    error.value = 'Failed to load video player. Please try again later.'
+  }
 })
 
 defineProps({
   src: { type: String, required: true },
   title: { type: String, default: '' }
-});
-
+})
 </script>
+
 
 <style scoped>
 .vidstack-wrapper {

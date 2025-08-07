@@ -658,8 +658,10 @@ const toggleSubscription = (classItem) => {
 // };
 
 const joinClass = (selectedClassItem) => {
-  // router.push({ path: '/smart-class/screen/live-view' });
-  window.open(selectedClassItem?.meet_link, '_blank');
+  router.push({ path: '/smart-class/screen/live-view' });
+
+  localStorage.setItem('classData', JSON.stringify(selectedClassItem));
+  router.push({ path: '/smart-class/screen/live-view' });
 };
 
 
