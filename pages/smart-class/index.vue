@@ -1,14 +1,13 @@
 <template>
   <NuxtLayout name="home-layout">
-    <div class="smart-class-entry min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white font-sans">
+    <div class="smart-class-entry min-h-screen bg-gradient-to-br from-slate-900 via-[#2a4469] to-slate-900 text-white font-sans">
+
       <!-- Header Section -->
-      <div class="relative h-[50vh] flex items-center justify-center bg-gradient-to-r from-indigo-500 to-purple-600 overflow-hidden">
-        <!-- Background Image Overlay -->
+      <div class="relative h-[50vh] flex items-center justify-center bg-gradient-to-r from-[#56ade8] to-purple-600 overflow-hidden">
         <div class="absolute inset-0 bg-classroom-pattern opacity-30 z-10"></div>
 
-        <!-- Header Content -->
         <div class="text-center z-20 relative">
-          <h1 class="text-5xl md:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-yellow-300 to-green-400 animate-gradient-shift">
+          <h1 class="text-5xl md:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-[#56ade8] via-yellow-300 to-green-400 animate-gradient-shift">
             Smart Class Hub
           </h1>
           <p class="text-xl md:text-2xl opacity-90 text-shadow">
@@ -16,7 +15,6 @@
           </p>
         </div>
 
-        <!-- Gradient Overlay -->
         <div class="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-slate-900 to-transparent z-20"></div>
       </div>
 
@@ -26,80 +24,69 @@
         <NuxtLink
             v-if="canGoBack"
             to="/"
-            class="inline-flex items-center gap-3 px-6 py-3 mb-8 bg-white/10 backdrop-blur-lg border-2 border-white/20 rounded-full text-white hover:bg-white/20 hover:-translate-y-1 transition-all duration-300 shadow-lg hover:shadow-xl no-underline"
+            class="inline-flex items-center gap-3 px-6 py-3 mb-8 text-white bg-[#56ade8] border-2 border-[#56ade8] rounded-full shadow-lg transition-all duration-300 hover:bg-white hover:text-[#56ade8] hover:-translate-y-1"
         >
           <Icon name="mdi:arrow-left" size="20" />
           Back
         </NuxtLink>
 
-
-        <!-- Navigation Cards Grid -->
+        <!-- Navigation Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           <NuxtLink
               v-for="(item, index) in items"
               :key="index"
               :to="item.value === 'smart-class' ? '/smart-class' : `/smart-class/screen/${item.value}`"
-              class="nav-card group relative bg-white/5 backdrop-blur-lg rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl border border-white/10 min-h-[280px] animate-slide-in"
+              class="nav-card group relative bg-[#56ade8]/10 backdrop-blur-lg rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl border border-white/10 min-h-[280px] animate-slide-in"
               :style="{ animationDelay: `${index * 150}ms` }"
           >
-            <!-- Card Background Gradient -->
-            <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/30 to-purple-600/30 opacity-50 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"></div>
+            <div class="absolute inset-0 bg-gradient-to-br from-[#56ade8]/30 to-purple-600/30 opacity-50 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"></div>
 
             <!-- Live Badge -->
-            <div v-if="item.isLive" class="absolute top-4 left-4 flex items-center gap-2 bg-red-500/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold z-30">
+            <div
+                v-if="item.isLive"
+                class="absolute top-4 left-4 flex items-center gap-2 bg-red-500/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold z-30"
+            >
               <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
               LIVE
             </div>
 
             <!-- Notification Badge -->
-            <div v-if="item.notifications" class="absolute top-4 right-4 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold z-30 animate-bounce">
+            <div
+                v-if="item.notifications"
+                class="absolute top-4 right-4 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold z-30 animate-bounce"
+            >
               {{ item.notifications }}
             </div>
 
             <!-- Card Content -->
             <div class="relative p-8 h-full flex flex-col items-center text-center z-20">
-              <!-- Icon -->
               <div class="mb-6 p-4 bg-white/10 backdrop-blur rounded-full group-hover:bg-white/20 group-hover:scale-110 transition-all duration-300">
                 <Icon :name="item.icon" size="48" class="text-white" />
               </div>
-
-              <!-- Title -->
               <h3 class="text-xl font-bold mb-3 text-white">{{ item.title }}</h3>
-
-              <!-- Description -->
               <p class="text-white/70 text-sm leading-relaxed flex-grow">{{ item.description }}</p>
-
-              <!-- Hover Action Button -->
               <div class="absolute bottom-4 right-4 w-11 h-11 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 text-gray-800 hover:bg-white hover:scale-110">
                 <Icon name="mdi:arrow-right" size="20" />
               </div>
             </div>
           </NuxtLink>
-
         </div>
 
-        <!-- Quick Stats Section -->
-        <div class="bg-white/5 backdrop-blur-lg rounded-3xl p-8 border border-white/10">
+        <!-- Quick Stats -->
+        <div class="bg-[#56ade8]/5 backdrop-blur-lg rounded-3xl p-8 border border-white/10">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div
                 v-for="(stat, index) in stats"
                 :key="index"
-                class="flex items-center gap-4 bg-white/5 p-6 rounded-2xl hover:bg-white/10 hover:-translate-y-2 transition-all duration-300"
+                class="flex items-center gap-4 bg-[#56ade8]/10 p-6 rounded-2xl hover:bg-[#56ade8]/20 hover:-translate-y-2 transition-all duration-300"
             >
-              <!-- Stat Icon -->
-              <div class="p-4 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full text-white">
+              <div class="p-4 bg-[#56ade8] rounded-full text-white">
                 <Icon :name="stat.icon" size="32" />
               </div>
-
-              <!-- Stat Content -->
               <div>
                 <div class="text-2xl font-bold text-white mb-1">{{ stat.number }}</div>
                 <div class="text-white/70 text-sm">{{ stat.label }}</div>
               </div>
-<!--              <div>-->
-<!--                <div class="text-2xl font-bold text-white mb-1">{{ stat.number }}</div>-->
-<!--                <div class="text-white/70 text-sm">{{ stat.label }}</div>-->
-<!--              </div>-->
             </div>
           </div>
         </div>
