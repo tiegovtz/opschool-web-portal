@@ -57,108 +57,122 @@
       </v-card>
     </v-dialog> -->
 
-<div
-  v-if="dialog"
-  class="fixed inset-0 flex items-center justify-center z-[100] bg-black bg-opacity-50"
->
-  <!-- Modal Card -->
-  <div class="bg-tranparent w-full max-w-xl rounded-lg shadow-lg overflow-y-scroll backdrop-blur-md scrollbar-none">
-    <!-- Header -->
-    <div class="px-6 py-4 border-b border-gray-200">
-      <h3 class="text-lg font-semibold text-white">Create Session</h3>
-    </div>
-
-    <!-- Form Body -->
-    <form @submit.prevent="submit" ref="formRef" class="px-6 py-4 space-y-4 ">
-      <div class="flex flex-wrap gap-4">
-        <!-- Select Class -->
-        <div class="w-full text-white">
-          <label class="block mb-1 text-sm font-medium text-white">Select Class</label>
-           <CustomDropDownList @update-model-value="formData.school_class = $event" placeholder="select class" class="w-full !text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolClasses"/>         
+    <div
+        v-if="dialog"
+        class="fixed inset-0 flex items-center justify-center z-[100] bg-black bg-opacity-50"
+    >
+      <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl overflow-y-auto max-h-[90vh]">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-xl font-bold text-gray-800">Create Session</h3>
         </div>
 
-        <!-- Select Subject -->
-        <div class="w-full text-white">
-          <label class="block mb-1 text-sm font-medium text-white">Subject</label>
-         <CustomDropDownList @update-model-value="formData.subject=$event" placeholder="select subject" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolSubjects"/>
-        </div>
+        <!-- Form Body -->
+        <form @submit.prevent="submit" ref="formRef" class="px-6 py-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-800">
 
-        <!-- Start Time -->
-        <div class="w-full text-white">
-          <label class="block mb-1 text-sm font-medium text-white">Start Time</label>
-          <input
-            type="datetime-local"
-            v-model="formData.start_time"
-            required
-            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
-          />
-        </div>
+          <!-- Select Class -->
+          <div>
+            <label class="block mb-1 text-sm font-medium">Select Class</label>
+            <CustomDropDownList
+                @update-model-value="formData.school_class = $event"
+                placeholder="Select class"
+                class="w-full !text-sm border border-gray-300 rounded-md shadow-sm h-14 bg-white placeholder-gray-500"
+                :list="schoolClasses"
+            />
+          </div>
 
-        <!-- End Time -->
-        <div class="w-full text-white">
-          <label class="block mb-1 text-sm font-medium text-white">End Time</label>
-          <input
-            type="datetime-local"
-            v-model="formData.end_time"
-            required
-            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
-          />
-        </div>
+          <!-- Select Subject -->
+          <div>
+            <label class="block mb-1 text-sm font-medium">Subject</label>
+            <CustomDropDownList
+                @update-model-value="formData.subject = $event"
+                placeholder="Select subject"
+                class="w-full !text-sm border border-gray-300 rounded-md shadow-sm h-14 bg-white placeholder-gray-500"
+                :list="schoolSubjects"
+            />
+          </div>
 
-        <!-- Topic -->
-        <div class="w-full text-white">
-          <label class="block mb-1 text-sm font-medium text-white">Topic</label>
-          <input
-            type="text"
-            v-model="formData.topic"
-            required
-            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
-          />
-        </div>
+          <!-- Start Time -->
+          <div>
+            <label class="block mb-1 text-sm font-medium">Start Time</label>
+            <input
+                type="datetime-local"
+                v-model="formData.start_time"
+                required
+                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
 
-        <!-- Room Name -->
-        <div class="w-full text-white">
-          <label class="block mb-1 text-sm font-medium text-white">Room Name</label>
-          <input
-            type="text"
-            v-model="formData.room_name"
-            required
-            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
-          />
-        </div>
+          <!-- End Time -->
+          <div>
+            <label class="block mb-1 text-sm font-medium">End Time</label>
+            <input
+                type="datetime-local"
+                v-model="formData.end_time"
+                required
+                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
 
-        <!-- Details -->
-        <div class="w-full text-white">
-          <label class="block mb-1 text-sm font-medium text-white">Details</label>
-          <input
-            type="text"
-            v-model="formData.details"
-            required
-            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:outline-none bg-transparent h-14"
-          />
+          <!-- Topic -->
+          <div>
+            <label class="block mb-1 text-sm font-medium">Topic</label>
+            <input
+                type="text"
+                v-model="formData.topic"
+                required
+                placeholder="Enter topic"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          <!-- Room Name -->
+          <div>
+            <label class="block mb-1 text-sm font-medium">Room Name</label>
+            <input
+                type="text"
+                v-model="formData.room_name"
+                required
+                placeholder="Enter room name"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+          <!-- Details (full width) -->
+          <div class="md:col-span-2">
+            <label class="block mb-1 text-sm font-medium">Details</label>
+            <input
+                type="text"
+                v-model="formData.details"
+                required
+                placeholder="Enter details"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+
+        </form>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
+          <button
+              type="button"
+              @click="dialog = false"
+              class="px-5 py-2 rounded-md border border-red-500 text-white bg-red-500 hover:bg-red-600"
+          >
+            Cancel
+          </button>
+          <button
+              type="submit"
+              @click="submit"
+              class="px-5 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Submit
+          </button>
         </div>
       </div>
-    </form>
-
-    <!-- Footer -->
-    <div class="px-6 py-4 flex justify-end gap-2 border-t border-gray-200">
-      <button
-        type="button"
-        @click="dialog = false"
-        class="px-4 py-2 rounded-md border border-gray-300 text-white hover:bg-gray-100 bg-red-500"
-      >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        @click="submit"
-        class="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
-      >
-        Submit
-      </button>
     </div>
-  </div>
-</div>
+
+
 
 
     <div class="live-classes">
@@ -286,8 +300,9 @@
             <div class="card-content">
               <h3 class="class-title">{{ classItem.title }}</h3>
               <p class="class-instructor">{{ classItem.instructor }}</p>
+
               <div class="class-meta">
-                <span class="class-category">{{ classItem?.class || classItem?.class }}</span>
+                <span class="class-category"> {{ classItem?.class || classItem?.class }}  </span>
                 <span class="class-time">{{ formatTime(classItem.scheduledTime || classItem?.start_time) }}</span>
               </div>
               <div class="class-stats">
