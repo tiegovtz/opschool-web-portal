@@ -303,6 +303,7 @@
 
               <div class="class-meta">
                 <span class="class-category"> {{ classItem?.class || classItem?.class }}  </span>
+                {{classItem.subject}}
                 <span class="class-time">{{ formatTime(classItem.scheduledTime || classItem?.start_time) }}</span>
               </div>
               <div class="class-stats">
