@@ -832,7 +832,7 @@ const selectedSubjectName = computed(() => {
       <!-- Filter Section -->
       <div class="filters-section relative z-50">
         <!-- Create Button -->
-        <div v-if="userToken?.type.toLowerCase() === 'teacher'" class="flex justify-end mb-4 px-2">
+        <div v-if="userToken?.type.toLowerCase() === 'contentmoderator'" class="flex justify-end mb-4 px-2">
           <button @click="onCreate"
             class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2">
             <i class="mdi mdi-plus"></i>
