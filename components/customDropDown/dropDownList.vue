@@ -50,11 +50,11 @@ onBeforeUnmount(() => {
     <!-- Dropdown button -->
     <button
       type="button"
-      class="flex items-center justify-between w-full px-4 py-2 text-sm text-gray-700 bg-white rounded-md shadow-sm focus:outline-none"
+      class="flex items-center justify-between h-full w-full px-4 py-2  text-gray-700 rounded-md shadow-sm focus:outline-none"
       @click="isOpen = !isOpen"
     >
       <span :class="[
-        selected ? 'text-xs text-textGray': 'text-xs text-textGray text-opacity-40'
+        selected ? 'text-md text-textGray': 'text-md text-textGray text-opacity-40'
       ]">{{ selected || placeholder }}</span>
       <!-- Arrow Icon -->
       <Icon name="formkit:down"  
@@ -65,7 +65,7 @@ onBeforeUnmount(() => {
     <transition name="fade">
       <ul
         v-if="isOpen"
-        class="absolute z-10 w-full mt-1 overflow-y-auto text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-32"
+        class="absolute z-10 w-full mt-1 overflow-y-auto scrollbar-none text-sm bg-white border border-gray-200 rounded-md shadow-lg max-h-32"
       >
         <li
           v-for="(item, index) in list"
