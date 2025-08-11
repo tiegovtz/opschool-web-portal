@@ -227,7 +227,7 @@
 
         <div class="p-4">
           <!-- Create Button " -->
-          <div v-if="userToken?.type.toLowerCase() === 'teacher'"  class="flex justify-end mb-4">
+          <div v-if="userToken?.type.toLowerCase() === 'teacheradmin'"  class="flex justify-end mb-4">
             <button @click="onCreate"
               class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
