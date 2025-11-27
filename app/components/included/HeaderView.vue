@@ -33,7 +33,7 @@ const dropDown = () => {
 
 <template>
   <!-- Header -->
-  <header class="relative shadow-sm bg-[url('/public/flag/tenor.gif')] bg-cover bg-center bg-no-repeat">
+  <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat">
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->
       <div class="relative flex justify-center w-full h-24 pt-1">
