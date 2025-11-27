@@ -74,16 +74,19 @@ const mouseOut = () => {
 
       <!-- Apperance Normal -->
       <form v-if="appearance === 'normal'" action="" @submit.prevent="search"
-        class="flex w-full h-10 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
+        class="flex w-full h-10 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue"
+        role="search" aria-label="Search for topics">
 
         <div class="flex items-center w-full">
           <!-- Search Icon -->
-          <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" />
+          <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" aria-hidden="true" />
 
           <!-- Search Input -->
-          <input type="text" @input="inputSearch" v-model="searchReactive.search"
+          <label for="search-normal" class="sr-only">Search for topics</label>
+          <input type="text" id="search-normal" @input="inputSearch" v-model="searchReactive.search"
             placeholder="What do you want to learn?"
-            class="flex flex-1 h-full px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue" />
+            class="flex flex-1 h-full px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue"
+            :aria-expanded="searchReactive.searchResult ? 'true' : 'false'" />
         </div>
 
         <!-- Search Button -->
@@ -96,16 +99,19 @@ const mouseOut = () => {
 
       <!-- Apperance Not Normal -->
       <form v-else-if="appearance !== 'normal'" action=""
-        class="flex items-center w-full max-w-3xl p-2 bg-white rounded-md h-15" @submit.prevent="search">
+        class="flex items-center w-full max-w-3xl p-2 bg-white rounded-md h-15" @submit.prevent="search"
+        role="search" aria-label="Search for topics">
 
         <div class="flex items-center w-full pl-4">
           <!-- Search Icon -->
-          <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" />
+          <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" aria-hidden="true" />
 
           <!-- Search Input -->
-          <input type="text" @input="inputSearch" v-model="searchReactive.search"
+          <label for="search-large" class="sr-only">Search for topics</label>
+          <input type="text" id="search-large" @input="inputSearch" v-model="searchReactive.search"
             class="flex flex-1 h-full px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue"
-            placeholder="What do you want to learn?" />
+            placeholder="What do you want to learn?"
+            :aria-expanded="searchReactive.searchResult ? 'true' : 'false'" />
         </div>
 
         <!-- Search Button -->
@@ -121,7 +127,8 @@ const mouseOut = () => {
         'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
         appearance === 'normal'
           ? 'top-10 left-0 max-w-md'
-          : 'top-[96px] max-w-3xl px-1',]">
+          : 'top-[96px] max-w-3xl px-1',]"
+        role="list" aria-label="Search results">
 
         <TopicCard v-for="result in searchReactive.searchResult" model-type="search" :key="result._id"
           :topic-id="result._id" :topic-title="result.name" :topic-image="result.thumbnail"
@@ -135,7 +142,8 @@ const mouseOut = () => {
         'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
         appearance === 'normal'
           ? 'top-10 left-0 max-w-md'
-          : 'top-[180px] max-w-3xl px-1',]">
+          : 'top-[180px] max-w-3xl px-1',]"
+        role="list" aria-label="Search results">
 
         <SearchResults v-for="result in searchReactive.searchResult" :key="result._id" :id="result._id"
           :title="result.name" :thumbnail="result.thumbnail" :level="result?.level ?? 'Form 1'"
