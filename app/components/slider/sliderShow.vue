@@ -3,15 +3,38 @@ import type { SwiperContainer } from 'swiper/element'
 
 const containerRef = ref<SwiperContainer | null>(null)
 const slides = [
-  "/images/8.TIE-Interactive.webp",
-  "/images/1.TIE-Interactive.webp",
-  "/images/9.TIE-Interactive.webp",
-  "/images/7.TIE-Interactive.webp",
-  "/images/6.TIE-Interactive.webp",
-  "/images/5.TIE-Interactive.webp",
-  "/images/3.TIE-Interactive.webp",
-  "/images/2.TIE-Interactive.webp",
-  "/images/10.TIE-Interactive.webp",
+  {
+    image: "/images/1.TIE-Interactive.webp",
+    alt: "Waziri Mkuu",
+  },
+  {
+    image: "/images/9.TIE-Interactive.webp",
+    alt: "Slide 2",
+  },
+  {
+    image: "/images/7.TIE-Interactive.webp",
+    alt: "Slide 3",
+  },
+  {
+    image: "/images/6.TIE-Interactive.webp",
+    alt: "Slide 4",
+  },
+  {
+    image: "/images/5.TIE-Interactive.webp",
+    alt: "Slide 5",
+  },
+  {
+    image: "/images/3.TIE-Interactive.webp",
+    alt: "Slide 6",
+  },
+  {
+    image: "/images/2.TIE-Interactive.webp",
+    alt: "Slide 7",
+  },
+  {
+    image: "/images/10.TIE-Interactive.webp",
+    alt: "Slide 8",
+  },
 ]
 
 const swiper = useSwiper(containerRef, {
@@ -73,18 +96,18 @@ onMounted(async () => {
       padding: "5px 0px",
       borderRadius: "5px",
       cursor: "pointer",
-      opacity:"0",
-      transition:"all .5s ease-in-out"
+      opacity: "0",
+      transition: "all .5s ease-in-out"
     };
 
-    containerRef.value.addEventListener('mouseover',()=>{
-      prevEl.style.opacity="1"
-      nextEl.style.opacity="1"
+    containerRef.value.addEventListener('mouseover', () => {
+      prevEl.style.opacity = "1"
+      nextEl.style.opacity = "1"
     })
 
-    containerRef.value.addEventListener('mouseout',()=>{
-      prevEl.style.opacity="0"
-      nextEl.style.opacity="0"
+    containerRef.value.addEventListener('mouseout', () => {
+      prevEl.style.opacity = "0"
+      nextEl.style.opacity = "0"
     })
 
     Object.assign(prevEl.style, buttonStyles);
@@ -96,12 +119,17 @@ onMounted(async () => {
 
 <template>
   <ClientOnly>
-    <swiper-container ref="containerRef" :init="false" class="w-full h-full max-h-[550px] overflow-hidden">
-      <swiper-slide v-for="(slide, idx) in slides" :key="idx">
-        <!-- Slide {{ idx + 1 }} -->
-        <NuxtImg :src="`${slide}`" alt="Slider Image" class="object-cover w-full h-full rounded-md" />
-      </swiper-slide>
-    </swiper-container>
+    <section class="relative w-full h-full max-h-[550px] overflow-hidden"
+      aria-label="Featured interactive learning content">
+      <swiper-container ref="containerRef" :init="false" class="w-full h-full max-h-[550px] overflow-hidden"
+        role="region" aria-roledescription="carousel" aria-label="Image slider">
+        <swiper-slide v-for="(slide, idx) in slides" :key="idx" aria-roledescription="slide"
+          :aria-label="`Slide ${idx + 1} of ${slides.length}`">
+          <!-- Slide {{ idx + 1 }} -->
+          <NuxtImg :src="slide.image" :alt="slide.alt" class="object-cover w-full h-full rounded-md" />
+        </swiper-slide>
+      </swiper-container>
+    </section>
   </ClientOnly>
 </template>
 

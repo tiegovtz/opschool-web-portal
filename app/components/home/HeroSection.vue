@@ -42,30 +42,41 @@ const toggleReadMore = () => {
 </script>
 
 <template>
-  <section class="flex justify-center my-2 hero-section">
+  <!-- Hero landmark -->
+  <section class="flex justify-center my-2 hero-section" aria-label="Ekima interactive learning introduction">
     <div class="grid grid-cols-1 xl:grid-cols-2 md:gap-2">
+      <!-- Slider -->
       <div class="flex flex-col items-center justify-center h-full">
         <SliderShow />
       </div>
+
+      <!-- Text / CTA -->
       <div class="flex flex-col h-full xl:ml-10">
-        <h1 class="hidden mb-4 font-extrabold md:text-extraLarge text-large xl:block">
+        <!-- Main heading: visible AND readable by screen readers on all sizes -->
+        <h1 class="mb-4 font-extrabold text-large md:text-extraLarge" id="hero-heading">
           Welcome
         </h1>
-        
-        <p class="mt-2 text-justify text-black text-medium text-opacity-80" v-html="isExpanded ? fullText : shortText"></p>
 
-        <button
-          @click="toggleReadMore"
-          class="self-start text-sm underline cursor-pointer text-oceanBlue"
-        >
-          {{ isExpanded ? 'Show Less' : 'Read More' }}
+        <!-- Description container controlled by the button -->
+        <div id="hero-description" aria-live="polite">
+          <p class="mt-2 text-justify text-black text-medium text-opacity-80"
+            v-html="isExpanded ? fullText : shortText"></p>
+        </div>
+
+        <!-- Read more / Show less toggle -->
+        <button type="button" @click="toggleReadMore" class="self-start text-sm underline cursor-pointer text-oceanBlue"
+          :aria-expanded="isExpanded" aria-controls="hero-description">
+          {{ isExpanded ? "Show Less" : "Read More" }}
         </button>
-        
+
+        <!-- Banner image (only when collapsed) -->
         <div :class="[
           'overflow-hidden rounded-md mt-auto transition-all duration-500 ease-in-out bg-gradient-to-b',
           isExpanded ? 'h-0' : 'h-44'
         ]">
-          <NuxtImg src="/images/4.banner_miaka_50_transparent.gif" alt="banner_miaka_50" class="object-contain w-full h-full" />
+          <NuxtImg src="/images/4.banner_miaka_50_transparent.gif"
+            alt="Banner celebrating 50 years of the Tanzania Institute of Education"
+            class="object-contain w-full h-full" />
         </div>
       </div>
     </div>

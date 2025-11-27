@@ -443,14 +443,16 @@ watch(
 
       <!-- container filter Mobile -->
       <div class="flex items-center justify-between py-2 xl:hidden">
-        <p class="font-medium text-small">Viewing {{ data?.length }} Results</p>
-        <div
+        <p class="font-medium text-small" aria-live="polite">Viewing {{ data?.length }} Results</p>
+        <button
           class="flex items-center gap-2 cursor-pointer text-deepBlue"
           @click="hideFilter = !hideFilter"
+          :aria-expanded="hideFilter"
+          aria-label="Toggle filters"
         >
-          <Icon name="mage:filter-fill" size="24" class="" />
+          <Icon name="mage:filter-fill" size="24" class="" aria-hidden="true" />
           <p class="text-medium">Filters</p>
-        </div>
+        </button>
 
         <!-- Side Bar Container Filter For Mobile View Only -->
         <div
@@ -463,11 +465,13 @@ watch(
             <div class="flex items-center justify-end">
               <button
                 class="flex items-center justify-center w-10 h-10 p-2 cursor-pointer rounded-bl-md bg-deepBlue"
-                @click="hideFilter = !hideFilter">
+                @click="hideFilter = !hideFilter"
+                aria-label="Close filters">
                 <Icon
                   name="formkit:close"
                   size="24"
-                  class="font-bold text-white"/>
+                  class="font-bold text-white"
+                  aria-hidden="true"/>
               </button>
             </div>
 
@@ -481,23 +485,27 @@ watch(
         </div>
       </div>
       <!-- LayoutEffect  -->
-      <div class="items-center justify-end hidden gap-2 md:flex">
-        <Icon
-          name="bxs:grid-alt"
-          size="1.5rem"
+      <div class="items-center justify-end hidden gap-2 md:flex" role="group" aria-label="Layout options">
+        <button
           @click="layoutEffect = 'grid'"
+          :aria-pressed="layoutEffect === 'grid'"
+          aria-label="Grid layout"
           :class="[
             'cursor-pointer transition-all duration-500 ease-in-out',
             layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
-          ]"/>
-        <Icon
-          name="fa-solid:list"
-          size="1.5rem"
+          ]">
+          <Icon name="bxs:grid-alt" size="1.5rem" aria-hidden="true" />
+        </button>
+        <button
           @click="layoutEffect = 'list'"
+          :aria-pressed="layoutEffect === 'list'"
+          aria-label="List layout"
           :class="[
             'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
             layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
-          ]"/>
+          ]">
+          <Icon name="fa-solid:list" size="1.5rem" aria-hidden="true" />
+        </button>
       </div>
       <div class="flex items-center justify-center w-full gap-4 xl:items-start">
         <!-- container filter Desktop -->
@@ -522,22 +530,24 @@ watch(
           <!-- Status Error -->
           <div
             v-else-if="status === 'error'"
-            class="md:min-h-[342px] flex flex-col justify-center items-center">
-            <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+            class="md:min-h-[342px] flex flex-col justify-center items-center"
+            role="alert">
+            <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" aria-hidden="true" />
             <p class="text-center">
               Oops! Something went wrong.<br />
               Try refreshing the page or check your internet connection.
             </p>
 
-            <span
+            <button
               v-if="
                 (Array.isArray(filterValue) && filterValue.length > 0) ||
                 (typeof filterValue == 'object' &&
                   Object.keys(filterValue).length > 0)"
               @click="filterValue = []"
-              class="cursor-pointer text-oceanBlue">
+              class="cursor-pointer text-oceanBlue"
+              aria-label="Reset filters">
               Reset filters
-            </span>
+            </button>
           </div>
 
           <!-- Status Success -->

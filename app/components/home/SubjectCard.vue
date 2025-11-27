@@ -64,7 +64,8 @@ const setSubjectToView = () => {
       'relative flex  w-full  overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue',
       layoutEffect == 'grid' ? 'flex-col pb-4' : 'flex-row'
     ]"
-    @click="setSubjectToView()">
+    @click="setSubjectToView()"
+    :aria-label="`View ${subjectName} subject: ${subjectDescription}`">
     <!-- image -->
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
@@ -73,7 +74,7 @@ const setSubjectToView = () => {
       <NuxtImg
         :src="subjectImage"
         loading="lazy"
-        alt="subject-image"
+        :alt="`Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
       />
     </div>
@@ -95,12 +96,12 @@ const setSubjectToView = () => {
        {{ subjectName }}
      </p>
   
-     <small 
+     <small
        :class="[
          'flex items-center  gap-2  text-oceanBlue group-hover:text-white',
          layoutEffect == 'grid' ? 'justify-end p-2' : 'justify-start mt-auto pb-2'
        ]">
-       <Icon name="flowbite:users-outline" class="text-medium" />
+       <Icon name="flowbite:users-outline" class="text-medium" aria-hidden="true" />
        <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
      </small>
      </div>
@@ -119,7 +120,8 @@ const setSubjectToView = () => {
     :class="[
       'relative flex  w-full  overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue',
       layoutEffect == 'grid' ? 'flex-col pb-4' : 'flex-row'
-    ]">
+    ]"
+    :aria-label="`View ${subjectName} subject: ${subjectDescription}`">
     <!-- image -->
      <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
@@ -128,7 +130,7 @@ const setSubjectToView = () => {
       <NuxtImg
         :src="subjectImage"
         loading="lazy"
-        alt="subject-image"
+        :alt="`Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
       />
     </div>
@@ -149,7 +151,7 @@ const setSubjectToView = () => {
       <small
         class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white"
       >
-        <Icon name="flowbite:users-outline" class="text-medium" />
+        <Icon name="flowbite:users-outline" class="text-medium" aria-hidden="true" />
         <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
       </small>
     </div>

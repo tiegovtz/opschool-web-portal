@@ -186,97 +186,107 @@ const visibleFilters = computed(() => {
 </script>
 
 <template>
-  <div v-if="isLoading">
-      <p class="text-gray-400 animate-pulse">Loading filters...</p>
-    </div>
-     <!-- Actual dropdown rendering logic here -->
-     <form v-else class="flex flex-col w-full bg-white divide-y divide-gray-200 cursor-pointer" @reset="resetFilters">
-        <!-- Filter legend and reset button -->
-        <div class="flex items-center justify-between p-4 border-b bg-gray-50">
-          <h2 class="text-lg font-bold text-gray-700">Filter</h2>
-          <button type="reset"
-            class="px-3 py-1 text-sm transition-all duration-500 ease-in-out border rounded-md text-oceanBlue border-oceanBlue hover:bg-deepBlue hover:text-white hover:border-deepBlue">
-            Reset Filters
-          </button>
-        </div>
+  <div v-if="isLoading" role="status" aria-live="polite">
+    <p class="text-gray-400 animate-pulse">Loading filters...</p>
+  </div>
 
-        <div v-for="(filter, index) in visibleFilters" :key="index" class="p-4">
-          <div @click="setMenuOpen(index)" class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">{{ filter.name }}</h3>
-            <span>
-              <Icon :name="dropDownMenu.openMenus.includes(index) ?
-                'lets-icons:remove-duotone' :
-                'lets-icons:add-duotone'" size="1.2rem" class="text-deepBlue" />
-            </span>
+  <form v-else class="flex flex-col w-full bg-white divide-y divide-gray-200" @reset="resetFilters"
+    aria-label="Content filters">
+    <!-- Filter legend and reset button -->
+    <div class="flex items-center justify-between p-4 border-b bg-gray-50">
+      <h2 class="text-lg font-bold text-gray-700">Filter</h2>
+      <button type="reset"
+        class="px-3 py-1 text-sm transition-all duration-500 ease-in-out border rounded-md text-oceanBlue border-oceanBlue hover:bg-deepBlue hover:text-white hover:border-deepBlue">
+        Reset Filters
+      </button>
+    </div>
+
+    <div v-for="(filter, index) in visibleFilters" :key="index" class="p-4"
+      :aria-labelledby="`filter-heading-${index}`">
+      <!-- Accordion toggle -->
+      <button type="button" class="flex items-center justify-between w-full text-left" @click="setMenuOpen(index)"
+        :aria-expanded="dropDownMenu.openMenus.includes(index)" :aria-controls="`filter-panel-${index}`">
+        <h3 class="text-lg font-semibold capitalize" :id="`filter-heading-${index}`">
+          {{ filter.name }}
+        </h3>
+        <span>
+          <Icon :name="dropDownMenu.openMenus.includes(index)
+            ? 'lets-icons:remove-duotone'
+            : 'lets-icons:add-duotone'" size="1.2rem" class="text-deepBlue" />
+        </span>
+      </button>
+
+      <transition name="fade">
+        <div v-if="dropDownMenu.openMenus.includes(index)" class="mt-2 space-y-2" :id="`filter-panel-${index}`"
+          role="region" :aria-labelledby="`filter-heading-${index}`">
+          <!-- LEVEL -->
+          <div v-if="filter.name.toLowerCase() === 'level'">
+            <fieldset>
+              <legend class="sr-only">Filter by education level</legend>
+              <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2">
+                <input :type="filter.inputType" :value="option.name" name="level" @change="selectLevel(option.name)"
+                  :checked="selectedFilters.level === option.name" class="capitalize" />
+                {{ option.name }}
+              </label>
+            </fieldset>
           </div>
 
-          <transition name="fade">
-            <div v-if="dropDownMenu.openMenus.includes(index)" class="mt-2 space-y-2">
-              <!-- LEVEL -->
-              <div v-if="filter.name.toLowerCase() === 'level'">
-                <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2">
-                  <input :type="filter.inputType" :value="option.name" name="level" @change="selectLevel(option.name)"
-                    :checked="selectedFilters.level === option.name" class="capitalize"/>
-                  {{ option.name }}
-                </label>
-              </div>
-
-              <!-- CLASS -->
-              <div v-else-if="filter.name === 'class'">
-                <div v-if="!selectedFilters.level" class="text-sm text-red-500">
-                  Please select a level first.
-                </div>
-                <div v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
-                  <div v-if="group.level?.toLowerCase() === selectedFilters.level?.toLowerCase()">
-                    <label v-for="className in group.classes" :key="className" class="flex items-center gap-2">
-                      <input :type="filter.inputType" :value="className" name="class" @change="selectClass(className)"
-                      :checked="selectedFilters.class?.includes(className)" />
-                      {{ className }}
-                    </label>
-                  </div>
-                  <div v-else class="flex items-center gap-2" >
-                    no content
-                  </div>
-                </div>
-              </div>
-
-              <!-- SUBJECT -->
-              <div v-else-if="filter.name === 'subject'">
-                <div v-if="!selectedFilters.level" class="text-sm text-red-500">
-                  Please select a level first.
-                </div>
-                <div v-else v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
-                  <div v-if="group.level === selectedFilters.level">
-                    <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
-                      @click.prevent="toggleCheckbox('subject', subject)">
-                      <input :type="filter.inputType" :value="subject" :checked="selectedFilters.subject?.includes(subject)" @change="selectSubject(subject)" />
-                      {{ subject }}
-                    </label>
-                  </div>
-                  <div v-else>
-                    <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2"
-                      @click.prevent="toggleCheckbox('subject', subject)">
-                      <input :type="filter.inputType" :value="subject" :checked="selectedFilters.subject?.includes(subject)"  @change="selectSubject(subject)" />
-                      {{ subject }}
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <!-- GENERAL FILTER (Category, Language, Skills) -->
-              <div v-else>
-                <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2"
-                  @click.prevent="toggleCheckbox(filter.name.toLowerCase(), option.name)">
-                  <input :type="filter.inputType" :value="option.name" class="capitalize"
-                    :checked="selectedFilters[filter.name.toLowerCase()]?.includes(option.name)" />
-                  {{ option.name }}
-                </label>
-              </div>
+          <!-- CLASS -->
+          <div v-else-if="filter.name === 'class'">
+            <div v-if="!selectedFilters.level" class="text-sm text-red-500" role="alert">
+              Please select a level first.
             </div>
-          </transition>
+            <fieldset v-else>
+              <legend class="sr-only">Filter by class</legend>
+              <div v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
+                <div v-if="group.level?.toLowerCase() === selectedFilters.level?.toLowerCase()">
+                  <label v-for="className in group.classes" :key="className" class="flex items-center gap-2">
+                    <input :type="filter.inputType" :value="className" name="class" @change="selectClass(className)"
+                      :checked="selectedFilters.class?.includes(className)" />
+                    {{ className }}
+                  </label>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- SUBJECT -->
+          <div v-else-if="filter.name === 'subject'">
+            <div v-if="!selectedFilters.level" class="text-sm text-red-500" role="alert">
+              Please select a level first.
+            </div>
+            <fieldset v-else>
+              <legend class="sr-only">Filter by subject</legend>
+              <div v-for="group in filter.filterGroup" :key="group.level + selectedFilters.level">
+                <div v-if="group.level === selectedFilters.level">
+                  <label v-for="subject in group.list" :key="subject" class="flex items-center gap-2">
+                    <input :type="filter.inputType" :value="subject"
+                      :checked="selectedFilters.subject?.includes(subject)" @change="selectSubject(subject)" />
+                    {{ subject }}
+                  </label>
+                </div>
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- GENERAL FILTER (Language, Skills, etc.) -->
+          <div v-else>
+            <fieldset>
+              <legend class="sr-only">Filter by {{ filter.name }}</legend>
+              <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2">
+                <input :type="filter.inputType" :value="option.name" class="capitalize"
+                  :checked="selectedFilters[filter.name.toLowerCase()]?.includes(option.name)"
+                  @change="toggleCheckbox(filter.name.toLowerCase(), option.name)" />
+                {{ option.name }}
+              </label>
+            </fieldset>
+          </div>
         </div>
-      </form>
+      </transition>
+    </div>
+  </form>
 </template>
+
 
 
 <style scoped>
