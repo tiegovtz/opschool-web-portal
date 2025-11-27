@@ -123,7 +123,7 @@ const userTypes = [
         <div class="w-full max-w-md px-4 rounded-lg md:bg-white md:shadow-2xl md:pt-3">
             <h1 class="font-bold text-center text-large">Forgot Password</h1>
             <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
-                <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
+                <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="TIE Web Portal Logo" />
             </NuxtLink>
             <form @submit.prevent="forgotPassword" :class="[
                 'px-4 text-textGray md:h-[150px] relative overflow-hidden text-extraSmall',
@@ -145,12 +145,14 @@ const userTypes = [
                         <!-- Use the Custom Dropdown instead of <select> -->
                         <CustomDropDownList v-model="userForgotPassword.type" :list="userTypes"
                             placeholder="(eg: Student, Teacher ...)"
+                            :aria-invalid="!!userForgotPassword.controller.errors.type"
+                            aria-describedby="type-error"
                             @update-model-value="userForgotPassword.type = $event" />
 
                     </div>
 
                     <!-- Select User Type error message -->
-                    <small v-if="userForgotPassword.controller.errors.type" class="w-full text-red-500 text-smallest">
+                    <small id="type-error" v-if="userForgotPassword.controller.errors.type" class="w-full text-red-500 text-smallest">
                         {{ userForgotPassword.controller.errors.type }}
                     </small>
                 </div>
@@ -165,16 +167,19 @@ const userTypes = [
                                 userForgotPassword.controller.errors.fname,
                         }
                     ]">
+                        <label for="fname" class="sr-only">First Name</label>
                         <div class="flex items-center w-full">
                             <input type="text" id="fname" v-model="userForgotPassword.fname" @keydown.space.prevent
                                 name="fname" autocomplete="off"
+                                :aria-invalid="!!userForgotPassword.controller.errors.fname"
+                                aria-describedby="fname-error"
                                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                                 placeholder="First Name" />
                             <Icon name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
                         </div>
 
                         <!-- First Name error message -->
-                        <small v-if="userForgotPassword.controller.errors.fname"
+                        <small id="fname-error" v-if="userForgotPassword.controller.errors.fname"
                             class="w-full text-red-500 text-smallest">
                             {{ userForgotPassword.controller.errors.fname }}
                         </small>
@@ -188,16 +193,19 @@ const userTypes = [
                                 userForgotPassword.controller.errors.lname,
                         }
                     ]">
+                        <label for="lname" class="sr-only">Last Name</label>
                         <div class="flex items-center w-full">
                             <input type="text" id="lname" v-model="userForgotPassword.lname" @keydown.space.prevent
                                 name="lname" autocomplete="off"
+                                :aria-invalid="!!userForgotPassword.controller.errors.lname"
+                                aria-describedby="lname-error"
                                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                                 placeholder="Last Name" />
                             <Icon name="lets-icons:user-box-light" class="w-5 h-5 text-textGray" />
                         </div>
 
                         <!-- Last Name error message -->
-                        <small v-if="userForgotPassword.controller.errors.lname"
+                        <small id="lname-error" v-if="userForgotPassword.controller.errors.lname"
                             class="w-full text-red-500 text-smallest">
                             {{ userForgotPassword.controller.errors.lname }}
                         </small>
@@ -211,29 +219,40 @@ const userTypes = [
                                 userForgotPassword.controller.errors.school,
                         }
                     ]">
+                        <label for="school" class="sr-only">School Name</label>
                         <div class="flex items-center w-full">
                             <input type="text" id="school" v-model="userForgotPassword.school"
                                 name="school" autocomplete="off"
+                                :aria-invalid="!!userForgotPassword.controller.errors.school"
+                                aria-describedby="school-error"
                                 class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                                 placeholder="School ( eg: Taifa Secondary School )" />
                             <Icon name="tdesign:institution" class="w-5 h-5 text-textGray" />
                         </div>
 
-                        <!-- Last Name error message -->
-                        <small v-if="userForgotPassword.controller.errors.school"
+                        <!-- School error message -->
+                        <small id="school-error" v-if="userForgotPassword.controller.errors.school"
                             class="w-full text-red-500 text-smallest">
                             {{ userForgotPassword.controller.errors.school }}
                         </small>
                     </div>
 
                 </div>
-                <div v-else
-                    class="flex items-center gap-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue">
-                    <input type="email" id="email" :disabled="userForgotPassword.type.toLowerCase().trim() === ''"
-                        v-model="userForgotPassword.email" name="email" autocomplete="off"
-                        class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-                        placeholder="Email ( eg:example@email.com )">
-                    <Icon name="mdi-light:email" class="w-5 h-5 text-textGray focus:text-oceanBlue" />
+                <div v-else class="flex flex-col">
+                    <div class="flex items-center gap-2 mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue">
+                        <label for="email" class="sr-only">Email Address</label>
+                        <input type="email" id="email" :disabled="userForgotPassword.type.toLowerCase().trim() === ''"
+                            v-model="userForgotPassword.email" name="email" autocomplete="off"
+                            :aria-invalid="!!userForgotPassword.controller.errors.email"
+                            aria-describedby="email-error"
+                            class="w-full p-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
+                            placeholder="Email ( eg:example@email.com )">
+                        <Icon name="mdi-light:email" class="w-5 h-5 text-textGray focus:text-oceanBlue" />
+                    </div>
+                    <!-- Email error message -->
+                    <small id="email-error" v-if="userForgotPassword.controller.errors.email" class="w-full mb-4 text-red-500 text-smallest">
+                        {{ userForgotPassword.controller.errors.email }}
+                    </small>
                 </div>
                 <button type="submit" :disabled="userForgotPassword.controller.isDisabled"
                     class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">

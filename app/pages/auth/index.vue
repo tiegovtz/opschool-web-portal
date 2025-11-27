@@ -221,7 +221,7 @@ watch(
     <div class="w-full max-w-md px-4 rounded-lg md:bg-white md:shadow-2xl md:pt-3">
       <h1 class="font-bold text-center text-large">Welcome</h1>
       <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
-        <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
+        <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="TIE Web Portal Logo" />
       </NuxtLink>
       <form @submit.prevent="signIn" v-if="userSignIn.controller.attemps < 3"
         class="px-4 overflow-hidden text-textGray text-extraSmall">
@@ -233,9 +233,12 @@ watch(
               userSignIn.controller.errors.username,
           },
         ]">
+          <label for="username" class="sr-only">Username (e.g., email, phone, or student name)</label>
           <div class="flex items-center w-full">
             <input type="text" id="username" v-model="userSignIn.username" name="username" autocomplete="off"
               @keydown.space.prevent
+              :aria-invalid="!!userSignIn.controller.errors.username"
+              aria-describedby="username-error"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
               placeholder="(e.g. example@email.com /0622***722 /Student.Name)" />
 
@@ -243,7 +246,7 @@ watch(
           </div>
 
           <!-- Username error message -->
-          <small v-if="userSignIn.controller.errors.username" :class="[
+          <small id="username-error" v-if="userSignIn.controller.errors.username" :class="[
             'w-full text-red-500 text-smallest',
             { 'mt-1': userSignIn.type.trim().toLowerCase() === 'student' },
             {
@@ -266,17 +269,20 @@ watch(
               userSignIn.controller.errors.password,
           },
         ]">
+          <label for="password" class="sr-only">Password</label>
           <div class="flex items-center w-full">
             <input :type="showPassword ? 'text' : 'password'" id="password" v-model="userSignIn.password"
               name="password"
+              :aria-invalid="!!userSignIn.controller.errors.password"
+              aria-describedby="password-error"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
               placeholder="Password" />
             <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'
-              " class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
+              " class="w-5 h-5 cursor-pointer text-textGray" tabindex="0" @click="togglePassword" @keydown.enter="togglePassword" />
           </div>
 
           <!-- Password error message -->
-          <small v-if="userSignIn.controller.errors.password" class="w-full text-red-500 text-smallest">
+          <small id="password-error" v-if="userSignIn.controller.errors.password" class="w-full text-red-500 text-smallest">
             {{ userSignIn.controller.errors.password }}
           </small>
         </div>
