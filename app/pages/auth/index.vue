@@ -214,8 +214,8 @@ watch(
     <MessageComponent :message="userSignIn.controller.feedback"
       :position="userSignIn.controller.feedback ? true : false"
       :event-type="userSignIn.controller.isSucces ? 'success' : 'error'" :icon="userSignIn.controller.isSucces
-          ? 'icons8:checked'
-          : 'oui:cross-in-circle-empty'
+        ? 'icons8:checked'
+        : 'oui:cross-in-circle-empty'
         " />
 
     <div class="w-full max-w-md px-4 rounded-lg md:bg-white md:shadow-2xl md:pt-3">
