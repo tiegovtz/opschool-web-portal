@@ -236,8 +236,7 @@ watch(
           <label for="username" class="sr-only">Username (e.g., email, phone, or student name)</label>
           <div class="flex items-center w-full">
             <input type="text" id="username" v-model="userSignIn.username" name="username" autocomplete="off"
-              @keydown.space.prevent
-              :aria-invalid="!!userSignIn.controller.errors.username"
+              @keydown.space.prevent :aria-invalid="!!userSignIn.controller.errors.username"
               aria-describedby="username-error"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
               placeholder="(e.g. example@email.com /0622***722 /Student.Name)" />
@@ -272,25 +271,29 @@ watch(
           <label for="password" class="sr-only">Password</label>
           <div class="flex items-center w-full">
             <input :type="showPassword ? 'text' : 'password'" id="password" v-model="userSignIn.password"
-              name="password"
-              :aria-invalid="!!userSignIn.controller.errors.password"
-              aria-describedby="password-error"
+              name="password" :aria-invalid="!!userSignIn.controller.errors.password" aria-describedby="password-error"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
               placeholder="Password" />
             <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'
-              " class="w-5 h-5 cursor-pointer text-textGray" tabindex="0" @click="togglePassword" @keydown.enter="togglePassword" />
+              " class="w-5 h-5 cursor-pointer text-textGray" tabindex="0" @click="togglePassword"
+              @keydown.enter="togglePassword" />
           </div>
 
           <!-- Password error message -->
-          <small id="password-error" v-if="userSignIn.controller.errors.password" class="w-full text-red-500 text-smallest">
+          <small id="password-error" v-if="userSignIn.controller.errors.password"
+            class="w-full text-red-500 text-smallest">
             {{ userSignIn.controller.errors.password }}
           </small>
         </div>
 
         <div class="flex items-center justify-between my-6">
-          <NuxtLink to="/auth/ForgotPassword" class="text-sm cursor-pointer text-textGray">
-            Forgot Password?
+          <!-- Forgot password link -->
+          <NuxtLink to="/auth/ForgotPassword"
+            class="text-sm cursor-pointer text-textGray underline-offset-2 hover:underline">
+            Forgot password?
           </NuxtLink>
+
+          <!-- Remember me -->
           <div class="flex items-center gap-2">
             <input type="checkbox" id="remember" v-model="userSignIn.rememberMe" class="w-4 h-4 cursor-pointer" />
             <label for="remember" class="text-sm cursor-pointer text-textGray">
@@ -299,37 +302,52 @@ watch(
           </div>
         </div>
 
-        <button type="submit" :disabled="isDisable"
-          class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
-          Sign In
-          <Icon name="eos-icons:loading" class="text-white" size="20" v-if="isDisable" />
+        <!-- Sign in button -->
+        <button type="submit" :disabled="isDisable" :aria-disabled="isDisable ? 'true' : 'false'"
+          :aria-busy="isDisable ? 'true' : 'false'"
+          class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
+          <!-- Normal state -->
+          <span v-if="!isDisable">
+            Sign in
+          </span>
+
+          <!-- Loading state -->
+          <span v-else class="flex items-center gap-2">
+            <span>Signing in…</span>
+            <Icon name="eos-icons:loading" class="text-white animate-spin" size="20" aria-hidden="true" />
+          </span>
         </button>
 
-        <!-- sign up -->
+        <!-- Sign up -->
         <div class="flex flex-col items-center gap-4 my-4">
           <p class="text-sm text-textGray">Don't have an account?</p>
           <NuxtLink to="/auth/SignUp"
             class="w-full p-2 text-center text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-darkBlue hover:bg-darkBlue/80">
-            Sign Up
+            Sign up
           </NuxtLink>
         </div>
       </form>
-      <div v-else class="flex flex-col items-center justify-center w-full gap-2">
-        <div class="py-3">
+
+      <!-- Too many attempts state -->
+      <div v-else class="flex flex-col items-center justify-center w-full gap-2" aria-live="polite">
+        <div class="py-3 text-center">
           You have attempted to sign in
-          <span class="text-oceanBlue">{{
-            userSignIn.controller.attemps
-            }}</span>
-          times. Please consider to
+          <span class="text-oceanBlue">
+            {{ userSignIn.controller.attemps }}
+          </span>
+          times. Please reset your password or register a new account.
         </div>
+
         <NuxtLink to="/auth/ForgotPassword"
-          class="flex items-center justify-center w-full p-2 text-white capitalize rounded-md cursor-pointer bg-oceanBlue">
-          reset your password
+          class="flex items-center justify-center w-full p-2 text-white capitalize rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
+          Reset your password
         </NuxtLink>
-        or
+
+        <span>or</span>
+
         <NuxtLink to="/auth/SignUp"
-          class="flex items-center justify-center w-full p-2 mb-3 text-white capitalize rounded-md cursor-pointer bg-oceanBlue">
-          Register a new account.
+          class="flex items-center justify-center w-full p-2 mb-3 text-white capitalize rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
+          Register a new account
         </NuxtLink>
       </div>
     </div>
