@@ -4,7 +4,7 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 const props = defineProps({
   list: {
     type: Array,
-    required: true, // [{ id, name }, ...]
+    required: true,
   },
   modelValue: {
     type: [String, Number, Object],
@@ -20,8 +20,8 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:modelValue']); // v-model support
-const attrs = useAttrs(); // to forward id, aria-* from parent
+const emit = defineEmits(['update:modelValue']);
+const attrs = useAttrs();
 
 const isOpen = ref(false);
 const selected = ref('');
@@ -44,32 +44,16 @@ const toggleOpen = () => {
   }
 };
 
-// Emit change when selected
 const selectItem = (item) => {
+  if (props.disabled) return;
   selectedLabel.value = item.name;
   emit('update:modelValue', item.id ?? item.name);
   isOpen.value = false;
 };
-
-// Close when clicked outside
-const handleClickOutside = (e) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
-    isOpen.value = false;
-  }
-};
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
 </script>
 
 <template>
   <div ref="dropdownRef" class="relative w-full text-left">
-    <!-- Dropdown button -->
     <button type="button"
       class="flex items-center justify-between w-full h-full px-4 py-2 text-gray-700 rounded-md shadow-sm focus:outline-none"
       @click.stop="toggleOpen" role="combobox" aria-haspopup="listbox"
@@ -84,9 +68,8 @@ onBeforeUnmount(() => {
         :class="['w-4 h-4 ml-2 transition-transform duration-500 ease-in-out text-textGray', { 'rotate-180': isOpen }]" />
     </button>
 
-    <!-- Dropdown list -->
     <transition name="fade">
-      <ul v-if="isOpen"
+      <ul v-if="isOpen && !disabled"
         class="absolute z-10 w-full mt-1 overflow-y-auto text-sm bg-white border border-gray-200 rounded-md shadow-lg scrollbar-none max-h-32"
         :id="$attrs.id ? `${$attrs.id}-listbox` : 'dropdown-listbox'" role="listbox">
         <li v-for="(item, index) in list" :key="index" role="option"
@@ -101,6 +84,7 @@ onBeforeUnmount(() => {
     </transition>
   </div>
 </template>
+
 
 <style scoped>
 .fade-enter-active,
