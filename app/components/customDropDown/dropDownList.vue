@@ -4,11 +4,11 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 const props = defineProps({
   list: {
     type: Array,
-    required: true
+    required: true, // [{ id, name }, ...]
   },
   modelValue: {
     type: [String, Number, Object],
-    default: null
+    default: null,
   },
   placeholder: {
     type: String,
@@ -20,7 +20,8 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['updateModelValue']);
+const emit = defineEmits(['update:modelValue']); // v-model support
+const attrs = useAttrs(); // to forward id, aria-* from parent
 
 const isOpen = ref(false);
 const selected = ref('');
@@ -45,9 +46,9 @@ const toggleOpen = () => {
 
 // Emit change when selected
 const selectItem = (item) => {
-  selected.value = item.name;
-  isOpen.value = !isOpen.value;
-  emit('updateModelValue', item.id);
+  selectedLabel.value = item.name;
+  emit('update:modelValue', item.id ?? item.name);
+  isOpen.value = false;
 };
 
 // Close when clicked outside
