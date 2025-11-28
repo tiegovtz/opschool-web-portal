@@ -1,31 +1,28 @@
 <script setup>
-import { reactive, watch, computed } from "vue";
 import { CustomDropDownList } from "#components";
 import axios from "axios";
 
+// Props
 const props = defineProps({
   region: String,
   district: String,
   error: String,
 });
 
+// Reactive state
 const data = reactive({
   district: [],
-  status: "idle", // idle | pending | success | error
+  status: "idle",
   error: null,
 });
 
+// Emits
 const emit = defineEmits(["updateDistrict"]);
 
-const districtValue = computed({
-  get: () => props.district,
-  set: (value) => emit("updateDistrict", value),
-});
-
+// Fetch district function
 const fetchDistricts = async (region) => {
   data.status = "pending";
   data.error = null;
-  data.district = [];
 
   try {
     const response = await axios.get(
@@ -33,6 +30,7 @@ const fetchDistricts = async (region) => {
         region
       ).toUpperCase()}`
     );
+
     data.status = "success";
     data.district = response.data;
   } catch (err) {
@@ -41,63 +39,33 @@ const fetchDistricts = async (region) => {
   }
 };
 
+// Watch for changes in region or district
 watch(
   () => props.region,
   (region) => {
-    // reset selected district when region changes
-    emit("updateDistrict", "");
     if (region) {
       fetchDistricts(region);
-    } else {
-      data.status = "idle";
-      data.district = [];
-      data.error = null;
     }
-  },
-  { immediate: true }
-);
-
-const districtOptions = computed(() =>
-  data.district.map((d) => ({ id: d, name: d }))
-);
-
-const isDisabled = computed(
-  () =>
-    !props.region ||
-    data.status === "pending" ||
-    data.status === "error" ||
-    !districtOptions.value.length
+  }
 );
 </script>
 
 <template>
   <div class="flex flex-col items-start w-full">
-    <label for="district-select" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-      Select district:
-    </label>
+    <label for="district" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select District:</label>
 
-    <CustomDropDownList id="district-select" v-model="districtValue" :list="districtOptions" :placeholder="!props.region
-        ? 'Select a region first'
-        : data.status === 'pending'
-          ? 'Loading districts…'
-          : 'Select a district'
-      " :disabled="isDisabled" :aria-invalid="!!error" aria-describedby="district-status district-error" />
+    <CustomDropDownList v-if="data.status === 'success'" :list="data.district.map((district) => ({ id: district, name: district }))
+      " :placeholder="'Select a District'" :modelValue="props.district"
+      @updateModelValue="(value) => emit('updateDistrict', value)" />
 
-    <!-- Status / helper text -->
-    <!-- <div id="district-status" class="w-full mt-1" aria-live="polite">
-      <p v-if="data.status === 'pending'" class="text-sm text-gray-400" role="status">
-        Loading districts…
-      </p>
-      <p v-else-if="data.status === 'error'" class="text-sm text-red-500" role="alert">
-        {{ data.error || "Unable to load districts. Please try again." }}
-      </p>
-      <p v-else-if="!props.region" class="text-sm text-gray-400">
-        Select a region first.
-      </p>
-    </div> -->
+    <p v-else-if="data.status === 'pending'" class="text-sm text-gray-400">Loading districts...</p>
+    <p v-else-if="data.status === 'error'" class="text-sm text-red-500">
+      {{ data.error }}
+    </p>
+    <p v-else class="text-sm text-gray-400">Select a region first.</p>
 
-    <!-- Validation error from parent -->
-    <small v-if="error" id="district-error" class="w-full mt-1 text-red-500 text-smallest" role="alert">
+    <!-- Error message -->
+    <small v-if="error" class="w-full text-red-500 text-smallest">
       {{ error }}
     </small>
   </div>
