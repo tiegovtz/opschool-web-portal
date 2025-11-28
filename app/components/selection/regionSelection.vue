@@ -1,54 +1,46 @@
 <script setup>
-import { reactive, onMounted } from 'vue';
-import { CustomDropDownList } from '#components';
+import { CustomDropDownList } from "#components";
 import axios from 'axios';
 
 // Props
 const props = defineProps({
-    error: String,       // validation error from parent
-    region: String,      // current selected region value
+    error: String,
+    region: String,
 });
 
 // Reactive state
 const data = reactive({
     regions: [],
-    status: 'pending',   // 'pending' | 'success' | 'error'
-    error: null,         // fetch error
+    status: "pending",
+    error: null,
 });
 
 // Emit
-const emit = defineEmits(['updateRegion']);
+const emit = defineEmits(["updateRegion"]);
 
 // Fetch Region function
 const fetchRegion = async () => {
 
     data.error = null;
-    data.status = 'pending';
 
     try {
-        const response = await axios.get(
-            'https://opschool.tie.go.tz:5001/v1/schools/regions'
-        );
+        const response = await axios.get(`https://opschool.tie.go.tz:5001/v1/schools/regions`);
 
-        data.status = 'success';
-        data.regions = response.data || [];
+        data.status = "success";
+        data.regions = response.data;
     } catch (err) {
-        data.status = 'error';
-        data.error = err?.message || 'Failed to fetch regions';
+        data.status = "error";
+        data.error = err.message;
     }
 };
 
-// Fetch on mount
-onMounted(async () => {
-    await fetchRegion();
-});
+// Initial Fetch
+fetchRegion();
 </script>
 
 <template>
-    <div class="flex flex-col items-start w-full" :aria-busy="data.status === 'pending' ? 'true' : 'false'">
-        <label for="region-select" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-            Select region:
-        </label>
+    <div class="flex flex-col items-start w-full">
+        <label for="region" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select Region:</label>
 
         <CustomDropDownList v-if="data.status === 'success' && data.regions.length"
             :list="data.regions.map(region => ({ id: region, name: region }))"
@@ -58,8 +50,8 @@ onMounted(async () => {
         <p v-else-if="data.status === 'pending'">Loading...</p>
         <p v-else-if="data.status === 'error'" class="text-normalRed text-smallest">Failed to Fetch data</p>
 
-        <!-- Validation error from parent (e.g. "Region is required") -->
-        <small v-if="error" id="region-error" class="w-full mt-1 text-red-500 text-smallest" role="alert">
+        <!-- Error message -->
+        <small v-if="error" class="w-full text-red-500 text-smallest">
             {{ error }}
         </small>
     </div>

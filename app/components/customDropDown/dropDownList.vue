@@ -4,11 +4,11 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
 const props = defineProps({
   list: {
     type: Array,
-    required: true,
+    required: true
   },
   modelValue: {
     type: [String, Number, Object],
-    default: null,
+    default: null
   },
   placeholder: {
     type: String,
@@ -20,8 +20,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:modelValue']);
-const attrs = useAttrs();
+const emit = defineEmits(['updateModelValue']);
 
 const isOpen = ref(false);
 const selected = ref('');
@@ -54,6 +53,7 @@ const selectItem = (item) => {
 
 <template>
   <div ref="dropdownRef" class="relative w-full text-left">
+    <!-- Dropdown button -->
     <button type="button"
       class="flex items-center justify-between w-full h-full px-4 py-2 text-gray-700 rounded-md shadow-sm focus:outline-none"
       @click.stop="toggleOpen" role="combobox" aria-haspopup="listbox"
@@ -68,6 +68,7 @@ const selectItem = (item) => {
         :class="['w-4 h-4 ml-2 transition-transform duration-500 ease-in-out text-textGray', { 'rotate-180': isOpen }]" />
     </button>
 
+    <!-- Dropdown list -->
     <transition name="fade">
       <ul v-if="isOpen && !disabled"
         class="absolute z-10 w-full mt-1 overflow-y-auto text-sm bg-white border border-gray-200 rounded-md shadow-lg scrollbar-none max-h-32"
