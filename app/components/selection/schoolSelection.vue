@@ -1,8 +1,8 @@
 <script setup>
 import { CustomDropDownList } from "#components";
-import axios from 'axios';
+import axios from "axios";
+import { reactive, ref, watch } from "vue";
 
-// Props
 const props = defineProps({
   region: String,
   district: String,
@@ -10,15 +10,21 @@ const props = defineProps({
   school: String,
 });
 
-// Reactive state
 const data = reactive({
   schools: [],
   status: "idle",
   error: null,
 });
 
-// Emit
 const emit = defineEmits(["updateSchool"]);
+
+// local v-model for dropdown
+const selectedSchool = ref(props.school ?? null);
+
+// Emit to parent whenever dropdown changes
+watch(selectedSchool, (val) => {
+  emit("updateSchool", val);
+});
 
 // Fetch schools function
 const fetchSchools = async (region, district) => {
@@ -60,8 +66,9 @@ watch(() => props.region, (region) => {
 
 <template>
   <div class="flex flex-col items-start w-full">
+    <!-- Label correctly linked to dropdown via id -->
     <label for="school" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-      Select School:
+      Select school:
     </label>
 
     <CustomDropDownList v-if="data.status === 'success' && data.schools.length"
@@ -80,8 +87,8 @@ watch(() => props.region, (region) => {
       {{ data.error }}
     </div>
 
-    <!-- Error message -->
-    <small v-if="error" class="w-full mt-1 text-red-500 text-smallest">
+    <!-- Validation error from parent -->
+    <small v-if="error" id="school-error" class="w-full mt-1 text-red-500 text-smallest" role="alert">
       {{ error }}
     </small>
   </div>

@@ -1,28 +1,31 @@
 <script setup>
+import { reactive, watch, computed } from "vue";
 import { CustomDropDownList } from "#components";
 import axios from "axios";
 
-// Props
 const props = defineProps({
   region: String,
   district: String,
   error: String,
 });
 
-// Reactive state
 const data = reactive({
   district: [],
-  status: "idle",
+  status: "idle", // idle | pending | success | error
   error: null,
 });
 
-// Emits
 const emit = defineEmits(["updateDistrict"]);
 
-// Fetch district function
+const districtValue = computed({
+  get: () => props.district,
+  set: (value) => emit("updateDistrict", value),
+});
+
 const fetchDistricts = async (region) => {
   data.status = "pending";
   data.error = null;
+  data.district = [];
 
   try {
     const response = await axios.get(
@@ -30,7 +33,6 @@ const fetchDistricts = async (region) => {
         region
       ).toUpperCase()}`
     );
-
     data.status = "success";
     data.district = response.data;
   } catch (err) {
@@ -39,14 +41,32 @@ const fetchDistricts = async (region) => {
   }
 };
 
-// Watch for changes in region or district
 watch(
   () => props.region,
   (region) => {
+    // reset selected district when region changes
+    emit("updateDistrict", "");
     if (region) {
       fetchDistricts(region);
+    } else {
+      data.status = "idle";
+      data.district = [];
+      data.error = null;
     }
-  }
+  },
+  { immediate: true }
+);
+
+const districtOptions = computed(() =>
+  data.district.map((d) => ({ id: d, name: d }))
+);
+
+const isDisabled = computed(
+  () =>
+    !props.region ||
+    data.status === "pending" ||
+    data.status === "error" ||
+    !districtOptions.value.length
 );
 </script>
 
@@ -66,8 +86,8 @@ watch(
     </p>
     <p v-else class="text-sm text-gray-400">Select a region first.</p>
 
-    <!-- Error message -->
-    <small v-if="error" class="w-full text-red-500 text-smallest">
+    <!-- Validation error from parent -->
+    <small v-if="error" id="district-error" class="w-full mt-1 text-red-500 text-smallest" role="alert">
       {{ error }}
     </small>
   </div>
