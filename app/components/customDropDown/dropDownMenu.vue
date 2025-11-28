@@ -24,7 +24,7 @@ setTimeout(() => {
 }, 500);
 
 const dropDownMenu = reactive({
-  openMenus: [0, 1, 2],
+  openMenus: [0],
 });
 
 const selectedFilters = reactive({});
@@ -180,9 +180,32 @@ const filterNameGroup = computed(() => {
 
 const visibleFilters = computed(() => {
   return filterNameGroup.value.filter(
-    (filter) => filter.visibility === "all" || filter.visibility === props.activeTab
+    (filter) => {
+      if (filter.name === 'class' || filter.name === 'subject') {
+        return selectedFilters.level && (filter.visibility === "all" || filter.visibility === props.activeTab);
+      }
+      return filter.visibility === "all" || filter.visibility === props.activeTab;
+    }
   );
 });
+
+// Check visible filters
+watch(() => props.activeTab, () => {
+  const openMenus = [];
+  visibleFilters.value.forEach((_, index) => {
+    openMenus.push(index);
+  });
+  dropDownMenu.openMenus = openMenus;
+});
+
+watch(() => selectedFilters.level, () => {
+  const openMenus = [];
+  visibleFilters.value.forEach((_, index) => {
+    openMenus.push(index);
+  });
+  dropDownMenu.openMenus = openMenus;
+});
+
 </script>
 
 <template>
