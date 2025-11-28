@@ -172,12 +172,19 @@ const signIn = async () => {
 
 // Disable Variable
 const isDisable = ref(false);
+const headingRef = ref(null);
 
 // Password toggle
 const showPassword = ref(false);
 const togglePassword = () => {
   showPassword.value = !showPassword.value;
 };
+
+onMounted(() => {
+  // Move focus to the heading when the sign-in page mounts
+  headingRef.value?.focus();
+});
+
 
 // Clear validation errors when user types
 watch(
@@ -209,23 +216,34 @@ watch(
 </script>
 
 <template>
-  <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b">
-    <!-- Message Component -->
-    <MessageComponent :message="userSignIn.controller.feedback"
-      :position="userSignIn.controller.feedback ? true : false"
-      :event-type="userSignIn.controller.isSucces ? 'success' : 'error'" :icon="userSignIn.controller.isSucces
-        ? 'icons8:checked'
-        : 'oui:cross-in-circle-empty'
-        " />
+  <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b" aria-labelledby="signin-heading">
+    <!-- Message Component (announce feedback changes) -->
+    <div v-if="userSignIn.controller.feedback" role="status" aria-live="polite" class="sr-only">
+      {{ userSignIn.controller.feedback }}
+    </div>
+    <MessageComponent :message="userSignIn.controller.feedback" :position="!!userSignIn.controller.feedback"
+      :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
+      :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
     <div class="w-full max-w-md px-4 rounded-lg md:bg-white md:shadow-2xl md:pt-3">
-      <h1 class="font-bold text-center text-large">Welcome</h1>
+      <!-- Main heading for this view -->
+      <h1 id="signin-heading" ref="headingRef" tabindex="-1" class="font-bold text-center text-large">
+        Sign in
+      </h1>
+
       <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
-        <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="TIE Web Portal Logo" />
+        <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="TIE Web Portal logo" />
       </NuxtLink>
-      <form @submit.prevent="signIn" v-if="userSignIn.controller.attemps < 3"
-        class="px-4 overflow-hidden text-textGray text-extraSmall">
-        <!-- Username Teacher and Stackeholder and Student -->
+
+      <!-- Sign in form -->
+      <form v-if="userSignIn.controller.attemps < 3" @submit.prevent="signIn"
+        class="px-4 overflow-hidden text-textGray text-extraSmall" aria-describedby="signin-helper">
+        <!-- Helper text (optional, can be expanded) -->
+        <p id="signin-helper" class="sr-only">
+          Enter your username and password to sign in. Required fields are username and password.
+        </p>
+
+        <!-- Username -->
         <div :class="[
           'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
           {
@@ -233,15 +251,16 @@ watch(
               userSignIn.controller.errors.username,
           },
         ]">
-          <label for="username" class="sr-only">Username (e.g., email, phone, or student name)</label>
-          <div class="flex items-center w-full">
-            <input type="text" id="username" v-model="userSignIn.username" name="username" autocomplete="off"
-              @keydown.space.prevent :aria-invalid="!!userSignIn.controller.errors.username"
-              aria-describedby="username-error"
-              class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-              placeholder="(e.g. example@email.com /0622***722 /Student.Name)" />
+          <label for="username" class="sr-only">
+            Username (e.g., email, phone, or student name)
+          </label>
 
-            <Icon name="solar:user-outline" class="w-5 h-5 text-textGray" />
+          <div class="flex items-center w-full">
+            <input id="username" type="text" v-model="userSignIn.username" name="username" autocomplete="username"
+              :aria-invalid="!!userSignIn.controller.errors.username" aria-describedby="username-error"
+              class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
+              placeholder="(e.g. example@email.com / 0622***722 / Student.Name)" />
+            <Icon name="solar:user-outline" class="w-5 h-5 text-textGray" aria-hidden="true" />
           </div>
 
           <!-- Username error message -->
@@ -251,11 +270,10 @@ watch(
             {
               'mt-1':
                 userSignIn.type.trim().toLowerCase() === 'teacher' ||
-                userSignIn.type.trim().toLowerCase() ===
-                'education stackeholder',
+                userSignIn.type.trim().toLowerCase() === 'education stackeholder',
             },
             { 'mt-0': userSignIn.type.trim().toLowerCase() === '' },
-          ]">
+          ]" role="alert">
             {{ userSignIn.controller.errors.username }}
           </small>
         </div>
@@ -269,31 +287,37 @@ watch(
           },
         ]">
           <label for="password" class="sr-only">Password</label>
-          <div class="flex items-center w-full">
+
+          <div class="flex items-center w-full gap-2">
             <input :type="showPassword ? 'text' : 'password'" id="password" v-model="userSignIn.password"
-              name="password" :aria-invalid="!!userSignIn.controller.errors.password" aria-describedby="password-error"
+              name="password" autocomplete="current-password" :aria-invalid="!!userSignIn.controller.errors.password"
+              aria-describedby="password-error"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
               placeholder="Password" />
-            <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'
-              " class="w-5 h-5 cursor-pointer text-textGray" tabindex="0" @click="togglePassword"
-              @keydown.enter="togglePassword" />
+
+            <!-- Proper button for toggling password visibility -->
+            <button type="button" class="p-1 rounded text-textGray focus:outline-none focus:ring-2 focus:ring-oceanBlue"
+              :aria-pressed="showPassword ? 'true' : 'false'"
+              :aria-label="showPassword ? 'Hide password' : 'Show password'" @click="togglePassword">
+              <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'" class="w-5 h-5"
+                aria-hidden="true" />
+            </button>
           </div>
 
           <!-- Password error message -->
           <small id="password-error" v-if="userSignIn.controller.errors.password"
-            class="w-full text-red-500 text-smallest">
+            class="w-full text-red-500 text-smallest" role="alert">
             {{ userSignIn.controller.errors.password }}
           </small>
         </div>
 
+        <!-- Forgot / Remember -->
         <div class="flex items-center justify-between my-6">
-          <!-- Forgot password link -->
           <NuxtLink to="/auth/ForgotPassword"
             class="text-sm cursor-pointer text-textGray underline-offset-2 hover:underline">
             Forgot password?
           </NuxtLink>
 
-          <!-- Remember me -->
           <div class="flex items-center gap-2">
             <input type="checkbox" id="remember" v-model="userSignIn.rememberMe" class="w-4 h-4 cursor-pointer" />
             <label for="remember" class="text-sm cursor-pointer text-textGray">
@@ -320,7 +344,7 @@ watch(
 
         <!-- Sign up -->
         <div class="flex flex-col items-center gap-4 my-4">
-          <p class="text-sm text-textGray">Don't have an account?</p>
+          <p class="text-sm text-textGray">Don&apos;t have an account?</p>
           <NuxtLink to="/auth/SignUp"
             class="w-full p-2 text-center text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-darkBlue hover:bg-darkBlue/80">
             Sign up
@@ -353,3 +377,4 @@ watch(
     </div>
   </section>
 </template>
+
