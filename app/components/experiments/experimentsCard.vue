@@ -65,8 +65,9 @@ const setExperimentUrl =()=>{
     <NuxtLink
         :to="`/experiments/${experimentStandard}/${experimentSubject}/${experimentName}/${experimentId}`" 
         @click="setExperimentUrl()"
+        :aria-label="`View experiment: ${experimentName}`"
         :class="[
-            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
+            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px] focus:outline-none focus:ring-2 focus:ring-oceanBlue',
             layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32'
         ]">
         <!-- Thumbnail section -->
@@ -82,8 +83,10 @@ const setExperimentUrl =()=>{
             <div
                 class="absolute inset-0 flex items-center justify-center transition-opacity cursor-pointer opacity-90 group-hover:opacity-100">
                 <button
-                    class="flex items-center justify-center p-3 transition-transform duration-300 border rounded-full cursor-pointer bg-white/20 backdrop-blur-sm border-white/30 group-hover:scale-110"
-                    aria-label="Play experiment">
+                    class="flex items-center justify-center p-3 transition-transform duration-300 border rounded-full cursor-pointer bg-white/20 backdrop-blur-sm border-white/30 group-hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white"
+                    :aria-label="`View experiment: ${experimentName}`"
+                    @keydown.enter="$event.preventDefault()"
+                    @keydown.space="$event.preventDefault()">
                     <Icon name="icon-park-solid:experiment-one" class="text-3xl text-white" />
                 </button>
             </div>
