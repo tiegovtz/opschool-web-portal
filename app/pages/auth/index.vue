@@ -215,7 +215,7 @@ watch(
 </script>
 
 <template>
-  <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b" aria-labelledby="signin-heading">
+  <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b" aria-labelledby="signin-paging">
     <!-- Message Component (announce feedback changes) -->
     <div v-if="userSignIn.controller.feedback" role="status" aria-live="polite" class="sr-only">
       {{ userSignIn.controller.feedback }}
@@ -226,8 +226,8 @@ watch(
 
     <div class="w-full max-w-md px-4 rounded-lg md:bg-white md:shadow-2xl md:pt-3">
       <!-- Main heading for this view -->
-      <h1 id="signin-heading" ref="headingRef" tabindex="-1" class="font-bold text-center text-large">
-        Sign in
+      <h1 id="Welcome" ref="headingRef" tabindex="-1" class="font-bold text-center text-large">
+        Welcome
       </h1>
 
       <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
