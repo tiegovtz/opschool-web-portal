@@ -9,6 +9,7 @@ import { CustomDropDownList } from "#components";
 
 // input tabs control
 const inputTabs = ref("tabOne");
+const headingRef = ref(null);
 
 const usersignUp = reactive({
   type: "",
@@ -284,7 +285,6 @@ const userExists = async () => {
 }
 
 // Watch if user has inset data
-// First Name watching
 watch(
   () => usersignUp.fname,
   (fname) => {
@@ -307,6 +307,7 @@ watch(
     }
   }
 );
+
 // last name watching
 watch(
   () => usersignUp.lname,
@@ -464,6 +465,7 @@ watch(
     }
   }
 );
+
 // confirm password watching
 watch(
   () => usersignUp.confirm_password,
@@ -493,6 +495,11 @@ const showConfirmPassword = ref(false);
 const toggleConfirmPassword = () => {
   showConfirmPassword.value = !showConfirmPassword.value;
 };
+
+onMounted(() => {
+  // Move focus to the heading when the sign-in page mounts
+  headingRef.value?.focus();
+});
 
 // input tabs control
 const switchTab = (tabName) => {
@@ -619,7 +626,7 @@ const organization = [
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b">
+  <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b" aria-labelledby="signup-heading">
 
     <!-- Message Component -->
     <MessageComponent :message="usersignUp.controller.feedback"
@@ -627,10 +634,13 @@ const organization = [
       :icon="usersignUp.controller.isSent == 'success' ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
     <div class="w-full max-w-md px-4 py-10 rounded-lg md:bg-white md:shadow-2xl">
-      <h1 class="font-bold text-center text-large">Sign Up</h1>
+      <h1 class="font-bold text-center text-large" id="signup-heading" ref="headingRef" tabindex="-1">Sign Up</h1>
+
       <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
-        <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="logo" />
+        <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full"
+          alt="Tanzania Institute of Education logo featuring a red and orange torch above a blue open book, supported by a black stand, framed by blue banners with the text ‘Taasisi ya Elimu Tanzania’ and the motto ‘Elimu ni Kazi.’ The emblem is outlined with red and blue decorative lines." />
       </NuxtLink>
+
       <form @submit.prevent="signUp" @keydown.enter.prevent
         class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" :class="[
                 {
@@ -827,8 +837,7 @@ const organization = [
             <div class="flex flex-col">
               <label for="age" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select Age:</label>
 
-              <CustomDropDownList :list="ageOptions" 
-                :placeholder="usersignUp.type.toLowerCase().trim() === 'student'
+              <CustomDropDownList :list="ageOptions" :placeholder="usersignUp.type.toLowerCase().trim() === 'student'
                 ? 'Eg: kids(3 - 12)' : 'Eg: YoungAdults(20 - 35)'" @update-model-value="usersignUp.age = $event" />
             </div>
 
@@ -850,8 +859,8 @@ const organization = [
                 }
               ]">
               <div class="flex items-center w-full">
-                <input type="text" id="email" v-model="usersignUp.email" @keydown.space.prevent 
-                   name="username" autocomplete="off"
+                <input type="text" id="email" v-model="usersignUp.email" @keydown.space.prevent name="username"
+                  autocomplete="off"
                   class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                   placeholder="Email (eg: example@email.com)" />
                 <Icon name="mdi-light:email" class="w-5 h-5 text-textGray" />
@@ -872,8 +881,8 @@ const organization = [
                   }
                 ]">
               <div class="flex items-center w-full">
-                <input type="tel" id="phone" v-model="usersignUp.phone" @keydown.space.prevent 
-                  name="phone" autocomplete="off"
+                <input type="tel" id="phone" v-model="usersignUp.phone" @keydown.space.prevent name="phone"
+                  autocomplete="off"
                   class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                   placeholder="Phone Number (eg: 0622***722 or +255622***722)" />
                 <Icon name="iconamoon:phone-thin" class="w-5 h-5 text-textGray" />
@@ -907,7 +916,7 @@ const organization = [
                   {{ usersignUp.controller.errors.organization }}
                 </small>
               </div>
-              
+
               <!-- stakeholder role -->
               <div :class="[
                     'flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
@@ -917,14 +926,14 @@ const organization = [
                     }
                   ]">
 
-                  <!-- Select Organization -->
+                <!-- Select Organization -->
                 <div class="flex flex-col">
                   <label for="userOrgRole" class="font-semibold capitalize text-oceanBlue text-extraSmall">
                     Select role in your Organization:</label>
 
-                     <CustomDropDownList v-model="usersignUp.userOrgRole" :list="organization" placeholder="Eg: ( Manager ) ..."
-                      @update-model-value="usersignUp.userOrgRole = $event" />
-                      
+                  <CustomDropDownList v-model="usersignUp.userOrgRole" :list="organization"
+                    placeholder="Eg: ( Manager ) ..." @update-model-value="usersignUp.userOrgRole = $event" />
+
                 </div>
 
                 <!-- Age error message -->
@@ -991,7 +1000,7 @@ const organization = [
                 name="password" autocomplete="off"
                 class="w-full p-1 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Password" />
-              <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'" 
+              <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
                 class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
             </div>
             <!-- Password error message -->
@@ -1008,8 +1017,8 @@ const organization = [
                 v-model="usersignUp.confirm_password" name="confirm_password" autocomplete="off"
                 class="w-full p-1 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 placeholder="Confirm Password" />
-              <Icon :name="showConfirmPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'" 
-                  class="w-5 h-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
+              <Icon :name="showConfirmPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
+                class="w-5 h-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
             </div>
             <!-- Password error message -->
             <small v-if="usersignUp.controller.errors.confirm_password" class="w-full text-red-500 text-smallest">
