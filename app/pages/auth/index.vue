@@ -185,7 +185,6 @@ onMounted(() => {
   headingRef.value?.focus();
 });
 
-
 // Clear validation errors when user types
 watch(
   () => userSignIn.username,
@@ -232,7 +231,8 @@ watch(
       </h1>
 
       <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
-        <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full" alt="TIE Web Portal logo" />
+        <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full"
+          alt="Tanzania Institute of Education logo featuring a red and orange torch above a blue open book, supported by a black stand, framed by blue banners with the text ‘Taasisi ya Elimu Tanzania’ and the motto ‘Elimu ni Kazi.’ The emblem is outlined with red and blue decorative lines." />
       </NuxtLink>
 
       <!-- Sign in form -->
@@ -260,7 +260,7 @@ watch(
               :aria-invalid="!!userSignIn.controller.errors.username" aria-describedby="username-error"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
               placeholder="(e.g. example@email.com / 0622***722 / Student.Name)" />
-            <Icon name="solar:user-outline" class="w-5 h-5 text-textGray" aria-hidden="true" />
+            <Icon name="solar:user-outline" class="w-5 h-5 text-textGray" aria-hidden="true" focusable="false" />
           </div>
 
           <!-- Username error message -->
