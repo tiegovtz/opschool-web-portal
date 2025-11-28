@@ -246,8 +246,8 @@ const { progress, isLoading } = useLoadingIndicator();
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
           <div class="flex flex-col w-full px-2 lg:px-4">
-           <HomeCustomScrollView :data="experiments" active-tab="experiments" />
-           
+          <HomeCustomScrollView :data="experiments" active-tab="experiments" />
+          
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" class="flex justify-center my-10">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
