@@ -9,6 +9,7 @@ import { CustomDropDownList } from "#components";
 
 // input tabs control
 const inputTabs = ref("tabOne");
+const headingRef = ref(null);
 
 const usersignUp = reactive({
   type: "",
@@ -464,6 +465,7 @@ watch(
     }
   }
 );
+
 // confirm password watching
 watch(
   () => usersignUp.confirm_password,
@@ -493,6 +495,11 @@ const showConfirmPassword = ref(false);
 const toggleConfirmPassword = () => {
   showConfirmPassword.value = !showConfirmPassword.value;
 };
+
+onMounted(() => {
+  // Move focus to the heading when the sign-in page mounts
+  headingRef.value?.focus();
+});
 
 // input tabs control
 const switchTab = (tabName) => {
