@@ -36,6 +36,16 @@ watch(() => props.modelValue, (newVal) => {
   }
 }, { immediate: true });
 
+// Watch for modelValue changes to update selected display text
+watch(() => props.modelValue, (newVal) => {
+  if (newVal !== null && newVal !== undefined) {
+    const item = props.list.find(i => i.id === newVal);
+    selected.value = item ? item.name : '';
+  } else {
+    selected.value = '';
+  }
+}, { immediate: true });
+
 // Toggle dropdown open/close
 const toggleOpen = () => {
   if (!props.disabled) {
@@ -43,27 +53,12 @@ const toggleOpen = () => {
   }
 };
 
-// Emit change when selected
 const selectItem = (item) => {
-  selected.value = item.name;
-  isOpen.value = !isOpen.value;
-  emit('updateModelValue', item.id);
+  if (props.disabled) return;
+  selectedLabel.value = item.name;
+  emit('update:modelValue', item.id ?? item.name);
+  isOpen.value = false;
 };
-
-// Close when clicked outside
-const handleClickOutside = (e) => {
-  if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
-    isOpen.value = false;
-  }
-};
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside);
-});
 </script>
 
 <template>
@@ -85,7 +80,7 @@ onBeforeUnmount(() => {
 
     <!-- Dropdown list -->
     <transition name="fade">
-      <ul v-if="isOpen"
+      <ul v-if="isOpen && !disabled"
         class="absolute z-10 w-full mt-1 overflow-y-auto text-sm bg-white border border-gray-200 rounded-md shadow-lg scrollbar-none max-h-32"
         :id="$attrs.id ? `${$attrs.id}-listbox` : 'dropdown-listbox'" role="listbox">
         <li v-for="(item, index) in list" :key="index" role="option"
