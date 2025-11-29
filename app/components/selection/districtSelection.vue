@@ -54,9 +54,11 @@ watch(
   <div class="flex flex-col items-start w-full">
     <label for="district" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select District:</label>
 
-    <CustomDropDownList v-if="data.status === 'success'" :list="data.district.map((district) => ({ id: district, name: district }))
-      " :placeholder="'Select a District'" :modelValue="props.district"
-      @updateModelValue="(value) => emit('updateDistrict', value)" />
+    <CustomDropDownList id="district" v-if="data.status === 'success'"
+      :aria-invalid="Boolean(props.error || data.error)"
+      :disabled="!props.region || data.status === 'pending' || data.status === 'error'"
+      :list="data.district.map((district) => ({ id: district, name: district }))" :placeholder="'Select a District'"
+      :modelValue="props.district" @updateModelValue="(value) => emit('updateDistrict', value)" />
 
     <p v-else-if="data.status === 'pending'" class="text-sm text-gray-400">Loading districts...</p>
     <p v-else-if="data.status === 'error'" class="text-sm text-red-500">
