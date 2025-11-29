@@ -19,7 +19,15 @@ export default defineNuxtConfig({
 
   vue: {
     compilerOptions: {
-      isCustomElement: (tag) => tag.startsWith('media-'),
+      isCustomElement: (tag) => tag.startsWith('media-') || tag === 'openai-chatkit',
+    },
+  },
+
+  runtimeConfig: {
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    CHATKIT_API_BASE: process.env.CHATKIT_API_BASE || 'https://api.openai.com',
+    public: {
+      CHATKIT_WORKFLOW_ID: process.env.NUXT_PUBLIC_CHATKIT_WORKFLOW_ID || '',
     },
   },
 
@@ -28,6 +36,7 @@ export default defineNuxtConfig({
     { src: "~/plugins/mathjax-directive.client.js", mode: "client" },
     { src: "~/plugins/block-navigation.client.ts", mode: "client" },
     { src: "~/plugins/init-chapter-progress.client.js", mode: "client" },
+    { src: "~/plugins/chatkit.client.ts", mode: "client" },
   ],
 
   modules: [

@@ -74,6 +74,15 @@ const dropDown = () => {
             </div>
             <p class="hidden capitalize lg:flex">TIE Library</p>
           </a>
+          <!-- Madam Ana -->
+          <NuxtLink to="/madam-ana"
+            class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium"
+            active-class="text-white !bg-deepBlue">
+            <div class="flex items-center justify-center">
+              <Icon name="mdi:account" size="20" />
+            </div>
+            <p class="hidden capitalize lg:flex">Madam Ana</p>
+          </NuxtLink>
 
           <!-- title (TIE online public school) -->
           <div class="flex-1">
@@ -153,6 +162,14 @@ const dropDown = () => {
                   <Icon name="ph:notebook-fill" size="20" />
                 </div>
               </a>
+              <!-- Madam Ana -->
+              <NuxtLink to="/madam-ana"
+                class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45"
+                active-class="text-white !bg-deepBlue">
+                <div class="flex items-center justify-center">
+                  <Icon name="mdi:account" size="20" />
+                </div>
+              </NuxtLink>
             </div>
 
             <!-- Paragraph Text -->
