@@ -5,6 +5,7 @@ import modelParser from "~/utilities/parsers/modelParser";
 import videoParser from "~/utilities/parsers/videoParser";
 import { currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
+import AIAssistant from "~/components/chapter/AIAssistant.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 import apiDocs from "~/utilities/api-docs";
 import { updateChapterProgress } from "~/utilities/progress";
@@ -905,5 +906,12 @@ definePageMeta({
         <p>Try to reload the page, something went wrong</p>
       </div>
     </section>
+
+    <!-- AI Assistant -->
+    <AIAssistant 
+      v-if="chapters.currentChapterId && chapters.notes"
+      :chapter-id="chapters.currentChapterId"
+      :chapter-name="chapters.notes?.name || 'this competence'"
+    />
   </NuxtLayout>
 </template>
