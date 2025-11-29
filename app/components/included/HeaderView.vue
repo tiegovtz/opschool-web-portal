@@ -11,7 +11,7 @@ const logout = () => {
   userToken.value = null;
   accessToken.value = null;
   refreshToken.value = null;
-
+  
   const router = useRouter();
   layoutEffect.value = "grid";
   // Use the State
@@ -39,24 +39,7 @@ const dropDown = () => {
       <div class="relative flex justify-center w-full h-24 pt-1">
         <div class="flex items-center justify-between w-full h-full wrapper-container">
           <NuxtLink to="/" class="flex items-center justify-center h-full cursor-pointer max-w-[64px]">
-            <figure>
-              <NuxtImg src="/logo/emblem.webp" alt="Tanzania coat of arms: man and woman supporting a central shield with Mount Kilimanjaro, national flag colors, water waves, a torch, and traditional t
-             ools" role="img" aria-describedby="tanzania-emblem-longdesc" class="object-contain w-full h-full" />
-              <figcaption id="tanzania-emblem-longdesc" class="sr-only">
-                Tanzania coat of arms, centered on a white background. In the middle is a vertically oriented shield topped
-                by a small stylized Mount Kilimanjaro silhouette (white peak) above it. Across the center of the shield is a
-                narrow horizontal band showing the Tanzania national flag: from left to right green, black with thin yellow
-                edging, and blue. Below the flag inside the lower shield are two horizontal blue-and-white wavy stripes
-                representing water. A golden / brass-colored torch with a red/orange flame sits in front of the shield. To
-                the left of the shield (viewer’s left) is a golden lion standing upright; to the right of the shield
-                (viewer’s right) is a matching golden lion — both facing the shield and appearing as supporters. Behind and
-                crossing the shield are two traditional farming tools (a hoe and a spear-like implement) arranged
-                diagonally, with metal/wood tones (dark gray/ brown). At the base there is a simple stone plinth. Overall
-                palette: green, black, yellow/gold, blue, white, red/orange (flame), brown/gray (tools), golden lions.
-                Layout: lions flank the shield on both sides; mount silhouette sits above the central flag band; wavy lines
-                are at the bottom of the shield; torch is centered in front.
-              </figcaption>
-            </figure>
+            <NuxtImg src="/logo/emblem.webp" alt="EMBLEM" class="object-contain w-full h-full" />
           </NuxtLink>
           <div class="flex flex-col items-center h-full gap-1 text-center uppercase font-tahomabd">
             <p class="md:text-small text-extraSmall text-deepBlue text-shadow">
@@ -67,7 +50,7 @@ const dropDown = () => {
             </p>
           </div>
           <NuxtLink to="/" class="flex items-center justify-center h-full p-2 cursor-pointer">
-            <NuxtImg src="/logo/logo_tie.gif" alt="TIE LOGO" class="w-16 h-16" />
+            <NuxtImg  src="/logo/logo_tie.gif" alt="TIE LOGO" class="w-16 h-16" />
           </NuxtLink>
         </div>
       </div>
@@ -106,12 +89,12 @@ const dropDown = () => {
             <div class="flex items-center gap-4 px-2 py-1" v-if="userToken">
 
               <!-- Profile -->
-              <NuxtLink to="/profile">
+              <NuxtLink to="/profile"  >
                 <div class="flex items-center justify-center overflow-hidden">
-                  <div class="flex items-center gap-1 cursor-pointer">
+                  <div class="flex items-center gap-1 cursor-pointer" >
                     <div v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''" class="w-8 h-8">
-                      <NuxtImg :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic" alt="User Profile"
-                        class="object-cover w-full h-full rounded-full" />
+                      <NuxtImg  :src="apiDocs.baseURL.replace('v1','')+userToken?.profilePic" alt="User Profile"
+                      class="object-cover w-full h-full rounded-full" />
                     </div>
                     <Icon v-else name="iconamoon:profile-circle-thin" class="" size="2rem" />
                     <p class="capitalize text-medium line-clamp-1 max-w-60">
@@ -157,7 +140,7 @@ const dropDown = () => {
               <NuxtLink to="/profile" v-if="userToken" class="flex items-center pl-1">
                 <Icon name="iconamoon:profile-circle-thin" class="" size="1.2rem" />
               </NuxtLink>
-
+              
               <NuxtLink to="/auth/SignUp" title="Sign Up" v-else
                 class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                 <Icon name="iconamoon:profile-thin" class="" size="1.2rem" />
