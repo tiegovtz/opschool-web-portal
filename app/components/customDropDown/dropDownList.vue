@@ -36,6 +36,16 @@ watch(() => props.modelValue, (newVal) => {
   }
 }, { immediate: true });
 
+// Watch for modelValue changes to update selected display text
+watch(() => props.modelValue, (newVal) => {
+  if (newVal !== null && newVal !== undefined) {
+    const item = props.list.find(i => i.id === newVal);
+    selected.value = item ? item.name : '';
+  } else {
+    selected.value = '';
+  }
+}, { immediate: true });
+
 // Toggle dropdown open/close
 const toggleOpen = () => {
   if (!props.disabled) {
