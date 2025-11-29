@@ -51,15 +51,16 @@ const toggleReadMore = () => {
       </div>
 
       <!-- Text / CTA -->
-      <div class="flex flex-col h-full xl:ml-10">
+      <div aria-label="welcome note" aria-describedby="hero-description" role="region" tabindex="0"
+        class="flex flex-col h-full xl:ml-10">
         <!-- Main heading: visible AND readable by screen readers on all sizes -->
         <h1 class="mb-4 font-extrabold text-large md:text-extraLarge" id="hero-heading">
           Welcome
         </h1>
 
         <!-- Description container controlled by the button -->
-        <div id="hero-description" aria-live="polite">
-          <p class="mt-2 text-justify text-black text-medium text-opacity-80"
+        <div id="hero-description">
+          <p class="mt-2 text-justify text-black text-medium text-opacity-80" :aria-expanded="isExpanded"
             v-html="isExpanded ? fullText : shortText"></p>
         </div>
 
