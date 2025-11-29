@@ -1,5 +1,5 @@
 <script setup>
-import ChatKitPanel from "~/components/chatkit/ChatKitPanel.vue";
+// ChatKit removed: page retained with a placeholder message.
 </script>
 
 <template>
@@ -8,19 +8,12 @@ import ChatKitPanel from "~/components/chatkit/ChatKitPanel.vue";
       <h1 class="text-3xl font-bold text-deepBlue mb-4">Madam Ana</h1>
       <div class="prose max-w-none mb-6">
         <p class="text-medium text-gray-700">
-          Welcome to Madam Ana's page. Chat with our AI assistant below.
+          The interactive assistant on this page has been removed.
         </p>
       </div>
-      <ClientOnly>
-        <div class="mx-auto w-full max-w-5xl">
-          <ChatKitPanel />
-        </div>
-        <template #fallback>
-          <div class="flex items-center justify-center h-[90vh]">
-            <p class="text-gray-600">Loading ChatKit...</p>
-          </div>
-        </template>
-      </ClientOnly>
+      <div class="mx-auto w-full max-w-3xl p-6 bg-white rounded shadow-sm">
+        <p class="text-gray-600">This feature is no longer available. Contact the team for alternatives.</p>
+      </div>
     </div>
   </NuxtLayout>
 </template>
