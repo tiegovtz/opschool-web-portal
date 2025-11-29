@@ -123,10 +123,10 @@ onMounted(async () => {
       aria-label="Featured interactive learning content">
       <swiper-container ref="containerRef" :init="false" class="w-full h-full max-h-[550px] overflow-hidden"
         role="region" aria-roledescription="carousel" aria-label="Image slider">
-        <swiper-slide v-for="(slide, idx) in slides" :key="idx" aria-roledescription="slide"
-          :aria-label="`Slide ${idx + 1} of ${slides.length}`">
+        <swiper-slide v-for="(slide, idx) in slides" tabindex="0" :key="idx" aria-roledescription="slide"
+          :aria-label="`Slide ${idx + 1} of ${slides.length} - ${slide.alt}`">
           <!-- Slide {{ idx + 1 }} -->
-          <NuxtImg :src="slide.image" :alt="slide.alt" class="object-cover w-full h-full rounded-md" />
+          <NuxtImg role="img" :src="slide.image" :alt="slide.alt" class="object-cover w-full h-full rounded-md" />
         </swiper-slide>
       </swiper-container>
     </section>
