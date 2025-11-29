@@ -104,11 +104,6 @@ const toggleSidebar = () => {
     if (import.meta.client) {
         const sidebar = document.querySelector(".sidebar");
         sidebar.classList.toggle("right-0");
-        // Update aria-expanded attribute
-        const toggleBtn = document.querySelector('[aria-label="Toggle menu"]');
-        if (toggleBtn) {
-            toggleBtn.setAttribute('aria-expanded', sidebar.classList.contains('right-0') ? 'true' : 'false');
-        }
     }
 };
 
@@ -163,10 +158,9 @@ onMounted(() => {
                 <!-- Experiments Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink 
+                        <NuxtLink
                             :to="{ path: '/', query: { tab: 'experiments', subject: experimentSubject, class: experimentStandard } }"
-                            aria-label="Go back to experiments list"
-                            class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue">
+                            class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
                             <!-- {{
                                 experimentSubject != null &&
                                     experimentSubject != undefined &&
@@ -204,13 +198,9 @@ onMounted(() => {
                         </p>
                     </div>
                     <!-- Header Description -->
-                    <button 
-                        aria-label="Toggle menu" 
-                        aria-expanded="false"
-                        class="flex lg:hidden p-2 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-oceanBlue"
-                        @click="toggleSidebar()">
+                    <div class="flex lg:hidden" @click="toggleSidebar()">
                         <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" />
-                    </button>
+                    </div>
                 </div>
 
                 <!-- Description -->
@@ -224,18 +214,13 @@ onMounted(() => {
                         <iframe :class="[
                                 ' w-full  rounded-md mt-6',
                                 isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
-                            ]" :src="experimentInfo.stepsFileUrl" :title="`Experiment viewer for ${experimentTitle}`" frameborder="0"></iframe>
+                            ]" :src="experimentInfo.stepsFileUrl" frameborder="0"></iframe>
                         <!-- full screen controls -->
-                        <button 
-                            class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-oceanBlue"
-                            :aria-label="isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
-                            :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" 
-                            @click="fullScreen"
-                            @keydown.f="fullScreen"
-                            @keydown.escape="isFullscreen && fullScreen()">
+                        <div class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"
+                            :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" @click="fullScreen">
                             <Icon v-if="isFullscreen" name="qlementine-icons:fullscreen-exit-16" size="24" />
                             <Icon v-else name="qlementine-icons:fullscreen-16" size="24" />
-                        </button>
+                        </div>
                     </div>
 
                     <div v-else-if="status == 'success' && !webglSupported"
@@ -270,15 +255,11 @@ onMounted(() => {
                         : !experimentInfo?.next && experimentInfo?.previous ? 'justify-start' : '',
                          ]">
                         <NuxtLink :to="{path:`/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.previous?.name}/${experimentInfo?.previous?._id}`}" 
-                        v-if="experimentInfo?.previous" 
-                        :aria-label="`Go to previous experiment: ${experimentInfo?.previous?.name}`"
-                        class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-deepBlue">
+                        v-if="experimentInfo?.previous" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
                             Previous experiment
                         </NuxtLink>
                         <NuxtLink :to="{path:`/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.next?.name}/${experimentInfo?.next?._id}`}" 
-                        v-if="experimentInfo?.next" 
-                        :aria-label="`Go to next experiment: ${experimentInfo?.next?.name}`"
-                        class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-deepBlue">
+                        v-if="experimentInfo?.next" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
                             Next experiment
                         </NuxtLink>
                      </div>
