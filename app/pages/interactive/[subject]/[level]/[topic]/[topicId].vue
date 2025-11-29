@@ -742,8 +742,7 @@ definePageMeta({
         @click="experimrntUrl = null">
         <Icon name="formkit:close" size="24" class="font-bold text-white" />
       </div>
-      <iframe :src="experimrntUrl" frameborder="0" 
-      :class="[
+      <iframe :src="experimrntUrl" frameborder="0" :class="[
         ' w-full  rounded-md !bg-white',
         isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
       ]"></iframe>
@@ -831,8 +830,14 @@ definePageMeta({
           <div class="relative flex flex-col justify-center w-full gap-2 py-3 content-view">
 
             <!-- Chapter Notes -->
-            <div class="mx-auto notes md:px-4 max-w-7xl" v-mathjax
-              v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></div>
+            <div class="mx-auto notes md:px-4 max-w-7xl" aria-label="Compitencies notes" aria-details="notes-extra-details"
+              role="region" v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></div>
+
+            <p id="notes-extra-details" class="sr-only">
+              These notes include at least one video, two-dimensional images such as GIFs,
+              interactive gamified experiments, a three-dimensional model, and a short quiz
+              at the end of each competency.
+            </p>
 
             <!-- Chapter Button - (Quiz) -->
             <div v-if="chapters.questions && chapters.questions?.length > 0"
@@ -847,8 +852,7 @@ definePageMeta({
             <!-- Next and Previous chapter Action -->
             <div class="flex flex-row-reverse items-center justify-between lg:hidden">
               <!-- Next Chapter -->
-              <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length" 
-              :class="[
+              <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length" :class="[
                 'flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue',
                 { 'opacity-0': chapters.number == chapters.list?.length }]">
                 <p class="flex gap-2 capitalize">
@@ -858,13 +862,12 @@ definePageMeta({
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
                 </div>
               </button>
-              
+
               <!-- Previous Chapter -->
-              <button @click="changeChapter('p')" :disabled="chapters.number <= 1"
-                :class="[
+              <button @click="changeChapter('p')" :disabled="chapters.number <= 1" :class="[
                 'flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue',
                 { 'opacity-0': chapters.number <= 1 }
-                ]">
+              ]">
                 <div class="flex items-center justify-center w-4 h-4 bg-white rounded-full animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="transform rotate-180 text-oceanBlue" />
                 </div>

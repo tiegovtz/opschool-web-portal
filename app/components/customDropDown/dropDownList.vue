@@ -42,12 +42,6 @@ const toggleOpen = () => {
     isOpen.value = !isOpen.value;
   }
 };
-// Toggle dropdown open/close
-const toggleOpen = () => {
-  if (!props.disabled) {
-    isOpen.value = !isOpen.value;
-  }
-};
 
 const selectItem = (item) => {
   if (props.disabled) return;
@@ -112,7 +106,7 @@ onBeforeUnmount(() => {
 .fade-enter-active,
 .fade-leave-active {
   transition: all 0.2s ease;
-}
+} 
 
 .fade-enter-from,
 .fade-leave-to {
