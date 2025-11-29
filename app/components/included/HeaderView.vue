@@ -33,7 +33,7 @@ const dropDown = () => {
 
 <template>
   <!-- Header -->
-  <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat">
+  <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat" role="navigation">
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->
       <div class="relative flex justify-center w-full h-24 pt-1">
@@ -58,7 +58,9 @@ const dropDown = () => {
               </figcaption>
             </figure>
           </NuxtLink>
-          <div class="flex flex-col items-center h-full gap-1 text-center uppercase font-tahomabd">
+          <div class="flex flex-col items-center h-full gap-1 text-center uppercase font-tahomabd" tabindex="0"
+            aria-label="governed by Ministry of education, science and technology Tanzania institute of education (TIE)"
+            role="region">
             <p class="md:text-small text-extraSmall text-deepBlue text-shadow">
               Ministry of education, science and technology
             </p>
