@@ -5,35 +5,35 @@ const containerRef = ref<SwiperContainer | null>(null)
 const slides = [
   {
     image: "/images/1.TIE-Interactive.webp",
-    alt: "Waziri Mkuu",
+    alt: "A student demonstrates work on a desktop computer to a former prime minister Kassimu Majaliwa in a school computer lab, while other officials and students watch from rows of computers in the background.",
   },
   {
     image: "/images/9.TIE-Interactive.webp",
-    alt: "Slide 2",
+    alt: "Minister of Education Adolf Mkenda and the Director General of the Tanzania Institute of Education Anneth Komba stand with other officials under a tent, looking at textbooks and learning materials displayed on tables while a presenter explains them.",
   },
   {
     image: "/images/7.TIE-Interactive.webp",
-    alt: "Slide 3",
+    alt: "A female student in a white T-shirt leans over a laptop, typing or adjusting settings, while other students sit at the same table watching in a classroom.",
   },
   {
     image: "/images/6.TIE-Interactive.webp",
-    alt: "Slide 4",
+    alt: "Student in a white T-shirt writes in a notebook at a computer desk, with desktop monitors and other students working in the background.",
   },
   {
     image: "/images/5.TIE-Interactive.webp",
-    alt: "Slide 5",
+    alt: "Students in blue school uniforms sit in a computer lab, working at desktop computers in a row while a teacher assists in the background.",
   },
   {
     image: "/images/3.TIE-Interactive.webp",
-    alt: "Slide 6",
+    alt: "Students in blue uniforms work together at a science lab bench, using a multimeter and wires to test an electronics setup while classmates watch and take notes.",
   },
   {
     image: "/images/2.TIE-Interactive.webp",
-    alt: "Slide 7",
+    alt: "Student in a computer lab uses a desktop computer to build a Scratch-style coding program, with other students working at nearby machines in the background.",
   },
   {
     image: "/images/10.TIE-Interactive.webp",
-    alt: "Slide 8",
+    alt: "Minister of Education Adolf Mkenda, the Director General of the Tanzania Institute of Education Anneth Komba, a former prime minister kassim majaliwa, and other officials stand on a stage holding a large ‘One Book, One Student’ campaign display during the launch event celebrating 50 years of the Tanzania Institute of Education.",
   },
 ]
 
