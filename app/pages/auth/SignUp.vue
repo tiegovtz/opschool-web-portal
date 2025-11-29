@@ -551,7 +551,7 @@ const switchTab = (tabName) => {
         usersignUp.controller.errors.fname = null;
       }
 
-
+x123456M
       // Validate Last name
       const lname = auth.isValidName(usersignUp.lname);
       if (!lname.isMinLength) {

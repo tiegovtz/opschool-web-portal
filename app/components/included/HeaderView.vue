@@ -43,24 +43,17 @@ const dropDown = () => {
               <NuxtImg src="/logo/emblem.webp" alt="Tanzania coat of arms: man and woman supporting a central shield with Mount Kilimanjaro, national flag colors, water waves, a torch, and traditional t
              ools" role="img" aria-describedby="tanzania-emblem-longdesc" class="object-contain w-full h-full" />
               <figcaption id="tanzania-emblem-longdesc" class="sr-only">
-                Tanzania coat of arms, centered on a white background. In the middle is a vertically oriented shield
-                topped
-                by a small stylized Mount Kilimanjaro silhouette (white peak) above it. Across the center of the shield
-                is a
-                narrow horizontal band showing the Tanzania national flag: from left to right green, black with thin
-                yellow
+                Tanzania coat of arms, centered on a white background. In the middle is a vertically oriented shield topped
+                by a small stylized Mount Kilimanjaro silhouette (white peak) above it. Across the center of the shield is a
+                narrow horizontal band showing the Tanzania national flag: from left to right green, black with thin yellow
                 edging, and blue. Below the flag inside the lower shield are two horizontal blue-and-white wavy stripes
-                representing water. A golden / brass-colored torch with a red/orange flame sits in front of the shield.
-                To
+                representing water. A golden / brass-colored torch with a red/orange flame sits in front of the shield. To
                 the left of the shield (viewer’s left) is a golden lion standing upright; to the right of the shield
-                (viewer’s right) is a matching golden lion — both facing the shield and appearing as supporters. Behind
-                and
+                (viewer’s right) is a matching golden lion — both facing the shield and appearing as supporters. Behind and
                 crossing the shield are two traditional farming tools (a hoe and a spear-like implement) arranged
-                diagonally, with metal/wood tones (dark gray/ brown). At the base there is a simple stone plinth.
-                Overall
+                diagonally, with metal/wood tones (dark gray/ brown). At the base there is a simple stone plinth. Overall
                 palette: green, black, yellow/gold, blue, white, red/orange (flame), brown/gray (tools), golden lions.
-                Layout: lions flank the shield on both sides; mount silhouette sits above the central flag band; wavy
-                lines
+                Layout: lions flank the shield on both sides; mount silhouette sits above the central flag band; wavy lines
                 are at the bottom of the shield; torch is centered in front.
               </figcaption>
             </figure>
