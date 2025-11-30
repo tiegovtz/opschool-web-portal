@@ -78,25 +78,25 @@ const signIn = async () => {
         userSignIn.controller.isSucces = true;
 
         const accessToken = useCookie("signInAccessToken", {
-          httpOnly: false, // Accessible in browser
-          secure: import.meta.env.PROD, // ✅ uses Nuxt's client env detection
-          maxAge: 60 * 60 * 2, // 2 hours
+          httpOnly: false,              // Accessible in browser
+          secure: import.meta.env.PROD, // uses Nuxt's client env detection
+          maxAge: 60 * 60 * 2,          // 2 hours
           sameSite: "strict",
           path: "/",
         });
 
         const refreshToken = useCookie("signInRefreshToken", {
-          httpOnly: false, // Accessible in browser
+          httpOnly: false,              // Accessible in browser
           secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 2, // 2 hours
+          maxAge: 60 * 60 * 2,          // 2 hours
           sameSite: "strict",
           path: "/",
         });
 
         const userToken = useCookie("signInUserToken", {
-          httpOnly: false, // Accessible in browser
+          httpOnly: false,              // Accessible in browser
           secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 2, // 2 hours
+          maxAge: 60 * 60 * 2,          // 2 hours
           sameSite: "strict",
           path: "/",
           default: () => ({}),
@@ -112,9 +112,9 @@ const signIn = async () => {
 
         // create user remember me cookie
         const userRememberMe = useCookie("userRememberMe", {
-          httpOnly: false, // Accessible in browser
+          httpOnly: false,                  // Accessible in browser
           secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 24 * 7, // 1 week
+          maxAge: 60 * 60 * 24 * 7,         // 1 week
           sameSite: "strict",
           path: "/",
           default: () => null,
@@ -135,7 +135,7 @@ const signIn = async () => {
             rememberMe: userSignIn.rememberMe,
           };
         } else {
-          userRememberMe.value = null; // Clear the cookie
+          userRememberMe.value = null;      // Clear the cookie
         }
 
         accessToken.value = response.data.access_token;
@@ -151,7 +151,7 @@ const signIn = async () => {
             router.replace("/home");
           }
           // router.back();
-        }, 2000);
+        }, 15000);
       } else {
         userSignIn.controller.attemps++;
         isDisable.value = false;
@@ -166,7 +166,7 @@ const signIn = async () => {
     setTimeout(() => {
       userSignIn.controller.feedback = null;
       userSignIn.controller.isSucces = false;
-    }, 2000);
+    }, 15000);
   }
 };
 
@@ -236,7 +236,7 @@ watch(
       </NuxtLink>
 
       <!-- Sign in form -->
-      <form v-if="userSignIn.controller.attemps < 3" @submit.prevent="signIn"
+      <form v-if="userSignIn.controller.attemps < 3" @submit.prevent="signIn" autocomplete="off"
         class="px-4 overflow-hidden text-textGray text-extraSmall" aria-describedby="signin-helper">
         <!-- Helper text (optional, can be expanded) -->
         <p id="signin-helper" class="sr-only">
@@ -290,10 +290,9 @@ watch(
 
           <div class="flex items-center w-full gap-2">
             <input :type="showPassword ? 'text' : 'password'" id="password" v-model="userSignIn.password"
-              name="password" autocomplete="current-password" :aria-invalid="!!userSignIn.controller.errors.password"
-              aria-describedby="password-error"
-              class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-              placeholder="Password" />
+              name="password" autocomplete="current-password" aria-describedby="password-error"
+              :aria-invalid="!!userSignIn.controller.errors.password" placeholder="Password"
+              class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs" />
 
             <!-- Proper button for toggling password visibility -->
             <button type="button" class="p-1 rounded text-textGray focus:outline-none focus:ring-2 focus:ring-oceanBlue"
