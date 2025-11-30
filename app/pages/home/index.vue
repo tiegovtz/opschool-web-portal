@@ -72,6 +72,7 @@ useHead({
 // Define Cookie
 const userToken = useCookie("signInUserToken");
 const route = useRoute();
+const router = useRouter();
 let tab = route.query?.tab;
 
 // Define Ref state
@@ -428,6 +429,26 @@ watch(
     }
   }
 );
+
+// switch tabs 
+const switchTab = async (tab) => {
+  if (!tab) return;
+
+  activeTab.value = tab;
+
+  await nextTick(async () => {
+    if (import.meta.server) return;
+
+    await router.push('#content-container-after-login');
+
+    // Give the DOM a beat to update
+    requestAnimationFrame(() => {
+      const el = document.getElementById('content-container-after-login');
+      if (el) el.focus();
+    });
+  });
+};
+
 </script>
 
 <template>
@@ -437,7 +458,7 @@ watch(
       <HomeSearchbar appearance="rounded" />
       <TabBar
         :is-logged-in="true"
-        @emit-active-tab="activeTab = $event"
+        @emit-active-tab="switchTab($event)"
         :active-tab="activeTab"
       />
 
@@ -551,7 +572,7 @@ watch(
           </div>
 
           <!-- Status Success -->
-          <div
+          <div id="content-container-after-login" aria-label="content list" role="region" tabindex="0"
             v-else-if="status == 'success' && subjectId && data.length > 0">
             <ClientOnly>
               <customGridOne v-if="activeTab.toLowerCase() === 'home'">

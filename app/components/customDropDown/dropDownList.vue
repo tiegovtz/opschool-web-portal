@@ -36,16 +36,6 @@ watch(() => props.modelValue, (newVal) => {
   }
 }, { immediate: true });
 
-// Watch for modelValue changes to update selected display text
-watch(() => props.modelValue, (newVal) => {
-  if (newVal !== null && newVal !== undefined) {
-    const item = props.list.find(i => i.id === newVal);
-    selected.value = item ? item.name : '';
-  } else {
-    selected.value = '';
-  }
-}, { immediate: true });
-
 // Toggle dropdown open/close
 const toggleOpen = () => {
   if (!props.disabled) {
@@ -59,6 +49,21 @@ const selectItem = (item) => {
   emit('update:modelValue', item.id ?? item.name);
   isOpen.value = false;
 };
+
+// Close when clicked outside
+const handleClickOutside = (e) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
+    isOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <template>
@@ -101,7 +106,7 @@ const selectItem = (item) => {
 .fade-enter-active,
 .fade-leave-active {
   transition: all 0.2s ease;
-}
+} 
 
 .fade-enter-from,
 .fade-leave-to {
