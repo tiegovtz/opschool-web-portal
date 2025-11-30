@@ -16,7 +16,7 @@ const emit = defineEmits(['emitChapterId'])
 </script>
 
 <template>
-    <div class="flex flex-col gap-3 md:pl-4">
+    <div role="listitem" class="flex flex-col gap-3 md:pl-4">
         <button type="button" v-for="(chapter, index) in chapters" :key="index" :aria-label="`press to switch to ${chapter?.name}`" tabindex="0" @click="emit('emitChapterId',chapter?._id)"
             :title="chapter?.name"
             class="flex items-center gap-2 cursor-pointer p-3 rounded-md bg-containerGray"
