@@ -4,10 +4,10 @@
     v-if="!isOpen"
     @click="toggleAssistant"
     class="fixed bottom-6 right-6 z-50 bg-oceanBlue hover:bg-deepBlue text-white rounded-full p-4 shadow-lg transition-all duration-300 flex items-center gap-2"
-    title="Ask Madam Ana"
+    title="Ask Subject AI Teacher"
   >
     <Icon name="mdi:robot" size="24" />
-    <span class="hidden md:block">Madam Ana</span>
+    <span class="hidden md:block">Subject AI Teacher</span>
   </button>
 
   <!-- AI Assistant Panel -->
@@ -16,25 +16,75 @@
     class="fixed bottom-6 right-6 z-50 w-full max-w-md bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col"
     style="height: 600px;"
   >
-    <!-- Header -->
-    <div class="flex items-center justify-between p-4 border-b bg-oceanBlue text-white rounded-t-lg">
-      <div>
-        <h3 class="font-semibold">Madam Ana</h3>
-        <p class="text-xs opacity-90">{{ chapterName }}</p>
-      </div>
-      <button @click="toggleAssistant" class="hover:bg-white/20 rounded p-1">
-        <Icon name="mdi:close" size="20" />
-      </button>
-    </div>
+           <!-- Header -->
+           <div class="flex items-center justify-between p-4 border-b bg-oceanBlue text-white rounded-t-lg relative settings-container">
+             <div>
+               <h3 class="font-semibold">Subject AI Teacher</h3>
+               <p class="text-xs opacity-90">{{ chapterName }}</p>
+             </div>
+             <div class="flex items-center gap-2 relative">
+               <!-- Settings Button -->
+               <button @click.stop="toggleSettings" class="hover:bg-white/20 rounded p-1" title="Voice Settings">
+                 <Icon name="mdi:cog" size="20" />
+               </button>
+               <!-- Settings Dropdown -->
+               <div v-if="showSettings" class="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg p-4 z-50 min-w-[200px] settings-container" @click.stop>
+                 <h4 class="font-semibold mb-2 text-gray-900">Voice Settings</h4>
+                 <p class="text-xs text-gray-500 mb-3">Select voice for audio responses</p>
+                 <div class="space-y-2">
+                   <label class="flex items-center gap-2 cursor-pointer">
+                     <input type="radio" value="female" :checked="voiceGender === 'female'" @change="saveVoicePreference('female')" />
+                     <span class="text-gray-900">Female Voice</span>
+                   </label>
+                   <label class="flex items-center gap-2 cursor-pointer">
+                     <input type="radio" value="male" :checked="voiceGender === 'male'" @change="saveVoicePreference('male')" />
+                     <span class="text-gray-900">Male Voice</span>
+                   </label>
+                 </div>
+               </div>
+               <button @click="toggleAssistant" class="hover:bg-white/20 rounded p-1">
+                 <Icon name="mdi:close" size="20" />
+               </button>
+             </div>
+           </div>
 
     <!-- Messages Container -->
     <div class="flex-1 overflow-y-auto p-4 space-y-4" ref="messagesContainer">
-      <div v-if="messages.length === 0" class="text-center text-gray-500 py-8">
-        <Icon name="mdi:robot" size="48" class="mx-auto mb-2 text-oceanBlue" />
-        <p>Hello! I'm <strong>Madam Ana</strong>, your STEM subjects teacher.</p>
-        <p class="text-sm mt-2">I'm here to help you understand <strong>{{ chapterName }}</strong>.</p>
-        <p class="text-xs mt-1 opacity-75">Feel free to ask me any questions about this competence!</p>
-      </div>
+      <ClientOnly>
+        <div v-if="messages.length === 0" class="text-center text-gray-500 py-8">
+          <div class="flex items-center justify-center gap-6 mb-4">
+            <!-- Female Voice Avatar -->
+            <button 
+              @click="saveVoicePreference('female')"
+              :class="['flex flex-col items-center gap-2 p-3 rounded-xl transition-all', voiceGender === 'female' ? 'bg-oceanBlue text-white' : 'bg-gray-100 hover:bg-gray-200']"
+              title="Select Female Voice"
+            >
+              <Icon name="mdi:face-woman" size="48" />
+              <span class="text-xs font-medium">Female Voice</span>
+            </button>
+            
+            <!-- Male Voice Avatar -->
+            <button 
+              @click="saveVoicePreference('male')"
+              :class="['flex flex-col items-center gap-2 p-3 rounded-xl transition-all', voiceGender === 'male' ? 'bg-oceanBlue text-white' : 'bg-gray-100 hover:bg-gray-200']"
+              title="Select Male Voice"
+            >
+              <Icon name="mdi:face-man" size="48" />
+              <span class="text-xs font-medium">Male Voice</span>
+            </button>
+          </div>
+          <p>Hello! I'm your <strong>Subject AI Teacher</strong>.</p>
+          <p class="text-sm mt-2">I'm here to help you understand <strong>{{ chapterName }}</strong>.</p>
+          <p class="text-xs mt-1 opacity-75">Select a voice to hear audio responses. Feel free to ask me any questions about this competence!</p>
+        </div>
+        <template #fallback>
+          <div v-if="messages.length === 0" class="text-center text-gray-500 py-8">
+            <p>Hello! I'm your <strong>Subject AI Teacher</strong>.</p>
+            <p class="text-sm mt-2">I'm here to help you understand <strong>{{ chapterName }}</strong>.</p>
+            <p class="text-xs mt-1 opacity-75">Feel free to ask me any questions about this competence!</p>
+          </div>
+        </template>
+      </ClientOnly>
 
       <div
         v-for="(message, index) in messages"
@@ -130,7 +180,7 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onUnmounted } from 'vue';
+import { ref, watch, nextTick, onUnmounted, onMounted } from 'vue';
 
 // Format message content for better display - enhanced markdown support
 const formatMessage = (content) => {
@@ -319,12 +369,49 @@ const messages = ref([]);
 const messagesContainer = ref(null);
 const previousChapterId = ref(null);
 
+// Provider tracking
+const currentProvider = ref(null);
+const currentModel = ref(null);
+
 // Quick action states
 const isSummarizing = ref(false);
 const isEnglishCrashCourse = ref(false);
 const isPlayingAudio = ref(false);
 const speechSynthesis = ref(null);
 const currentUtterance = ref(null);
+
+// Voice preference state (for audio file selection)
+const voiceGender = ref('female');
+const showSettings = ref(false);
+const currentAudio = ref(null);
+
+// Load voice preference from localStorage
+const loadVoicePreference = () => {
+  if (typeof window !== 'undefined') {
+    const saved = localStorage.getItem('tie-teacher-voice');
+    if (saved === 'male' || saved === 'female') {
+      voiceGender.value = saved;
+    }
+  }
+};
+
+// Save voice preference to localStorage
+const saveVoicePreference = (gender) => {
+  voiceGender.value = gender;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('tie-teacher-voice', gender);
+  }
+};
+
+// Toggle settings dropdown
+const toggleSettings = () => {
+  showSettings.value = !showSettings.value;
+};
+
+// Load voice preference on mount
+onMounted(() => {
+  loadVoicePreference();
+});
 
 const toggleAssistant = () => {
   isOpen.value = !isOpen.value;
@@ -339,8 +426,35 @@ watch(() => props.chapterId, (newChapterId, oldChapterId) => {
     previousChapterId.value = newChapterId;
     isSummarizing.value = false;
     isEnglishCrashCourse.value = false;
+    showSettings.value = false;
   }
 }, { immediate: true });
+
+// Close settings dropdown when clicking outside
+onMounted(() => {
+  if (typeof window === 'undefined') return;
+  
+  const handleClickOutside = (event) => {
+    const target = event.target;
+    const settingsContainer = target.closest('.settings-container');
+    const settingsButton = target.closest('[title="Voice Settings"]');
+    
+    if (showSettings.value && !settingsContainer && !settingsButton) {
+      showSettings.value = false;
+    }
+  };
+  
+  watch(showSettings, (isOpen) => {
+    if (isOpen) {
+      // Use setTimeout to avoid immediate trigger
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 0);
+    } else {
+      document.removeEventListener('click', handleClickOutside);
+    }
+  });
+});
 
 const askQuestion = async () => {
   if (!currentQuestion.value.trim() || isLoading.value || !props.chapterId) {
@@ -382,7 +496,7 @@ const askQuestion = async () => {
       return;
     }
 
-    console.log('Sending request:', { question, chapterId: props.chapterId });
+    console.log('[Subject AI Teacher] Sending request:', { question, chapterId: props.chapterId });
 
     // Prepare conversation history (without timestamps, just role and content)
     const conversationHistory = messages.value.map(msg => ({
@@ -400,15 +514,32 @@ const askQuestion = async () => {
       // $fetch automatically includes cookies, no need to set Authorization header
     });
 
+    // Log provider information in browser console
+    const provider = response.provider || 'Unknown';
+    const model = response.model || 'Unknown';
+    console.log(`[Subject AI Teacher] ✅ Response received from: ${provider} (Model: ${model})`);
+    console.log(`[Subject AI Teacher] 📊 Response stats:`, {
+      provider,
+      model,
+      finishReason: response.finishReason,
+      timestamp: response.timestamp
+    });
+
+    // Update current provider/model for display
+    currentProvider.value = provider;
+    currentModel.value = model;
+
     // Add AI response
     messages.value.push({
       role: 'assistant',
       content: response.answer,
-      timestamp: new Date().toLocaleTimeString()
+      timestamp: new Date().toLocaleTimeString(),
+      provider: provider, // Store provider for potential UI display
+      model: model // Store model for potential UI display
     });
 
   } catch (error) {
-    console.error('AI Assistant error:', error);
+    console.error('[Subject AI Teacher] AI Assistant error:', error);
     const errorMessage = error?.data?.message || error?.message || 'Sorry, I encountered an error. Please try again.';
     messages.value.push({
       role: 'assistant',
@@ -473,148 +604,51 @@ const handleEnglishCrashCourse = async () => {
   }
 };
 
-// Handle Read (Text-to-Speech) action
+// Handle Read (Audio File) action - PLACEHOLDER
 const handleRead = async () => {
   if (isLoading.value || isPlayingAudio.value || !props.chapterId) {
     return;
   }
 
-  // Check if browser supports speech synthesis
-  if (!('speechSynthesis' in window)) {
-    messages.value.push({
-      role: 'assistant',
-      content: 'Sorry, your browser does not support text-to-speech. Please try a different browser.',
-      timestamp: new Date().toLocaleTimeString()
-    });
-    return;
-  }
+  // Placeholder message - text-to-speech feature coming soon
+  messages.value.push({
+    role: 'assistant',
+    content: `Text-to-speech feature is coming soon! The audio playback functionality will be available once the audio files are added. You can still use the voice settings to select your preferred voice (${voiceGender.value === 'male' ? 'male' : 'female'}) for when the feature is ready.`,
+    timestamp: new Date().toLocaleTimeString()
+  });
 
-  try {
-    isLoading.value = true;
-    isPlayingAudio.value = true;
-
-    // Fetch chapter content
-    const token = useCookie('signInAccessToken').value;
-    if (!token) {
-      throw new Error('Please sign in to use this feature.');
+  // Scroll to show the message
+  nextTick(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
-
-    const chapterData = await $fetch(`/api/topics/chapters/${props.chapterId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (!chapterData || !chapterData.content) {
-      throw new Error('Chapter content not available.');
-    }
-
-    // Extract text content (similar to server-side extraction)
-    const extractTextContent = (html) => {
-      if (!html || typeof html !== 'string') return '';
-      
-      let text = html
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/<script[\s\S]*?<\/script>/gi, '')
-        .replace(/<style[\s\S]*?<\/style>/gi, '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/expPackage="[^"]*"/g, '')
-        .replace(/model="[^"]*"/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-      
-      return text;
-    };
-
-    const textContent = extractTextContent(chapterData.content || chapterData.notes || chapterData.description || '');
-    
-    if (!textContent || textContent.length === 0) {
-      throw new Error('No readable content found in this chapter.');
-    }
-
-    // Stop any existing speech
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
-
-    // Create speech utterance
-    const utterance = new SpeechSynthesisUtterance(textContent);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.9; // Slightly slower for better comprehension
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    // Set up event handlers
-    utterance.onend = () => {
-      isPlayingAudio.value = false;
-      currentUtterance.value = null;
-    };
-
-    utterance.onerror = (error) => {
-      console.error('Speech synthesis error:', error);
-      isPlayingAudio.value = false;
-      currentUtterance.value = null;
-      
-      // Only show error message if it's not a user-initiated cancellation
-      // error.error === 'interrupted' means user cancelled, which is normal
-      if (error.error !== 'interrupted' && error.error !== 'canceled') {
-        messages.value.push({
-          role: 'assistant',
-          content: 'An error occurred while reading. Please try again.',
-          timestamp: new Date().toLocaleTimeString()
-        });
-      }
-    };
-
-    currentUtterance.value = utterance;
-    window.speechSynthesis.speak(utterance);
-
-    // Show confirmation message
-    messages.value.push({
-      role: 'assistant',
-      content: `Reading chapter: ${chapterData.name || props.chapterName}. Click "Stop Reading" to pause.`,
-      timestamp: new Date().toLocaleTimeString()
-    });
-
-  } catch (error) {
-    console.error('Read error:', error);
-    messages.value.push({
-      role: 'assistant',
-      content: error.message || 'Failed to read chapter content. Please try again.',
-      timestamp: new Date().toLocaleTimeString()
-    });
-    isPlayingAudio.value = false;
-  } finally {
-    isLoading.value = false;
-  }
+  });
 };
 
 // Stop reading
 const stopReading = () => {
   try {
-    if (window.speechSynthesis && window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
+    // Stop audio file playback
+    if (currentAudio.value) {
+      currentAudio.value.pause();
+      currentAudio.value.currentTime = 0;
+      currentAudio.value = null;
     }
     // Reset state without showing error message
     isPlayingAudio.value = false;
-    currentUtterance.value = null;
   } catch (error) {
     // Silently handle any errors when stopping
     console.log('Stopped reading');
     isPlayingAudio.value = false;
-    currentUtterance.value = null;
+    currentAudio.value = null;
   }
 };
 
-// Clean up speech synthesis on component unmount
+// Clean up audio on component unmount
 onUnmounted(() => {
   stopReading();
+  // Close settings dropdown if open
+  showSettings.value = false;
 });
 </script>
 
