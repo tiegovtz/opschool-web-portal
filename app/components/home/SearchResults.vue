@@ -2,7 +2,7 @@
 // Define Stores
 const navigationStore = useNavigationStore()
 
-// Define Props
+// Define Props 
 const props = defineProps({
     id: {
         type: String,

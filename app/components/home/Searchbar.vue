@@ -65,7 +65,8 @@ const mouseOut = () => {
     ' flex items-center justify-center w-full',
     appearance === 'normal'
       ? 'max-w-md'
-      : `md:h-72 h-32 bg-background3 bg-cover bg-center bg-no-repeat rounded-md`,]">
+      : `md:h-72 h-32 bg-background3 bg-cover bg-center bg-no-repeat rounded-md`,]" tabindex="0"
+    aria-label="Taasisi ya Elimu Tanzania main building with trees in front" role="region">
     <div :class="[
       ' relative flex items-center justify-center w-full h-full rounded-md',
       appearance === 'normal'
@@ -79,7 +80,7 @@ const mouseOut = () => {
 
         <div class="flex items-center w-full">
           <!-- Search Icon -->
-          <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" aria-hidden="true" />
+          <Icon name="mdi:magnify" aria-label="search icon" class="text-gray-400" size="1.5rem" aria-hidden="true" />
 
           <!-- Search Input -->
           <label for="search-normal" class="sr-only">Search for topics</label>
@@ -114,7 +115,7 @@ const mouseOut = () => {
         </div>
 
         <!-- Search Button -->
-        <button type="submit"  role="button" aria-describedby="search-data"
+        <button type="submit" role="button" aria-describedby="search-data"
           class="items-center justify-center hidden h-full px-4 py-2 overflow-hidden text-white transition-colors duration-500 ease-in-out rounded-b-none cursor-pointer md:flex rounded-r-md bg-oceanBlue hover:bg-deepBlue"
           @click="search">
           Search
