@@ -13,7 +13,7 @@ const props = defineProps({
     },
     experimentThumbnail: {
         type: String,
-       default: '/images/background2.webp',
+    default: '/images/background2.webp',
     },
     experimentFileUrl: {
         type: String,
