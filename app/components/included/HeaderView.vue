@@ -11,7 +11,7 @@ const logout = () => {
   userToken.value = null;
   accessToken.value = null;
   refreshToken.value = null;
-  
+
   const router = useRouter();
   layoutEffect.value = "grid";
   // Use the State
@@ -33,15 +33,34 @@ const dropDown = () => {
 
 <template>
   <!-- Header -->
-  <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat">
+  <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat" role="navigation">
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->
       <div class="relative flex justify-center w-full h-24 pt-1">
         <div class="flex items-center justify-between w-full h-full wrapper-container">
           <NuxtLink to="/" class="flex items-center justify-center h-full cursor-pointer max-w-[64px]">
-            <NuxtImg src="/logo/emblem.webp" alt="EMBLEM" class="object-contain w-full h-full" />
+            <figure>
+              <NuxtImg src="/logo/emblem.webp" alt="Tanzania coat of arms: man and woman supporting a central shield with Mount Kilimanjaro, national flag colors, water waves, a torch, and traditional t
+             ools" role="img" aria-describedby="tanzania-emblem-longdesc" class="object-contain w-full h-full" />
+              <figcaption id="tanzania-emblem-longdesc" class="sr-only">
+                Tanzania coat of arms, centered on a white background. In the middle is a vertically oriented shield topped
+                by a small stylized Mount Kilimanjaro silhouette (white peak) above it. Across the center of the shield is a
+                narrow horizontal band showing the Tanzania national flag: from left to right green, black with thin yellow
+                edging, and blue. Below the flag inside the lower shield are two horizontal blue-and-white wavy stripes
+                representing water. A golden / brass-colored torch with a red/orange flame sits in front of the shield. To
+                the left of the shield (viewer’s left) is a golden lion standing upright; to the right of the shield
+                (viewer’s right) is a matching golden lion — both facing the shield and appearing as supporters. Behind and
+                crossing the shield are two traditional farming tools (a hoe and a spear-like implement) arranged
+                diagonally, with metal/wood tones (dark gray/ brown). At the base there is a simple stone plinth. Overall
+                palette: green, black, yellow/gold, blue, white, red/orange (flame), brown/gray (tools), golden lions.
+                Layout: lions flank the shield on both sides; mount silhouette sits above the central flag band; wavy lines
+                are at the bottom of the shield; torch is centered in front.
+              </figcaption>
+            </figure>
           </NuxtLink>
-          <div class="flex flex-col items-center h-full gap-1 text-center uppercase font-tahomabd">
+          <div class="flex flex-col items-center h-full gap-1 text-center uppercase font-tahomabd" tabindex="0"
+            aria-label="governed by Ministry of education, science and technology Tanzania institute of education (TIE)"
+            role="region">
             <p class="md:text-small text-extraSmall text-deepBlue text-shadow">
               Ministry of education, science and technology
             </p>
@@ -50,7 +69,8 @@ const dropDown = () => {
             </p>
           </div>
           <NuxtLink to="/" class="flex items-center justify-center h-full p-2 cursor-pointer">
-            <NuxtImg  src="/logo/logo_tie.gif" alt="TIE LOGO" class="w-16 h-16" />
+            <NuxtImg src="/logo/logo_tie.gif" class="w-16 h-16"
+              alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
           </NuxtLink>
         </div>
       </div>
@@ -59,14 +79,14 @@ const dropDown = () => {
         <!-- Media Screen -->
         <div
           class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container">
-          <NuxtLink to="/" class="flex gap-2 pl-2">
+          <NuxtLink aria-label="Go home" to="/" class="flex gap-2 pl-2">
             <div class="flex items-center justify-center">
               <Icon name="ant-design:home-filled" size="20" />
             </div>
             <p class="hidden capitalize lg:flex">Home</p>
           </NuxtLink>
           <!-- TIE Library Books -->
-          <a href="https://ol.tie.go.tz/index.php" target="_blank"
+          <a  aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
             class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
@@ -85,8 +105,8 @@ const dropDown = () => {
           </NuxtLink>
 
           <!-- title (TIE online public school) -->
-          <div class="flex-1">
-            <NuxtLink to="/">
+          <div class="flex-1" role="navigation">
+            <NuxtLink aria-label="Go home" to="/">
               <p class="block text-center uppercase lg:text-large text-medium text-shadow">
                 TIE online public school
               </p>
@@ -98,12 +118,12 @@ const dropDown = () => {
             <div class="flex items-center gap-4 px-2 py-1" v-if="userToken">
 
               <!-- Profile -->
-              <NuxtLink to="/profile"  >
+              <NuxtLink aria-label="Go to profile page" to="/profile">
                 <div class="flex items-center justify-center overflow-hidden">
-                  <div class="flex items-center gap-1 cursor-pointer" >
+                  <div class="flex items-center gap-1 cursor-pointer">
                     <div v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''" class="w-8 h-8">
-                      <NuxtImg  :src="apiDocs.baseURL.replace('v1','')+userToken?.profilePic" alt="User Profile"
-                      class="object-cover w-full h-full rounded-full" />
+                      <NuxtImg :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic" alt="User Profile"
+                        class="object-cover w-full h-full rounded-full" />
                     </div>
                     <Icon v-else name="iconamoon:profile-circle-thin" class="" size="2rem" />
                     <p class="capitalize text-medium line-clamp-1 max-w-60">
@@ -115,7 +135,7 @@ const dropDown = () => {
               </NuxtLink>
 
               <!-- Logout -->
-              <div
+              <div tabindex="0" aria-label="logout"
                 class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
                 @click="logout">
                 <span class="capitalize"> Logout </span>
@@ -124,14 +144,14 @@ const dropDown = () => {
             </div>
             <div class="flex items-center gap-4 p-2" v-else>
               <!-- sign in -->
-              <NuxtLink to="/auth" title="Sign in"
+              <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <Icon name="solar:login-2-outline" class="" size="1.5rem" />
                 <p class="hidden capitalize lg:flex">Sign in</p>
               </NuxtLink>
 
               <!-- sign up -->
-              <NuxtLink to="/auth/SignUp" title="Sign Up"
+              <NuxtLink aria-label="Go to sign up page" to="/auth/SignUp" title="Sign Up"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <Icon name="iconamoon:profile-thin" class="" size="1.5rem" />
                 <p class="hidden capitalize lg:flex">Create Account</p>
@@ -146,16 +166,16 @@ const dropDown = () => {
           <div class="flex items-center justify-between w-full">
             <div class="flex">
 
-              <NuxtLink to="/profile" v-if="userToken" class="flex items-center pl-1">
+              <NuxtLink aria-label="Go to profile page" to="/profile" v-if="userToken" class="flex items-center pl-1">
                 <Icon name="iconamoon:profile-circle-thin" class="" size="1.2rem" />
               </NuxtLink>
-              
+
               <NuxtLink to="/auth/SignUp" title="Sign Up" v-else
                 class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                 <Icon name="iconamoon:profile-thin" class="" size="1.2rem" />
               </NuxtLink>
               <!-- TIE Library Books -->
-              <a href="https://ol.tie.go.tz/index.php" target="_blank"
+              <a aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
                 class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45"
                 active-class="text-white !bg-deepBlue">
                 <div class="flex items-center justify-center">
@@ -181,7 +201,7 @@ const dropDown = () => {
 
             <!-- Logout and Sign in -->
             <div class="flex items-center">
-              <NuxtLink to="/" class="flex gap-2 pr-2">
+              <NuxtLink aria-label="Go home" to="/" class="flex gap-2 pr-2">
                 <div class="flex items-center justify-center">
                   <Icon name="ant-design:home-filled" size="20" />
                 </div>
@@ -191,7 +211,7 @@ const dropDown = () => {
                 <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
               </div>
               <!-- sign in -->
-              <NuxtLink to="/auth" title="Sign in" v-else
+              <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in" v-else
                 class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                 <Icon name="solar:login-2-outline" class="" size="1.2rem" />
               </NuxtLink>
