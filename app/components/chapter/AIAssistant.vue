@@ -1,191 +1,10 @@
-<template>
-  <!-- Floating AI Assistant Button -->
-  <button
-    v-if="!isOpen"
-    @click="toggleAssistant"
-    class="fixed bottom-6 right-6 z-50 bg-oceanBlue hover:bg-deepBlue text-white rounded-full p-4 shadow-lg transition-all duration-300 flex items-center gap-2"
-    title="Ask Subject AI Teacher"
-  >
-    <Icon name="mdi:robot" size="24" />
-    <span class="hidden md:block">Subject AI Teacher</span>
-  </button>
-
-  <!-- AI Assistant Panel -->
-  <div
-    v-if="isOpen"
-    class="fixed bottom-6 right-6 z-50 w-full max-w-md bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col"
-    style="height: 600px;"
-  >
-           <!-- Header -->
-           <div class="flex items-center justify-between p-4 border-b bg-oceanBlue text-white rounded-t-lg relative settings-container">
-             <div>
-               <h3 class="font-semibold">Subject AI Teacher</h3>
-               <p class="text-xs opacity-90">{{ chapterName }}</p>
-             </div>
-             <div class="flex items-center gap-2 relative">
-               <!-- Settings Button -->
-               <button @click.stop="toggleSettings" class="hover:bg-white/20 rounded p-1" title="Voice Settings">
-                 <Icon name="mdi:cog" size="20" />
-               </button>
-               <!-- Settings Dropdown -->
-               <div v-if="showSettings" class="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg p-4 z-50 min-w-[200px] settings-container" @click.stop>
-                 <h4 class="font-semibold mb-2 text-gray-900">Voice Settings</h4>
-                 <p class="text-xs text-gray-500 mb-3">Select voice for audio responses</p>
-                 <div class="space-y-2">
-                   <label class="flex items-center gap-2 cursor-pointer">
-                     <input type="radio" value="female" :checked="voiceGender === 'female'" @change="saveVoicePreference('female')" />
-                     <span class="text-gray-900">Female Voice</span>
-                   </label>
-                   <label class="flex items-center gap-2 cursor-pointer">
-                     <input type="radio" value="male" :checked="voiceGender === 'male'" @change="saveVoicePreference('male')" />
-                     <span class="text-gray-900">Male Voice</span>
-                   </label>
-                 </div>
-               </div>
-               <button @click="toggleAssistant" class="hover:bg-white/20 rounded p-1">
-                 <Icon name="mdi:close" size="20" />
-               </button>
-             </div>
-           </div>
-
-    <!-- Messages Container -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-4" ref="messagesContainer">
-      <ClientOnly>
-        <div v-if="messages.length === 0" class="text-center text-gray-500 py-8">
-          <div class="flex items-center justify-center gap-6 mb-4">
-            <!-- Female Voice Avatar -->
-            <button 
-              @click="saveVoicePreference('female')"
-              :class="['flex flex-col items-center gap-2 p-3 rounded-xl transition-all', voiceGender === 'female' ? 'bg-oceanBlue text-white' : 'bg-gray-100 hover:bg-gray-200']"
-              title="Select Female Voice"
-            >
-              <Icon name="mdi:face-woman" size="48" />
-              <span class="text-xs font-medium">Female Voice</span>
-            </button>
-            
-            <!-- Male Voice Avatar -->
-            <button 
-              @click="saveVoicePreference('male')"
-              :class="['flex flex-col items-center gap-2 p-3 rounded-xl transition-all', voiceGender === 'male' ? 'bg-oceanBlue text-white' : 'bg-gray-100 hover:bg-gray-200']"
-              title="Select Male Voice"
-            >
-              <Icon name="mdi:face-man" size="48" />
-              <span class="text-xs font-medium">Male Voice</span>
-            </button>
-          </div>
-          <p>Hello! I'm your <strong>Subject AI Teacher</strong>.</p>
-          <p class="text-sm mt-2">I'm here to help you understand <strong>{{ chapterName }}</strong>.</p>
-          <p class="text-xs mt-1 opacity-75">Select a voice to hear audio responses. Feel free to ask me any questions about this competence!</p>
-        </div>
-        <template #fallback>
-          <div v-if="messages.length === 0" class="text-center text-gray-500 py-8">
-            <p>Hello! I'm your <strong>Subject AI Teacher</strong>.</p>
-            <p class="text-sm mt-2">I'm here to help you understand <strong>{{ chapterName }}</strong>.</p>
-            <p class="text-xs mt-1 opacity-75">Feel free to ask me any questions about this competence!</p>
-          </div>
-        </template>
-      </ClientOnly>
-
-      <div
-        v-for="(message, index) in messages"
-        :key="index"
-        :class="[
-          'flex',
-          message.role === 'user' ? 'justify-end' : 'justify-start'
-        ]"
-      >
-        <div
-          :class="[
-            'max-w-[85%] rounded-xl p-4 shadow-md',
-            message.role === 'user'
-              ? 'bg-gradient-to-br from-oceanBlue to-deepBlue text-white'
-              : 'bg-gradient-to-br from-blue-50 to-gray-50 text-gray-900 border border-gray-200'
-          ]"
-        >
-          <div 
-            class="text-sm leading-relaxed"
-            :class="message.role === 'user' ? 'text-white' : 'text-gray-800'"
-            v-html="formatMessage(message.content)"
-          ></div>
-          <p 
-            class="text-xs mt-3 opacity-60 font-medium"
-            :class="message.role === 'user' ? 'text-blue-100' : 'text-gray-500'"
-          >
-            {{ message.timestamp }}
-          </p>
-        </div>
-      </div>
-
-      <div v-if="isLoading" class="flex justify-start">
-        <div class="bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl p-4 border border-gray-200 shadow-sm">
-          <div class="flex gap-1.5">
-            <span class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"></span>
-            <span class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-            <span class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Quick Action Buttons -->
-    <div class="px-4 pt-4 pb-2 border-t border-gray-200">
-      <div class="flex flex-wrap gap-2">
-        <button
-          @click="handleSummarize"
-          :disabled="isLoading || isSummarizing || !chapterId"
-          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-oceanBlue to-deepBlue text-white rounded-lg hover:from-deepBlue hover:to-oceanBlue disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
-        >
-          <Icon name="mdi:file-document-outline" size="18" />
-          <span>{{ isSummarizing ? 'Summarizing...' : 'Summarize' }}</span>
-        </button>
-        <button
-          @click="handleEnglishCrashCourse"
-          :disabled="isLoading || isEnglishCrashCourse || !chapterId"
-          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
-        >
-          <Icon name="mdi:translate" size="18" />
-          <span>{{ isEnglishCrashCourse ? 'Loading...' : 'English Crash Course' }}</span>
-        </button>
-        <button
-          @click="isPlayingAudio ? stopReading() : handleRead()"
-          :disabled="isLoading || !chapterId"
-          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
-        >
-          <Icon :name="isPlayingAudio ? 'mdi:pause' : 'mdi:volume-high'" size="18" />
-          <span>{{ isPlayingAudio ? 'Stop Reading' : 'Read' }}</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Input Area -->
-    <div class="p-4 border-t border-gray-200">
-      <form @submit.prevent="askQuestion" class="flex gap-2">
-        <input
-          v-model="currentQuestion"
-          type="text"
-          placeholder="Ask about this competence..."
-          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue"
-          :disabled="isLoading || !chapterId"
-        />
-        <button
-          type="submit"
-          :disabled="!currentQuestion.trim() || isLoading || !chapterId"
-          class="px-4 py-2 bg-oceanBlue text-white rounded-lg hover:bg-deepBlue disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <Icon name="mdi:send" size="20" />
-        </button>
-      </form>
-    </div>
-  </div>
-</template>
-
 <script setup>
 import { ref, watch, nextTick, onUnmounted, onMounted } from 'vue';
 
 // Format message content for better display - enhanced markdown support
 const formatMessage = (content) => {
   if (!content) return '';
-  
+
   // Escape HTML to prevent XSS
   const escapeHtml = (text) => {
     const map = {
@@ -197,9 +16,9 @@ const formatMessage = (content) => {
     };
     return text.replace(/[&<>"']/g, m => map[m]);
   };
-  
+
   let formatted = content;
-  
+
   // Step 1: Process code blocks first (before escaping) - triple backticks
   const codeBlocks = [];
   formatted = formatted.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
@@ -207,7 +26,7 @@ const formatMessage = (content) => {
     codeBlocks.push({ placeholder, code: code.trim() });
     return placeholder;
   });
-  
+
   // Step 2: Process inline code - single backticks
   const inlineCodes = [];
   formatted = formatted.replace(/`([^`\n]+)`/g, (match, code) => {
@@ -215,62 +34,62 @@ const formatMessage = (content) => {
     inlineCodes.push({ placeholder, code });
     return placeholder;
   });
-  
+
   // Step 3: Escape HTML
   formatted = escapeHtml(formatted);
-  
+
   // Step 4: Restore code blocks
   codeBlocks.forEach(({ placeholder, code }) => {
     const escapedCode = escapeHtml(code);
-    formatted = formatted.replace(placeholder, `<pre class="bg-gray-100 p-3 rounded-lg overflow-x-auto my-3 border border-gray-300"><code class="text-sm font-mono whitespace-pre">${escapedCode}</code></pre>`);
+    formatted = formatted.replace(placeholder, `<pre class="p-3 my-3 overflow-x-auto bg-gray-100 border border-gray-300 rounded-lg"><code class="font-mono text-sm whitespace-pre">${escapedCode}</code></pre>`);
   });
-  
+
   // Step 5: Process links [text](url)
-  formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline break-words">$1</a>');
-  
+  formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline break-words hover:text-blue-800">$1</a>');
+
   // Step 6: Process bold **text** or __text__
   formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>');
   formatted = formatted.replace(/__([^_]+)__/g, '<strong class="font-semibold">$1</strong>');
-  
+
   // Step 7: Process italic *text* or _text_ (but not when part of **bold**)
   formatted = formatted.replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em class="italic">$1</em>');
   formatted = formatted.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em class="italic">$1</em>');
-  
+
   // Step 8: Process strikethrough ~~text~~
   formatted = formatted.replace(/~~([^~]+)~~/g, '<del class="line-through opacity-75">$1</del>');
-  
+
   // Step 9: Process blockquotes > text
-  formatted = formatted.replace(/^&gt;\s+(.+)$/gm, '<blockquote class="border-l-4 border-gray-300 pl-4 my-2 italic text-gray-700">$1</blockquote>');
-  
+  formatted = formatted.replace(/^&gt;\s+(.+)$/gm, '<blockquote class="pl-4 my-2 italic text-gray-700 border-l-4 border-gray-300">$1</blockquote>');
+
   // Step 10: Process headers on individual lines BEFORE paragraph splitting
   // Match headings that start with # at the beginning of a line (allowing whitespace)
   // Process all heading levels, checking from longest to shortest
   formatted = formatted.replace(/^(#{4})\s+(.+)$/gm, (match, hashes, text) => {
-    return `<h4 class="font-semibold text-sm mt-3 mb-2 pt-2">${text.trim()}</h4>`;
+    return `<h4 class="pt-2 mt-3 mb-2 text-sm font-semibold">${text.trim()}</h4>`;
   });
   formatted = formatted.replace(/^(#{3})\s+(.+)$/gm, (match, hashes, text) => {
-    return `<h3 class="font-semibold text-base mt-4 mb-3 pt-2 border-t border-opacity-20">${text.trim()}</h3>`;
+    return `<h3 class="pt-2 mt-4 mb-3 text-base font-semibold border-t border-opacity-20">${text.trim()}</h3>`;
   });
   formatted = formatted.replace(/^(#{2})\s+(.+)$/gm, (match, hashes, text) => {
-    return `<h2 class="font-bold text-lg mt-5 mb-3 pt-3 border-t-2 border-opacity-30">${text.trim()}</h2>`;
+    return `<h2 class="pt-3 mt-5 mb-3 text-lg font-bold border-t-2 border-opacity-30">${text.trim()}</h2>`;
   });
   formatted = formatted.replace(/^(#{1})\s+(.+)$/gm, (match, hashes, text) => {
-    return `<h1 class="font-bold text-xl mt-6 mb-4 pt-4 border-t-2 border-opacity-40">${text.trim()}</h1>`;
+    return `<h1 class="pt-4 mt-6 mb-4 text-xl font-bold border-t-2 border-opacity-40">${text.trim()}</h1>`;
   });
-  
+
   // Step 11: Split into paragraphs and process block elements
   // Use regex to split on double newlines, but preserve single newlines
   const paragraphs = formatted.split(/\n\n+/);
-  
+
   formatted = paragraphs.map(para => {
     para = para.trim();
     if (!para) return '';
-    
+
     // Check if already a header (from previous step)
     if (para.startsWith('<h1') || para.startsWith('<h2') || para.startsWith('<h3') || para.startsWith('<h4')) {
       return para;
     }
-    
+
     // Check if paragraph contains multiple headers (split them)
     if (para.includes('</h1>') || para.includes('</h2>') || para.includes('</h3>') || para.includes('</h4>')) {
       // Split by header tags and process each part
@@ -282,72 +101,72 @@ const formatMessage = (content) => {
         // Check if this part itself is a header
         if (/^####\s+(.+)$/.test(trimmed)) {
           const headerText = trimmed.replace(/^####\s+/, '').trim();
-          return `<h4 class="font-semibold text-sm mt-3 mb-2 pt-2">${headerText}</h4>`;
+          return `<h4 class="pt-2 mt-3 mb-2 text-sm font-semibold">${headerText}</h4>`;
         }
         if (/^###\s+(.+)$/.test(trimmed)) {
           const headerText = trimmed.replace(/^###\s+/, '').trim();
-          return `<h3 class="font-semibold text-base mt-4 mb-3 pt-2 border-t border-opacity-20">${headerText}</h3>`;
+          return `<h3 class="pt-2 mt-4 mb-3 text-base font-semibold border-t border-opacity-20">${headerText}</h3>`;
         }
         if (/^##\s+(.+)$/.test(trimmed)) {
           const headerText = trimmed.replace(/^##\s+/, '').trim();
-          return `<h2 class="font-bold text-lg mt-5 mb-3 pt-3 border-t-2 border-opacity-30">${headerText}</h2>`;
+          return `<h2 class="pt-3 mt-5 mb-3 text-lg font-bold border-t-2 border-opacity-30">${headerText}</h2>`;
         }
         if (/^#\s+(.+)$/.test(trimmed)) {
           const headerText = trimmed.replace(/^#\s+/, '').trim();
-          return `<h1 class="font-bold text-xl mt-6 mb-4 pt-4 border-t-2 border-opacity-40">${headerText}</h1>`;
+          return `<h1 class="pt-4 mt-6 mb-4 text-xl font-bold border-t-2 border-opacity-40">${headerText}</h1>`;
         }
         return `<p class="mb-2 leading-relaxed">${trimmed.replace(/\n/g, '<br>')}</p>`;
       }).join('');
     }
-    
+
     // Check for horizontal rule
     if (/^[-*_]{3,}$/.test(para)) {
       return '<hr class="my-4 border-gray-300" />';
     }
-    
+
     // Check if paragraph is already a blockquote
     if (para.startsWith('<blockquote')) {
       return para;
     }
-    
+
     // Check if paragraph is a list
     const isBulletList = /^[-•*]\s/m.test(para);
     const isNumberedList = /^\d+\.\s/m.test(para);
     const isTaskList = /^[-*]\s\[([ xX])\]\s/m.test(para);
-    
+
     if (isTaskList) {
       // Handle task lists
       let taskItems = para.replace(/^[-*]\s\[([ xX])\]\s+(.+)$/gim, (match, checked, text) => {
         const isChecked = checked.toLowerCase() === 'x';
-        return `<li class="mb-1 flex items-start gap-2"><input type="checkbox" ${isChecked ? 'checked' : ''} disabled class="mt-1" /><span>${text}</span></li>`;
+        return `<li class="flex items-start gap-2 mb-1"><input type="checkbox" ${isChecked ? 'checked' : ''} disabled class="mt-1" /><span>${text}</span></li>`;
       });
-      return `<ul class="list-none space-y-1 my-2 ml-2">${taskItems}</ul>`;
+      return `<ul class="my-2 ml-2 space-y-1 list-none">${taskItems}</ul>`;
     } else if (isBulletList || isNumberedList) {
       // Handle bullet points (including * as bullet)
       let listItems = para.replace(/^[-•*]\s+(.+)$/gim, '<li class="mb-1">$1</li>');
       // Handle numbered lists
       listItems = listItems.replace(/^\d+\.\s+(.+)$/gim, '<li class="mb-1">$1</li>');
-      
+
       if (listItems.includes('<li')) {
         const listTag = isNumberedList ? 'ol' : 'ul';
-        const listClass = isNumberedList 
-          ? 'list-decimal list-inside space-y-1 my-2 ml-4' 
+        const listClass = isNumberedList
+          ? 'list-decimal list-inside space-y-1 my-2 ml-4'
           : 'list-disc list-inside space-y-1 my-2 ml-4';
         return `<${listTag} class="${listClass}">${listItems}</${listTag}>`;
       }
     }
-    
+
     // Regular paragraph with line breaks
     para = para.replace(/\n/g, '<br>');
     return `<p class="mb-2 leading-relaxed">${para}</p>`;
   }).filter(p => p).join('');
-  
+
   // Step 11: Restore inline code
   inlineCodes.forEach(({ placeholder, code }) => {
     const escapedCode = escapeHtml(code);
     formatted = formatted.replace(placeholder, `<code class="bg-opacity-20 px-1.5 py-0.5 rounded text-xs font-mono">${escapedCode}</code>`);
   });
-  
+
   return formatted;
 };
 
@@ -433,17 +252,17 @@ watch(() => props.chapterId, (newChapterId, oldChapterId) => {
 // Close settings dropdown when clicking outside
 onMounted(() => {
   if (typeof window === 'undefined') return;
-  
+
   const handleClickOutside = (event) => {
     const target = event.target;
     const settingsContainer = target.closest('.settings-container');
     const settingsButton = target.closest('[title="Voice Settings"]');
-    
+
     if (showSettings.value && !settingsContainer && !settingsButton) {
       showSettings.value = false;
     }
   };
-  
+
   watch(showSettings, (isOpen) => {
     if (isOpen) {
       // Use setTimeout to avoid immediate trigger
@@ -475,7 +294,7 @@ const askQuestion = async () => {
 
   try {
     const token = useCookie('signInAccessToken').value;
-    
+
     if (!token) {
       messages.value.push({
         role: 'assistant',
@@ -574,7 +393,7 @@ const handleSummarize = async () => {
 
   isSummarizing.value = true;
   const prompt = `Please provide a comprehensive summary of this chapter/competence: ${props.chapterName}. Include the main concepts, key points, and important information.`;
-  
+
   // Set the prompt and trigger the question
   currentQuestion.value = prompt;
   try {
@@ -593,7 +412,7 @@ const handleEnglishCrashCourse = async () => {
 
   isEnglishCrashCourse.value = true;
   const prompt = `I'm a Tanzanian student who learned in Swahili. Please explain this chapter/competence "${props.chapterName}" in simple English, helping me understand the key concepts and terms. Use Tanzanian context, examples, and references that relate to Tanzania (like Tanzanian cities, culture, industries, or local examples). Use simple language and provide examples where helpful. use swahili to make more more emphasis on points.`;
-  
+
   // Set the prompt and trigger the question
   currentQuestion.value = prompt;
   try {
@@ -651,6 +470,157 @@ onUnmounted(() => {
   showSettings.value = false;
 });
 </script>
+
+<template>
+  <!-- Floating AI Assistant Button -->
+  <button v-if="!isOpen" @click="toggleAssistant"
+    class="fixed z-50 flex items-center gap-2 p-4 text-white transition-all duration-300 rounded-full shadow-lg bottom-6 right-6 bg-oceanBlue hover:bg-deepBlue"
+    title="Ask Subject AI Teacher">
+    <Icon name="mdi:robot" size="24" />
+    <span class="hidden md:block">Subject AI Teacher</span>
+  </button>
+
+  <!-- AI Assistant Panel -->
+  <div v-if="isOpen"
+    class="fixed z-50 flex flex-col w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-2xl bottom-6 right-6"
+    style="height: 600px;">
+    <!-- Header -->
+    <div
+      class="relative flex items-center justify-between p-4 text-white border-b rounded-t-lg bg-oceanBlue settings-container">
+      <div>
+        <h3 class="font-semibold">Subject AI Teacher</h3>
+        <p class="text-xs opacity-90">{{ chapterName }}</p>
+      </div>
+      <div class="relative flex items-center gap-2">
+        <!-- Settings Button -->
+        <button @click.stop="toggleSettings" class="p-1 rounded hover:bg-white/20" title="Voice Settings">
+          <Icon name="mdi:cog" size="20" />
+        </button>
+        <!-- Settings Dropdown -->
+        <div v-if="showSettings"
+          class="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg p-4 z-50 min-w-[200px] settings-container"
+          @click.stop>
+          <h4 class="mb-2 font-semibold text-gray-900">Voice Settings</h4>
+          <p class="mb-3 text-xs text-gray-500">Select voice for audio responses</p>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" value="female" :checked="voiceGender === 'female'"
+                @change="saveVoicePreference('female')" />
+              <span class="text-gray-900">Female Voice</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" value="male" :checked="voiceGender === 'male'"
+                @change="saveVoicePreference('male')" />
+              <span class="text-gray-900">Male Voice</span>
+            </label>
+          </div>
+        </div>
+        <button @click="toggleAssistant" class="p-1 rounded hover:bg-white/20">
+          <Icon name="mdi:close" size="20" />
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="flex-1 p-4 space-y-4 overflow-y-auto" ref="messagesContainer">
+      <ClientOnly>
+        <div v-if="messages.length === 0" class="py-8 text-center text-gray-500">
+          <div class="flex items-center justify-center gap-6 mb-4">
+            <!-- Female Voice Avatar -->
+            <button @click="saveVoicePreference('female')"
+              :class="['flex flex-col items-center gap-2 p-3 rounded-xl transition-all', voiceGender === 'female' ? 'bg-oceanBlue text-white' : 'bg-gray-100 hover:bg-gray-200']"
+              title="Select Female Voice">
+              <Icon name="mdi:face-woman" size="48" />
+              <span class="text-xs font-medium">Female Voice</span>
+            </button>
+
+            <!-- Male Voice Avatar -->
+            <button @click="saveVoicePreference('male')"
+              :class="['flex flex-col items-center gap-2 p-3 rounded-xl transition-all', voiceGender === 'male' ? 'bg-oceanBlue text-white' : 'bg-gray-100 hover:bg-gray-200']"
+              title="Select Male Voice">
+              <Icon name="mdi:face-man" size="48" />
+              <span class="text-xs font-medium">Male Voice</span>
+            </button>
+          </div>
+          <p>Hello! I'm your <strong>Subject AI Teacher</strong>.</p>
+          <p class="mt-2 text-sm">I'm here to help you understand <strong>{{ chapterName }}</strong>.</p>
+          <p class="mt-1 text-xs opacity-75">Select a voice to hear audio responses. Feel free to ask me any questions
+            about this competence!</p>
+        </div>
+        <template #fallback>
+          <div v-if="messages.length === 0" class="py-8 text-center text-gray-500">
+            <p>Hello! I'm your <strong>Subject AI Teacher</strong>.</p>
+            <p class="mt-2 text-sm">I'm here to help you understand <strong>{{ chapterName }}</strong>.</p>
+            <p class="mt-1 text-xs opacity-75">Feel free to ask me any questions about this competence!</p>
+          </div>
+        </template>
+      </ClientOnly>
+
+      <div v-for="(message, index) in messages" :key="index" :class="[
+        'flex',
+        message.role === 'user' ? 'justify-end' : 'justify-start'
+      ]">
+        <div :class="[
+          'max-w-[85%] rounded-xl p-4 shadow-md',
+          message.role === 'user'
+            ? 'bg-gradient-to-br from-oceanBlue to-deepBlue text-white'
+            : 'bg-gradient-to-br from-blue-50 to-gray-50 text-gray-900 border border-gray-200'
+        ]">
+          <div class="text-sm leading-relaxed" :class="message.role === 'user' ? 'text-white' : 'text-gray-800'"
+            v-html="formatMessage(message.content)"></div>
+          <p class="mt-3 text-xs font-medium opacity-60"
+            :class="message.role === 'user' ? 'text-blue-100' : 'text-gray-500'">
+            {{ message.timestamp }}
+          </p>
+        </div>
+      </div>
+
+      <div v-if="isLoading" class="flex justify-start">
+        <div class="p-4 border border-gray-200 shadow-sm bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl">
+          <div class="flex gap-1.5">
+            <span class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"></span>
+            <span class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+            <span class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Action Buttons -->
+    <div class="px-4 pt-4 pb-2 border-t border-gray-200">
+      <div class="flex flex-wrap gap-2">
+        <button @click="handleSummarize" :disabled="isLoading || isSummarizing || !chapterId"
+          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-oceanBlue to-deepBlue text-white rounded-lg hover:from-deepBlue hover:to-oceanBlue disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
+          <Icon name="mdi:file-document-outline" size="18" />
+          <span>{{ isSummarizing ? 'Summarizing...' : 'Summarize' }}</span>
+        </button>
+        <button @click="handleEnglishCrashCourse" :disabled="isLoading || isEnglishCrashCourse || !chapterId"
+          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
+          <Icon name="mdi:translate" size="18" />
+          <span>{{ isEnglishCrashCourse ? 'Loading...' : 'English Crash Course' }}</span>
+        </button>
+        <button @click="isPlayingAudio ? stopReading() : handleRead()" :disabled="isLoading || !chapterId"
+          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
+          <Icon :name="isPlayingAudio ? 'mdi:pause' : 'mdi:volume-high'" size="18" />
+          <span>{{ isPlayingAudio ? 'Stop Reading' : 'Read' }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="p-4 border-t border-gray-200">
+      <form @submit.prevent="askQuestion" class="flex gap-2">
+        <input v-model="currentQuestion" type="text" placeholder="Ask about this competence..."
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue"
+          :disabled="isLoading || !chapterId" />
+        <button type="submit" :disabled="!currentQuestion.trim() || isLoading || !chapterId"
+          class="px-4 py-2 text-white transition-colors rounded-lg bg-oceanBlue hover:bg-deepBlue disabled:opacity-50 disabled:cursor-not-allowed">
+          <Icon name="mdi:send" size="20" />
+        </button>
+      </form>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 /* Custom scrollbar for messages container */
@@ -751,7 +721,8 @@ hr {
   border-top-color: rgba(255, 255, 255, 0.3);
 }
 
-ul, ol {
+ul,
+ol {
   margin: 0.5rem 0;
   padding-left: 1.5rem;
 }
@@ -760,7 +731,9 @@ li {
   margin: 0.25rem 0;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   line-height: 1.4;
   font-weight: 600;
 }
@@ -792,7 +765,9 @@ h3 {
   border-top-color: rgba(0, 0, 0, 0.05);
 }
 
-h1:first-child, h2:first-child, h3:first-child {
+h1:first-child,
+h2:first-child,
+h3:first-child {
   margin-top: 0;
   padding-top: 0;
   border-top: none;
@@ -818,4 +793,3 @@ p {
   line-height: 1.6;
 }
 </style>
-
