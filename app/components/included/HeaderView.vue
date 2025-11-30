@@ -79,14 +79,14 @@ const dropDown = () => {
         <!-- Media Screen -->
         <div
           class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container">
-          <NuxtLink to="/" class="flex gap-2 pl-2">
+          <NuxtLink aria-label="Go home" to="/" class="flex gap-2 pl-2">
             <div class="flex items-center justify-center">
               <Icon name="ant-design:home-filled" size="20" />
             </div>
             <p class="hidden capitalize lg:flex">Home</p>
           </NuxtLink>
           <!-- TIE Library Books -->
-          <a href="https://ol.tie.go.tz/index.php" target="_blank"
+          <a  aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
             class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
@@ -96,8 +96,8 @@ const dropDown = () => {
           </a>
 
           <!-- title (TIE online public school) -->
-          <div class="flex-1">
-            <NuxtLink to="/">
+          <div class="flex-1" role="navigation">
+            <NuxtLink aria-label="Go home" to="/">
               <p class="block text-center uppercase lg:text-large text-medium text-shadow">
                 TIE online public school
               </p>
@@ -109,7 +109,7 @@ const dropDown = () => {
             <div class="flex items-center gap-4 px-2 py-1" v-if="userToken">
 
               <!-- Profile -->
-              <NuxtLink to="/profile">
+              <NuxtLink aria-label="Go to profile page" to="/profile">
                 <div class="flex items-center justify-center overflow-hidden">
                   <div class="flex items-center gap-1 cursor-pointer">
                     <div v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''" class="w-8 h-8">
@@ -135,14 +135,14 @@ const dropDown = () => {
             </div>
             <div class="flex items-center gap-4 p-2" v-else>
               <!-- sign in -->
-              <NuxtLink to="/auth" title="Sign in"
+              <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <Icon name="solar:login-2-outline" class="" size="1.5rem" />
                 <p class="hidden capitalize lg:flex">Sign in</p>
               </NuxtLink>
 
               <!-- sign up -->
-              <NuxtLink to="/auth/SignUp" title="Sign Up"
+              <NuxtLink aria-label="Go to sign up page" to="/auth/SignUp" title="Sign Up"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <Icon name="iconamoon:profile-thin" class="" size="1.5rem" />
                 <p class="hidden capitalize lg:flex">Create Account</p>
@@ -157,7 +157,7 @@ const dropDown = () => {
           <div class="flex items-center justify-between w-full">
             <div class="flex">
 
-              <NuxtLink to="/profile" v-if="userToken" class="flex items-center pl-1">
+              <NuxtLink aria-label="Go to profile page" to="/profile" v-if="userToken" class="flex items-center pl-1">
                 <Icon name="iconamoon:profile-circle-thin" class="" size="1.2rem" />
               </NuxtLink>
 
@@ -166,7 +166,7 @@ const dropDown = () => {
                 <Icon name="iconamoon:profile-thin" class="" size="1.2rem" />
               </NuxtLink>
               <!-- TIE Library Books -->
-              <a href="https://ol.tie.go.tz/index.php" target="_blank"
+              <a aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
                 class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45"
                 active-class="text-white !bg-deepBlue">
                 <div class="flex items-center justify-center">
@@ -184,7 +184,7 @@ const dropDown = () => {
 
             <!-- Logout and Sign in -->
             <div class="flex items-center">
-              <NuxtLink to="/" class="flex gap-2 pr-2">
+              <NuxtLink aria-label="Go home" to="/" class="flex gap-2 pr-2">
                 <div class="flex items-center justify-center">
                   <Icon name="ant-design:home-filled" size="20" />
                 </div>
@@ -194,7 +194,7 @@ const dropDown = () => {
                 <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
               </div>
               <!-- sign in -->
-              <NuxtLink to="/auth" title="Sign in" v-else
+              <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in" v-else
                 class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                 <Icon name="solar:login-2-outline" class="" size="1.2rem" />
               </NuxtLink>
