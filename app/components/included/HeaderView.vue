@@ -95,7 +95,7 @@ const dropDown = () => {
             <p class="hidden capitalize lg:flex">TIE Library</p>
           </a>
           <!-- TIE AI Teacher -->
-          <NuxtLink to="/madam-ana"
+          <NuxtLink to="/tie-ai-teacher"
             class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
@@ -183,7 +183,7 @@ const dropDown = () => {
                 </div>
               </a>
               <!-- TIE AI Teacher -->
-              <NuxtLink to="/madam-ana"
+              <NuxtLink to="/tie-ai-teacher"
                 class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45"
                 active-class="text-white !bg-deepBlue">
                 <div class="flex items-center justify-center">
