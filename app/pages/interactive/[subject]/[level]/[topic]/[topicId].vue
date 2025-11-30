@@ -9,6 +9,7 @@ import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 import apiDocs from "~/utilities/api-docs";
 import { updateChapterProgress } from "~/utilities/progress";
 import { fetchAsyncData } from "~/composable/useAsyncFetch";
+import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 
 const route = useRoute();
 const router = useRouter();
@@ -831,7 +832,7 @@ definePageMeta({
 
             <!-- Chapter Notes -->
             <div class="mx-auto notes md:px-4 max-w-7xl" aria-label="Compitencies notes" aria-details="notes-extra-details"
-              role="region" v-html="experimentParser(modelParser(videoParser(chapters.notes?.content)))"></div>
+              role="region" v-html="enhanceAccessibility(experimentParser(modelParser(videoParser(chapters.notes?.content))))"></div>
 
             <p id="notes-extra-details" class="sr-only">
               These notes include at least one video, two-dimensional images such as GIFs,
