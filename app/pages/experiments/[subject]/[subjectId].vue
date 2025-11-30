@@ -228,7 +228,7 @@ const { progress, isLoading } = useLoadingIndicator();
             <div class="flex items-center gap-4">
               <!-- Topic Cards are in Grid -->
               <div class="flex flex-col items-start ">
-                <customGridTwo>
+                <customGridTwo role="region" aria-label="Experiments grid">
                   <template #data>
                     <ExperimentsCard 
                       v-for="experiment in slicedData" 
@@ -261,8 +261,8 @@ const { progress, isLoading } = useLoadingIndicator();
                 <!-- previous -->
                 <button class="flex items-center justify-center" v-if="currentPage > 5" @click="prevPage"
                   aria-label="Go to previous page">
-                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
-                </button> // chnged from div to button
+                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" aria-hidden="true" />
+                </button>
 
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"

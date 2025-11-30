@@ -65,6 +65,7 @@ const setExperimentUrl =()=>{
     <NuxtLink
         :to="`/experiments/${experimentStandard}/${experimentSubject}/${experimentName}/${experimentId}`" 
         @click="setExperimentUrl()"
+        :aria-label="`View ${experimentName} experiment`"
         :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
             layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32'
@@ -76,15 +77,16 @@ const setExperimentUrl =()=>{
         ]">
             <NuxtImg :src="experimentThumbnail" :alt="experimentName"
                 class="object-cover w-full h-full transition-transform duration-500" />
-            <div class="absolute inset-0 bg-gradient-to-t from-black bg-opacity-70 to-transparent opacity-70"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black bg-opacity-70 to-transparent opacity-70" aria-hidden="true"></div>
 
             <!-- Play button -->
             <div
                 class="absolute inset-0 flex items-center justify-center transition-opacity cursor-pointer opacity-90 group-hover:opacity-100">
                 <button
                     class="flex items-center justify-center p-3 transition-transform duration-300 border rounded-full cursor-pointer bg-white/20 backdrop-blur-sm border-white/30 group-hover:scale-110"
-                    aria-label="Play experiment">
-                    <Icon name="icon-park-solid:experiment-one" class="text-3xl text-white" />
+                    :aria-label="`Play ${experimentName} experiment`"
+                    type="button">
+                    <Icon name="icon-park-solid:experiment-one" class="text-3xl text-white" aria-hidden="true" />
                 </button>
             </div>
         </div>

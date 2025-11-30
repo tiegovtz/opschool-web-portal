@@ -206,6 +206,9 @@ const setSeeMore = (seeMore) => {
           <small
             @click="setSeeMore(experiments?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            role="button"
+            tabindex="0"
+            :aria-label="`See less ${experiments?.dataOfKey.toLowerCase()} experiments`"
           >
             {{
               seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()
@@ -224,6 +227,9 @@ const setSeeMore = (seeMore) => {
           <small
             @click="setSeeMore(experiments?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            role="button"
+            tabindex="0"
+            :aria-label="`See all ${experiments?.dataOfKey.toLowerCase()} experiments`"
           >
             {{
               seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()
@@ -315,7 +321,9 @@ const setSeeMore = (seeMore) => {
           <small
             @click="setSeeMore(videos?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            :aria-label="seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase() ? `See less ${videos?.dataOfKey.toLowerCase()}` : `See all ${videos?.dataOfKey.toLowerCase()}`"
+            role="button"
+            tabindex="0"
+            :aria-label="`See less ${videos?.dataOfKey.toLowerCase()} videos`"
           >
             {{
               seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()
@@ -334,6 +342,9 @@ const setSeeMore = (seeMore) => {
           <small
             @click="setSeeMore(videos?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            role="button"
+            tabindex="0"
+            :aria-label="`See all ${videos?.dataOfKey.toLowerCase()} videos`"
           >
             {{
               seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()
@@ -415,6 +426,9 @@ const setSeeMore = (seeMore) => {
           <small
             @click="setSeeMore(audios?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            role="button"
+            tabindex="0"
+            :aria-label="`See less ${audios?.dataOfKey.toLowerCase()} audio files`"
           >
             {{
               seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()
@@ -433,6 +447,9 @@ const setSeeMore = (seeMore) => {
           <small
             @click="setSeeMore(audios?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            role="button"
+            tabindex="0"
+            :aria-label="`See all ${audios?.dataOfKey.toLowerCase()} audio files`"
           >
             {{
               seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()
@@ -787,6 +804,9 @@ const setSeeMore = (seeMore) => {
           <small
             @click="setSeeMore(videos?.dataOfKey)"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            role="button"
+            tabindex="0"
+            :aria-label="`See less ${videos?.dataOfKey} videos`"
           >
             {{
               seeMoreDetails && seeMoreDetails === videos?.dataOfKey
@@ -805,6 +825,9 @@ const setSeeMore = (seeMore) => {
           <small
             @click="setSeeMore(videos?.dataOfKey)"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            role="button"
+            tabindex="0"
+            :aria-label="`See all ${videos?.dataOfKey} videos`"
           >
             {{
               seeMoreDetails && seeMoreDetails === videos?.dataOfKey
@@ -886,6 +909,9 @@ const setSeeMore = (seeMore) => {
           <small
             @click="setSeeMore(audios?.dataOfKey)"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            role="button"
+            tabindex="0"
+            :aria-label="`See less ${audios?.dataOfKey} audio files`"
           >
             {{
               seeMoreDetails && seeMoreDetails === audios?.dataOfKey
@@ -904,6 +930,9 @@ const setSeeMore = (seeMore) => {
           <small
             @click="setSeeMore(audios?.dataOfKey)"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            role="button"
+            tabindex="0"
+            :aria-label="`See all ${audios?.dataOfKey} audio files`"
           >
             {{
               seeMoreDetails && seeMoreDetails === audios?.dataOfKey
