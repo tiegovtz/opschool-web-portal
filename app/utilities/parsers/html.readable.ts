@@ -4,18 +4,9 @@ export function enhanceAccessibility(htmlString: string): string {
 
   // Elements you want to make focusable
   const makeFocusable = [
-    "p",
     "img",
-    "table",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
     "span",
     "em",
-    "td"
   ];
 
   // Loop through each target element
