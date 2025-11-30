@@ -63,104 +63,113 @@ const signIn = async () => {
 
     // send data
     try {
-      const response = await axios.post(apiDocs.auth.login, {
-        username: sanitize.input(userSignIn.username),
-        password: userSignIn.password,
+      // const response = await axios.post(apiDocs.auth.login, {
+      //   username: sanitize.input(userSignIn.username),
+      //   password: userSignIn.password,
+      // });
+
+
+      const response = await $fetch(apiDocs.auth.login,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            username: sanitize.input(userSignIn.username),
+            password: userSignIn.password,
+          })
+        }
+      );
+
+      userSignIn.controller.feedback = messages.success.auth.authenticated;
+
+      // unlock button
+      isDisable.value = false;
+
+      userSignIn.controller.feedback = messages.success.auth.authenticated;
+      userSignIn.controller.isSucces = true;
+
+      const accessToken = useCookie("signInAccessToken", {
+        httpOnly: false, // Accessible in browser
+        secure: import.meta.env.PROD, // ✅ uses Nuxt's client env detection
+        maxAge: 60 * 60 * 2, // 2 hours
+        sameSite: "strict",
+        path: "/",
       });
 
-      if (response.status >= 200 && response.status < 300) {
-        userSignIn.controller.feedback = messages.success.auth.authenticated;
+      const refreshToken = useCookie("signInRefreshToken", {
+        httpOnly: false, // Accessible in browser
+        secure: import.meta.env.PROD,
+        maxAge: 60 * 60 * 2, // 2 hours
+        sameSite: "strict",
+        path: "/",
+      });
 
-        // unlock button
-        isDisable.value = false;
-
-        userSignIn.controller.feedback = messages.success.auth.authenticated;
-        userSignIn.controller.isSucces = true;
-
-        const accessToken = useCookie("signInAccessToken", {
-          httpOnly: false, // Accessible in browser
-          secure: import.meta.env.PROD, // ✅ uses Nuxt's client env detection
-          maxAge: 60 * 60 * 2, // 2 hours
-          sameSite: "strict",
-          path: "/",
-        });
-
-        const refreshToken = useCookie("signInRefreshToken", {
-          httpOnly: false, // Accessible in browser
-          secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 2, // 2 hours
-          sameSite: "strict",
-          path: "/",
-        });
-
-        const userToken = useCookie("signInUserToken", {
-          httpOnly: false, // Accessible in browser
-          secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 2, // 2 hours
-          sameSite: "strict",
-          path: "/",
-          default: () => ({}),
-          encode: (value) => JSON.stringify(value),
-          decode: (value) => {
-            try {
-              return JSON.parse(value);
-            } catch (e) {
-              return {};
-            }
-          },
-        });
-
-        // create user remember me cookie
-        const userRememberMe = useCookie("userRememberMe", {
-          httpOnly: false, // Accessible in browser
-          secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 24 * 7, // 1 week
-          sameSite: "strict",
-          path: "/",
-          default: () => null,
-          encode: (value) => JSON.stringify(value),
-          decode: (value) => {
-            try {
-              return JSON.parse(value);
-            } catch (e) {
-              return null;
-            }
-          },
-        });
-
-        if (userSignIn.rememberMe) {
-          userRememberMe.value = {
-            username: userSignIn.username,
-            password: dataEncrypt(userSignIn.password),
-            rememberMe: userSignIn.rememberMe,
-          };
-        } else {
-          userRememberMe.value = null; // Clear the cookie
-        }
-
-        accessToken.value = response.data.access_token;
-        refreshToken.value = response.data.refresh_token;
-        userToken.value = response.data.user;
-
-        setTimeout(() => {
-          // router
-          const router = useRouter();
-          if (returnPath) {
-            router.replace(returnPath);
-          } else {
-            router.replace("/home");
+      const userToken = useCookie("signInUserToken", {
+        httpOnly: false, // Accessible in browser
+        secure: import.meta.env.PROD,
+        maxAge: 60 * 60 * 2, // 2 hours
+        sameSite: "strict",
+        path: "/",
+        default: () => ({}),
+        encode: (value) => JSON.stringify(value),
+        decode: (value) => {
+          try {
+            return JSON.parse(value);
+          } catch (e) {
+            return {};
           }
-          // router.back();
-        }, 2000);
+        },
+      });
+
+      // create user remember me cookie
+      const userRememberMe = useCookie("userRememberMe", {
+        httpOnly: false, // Accessible in browser
+        secure: import.meta.env.PROD,
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+        sameSite: "strict",
+        path: "/",
+        default: () => null,
+        encode: (value) => JSON.stringify(value),
+        decode: (value) => {
+          try {
+            return JSON.parse(value);
+          } catch (e) {
+            return null;
+          }
+        },
+      });
+
+      if (userSignIn.rememberMe) {
+        userRememberMe.value = {
+          username: userSignIn.username,
+          password: dataEncrypt(userSignIn.password),
+          rememberMe: userSignIn.rememberMe,
+        };
       } else {
-        userSignIn.controller.attemps++;
-        isDisable.value = false;
-        userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
+        userRememberMe.value = null; // Clear the cookie
       }
+
+      accessToken.value = response.data.access_token;
+      refreshToken.value = response.data.refresh_token;
+      userToken.value = response.data.user;
+
+      setTimeout(() => {
+        // router
+        const router = useRouter();
+        if (returnPath) {
+          router.replace(returnPath);
+        } else {
+          router.replace("/home");
+        }
+        // router.back();
+      }, 2000);
+
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
       isDisable.value = false;
+
+      console.error("[Auth Error]:", error);
+
     }
 
     setTimeout(() => {
@@ -377,4 +386,3 @@ watch(
     </div>
   </section>
 </template>
-
