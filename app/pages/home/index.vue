@@ -443,7 +443,9 @@ watch(
 
       <!-- container filter Mobile -->
       <div class="flex items-center justify-between py-2 xl:hidden">
-        <p class="font-medium text-small">Viewing {{ data?.length }} Results</p>
+        <ClientOnly>
+          <p class="font-medium text-small">Viewing {{ data?.length || 0 }} Results</p>
+        </ClientOnly>
         <div
           class="flex items-center gap-2 cursor-pointer text-deepBlue"
           @click="hideFilter = !hideFilter"

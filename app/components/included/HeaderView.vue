@@ -74,14 +74,14 @@ const dropDown = () => {
             </div>
             <p class="hidden capitalize lg:flex">TIE Library</p>
           </a>
-          <!-- Madam Ana -->
+          <!-- TIE AI Teacher -->
           <NuxtLink to="/madam-ana"
             class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
               <Icon name="mdi:account" size="20" />
             </div>
-            <p class="hidden capitalize lg:flex">Madam Ana</p>
+            <p class="hidden capitalize lg:flex">TIE AI Teacher</p>
           </NuxtLink>
 
           <!-- title (TIE online public school) -->
@@ -162,7 +162,7 @@ const dropDown = () => {
                   <Icon name="ph:notebook-fill" size="20" />
                 </div>
               </a>
-              <!-- Madam Ana -->
+              <!-- TIE AI Teacher -->
               <NuxtLink to="/madam-ana"
                 class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45"
                 active-class="text-white !bg-deepBlue">

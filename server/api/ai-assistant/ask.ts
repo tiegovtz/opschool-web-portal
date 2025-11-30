@@ -153,7 +153,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 2. Prepare prompt with strict instructions
-    const systemPrompt = `You are Madam Ana, a friendly and experienced STEM (Science, Technology, Engineering, and Mathematics) subjects teacher teaching Tanzanian students. Your goal is to help students understand and learn about the current competence/chapter they are studying.
+    const systemPrompt = `You are Subject AI Teacher, a friendly and experienced STEM (Science, Technology, Engineering, and Mathematics) subjects teacher teaching Tanzanian students. Your goal is to help students understand and learn about the current competence/chapter they are studying.
 
 COMPETENCE/CHAPTER: ${chapterName}
 
@@ -184,7 +184,7 @@ IMPORTANT RULES:
    
 3. Respond to greetings:
    - Greet students warmly when they say hello, hi, or similar
-   - Introduce yourself: "Hello! I'm Madam Ana, your STEM subjects teacher. I'm here to help you understand [${chapterName}]. Feel free to ask me any questions about this competence!"
+   - Introduce yourself: "Hello! I'm your Subject AI Teacher, a STEM subjects teacher. I'm here to help you understand [${chapterName}]. Feel free to ask me any questions about this competence!"
    - When introducing yourself, always mention that you're a STEM teacher and the specific chapter/competence you can help with
    
 4. If the content doesn't fully cover a question:
@@ -231,55 +231,152 @@ IMPORTANT RULES:
     // Add current user question
     messages.push({ role: "user", content: question });
 
-    // 4. Call OpenAI API
+    // 4. Call LLM API with GPT as primary and Gemma as fallback
     const config = useRuntimeConfig();
-    const openaiApiKey = config.OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-
-    if (!openaiApiKey) {
-      throw createError({
-        statusCode: 500,
-        message: "OpenAI API key not configured"
-      });
-    }
-
-    const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${openaiApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 2000, // Increased from 500 to allow for complete responses
-      }),
-    });
-
-    if (!openaiResponse.ok) {
-      const error = await openaiResponse.json().catch(() => ({}));
-      throw createError({
-        statusCode: openaiResponse.status,
-        message: error.error?.message || "OpenAI API error"
-      });
-    }
-
-    const aiData = await openaiResponse.json();
-    const choice = aiData.choices[0];
-    const answer = choice?.message?.content || "Sorry, I couldn't generate an answer.";
-    const finishReason = choice?.finish_reason;
-
-    // Log if response was truncated
-    if (finishReason === 'length') {
-      console.warn("AI response was truncated due to token limit. Consider increasing max_tokens or shortening context.");
-    }
-
-    return {
-      answer,
-      chapterName,
-      timestamp: new Date().toISOString(),
-      finishReason: finishReason // Include for debugging
+    const openaiApiKey = config.OPENAI_API_KEY || process.env.OPENAI_API_KEY || '';
+    
+    // Primary: OpenAI GPT configuration
+    const primaryConfig = {
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-4o-mini',
+      provider: 'OpenAI',
+      maxTokens: 2000,
+      timeout: 30000, // 30 seconds
+      requiresAuth: true,
     };
+    
+    // Fallback: Ollama Gemma configuration
+    const fallbackConfig = {
+      baseUrl: 'http://localhost:11434/v1',
+      model: 'gemma3:1b',
+      provider: 'Ollama',
+      maxTokens: 1500,
+      timeout: 45000, // 45 seconds
+      requiresAuth: false,
+    };
+    
+    // Limit chapter content length for faster processing (keep first 8000 chars for fallback)
+    const optimizedSystemPrompt = systemPrompt.length > 8000 
+      ? systemPrompt.substring(0, 8000) + "\n\n[Content truncated for faster response]"
+      : systemPrompt;
+    
+    // Replace system message with optimized version if needed
+    const optimizedMessages = messages.map((msg, idx) => 
+      idx === 0 && msg.role === 'system' ? { ...msg, content: optimizedSystemPrompt } : msg
+    );
+
+    // Helper function to make LLM API call
+    const callLLM = async (llmConfig: typeof primaryConfig): Promise<any> => {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      
+      if (llmConfig.requiresAuth && openaiApiKey) {
+        headers["Authorization"] = `Bearer ${openaiApiKey}`;
+      }
+      
+      console.log(`[AI Assistant] Attempting ${llmConfig.provider} with model: ${llmConfig.model}`);
+      console.log(`[AI Assistant] API Base URL: ${llmConfig.baseUrl}`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), llmConfig.timeout);
+
+      try {
+        const llmResponse = await fetch(`${llmConfig.baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify({
+            model: llmConfig.model,
+            messages: optimizedMessages,
+            temperature: 0.7,
+            max_tokens: llmConfig.maxTokens,
+          }),
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!llmResponse.ok) {
+          const errorText = await llmResponse.text().catch(() => '');
+          let error;
+          try {
+            error = JSON.parse(errorText);
+          } catch {
+            error = { message: errorText || llmResponse.statusText };
+          }
+          
+          throw new Error(error.error?.message || error.message || `${llmConfig.provider} API error`);
+        }
+
+        const aiData = await llmResponse.json();
+        const choice = aiData.choices[0];
+        const answer = choice?.message?.content || "Sorry, I couldn't generate an answer.";
+        const finishReason = choice?.finish_reason;
+
+        // Log if response was truncated
+        if (finishReason === 'length') {
+          console.warn(`[AI Assistant] Response from ${llmConfig.provider} was truncated due to token limit.`);
+        }
+
+        console.log(`[AI Assistant] ✅ Successfully received response from ${llmConfig.provider} (model: ${llmConfig.model})`);
+        
+        return {
+          answer,
+          finishReason,
+          provider: llmConfig.provider,
+          model: llmConfig.model
+        };
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError.name === 'AbortError') {
+          throw new Error(`Request timed out after ${llmConfig.timeout}ms`);
+        }
+        
+        throw fetchError;
+      }
+    };
+
+    // Try primary (OpenAI GPT) first
+    try {
+      // Check if OpenAI API key is available
+      if (!openaiApiKey) {
+        console.log('[AI Assistant] OpenAI API key not found, skipping to fallback');
+        throw new Error('OpenAI API key not configured');
+      }
+      
+      const result = await callLLM(primaryConfig);
+      return {
+        answer: result.answer,
+        chapterName,
+        timestamp: new Date().toISOString(),
+        finishReason: result.finishReason,
+        provider: result.provider,
+        model: result.model
+      };
+    } catch (primaryError: any) {
+      console.warn(`[AI Assistant] ⚠️ Primary provider (OpenAI) failed: ${primaryError.message}`);
+      console.log(`[AI Assistant] 🔄 Falling back to ${fallbackConfig.provider} (${fallbackConfig.model})`);
+      
+      // Try fallback (Ollama Gemma)
+      try {
+        const result = await callLLM(fallbackConfig);
+        return {
+          answer: result.answer,
+          chapterName,
+          timestamp: new Date().toISOString(),
+          finishReason: result.finishReason,
+          provider: result.provider,
+          model: result.model
+        };
+      } catch (fallbackError: any) {
+        console.error(`[AI Assistant] ❌ Fallback provider (${fallbackConfig.provider}) also failed: ${fallbackError.message}`);
+        throw createError({
+          statusCode: 503,
+          message: `Both primary (OpenAI) and fallback (${fallbackConfig.provider}) providers failed. Primary error: ${primaryError.message}. Fallback error: ${fallbackError.message}`
+        });
+      }
+    }
 
   } catch (error: any) {
     console.error("AI Assistant error:", error);
