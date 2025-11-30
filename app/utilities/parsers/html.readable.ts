@@ -12,7 +12,10 @@ export function enhanceAccessibility(htmlString: string): string {
     "h3",
     "h4",
     "h5",
-    "h6"
+    "h6",
+    "span",
+    "em",
+    "td"
   ];
 
   // Loop through each target element
