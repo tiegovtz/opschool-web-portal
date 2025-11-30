@@ -148,9 +148,9 @@ const signIn = async () => {
         userRememberMe.value = null; // Clear the cookie
       }
 
-      accessToken.value = response.data.access_token;
-      refreshToken.value = response.data.refresh_token;
-      userToken.value = response.data.user;
+      accessToken.value = response.access_token;
+      refreshToken.value = response.refresh_token;
+      userToken.value = response.user;
 
       setTimeout(() => {
         // router
