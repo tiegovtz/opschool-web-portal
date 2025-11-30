@@ -33,7 +33,7 @@ const slides = [
   },
   {
     image: "/images/10.TIE-Interactive.webp",
-    alt: "Minister of Education Adolf Mkenda, the Director General of the Tanzania Institute of Education Anneth Komba, a former prime minister kassim majaliwa, and other officials stand on a stage holding a large ‘One Book, One Student’ campaign display during the launch event celebrating 50 years of the Tanzania Institute of Education.",
+    alt: "Minister of Education Adolf Mkenda, the Director General of the Tanzania Institute of Education Anneth Komba, a former prime minister kassim majaliwa, and other officials stand on a stage holding a large ‘Kitabu kimoja mwanafunzi mmoja campaign display during the launch event celebrating 50 years of the Tanzania Institute of Education.",
   },
 ]
 
@@ -123,10 +123,15 @@ onMounted(async () => {
       aria-label="Featured interactive learning content">
       <swiper-container ref="containerRef" :init="false" class="w-full h-full max-h-[550px] overflow-hidden"
         role="region" aria-roledescription="carousel" aria-label="Image slider">
-        <swiper-slide v-for="(slide, idx) in slides" :key="idx" aria-roledescription="slide"
-          :aria-label="`Slide ${idx + 1} of ${slides.length}`">
-          <!-- Slide {{ idx + 1 }} -->
+        <swiper-slide v-for="(slide, idx) in slides" :key="idx" role="group" aria-roledescription="slide"
+          :aria-label="`Slide ${idx + 1} of ${slides.length}`" :aria-describedby="`slide-desc-${idx}`"
+          :tabindex="idx">
           <NuxtImg :src="slide.image" :alt="slide.alt" class="object-cover w-full h-full rounded-md" />
+
+          <!-- Hidden description for SR -->
+          <p class="sr-only" :id="`slide-desc-${idx}`">
+            {{ slide.alt }}
+          </p>
         </swiper-slide>
       </swiper-container>
     </section>
