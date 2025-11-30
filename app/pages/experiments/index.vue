@@ -207,25 +207,32 @@ const { progress, isLoading } = useLoadingIndicator();
 
 <template>
   <NuxtLayout name="home-layout">
-    <section :class="[' ', { ' animate-pulse': isLoading }]">
+    <section :class="[' ', { ' animate-pulse': isLoading }]" 
+    aria-busy="isLoading ? 'true' : 'false'">
       <!-- User Token Available -->
-      <div
+      <section
         v-if="userToken"
         class="flex flex-col items-center justify-center w-full gap-4 pt-4"
       >
-        <HomeSearchbar appearance="rounded" />
-        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
-      </div>
+        <HomeSearchbar appearance="rounded" aria-label="Search experiments"/>
+        <nav aria-label="Content categories">
+          <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
+        </nav>
+      </section>
 
       <!-- User Token Not Available -->
-      <div v-else>
+      <section v-else>
         <HeroSection />
-        <TabBar />
-      </div>
+        <nav aria-label="Content categories">
+          <TabBar />
+        </nav>
+      </section>
 
       <div
         v-if="status === 'pending'"
         class="flex flex-col items-center justify-center"
+        role="status"
+        aria-live="polite"
       >
         <LoadingIndicator :is-loading="true" />
       </div>
@@ -234,8 +241,10 @@ const { progress, isLoading } = useLoadingIndicator();
       <div
         v-else-if="status === 'error'"
         class="md:min-h-[342px] flex flex-col justify-center items-center"
+        role="alert"
+        aria-live="assertive"
       >
-        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" aria-hidden="true"/>
         <p class="text-center">
           Oops! Something went wrong.<br />
           Try refreshing the page or check your internet connection.
@@ -246,10 +255,16 @@ const { progress, isLoading } = useLoadingIndicator();
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
           <div class="flex flex-col w-full px-2 lg:px-4">
-           <HomeCustomScrollView :data="experiments" active-tab="experiments" />
-           
+
+            <!-- Scroll View -->
+            <section aria-label="Experiments list">
+              <HomeCustomScrollView :data="experiments" active-tab="experiments" />
+            </section>
+          
+          
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-10">
+            <div v-if="totalPages > 1" class="flex justify-center my-10" 
+              aria-label="Pagination navigation">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn
                   v-for="page in totalPages"
@@ -259,6 +274,7 @@ const { progress, isLoading } = useLoadingIndicator();
                   :disabled="page === currentPage"
                   @click="sliceData((page - 1) * pageSize, page * pageSize)"
                   @send-page-number="currentPage = $event"
+                  :aria-label="`Go to page ${page}`"
                 />
               </div>
               <div v-else class="flex justify-center gap-2">
@@ -266,11 +282,13 @@ const { progress, isLoading } = useLoadingIndicator();
                 <div
                   class="flex items-center justify-center"
                   v-if="currentPage > 5"
+                  aria-label="Go to previous page"
                 >
                   <Icon
                     name="iconamoon:arrow-left-2-fill"
                     size="2rem"
                     @click="prevPage"
+                    aria-hidden="true"
                   />
                 </div>
 
@@ -282,17 +300,20 @@ const { progress, isLoading } = useLoadingIndicator();
                   :disabled="page === currentPage"
                   @click="sliceData((page - 1) * pageSize, page * pageSize)"
                   @send-page-number="currentPage = $event"
+                  :aria-label="`Go to page ${page}`"
                 />
 
                 <!-- next button -->
                 <div
                   class="flex items-center justify-center"
                   v-if="currentPage > 4"
+                  aria-label="Go to next page"
                 >
                   <Icon
                     name="iconamoon:arrow-right-2-fill"
                     size="2rem"
                     @click="nextPage"
+                    aria-hidden="true"
                   />
                 </div>
               </div>
