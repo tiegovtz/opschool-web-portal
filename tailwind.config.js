@@ -48,9 +48,9 @@ export default {
         'optionImage': "url('/images/default.webp')",
         
         // BackGround
-        'background3': "url('/public/images/background3.webp')",
-        'background2': "url('/public/images/background2.webp')",
-        'background1': "url('/public/images/background1.webp')",
+        'background3': "url('/images/background3.webp')",
+        'background2': "url('/images/background2.webp')",
+        'background1': "url('/images/background1.webp')",
       },
 
       animation: {

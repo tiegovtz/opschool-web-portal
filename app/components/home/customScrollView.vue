@@ -34,6 +34,7 @@ const setSeeMore = (seeMore) => {
   }
 };
 </script>
+
 <template>
   <div v-if="userToken">
     <div v-if="activeTab.toLowerCase() === 'home'">
@@ -62,12 +63,13 @@ const setSeeMore = (seeMore) => {
           v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem] capitalize">
+          <h2 class="font-bold text-[1.3rem] capitalize">
             {{ topics?.dataOfKey.toLowerCase() }}
-          </p>
+          </h2>
           <small
             @click="setSeeMore(topics?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            :aria-label="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase() ? `See less ${topics?.dataOfKey.toLowerCase()}` : `See all ${topics?.dataOfKey.toLowerCase()}`"
           >
             {{
               seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()
@@ -307,12 +309,13 @@ const setSeeMore = (seeMore) => {
           v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem] capitalize">
+          <h2 class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey.toLowerCase() }}
-          </p>
+          </h2>
           <small
             @click="setSeeMore(videos?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            :aria-label="seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase() ? `See less ${videos?.dataOfKey.toLowerCase()}` : `See all ${videos?.dataOfKey.toLowerCase()}`"
           >
             {{
               seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()
@@ -530,12 +533,13 @@ const setSeeMore = (seeMore) => {
           v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem] capitalize">
+          <h2 class="font-bold text-[1.3rem] capitalize">
             {{ topics?.dataOfKey.toLowerCase() }}
-          </p>
+          </h2>
           <small
             @click="setSeeMore(topics?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            :aria-label="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase() ? `See less ${topics?.dataOfKey.toLowerCase()}` : `See all ${topics?.dataOfKey.toLowerCase()}`"
           >
             {{
               seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()
@@ -548,12 +552,13 @@ const setSeeMore = (seeMore) => {
           v-else-if="!seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem] capitalize">
+          <h2 class="font-bold text-[1.3rem] capitalize">
             {{ topics?.dataOfKey.toLowerCase() }}
-          </p>
+          </h2>
           <small
             @click="setSeeMore(topics?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            :aria-label="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase() ? `See less ${topics?.dataOfKey.toLowerCase()}` : `See all ${topics?.dataOfKey.toLowerCase()}`"
           >
             {{
               seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()
@@ -666,12 +671,13 @@ const setSeeMore = (seeMore) => {
           v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
           class="flex items-center justify-between py-4"
         >
-          <p class="font-bold text-[1.3rem] capitalize">
+          <h2 class="font-bold text-[1.3rem] capitalize">
             {{ experiments?.dataOfKey.toLowerCase() }}
-          </p>
+          </h2>
           <small
             @click="setSeeMore(experiments?.dataOfKey.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            :aria-label="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase() ? `See less ${experiments?.dataOfKey.toLowerCase()}` : `See all ${experiments?.dataOfKey.toLowerCase()}`"
           >
             {{
               seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()

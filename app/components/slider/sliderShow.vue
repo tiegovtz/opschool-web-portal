@@ -3,15 +3,38 @@ import type { SwiperContainer } from 'swiper/element'
 
 const containerRef = ref<SwiperContainer | null>(null)
 const slides = [
-  "/images/8.TIE-Interactive.webp",
-  "/images/1.TIE-Interactive.webp",
-  "/images/9.TIE-Interactive.webp",
-  "/images/7.TIE-Interactive.webp",
-  "/images/6.TIE-Interactive.webp",
-  "/images/5.TIE-Interactive.webp",
-  "/images/3.TIE-Interactive.webp",
-  "/images/2.TIE-Interactive.webp",
-  "/images/10.TIE-Interactive.webp",
+  {
+    image: "/images/1.TIE-Interactive.webp",
+    alt: "A student demonstrates work on a desktop computer to a former prime minister Kassimu Majaliwa in a school computer lab, while other officials and students watch from rows of computers in the background.",
+  },
+  {
+    image: "/images/9.TIE-Interactive.webp",
+    alt: "Minister of Education Adolf Mkenda and the Director General of the Tanzania Institute of Education Anneth Komba stand with other officials under a tent, looking at textbooks and learning materials displayed on tables while a presenter explains them.",
+  },
+  {
+    image: "/images/7.TIE-Interactive.webp",
+    alt: "A female student in a white T-shirt leans over a laptop, typing or adjusting settings, while other students sit at the same table watching in a classroom.",
+  },
+  {
+    image: "/images/6.TIE-Interactive.webp",
+    alt: "Student in a white T-shirt writes in a notebook at a computer desk, with desktop monitors and other students working in the background.",
+  },
+  {
+    image: "/images/5.TIE-Interactive.webp",
+    alt: "Students in blue school uniforms sit in a computer lab, working at desktop computers in a row while a teacher assists in the background.",
+  },
+  {
+    image: "/images/3.TIE-Interactive.webp",
+    alt: "Students in blue uniforms work together at a science lab bench, using a multimeter and wires to test an electronics setup while classmates watch and take notes.",
+  },
+  {
+    image: "/images/2.TIE-Interactive.webp",
+    alt: "Student in a computer lab uses a desktop computer to build a Scratch-style coding program, with other students working at nearby machines in the background.",
+  },
+  {
+    image: "/images/10.TIE-Interactive.webp",
+    alt: "Minister of Education Adolf Mkenda, the Director General of the Tanzania Institute of Education Anneth Komba, a former prime minister kassim majaliwa, and other officials stand on a stage holding a large ‘Kitabu kimoja mwanafunzi mmoja campaign display during the launch event celebrating 50 years of the Tanzania Institute of Education.",
+  },
 ]
 
 const swiper = useSwiper(containerRef, {
@@ -73,18 +96,18 @@ onMounted(async () => {
       padding: "5px 0px",
       borderRadius: "5px",
       cursor: "pointer",
-      opacity:"0",
-      transition:"all .5s ease-in-out"
+      opacity: "0",
+      transition: "all .5s ease-in-out"
     };
 
-    containerRef.value.addEventListener('mouseover',()=>{
-      prevEl.style.opacity="1"
-      nextEl.style.opacity="1"
+    containerRef.value.addEventListener('mouseover', () => {
+      prevEl.style.opacity = "1"
+      nextEl.style.opacity = "1"
     })
 
-    containerRef.value.addEventListener('mouseout',()=>{
-      prevEl.style.opacity="0"
-      nextEl.style.opacity="0"
+    containerRef.value.addEventListener('mouseout', () => {
+      prevEl.style.opacity = "0"
+      nextEl.style.opacity = "0"
     })
 
     Object.assign(prevEl.style, buttonStyles);
@@ -96,12 +119,22 @@ onMounted(async () => {
 
 <template>
   <ClientOnly>
-    <swiper-container ref="containerRef" :init="false" class="w-full h-full max-h-[550px] overflow-hidden">
-      <swiper-slide v-for="(slide, idx) in slides" :key="idx">
-        <!-- Slide {{ idx + 1 }} -->
-        <NuxtImg :src="`${slide}`" alt="Slider Image" class="object-cover w-full h-full rounded-md" />
-      </swiper-slide>
-    </swiper-container>
+    <section class="relative w-full h-full max-h-[550px] overflow-hidden"
+      aria-label="Featured interactive learning content">
+      <swiper-container ref="containerRef" :init="false" class="w-full h-full max-h-[550px] overflow-hidden"
+        role="region" aria-roledescription="carousel" aria-label="Image slider">
+        <swiper-slide v-for="(slide, idx) in slides" :key="idx" role="group" aria-roledescription="slide"
+          :aria-label="`Slide ${idx + 1} of ${slides.length}`" :aria-describedby="`slide-desc-${idx}`"
+          :tabindex="idx">
+          <NuxtImg :src="slide.image" :alt="slide.alt" class="object-cover w-full h-full rounded-md" />
+
+          <!-- Hidden description for SR -->
+          <p class="sr-only" :id="`slide-desc-${idx}`">
+            {{ slide.alt }}
+          </p>
+        </swiper-slide>
+      </swiper-container>
+    </section>
   </ClientOnly>
 </template>
 

@@ -221,7 +221,7 @@ const { progress, isLoading } = useLoadingIndicator();
             <div class="flex items-center gap-4">
               <!-- Topic Cards are in Grid -->
               <div class="flex flex-col items-start ">
-                <customGridTwo>
+                <customGridTwo role="region" aria-label="Experiments grid">
                   <template #data>
                     <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id"
                       :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
@@ -235,7 +235,7 @@ const { progress, isLoading } = useLoadingIndicator();
             </div>
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-5">
+            <nav v-if="totalPages > 1" aria-label="Pagination" class="flex justify-center my-5">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
@@ -243,20 +243,26 @@ const { progress, isLoading } = useLoadingIndicator();
               </div>
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
-                <div class="flex items-center justify-center" v-if="currentPage > 5">
-                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
-                </div>
+                <button v-if="currentPage > 5" 
+                  aria-label="Previous page"
+                  class="flex items-center justify-center p-2 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-oceanBlue"
+                  @click="prevPage">
+                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" />
+                </button>
 
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
                   @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
 
                 <!-- next button -->
-                <div class="flex items-center justify-center" v-if="currentPage > 4">
-                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
-                </div>
+                <button v-if="currentPage > 4" 
+                  aria-label="Next page"
+                  class="flex items-center justify-center p-2 rounded hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-oceanBlue"
+                  @click="nextPage">
+                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" />
+                </button>
               </div>
-            </div>
+            </nav>
           </div>
         </ClientOnly>
         <MessageTopicNotFound v-else />
