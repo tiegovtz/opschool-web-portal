@@ -69,7 +69,8 @@ const dropDown = () => {
             </p>
           </div>
           <NuxtLink to="/" class="flex items-center justify-center h-full p-2 cursor-pointer">
-            <NuxtImg src="/logo/logo_tie.gif" alt="TIE LOGO" class="w-16 h-16" />
+            <NuxtImg src="/logo/logo_tie.gif" class="w-16 h-16"
+              alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
           </NuxtLink>
         </div>
       </div>
