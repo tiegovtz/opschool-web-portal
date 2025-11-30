@@ -16,8 +16,8 @@ const emit = defineEmits(['emitChapterId'])
 </script>
 
 <template>
-    <ul class="flex flex-col gap-3 md:pl-4">
-        <li v-for="(chapter, index) in chapters" :key="index" :aria-label="`press to switch to ${chapter?.name}`" tabindex="0" @click="emit('emitChapterId',chapter?._id)"
+    <div class="flex flex-col gap-3 md:pl-4">
+        <button type="button" v-for="(chapter, index) in chapters" :key="index" :aria-label="`press to switch to ${chapter?.name}`" tabindex="0" @click="emit('emitChapterId',chapter?._id)"
             :title="chapter?.name"
             class="flex items-center gap-2 cursor-pointer p-3 rounded-md bg-containerGray"
             :class="{ 'bg-oceanBlue text-white shadow-oceanBlue/50 shadow-md': activeChapterId == chapter?._id }">
@@ -27,6 +27,6 @@ const emit = defineEmits(['emitChapterId'])
             <div  class="line-clamp-2" :aria-label="`compitence heading ${chapter?.name}`" role="heading" >
                 {{ chapter?.name }}
             </div>
-        </li>
-    </ul>
+        </button>
+    </div>
 </template>
