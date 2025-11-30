@@ -126,7 +126,7 @@ const dropDown = () => {
               </NuxtLink>
 
               <!-- Logout -->
-              <div
+              <div tabindex="0" aria-label="logout"
                 class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
                 @click="logout">
                 <span class="capitalize"> Logout </span>
