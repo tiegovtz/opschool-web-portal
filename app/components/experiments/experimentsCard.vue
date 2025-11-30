@@ -53,7 +53,7 @@ const props = defineProps({
 const setExperimentUrl =()=>{
     navigationStore.setExperiment(`/experiments/${props.experimentStandard}/${props.experimentSubject}/${props.experimentName}/${props.experimentId}`);
     useState('experimentToView', () => (
-           {
+        {
             route:`/experiments/${props.experimentStandard}/${props.experimentSubject}/${props.experimentName}/${props.experimentId}`,
             updatedAt:Date.now()
         })
