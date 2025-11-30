@@ -87,82 +87,78 @@ const signIn = async () => {
       userSignIn.controller.feedback = messages.success.auth.authenticated;
       userSignIn.controller.isSucces = true;
 
-        const accessToken = useCookie("signInAccessToken", {
-          httpOnly: false,              // Accessible in browser
-          secure: import.meta.env.PROD, // uses Nuxt's client env detection
-          maxAge: 60 * 60 * 2,          // 2 hours
-          sameSite: "strict",
-          path: "/",
-        });
+      const accessToken = useCookie("signInAccessToken", {
+        httpOnly: false,              // Accessible in browser
+        secure: import.meta.env.PROD, // uses Nuxt's client env detection
+        maxAge: 60 * 60 * 2,          // 2 hours
+        sameSite: "strict",
+        path: "/",
+      });
 
-        const refreshToken = useCookie("signInRefreshToken", {
-          httpOnly: false,              // Accessible in browser
-          secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 2,          // 2 hours
-          sameSite: "strict",
-          path: "/",
-        });
+      const refreshToken = useCookie("signInRefreshToken", {
+        httpOnly: false,              // Accessible in browser
+        secure: import.meta.env.PROD,
+        maxAge: 60 * 60 * 2,          // 2 hours
+        sameSite: "strict",
+        path: "/",
+      });
 
-        const userToken = useCookie("signInUserToken", {
-          httpOnly: false,              // Accessible in browser
-          secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 2,          // 2 hours
-          sameSite: "strict",
-          path: "/",
-          default: () => ({}),
-          encode: (value) => JSON.stringify(value),
-          decode: (value) => {
-            try {
-              return JSON.parse(value);
-            } catch (e) {
-              return {};
-            }
-          },
-        });
+      const userToken = useCookie("signInUserToken", {
+        httpOnly: false,              // Accessible in browser
+        secure: import.meta.env.PROD,
+        maxAge: 60 * 60 * 2,          // 2 hours
+        sameSite: "strict",
+        path: "/",
+        default: () => ({}),
+        encode: (value) => JSON.stringify(value),
+        decode: (value) => {
+          try {
+            return JSON.parse(value);
+          } catch (e) {
+            return {};
+          }
+        },
+      });
 
-        // create user remember me cookie
-        const userRememberMe = useCookie("userRememberMe", {
-          httpOnly: false,                  // Accessible in browser
-          secure: import.meta.env.PROD,
-          maxAge: 60 * 60 * 24 * 7,         // 1 week
-          sameSite: "strict",
-          path: "/",
-          default: () => null,
-          encode: (value) => JSON.stringify(value),
-          decode: (value) => {
-            try {
-              return JSON.parse(value);
-            } catch (e) {
-              return null;
-            }
-          },
-        });
+      // create user remember me cookie
+      const userRememberMe = useCookie("userRememberMe", {
+        httpOnly: false,                  // Accessible in browser
+        secure: import.meta.env.PROD,
+        maxAge: 60 * 60 * 24 * 7,         // 1 week
+        sameSite: "strict",
+        path: "/",
+        default: () => null,
+        encode: (value) => JSON.stringify(value),
+        decode: (value) => {
+          try {
+            return JSON.parse(value);
+          } catch (e) {
+            return null;
+          }
+        },
+      });
 
-        if (userSignIn.rememberMe) {
-          userRememberMe.value = {
-            username: userSignIn.username,
-            password: dataEncrypt(userSignIn.password),
-            rememberMe: userSignIn.rememberMe,
-          };
-        } else {
-          userRememberMe.value = null;      // Clear the cookie
-        }
+      if (userSignIn.rememberMe) {
+        userRememberMe.value = {
+          username: userSignIn.username,
+          password: dataEncrypt(userSignIn.password),
+          rememberMe: userSignIn.rememberMe,
+        };
+      } else {
+        userRememberMe.value = null;      // Clear the cookie
+      }
 
       accessToken.value = response.access_token;
       refreshToken.value = response.refresh_token;
       userToken.value = response.user;
 
-        setTimeout(() => {
-          // router
-          const router = useRouter();
-          if (returnPath) {
-            router.replace(returnPath);
-          } else {
-            router.replace("/home");
-          }
-          // router.back();
-        }, 15000);
-     
+      const router = useRouter();
+      if (returnPath) {
+        router.replace(returnPath);
+      } else {
+        router.replace("/home");
+      }
+
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
@@ -170,12 +166,10 @@ const signIn = async () => {
 
       console.error("[Auth Error]:", error);
 
-    }
-
-    setTimeout(() => {
-      userSignIn.controller.feedback = null;
+    }finally{
+       userSignIn.controller.feedback = null;
       userSignIn.controller.isSucces = false;
-    }, 15000);
+    }
   }
 };
 
