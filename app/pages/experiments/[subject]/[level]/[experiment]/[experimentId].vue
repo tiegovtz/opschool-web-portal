@@ -162,15 +162,6 @@ onMounted(() => {
                         <NuxtLink
                             :to="{ path: '/', query: { tab: 'experiments', subject: experimentSubject, class: experimentStandard } }"
                             class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue" aria-label="Go back to experiment list">
-                            <!-- {{
-                                experimentSubject != null &&
-                                    experimentSubject != undefined &&
-                                    experimentSubject != "null"
-                                    ? experimentSubject
-                                    : `Secondary`
-                            }}
-                            <Icon name="weui:arrow-outlined" size="18" class="text-black" /> -->
-
                             <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" aria-hidden="true"/>
                         </NuxtLink>
 
