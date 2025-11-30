@@ -198,15 +198,22 @@ const { progress, isLoading } = useLoadingIndicator();
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="" :class="{ ' animate-pulse': isLoading }">
+    <main class="" :class="{ ' animate-pulse': isLoading }"  aria-busy="isLoading ? 'true' : 'false'">
       <HeroSection />
+      <!-- Tabs -->
+      <nav aria-label="Subject tabs">
       <TabBar :subject-title="subjectTitle" :topic-id="subjectId" />
-      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
+      </nav>
+      <!-- Loading -->
+      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center" role="status"
+        aria-live="polite">
         <LoadingIndicator :is-loading="true" />
       </div>
       <!-- Status Error -->
-      <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center">
-        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+      <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center" 
+      role="alert"
+        aria-live="assertive">
+        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" aria-hidden="true"/>
         <p class="text-center">
           Oops! Something went wrong.<br />
           Try refreshing the page or check your internet connection.
@@ -223,38 +230,51 @@ const { progress, isLoading } = useLoadingIndicator();
               <div class="flex flex-col items-start ">
                 <customGridTwo>
                   <template #data>
-                    <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id"
-                      :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
-                      :experiment-title="experiment.title" :experiment-description="experiment.description"
-                      :experiment-type="experiment.category" :experiment-subject="experiment.subject.name"
-                      :experiment-level="experiment.level.name" :experiment-name="experiment.name"
-                      :experiment-file-url="experiment.stepsFileUrl" />
+                    <ExperimentsCard 
+                      v-for="experiment in slicedData" 
+                      :key="experiment._id"
+                      :experiment-id="experiment._id" 
+                      :experiment-thumbnail="experiment.thumbnail"
+                      :experiment-title="experiment.title" 
+                      :experiment-description="experiment.description"
+                      :experiment-type="experiment.category" 
+                      :experiment-subject="experiment.subject.name"
+                      :experiment-level="experiment.level.name" 
+                      :experiment-name="experiment.name"
+                      :experiment-file-url="experiment.stepsFileUrl" 
+                      :alt="experiment.title"
+                    />
                   </template>
                 </customGridTwo>
               </div>
             </div>
 
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-5">
+            <div v-if="totalPages > 1" class="flex justify-center my-5" aria-label="Experiment pagination">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" 
+                  :aria-label="`Go to page ${page}`"/>
               </div>
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
-                <div class="flex items-center justify-center" v-if="currentPage > 5">
+                <button class="flex items-center justify-center" v-if="currentPage > 5" @click="prevPage"
+                  aria-label="Go to previous page">
                   <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
-                </div>
+                </button> // chnged from div to button
 
                 <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                   :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" 
+                  :aria-label="`Go to page ${page}`"
+                  />
 
                 <!-- next button -->
-                <div class="flex items-center justify-center" v-if="currentPage > 4">
-                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
-                </div>
+                <button class="flex items-center justify-center" v-if="currentPage > 4" @click="nextPage"
+                  aria-label="Go to next page">
+                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" aria-hidden="true"/>
+                </button>
               </div>
             </div>
           </div>
@@ -268,6 +288,6 @@ const { progress, isLoading } = useLoadingIndicator();
           Try to refresh the page, Something went Wrong
         </div>
       </div>
-    </div>
+    </main>
   </NuxtLayout>
 </template>
