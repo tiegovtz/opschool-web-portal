@@ -759,7 +759,7 @@ definePageMeta({
 
     <!-- quiz -->
     <!-- bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat -->
-    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
+    <div  v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :chapter-id="chapters.notes?._id ?? chapters.currentChapterId" :change-chapter="changeChapter"
@@ -790,7 +790,7 @@ definePageMeta({
         </div>
 
         <!-- Notes loaded successfully -->
-        <div ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
+        <div aria-live="polite" aria-label="compitence content loaded successfully"  ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
           class="w-full py-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between">
@@ -884,15 +884,15 @@ definePageMeta({
         </div>
 
         <!-- Notes failed to load -->
-        <div v-else class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
-          <MessageTopicNotFound message="This chapter currently not available" />
+        <div aria-live="polite" aria-label="error,activity not found" v-else class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
+          <MessageTopicNotFound message="This activity currently not available" />
         </div>
 
         <!-- Sidebar w-1/4 -->
         <div tabindex="0"
           class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2 lg:static bg-white">
           <div class="flex items-center justify-between mb-4">
-            <h1 aria-label="Content list" class="pt-5 pl-4 font-medium capitalize text-medium">Competencies</h1>
+            <h1 aria-label="Activity list" class="pt-5 pl-4 font-medium capitalize text-medium">Activities</h1>
             <!-- toggle menu -->
             <div
               class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"
@@ -908,7 +908,7 @@ definePageMeta({
       </div>
 
       <!-- Default/idle state -->
-      <div v-else class="idle">
+      <div v-else  class="idle">
         <p>Try to reload the page, something went wrong</p>
       </div>
     </section>
