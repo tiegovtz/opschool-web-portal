@@ -123,11 +123,11 @@ const mouseOut = () => {
       </form>
 
       <!-- Result Search with NO userToken -->
-      <div aria-live="polite" aria-atomic="true" v-if="searchReactive.searchResult && searchReactive.search && !userToken" :class="[
+      <div aria-live="polite"  v-if="searchReactive.searchResult && searchReactive.search && !userToken" :class="[
         'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
         appearance === 'normal'
           ? 'top-10 left-0 max-w-md'
-          : 'top-[96px] max-w-3xl px-1',]" role="list" aria-label="Search results" >
+          : 'top-[96px] max-w-3xl px-1',]" role="list" :aria-label="`Search ${searchReactive.searchResult?.length} results`"  >
 
         <TopicCard  v-for="result in searchReactive.searchResult" model-type="search" :key="result._id"
           :topic-id="result._id" :topic-title="result.name" :topic-image="result.thumbnail"
@@ -137,11 +137,11 @@ const mouseOut = () => {
       </div>
 
       <!-- Result Search with userToken -->
-      <div aria-live="polite" aria-atomic="true" v-else-if="searchReactive.searchResult && searchReactive.search && userToken" :class="[
+      <div aria-live="polite" v-else-if="searchReactive.searchResult && searchReactive.search && userToken" :class="[
         'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
         appearance === 'normal'
           ? 'top-10 left-0 max-w-md'
-          : 'top-[180px] max-w-3xl px-1',]" role="list" aria-label="Search results">
+          : 'top-[180px] max-w-3xl px-1',]" role="list" :aria-label="`Search ${searchReactive.searchResult?.length} results`">
 
         <SearchResults role="option" v-for="result in searchReactive.searchResult" :key="result._id" :id="result._id"
           :title="result.name" :thumbnail="result.thumbnail" :level="result?.level ?? 'Form 1'"
