@@ -143,7 +143,7 @@ watch(
 </script>
 
 <template>
-  <section
+  <section aria-label="your in quiz container ready to attempt it."
     class="flex flex-col items-center justify-center py-4 rounded-md bg-gradient-to-b from-deepBlue to-white center-height">
     <!-- Questions -->
     <div class="container w-full max-w-5xl bg-white rounded-md md:p-8 custom-box-shadow" v-if="isAttemptingQuiz">
