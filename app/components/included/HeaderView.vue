@@ -11,14 +11,9 @@ const logout = () => {
   userToken.value = null;
   accessToken.value = null;
   refreshToken.value = null;
-  
+
   const router = useRouter();
   layoutEffect.value = "grid";
-  // Use the State
-  // useState("topicToView", () => null);
-  // useState("videoToView", () => null);
-  // useState("experimentToView", () => null);
-
   router.replace("/home");
   // Dismiss Drop Down
   dropDown();
@@ -38,11 +33,27 @@ const dropDown = () => {
       <!-- Header -->
       <div class="relative flex justify-center w-full h-24 pt-1">
         <div class="flex items-center justify-between w-full h-full wrapper-container">
-          <NuxtLink to="/" class="flex items-center justify-center h-full cursor-pointer max-w-[64px]">
-            <NuxtImg src="/logo/emblem.webp" alt="EMBLEM" class="object-contain w-full h-full" />
+          <NuxtLink to="/" aria-label="Go to homepage"
+            class="flex items-center justify-center h-full cursor-pointer max-w-[64px]">
+            <figure>
+              <NuxtImg src="/logo/emblem.webp"
+                alt="Tanzania coat of arms: man and woman supporting a central shield with Mount Kilimanjaro, flag colors, water waves, a torch, and crossed tools"
+                role="img" aria-describedby="tanzania-emblem-longdesc" class="object-contain w-full h-full" />
+
+              <figcaption id="tanzania-emblem-longdesc" class="sr-only">
+                Tanzania’s coat of arms with a central shield supported by a man on the viewer’s left and a woman on the
+                viewer’s
+                right. The shield shows Mount Kilimanjaro at the top, Tanzania’s flag colors across the middle, and blue
+                and white
+                waves at the bottom. A gold torch with a red-orange flame stands in front. Behind the shield are crossed
+                traditional
+                tools: a spear and a hoe.
+              </figcaption>
+            </figure>
           </NuxtLink>
+
           <div class="flex flex-col items-center h-full gap-1 text-center uppercase font-tahomabd" tabindex="0"
-            aria-label="governed by Ministry of education, science and technology Tanzania institute of education (TIE)"
+            aria-label="Presented by Ministry of education, science and technology together with Tanzania institute of education (TIE)"
             role="region">
             <p class="md:text-small text-extraSmall text-deepBlue text-shadow">
               Ministry of education, science and technology
@@ -69,7 +80,7 @@ const dropDown = () => {
             <p class="hidden capitalize lg:flex">Home</p>
           </NuxtLink>
           <!-- TIE Library Books -->
-          <a  aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
+          <a aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
             class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
@@ -103,10 +114,10 @@ const dropDown = () => {
               <!-- Profile -->
               <NuxtLink aria-label="Go to profile page" to="/profile">
                 <div class="flex items-center justify-center overflow-hidden">
-                  <div class="flex items-center gap-1 cursor-pointer" >
+                  <div class="flex items-center gap-1 cursor-pointer">
                     <div v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''" class="w-8 h-8">
-                      <NuxtImg  :src="apiDocs.baseURL.replace('v1','')+userToken?.profilePic" alt="User Profile"
-                      class="object-cover w-full h-full rounded-full" />
+                      <NuxtImg :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic" alt="User Profile"
+                        class="object-cover w-full h-full rounded-full" />
                     </div>
                     <Icon v-else name="iconamoon:profile-circle-thin" class="" size="2rem" />
                     <p class="capitalize text-medium line-clamp-1 max-w-60">
@@ -152,7 +163,7 @@ const dropDown = () => {
               <NuxtLink aria-label="Go to profile page" to="/profile" v-if="userToken" class="flex items-center pl-1">
                 <Icon name="iconamoon:profile-circle-thin" class="" size="1.2rem" />
               </NuxtLink>
-              
+
               <NuxtLink to="/auth/SignUp" title="Sign Up" v-else
                 class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                 <Icon name="iconamoon:profile-thin" class="" size="1.2rem" />
