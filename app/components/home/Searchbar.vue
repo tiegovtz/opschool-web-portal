@@ -11,6 +11,9 @@ const searchReactive = reactive({
   searchResult: null,
 });
 
+// search anouncement to screen reders
+const announcement = ref("");
+
 const search = async () => {
   const url = userToken.value
     ? `${apiDocs.search.getSearch}?query=${searchReactive.search.trim()}`
@@ -28,11 +31,15 @@ const search = async () => {
       const data = response.data;
       if (Array.isArray(data) && data.length > 0) {
         searchReactive.searchResult = data;
+         announcement.value = `${data.length} results found for ${searchReactive.search}.`;
       } else {
         searchReactive.searchResult = null;
+              announcement.value = `No results found for ${searchReactive.search}.`;
+
       }
     })
     .catch((error) => {
+      announcement.value = `Search failed.`;
       searchReactive.searchResult = null;
     });
 };
@@ -66,7 +73,8 @@ const mouseOut = () => {
     appearance === 'normal'
       ? 'max-w-md'
       : `md:h-72 h-32 bg-background3 bg-cover bg-center bg-no-repeat rounded-md`,]" tabindex="0"
-    :aria-label="appearance === 'normal' ?`Search box`: 'in background of search box, is image of Tanzania instituteof education main building with trees in front'" role="region">
+    :aria-label="appearance === 'normal' ? `Search box` : 'in background of search box, is image of Tanzania instituteof education main building with trees in front'"
+    role="region">
     <div :class="[
       ' relative flex items-center justify-center w-full h-full rounded-md',
       appearance === 'normal'
@@ -123,17 +131,19 @@ const mouseOut = () => {
       </form>
 
       <!-- Result Search with NO userToken -->
-      <div aria-live="polite"  v-if="searchReactive.searchResult && searchReactive.search && !userToken" :class="[
+      <div aria-live="polite" v-if="searchReactive.searchResult && searchReactive.search && !userToken" :class="[
         'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
         appearance === 'normal'
           ? 'top-10 left-0 max-w-md'
-          : 'top-[96px] max-w-3xl px-1',]" role="list" :aria-label="`Search ${searchReactive.searchResult?.length} results`"  >
+          : 'top-[96px] max-w-3xl px-1',]" role="list"
+        :aria-label="`Search ${searchReactive.searchResult?.length} results`">
 
-        <TopicCard  v-for="result in searchReactive.searchResult" model-type="search" :key="result._id"
+        <TopicCard v-for="result in searchReactive.searchResult" model-type="search" :key="result._id"
           :topic-id="result._id" :topic-title="result.name" :topic-image="result.thumbnail"
           :topic-standard="result.standard" :topic-subject="result.subject.name"
           :topic-description="result.descriptions" :topic-level="result.level?.name ?? 'Form 1'" :topic-likes="0"
-          :topic-views="topic?.viewedBy?.length ? topic?.viewedBy?.length : 0" topic-duration="0" :aria-label="`Among the topics from search result,${result.name} press to learn`" />
+          :topic-views="topic?.viewedBy?.length ? topic?.viewedBy?.length : 0" topic-duration="0"
+          :aria-label="`Among the topics from search result,${result.name} press to learn`" />
       </div>
 
       <!-- Result Search with userToken -->
@@ -141,12 +151,17 @@ const mouseOut = () => {
         'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
         appearance === 'normal'
           ? 'top-10 left-0 max-w-md'
-          : 'top-[180px] max-w-3xl px-1',]" role="list" :aria-label="`Search ${searchReactive.searchResult?.length} results`">
+          : 'top-[180px] max-w-3xl px-1',]" role="list"
+        :aria-label="`Search ${searchReactive.searchResult?.length} results`">
 
         <SearchResults role="option" v-for="result in searchReactive.searchResult" :key="result._id" :id="result._id"
           :title="result.name" :thumbnail="result.thumbnail" :level="result?.level ?? 'Form 1'"
           :subject="result?.subject ?? 'N/A'" :type="result?.type ?? 'topic'" />
 
+      </div>
+      <!-- screen reader notifier -->
+      <div class="sr-only" aria-live="polite" role="status">
+        {{ announcement }}
       </div>
 
     </div>

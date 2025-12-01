@@ -219,9 +219,6 @@ watch(
 <template>
   <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b" aria-labelledby="signin-paging">
     <!-- Message Component (announce feedback changes) -->
-    <div v-if="userSignIn.controller.feedback" role="status" aria-live="polite" class="sr-only">
-      {{ userSignIn.controller.feedback }}
-    </div>
     <MessageComponent  aria-live="polite" role="status" :message="userSignIn.controller.feedback" :position="!!userSignIn.controller.feedback"
       :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
       :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
