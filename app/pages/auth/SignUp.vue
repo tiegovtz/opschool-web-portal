@@ -634,7 +634,7 @@ const organization = [
       </NuxtLink>
 
       <form @submit.prevent="signUp" @keydown.enter.prevent
-        class="text-textGray md:h-[520px] h-dvh relative overflow-hidden text-extraSmall" :class="[
+        class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" :class="[
                 {
                   'md:h-[600px]':
                     usersignUp.controller.errors.age ||
@@ -829,7 +829,7 @@ const organization = [
             <div class="flex flex-col">
               <label for="age" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select Age:</label>
 
-              <CustomDropDownList :list="ageOptions" :placeholder="usersignUp.type.toLowerCase().trim() === 'student'
+              <CustomDropDownList v-model="usersignUp.age" :list="ageOptions" :placeholder="usersignUp.type.toLowerCase().trim() === 'student'
                 ? 'Eg: kids(3 - 12)' : 'Eg: YoungAdults(20 - 35)'" @update-model-value="usersignUp.age = $event" />
             </div>
 
