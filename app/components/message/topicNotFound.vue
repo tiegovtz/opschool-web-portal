@@ -2,7 +2,7 @@
  defineProps({
     message:{
         type:String,
-         default:'This topic will be updated soon'
+         default:'This activitiy will be updated soon'
     }
  })
 </script>
