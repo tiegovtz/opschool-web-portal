@@ -155,7 +155,7 @@ const signIn = async () => {
       setTimeout(()=>{
         const router = useRouter();
       if (returnPath) {
-        
+
         router.replace(returnPath);
       } else {
         router.replace("/home");
@@ -226,7 +226,7 @@ watch(
     <div v-if="userSignIn.controller.feedback" role="status" aria-live="polite" class="sr-only">
       {{ userSignIn.controller.feedback }}
     </div>
-    <MessageComponent aria-live="polite" :message="userSignIn.controller.feedback" :position="!!userSignIn.controller.feedback"
+    <MessageComponent  v-if="userSignIn.controller.feedback"  aria-live="polite" role="status" :message="userSignIn.controller.feedback" :position="!!userSignIn.controller.feedback"
       :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
       :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
@@ -236,7 +236,7 @@ watch(
         Welcome
       </h1>
 
-      <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
+      <NuxtLink aria-label="press to go home" to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
         <NuxtImg src="/logo/logo_tie.gif" class="object-contain w-full h-full"
           alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
       </NuxtLink>
@@ -270,7 +270,7 @@ watch(
           </div>
 
           <!-- Username error message -->
-          <small id="username-error" v-if="userSignIn.controller.errors.username" :class="[
+          <small aria-live="polite" aria-atomic id="username-error" v-if="userSignIn.controller.errors.username" :class="[
             'w-full text-red-500 text-smallest',
             { 'mt-1': userSignIn.type.trim().toLowerCase() === 'student' },
             {
@@ -310,7 +310,7 @@ watch(
           </div>
 
           <!-- Password error message -->
-          <small id="password-error" v-if="userSignIn.controller.errors.password"
+          <small aria-live="polite" aria-atomic id="password-error" v-if="userSignIn.controller.errors.password"
             class="w-full text-red-500 text-smallest" role="alert">
             {{ userSignIn.controller.errors.password }}
           </small>
@@ -332,16 +332,16 @@ watch(
         </div>
 
         <!-- Sign in button -->
-        <button type="submit" :disabled="isDisable" :aria-disabled="isDisable ? 'true' : 'false'"
+        <button aria-label="sign in button, press to sign in" type="submit" :disabled="isDisable" :aria-disabled="isDisable ? 'true' : 'false'"
           :aria-busy="isDisable ? 'true' : 'false'"
           class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
           <!-- Normal state -->
-          <span v-if="!isDisable">
+          <span aria-live="polite" aria-atomic v-if="!isDisable">
             Sign in
           </span>
 
           <!-- Loading state -->
-          <span v-else class="flex items-center gap-2">
+          <span  aria-live="polite" aria-atomic v-else class="flex items-center gap-2">
             <span>Signing in…</span>
             <Icon name="eos-icons:loading" class="text-white animate-spin" size="20" aria-hidden="true" />
           </span>
@@ -358,7 +358,7 @@ watch(
       </form>
 
       <!-- Too many attempts state -->
-      <div v-else class="flex flex-col items-center justify-center w-full gap-2" aria-live="polite">
+      <div v-else class="flex flex-col items-center justify-center w-full gap-2" aria-live="polite" aria-label="sign in error">
         <div class="py-3 text-center">
           You have attempted to sign in
           <span class="text-oceanBlue">
@@ -367,14 +367,14 @@ watch(
           times. Please reset your password or register a new account.
         </div>
 
-        <NuxtLink to="/auth/ForgotPassword"
+        <NuxtLink aria-label="Visit to reset your password page, if you dont remember the password" to="/auth/ForgotPassword"
           class="flex items-center justify-center w-full p-2 text-white capitalize rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
           Reset your password
         </NuxtLink>
 
         <span>or</span>
 
-        <NuxtLink to="/auth/SignUp"
+        <NuxtLink aria-label="visit registration page, if you dont have " to="/auth/SignUp"
           class="flex items-center justify-center w-full p-2 mb-3 text-white capitalize rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
           Register a new account
         </NuxtLink>
