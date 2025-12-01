@@ -9,6 +9,7 @@
           class="w-5 h-5 text-white"
         />
       </div>
+
       <div
         class="bg-white text-gray-800 px-5 py-3 rounded-2xl rounded-tl-sm shadow-md border border-gray-100"
       >
@@ -17,12 +18,14 @@
           :key="idx"
           class="space-y-2"
         >
+          <!-- Markdown Support -->
           <div
             v-if="part.type === 'text'"
-            class="text-sm leading-relaxed"
-          >
-            {{ part.text }}
-          </div>
+            class="prose prose-sm max-w-none"
+            v-html="md.render(part.text)"
+          ></div>
+
+          <!-- Tools -->
           <pre
             v-if="part.type.startsWith('tool-')"
             class="text-xs bg-gray-50 p-3 rounded-lg mt-2 overflow-x-auto border border-gray-200"
@@ -36,5 +39,7 @@
 </template>
 
 <script setup lang="ts">
+import MarkdownIt from "markdown-it";
+const md = new MarkdownIt({ html: false, breaks: true, linkify: true });
 defineProps<{ message: any }>();
 </script>

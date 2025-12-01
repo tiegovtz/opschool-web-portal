@@ -8,7 +8,7 @@
         <input
           v-model="input"
           placeholder="Type your question here..."
-          class="w-full rounded-2xl border-2 border-gray-200 px-5 py-3.5 pr-12 focus:outline-none focus:border-oceanBlue focus:ring focus:ring-oceanBlue bg-gray-50 transition-all text-sm"
+          class="w-full rounded-2xl border-gray-200 px-5 py-3.5 pr-12 focus:outline-none focus:border-oceanBlue focus:ring focus:ring-oceanBlue bg-gray-50 transition-all text-sm"
         />
         <button
           type="button"
