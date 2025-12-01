@@ -65,7 +65,7 @@ const tabCheck = (checkValue) => {
         </div>
         Interactive Content
       </button>
-      <NuxtLink v-else :to="subjectTitle ? topicId ? `/interactive/${subjectTitle}/${topicId}` : `/interactive/${subjectTitle}` : `/interactive`"
+      <NuxtLink :aria-label="`press to visit page for interactive contents ${subjectTitle ? `for subject ${subjectTitle}`:''}`" v-else :to="subjectTitle ? topicId ? `/interactive/${subjectTitle}/${topicId}` : `/interactive/${subjectTitle}` : `/interactive`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
         active-class="text-white !bg-deepBlue ">
         <div class="flex items-center justify-center">
@@ -88,7 +88,7 @@ const tabCheck = (checkValue) => {
         </div>
         Learning Activities
       </button>
-      <NuxtLink v-else  :to="subjectTitle ? topicId ? `/experiments/${subjectTitle}/${topicId}` : `/experiments/${subjectTitle}` : `/experiments`"
+      <NuxtLink v-else :aria-label="`press to visit page of learning activities (experiments) ${subjectTitle ? `for subject ${subjectTitle}`:''}`"  :to="subjectTitle ? topicId ? `/experiments/${subjectTitle}/${topicId}` : `/experiments/${subjectTitle}` : `/experiments`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
@@ -111,7 +111,7 @@ const tabCheck = (checkValue) => {
         </div>
         Video
       </button>
-      <NuxtLink v-else :to="{
+      <NuxtLink v-else :aria-label="`press to visit page of Video ${subjectTitle ? `for subject ${subjectTitle}`:''}`" :to="{
         path:subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`,
         query:  {
           type: 'conc'
@@ -139,7 +139,8 @@ const tabCheck = (checkValue) => {
         </div>
         Class Videos
       </button>
-      <NuxtLink v-else :to="{
+      <NuxtLink v-else 
+      :aria-label="`press to visit page of class video ${subjectTitle ? `for subject ${subjectTitle}`:''}`" :to="{
         path:subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`,
         query: {
           type: 'oth'
@@ -169,6 +170,7 @@ const tabCheck = (checkValue) => {
         Audio
       </button>
       <NuxtLink v-else :to="subjectTitle ? topicId ? `/audio/${subjectTitle}/${topicId}` : `/audio/${subjectTitle}` : `/audio`"
+        :aria-label="`press to visit page of audio ${subjectTitle ? `for subject ${subjectTitle}`:''}`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
@@ -181,22 +183,13 @@ const tabCheck = (checkValue) => {
           :to="'/smart-class'"
           class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
           active-class="text-white !bg-deepBlue"
+          aria-label="press to visit page of smart class page for livessession "
       >
         <div class="flex items-center justify-center">
           <Icon name="mdi:television" size="20" />
         </div>
         Smart Class
       </NuxtLink>
-
-
-      <!--      <NuxtLink v-else :to="subjectTitle ? topicId ? `/audio/${subjectTitle}/${topicId}` : `/audio/${subjectTitle}` : `/audio`"-->
-<!--        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed text-medium lg:w-45"-->
-<!--        active-class="text-white !bg-deepBlue">-->
-<!--        <div class="flex items-center justify-center">-->
-<!--          <Icon name="famicons:headset-sharp" size="20" />-->
-<!--        </div>-->
-<!--        Smart Class-->
-<!--      </NuxtLink>-->
     </div>
   </section>
 </template>
