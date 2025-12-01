@@ -152,12 +152,14 @@ const signIn = async () => {
       refreshToken.value = response.refresh_token;
       userToken.value = response.user;
 
-      const router = useRouter();
+      setTimeout(()=>{
+        const router = useRouter();
       if (returnPath) {
         router.replace(returnPath);
       } else {
         router.replace("/home");
       }
+      },1500)
 
     } catch (error) {
       userSignIn.controller.attemps++;
@@ -223,7 +225,7 @@ watch(
     <div v-if="userSignIn.controller.feedback" role="status" aria-live="polite" class="sr-only">
       {{ userSignIn.controller.feedback }}
     </div>
-    <MessageComponent :message="userSignIn.controller.feedback" :position="!!userSignIn.controller.feedback"
+    <MessageComponent aria-live="polite" :message="userSignIn.controller.feedback" :position="!!userSignIn.controller.feedback"
       :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
       :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
