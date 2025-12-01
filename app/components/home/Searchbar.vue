@@ -76,14 +76,14 @@ const mouseOut = () => {
       <!-- Apperance Normal -->
       <form v-if="appearance === 'normal'" action="" @submit.prevent="search"
         class="flex w-full h-10 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue"
-        role="search" aria-label="Search for topics">
+        role="search" aria-label="Search for compitence">
 
         <div class="flex items-center w-full">
           <!-- Search Icon -->
           <Icon name="mdi:magnify" aria-label="search icon" class="text-gray-400" size="1.5rem" aria-hidden="true" />
 
           <!-- Search Input -->
-          <label for="search-normal" class="sr-only">Search for topics</label>
+          <label for="search-normal" class="sr-only">Search for compitence</label>
           <input type="text" id="search-normal" @input="inputSearch" v-model="searchReactive.search"
             placeholder="What do you want to learn?"
             class="flex flex-1 h-full px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue"
@@ -101,14 +101,14 @@ const mouseOut = () => {
       <!-- Apperance Not Normal -->
       <form v-else-if="appearance !== 'normal'" action=""
         class="flex items-center w-full max-w-3xl p-2 bg-white rounded-md h-15" @submit.prevent="search" role="search"
-        aria-label="Search for topics">
+        aria-label="Search for compitence">
 
         <div class="flex items-center w-full pl-4">
           <!-- Search Icon -->
           <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" aria-hidden="true" />
 
           <!-- Search Input -->
-          <label for="search-large" class="sr-only">Search for topics</label>
+          <label for="search-large" class="sr-only">Search for compitence</label>
           <input type="text" id="search-large" @input="inputSearch" v-model="searchReactive.search"
             class="flex flex-1 h-full px-2 focus:outline-none focus:ring-0 focus:border-oceanBlue"
             placeholder="What do you want to learn?" :aria-expanded="searchReactive.searchResult ? 'true' : 'false'" />
