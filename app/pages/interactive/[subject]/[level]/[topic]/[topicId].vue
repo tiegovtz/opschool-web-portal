@@ -29,7 +29,8 @@ currentTopic.value = topicTitle;
 // tokens cookies
 const signInAccessToken = useCookie("signInAccessToken");
 const userToken = useCookie("signInUserToken");
-
+// search anouncement to screen reders
+const announcement = ref(null);
 const chapterProgress = useCookie("chapterProgress");
 
 // Define meta info about page
@@ -242,7 +243,7 @@ const getChapter = async (chapterId) => {
   chapters.currentChapterId = chapterId;
 
   await ensureAccessTokenValid();
-
+  announcement.value=`Loading activity of ${chapters.list?.filter(c=>c._id===currentChapterId)?.name} content please wait`;
   try {
     const { data: response, status } = await fetchAsyncData(
       `chapter-${chapterId}`,
@@ -267,11 +268,13 @@ const getChapter = async (chapterId) => {
       }
 
       await Promise.allSettled(tasks);
+      announcement.value=`content of ${chapters.list?.filter(c=>c._id===currentChapterId)?.name} loaded successfully you may continue reading`;
     }
   } catch (error) {
     chapters.notesStatus = "error";
     chapters.error = error;
-    console.error("Error fetching chapter details:", error);
+    console.error("[Error fetching activity detail details]:", error);
+    announcement.value = 'Something went wrong , fetch failed'
   }
 };
 
@@ -919,5 +922,13 @@ definePageMeta({
       :chapter-id="chapters.currentChapterId"
       :chapter-name="chapters.notes?.name || 'this competence'"
     />
+
+    <!--  -->
+      <!-- screen reader notifier -->
+      <div class="sr-only" aria-live="polite" aria-atomic role="status">
+        {{ announcement }}
+      </div>
+
   </NuxtLayout>
+
 </template>
