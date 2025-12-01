@@ -25,6 +25,7 @@ const emit = defineEmits(['updateModelValue']);
 const isOpen = ref(false);
 const selected = ref('');
 const dropdownRef = ref(null);
+const selectedLabel = ref('');
 
 // Watch for modelValue changes to update selected display text
 watch(() => props.modelValue, (newVal) => {
@@ -45,11 +46,14 @@ const toggleOpen = () => {
 
 const selectItem = (item) => {
   if (props.disabled) return;
+
   selectedLabel.value = item.name;
+  selected.value = item.name;
+
   emit('update:modelValue', item.id ?? item.name);
+
   isOpen.value = false;
 };
-
 // Close when clicked outside
 const handleClickOutside = (e) => {
   if (dropdownRef.value && !dropdownRef.value.contains(e.target)) {
