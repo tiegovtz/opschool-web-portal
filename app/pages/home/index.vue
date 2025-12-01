@@ -435,18 +435,6 @@ const switchTab = async (tab) => {
   if (!tab) return;
 
   activeTab.value = tab;
-
-  await nextTick(async () => {
-    if (import.meta.server) return;
-
-    await router.push('#content-container-after-login');
-
-    // Give the DOM a beat to update
-    requestAnimationFrame(() => {
-      const el = document.getElementById('content-container-after-login');
-      if (el) el.focus();
-    });
-  });
 };
 
 </script>
