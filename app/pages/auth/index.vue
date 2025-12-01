@@ -161,7 +161,6 @@ const signIn = async () => {
         router.replace("/home");
       }
       },1500)
-
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
@@ -169,9 +168,6 @@ const signIn = async () => {
 
       console.error("[Auth Error]:", error);
 
-    }finally{
-       userSignIn.controller.feedback = null;
-      userSignIn.controller.isSucces = false;
     }
   }
 };
@@ -226,7 +222,7 @@ watch(
     <div v-if="userSignIn.controller.feedback" role="status" aria-live="polite" class="sr-only">
       {{ userSignIn.controller.feedback }}
     </div>
-    <MessageComponent  v-if="userSignIn.controller.feedback"  aria-live="polite" role="status" :message="userSignIn.controller.feedback" :position="!!userSignIn.controller.feedback"
+    <MessageComponent  aria-live="polite" role="status" :message="userSignIn.controller.feedback" :position="!!userSignIn.controller.feedback"
       :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
       :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
