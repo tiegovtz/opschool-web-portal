@@ -5,18 +5,30 @@ import { ref } from "vue";
 const input = ref("");
 const chat = new Chat({});
 
-const handleSubmit = (e: Event) => {
-  e.preventDefault();
-  if (!input.value.trim()) return;
-  chat.sendMessage({ text: input.value });
+// Local state to show typing loader
+const isTyping = ref(false);
+
+const handleSubmit = (message: string) => {
+  if (!message.trim()) return;
+
+  isTyping.value = true; // Show loader immediately
+  chat.sendMessage({ text: message }).finally(() => {
+    isTyping.value = false; // Hide loader when done
+  });
   input.value = "";
 };
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <AiTeacherHeader/>
-    <AiTeacherMessages :messages="chat.messages"/>
-    <AiTeacherInput :chat="chat" @sendMessage="chat.sendMessage({ text: $event })"/>
+    <AiTeacherHeader />
+    <AiTeacherMessages
+      :messages="chat.messages"
+      :isTyping="isTyping"
+    />
+    <AiTeacherInput
+      :chat="chat"
+      @sendMessage="handleSubmit"
+    />
   </NuxtLayout>
 </template>
