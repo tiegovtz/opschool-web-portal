@@ -1,5 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import { vite as vidstack } from 'vidstack/plugins';
+import { vite as vidstack } from "vidstack/plugins";
 
 export default defineNuxtConfig({
   compatibilityDate: "2024-11-01",
@@ -19,13 +19,17 @@ export default defineNuxtConfig({
 
   vue: {
     compilerOptions: {
-      isCustomElement: (tag) => tag.startsWith('media-'),
+      isCustomElement: (tag) => tag.startsWith("media-"),
     },
   },
 
   runtimeConfig: {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-    public: {},
+    openaiApiKey: process.env.OPENAI_API_KEY || "",
+    public: {
+      supabaseUrl: process.env.NUXT_SUPABASE_URL,
+      supabaseKey: process.env.NUXT_SUPABASE_ANON_KEY,
+    },
   },
 
   plugins: [
@@ -42,6 +46,7 @@ export default defineNuxtConfig({
     "nuxt-swiper",
     "@pinia/nuxt",
     "pinia-plugin-persistedstate/nuxt",
+    "@nuxtjs/supabase",
   ],
 
   image: {
@@ -83,6 +88,11 @@ export default defineNuxtConfig({
     head: {
       meta: [{ name: "generator", content: "" }],
     },
+  },
+  supabase: {
+    redirect: false,
+    url: process.env.NUXT_SUPABASE_URL,
+    key: process.env.NUXT_SUPABASE_ANON_KEY,
   },
 });
 
