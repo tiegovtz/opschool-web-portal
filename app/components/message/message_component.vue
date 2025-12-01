@@ -22,7 +22,7 @@ defineProps({
 </script>
 
 <template>
-    <div :class="position ? 'top-10' : '-top-32 opacity-0'"
+    <div :class="position ? 'top-10' : '-top-32 opacity-10'"
         class="fixed z-40 flex items-center justify-center w-auto max-w-md gap-3 px-4 py-3 transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md md:w-full"
         aria-live="polite" aria-atomic="true">
         <div v-if="message" class="flex items-center">
