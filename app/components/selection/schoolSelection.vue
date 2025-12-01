@@ -1,39 +1,50 @@
 <script setup>
 import { CustomDropDownList } from "#components";
-import axios from 'axios';
+import axios from "axios";
+import { reactive, ref, watch } from "vue";
 
-// Props
 const props = defineProps({
   region: String,
   district: String,
-  error: String,
-  school: String,
+  error: String,   // validation error from parent
+  school: String,  // currently selected school id (optional)
 });
 
-// Reactive state
 const data = reactive({
   schools: [],
-  status: "idle",
+  status: "idle",  // 'idle' | 'pending' | 'success' | 'error'
   error: null,
 });
 
-// Emit
 const emit = defineEmits(["updateSchool"]);
+
+// local v-model for dropdown
+const selectedSchool = ref(props.school ?? null);
+
+// Emit to parent whenever dropdown changes
+watch(selectedSchool, (val) => {
+  emit("updateSchool", val);
+});
 
 // Fetch schools function
 const fetchSchools = async (region, district) => {
   data.status = "pending";
   data.error = null;
+
   if (!region || !district || region === "" || district === "") {
     data.status = "idle";
+    data.schools = [];
     return;
   }
 
   try {
-    const response = await axios.post("https://opschool.tie.go.tz:5001/v1/schools", {
-      region: `${region}`.toUpperCase(),
-      district: `${district}`.toUpperCase(),
-    });
+    const response = await axios.post(
+      "https://opschool.tie.go.tz:5001/v1/schools",
+      {
+        region: `${region}`.toUpperCase(),
+        district: `${district}`.toUpperCase(),
+      }
+    );
 
     data.status = "success";
     data.schools = response.data;
@@ -44,44 +55,61 @@ const fetchSchools = async (region, district) => {
 };
 
 // Watch for changes in region or district (School)
-watch(() => props.district, (district) => {
-  if (district) {
-    fetchSchools(props.region, district);
+watch(
+  () => props.district,
+  (district) => {
+    if (district) {
+      fetchSchools(props.region, district);
+    } else {
+      data.status = "idle";
+      data.schools = [];
+    }
   }
-});
+);
 
-watch(() => props.region, (region) => {
-  if (region) {
-    fetchSchools(region, props.district);
+watch(
+  () => props.region,
+  (region) => {
+    if (region) {
+      fetchSchools(region, props.district);
+    } else {
+      data.status = "idle";
+      data.schools = [];
+    }
   }
-});
-
+);
 </script>
 
 <template>
   <div class="flex flex-col items-start w-full">
+    <!-- Label correctly linked to dropdown via id -->
     <label for="school" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-      Select School:
+      Select school:
     </label>
 
-    <CustomDropDownList v-if="data.status === 'success' && data.schools.length"
-      :list="data.schools.map(school => ({ id: school._id, name: school.name }))" :placeholder="'Choose a school'"
-      @updateModelValue="emit('updateSchool', $event)" />
+    <!-- Accessible dropdown -->
+    <CustomDropDownList v-if="data.status === 'success' && data.schools.length" id="school" v-model="selectedSchool"
+      :list="data.schools.map((school) => ({ id: school._id, name: school.name }))" placeholder="Choose a school"
+      :aria-invalid="!!error" aria-describedby="school-error" />
 
-    <div v-else-if="data.status === 'idle'" class="mt-2 text-textGray/40">
-      Select Region and District First
+    <!-- Status / helper messages (live region) -->
+    <div v-else class="mt-2 text-textGray/40" role="status" aria-live="polite">
+      <span v-if="data.status === 'idle'">
+        Select region and district first.
+      </span>
+      <span v-else-if="data.status === 'pending'">
+        Loading schools…
+      </span>
+      <span v-else-if="data.status === 'error'" class="text-red-500">
+        {{ data.error }}
+      </span>
+      <span v-else-if="data.status === 'success' && !data.schools.length">
+        No schools found for the selected region and district.
+      </span>
     </div>
 
-    <div v-else-if="data.status === 'pending'" class="mt-2 text-textGray/40">
-      Loading...
-    </div>
-
-    <div v-else-if="data.status === 'error'" class="mt-2 text-red-500">
-      {{ data.error }}
-    </div>
-
-    <!-- Error message -->
-    <small v-if="error" class="w-full mt-1 text-red-500 text-smallest">
+    <!-- Validation error from parent -->
+    <small v-if="error" id="school-error" class="w-full mt-1 text-red-500 text-smallest" role="alert">
       {{ error }}
     </small>
   </div>
