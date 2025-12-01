@@ -66,7 +66,7 @@ const mouseOut = () => {
     appearance === 'normal'
       ? 'max-w-md'
       : `md:h-72 h-32 bg-background3 bg-cover bg-center bg-no-repeat rounded-md`,]" tabindex="0"
-    aria-label="Taasisi ya Elimu Tanzania main building with trees in front" role="region">
+    :aria-label="appearance === 'normal' ?`Search box`: 'in background of search box, is image of Tanzania instituteof education main building with trees in front'" role="region">
     <div :class="[
       ' relative flex items-center justify-center w-full h-full rounded-md',
       appearance === 'normal'
@@ -115,7 +115,7 @@ const mouseOut = () => {
         </div>
 
         <!-- Search Button -->
-        <button type="submit" role="button" aria-describedby="search-data"
+        <button type="submit" role="button" aria-label="press to search"
           class="items-center justify-center hidden h-full px-4 py-2 overflow-hidden text-white transition-colors duration-500 ease-in-out rounded-b-none cursor-pointer md:flex rounded-r-md bg-oceanBlue hover:bg-deepBlue"
           @click="search">
           Search
@@ -123,21 +123,21 @@ const mouseOut = () => {
       </form>
 
       <!-- Result Search with NO userToken -->
-      <div v-if="searchReactive.searchResult && searchReactive.search && !userToken" :class="[
+      <div aria-live="polite" aria-atomic="true" v-if="searchReactive.searchResult && searchReactive.search && !userToken" :class="[
         'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
         appearance === 'normal'
           ? 'top-10 left-0 max-w-md'
-          : 'top-[96px] max-w-3xl px-1',]" role="list" aria-label="Search results" aria-live="polite">
+          : 'top-[96px] max-w-3xl px-1',]" role="list" aria-label="Search results" >
 
-        <TopicCard v-for="result in searchReactive.searchResult" model-type="search" :key="result._id"
+        <TopicCard  v-for="result in searchReactive.searchResult" model-type="search" :key="result._id"
           :topic-id="result._id" :topic-title="result.name" :topic-image="result.thumbnail"
           :topic-standard="result.standard" :topic-subject="result.subject.name"
           :topic-description="result.descriptions" :topic-level="result.level?.name ?? 'Form 1'" :topic-likes="0"
-          :topic-views="topic?.viewedBy?.length ? topic?.viewedBy?.length : 0" topic-duration="0" />
+          :topic-views="topic?.viewedBy?.length ? topic?.viewedBy?.length : 0" topic-duration="0" :aria-label="`Among the topics from search result,${result.name} press to learn`" />
       </div>
 
       <!-- Result Search with userToken -->
-      <div v-else-if="searchReactive.searchResult && searchReactive.search && userToken" :class="[
+      <div aria-live="polite" aria-atomic="true" v-else-if="searchReactive.searchResult && searchReactive.search && userToken" :class="[
         'absolute z-50  w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-scroll',
         appearance === 'normal'
           ? 'top-10 left-0 max-w-md'
