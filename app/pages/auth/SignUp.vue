@@ -551,7 +551,6 @@ const switchTab = (tabName) => {
         usersignUp.controller.errors.fname = null;
       }
 
-
       // Validate Last name
       const lname = auth.isValidName(usersignUp.lname);
       if (!lname.isMinLength) {
@@ -635,7 +634,7 @@ const organization = [
       </NuxtLink>
 
       <form @submit.prevent="signUp" @keydown.enter.prevent
-        class="text-textGray md:h-[500px] h-dvh relative overflow-hidden text-extraSmall" :class="[
+        class="text-textGray md:h-[520px] h-dvh relative overflow-hidden text-extraSmall" :class="[
                 {
                   'md:h-[600px]':
                     usersignUp.controller.errors.age ||

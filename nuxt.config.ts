@@ -23,6 +23,11 @@ export default defineNuxtConfig({
     },
   },
 
+  runtimeConfig: {
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    public: {},
+  },
+
   plugins: [
     { src: "~/plugins/mathjax.client.js", mode: "client" },
     { src: "~/plugins/mathjax-directive.client.js", mode: "client" },

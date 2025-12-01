@@ -228,7 +228,7 @@ const { progress, isLoading } = useLoadingIndicator();
             <div class="flex items-center gap-4">
               <!-- Topic Cards are in Grid -->
               <div class="flex flex-col items-start ">
-                <customGridTwo role="region" aria-label="Experiments grid">
+                <customGridTwo>
                   <template #data>
                     <ExperimentsCard 
                       v-for="experiment in slicedData" 
