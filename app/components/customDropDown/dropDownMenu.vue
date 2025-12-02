@@ -140,7 +140,7 @@ const filterNameGroup = computed(() => {
     });
   }
 
-  if (Array.isArray(subjects?.value) && props.activeTab!=='subject') {
+  if (Array.isArray(subjects?.value) && props.activeTab.toLowerCase() !=='home') {
     filters.push({
       name: 'subject',
       visibility: 'all',
@@ -178,13 +178,11 @@ const filterNameGroup = computed(() => {
   return filters;
 });
 
+
 const visibleFilters = computed(() => {
   return filterNameGroup.value.filter((filter) => {
-    if (filter.name === 'subject') {
-      return props.activeTab !== 'subject';
-    }
 
-    if (filter.name === 'class' ) {
+    if (filter.name === 'class' || filter.name === 'subject') {
       return selectedFilters.level && (filter.visibility === "all" || filter.visibility === props.activeTab);
     }
 
@@ -278,7 +276,7 @@ watch(() => selectedFilters.level, () => {
           </div>
 
           <!-- SUBJECT -->
-          <div v-else-if="filter.name === 'subject' && activeTab!=='subject'">
+          <div v-else-if="filter.name === 'subject' && activeTab.toLowerCase()!=='home'">
             <div v-if="!selectedFilters.level" class="text-sm text-red-500" role="alert">
               Please select a level first.
             </div>
