@@ -1,5 +1,7 @@
 <template>
   <div
+    ref="messagesContainer"
+    @scroll="handleScroll"
     class="p-6 space-y-5 h-[calc(100vh-280px)] max-h-[600px] overflow-y-auto bg-gradient-to-b from-gray-50/30 to-white"
   >
     <div
@@ -57,7 +59,71 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ messages: any[]; isTyping?: boolean }>();
+import { ref, watch, nextTick, onMounted } from 'vue';
+
+const props = defineProps<{ messages: any[]; isTyping?: boolean }>();
+
+const messagesContainer = ref<HTMLElement | null>(null);
+const shouldAutoScroll = ref(true);
+
+// Smooth scroll function
+const scrollToBottom = (smooth = true) => {
+  if (!messagesContainer.value || !shouldAutoScroll.value) return;
+  
+  nextTick(() => {
+    if (messagesContainer.value) {
+      if (smooth) {
+        messagesContainer.value.scrollTo({
+          top: messagesContainer.value.scrollHeight,
+          behavior: 'smooth'
+        });
+      } else {
+        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+      }
+    }
+  });
+};
+
+// Check if user is near bottom (within 100px)
+const isNearBottom = () => {
+  if (!messagesContainer.value) return true;
+  const threshold = 100;
+  const distanceFromBottom = messagesContainer.value.scrollHeight - 
+    messagesContainer.value.scrollTop - 
+    messagesContainer.value.clientHeight;
+  return distanceFromBottom < threshold;
+};
+
+// Handle scroll event to determine if user has manually scrolled up
+const handleScroll = () => {
+  shouldAutoScroll.value = isNearBottom();
+};
+
+// Auto-scroll to bottom when new messages arrive
+watch(() => props.messages, () => {
+  scrollToBottom(true);
+}, { deep: true });
+
+// Auto-scroll when typing state changes
+watch(() => props.isTyping, (newVal) => {
+  if (newVal) {
+    scrollToBottom(true);
+  } else {
+    // Also scroll when typing finishes
+    setTimeout(() => {
+      scrollToBottom(true);
+    }, 100);
+  }
+});
+
+// Scroll to bottom on mount if there are messages
+onMounted(() => {
+  if (props.messages.length > 0) {
+    nextTick(() => {
+      scrollToBottom(false);
+    });
+  }
+});
 </script>
 
 <style>
