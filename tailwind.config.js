@@ -24,7 +24,6 @@ export default {
         normalGreener: "#4db139",
         grayLight: "#f0f0f0",
         paleBrickRed:"#e55637bb"
-
       },
       
       fontFamily: {
