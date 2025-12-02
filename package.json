@@ -65,6 +65,7 @@
     "@primevue/auto-import-resolver": "^4.3.1",
     "@primevue/nuxt-module": "^4.3.1",
     "@types/crypto-js": "^4.2.2",
+    "@types/lodash": "^4.17.21",
     "@types/markdown-it": "^14.1.2",
     "@types/mathjax": "^0.0.40",
     "@vitejs/plugin-legacy": "^6.0.2",
