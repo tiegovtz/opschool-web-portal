@@ -243,7 +243,7 @@ const getChapter = async (chapterId) => {
   chapters.currentChapterId = chapterId;
 
   await ensureAccessTokenValid();
-  announcement.value=`Loading activity of ${chapters.list?.filter(c=>c._id===currentChapterId)?.name} content please wait`;
+  announcement.value=`Loading activity of ${chapters.list?.filter(c=>c._id===chapterId)?.name} content please wait`;
   try {
     const { data: response, status } = await fetchAsyncData(
       `chapter-${chapterId}`,
@@ -268,7 +268,7 @@ const getChapter = async (chapterId) => {
       }
 
       await Promise.allSettled(tasks);
-      announcement.value=`content of ${chapters.list?.filter(c=>c._id===currentChapterId)?.name} loaded successfully you may continue reading`;
+      announcement.value=`content of ${chapters.list?.filter(c=>c._id===chapterId)?.name} loaded successfully you may continue reading`;
     }
   } catch (error) {
     chapters.notesStatus = "error";
