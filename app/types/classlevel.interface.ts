@@ -1,4 +1,4 @@
 import type { BaseEntity } from "./base.interface";
 
-export interface EducationLevel extends BaseEntity{
+export interface ClassLevel extends BaseEntity{
 }
