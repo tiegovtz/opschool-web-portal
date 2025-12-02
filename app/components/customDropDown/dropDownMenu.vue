@@ -15,8 +15,8 @@ const isLoading = ref(true);
 const { data: educationLevels } = await useFetch(apiDocs.educationLevel.getEducationLevels, { headers });
 const { data: classes } = await useFetch(apiDocs.levels.getLevels, { headers });
 const { data: subjects } = await useFetch(apiDocs.subjects.getPublicSubjects, { headers });
-const { data: languages } = await useFetch(apiDocs.languages.getLanguages, { headers });
-const { data: skills } = await useFetch(apiDocs.skills.getSkills, { headers });
+// const { data: languages } = await useFetch(apiDocs.languages.getLanguages, { headers });
+// const { data: skills } = await useFetch(apiDocs.skills.getSkills, { headers });
 
 // Simulate a short delay for skeleton visibility
 setTimeout(() => {
@@ -140,7 +140,7 @@ const filterNameGroup = computed(() => {
     });
   }
 
-  if (Array.isArray(subjects?.value)) {
+  if (Array.isArray(subjects?.value) && props.activeTab!=='subject') {
     filters.push({
       name: 'subject',
       visibility: 'all',
@@ -157,37 +157,41 @@ const filterNameGroup = computed(() => {
     });
   }
   
-  if (Array.isArray(languages?.value)) {
-    filters.push({
-      name: 'language',
-      visibility: 'all',
-      inputType: 'radio',
-      filterGroup: languages.value.map((lang) => ({ name: lang.name }))
-    });
-  }
+  // if (Array.isArray(languages?.value)) {
+  //   filters.push({
+  //     name: 'language',
+  //     visibility: 'all',
+  //     inputType: 'radio',
+  //     filterGroup: languages.value.map((lang) => ({ name: lang.name }))
+  //   });
+  // }
 
-  if (Array.isArray(skills?.value)) {
-    filters.push({
-      name: 'skills',
-      visibility: 'all',
-      inputType: 'radio',
-      filterGroup: skills.value.map((skill) => ({ name: skill.name }))
-    });
-  }
+  // if (Array.isArray(skills?.value)) {
+  //   filters.push({
+  //     name: 'skills',
+  //     visibility: 'all',
+  //     inputType: 'radio',
+  //     filterGroup: skills.value.map((skill) => ({ name: skill.name }))
+  //   });
+  // }
   
   return filters;
 });
 
 const visibleFilters = computed(() => {
-  return filterNameGroup.value.filter(
-    (filter) => {
-      if (filter.name === 'class' || filter.name === 'subject') {
-        return selectedFilters.level && (filter.visibility === "all" || filter.visibility === props.activeTab);
-      }
-      return filter.visibility === "all" || filter.visibility === props.activeTab;
+  return filterNameGroup.value.filter((filter) => {
+    if (filter.name === 'subject') {
+      return props.activeTab !== 'subject';
     }
-  );
+
+    if (filter.name === 'class' ) {
+      return selectedFilters.level && (filter.visibility === "all" || filter.visibility === props.activeTab);
+    }
+
+    return filter.visibility === "all" || filter.visibility === props.activeTab;
+  });
 });
+
 
 // Check visible filters
 watch(() => props.activeTab, () => {
@@ -274,7 +278,7 @@ watch(() => selectedFilters.level, () => {
           </div>
 
           <!-- SUBJECT -->
-          <div v-else-if="filter.name === 'subject'">
+          <div v-else-if="filter.name === 'subject' && activeTab!=='subject'">
             <div v-if="!selectedFilters.level" class="text-sm text-red-500" role="alert">
               Please select a level first.
             </div>
@@ -293,7 +297,7 @@ watch(() => selectedFilters.level, () => {
           </div>
 
           <!-- GENERAL FILTER (Language, Skills, etc.) -->
-          <div v-else>
+          <!-- <div v-else>
             <fieldset>
               <legend class="sr-only">Filter by {{ filter.name }}</legend>
               <label v-for="option in filter.filterGroup" :key="option.name" class="flex items-center gap-2">
@@ -303,7 +307,7 @@ watch(() => selectedFilters.level, () => {
                 {{ option.name }}
               </label>
             </fieldset>
-          </div>
+          </div> -->
         </div>
       </transition>
     </div>
