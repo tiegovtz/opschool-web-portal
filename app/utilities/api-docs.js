@@ -1,6 +1,6 @@
-const baseURL = "https://opschool.tie.go.tz:5001/v1"; // Define baseURL first
+// const baseURL = "https://opschool.tie.go.tz:5001/v1"; // Define baseURL first
 
-// const baseURL = "https://apitie.ekima.africa/v1" // Define baseURL first
+const baseURL = "https://apitie.ekima.africa/v1" // Define baseURL first
 
 // const baseURL = "http://[::1]:5501/v1" // Define baseURL first
 
