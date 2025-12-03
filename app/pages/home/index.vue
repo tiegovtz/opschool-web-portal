@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import HeroSection from "~/components/home/HeroSection.vue";
 import TopicCard from "~/components/home/TopicCard.vue";
 import TabBar from "~/components/home/TabBar.vue";
@@ -23,6 +23,8 @@ import DropDownMenu from "~/components/customDropDown/dropDownMenu.vue";
 import SubjectCard from "~/components/home/SubjectCard.vue";
 import { layoutEffect } from "~/utilities/controlls";
 import { fetchAsyncData } from "~/composable/useAsyncFetch";
+import type { User } from "~/types/user.interface";
+import type { Subjects } from "~/types/subject.interface";
 
 // Define meta info about page
 useHead({
@@ -78,16 +80,16 @@ let tab = route.query?.tab;
 // Define Ref state
 const error = ref(); // Initial Error State
 const status = ref("pending"); // Initial Status State
-const data = ref([]); // Initial Topics State
+const data = ref<any>([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
 const hideFilter = ref(false); // Initial Hide Filters
 const activeTab = ref("home"); // Initial Active Tab State
 const filterValue = ref(); // Initial Filter Value State
 const subjectId = ref(); // Initial subjectId Value State
-const seeMoreDetails = ref(route.query?.subject?.toLowerCase() ?? null); // Initial See More
+const seeMoreDetails = ref<string|null>((route.query?.subject as string)?.toLowerCase() ?? null); // Initial See More
 
 // Define Filters Reactive State
-const filters = reactive({
+const filters = reactive<{ level: number | string | null; subject: string | null }>({
   level: null,
   subject: null,
 });
@@ -104,7 +106,7 @@ if (tab) {
 }
 
 // First, fix the sliceData function
-const sliceData = (start, end) => {
+const sliceData = (start:number, end:number) => {
   if (!data || !Array.isArray(data.value) || data.value.length === 0) {
     slicedData.value = [];
     return;
@@ -125,8 +127,8 @@ const currentPage = ref(1);
 const pageSize = ref();
 
 // Then, update fetchData to call sliceData after data is loaded
-const fetchData = async (params) => {
-  let url;
+const fetchData = async (params?:any) => {
+  let url:string;
   data.value = [];
   status.value = "pending";
   error.value = null;
@@ -160,7 +162,7 @@ const fetchData = async (params) => {
       url = apiDocs.topics.filterTopics;
       params = {
         ...params,
-        userId: userToken.value?._id,
+        userId: (userToken.value as unknown as User)?._id,
       };
     }
     else if(tab === "audio") {
@@ -210,7 +212,7 @@ const fetchData = async (params) => {
         );
         params = {
           ...params,
-          userId: userToken.value?._id,
+          userId: (userToken.value as unknown as User)?._id,
         };
       }
       else if (tab === "audio") {
@@ -275,11 +277,11 @@ const fetchData = async (params) => {
 fetchData();
 
 // shuffle Subject
-const shuffleSubject = (subjects) => {
+const shuffleSubject = (subjects:Subjects[]) => {
   return subjects
-    .map((subject) => ({ subject, sort: Math.random() })) // Assign a random sort key
-    .sort((a, b) => a.sort - b.sort) // Sort by random key
-    .map(({ subject }) => subject); // Extract shuffled choices
+    .map((subject:Subjects) => ({ subject, sort: Math.random() })) // Assign a random sort key
+    .sort((a:any, b:any) => a.sort - b.sort) // Sort by random key
+    .map(({ subject }: { subject: Subjects }) => subject); // Extract shuffled choices
 };
 
 //  assigning page size based on screen sizes
@@ -326,7 +328,7 @@ watch(
 );
 
 // once pages are more than 5, handle pagination
-const nextPage = (event) => {
+const nextPage = () => {
   currentPage.value++;
   currentPage.value =
     currentPage.value > totalPages.value ? totalPages.value : currentPage.value;
@@ -336,7 +338,7 @@ const nextPage = (event) => {
   );
 };
 
-const prevPage = (event) => {
+const prevPage = () => {
   currentPage.value--;
   currentPage.value = currentPage.value < 1 ? 1 : currentPage.value;
   sliceData(
@@ -351,8 +353,8 @@ const level = ref(); // Initial Level State
 watch(filters, (newFilters) => {
   if (newFilters.level !== null && newFilters.subject !== null) {
     fetchData({
-      level: filters.level.toString(),
-      subject: filters.subject.toString(),
+      level: newFilters.level?.toString(),
+      subject: newFilters.subject.toString(),
     });
   }
 });
@@ -431,7 +433,7 @@ watch(
 );
 
 // switch tabs 
-const switchTab = async (tab) => {
+const switchTab = async (tab:string) => {
   if (!tab) return;
 
   activeTab.value = tab;
@@ -520,7 +522,7 @@ const switchTab = async (tab) => {
       </div>
       <div class="flex items-center justify-center w-full gap-4 xl:items-start">
         <!-- container filter Desktop -->
-        <div
+        <div aria-label="Filters" role="group"
           class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
           <!-- Home Drop Down Menu -->
           <DropDownMenu
@@ -710,7 +712,7 @@ const switchTab = async (tab) => {
             <ClientOnly>
               <HomeCustomScrollView
                 :shuffle-subject="shuffleSubject"
-                :see-more-details="seeMoreDetails"
+                :see-more-details="seeMoreDetails?.toString()"
                 :data="data"
                 :active-tab="activeTab"
                 @emittedSubjectId="subjectId = $event"

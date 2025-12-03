@@ -33,7 +33,7 @@ const dropDown = () => {
       <!-- Header -->
       <div class="relative flex justify-center w-full h-24 pt-1">
         <div class="flex items-center justify-between w-full h-full wrapper-container">
-          <NuxtLink to="/" aria-label="Go to homepage"
+          <NuxtLink to="/" aria-label="Go to homepage,link with court of arm image " aria-describedby="tanzania-emblem-longdesc"
             class="flex items-center justify-center h-full cursor-pointer max-w-[64px]">
             <figure>
               <NuxtImg src="/logo/emblem.webp"
@@ -89,8 +89,8 @@ const dropDown = () => {
             <p class="hidden capitalize lg:flex">TIE Library</p>
           </a>
           <!-- TIE AI Teacher -->
-          <NuxtLink to="/tie-ai-teacher"
-            class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium"
+          <NuxtLink v-if="userToken" to="/tie-ai-teacher"
+            class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium rounded-md"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
               <Icon name="mdi:account" size="20" />
