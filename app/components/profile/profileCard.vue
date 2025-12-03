@@ -402,7 +402,7 @@ const discardChanges = () => {
           </div>
           <div class="stat-content">
             <span class="stat-label">Subject Opened</span>
-            <span class="stat-value">{{ profileData.openedSubjects > 0 ? profileData.openedSubjects : 5 }}</span>
+            <span class="stat-value">{{ profileData.openedSubjects ?? 0 }}</span>
           </div>
         </div>
 
