@@ -24,7 +24,7 @@ const emit = defineEmits(['emitChapterId'])
             <div class="">
                 <Icon aria-label="folder icon," name="mage:folder-2" class="cursor-pointer" size="1.5rem" />
             </div>
-            <div  class="line-clamp-2" :aria-label="`compitence heading ${chapter?.name}`" role="heading" >
+            <div  class="line-clamp-2 text-start" :aria-label="`compitence heading ${chapter?.name}`" role="heading" >
                 {{ chapter?.name }}
             </div>
         </button>
