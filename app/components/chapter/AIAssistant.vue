@@ -1,31 +1,35 @@
 <script setup>
-import { ref, watch, nextTick, onUnmounted, onMounted } from 'vue';
+import { ref, watch, nextTick, onUnmounted, onMounted } from "vue";
+import apiDocs from "~/utilities/api-docs";
 
 // Format message content for better display - enhanced markdown support
 const formatMessage = (content) => {
-  if (!content) return '';
+  if (!content) return "";
 
   // Escape HTML to prevent XSS
   const escapeHtml = (text) => {
     const map = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;'
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
     };
-    return text.replace(/[&<>"']/g, m => map[m]);
+    return text.replace(/[&<>"']/g, (m) => map[m]);
   };
 
   let formatted = content;
 
   // Step 1: Process code blocks first (before escaping) - triple backticks
   const codeBlocks = [];
-  formatted = formatted.replace(/```(\w+)?\n?([\s\S]*?)```/g, (match, lang, code) => {
-    const placeholder = `__CODEBLOCK_${codeBlocks.length}__`;
-    codeBlocks.push({ placeholder, code: code.trim() });
-    return placeholder;
-  });
+  formatted = formatted.replace(
+    /```(\w+)?\n?([\s\S]*?)```/g,
+    (match, lang, code) => {
+      const placeholder = `__CODEBLOCK_${codeBlocks.length}__`;
+      codeBlocks.push({ placeholder, code: code.trim() });
+      return placeholder;
+    }
+  );
 
   // Step 2: Process inline code - single backticks
   const inlineCodes = [];
@@ -41,25 +45,49 @@ const formatMessage = (content) => {
   // Step 4: Restore code blocks
   codeBlocks.forEach(({ placeholder, code }) => {
     const escapedCode = escapeHtml(code);
-    formatted = formatted.replace(placeholder, `<pre class="p-3 my-3 overflow-x-auto bg-gray-100 border border-gray-300 rounded-lg"><code class="font-mono text-sm whitespace-pre">${escapedCode}</code></pre>`);
+    formatted = formatted.replace(
+      placeholder,
+      `<pre class="p-3 my-3 overflow-x-auto bg-gray-100 border border-gray-300 rounded-lg"><code class="font-mono text-sm whitespace-pre">${escapedCode}</code></pre>`
+    );
   });
 
   // Step 5: Process links [text](url)
-  formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline break-words hover:text-blue-800">$1</a>');
+  formatted = formatted.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline break-words hover:text-blue-800">$1</a>'
+  );
 
   // Step 6: Process bold **text** or __text__
-  formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>');
-  formatted = formatted.replace(/__([^_]+)__/g, '<strong class="font-semibold">$1</strong>');
+  formatted = formatted.replace(
+    /\*\*([^*]+)\*\*/g,
+    '<strong class="font-semibold">$1</strong>'
+  );
+  formatted = formatted.replace(
+    /__([^_]+)__/g,
+    '<strong class="font-semibold">$1</strong>'
+  );
 
   // Step 7: Process italic *text* or _text_ (but not when part of **bold**)
-  formatted = formatted.replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em class="italic">$1</em>');
-  formatted = formatted.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em class="italic">$1</em>');
+  formatted = formatted.replace(
+    /(?<!\*)\*([^*\n]+?)\*(?!\*)/g,
+    '<em class="italic">$1</em>'
+  );
+  formatted = formatted.replace(
+    /(?<!_)_([^_\n]+?)_(?!_)/g,
+    '<em class="italic">$1</em>'
+  );
 
   // Step 8: Process strikethrough ~~text~~
-  formatted = formatted.replace(/~~([^~]+)~~/g, '<del class="line-through opacity-75">$1</del>');
+  formatted = formatted.replace(
+    /~~([^~]+)~~/g,
+    '<del class="line-through opacity-75">$1</del>'
+  );
 
   // Step 9: Process blockquotes > text
-  formatted = formatted.replace(/^&gt;\s+(.+)$/gm, '<blockquote class="pl-4 my-2 italic text-gray-700 border-l-4 border-gray-300">$1</blockquote>');
+  formatted = formatted.replace(
+    /^&gt;\s+(.+)$/gm,
+    '<blockquote class="pl-4 my-2 italic text-gray-700 border-l-4 border-gray-300">$1</blockquote>'
+  );
 
   // Step 10: Process headers on individual lines BEFORE paragraph splitting
   // Match headings that start with # at the beginning of a line (allowing whitespace)
@@ -81,90 +109,122 @@ const formatMessage = (content) => {
   // Use regex to split on double newlines, but preserve single newlines
   const paragraphs = formatted.split(/\n\n+/);
 
-  formatted = paragraphs.map(para => {
-    para = para.trim();
-    if (!para) return '';
+  formatted = paragraphs
+    .map((para) => {
+      para = para.trim();
+      if (!para) return "";
 
-    // Check if already a header (from previous step)
-    if (para.startsWith('<h1') || para.startsWith('<h2') || para.startsWith('<h3') || para.startsWith('<h4')) {
-      return para;
-    }
-
-    // Check if paragraph contains multiple headers (split them)
-    if (para.includes('</h1>') || para.includes('</h2>') || para.includes('</h3>') || para.includes('</h4>')) {
-      // Split by header tags and process each part
-      const parts = para.split(/(<\/h[1-4]>)/);
-      return parts.map(part => {
-        const trimmed = part.trim();
-        if (!trimmed) return '';
-        if (trimmed.startsWith('<h')) return trimmed;
-        // Check if this part itself is a header
-        if (/^####\s+(.+)$/.test(trimmed)) {
-          const headerText = trimmed.replace(/^####\s+/, '').trim();
-          return `<h4 class="pt-2 mt-3 mb-2 text-sm font-semibold">${headerText}</h4>`;
-        }
-        if (/^###\s+(.+)$/.test(trimmed)) {
-          const headerText = trimmed.replace(/^###\s+/, '').trim();
-          return `<h3 class="pt-2 mt-4 mb-3 text-base font-semibold border-t border-opacity-20">${headerText}</h3>`;
-        }
-        if (/^##\s+(.+)$/.test(trimmed)) {
-          const headerText = trimmed.replace(/^##\s+/, '').trim();
-          return `<h2 class="pt-3 mt-5 mb-3 text-lg font-bold border-t-2 border-opacity-30">${headerText}</h2>`;
-        }
-        if (/^#\s+(.+)$/.test(trimmed)) {
-          const headerText = trimmed.replace(/^#\s+/, '').trim();
-          return `<h1 class="pt-4 mt-6 mb-4 text-xl font-bold border-t-2 border-opacity-40">${headerText}</h1>`;
-        }
-        return `<p class="mb-2 leading-relaxed">${trimmed.replace(/\n/g, '<br>')}</p>`;
-      }).join('');
-    }
-
-    // Check for horizontal rule
-    if (/^[-*_]{3,}$/.test(para)) {
-      return '<hr class="my-4 border-gray-300" />';
-    }
-
-    // Check if paragraph is already a blockquote
-    if (para.startsWith('<blockquote')) {
-      return para;
-    }
-
-    // Check if paragraph is a list
-    const isBulletList = /^[-•*]\s/m.test(para);
-    const isNumberedList = /^\d+\.\s/m.test(para);
-    const isTaskList = /^[-*]\s\[([ xX])\]\s/m.test(para);
-
-    if (isTaskList) {
-      // Handle task lists
-      let taskItems = para.replace(/^[-*]\s\[([ xX])\]\s+(.+)$/gim, (match, checked, text) => {
-        const isChecked = checked.toLowerCase() === 'x';
-        return `<li class="flex items-start gap-2 mb-1"><input type="checkbox" ${isChecked ? 'checked' : ''} disabled class="mt-1" /><span>${text}</span></li>`;
-      });
-      return `<ul class="my-2 ml-2 space-y-1 list-none">${taskItems}</ul>`;
-    } else if (isBulletList || isNumberedList) {
-      // Handle bullet points (including * as bullet)
-      let listItems = para.replace(/^[-•*]\s+(.+)$/gim, '<li class="mb-1">$1</li>');
-      // Handle numbered lists
-      listItems = listItems.replace(/^\d+\.\s+(.+)$/gim, '<li class="mb-1">$1</li>');
-
-      if (listItems.includes('<li')) {
-        const listTag = isNumberedList ? 'ol' : 'ul';
-        const listClass = isNumberedList
-          ? 'list-decimal list-inside space-y-1 my-2 ml-4'
-          : 'list-disc list-inside space-y-1 my-2 ml-4';
-        return `<${listTag} class="${listClass}">${listItems}</${listTag}>`;
+      // Check if already a header (from previous step)
+      if (
+        para.startsWith("<h1") ||
+        para.startsWith("<h2") ||
+        para.startsWith("<h3") ||
+        para.startsWith("<h4")
+      ) {
+        return para;
       }
-    }
 
-    // Regular paragraph with line breaks
-    para = para.replace(/\n/g, '<br>');
-    return `<p class="mb-2 leading-relaxed">${para}</p>`;
-  }).filter(p => p).join('');
+      // Check if paragraph contains multiple headers (split them)
+      if (
+        para.includes("</h1>") ||
+        para.includes("</h2>") ||
+        para.includes("</h3>") ||
+        para.includes("</h4>")
+      ) {
+        // Split by header tags and process each part
+        const parts = para.split(/(<\/h[1-4]>)/);
+        return parts
+          .map((part) => {
+            const trimmed = part.trim();
+            if (!trimmed) return "";
+            if (trimmed.startsWith("<h")) return trimmed;
+            // Check if this part itself is a header
+            if (/^####\s+(.+)$/.test(trimmed)) {
+              const headerText = trimmed.replace(/^####\s+/, "").trim();
+              return `<h4 class="pt-2 mt-3 mb-2 text-sm font-semibold">${headerText}</h4>`;
+            }
+            if (/^###\s+(.+)$/.test(trimmed)) {
+              const headerText = trimmed.replace(/^###\s+/, "").trim();
+              return `<h3 class="pt-2 mt-4 mb-3 text-base font-semibold border-t border-opacity-20">${headerText}</h3>`;
+            }
+            if (/^##\s+(.+)$/.test(trimmed)) {
+              const headerText = trimmed.replace(/^##\s+/, "").trim();
+              return `<h2 class="pt-3 mt-5 mb-3 text-lg font-bold border-t-2 border-opacity-30">${headerText}</h2>`;
+            }
+            if (/^#\s+(.+)$/.test(trimmed)) {
+              const headerText = trimmed.replace(/^#\s+/, "").trim();
+              return `<h1 class="pt-4 mt-6 mb-4 text-xl font-bold border-t-2 border-opacity-40">${headerText}</h1>`;
+            }
+            return `<p class="mb-2 leading-relaxed">${trimmed.replace(
+              /\n/g,
+              "<br>"
+            )}</p>`;
+          })
+          .join("");
+      }
+
+      // Check for horizontal rule
+      if (/^[-*_]{3,}$/.test(para)) {
+        return '<hr class="my-4 border-gray-300" />';
+      }
+
+      // Check if paragraph is already a blockquote
+      if (para.startsWith("<blockquote")) {
+        return para;
+      }
+
+      // Check if paragraph is a list
+      const isBulletList = /^[-•*]\s/m.test(para);
+      const isNumberedList = /^\d+\.\s/m.test(para);
+      const isTaskList = /^[-*]\s\[([ xX])\]\s/m.test(para);
+
+      if (isTaskList) {
+        // Handle task lists
+        let taskItems = para.replace(
+          /^[-*]\s\[([ xX])\]\s+(.+)$/gim,
+          (match, checked, text) => {
+            const isChecked = checked.toLowerCase() === "x";
+            return `<li class="flex items-start gap-2 mb-1"><input type="checkbox" ${
+              isChecked ? "checked" : ""
+            } disabled class="mt-1" /><span>${text}</span></li>`;
+          }
+        );
+        return `<ul class="my-2 ml-2 space-y-1 list-none">${taskItems}</ul>`;
+      } else if (isBulletList || isNumberedList) {
+        // Handle bullet points (including * as bullet)
+        let listItems = para.replace(
+          /^[-•*]\s+(.+)$/gim,
+          '<li class="mb-1">$1</li>'
+        );
+        // Handle numbered lists
+        listItems = listItems.replace(
+          /^\d+\.\s+(.+)$/gim,
+          '<li class="mb-1">$1</li>'
+        );
+
+        if (listItems.includes("<li")) {
+          const listTag = isNumberedList ? "ol" : "ul";
+          const listClass = isNumberedList
+            ? "list-decimal list-inside space-y-1 my-2 ml-4"
+            : "list-disc list-inside space-y-1 my-2 ml-4";
+          return `<${listTag} class="${listClass}">${listItems}</${listTag}>`;
+        }
+      }
+
+      // Regular paragraph with line breaks
+      para = para.replace(/\n/g, "<br>");
+      return `<p class="mb-2 leading-relaxed">${para}</p>`;
+    })
+    .filter((p) => p)
+    .join("");
 
   // Step 11: Restore inline code
   inlineCodes.forEach(({ placeholder, code }) => {
     const escapedCode = escapeHtml(code);
-    formatted = formatted.replace(placeholder, `<code class="bg-opacity-20 px-1.5 py-0.5 rounded text-xs font-mono">${escapedCode}</code>`);
+    formatted = formatted.replace(
+      placeholder,
+      `<code class="bg-opacity-20 px-1.5 py-0.5 rounded text-xs font-mono">${escapedCode}</code>`
+    );
   });
 
   return formatted;
@@ -173,21 +233,22 @@ const formatMessage = (content) => {
 const props = defineProps({
   chapterId: {
     type: String,
-    required: true
+    required: true,
   },
   chapterName: {
     type: String,
-    default: 'this competence'
-  }
+    default: "this competence",
+  },
 });
 
 const isOpen = ref(false);
-const currentQuestion = ref('');
+const currentQuestion = ref("");
 const isLoading = ref(false);
 const messages = ref([]);
 const messagesContainer = ref(null);
 const previousChapterId = ref(null);
 const shouldAutoScroll = ref(true);
+const token = useCookie("signInAccessToken").value;
 
 // Provider tracking
 const currentProvider = ref(null);
@@ -201,15 +262,15 @@ const speechSynthesis = ref(null);
 const currentUtterance = ref(null);
 
 // Voice preference state (for audio file selection)
-const voiceGender = ref('female');
+const voiceGender = ref("female");
 const showSettings = ref(false);
 const currentAudio = ref(null);
 
 // Load voice preference from localStorage
 const loadVoicePreference = () => {
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem('tie-teacher-voice');
-    if (saved === 'male' || saved === 'female') {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("tie-teacher-voice");
+    if (saved === "male" || saved === "female") {
       voiceGender.value = saved;
     }
   }
@@ -218,8 +279,8 @@ const loadVoicePreference = () => {
 // Save voice preference to localStorage
 const saveVoicePreference = (gender) => {
   voiceGender.value = gender;
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('tie-teacher-voice', gender);
+  if (typeof window !== "undefined") {
+    localStorage.setItem("tie-teacher-voice", gender);
   }
 };
 
@@ -245,25 +306,29 @@ const toggleAssistant = () => {
 };
 
 // Reset conversation when chapter changes
-watch(() => props.chapterId, (newChapterId, oldChapterId) => {
-  if (oldChapterId && newChapterId !== oldChapterId) {
-    // Chapter changed - clear conversation history and stop any audio
-    stopReading();
-    messages.value = [];
-    previousChapterId.value = newChapterId;
-    isSummarizing.value = false;
-    isEnglishCrashCourse.value = false;
-    showSettings.value = false;
-  }
-}, { immediate: true });
+watch(
+  () => props.chapterId,
+  (newChapterId, oldChapterId) => {
+    if (oldChapterId && newChapterId !== oldChapterId) {
+      // Chapter changed - clear conversation history and stop any audio
+      stopReading();
+      messages.value = [];
+      previousChapterId.value = newChapterId;
+      isSummarizing.value = false;
+      isEnglishCrashCourse.value = false;
+      showSettings.value = false;
+    }
+  },
+  { immediate: true }
+);
 
 // Close settings dropdown when clicking outside
 onMounted(() => {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
   const handleClickOutside = (event) => {
     const target = event.target;
-    const settingsContainer = target.closest('.settings-container');
+    const settingsContainer = target.closest(".settings-container");
     const settingsButton = target.closest('[title="Voice Settings"]');
 
     if (showSettings.value && !settingsContainer && !settingsButton) {
@@ -275,49 +340,58 @@ onMounted(() => {
     if (isOpen) {
       // Use setTimeout to avoid immediate trigger
       setTimeout(() => {
-        document.addEventListener('click', handleClickOutside);
+        document.addEventListener("click", handleClickOutside);
       }, 0);
     } else {
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     }
   });
 });
 
-const askQuestion = async (actualQuestion = null, maskedMessage = null) => {
+const askQuestion = async (
+  actualQuestion = null,
+  maskedMessage = null,
+  options = {}
+) => {
+  const { useDocsAPI = false } = options;
+
+  // --- FIX: always convert objects to strings for AI-safe content ---
+  const safeContent = (value) => {
+    if (typeof value === "string") return value;
+    if (value === undefined || value === null) return "";
+    return JSON.stringify(value);
+  };
+
   // Use provided question or current input
   const question = actualQuestion || currentQuestion.value.trim();
-  
+
   if (!question || isLoading.value || !props.chapterId) {
     return;
   }
 
-  // Clear current input only if we're using it (not when actualQuestion is provided)
+  // Clear input only if user typed the message
   if (!actualQuestion) {
-    currentQuestion.value = '';
+    currentQuestion.value = "";
   }
 
-  // Add user message - show masked message if provided, otherwise show actual question
+  // Push user message into UI
   const userMessage = {
-    role: 'user',
+    role: "user",
     content: maskedMessage || question,
     timestamp: new Date().toLocaleTimeString(),
-    actualContent: question // Store actual content for API calls
+    actualContent: question, // always store original input
   };
   messages.value.push(userMessage);
-  
-  // Scroll immediately when user sends a message
   scrollToBottom(true);
 
   isLoading.value = true;
 
   try {
-    const token = useCookie('signInAccessToken').value;
-
     if (!token) {
       messages.value.push({
-        role: 'assistant',
-        content: 'Please sign in to use the AI assistant.',
-        timestamp: new Date().toLocaleTimeString()
+        role: "assistant",
+        content: "Please sign in to use the AI assistant.",
+        timestamp: new Date().toLocaleTimeString(),
       });
       isLoading.value = false;
       return;
@@ -325,67 +399,98 @@ const askQuestion = async (actualQuestion = null, maskedMessage = null) => {
 
     if (!props.chapterId) {
       messages.value.push({
-        role: 'assistant',
-        content: 'Chapter ID is missing. Please reload the page.',
-        timestamp: new Date().toLocaleTimeString()
+        role: "assistant",
+        content: "Chapter ID is missing. Please reload the page.",
+        timestamp: new Date().toLocaleTimeString(),
       });
       isLoading.value = false;
       return;
     }
 
-    console.log('[AI Subject Teacher] Sending request:', { question, chapterId: props.chapterId });
+    console.log("[AI Subject Teacher] Sending request:", {
+      question,
+      chapterId: props.chapterId,
+      useDocsAPI,
+    });
 
-    // Prepare conversation history (use actualContent if available, otherwise use content)
-    const conversationHistory = messages.value.map(msg => ({
+    // --- Build conversation history with safe values ---
+    const conversationHistory = messages.value.map((msg) => ({
       role: msg.role,
-      content: msg.actualContent || msg.content
+      content: safeContent(msg.actualContent || msg.content),
     }));
 
-    const response = await $fetch('/api/ai-assistant/ask', {
-      method: 'POST',
-      body: {
-        question: question,
-        chapterId: props.chapterId,
-        conversationHistory: conversationHistory
-      }
-      // $fetch automatically includes cookies, no need to set Authorization header
-    });
+    // -------------------------------
+    // SWITCH BETWEEN API & AI
+    // -------------------------------
+    let answer = "";
+    let provider = "";
+    let model = "";
 
-    // Log provider information in browser console
-    const provider = response.provider || 'Unknown';
-    const model = response.model || 'Unknown';
-    console.log(`[AI Subject Teacher] ✅ Response received from: ${provider} (Model: ${model})`);
-    console.log(`[AI Subject Teacher] 📊 Response stats:`, {
-      provider,
-      model,
-      finishReason: response.finishReason,
-      timestamp: response.timestamp
-    });
+    if (useDocsAPI) {
+      // --- 📘 SUMMARY from Docs API ---
+      const summaryData = await $fetch(
+        apiDocs.chapters.getChapterId.replace(":id", props.chapterId),
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    // Update current provider/model for display
+      console.log("[Docs API] Summary data:", summaryData);
+
+      answer =
+        safeContent(summaryData?.summary) ||
+        safeContent(summaryData?.description) ||
+        safeContent(summaryData?.content) ||
+        JSON.stringify(summaryData, null, 2);
+
+      provider = "Docs API";
+      model = "getChapterId";
+    } else {
+      // --- 🤖 STANDARD AI CHAT ---
+      const response = await $fetch("/api/ai-assistant/ask", {
+        method: "POST",
+        body: {
+          question,
+          chapterId: props.chapterId,
+          conversationHistory,
+        },
+      });
+
+      provider = response.provider || "Unknown";
+      model = response.model || "Unknown";
+      answer = safeContent(response.answer);
+
+      console.log(`[AI] Response received from ${provider} (${model})`);
+    }
+
+    // Store provider/model for UI
     currentProvider.value = provider;
     currentModel.value = model;
 
-    // Add AI response
+    // Push assistant response
     messages.value.push({
-      role: 'assistant',
-      content: response.answer,
+      role: "assistant",
+      content: safeContent(answer),
       timestamp: new Date().toLocaleTimeString(),
-      provider: provider, // Store provider for potential UI display
-      model: model // Store model for potential UI display
+      provider,
+      model,
     });
-
   } catch (error) {
-    console.error('[AI Subject Teacher] AI Assistant error:', error);
-    const errorMessage = error?.data?.message || error?.message || 'Sorry, I encountered an error. Please try again.';
+    console.error("[AI Subject Teacher] Error:", error);
+
     messages.value.push({
-      role: 'assistant',
-      content: errorMessage,
-      timestamp: new Date().toLocaleTimeString()
+      role: "assistant",
+      content:
+        error?.data?.message ||
+        error?.message ||
+        "Sorry, I encountered an error. Please try again.",
+      timestamp: new Date().toLocaleTimeString(),
     });
   } finally {
     isLoading.value = false;
-    // Scroll to bottom after message is added
     scrollToBottom(true);
   }
 };
@@ -393,16 +498,17 @@ const askQuestion = async (actualQuestion = null, maskedMessage = null) => {
 // Smooth scroll function
 const scrollToBottom = (smooth = true) => {
   if (!messagesContainer.value || !shouldAutoScroll.value) return;
-  
+
   nextTick(() => {
     if (messagesContainer.value) {
       if (smooth) {
         messagesContainer.value.scrollTo({
           top: messagesContainer.value.scrollHeight,
-          behavior: 'smooth'
+          behavior: "smooth",
         });
       } else {
-        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        messagesContainer.value.scrollTop =
+          messagesContainer.value.scrollHeight;
       }
     }
   });
@@ -412,8 +518,9 @@ const scrollToBottom = (smooth = true) => {
 const isNearBottom = () => {
   if (!messagesContainer.value) return true;
   const threshold = 100;
-  const distanceFromBottom = messagesContainer.value.scrollHeight - 
-    messagesContainer.value.scrollTop - 
+  const distanceFromBottom =
+    messagesContainer.value.scrollHeight -
+    messagesContainer.value.scrollTop -
     messagesContainer.value.clientHeight;
   return distanceFromBottom < threshold;
 };
@@ -424,9 +531,13 @@ const handleScroll = () => {
 };
 
 // Auto-scroll to bottom when new messages arrive
-watch(messages, () => {
-  scrollToBottom(true);
-}, { deep: true });
+watch(
+  messages,
+  () => {
+    scrollToBottom(true);
+  },
+  { deep: true }
+);
 
 // Auto-scroll when loading state changes
 watch(isLoading, (newVal) => {
@@ -437,15 +548,14 @@ watch(isLoading, (newVal) => {
 
 // Handle Summarize action
 const handleSummarize = async () => {
-  if (isLoading.value || isSummarizing.value || !props.chapterId) {
-    return;
-  }
+  if (isLoading.value || isSummarizing.value || !props.chapterId) return;
 
   isSummarizing.value = true;
-  const prompt = `Please provide a comprehensive summary of this chapter/competence: ${props.chapterName}. Include the main concepts, key points, and important information.`;
+
+  const prompt = `Please provide a comprehensive summary of this chapter/competence: ${props.chapterName}. Include main concepts, key points, and important information.`;
 
   try {
-    await askQuestion(prompt, 'Create a summary');
+    await askQuestion(prompt, "Create a summary", { useDocsAPI: true });
   } finally {
     isSummarizing.value = false;
   }
@@ -461,7 +571,7 @@ const handleEnglishCrashCourse = async () => {
   const prompt = `I'm a Tanzanian student who learned in Swahili. Please explain this chapter/competence "${props.chapterName}" in simple English, helping me understand the key concepts and terms. Use Tanzanian context, examples, and references that relate to Tanzania (like Tanzanian cities, culture, industries, or local examples). Use simple language and provide examples where helpful. use swahili to make more more emphasis on points.`;
 
   try {
-    await askQuestion(prompt, 'Help with English crash course');
+    await askQuestion(prompt, "Help with English crash course");
   } finally {
     isEnglishCrashCourse.value = false;
   }
@@ -475,9 +585,11 @@ const handleRead = async () => {
 
   // Placeholder message - text-to-speech feature coming soon
   messages.value.push({
-    role: 'assistant',
-    content: `Text-to-speech feature is coming soon! The audio playback functionality will be available once the audio files are added. You can still use the voice settings to select your preferred voice (${voiceGender.value === 'male' ? 'male' : 'female'}) for when the feature is ready.`,
-    timestamp: new Date().toLocaleTimeString()
+    role: "assistant",
+    content: `Text-to-speech feature is coming soon! The audio playback functionality will be available once the audio files are added. You can still use the voice settings to select your preferred voice (${
+      voiceGender.value === "male" ? "male" : "female"
+    }) for when the feature is ready.`,
+    timestamp: new Date().toLocaleTimeString(),
   });
 
   // Scroll to show the message
@@ -501,7 +613,7 @@ const stopReading = () => {
     isPlayingAudio.value = false;
   } catch (error) {
     // Silently handle any errors when stopping
-    console.log('Stopped reading');
+    console.log("Stopped reading");
     isPlayingAudio.value = false;
     currentAudio.value = null;
   }
@@ -517,58 +629,104 @@ onUnmounted(() => {
 
 <template>
   <!-- Floating AI Assistant Button -->
-  <button v-if="!isOpen" @click="toggleAssistant"
+  <button
+    v-if="!isOpen"
+    @click="toggleAssistant"
     class="fixed z-50 flex items-center gap-2 p-4 text-white transition-all duration-300 rounded-full shadow-lg bottom-6 right-6 bg-oceanBlue hover:bg-deepBlue"
-    title="Ask AI Subject Teacher">
-    <Icon name="mdi:robot" size="24" />
+    title="Ask AI Subject Teacher"
+  >
+    <Icon
+      name="mdi:robot"
+      size="24"
+    />
     <span class="hidden md:block">AI Subject Teacher</span>
   </button>
 
   <!-- AI Assistant Panel -->
-  <div v-if="isOpen"
+  <div
+    v-if="isOpen"
     class="fixed z-50 flex flex-col w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-2xl bottom-6 right-6"
-    style="height: 600px;">
+    style="height: 600px"
+  >
     <!-- Header -->
     <div
-      class="relative flex items-center justify-between p-4 text-white border-b rounded-t-lg bg-oceanBlue settings-container">
+      class="relative flex items-center justify-between p-4 text-white border-b rounded-t-lg bg-oceanBlue settings-container"
+    >
       <div>
         <h3 class="font-semibold">AI Subject Teacher</h3>
         <p class="text-xs opacity-90">{{ chapterName }}</p>
       </div>
       <div class="relative flex items-center gap-2">
         <!-- Settings Button -->
-        <button @click.stop="toggleSettings" class="p-1 rounded hover:bg-white/20" title="Voice Settings">
-          <Icon name="mdi:cog" size="20" />
+        <button
+          @click.stop="toggleSettings"
+          class="p-1 rounded hover:bg-white/20"
+          title="Voice Settings"
+        >
+          <Icon
+            name="mdi:cog"
+            size="20"
+          />
         </button>
         <!-- Settings Dropdown -->
-        <div v-if="showSettings"
+        <div
+          v-if="showSettings"
           class="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg p-4 z-50 min-w-[200px] settings-container"
-          @click.stop>
+          @click.stop
+        >
           <h4 class="mb-2 font-semibold text-gray-900">Voice Settings</h4>
-          <p class="mb-3 text-xs text-gray-500">Select voice for audio responses</p>
+          <p class="mb-3 text-xs text-gray-500">
+            Select voice for audio responses
+          </p>
           <div class="space-y-2">
             <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" value="female" :checked="voiceGender === 'female'"
-                @change="saveVoicePreference('female')" />
+              <input
+                type="radio"
+                value="female"
+                :checked="voiceGender === 'female'"
+                @change="saveVoicePreference('female')"
+              />
               <span class="text-gray-900">Female Voice</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
-              <input type="radio" value="male" :checked="voiceGender === 'male'"
-                @change="saveVoicePreference('male')" />
+              <input
+                type="radio"
+                value="male"
+                :checked="voiceGender === 'male'"
+                @change="saveVoicePreference('male')"
+              />
               <span class="text-gray-900">Male Voice</span>
             </label>
           </div>
         </div>
-        <button @click="toggleAssistant" class="p-1 rounded hover:bg-white/20">
-          <Icon name="mdi:close" size="20" />
+        <button
+          @click="toggleAssistant"
+          class="p-1 rounded hover:bg-white/20"
+        >
+          <Icon
+            name="mdi:close"
+            size="20"
+          />
         </button>
       </div>
     </div>
 
     <!-- Messages Container -->
-    <div :class="['flex-1 p-4 overflow-y-auto', messages.length === 0 ? 'flex items-center justify-center' : 'flex flex-col space-y-4']" ref="messagesContainer" @scroll="handleScroll">
+    <div
+      :class="[
+        'flex-1 p-4 overflow-y-auto',
+        messages.length === 0
+          ? 'flex items-center justify-center'
+          : 'flex flex-col space-y-4',
+      ]"
+      ref="messagesContainer"
+      @scroll="handleScroll"
+    >
       <ClientOnly>
-        <div v-if="messages.length === 0" class="text-center text-gray-500">
+        <div
+          v-if="messages.length === 0"
+          class="text-center text-gray-500"
+        >
           <!-- Female Voice Avatar -->
           <!-- <div class="flex items-center justify-center gap-6 mb-4">
             <button @click="saveVoicePreference('female')"
@@ -586,44 +744,80 @@ onUnmounted(() => {
             </button>
           </div> -->
           <p>Hello! I'm your <strong>AI Subject Teacher</strong>.</p>
-          <p class="mt-2 text-sm">I'm here to help you understand <strong>{{ chapterName }}</strong>.</p>
-          <p class="mt-1 text-xs opacity-75">Feel free to ask me any questions
-            about this competence!</p>
+          <p class="mt-2 text-sm">
+            I'm here to help you understand <strong>{{ chapterName }}</strong
+            >.
+          </p>
+          <p class="mt-1 text-xs opacity-75">
+            Feel free to ask me any questions about this competence!
+          </p>
         </div>
         <template #fallback>
-          <div v-if="messages.length === 0" class="text-center text-gray-500">
+          <div
+            v-if="messages.length === 0"
+            class="text-center text-gray-500"
+          >
             <p>Hello! I'm your <strong>AI Subject Teacher</strong>.</p>
-            <p class="mt-2 text-sm">I'm here to help you understand <strong>{{ chapterName }}</strong>.</p>
-            <p class="mt-1 text-xs opacity-75">Feel free to ask me any questions about this competence!</p>
+            <p class="mt-2 text-sm">
+              I'm here to help you understand <strong>{{ chapterName }}</strong
+              >.
+            </p>
+            <p class="mt-1 text-xs opacity-75">
+              Feel free to ask me any questions about this competence!
+            </p>
           </div>
         </template>
       </ClientOnly>
 
-      <div v-for="(message, index) in messages" :key="index" :class="[
-        'flex',
-        message.role === 'user' ? 'justify-end' : 'justify-start'
-      ]">
-        <div :class="[
-          'max-w-[85%] rounded-xl p-4 shadow-md',
-          message.role === 'user'
-            ? 'bg-gradient-to-br from-oceanBlue to-deepBlue text-white'
-            : 'bg-gradient-to-br from-blue-50 to-gray-50 text-gray-900 border border-gray-200'
-        ]">
-          <div class="text-sm leading-relaxed" :class="message.role === 'user' ? 'text-white' : 'text-gray-800'"
-            v-html="formatMessage(message.content)"></div>
-          <p class="mt-3 text-xs font-medium opacity-60"
-            :class="message.role === 'user' ? 'text-blue-100' : 'text-gray-500'">
+      <div
+        v-for="(message, index) in messages"
+        :key="index"
+        :class="[
+          'flex',
+          message.role === 'user' ? 'justify-end' : 'justify-start',
+        ]"
+      >
+        <div
+          :class="[
+            'max-w-[85%] rounded-xl p-4 shadow-md',
+            message.role === 'user'
+              ? 'bg-gradient-to-br from-oceanBlue to-deepBlue text-white'
+              : 'bg-gradient-to-br from-blue-50 to-gray-50 text-gray-900 border border-gray-200',
+          ]"
+        >
+          <div
+            class="text-sm leading-relaxed"
+            :class="message.role === 'user' ? 'text-white' : 'text-gray-800'"
+            v-html="formatMessage(message.content)"
+          ></div>
+          <p
+            class="mt-3 text-xs font-medium opacity-60"
+            :class="message.role === 'user' ? 'text-blue-100' : 'text-gray-500'"
+          >
             {{ message.timestamp }}
           </p>
         </div>
       </div>
 
-      <div v-if="isLoading" class="flex justify-start">
-        <div class="p-4 border border-gray-200 shadow-sm bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl">
+      <div
+        v-if="isLoading"
+        class="flex justify-start"
+      >
+        <div
+          class="p-4 border border-gray-200 shadow-sm bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl"
+        >
           <div class="flex gap-1.5">
-            <span class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"></span>
-            <span class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-            <span class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+            <span
+              class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"
+            ></span>
+            <span
+              class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"
+              style="animation-delay: 0.2s"
+            ></span>
+            <span
+              class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"
+              style="animation-delay: 0.4s"
+            ></span>
           </div>
         </div>
       </div>
@@ -631,13 +825,26 @@ onUnmounted(() => {
 
     <!-- Input Area -->
     <div class="p-4 border-t border-gray-200">
-      <form @submit.prevent="askQuestion" class="flex gap-2">
-        <input v-model="currentQuestion" type="text" placeholder="Ask about this competence..."
+      <form
+        @submit.prevent="askQuestion"
+        class="flex gap-2"
+      >
+        <input
+          v-model="currentQuestion"
+          type="text"
+          placeholder="Ask about this competence..."
           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue"
-          :disabled="isLoading || !chapterId" />
-        <button type="submit" :disabled="!currentQuestion.trim() || isLoading || !chapterId"
-          class="px-4 py-2 text-white transition-colors rounded-lg bg-oceanBlue hover:bg-deepBlue disabled:opacity-50 disabled:cursor-not-allowed">
-          <Icon name="mdi:send" size="20" />
+          :disabled="isLoading || !chapterId"
+        />
+        <button
+          type="submit"
+          :disabled="!currentQuestion.trim() || isLoading || !chapterId"
+          class="px-4 py-2 text-white transition-colors rounded-lg bg-oceanBlue hover:bg-deepBlue disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Icon
+            name="mdi:send"
+            size="20"
+          />
         </button>
       </form>
     </div>
@@ -645,20 +852,40 @@ onUnmounted(() => {
     <!-- Quick Action Buttons -->
     <div class="px-4 pt-2 pb-4 border-t border-gray-200">
       <div class="flex flex-wrap gap-2">
-        <button @click="handleSummarize" :disabled="isLoading || isSummarizing || !chapterId"
-          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-oceanBlue to-deepBlue text-white rounded-lg hover:from-deepBlue hover:to-oceanBlue disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
-          <Icon name="mdi:file-document-outline" size="18" />
-          <span>{{ isSummarizing ? 'Summarizing...' : 'Summarize' }}</span>
+        <button
+          @click="handleSummarize"
+          :disabled="isLoading || isSummarizing || !chapterId"
+          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-oceanBlue to-deepBlue text-white rounded-lg hover:from-deepBlue hover:to-oceanBlue disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+        >
+          <Icon
+            name="mdi:file-document-outline"
+            size="18"
+          />
+          <span>{{ isSummarizing ? "Summarizing..." : "Summarize" }}</span>
         </button>
-        <button @click="handleEnglishCrashCourse" :disabled="isLoading || isEnglishCrashCourse || !chapterId"
-          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
-          <Icon name="mdi:translate" size="18" />
-          <span>{{ isEnglishCrashCourse ? 'Loading...' : 'English Crash Course' }}</span>
+        <button
+          @click="handleEnglishCrashCourse"
+          :disabled="isLoading || isEnglishCrashCourse || !chapterId"
+          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+        >
+          <Icon
+            name="mdi:translate"
+            size="18"
+          />
+          <span>{{
+            isEnglishCrashCourse ? "Loading..." : "English Crash Course"
+          }}</span>
         </button>
-        <button @click="isPlayingAudio ? stopReading() : handleRead()" :disabled="isLoading || !chapterId"
-          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
-          <Icon :name="isPlayingAudio ? 'mdi:pause' : 'mdi:volume-high'" size="18" />
-          <span>{{ isPlayingAudio ? 'Stop Reading' : 'Read' }}</span>
+        <button
+          @click="isPlayingAudio ? stopReading() : handleRead()"
+          :disabled="isLoading || !chapterId"
+          class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
+        >
+          <Icon
+            :name="isPlayingAudio ? 'mdi:pause' : 'mdi:volume-high'"
+            size="18"
+          />
+          <span>{{ isPlayingAudio ? "Stop Reading" : "Read" }}</span>
         </button>
       </div>
     </div>
@@ -699,7 +926,7 @@ code {
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   font-size: 0.875rem;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   display: inline-block;
 }
 
