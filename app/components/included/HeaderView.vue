@@ -1,14 +1,12 @@
 <script setup>
 import apiDocs from "~/utilities/api-docs";
 import { layoutEffect } from "~/utilities/controlls";
-import useNotification from '~/composables/useNotification'
 import messages from '~/utilities/messages'
 
 const userToken = useCookie("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
 const refreshToken = useCookie("signInRefreshToken");
 
-const { setNotification } = useNotification()
 
 const logout = () => {
   // Clear All Cookies
@@ -16,12 +14,7 @@ const logout = () => {
   accessToken.value = null;
   refreshToken.value = null;
 
-  // Show accessible logout message
-  try {
-    setNotification(messages.success.auth.loggedOut, 'success', { position: true, duration: 5000 })
-  } catch (e) {
-    // ignore if notification system unavailable
-  }
+  // Redirect to Home
 
   const router = useRouter();
   layoutEffect.value = "grid";
