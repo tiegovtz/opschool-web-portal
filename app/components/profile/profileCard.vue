@@ -1,7 +1,7 @@
 <script setup>
 import messages from "~/utilities/messages";
 import { MessageComponent, ProfileDrawInitialLater } from "#components";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 
 // Define Cookie
 const signInAccessToken = useCookie("signInAccessToken");

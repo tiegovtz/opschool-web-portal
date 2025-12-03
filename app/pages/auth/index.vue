@@ -2,8 +2,7 @@
 import messages from "~/utilities/messages";
 import { auth } from "~/utilities/validationInput";
 import { sanitize } from "~/utilities/sanitizeInput";
-import axios from "axios";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import { dataEncrypt, dataDecrypt } from "~/utilities/encryption";
 
 // // Use the State

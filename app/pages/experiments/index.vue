@@ -10,7 +10,7 @@ import {
   isGreaterToSM,
   screenWidth,
 } from "@/utilities/controlls";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { fetchAsyncData } from "~/composable/useAsyncFetch";

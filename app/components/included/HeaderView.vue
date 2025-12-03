@@ -1,5 +1,5 @@
 <script setup>
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import { layoutEffect } from "~/utilities/controlls";
 
 const userToken = useCookie("signInUserToken");

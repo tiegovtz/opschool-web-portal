@@ -6,7 +6,7 @@ import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import { ref, computed, onMounted, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import InputsSelection from '@/components/home/InputsSelection.vue'
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { fetchAsyncData } from "~/composable/useAsyncFetch";

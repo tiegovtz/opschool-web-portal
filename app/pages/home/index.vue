@@ -12,7 +12,7 @@ import {
   screenWidth,
 } from "@/utilities/controlls";
 import InputsSelection from "~/components/home/InputsSelection.vue";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import {
   filterKeyDataFromArrayOfJson,
   removeDataFromArrayOfJson,
@@ -25,6 +25,13 @@ import { layoutEffect } from "~/utilities/controlls";
 import { fetchAsyncData } from "~/composable/useAsyncFetch";
 import type { User } from "~/types/user.interface";
 import type { Subjects } from "~/types/subject.interface";
+import type { tabs } from "~/types/types.data";
+import { number } from "zod";
+import type { GroupedData } from "~/types/grouped.data";
+import type { Experiment } from "~/types/experiment.interface";
+import type { Videos } from "~/types/video.iunterface";
+import type { Audios } from "~/types/audio.interface";
+import type { Topic } from "~/types/topic.interface";
 
 // Define meta info about page
 useHead({
@@ -74,16 +81,18 @@ useHead({
 // Define Cookie
 const userToken = useCookie("signInUserToken");
 const route = useRoute();
-const router = useRouter();
-let tab = route.query?.tab;
+let tab = route.query?.tab as tabs;
+// current page data
+const currentPage = ref<number>(1);
+const pageSize = ref<number>(12);
 
 // Define Ref state
 const error = ref(); // Initial Error State
-const status = ref("pending"); // Initial Status State
-const data = ref<any>([]); // Initial Topics State
+const status = ref<string|null>("pending"); // Initial Status State
+const data = ref<any[] | GroupedData<Subjects>[] | GroupedData<Experiment>[] | GroupedData<Videos>[] | GroupedData<Audios>[] |GroupedData<Topic>[] >(); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
 const hideFilter = ref(false); // Initial Hide Filters
-const activeTab = ref("home"); // Initial Active Tab State
+const activeTab = ref<tabs>("subjects"); // Initial Active Tab State
 const filterValue = ref(); // Initial Filter Value State
 const subjectId = ref(); // Initial subjectId Value State
 const seeMoreDetails = ref<string|null>((route.query?.subject as string)?.toLowerCase() ?? null); // Initial See More
@@ -99,10 +108,10 @@ const { progress, isLoading } = useLoadingIndicator();
 
 // Checking Tab if is corresponde to route
 if (tab) {
-  tab == "experiments" ? (activeTab.value = "Experiments") : "";
-  tab == "video" ? (activeTab.value = "Video") : "";
-  tab == "audio" ? (activeTab.value = "Audio") : "";
-  tab == "interactive" ? (activeTab.value = "Interactive Books") : "";
+  tab == "learn-activities" ? (activeTab.value = "learn-activities") : "";
+  tab == "video" ? (activeTab.value = "video") : "";
+  tab == "audio" ? (activeTab.value = "audio") : "";
+  tab == "interactive-contents" ? (activeTab.value = "interactive-contents") : "";
 }
 
 // First, fix the sliceData function
@@ -122,9 +131,7 @@ const sliceData = (start:number, end:number) => {
   slicedData.value = data.value?.slice(start, end);
 };
 
-// current page data
-const currentPage = ref(1);
-const pageSize = ref();
+
 
 // Then, update fetchData to call sliceData after data is loaded
 const fetchData = async (params?:any) => {
@@ -132,11 +139,11 @@ const fetchData = async (params?:any) => {
   data.value = [];
   status.value = "pending";
   error.value = null;
-  const tab = activeTab.value.toLowerCase();
+  const tab = activeTab.value;
 
   if (userToken.value) {
     // Check for specific tabs
-    if (tab === "experiments") {
+    if (tab === "learn-activities") {
       url = apiDocs.experiments.getPublicExperiments;
       params = {
         ...params,
@@ -147,18 +154,18 @@ const fetchData = async (params?:any) => {
         ...params,
         videoType: "Conceptual",
       };
-    } else if (tab === "othervideo") {
+    } else if (tab === "class-videos") {
       url = apiDocs.videos.getPublicVideo;
       params = {
         ...params,
         videoType: "others",
       };
-    } else if (tab === "home") {
+    } else if (tab === "subjects") {
       url = apiDocs.subjects.getPublicSubjects;
       params = {
         ...params,
       };
-    } else if (tab === "interactive books") {
+    } else if (tab === "interactive-contents") {
       url = apiDocs.topics.filterTopics;
       params = {
         ...params,
@@ -176,7 +183,7 @@ const fetchData = async (params?:any) => {
 
     // Subject-specific tab overrides
     if (subjectId.value) {
-      if (tab === "experiments") {
+      if (tab === "learn-activities") {
         url = apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
           "{subjectId}",
           subjectId.value
@@ -195,7 +202,7 @@ const fetchData = async (params?:any) => {
           ...params,
           videoType: "Conceptual",
         };
-      } else if (tab === "othervideo") {
+      } else if (tab === "class-videos") {
         url = apiDocs.videos.getPublicVideoBySubjectId.replace(
           "{subjectId}",
           subjectId.value
@@ -205,7 +212,7 @@ const fetchData = async (params?:any) => {
           ...params,
           videoType: "Others",
         };
-      } else if (tab === "interactive books") {
+      } else if (tab === "interactive-contents") {
         url = apiDocs.topics.getSubjectId.replace(
           "{subjectId}",
           subjectId.value
@@ -248,7 +255,7 @@ const fetchData = async (params?:any) => {
     // Call State Define above
     if (subjectId.value) {
       data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
-    } else if (!subjectId.value && tab !== "home") {
+    } else if (!subjectId.value && tab !== "subjects") {
       data.value = filterKeyDataFromArrayOfJson(response.value, "subject.name", [
         "physics",
         "chemistry",
@@ -371,18 +378,18 @@ watch(
   (activeTab) => {
     if (activeTab) {
       seeMoreDetails.value = null;
-      if (activeTab.toLowerCase() === "home") {
+      if (activeTab === "subjects") {
         subjectId.value = "";
         fetchData();
-      } else if (activeTab.toLowerCase() === "interactive books") {
+      } else if (activeTab === "interactive-contents") {
         fetchData();
-      } else if (activeTab.toLowerCase() === "experiments") {
+      } else if (activeTab === "learn-activities") {
         fetchData();
-      } else if (activeTab.toLowerCase() === "video") {
+      } else if (activeTab === "video") {
         fetchData();
-      } else if (activeTab.toLowerCase() === "othervideo") {
+      } else if (activeTab === "class-videos") {
         fetchData();
-      } else if (activeTab.toLowerCase() === "audio") {
+      } else if (activeTab === "audio") {
         fetchData();
       }
       else{
@@ -397,7 +404,7 @@ watch(
   () => userToken.value,
   (userToken) => {
     if (userToken == null || userToken == undefined) {
-      activeTab.value = "home";
+      activeTab.value = "subjects";
       layoutEffect.value = "grid";
       fetchData();
     }
@@ -427,13 +434,13 @@ watch(
   () => subjectId.value,
   (valueId) => {
     if (valueId) {
-      activeTab.value = "Interactive Books";
+      activeTab.value = "interactive-contents";
     }
   }
 );
 
 // switch tabs 
-const switchTab = async (tab:string) => {
+const switchTab = async (tab:tabs) => {
   if (!tab) return;
 
   activeTab.value = tab;
@@ -565,9 +572,9 @@ const switchTab = async (tab:string) => {
 
           <!-- Status Success -->
           <div id="content-container-after-login" aria-label="content list" role="region" tabindex="0"
-            v-else-if="status == 'success' && subjectId && data.length > 0">
+            v-else-if="status == 'success' && subjectId && data && data.length > 0">
             <ClientOnly>
-              <customGridOne v-if="activeTab.toLowerCase() === 'home'">
+              <customGridOne v-if="activeTab === 'subjects'">
                 <template #data>
                   <!-- Subject Cards are in Grid -->
                   <SubjectCard
@@ -586,7 +593,7 @@ const switchTab = async (tab:string) => {
               </customGridOne>
 
               <customGridOne
-                v-else-if="activeTab.toLowerCase() === 'interactive books'">
+                v-else-if="activeTab === 'interactive-contents'">
                 <template #data>
                   <!-- Topic Cards are in Grid -->
                   <TopicCard
@@ -605,7 +612,7 @@ const switchTab = async (tab:string) => {
               </customGridOne>
 
               <customGridOne
-                v-else-if="activeTab.toLowerCase() === 'experiments'">
+                v-else-if="activeTab === 'learn-activities'">
                 <template #data>
                   <!-- Experiment Cards are in Grid -->
                   <ExperimentsCard
@@ -626,8 +633,8 @@ const switchTab = async (tab:string) => {
 
               <customGridOne
                 v-else-if="
-                  activeTab.toLowerCase() === 'video' ||
-                  activeTab.toLowerCase() === 'othervideo'
+                  activeTab === 'video' ||
+                  activeTab === 'class-videos'
                 ">
                 <template #data>
                   <!-- Video Cards are in Grid -->
@@ -645,7 +652,7 @@ const switchTab = async (tab:string) => {
                   />
                 </template>
               </customGridOne>
-              <div v-else-if="activeTab.toLowerCase() === 'audio'">
+              <div v-else-if="activeTab === 'audio'">
                 <MessageTopicNotFound
                   message="This page will be updated soon"/>
               </div>
@@ -708,7 +715,7 @@ const switchTab = async (tab:string) => {
 
           <!-- data sorted if no subject -->
           <div
-            v-else-if="status == 'success' && !subjectId && data.length > 0">
+            v-else-if="status == 'success' && !subjectId && data && data.length > 0">
             <ClientOnly>
               <HomeCustomScrollView
                 :shuffle-subject="shuffleSubject"
@@ -754,7 +761,7 @@ const switchTab = async (tab:string) => {
       <!-- Status Success -->
       <div v-else-if="status == 'success'" class="">
         <!-- client only -->
-        <ClientOnly v-if="data.length > 0">
+        <ClientOnly v-if="data && data.length > 0">
           <div class="flex flex-col w-full">
             <customGridTwo
               v-if="filters.level !== null && filters.subject !== null">

@@ -4,7 +4,7 @@ import { sanitize } from "~/utilities/sanitizeInput";
 import { auth } from "~/utilities/validationInput";
 import axios from 'axios'
 import { generateRandomID } from "~/utilities/generateRandomNumber";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import { CustomDropDownList } from "#components";
 
 // input tabs control

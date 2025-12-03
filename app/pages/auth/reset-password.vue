@@ -1,6 +1,6 @@
 <script setup>
 import messages from "~/utilities/messages";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 
 
 const route = useRoute();
