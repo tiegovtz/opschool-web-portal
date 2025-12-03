@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
@@ -14,6 +14,8 @@ import apiDocs from "~/utilities/apiDocs";
 import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { fetchAsyncData } from "~/composable/useAsyncFetch";
+import type { tabs } from "~/types/types.data";
+import InputsSelection from "~/components/home/InputsSelection.vue";
 
 const route = useRoute();
 // const router = useRouter();
@@ -82,11 +84,11 @@ const experiments = ref(); // Initial experiments State
 const slicedData = ref(); // Initial slice data to 9
 
 // Define Cookie
-const auth_token = useCookie("signInAccessToken").value;
+const activeTab = ref<tabs>()
 const userToken = useCookie("signInUserToken");
 
 // First, fix the sliceData function
-const sliceData = (start, end) => {
+const sliceData = (start:number, end:number) => {
   if (
     !experiments.value ||
     !Array.isArray(experiments.value) ||
@@ -107,15 +109,16 @@ const sliceData = (start, end) => {
 };
 
 // Define current page and Page size variable
-const currentPage = ref(1);
-const pageSize = ref();
+const currentPage = ref<number>(1);
+const pageSize = ref<number>(12);
 
 // Fetch Experiments From Server
-const fetchExperiments = async () => {
+const fetchExperiments = async (param?:any) => {
   try {
     status.value = "pending";
     const {data:response,status:fetchStatus} = await fetchAsyncData(`experiments`,()=>$fetch(apiDocs.experiments.getPublicExperiments, {
       method: "GET",
+      params:{...param}
     }));
 
     // Call State Define above
@@ -128,9 +131,9 @@ const fetchExperiments = async () => {
       (currentPage.value - 1) * pageSize.value,
       currentPage.value * pageSize.value
     );
-  } catch (error) {
+  } catch (error:any) {
     status.value = "error";
-    error.value = error;
+    error.value = error as any;
     console.log(error);
   }
 };
@@ -201,14 +204,41 @@ const prevPage = () => {
   );
 };
 
-// loadoing indicator
+// loadoing indicatfetchTopicsor
 const { progress, isLoading } = useLoadingIndicator();
+// Define Filters Reactive State
+const filters = reactive<{
+  level: string | number | null;
+  subject: string | number | null;
+}>({
+  level: null,
+  subject: null,
+});
+
+const level = ref()  // Initial Level State
+// watch emits changes
+watch(filters, (filters) => {
+  const payload: any = {};
+
+  if (filters.level) {
+    payload.level = filters.level.toString();
+  }
+
+  if (filters.subject) {
+    payload.subject = filters.subject.toString();
+  }
+
+  if (Object.keys(payload).length === 0) return;
+
+  fetchExperiments(payload);
+});
+
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
     <section :class="[' ', { ' animate-pulse': isLoading }]" 
-    aria-busy="isLoading ? 'true' : 'false'">
+    :aria-busy="isLoading ? 'true' : 'false'">
       <!-- User Token Available -->
       <section
         v-if="userToken"
@@ -223,6 +253,8 @@ const { progress, isLoading } = useLoadingIndicator();
       <!-- User Token Not Available -->
       <section v-else>
         <HeroSection />
+        <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+          @emit-subject="filters.subject = $event" />
         <nav aria-label="Content categories">
           <TabBar />
         </nav>
@@ -258,7 +290,7 @@ const { progress, isLoading } = useLoadingIndicator();
 
             <!-- Scroll View -->
             <section aria-label="Experiments list">
-              <HomeCustomScrollView :data="experiments" active-tab="experiments" />
+              <HomeCustomScrollView :data="experiments" active-tab="interactive-contents" />
             </section>
           
           

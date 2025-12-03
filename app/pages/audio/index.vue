@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
@@ -9,6 +9,7 @@ import InputsSelection from '@/components/home/InputsSelection.vue'
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { HomeCustomScrollView } from "#components";
 import { fetchAsyncData } from '~/composable/useAsyncFetch';
+import type { tabs } from '~/types/types.data';
 
 useHead({
   title: "TIE - Audio Resource",
@@ -48,7 +49,7 @@ const auth_token = useCookie('signInAccessToken').value;
 const userToken = useCookie("signInUserToken");
 
 // First, fix the sliceData function
-const sliceData = (start, end) => {
+const sliceData = (start: number, end: number) => {
 
   if (!audios.value || !Array.isArray(audios.value) || audios.value.length === 0) {
     slicedData.value = [];
@@ -66,30 +67,30 @@ const sliceData = (start, end) => {
 };
 
 // Define current page and Page size variable
-const currentPage = ref(1);
-const pageSize = ref();
-
+const currentPage = ref<number>(1);
+const pageSize = ref<number>(12);
+const activeTab = ref<tabs>()
 // Fetch audios From Server
-const fetchAudios = async (param) => {
+const fetchAudios = async (param?: any) => {
 
   // if(!param){
   //   param = {
   //     audioType:audioType?audioType: 'Conceptual'
   //   }
   // }
-  
+
   try {
     status.value = 'pending';
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`audios-${param?.toString()}`,()=>$fetch(apiDocs.audio.getPublicAudio, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`audios-${param?.toString()}`, () => $fetch(apiDocs.audio.getPublicAudio, {
       method: 'GET',
       params: {
-       ...param
+        ...param
       },
     }));
 
     // Call State Define above
     audios.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
-    audios.value = filterKeyDataFromArrayOfJson( audios.value,"subject.name",['physics','chemistry','mathematics','biology','geography'])
+    audios.value = filterKeyDataFromArrayOfJson(audios.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
     status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
@@ -98,7 +99,7 @@ const fetchAudios = async (param) => {
       currentPage.value * pageSize.value
     );
 
-  } catch (error) {
+  } catch (error: any) {
     status.value = 'error';
     error.value = error;
     console.log(error);
@@ -167,12 +168,40 @@ const prevPage = () => {
 
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator()
-watch (()=>route.query?.type,()=>{
-  
+watch(() => route.query?.type, () => {
+  useCookie("signInAccessToken").value;
   // fetchAudios({
   //   AudioType: route.query?.type == 'conc'? 'Conceptual' : 'others'
   // })
 })
+
+// Define Filters Reactive State
+const filters = reactive<{
+  level: string | number | null;
+  subject: string | number | null;
+}>({
+  level: null,
+  subject: null,
+});
+
+const level = ref()  // Initial Level State
+// watch emits changes
+watch(filters, (filters) => {
+  const payload: any = {};
+
+  if (filters.level) {
+    payload.level = filters.level.toString();
+  }
+
+  if (filters.subject) {
+    payload.subject = filters.subject.toString();
+  }
+
+  if (Object.keys(payload).length === 0) return;
+
+  fetchAudios(payload);
+});
+
 </script>
 
 <template>
@@ -199,22 +228,20 @@ watch (()=>route.query?.type,()=>{
       <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />
       </div>
-     <!-- Status Error -->
-          <div
-            v-else-if="status === 'error'"
-            class="md:min-h-[342px] flex flex-col justify-center items-center">
-            <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
-            <p class="text-center">
-              Oops! Something went wrong.<br />
-              Try refreshing the page or check your internet connection.
-            </p>
-          </div>
+      <!-- Status Error -->
+      <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center">
+        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+        <p class="text-center">
+          Oops! Something went wrong.<br />
+          Try refreshing the page or check your internet connection.
+        </p>
+      </div>
       <!-- Status Success -->
       <div v-else-if="status == 'success'">
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
           <div class="flex flex-col w-full">
-            <HomeCustomScrollView :data="audios" active-tab="Audio" />
+            <HomeCustomScrollView :data="audios" active-tab="audio" />
 
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" class="flex justify-center my-10">
