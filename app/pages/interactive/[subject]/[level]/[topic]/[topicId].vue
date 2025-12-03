@@ -7,7 +7,7 @@ import { currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import AIAssistant from "~/components/chapter/AIAssistant.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import { updateChapterProgress } from "~/utilities/progress";
 import { fetchAsyncData } from "~/composable/useAsyncFetch";
 import { enhanceAccessibility } from "~/utilities/parsers/html.readable";

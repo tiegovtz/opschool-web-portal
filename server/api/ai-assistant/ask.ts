@@ -1,4 +1,4 @@
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 
 /**
  * Extract plain text from HTML content, removing all HTML tags and formatting

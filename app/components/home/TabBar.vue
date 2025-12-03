@@ -1,4 +1,7 @@
-<script setup>
+<script setup lang="ts">
+import { HomeTabs } from '~/types/enum/tabs.enum';
+import type { tabs, videoType } from '~/types/types.data';
+
 
 // Define Emit
 const emit = defineEmits([
@@ -7,25 +10,27 @@ const emit = defineEmits([
 
 
 // Define Props
-defineProps({
-  subjectTitle: String,
-  topicId: String,
-  isLoggedIn:{
-    type: Boolean,
-    default: false
-  },
-  activeTab: String,
+withDefaults(defineProps<{subjectTitle?: string,
+  topicId?: string,
+  isLoggedIn?:boolean,
+  activeTab?: tabs,
+}>(),{
+  isLoggedIn:false,
+  activeTab:'subjects'
 })
 
 // Define State
-const tabState = reactive({
+const tabState = reactive <{
+  isChecked:boolean,
+  checkedValueButton:tabs | null
+}>({
   isChecked: false,
   checkedValueButton: null,
 });
-const videoType = ref('conceptual') //Conceptual and other initial
+const videoType = ref<videoType>('conceptual') //Conceptual and other initial
 
 // Define a Function
-const tabCheck = (checkValue) => {
+const tabCheck = (checkValue:tabs) => {
   tabState.isChecked = true;
   tabState.checkedValueButton = checkValue;
   emit('emitActiveTab',tabState.checkedValueButton);
@@ -44,26 +49,26 @@ const tabCheck = (checkValue) => {
         role="tab"
         :class="[
           'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Home' || activeTab == 'Home'}
+          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'subjects' || activeTab == 'subjects'}
         ]"
-        @click="tabCheck('Home')" >
+        @click="tabCheck('subjects')" >
         <div class="flex items-center justify-center">
-          <Icon name="mdi:notebook-edit" size="20" class="" />
+          <Icon aria-label="" name="mdi:notebook-edit" size="20" class="" />
         </div>
-        Subjects
+        {{ HomeTabs.subject }}
       </button>
       <!-- Interactive Content -->
       <button v-if="isLoggedIn"
        role="tab"
         :class="[
           'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Interactive Books' || activeTab == 'Interactive Books'}
+          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'interactive-contents' || activeTab == 'interactive-contents'}
         ]"
-        @click="tabCheck('Interactive Books')" >
+        @click="tabCheck('interactive-contents')" >
         <div class="flex items-center justify-center">
           <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
         </div>
-        Interactive Content
+        {{ HomeTabs.interactive }}
       </button>
       <NuxtLink :aria-label="`press to visit page for interactive contents ${subjectTitle ? `for subject ${subjectTitle}`:''}`" v-else :to="subjectTitle ? topicId ? `/interactive/${subjectTitle}/${topicId}` : `/interactive/${subjectTitle}` : `/interactive`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
@@ -71,7 +76,7 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
         </div>
-        Interactive Content
+        {{ HomeTabs.interactive }}
       </NuxtLink>
       
 
@@ -80,13 +85,13 @@ const tabCheck = (checkValue) => {
        role="tab"
          :class="[
         'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Experiments' || activeTab == 'Experiments'}
+         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'learn-activities' || activeTab == 'learn-activities'}
          ]"
-        @click="tabCheck('Experiments')" >
+        @click="tabCheck('learn-activities')" >
         <div class="flex items-center justify-center">
           <Icon name="icon-park-solid:experiment-one" size="20" />
         </div>
-        Learning Activities
+        {{ HomeTabs.activity }}
       </button>
       <NuxtLink v-else :aria-label="`press to visit page of learning activities (experiments) ${subjectTitle ? `for subject ${subjectTitle}`:''}`"  :to="subjectTitle ? topicId ? `/experiments/${subjectTitle}/${topicId}` : `/experiments/${subjectTitle}` : `/experiments`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
@@ -94,7 +99,7 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="icon-park-solid:experiment-one" size="20" />
         </div>
-        Learning Activities
+        {{ HomeTabs.activity }}
       </NuxtLink>
       
 
@@ -103,13 +108,13 @@ const tabCheck = (checkValue) => {
        role="tab"
         :class="[
         'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Video' || activeTab == 'Video'}
+         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'video' || activeTab == 'video'}
          ]"
-        @click="tabCheck('Video')" >
+        @click="tabCheck('video')" >
         <div class="flex items-center justify-center">
           <Icon name="fluent:video-24-filled" size="20" />
         </div>
-        Video
+            {{ HomeTabs.video }}
       </button>
       <NuxtLink v-else :aria-label="`press to visit page of Video ${subjectTitle ? `for subject ${subjectTitle}`:''}`" :to="{
         path:subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`,
@@ -123,7 +128,7 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="fluent:video-24-filled" size="20" />
         </div>
-        Video
+        {{ HomeTabs.video }}
       </NuxtLink>
 
       <!-- Other Video -->
@@ -131,13 +136,13 @@ const tabCheck = (checkValue) => {
        role="tab"
         :class="[
         'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'otherVideo' || activeTab == 'otherVideo'}
+         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'class-videos' || activeTab == 'class-videos'}
          ]"
-        @click="tabCheck('otherVideo')" >
+        @click="tabCheck('class-videos')" >
         <div class="flex items-center justify-center">
           <Icon name="icon-park-solid:blackboard" size="20" />
         </div>
-        Class Videos
+        {{ HomeTabs.classVideos }}
       </button>
       <NuxtLink v-else 
       :aria-label="`press to visit page of class video ${subjectTitle ? `for subject ${subjectTitle}`:''}`" :to="{
@@ -146,14 +151,14 @@ const tabCheck = (checkValue) => {
           type: 'oth'
         }
       }"
-       @click="videoType = 'other'"
+       @click="videoType = 'class-video'"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
-         :active-class=" videoType == 'other' ? 'text-white !bg-deepBlue': 'text-white !bg-oceanBlue'
+         :active-class=" videoType == 'class-video' ? 'text-white !bg-deepBlue': 'text-white !bg-oceanBlue'
          ">
         <div class="flex items-center justify-center">
           <Icon name="icon-park-solid:blackboard" size="20" />
         </div>
-        Class Videos
+        {{ HomeTabs.classVideos }}
       </NuxtLink>
       
       <!-- Audio -->
@@ -161,13 +166,13 @@ const tabCheck = (checkValue) => {
        role="tab"
       :class="[
         'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Audio' || activeTab == 'Audio'}
+         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'audio' || activeTab == 'audio'}
          ]"
-        @click="tabCheck('Audio')" >
+        @click="tabCheck('audio')" >
         <div class="flex items-center justify-center">
           <Icon name="famicons:headset-sharp" size="20" />
         </div>
-        Audio
+        {{ HomeTabs.audio }}
       </button>
       <NuxtLink v-else :to="subjectTitle ? topicId ? `/audio/${subjectTitle}/${topicId}` : `/audio/${subjectTitle}` : `/audio`"
         :aria-label="`press to visit page of audio ${subjectTitle ? `for subject ${subjectTitle}`:''}`"
@@ -176,7 +181,7 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="famicons:headset-sharp" size="20" />
         </div>
-        Audio
+       {{ HomeTabs.audio }}
       </NuxtLink>
 
       <NuxtLink
@@ -188,7 +193,7 @@ const tabCheck = (checkValue) => {
         <div class="flex items-center justify-center">
           <Icon name="mdi:television" size="20" />
         </div>
-        Smart Class
+       {{ HomeTabs.smartClass }}
       </NuxtLink>
     </div>
   </section>
