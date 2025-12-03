@@ -572,7 +572,9 @@ const handleEnglishCrashCourse = async () => {
   const prompt = `I'm a Tanzanian student who learned in Swahili. Please explain this chapter/competence "${props.chapterName}" in simple English, helping me understand the key concepts and terms. Use Tanzanian context, examples, and references that relate to Tanzania (like Tanzanian cities, culture, industries, or local examples). Use simple language and provide examples where helpful. use swahili to make more more emphasis on points.`;
 
   try {
-    await askQuestion(prompt, "Help with English crash course");
+    await askQuestion(prompt, "Help with English crash course", {
+      useDocsAPI: true,
+    });
   } finally {
     isEnglishCrashCourse.value = false;
   }
@@ -728,22 +730,6 @@ onUnmounted(() => {
           v-if="messages.length === 0"
           class="text-center text-gray-500"
         >
-          <!-- Female Voice Avatar -->
-          <!-- <div class="flex items-center justify-center gap-6 mb-4">
-            <button @click="saveVoicePreference('female')"
-              :class="['flex flex-col items-center gap-2 p-3 rounded-xl transition-all', voiceGender === 'female' ? 'bg-oceanBlue text-white' : 'bg-gray-100 hover:bg-gray-200']"
-              title="Select Female Voice">
-              <Icon name="mdi:face-woman" size="48" />
-              <span class="text-xs font-medium">Female Voice</span>
-            </button>
-
-            <button @click="saveVoicePreference('male')"
-              :class="['flex flex-col items-center gap-2 p-3 rounded-xl transition-all', voiceGender === 'male' ? 'bg-oceanBlue text-white' : 'bg-gray-100 hover:bg-gray-200']"
-              title="Select Male Voice">
-              <Icon name="mdi:face-man" size="48" />
-              <span class="text-xs font-medium">Male Voice</span>
-            </button>
-          </div> -->
           <p>Hello! I'm your <strong>AI Subject Teacher</strong>.</p>
           <p class="mt-2 text-sm">
             I'm here to help you understand <strong>{{ chapterName }}</strong
