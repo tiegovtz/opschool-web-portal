@@ -30,7 +30,7 @@ currentTopic.value = topicTitle;
 const signInAccessToken = useCookie("signInAccessToken");
 const userToken = useCookie("signInUserToken");
 // search anouncement to screen reders
-const announcement = ref(null);
+const announcement = ref();
 const chapterProgress = useCookie("chapterProgress");
 
 // Define meta info about page
@@ -925,7 +925,7 @@ definePageMeta({
 
     <!--  -->
       <!-- screen reader notifier -->
-      <div class="sr-only" aria-live="polite" aria-atomic role="status">
+      <div class="sr-only" aria-live="assertive" aria-atomic role="status">
         {{ announcement }}
       </div>
 
