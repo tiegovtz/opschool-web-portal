@@ -1,4 +1,5 @@
 <script setup>
+import { ar } from "zod/v4/locales";
 import { layoutEffect } from "~/utilities/controlls";
 const navigationStore = useNavigationStore()
 const props = defineProps({
@@ -71,8 +72,11 @@ const setVideoToView = () => {
         :to="`/video/${videoStandard}/${videoSubject}/${videoName}/${videoId}`" @click="setVideoToView()"
         :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
-            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32'
-        ]">
+            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32',
+            
+        ]" 
+        :aria-label="`View ${videoName} video with video description ${videoDescription}`"
+        >
         
         <!-- Thumbnail section -->
         <div :class="[
