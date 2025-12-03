@@ -2,9 +2,13 @@
 import { ref, watch, nextTick, onUnmounted, onMounted } from "vue";
 import apiDocs from "~/utilities/api-docs";
 
-// Format message content for better display - enhanced markdown support
+const isHtml = (str) => /<\/?[a-z][\s\S]*>/i.test(str?.trim());
+
 const formatMessage = (content) => {
   if (!content) return "";
+  if (isHtml(content)) {
+    return content; // DO NOT escape or format — just render it
+  }
 
   // Escape HTML to prevent XSS
   const escapeHtml = (text) => {
@@ -15,12 +19,12 @@ const formatMessage = (content) => {
       '"': "&quot;",
       "'": "&#039;",
     };
-    return text.replace(/[&<>"']/g, (m) => map[m]);
+    return String(text).replace(/[&<>"']/g, (m) => map[m]);
   };
 
   let formatted = content;
 
-  // Step 1: Process code blocks first (before escaping) - triple backticks
+  // Step 1: Extract code blocks and inline code as placeholders
   const codeBlocks = [];
   formatted = formatted.replace(
     /```(\w+)?\n?([\s\S]*?)```/g,
@@ -31,7 +35,6 @@ const formatMessage = (content) => {
     }
   );
 
-  // Step 2: Process inline code - single backticks
   const inlineCodes = [];
   formatted = formatted.replace(/`([^`\n]+)`/g, (match, code) => {
     const placeholder = `__INLINECODE_${inlineCodes.length}__`;
@@ -39,10 +42,10 @@ const formatMessage = (content) => {
     return placeholder;
   });
 
-  // Step 3: Escape HTML
+  // Step 2: Escape the rest
   formatted = escapeHtml(formatted);
 
-  // Step 4: Restore code blocks
+  // Step 3: Restore code blocks (escaped)
   codeBlocks.forEach(({ placeholder, code }) => {
     const escapedCode = escapeHtml(code);
     formatted = formatted.replace(
@@ -51,13 +54,13 @@ const formatMessage = (content) => {
     );
   });
 
-  // Step 5: Process links [text](url)
+  // Links [text](url)
   formatted = formatted.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
     '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline break-words hover:text-blue-800">$1</a>'
   );
 
-  // Step 6: Process bold **text** or __text__
+  // Bold
   formatted = formatted.replace(
     /\*\*([^*]+)\*\*/g,
     '<strong class="font-semibold">$1</strong>'
@@ -67,7 +70,7 @@ const formatMessage = (content) => {
     '<strong class="font-semibold">$1</strong>'
   );
 
-  // Step 7: Process italic *text* or _text_ (but not when part of **bold**)
+  // Italic
   formatted = formatted.replace(
     /(?<!\*)\*([^*\n]+?)\*(?!\*)/g,
     '<em class="italic">$1</em>'
@@ -77,112 +80,66 @@ const formatMessage = (content) => {
     '<em class="italic">$1</em>'
   );
 
-  // Step 8: Process strikethrough ~~text~~
+  // Strikethrough
   formatted = formatted.replace(
     /~~([^~]+)~~/g,
     '<del class="line-through opacity-75">$1</del>'
   );
 
-  // Step 9: Process blockquotes > text
+  // Blockquote
   formatted = formatted.replace(
     /^&gt;\s+(.+)$/gm,
     '<blockquote class="pl-4 my-2 italic text-gray-700 border-l-4 border-gray-300">$1</blockquote>'
   );
 
-  // Step 10: Process headers on individual lines BEFORE paragraph splitting
-  // Match headings that start with # at the beginning of a line (allowing whitespace)
-  // Process all heading levels, checking from longest to shortest
-  formatted = formatted.replace(/^(#{4})\s+(.+)$/gm, (match, hashes, text) => {
-    return `<h4 class="pt-2 mt-3 mb-2 text-sm font-semibold">${text.trim()}</h4>`;
-  });
-  formatted = formatted.replace(/^(#{3})\s+(.+)$/gm, (match, hashes, text) => {
-    return `<h3 class="pt-2 mt-4 mb-3 text-base font-semibold border-t border-opacity-20">${text.trim()}</h3>`;
-  });
-  formatted = formatted.replace(/^(#{2})\s+(.+)$/gm, (match, hashes, text) => {
-    return `<h2 class="pt-3 mt-5 mb-3 text-lg font-bold border-t-2 border-opacity-30">${text.trim()}</h2>`;
-  });
-  formatted = formatted.replace(/^(#{1})\s+(.+)$/gm, (match, hashes, text) => {
-    return `<h1 class="pt-4 mt-6 mb-4 text-xl font-bold border-t-2 border-opacity-40">${text.trim()}</h1>`;
-  });
+  // Headers
+  formatted = formatted.replace(
+    /^(#{4})\s+(.+)$/gm,
+    (m, h, t) =>
+      `<h4 class="pt-2 mt-3 mb-2 text-sm font-semibold">${t.trim()}</h4>`
+  );
+  formatted = formatted.replace(
+    /^(#{3})\s+(.+)$/gm,
+    (m, h, t) =>
+      `<h3 class="pt-2 mt-4 mb-3 text-base font-semibold border-t border-opacity-20">${t.trim()}</h3>`
+  );
+  formatted = formatted.replace(
+    /^(#{2})\s+(.+)$/gm,
+    (m, h, t) =>
+      `<h2 class="pt-3 mt-5 mb-3 text-lg font-bold border-t-2 border-opacity-30">${t.trim()}</h2>`
+  );
+  formatted = formatted.replace(
+    /^(#{1})\s+(.+)$/gm,
+    (m, h, t) =>
+      `<h1 class="pt-4 mt-6 mb-4 text-xl font-bold border-t-2 border-opacity-40">${t.trim()}</h1>`
+  );
 
-  // Step 11: Split into paragraphs and process block elements
-  // Use regex to split on double newlines, but preserve single newlines
+  // Paragraphs & lists
   const paragraphs = formatted.split(/\n\n+/);
-
   formatted = paragraphs
     .map((para) => {
       para = para.trim();
       if (!para) return "";
-
-      // Check if already a header (from previous step)
       if (
         para.startsWith("<h1") ||
         para.startsWith("<h2") ||
         para.startsWith("<h3") ||
         para.startsWith("<h4")
-      ) {
+      )
         return para;
-      }
 
-      // Check if paragraph contains multiple headers (split them)
-      if (
-        para.includes("</h1>") ||
-        para.includes("</h2>") ||
-        para.includes("</h3>") ||
-        para.includes("</h4>")
-      ) {
-        // Split by header tags and process each part
-        const parts = para.split(/(<\/h[1-4]>)/);
-        return parts
-          .map((part) => {
-            const trimmed = part.trim();
-            if (!trimmed) return "";
-            if (trimmed.startsWith("<h")) return trimmed;
-            // Check if this part itself is a header
-            if (/^####\s+(.+)$/.test(trimmed)) {
-              const headerText = trimmed.replace(/^####\s+/, "").trim();
-              return `<h4 class="pt-2 mt-3 mb-2 text-sm font-semibold">${headerText}</h4>`;
-            }
-            if (/^###\s+(.+)$/.test(trimmed)) {
-              const headerText = trimmed.replace(/^###\s+/, "").trim();
-              return `<h3 class="pt-2 mt-4 mb-3 text-base font-semibold border-t border-opacity-20">${headerText}</h3>`;
-            }
-            if (/^##\s+(.+)$/.test(trimmed)) {
-              const headerText = trimmed.replace(/^##\s+/, "").trim();
-              return `<h2 class="pt-3 mt-5 mb-3 text-lg font-bold border-t-2 border-opacity-30">${headerText}</h2>`;
-            }
-            if (/^#\s+(.+)$/.test(trimmed)) {
-              const headerText = trimmed.replace(/^#\s+/, "").trim();
-              return `<h1 class="pt-4 mt-6 mb-4 text-xl font-bold border-t-2 border-opacity-40">${headerText}</h1>`;
-            }
-            return `<p class="mb-2 leading-relaxed">${trimmed.replace(
-              /\n/g,
-              "<br>"
-            )}</p>`;
-          })
-          .join("");
-      }
-
-      // Check for horizontal rule
-      if (/^[-*_]{3,}$/.test(para)) {
+      if (/^[-*_]{3,}$/.test(para))
         return '<hr class="my-4 border-gray-300" />';
-      }
+      if (para.startsWith("<blockquote")) return para;
 
-      // Check if paragraph is already a blockquote
-      if (para.startsWith("<blockquote")) {
-        return para;
-      }
-
-      // Check if paragraph is a list
+      const isTaskList = /^[-*]\s\[([ xX])\]\s/m.test(para);
       const isBulletList = /^[-•*]\s/m.test(para);
       const isNumberedList = /^\d+\.\s/m.test(para);
-      const isTaskList = /^[-*]\s\[([ xX])\]\s/m.test(para);
 
       if (isTaskList) {
-        // Handle task lists
         let taskItems = para.replace(
           /^[-*]\s\[([ xX])\]\s+(.+)$/gim,
-          (match, checked, text) => {
+          (m, checked, text) => {
             const isChecked = checked.toLowerCase() === "x";
             return `<li class="flex items-start gap-2 mb-1"><input type="checkbox" ${
               isChecked ? "checked" : ""
@@ -191,17 +148,14 @@ const formatMessage = (content) => {
         );
         return `<ul class="my-2 ml-2 space-y-1 list-none">${taskItems}</ul>`;
       } else if (isBulletList || isNumberedList) {
-        // Handle bullet points (including * as bullet)
         let listItems = para.replace(
           /^[-•*]\s+(.+)$/gim,
           '<li class="mb-1">$1</li>'
         );
-        // Handle numbered lists
         listItems = listItems.replace(
           /^\d+\.\s+(.+)$/gim,
           '<li class="mb-1">$1</li>'
         );
-
         if (listItems.includes("<li")) {
           const listTag = isNumberedList ? "ol" : "ul";
           const listClass = isNumberedList
@@ -211,14 +165,13 @@ const formatMessage = (content) => {
         }
       }
 
-      // Regular paragraph with line breaks
       para = para.replace(/\n/g, "<br>");
       return `<p class="mb-2 leading-relaxed">${para}</p>`;
     })
-    .filter((p) => p)
+    .filter(Boolean)
     .join("");
 
-  // Step 11: Restore inline code
+  // Restore inline code
   inlineCodes.forEach(({ placeholder, code }) => {
     const escapedCode = escapeHtml(code);
     formatted = formatted.replace(
@@ -230,25 +183,23 @@ const formatMessage = (content) => {
   return formatted;
 };
 
+// Props
 const props = defineProps({
-  chapterId: {
-    type: String,
-    required: true,
-  },
-  chapterName: {
-    type: String,
-    default: "this competence",
-  },
+  chapterId: { type: String, required: true },
+  chapterName: { type: String, default: "this competence" },
 });
 
+// state refs
 const isOpen = ref(false);
 const currentQuestion = ref("");
 const isLoading = ref(false);
 const messages = ref([]);
 const messagesContainer = ref(null);
-const previousChapterId = ref(null);
+const previousChapterId = ref(null); // will store the previous ID (old value)
 const shouldAutoScroll = ref(true);
-const token = useCookie("signInAccessToken").value;
+
+// Cookie ref (reactive)
+const token = useCookie("signInAccessToken"); // keep as ref; use token.value when needed
 
 // Provider tracking
 const currentProvider = ref(null);
@@ -258,15 +209,16 @@ const currentModel = ref(null);
 const isSummarizing = ref(false);
 const isEnglishCrashCourse = ref(false);
 const isPlayingAudio = ref(false);
-const speechSynthesis = ref(null);
-const currentUtterance = ref(null);
-
-// Voice preference state (for audio file selection)
-const voiceGender = ref("female");
-const showSettings = ref(false);
 const currentAudio = ref(null);
 
-// Load voice preference from localStorage
+// Voice preference state
+const voiceGender = ref("female");
+const showSettings = ref(false);
+
+// Abort controller for network calls
+let activeAbortController = null;
+
+// Load voice preference
 const loadVoicePreference = () => {
   if (typeof window !== "undefined") {
     const saved = localStorage.getItem("tie-teacher-voice");
@@ -276,7 +228,6 @@ const loadVoicePreference = () => {
   }
 };
 
-// Save voice preference to localStorage
 const saveVoicePreference = (gender) => {
   voiceGender.value = gender;
   if (typeof window !== "undefined") {
@@ -284,24 +235,70 @@ const saveVoicePreference = (gender) => {
   }
 };
 
-// Toggle settings dropdown
 const toggleSettings = () => {
   showSettings.value = !showSettings.value;
 };
 
-// Load voice preference on mount
+// Combine onMounted tasks
 onMounted(() => {
   loadVoicePreference();
+
+  // Click outside handler for settings
+  const handleClickOutside = (event) => {
+    if (!showSettings.value) return;
+    const target = event.target;
+    const settingsContainer = target.closest(".settings-container");
+    const settingsButton = target.closest('[title="Voice Settings"]');
+    if (!settingsContainer && !settingsButton) {
+      showSettings.value = false;
+    }
+  };
+
+  // Escape key to close assistant
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") {
+      if (showSettings.value) {
+        showSettings.value = false;
+      } else if (isOpen.value) {
+        isOpen.value = false;
+      }
+    }
+  };
+
+  const stopListeners = () => {
+    document.removeEventListener("click", handleClickOutside);
+    document.removeEventListener("keydown", handleKeyDown);
+  };
+
+  watch(
+    showSettings,
+    (open) => {
+      if (open) {
+        // Delay to avoid immediate trigger from the opening click
+        setTimeout(
+          () => document.addEventListener("click", handleClickOutside),
+          0
+        );
+      } else {
+        document.removeEventListener("click", handleClickOutside);
+      }
+    },
+    { immediate: false }
+  );
+
+  document.addEventListener("keydown", handleKeyDown);
+
+  onUnmounted(() => {
+    stopListeners();
+  });
 });
 
+// Toggle assistant open/close and auto-scroll
 const toggleAssistant = () => {
   isOpen.value = !isOpen.value;
-  // Enable auto-scroll and scroll to bottom when opening
   if (isOpen.value) {
     shouldAutoScroll.value = true;
-    nextTick(() => {
-      scrollToBottom(false); // Instant scroll when opening
-    });
+    nextTick(() => scrollToBottom(false));
   }
 };
 
@@ -309,11 +306,11 @@ const toggleAssistant = () => {
 watch(
   () => props.chapterId,
   (newChapterId, oldChapterId) => {
+    // If there's an old chapter, store it in previousChapterId (so the name matches)
     if (oldChapterId && newChapterId !== oldChapterId) {
-      // Chapter changed - clear conversation history and stop any audio
       stopReading();
       messages.value = [];
-      previousChapterId.value = newChapterId;
+      previousChapterId.value = oldChapterId; // store old value
       isSummarizing.value = false;
       isEnglishCrashCourse.value = false;
       showSettings.value = false;
@@ -322,32 +319,18 @@ watch(
   { immediate: true }
 );
 
-// Close settings dropdown when clicking outside
-onMounted(() => {
-  if (typeof window === "undefined") return;
+// Format any non-string safely
+const safeContent = (value) => {
+  if (typeof value === "string") return value;
+  if (value === undefined || value === null) return "";
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+};
 
-  const handleClickOutside = (event) => {
-    const target = event.target;
-    const settingsContainer = target.closest(".settings-container");
-    const settingsButton = target.closest('[title="Voice Settings"]');
-
-    if (showSettings.value && !settingsContainer && !settingsButton) {
-      showSettings.value = false;
-    }
-  };
-
-  watch(showSettings, (isOpen) => {
-    if (isOpen) {
-      // Use setTimeout to avoid immediate trigger
-      setTimeout(() => {
-        document.addEventListener("click", handleClickOutside);
-      }, 0);
-    } else {
-      document.removeEventListener("click", handleClickOutside);
-    }
-  });
-});
-
+// askQuestion with AbortController, reactive token usage, and better error handling
 const askQuestion = async (
   actualQuestion = null,
   maskedMessage = null,
@@ -355,22 +338,11 @@ const askQuestion = async (
 ) => {
   const { useDocsAPI = false } = options;
 
-  // --- FIX: Convert any non-string into safe string for AI ---
-  const safeContent = (value) => {
-    if (typeof value === "string") return value;
-    if (value === undefined || value === null) return "";
-    return JSON.stringify(value);
-  };
-
-  // Use provided question or the input field
-  const question = actualQuestion || currentQuestion.value.trim();
-
+  const question = actualQuestion ?? currentQuestion.value.trim();
   if (!question || isLoading.value || !props.chapterId) return;
 
-  // Clear input only when user typed manually
   if (!actualQuestion) currentQuestion.value = "";
 
-  // Push user message to UI
   const userMessage = {
     role: "user",
     content: maskedMessage || question,
@@ -382,9 +354,22 @@ const askQuestion = async (
 
   isLoading.value = true;
 
+  // Abort any previous active request
+  if (activeAbortController) {
+    try {
+      activeAbortController.abort();
+    } catch (e) {
+      /* ignore */
+    }
+    activeAbortController = null;
+  }
+  activeAbortController = new AbortController();
+  const signal = activeAbortController.signal;
+
   try {
-    // --- Validate token ---
-    if (!token) {
+    // Validate token at the moment of sending
+    const currentTokenValue = token?.value;
+    if (!currentTokenValue) {
       messages.value.push({
         role: "assistant",
         content: "Please sign in to use the AI assistant.",
@@ -394,7 +379,6 @@ const askQuestion = async (
       return;
     }
 
-    // --- Validate chapterId ---
     if (!props.chapterId) {
       messages.value.push({
         role: "assistant",
@@ -411,9 +395,6 @@ const askQuestion = async (
       useDocsAPI,
     });
 
-    // ------------------------------------------
-    // Build Clean Conversation History
-    // ------------------------------------------
     const conversationHistory = messages.value.map((msg) => ({
       role: msg.role,
       content: safeContent(msg.actualContent || msg.content),
@@ -423,55 +404,41 @@ const askQuestion = async (
     let provider = "";
     let model = "";
 
-    // ==========================================
-    // OPTION A — USE DOCS API (Summaries)
-    // ==========================================
     if (useDocsAPI) {
-      const summaryData = await $fetch(
-        apiDocs.chapters.getChapterId.replace(":id", props.chapterId),
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      console.log("[Docs API] Summary data:", summaryData);
+      // Docs API fetch
+      const url = apiDocs.chapters.getChapterId.replace(":id", props.chapterId);
+      const summaryData = await $fetch(url, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${currentTokenValue}` },
+        signal,
+      });
 
       answer =
         safeContent(summaryData?.summary) ||
         safeContent(summaryData?.description) ||
         safeContent(summaryData?.content) ||
         JSON.stringify(summaryData, null, 2);
-
       provider = "Docs API";
       model = "getChapterId";
     } else {
-      // ==========================================
-      // OPTION B — NORMAL AI ASSISTANT
-      // ==========================================
+      // Normal AI assistant
       const response = await $fetch("/api/ai-assistant/ask", {
         method: "POST",
-        body: {
-          question,
-          chapterId: props.chapterId,
-          conversationHistory,
-        },
+        body: { question, chapterId: props.chapterId, conversationHistory },
+        headers: { Authorization: `Bearer ${currentTokenValue}` },
+        signal,
       });
+      console.log(response.answer);
 
       answer = safeContent(response.answer);
       provider = response.provider || "Unknown";
       model = response.model || "Unknown";
-
       console.log(`[AI] Response received from ${provider} (${model})`);
     }
 
-    // Save provider + model
     currentProvider.value = provider;
     currentModel.value = model;
 
-    // ------------------------------------------
-    // Push assistant message to UI
-    // ------------------------------------------
     messages.value.push({
       role: "assistant",
       content: safeContent(answer),
@@ -480,42 +447,44 @@ const askQuestion = async (
       model,
     });
   } catch (error) {
-    console.error("[AI Subject Teacher] Error:", error);
-
-    messages.value.push({
-      role: "assistant",
-      content:
-        error?.data?.message ||
-        error?.message ||
-        "Sorry, I encountered an error. Please try again.",
-      timestamp: new Date().toLocaleTimeString(),
-    });
+    // Distinguish abort vs other errors
+    if (error?.name === "AbortError") {
+      // aborted - don't spam the UI
+      console.warn("Request aborted");
+    } else {
+      console.error("[AI Subject Teacher] Error:", error);
+      messages.value.push({
+        role: "assistant",
+        content:
+          error?.data?.message ||
+          error?.message ||
+          "Sorry, I encountered an error. Please try again.",
+        timestamp: new Date().toLocaleTimeString(),
+      });
+    }
   } finally {
     isLoading.value = false;
+    activeAbortController = null;
     scrollToBottom(true);
   }
 };
 
-// Smooth scroll function
+// Scroll helpers
 const scrollToBottom = (smooth = true) => {
   if (!messagesContainer.value || !shouldAutoScroll.value) return;
-
   nextTick(() => {
-    if (messagesContainer.value) {
-      if (smooth) {
-        messagesContainer.value.scrollTo({
-          top: messagesContainer.value.scrollHeight,
-          behavior: "smooth",
-        });
-      } else {
-        messagesContainer.value.scrollTop =
-          messagesContainer.value.scrollHeight;
-      }
+    if (!messagesContainer.value) return;
+    if (smooth) {
+      messagesContainer.value.scrollTo({
+        top: messagesContainer.value.scrollHeight,
+        behavior: "smooth",
+      });
+    } else {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
   });
 };
 
-// Check if user is near bottom (within 100px)
 const isNearBottom = () => {
   if (!messagesContainer.value) return true;
   const threshold = 100;
@@ -526,12 +495,11 @@ const isNearBottom = () => {
   return distanceFromBottom < threshold;
 };
 
-// Handle scroll event to determine if user has manually scrolled up
 const handleScroll = () => {
   shouldAutoScroll.value = isNearBottom();
 };
 
-// Auto-scroll to bottom when new messages arrive
+// Watchers to auto-scroll on messages and loading
 watch(
   messages,
   () => {
@@ -539,22 +507,15 @@ watch(
   },
   { deep: true }
 );
-
-// Auto-scroll when loading state changes
 watch(isLoading, (newVal) => {
-  if (newVal) {
-    scrollToBottom(true);
-  }
+  if (newVal) scrollToBottom(true);
 });
 
-// Handle Summarize action
+// Summarize and Crash Course actions
 const handleSummarize = async () => {
   if (isLoading.value || isSummarizing.value || !props.chapterId) return;
-
   isSummarizing.value = true;
-
   const prompt = `Please provide a comprehensive summary of this chapter/competence: ${props.chapterName}. Include main concepts, key points, and important information.`;
-
   try {
     await askQuestion(prompt, "Create a summary", { useDocsAPI: true });
   } finally {
@@ -562,15 +523,10 @@ const handleSummarize = async () => {
   }
 };
 
-// Handle English Crash Course action
 const handleEnglishCrashCourse = async () => {
-  if (isLoading.value || isEnglishCrashCourse.value || !props.chapterId) {
-    return;
-  }
-
+  if (isLoading.value || isEnglishCrashCourse.value || !props.chapterId) return;
   isEnglishCrashCourse.value = true;
-  const prompt = `I'm a Tanzanian student who learned in Swahili. Please explain this chapter/competence "${props.chapterName}" in simple English, helping me understand the key concepts and terms. Use Tanzanian context, examples, and references that relate to Tanzania (like Tanzanian cities, culture, industries, or local examples). Use simple language and provide examples where helpful. use swahili to make more more emphasis on points.`;
-
+  const prompt = `I'm a Tanzanian student who learned in Swahili. Please explain this chapter/competence "${props.chapterName}" in simple English, helping me understand the key concepts and terms. Use Tanzanian context, examples, and references that relate to Tanzania. Use simple language and provide examples where helpful. use swahili to make more emphasis on points.`;
   try {
     await askQuestion(prompt, "Help with English crash course", {
       useDocsAPI: true,
@@ -580,13 +536,9 @@ const handleEnglishCrashCourse = async () => {
   }
 };
 
-// Handle Read (Audio File) action - PLACEHOLDER
+// Read (audio) placeholder
 const handleRead = async () => {
-  if (isLoading.value || isPlayingAudio.value || !props.chapterId) {
-    return;
-  }
-
-  // Placeholder message - text-to-speech feature coming soon
+  if (isLoading.value || isPlayingAudio.value || !props.chapterId) return;
   messages.value.push({
     role: "assistant",
     content: `Text-to-speech feature is coming soon! The audio playback functionality will be available once the audio files are added. You can still use the voice settings to select your preferred voice (${
@@ -594,39 +546,38 @@ const handleRead = async () => {
     }) for when the feature is ready.`,
     timestamp: new Date().toLocaleTimeString(),
   });
-
-  // Scroll to show the message
   nextTick(() => {
-    if (messagesContainer.value) {
+    if (messagesContainer.value)
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-    }
   });
 };
 
-// Stop reading
 const stopReading = () => {
   try {
-    // Stop audio file playback
     if (currentAudio.value) {
       currentAudio.value.pause();
       currentAudio.value.currentTime = 0;
       currentAudio.value = null;
     }
-    // Reset state without showing error message
     isPlayingAudio.value = false;
   } catch (error) {
-    // Silently handle any errors when stopping
     console.log("Stopped reading");
     isPlayingAudio.value = false;
     currentAudio.value = null;
   }
 };
 
-// Clean up audio on component unmount
+// cleanup
 onUnmounted(() => {
   stopReading();
-  // Close settings dropdown if open
   showSettings.value = false;
+  if (activeAbortController) {
+    try {
+      activeAbortController.abort();
+    } catch (e) {
+      /* ignore */
+    }
+  }
 });
 </script>
 
@@ -715,7 +666,19 @@ onUnmounted(() => {
     </div>
 
     <!-- Messages Container -->
+    <!-- <div
+      :class="[
+        'flex-1 p-4 overflow-y-auto',
+        messages.length === 0
+          ? 'flex items-center justify-center'
+          : 'flex flex-col space-y-4',
+      ]"
+      ref="messagesContainer"
+      @scroll="handleScroll"
+    > -->
     <div
+      role="log"
+      aria-live="polite"
       :class="[
         'flex-1 p-4 overflow-y-auto',
         messages.length === 0
@@ -818,15 +781,16 @@ onUnmounted(() => {
       >
         <input
           v-model="currentQuestion"
-          @keyup.enter="askQuestion()"
           type="text"
           placeholder="Type your message..."
+          aria-label="Type your question for AI Subject Teacher"
           class="flex-1 p-3 rounded-lg border border-gray-300 focus:outline-none"
         />
 
         <button
           type="submit"
-          class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
+          :disabled="isLoading"
+          class="bg-oceanBlue text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Send
         </button>
