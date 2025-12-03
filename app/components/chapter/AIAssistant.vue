@@ -412,11 +412,14 @@ const askQuestion = async (
         headers: { Authorization: `Bearer ${currentTokenValue}` },
         signal,
       });
+      console.log("data", summaryData);
 
       answer =
-        safeContent(summaryData?.summary) ||
-        safeContent(summaryData?.description) ||
-        safeContent(summaryData?.content) ||
+        safeContent(summaryData?.crashCourse) ||
+        // safeContent(summaryData?.summary) ||
+        // safeContent(summaryData?.description) ||
+        // safeContent(summaryData?.content) ||
+        
         JSON.stringify(summaryData, null, 2);
       provider = "Docs API";
       model = "getChapterId";
