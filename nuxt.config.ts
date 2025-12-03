@@ -93,7 +93,10 @@ export default defineNuxtConfig({
     redirect: false,
     url: process.env.NUXT_SUPABASE_URL,
     key: process.env.NUXT_SUPABASE_ANON_KEY,
+  
   },
+  
+
 });
 
 //
