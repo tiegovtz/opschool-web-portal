@@ -56,6 +56,8 @@ const tabCheck = (checkValue:tabs) => {
           <Icon aria-label="" name="mdi:notebook-edit" size="20" class="" />
         </div>
         {{ HomeTabs.subject }}
+
+        <a class="sr-only" aria-label="Press to jump to subject list" role="navigation" href="#content-container-after-login" target="_blank" rel="noopener noreferrer">Skip content</a>
       </button>
       <!-- Interactive Content -->
       <button v-if="isLoggedIn"
@@ -69,6 +71,8 @@ const tabCheck = (checkValue:tabs) => {
           <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
         </div>
         {{ HomeTabs.interactive }}
+
+        <a class="sr-only" aria-label="Press to jump to interactive contents list" role="navigation" href="#content-container-after-login" target="_blank" rel="noopener noreferrer">Skip content</a>
       </button>
       <NuxtLink :aria-label="`press to visit page for interactive contents ${subjectTitle ? `for subject ${subjectTitle}`:''}`" v-else :to="subjectTitle ? topicId ? `/interactive/${subjectTitle}/${topicId}` : `/interactive/${subjectTitle}` : `/interactive`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
@@ -92,6 +96,8 @@ const tabCheck = (checkValue:tabs) => {
           <Icon name="icon-park-solid:experiment-one" size="20" />
         </div>
         {{ HomeTabs.activity }}
+
+        <a class="sr-only" aria-label="Press to jump to learn activities list" role="navigation" href="#content-container-after-login" target="_blank" rel="noopener noreferrer">Skip content</a>
       </button>
       <NuxtLink v-else :aria-label="`press to visit page of learning activities (experiments) ${subjectTitle ? `for subject ${subjectTitle}`:''}`"  :to="subjectTitle ? topicId ? `/experiments/${subjectTitle}/${topicId}` : `/experiments/${subjectTitle}` : `/experiments`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
@@ -115,6 +121,8 @@ const tabCheck = (checkValue:tabs) => {
           <Icon name="fluent:video-24-filled" size="20" />
         </div>
             {{ HomeTabs.video }}
+
+          <a class="sr-only" aria-label="Press to jump videos list" role="navigation" href="#content-container-after-login" target="_blank" rel="noopener noreferrer">Skip content</a>
       </button>
       <NuxtLink v-else :aria-label="`press to visit page of Video ${subjectTitle ? `for subject ${subjectTitle}`:''}`" :to="{
         path:subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`,
@@ -143,6 +151,7 @@ const tabCheck = (checkValue:tabs) => {
           <Icon name="icon-park-solid:blackboard" size="20" />
         </div>
         {{ HomeTabs.classVideos }}
+        <a class="sr-only" aria-label="Press to jump to class videos list" role="navigation" href="#content-container-after-login" target="_blank" rel="noopener noreferrer">Skip content</a>
       </button>
       <NuxtLink v-else 
       :aria-label="`press to visit page of class video ${subjectTitle ? `for subject ${subjectTitle}`:''}`" :to="{
@@ -173,6 +182,7 @@ const tabCheck = (checkValue:tabs) => {
           <Icon name="famicons:headset-sharp" size="20" />
         </div>
         {{ HomeTabs.audio }}
+        <a class="sr-only" aria-label="Press to jump to audios list" role="navigation" href="#content-container-after-login" target="_blank" rel="noopener noreferrer">Skip content</a>
       </button>
       <NuxtLink v-else :to="subjectTitle ? topicId ? `/audio/${subjectTitle}/${topicId}` : `/audio/${subjectTitle}` : `/audio`"
         :aria-label="`press to visit page of audio ${subjectTitle ? `for subject ${subjectTitle}`:''}`"
