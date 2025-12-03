@@ -187,6 +187,7 @@ const isLoading = ref(false);
 const messages = ref([]);
 const messagesContainer = ref(null);
 const previousChapterId = ref(null);
+const shouldAutoScroll = ref(true);
 
 // Provider tracking
 const currentProvider = ref(null);
@@ -234,6 +235,13 @@ onMounted(() => {
 
 const toggleAssistant = () => {
   isOpen.value = !isOpen.value;
+  // Enable auto-scroll and scroll to bottom when opening
+  if (isOpen.value) {
+    shouldAutoScroll.value = true;
+    nextTick(() => {
+      scrollToBottom(false); // Instant scroll when opening
+    });
+  }
 };
 
 // Reset conversation when chapter changes
@@ -275,20 +283,30 @@ onMounted(() => {
   });
 });
 
-const askQuestion = async () => {
-  if (!currentQuestion.value.trim() || isLoading.value || !props.chapterId) {
+const askQuestion = async (actualQuestion = null, maskedMessage = null) => {
+  // Use provided question or current input
+  const question = actualQuestion || currentQuestion.value.trim();
+  
+  if (!question || isLoading.value || !props.chapterId) {
     return;
   }
 
-  const question = currentQuestion.value.trim();
-  currentQuestion.value = '';
+  // Clear current input only if we're using it (not when actualQuestion is provided)
+  if (!actualQuestion) {
+    currentQuestion.value = '';
+  }
 
-  // Add user message
-  messages.value.push({
+  // Add user message - show masked message if provided, otherwise show actual question
+  const userMessage = {
     role: 'user',
-    content: question,
-    timestamp: new Date().toLocaleTimeString()
-  });
+    content: maskedMessage || question,
+    timestamp: new Date().toLocaleTimeString(),
+    actualContent: question // Store actual content for API calls
+  };
+  messages.value.push(userMessage);
+  
+  // Scroll immediately when user sends a message
+  scrollToBottom(true);
 
   isLoading.value = true;
 
@@ -315,12 +333,12 @@ const askQuestion = async () => {
       return;
     }
 
-    console.log('[Subject AI Teacher] Sending request:', { question, chapterId: props.chapterId });
+    console.log('[AI Subject Teacher] Sending request:', { question, chapterId: props.chapterId });
 
-    // Prepare conversation history (without timestamps, just role and content)
+    // Prepare conversation history (use actualContent if available, otherwise use content)
     const conversationHistory = messages.value.map(msg => ({
       role: msg.role,
-      content: msg.content
+      content: msg.actualContent || msg.content
     }));
 
     const response = await $fetch('/api/ai-assistant/ask', {
@@ -336,8 +354,8 @@ const askQuestion = async () => {
     // Log provider information in browser console
     const provider = response.provider || 'Unknown';
     const model = response.model || 'Unknown';
-    console.log(`[Subject AI Teacher] ✅ Response received from: ${provider} (Model: ${model})`);
-    console.log(`[Subject AI Teacher] 📊 Response stats:`, {
+    console.log(`[AI Subject Teacher] ✅ Response received from: ${provider} (Model: ${model})`);
+    console.log(`[AI Subject Teacher] 📊 Response stats:`, {
       provider,
       model,
       finishReason: response.finishReason,
@@ -358,7 +376,7 @@ const askQuestion = async () => {
     });
 
   } catch (error) {
-    console.error('[Subject AI Teacher] AI Assistant error:', error);
+    console.error('[AI Subject Teacher] AI Assistant error:', error);
     const errorMessage = error?.data?.message || error?.message || 'Sorry, I encountered an error. Please try again.';
     messages.value.push({
       role: 'assistant',
@@ -367,23 +385,55 @@ const askQuestion = async () => {
     });
   } finally {
     isLoading.value = false;
-    // Scroll to bottom
-    nextTick(() => {
-      if (messagesContainer.value) {
+    // Scroll to bottom after message is added
+    scrollToBottom(true);
+  }
+};
+
+// Smooth scroll function
+const scrollToBottom = (smooth = true) => {
+  if (!messagesContainer.value || !shouldAutoScroll.value) return;
+  
+  nextTick(() => {
+    if (messagesContainer.value) {
+      if (smooth) {
+        messagesContainer.value.scrollTo({
+          top: messagesContainer.value.scrollHeight,
+          behavior: 'smooth'
+        });
+      } else {
         messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
       }
-    });
-  }
+    }
+  });
+};
+
+// Check if user is near bottom (within 100px)
+const isNearBottom = () => {
+  if (!messagesContainer.value) return true;
+  const threshold = 100;
+  const distanceFromBottom = messagesContainer.value.scrollHeight - 
+    messagesContainer.value.scrollTop - 
+    messagesContainer.value.clientHeight;
+  return distanceFromBottom < threshold;
+};
+
+// Handle scroll event to determine if user has manually scrolled up
+const handleScroll = () => {
+  shouldAutoScroll.value = isNearBottom();
 };
 
 // Auto-scroll to bottom when new messages arrive
 watch(messages, () => {
-  nextTick(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-    }
-  });
+  scrollToBottom(true);
 }, { deep: true });
+
+// Auto-scroll when loading state changes
+watch(isLoading, (newVal) => {
+  if (newVal) {
+    scrollToBottom(true);
+  }
+});
 
 // Handle Summarize action
 const handleSummarize = async () => {
@@ -394,12 +444,9 @@ const handleSummarize = async () => {
   isSummarizing.value = true;
   const prompt = `Please provide a comprehensive summary of this chapter/competence: ${props.chapterName}. Include the main concepts, key points, and important information.`;
 
-  // Set the prompt and trigger the question
-  currentQuestion.value = prompt;
   try {
-    await askQuestion();
+    await askQuestion(prompt, 'Create a summary');
   } finally {
-    currentQuestion.value = '';
     isSummarizing.value = false;
   }
 };
@@ -413,12 +460,9 @@ const handleEnglishCrashCourse = async () => {
   isEnglishCrashCourse.value = true;
   const prompt = `I'm a Tanzanian student who learned in Swahili. Please explain this chapter/competence "${props.chapterName}" in simple English, helping me understand the key concepts and terms. Use Tanzanian context, examples, and references that relate to Tanzania (like Tanzanian cities, culture, industries, or local examples). Use simple language and provide examples where helpful. use swahili to make more more emphasis on points.`;
 
-  // Set the prompt and trigger the question
-  currentQuestion.value = prompt;
   try {
-    await askQuestion();
+    await askQuestion(prompt, 'Help with English crash course');
   } finally {
-    currentQuestion.value = '';
     isEnglishCrashCourse.value = false;
   }
 };
@@ -475,9 +519,9 @@ onUnmounted(() => {
   <!-- Floating AI Assistant Button -->
   <button v-if="!isOpen" @click="toggleAssistant"
     class="fixed z-50 flex items-center gap-2 p-4 text-white transition-all duration-300 rounded-full shadow-lg bottom-6 right-6 bg-oceanBlue hover:bg-deepBlue"
-    title="Ask Subject AI Teacher">
+    title="Ask AI Subject Teacher">
     <Icon name="mdi:robot" size="24" />
-    <span class="hidden md:block">Subject AI Teacher</span>
+    <span class="hidden md:block">AI Subject Teacher</span>
   </button>
 
   <!-- AI Assistant Panel -->
@@ -488,7 +532,7 @@ onUnmounted(() => {
     <div
       class="relative flex items-center justify-between p-4 text-white border-b rounded-t-lg bg-oceanBlue settings-container">
       <div>
-        <h3 class="font-semibold">Subject AI Teacher</h3>
+        <h3 class="font-semibold">AI Subject Teacher</h3>
         <p class="text-xs opacity-90">{{ chapterName }}</p>
       </div>
       <div class="relative flex items-center gap-2">
@@ -522,11 +566,11 @@ onUnmounted(() => {
     </div>
 
     <!-- Messages Container -->
-    <div class="flex-1 p-4 space-y-4 overflow-y-auto" ref="messagesContainer">
+    <div :class="['flex-1 p-4 overflow-y-auto', messages.length === 0 ? 'flex items-center justify-center' : 'flex flex-col space-y-4']" ref="messagesContainer" @scroll="handleScroll">
       <ClientOnly>
-        <div v-if="messages.length === 0" class="py-8 text-center text-gray-500">
-          <div class="flex items-center justify-center gap-6 mb-4">
-            <!-- Female Voice Avatar -->
+        <div v-if="messages.length === 0" class="text-center text-gray-500">
+          <!-- Female Voice Avatar -->
+          <!-- <div class="flex items-center justify-center gap-6 mb-4">
             <button @click="saveVoicePreference('female')"
               :class="['flex flex-col items-center gap-2 p-3 rounded-xl transition-all', voiceGender === 'female' ? 'bg-oceanBlue text-white' : 'bg-gray-100 hover:bg-gray-200']"
               title="Select Female Voice">
@@ -534,22 +578,21 @@ onUnmounted(() => {
               <span class="text-xs font-medium">Female Voice</span>
             </button>
 
-            <!-- Male Voice Avatar -->
             <button @click="saveVoicePreference('male')"
               :class="['flex flex-col items-center gap-2 p-3 rounded-xl transition-all', voiceGender === 'male' ? 'bg-oceanBlue text-white' : 'bg-gray-100 hover:bg-gray-200']"
               title="Select Male Voice">
               <Icon name="mdi:face-man" size="48" />
               <span class="text-xs font-medium">Male Voice</span>
             </button>
-          </div>
-          <p>Hello! I'm your <strong>Subject AI Teacher</strong>.</p>
+          </div> -->
+          <p>Hello! I'm your <strong>AI Subject Teacher</strong>.</p>
           <p class="mt-2 text-sm">I'm here to help you understand <strong>{{ chapterName }}</strong>.</p>
-          <p class="mt-1 text-xs opacity-75">Select a voice to hear audio responses. Feel free to ask me any questions
+          <p class="mt-1 text-xs opacity-75">Feel free to ask me any questions
             about this competence!</p>
         </div>
         <template #fallback>
-          <div v-if="messages.length === 0" class="py-8 text-center text-gray-500">
-            <p>Hello! I'm your <strong>Subject AI Teacher</strong>.</p>
+          <div v-if="messages.length === 0" class="text-center text-gray-500">
+            <p>Hello! I'm your <strong>AI Subject Teacher</strong>.</p>
             <p class="mt-2 text-sm">I'm here to help you understand <strong>{{ chapterName }}</strong>.</p>
             <p class="mt-1 text-xs opacity-75">Feel free to ask me any questions about this competence!</p>
           </div>
@@ -586,8 +629,21 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- Input Area -->
+    <div class="p-4 border-t border-gray-200">
+      <form @submit.prevent="askQuestion" class="flex gap-2">
+        <input v-model="currentQuestion" type="text" placeholder="Ask about this competence..."
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue"
+          :disabled="isLoading || !chapterId" />
+        <button type="submit" :disabled="!currentQuestion.trim() || isLoading || !chapterId"
+          class="px-4 py-2 text-white transition-colors rounded-lg bg-oceanBlue hover:bg-deepBlue disabled:opacity-50 disabled:cursor-not-allowed">
+          <Icon name="mdi:send" size="20" />
+        </button>
+      </form>
+    </div>
+
     <!-- Quick Action Buttons -->
-    <div class="px-4 pt-4 pb-2 border-t border-gray-200">
+    <div class="px-4 pt-2 pb-4 border-t border-gray-200">
       <div class="flex flex-wrap gap-2">
         <button @click="handleSummarize" :disabled="isLoading || isSummarizing || !chapterId"
           class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-oceanBlue to-deepBlue text-white rounded-lg hover:from-deepBlue hover:to-oceanBlue disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm">
@@ -605,19 +661,6 @@ onUnmounted(() => {
           <span>{{ isPlayingAudio ? 'Stop Reading' : 'Read' }}</span>
         </button>
       </div>
-    </div>
-
-    <!-- Input Area -->
-    <div class="p-4 border-t border-gray-200">
-      <form @submit.prevent="askQuestion" class="flex gap-2">
-        <input v-model="currentQuestion" type="text" placeholder="Ask about this competence..."
-          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue"
-          :disabled="isLoading || !chapterId" />
-        <button type="submit" :disabled="!currentQuestion.trim() || isLoading || !chapterId"
-          class="px-4 py-2 text-white transition-colors rounded-lg bg-oceanBlue hover:bg-deepBlue disabled:opacity-50 disabled:cursor-not-allowed">
-          <Icon name="mdi:send" size="20" />
-        </button>
-      </form>
     </div>
   </div>
 </template>

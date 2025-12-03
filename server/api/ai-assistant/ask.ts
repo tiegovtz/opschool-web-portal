@@ -153,7 +153,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 2. Prepare prompt with strict instructions
-    const systemPrompt = `You are Subject AI Teacher, a friendly and experienced teacher helping Tanzanian students. Your goal is to help students understand and learn about the current competence/chapter they are studying.
+    const systemPrompt = `You are AI Subject Teacher, a friendly and experienced teacher helping Tanzanian students. Your goal is to help students understand and learn about the current competence/chapter they are studying.
 
 COMPETENCE/CHAPTER: ${chapterName}
 
@@ -184,7 +184,7 @@ IMPORTANT RULES:
    
 3. Respond to greetings:
    - Greet students warmly when they say hello, hi, or similar
-   - Introduce yourself: "Hello! I'm your Subject AI Teacher. I'm here to help you understand [${chapterName}]. Feel free to ask me any questions about this competence!"
+   - Introduce yourself: "Hello! I'm your AI Subject Teacher. I'm here to help you understand [${chapterName}]. Feel free to ask me any questions about this competence!"
    - When introducing yourself, mention the specific chapter/competence you can help with
    
 4. If the content doesn't fully cover a question:
