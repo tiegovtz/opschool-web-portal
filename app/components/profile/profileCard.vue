@@ -389,7 +389,7 @@ const discardChanges = () => {
           <div class="bg-blue-100 stat-icon">
             <Icon name="fa6-solid:book-open-reader" size="20" class="w-6 h-6 text-deepBlue" />
           </div>
-          <div class="stat-content">+
+          <div class="stat-content">
             <span class="stat-label">Compitences Opened</span>
             <span class="stat-value">{{ profileData.totalTopicsOpened }}</span>
           </div>
@@ -402,7 +402,7 @@ const discardChanges = () => {
           </div>
           <div class="stat-content">
             <span class="stat-label">Subject Opened</span>
-            <span class="stat-value">{{ profileData.openedSubjects > 0 ? profileData.openedSubjects : 5 }}</span>
+            <span class="stat-value">{{ profileData.openedSubjects ?? 0 }}</span>
           </div>
         </div>
 
