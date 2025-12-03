@@ -355,31 +355,27 @@ const askQuestion = async (
 ) => {
   const { useDocsAPI = false } = options;
 
-  // --- FIX: always convert objects to strings for AI-safe content ---
+  // --- FIX: Convert any non-string into safe string for AI ---
   const safeContent = (value) => {
     if (typeof value === "string") return value;
     if (value === undefined || value === null) return "";
     return JSON.stringify(value);
   };
 
-  // Use provided question or current input
+  // Use provided question or the input field
   const question = actualQuestion || currentQuestion.value.trim();
 
-  if (!question || isLoading.value || !props.chapterId) {
-    return;
-  }
+  if (!question || isLoading.value || !props.chapterId) return;
 
-  // Clear input only if user typed the message
-  if (!actualQuestion) {
-    currentQuestion.value = "";
-  }
+  // Clear input only when user typed manually
+  if (!actualQuestion) currentQuestion.value = "";
 
-  // Push user message into UI
+  // Push user message to UI
   const userMessage = {
     role: "user",
     content: maskedMessage || question,
     timestamp: new Date().toLocaleTimeString(),
-    actualContent: question, // always store original input
+    actualContent: question,
   };
   messages.value.push(userMessage);
   scrollToBottom(true);
@@ -387,6 +383,7 @@ const askQuestion = async (
   isLoading.value = true;
 
   try {
+    // --- Validate token ---
     if (!token) {
       messages.value.push({
         role: "assistant",
@@ -397,6 +394,7 @@ const askQuestion = async (
       return;
     }
 
+    // --- Validate chapterId ---
     if (!props.chapterId) {
       messages.value.push({
         role: "assistant",
@@ -413,28 +411,27 @@ const askQuestion = async (
       useDocsAPI,
     });
 
-    // --- Build conversation history with safe values ---
+    // ------------------------------------------
+    // Build Clean Conversation History
+    // ------------------------------------------
     const conversationHistory = messages.value.map((msg) => ({
       role: msg.role,
       content: safeContent(msg.actualContent || msg.content),
     }));
 
-    // -------------------------------
-    // SWITCH BETWEEN API & AI
-    // -------------------------------
     let answer = "";
     let provider = "";
     let model = "";
 
+    // ==========================================
+    // OPTION A — USE DOCS API (Summaries)
+    // ==========================================
     if (useDocsAPI) {
-      // --- 📘 SUMMARY from Docs API ---
       const summaryData = await $fetch(
         apiDocs.chapters.getChapterId.replace(":id", props.chapterId),
         {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -449,7 +446,9 @@ const askQuestion = async (
       provider = "Docs API";
       model = "getChapterId";
     } else {
-      // --- 🤖 STANDARD AI CHAT ---
+      // ==========================================
+      // OPTION B — NORMAL AI ASSISTANT
+      // ==========================================
       const response = await $fetch("/api/ai-assistant/ask", {
         method: "POST",
         body: {
@@ -459,18 +458,20 @@ const askQuestion = async (
         },
       });
 
+      answer = safeContent(response.answer);
       provider = response.provider || "Unknown";
       model = response.model || "Unknown";
-      answer = safeContent(response.answer);
 
       console.log(`[AI] Response received from ${provider} (${model})`);
     }
 
-    // Store provider/model for UI
+    // Save provider + model
     currentProvider.value = provider;
     currentModel.value = model;
 
-    // Push assistant response
+    // ------------------------------------------
+    // Push assistant message to UI
+    // ------------------------------------------
     messages.value.push({
       role: "assistant",
       content: safeContent(answer),
@@ -826,25 +827,22 @@ onUnmounted(() => {
     <!-- Input Area -->
     <div class="p-4 border-t border-gray-200">
       <form
-        @submit.prevent="askQuestion"
-        class="flex gap-2"
+        @submit.prevent="askQuestion()"
+        class="flex gap-2 mt-4 border-t pt-4"
       >
         <input
           v-model="currentQuestion"
+          @keyup.enter="askQuestion()"
           type="text"
-          placeholder="Ask about this competence..."
-          class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue"
-          :disabled="isLoading || !chapterId"
+          placeholder="Type your message..."
+          class="flex-1 p-3 rounded-lg border border-gray-300 focus:outline-none"
         />
+
         <button
           type="submit"
-          :disabled="!currentQuestion.trim() || isLoading || !chapterId"
-          class="px-4 py-2 text-white transition-colors rounded-lg bg-oceanBlue hover:bg-deepBlue disabled:opacity-50 disabled:cursor-not-allowed"
+          class="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium"
         >
-          <Icon
-            name="mdi:send"
-            size="20"
-          />
+          Send
         </button>
       </form>
     </div>
