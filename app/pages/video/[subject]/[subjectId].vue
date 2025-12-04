@@ -10,7 +10,7 @@ import {
   isGreaterToSM,
   screenWidth,
 } from "@/utilities/controlls";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import VideoCard from "~/components/video/videoCard.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
