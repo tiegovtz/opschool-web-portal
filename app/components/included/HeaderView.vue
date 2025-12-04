@@ -23,14 +23,32 @@ const logout = () => {
   dropDown();
 };
 
+const logoutMessage = ref("");
+const logoutAlert = ref(null);
+
 const announceLogout = () => {
-  const region = document.getElementById("sr-logout-alert");
-  if (region) {
-    region.textContent = ""; // reset (important for repeated announcements)
+  // Keyboard support: only trigger on Enter or Space
+  if (event.type === "keyup" && !["Enter", " "].includes(event.key)) {
+    return;
+  }
+
+  // Update the visible message
+  logoutMessage.value = "You have been logged out";
+
+  // Announce to screen readers
+  if (logoutAlert.value) {
+    logoutAlert.value.textContent = ""; // force refresh
     setTimeout(() => {
-      region.textContent = "You have been logged out";
+      logoutAlert.value.textContent = logoutMessage.value;
     }, 50);
   }
+  // const region = document.getElementById("sr-logout-alert");
+  // if (region) {
+  //   region.textContent = ""; // reset (important for repeated announcements)
+  //   setTimeout(() => {
+  //     region.textContent = "You have been logged out";
+  //   }, 50);
+  //}
 
   logout(); // trigger your existing logout logic
 };
@@ -146,9 +164,9 @@ const dropDown = () => {
               </NuxtLink>
 
               <!-- Logout -->
-              <div tabindex="0" aria-label="logout"
+              <div tabindex="0" aria-label="logout" role="button"
                 class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
-                @click="announceLogout">
+                @click="announceLogout" @keyup="announceLogout" >
                 <span class="capitalize"> Logout </span>
                 <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
               </div>
@@ -219,7 +237,7 @@ const dropDown = () => {
                 </div>
                 <p class="hidden capitalize lg:flex">Home</p>
               </NuxtLink>
-              <div class="flex items-center h-6 gap-2 p-2 cursor-pointer md:h-8" @click="logout" v-if="userToken">
+              <div class="flex items-center h-6 gap-2 p-2 cursor-pointer md:h-8" @click="logout" v-if="userToken" role="button" tabindex="0" @keyup="announceLogout">
                 <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
               </div>
               <!-- sign in -->
@@ -230,7 +248,15 @@ const dropDown = () => {
             </div>
           </div>
         </div>
-        <div id="sr-logout-alert" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
+      <!-- <div id="sr-logout-alert" aria-live="assertive" aria-atomic="true" class="sr-only"></div> -->
+      <div 
+  ref="logoutAlert"
+  aria-live="assertive"
+  aria-atomic="true"
+>
+  {{ logoutMessage }}
+</div>
+
       </div>
     </nav>
   </header>
