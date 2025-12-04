@@ -7,7 +7,7 @@ import { currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import AIAssistant from "~/components/chapter/AIAssistant.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import { updateChapterProgress } from "~/utilities/progress";
 import { fetchAsyncData } from "~/composable/useAsyncFetch";
 import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
@@ -30,7 +30,7 @@ currentTopic.value = topicTitle;
 const signInAccessToken = useCookie("signInAccessToken");
 const userToken = useCookie("signInUserToken");
 // search anouncement to screen reders
-const announcement = ref(null);
+const announcement = ref();
 const chapterProgress = useCookie("chapterProgress");
 
 // Define meta info about page
@@ -925,7 +925,7 @@ definePageMeta({
 
     <!--  -->
       <!-- screen reader notifier -->
-      <div class="sr-only" aria-live="polite" aria-atomic role="status">
+      <div class="sr-only" aria-live="assertive" aria-atomic role="status">
         {{ announcement }}
       </div>
 

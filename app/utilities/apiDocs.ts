@@ -1,10 +1,4 @@
-const baseURL = "https://opschool.tie.go.tz:5001/v1"; // Define baseURL first
-
-// const baseURL = "https://apitie.ekima.africa/v1" // Define baseURL first
-
-// const baseURL = "http://[::1]:5501/v1" // Define baseURL first
-
-// const baseURL = "http://127.0.0.1:5500/v1" // Define baseURL first
+const baseURL = import.meta.env?.VITE_API_BASE_URL ??  "https://apitie.ekima.africa/v1" // define baseURL first
 
 const apiDocs = {
   baseURL: baseURL, // You can include it here for reference

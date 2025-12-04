@@ -1,34 +1,19 @@
-<script setup>
+<script setup lang="ts">
 // Define Stores
 const navigationStore = useNavigationStore()
 
 // Define Props 
-const props = defineProps({
-    id: {
-        type: String,
-        required: true,
-    },
-    title: {
-        type: String,
-        required: true,
-    },
-    thumbnail: {
-        type: String,
-        default: '/images/background2.webp',
-    },
-    level: {
-        type: String,
-        required: true,
-    },
-    subject: {
-        type: String,
-        required: true,
-    },
-    type: {
-        type: String,
-        required: true,
-    },
+const props = withDefaults(defineProps<{
+    id:string,
+    title:string,
+    thumbnail?: string,
+    level:string,
+    subject: string,
+    type:string,
+}>(),{
+    thumbnail:'/images/background2.webp',
 });
+
 
 const pageToView = computed(() => {
     let page;
