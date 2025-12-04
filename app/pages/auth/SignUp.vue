@@ -805,7 +805,7 @@ const organization = [
 
           <!-- Next Button -->
           <div class="flex items-center justify-center px-2">
-            <button type="button" @click="switchTab('tabTwo')"
+            <button type="button" role="button" tabindex="0" @click="switchTab('tabTwo')"
               class="flex items-center w-auto h-8 gap-2 px-4 transition-all duration-500 border rounded-full cursor-pointer hover:bg-oceanBlue hover:text-white text-oceanBlue border-oceanBlue animate-bounce-horizontal group">
               <p class="text-small group-hover:text-white">Next</p>
               <Icon name="f7:arrow-right" class="group-hover:text-white" size="16" />
