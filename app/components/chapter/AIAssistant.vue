@@ -283,6 +283,12 @@ onMounted(() => {
   });
 });
 
+// Handle form submit
+const handleFormSubmit = (e) => {
+  e.preventDefault();
+  askQuestion();
+};
+
 const askQuestion = async (actualQuestion = null, maskedMessage = null) => {
   // Use provided question or current input
   const question = actualQuestion || currentQuestion.value.trim();
@@ -631,7 +637,7 @@ onUnmounted(() => {
 
     <!-- Input Area -->
     <div class="p-4 border-t border-gray-200">
-      <form @submit.prevent="askQuestion" class="flex gap-2">
+      <form @submit.prevent="handleFormSubmit" class="flex gap-2">
         <input v-model="currentQuestion" type="text" placeholder="Ask about this competence..."
           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue"
           :disabled="isLoading || !chapterId" />
