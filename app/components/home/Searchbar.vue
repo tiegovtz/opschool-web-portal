@@ -1,7 +1,7 @@
 <script setup>
 import axios from "axios";
 import TopicCard from "./TopicCard.vue";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import SearchResults from "./SearchResults.vue";
 
 const userToken = useCookie("signInUserToken");

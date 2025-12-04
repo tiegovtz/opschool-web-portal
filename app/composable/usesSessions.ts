@@ -1,6 +1,6 @@
 
 import { ref } from 'vue';
-import apiDocs from '~/utilities/api-docs';
+import apiDocs from '~/utilities/apiDocs';
 
 export function useSessionsSetup() {
   const loading = ref(false);

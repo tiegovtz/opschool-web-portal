@@ -1,4 +1,7 @@
-<script setup>
+<script setup lang="ts">
+import { HomeTabs } from '~/types/enum/tabs.enum';
+import type { tabs, videoType } from '~/types/types.data';
+
 
 // Define Emit
 const emit = defineEmits([
@@ -7,28 +10,31 @@ const emit = defineEmits([
 
 
 // Define Props
-defineProps({
-  subjectTitle: String,
-  topicId: String,
-  isLoggedIn:{
-    type: Boolean,
-    default: false
-  },
-  activeTab: String,
+withDefaults(defineProps<{
+  subjectTitle?: string,
+  topicId?: string,
+  isLoggedIn?: boolean,
+  activeTab?: tabs,
+}>(), {
+  isLoggedIn: false,
+  activeTab: 'subjects'
 })
 
 // Define State
-const tabState = reactive({
+const tabState = reactive<{
+  isChecked: boolean,
+  checkedValueButton: tabs | null
+}>({
   isChecked: false,
   checkedValueButton: null,
 });
-const videoType = ref('conceptual') //Conceptual and other initial
+const videoType = ref<videoType>('conceptual') //Conceptual and other initial
 
 // Define a Function
-const tabCheck = (checkValue) => {
+const tabCheck = (checkValue: tabs) => {
   tabState.isChecked = true;
   tabState.checkedValueButton = checkValue;
-  emit('emitActiveTab',tabState.checkedValueButton);
+  emit('emitActiveTab', tabState.checkedValueButton);
 
 }
 
@@ -38,160 +44,167 @@ const tabCheck = (checkValue) => {
   <section class="my-5" role="navigation">
     <div
       class="flex items-center text-center justify-start gap-3 mb-6 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center">
-      
+
       <!-- subject tab -->
-      <button v-if="isLoggedIn"
-        role="tab"
-        :class="[
+      <div v-if="isLoggedIn" class="">
+        <button role="tab" :class="[
           'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Home' || activeTab == 'Home'}
-        ]"
-        @click="tabCheck('Home')" >
-        <div class="flex items-center justify-center">
-          <Icon name="mdi:notebook-edit" size="20" class="" />
-        </div>
-        Subjects
-      </button>
+          { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'subjects' || activeTab == 'subjects' }
+        ]" @click="tabCheck('subjects')">
+          <div class="flex items-center justify-center">
+            <Icon aria-label="" name="mdi:notebook-edit" size="20" class="" />
+          </div>
+          {{ HomeTabs.subject }}
+        </button>
+        <a class="sr-only" aria-label="Press to jump to subject list" role="navigation"
+          href="#content-container-after-login" >Skip content</a>
+      </div>
       <!-- Interactive Content -->
-      <button v-if="isLoggedIn"
-       role="tab"
-        :class="[
+      <div v-if="isLoggedIn" class="">
+        <button role="tab" :class="[
           'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-          {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Interactive Books' || activeTab == 'Interactive Books'}
-        ]"
-        @click="tabCheck('Interactive Books')" >
-        <div class="flex items-center justify-center">
-          <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
-        </div>
-        Interactive Content
-      </button>
-      <NuxtLink :aria-label="`press to visit page for interactive contents ${subjectTitle ? `for subject ${subjectTitle}`:''}`" v-else :to="subjectTitle ? topicId ? `/interactive/${subjectTitle}/${topicId}` : `/interactive/${subjectTitle}` : `/interactive`"
+          { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'interactive-contents' || activeTab == 'interactive-contents' }
+        ]" @click="tabCheck('interactive-contents')">
+          <div class="flex items-center justify-center">
+            <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
+          </div>
+          {{ HomeTabs.interactive }}
+        </button>
+        <a class="sr-only" aria-label="Press to jump to interactive contents list" role="navigation"
+          href="#content-container-after-login" >Skip content</a>
+      </div>
+
+      <NuxtLink
+        :aria-label="`press to visit page for interactive contents ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
+        v-else
+        :to="subjectTitle ? topicId ? `/interactive/${subjectTitle}/${topicId}` : `/interactive/${subjectTitle}` : `/interactive`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
         active-class="text-white !bg-deepBlue ">
         <div class="flex items-center justify-center">
           <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
         </div>
-        Interactive Content
+        {{ HomeTabs.interactive }}
       </NuxtLink>
-      
+
 
       <!-- Learning Activities -->
-      <button v-if="isLoggedIn"
-       role="tab"
-         :class="[
-        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Experiments' || activeTab == 'Experiments'}
-         ]"
-        @click="tabCheck('Experiments')" >
-        <div class="flex items-center justify-center">
-          <Icon name="icon-park-solid:experiment-one" size="20" />
-        </div>
-        Learning Activities
-      </button>
-      <NuxtLink v-else :aria-label="`press to visit page of learning activities (experiments) ${subjectTitle ? `for subject ${subjectTitle}`:''}`"  :to="subjectTitle ? topicId ? `/experiments/${subjectTitle}/${topicId}` : `/experiments/${subjectTitle}` : `/experiments`"
+      <div v-if="isLoggedIn">
+        <button role="tab" :class="[
+          'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+          { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'learn-activities' || activeTab == 'learn-activities' }
+        ]" @click="tabCheck('learn-activities')">
+          <div class="flex items-center justify-center">
+            <Icon name="icon-park-solid:experiment-one" size="20" />
+          </div>
+          {{ HomeTabs.activity }}
+        </button>
+        <a class="sr-only" aria-label="Press to jump to learn activities list" role="navigation"
+          href="#content-container-after-login" >Skip content</a>
+      </div>
+      <NuxtLink v-else
+        :aria-label="`press to visit page of learning activities (experiments) ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
+        :to="subjectTitle ? topicId ? `/experiments/${subjectTitle}/${topicId}` : `/experiments/${subjectTitle}` : `/experiments`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
           <Icon name="icon-park-solid:experiment-one" size="20" />
         </div>
-        Learning Activities
+        {{ HomeTabs.activity }}
       </NuxtLink>
-      
+
 
       <!-- Conceptual Video -->
-      <button v-if="isLoggedIn"   
-       role="tab"
-        :class="[
-        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Video' || activeTab == 'Video'}
-         ]"
-        @click="tabCheck('Video')" >
-        <div class="flex items-center justify-center">
-          <Icon name="fluent:video-24-filled" size="20" />
-        </div>
-        Video
-      </button>
-      <NuxtLink v-else :aria-label="`press to visit page of Video ${subjectTitle ? `for subject ${subjectTitle}`:''}`" :to="{
-        path:subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`,
-        query:  {
-          type: 'conc'
-        }
-      }"
-        @click="videoType = 'conceptual'"
+      <div v-if="isLoggedIn" class="">
+        <button role="tab" :class="[
+          'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+          { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'video' || activeTab == 'video' }
+        ]" @click="tabCheck('video')">
+          <div class="flex items-center justify-center">
+            <Icon name="fluent:video-24-filled" size="20" />
+          </div>
+          {{ HomeTabs.video }}
+        </button>
+        <a class="sr-only" aria-label="Press to jump videos list" role="navigation"
+          href="#content-container-after-login" >Skip content</a>
+      </div>
+      <NuxtLink v-else :aria-label="`press to visit page of Video ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
+        :to="{
+          path: subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`,
+          query: {
+            type: 'conc'
+          }
+        }" @click="videoType = 'conceptual'"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
-        :active-class=" videoType == 'conceptual' ? 'text-white !bg-deepBlue': 'text-white !bg-oceanBlue'">
+        :active-class="videoType == 'conceptual' ? 'text-white !bg-deepBlue' : 'text-white !bg-oceanBlue'">
         <div class="flex items-center justify-center">
           <Icon name="fluent:video-24-filled" size="20" />
         </div>
-        Video
+        {{ HomeTabs.video }}
       </NuxtLink>
 
       <!-- Other Video -->
-      <button v-if="isLoggedIn"   
-       role="tab"
-        :class="[
-        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'otherVideo' || activeTab == 'otherVideo'}
-         ]"
-        @click="tabCheck('otherVideo')" >
-        <div class="flex items-center justify-center">
-          <Icon name="icon-park-solid:blackboard" size="20" />
-        </div>
-        Class Videos
-      </button>
-      <NuxtLink v-else 
-      :aria-label="`press to visit page of class video ${subjectTitle ? `for subject ${subjectTitle}`:''}`" :to="{
-        path:subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`,
-        query: {
-          type: 'oth'
-        }
-      }"
-       @click="videoType = 'other'"
+       <div  v-if="isLoggedIn" class="">
+         <button role="tab" :class="[
+           'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+           { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'class-videos' || activeTab == 'class-videos' }
+         ]" @click="tabCheck('class-videos')">
+           <div class="flex items-center justify-center">
+             <Icon name="icon-park-solid:blackboard" size="20" />
+           </div>
+           {{ HomeTabs.classVideos }}
+          </button>
+          <a class="sr-only" aria-label="Press to jump to class videos list" role="navigation"
+            href="#content-container-after-login" >Skip content</a>
+       </div>
+      <NuxtLink v-else
+        :aria-label="`press to visit page of class video ${subjectTitle ? `for subject ${subjectTitle}` : ''}`" :to="{
+          path: subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`,
+          query: {
+            type: 'oth'
+          }
+        }" @click="videoType = 'class-video'"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
-         :active-class=" videoType == 'other' ? 'text-white !bg-deepBlue': 'text-white !bg-oceanBlue'
-         ">
+        :active-class="videoType == 'class-video' ? 'text-white !bg-deepBlue' : 'text-white !bg-oceanBlue'
+          ">
         <div class="flex items-center justify-center">
           <Icon name="icon-park-solid:blackboard" size="20" />
         </div>
-        Class Videos
+        {{ HomeTabs.classVideos }}
       </NuxtLink>
-      
+
       <!-- Audio -->
-      <button v-if="isLoggedIn" 
-       role="tab"
-      :class="[
-        'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-         {'text-white !bg-deepBlue' : tabState.isChecked && tabState.checkedValueButton == 'Audio' || activeTab == 'Audio'}
-         ]"
-        @click="tabCheck('Audio')" >
-        <div class="flex items-center justify-center">
-          <Icon name="famicons:headset-sharp" size="20" />
-        </div>
-        Audio
-      </button>
-      <NuxtLink v-else :to="subjectTitle ? topicId ? `/audio/${subjectTitle}/${topicId}` : `/audio/${subjectTitle}` : `/audio`"
-        :aria-label="`press to visit page of audio ${subjectTitle ? `for subject ${subjectTitle}`:''}`"
+       <div v-if="isLoggedIn" >
+         <button role="tab" :class="[
+           'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+           { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'audio' || activeTab == 'audio' }
+         ]" @click="tabCheck('audio')">
+           <div class="flex items-center justify-center">
+             <Icon name="famicons:headset-sharp" size="20" />
+           </div>
+           {{ HomeTabs.audio }}
+          </button>
+          <a class="sr-only" aria-label="Press to jump to audios list" role="navigation"
+            href="#content-container-after-login" >Skip content</a>
+       </div>
+      <NuxtLink v-else
+        :to="subjectTitle ? topicId ? `/audio/${subjectTitle}/${topicId}` : `/audio/${subjectTitle}` : `/audio`"
+        :aria-label="`press to visit page of audio ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
           <Icon name="famicons:headset-sharp" size="20" />
         </div>
-        Audio
+        {{ HomeTabs.audio }}
       </NuxtLink>
 
-      <NuxtLink
-          :to="'/smart-class'"
-          class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
-          active-class="text-white !bg-deepBlue"
-          aria-label="press to visit page of smart class page for livessession "
-      >
+      <NuxtLink :to="'/smart-class'"
+        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
+        active-class="text-white !bg-deepBlue" aria-label="press to visit page of smart class page for livessession ">
         <div class="flex items-center justify-center">
           <Icon name="mdi:television" size="20" />
         </div>
-        Smart Class
+        {{ HomeTabs.smartClass }}
       </NuxtLink>
     </div>
   </section>
 </template>
-
-

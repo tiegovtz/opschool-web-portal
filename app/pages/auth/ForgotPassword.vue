@@ -2,7 +2,7 @@
 import messages from '~/utilities/messages';
 import { auth } from '~/utilities/validationInput';
 import { CustomDropDownList } from "#components";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 
 
 const userForgotPassword = reactive({

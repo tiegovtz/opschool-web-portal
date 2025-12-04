@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, nextTick } from "vue";
 import debounce from "lodash/debounce";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import type { educationLevel } from "~/types/educationlevel.interface";
 import type { ClassLevel } from "~/types/classlevel.interface";
 import type { Subjects } from "~/types/subject.interface";
