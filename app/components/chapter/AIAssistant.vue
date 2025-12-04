@@ -520,7 +520,7 @@ const handleSummarize = async () => {
   isSummarizing.value = true;
   const prompt = `Please provide a comprehensive summary of this chapter/competence: ${props.chapterName}. Include main concepts, key points, and important information.`;
   try {
-    await askQuestion(prompt, "Create a summary", { useDocsAPI: true });
+    await askQuestion(prompt, "Create a summary", { useDocsAPI: false });
   } finally {
     isSummarizing.value = false;
   }
@@ -532,7 +532,7 @@ const handleEnglishCrashCourse = async () => {
   const prompt = `I'm a Tanzanian student who learned in Swahili. Please explain this chapter/competence "${props.chapterName}" in simple English, helping me understand the key concepts and terms. Use Tanzanian context, examples, and references that relate to Tanzania. Use simple language and provide examples where helpful. use swahili to make more emphasis on points.`;
   try {
     await askQuestion(prompt, "Help with English crash course", {
-      useDocsAPI: true,
+      useDocsAPI: false,
     });
   } finally {
     isEnglishCrashCourse.value = false;
