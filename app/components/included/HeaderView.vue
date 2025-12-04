@@ -26,31 +26,24 @@ const logout = () => {
 const logoutMessage = ref("");
 const logoutAlert = ref(null);
 
-const announceLogout = () => {
-  // Keyboard support: only trigger on Enter or Space
+const announceLogout = (event) => {
+  
+   // Keyboard support (Enter + Space)
   if (event.type === "keyup" && !["Enter", " "].includes(event.key)) {
     return;
   }
 
-  // Update the visible message
   logoutMessage.value = "You have been logged out";
 
-  // Announce to screen readers
+  // Screen reader announcement only (sr-only region)
   if (logoutAlert.value) {
-    logoutAlert.value.textContent = ""; // force refresh
+    logoutAlert.value.textContent = ""; 
     setTimeout(() => {
       logoutAlert.value.textContent = logoutMessage.value;
     }, 50);
   }
-  // const region = document.getElementById("sr-logout-alert");
-  // if (region) {
-  //   region.textContent = ""; // reset (important for repeated announcements)
-  //   setTimeout(() => {
-  //     region.textContent = "You have been logged out";
-  //   }, 50);
-  //}
 
-  logout(); // trigger your existing logout logic
+  logout(); // run your logout logic
 };
 
 
@@ -248,14 +241,12 @@ const dropDown = () => {
             </div>
           </div>
         </div>
-      <!-- <div id="sr-logout-alert" aria-live="assertive" aria-atomic="true" class="sr-only"></div> -->
-      <div 
+      <div
   ref="logoutAlert"
   aria-live="assertive"
   aria-atomic="true"
->
-  {{ logoutMessage }}
-</div>
+  class="sr-only"
+></div>
 
       </div>
     </nav>
