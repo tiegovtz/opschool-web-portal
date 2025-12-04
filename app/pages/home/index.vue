@@ -542,7 +542,7 @@ const switchTab = async (tab: tabs) => {
           </div>
 
           <!-- Status Success -->
-          <div id="content-container-after-login" aria-label="content list" role="region" tabindex="0"
+          <div id="content-container-after-login" aria-label="content list" role="region" tabindex="-1"
             v-else-if="status == 'success' && subjectId && data && data.length > 0">
             <ClientOnly>
               <customGridOne v-if="activeTab === 'subjects'">
