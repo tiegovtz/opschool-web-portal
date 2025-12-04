@@ -1,5 +1,5 @@
 <script setup>
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import { ref, watchEffect, onMounted, onUnmounted } from "vue";
 import { fetchAsyncData } from "~/composable/useAsyncFetch";
 

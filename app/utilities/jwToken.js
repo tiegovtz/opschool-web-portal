@@ -1,5 +1,5 @@
 import { jwtDecode } from "jwt-decode";
-import apiDocs from "./api-docs";
+import apiDocs from "./apiDocs";
 
 /**
  * Checks if a given JWT token is expiring soon.
