@@ -1,10 +1,12 @@
 <script setup>
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import { layoutEffect } from "~/utilities/controlls";
+import messages from '~/utilities/messages'
 
 const userToken = useCookie("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
 const refreshToken = useCookie("signInRefreshToken");
+
 
 const logout = () => {
   // Clear All Cookies
@@ -12,12 +14,27 @@ const logout = () => {
   accessToken.value = null;
   refreshToken.value = null;
 
+  // Redirect to Home
+
   const router = useRouter();
   layoutEffect.value = "grid";
   router.replace("/home");
   // Dismiss Drop Down
   dropDown();
 };
+
+const announceLogout = () => {
+  const region = document.getElementById("sr-logout-alert");
+  if (region) {
+    region.textContent = ""; // reset (important for repeated announcements)
+    setTimeout(() => {
+      region.textContent = "You have been logged out";
+    }, 50);
+  }
+
+  logout(); // trigger your existing logout logic
+};
+
 
 const isPop = ref(true);
 
@@ -33,7 +50,7 @@ const dropDown = () => {
       <!-- Header -->
       <div class="relative flex justify-center w-full h-24 pt-1">
         <div class="flex items-center justify-between w-full h-full wrapper-container">
-          <NuxtLink to="/" aria-label="Go to homepage"
+          <NuxtLink to="/" aria-label="Go to homepage,link with court of arm image " aria-describedby="tanzania-emblem-longdesc"
             class="flex items-center justify-center h-full cursor-pointer max-w-[64px]">
             <figure>
               <NuxtImg src="/logo/emblem.webp"
@@ -89,8 +106,8 @@ const dropDown = () => {
             <p class="hidden capitalize lg:flex">TIE Library</p>
           </a>
           <!-- TIE AI Teacher -->
-          <NuxtLink to="/tie-ai-teacher"
-            class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium"
+          <NuxtLink v-if="userToken" to="/tie-ai-teacher"
+            class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium rounded-md"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
               <Icon name="mdi:account" size="20" />
@@ -131,11 +148,12 @@ const dropDown = () => {
               <!-- Logout -->
               <div tabindex="0" aria-label="logout"
                 class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
-                @click="logout">
+                @click="announceLogout">
                 <span class="capitalize"> Logout </span>
                 <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
               </div>
             </div>
+            
             <div class="flex items-center gap-4 p-2" v-else>
               <!-- sign in -->
               <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
@@ -212,6 +230,7 @@ const dropDown = () => {
             </div>
           </div>
         </div>
+        <div id="sr-logout-alert" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
       </div>
     </nav>
   </header>

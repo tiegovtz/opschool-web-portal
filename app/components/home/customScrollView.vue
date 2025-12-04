@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import customGridOne from "~/components/home/customGridOne.vue";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import ExperimentsCard from "~/components/experiments/experimentsCard.vue";
@@ -7,26 +7,21 @@ import SubjectCard from "~/components/home/SubjectCard.vue";
 import { VideoCard } from "#components";
 import { layoutEffect } from "~/utilities/controlls";
 import AudioCard from "../audio/audioCard.vue";
+import type { tabs } from "~/types/types.data";
 
 const emits = defineEmits(['emittedSubjectId','emittedActiveTab','emittedSubjectName']);
 
-const props=defineProps({
-  data: {
-    type: Array,
-    required: true,
-  },
-  activeTab: {
-    type: String,
-    required: true,
-  },
-  seeMoreDetails: String,
-  shuffleSubject: Function,
-});
+const props=defineProps<{
+  data:any[],
+  activeTab:tabs 
+  seeMoreDetails?: string,
+  shuffleSubject?: Function,
+}>();
 
-const seeMoreDetails = ref(props.seeMoreDetails ?? null); // Initial See More
+const seeMoreDetails = ref<string|null>(props.seeMoreDetails ?? null); // Initial See More
 const userToken = useCookie("signInUserToken");
 // modify see more
-const setSeeMore = (seeMore) => {
+const setSeeMore = (seeMore:string) => {
   if (seeMoreDetails.value === seeMore) {
     seeMoreDetails.value = null;
   } else {
@@ -37,13 +32,13 @@ const setSeeMore = (seeMore) => {
 
 <template>
   <div v-if="userToken">
-    <div v-if="activeTab.toLowerCase() === 'home'">
+    <div v-if="activeTab === 'subjects'">
       <!-- Subject Cards are in Grid -->
-      <customGridOne v-if="activeTab.toLowerCase() === 'home'">
+      <customGridOne v-if="activeTab === 'subjects'">
         <template #data>
           <!-- Subject Cards are in Grid -->
           <SubjectCard
-            v-for="subject in shuffleSubject(data)"
+            v-for="subject in shuffleSubject?.(data)"
             :key="subject._id"
             :subject-id="subject._id"
             :subject-name="subject.name"
@@ -57,7 +52,7 @@ const setSeeMore = (seeMore) => {
         </template>
       </customGridOne>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'interactive books'">
+    <div v-else-if="activeTab === 'interactive-contents'">
       <div v-for="(topics, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
@@ -194,7 +189,7 @@ const setSeeMore = (seeMore) => {
         </customGridOne>
       </div>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'experiments'">
+    <div v-else-if="activeTab === 'learn-activities'">
       <div v-for="(experiments, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
@@ -306,8 +301,8 @@ const setSeeMore = (seeMore) => {
     </div>
     <div
       v-else-if="
-        activeTab.toLowerCase() === 'video' ||
-        activeTab.toLowerCase() === 'othervideo'
+        activeTab === 'video' ||
+        activeTab === 'class-videos'
       "
     >
       <div v-for="(videos, index) in data" :key="index">
@@ -414,7 +409,7 @@ const setSeeMore = (seeMore) => {
         </customGridOne>
       </div>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'audio'">
+    <div v-else-if="activeTab === 'audio'">
        <div v-for="(audios, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()"
@@ -524,9 +519,9 @@ const setSeeMore = (seeMore) => {
     </div>
   </div>
   <div v-else>
-     <div v-if="activeTab.toLowerCase() === 'home'">
+     <div v-if="activeTab === 'subjects'">
       <!-- Subject Cards are in Grid -->
-      <customGridTwo v-if="activeTab.toLowerCase() === 'home'">
+      <customGridTwo v-if="activeTab === 'subjects'">
         <template #data>
           <!-- Subject Cards are in Grid -->
           <SubjectCard
@@ -544,7 +539,7 @@ const setSeeMore = (seeMore) => {
         </template>
       </customGridTwo>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'interactive books'">
+    <div v-else-if="activeTab === 'interactive-contents'">
       <div v-for="(topics, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
@@ -682,7 +677,7 @@ const setSeeMore = (seeMore) => {
         </customGridTwo>
       </div>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'experiments'">
+    <div v-else-if="activeTab === 'learn-activities'">
       <div v-for="(experiments, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
@@ -789,8 +784,8 @@ const setSeeMore = (seeMore) => {
     </div>
     <div
       v-else-if="
-        activeTab.toLowerCase() === 'video' ||
-        activeTab.toLowerCase() === 'othervideo'
+        activeTab === 'video' ||
+        activeTab === 'class-videos'
       "
     >
       <div v-for="(videos, index) in data" :key="index">
@@ -897,7 +892,7 @@ const setSeeMore = (seeMore) => {
         </customGridTwo>
       </div>
     </div>
-    <div v-else-if="activeTab.toLowerCase() === 'audio'">
+    <div v-else-if="activeTab === 'audio'">
       <div v-for="(audios, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey"

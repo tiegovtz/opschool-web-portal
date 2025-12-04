@@ -8,4 +8,5 @@ export interface BaseEntity {
   alt?:string;
   thumbnail?:string;
   syllabus?:string;
+  views?:number;
 }

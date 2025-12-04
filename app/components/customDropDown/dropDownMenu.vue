@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, nextTick } from "vue";
 import debounce from "lodash/debounce";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import type { educationLevel } from "~/types/educationlevel.interface";
 import type { ClassLevel } from "~/types/classlevel.interface";
 import type { Subjects } from "~/types/subject.interface";
@@ -101,7 +101,7 @@ const filterGroups = computed(() => {
   }
 
   // Class
-  if (classes.value?.length) {
+  if (classes.value?.length && selected.level?.trim() !== '') {
     groups.push({
       name: "class",
       inputType: "radio",
@@ -147,6 +147,7 @@ watch([() => props.activeTab, () => selected.level], () => {
       <h2 class="font-bold text-gray-700">Filter</h2>
       <button
         type="reset"
+        aria-label="press to reset filters"
         class="px-3 py-1 text-sm border border-oceanBlue text-oceanBlue rounded-md transition hover:bg-oceanBlue hover:text-white"
       >
         Reset

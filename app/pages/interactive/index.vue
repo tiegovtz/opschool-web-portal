@@ -1,15 +1,16 @@
-<script setup>
-import TopicCard from "@/components/home/TopicCard.vue";
+<script setup lang="ts">
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, reactive } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import InputsSelection from '@/components/home/InputsSelection.vue'
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { fetchAsyncData } from "~/composable/useAsyncFetch";
+import type { User } from "~/types/user.interface";
+import type { Subjects } from "~/types/subject.interface";
 
 // Define meta info about page
 useHead({
@@ -42,11 +43,11 @@ const userToken = useCookie('signInUserToken');
 
 // Define Ref status
 const status = ref('pending'); // Initial Status State
-const topic = ref([]);        // Initial Topics State
+const topic = ref<any[]>();        // Initial Topics State
 const slicedData = ref();    // Initial slice data to 9
 
 // First, fix the sliceData function
-const sliceData = (start, end) => {
+const sliceData = (start:number, end:number) => {
 
   if (!topic.value || !Array.isArray(topic.value) || topic.value.length === 0) {
     slicedData.value = [];
@@ -55,7 +56,7 @@ const sliceData = (start, end) => {
 
   // If only one page of data or less, return all data
   if (topic.value.length <= pageSize.value) {
-    slicedData.value = topic.value;
+    slicedData.value = topic.value;      
     return;
   }
 
@@ -68,10 +69,10 @@ const currentPage = ref(1);
 const pageSize = ref();
 
 // Then, update fetchTopics to call sliceData after data is loaded
-const fetchTopics = async (params) => {
+const fetchTopics = async (params?:any) => {
 
   const url = userToken.value ?
-    apiDocs.topics.filterTopicsByUser.replace('{userId}', userToken.value?._id) :
+    apiDocs.topics.filterTopicsByUser.replace('{userId}', (userToken.value as unknown as User)?._id) :
     apiDocs.topics.filterTopics
 
   try {
@@ -161,21 +162,29 @@ const prevPage = () => {
 const { progress, isLoading } = useLoadingIndicator()
 
 // Define Filters Reactive State
-const filters = reactive(
+const filters = reactive<{ level: string | number | null; subject: string | null }>(
   {
     level: null,
     subject: null,
   }
 )
 
-const level = ref()  // Initial Level State
+const level = ref<string | null>(null)  // Initial Level State
 // watch emits changes
-watch(filters, (filters) => {
-  fetchTopics({
-    "level": filters.level.toString(),
-    "subject": filters.subject.toString()
-  })
-})
+watch(filters, (current) => {
+  const payload: Record<string, string> = {};
+
+  if (current.level != null) {
+    payload.level = String(current.level);
+  }
+
+  if (current.subject != null) {
+    payload.subject = String(current.subject);
+  }
+
+  fetchTopics(payload);
+}, { deep: true });
+
 </script>
 
 <template>
@@ -188,7 +197,7 @@ watch(filters, (filters) => {
       <!-- User Token Available -->
       <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
         <HomeSearchbar appearance="rounded" />
-        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
+        <TabBar />
       </div>
 
       <!-- User Token Not Available -->
@@ -216,7 +225,7 @@ watch(filters, (filters) => {
         <!-- client only -->
         <ClientOnly v-if="slicedData?.length > 0">
           <div class="flex flex-col w-full">
-           <HomeCustomScrollView :data="topic" active-tab="interactive books" />
+           <HomeCustomScrollView :data="topic ??[]" active-tab="interactive-contents" />
 
             <!-- pagination numbers based on data length greater to 9 -->
             <div v-if="totalPages > 1" class="flex justify-center my-10">

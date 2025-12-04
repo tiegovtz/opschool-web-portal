@@ -1,5 +1,5 @@
 import Bowser from "bowser";
-import apiDocs from "./api-docs";
+import apiDocs from "./apiDocs";
 
 export const webVisitor = async () => {
   // Get platform details from Bowser

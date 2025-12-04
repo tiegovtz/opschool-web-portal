@@ -3,7 +3,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from "axios";
 import { useSessionsSetup } from "../../../../composable/usesSessions.js";
-import apiDocs from '~/utilities/api-docs.js';
+import apiDocs from '~/utilities/apiDocs.js';
 import { filterContentBySearch } from '~/utilities/filterJson.js';
 
 const router = useRouter();

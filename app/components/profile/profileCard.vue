@@ -1,7 +1,7 @@
 <script setup>
 import messages from "~/utilities/messages";
 import { MessageComponent, ProfileDrawInitialLater } from "#components";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 
 // Define Cookie
 const signInAccessToken = useCookie("signInAccessToken");
@@ -402,7 +402,7 @@ const discardChanges = () => {
           </div>
           <div class="stat-content">
             <span class="stat-label">Subject Opened</span>
-            <span class="stat-value">{{ profileData.openedSubjects > 0 ? profileData.openedSubjects : 5 }}</span>
+            <span class="stat-value">{{ profileData.openedSubjects ?? 0 }}</span>
           </div>
         </div>
 

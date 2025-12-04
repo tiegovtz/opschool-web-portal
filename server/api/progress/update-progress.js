@@ -1,4 +1,4 @@
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 
 export default defineEventHandler(async (event) => {
   const auth_token = getCookie(event, "signInAccessToken");
