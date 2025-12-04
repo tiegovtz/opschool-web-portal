@@ -1,16 +1,16 @@
 <template>
   <form
     @submit="handleSubmit"
-    class="border-t border-gray-200 p-5 bg-white"
+    class="border-t border-gray-200 p-5 bg-transparent w-full"
   >
-    <div class="flex items-end gap-3">
-      <div class="flex-1 relative">
+    <div class="flex items-end  gap-3 p-2">
+      <div class="flex-1 relative h-14">
         <input
           v-model="input"
           placeholder="Type your question here..."
-          class="w-full rounded-2xl border-gray-200 px-5 py-3.5 pr-12 focus:outline-none focus:border-oceanBlue focus:ring focus:ring-oceanBlue bg-gray-50 transition-all text-sm"
+          class="w-full rounded-2xl border-gray-200 px-5 h-full pr-12 focus:outline-none focus:border-oceanBlue focus:ring focus:ring-oceanBlue bg-gray-50 transition-all text-sm"
         />
-        <button
+        <!-- <button
           type="button"
           class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
         >
@@ -18,7 +18,7 @@
             name="heroicons:paper-clip"
             class="w-5 h-5"
           />
-        </button>
+        </button> -->
       </div>
       <button
         type="submit"

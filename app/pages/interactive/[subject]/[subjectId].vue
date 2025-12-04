@@ -11,7 +11,7 @@ import {
   screenWidth,
 } from "@/utilities/controlls";
 import InputsSelection from "@/components/home/InputsSelection.vue";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composable/useAsyncFetch";
