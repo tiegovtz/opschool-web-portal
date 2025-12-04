@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, nextTick, onUnmounted, onMounted } from "vue";
-import apiDocs from "~/utilities/api-docs";
+import apiDocs from "~/utilities/apiDocs";
 
 const isHtml = (str) => /<\/?[a-z][\s\S]*>/i.test(str?.trim());
 
