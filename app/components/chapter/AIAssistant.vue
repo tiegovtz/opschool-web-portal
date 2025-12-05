@@ -1,5 +1,6 @@
 <script setup>
-import { ref, watch, nextTick, onUnmounted, onMounted } from "vue";
+import { ref, watch, nextTick, onUnmounted, onMounted, computed } from "vue";
+import { Chat } from "@ai-sdk/vue";
 import apiDocs from "~/utilities/apiDocs";
 
 const isHtml = (str) => /<\/?[a-z][\s\S]*>/i.test(str?.trim());
@@ -187,6 +188,10 @@ const formatMessage = (content) => {
 const props = defineProps({
   chapterId: { type: String, required: true },
   chapterName: { type: String, default: "this competence" },
+  subject: { type: String, default: "" },
+  level: { type: String, default: "" },
+  topic: { type: String, default: "" },
+  chapterNo: { type: Number, default: null },
 });
 
 // state refs
@@ -204,6 +209,265 @@ const token = useCookie("signInAccessToken"); // keep as ref; use token.value wh
 // Provider tracking
 const currentProvider = ref(null);
 const currentModel = ref(null);
+
+// Chat component for regular messages (using /api/chat)
+// Use computed to ensure chapterName is reactive
+const currentChapterName = computed(() => props.chapterName || "this competence");
+
+// Log chapterName when component mounts or chapter changes
+watch(
+  () => props.chapterName,
+  (newChapterName) => {
+    console.log("[Subject AI Teacher] Chapter name prop:", newChapterName);
+    console.log("[Subject AI Teacher] Computed chapter name:", currentChapterName.value);
+  },
+  { immediate: true }
+);
+
+// Create reactive headers and body that include context
+const getContextHeaders = () => {
+  const headers = {};
+  const chapterNameValue = currentChapterName.value;
+  
+  headers["X-Chapter-Name"] = chapterNameValue;
+  if (props.subject) headers["X-Subject"] = props.subject;
+  if (props.level) headers["X-Level"] = props.level;
+  if (props.topic) headers["X-Topic"] = props.topic;
+  if (props.chapterNo !== null && props.chapterNo !== undefined) {
+    headers["X-Chapter-No"] = String(props.chapterNo);
+  }
+  
+  const currentTokenValue = token?.value;
+  if (currentTokenValue) {
+    headers["Authorization"] = `Bearer ${currentTokenValue}`;
+  }
+  
+  return headers;
+};
+
+const getContextBody = () => {
+  const body = {};
+  const chapterNameValue = currentChapterName.value;
+  
+  body.chapterName = chapterNameValue;
+  if (props.subject) body.subject = props.subject;
+  if (props.level) body.level = props.level;
+  if (props.topic) body.topic = props.topic;
+  if (props.chapterNo !== null && props.chapterNo !== undefined) {
+    body.chapterNo = props.chapterNo;
+  }
+  
+  return body;
+};
+
+// Create a custom fetch that wraps the default fetch
+const createCustomFetch = () => {
+  return async (url, options = {}) => {
+    const chapterNameValue = currentChapterName.value;
+    
+    console.log("[Subject AI Teacher] 🔵 Custom fetch called");
+    console.log("[Subject AI Teacher] URL:", url);
+    console.log("[Subject AI Teacher] ChapterName:", chapterNameValue);
+    
+    // Merge headers
+    const contextHeaders = getContextHeaders();
+    const mergedHeaders = {
+      ...(options.headers || {}),
+      ...contextHeaders,
+    };
+    
+    // Try to merge body
+    let body = options.body;
+    if (body && typeof body === 'string') {
+      try {
+        const bodyObj = JSON.parse(body);
+        const contextBody = getContextBody();
+        Object.assign(bodyObj, contextBody);
+        body = JSON.stringify(bodyObj);
+        console.log("[Subject AI Teacher] ✅ Modified request body with context");
+      } catch (e) {
+        console.warn("[Subject AI Teacher] Could not parse body:", e);
+      }
+    }
+    
+    console.log("[Subject AI Teacher] Context being sent:", {
+      chapterName: chapterNameValue,
+      subject: props.subject,
+      level: props.level,
+      topic: props.topic,
+      chapterNo: props.chapterNo
+    });
+    
+    return fetch(url, {
+      ...options,
+      headers: mergedHeaders,
+      body,
+    });
+  };
+};
+
+// Initialize Chat component
+const chat = new Chat({
+  api: "/api/chat",
+});
+
+// Intercept fetch calls by overriding the global fetch temporarily
+// Store original fetch
+const originalFetch = window.fetch;
+
+// Override fetch to add context
+window.fetch = async function(url, options = {}) {
+  // Only intercept calls to our API endpoint
+  if (typeof url === 'string' && url.includes('/api/chat')) {
+    const chapterNameValue = currentChapterName.value;
+    
+    console.log("[Subject AI Teacher] 🔵 Intercepted fetch call");
+    console.log("[Subject AI Teacher] URL:", url);
+    console.log("[Subject AI Teacher] ChapterName:", chapterNameValue);
+    
+    // Add context headers
+    const contextHeaders = getContextHeaders();
+    const mergedHeaders = {
+      ...(options.headers || {}),
+      ...contextHeaders,
+    };
+    
+    // Add context to body if it's a JSON string
+    let body = options.body;
+    if (body && typeof body === 'string') {
+      try {
+        const bodyObj = JSON.parse(body);
+        const contextBody = getContextBody();
+        Object.assign(bodyObj, contextBody);
+        body = JSON.stringify(bodyObj);
+        console.log("[Subject AI Teacher] ✅ Added context to request body");
+      } catch (e) {
+        console.warn("[Subject AI Teacher] Could not parse body:", e);
+      }
+    }
+    
+    console.log("[Subject AI Teacher] Context being sent:", {
+      chapterName: chapterNameValue,
+      subject: props.subject,
+      level: props.level,
+      topic: props.topic,
+      chapterNo: props.chapterNo
+    });
+    
+    // Call original fetch with modified options
+    return originalFetch(url, {
+      ...options,
+      headers: mergedHeaders,
+      body,
+    });
+  }
+  
+  // For other URLs, use original fetch
+  return originalFetch(url, options);
+};
+
+console.log("[Subject AI Teacher] Chat component created with fetch interceptor");
+
+// Sync Chat component messages with local messages state
+// Use a debounced approach to avoid too many updates during streaming
+let syncTimeout = null;
+watch(
+  () => chat.messages,
+  (chatMessages) => {
+    if (!Array.isArray(chatMessages)) return;
+
+    // Clear any pending sync
+    if (syncTimeout) {
+      clearTimeout(syncTimeout);
+    }
+
+    // Debounce updates during streaming to avoid excessive re-renders
+    syncTimeout = setTimeout(() => {
+      // Build a map of Chat messages by ID for efficient lookup
+      const chatMessagesMap = new Map();
+      chatMessages.forEach((chatMsg) => {
+        if (chatMsg && chatMsg.id) {
+          chatMessagesMap.set(chatMsg.id, chatMsg);
+        }
+      });
+
+      // Get all Chat message IDs
+      const chatMessageIds = Array.from(chatMessagesMap.keys());
+
+      // Remove local messages that no longer exist in Chat (shouldn't happen, but safety check)
+      messages.value = messages.value.filter(
+        (m) => !m.fromChat || chatMessageIds.includes(m.chatId)
+      );
+
+      // Process each Chat message
+      chatMessages.forEach((chatMsg) => {
+        if (!chatMsg || !chatMsg.id) return;
+
+        // Extract text content from message parts
+        let textContent = "";
+        if (Array.isArray(chatMsg.parts) && chatMsg.parts.length > 0) {
+          textContent = chatMsg.parts
+            .filter((p) => p && p.type === "text" && p.text)
+            .map((p) => String(p.text))
+            .join("");
+        } else if (chatMsg.content) {
+          // Fallback: if message has direct content property
+          textContent = String(chatMsg.content);
+        }
+
+        // Find existing message by chatId
+        const existingIndex = messages.value.findIndex(
+          (m) => m.fromChat && m.chatId === chatMsg.id
+        );
+
+        const messageData = {
+          role: chatMsg.role,
+          content: textContent,
+          timestamp: existingIndex >= 0 
+            ? messages.value[existingIndex].timestamp 
+            : new Date().toLocaleTimeString(),
+          fromChat: true,
+          chatId: chatMsg.id,
+        };
+
+        if (chatMsg.role === "user") {
+          messageData.actualContent = textContent;
+        }
+
+        if (existingIndex >= 0) {
+          // Update existing message (for streaming updates)
+          messages.value[existingIndex] = messageData;
+        } else {
+          // Add new message
+          // For user messages, always add (they're complete immediately)
+          // For assistant messages, only add if we have some content (streaming will update it)
+          if (chatMsg.role === "user" || textContent.length > 0) {
+            messages.value.push(messageData);
+          }
+        }
+      });
+
+      // Update loading state based on Chat component status
+      // Chat component has status: 'ready' | 'streaming' | 'error'
+      const chatIsLoading = chat.status === 'streaming' || chat.isLoading || false;
+      isLoading.value = chatIsLoading;
+      scrollToBottom(true);
+    }, 50); // 50ms debounce for streaming updates
+  },
+  { deep: true, immediate: false }
+);
+
+// Watch Chat component status to update loading state
+watch(
+  () => chat.status,
+  (newStatus) => {
+    // Update isLoading when Chat status changes
+    isLoading.value = newStatus === 'streaming' || chat.isLoading || false;
+    if (newStatus === 'streaming') {
+      scrollToBottom(true);
+    }
+  }
+);
 
 // Quick action states
 const isSummarizing = ref(false);
@@ -290,6 +554,10 @@ onMounted(() => {
 
   onUnmounted(() => {
     stopListeners();
+    // Restore original fetch when component unmounts
+    if (typeof window !== 'undefined' && originalFetch) {
+      window.fetch = originalFetch;
+    }
   });
 });
 
@@ -302,10 +570,45 @@ const toggleAssistant = () => {
   }
 };
 
-// Handle form submit - prevents event object from being passed to askQuestion
-const handleFormSubmit = (e) => {
+// Handle form submit - use Chat component for regular messages
+const handleFormSubmit = async (e) => {
   e.preventDefault();
-  askQuestion();
+  const question = currentQuestion.value.trim();
+  if (!question || isLoading.value || !props.chapterId) return;
+
+  console.log("[Subject AI Teacher] 🟢 handleFormSubmit called with question:", question);
+  console.log("[Subject AI Teacher] Chat object:", chat);
+  console.log("[Subject AI Teacher] Chat.sendMessage exists:", typeof chat.sendMessage);
+
+  // Validate token
+  const currentTokenValue = token?.value;
+  if (!currentTokenValue) {
+    messages.value.push({
+      role: "assistant",
+      content: "Please sign in to use the AI assistant.",
+      timestamp: new Date().toLocaleTimeString(),
+    });
+    return;
+  }
+
+  currentQuestion.value = "";
+  isLoading.value = true;
+
+  try {
+    console.log("[Subject AI Teacher] 🟡 About to call chat.sendMessage");
+    await chat.sendMessage({ text: question });
+    console.log("[Subject AI Teacher] 🟢 chat.sendMessage completed");
+  } catch (error) {
+    console.error("[AI Subject Teacher] Chat error:", error);
+    messages.value.push({
+      role: "assistant",
+      content:
+        error?.message || "Sorry, I encountered an error. Please try again.",
+      timestamp: new Date().toLocaleTimeString(),
+    });
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 // Reset conversation when chapter changes
@@ -316,6 +619,7 @@ watch(
     if (oldChapterId && newChapterId !== oldChapterId) {
       stopReading();
       messages.value = [];
+      chat.messages = []; // Clear Chat component messages too
       previousChapterId.value = oldChapterId; // store old value
       isSummarizing.value = false;
       isEnglishCrashCourse.value = false;
@@ -758,25 +1062,27 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <!-- Typing Indicator - Similar to TIE AI Teacher -->
       <div
-        v-if="isLoading"
+        v-if="isLoading || chat.status === 'streaming'"
         class="flex justify-start"
       >
         <div
-          class="p-4 border border-gray-200 shadow-sm bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl"
+          class="max-w-[85%] rounded-xl p-4 shadow-md bg-gradient-to-br from-blue-50 to-gray-50 text-gray-900 border border-gray-200"
         >
-          <div class="flex gap-1.5">
-            <span
-              class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"
-            ></span>
-            <span
-              class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"
-              style="animation-delay: 0.2s"
-            ></span>
-            <span
-              class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"
-              style="animation-delay: 0.4s"
-            ></span>
+          <div class="flex items-center space-x-2">
+            <div class="flex gap-1.5">
+              <span
+                class="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-0"
+              ></span>
+              <span
+                class="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-200"
+              ></span>
+              <span
+                class="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-400"
+              ></span>
+            </div>
+            <span class="text-gray-500 text-sm ml-2">AI is typing...</span>
           </div>
         </div>
       </div>
@@ -1019,5 +1325,33 @@ h3:first-child {
 
 p {
   line-height: 1.6;
+}
+
+/* Typing indicator animation - matching TIE AI Teacher */
+@keyframes bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.delay-0 {
+  animation-delay: 0s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
 }
 </style>

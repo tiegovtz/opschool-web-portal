@@ -921,6 +921,10 @@ definePageMeta({
       v-if="chapters.currentChapterId && chapters.notes"
       :chapter-id="chapters.currentChapterId"
       :chapter-name="chapters.notes?.name || 'this competence'"
+      :subject="topicStandard"
+      :level="topicLevel"
+      :topic="topicTitle"
+      :chapter-no="chapters.notes?.chapterNo"
     />
 
     <!--  -->
