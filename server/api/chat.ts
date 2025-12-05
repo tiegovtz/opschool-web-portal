@@ -112,7 +112,12 @@ export default defineEventHandler(async (event) => {
   console.log("=".repeat(60));
   console.log("[API /chat] === REQUEST RECEIVED ===");
   console.log("[API /chat] Request body keys:", Object.keys(body || {}));
-  console.log("[API /chat] Context received:", {
+  console.log("[API /chat] All headers:", Object.fromEntries(
+    Array.from(event.headers.entries()).map(([k, v]) => [k, v])
+  ));
+  console.log("[API /chat] Context extracted:", {
+    chapterNameFromBody: chapterNameFromBody,
+    chapterNameFromHeader: chapterNameFromHeader,
     chapterName: chapterName,
     subject: subject,
     level: level,
@@ -122,9 +127,17 @@ export default defineEventHandler(async (event) => {
   
   if (chapterName) {
     console.log("[API /chat] ✅ Subject AI Teacher mode - Chapter:", chapterName);
+    console.log("[API /chat] Chapter name is valid?", 
+      chapterName && 
+      chapterName.trim() && 
+      chapterName !== "this competence"
+    );
   } else {
     console.log("[API /chat] ❌ TIE AI Teacher mode (no chapterName found)");
     console.log("[API /chat] Full body structure:", JSON.stringify(body, null, 2).substring(0, 1000));
+    console.log("[API /chat] Checking headers for x-chapter-name:", 
+      event.headers.get("x-chapter-name") || event.headers.get("X-Chapter-Name") || "NOT FOUND"
+    );
   }
   console.log("=".repeat(60));
 
