@@ -4,13 +4,16 @@ export default defineNuxtPlugin(() => {
   if (import.meta.server) return;
 
   // Configure MathJax
+  // Supported delimiters:
+  // - Inline math: $...$ or \(...\)
+  // - Display math: $$...$$ or \[...\]
   window.MathJax = {
     tex: {
       inlineMath: [['$', '$'], ['\\(', '\\)']],
       displayMath: [['$$', '$$'], ['\\[', '\\]']],
-      processEscapes: true,
-      processEnvironments: true,
-      packages: { '[+]': ['mhchem'] }
+      processEscapes: true, // Allow \$ to escape dollar signs
+      processEnvironments: true, // Process LaTeX environments
+      packages: { '[+]': ['mhchem'] } // Include chemistry package
     },
     options: {
       skipHtmlTags: ['script', 'noscript', 'style',],

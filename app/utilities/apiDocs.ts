@@ -131,6 +131,7 @@ const apiDocs = {
   // Search
   search: {
     getSearch: `${baseURL}/search`,
+    aiSearch: `/api/ai/search`, // Nuxt server API route
   },
 }
 
