@@ -1,34 +1,20 @@
-<script setup>
+<script setup lang="ts">
 import { layoutEffect } from "~/utilities/controlls";
 import { calculateTopicMetrics } from "~/utilities/topicMetrics.js";
 
 // Define Props
-const props = defineProps({
-  subjectId: {
-    type: String,
-    required: true,
-  },
-  subjectName: {
-    type: String,
-    required: true,
-  },
-  subjectImage: {
-    type: String,
-    default: '/images/background2.webp'
-  },
-  subjectDescription: {
-    type: String,
-    required: true,
-  },
-  totalViews: {
-    type: Number,
-    default: 0,
-  },
-  
-  isLoggedIn: {
-    type: Boolean,
-    default: false,
-  },
+const props = withDefaults(defineProps<{
+  subjectId:string;
+    subjectName:string,
+  subjectImage?:string,
+  subjectDescription: string,
+  totalViews:number,
+  isLoggedIn:boolean,
+
+}>(),{
+  totalViews:0,
+  isLoggedIn:false,
+  subjectImage:'/images/background2.webp'
 });
 
 // Define Emits

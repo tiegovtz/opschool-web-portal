@@ -1,20 +1,25 @@
-<script setup>
+<script setup lang="ts">
 import axios from "axios";
 import TopicCard from "./TopicCard.vue";
 import apiDocs from "~/utilities/apiDocs";
 import SearchResults from "./SearchResults.vue";
+import type { Topic } from "~/types/topic.interface";
 
 const userToken = useCookie("signInUserToken");
 
-const searchReactive = reactive({
+const searchReactive = reactive<{
+  search:string|null,
+  searchResult:any[] | Topic[]
+}>({
   search: null,
-  searchResult: null,
+  searchResult: [],
 });
 
 // search anouncement to screen reders
-const announcement = ref("");
+const announcement = ref<string>("");
 
 const search = async () => {
+  if(!searchReactive.search || searchReactive.search=='') return;
   const url = userToken.value
     ? `${apiDocs.search.getSearch}?query=${searchReactive.search.trim()}`
     : `${apiDocs.topics.filterTopics}?name=${searchReactive.search.trim()}`;
@@ -33,14 +38,14 @@ const search = async () => {
         searchReactive.searchResult = data;
          announcement.value = `${data.length} results found for ${searchReactive.search}.`;
       } else {
-        searchReactive.searchResult = null;
+        searchReactive.searchResult =[];
               announcement.value = `No results found for ${searchReactive.search}.`;
 
       }
     })
     .catch((error) => {
       announcement.value = `Search failed.`;
-      searchReactive.searchResult = null;
+      searchReactive.searchResult =[];
     });
 };
 
@@ -52,18 +57,19 @@ defineProps({
 });
 
 // watch search
-const inputSearch = (event) => {
-  const newVal = event.target.value;
+const inputSearch = (event:Event) => {
+  if(!event.target) return;
+  const newVal = (event.target as HTMLInputElement)?.value;
 
   if (newVal && newVal.trim() !== "") {
     // search();
   } else {
-    searchReactive.searchResult = null;
+    searchReactive.searchResult = [];
   }
 };
 
 const mouseOut = () => {
-  searchReactive.searchResult = null;
+  searchReactive.searchResult = [];
 }
 </script>
 
@@ -142,7 +148,7 @@ const mouseOut = () => {
           :topic-id="result._id" :topic-title="result.name" :topic-image="result.thumbnail"
           :topic-standard="result.standard" :topic-subject="result.subject.name"
           :topic-description="result.descriptions" :topic-level="result.level?.name ?? 'Form 1'" :topic-likes="0"
-          :topic-views="topic?.viewedBy?.length ? topic?.viewedBy?.length : 0" topic-duration="0"
+          :topic-views="result?.viewedBy?.length ? result?.viewedBy?.length : 0" topic-duration="0"
           :aria-label="`Among the topics from search result,${result.name} press to learn`" />
       </div>
 

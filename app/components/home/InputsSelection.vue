@@ -1,7 +1,7 @@
-<script setup>
-const level = ref('')
-const standard = ref('')
-const subject = ref('')
+<script setup lang="ts">
+const level = ref<string>('')
+const standard = ref<string>('')
+const subject = ref<string>('')
 
 
 

@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
 import { layoutEffect } from '~/utilities/controlls'
 
@@ -6,59 +6,31 @@ import { layoutEffect } from '~/utilities/controlls'
 const navigationStore = useNavigationStore()
 
 // Define Props
-const props = defineProps({
-  topicId: {
-    type: String,
-    required: true,
-  },
-  topicImage: {
-    type: String,
-    default: '/images/background2.webp',
-  },
-  topicTitle: {
-    type: String,
-    required: true,
-  },
-  topicDescription: {
-    type: String,
-    required: true,
-  },
-  topicDuration: {
-    type: String,
-    required: true,
-  },
-  topicLikes: {
-    types: Number,
-    required: true,
-  },
-  topicViews: {
-    type: Number,
-    required: true,
-  },
-  topicLevel: {
-    type: String,
-    default: 'Secondary',
-  },
-  topicStandard: {
-    type: String,
-    default: 'Form One',
-  },
-  subjectName: {
-    type: String,
-    default: 'Physics'
-  },
-  modelType: {
-    type: String,
-    default: 'card',
-  },
+const props = withDefaults(defineProps<{
+  topicId:string,
+  topicImage?:string,
+  topicTitle:string,
+  topicDescription:string,
+  topicDuration: string,
+  topicLikes: number,
+  topicViews: number,
+  topicLevel?:string,
+  topicStandard?:string,
+  subjectName?:string,
+  modelType?: string,
 
   // progress
-  topicProgress: {
-    type: Number,
-    default: 0,
-  },
-  topicViewed: Boolean
+  topicProgress?: number,
+  topicViewed?: boolean
 
+}>(),{
+topicImage:'',
+topicLevel:'Secondary',
+topicStandard:'Form One',
+subjectName:'Physics',
+modelType:'card',
+topicProgress:0,
+topicViewed:false,
 })
 
 const setTopicToView = () => {
