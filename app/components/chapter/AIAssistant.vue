@@ -96,6 +96,29 @@ const formatMessage = (content) => {
     '<blockquote class="pl-4 my-2 italic text-gray-700 border-l-4 border-gray-300">$1</blockquote>'
   );
 
+  // Math formulas - Convert LaTeX to MathJax format
+  // Process display math first to avoid conflicts with inline math
+  // Display math: $$...$$ or \[...\]
+  formatted = formatted.replace(
+    /\$\$([\s\S]*?)\$\$/g,
+    '<div class="mathjax-display my-4">\\[$1\\]</div>'
+  );
+  formatted = formatted.replace(
+    /\\\[([\s\S]*?)\\\]/g,
+    '<div class="mathjax-display my-4">\\[$1\\]</div>'
+  );
+  
+  // Inline math: $...$ or \(...\)
+  // Use negative lookbehind/lookahead to avoid matching $$ (already processed)
+  formatted = formatted.replace(
+    /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/g,
+    '<span class="mathjax-inline">\\($1\\)</span>'
+  );
+  formatted = formatted.replace(
+    /\\\(([^)]+?)\\\)/g,
+    '<span class="mathjax-inline">\\($1\\)</span>'
+  );
+
   // Headers
   formatted = formatted.replace(
     /^(#{4})\s+(.+)$/gm,
@@ -1131,8 +1154,42 @@ watch(isLoading, (newVal) => {
   } else if (!newVal && chat.status === 'ready') {
     // Scroll when streaming completes to show final message
     scrollToBottom(true);
+    // Render MathJax after message is complete
+    renderMathJax();
   }
 });
+
+// Render MathJax formulas
+const messageContainers = ref([]);
+const renderMathJax = async () => {
+  if (import.meta.server) return;
+  
+  await nextTick();
+  
+  if (window.mathJaxLoaded && window.MathJaxRender) {
+    try {
+      await window.mathJaxLoaded;
+      const containers = Array.isArray(messageContainers.value) 
+        ? messageContainers.value 
+        : messageContainers.value 
+          ? [messageContainers.value] 
+          : [];
+      
+      if (containers.length > 0) {
+        await window.MathJaxRender(containers);
+      }
+    } catch (error) {
+      if (isDev) {
+        console.warn("MathJax rendering failed:", error);
+      }
+    }
+  }
+};
+
+// Watch messages to trigger MathJax rendering
+watch(() => messages.value, () => {
+  renderMathJax();
+}, { deep: true });
 
 // Summarize and Crash Course actions
 const handleSummarize = async () => {
@@ -1362,6 +1419,7 @@ onUnmounted(() => {
           ]"
         >
           <div
+            ref="messageContainers"
             class="text-sm leading-relaxed"
             :class="message.role === 'user' ? 'text-white' : 'text-gray-800'"
             v-html="formatMessage(message.content)"
