@@ -23,6 +23,7 @@
         <!-- Back Button -->
         <NuxtLink
             v-if="canGoBack"
+            @click="useNavigationStore().setGoBack($route.fullPath)"
             to="/"
             class="inline-flex items-center gap-3 px-6 py-3 mb-8 text-white bg-[#56ade8] border-2 border-[#56ade8] rounded-full shadow-lg transition-all duration-300 hover:bg-white hover:text-[#56ade8] hover:-translate-y-1"
         >
@@ -34,6 +35,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           <NuxtLink
               v-for="(item, index) in items"
+              @click="useNavigationStore().setGoBack($route.fullPath)"
               :key="index"
               :to="item.value === 'smart-class' ? '/smart-class/header-less' : `/smart-class/header-less/screen/${item.value}`"
               class="nav-card group relative bg-[#56ade8]/10 backdrop-blur-lg rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl border border-white/10 min-h-[280px] animate-slide-in"
