@@ -1,5 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import { reactive, ref, computed, nextTick, watch } from "vue";
+import type { Question } from "~/types/question.interface";
 
 // Define State
 const isTips = ref(false);
@@ -18,22 +19,14 @@ const questionAnswer = reactive({
   isAnswered: false,
   selectedChoice: "",
   isCorrectAnswer: false,
-  clickedChoice: null,
+  clickedChoice: "" as string | null,
 });
 
-const questionProps = defineProps({
-  questionType: String,
-  question: String,
-  trueAnswer: String,
-  choices: Array,
-  number: String,
-  thumbnail: String,
-  blanks: Number,
-});
+const questionProps = defineProps<Question>();
 
 const emit = defineEmits(["questionAnswered", "clickedChoice"]);
 
-const markQuestion = (choice) => {
+const markQuestion = (choice:string) => {
   if (questionAnswer.disableAnswer) return;
 
   questionAnswer.selectedChoice = choice;
@@ -54,7 +47,7 @@ const markQuestion = (choice) => {
   }, 1000);
 };
 
-const indexToAlpha = (index) => String.fromCharCode(65 + index);
+const indexToAlpha = (index:number) => String.fromCharCode(65 + index);
 
 const shuffleChoices = computed(() => {
   const shuffled = questionProps.choices
@@ -67,7 +60,7 @@ const shuffleChoices = computed(() => {
 });
 
 
-const dropZoneAnswers = ref([]);
+const dropZoneAnswers = ref<(string | null)[]>([]);
 const isDropped = ref(false);
 
 watch(
@@ -76,12 +69,12 @@ watch(
     const blanks =
       questionProps.blanks ||
       (questionProps.question.match(/(_\$blank)/g) || []).length;
-    dropZoneAnswers.value = Array.from({ length: blanks }, () => null);
+    dropZoneAnswers.value = Array.from({ length: blanks as number }, () => null) ?? [];
   },
   { immediate: true }
 );
 
-const handleDrop = (index, event) => {
+const handleDrop = (index:number, event: { dataTransfer: { getData: (arg0: string) => any; }; }) => {
   if (dropZoneAnswers.value[index]) return;
 
   const data = event.dataTransfer.getData("text");
@@ -124,14 +117,14 @@ const renderQuestionWithBlanks = computed(() => {
 const liveFilledSentence = computed(() => {
   return renderQuestionWithBlanks.value
     .map((part) =>
-      part.isBlank ? dropZoneAnswers.value[part.index] || "____" : part.text
+      part.isBlank ? dropZoneAnswers.value[part.index as number] || "____" : part.text
     )
     .join("");
 });
 
 // playDemoAnimation and flyToTarget Function
-const flyToTarget = (sourceEl, targetEl, index) => {
-  const clone = sourceEl.cloneNode(true);
+const flyToTarget = (sourceEl:HTMLElement, targetEl:HTMLElement, index?:number) => {
+  const clone = sourceEl.cloneNode(true) as HTMLElement;
   clone.innerText = "example";
 
   const sourceRect = sourceEl.getBoundingClientRect();
@@ -190,13 +183,13 @@ const playDemoAnimation = async () => {
     (_, i) => i
   );
   const randomIndex =
-    availableIndexes[Math.floor(Math.random() * availableIndexes.length)];
+    availableIndexes[Math.floor(Math.random() * availableIndexes.length)] as number;
   const randomChoiceIndex = Math.floor(
     Math.random() * shuffleChoices.value.length
   );
 
-  const sourceEl = choiceElements[randomChoiceIndex];
-  const targetEl = dropZones[randomIndex];
+  const sourceEl = choiceElements[randomChoiceIndex] as HTMLElement;
+  const targetEl = dropZones[randomIndex] as HTMLElement;
 
   // animate
   flyToTarget(sourceEl, targetEl);
@@ -243,12 +236,12 @@ const playDemoAnimation = async () => {
             :class="{
               'bg-deepBlue hover:!bg-deepBlue text-white':
                 questionAnswer.isAnswered &&
-                choice === questionAnswer.clickedChoice,
+                choice.value === questionAnswer.clickedChoice,
               'cursor-not-allowed': questionAnswer.disableAnswer,
             }"
-            @click="markQuestion(choice)"
+            @click="markQuestion(choice.value)"
           >
-            <span>{{ indexToAlpha(index) + ") " + choice }}</span>
+            <span>{{ indexToAlpha(index) + ") " + choice.value }}</span>
           </li>
         </ol>
       </div>
@@ -268,10 +261,10 @@ const playDemoAnimation = async () => {
               v-else
               :key="part.key + i"
               class="drag-zone inline-block min-w-[100px] px-2 py-1 border-b border-dashed border-oceanBlue text-center text-sm bg-blue-50 rounded-sm font-bold"
-              @drop.prevent="handleDrop(part.index, $event)"
+              @drop.prevent="handleDrop(part.index as number, $event as any)"
               @dragover.prevent
             >
-              {{ dropZoneAnswers[part.index] || "____" }}
+              {{ dropZoneAnswers[part.index as number] || "____" }}
             </span>
           </template>
         </p>
@@ -293,9 +286,9 @@ const playDemoAnimation = async () => {
           :key="index"
           class="p-2 transition-all duration-500 ease-in-out rounded-md shadow cursor-move bg-oceanBlue bg-opacity-20 hover:bg-oceanBlue hover:text-white drag-answers"
           draggable="true"
-          @dragstart="(e) => e.dataTransfer.setData('text', choice)"
+          @dragstart="(e) => (e as DragEvent).dataTransfer?.setData('text', choice.value)"
         >
-          {{ choice }}
+        {{ choice.value }}
         </div>
       </div>
       <!-- tips or Help information -->
