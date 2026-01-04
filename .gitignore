@@ -27,5 +27,10 @@ logs
 # vscode
 .vscode
 
+# cursor files
+*.curs
+*.ani   
+.cursor
+
 # public videos
 /public/video
