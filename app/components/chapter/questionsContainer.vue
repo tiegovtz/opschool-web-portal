@@ -1,6 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import apiDocs from "~/utilities/apiDocs";
 import questionsAnswers from "./questionsAnswers.vue";
+import type { Choice, Question } from "~/types/question.interface";
 
 // define Props
 const props = defineProps({
@@ -25,7 +26,7 @@ const quizAttempt = reactive({
   currentQuestion: 0,
   scored: 0,
   isAttempting: false,
-  clickedAnswer: [],
+  clickedAnswer: [] as string[],
   quizCompleted: false, // New property to track if the quiz is completed
 });
 
@@ -37,7 +38,7 @@ const scoredComputed = computed(() => {
 });
 
 // Motivation Messages
-const getMotivationMessage = (score) => {
+const getMotivationMessage = (score:number) => {
   if (score >= 81) return "Excellent! Keep it up! 🎉";
   if (score >= 61) return "Great job! Aim higher! 💪";
   if (score >= 41) return "Good effort! Keep improving! 🌟";
@@ -46,7 +47,7 @@ const getMotivationMessage = (score) => {
 };
 
 // Function to set color based on score
-const getScoreColor = (score) => {
+const getScoreColor = (score:number) => {
   return {
     "text-green-500": score >= 81, // Excellent
     "text-blue-500": score >= 61 && score < 81, // Great
@@ -60,8 +61,8 @@ const getScoreColor = (score) => {
 const resetQuiz = () => {
   // Check Student If Score above 50
   scoredComputed.value < 50
-    ? props.changeChapter("R")
-    : props.changeChapter("N");
+    ? props?.changeChapter?.("R")
+    : props?.changeChapter?.("N");
   quizAttempt.totalQuestions = props.questions.length;
   quizAttempt.answeredQuestions = 0;
   quizAttempt.currentQuestion = 0;
@@ -72,7 +73,7 @@ const resetQuiz = () => {
 };
 
 // Quize Attempt Answered Questions Function
-const answeredAttempt = async (isAnswered) => {
+const answeredAttempt = async (isAnswered:any) => {
   // If Is answer the question
   if (isAnswered) {
     quizAttempt.scored++;
@@ -93,10 +94,10 @@ const answeredAttempt = async (isAnswered) => {
 
 // shuffle Questions
 const shuffleQuestions = computed(() => {
-  return props.questions
+  return  props.questions
     .map((question) => ({ question, sort: Math.random() })) // Assign a random sort key
     .sort((a, b) => a.sort - b.sort) // Sort by random key
-    .map(({ question }) => question); // Extract shuffled choices
+    .map(({ question }) => question) as Question[]; // Extract shuffled choices
 });
 
 // Set total questions when component mounts
@@ -117,7 +118,7 @@ watch(
         quizAttempt.quizCompleted = true; // Set quiz as completed when all questions are answered
 
         // if quiz ended submmit the score
-        await $fetch(apiDocs.progressTracking.postQuizAssessment.replace('{chapterId}', props.chapterId), {
+        await $fetch(apiDocs.progressTracking.postQuizAssessment.replace('{chapterId}', props.chapterId as string), {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${useCookie('signInAccessToken').value}`,
@@ -150,7 +151,7 @@ watch(
       <!-- Close Button -->
       <div class="flex items-center justify-end mb-2">
         <div class="flex items-center justify-center w-8 h-8 p-2 bg-red-500 rounded-full cursor-pointer"
-          @click="changeChapter('R')">
+          @click="changeChapter?.('R')">
           <Icon name="formkit:close" size="24" class="font-bold text-white" />
         </div>
       </div>
@@ -205,12 +206,18 @@ watch(
                 <b :class="['text-black', { 'capitalize': question.questionType === 'drag_and_drop' }]">Your choice:
                 </b>
                 <span :class="[question.questionType === 'drag_and_drop' ? 'capitalize' : '']">{{
-                  quizAttempt.clickedAnswer[index].replaceAll('-', ' ,') }}</span>
+                  quizAttempt.clickedAnswer[index]?.replaceAll('-', ' ,') }}</span>
 
                 <!-- Mark Tick and Wrong -->
                 <span v-if="quizAttempt.clickedAnswer[index] == question.answer"
                   class="font-bold text-normalGreener">✓</span>
                 <span v-else class="font-bold text-red-600">✗</span>
+              </p>
+              <!-- choice description (reason)-->
+              <p v-if="question.choices[index]?.description" class="" >
+                 <b :class="['text-black']">Reason:
+                </b>
+                {{ question.choices[index]?.description }}
               </p>
             </div>
           </div>
@@ -250,13 +257,16 @@ watch(
       </div>
 
       <!-- Use currentQuestion instead of shuffleQuestions to determine which question to display -->
-      <questionsAnswers v-else @question-answered="answeredAttempt($event)"
-        @clicked-choice="quizAttempt.clickedAnswer.push($event)" :question-type="shuffleQuestions[quizAttempt.currentQuestion].questionType
-          " :thumbnail="shuffleQuestions[quizAttempt.currentQuestion].thumbnail"
-        :true-answer="shuffleQuestions[quizAttempt.currentQuestion].answer"
-        :choices="shuffleQuestions[quizAttempt.currentQuestion].choices"
-        :question="shuffleQuestions[quizAttempt.currentQuestion].question"
-        :number="`${quizAttempt.currentQuestion + 1}`.toString()" />
+      <questionsAnswers v-else-if="shuffleQuestions" @question-answered="answeredAttempt($event)"
+        @clicked-choice="quizAttempt.clickedAnswer.push($event)" :question-type="shuffleQuestions[quizAttempt.currentQuestion]?.questionType ?? 'multiple_choice' 
+          " :thumbnail="shuffleQuestions[quizAttempt.currentQuestion]?.thumbnail ?? ''"
+        :true-answer="shuffleQuestions[quizAttempt.currentQuestion]?.answer ??''"
+        :choices="shuffleQuestions[quizAttempt.currentQuestion]?.choices ?? []"
+        :question="shuffleQuestions[quizAttempt.currentQuestion]?.question ?? '' "
+        :number="`${quizAttempt.currentQuestion + 1}`.toString()" 
+        :answer="shuffleQuestions[quizAttempt.currentQuestion]?.answer ?? ''"
+
+        />
     </div>
   </section>
 </template>
