@@ -837,7 +837,7 @@ definePageMeta({
           <div class="relative flex flex-col justify-center w-full gap-2 py-3 content-view">
 
             <!-- Chapter Notes -->
-            <div class="mx-auto notes md:px-4 max-w-7xl" aria-label="Compitencies notes" aria-details="notes-extra-details"
+            <div v-mathjax class="mx-auto notes md:px-4 max-w-7xl" aria-label="Compitencies notes" aria-details="notes-extra-details"
               role="region" v-html="enhanceAccessibility(experimentParser(modelParser(videoParser(chapters.notes?.content))))"></div>
 
             <p id="notes-extra-details" class="sr-only">
