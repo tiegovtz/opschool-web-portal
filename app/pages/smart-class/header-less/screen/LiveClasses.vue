@@ -295,7 +295,7 @@
 import {ref, reactive, computed, onMounted} from 'vue';
 import { useRouter } from 'vue-router';
 import axios from "axios";
-import {useSessionsSetup} from "../../../composable/usesSessions.js";
+import { useSessionsSetup } from '~/composable/usesSessions';
 
 const router = useRouter();
 
