@@ -35,6 +35,27 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     if (allowList.includes(to.fullPath)) return true;
 
+    // Allow direct navigation to content pages (video, interactive, audio, experiments)
+    // These routes follow the pattern: /{type}/{subject}/{level}/{topic}/{id}
+    const contentRoutePattern = /^\/(video|interactive|audio|experiments)\/[^/]+\/[^/]+\/[^/]+\/[^/]+$/;
+    if (contentRoutePattern.test(to.path)) {
+      // Set the navigation store based on the route type for consistency
+      const routeType = to.path.split('/')[1];
+      const routePath = to.path;
+      
+      if (routeType === 'video') {
+        navigationStore.setVideo(routePath);
+      } else if (routeType === 'interactive') {
+        navigationStore.setTopic(routePath);
+      } else if (routeType === 'audio') {
+        navigationStore.setAudio(routePath);
+      } else if (routeType === 'experiments') {
+        navigationStore.setExperiment(routePath);
+      }
+      
+      return true;
+    }
+
     if (!routesStates && to.fullPath !== "/home") {
       return "/home";
     }

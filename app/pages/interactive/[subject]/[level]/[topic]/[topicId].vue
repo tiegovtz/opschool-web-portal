@@ -229,6 +229,34 @@ const syncRemoteProgress = async (chapterId) => {
   }
 };
 
+// Store context in localStorage for AI Assistant
+const storeChapterContext = (chapterId, chapterNotes) => {
+  if (!import.meta.client) return; // Only run on client
+  
+  const context = {
+    chapterId: chapterId,
+    chapterName: chapterNotes?.name || 'this competence',
+    subject: topicStandard,
+    level: topicLevel,
+    topic: topicTitle,
+    chapterNo: chapterNotes?.chapterNo || null,
+    timestamp: Date.now(), // Store timestamp for cache invalidation
+  };
+  
+  // Only store if chapterName is valid (not "this competence" or empty)
+  if (!context.chapterName || context.chapterName === 'this competence' || !context.chapterName.trim()) {
+    console.warn('[Topic Page] ⚠️ Skipping context storage - invalid chapter name:', context.chapterName);
+    return;
+  }
+  
+  try {
+    localStorage.setItem('tie-ai-assistant-context', JSON.stringify(context));
+    console.log('[Topic Page] ✅ Stored chapter context in localStorage:', context);
+  } catch (error) {
+    console.warn('[Topic Page] ⚠️ Failed to store context in localStorage:', error);
+  }
+};
+
 // Main function 
 const getChapter = async (chapterId) => {
   // validate if chapterId is null or undefined
@@ -253,6 +281,9 @@ const getChapter = async (chapterId) => {
     if (response) {
       chapters.notesStatus = status.value;
       chapters.notes = response;
+
+      // Store context in localStorage for AI Assistant
+      storeChapterContext(chapterId, response);
 
       const tasks = [
         getQNTopicChapter(chapterId),
@@ -321,8 +352,21 @@ await useFetch(`/api/topics/${topicId}`)
       if (status.value === 'success') {
         chapters.status = status.value;
         chapters.list = data.value;
-        getChapter(data.value[0]?._id);
-        chapters.currentChapterId = data.value[0]?._id;
+        const firstChapterId = data.value[0]?._id;
+        chapters.currentChapterId = firstChapterId;
+        
+        // Prefetch and store context for the first chapter immediately
+        // This ensures context is available even before getChapter completes
+        if (firstChapterId && data.value[0]) {
+          const firstChapter = data.value[0];
+          storeChapterContext(firstChapterId, {
+            name: firstChapter.name,
+            chapterNo: firstChapter.chapterNo
+          });
+        }
+        
+        // Then load the full chapter details
+        getChapter(firstChapterId);
       }
       else if (status.value === 'error') {
         chapters.status = status.value;
@@ -371,6 +415,10 @@ watch(
   (newNotes) => {
     if (newNotes) {
       setPicCenter();
+      // Update localStorage context when notes change
+      if (chapters.currentChapterId) {
+        storeChapterContext(chapters.currentChapterId, newNotes);
+      }
     }
   }
 );
@@ -921,6 +969,10 @@ definePageMeta({
       v-if="chapters.currentChapterId && chapters.notes"
       :chapter-id="chapters.currentChapterId"
       :chapter-name="chapters.notes?.name || 'this competence'"
+      :subject="topicStandard"
+      :level="topicLevel"
+      :topic="topicTitle"
+      :chapter-no="chapters.notes?.chapterNo"
     />
 
     <!--  -->
