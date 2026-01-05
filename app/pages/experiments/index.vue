@@ -77,18 +77,27 @@ useHead({
   ],
 });
 
-// Define Ref state variables
-const error = ref(null); // Initial Error State
-const status = ref("pending"); // Initial Status State
-const experiments = ref(); // Initial experiments State
-const slicedData = ref(); // Initial slice data to 9
+//##########################################################################
+//----------------- Define Ref state variables -----------------------------
+//##########################################################################
+const error = ref(null);
+const status = ref("pending");
+const experiments = ref();
+const slicedData = ref();
+
+const level = ref();
+const activeTab = ref<tabs>();
+  
+const currentPage = ref<number>(1);
+const pageSize = ref<number>(12);
 
 // Define Cookie
-const activeTab = ref<tabs>()
 const userToken = useCookie("signInUserToken");
 
-// First, fix the sliceData function
-const sliceData = (start:number, end:number) => {
+//##########################################################################
+//----------------- First, fix the sliceData function ----------------------
+//##########################################################################
+const sliceData = (start: number, end: number) => {
   if (
     !experiments.value ||
     !Array.isArray(experiments.value) ||
@@ -108,22 +117,20 @@ const sliceData = (start:number, end:number) => {
   slicedData.value = experiments.value.slice(start, end);
 };
 
-// Define current page and Page size variable
-const currentPage = ref<number>(1);
-const pageSize = ref<number>(12);
-
-// Fetch Experiments From Server
-const fetchExperiments = async (param?:any) => {
+//##########################################################################
+//----------------- Fetch Experiments From Server --------------------------
+//##########################################################################
+const fetchExperiments = async (param?: any) => {
   try {
     status.value = "pending";
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`experiments`,()=>$fetch(apiDocs.experiments.getPublicExperiments, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`experiments`, () => $fetch(apiDocs.experiments.getPublicExperiments, {
       method: "GET",
-      params:{...param}
+      params: { ...param }
     }));
 
     // Call State Define above
     experiments.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
-    experiments.value = filterKeyDataFromArrayOfJson( experiments.value,"subject.name",['physics','chemistry','mathematics','biology','geography']);
+    experiments.value = filterKeyDataFromArrayOfJson(experiments.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography']);
     status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
@@ -131,17 +138,24 @@ const fetchExperiments = async (param?:any) => {
       (currentPage.value - 1) * pageSize.value,
       currentPage.value * pageSize.value
     );
-  } catch (error:any) {
+  } catch (error: any) {
     status.value = "error";
     error.value = error as any;
     console.log(error);
   }
 };
 
-// Call FetchExperiments Function
-fetchExperiments();
+//##########################################################################
+//----------------- On Mounted Lifecycle Hook ------------------------------
+//##########################################################################
+onMounted(async () => {
+  await fetchExperiments();
+});
 
-//  assigning page size based on screen sizes
+
+//##########################################################################
+//----------------- assigning page size based on screen sizes --------------
+//##########################################################################
 if (isGreaterToXL) {
   pageSize.value = 12; // 12 experiments cards
 } else if (isGreaterToLG) {
@@ -152,7 +166,9 @@ if (isGreaterToXL) {
   pageSize.value = 4; // 4 topics card per page
 }
 
-// total pages data
+//##########################################################################
+//----------------- total pages data ---------------------------------------
+//##########################################################################
 const totalPages = computed(() => {
   if (experiments.value && Array.isArray(experiments.value)) {
     return Math.ceil(experiments.value.length / pageSize.value);
@@ -160,7 +176,9 @@ const totalPages = computed(() => {
   return 0; // Default to 0 if no data
 });
 
-// Watch screen width and update page size accordingly
+//##########################################################################
+//----------------- Watch screen width and update page size accordingly ----
+//##########################################################################
 watch(
   () => screenWidth.value,
   () => {
@@ -184,7 +202,9 @@ watch(
   }
 );
 
-// once pages are more than 5, handle pagination
+//##########################################################################
+//----------------- once pages are more than 5, handle pagination ----------
+//##########################################################################
 const nextPage = () => {
   currentPage.value++;
   currentPage.value =
@@ -206,7 +226,10 @@ const prevPage = () => {
 
 // loadoing indicatfetchTopicsor
 const { progress, isLoading } = useLoadingIndicator();
-// Define Filters Reactive State
+
+//##########################################################################
+//----------------- Define Filters Reactive State --------------------------
+//##########################################################################
 const filters = reactive<{
   level: string | number | null;
   subject: string | number | null;
@@ -215,8 +238,9 @@ const filters = reactive<{
   subject: null,
 });
 
-const level = ref()  // Initial Level State
-// watch emits changes
+//##########################################################################
+//----------------- watch emits changes ------------------------------------
+//##########################################################################
 watch(filters, (filters) => {
   const payload: any = {};
 
@@ -237,14 +261,10 @@ watch(filters, (filters) => {
 
 <template>
   <NuxtLayout name="home-layout">
-    <section :class="[' ', { ' animate-pulse': isLoading }]" 
-    :aria-busy="isLoading ? 'true' : 'false'">
+    <section :class="[' ', { ' animate-pulse': isLoading }]" :aria-busy="isLoading ? 'true' : 'false'">
       <!-- User Token Available -->
-      <section
-        v-if="userToken"
-        class="flex flex-col items-center justify-center w-full gap-4 pt-4"
-      >
-        <HomeSearchbar appearance="rounded" aria-label="Search experiments"/>
+      <section v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
+        <HomeSearchbar appearance="rounded" aria-label="Search experiments" />
         <nav aria-label="Content categories">
           <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
         </nav>
@@ -260,23 +280,15 @@ watch(filters, (filters) => {
         </nav>
       </section>
 
-      <div
-        v-if="status === 'pending'"
-        class="flex flex-col items-center justify-center"
-        role="status"
-        aria-live="polite"
-      >
+      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center" role="status"
+        aria-live="polite">
         <LoadingIndicator :is-loading="true" />
       </div>
 
       <!-- Status Error -->
-      <div
-        v-else-if="status === 'error'"
-        class="md:min-h-[342px] flex flex-col justify-center items-center"
-        role="alert"
-        aria-live="assertive"
-      >
-        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" aria-hidden="true"/>
+      <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center"
+        role="alert" aria-live="assertive">
+        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" aria-hidden="true" />
         <p class="text-center">
           Oops! Something went wrong.<br />
           Try refreshing the page or check your internet connection.
@@ -292,61 +304,30 @@ watch(filters, (filters) => {
             <section aria-label="Experiments list">
               <HomeCustomScrollView :data="experiments" active-tab="interactive-contents" />
             </section>
-          
-          
+
+
             <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-10" 
-              aria-label="Pagination navigation">
+            <div v-if="totalPages > 1" class="flex justify-center my-10" aria-label="Pagination navigation">
               <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                  :aria-label="`Go to page ${page}`"
-                />
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event"
+                  :aria-label="`Go to page ${page}`" />
               </div>
               <div v-else class="flex justify-center gap-2">
                 <!-- previous -->
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage > 5"
-                  aria-label="Go to previous page"
-                >
-                  <Icon
-                    name="iconamoon:arrow-left-2-fill"
-                    size="2rem"
-                    @click="prevPage"
-                    aria-hidden="true"
-                  />
+                <div class="flex items-center justify-center" v-if="currentPage > 5" aria-label="Go to previous page">
+                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" aria-hidden="true" />
                 </div>
 
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                  :aria-label="`Go to page ${page}`"
-                />
+                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                  :is-active="page === currentPage" :disabled="page === currentPage"
+                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event"
+                  :aria-label="`Go to page ${page}`" />
 
                 <!-- next button -->
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage > 4"
-                  aria-label="Go to next page"
-                >
-                  <Icon
-                    name="iconamoon:arrow-right-2-fill"
-                    size="2rem"
-                    @click="nextPage"
-                    aria-hidden="true"
-                  />
+                <div class="flex items-center justify-center" v-if="currentPage > 4" aria-label="Go to next page">
+                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" aria-hidden="true" />
                 </div>
               </div>
             </div>
