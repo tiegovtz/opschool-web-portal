@@ -43,10 +43,11 @@ const props = defineProps({
 });
 
 // Reset all filters
-const resetFilters = () => {
+const resetFilters = async () => {
   selected.level = "";
   selected.class = "";
   selected.subject = "";
+    await nextTick();
   emitUpdate();
 };
 
@@ -126,10 +127,18 @@ const filterGroups = computed(() => {
   return groups;
 });
 
-// Open all visible groups on tab change or level change
-watch([() => props.activeTab, () => selected.level], () => {
-  openMenus.value = filterGroups.value.map((_, i) => i);
-});
+// Open all visible groups on tab change or level change compare old and new
+watch(
+  [() => props.activeTab, () => selected.level],
+  ([newTab, newLevel], [oldTab, oldLevel]) => {
+    openMenus.value = filterGroups.value.map((_, i) => i);
+
+    if (newTab !== oldTab) {
+      resetFilters();
+    }
+  }
+);
+
 </script>
 <template>
   <div v-if="isLoading" role="status" aria-live="polite">
