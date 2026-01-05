@@ -5,23 +5,31 @@ import { defineStore } from 'pinia';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
-        token: localStorage.getItem('auth_token') || '', // Load token from localStorage
-        user: JSON.parse(localStorage.getItem('auth_user') || 'null'), // Load user from localStorage
+        token: process.client ? localStorage.getItem('auth_token') || '' : '',
+        user: process.client
+            ? JSON.parse(localStorage.getItem('auth_user') || 'null')
+            : null,
     }),
     actions: {
         setToken(token: string) {
             this.token = token;
-            localStorage.setItem('auth_token', token); // Persist token in localStorage
+            if (process.client) {
+                localStorage.setItem('auth_token', token);
+            }
         },
         setUser(user: any) {
             this.user = user;
-            localStorage.setItem('auth_user', JSON.stringify(user)); // Persist user in localStorage
+            if (process.client) {
+                localStorage.setItem('auth_user', JSON.stringify(user));
+            }
         },
         clearAuthData() {
             this.token = '';
             this.user = null;
-            localStorage.removeItem('auth_token'); // Remove token from localStorage
-            localStorage.removeItem('auth_user'); // Remove user from localStorage
+            if (process.client) {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('auth_user');
+            }
         },
     },
     getters: {

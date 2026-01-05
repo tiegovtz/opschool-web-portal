@@ -1,6 +1,7 @@
 <script setup>
 import { ar } from "zod/v4/locales";
 import { layoutEffect } from "~/utilities/controlls";
+import { useNavigationStore } from "~/stores/navigationStore";
 const navigationStore = useNavigationStore()
 const props = defineProps({
     videoId: {
