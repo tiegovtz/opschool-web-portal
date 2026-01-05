@@ -12,7 +12,6 @@ export const useFilterStore = defineStore('filter', () => {
 
   // Getter for filters
   const getFilters = () => filters
-   // Getters for each filter
   const getLevel = () => filters.level
   const getStandard = () => filters.standard
   const getSubject = () => filters.subject
