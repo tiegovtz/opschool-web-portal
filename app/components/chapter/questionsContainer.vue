@@ -141,6 +141,13 @@ watch(
   }
 );
 
+const getChoiceReason = (question: Question) => {
+  return question.choices.find(
+    (choice: Choice) => choice.value === question.answer
+  )?.description;
+};
+
+
 </script>
 
 <template>
@@ -214,10 +221,10 @@ watch(
                 <span v-else class="font-bold text-red-600">✗</span>
               </p>
               <!-- choice description (reason)-->
-              <p v-if="question.choices[index]?.description" class="" >
+              <p v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description" class="" >
                  <b :class="['text-black']">Reason:
                 </b>
-                {{ question.choices[index]?.description }}
+                {{ getChoiceReason(question) }}
               </p>
             </div>
           </div>
