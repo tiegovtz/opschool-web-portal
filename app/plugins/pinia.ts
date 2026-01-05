@@ -4,6 +4,7 @@ import { toRaw } from "vue";
 
 export default defineNuxtPlugin({
   name: "pinia",
+  enforce: "pre",
   setup(nuxtApp) {
     const pinia = createPinia();
 
