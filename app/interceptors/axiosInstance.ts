@@ -11,7 +11,9 @@ const excludedEndpoints = ["/login"];
 axiosInstance.interceptors.request.use(
   (config) => {
     const authStore = useAuthStore();
-    const token = authStore.token || localStorage.getItem("auth_token");
+    const token =
+      authStore.token ||
+      (process.client ? localStorage.getItem("auth_token") : null);
 
     const isExcluded = excludedEndpoints.some((endpoint) =>
       config.url?.endsWith(endpoint)
