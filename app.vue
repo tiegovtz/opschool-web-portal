@@ -1,5 +1,6 @@
 <script setup>
 import apiDocs from './utilities/api-docs'
+import { useBackspaceNavigation } from '@/composables/useBackspaceNavigation'
 import {
   isGreaterToXL,
   isGreaterToLG,
@@ -53,7 +54,7 @@ if (import.meta.client) {
           method: 'PATCH',
           body: {
             duration: userTimeSpent.value
-          },
+          },useBackspaceNavigation()
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${accessToken.value}`
@@ -113,6 +114,9 @@ if (import.meta.client) {
     clearInterval(activityInterval)
     clearInterval(timeTick)
   });
+
+  //enable backspace navigation
+  useBackspaceNavigation()
 }
 </script>
 
