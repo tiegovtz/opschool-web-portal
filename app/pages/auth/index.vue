@@ -4,6 +4,7 @@ import { auth } from "~/utilities/validationInput";
 import { sanitize } from "~/utilities/sanitizeInput";
 import apiDocs from "~/utilities/apiDocs";
 import { dataEncrypt, dataDecrypt } from "~/utilities/encryption";
+import { useNavigationStore } from "~/stores/navigationStore";
 
 // // Use the State
 const navigationStore = useNavigationStore();

@@ -1,12 +1,54 @@
-// 🔍 Filter function
+/**
+ * Filters an array of objects based on a search string.
+ *
+ * This function scans through every object in the array and checks all of its
+ * values. If at least one value is a string and contains the search text
+ * (case-insensitive), the object is included in the returned result.
+ *
+ * @param {any[]} content - The array of objects to be filtered.
+ * @param {string} searchValue - The search text used to filter object values.
+ * @returns {any[]}
+ *   - A filtered array of objects that match the search term.
+ *   - If the search text is empty or the content array is empty, the original
+ *     array is returned unchanged.
+ *
+ * @example
+ * const items = [
+ *   { title: "Introduction to Physics", level: "Form 1" },
+ *   { title: "Advanced Chemistry", level: "Form 3" },
+ *   { title: "Basic Mathematics", level: "Form 1" },
+ * ];
+ *
+ * const result = filterContentBySearch(items, "chem");
+ * console.log(result);
+ *
+ * // Output:
+ * [
+ *   { title: "Advanced Chemistry", level: "Form 3" }
+ * ]
+ *
+ * @example
+ *  If searchValue is empty, the function returns the original array:
+ * filterContentBySearch(items, "");
+ *  → returns all items
+ *
+ * @example
+ *  Search works on ANY string property:
+ * filterContentBySearch(items, "form 1");
+ *  → returns all objects where any field contains "form 1"
+ */
+
 const filterContentBySearch = (content: any[], searchValue: String) => {
   if (content?.length == 0) return content;
   if (!searchValue?.trim()) return content;
-  return content.filter(item =>
-    Object.values(item).some(val =>
-      val && typeof (val) == 'string' && val.toString().toLowerCase().includes(searchValue.toLowerCase())
+  return content.filter((item) =>
+    Object.values(item).some(
+      (val) =>
+        val &&
+        typeof val == "string" &&
+        val.toString().toLowerCase().includes(searchValue.toLowerCase())
     )
-  )
+  );
 };
 
 /**
@@ -26,36 +68,21 @@ const filterContentBySearch = (content: any[], searchValue: String) => {
  * ```
  *
  * @example
- * const input = {
- *   name: "Alice",
- *   location: {
- *     city: "Paris",
- *     country: {
- *       name: "France",
- *       code: "FR"
- *     }
- *   }
- * };
+ * const data = [
+ *   { name: "Alice", age: 25, city: "Paris" },
+ *   { name: "Bob", age: 30, city: "Paris" },
+ *   { name: "Charlie", age: 25, city: "London" }
+ * ];
  *
- * const result = extractNestedKeysAndValues(input);
+ * const result = extractNestedKeysAndValues(data);
  * console.log(result);
- * // Output:
- * // [
- * //   { key: "name", value: "Alice" },
- * //   {
- * //     key: "location",
- * //     children: [
- * //       { key: "city", value: "Paris" },
- * //       {
- * //         key: "country",
- * //         children: [
- * //           { key: "name", value: "France" },
- * //           { key: "code", value: "FR" }
- * //         ]
- * //       }
- * //     ]
- * //   }
- * // ]
+ * 
+ *  Output:
+ * [
+ *   { key: "name", values: ["Alice", "Bob", "Charlie"] },
+ *   { key: "age", values: [25, 30] },
+ *   { key: "city", values: ["Paris", "London"] }
+ * ]
  */
 type InputObject = Record<string, any>;
 
@@ -88,7 +115,10 @@ const extractNestedKeysAndValues = (data: InputObject[]): KeyValues[] => {
 
   return result;
 };
-// ////////
+
+
+
+
 type DataItem = Record<string, any>;
 
 type Filters = {
@@ -107,13 +137,13 @@ const filterDataByValues = <T extends DataItem>(
   data: T[],
   filters: Filters
 ): T[] => {
-  return data.filter(item => {
+  return data.filter((item) => {
     return Object.entries(filters).every(([key, rawValues]) => {
       const values = rawValues.map(extractFilterValue);
 
       // If item[key] is an object with _id, compare by _id
-      if (typeof item[key] === 'object' && item[key]?._id) {
-        return values.some(v => v._id === item[key]._id);
+      if (typeof item[key] === "object" && item[key]?._id) {
+        return values.some((v) => v._id === item[key]._id);
       }
 
       // Otherwise, do a direct match
@@ -203,7 +233,6 @@ const filterKeyDataFromArrayOfJson = <T>(
   return result;
 };
 
-
 /**
  * Removes objects from an array where the given key matches one or more specified values.
  *
@@ -223,16 +252,20 @@ const filterKeyDataFromArrayOfJson = <T>(
  *
  * const result = removeDataFromArrayOfJson(students, "age", [20, 22]);
  * console.log(result);
- * 
- * // Output:
+ *
+ *  Output:
  * [
  *   { name: "George", age: 21 }
  * ]
  */
-const removeDataFromArrayOfJson = <T>(array: T[], key: string, value: any): T[] => {
+const removeDataFromArrayOfJson = <T>(
+  array: T[],
+  key: string,
+  value: any
+): T[] => {
   if (!Array.isArray(array) || !key) return array;
 
-  return array.filter(item => {
+  return array.filter((item) => {
     const keys = key.split(".");
     let target: any = item;
 
@@ -250,11 +283,10 @@ const removeDataFromArrayOfJson = <T>(array: T[], key: string, value: any): T[] 
   });
 };
 
-
 export {
   filterContentBySearch,
   extractNestedKeysAndValues,
   filterDataByValues,
   filterKeyDataFromArrayOfJson,
-  removeDataFromArrayOfJson
-}
+  removeDataFromArrayOfJson,
+};

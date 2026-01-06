@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
 import { layoutEffect } from '~/utilities/controlls'
+import { useNavigationStore } from "~/stores/navigationStore";
 
 // Define Stores
 const navigationStore = useNavigationStore()
