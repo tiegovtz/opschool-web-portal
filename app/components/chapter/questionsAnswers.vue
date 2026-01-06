@@ -302,7 +302,7 @@ const playDemoAnimation = async () => {
         <div class="flex items-center">
           <p
             :class="[
-              'max-w-2xl text-textGray transition-all duration-500 ease-in-out',
+              'max-w-2xl text-oceanBlue text-sm transition-all duration-500 ease-in-out',
             ]"
           >
             Drag each answer choice into the blank space by clicking and
