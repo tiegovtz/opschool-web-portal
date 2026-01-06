@@ -1,14 +1,19 @@
-export default defineNuxtPlugin((nuxtApp) => {
-  const router = useRouter();
-  const navigationStore = useNavigationStore();
+import { useNavigationStore } from "~/stores/navigationStore";
+
+export default defineNuxtPlugin({
+  name: "block-navigation",
+  dependsOn: ["pinia"],
+  setup(nuxtApp) {
+    const router = useRouter();
+    const navigationStore = useNavigationStore();
 
   // Routes someone cannot access if NOT signed in
   const blockedBeforeLogin = [
     "/tie-ai-teacher",
   ];
 
-  router.beforeEach((to, from) => {
-    const user = useCookie("signInUserToken");
+    router.beforeEach((to, from) => {
+      const user = useCookie("signInUserToken");
 
     // 🔒 1. Not logged in → block protected pages
     if (!user.value) {
@@ -67,5 +72,6 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     return true;
-  });
+    });
+  },
 });

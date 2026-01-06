@@ -44,8 +44,6 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxt/icon",
     "nuxt-swiper",
-    "@pinia/nuxt",
-    "pinia-plugin-persistedstate/nuxt",
     "@nuxtjs/supabase",
   ],
 
