@@ -42,8 +42,7 @@ const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjec
   <div class="flex flex-col items-center justify-between gap-4 px-4 my-5 xl:flex-row">
     <form action="" class="flex flex-col items-center justify-center w-full gap-4 my-5 md:flex-row">
       <select v-model="level" name="educationLevel" id=""
-        class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue"
-        @change="sendEmits">
+        class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
         <option v-if="educationLevels" value="">Select level</option>
         <option v-else value="">loading .. </option>
         <option v-for="(level, i) in educationLevels" :value="level.name.toLowerCase()"
@@ -62,7 +61,7 @@ const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjec
       <!-- Level Selection -->
       <select v-model="standard" v-else name="classLevel" id="" @change="sendEmits"
         class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
-        <option value="">Select Level First</option>
+        <option value="">Select level first</option>
       </select>
 
       <!-- Subject -->
