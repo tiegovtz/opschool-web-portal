@@ -224,7 +224,7 @@ const getChoiceReason = (question: Question) => {
               <p v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description" class="" >
                  <b :class="['text-black']">Reason:
                 </b>
-                {{ getChoiceReason(question) }}
+               <i> {{ getChoiceReason(question) }}</i>
               </p>
             </div>
           </div>
