@@ -25,6 +25,7 @@ const searchReactive = reactive<{
 const aiSearchMode = ref(false);
 const aiAnswer = ref("");
 const isLoadingAI = ref(false);
+const isLoadingTraditional = ref(false);
 const showFeedback = ref(false);
 const feedbackGiven = ref(false);
 const relatedContent = ref({
@@ -41,11 +42,28 @@ const announcement = ref<string>("");
 const handleSearch = async () => {
   if (!searchReactive.search || !searchReactive.search.trim()) return;
 
-  // Use AI search if enabled
+  // Always run traditional search first to show results immediately
+  await performTraditionalSearch();
+
+  // If AI search mode is enabled, run AI search in parallel (non-blocking)
   if (aiSearchMode.value) {
-    await performAISearch();
+    // Don't await - let it run in background and add summary when ready
+    performAISearch().catch((error) => {
+      console.error("[AI Search Frontend] AI search failed:", error);
+      // AI search failure doesn't affect traditional results
+    });
   } else {
-    await performTraditionalSearch();
+    // Clear AI-related state when AI mode is disabled
+    aiAnswer.value = "";
+    showFeedback.value = false;
+    feedbackGiven.value = false;
+    relatedContent.value = {
+      topics: [],
+      videos: [],
+      audio: [],
+      experiments: [],
+      suggestions: "",
+    };
   }
 };
 
@@ -144,17 +162,12 @@ watch(() => aiAnswer.value, () => {
 
 const performAISearch = async () => {
   isLoadingAI.value = true;
+  // Don't clear search results - they may already be displayed from traditional search
+  // Only clear AI-specific state
   aiAnswer.value = "";
-  searchReactive.searchResult = null;
   feedbackGiven.value = false;
   showFeedback.value = false;
-  relatedContent.value = {
-    topics: [],
-    videos: [],
-    audio: [],
-    experiments: [],
-    suggestions: "",
-  };
+  // Don't clear relatedContent immediately - will be updated when AI response arrives
 
   try {
     // Use $fetch for Nuxt server API routes
@@ -194,39 +207,49 @@ const performAISearch = async () => {
         });
       }
 
-      // Always try to show results if they exist from AI search
+      // Update results only if we don't already have traditional results
+      // This ensures traditional results (shown first) are not overwritten
       if (data.results && Array.isArray(data.results) && data.results.length > 0) {
-        searchReactive.searchResult = data.results;
-        announcement.value = `AI found ${data.resultCount || data.results.length} result${(data.resultCount || data.results.length) > 1 ? "s" : ""} and provided an answer for ${searchReactive.search}.`;
-        console.log("[AI Search Frontend] Results set from AI search:", data.results.length, "items");
+        // Only update if we don't have results yet, or if AI found more results
+        if (!searchReactive.searchResult || searchReactive.searchResult.length === 0) {
+          searchReactive.searchResult = data.results;
+          announcement.value = `AI found ${data.resultCount || data.results.length} result${(data.resultCount || data.results.length) > 1 ? "s" : ""} and provided an answer for ${searchReactive.search}.`;
+          console.log("[AI Search Frontend] Results set from AI search:", data.results.length, "items");
+        } else {
+          // Traditional results already shown, just update announcement for AI answer
+          announcement.value = `AI provided an answer for ${searchReactive.search}. ${searchReactive.searchResult.length} result${searchReactive.searchResult.length > 1 ? "s" : ""} found.`;
+          console.log("[AI Search Frontend] Traditional results already displayed, AI answer added");
+        }
       } else {
-        // If no results from AI search, always try traditional search to get results
-        console.log("[AI Search Frontend] No results from AI search, fetching traditional results...");
-        // Run traditional search to get results (don't await to show AI answer immediately)
-        performTraditionalSearch().then(() => {
-          console.log("[AI Search Frontend] Traditional search completed, results should be visible");
-        }).catch(err => {
-          console.warn("[AI Search Frontend] Traditional search failed:", err);
-        });
+        // No results from AI search, but traditional search may have already provided results
+        if (!searchReactive.searchResult || searchReactive.searchResult.length === 0) {
+          // No results at all, try traditional search as fallback
+          console.log("[AI Search Frontend] No results from AI search, trying traditional search...");
+          performTraditionalSearch().then(() => {
+            console.log("[AI Search Frontend] Traditional search completed");
+          }).catch(err => {
+            console.warn("[AI Search Frontend] Traditional search failed:", err);
+          });
+        }
         announcement.value = `AI provided an answer for ${searchReactive.search}.`;
       }
     } else if (data && data.error) {
-      // Show error message
-      aiAnswer.value = `Sorry, I encountered an error: ${data.error}. Trying traditional search...`;
+      // Show error message but don't block - traditional results may already be shown
+      aiAnswer.value = `Sorry, I encountered an error generating an AI answer: ${data.error}.`;
       showFeedback.value = false;
-      // Fallback to traditional search
-      await performTraditionalSearch();
+      // Don't run traditional search here - it should have already run
+      console.log("[AI Search Frontend] AI search error, but traditional results may already be displayed");
     } else {
-      // Fallback to traditional search if AI search fails
-      await performTraditionalSearch();
+      // No AI answer but traditional search should have already run
+      console.log("[AI Search Frontend] No AI answer received, but traditional results should be displayed");
     }
   } catch (error) {
     console.error("[AI Search Frontend] Error:", error);
-    // Show user-friendly error
-    aiAnswer.value = "Sorry, I couldn't process your question right now. Trying traditional search...";
+    // Show user-friendly error but don't block - traditional results may already be shown
+    aiAnswer.value = "Sorry, I couldn't process your question right now.";
     showFeedback.value = false;
-    // Fallback to traditional search
-    await performTraditionalSearch();
+    // Don't run traditional search here - it should have already run
+    console.log("[AI Search Frontend] AI search failed, but traditional results may already be displayed");
   } finally {
     isLoadingAI.value = false;
     // Trigger MathJax rendering after AI answer is set
@@ -235,30 +258,33 @@ const performAISearch = async () => {
 };
 
 const performTraditionalSearch = async () => {
+  isLoadingTraditional.value = true;
   const url = userToken.value
     ? `${apiDocs.search.getSearch}?query=${searchReactive.search.trim()}`
     : `${apiDocs.topics.filterTopics}?name=${searchReactive.search.trim()}`;
 
-  await axios
-    .get(url, {
-        headers: {
-          Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
-    })
-    .then((response) => {
-      const data = response.data;
-      if (Array.isArray(data) && data.length > 0) {
-        searchReactive.searchResult = data;
-         announcement.value = `${data.length} results found for ${searchReactive.search}.`;
-      } else {
-        searchReactive.searchResult =[];
-              announcement.value = `No results found for ${searchReactive.search}.`;
-      }
-    })
-    .catch((error) => {
-      announcement.value = `Search failed.`;
-      searchReactive.searchResult =[];
     });
+    
+    const data = response.data;
+    if (Array.isArray(data) && data.length > 0) {
+      searchReactive.searchResult = data;
+      announcement.value = `${data.length} result${data.length > 1 ? "s" : ""} found for ${searchReactive.search}.`;
+    } else {
+      searchReactive.searchResult = [];
+      announcement.value = `No results found for ${searchReactive.search}.`;
+    }
+  } catch (error) {
+    console.error("[Traditional Search] Error:", error);
+    announcement.value = `Search failed.`;
+    searchReactive.searchResult = [];
+  } finally {
+    isLoadingTraditional.value = false;
+  }
 };
 
 const handleFeedback = (helpful) => {
@@ -373,11 +399,11 @@ const mouseOut = () => {
 
         <!-- Search Button -->
         <button type="submit"
-              :disabled="isLoadingAI"
+              :disabled="isLoadingTraditional || isLoadingAI"
               class="items-center justify-center hidden px-4 py-2 overflow-hidden text-white transition-colors duration-500 ease-in-out rounded-b-none cursor-pointer md:flex rounded-t-md bg-oceanBlue hover:bg-deepBlue disabled:opacity-50 disabled:cursor-not-allowed"
               @click="handleSearch"
-              :aria-label="isLoadingAI ? 'Searching...' : 'Search'">
-              <Icon v-if="isLoadingAI" name="mdi:loading" class="animate-spin" size="1rem" aria-hidden="true" />
+              :aria-label="(isLoadingTraditional || isLoadingAI) ? 'Searching...' : 'Search'">
+              <Icon v-if="isLoadingTraditional || isLoadingAI" name="mdi:loading" class="animate-spin" size="1rem" aria-hidden="true" />
               <span v-else>Search</span>
         </button>
       </form>
@@ -425,10 +451,10 @@ const mouseOut = () => {
 
         <!-- Search Button -->
         <button type="submit" role="button" aria-label="press to search"
-            :disabled="isLoadingAI"
+            :disabled="isLoadingTraditional || isLoadingAI"
             class="items-center justify-center hidden h-full px-4 py-2 overflow-hidden text-white transition-colors duration-500 ease-in-out rounded-b-none cursor-pointer md:flex rounded-r-md bg-oceanBlue hover:bg-deepBlue disabled:opacity-50 disabled:cursor-not-allowed"
             @click="handleSearch">
-            <Icon v-if="isLoadingAI" name="mdi:loading" class="animate-spin" size="1rem" aria-hidden="true" />
+            <Icon v-if="isLoadingTraditional || isLoadingAI" name="mdi:loading" class="animate-spin" size="1rem" aria-hidden="true" />
             <span v-else>Search</span>
         </button>
       </form>
@@ -489,9 +515,9 @@ const mouseOut = () => {
         </div>
       </div>
 
-      <!-- Loading Indicator for AI Search -->
+      <!-- Loading Indicator for Traditional Search -->
       <div
-        v-if="isLoadingAI && searchReactive.search"
+        v-if="isLoadingTraditional && searchReactive.search && !searchReactive.searchResult"
         :class="[
           'absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-md p-4',
           appearance === 'normal'
@@ -499,17 +525,35 @@ const mouseOut = () => {
             : 'top-[140px] max-w-3xl',
         ]"
         role="status"
-        aria-label="AI is searching"
+        aria-label="Searching"
       >
         <div class="flex items-center gap-3">
           <Icon name="mdi:loading" class="animate-spin text-oceanBlue" size="1.5rem" aria-hidden="true" />
-          <p class="text-sm text-gray-600">AI is analyzing your question...</p>
+          <p class="text-sm text-gray-600">Searching...</p>
+        </div>
+      </div>
+
+      <!-- Loading Indicator for AI Search (only shows when AI is loading and results are already displayed) -->
+      <div
+        v-if="isLoadingAI && searchReactive.search && searchReactive.searchResult && searchReactive.searchResult.length > 0"
+        :class="[
+          'absolute z-[54] w-full bg-blue-50 border border-blue-200 rounded-md shadow-md p-3',
+          appearance === 'normal'
+            ? 'top-16 left-0 max-w-md'
+            : 'top-[140px] max-w-3xl',
+        ]"
+        role="status"
+        aria-label="AI is analyzing"
+      >
+        <div class="flex items-center gap-2">
+          <Icon name="mdi:loading" class="animate-spin text-oceanBlue" size="1rem" aria-hidden="true" />
+          <p class="text-xs text-gray-600">AI is analyzing your search...</p>
         </div>
       </div>
 
       <!-- Result Search with NO userToken -->
       <div
-        v-if="searchReactive.searchResult && searchReactive.search && !userToken && !isLoadingAI"
+        v-if="searchReactive.searchResult && searchReactive.search && !userToken"
         :class="[
           'absolute z-[60] w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-auto',
         appearance === 'normal'
@@ -545,7 +589,7 @@ const mouseOut = () => {
 
       <!-- Result Search with userToken -->
       <div
-        v-else-if="searchReactive.searchResult && searchReactive.search && userToken && !isLoadingAI"
+        v-else-if="searchReactive.searchResult && searchReactive.search && userToken"
         :class="[
           'absolute z-[60] w-full bg-white shadow-md rounded-md max-h-[400px] overflow-y-auto',
           appearance === 'normal'
