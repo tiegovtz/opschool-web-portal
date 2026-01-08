@@ -51,8 +51,8 @@ const apiDocs = {
 
   // education level
   educationLevel: {
-    getEducationLevels: `${baseURL}/educationLevels`,
-    getEducationLevelId: `${baseURL}/educationLevels/:id`,
+    getEducationLevels: `${baseURL}/education-levels`,
+    getEducationLevelId: `${baseURL}/education-levels/:id`,
   },
 
   // languages API
@@ -131,6 +131,7 @@ const apiDocs = {
   // Search
   search: {
     getSearch: `${baseURL}/search`,
+    aiSearch: `/api/ai/search`, // Nuxt server API route
   },
 }
 

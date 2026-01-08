@@ -26,7 +26,6 @@ import { fetchAsyncData } from "~/composable/useAsyncFetch";
 import type { User } from "~/types/user.interface";
 import type { Subjects } from "~/types/subject.interface";
 import type { tabs } from "~/types/types.data";
-import { number } from "zod";
 import type { GroupedData } from "~/types/grouped.data";
 import type { Experiment } from "~/types/experiment.interface";
 import type { Videos } from "~/types/video.iunterface";
@@ -402,6 +401,9 @@ watch(
         data.value = [];
       }
     }
+
+    // clear filter value on tab change
+    filterValue.value = {};
   }
 );
 

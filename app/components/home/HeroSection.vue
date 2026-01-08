@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from "vue";
 import SliderShow from "../slider/sliderShow.vue";
 
@@ -33,7 +33,7 @@ you for the challenges ahead. <br/><br />
 `;
 
 // Track if the user has clicked "Read More"
-const isExpanded = ref(false);
+const isExpanded = ref<boolean>(false);
 
 // Toggle function
 const toggleReadMore = async () => {
