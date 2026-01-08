@@ -1,6 +1,10 @@
 <script setup>
-import { ref, watch, nextTick, onUnmounted, onMounted } from "vue";
+import { ref, watch, nextTick, onUnmounted, onMounted, computed } from "vue";
+import { Chat } from "@ai-sdk/vue";
 import apiDocs from "~/utilities/apiDocs";
+
+// Development mode flag for conditional logging
+const isDev = import.meta.dev;
 
 const isHtml = (str) => /<\/?[a-z][\s\S]*>/i.test(str?.trim());
 
@@ -92,6 +96,29 @@ const formatMessage = (content) => {
     '<blockquote class="pl-4 my-2 italic text-gray-700 border-l-4 border-gray-300">$1</blockquote>'
   );
 
+  // Math formulas - Convert LaTeX to MathJax format
+  // Process display math first to avoid conflicts with inline math
+  // Display math: $$...$$ or \[...\]
+  formatted = formatted.replace(
+    /\$\$([\s\S]*?)\$\$/g,
+    '<div class="mathjax-display my-4">\\[$1\\]</div>'
+  );
+  formatted = formatted.replace(
+    /\\\[([\s\S]*?)\\\]/g,
+    '<div class="mathjax-display my-4">\\[$1\\]</div>'
+  );
+  
+  // Inline math: $...$ or \(...\)
+  // Use negative lookbehind/lookahead to avoid matching $$ (already processed)
+  formatted = formatted.replace(
+    /(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/g,
+    '<span class="mathjax-inline">\\($1\\)</span>'
+  );
+  formatted = formatted.replace(
+    /\\\(([^)]+?)\\\)/g,
+    '<span class="mathjax-inline">\\($1\\)</span>'
+  );
+
   // Headers
   formatted = formatted.replace(
     /^(#{4})\s+(.+)$/gm,
@@ -147,21 +174,39 @@ const formatMessage = (content) => {
           }
         );
         return `<ul class="my-2 ml-2 space-y-1 list-none">${taskItems}</ul>`;
-      } else if (isBulletList || isNumberedList) {
+      } else if (isNumberedList) {
+        // Handle numbered lists - preserve order and proper numbering
+        // Split by lines and process each numbered item sequentially
+        const lines = para.split(/\n/);
+        const listItems = [];
+        let listCounter = 0;
+        
+        for (const line of lines) {
+          const trimmed = line.trim();
+          const match = trimmed.match(/^(\d+)\.\s+(.+)$/);
+          if (match) {
+            const originalNumber = parseInt(match[1], 10);
+            const content = match[2];
+            listCounter++;
+            // Use explicit value attribute to ensure proper numbering even during re-renders
+            // This prevents Vue re-renders from resetting the counter
+            listItems.push(`<li value="${originalNumber}" class="mb-1">${content}</li>`);
+          }
+        }
+        
+        if (listItems.length > 0) {
+          // Use proper ordered list with explicit value attributes to prevent counter resets
+          // during Vue re-renders (especially during streaming)
+          return `<ol class="my-2 ml-6 space-y-1" style="list-style-type: decimal; list-style-position: outside; padding-left: 1.5rem;">${listItems.join('')}</ol>`;
+        }
+      } else if (isBulletList) {
+        // Handle bullet lists
         let listItems = para.replace(
           /^[-•*]\s+(.+)$/gim,
-          '<li class="mb-1">$1</li>'
-        );
-        listItems = listItems.replace(
-          /^\d+\.\s+(.+)$/gim,
-          '<li class="mb-1">$1</li>'
+          '<li class="mb-1 ml-4">$1</li>'
         );
         if (listItems.includes("<li")) {
-          const listTag = isNumberedList ? "ol" : "ul";
-          const listClass = isNumberedList
-            ? "list-decimal list-inside space-y-1 my-2 ml-4"
-            : "list-disc list-inside space-y-1 my-2 ml-4";
-          return `<${listTag} class="${listClass}">${listItems}</${listTag}>`;
+          return `<ul class="list-disc space-y-1 my-2 ml-6" style="list-style-type: disc;">${listItems}</ul>`;
         }
       }
 
@@ -187,6 +232,10 @@ const formatMessage = (content) => {
 const props = defineProps({
   chapterId: { type: String, required: true },
   chapterName: { type: String, default: "this competence" },
+  subject: { type: String, default: "" },
+  level: { type: String, default: "" },
+  topic: { type: String, default: "" },
+  chapterNo: { type: Number, default: null },
 });
 
 // state refs
@@ -196,7 +245,7 @@ const isLoading = ref(false);
 const messages = ref([]);
 const messagesContainer = ref(null);
 const previousChapterId = ref(null); // will store the previous ID (old value)
-const shouldAutoScroll = ref(true);
+const shouldAutoScroll = ref(true); // Re-enabled for Subject AI Teacher
 
 // Cookie ref (reactive)
 const token = useCookie("signInAccessToken"); // keep as ref; use token.value when needed
@@ -204,6 +253,491 @@ const token = useCookie("signInAccessToken"); // keep as ref; use token.value wh
 // Provider tracking
 const currentProvider = ref(null);
 const currentModel = ref(null);
+
+// Memoized localStorage context - initialized once and updated reactively
+const storedContext = ref(null);
+
+// Initialize stored context on mount
+const initializeStoredContext = () => {
+  if (!import.meta.client) return;
+  
+  try {
+    const stored = localStorage.getItem('tie-ai-assistant-context');
+    if (stored) {
+      const context = JSON.parse(stored);
+      // Check if context is recent (within 1 hour)
+      const oneHour = 60 * 60 * 1000;
+      if (Date.now() - context.timestamp < oneHour) {
+        if (isDev) {
+          console.log('[Subject AI Teacher] 📦 Retrieved context from localStorage:', context);
+        }
+        storedContext.value = context;
+        return;
+      } else {
+        if (isDev) {
+          console.log('[Subject AI Teacher] ⏰ Stored context expired, ignoring');
+        }
+        localStorage.removeItem('tie-ai-assistant-context');
+      }
+    }
+  } catch (error) {
+    if (isDev) {
+      console.warn('[Subject AI Teacher] ⚠️ Failed to read context from localStorage:', error);
+    }
+  }
+  storedContext.value = null;
+};
+
+// Watch for localStorage changes from other tabs/windows
+if (import.meta.client) {
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'tie-ai-assistant-context') {
+      initializeStoredContext();
+    }
+  });
+}
+
+// Get effective context with fallback to localStorage (computed for reactivity)
+const effectiveContext = computed(() => {
+  const stored = storedContext.value;
+  
+  // Prefer props, but use stored context as fallback
+  return {
+    chapterName: props.chapterName && props.chapterName !== 'this competence' 
+      ? props.chapterName 
+      : (stored?.chapterName || props.chapterName || 'this competence'),
+    subject: props.subject || stored?.subject || '',
+    level: props.level || stored?.level || '',
+    topic: props.topic || stored?.topic || '',
+    chapterNo: props.chapterNo !== null && props.chapterNo !== undefined 
+      ? props.chapterNo 
+      : (stored?.chapterNo ?? null),
+  };
+});
+
+// Chat component for regular messages (using /api/chat)
+// Use computed to ensure chapterName is reactive with localStorage fallback
+const currentChapterName = computed(() => effectiveContext.value.chapterName);
+
+// Computed property to determine if typing indicator should be visible
+// This will be defined after chat is initialized
+let showTypingIndicator;
+
+// Log chapterName when component mounts or chapter changes (dev only)
+if (isDev) {
+  watch(
+    () => props.chapterName,
+    (newChapterName) => {
+      console.log("[Subject AI Teacher] 📋 Chapter name prop:", newChapterName);
+      console.log("[Subject AI Teacher] 📋 Computed chapter name:", currentChapterName.value);
+      console.log("[Subject AI Teacher] 📋 Is valid chapter name?", 
+        currentChapterName.value && 
+        currentChapterName.value.trim() && 
+        currentChapterName.value !== "this competence"
+      );
+      console.log("[Subject AI Teacher] 📋 All props:", {
+        chapterName: props.chapterName,
+        subject: props.subject,
+        level: props.level,
+        topic: props.topic,
+        chapterNo: props.chapterNo
+      });
+    },
+    { immediate: true }
+  );
+}
+
+// Create reactive headers and body that include context
+const getContextHeaders = () => {
+  const headers = {};
+  const context = effectiveContext.value;
+  const chapterNameValue = context.chapterName;
+  
+  headers["X-Chapter-Name"] = chapterNameValue;
+  if (context.subject) headers["X-Subject"] = context.subject;
+  if (context.level) headers["X-Level"] = context.level;
+  if (context.topic) headers["X-Topic"] = context.topic;
+  if (context.chapterNo !== null && context.chapterNo !== undefined) {
+    headers["X-Chapter-No"] = String(context.chapterNo);
+  }
+  
+  const currentTokenValue = token?.value;
+  if (currentTokenValue) {
+    headers["Authorization"] = `Bearer ${currentTokenValue}`;
+  }
+  
+  return headers;
+};
+
+const getContextBody = () => {
+  const body = {};
+  const context = effectiveContext.value;
+  const chapterNameValue = context.chapterName;
+  
+  body.chapterName = chapterNameValue;
+  if (context.subject) body.subject = context.subject;
+  if (context.level) body.level = context.level;
+  if (context.topic) body.topic = context.topic;
+  if (context.chapterNo !== null && context.chapterNo !== undefined) {
+    body.chapterNo = context.chapterNo;
+  }
+  
+  return body;
+};
+
+// Create a custom fetch that wraps the default fetch (unused, kept for reference)
+const createCustomFetch = () => {
+  return async (url, options = {}) => {
+    const chapterNameValue = currentChapterName.value;
+    
+    if (isDev) {
+      console.log("[Subject AI Teacher] 🔵 Custom fetch called");
+      console.log("[Subject AI Teacher] URL:", url);
+      console.log("[Subject AI Teacher] ChapterName:", chapterNameValue);
+    }
+    
+    // Merge headers
+    const contextHeaders = getContextHeaders();
+    const mergedHeaders = {
+      ...(options.headers || {}),
+      ...contextHeaders,
+    };
+    
+    // Try to merge body
+    let body = options.body;
+    if (body && typeof body === 'string') {
+      try {
+        const bodyObj = JSON.parse(body);
+        const contextBody = getContextBody();
+        Object.assign(bodyObj, contextBody);
+        body = JSON.stringify(bodyObj);
+        if (isDev) {
+          console.log("[Subject AI Teacher] ✅ Modified request body with context");
+        }
+      } catch (e) {
+        if (isDev) {
+          console.warn("[Subject AI Teacher] Could not parse body:", e);
+        }
+      }
+    }
+    
+    if (isDev) {
+      console.log("[Subject AI Teacher] Context being sent:", {
+        chapterName: chapterNameValue,
+        subject: props.subject,
+        level: props.level,
+        topic: props.topic,
+        chapterNo: props.chapterNo
+      });
+    }
+    
+    return fetch(url, {
+      ...options,
+      headers: mergedHeaders,
+      body,
+    });
+  };
+};
+
+// Intercept fetch calls by overriding the global fetch BEFORE Chat component initialization
+// This ensures the Chat component uses our intercepted fetch
+// Store original fetch
+const originalFetch = window.fetch;
+
+// Override fetch to add context
+window.fetch = async function(url, options = {}) {
+  // Only intercept calls to our API endpoint
+  if (typeof url === 'string' && url.includes('/api/chat')) {
+    const context = effectiveContext.value;
+    const chapterNameValue = context.chapterName;
+    
+    if (isDev) {
+      console.log("[Subject AI Teacher] 🔵 ========== FETCH INTERCEPTED ==========");
+      console.log("[Subject AI Teacher] URL:", url);
+      console.log("[Subject AI Teacher] ChapterName (computed):", chapterNameValue);
+      console.log("[Subject AI Teacher] ChapterName (prop):", props.chapterName);
+      console.log("[Subject AI Teacher] Using stored context?", !!storedContext.value);
+      console.log("[Subject AI Teacher] Effective context:", context);
+      console.log("[Subject AI Teacher] Is valid?", 
+        chapterNameValue && 
+        chapterNameValue.trim() && 
+        chapterNameValue !== "this competence"
+      );
+    }
+    
+    // Add context headers
+    const contextHeaders = getContextHeaders();
+    
+    // Properly merge headers - handle both Headers object and plain object
+    let mergedHeaders;
+    if (options.headers instanceof Headers) {
+      mergedHeaders = new Headers(options.headers);
+      Object.entries(contextHeaders).forEach(([key, value]) => {
+        mergedHeaders.set(key, value);
+      });
+    } else {
+      mergedHeaders = {
+        ...(options.headers || {}),
+        ...contextHeaders,
+      };
+    }
+    
+    // Add context to body if it's a JSON string
+    let body = options.body;
+    if (body && typeof body === 'string') {
+      try {
+        const bodyObj = JSON.parse(body);
+        const contextBody = getContextBody();
+        // Merge context into body
+        Object.assign(bodyObj, contextBody);
+        body = JSON.stringify(bodyObj);
+        if (isDev) {
+          console.log("[Subject AI Teacher] ✅ Added context to request body");
+          console.log("[Subject AI Teacher] Request body after merge:", JSON.stringify(bodyObj, null, 2).substring(0, 500));
+        }
+      } catch (e) {
+        if (isDev) {
+          console.warn("[Subject AI Teacher] Could not parse body:", e);
+          console.warn("[Subject AI Teacher] Body type:", typeof body, "Body:", body?.substring(0, 200));
+        }
+      }
+    } else if (isDev) {
+      console.warn("[Subject AI Teacher] Body is not a string, type:", typeof body);
+    }
+    
+    const contextToSend = {
+      chapterName: chapterNameValue,
+      subject: context.subject,
+      level: context.level,
+      topic: context.topic,
+      chapterNo: context.chapterNo
+    };
+    
+    if (isDev) {
+      console.log("[Subject AI Teacher] 📤 Context being sent:", contextToSend);
+      console.log("[Subject AI Teacher] 📤 Headers being sent:", mergedHeaders instanceof Headers 
+        ? Object.fromEntries(mergedHeaders.entries())
+        : mergedHeaders);
+    }
+    
+    // Validate that we're sending a valid chapter name
+    if (!chapterNameValue || chapterNameValue === "this competence" || !chapterNameValue.trim()) {
+      console.error("[Subject AI Teacher] ⚠️ WARNING: Invalid chapter name being sent:", chapterNameValue);
+    } else if (isDev) {
+      console.log("[Subject AI Teacher] ✅ Valid chapter name confirmed:", chapterNameValue);
+    }
+    
+    try {
+      // Call original fetch with modified options
+      const response = await originalFetch(url, {
+        ...options,
+        headers: mergedHeaders,
+        body,
+      });
+      
+      if (isDev) {
+        console.log("[Subject AI Teacher] 📥 Response received:", {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+      }
+      
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        console.error("[Subject AI Teacher] ❌ Response error:", errorText);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error("[Subject AI Teacher] ❌ Fetch error:", error);
+      throw error;
+    }
+  }
+  
+  // For other URLs, use original fetch
+  return originalFetch(url, options);
+};
+
+if (isDev) {
+  console.log("[Subject AI Teacher] ✅ Fetch interceptor installed");
+}
+
+// Initialize Chat component AFTER fetch interceptor is set up
+// This ensures Chat uses our intercepted fetch
+const chat = new Chat({
+  api: "/api/chat",
+});
+
+if (isDev) {
+  console.log("[Subject AI Teacher] ✅ Chat component initialized");
+}
+
+// Computed property to determine if typing indicator should be visible
+// Defined after chat is initialized so it can access chat.status
+showTypingIndicator = computed(() => {
+  const isCurrentlyLoading = isLoading.value;
+  const isStreaming = chat.status === 'streaming';
+  const isChatLoading = chat.isLoading || false;
+  const shouldShow = isCurrentlyLoading || isStreaming || isChatLoading;
+  return shouldShow;
+});
+
+// Sync Chat component messages with local messages state
+// Use a debounced approach to avoid too many updates during streaming
+let syncTimeout = null;
+watch(
+  () => chat.messages,
+  (chatMessages) => {
+    if (isDev) {
+      console.log("[Subject AI Teacher] 📨 Chat messages changed:", {
+        count: chatMessages?.length,
+        messages: chatMessages
+      });
+    }
+    
+    if (!Array.isArray(chatMessages)) {
+      if (isDev) {
+        console.warn("[Subject AI Teacher] ⚠️ chatMessages is not an array:", chatMessages);
+      }
+      return;
+    }
+
+    // Clear any pending sync
+    if (syncTimeout) {
+      clearTimeout(syncTimeout);
+    }
+
+    // Debounce updates during streaming to avoid excessive re-renders
+    syncTimeout = setTimeout(() => {
+      if (isDev) {
+        console.log("[Subject AI Teacher] 🔄 Syncing messages, chatMessages.length:", chatMessages.length);
+      }
+      // Build a map of Chat messages by ID for efficient lookup
+      const chatMessagesMap = new Map();
+      chatMessages.forEach((chatMsg) => {
+        if (chatMsg && chatMsg.id) {
+          chatMessagesMap.set(chatMsg.id, chatMsg);
+        }
+      });
+
+      // Get all Chat message IDs
+      const chatMessageIds = Array.from(chatMessagesMap.keys());
+
+      // Remove local messages that no longer exist in Chat (shouldn't happen, but safety check)
+      messages.value = messages.value.filter(
+        (m) => !m.fromChat || chatMessageIds.includes(m.chatId)
+      );
+
+      // Process each Chat message
+      chatMessages.forEach((chatMsg) => {
+        if (!chatMsg || !chatMsg.id) return;
+
+        // Extract text content from message parts
+        let textContent = "";
+        if (Array.isArray(chatMsg.parts) && chatMsg.parts.length > 0) {
+          textContent = chatMsg.parts
+            .filter((p) => p && p.type === "text" && p.text)
+            .map((p) => String(p.text))
+            .join("");
+        } else if (chatMsg.content) {
+          // Fallback: if message has direct content property
+          textContent = String(chatMsg.content);
+        }
+
+        // Find existing message by chatId
+        const existingIndex = messages.value.findIndex(
+          (m) => m.fromChat && m.chatId === chatMsg.id
+        );
+
+        const messageData = {
+          role: chatMsg.role,
+          content: textContent,
+          timestamp: existingIndex >= 0 
+            ? messages.value[existingIndex].timestamp 
+            : new Date().toLocaleTimeString(),
+          fromChat: true,
+          chatId: chatMsg.id,
+        };
+
+        if (chatMsg.role === "user") {
+          messageData.actualContent = textContent;
+        }
+
+        if (existingIndex >= 0) {
+          // Update existing message (for streaming updates)
+          messages.value[existingIndex] = messageData;
+        } else {
+          // Add new message
+          // For user messages, always add (they're complete immediately)
+          // For assistant messages, only add if we have some content (streaming will update it)
+          if (chatMsg.role === "user" || textContent.length > 0) {
+            messages.value.push(messageData);
+          }
+        }
+      });
+
+      // Update loading state based on Chat component status
+      // Chat component has status: 'ready' | 'streaming' | 'error'
+      const chatIsLoading = chat.status === 'streaming' || chat.isLoading || false;
+      isLoading.value = chatIsLoading;
+      // Don't auto-scroll during streaming - let student read at their own pace
+      // Only scroll when NOT streaming
+      if (chat.status !== 'streaming') {
+        scrollToBottom(true);
+      }
+    }, 50); // 50ms debounce for streaming updates
+  },
+  { deep: true, immediate: false }
+);
+
+// Consolidated watcher for chat status and loading state
+// Handles both chat.status and chat.isLoading changes efficiently
+let loadingTimeout = null;
+
+// Helper function to handle streaming completion
+const handleStreamingComplete = () => {
+  // Clear any pending timeout
+  if (loadingTimeout) {
+    clearTimeout(loadingTimeout);
+  }
+  
+  // Check if we have assistant messages (responses)
+  const hasAssistantMessage = chat.messages.some(m => m.role === 'assistant');
+  if (hasAssistantMessage) {
+    // Add a small delay to ensure the last message chunk is rendered
+    loadingTimeout = setTimeout(() => {
+      // Double-check that streaming is really done
+      if (chat.status === 'ready' && !chat.isLoading) {
+        isLoading.value = false;
+        // Scroll to bottom when streaming completes to show final message
+        scrollToBottom(true);
+      }
+    }, 150);
+  }
+  // If no assistant message yet, keep isLoading true (waiting for response)
+};
+
+// Watch both chat.status and chat.isLoading together
+watch(
+  () => [chat.status, chat.isLoading],
+  ([newStatus, isChatLoading]) => {
+    // Always turn on when streaming starts or loading begins
+    if (newStatus === 'streaming' || isChatLoading) {
+      isLoading.value = true;
+      // Scroll once when streaming starts to show typing indicator/beginning of response
+      // But then stop auto-scrolling during streaming so student can read
+      if (newStatus === 'streaming') {
+        scrollToBottom(true);
+      }
+    } 
+    // Only turn off when status is 'ready' AND not loading
+    else if (newStatus === 'ready' && !isChatLoading) {
+      handleStreamingComplete();
+    }
+  }
+);
 
 // Quick action states
 const isSummarizing = ref(false);
@@ -241,6 +775,9 @@ const toggleSettings = () => {
 
 // Combine onMounted tasks
 onMounted(() => {
+  // Initialize stored context from localStorage
+  initializeStoredContext();
+  
   loadVoicePreference();
 
   // Click outside handler for settings
@@ -290,6 +827,17 @@ onMounted(() => {
 
   onUnmounted(() => {
     stopListeners();
+    // Clear any pending timeouts
+    if (syncTimeout) {
+      clearTimeout(syncTimeout);
+    }
+    if (loadingTimeout) {
+      clearTimeout(loadingTimeout);
+    }
+    // Restore original fetch when component unmounts
+    if (typeof window !== 'undefined' && originalFetch) {
+      window.fetch = originalFetch;
+    }
   });
 });
 
@@ -302,6 +850,59 @@ const toggleAssistant = () => {
   }
 };
 
+// Handle form submit - use Chat component for regular messages
+const handleFormSubmit = async (e) => {
+  e.preventDefault();
+  const question = currentQuestion.value.trim();
+  if (!question || isLoading.value || !props.chapterId) return;
+
+  if (isDev) {
+    console.log("[Subject AI Teacher] 🟢 handleFormSubmit called with question:", question);
+    console.log("[Subject AI Teacher] Chat object:", chat);
+    console.log("[Subject AI Teacher] Chat.sendMessage exists:", typeof chat.sendMessage);
+  }
+
+  // Validate token
+  const currentTokenValue = token?.value;
+  if (!currentTokenValue) {
+    messages.value.push({
+      role: "assistant",
+      content: "Please sign in to use the AI assistant.",
+      timestamp: new Date().toLocaleTimeString(),
+    });
+    return;
+  }
+
+  currentQuestion.value = "";
+  // Show typing indicator immediately when form is submitted
+  isLoading.value = true;
+  if (isDev) {
+    console.log("[Subject AI Teacher] ✅ isLoading set to true - typing indicator should be visible");
+  }
+
+  try {
+    if (isDev) {
+      console.log("[Subject AI Teacher] 🟡 About to call chat.sendMessage");
+    }
+    await chat.sendMessage({ text: question });
+    if (isDev) {
+      console.log("[Subject AI Teacher] 🟢 chat.sendMessage completed");
+    }
+  } catch (error) {
+    console.error("[AI Subject Teacher] Chat error:", error);
+    messages.value.push({
+      role: "assistant",
+      content:
+        error?.message || "Sorry, I encountered an error. Please try again.",
+      timestamp: new Date().toLocaleTimeString(),
+    });
+    // Turn off loading on error
+    isLoading.value = false;
+  }
+  // Note: Don't set isLoading to false here - let the chat.status watch handle it
+  // This ensures the typing indicator stays visible during streaming
+};
+
 // Reset conversation when chapter changes
 watch(
   () => props.chapterId,
@@ -310,6 +911,7 @@ watch(
     if (oldChapterId && newChapterId !== oldChapterId) {
       stopReading();
       messages.value = [];
+      chat.messages = []; // Clear Chat component messages too
       previousChapterId.value = oldChapterId; // store old value
       isSummarizing.value = false;
       isEnglishCrashCourse.value = false;
@@ -349,8 +951,8 @@ const askQuestion = async (
     timestamp: new Date().toLocaleTimeString(),
     actualContent: question,
   };
-  messages.value.push(userMessage);
-  scrollToBottom(true);
+    messages.value.push(userMessage);
+    scrollToBottom(true);
 
   isLoading.value = true;
 
@@ -389,11 +991,13 @@ const askQuestion = async (
       return;
     }
 
-    console.log("[AI Subject Teacher] Sending request:", {
-      question,
-      chapterId: props.chapterId,
-      useDocsAPI,
-    });
+    if (isDev) {
+      console.log("[AI Subject Teacher] Sending request:", {
+        question,
+        chapterId: props.chapterId,
+        useDocsAPI,
+      });
+    }
 
     const conversationHistory = messages.value.map((msg) => ({
       role: msg.role,
@@ -431,12 +1035,16 @@ const askQuestion = async (
         headers: { Authorization: `Bearer ${currentTokenValue}` },
         signal,
       });
-      console.log(response.answer);
+      if (isDev) {
+        console.log(response.answer);
+      }
 
       answer = safeContent(response.answer);
       provider = response.provider || "Unknown";
       model = response.model || "Unknown";
-      console.log(`[AI] Response received from ${provider} (${model})`);
+      if (isDev) {
+        console.log(`[AI] Response received from ${provider} (${model})`);
+      }
     }
 
     currentProvider.value = provider;
@@ -477,13 +1085,18 @@ const scrollToBottom = (smooth = true) => {
   if (!messagesContainer.value || !shouldAutoScroll.value) return;
   nextTick(() => {
     if (!messagesContainer.value) return;
+    // Add a small offset (50px) to scroll a bit more than the bottom
+    // This ensures the last message is fully visible with some padding
+    const scrollOffset = 50;
+    const targetScroll = messagesContainer.value.scrollHeight + scrollOffset;
+    
     if (smooth) {
       messagesContainer.value.scrollTo({
-        top: messagesContainer.value.scrollHeight,
+        top: targetScroll,
         behavior: "smooth",
       });
     } else {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+      messagesContainer.value.scrollTop = targetScroll;
     }
   });
 };
@@ -503,16 +1116,80 @@ const handleScroll = () => {
 };
 
 // Watchers to auto-scroll on messages and loading
+// Watchers to auto-scroll on messages (but not during streaming)
 watch(
   messages,
   () => {
-    scrollToBottom(true);
+    // Only auto-scroll if not currently streaming
+    // This allows student to read during streaming without constant scrolling
+    if (chat.status !== 'streaming') {
+      scrollToBottom(true);
+    }
+    
+    // Fix numbered lists after Vue re-renders (prevents all items showing as "1.")
+    nextTick(() => {
+      if (messagesContainer.value) {
+        const orderedLists = messagesContainer.value.querySelectorAll('ol');
+        orderedLists.forEach((ol) => {
+          const items = ol.querySelectorAll('li[value]');
+          items.forEach((li, index) => {
+            const value = li.getAttribute('value');
+            if (value) {
+              // Ensure the value attribute is respected
+              li.setAttribute('value', value);
+            }
+          });
+        });
+      }
+    });
   },
   { deep: true }
 );
 watch(isLoading, (newVal) => {
-  if (newVal) scrollToBottom(true);
+  // Scroll once when loading starts (streaming begins) to show typing indicator
+  // But don't continue scrolling during streaming
+  if (newVal && chat.status === 'streaming') {
+    // Scroll once when streaming starts
+    scrollToBottom(true);
+  } else if (!newVal && chat.status === 'ready') {
+    // Scroll when streaming completes to show final message
+    scrollToBottom(true);
+    // Render MathJax after message is complete
+    renderMathJax();
+  }
 });
+
+// Render MathJax formulas
+const messageContainers = ref([]);
+const renderMathJax = async () => {
+  if (import.meta.server) return;
+  
+  await nextTick();
+  
+  if (window.mathJaxLoaded && window.MathJaxRender) {
+    try {
+      await window.mathJaxLoaded;
+      const containers = Array.isArray(messageContainers.value) 
+        ? messageContainers.value 
+        : messageContainers.value 
+          ? [messageContainers.value] 
+          : [];
+      
+      if (containers.length > 0) {
+        await window.MathJaxRender(containers);
+      }
+    } catch (error) {
+      if (isDev) {
+        console.warn("MathJax rendering failed:", error);
+      }
+    }
+  }
+};
+
+// Watch messages to trigger MathJax rendering
+watch(() => messages.value, () => {
+  renderMathJax();
+}, { deep: true });
 
 // Summarize and Crash Course actions
 const handleSummarize = async () => {
@@ -564,7 +1241,9 @@ const stopReading = () => {
     }
     isPlayingAudio.value = false;
   } catch (error) {
-    console.log("Stopped reading");
+    if (isDev) {
+      console.log("Stopped reading");
+    }
     isPlayingAudio.value = false;
     currentAudio.value = null;
   }
@@ -688,6 +1367,7 @@ onUnmounted(() => {
           ? 'flex items-center justify-center'
           : 'flex flex-col space-y-4',
       ]"
+      style="padding-bottom: 80px;"
       ref="messagesContainer"
       @scroll="handleScroll"
     >
@@ -739,6 +1419,7 @@ onUnmounted(() => {
           ]"
         >
           <div
+            ref="messageContainers"
             class="text-sm leading-relaxed"
             :class="message.role === 'user' ? 'text-white' : 'text-gray-800'"
             v-html="formatMessage(message.content)"
@@ -752,25 +1433,29 @@ onUnmounted(() => {
         </div>
       </div>
 
+      <!-- Typing Indicator - Similar to TIE AI Teacher -->
+      <!-- Show immediately when form is submitted or when chat is streaming -->
       <div
-        v-if="isLoading"
+        v-show="showTypingIndicator"
         class="flex justify-start"
+        style="min-height: 60px;"
       >
         <div
-          class="p-4 border border-gray-200 shadow-sm bg-gradient-to-br from-blue-50 to-gray-50 rounded-xl"
+          class="max-w-[85%] rounded-xl p-4 shadow-md bg-gradient-to-br from-blue-50 to-gray-50 text-gray-900 border border-gray-200"
         >
-          <div class="flex gap-1.5">
-            <span
-              class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"
-            ></span>
-            <span
-              class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"
-              style="animation-delay: 0.2s"
-            ></span>
-            <span
-              class="w-2.5 h-2.5 bg-oceanBlue rounded-full animate-bounce"
-              style="animation-delay: 0.4s"
-            ></span>
+          <div class="flex items-center space-x-2">
+            <div class="flex gap-1.5">
+              <span
+                class="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-0"
+              ></span>
+              <span
+                class="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-200"
+              ></span>
+              <span
+                class="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-400"
+              ></span>
+            </div>
+            <span class="text-gray-500 text-sm ml-2">AI is typing...</span>
           </div>
         </div>
       </div>
@@ -779,8 +1464,8 @@ onUnmounted(() => {
     <!-- Input Area -->
     <div class="p-4 border-t border-gray-200">
       <form
-        @submit.prevent="askQuestion()"
-        class="flex gap-2 mt-4 border-t pt-4"
+        @submit.prevent="handleFormSubmit"
+        class="flex gap-2"
       >
         <input
           v-model="currentQuestion"
@@ -788,11 +1473,12 @@ onUnmounted(() => {
           placeholder="Type your message..."
           aria-label="Type your question for AI Subject Teacher"
           class="flex-1 p-3 rounded-lg border border-gray-300 focus:outline-none"
+          :disabled="isLoading || !chapterId"
         />
 
         <button
           type="submit"
-          :disabled="isLoading"
+          :disabled="!currentQuestion.trim() || isLoading || !chapterId"
           class="bg-oceanBlue text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Send
@@ -948,6 +1634,23 @@ ol {
   padding-left: 1.5rem;
 }
 
+/* Ensure ordered lists maintain proper sequential numbering */
+ol {
+  list-style-type: decimal;
+  list-style-position: outside;
+}
+
+ol li {
+  display: list-item;
+  margin: 0.25rem 0;
+  padding-left: 0.25rem;
+}
+
+/* Ensure value attribute is respected for proper numbering */
+ol li[value] {
+  counter-reset: none;
+}
+
 li {
   margin: 0.25rem 0;
 }
@@ -1012,5 +1715,33 @@ h3:first-child {
 
 p {
   line-height: 1.6;
+}
+
+/* Typing indicator animation - matching TIE AI Teacher */
+@keyframes bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.delay-0 {
+  animation-delay: 0s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
 }
 </style>
