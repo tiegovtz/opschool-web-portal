@@ -1,5 +1,8 @@
 <script setup>
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import apiDocs from './utilities/api-docs'
+import { useBackspaceNavigation } from '@/composables/useBackspaceNavigation'
+import { useGlobalFocus } from '@/composables/useGlobalFocus'
 import {
   isGreaterToXL,
   isGreaterToLG,
@@ -100,6 +103,7 @@ if (import.meta.client) {
     }, 1000);
 
     webVisitor();
+    useGlobalFocus();
   })
 
   onBeforeUnmount(() => {
@@ -113,6 +117,7 @@ if (import.meta.client) {
     clearInterval(activityInterval)
     clearInterval(timeTick)
   });
+
 }
 </script>
 
