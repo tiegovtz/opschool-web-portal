@@ -1,6 +1,6 @@
 <template>
 
-  <NuxtLayout name="home-layout">
+  <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
   <v-dialog v-model="dialog" max-width="600px">
     <v-card>
       <v-card-title>Create Session</v-card-title>

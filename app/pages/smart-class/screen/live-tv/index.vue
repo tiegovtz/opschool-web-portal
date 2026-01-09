@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
 
   <div class="iframe-screen">
     <div class="header">
