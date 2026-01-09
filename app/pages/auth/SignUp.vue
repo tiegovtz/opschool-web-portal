@@ -9,6 +9,7 @@ import { CustomDropDownList } from "#components";
 
 // input tabs control
 const inputTabs = ref("tabOne");
+const headingRef = ref(null);
 
 const usersignUp = reactive({
   type: "",
@@ -616,10 +617,15 @@ const organization = [
   { id: 'others', name: 'others' },
 ];
 
+onMounted(() => {
+  headingRef.value?.focus();
+});
+
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b" aria-labelledby="signup-heading" tabindex="-1">
+  <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b" aria-labelledby="signup-heading"
+    tabindex="-1">
 
     <!-- Message Component -->
     <MessageComponent :message="usersignUp.controller.feedback"
@@ -627,6 +633,7 @@ const organization = [
       :icon="usersignUp.controller.isSent == 'success' ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
     <div class="w-full max-w-md px-4 py-10 rounded-lg md:bg-white md:shadow-2xl">
+
       <h1 class="font-bold text-center text-large" id="signup-heading" ref="headingRef" tabindex="-1">Sign Up</h1>
 
       <NuxtLink to="/" aria-label="press to go home.The link contain TIE logo" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
@@ -636,30 +643,30 @@ const organization = [
 
       <form @submit.prevent="signUp" @keydown.enter.prevent
         class="text-textGray md:h-[530px] h-dvh relative overflow-hidden text-extraSmall" :class="[
-                {
-                  'md:h-[600px]':
-                    usersignUp.controller.errors.age ||
-                    usersignUp.controller.errors.fname ||
-                    usersignUp.controller.errors.gender ||
-                    usersignUp.controller.errors.lname ||
-                    usersignUp.controller.errors.password ||
-                    usersignUp.controller.errors.confirm_password,
-                },
-                { 'md:h-[650px]': usersignUp.userOrgRole.toLowerCase() === 'others' }
-              ]">
+          {
+            'md:h-[600px]':
+              usersignUp.controller.errors.age ||
+              usersignUp.controller.errors.fname ||
+              usersignUp.controller.errors.gender ||
+              usersignUp.controller.errors.lname ||
+              usersignUp.controller.errors.password ||
+              usersignUp.controller.errors.confirm_password,
+          },
+          { 'md:h-[650px]': usersignUp.userOrgRole.toLowerCase() === 'others' }
+        ]">
         <!-- First Input Group -->
         <div :class="[
-              'absolute top-0 flex flex-col px-6 transition-all duration-500 ',
-              inputTabs === 'tabOne' ? 'left-0 w-full' : '-left-full'
-            ]">
+          'absolute top-0 flex flex-col px-6 transition-all duration-500 ',
+          inputTabs === 'tabOne' ? 'left-0 w-full' : '-left-full'
+        ]">
           <!-- Select User Type -->
           <div :class="[
-              'mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-              {
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.type,
-              }
-            ]">
+            'mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.type,
+            }
+          ]">
             <div class="flex flex-col items-start w-full">
               <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">
                 Select User Type:</label>
@@ -677,12 +684,12 @@ const organization = [
 
           <!-- First Name -->
           <div :class="[
-              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-              {
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.fname,
-              }
-            ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.fname,
+            }
+          ]">
             <div class="flex items-center w-full">
               <input type="text" id="fname" v-model="usersignUp.fname" @keydown.space.prevent name="fname"
                 autocomplete="off"
@@ -699,12 +706,12 @@ const organization = [
 
           <!-- Last Name -->
           <div :class="[
-              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-              {
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.lname,
-              }
-            ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.lname,
+            }
+          ]">
             <div class="flex items-center w-full">
               <input type="text" id="lname" v-model="usersignUp.lname" @keydown.space.prevent name="lname"
                 autocomplete="off"
@@ -721,24 +728,24 @@ const organization = [
 
           <!-- region -->
           <div :class="[
-      'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-      {
-        'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-          usersignUp.controller.errors.region,
-      }
-    ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.region,
+            }
+          ]">
             <SelectionRegionSelection :error="usersignUp.controller.errors.region"
               @update-region="usersignUp.region = $event" />
           </div>
 
           <!-- District -->
           <div :class="[
-      'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-      {
-        'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-          usersignUp.controller.errors.district,
-      }
-    ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.district,
+            }
+          ]">
             <!-- select district -->
             <SelectionDistrictSelection :error="usersignUp.controller.errors.district" :region="usersignUp.region"
               @update-district="usersignUp.district = $event" />
@@ -746,12 +753,12 @@ const organization = [
 
           <!-- school -->
           <div v-if="usersignUp.type.toLowerCase() === 'student' || usersignUp.type.toLowerCase() === 'teacher'" :class="[
-      'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-      {
-        'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-          usersignUp.controller.errors.school,
-      }
-    ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.school,
+            }
+          ]">
 
             <!-- select school -->
             <SelectionSchoolSelection :district="usersignUp.district" :region="usersignUp.region"
@@ -761,12 +768,12 @@ const organization = [
 
           <!-- gender input radio -->
           <div :class="[
-      'py-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue',
-      {
-        'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-          usersignUp.controller.errors.gender,
-      }
-    ]">
+            'py-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.gender,
+            }
+          ]">
             <div class="flex flex-col items-center justify-start md:flex-row md:gap-10">
               <div class="font-semibold capitalize text-oceanBlue text-extraSmall">
                 Select Sex:
@@ -816,9 +823,9 @@ const organization = [
 
         <!-- Second Input Group -->
         <div :class="[
-            'absolute top-0 flex flex-col px-6 transition-all duration-500 -right-full',
-            inputTabs === 'tabTwo' ? 'right-0 w-full h-full' : ''
-          ]">
+          'absolute top-0 flex flex-col px-6 transition-all duration-500 -right-full',
+          inputTabs === 'tabTwo' ? 'right-0 w-full h-full' : ''
+        ]">
           <!-- Select Age -->
           <div :class="[
             'flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
@@ -845,12 +852,12 @@ const organization = [
 
             <!-- Email -->
             <div :class="[
-                'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                {
-                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                    usersignUp.controller.errors.email,
-                }
-              ]">
+              'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.email,
+              }
+            ]">
               <div class="flex items-center w-full">
                 <input type="text" id="email" v-model="usersignUp.email" @keydown.space.prevent name="username"
                   autocomplete="off"
@@ -867,12 +874,12 @@ const organization = [
 
             <!-- Phone Number -->
             <div :class="[
-                  'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                  {
-                    'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                      usersignUp.controller.errors.phone,
-                  }
-                ]">
+              'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.phone,
+              }
+            ]">
               <div class="flex items-center w-full">
                 <input type="tel" id="phone" v-model="usersignUp.phone" @keydown.space.prevent name="phone"
                   autocomplete="off"
@@ -891,12 +898,12 @@ const organization = [
             <div class="" id="organization" v-if="usersignUp.type.toLowerCase() === 'education stackeholder'">
               <!-- organization name -->
               <div :class="[
-                    'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                    {
-                      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                        usersignUp.controller.errors.organization,
-                    }
-                  ]">
+                'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                {
+                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                    usersignUp.controller.errors.organization,
+                }
+              ]">
                 <div class="flex items-center w-full">
                   <input type="text" id="organization" v-model="usersignUp.organization" name="organization"
                     autocomplete="off"
@@ -912,12 +919,12 @@ const organization = [
 
               <!-- stakeholder role -->
               <div :class="[
-                    'flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                    {
-                      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                        usersignUp.controller.errors.userOrgRole,
-                    }
-                  ]">
+                'flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                {
+                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                    usersignUp.controller.errors.userOrgRole,
+                }
+              ]">
 
                 <!-- Select Organization -->
                 <div class="flex flex-col">
@@ -937,12 +944,12 @@ const organization = [
 
               <!-- other user role in their org -->
               <div v-if="usersignUp.userOrgRole.toLowerCase() === 'others'" :class="[
-                  'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                  {
-                    'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                      usersignUp.controller.errors.userOrgRole,
-                  }
-                ]">
+                'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                {
+                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                    usersignUp.controller.errors.userOrgRole,
+                }
+              ]">
                 <div class="flex items-center w-full">
                   <input type="text" id="userOrgRole" v-model="usersignUp.otherRole" @keydown.space.prevent
                     name="organization" autocomplete="off"
@@ -960,12 +967,12 @@ const organization = [
 
           <!-- username student -->
           <div v-if="usersignUp.type.toLowerCase() === 'student'" :class="[
-              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-              {
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.userName,
-              }
-            ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.userName,
+            }
+          ]">
             <div class="flex items-center w-full">
               <input type="text" id="userName" v-model="usersignUp.userName" @keydown.space.prevent name="userName"
                 autocomplete="off" readonly
@@ -982,12 +989,12 @@ const organization = [
 
           <!-- Password -->
           <div :class="[
-              'flex flex-col items-center gap-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-              {
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.password,
-              }
-            ]">
+            'flex flex-col items-center gap-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.password,
+            }
+          ]">
             <div class="flex items-center w-full">
               <input :type="showPassword ? 'text' : 'password'" id="password" v-model="usersignUp.password"
                 name="password" autocomplete="off"
