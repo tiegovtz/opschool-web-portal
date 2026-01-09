@@ -22,9 +22,7 @@ const handleSubmit = (message: string) => {
 <template>
   <NuxtLayout name="home-layout">
     <!-- Page Header -->
-    <header role="banner">
-      <AiTeacherHeader />
-    </header>
+    <AiTeacherHeader />
 
     <!-- Chat Messages Area -->
     <main role="main" aria-label="AI Teacher conversation">

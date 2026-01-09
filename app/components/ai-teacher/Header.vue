@@ -1,6 +1,6 @@
 <template>
-  <header class="px-8 py-6" role="banner" aria-labelledby="app-title">
-    <div class="flex items-center gap-3">
+  <header class="px-8 py-6" aria-labelledby="app-title" tabindex="-1">
+    <div class="flex items-center gap-3" tabindex="-1">
 
       <!-- Icon container -->
       <div class="flex items-center justify-center w-12 h-12 rounded-full bg-oceanBlue backdrop-blur"
