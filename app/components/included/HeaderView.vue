@@ -118,7 +118,7 @@ const dropDown = () => {
           </a>
           <!-- TIE AI Teacher -->
           <NuxtLink v-if="userToken" to="/tie-ai-teacher"
-            class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium rounded-md"
+            class="flex items-center gap-2 px-2 text-center text-white rounded-md cursor-pointer text-medium"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
               <Icon name="mdi:account" size="20" />
@@ -157,7 +157,7 @@ const dropDown = () => {
               </NuxtLink>
 
               <!-- Logout -->
-              <div tabindex="0" aria-label="logout" role="button"
+              <div tabindex="-1" aria-label="logout" role="button"
                 class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
                 @click="announceLogout" @keyup="announceLogout" >
                 <span class="capitalize"> Logout </span>
