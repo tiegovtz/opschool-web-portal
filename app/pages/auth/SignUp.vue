@@ -464,6 +464,7 @@ watch(
     }
   }
 );
+
 // confirm password watching
 watch(
   () => usersignUp.confirm_password,
@@ -618,7 +619,7 @@ const organization = [
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b" aria-labelledby="signup-heading">
+  <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b" aria-labelledby="signup-heading" tabindex="-1">
 
     <!-- Message Component -->
     <MessageComponent :message="usersignUp.controller.feedback"

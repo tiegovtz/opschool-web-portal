@@ -2,6 +2,7 @@
 import { reactive, onMounted } from 'vue';
 import { CustomDropDownList } from '#components';
 import axios from 'axios';
+import apiDocs from '~/utilities/apiDocs';
 
 // Props
 const props = defineProps({
@@ -13,7 +14,7 @@ const props = defineProps({
 const data = reactive({
     regions: [],
     status: 'pending',   // 'pending' | 'success' | 'error'
-    error: null,         // fetch error
+    error: null,         // fetch error 
 });
 
 // Emit
@@ -25,9 +26,13 @@ const fetchRegion = async () => {
     data.status = 'pending';
 
     try {
-        const response = await axios.get(
-            'https://opschool.tie.go.tz:5001/v1/schools/regions'
-        );
+        // const response = await axios.get(
+        //     'https://opschool.tie.go.tz:5001/v1/schools/regions'
+        // );
+
+        const response = await useFetch(apiDocs.school.getSchoolRegions, {
+            method: 'GET',
+        });
 
         data.status = 'success';
         data.regions = response.data || [];
