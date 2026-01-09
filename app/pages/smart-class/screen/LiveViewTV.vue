@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
 
   <div class="iframe-screen">
     <div class="header">
@@ -24,7 +24,7 @@
   </NuxtLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {onMounted} from "vue";
 
 const iframeSrc = ref("https://tv.somakwanza.tz");

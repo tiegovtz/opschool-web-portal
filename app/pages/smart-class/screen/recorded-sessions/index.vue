@@ -1,7 +1,6 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from "axios";
 import { useSessionsSetup } from "../../../../composable/usesSessions.js";
 import apiDocs from '~/utilities/apiDocs.js';
 import { filterContentBySearch } from '~/utilities/filterJson.js';
@@ -413,11 +412,15 @@ const toggleSubscription = (classItem) => {
 
 // const joinClass = (selectedClassItem) => {
 //   router.push({ path: '/main/live-view' });
-// };
+//  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'"> 
+//};
 
 const joinClass = (selectedClassItem) => {
   localStorage.setItem('classData', JSON.stringify(selectedClassItem));
-  router.push({ path: '/smart-class/screen/live-view' });
+  router.push({
+    path: '/smart-class/screen/live-view',
+    query: router.currentRoute.value.fullPath.includes('header-less') ? { 'header-less': 'true' } : {}
+  });
 };
 
 
@@ -496,220 +499,6 @@ const selectedSubjectName = computed(() => {
 
 
 <template>
-  <!-- <v-dialog v-model="dialog" max-width="800px" scrollable> -->
-  <!-- <v-container class="upload-container" fluid>
-      <v-row justify="center">
-        <v-col cols="12" md="10" lg="8">
-          <v-card class="upload-card" elevation="0">
-            <v-card-text class="pa-8">
-              <v-form ref="uploadForm" v-model="formValid" lazy-validation> -->
-  <!-- Class Title -->
-  <!-- <v-text-field
-                    v-model="classData.title"
-                    label="Class Title"
-                    placeholder="Enter an engaging title for your class"
-                    variant="outlined"
-                    :rules="titleRules"
-                    class="custom-input mb-6"
-                    prepend-inner-icon="mdi-book-open-variant"
-                    required
-                ></v-text-field> -->
-
-  <!-- Instructor Name -->
-  <!-- <v-text-field
-                    v-model="classData.instructor"
-                    label="Instructor Name"
-                    placeholder="Your name or instructor name"
-                    variant="outlined"
-                    :rules="instructorRules"
-                    class="custom-input mb-6"
-                    prepend-inner-icon="mdi-account-tie"
-                    required
-                ></v-text-field> -->
-
-  <!-- Class Category -->
-  <!-- <v-select
-                    v-model="classData.category"
-                    :items="categories"
-                    label="Class Category"
-                    placeholder="Select a category for your class"
-                    variant="outlined"
-                    :rules="categoryRules"
-                    class="custom-select mb-6"
-                    prepend-inner-icon="mdi-tag"
-                    required
-                ></v-select> -->
-
-  <!-- Class Duration -->
-  <!-- <v-select
-                    v-model="classData.duration"
-                    :items="durations"
-                    label="Class Duration"
-                    placeholder="Select class duration"
-                    variant="outlined"
-                    :rules="durationRules"
-                    class="custom-select mb-6"
-                    prepend-inner-icon="mdi-clock-outline"
-                    required
-                ></v-select> -->
-
-  <!-- Class Description -->
-  <!-- <v-textarea
-                    v-model="classData.description"
-                    label="Class Description"
-                    placeholder="Describe what students will learn in this class..."
-                    variant="outlined"
-                    :rules="descriptionRules"
-                    class="custom-textarea mb-6"
-                    prepend-inner-icon="mdi-text"
-                    rows="4"
-                    required
-                ></v-textarea> -->
-
-  <!-- Video Upload Section -->
-  <!-- <div class="upload-section mb-6">
-                  <h3 class="upload-section-title">
-                    <v-icon class="mr-2">mdi-video</v-icon>
-                    Class Video
-                  </h3>
-                  <v-file-input
-                      v-model="classData.video"
-                      label="Upload Video File"
-                      placeholder="Choose video file"
-                      accept="video/*"
-                      variant="outlined"
-                      :rules="videoRules"
-                      class="custom-file-input"
-                      prepend-icon=""
-                      prepend-inner-icon="mdi-cloud-upload"
-                      show-size
-                      @change="handleVideoUpload"
-                  > -->
-  <!-- <template #selection="{ fileNames }">
-                      <template v-for="fileName in fileNames" :key="fileName">
-                        <v-chip
-                            class="file-chip"
-                            color="primary"
-                            variant="flat"
-                            prepend-icon="mdi-video"
-                        >
-                          {{ fileName }}
-                        </v-chip>
-                      </template>
-</template>
-</v-file-input> -->
-
-  <!-- Video Preview -->
-  <!-- <div v-if="videoPreview" class="video-preview mt-4">
-                    <video
-                        :src="videoPreview"
-                        controls
-                        class="preview-video"
-                        preload="metadata"
-                    ></video>
-                  </div>
-                </div> -->
-
-  <!-- Thumbnail Upload Section -->
-  <!-- <div class="upload-section mb-6">
-                  <h3 class="upload-section-title">
-                    <v-icon class="mr-2">mdi-image</v-icon>
-                    Class Thumbnail
-                  </h3>
-                  <v-file-input
-                      v-model="classData.thumbnail"
-                      label="Upload Thumbnail Image"
-                      placeholder="Choose thumbnail image"
-                      accept="image/*"
-                      variant="outlined"
-                      :rules="thumbnailRules"
-                      class="custom-file-input"
-                      prepend-icon=""
-                      prepend-inner-icon="mdi-image-plus"
-                      show-size
-                      @change="handleThumbnailUpload"
-                  > -->
-  <!-- <template #selection="{ fileNames }">
-                      <template v-for="fileName in fileNames" :key="fileName">
-                        <v-chip
-                            class="file-chip"
-                            color="secondary"
-                            variant="flat"
-                            prepend-icon="mdi-image"
-                        >
-                          {{ fileName }}
-                        </v-chip>
-                      </template>
-                    </template>
-                  </v-file-input> -->
-
-  <!-- Thumbnail Preview -->
-  <!-- <div v-if="thumbnailPreview" class="thumbnail-preview mt-4">
-                    <img
-                        :src="thumbnailPreview"
-                        alt="Thumbnail preview"
-                        class="preview-thumbnail"
-                    />
-                  </div>
-                </div> -->
-
-  <!-- Upload Progress -->
-  <!-- <v-progress-linear
-                    v-if="uploading"
-                    :model-value="uploadProgress"
-                    color="primary"
-                    height="8"
-                    class="mb-6"
-                    striped
-                ></v-progress-linear> -->
-
-  <!-- Action Buttons -->
-  <!-- <div class="upload-actions">
-                  <v-btn
-                      variant="outlined"
-                      size="large"
-                      class="secondary-btn mr-4"
-                      @click="resetForm"
-                  >
-                    <v-icon start>mdi-refresh</v-icon>
-                    Reset
-                  </v-btn> -->
-
-  <!-- <v-btn
-                      color="primary"
-                      size="large"
-                      class="primary-btn"
-                      :loading="uploading"
-                      :disabled="!formValid"
-                      @click="submitForm"
-                  >
-                    <v-icon start>mdi-cloud-upload</v-icon>
-                    {{ uploading ? 'Uploading...' : 'Upload Class' }}
-                  </v-btn>
-                </div>
-              </v-form>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
-
-
-  </v-dialog> -->
-  <!-- Success Snackbar -->
-  <!-- <v-snackbar
-      v-model="snackbar.show"
-      :color="snackbar.color"
-      :timeout="4000"
-      location="top right"
-      elevation="6"
-  >
-    <div class="d-flex align-center">
-      <v-icon class="mr-2">{{ snackbar.icon }}</v-icon>
-      {{ snackbar.message }}
-    </div>
-  </v-snackbar> -->
-
   <!-- Dialog Container  -->
   <div  v-if="dialog" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 overflow-auto">
     <div
@@ -817,7 +606,7 @@ const selectedSubjectName = computed(() => {
     <i :class="['mdi', snackbar.icon]"></i> {{ snackbar.message }}
   </div>
 
-  <NuxtLayout name="home-layout">
+  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
 
     <div class="live-classes">
       <!-- Header Section -->
