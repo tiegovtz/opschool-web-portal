@@ -33,6 +33,9 @@ const fetchDistricts = async (region) => {
         region
       ).toUpperCase()}`
     );
+
+    // const response = await useFetch(apiDocs.school.getSchoolDistricts(region));
+    
     data.status = "success";
     data.district = response.data;
   } catch (err) {
