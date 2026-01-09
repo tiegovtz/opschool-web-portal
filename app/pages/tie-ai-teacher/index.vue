@@ -21,14 +21,19 @@ const handleSubmit = (message: string) => {
 
 <template>
   <NuxtLayout name="home-layout">
+    <!-- Page Header -->
     <AiTeacherHeader />
-    <AiTeacherMessages
-      :messages="chat.messages"
-      :isTyping="isTyping"
-    />
-    <AiTeacherInput
-      :chat="chat"
-      @sendMessage="handleSubmit"
-    />
+
+    <!-- Chat Messages Area -->
+    <main role="main" aria-label="AI Teacher conversation">
+      <AiTeacherMessages :messages="chat.messages" :isTyping="isTyping" role="log" aria-live="polite"
+        aria-relevant="additions text" />
+    </main>
+
+    <!-- Message Input -->
+    <footer role="contentinfo">
+      <AiTeacherInput :chat="chat" @sendMessage="handleSubmit" aria-label="Type a message to the AI teacher" />
+    </footer>
   </NuxtLayout>
 </template>
+
