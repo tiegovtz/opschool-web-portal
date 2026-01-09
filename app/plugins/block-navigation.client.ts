@@ -36,6 +36,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       "/smart-class/header-less/screen/live-classes",
       "/smart-class/header-less/screen/upcoming-classes",
       "/tie-ai-teacher",
+      "/english-practice",
       "/home#content-container-after-login",
     ];
 
