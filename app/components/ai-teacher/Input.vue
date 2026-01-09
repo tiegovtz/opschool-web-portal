@@ -37,7 +37,7 @@ const handleSubmit = (e: Event) => {
 
       <button type="submit"
         class="bg-oceanBlue hover:from-[#093f7a] hover:to-[#0a52a1] text-white px-6 py-3.5 rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center gap-2 group"
-        aria-label="Send question">
+        aria-label="Send prompt to AI teacher">
         <span>Send</span>
         <Icon name="heroicons:arrow-up-right" class="w-5 h-5 transition transform group-hover:translate-x-1"
           aria-hidden="true" />
