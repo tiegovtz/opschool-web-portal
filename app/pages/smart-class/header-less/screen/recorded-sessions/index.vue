@@ -416,7 +416,7 @@ const toggleSubscription = (classItem) => {
 
 const joinClass = (selectedClassItem) => {
   localStorage.setItem('classData', JSON.stringify(selectedClassItem));
-  router.push({ path: '/smart-class/screen/live-view' });
+  router.push({ path: '/smart-class/header-less/screen/live-view' });
 };
 
 
