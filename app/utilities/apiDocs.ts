@@ -136,6 +136,7 @@ const apiDocs = {
 
   // School
   school: {
+    get:`${baseURL}/schools`,
     getSchoolRegions: `${baseURL}/schools/regions`,
     getSchoolDistricts: (region: string): string => `${baseURL}/schools/districts/${region}`,
     // getSchools: `${baseURL}/schools`,
