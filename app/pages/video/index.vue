@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
@@ -48,7 +48,7 @@ const auth_token = useCookie('signInAccessToken').value;
 const userToken = useCookie("signInUserToken");
 
 // First, fix the sliceData function
-const sliceData = (start, end) => {
+const sliceData = (start:number, end:number) => {
 
   if (!videos.value || !Array.isArray(videos.value) || videos.value.length === 0) {
     slicedData.value = [];
@@ -70,7 +70,7 @@ const currentPage = ref(1);
 const pageSize = ref();
 
 // Fetch Videos From Server
-const fetchVideos = async (param) => {
+const fetchVideos = async (param:any) => {
 
   if(!param){
     param = {
@@ -98,15 +98,15 @@ const fetchVideos = async (param) => {
       currentPage.value * pageSize.value
     );
 
-  } catch (error) {
+  } catch (erro) {
     status.value = 'error';
-    error.value = error;
+    error.value = erro as any;
     console.log(error);
   }
 }
 
 // Call FetchVideos Function
-fetchVideos();
+fetchVideos({});
 
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
@@ -173,6 +173,33 @@ watch (()=>route.query?.type,()=>{
     videoType: route.query?.type == 'conc'? 'Conceptual' : 'others'
   })
 })
+
+// Define Filters Reactive State
+const filters = reactive<{ level: string | number | null; subject: string | null }>(
+  {
+    level: null,
+    subject: null,
+  }
+)
+const level = ref<string | null>(null)  // Initial Level State
+// watch emits changes
+watch(filters, (current) => {
+  const payload: Record<string, string> = {};
+
+  if (current.level != null) {
+    payload.level = String(current.level);
+  }
+
+  if (current.subject != null) {
+    payload.subject = String(current.subject);
+  }
+
+  fetchVideos({
+    videoType: route.query?.type == 'conc'? 'Conceptual' : 'others',
+    ...payload
+  })
+}, { deep: true });
+
 </script>
 
 <template>
@@ -181,15 +208,8 @@ watch (()=>route.query?.type,()=>{
       ' ',
       { ' animate-pulse': isLoading }
     ]">
-
-      <!-- User Token Available -->
-      <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
-        <HomeSearchbar appearance="rounded" />
-        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
-      </div>
-
       <!-- User Token Not Available -->
-      <div v-else>
+      <div>
         <HeroSection />
         <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
           @emit-subject="filters.subject = $event" />
