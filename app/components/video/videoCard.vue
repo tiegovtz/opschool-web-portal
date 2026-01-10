@@ -1,56 +1,30 @@
-<script setup>
-import { ar } from "zod/v4/locales";
+<script setup lang="ts">
 import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
 const navigationStore = useNavigationStore()
-const props = defineProps({
-    videoId: {
-        type: String,
-        required: true,
-    },
-    videoName: {
-        type: String,
-        required: true,
-    },
-    videoThumbnail: {
-        type: String,
-       default: '/public/images/default.webp',
-    },
-    videoFileUrl: {
-        type: String,
-        required: true,
-    },
-    videoDescription: {
-        type: String,
-        required: true,
-    },
-    videoType: {
-        type: String,
-        required: true,
-    },
-    videoLevel: {
-        type: String,
-        default: 'Secondary',
-    },
-    videoStandard: {
-        type: String,
-        default: 'Form One',
-    },
-    videoSubject: {
-        type: String,
-        default: 'Physics'
-    },
+const props = withDefaults( defineProps<{
+    videoId: string,
+    videoName: string,
+    videoThumbnail?: string,
+    videoFileUrl: string,
+    videoDescription:string,
+    videoType:string,
+    videoLevel: string,
+    videoStandard: string,
+    videoSubject: string,
 
     // progress
-    topicProgress: {
-        type: Number,
-        default: 0,
-    },
-    topicViewed: Boolean,
-    isDeleted:{
-        type: Boolean,
-        default: false,
-    }
+    topicProgress: number,
+    topicViewed: boolean,
+    isDeleted:boolean
+
+}>(),{
+    videoThumbnail:'/public/images/default.webp',
+    videoLevel:'Secondary',
+    videoStandard:'Form One',
+    videoSubject: 'Physics',
+    topicProgress:0,
+    isDeleted: false,
 
 })
 
