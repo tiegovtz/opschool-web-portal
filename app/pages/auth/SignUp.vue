@@ -523,7 +523,7 @@ const switchTab = (tabName) => {
 
     // school for student and teacher
     if ((!usersignUp.school || usersignUp.school.trim() == " ") &&
-      usersignUp.type.toLowerCase() !== "education stackeholder") {
+      usersignUp.type.toLowerCase() !== "educationstackeholder") {
       usersignUp.controller.errors.school = messages.error.form.school;
       return;
     }
@@ -535,7 +535,7 @@ const switchTab = (tabName) => {
       usersignUp.gender &&
       usersignUp.region &&
       usersignUp.district &&
-      (usersignUp.type.toLowerCase() === "education stackeholder" ? true : usersignUp.school)
+      (usersignUp.type.toLowerCase() === "educationstackeholder" ? true : usersignUp.school)
     ) {
 
       // Validate first name
