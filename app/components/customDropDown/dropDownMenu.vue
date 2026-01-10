@@ -34,6 +34,8 @@ const selected = reactive({
   subject: "",
 });
 
+const liveMessage = ref("");
+
 // Emits
 const emit = defineEmits(["emitUpdateFilterValue"]);
 
@@ -47,7 +49,8 @@ const resetFilters = async () => {
   selected.level = "";
   selected.class = "";
   selected.subject = "";
-    await nextTick();
+  await nextTick();
+  liveMessage.value = "All filters reset.";
   emitUpdate();
 };
 
@@ -57,6 +60,7 @@ const selectLevel = async (name: string) => {
   selected.class = "";
   selected.subject = "";
   await nextTick();
+  liveMessage.value = `Level selected: ${name}`;
   emitUpdate();
 };
 
@@ -65,6 +69,7 @@ const selectClass = async (name: string) => {
   selected.class = name;
   selected.subject = "";
   await nextTick();
+  liveMessage.value = `Class selected: ${name}`;
   emitUpdate();
 };
 
@@ -72,6 +77,7 @@ const selectClass = async (name: string) => {
 const selectSubject = async (name: string) => {
   selected.subject = name;
   await nextTick();
+  liveMessage.value = `Subject selected: ${name}`;
   emitUpdate();
 };
 
@@ -141,75 +147,85 @@ watch(
 
 </script>
 <template>
-  <div v-if="isLoading" role="status" aria-live="polite">
-    <p class="text-gray-400 animate-pulse">Loading filters...</p>
+  <!-- Loading State -->
+  <div v-if="isLoading" role="status" aria-live="polite" aria-busy="true">
+    <p class="text-gray-400 animate-pulse">Loading filters…</p>
   </div>
 
-  <form
-    v-else
-    class="flex flex-col w-full bg-white divide-y rounded-md "
-    @reset="resetFilters"
-    aria-label="Content filters"
-  >
+  <!-- Filters Form -->
+  <form v-else class="flex flex-col w-full bg-white divide-y rounded-md" @reset="resetFilters"
+    aria-label="Content filters" role="search">
+    <span class="sr-only" aria-live="polite" aria-atomic="true">{{ liveMessage }}</span>
     <!-- Header -->
     <div class="flex items-center justify-between p-4 bg-gray-50 border-b">
-      <h2 class="font-bold text-gray-700">Filter</h2>
-      <button
-        type="reset"
-        aria-label="press to reset filters"
-        class="px-3 py-1 text-sm border border-oceanBlue text-oceanBlue rounded-md transition hover:bg-oceanBlue hover:text-white"
-      >
+      <h2 id="filter-heading" class="font-bold text-gray-700">
+        Filter
+      </h2>
+
+      <button type="reset" aria-label="Reset all filters"
+        class="px-3 py-1 text-sm border border-oceanBlue text-oceanBlue rounded-md transition hover:bg-oceanBlue hover:text-white">
         Reset
       </button>
     </div>
 
-    <!-- Filters -->
-    <div
-      v-for="(group, i) in filterGroups"
-      :key="group.name"
-      class="p-4"
-    >
+    <!-- Filter Groups -->
+    <div v-for="(group, i) in filterGroups" :key="group.name" class="p-4" role="region"
+      :aria-labelledby="`filter-group-${i}`">
+      
       <!-- Accordion Header -->
-      <button
-        type="button"
-        class="flex items-center justify-between w-full text-left"
-        @click="() => {
+      <button type="button" class="flex items-center justify-between w-full text-left" :id="`filter-group-${i}`"
+        :aria-expanded="openMenus.includes(i)" :aria-controls="`filter-panel-${i}`" @click="() => {
           const pos = openMenus.indexOf(i);
           pos > -1 ? openMenus.splice(pos, 1) : openMenus.push(i);
-        }"
-      >
-        <h3 class="capitalize font-semibold">{{ group.name }}</h3>
-        <Icon
-          :name="openMenus.includes(i) ? 'lets-icons:remove-duotone' : 'lets-icons:add-duotone'"
-          class="text-oceanBlue"
-        />
+        }">
+        <h3 class="capitalize font-semibold">
+          {{ group.name }}
+        </h3>
+
+        <Icon :name="openMenus.includes(i)
+          ? 'lets-icons:remove-duotone'
+          : 'lets-icons:add-duotone'" class="text-oceanBlue" aria-hidden="true" />
       </button>
 
-      <!-- Options -->
+      <!-- Options Panel -->
       <transition name="fade">
-        <div v-if="openMenus.includes(i)" class="mt-3 space-y-2 ml-2">
-          <label
-            v-for="item in group.items"
-            :key="item"
-            class="flex items-center gap-2"
-          >
-            <input
-              :type="group.inputType"
-              :name="group.name"
-              :value="item"
-              :checked="selected[group.name as keyof typeof selected] === item"
-              @change="
+        <div v-if="openMenus.includes(i)" :id="`filter-panel-${i}`" class="mt-3 ml-2 space-y-2" role="group"
+          :aria-labelledby="`filter-group-${i}`">
+          <label v-for="item in group.items" :key="item" class="flex items-center gap-2">
+            <input :type="group.inputType" :name="group.name" :value="item"
+              :checked="selected[group.name as keyof typeof selected] === item" @change="
                 group.name === 'level'
                   ? selectLevel(item)
                   : group.name === 'class'
-                  ? selectClass(item)
-                  : selectSubject(item)
-              "
-            />
-            {{ item }}
+                    ? selectClass(item)
+                    : selectSubject(item)
+                " />
+            <span>{{ item }}</span>
           </label>
         </div>
       </transition>
+
+      <!-- <transition name="fade">
+        <div v-if="openMenus.includes(i)" :id="`filter-panel-${i}`" class="mt-3 ml-2" role="group"
+          :aria-labelledby="`filter-group-${i}`">
+          <ul class="space-y-2" role="list">
+            <li v-for="item in group.items" :key="item" role="listitem">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input :type="group.inputType" :name="group.name" :value="item"
+                  :checked="selected[group.name as keyof typeof selected] === item" @change="
+                    group.name === 'level'
+                      ? selectLevel(item)
+                      : group.name === 'class'
+                        ? selectClass(item)
+                        : selectSubject(item)
+                    " />
+                <span>{{ item }}</span>
+              </label>
+            </li>
+          </ul>
+        </div>
+      </transition> -->
+
     </div>
   </form>
 </template>
