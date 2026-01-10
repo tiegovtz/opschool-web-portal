@@ -606,7 +606,7 @@ const ageOptions = computed(() => {
 const userTypes = [
   { id: 'Student', name: 'Student' },
   { id: 'Teacher', name: 'Teacher' },
-  { id: 'Education Stackeholder', name: 'Education Stakeholder' },
+  { id: 'EducationStackeholder', name: 'Education Stakeholder' },
 ];
 
 const organization = [
