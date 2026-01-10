@@ -28,7 +28,7 @@ import type { Subjects } from "~/types/subject.interface";
 import type { tabs } from "~/types/types.data";
 import type { GroupedData } from "~/types/grouped.data";
 import type { Experiment } from "~/types/experiment.interface";
-import type { Videos } from "~/types/video.iunterface";
+import type { Videos } from "~/types/video.interface";
 import type { Audios } from "~/types/audio.interface";
 import type { Topic } from "~/types/topic.interface";
 import { getTabLabel } from "~/utilities/get.labels";
@@ -243,7 +243,7 @@ const fetchData = async (params?: any) => {
   }
 
   try {
-     announcement.value = `loading  ${getTabLabel(activeTab.value)} please wait.`;
+    announcement.value = `loading  ${getTabLabel(activeTab.value)} please wait.`;
     const { data: response, status: fetchStatus } = await fetchAsyncData(`tab-${tab}-${subjectId.value ? subjectId.value : ''}`, () => $fetch(url, {
       params: {
         ...params,
@@ -281,7 +281,7 @@ const fetchData = async (params?: any) => {
   } catch (err) {
     status.value = "error";
     error.value = err;
-    announcement.value=`Error occured while fetching ${getTabLabel(activeTab.value)}`;
+    announcement.value = `Error occured while fetching ${getTabLabel(activeTab.value)}`;
   }
 };
 
@@ -680,7 +680,7 @@ const switchTab = async (tab: tabs) => {
                       : topic.views
                         ? topic.views
                         : 0
-                    " :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
+                      " :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
                   :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
               </template>
             </customGridTwo>
@@ -733,8 +733,8 @@ const switchTab = async (tab: tabs) => {
 
     <!-- announcement -->
     <!-- screen reader notifier -->
-    <div class="sr-only" aria-live="assertive" aria-atomic role="status">
+    <!-- <div class="sr-only" aria-live="assertive" aria-atomic role="status">
       {{ announcement }}
-    </div>
+    </div> -->
   </NuxtLayout>
 </template>
