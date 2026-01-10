@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import { reactive, watch, computed } from "vue";
 import { CustomDropDownList } from "#components";
-import axios from "axios";
+import apiDocs from "~/utilities/apiDocs";
 
 const props = defineProps({
   region: String,
@@ -9,7 +9,7 @@ const props = defineProps({
   error: String,
 });
 
-const data = reactive({
+const data = reactive<{ district: any[], status: 'idle' | 'pending' | 'success' | 'error', error: any }>({
   district: [],
   status: "idle", // idle | pending | success | error
   error: null,
@@ -22,25 +22,19 @@ const districtValue = computed({
   set: (value) => emit("updateDistrict", value),
 });
 
-const fetchDistricts = async (region) => {
+const fetchDistricts = async (region: string) => {
   data.status = "pending";
   data.error = null;
   data.district = [];
 
   try {
-    const response = await axios.get(
-      `https://opschool.tie.go.tz:5001/v1/schools/districts/${String(
-        region
-      ).toUpperCase()}`
-    );
+    const response = await $fetch<any[]>(apiDocs.school.getSchoolDistricts(region));
 
-    // const response = await useFetch(apiDocs.school.getSchoolDistricts(region));
-    
     data.status = "success";
-    data.district = response.data;
+    data.district = response;
   } catch (err) {
     data.status = "error";
-    data.error = err.message;
+    data.error = (err as any).message;
   }
 };
 
@@ -80,10 +74,10 @@ const isDisabled = computed(
     </label>
 
     <CustomDropDownList id="district-select" v-model="districtValue" :list="districtOptions" :placeholder="!props.region
-        ? 'Select a region first'
-        : data.status === 'pending'
-          ? 'Loading districts…'
-          : 'Select a district'
+      ? 'Select a region first'
+      : data.status === 'pending'
+        ? 'Loading districts…'
+        : 'Select a district'
       " :disabled="isDisabled" :aria-invalid="!!error" aria-describedby="district-status district-error" />
 
     <!-- Status / helper text -->

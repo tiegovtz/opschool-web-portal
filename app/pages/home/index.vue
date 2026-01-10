@@ -521,7 +521,7 @@ const switchTab = async (tab: tabs) => {
         </div>
 
         <!-- data are in Grid -->
-        <div class="w-full xl:w-3/4">
+        <div  class="w-full xl:w-3/4"  id="main-container" aria-label="content list" role="region" tabindex="-1">
           <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
             <LoadingIndicator :is-loading="true" />
           </div>
@@ -544,7 +544,7 @@ const switchTab = async (tab: tabs) => {
           </div>
 
           <!-- Status Success -->
-          <div id="content-container-after-login" aria-label="content list" role="region" tabindex="-1"
+          <div
             v-else-if="status == 'success' && subjectId && data && data.length > 0">
             <ClientOnly>
               <customGridOne v-if="activeTab === 'subjects'">
