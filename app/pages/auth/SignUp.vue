@@ -56,10 +56,25 @@ const usersignUp = reactive({
   },
 });
 
+const normalizeUserTypeKey = (type) => {
+  const value = (type || "").toString().trim().toLowerCase().replace(/\s+/g, "");
+  return value === "educationstackeholder" ? "educationstakeholder" : value;
+};
+
+const toBackendUserType = (type) => {
+  const key = normalizeUserTypeKey(type);
+  if (key === "student") return "Student";
+  if (key === "teacher") return "Teacher";
+  if (key === "educationstakeholder") return "EducationStakeholder";
+  return type?.toString().trim() || "";
+};
+
 const signUp = async () => {
   if (usersignUp.userOrgRole.toLowerCase().trim() == 'others' && usersignUp.otherRole) {
     usersignUp.userOrgRole = usersignUp.otherRole
   }
+  const typeKey = normalizeUserTypeKey(usersignUp.type);
+  const backendType = toBackendUserType(usersignUp.type);
 
   if (
     usersignUp.age &&                                     // Age must be greater than 0
@@ -74,14 +89,14 @@ const signUp = async () => {
     usersignUp.district?.trim() &&                        // District is required
 
     // If not an "Education Stakeholder", user must provide their school
-    (usersignUp.type.toLowerCase().trim() !== 'education stackeholder' && usersignUp.school?.trim()) ||
+    (typeKey !== 'educationstakeholder' && usersignUp.school?.trim()) ||
 
     // If user is an "Education Stakeholder", they must provide organization and role
-    (usersignUp.type.toLowerCase().trim() === 'education stackeholder' &&
+    (typeKey === 'educationstakeholder' &&
       usersignUp.organization?.trim() && usersignUp.userOrgRole?.trim()) &&
 
     // Either user is not "Student"  they must provide both email and phone
-    (usersignUp.type.toLowerCase().trim() !== 'student' && (usersignUp.email?.trim() && usersignUp.phone?.trim()))
+    (typeKey !== 'student' && (usersignUp.email?.trim() && usersignUp.phone?.trim()))
   ) {
 
     // 
@@ -91,11 +106,11 @@ const signUp = async () => {
 
     // submit data
     await axios.post(apiDocs.auth.signUp,
-      usersignUp.type.toLowerCase().trim() == 'student' ?
+      typeKey == 'student' ?
         {
           name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
           password: usersignUp.password,
-          type: usersignUp.type,
+          type: backendType,
           gender: usersignUp.gender,
           region: usersignUp.region,
           school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
@@ -105,13 +120,13 @@ const signUp = async () => {
           username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
         }
         :
-        usersignUp.type.toLowerCase().trim() == 'teacher' ?
+        typeKey == 'teacher' ?
 
           {
             name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
             password: usersignUp.password,
             phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
-            type: usersignUp.type,
+            type: backendType,
             email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
             gender: usersignUp.gender,
             region: usersignUp.region,
@@ -125,7 +140,7 @@ const signUp = async () => {
             name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
             password: usersignUp.password,
             phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
-            type: usersignUp.type,
+            type: backendType,
             email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
             gender: usersignUp.gender,
             region: usersignUp.region,
@@ -151,7 +166,7 @@ const signUp = async () => {
           usersignUp.controller.isSent = 'failed';
 
           // Check both student and Stakeholder and teacher already Exist
-          if (usersignUp.type.toLowerCase().trim() === 'student') {
+          if (typeKey === 'student') {
             usersignUp.controller.feedback = messages.error.auth.userExist;
           } else {
             usersignUp.controller.feedback = messages.error.auth.accountExists;
@@ -523,7 +538,7 @@ const switchTab = (tabName) => {
 
     // school for student and teacher
     if ((!usersignUp.school || usersignUp.school.trim() == " ") &&
-      usersignUp.type.toLowerCase() !== "educationstackeholder") {
+      normalizeUserTypeKey(usersignUp.type) !== "educationstakeholder") {
       usersignUp.controller.errors.school = messages.error.form.school;
       return;
     }
@@ -535,7 +550,7 @@ const switchTab = (tabName) => {
       usersignUp.gender &&
       usersignUp.region &&
       usersignUp.district &&
-      (usersignUp.type.toLowerCase() === "educationstackeholder" ? true : usersignUp.school)
+      (normalizeUserTypeKey(usersignUp.type) === "educationstakeholder" ? true : usersignUp.school)
     ) {
 
       // Validate first name
@@ -571,7 +586,7 @@ const switchTab = (tabName) => {
       usersignUp.userName = usersignUp.fname + "." + usersignUp.lname;
 
       // One-liner equivalent to the if statement, use a logical && operator:
-      usersignUp.type.toLowerCase().trim() === 'student' && userExists();
+      normalizeUserTypeKey(usersignUp.type) === 'student' && userExists();
 
       // if (usersignUp.type.toLowerCase().trim() === 'student') {
       //   userExists();
@@ -606,7 +621,7 @@ const ageOptions = computed(() => {
 const userTypes = [
   { id: 'Student', name: 'Student' },
   { id: 'Teacher', name: 'Teacher' },
-  { id: 'EducationStackeholder', name: 'Education Stakeholder' },
+  { id: 'EducationStakeholder', name: 'Education Stakeholder' },
 ];
 
 const organization = [
@@ -895,7 +910,7 @@ onMounted(() => {
             </div>
 
             <!-- organization informations for stakeholders -->
-            <div class="" id="organization" v-if="usersignUp.type.toLowerCase() === 'education stackeholder'">
+            <div class="" id="organization" v-if="normalizeUserTypeKey(usersignUp.type) === 'educationstakeholder'">
               <!-- organization name -->
               <div :class="[
                 'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
