@@ -63,7 +63,7 @@ const mainFocus = () => {
           </div>
           {{ HomeTabs.subject }}
         </button>
-        <button type="button" class="sr-only" @click="mainFocus" aria-label="Press enter to jump to subject list">Skip content</button>
+        <button v-if="activeTab==='subjects'" type="button" class="sr-only" @click="mainFocus" aria-label="Press enter to jump to subject list">Skip content</button>
       </div>
       <!-- Interactive Content -->
       <div v-if="isLoggedIn" class="">
@@ -76,7 +76,7 @@ const mainFocus = () => {
           </div>
           {{ HomeTabs.interactive }}
         </button>
-        <button class="sr-only" @click="mainFocus" aria-label="Press enter to jump to interactive contents list"
+        <button v-if="activeTab==='interactive-contents'" class="sr-only" @click="mainFocus" aria-label="Press enter to jump to interactive contents list"
           >Skip content</button>
       </div>
 
@@ -104,7 +104,7 @@ const mainFocus = () => {
           </div>
           {{ HomeTabs.activity }}
         </button>
-        <button class="sr-only" @click="mainFocus" aria-label="Press enter to jump to learner activities list"
+        <button v-if="activeTab=== 'learn-activities'" class="sr-only" @click="mainFocus" aria-label="Press enter to jump to learner activities list"
           >Skip content</button>
       </div>
       <NuxtLink v-else
@@ -130,7 +130,7 @@ const mainFocus = () => {
           </div>
           {{ HomeTabs.video }}
         </button>
-        <button class="sr-only" @click="mainFocus" aria-label="Press enter to jump videos list">Skip
+        <button v-if="activeTab==='video'" class="sr-only" @click="mainFocus" aria-label="Press enter to jump videos list">Skip
           content</button>
       </div>
       <NuxtLink v-else :aria-label="`press to visit page of Video ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
@@ -159,7 +159,7 @@ const mainFocus = () => {
           </div>
           {{ HomeTabs.classVideos }}
         </button>
-        <button class="sr-only" @click="mainFocus" aria-label="Press enter to jump to class videos list"
+        <button v-if="activeTab==='class-videos'" class="sr-only" @click="mainFocus" aria-label="Press enter to jump to class videos list"
           >Skip content</button>
       </div>
       <NuxtLink v-else
@@ -189,7 +189,7 @@ const mainFocus = () => {
           </div>
           {{ HomeTabs.audio }}
         </button>
-        <button class="sr-only" @click="mainFocus" aria-label="Press enter to jump to audios list">Skip
+        <button v-if="activeTab==='audio'" class="sr-only" @click="mainFocus" aria-label="Press enter to jump to audios list">Skip
           content</button>
       </div>
       <NuxtLink v-else
