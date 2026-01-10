@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
   <div class="iframe-screen">
     <div class="header">
       <h1 class="title">Now Streaming</h1>
@@ -52,10 +52,8 @@ onMounted(() => {
       console.error('Failed to parse classData:', e)
     }
   } else {
-    console.log("SOMAKWANZA TV");
     streamUrl.value = 'https://tv.somakwanza.tz'
   }
-  console.log("somakwanza : " + streamUrl.value);
 })
 </script>
 

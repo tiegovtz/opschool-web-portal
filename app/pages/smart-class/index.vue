@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
     <div class="smart-class-entry min-h-screen bg-gradient-to-br from-slate-900 via-[#2a4469] to-slate-900 text-white font-sans">
 
       <!-- Header Section -->
@@ -34,8 +34,9 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           <NuxtLink
               v-for="(item, index) in items"
+               @click="useNavigationStore().setGoBack($route.fullPath)"
               :key="index"
-              :to="item.value === 'smart-class' ? '/smart-class' : `/smart-class/screen/${item.value}`"
+              :to="item.value === 'smart-class' ? '/smart-class' : `/smart-class/screen/${item.value}${$router.currentRoute.value.fullPath.includes('header-less') ?'?header-less':''}`"
               class="nav-card group relative bg-[#56ade8]/10 backdrop-blur-lg rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl border border-white/10 min-h-[280px] animate-slide-in"
               :style="{ animationDelay: `${index * 150}ms` }"
           >
@@ -95,9 +96,9 @@
   </NuxtLayout>
 </template>
 
-<script setup>
-import {useRouter} from "vue-router";
+<script setup lang="ts">
 import {onMounted, ref} from "vue";
+import { useNavigationStore } from "~/stores/navigationStore";
 // Define meta info about page
 useHead({
   title: "Smart Class Hub - TIE Interactive Learning",
@@ -116,19 +117,8 @@ onMounted(() => {
   canGoBack.value = window.history.length > 1
 })
 
-const goBack = () => {
-  navigateTo(-1) // Nuxt's navigateTo function
-}
 
 const items = [
-  // {
-  //   title: 'Dashboard',
-  //   value: 'smart-class',
-  //   icon: 'mdi:view-dashboard',
-  //   description: 'Overview of your learning progress and achievements',
-  //   notifications: null,
-  //   isLive: false
-  // },
   {
     title: 'Live Classes',
     value: 'live-classes',
@@ -137,14 +127,6 @@ const items = [
     notifications: 3,
     isLive: true
   },
-  // {
-  //   title: 'Upcoming Classes',
-  //   value: 'upcoming-classes',
-  //   icon: 'mdi:calendar-clock',
-  //   description: 'View your scheduled learning sessions and events',
-  //   notifications: 5,
-  //   isLive: false
-  // },
   {
     title: 'SomaKwanza TV',
     value: 'live-tv',
@@ -181,7 +163,7 @@ const stats = [
   }
 ]
 
-const navigateTo = (path) => {
+const navigateTo = (path:string) => {
   if (path !== 'dashboard') {
     navigateTo(`/main/${path}`)
   }

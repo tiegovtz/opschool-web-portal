@@ -1,6 +1,6 @@
 <template>
 
-  <NuxtLayout name="home-layout">
+  <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
 
   <v-dialog v-model="dialog" max-width="600px">
     <v-card>
@@ -291,7 +291,7 @@
   </NuxtLayout>
 </template>
 
-<script setup>
+<script setup >
 import {ref, reactive, computed, onMounted} from 'vue';
 import { useRouter } from 'vue-router';
 import axios from "axios";
@@ -449,29 +449,9 @@ const minLength = min => v => (v && v.length >= min) || `Min ${min} characters`;
 // Form submit
 // Submit handler
 const submit = async () => {
-  console.log("Sdsfe");
-  // if (!isValid.value) {
-  //   showToast('Please fill the form correctly.', 'error');
-  //   return;
-  // }
 
   try {
-    // const payload = {
-    //   // Build your payload matching API expected fields
-    //   school_class: formData.value.school_class,
-    //   subject: formData.value.subject,
-    //   school_registration_number: formData.value.school_registration_number,
-    //   start_time: formData.value.start_time,
-    //   end_time: formData.value.end_time,
-    //   topic: formData.value.topic,
-    //   room_name: formData.value.room_name,
-    //   meet_link: formData.value.meet_link,
-    //   session_start: formData.value.session_start,
-    //   session_end: formData.value.session_end,
-    // };
     const payload = JSON.parse(JSON.stringify(formData)); // deep clone, usually unnecessary here
-
-
     try {
       const response = await axios.post('/api/auth/token/', {
         username: 'Nick',
@@ -480,8 +460,6 @@ const submit = async () => {
 
 
       const { access } = response.data;
-      console.log("adceds" + access);
-
       // Call API
       await postData(payload,access);
 
