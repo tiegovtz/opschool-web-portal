@@ -3,15 +3,15 @@ import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
 const navigationStore = useNavigationStore()
 const props = withDefaults( defineProps<{
-    videoId: string,
-    videoName: string,
-    videoThumbnail?: string,
-    videoFileUrl: string,
-    videoDescription:string,
-    videoType:string,
-    videoLevel: string,
-    videoStandard: string,
-    videoSubject: string,
+    videoId: string|any,
+    videoName: string|any,
+    videoThumbnail?: string|any,
+    videoFileUrl: string|any,
+    videoDescription:string|any,
+    videoType:string|any,
+    videoLevel: string|any,
+    videoStandard: string|any,
+    videoSubject: string|any,
 
     // progress
     topicProgress: number,
