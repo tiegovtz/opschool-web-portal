@@ -109,10 +109,11 @@ const { progress, isLoading } = useLoadingIndicator();
 
 // Checking Tab if is corresponde to route
 if (tab) {
-  tab == "learn-activities" ? (activeTab.value = "learn-activities") : "";
-  tab == "video" ? (activeTab.value = "video") : "";
-  tab == "audio" ? (activeTab.value = "audio") : "";
-  tab == "interactive-contents" ? (activeTab.value = "interactive-contents") : "";
+  if (tab == "learn-activities") activeTab.value = "learn-activities";
+  if (tab == "video") activeTab.value = "video";
+  if (tab == "class-videos") activeTab.value = "class-videos";
+  if (tab == "audio")activeTab.value = "audio";
+  if (tab == "interactive-contents")activeTab.value = "interactive-contents";
 }
 
 // First, fix the sliceData function
@@ -592,7 +593,9 @@ const switchTab = async (tab: tabs) => {
                   <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
                     :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
                     :is-deleted="video.isDeleted" :video-description="video.description"
-                    :video-subject="video.subject?.name" :video-type="video.videoType" />
+                    :video-subject="video.subject?.name" :video-type="video.videoType"
+                    :video-level="level" :video-standard="video.level?.name"
+                    :topic-progress="video.avgProgress" :topic-viewed="video.isViewed" />
                 </template>
               </customGridOne>
               <div v-else-if="activeTab === 'audio'">

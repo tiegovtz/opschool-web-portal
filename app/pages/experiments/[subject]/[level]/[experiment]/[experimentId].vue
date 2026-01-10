@@ -160,7 +160,7 @@ onMounted(() => {
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <NuxtLink
-                            :to="{ path: '/', query: { tab: 'experiments', subject: experimentSubject, class: experimentStandard } }"
+                            :to="{ path: '/', query: { tab: 'learn-activities', subject: experimentSubject, class: experimentStandard } }"
                             class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue" aria-label="Go back to experiment list">
                             <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" aria-hidden="true"/>
                         </NuxtLink>

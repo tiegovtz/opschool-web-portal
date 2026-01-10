@@ -851,7 +851,7 @@ definePageMeta({
               :to="{
                 path: '/',
                 query: {
-                  tab: 'interactive',
+                  tab: 'interactive-contents',
                   subject: topicLevel,
                   class: topicStandard,
                 },

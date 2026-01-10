@@ -81,7 +81,7 @@ const fetchVideoById = async () => {
             }
         });
 
-        videoInfo.value = response;
+        videoInfo.value = response;        
         status.value = 'success';
 
     } catch (error) {
@@ -115,7 +115,7 @@ definePageMeta({
                 <!-- Videovideo Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink :to="{ path: '/', query: { tab: 'video', subject: videoSubject, class: videoStandard } }"
+                        <NuxtLink :to="{ path: '/', query: { tab: `${videoInfo?.videoType ==='Conceptual' ?'video':'class-videos'}`, subject: videoSubject, class: videoStandard } }"
                             class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
                             <!-- {{
                             videoSubject != null &&
