@@ -117,6 +117,7 @@ const signUp = async () => {
           district: usersignUp.district,
           ageGroup: usersignUp.age,
           terms: true,
+          roles: ['Student'],
           username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
         }
         :
@@ -130,6 +131,7 @@ const signUp = async () => {
             email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
             gender: usersignUp.gender,
             region: usersignUp.region,
+            roles: ['Teacher'],
             school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
             district: usersignUp.district,
             ageGroup: usersignUp.age,
@@ -147,9 +149,10 @@ const signUp = async () => {
             school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
             district: usersignUp.district,
             ageGroup: usersignUp.age,
+            roles: ['EducationStakeholder'],
             terms: true,
             organization: usersignUp.organization,
-            role: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
+            stakeholder: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
           }
     )
       .then((response) => {
