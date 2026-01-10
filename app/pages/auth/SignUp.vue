@@ -1045,35 +1045,38 @@ onMounted(() => {
           </div>
 
           <!-- Sign Up Button -->
-          <button type="submit"
+          <button type="submit" :aria-busy="usersignUp.controller.isSent === 'pending' ? 'true' : 'false'"
             class="w-full p-2 text-white transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
             <!-- submited successful -->
             <div class="flex items-center justify-center gap-2"
               v-if="usersignUp.controller.isSent === 'success' && usersignUp.controller.isSubmitted">
               Submitted
-              <Icon name="icons8:checked" class="w-5 h-5 text-white cursor-pointer" size="16" />
+              <Icon name="icons8:checked" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
             </div>
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'pending' && usersignUp.controller.isSubmitted">
-              Please Wait
-              <Icon name="eos-icons:loading" class="w-5 h-5 text-white cursor-pointer" size="16" />
+              Signing up, please wait.
+              <Icon name="eos-icons:loading" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
             </div>
 
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'failed' && usersignUp.controller.isSubmitted">
               Failed
-              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" />
+              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
             </div>
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'error' && usersignUp.controller.isSubmitted">
               Internal Error
-              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" />
+              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
             </div>
             <div class="flex items-center justify-center gap-2" v-else>
               Sign Up
-              <Icon name="mynaui:send" class="w-5 h-5 text-white cursor-pointer" size="16" />
+              <Icon name="mynaui:send" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
             </div>
           </button>
+          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {{ usersignUp.controller.isSent === 'pending' ? 'Signing up, please wait.' : '' }}
+          </span>
 
           <!-- Already have an account -->
           <div class="flex items-center justify-center gap-2 mt-4 mb-4">
