@@ -733,8 +733,8 @@ const switchTab = async (tab: tabs) => {
 
     <!-- announcement -->
     <!-- screen reader notifier -->
-    <div class="sr-only" aria-live="assertive" aria-atomic role="status">
+    <!-- <div class="sr-only" aria-live="assertive" aria-atomic role="status">
       {{ announcement }}
-    </div>
+    </div> -->
   </NuxtLayout>
 </template>

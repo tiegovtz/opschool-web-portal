@@ -105,7 +105,6 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
-
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
