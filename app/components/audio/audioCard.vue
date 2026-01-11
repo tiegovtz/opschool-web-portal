@@ -18,6 +18,7 @@ const props = withDefaults(
         topicProgress?: number
         topicViewed?: boolean
         isDeleted?: boolean
+        altText?:string
     }>(),
     {
         audioThumbnail: '/images/default.webp',
