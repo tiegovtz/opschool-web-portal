@@ -22,7 +22,8 @@ const props = withDefaults(defineProps<{
 
   // progress
   topicProgress?: number,
-  topicViewed?: boolean
+  topicViewed?: boolean,
+  altText?:string
 
 }>(), {
   topicImage: '',
@@ -54,7 +55,7 @@ const userToken = useCookie('signInUserToken')
     :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`">
     <!-- profile view -->
     <div class="w-10 h-10 overflow-hidden rounded-full">
-      <NuxtImg :src="topicImage" :alt="topicTitle" class="object-cover w-full h-full" />
+      <NuxtImg :src="topicImage" :alt="altText ?? topicTitle" class="object-cover w-full h-full" />
     </div>
     <div class="stat-content">
       <span class="stat-label">{{ topicTitle }}</span>
@@ -76,7 +77,7 @@ const userToken = useCookie('signInUserToken')
       layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-full max-w-[200px]',
       { 'md:h-20 !h-full max-w-[80px]': modelType === 'search', },
     ]">
-      <NuxtImg :src="topicImage" loading="lazy" :alt="'Image of ' + topicTitle" :class="[
+      <NuxtImg :src="topicImage" loading="lazy" :alt="altText ?? `Image of ${topicTitle}`" :class="[
         'object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110',
         { 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' },
       ]" />
