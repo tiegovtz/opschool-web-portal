@@ -12,6 +12,7 @@ const props = withDefaults( defineProps<{
     videoLevel: string|any,
     videoStandard: string|any,
     videoSubject: string|any,
+    altText?:string|any
 
     // progress
     topicProgress: number,
@@ -58,7 +59,7 @@ const setVideoToView = () => {
             'relative overflow-hidden transition-all duration-500 ease-in-out',
             layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
-            <NuxtImg :src="videoThumbnail" :alt="videoName.toLowerCase()"
+            <NuxtImg :src="videoThumbnail" :alt="altText ?? videoName.toLowerCase()"
                 :class="[
                     'object-cover w-full h-full transition-transform duration-500',
                 ]" />

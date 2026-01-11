@@ -45,9 +45,11 @@ const setSeeMore = (seeMore:string) => {
             :subject-image="subject.thumbnail"
             :subject-description="subject.description"
             :total-views="subject.views ?? 0"
+            :alt-text="subject.alt"
             :is-logged-in="userToken != null || userToken != undefined"
             @emit-subject-name="emits('emittedSubjectName',$event)"
             @emit-subject-id="emits('emittedSubjectId',$event)"
+
           />
         </template>
       </customGridOne>
@@ -121,6 +123,7 @@ const setSeeMore = (seeMore:string) => {
                 :topic-standard="topic.level?.name"
                 :topic-viewed="topic.isViewed"
                 :topic-progress="topic.avgProgress"
+                :alt-text="topic.alt"
               />
             </template>
           </customGridOne>
@@ -155,6 +158,7 @@ const setSeeMore = (seeMore:string) => {
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
               :topic-progress="topic.avgProgress"
+              :alt-text="topic.alt"
             />
           </div>
         </div>
@@ -184,6 +188,7 @@ const setSeeMore = (seeMore:string) => {
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
               :topic-progress="topic.avgProgress"
+              :alt-text="topic.alt"
             />
           </template>
         </customGridOne>
@@ -252,6 +257,7 @@ const setSeeMore = (seeMore:string) => {
                 :experiment-level="experiment.level?.name"
                 :experiment-name="experiment.name"
                 :experiment-file-url="experiment.stepsFileUrl"
+                :alt-text="experiment.alt"
               />
             </template>
           </customGridOne>
@@ -276,6 +282,7 @@ const setSeeMore = (seeMore:string) => {
               :experiment-level="experiment.level?.name"
               :experiment-name="experiment.name"
               :experiment-file-url="experiment.stepsFileUrl"
+              :alt-text="experiment.alt"
             />
           </div>
         </div>
@@ -294,6 +301,7 @@ const setSeeMore = (seeMore:string) => {
               :experiment-level="experiment.level?.name"
               :experiment-name="experiment.name"
               :experiment-file-url="experiment.stepsFileUrl"
+              :alt-text="experiment.alt"
             />
           </template>
         </customGridOne>
@@ -365,6 +373,11 @@ const setSeeMore = (seeMore:string) => {
                 :video-description="video.description"
                 :video-subject="video.subject?.name"
                 :video-type="video.videoType"
+                :video-level="video.level?.name"
+                :video-standard="video.level?.name"
+                :topic-progress="video.avgProgress"
+                :topic-viewed="video.isViewed"
+                :alt-text="video.alt"
               />
             </template>
           </customGridOne>
@@ -387,6 +400,11 @@ const setSeeMore = (seeMore:string) => {
               :video-description="video.description"
               :video-subject="video.subject?.name"
               :video-type="video.videoType"
+              :video-level="video.level?.name"
+              :video-standard="video.level?.name"
+              :topic-progress="video.avgProgress"
+              :topic-viewed="video.isViewed"
+              :alt-text="video.alt"
             />
           </div>
         </div>
@@ -404,6 +422,11 @@ const setSeeMore = (seeMore:string) => {
               :video-description="video.description"
               :video-subject="video.subject?.name"
               :video-type="video.videoType"
+              :video-level="video.level?.name"
+              :video-standard="video.level?.name"
+              :topic-progress="video.avgProgress"
+              :topic-viewed="video.isViewed"
+              :alt-text="video.alt"
             />
           </template>
         </customGridOne>
@@ -470,6 +493,7 @@ const setSeeMore = (seeMore:string) => {
                 :audio-description="audio.description"
                 :audio-subject="audio.subject?.name"
                 :audio-type="audio.audioType"
+                :alt-text="audio.alt"
               />
             </template>
           </customGridOne>
@@ -509,6 +533,7 @@ const setSeeMore = (seeMore:string) => {
                 :audio-description="audio.description"
                 :audio-subject="audio.subject?.name"
                 :audio-type="audio.audioType"
+                :alt-text="audio.alt"
               />
           </template>
         </customGridOne>
@@ -533,6 +558,7 @@ const setSeeMore = (seeMore:string) => {
             :subject-description="subject.description"
             :total-views="subject.views ?? 0"
             :is-logged-in="userToken != null || userToken != undefined"
+            :alt-text="subject.alt"
             @emit-subject-name="emits('emittedSubjectName',$event)"
             @emit-subject-id="emits('emittedSubjectId',$event)"
           />
@@ -609,6 +635,7 @@ const setSeeMore = (seeMore:string) => {
                 :topic-standard="topic.level?.name"
                 :topic-viewed="topic.isViewed"
                 :topic-progress="topic.avgProgress"
+                :alt-text="topic.alt"
               />
             </template>
           </customGridTwo>
@@ -643,6 +670,7 @@ const setSeeMore = (seeMore:string) => {
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
               :topic-progress="topic.avgProgress"
+              :alt-text="topic.alt"
             />
           </div>
         </div>
@@ -672,6 +700,7 @@ const setSeeMore = (seeMore:string) => {
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
               :topic-progress="topic.avgProgress"
+              :alt-text="topic.alt"
             />
           </template>
         </customGridTwo>
@@ -735,6 +764,7 @@ const setSeeMore = (seeMore:string) => {
                 :experiment-level="experiment.level?.name"
                 :experiment-name="experiment.name"
                 :experiment-file-url="experiment.stepsFileUrl"
+                :alt-text="experiment.alt"
               />
             </template>
           </customGridTwo>
@@ -759,6 +789,7 @@ const setSeeMore = (seeMore:string) => {
               :experiment-level="experiment.level?.name"
               :experiment-name="experiment.name"
               :experiment-file-url="experiment.stepsFileUrl"
+              :alt-text="experiment.alt"
             />
           </div>
         </div>
@@ -777,6 +808,7 @@ const setSeeMore = (seeMore:string) => {
               :experiment-level="experiment.level?.name"
               :experiment-name="experiment.name"
               :experiment-file-url="experiment.stepsFileUrl"
+              :alt-text="experiment.alt"
             />
           </template>
         </customGridTwo>
@@ -848,6 +880,11 @@ const setSeeMore = (seeMore:string) => {
                 :video-description="video.description"
                 :video-subject="video.subject?.name"
                 :video-type="video.videoType"
+                :video-level="video.level?.name"
+                :video-standard="video.level?.name"
+                :topic-progress="video.avgProgress"
+                :topic-viewed="video.isViewed"
+                :alt-text="video.alt"
               />
             </template>
           </customGridTwo>
@@ -870,6 +907,11 @@ const setSeeMore = (seeMore:string) => {
               :video-description="video.description"
               :video-subject="video.subject?.name"
               :video-type="video.videoType"
+              :video-level="video.level?.name"
+              :video-standard="video.level?.name"
+              :topic-progress="video.avgProgress"
+              :topic-viewed="video.isViewed"
+              :alt-text="video.alt"
             />
           </div>
         </div>
@@ -887,6 +929,11 @@ const setSeeMore = (seeMore:string) => {
               :video-description="video.description"
               :video-subject="video.subject?.name"
               :video-type="video.videoType"
+              :video-level="video.level?.name"
+              :video-standard="video.level?.name"
+              :topic-progress="video.avgProgress"
+              :topic-viewed="video.isViewed"
+              :alt-text="video.alt"
             />
           </template>
         </customGridTwo>
@@ -953,6 +1000,7 @@ const setSeeMore = (seeMore:string) => {
                 :audio-description="audio.description"
                 :audio-subject="audio.subject?.name"
                 :audio-type="audio.audioType"
+                :alt-text="audio.alt"
               />
             </template>
           </customGridTwo>
@@ -975,6 +1023,7 @@ const setSeeMore = (seeMore:string) => {
                 :audio-description="audio.description"
                 :audio-subject="audio.subject?.name"
                 :audio-type="audio.audioType"
+                :alt-text="audio.alt"
               />
           </div>
         </div>
@@ -992,6 +1041,7 @@ const setSeeMore = (seeMore:string) => {
                 :audio-description="audio.description"
                 :audio-subject="audio.subject?.name"
                 :audio-type="audio.audioType"
+                :alt-text="audio.alt"
               />
           </template>
         </customGridTwo>

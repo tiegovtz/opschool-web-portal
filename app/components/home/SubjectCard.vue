@@ -10,6 +10,7 @@ const props = withDefaults(defineProps<{
   subjectDescription: string,
   totalViews:number,
   isLoggedIn:boolean,
+  altText?:string
 
 }>(),{
   totalViews:0,
@@ -60,7 +61,7 @@ const setSubjectToView = () => {
       <NuxtImg
         :src="subjectImage"
         loading="lazy"
-        :alt="`Image for ${subjectName} subject`"
+        :alt="altText ?? `Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
       />
     </div>
