@@ -1,5 +1,4 @@
 <template>
-
   <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
     <div
         v-if="dialog"
