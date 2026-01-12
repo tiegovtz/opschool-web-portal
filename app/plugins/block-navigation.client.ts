@@ -37,10 +37,17 @@ export default defineNuxtPlugin((nuxtApp) => {
       "/smart-class/header-less/screen/upcoming-classes",
       "/tie-ai-teacher",
       "/english-practice",
+      "/interactive-video",
+      "/list-videos",
       "/home#content-container-after-login",
     ];
 
-    if (allowList.includes(to.fullPath)) return true;
+    // Check if the base path (without query params) is in the allowlist
+    const basePath = to.path
+    if (allowList.includes(basePath) || allowList.includes(to.fullPath)) return true;
+    
+    // Also allow interactive-video with query parameters
+    if (basePath === '/interactive-video') return true;
 
     // Allow direct navigation to content pages (video, interactive, audio, experiments)
     // These routes follow the pattern: /{type}/{subject}/{level}/{topic}/{id}
