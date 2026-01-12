@@ -60,7 +60,7 @@ const setSubjectToView = () => {
     ]">
       <NuxtImg
         :src="subjectImage"
-        loading="lazy"
+        loading="lazy" tabindex="0"
         :alt="altText ?? `Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
       />
@@ -116,7 +116,7 @@ const setSubjectToView = () => {
     ]">
       <NuxtImg
         :src="subjectImage"
-        loading="lazy"
+        loading="lazy" tabindex="0"
         :alt="`Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110"
       />
