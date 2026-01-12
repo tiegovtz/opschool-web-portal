@@ -57,7 +57,7 @@ const setExperimentUrl =()=>{
             'relative overflow-hidden transition-all duration-500 ease-in-out',
             layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
-            <NuxtImg :src="experimentThumbnail" :alt="altText??experimentName"
+            <NuxtImg :src="experimentThumbnail" tabindex="0" :alt="altText??experimentName"
                 class="object-cover w-full h-full transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-black bg-opacity-70 to-transparent opacity-70" aria-hidden="true"></div>
 
