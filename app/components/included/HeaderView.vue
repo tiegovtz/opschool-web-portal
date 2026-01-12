@@ -157,12 +157,12 @@ const dropDown = () => {
               </NuxtLink>
 
               <!-- Logout -->
-              <div tabindex="-1" aria-label="logout" role="button"
+              <button aria-label="click to logout"
                 class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
                 @click="announceLogout" @keyup="announceLogout" >
                 <span class="capitalize"> Logout </span>
                 <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
-              </div>
+              </button>
             </div>
             
             <div class="flex items-center gap-4 p-2" v-else>
