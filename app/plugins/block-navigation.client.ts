@@ -42,6 +42,7 @@ export default defineNuxtPlugin({
       "/smart-class/screen/upcoming-classes",        
       "/tie-ai-teacher",
       "/home#content-container-after-login",
+      "/conversation-practice",
     ];
 
     if (allowList.includes(to.fullPath)) return true;

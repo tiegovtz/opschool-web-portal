@@ -34,3 +34,6 @@ logs
 
 # public videos
 /public/video
+
+# temp audio cache
+/public/temp-audio
