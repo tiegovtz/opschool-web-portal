@@ -26,10 +26,6 @@ export default defineNuxtConfig({
   runtimeConfig: {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY || "",
-    public: {
-      supabaseUrl: process.env.NUXT_SUPABASE_URL,
-      supabaseKey: process.env.NUXT_SUPABASE_ANON_KEY,
-    },
   },
 
   plugins: [
@@ -44,7 +40,6 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxt/icon",
     "nuxt-swiper",
-    "@nuxtjs/supabase",
   ],
 
   image: {
@@ -87,14 +82,6 @@ export default defineNuxtConfig({
       meta: [{ name: "generator", content: "" }],
     },
   },
-  supabase: {
-    redirect: false,
-    url: process.env.NUXT_SUPABASE_URL,
-    key: process.env.NUXT_SUPABASE_ANON_KEY,
-  
-  },
-  
-
 });
 
 //
