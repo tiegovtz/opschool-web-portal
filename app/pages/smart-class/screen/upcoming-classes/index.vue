@@ -1,7 +1,7 @@
 <template>
 
   <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a class="skip-link" href="#main-container">Skip to main content</a>
   <v-dialog v-model="dialog" max-width="600px">
     <v-card>
       <v-card-title>Create Session</v-card-title>
@@ -95,7 +95,7 @@
   </v-dialog>
 
   <div class="live-classes">
-    <main id="main-content" tabindex="-1" role="main">
+    <main id="main-container" tabindex="-1" role="main">
     <!-- Header Section -->
     <div class="header">
       <div class="header-content">

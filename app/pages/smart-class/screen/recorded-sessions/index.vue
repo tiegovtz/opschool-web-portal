@@ -629,9 +629,9 @@ const selectedSubjectName = computed(() => {
   </div>
 
   <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
-    <a class="skip-link" href="#main-content" @click.prevent="focusMain">Skip to main content</a>
+    <a class="skip-link" href="#main-container" @click.prevent="focusMain">Skip to main content</a>
 
-    <div id="main-content" class="live-classes" role="main" tabindex="-1" aria-label="Recorded sessions main content">
+    <div id="main-container" tabindex="-1" class="live-classes" role="main" aria-label="Recorded sessions main content">
       <!-- Header Section -->
       <div class="header">
         <div class="header-content">

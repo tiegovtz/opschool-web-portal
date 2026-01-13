@@ -16,6 +16,7 @@
 <!--          />-->
 <!--          -->
           <VidstackPlayer
+             id="main-container" tabindex="-1"
               v-if="streamUrl"
               ref="playerRef"
               :src="streamUrl"

@@ -16,8 +16,8 @@ const handleSubmit = (e: Event) => {
 </script>
 
 <template>
-  <form @submit.prevent="handleSubmit" class="w-full p-5 bg-transparent border-t border-gray-200" role="form"
-    aria-label="Ask a question">
+  <form id="main-container" tabindex="-1"  @submit.prevent="handleSubmit" class="w-full p-5 bg-transparent border-t border-gray-200" role="form"
+    aria-label="Ask a question to AI teacher">
     <div class="flex items-end gap-3 p-2">
       <div class="relative flex-1 h-14">
         <!-- Screen-reader label -->
@@ -25,7 +25,7 @@ const handleSubmit = (e: Event) => {
           Type your question
         </label>
 
-        <input id="question-input" v-model="input" type="text" placeholder="Type your question here..."
+        <input  id="question-input" v-model="input" type="text" placeholder="Type your question here..."
           class="w-full h-full px-5 pr-12 text-sm transition-all border-gray-200 rounded-2xl focus:outline-none focus:border-oceanBlue focus:ring focus:ring-oceanBlue bg-gray-50"
           aria-required="true" aria-describedby="question-help" autocomplete="off" />
 

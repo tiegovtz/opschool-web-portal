@@ -818,7 +818,7 @@ definePageMeta({
         @emit-quiz-score="updateChapterProgress" />
     </div>
 
-    <section v-else class="relative inline-flex w-full h-full overflow-hidden center-height">
+    <section  v-else class="relative inline-flex w-full h-full overflow-hidden center-height">
       <!-- Loading state -->
       <div v-if="chapters.status == 'pending'" class="flex items-center justify-center w-full loading content-height">
         <LoadingIndicator :is-loading="true" />
@@ -841,7 +841,7 @@ definePageMeta({
         </div>
 
         <!-- Notes loaded successfully -->
-        <div aria-live="polite" aria-label="compitence content loaded successfully"  ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
+        <div id="main-container" tabindex="-1" aria-live="polite" aria-label="compitence content loaded successfully"  ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
           class="w-full py-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between">
