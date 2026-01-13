@@ -1,8 +1,6 @@
 import { defineEventHandler, readBody } from "h3";
 import { streamText, convertToModelMessages, stepCountIs } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { shouldUseRAG } from "./utils/shouldUseRAG";
-import { searchNotes } from "./utils/searchNotes";
 import { studentTools } from "./utils/tools";
 
 // --------------------------------------
@@ -45,7 +43,6 @@ CRITICAL RULES - Chapter Scope:
    - Don't just retrieve and repeat information from the context
    - Actively teach by providing clear explanations, examples, analogies, and step-by-step guidance
    - Adapt your explanations to the student's level and learning style
-   - Use the vector store content as reference, but go beyond it to create effective learning experiences
    - ALL teaching must be strictly within the boundaries of "${chapterName}"
 
 3. Provide Additional Examples (chapter-specific):
@@ -140,11 +137,6 @@ export default defineEventHandler(async (event) => {
 
   const openai = createOpenAI({ apiKey });
 
-  // --------------------------------------
-  // Decide whether to use RAG
-  // --------------------------------------
-  const useRAG = await shouldUseRAG(userMessage, apiKey);
-
   // Validate chapterName - only use it if it's a real chapter name (not empty or default)
   // This ensures we don't use "this competence" as the chapter name
   const validChapterName =
@@ -163,28 +155,7 @@ export default defineEventHandler(async (event) => {
     : undefined;
 
   let systemPrompt = getBaseSystemPrompt(validChapterName, context);
-  let modelName = "gpt-4o";
-
-  // --------------------------------------
-  // RAG Flow
-  // --------------------------------------
-  if (useRAG) {
-    const results = await searchNotes(userMessage);
-    const context = results
-      .map((r: { content: string }) => `- ${r.content}`)
-      .join("\n");
-
-    // Only add context if something was retrieved
-    const systemPromptWithContext = `
-${systemPrompt}
-
-Context:
-${context || "(No relevant notes found)"}
-    `.trim();
-
-    systemPrompt = systemPromptWithContext;
-    modelName = "gpt-4o";
-  }
+  const modelName = "gpt-4o";
 
   // If chapterName is provided, ensure it's emphasized in the final prompt
   if (chapterName) {
