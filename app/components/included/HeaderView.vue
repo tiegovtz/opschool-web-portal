@@ -1,7 +1,7 @@
 <script setup>
 import apiDocs from "~/utilities/apiDocs";
 import { layoutEffect } from "~/utilities/controlls";
-import messages from '~/utilities/messages'
+import { moveFocus } from "~/utilities/focus.helper";
 
 const userToken = useCookie("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
@@ -27,8 +27,8 @@ const logoutMessage = ref("");
 const logoutAlert = ref(null);
 
 const announceLogout = (event) => {
-  
-   // Keyboard support (Enter + Space)
+
+  // Keyboard support (Enter + Space)
   if (event.type === "keyup" && !["Enter", " "].includes(event.key)) {
     return;
   }
@@ -37,7 +37,7 @@ const announceLogout = (event) => {
 
   // Screen reader announcement only (sr-only region)
   if (logoutAlert.value) {
-    logoutAlert.value.textContent = ""; 
+    logoutAlert.value.textContent = "";
     setTimeout(() => {
       logoutAlert.value.textContent = logoutMessage.value;
     }, 50);
@@ -57,11 +57,16 @@ const dropDown = () => {
 <template>
   <!-- Header -->
   <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat" role="navigation">
+    <button
+      class="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2 -z-30 focus:z-50 border border-blue-800 rounded-full px-4 py-1 bg-white"
+      aria-label="Press Enter to jump to main content" @click="moveFocus('main-container')" type="button">Skip to the
+      Content</button>
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->
       <div class="relative flex justify-center w-full h-24 pt-1">
         <div class="flex items-center justify-between w-full h-full wrapper-container">
-          <NuxtLink to="/" aria-label="Go to homepage,link with court of arm image " aria-describedby="tanzania-emblem-longdesc"
+          <NuxtLink to="/" aria-label="Go to homepage,link with court of arm image "
+            aria-describedby="tanzania-emblem-longdesc"
             class="flex items-center justify-center h-full cursor-pointer max-w-[64px]">
             <figure>
               <NuxtImg src="/logo/emblem.webp"
@@ -159,12 +164,12 @@ const dropDown = () => {
               <!-- Logout -->
               <button aria-label="click to logout"
                 class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
-                @click="announceLogout" @keyup="announceLogout" >
+                @click="announceLogout" @keyup="announceLogout">
                 <span class="capitalize"> Logout </span>
                 <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
               </button>
             </div>
-            
+
             <div class="flex items-center gap-4 p-2" v-else>
               <!-- sign in -->
               <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
@@ -230,7 +235,8 @@ const dropDown = () => {
                 </div>
                 <p class="hidden capitalize lg:flex">Home</p>
               </NuxtLink>
-              <div class="flex items-center h-6 gap-2 p-2 cursor-pointer md:h-8" @click="logout" v-if="userToken" role="button" tabindex="0" @keyup="announceLogout">
+              <div class="flex items-center h-6 gap-2 p-2 cursor-pointer md:h-8" @click="logout" v-if="userToken"
+                role="button" tabindex="0" @keyup="announceLogout">
                 <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
               </div>
               <!-- sign in -->
@@ -241,12 +247,7 @@ const dropDown = () => {
             </div>
           </div>
         </div>
-      <div
-  ref="logoutAlert"
-  aria-live="assertive"
-  aria-atomic="true"
-  class="sr-only"
-></div>
+        <div ref="logoutAlert" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
 
       </div>
     </nav>

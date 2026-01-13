@@ -1,6 +1,6 @@
 <template>
   <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ? ('normal' as any) : ('home-layout' as any)">
-    <div ref="pageRoot" class="smart-class-entry min-h-screen bg-gradient-to-br from-slate-900 via-[#2a4469] to-slate-900 text-white font-sans">
+    <div ref="pageRoot" id="main-container" tabindex="-1" class="smart-class-entry min-h-screen bg-gradient-to-br from-slate-900 via-[#2a4469] to-slate-900 text-white font-sans">
 
       <!-- Skip link for keyboard users -->
       <a href="#main-content" class="skip-link">Skip to main content</a>

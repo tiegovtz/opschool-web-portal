@@ -118,7 +118,7 @@
 
 
 
-    <div class="live-classes">
+    <div id="main-container" tabindex="-1" class="live-classes">
       <!-- Header Section -->
       <div class="header">
         <div class="header-content">

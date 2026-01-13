@@ -676,7 +676,7 @@ const switchTab = async (tab: tabs) => {
       <div v-else-if="status == 'success'" class="">
         <!-- client only -->
         <ClientOnly v-if="data && data.length > 0">
-          <div class="flex flex-col w-full">
+          <div id="main-container" tabindex="-1" class="flex flex-col w-full">
             <customGridTwo v-if="filters.level !== null && filters.subject !== null">
               <template #data>
                 <!-- Topic Cards -->

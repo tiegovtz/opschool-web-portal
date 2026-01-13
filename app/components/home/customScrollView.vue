@@ -31,8 +31,8 @@ const setSeeMore = (seeMore:string) => {
 </script>
 
 <template>
-  <div v-if="userToken">
-    <div v-if="activeTab === 'subjects'">
+  <div  v-if="userToken">
+    <div id="main-container" tabindex="-1" v-if="activeTab === 'subjects'">
       <!-- Subject Cards are in Grid -->
       <customGridOne v-if="activeTab === 'subjects'">
         <template #data>
@@ -54,7 +54,7 @@ const setSeeMore = (seeMore:string) => {
         </template>
       </customGridOne>
     </div>
-    <div v-else-if="activeTab === 'interactive-contents'">
+    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'interactive-contents'">
       <div v-for="(topics, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
@@ -194,7 +194,7 @@ const setSeeMore = (seeMore:string) => {
         </customGridOne>
       </div>
     </div>
-    <div v-else-if="activeTab === 'learn-activities'">
+    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'learn-activities'">
       <div v-for="(experiments, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
@@ -307,7 +307,7 @@ const setSeeMore = (seeMore:string) => {
         </customGridOne>
       </div>
     </div>
-    <div
+    <div id="main-container" tabindex="-1"
       v-else-if="
         activeTab === 'video' ||
         activeTab === 'class-videos'
@@ -432,7 +432,7 @@ const setSeeMore = (seeMore:string) => {
         </customGridOne>
       </div>
     </div>
-    <div v-else-if="activeTab === 'audio'">
+    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'audio'">
        <div v-for="(audios, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()"
@@ -539,12 +539,12 @@ const setSeeMore = (seeMore:string) => {
         </customGridOne>
       </div>
     </div>
-    <div v-else>
+    <div id="main-container" tabindex="-1" v-else>
       <MessageTopicNotFound message="This page will be updated soon" />
     </div>
   </div>
   <div v-else>
-     <div v-if="activeTab === 'subjects'">
+     <div id="main-container" tabindex="-1" v-if="activeTab === 'subjects'">
       <!-- Subject Cards are in Grid -->
       <customGridTwo v-if="activeTab === 'subjects'">
         <template #data>
@@ -565,7 +565,7 @@ const setSeeMore = (seeMore:string) => {
         </template>
       </customGridTwo>
     </div>
-    <div v-else-if="activeTab === 'interactive-contents'">
+    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'interactive-contents'">
       <div v-for="(topics, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
@@ -706,7 +706,7 @@ const setSeeMore = (seeMore:string) => {
         </customGridTwo>
       </div>
     </div>
-    <div v-else-if="activeTab === 'learn-activities'">
+    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'learn-activities'">
       <div v-for="(experiments, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
@@ -815,6 +815,7 @@ const setSeeMore = (seeMore:string) => {
       </div>
     </div>
     <div
+    id="main-container" tabindex="-1"
       v-else-if="
         activeTab === 'video' ||
         activeTab === 'class-videos'
@@ -939,7 +940,7 @@ const setSeeMore = (seeMore:string) => {
         </customGridTwo>
       </div>
     </div>
-    <div v-else-if="activeTab === 'audio'">
+    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'audio'">
       <div v-for="(audios, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey"
@@ -1047,7 +1048,7 @@ const setSeeMore = (seeMore:string) => {
         </customGridTwo>
       </div>
     </div>
-    <div v-else>
+    <div id="main-container" tabindex="-1" v-else>
       <MessageTopicNotFound message="This page will be updated soon" />
     </div>
   </div>

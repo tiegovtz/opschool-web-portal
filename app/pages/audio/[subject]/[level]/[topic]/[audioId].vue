@@ -184,7 +184,7 @@ onUnmounted(() => {
                 <div v-if="status == 'pending'">
                     <LoadingIndicator :is-loading="true" />
                 </div>
-                <div v-else-if="audioInfo && status == 'success'" class="md:px-4 notes">
+                <div id="main-container" tabindex="-1" v-else-if="audioInfo && status == 'success'" class="md:px-4 notes">
                     <div class="flex flex-col items-center w-full h-full max-w-xl gap-4 mx-auto my-4 rounded-md">
                         <canvas ref="canvasRef" class="w-full h-32 mt-4 bg-white rounded-md md:h-40"></canvas>
                         <audio ref="audioRef" preload="auto" controls @contextmenu.prevent

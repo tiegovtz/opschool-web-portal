@@ -11,6 +11,7 @@
     <div class="iframe-wrapper" role="region" aria-label="SomaKwanza TV video" tabindex="0">
 
       <VidstackPlayer
+      id="main-container" tabindex="-1"
           v-if="iframeSrc"
           ref="playerRef"
           :src="iframeSrc"
