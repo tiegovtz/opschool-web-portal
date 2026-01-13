@@ -34,8 +34,55 @@
       </div>
       
       <div class="bg-white rounded-2xl shadow-2xl p-8 border-2 border-oceanBlue/20">
-        <div class="text-xs text-gray-500 mb-3 text-center uppercase tracking-wider">
-          {{ currentScriptLine.speaker === 'student1' ? 'Student 1' : currentScriptLine.speaker === 'student2' ? 'Student 2' : 'AI Tutor' }}'s Line
+        <!-- Header with read-aloud controls -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-xs text-gray-500 uppercase tracking-wider">
+            {{ currentScriptLine.speaker === 'student1' ? 'Student 1' : currentScriptLine.speaker === 'student2' ? 'Student 2' : 'AI Tutor' }}'s Line
+          </div>
+          <!-- Read-aloud controls -->
+          <div class="flex items-center gap-2">
+            <button
+              @click="handleReadAloudToggle"
+              @keydown.enter.prevent="handleReadAloudToggle"
+              @keydown.space.prevent="handleReadAloudToggle"
+              :disabled="isReadAloudDisabled"
+              :aria-label="readAloud.isPlaying ? 'Pause pronunciation' : 'Play pronunciation'"
+              :aria-pressed="readAloud.isPlaying"
+              tabindex="0"
+              :class="[
+                'p-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-oceanBlue focus:ring-offset-2',
+                isReadAloudDisabled
+                  ? 'text-gray-300 cursor-not-allowed opacity-50'
+                  : readAloud.isPlaying
+                  ? 'text-green-600 bg-green-50 hover:bg-green-100'
+                  : 'text-oceanBlue bg-oceanBlue/10 hover:bg-oceanBlue/20'
+              ]"
+            >
+              <Icon
+                :name="readAloud.isPlaying ? 'heroicons:pause' : 'heroicons:play'"
+                class="w-5 h-5"
+                :class="{ 'animate-pulse': readAloud.isPlaying }"
+              />
+            </button>
+            <!-- Repeat button (only show if has been played) -->
+            <button
+              v-if="readAloud.hasPlayed && !readAloud.isPlaying"
+              @click="handleRepeat"
+              @keydown.enter.prevent="handleRepeat"
+              @keydown.space.prevent="handleRepeat"
+              :disabled="isReadAloudDisabled"
+              :aria-label="'Repeat pronunciation'"
+              tabindex="0"
+              :class="[
+                'p-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-oceanBlue focus:ring-offset-2',
+                isReadAloudDisabled
+                  ? 'text-gray-300 cursor-not-allowed opacity-50'
+                  : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+              ]"
+            >
+              <Icon name="heroicons:arrow-path" class="w-5 h-5" />
+            </button>
+          </div>
         </div>
         
         <!-- Teleprompter text with word highlighting -->
@@ -49,7 +96,13 @@
               :key="index"
               :class="[
                 'transition-all duration-200 px-1 rounded',
-                getWordState(index, word) === 'highlighted'
+                // During read-aloud playback
+                readAloud.isPlaying && readAloud.currentPlaybackWordIndex === index
+                  ? 'bg-purple-300 text-gray-900 font-bold scale-110'
+                  : readAloud.isPlaying && readAloud.currentPlaybackWordIndex > index
+                  ? 'text-purple-600 font-medium'
+                  // During speech recognition
+                  : getWordState(index, word) === 'highlighted'
                   ? 'bg-yellow-300 text-gray-900 font-bold scale-110'
                   : getWordState(index, word) === 'spoken'
                   ? 'text-green-600 font-medium'
@@ -104,9 +157,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import type { SpeakerType, PracticeMode } from '~/types/script.interface';
 import type { ScriptLine } from '~/types/script.interface';
+import { useReadAloud } from '~/composable/useReadAloud';
 
 interface Props {
   currentScriptLine?: ScriptLine;
@@ -122,6 +176,9 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+// Read-aloud composable
+const readAloud = useReadAloud();
 
 const scriptWords = computed(() => {
   if (!props.currentScriptLine?.text) return [];
@@ -172,6 +229,82 @@ const student1Name = computed(() => {
 
 const student2Name = computed(() => {
   return props.mode === 'single-user' ? 'AI Tutor' : 'Student 2';
+});
+
+// Check if read-aloud should be disabled
+const isReadAloudDisabled = computed(() => {
+  return props.isRecording || props.isAISpeaking || !props.currentScriptLine?.text;
+});
+
+// Handle read-aloud toggle
+const handleReadAloudToggle = () => {
+  if (isReadAloudDisabled.value) {
+    return;
+  }
+
+  if (!props.currentScriptLine?.text) {
+    return;
+  }
+
+  readAloud.toggle(
+    props.currentScriptLine.text,
+    (wordIndex: number) => {
+      // Word progress callback is handled by the composable's reactive state
+    },
+    {
+      lang: 'en-US',
+      rate: 1,
+      pitch: 1.1,
+      volume: 1,
+    }
+  );
+};
+
+// Handle repeat
+const handleRepeat = () => {
+  if (isReadAloudDisabled.value) {
+    return;
+  }
+
+  if (!props.currentScriptLine?.text) {
+    return;
+  }
+
+  readAloud.repeat(
+    props.currentScriptLine.text,
+    (wordIndex: number) => {
+      // Word progress callback is handled by the composable's reactive state
+    },
+    {
+      lang: 'en-US',
+      rate: 1,
+      pitch: 1.1,
+      volume: 1,
+    }
+  );
+};
+
+// Stop read-aloud if recording starts
+watch(() => props.isRecording, (isRecording) => {
+  if (isRecording && readAloud.isPlaying.value) {
+    readAloud.stop();
+  }
+});
+
+// Stop read-aloud if AI starts speaking
+watch(() => props.isAISpeaking, (isAISpeaking) => {
+  if (isAISpeaking && readAloud.isPlaying.value) {
+    readAloud.stop();
+  }
+});
+
+// Reset playback when script line changes
+watch(() => props.currentScriptLine?.id, () => {
+  if (readAloud.isPlaying.value) {
+    readAloud.stop();
+  }
+  // Reset hasPlayed for new line
+  readAloud.hasPlayed.value = false;
 });
 </script>
 

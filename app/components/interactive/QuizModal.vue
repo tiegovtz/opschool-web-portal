@@ -39,25 +39,31 @@
           <!-- Feedback Message (shown after submission) -->
           <div v-if="showFeedback" class="flex-1 px-4 sm:px-6 md:px-8 py-6 sm:py-8 flex items-center justify-center">
             <div class="bg-white/95 backdrop-blur-sm rounded-lg p-4 sm:p-6 md:p-8 w-full">
-              <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-900 font-normal leading-relaxed text-center">
+              <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-900 font-normal leading-relaxed text-center" role="status" aria-live="polite">
                 {{ feedbackMessage }}
               </p>
             </div>
           </div>
 
           <!-- Options (hidden after submission) -->
-          <div v-else class="flex-1 px-4 sm:px-6 md:px-8 space-y-2 sm:space-y-3 overflow-y-auto pb-3 sm:pb-4">
+          <div v-else class="flex-1 px-4 sm:px-6 md:px-8 space-y-2 sm:space-y-3 overflow-y-auto pb-3 sm:pb-4" role="radiogroup" aria-labelledby="quiz-question">
             <button
               v-for="(option, index) in quiz.options"
               :key="option.id"
               :class="[
                 'w-full text-left bg-white/95 backdrop-blur-sm rounded-lg p-3 sm:p-4 transition-all duration-200',
-                'hover:shadow-md border border-white/20',
+                'hover:shadow-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#0a7ac8]/50',
                 selectedAnswer === option.id
                   ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-[#0a7ac8]/50 shadow-lg bg-white'
                   : '',
               ]"
+              :aria-label="`Option ${String.fromCharCode(65 + index)}: ${option.label.replace(/^[A-Z]\)\s*/, '')}`"
+              :aria-pressed="selectedAnswer === option.id"
+              role="radio"
+              :tabindex="0"
               @click="handleSelectAnswer(option.id)"
+              @keydown.enter="handleSelectAnswer(option.id)"
+              @keydown.space.prevent="handleSelectAnswer(option.id)"
             >
               <div class="flex items-center gap-2 sm:gap-3 md:gap-4">
                 <!-- Letter indicator (A, B, C, D) - Black text with colon -->
@@ -94,18 +100,20 @@
               v-if="!showFeedback"
               :disabled="!selectedAnswer"
               :class="[
-                'w-full py-3 sm:py-4 px-6 rounded-lg font-semibold text-base sm:text-lg md:text-xl transition-all duration-200 backdrop-blur-sm border',
+                'w-full py-3 sm:py-4 px-6 rounded-lg font-semibold text-base sm:text-lg md:text-xl transition-all duration-200 backdrop-blur-sm border focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#0a7ac8]/50',
                 selectedAnswer
                   ? 'bg-white/95 text-gray-900 hover:bg-white border-white/30 shadow-lg'
                   : 'bg-white/70 text-gray-900/50 cursor-not-allowed border-white/20'
               ]"
+              aria-label="Submit your answer"
               @click="handleSubmit"
             >
               Submit
             </button>
             <button
               v-else
-              class="w-full py-3 sm:py-4 px-6 rounded-lg font-semibold text-base sm:text-lg md:text-xl transition-all duration-200 backdrop-blur-sm border bg-white/95 text-gray-900 hover:bg-white border-white/30 shadow-lg active:scale-95"
+              class="w-full py-3 sm:py-4 px-6 rounded-lg font-semibold text-base sm:text-lg md:text-xl transition-all duration-200 backdrop-blur-sm border bg-white/95 text-gray-900 hover:bg-white border-white/30 shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#0a7ac8]/50"
+              aria-label="Continue watching video"
               @click="handleContinue"
             >
               Continue
@@ -139,25 +147,31 @@
           <!-- Feedback Message (shown after submission) -->
           <div v-if="showFeedback" class="flex-1 px-4 sm:px-6 md:px-8 py-6 sm:py-8 flex items-center justify-center">
             <div class="bg-white/95 backdrop-blur-sm rounded-lg p-4 sm:p-6 md:p-8 w-full">
-              <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-900 font-normal leading-relaxed text-center">
+              <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-900 font-normal leading-relaxed text-center" role="status" aria-live="polite">
                 {{ feedbackMessage }}
               </p>
             </div>
           </div>
 
           <!-- Options (hidden after submission) -->
-          <div v-else class="flex-1 px-4 sm:px-6 md:px-8 space-y-2 sm:space-y-3 overflow-y-auto pb-3 sm:pb-4">
+          <div v-else class="flex-1 px-4 sm:px-6 md:px-8 space-y-2 sm:space-y-3 overflow-y-auto pb-3 sm:pb-4" role="radiogroup" aria-labelledby="quiz-question">
             <button
               v-for="(option, index) in quiz.options"
               :key="option.id"
               :class="[
                 'w-full text-left bg-white/95 backdrop-blur-sm rounded-lg p-3 sm:p-4 transition-all duration-200',
-                'hover:shadow-md border border-white/20',
+                'hover:shadow-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#0a7ac8]/50',
                 selectedAnswer === option.id
                   ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-[#0a7ac8]/50 shadow-lg bg-white'
                   : '',
               ]"
+              :aria-label="`Option ${String.fromCharCode(65 + index)}: ${option.label.replace(/^[A-Z]\)\s*/, '')}`"
+              :aria-pressed="selectedAnswer === option.id"
+              role="radio"
+              :tabindex="0"
               @click="handleSelectAnswer(option.id)"
+              @keydown.enter="handleSelectAnswer(option.id)"
+              @keydown.space.prevent="handleSelectAnswer(option.id)"
             >
               <div class="flex items-center gap-2 sm:gap-3 md:gap-4">
                 <!-- Letter indicator (A, B, C, D) - Black text with colon -->
@@ -194,18 +208,20 @@
               v-if="!showFeedback"
               :disabled="!selectedAnswer"
               :class="[
-                'w-full py-3 sm:py-4 px-6 rounded-lg font-semibold text-base sm:text-lg md:text-xl transition-all duration-200 backdrop-blur-sm border',
+                'w-full py-3 sm:py-4 px-6 rounded-lg font-semibold text-base sm:text-lg md:text-xl transition-all duration-200 backdrop-blur-sm border focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#0a7ac8]/50',
                 selectedAnswer
                   ? 'bg-white/95 text-gray-900 hover:bg-white border-white/30 shadow-lg active:scale-95'
                   : 'bg-white/70 text-gray-900/50 cursor-not-allowed border-white/20'
               ]"
+              aria-label="Submit your answer"
               @click="handleSubmit"
             >
               Submit
             </button>
             <button
               v-else
-              class="w-full py-3 sm:py-4 px-6 rounded-lg font-semibold text-base sm:text-lg md:text-xl transition-all duration-200 backdrop-blur-sm border bg-white/95 text-gray-900 hover:bg-white border-white/30 shadow-lg active:scale-95"
+              class="w-full py-3 sm:py-4 px-6 rounded-lg font-semibold text-base sm:text-lg md:text-xl transition-all duration-200 backdrop-blur-sm border bg-white/95 text-gray-900 hover:bg-white border-white/30 shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#0a7ac8]/50"
+              aria-label="Continue watching video"
               @click="handleContinue"
             >
               Continue

@@ -5,6 +5,8 @@
         ref="videoRef"
         class="w-full h-full object-contain"
         preload="auto"
+        aria-label="Interactive educational video with quizzes"
+        aria-describedby="video-description"
         @timeupdate="handleTimeUpdate"
         @loadedmetadata="handleLoadedMetadata"
         @click="handleVideoClick"
@@ -16,25 +18,15 @@
         @error="handleVideoError"
         @loadstart="handleLoadStart"
         @contextmenu.prevent
-        crossorigin="anonymous"
+        crossorigin="use-credentials"
       >
         <source :src="videoSrc" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
-
-      <!-- Interaction Overlay -->
-      <div
-        v-if="activeHotspots.length > 0"
-        class="absolute inset-0 pointer-events-none z-30"
-      >
-        <InteractiveHotspot
-          v-for="hotspot in activeHotspots"
-          :key="hotspot.id"
-          :interaction="hotspot"
-          :active="true"
-          @click="handleHotspotClick"
-        />
+      <div id="video-description" class="sr-only">
+        Interactive video player with embedded quizzes. Quizzes will appear at specific timestamps during playback.
       </div>
+
 
       <!-- Enhanced Play/Pause Button Overlay -->
       <button
@@ -57,6 +49,8 @@
       <div 
         class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-4 backdrop-blur-sm z-40 transition-opacity duration-300"
         :class="showControls || isQuizModalOpen ? 'opacity-100' : 'opacity-0'"
+        role="toolbar"
+        aria-label="Video player controls"
         @mouseenter="showControls = true"
         @mouseleave="startControlsTimer"
       >
@@ -64,7 +58,8 @@
           <!-- Play/Pause Button -->
           <button
             class="flex-shrink-0 p-2.5 text-white hover:bg-white/25 rounded-full focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 backdrop-blur-sm bg-white/10"
-            :aria-label="videoState.isPlaying.value ? 'Pause' : 'Play'"
+            :aria-label="videoState.isPlaying.value ? 'Pause video' : 'Play video'"
+            :aria-pressed="videoState.isPlaying.value"
             @click="handleVideoClick"
           >
             <svg
@@ -86,28 +81,29 @@
           </button>
           
           <!-- Time Display -->
-          <span class="text-white text-sm font-mono min-w-[45px]">
+          <span class="text-white text-sm font-mono min-w-[45px]" aria-label="Current time">
             {{ formatTime(videoState.currentTime.value) }}
           </span>
           
           <!-- Progress Bar -->
-          <div class="flex-1 min-w-0">
+          <div class="flex-1 min-w-0" role="progressbar" :aria-valuenow="videoState.currentTime.value" :aria-valuemin="0" :aria-valuemax="videoState.duration.value" :aria-label="`Video progress: ${Math.round((videoState.currentTime.value / videoState.duration.value) * 100)}%`">
             <VideoTimeline
               :current-time="videoState.currentTime.value || 0"
               :duration="videoState.duration.value || 0"
-              :markers="videoState.timelineMarkers.value || []"
+              :markers="[...(videoState.timelineMarkers.value || [])]"
               @seek="handleSeek"
             />
           </div>
           
-          <span class="text-white text-sm font-mono min-w-[45px] text-right">
+          <span class="text-white text-sm font-mono min-w-[45px] text-right" aria-label="Total duration">
             {{ formatTime(videoState.duration.value) }}
           </span>
           
           <!-- Fullscreen Button -->
           <button
             class="flex-shrink-0 p-2.5 text-white hover:bg-white/25 rounded-full focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 backdrop-blur-sm bg-white/10"
-            :aria-label="isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
+            :aria-label="isFullscreen ? 'Exit fullscreen mode' : 'Enter fullscreen mode'"
+            :aria-pressed="isFullscreen"
             @click="toggleFullscreen"
           >
             <svg
@@ -171,10 +167,9 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useInteractiveVideo } from '~/composable/useInteractiveVideo'
 import VideoTimeline from '~/components/interactive/VideoTimeline.vue'
-import InteractiveHotspot from '~/components/interactive/InteractiveHotspot.vue'
 import QuizModal from '~/components/interactive/QuizModal.vue'
 import SelectionModal from '~/components/interactive/SelectionModal.vue'
-import type { Interaction, HotspotInteraction, QuizInteraction, SelectionInteraction } from '~/types/interactive-video.interface'
+import type { Interaction, QuizInteraction, SelectionInteraction } from '~/types/interactive-video.interface'
 
 interface Props {
   videoSrc: string
@@ -184,7 +179,6 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  hotspotClick: [interaction: HotspotInteraction]
   quizSubmit: [interaction: QuizInteraction, answer: string]
   selectionSubmit: [interaction: SelectionInteraction, answers: Record<string, string>]
 }>()
@@ -223,27 +217,25 @@ const startControlsTimer = () => {
   }
 }
 
-const activeHotspots = computed(() => {
-  return videoState.activeInteractions.value.filter(
-    (interaction) => interaction.type === 'hotspot'
-  ) as HotspotInteraction[]
-})
 
 const handleTimeUpdate = () => {
   if (!videoRef.value) return
   const currentTime = videoRef.value.currentTime
   videoState.updateTime(currentTime)
 
+  // Threshold for detecting interactions (since startTime === endTime, we need a small window)
+  const INTERACTION_THRESHOLD = 0.5 // seconds
+
   // Check for quiz interactions - find any quiz that should be active now
+  // Since interactions appear when paused at a specific time, we check if we're at or near that time
   const quizInteraction = props.interactions.find(
     (interaction) => 
       interaction.type === 'quiz' && 
-      currentTime >= interaction.startTime && 
-      currentTime <= interaction.endTime &&
-      !answeredQuizIds.value.has(interaction.id) // Don't show already answered quizzes
+      !answeredQuizIds.value.has(interaction.id) && // Don't show already answered quizzes
+      Math.abs(currentTime - interaction.startTime) <= INTERACTION_THRESHOLD // Within threshold of interaction time
   ) as QuizInteraction | undefined
 
-  // Show quiz if we're in the quiz time range and modal isn't already open
+  // Show quiz if we're at the interaction time and modal isn't already open
   if (quizInteraction && !isQuizModalOpen.value && activeQuiz.value?.id !== quizInteraction.id) {
     console.log('Quiz detected at time:', currentTime, 'Quiz:', quizInteraction)
     activeQuiz.value = quizInteraction
@@ -258,23 +250,25 @@ const handleTimeUpdate = () => {
     }
   }
   
-  // Hide quiz if we're outside the quiz time range (only if we've moved past the end time)
-  if (activeQuiz.value && !quizInteraction && currentTime > (activeQuiz.value.endTime || 0)) {
-    console.log('Hiding quiz, moved past end time')
-    isQuizModalOpen.value = false
-    activeQuiz.value = null
+  // Hide quiz if we've moved away from the interaction time
+  if (activeQuiz.value && !quizInteraction) {
+    const timeDiff = Math.abs(currentTime - activeQuiz.value.startTime)
+    if (timeDiff > INTERACTION_THRESHOLD) {
+      console.log('Hiding quiz, moved away from interaction time')
+      isQuizModalOpen.value = false
+      activeQuiz.value = null
+    }
   }
 
   // Check for selection interactions
   const selectionInteraction = props.interactions.find(
     (interaction) => 
       interaction.type === 'selection' && 
-      currentTime >= interaction.startTime && 
-      currentTime <= interaction.endTime &&
-      !answeredQuizIds.value.has(interaction.id) // Don't show already answered interactions
+      !answeredQuizIds.value.has(interaction.id) && // Don't show already answered interactions
+      Math.abs(currentTime - interaction.startTime) <= INTERACTION_THRESHOLD // Within threshold of interaction time
   ) as SelectionInteraction | undefined
 
-  // Show selection if we're in the time range and modal isn't already open
+  // Show selection if we're at the interaction time and modal isn't already open
   if (selectionInteraction && !isSelectionModalOpen.value && activeSelection.value?.id !== selectionInteraction.id) {
     console.log('Selection detected at time:', currentTime, 'Interaction:', selectionInteraction)
     activeSelection.value = selectionInteraction
@@ -289,11 +283,14 @@ const handleTimeUpdate = () => {
     }
   }
   
-  // Hide selection if we're outside the time range
-  if (activeSelection.value && !selectionInteraction && currentTime > (activeSelection.value.endTime || 0)) {
-    console.log('Hiding selection, moved past end time')
-    isSelectionModalOpen.value = false
-    activeSelection.value = null
+  // Hide selection if we've moved away from the interaction time
+  if (activeSelection.value && !selectionInteraction) {
+    const timeDiff = Math.abs(currentTime - activeSelection.value.startTime)
+    if (timeDiff > INTERACTION_THRESHOLD) {
+      console.log('Hiding selection, moved away from interaction time')
+      isSelectionModalOpen.value = false
+      activeSelection.value = null
+    }
   }
 }
 
@@ -329,6 +326,13 @@ const handlePlay = () => {
 const handlePause = () => {
   if (videoState && videoState.setIsPlaying) {
     videoState.setIsPlaying(false)
+  }
+  // When video is paused, check if we're at an interaction time
+  if (videoRef.value) {
+    // Use nextTick to ensure currentTime is updated
+    nextTick(() => {
+      handleTimeUpdate()
+    })
   }
 }
 
@@ -375,22 +379,24 @@ watch(() => props.videoSrc, (newSrc, oldSrc) => {
   }
 }, { immediate: false })
 
+// Watch for interactions changes and check if we should show any at current time
+watch(() => props.interactions, (newInteractions) => {
+  console.log('Interactions updated:', newInteractions.length)
+  // If video is paused, check if we're at an interaction time
+  if (videoRef.value && videoRef.value.paused) {
+    handleTimeUpdate()
+  }
+}, { deep: true })
+
 const handleSeek = (time: number) => {
   if (!videoRef.value) return
   videoState.seekTo(time, videoRef.value)
+  // After seeking, check if we're at an interaction time
+  nextTick(() => {
+    handleTimeUpdate()
+  })
 }
 
-const handleHotspotClick = (interaction: HotspotInteraction) => {
-  emit('hotspotClick', interaction)
-  
-  // Handle different action types
-  if (interaction.action === 'modal') {
-    // Could show a modal with interaction.content
-    console.log('Hotspot clicked:', interaction)
-  } else if (interaction.action === 'link' && interaction.actionData?.url) {
-    window.open(interaction.actionData.url, '_blank')
-  }
-}
 
 const quizAnswerCorrect = ref<boolean | null>(null)
 const quizPauseTime = ref<number>(0)
@@ -445,13 +451,38 @@ const handleQuizContinue = (isCorrect: boolean) => {
       }, 200)
     })
   } else if (isCorrect === false) {
-    // Incorrect answer: restart from beginning
-    console.log('Restarting video from beginning')
+    // Incorrect answer: go back to just after the previous interaction's end time + 1 second
+    console.log('Incorrect answer - finding previous interaction')
+    
+    // Sort all interactions by startTime to find the previous one
+    const sortedInteractions = [...props.interactions].sort((a, b) => a.startTime - b.startTime)
+    
+    // Find the current quiz interaction
+    const currentInteraction = sortedInteractions.find(i => i.id === quizId)
+    const currentIndex = currentInteraction ? sortedInteractions.indexOf(currentInteraction) : -1
+    
+    // Find the previous interaction (before the current one)
+    let previousInteraction = null
+    if (currentIndex > 0) {
+      previousInteraction = sortedInteractions[currentIndex - 1]
+    }
+    
     // Remove the quiz from answered list so it can show again
     answeredQuizIds.value.delete(quizId)
-    videoRef.value.currentTime = 0
+    
+    if (previousInteraction) {
+      // Jump to previous interaction's end time + 1 second
+      const jumpTime = previousInteraction.endTime + 1
+      console.log('Jumping to previous interaction end time + 1s:', jumpTime, 'Previous interaction:', previousInteraction.id)
+      videoRef.value.currentTime = jumpTime
+    } else {
+      // If no previous interaction, restart from beginning
+      console.log('No previous interaction found - restarting from beginning')
+      videoRef.value.currentTime = 0
+    }
+    
     videoRef.value.play().catch(e => {
-      console.error('Failed to restart video:', e)
+      console.error('Failed to resume video:', e)
       // Try again after a short delay
       setTimeout(() => {
         videoRef.value?.play().catch(err => console.error('Retry failed:', err))
@@ -520,12 +551,38 @@ const handleSelectionContinue = (isCorrect: boolean) => {
       }, 200)
     })
   } else if (isCorrect === false) {
-    // Incorrect answer: restart from beginning
-    console.log('Restarting video from beginning')
+    // Incorrect answer: go back to just after the previous interaction's end time + 1 second
+    console.log('Incorrect answer - finding previous interaction')
+    
+    // Sort all interactions by startTime to find the previous one
+    const sortedInteractions = [...props.interactions].sort((a, b) => a.startTime - b.startTime)
+    
+    // Find the current selection interaction
+    const currentInteraction = sortedInteractions.find(i => i.id === interactionId)
+    const currentIndex = currentInteraction ? sortedInteractions.indexOf(currentInteraction) : -1
+    
+    // Find the previous interaction (before the current one)
+    let previousInteraction = null
+    if (currentIndex > 0) {
+      previousInteraction = sortedInteractions[currentIndex - 1]
+    }
+    
+    // Remove the interaction from answered list so it can show again
     answeredQuizIds.value.delete(interactionId)
-    videoRef.value.currentTime = 0
+    
+    if (previousInteraction) {
+      // Jump to previous interaction's end time + 1 second
+      const jumpTime = previousInteraction.endTime + 1
+      console.log('Jumping to previous interaction end time + 1s:', jumpTime, 'Previous interaction:', previousInteraction.id)
+      videoRef.value.currentTime = jumpTime
+    } else {
+      // If no previous interaction, restart from beginning
+      console.log('No previous interaction found - restarting from beginning')
+      videoRef.value.currentTime = 0
+    }
+    
     videoRef.value.play().catch(e => {
-      console.error('Failed to restart video:', e)
+      console.error('Failed to resume video:', e)
       setTimeout(() => {
         videoRef.value?.play().catch(err => console.error('Retry failed:', err))
       }, 200)
@@ -562,9 +619,13 @@ const triggerQuiz = (quizId?: string) => {
   }
 }
 
-// Expose methods for parent component
+// Expose methods and properties for parent component
 defineExpose({
-  triggerQuiz
+  triggerQuiz,
+  videoRef,
+  getDuration: () => videoState.duration.value,
+  getCurrentTime: () => videoState.currentTime.value,
+  videoState
 })
 
 const toggleFullscreen = async () => {

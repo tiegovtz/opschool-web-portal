@@ -1,0 +1,24 @@
+[
+  {
+    "type": "quiz",
+    "startTime": 44.246026,
+    "endTime": 44.246026,
+    "question": "A plane requires force to fly ",
+    "options": [
+      {
+        "id": "option-1",
+        "label": "True"
+      },
+      {
+        "id": "option-2",
+        "label": "False"
+      }
+    ],
+    "correctAnswer": "option-1",
+    "feedback": {
+      "correct": "",
+      "incorrect": ""
+    },
+    "id": "interaction-1768295791321-v97dn6auz"
+  }
+]

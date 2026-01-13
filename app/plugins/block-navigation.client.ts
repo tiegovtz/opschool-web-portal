@@ -5,6 +5,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   // Routes someone cannot access if NOT signed in
   const blockedBeforeLogin = [
     "/tie-ai-teacher",
+    "/admin",
   ];
 
   router.beforeEach((to, from) => {
@@ -12,8 +13,13 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     // 🔒 1. Not logged in → block protected pages
     if (!user.value) {
-      if (blockedBeforeLogin.includes(to.path)) {
-        return "/auth"; // or wherever your login page is
+      // Check if route starts with any blocked path (for nested routes like /admin/video-interactions)
+      const isBlocked = blockedBeforeLogin.some(blockedPath => 
+        to.path === blockedPath || to.path.startsWith(blockedPath + '/')
+      );
+      
+      if (isBlocked) {
+        return "/auth"; // Redirect to login page
       }
       return true;
     }
@@ -40,10 +46,18 @@ export default defineNuxtPlugin((nuxtApp) => {
       "/interactive-video",
       "/list-videos",
       "/home#content-container-after-login",
+      "/admin",
+      "/admin/video-interactions",
     ];
 
     // Check if the base path (without query params) is in the allowlist
     const basePath = to.path
+    
+    // Allow admin routes (all routes starting with /admin)
+    if (basePath.startsWith('/admin')) {
+      return true;
+    }
+    
     if (allowList.includes(basePath) || allowList.includes(to.fullPath)) return true;
     
     // Also allow interactive-video with query parameters
@@ -70,7 +84,11 @@ export default defineNuxtPlugin((nuxtApp) => {
       return true;
     }
 
-    if (!routesStates && to.fullPath !== "/home") {
+    // Don't redirect admin routes or allowlist routes to home
+    const isAdminRoute = basePath.startsWith('/admin');
+    const isAllowedRoute = allowList.includes(basePath) || allowList.includes(to.fullPath);
+    
+    if (!routesStates && to.fullPath !== "/home" && !isAdminRoute && !isAllowedRoute) {
       return "/home";
     }
 

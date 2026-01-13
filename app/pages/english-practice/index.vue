@@ -202,9 +202,13 @@ speechRecognition.onResult.value = (result) => {
       // Stop recording
       speechRecognition.stop();
       
-      // If next turn is AI, speak the script line
+      // If next turn is AI, speak the script line (with small delay to ensure speech recognition stops)
       if (turnManager.currentTurn.value === 'ai' && mode.value === 'single-user') {
-        handleAITurn();
+        console.log('[onResult] Turn switched to AI, current line index:', currentLineIndex.value);
+        // Small delay to ensure speech recognition is fully stopped
+        setTimeout(() => {
+          handleAITurn();
+        }, 300);
       }
     } else {
       // Not enough words - keep recording and show feedback
@@ -266,9 +270,13 @@ speechRecognition.onSilence.value = () => {
     speechRecognition.stop();
     turnManager.switchTurn();
     
-    // If next turn is AI, speak the script line
+    // If next turn is AI, speak the script line (with small delay to ensure speech recognition stops)
     if (turnManager.currentTurn.value === 'ai' && mode.value === 'single-user') {
-      handleAITurn();
+      console.log('[onSilence] Turn switched to AI, current line index:', currentLineIndex.value);
+      // Small delay to ensure speech recognition is fully stopped
+      setTimeout(() => {
+        handleAITurn();
+      }, 300);
     }
   } else if (transcript) {
     // Not enough words - show feedback but don't switch
@@ -283,11 +291,20 @@ speechRecognition.onError.value = (error) => {
 
 // Text-to-speech handlers
 textToSpeech.onEnd.value = () => {
-  // After AI finishes speaking, move to next line and switch back to student
+  // After AI finishes speaking, switch back to student and move to next line
   if (mode.value === 'single-user') {
+    // Reset word index for student's next turn
+    currentWordIndex.value = 0;
+    highlightedWord.value = '';
+    currentTranscript.value = '';
+    spokenWords.value.clear();
+    
+    // Move to next script line for student
     if (currentLineIndex.value < (script.value?.lines.length || 0) - 1) {
       currentLineIndex.value++;
     }
+    
+    // Switch back to student
     turnManager.setTurn('student1');
   }
 };
@@ -317,8 +334,24 @@ const handleMicToggle = () => {
 
 const handleAITurn = () => {
   const scriptLine = currentScriptLine.value;
-  if (!scriptLine || scriptLine.speaker !== 'ai') return;
+  if (!scriptLine) {
+    console.log('[handleAITurn] No script line available');
+    return;
+  }
 
+  // In single-user mode, AI speaks lines marked as 'student2' or 'ai'
+  // In multi-user mode, only speak lines marked as 'ai' (if any)
+  const shouldSpeak = mode.value === 'single-user' 
+    ? (scriptLine.speaker === 'student2' || scriptLine.speaker === 'ai')
+    : scriptLine.speaker === 'ai';
+
+  if (!shouldSpeak) {
+    console.log('[handleAITurn] Line speaker is:', scriptLine.speaker, 'Mode:', mode.value, '- No AI line to speak');
+    return;
+  }
+
+  console.log('[handleAITurn] AI speaking line:', scriptLine.text);
+  
   // Speak the script line
   textToSpeech.speak(scriptLine.text, {
     lang: 'en-US',

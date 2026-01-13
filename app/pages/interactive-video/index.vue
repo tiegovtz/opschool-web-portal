@@ -16,7 +16,7 @@
               Interactive Video Player
             </h1>
             <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-              Engage with interactive hotspots and quizzes as you learn
+              Engage with interactive quizzes and selection activities as you learn
             </p>
           </div>
 
@@ -71,72 +71,106 @@
               ref="videoPlayerRef"
               :video-src="videoSrc"
               :interactions="interactions"
-              @hotspot-click="handleHotspotClick"
               @quiz-submit="handleQuizSubmit"
               @selection-submit="handleSelectionSubmit"
             />
+            <div v-if="isLoadingInteractions" class="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+              <div class="text-center text-white">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
+                <p>Loading interactions...</p>
+              </div>
+            </div>
           </div>
 
-          <!-- Interaction Summary Card -->
-          <div v-if="hotspotClicks.length > 0 || quizResults.length > 0" 
-               class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+          <!-- Assessment/Progress Card - Always Visible -->
+          <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
             <div class="flex items-center gap-3 mb-6">
               <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                 <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                 </svg>
               </div>
-              <h2 class="text-2xl font-bold text-gray-900">Your Progress</h2>
+              <h2 class="text-2xl font-bold text-gray-900">Your Assessment</h2>
             </div>
           
-          <div v-if="hotspotClicks.length > 0" class="mb-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Hotspot Clicks</h3>
-            <ul class="space-y-2">
-              <li
-                v-for="(click, index) in hotspotClicks"
-                :key="`hotspot-${index}`"
-                class="p-3 bg-blue-50 rounded-lg border border-blue-200"
-              >
-                <span class="font-medium">{{ click.interaction.title || 'Hotspot' }}</span>
-                <span class="text-gray-600 ml-2">
-                  at {{ formatTime(click.timestamp) }}
-                </span>
-              </li>
-            </ul>
-          </div>
+            <!-- Statistics Summary -->
+            <div v-if="quizResults.length > 0 || interactions.length > 0" class="mb-6">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div class="text-sm font-medium text-blue-600 mb-1">Total Quizzes</div>
+                  <div class="text-2xl font-bold text-blue-900">{{ totalQuizzes }}</div>
+                </div>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div class="text-sm font-medium text-green-600 mb-1">Correct Answers</div>
+                  <div class="text-2xl font-bold text-green-900">{{ correctAnswers }}</div>
+                </div>
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div class="text-sm font-medium text-purple-600 mb-1">Score</div>
+                  <div class="text-2xl font-bold text-purple-900">{{ scorePercentage }}%</div>
+                </div>
+              </div>
+            </div>
 
-          <div v-if="quizResults.length > 0">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Quiz Results</h3>
-            <ul class="space-y-2">
-              <li
-                v-for="(result, index) in quizResults"
-                :key="`quiz-${index}`"
-                :class="[
-                  'p-3 rounded-lg border',
-                  result.isCorrect
-                    ? 'bg-green-50 border-green-200'
-                    : 'bg-red-50 border-red-200',
-                ]"
-              >
-                <div class="font-medium">
-                  {{ result.interaction.question }}
-                </div>
-                <div class="text-sm mt-1">
-                  Your answer: {{ result.selectedAnswer }}
-                  <span
-                    :class="result.isCorrect ? 'text-green-700' : 'text-red-700'"
-                    class="ml-2 font-semibold"
-                  >
-                    ({{ result.isCorrect ? 'Correct' : 'Incorrect' }})
-                  </span>
-                </div>
-                <span class="text-xs text-gray-500 block mt-1">
-                  at {{ formatTime(result.timestamp) }}
-                </span>
-              </li>
-            </ul>
+            <!-- Quiz Results List -->
+            <div v-if="quizResults.length > 0">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Quiz Results</h3>
+              <ul class="space-y-3">
+                <li
+                  v-for="(result, index) in quizResults"
+                  :key="`quiz-${index}`"
+                  :class="[
+                    'p-4 rounded-lg border transition-all',
+                    result.isCorrect
+                      ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                      : 'bg-red-50 border-red-200 hover:bg-red-100',
+                  ]"
+                >
+                  <div class="flex items-start justify-between mb-2">
+                    <div class="flex-1">
+                      <div class="font-medium text-gray-900 mb-1">
+                        {{ result.interaction.question }}
+                      </div>
+                      <div class="text-sm text-gray-600 mt-1">
+                        <span class="font-medium">Your answer:</span> 
+                        <span class="ml-1">{{ getAnswerLabel(result.interaction, result.selectedAnswer) }}</span>
+                        <span
+                          :class="result.isCorrect ? 'text-green-700' : 'text-red-700'"
+                          class="ml-2 font-semibold"
+                        >
+                          ({{ result.isCorrect ? '✓ Correct' : '✗ Incorrect' }})
+                        </span>
+                      </div>
+                    </div>
+                    <div 
+                      :class="result.isCorrect ? 'text-green-600' : 'text-red-600'"
+                      class="ml-3 flex-shrink-0"
+                    >
+                      <svg v-if="result.isCorrect" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                      </svg>
+                      <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="text-xs text-gray-500 mt-2">
+                    Answered at {{ formatTime(result.timestamp) }}
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Empty State -->
+            <div v-else class="text-center py-8">
+              <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              </div>
+              <p class="text-gray-600 font-medium mb-1">No quiz results yet</p>
+              <p class="text-sm text-gray-500">Complete interactive quizzes in the video to see your assessment here</p>
+            </div>
           </div>
-        </div>
       </div>
     </div>
     </NuxtLayout>
@@ -152,8 +186,9 @@
 
 <script setup lang="ts">
 import InteractiveVideo from '~/components/interactive/InteractiveVideo.vue'
-import type { HotspotInteraction, QuizInteraction, SelectionInteraction } from '~/types/interactive-video.interface'
+import type { Interaction, QuizInteraction, SelectionInteraction } from '~/types/interactive-video.interface'
 import { isTokenExpiringSoon, refreshToken } from '~/utilities/jwToken'
+import { useVideoInteractions } from '~/composable/useVideoInteractions'
 
 // Ensure this page is client-side only and requires authentication
 definePageMeta({
@@ -167,7 +202,7 @@ useHead({
   meta: [
     {
       name: 'description',
-      content: 'Interactive video player with hotspots and quizzes for enhanced learning experience.'
+      content: 'Interactive video player with quizzes and selection activities for enhanced learning experience.'
     },
   ]
 })
@@ -227,7 +262,7 @@ const fetchVideo = async () => {
     // Ensure token is valid and refresh if needed
     if (isTokenExpiringSoon(signInAccessToken.value, 60)) {
       const newToken = await refreshToken()
-      if (newToken?.access_token) {
+      if (newToken && 'access_token' in newToken && typeof newToken.access_token === 'string') {
         signInAccessToken.value = newToken.access_token
       } else {
         await navigateTo('/auth')
@@ -271,10 +306,12 @@ const fetchVideo = async () => {
 // Fetch video from the interactive topic
 const fetchVideoFromTopic = async () => {
   try {
+    // Get auth token
+    const signInAccessToken = useCookie('signInAccessToken')
     
     // Parse the URL to extract topic ID
     // Handle both full URLs and relative paths
-    let topicId: string
+    let topicId: string | undefined
     if (topicUrl.value.startsWith('http://') || topicUrl.value.startsWith('https://')) {
       const url = new URL(topicUrl.value)
       const pathParts = url.pathname.split('/').filter(Boolean)
@@ -349,83 +386,24 @@ onMounted(() => {
   fetchVideo()
 })
 
-// Interactions - can be loaded from API or passed as props
-const interactions = ref([
-  {
-    id: 'quiz-1',
-    type: 'quiz' as const,
-    startTime: 57,
-    endTime: 62,
-    question: 'Before we start, think about this: Imagine a world without the interaction of matter and energy. What would be missing?',
-    options: [
-      { id: 'option-1', label: 'A) Sunlight' },
-      { id: 'option-2', label: 'B) Movement' },
-      { id: 'option-3', label: 'C) Electricity' },
-      { id: 'option-4', label: 'D) All of the above' },
-    ],
-    correctAnswer: 'option-4',
-    feedback: {
-      correct: 'Correct! Without the interaction of matter and energy, the universe as we know it—light, heat, motion—would simply not exist.',
-      incorrect: 'Think about how matter and energy interact to create the phenomena we observe. Try again!',
-    },
-  },
-  {
-    id: 'selection-1',
-    type: 'selection' as const,
-    startTime: 174,
-    endTime: 179,
-    task: 'Select the correct physics label for each natural phenomenon.',
-    items: [
-      {
-        id: 'eclipse',
-        imageUrl: '', // Will use placeholder for now
-        imageAlt: 'Eclipse',
-        correctLabel: 'Light Refraction',
-      },
-      {
-        id: 'sunrise',
-        imageUrl: '',
-        imageAlt: 'Sunrise',
-        correctLabel: 'Light Scattering',
-      },
-      {
-        id: 'rainbow',
-        imageUrl: '',
-        imageAlt: 'Rainbow',
-        correctLabel: 'Light Refraction',
-      },
-      {
-        id: 'volcano',
-        imageUrl: '',
-        imageAlt: 'Volcano',
-        correctLabel: 'Thermal Energy',
-      },
-    ],
-    labels: ['Light Refraction', 'Light Scattering', 'Thermal Energy', 'Gravitational Force'],
-    feedback: {
-      correct: 'Excellent! You\'ve correctly matched the physics concepts to the natural phenomena.',
-      incorrect: 'Some labels don\'t match. Think about the physics behind each phenomenon and try again!',
-    },
-  },
-  {
-    id: 'quiz-2',
-    type: 'quiz' as const,
-    startTime: 200,
-    endTime: 205,
-    question: 'True or False: Energy can be created or destroyed.',
-    options: [
-      { id: 'true-option', label: 'True' },
-      { id: 'false-option', label: 'False' },
-    ],
-    correctAnswer: 'false-option',
-    feedback: {
-      correct: 'Correct! According to the law of conservation of energy, energy cannot be created or destroyed, only transformed from one form to another.',
-      incorrect: 'Incorrect. Remember the law of conservation of energy - energy cannot be created or destroyed, only transformed.',
-    },
-  },
-])
+// Interactions - loaded from API
+const videoIdFromQuery = computed(() => {
+  const id = route.query.videoId as string | undefined
+  return id || ''
+})
+const { interactions: loadedInteractions, isLoading: isLoadingInteractions } = useVideoInteractions(videoIdFromQuery)
 
-const hotspotClicks = ref<Array<{ interaction: HotspotInteraction; timestamp: number }>>([])
+// Use loaded interactions if available, otherwise fallback to empty array
+const interactions = ref<Interaction[]>([])
+
+watch(loadedInteractions, (newInteractions) => {
+  if (videoIdFromQuery.value && newInteractions.length > 0) {
+    interactions.value = [...newInteractions] as Interaction[]
+  } else {
+    interactions.value = []
+  }
+}, { immediate: true })
+
 const quizResults = ref<
   Array<{
     interaction: QuizInteraction
@@ -434,14 +412,6 @@ const quizResults = ref<
     timestamp: number
   }>
 >([])
-
-const handleHotspotClick = (interaction: HotspotInteraction) => {
-  hotspotClicks.value.push({
-    interaction,
-    timestamp: Date.now(),
-  })
-  console.log('Hotspot clicked:', interaction)
-}
 
 const handleQuizSubmit = (interaction: QuizInteraction, answer: string) => {
   const isCorrect = answer === interaction.correctAnswer
@@ -481,6 +451,26 @@ const handleSelectionSubmit = (interaction: SelectionInteraction, answers: Recor
 const formatTime = (timestamp: number): string => {
   const date = new Date(timestamp)
   return date.toLocaleTimeString()
+}
+
+// Assessment statistics
+const totalQuizzes = computed(() => {
+  return interactions.value.filter((i: any) => i.type === 'quiz').length
+})
+
+const correctAnswers = computed(() => {
+  return quizResults.value.filter(r => r.isCorrect).length
+})
+
+const scorePercentage = computed(() => {
+  if (quizResults.value.length === 0) return 0
+  return Math.round((correctAnswers.value / quizResults.value.length) * 100)
+})
+
+// Helper function to get answer label from option ID
+const getAnswerLabel = (interaction: QuizInteraction, answerId: string): string => {
+  const option = interaction.options?.find(opt => opt.id === answerId)
+  return option?.label || answerId
 }
 
 const videoPlayerRef = ref<InstanceType<typeof InteractiveVideo> | null>(null)

@@ -42,4 +42,3 @@ export interface SelectionInteraction extends VideoInteraction {
 export type Interaction = QuizInteraction | SelectionInteraction
 
 
-

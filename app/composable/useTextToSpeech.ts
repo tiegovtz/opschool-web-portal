@@ -17,51 +17,115 @@ export const useTextToSpeech = () => {
     voice?: SpeechSynthesisVoice;
   }) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      error.value = 'Text-to-speech is not supported in this browser';
+      const errMsg = 'Text-to-speech is not supported in this browser';
+      error.value = errMsg;
+      console.error('[useTextToSpeech]', errMsg);
       if (onError.value) {
-        onError.value(error.value);
+        onError.value(errMsg);
       }
       return;
     }
 
+    if (!text || text.trim().length === 0) {
+      const errMsg = 'Cannot speak empty text';
+      error.value = errMsg;
+      console.error('[useTextToSpeech]', errMsg);
+      if (onError.value) {
+        onError.value(errMsg);
+      }
+      return;
+    }
+
+    console.log('[useTextToSpeech] Attempting to speak:', text);
+
     // Cancel any ongoing speech
     stop();
 
-    utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = options?.lang || 'en-US';
-    utterance.pitch = options?.pitch ?? 1;
-    utterance.rate = options?.rate ?? 1;
-    utterance.volume = options?.volume ?? 1;
+    // Wait for voices to load if needed (browsers may load voices asynchronously)
+    const loadVoices = (): Promise<void> => {
+      return new Promise((resolve) => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          resolve();
+          return;
+        }
 
-    if (options?.voice) {
-      utterance.voice = options.voice;
-    }
-
-    utterance.onstart = () => {
-      isSpeaking.value = true;
-      isPaused.value = false;
-      error.value = null;
+        // Wait for voiceschanged event
+        const onVoicesChanged = () => {
+          window.speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
+          resolve();
+        };
+        window.speechSynthesis.addEventListener('voiceschanged', onVoicesChanged);
+        
+        // Timeout after 1 second if voices don't load
+        setTimeout(() => {
+          window.speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
+          resolve();
+        }, 1000);
+      });
     };
 
-    utterance.onend = () => {
-      isSpeaking.value = false;
-      isPaused.value = false;
-      if (onEnd.value) {
-        onEnd.value();
+    loadVoices().then(() => {
+      utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = options?.lang || 'en-US';
+      utterance.pitch = options?.pitch ?? 1;
+      utterance.rate = options?.rate ?? 1;
+      utterance.volume = options?.volume ?? 1;
+
+      // Try to select a good English voice if not specified
+      if (!options?.voice) {
+        const voices = window.speechSynthesis.getVoices();
+        const englishVoice = voices.find(voice => 
+          voice.lang.startsWith('en') && voice.localService
+        ) || voices.find(voice => voice.lang.startsWith('en'));
+        
+        if (englishVoice) {
+          utterance.voice = englishVoice;
+          console.log('[useTextToSpeech] Selected voice:', englishVoice.name);
+        }
+      } else {
+        utterance.voice = options.voice;
       }
-    };
 
-    utterance.onerror = (event: any) => {
-      isSpeaking.value = false;
-      isPaused.value = false;
-      const errorMessage = event.error || 'Text-to-speech error';
-      error.value = errorMessage;
-      if (onError.value) {
-        onError.value(errorMessage);
+      utterance.onstart = () => {
+        isSpeaking.value = true;
+        isPaused.value = false;
+        error.value = null;
+        console.log('[useTextToSpeech] Speech started');
+      };
+
+      utterance.onend = () => {
+        isSpeaking.value = false;
+        isPaused.value = false;
+        console.log('[useTextToSpeech] Speech ended');
+        if (onEnd.value) {
+          onEnd.value();
+        }
+      };
+
+      utterance.onerror = (event: any) => {
+        isSpeaking.value = false;
+        isPaused.value = false;
+        const errorMessage = event.error || 'Text-to-speech error';
+        error.value = errorMessage;
+        console.error('[useTextToSpeech] Error:', errorMessage, event);
+        if (onError.value) {
+          onError.value(errorMessage);
+        }
+      };
+
+      try {
+        window.speechSynthesis.speak(utterance);
+        console.log('[useTextToSpeech] speak() called successfully');
+      } catch (err: any) {
+        const errMsg = `Failed to start speech: ${err.message}`;
+        error.value = errMsg;
+        console.error('[useTextToSpeech]', errMsg, err);
+        if (onError.value) {
+          onError.value(errMsg);
+        }
       }
-    };
-
-    window.speechSynthesis.speak(utterance);
+    });
   };
 
   const pause = () => {
