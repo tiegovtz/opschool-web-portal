@@ -11,6 +11,30 @@ interface ConversationState {
   userMood: 'positive' | 'negative' | 'neutral'
   userChoices: Record<string, string>
   keyFacts: string[]
+  scenarioRoles: {
+    aiRole: 'seeker' | 'helper' | null
+    userRole: 'seeker' | 'helper' | null
+    aiNeed: string | null
+  }
+  branchStack: Array<{
+    branchId: string
+    triggeredAt: number
+    returnTo: number
+    reason: 'clarification' | 'contradiction' | 'user-question'
+  }>
+  scriptProgress: {
+    totalScriptPieces: number
+    coveredIndices: number[]
+    skippedIndices: Array<{
+      index: number
+      reason: string
+      timestamp: number
+    }>
+    currentScriptIndex: number
+    currentActualIndex: number
+  }
+  inBranch: boolean
+  branchDepth: number
   questionIndex: number
   totalQuestions: number
   lastCorrectAnswer: string | null
@@ -211,6 +235,469 @@ function isUserExpertScenario(currentPiece: string): { isExpert: boolean; type: 
 }
 
 /**
+ * Detect scenario roles from conversation pieces
+ * Determines if AI is seeking help (seeker) or providing help (helper)
+ * Returns null for both roles if it's just a casual conversation
+ */
+function detectScenarioRoles(conversationPieces: string[]): {
+  aiRole: 'seeker' | 'helper' | null
+  userRole: 'seeker' | 'helper' | null
+  aiNeed: string | null
+} {
+  // Only analyze first 2-3 pieces to determine scenario type
+  const firstPieces = conversationPieces.slice(0, 3).join(' ').toLowerCase()
+  
+  // Patterns indicating AI is seeking help/information
+  const aiSeekerPatterns = [
+    { pattern: /(?:do you know where|can you (?:help|tell) me where|where can i (?:buy|find|get))\s+(?:a\s+)?([^?]+)/i, type: 'location' },
+    { pattern: /(?:i need|i'm looking for|i want to (?:buy|find|get))\s+(?:a\s+)?([^.?]+)/i, type: 'item' },
+    { pattern: /(?:can you help me|could you help me|i need help with)\s+([^?]+)/i, type: 'help' },
+    { pattern: /(?:how do i|where do i|which way to)\s+([^?]+)/i, type: 'directions' },
+  ]
+  
+  for (const { pattern, type } of aiSeekerPatterns) {
+    const match = firstPieces.match(pattern)
+    if (match) {
+      const need = match[1]?.trim() || type
+      return {
+        aiRole: 'seeker',
+        userRole: 'helper',
+        aiNeed: need,
+      }
+    }
+  }
+  
+  // Patterns indicating AI is providing help/teaching
+  const aiHelperPatterns = [
+    /let me (?:help|show|teach|explain)/i,
+    /i can (?:help|show|teach|explain)/i,
+    /i'm here to (?:help|teach|guide)/i,
+    /today (?:i'll|we'll) (?:learn|study|practice)/i,
+  ]
+  
+  for (const pattern of aiHelperPatterns) {
+    if (pattern.test(firstPieces)) {
+      return {
+        aiRole: 'helper',
+        userRole: 'seeker',
+        aiNeed: null,
+      }
+    }
+  }
+  
+  // No clear helper/seeker pattern - just casual conversation
+  return {
+    aiRole: null,
+    userRole: null,
+    aiNeed: null,
+  }
+}
+
+/**
+ * Detect if user's answer should trigger a conversation branch
+ * Returns branch info if branching is needed
+ */
+function detectBranch(
+  userAnswer: string,
+  currentPiece: string,
+  nextPiece: string | null,
+  state: ConversationState
+): {
+  isBranch: boolean
+  branchType: 'clarification' | 'contradiction' | 'user-question' | null
+  branchPrompt: string | null
+} {
+  const answerLower = userAnswer.toLowerCase().trim()
+  const currentLower = currentPiece.toLowerCase()
+  
+  // 1. Clarification questions (user asking for more details before answering)
+  const clarificationPatterns = [
+    /how\s+(often|frequent|many|much|long)/i,
+    /when\s+(do|does|did|will|would)/i,
+    /where\s+exactly/i,
+    /what\s+(kind|type|do you mean)/i,
+    /before\s+i\s+answer/i,
+    /can\s+you\s+(tell|explain|clarify)/i,
+  ]
+  
+  for (const pattern of clarificationPatterns) {
+    if (pattern.test(userAnswer)) {
+      return {
+        isBranch: true,
+        branchType: 'clarification',
+        branchPrompt: `The user asked a clarifying question: "${userAnswer}". Generate a natural, conversational answer that provides the requested information, then smoothly returns to asking the original question again.`,
+      }
+    }
+  }
+  
+  // 2. Contradiction branches (user says "no" when script expects "yes")
+  const isNegativeAnswer = /^(no|nope|nah|not really|i don't think so|i'm not)\b/i.test(answerLower)
+  const isPositiveQuestion = /are you|do you|did you|have you|will you/i.test(currentLower)
+  
+  if (isNegativeAnswer && isPositiveQuestion && nextPiece) {
+    // Check if the next piece assumes a positive answer
+    const assumesPositive = nextPiece.length > 0
+    if (assumesPositive) {
+      return {
+        isBranch: true,
+        branchType: 'contradiction',
+        branchPrompt: `The user answered "no" to "${currentPiece}" but the script expected "yes". Generate a follow-up question to explore the user's actual situation (e.g., if asked "Are you Form 1?" and they said "no", ask "What form are you in?").`,
+      }
+    }
+  }
+  
+  // 3. User questions about AI's situation (when AI is seeker, user asks for context)
+  if (state.scenarioRoles.aiRole === 'seeker') {
+    const userAskingAboutAI = [
+      /(?:how|what|when|where|why)\s+(?:do you|are you|will you|is your)/i,
+      /tell me (?:about|more)/i,
+      /what(?:'s| is) your/i,
+    ]
+    
+    for (const pattern of userAskingAboutAI) {
+      if (pattern.test(userAnswer)) {
+        return {
+          isBranch: true,
+          branchType: 'user-question',
+          branchPrompt: `The user asked about the AI's situation: "${userAnswer}". Generate a response that answers their question from the AI's perspective (AI is seeking ${state.scenarioRoles.aiNeed}), then transition back to the conversation.`,
+        }
+      }
+    }
+  }
+  
+  return {
+    isBranch: false,
+    branchType: null,
+    branchPrompt: null,
+  }
+}
+
+/**
+ * Detect if the next script piece should be skipped
+ * Returns skip info with mandatory reasoning
+ */
+function detectSkip(
+  nextScriptPiece: string | null,
+  state: ConversationState,
+  conversationContext: string[]
+): {
+  shouldSkip: boolean
+  skipIndices: number[]
+  reason: string
+} {
+  if (!nextScriptPiece) {
+    return { shouldSkip: false, skipIndices: [], reason: '' }
+  }
+  
+  // Safety check: Don't skip if already skipped too many
+  const MAX_SKIPS = 3
+  const currentSkipCount = state.scriptProgress.skippedIndices.length
+  if (currentSkipCount >= MAX_SKIPS) {
+    return { shouldSkip: false, skipIndices: [], reason: '' }
+  }
+  
+  // Safety check: Don't skip more than 30% of script
+  const skipPercentage = currentSkipCount / state.scriptProgress.totalScriptPieces
+  if (skipPercentage > 0.3) {
+    return { shouldSkip: false, skipIndices: [], reason: '' }
+  }
+  
+  const nextLower = nextScriptPiece.toLowerCase()
+  const currentIndex = state.scriptProgress.currentScriptIndex
+  
+  // Pattern 1: "First day at school" question when user is not Form 1
+  if (/first\s+day/.test(nextLower) && /school|form|secondary/.test(nextLower)) {
+    // Check if user is Form 1
+    const isForm1 = state.keyFacts.some(fact => /form\s*1/i.test(fact))
+    const isHigherForm = state.keyFacts.some(fact => /form\s*[2-4]/i.test(fact))
+    
+    if (isHigherForm && !isForm1) {
+      return {
+        shouldSkip: true,
+        skipIndices: [currentIndex + 1, currentIndex + 2], // Skip Q&A pair
+        reason: `User is in Form 2-4, not Form 1. 'First day at secondary school' question no longer relevant (already happened years ago).`,
+      }
+    }
+  }
+  
+  // Pattern 2: Redundant questions about info already established
+  if (/what\s+(?:is|'s)\s+your\s+name/i.test(nextLower) && state.userName) {
+    return {
+      shouldSkip: true,
+      skipIndices: [currentIndex + 1],
+      reason: `User already introduced themselves as "${state.userName}". Asking name again is redundant.`,
+    }
+  }
+  
+  if (/(?:are you|what)\s+form/i.test(nextLower)) {
+    const userFormKnown = state.keyFacts.some(fact => /form\s*\d/i.test(fact))
+    if (userFormKnown) {
+      return {
+        shouldSkip: true,
+        skipIndices: [currentIndex + 1],
+        reason: `User's form level already established: ${state.keyFacts.find(f => /form\s*\d/i.test(f))}`,
+      }
+    }
+  }
+  
+  // Pattern 3: Context-specific skips based on scenario roles
+  if (state.scenarioRoles.aiRole === 'seeker') {
+    // If AI is seeking help, skip questions that flip the dynamic
+    if (/what\s+(?:do you|are you)\s+(?:need|want|looking for)/i.test(nextLower)) {
+      return {
+        shouldSkip: true,
+        skipIndices: [currentIndex + 1],
+        reason: `AI is the seeker (needs ${state.scenarioRoles.aiNeed}), not the user. Question flips the role dynamic.`,
+      }
+    }
+  }
+  
+  return { shouldSkip: false, skipIndices: [], reason: '' }
+}
+
+// ============================================================================
+// Branch Stack Management
+// ============================================================================
+
+/**
+ * Push a new branch onto the stack
+ */
+function pushBranch(
+  state: ConversationState,
+  branchType: 'clarification' | 'contradiction' | 'user-question',
+  triggeredAt: number,
+  returnTo: number
+): void {
+  const branchId = `branch-${Date.now()}-${Math.random().toString(36).substring(7)}`
+  
+  state.branchStack.push({
+    branchId,
+    triggeredAt,
+    returnTo,
+    reason: branchType,
+  })
+  
+  state.inBranch = true
+  state.branchDepth = state.branchStack.length
+  
+  console.log(`[conversation-branch] Pushed branch: ${branchId} (type: ${branchType}, depth: ${state.branchDepth})`)
+}
+
+/**
+ * Pop the most recent branch from the stack
+ */
+function popBranch(state: ConversationState): number | null {
+  const branch = state.branchStack.pop()
+  
+  if (!branch) {
+    console.log('[conversation-branch] No branch to pop')
+    return null
+  }
+  
+  state.branchDepth = state.branchStack.length
+  state.inBranch = state.branchStack.length > 0
+  
+  console.log(`[conversation-branch] Popped branch: ${branch.branchId}, returning to index ${branch.returnTo}`)
+  
+  return branch.returnTo
+}
+
+/**
+ * Check if we should return from the current branch
+ * Branch is resolved when user provides a satisfactory answer
+ */
+function shouldReturnFromBranch(
+  state: ConversationState,
+  userAnswer: string
+): boolean {
+  if (!state.inBranch || state.branchStack.length === 0) {
+    return false
+  }
+  
+  const currentBranch = state.branchStack[state.branchStack.length - 1]
+  const answerLower = userAnswer.toLowerCase().trim()
+  
+  // Branch is resolved if:
+  // 1. User provided a substantive answer (not another question)
+  // 2. Answer is not too short (more than 2 words usually)
+  const isQuestion = /\?$/.test(userAnswer) || /^(what|when|where|why|how|who)/i.test(userAnswer)
+  const isSubstantive = userAnswer.split(/\s+/).length >= 2
+  
+  if (!isQuestion && isSubstantive) {
+    console.log(`[conversation-branch] Branch ${currentBranch.branchId} resolved by user answer`)
+    return true
+  }
+  
+  return false
+}
+
+/**
+ * Get the next script piece index, skipping any that should be skipped
+ */
+function getNextScriptPiece(
+  state: ConversationState,
+  conversationPieces: string[]
+): { index: number; piece: string | null } {
+  let nextIndex = state.scriptProgress.currentScriptIndex + 1
+  
+  // Skip over any indices that should be skipped
+  while (nextIndex < conversationPieces.length) {
+    const isSkipped = state.scriptProgress.skippedIndices.some(skip => skip.index === nextIndex)
+    if (!isSkipped) {
+      return {
+        index: nextIndex,
+        piece: conversationPieces[nextIndex] || null,
+      }
+    }
+    nextIndex++
+  }
+  
+  return { index: nextIndex, piece: null }
+}
+
+/**
+ * Generate a branch response using OpenAI
+ * This creates a contextual answer to the user's clarifying question
+ */
+async function generateBranchResponse(
+  branchPrompt: string,
+  userQuestion: string,
+  currentPiece: string,
+  nextPiece: string | null,
+  state: ConversationState,
+  openaiApiKey: string
+): Promise<string> {
+  const context = `
+AI Character: ${state.aiName || 'Unknown'}
+AI Gender: ${state.aiGender}
+AI Role: ${state.aiRole || 'student'}
+Scenario Role: ${state.scenarioRoles.aiRole || 'casual conversation'}
+${state.scenarioRoles.aiNeed ? `AI's Need: ${state.scenarioRoles.aiNeed}` : ''}
+
+Recent Context:
+- Current conversation piece: "${currentPiece}"
+- User asked: "${userQuestion}"
+
+Key Facts:
+${state.keyFacts.slice(-5).join('\n- ')}
+`.trim()
+
+  const prompt = `${branchPrompt}
+
+CONTEXT:
+${context}
+
+CURRENT QUESTION: "${currentPiece}"
+${nextPiece ? `NEXT QUESTION (if needed): "${nextPiece}"` : ''}
+USER'S RESPONSE: "${userQuestion}"
+
+DECISION POINT - EVALUATE RELEVANCE:
+First, determine if "${currentPiece}" is still relevant given the user's response.
+
+OPTION A - Return to Current Question (if still relevant):
+- The user just needs clarification
+- The question still makes sense to ask
+- Example: User asks "what do you mean?" → Clarify and re-ask
+- Format: "[Clarification]. [Current question rephrased]"
+
+OPTION B - Skip to Next Question (if current is no longer relevant):
+- The user's response makes the current question obsolete
+- The context has changed making current question inappropriate
+- Example: Current asks "first day at school?" but user says "I've been here 3 years" → Skip it
+- Format: "[Acknowledge]. ${nextPiece || 'Let me ask something else'}"
+
+INSTRUCTIONS:
+1. Analyze if current question is still appropriate
+2. Answer the user's question/concern naturally (1-2 sentences)
+3. Stay in character (gender: ${state.aiGender}, role: ${state.aiRole || 'student'})
+4. Either return to current question OR skip to next based on relevance
+5. Do NOT use quotes around your response
+
+Example A (Clarification - Return to Current):
+Current: "Why do you like Tigo?"
+User: "what do you mean?"
+Response: "I'm asking why you think Tigo has the best internet. What's your reason for choosing Tigo?"
+
+Example B (Context Changed - Skip to Next):
+Current: "How was your first day at school?"
+User: "I've been here for 3 years, not a first day student"
+Response: "Oh, you've been here a while! In that case, what's your favorite subject?"
+
+Generate the branch response:`
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an AI conversation partner helping practice English. Be natural, friendly, and concise.',
+          },
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 150,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to generate branch response')
+    }
+
+    const data = await response.json()
+    const branchResponse = data.choices[0]?.message?.content?.trim() || ''
+    
+    console.log(`[conversation-branch] Generated response: ${branchResponse}`)
+    
+    return branchResponse
+  } catch (error) {
+    console.error('[conversation-branch] Error generating response:', error)
+    // Fallback response
+    return `Let me think about that... Anyway, let's continue with our conversation.`
+  }
+}
+
+/**
+ * Check if conversation is complete based on script coverage
+ * Instead of checking if we reached the last piece linearly,
+ * we check if we've covered enough of the script (with branches and skips)
+ */
+function isConversationComplete(state: ConversationState): {
+  isComplete: boolean
+  progress: number
+  covered: number
+  skipped: number
+  total: number
+} {
+  const covered = state.scriptProgress.coveredIndices.length
+  const skipped = state.scriptProgress.skippedIndices.length
+  const total = state.scriptProgress.totalScriptPieces
+  const progress = (covered + skipped) / total
+  
+  const branchesResolved = state.branchStack.length === 0
+  const minProgress = 0.85 // Must cover or skip 85% of script
+  
+  const isComplete = progress >= minProgress && branchesResolved
+  
+  return {
+    isComplete,
+    progress,
+    covered,
+    skipped,
+    total,
+  }
+}
+
+/**
  * Extract direction-related content from user's answer
  */
 function extractDirections(answer: string): string | null {
@@ -322,11 +809,59 @@ export default defineEventHandler(async (event) => {
       userMood: 'neutral',
       userChoices: {},
       keyFacts: [],
+      scenarioRoles: {
+        aiRole: null,
+        userRole: null,
+        aiNeed: null,
+      },
+      branchStack: [],
+      scriptProgress: {
+        totalScriptPieces: conversationContext.length,
+        coveredIndices: [],
+        skippedIndices: [],
+        currentScriptIndex: currentIndex,
+        currentActualIndex: currentIndex,
+      },
+      inBranch: false,
+      branchDepth: 0,
       questionIndex: currentIndex,
       totalQuestions: conversationContext.length,
       lastCorrectAnswer: null,
     }
 
+    // Ensure scenarioRoles exists (for backward compatibility with old state objects)
+    if (!state.scenarioRoles) {
+      state.scenarioRoles = {
+        aiRole: null,
+        userRole: null,
+        aiNeed: null,
+      }
+    }
+    
+    // Ensure branchStack exists (for backward compatibility)
+    if (!state.branchStack) {
+      state.branchStack = []
+    }
+    
+    // Ensure scriptProgress exists (for backward compatibility)
+    if (!state.scriptProgress) {
+      state.scriptProgress = {
+        totalScriptPieces: conversationContext.length,
+        coveredIndices: [],
+        skippedIndices: [],
+        currentScriptIndex: currentIndex,
+        currentActualIndex: currentIndex,
+      }
+    }
+    
+    // Ensure branch state fields exist
+    if (state.inBranch === undefined) {
+      state.inBranch = false
+    }
+    if (state.branchDepth === undefined) {
+      state.branchDepth = 0
+    }
+    
     // Extract AI info if not already set
     if (!state.aiName) {
       state.aiName = extractAIName(conversationContext)
@@ -346,16 +881,118 @@ export default defineEventHandler(async (event) => {
       })
     }
 
+    // ========================================================================
+    // BRANCHING LOGIC: Check if user's answer triggers a branch
+    // ========================================================================
+    
+    // Get next piece (considering skips)
+    let nextPiece = currentIndex < conversationContext.length - 1
+      ? conversationContext[currentIndex + 1]
+      : null
+    
+    // Check if we should branch
+    const branchInfo = detectBranch(userAnswer, currentPiece, nextPiece, state)
+    
+    // Safety check: Limit branch depth
+    const MAX_BRANCH_DEPTH = 2
+    const MAX_TOTAL_BRANCHES = 5
+    
+    if (branchInfo.isBranch && state.branchDepth < MAX_BRANCH_DEPTH && state.branchStack.length < MAX_TOTAL_BRANCHES) {
+      console.log(`[conversation-branch] Branch detected: ${branchInfo.branchType}`)
+      
+      // Generate branch response (AI will decide whether to return to question or skip)
+      const branchResponse = await generateBranchResponse(
+        branchInfo.branchPrompt!,
+        userAnswer,
+        currentPiece,
+        nextPiece,
+        state,
+        openaiApiKey
+      )
+      
+      // Check if AI decided to skip the current question
+      // If branch response contains the next piece, AI decided to skip
+      const aiSkippedCurrent = nextPiece && branchResponse.includes(nextPiece.substring(0, 30))
+      
+      if (aiSkippedCurrent) {
+        console.log(`[conversation-skip] AI intelligently skipped current question: ${currentIndex}`)
+        state.scriptProgress.skippedIndices.push({
+          index: currentIndex,
+          reason: `Question no longer relevant after user response: "${userAnswer}"`,
+          timestamp: Date.now(),
+        })
+      } else {
+        // Push branch to stack (will return to current question)
+        pushBranch(state, branchInfo.branchType!, currentIndex, currentIndex + 1)
+      }
+      
+      // Return branch response immediately
+      return {
+        success: true,
+        isCorrect: true,
+        feedback: 'Great question! Let me answer that.',
+        adaptedResponse: branchResponse,
+        enrichedState: state,
+      }
+    }
+    
+    // Check if we should return from current branch
+    if (shouldReturnFromBranch(state, userAnswer)) {
+      const returnToIndex = popBranch(state)
+      if (returnToIndex !== null) {
+        // Update state to return to main script
+        state.scriptProgress.currentScriptIndex = returnToIndex - 1
+        // Continue with normal validation
+      }
+    }
+    
+    // Check if next piece should be skipped
+    const skipInfo = detectSkip(nextPiece, state, conversationContext)
+    if (skipInfo.shouldSkip) {
+      console.log(`[conversation-skip] Skipping indices: ${skipInfo.skipIndices.join(', ')} - ${skipInfo.reason}`)
+      
+      // Add to skipped indices
+      for (const index of skipInfo.skipIndices) {
+        state.scriptProgress.skippedIndices.push({
+          index,
+          reason: skipInfo.reason,
+          timestamp: Date.now(),
+        })
+      }
+      
+      // Get the next non-skipped piece
+      const nextAvailable = getNextScriptPiece(state, conversationContext)
+      nextPiece = nextAvailable.piece
+    }
+    
+    // Check if conversation is complete based on coverage
+    const completionStatus = isConversationComplete(state)
+    if (completionStatus.isComplete && !nextPiece) {
+      console.log(`[conversation-complete] Covered: ${completionStatus.covered}/${completionStatus.total}, Skipped: ${completionStatus.skipped}`)
+      
+      // Generate closing statement
+      const userName = state.userName ? `, ${state.userName}` : ''
+      const closingStatement = `Thank you very much${userName}! We covered ${completionStatus.covered} topics together. It was wonderful practicing with you!`
+      
+      return {
+        success: true,
+        isCorrect: true,
+        feedback: closingStatement,
+        adaptedResponse: closingStatement,
+        enrichedState: state,
+      }
+    }
+    
+    // ========================================================================
+    // NORMAL VALIDATION FLOW (when not branching)
+    // ========================================================================
+    
     // Build compact context instead of full history
     const compactContext = buildCompactContext(state)
 
     // For backward compatibility, also support old format
     const previousContext = conversationHistory.length > 0
       ? conversationHistory.map((item: any) => `AI: ${item.ai}\nUser: ${item.user || '(no response)'}`).join('\n\n')
-      : null
-
-    const nextPiece = currentIndex < conversationContext.length - 1
-      ? conversationContext[currentIndex + 1]
       : null
 
     // Detect if user is the "expert" in this scenario
@@ -409,7 +1046,13 @@ The AI is asking for help/directions/advice. The USER knows the answer, not the 
      - "I am [age] years old" → User should have asked about age
      - "My favorite is [thing]" → User should have asked about favorites
 4) HUMOR IS OK when it still answers the question.
-5) IF "WHY" IS ASKED: Accept any reasonable reason. If missing, politely ask for it.
+5) IF "WHY" IS ASKED: 
+   - First check for reason keywords: "because", "since", "as", "due to", "thanks to", "for"
+   - If no keywords, evaluate if answer contains reasoning/explanation
+   - Examples WITH reasoning: "it's fun", "my dream job", "I enjoy it", "makes me happy", "I studied it"
+   - Examples WITHOUT reasoning: just "physics", just "yes", just a name without explanation
+   - Accept any answer that explains their reasoning, even without keywords
+   - Return "hasReason": true/false in evaluation
 6) Be lenient about grammar/spelling.
 
 **CONTEXTUAL MEMORY & COHERENCE:**
@@ -417,6 +1060,18 @@ The AI is asking for help/directions/advice. The USER knows the answer, not the 
 - You CAN politely disagree but MUST acknowledge what they said
 - If next piece contradicts user's choice, ADAPT it to match
 - NEVER pretend the user didn't make a choice
+
+**ROLE COHERENCE:**
+Scenario roles: AI is ${state.scenarioRoles.aiRole || 'casual'}, User is ${state.scenarioRoles.userRole || 'casual'}
+${state.scenarioRoles.aiNeed ? `AI's need: ${state.scenarioRoles.aiNeed}` : ''}
+
+CRITICAL - NEVER flip roles in adaptedResponse:
+- If AI is 'seeker': AI is the one who NEEDS help. AI asks questions about THEIR need, user provides answers.
+  * DO NOT ask user about their budget/preferences/needs when AI is the one seeking
+  * Example WRONG: AI needs SIM card → "Do you have a budget?" (flips to user needing)
+  * Example CORRECT: AI needs SIM card → "I need to buy a SIM card. Do you know where?"
+- If AI is 'helper': AI provides information, user asks questions about their needs
+- If both are null: Just casual conversation, no role restrictions
 
 **TEACHER-LIKE FEEDBACK:**
 - If correct: praise briefly and explain what was good
@@ -448,7 +1103,8 @@ Respond with JSON only:
     "correct": boolean,
     "feedback": "teacher-like explanation",
     "contextuallyAppropriate": boolean,
-    "compatibility": boolean
+    "compatibility": boolean,
+    "hasReason": boolean | null  // Only set if question asks "why", otherwise null
   },
   "adaptedResponse": string | null,
   "extractedFacts": {
@@ -548,6 +1204,13 @@ Respond with JSON only:
     // Limit key facts to last 10 to keep state compact
     if (enrichedState.keyFacts.length > 10) {
       enrichedState.keyFacts = enrichedState.keyFacts.slice(-10)
+    }
+    
+    // Initialize scenario roles on first question
+    if (currentIndex === 0 && (!enrichedState.scenarioRoles || enrichedState.scenarioRoles.aiRole === null)) {
+      const detectedRoles = detectScenarioRoles(conversationContext)
+      enrichedState.scenarioRoles = detectedRoles
+      console.log('[conversation-validate] Detected scenario roles:', detectedRoles)
     }
 
     // ========================================================================
@@ -697,11 +1360,21 @@ Respond with JSON only:
       }
     }
 
-    // Process follow-up for "why" questions
+    // Process follow-up for "why" questions - Two-tier system
     const asksWhy = (txt: string): boolean => /[^?]*\bwhy\b[^?]*\?/i.test(txt)
-    const reasonWordRe = /\b(because|since|as|due to|thanks to|because of|for)\b/i
     const needsReason = asksWhy(currentPiece)
-    const hasReason = reasonWordRe.test(userAnswer)
+    
+    // Tier 1: Fast keyword check (catches ~90% of cases)
+    const reasonKeywords = /\b(because|since|as|due to|thanks to|because of|for)\b/i
+    const hasTier1Reason = reasonKeywords.test(userAnswer)
+    
+    // Tier 2: AI evaluation (catches edge cases like "it's fun", "my dream")
+    const hasTier2Reason = result.evaluation?.hasReason === true
+    
+    // Combined: Has reason if either tier detects it
+    const hasReason = hasTier1Reason || hasTier2Reason
+    
+    console.log(`[conversation-why] needsReason: ${needsReason}, tier1: ${hasTier1Reason}, tier2: ${hasTier2Reason}, hasReason: ${hasReason}`)
     
     let finalIsCorrect = derivedIsCorrect
     let followUpInsert: string | null = null
@@ -719,9 +1392,12 @@ Respond with JSON only:
 
     // Handle missing "why" reason
     const isDialogueStructureError = /proper conversation.*need to ask|didn't ask.*question/i.test(String(modelFeedback))
-    const cantAnswer = /\b(wouldn't know|don't know|not sure|no idea|can't tell)\b/i.test(userAnswer)
+    const cantAnswer = /\b(wouldn't know|don't know|not sure|no idea|can't tell|not a doctor)\b/i.test(userAnswer)
     
-    if (needsReason && derivedIsCorrect && !hasReason && !isDialogueStructureError && !cantAnswer) {
+    // Don't ask "why" again if current piece is already a "why" follow-up
+    const isAlreadyWhyFollowUp = /^(could you tell me why|why do you)/i.test(currentPiece)
+    
+    if (needsReason && derivedIsCorrect && !hasReason && !isDialogueStructureError && !cantAnswer && !isAlreadyWhyFollowUp) {
       const whyMatch = currentPiece.match(/why\s+(?:do\s+you\s+)?(like|think|prefer|choose|want|enjoy)\s+([^?]+)/i)
       if (whyMatch) {
         followUpInsert = `Why do you ${whyMatch[1]} ${whyMatch[2].trim()}?`
@@ -735,6 +1411,15 @@ Respond with JSON only:
     if (finalIsCorrect) {
       enrichedState.lastCorrectAnswer = userAnswer
       enrichedState.questionIndex = currentIndex
+      
+      // Track script progress: Mark current piece as covered
+      if (!enrichedState.scriptProgress.coveredIndices.includes(currentIndex)) {
+        enrichedState.scriptProgress.coveredIndices.push(currentIndex)
+      }
+      
+      // Update current script index
+      enrichedState.scriptProgress.currentScriptIndex = currentIndex
+      enrichedState.scriptProgress.currentActualIndex = currentIndex
     }
 
     const logDecision = (extra: Record<string, unknown> = {}) => {

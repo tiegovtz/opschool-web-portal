@@ -240,6 +240,21 @@ const createDefaultState = () => ({
   userMood: 'neutral',
   userChoices: {},
   keyFacts: [],
+  scenarioRoles: {
+    aiRole: null,
+    userRole: null,
+    aiNeed: null,
+  },
+  branchStack: [],
+  scriptProgress: {
+    totalScriptPieces: 0,
+    coveredIndices: [],
+    skippedIndices: [],
+    currentScriptIndex: 0,
+    currentActualIndex: 0,
+  },
+  inBranch: false,
+  branchDepth: 0,
   questionIndex: 0,
   totalQuestions: 0,
   lastCorrectAnswer: null,
@@ -405,6 +420,13 @@ const startConversation = () => {
     aiGender: voiceType.value,
     totalQuestions: pieces.length,
     questionIndex: 0,
+    scriptProgress: {
+      totalScriptPieces: pieces.length,
+      coveredIndices: [],
+      skippedIndices: [],
+      currentScriptIndex: 0,
+      currentActualIndex: 0,
+    },
   }
 
   // Pre-analyze conversation for speaker identity
