@@ -356,6 +356,7 @@ await useFetch(`/api/topics/${topicId}`)
         chapters.currentChapterId = firstChapterId;
         
         // Prefetch and store context for the first chapter immediately
+        getChapter(firstChapterId);
         // This ensures context is available even before getChapter completes
         if (firstChapterId && data.value[0]) {
           const firstChapter = data.value[0];
@@ -364,9 +365,9 @@ await useFetch(`/api/topics/${topicId}`)
             chapterNo: firstChapter.chapterNo
           });
         }
+        console.log("[chapter list]:",data.value,'[firstChapterId]:',firstChapterId);
         
         // Then load the full chapter details
-        getChapter(firstChapterId);
       }
       else if (status.value === 'error') {
         chapters.status = status.value;
