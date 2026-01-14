@@ -1,5 +1,283 @@
 import apiDocs from "~/utilities/apiDocs"
 
+// ============================================================================
+// Types for Compact Conversation State
+// ============================================================================
+interface ConversationState {
+  aiName: string | null
+  aiGender: 'male' | 'female'
+  aiRole: string | null
+  userName: string | null
+  userMood: 'positive' | 'negative' | 'neutral'
+  userChoices: Record<string, string>
+  keyFacts: string[]
+  questionIndex: number
+  totalQuestions: number
+  lastCorrectAnswer: string | null
+}
+
+// ============================================================================
+// State Extraction Utilities
+// ============================================================================
+
+/**
+ * Extract user's name from their answer
+ */
+function extractUserName(answer: string): string | null {
+  const patterns = [
+    /(?:my name is|i am|i'm|call me)\s+([A-Z][a-z]+)/i,
+    /^([A-Z][a-z]+)(?:\s|,|\.|\!|$)/,  // Name at start of sentence
+  ]
+  
+  for (const pattern of patterns) {
+    const match = answer.match(pattern)
+    if (match && match[1]) {
+      const name = match[1]
+      // Filter out common non-name words
+      const commonWords = ['yes', 'no', 'okay', 'fine', 'good', 'bad', 'well', 'not', 'the', 'and']
+      if (!commonWords.includes(name.toLowerCase())) {
+        return name
+      }
+    }
+  }
+  return null
+}
+
+/**
+ * Extract AI character name from conversation pieces
+ */
+function extractAIName(pieces: string[]): string | null {
+  for (const piece of pieces) {
+    const match = piece.match(/(?:my name is|i am|i'm)\s+([A-Z][a-z]+)/i)
+    if (match && match[1]) {
+      return match[1]
+    }
+  }
+  return null
+}
+
+/**
+ * Extract AI role from conversation pieces
+ */
+function extractAIRole(pieces: string[]): string | null {
+  for (const piece of pieces) {
+    const rolePatterns = [
+      /i(?:'m| am) a\s+(form\s*\d+\s*student|student|teacher|doctor|pharmacist|nurse)/i,
+      /i(?:'m| am) (?:also\s+)?(form\s*\d+|in form\s*\d+)/i,
+    ]
+    for (const pattern of rolePatterns) {
+      const match = piece.match(pattern)
+      if (match && match[1]) {
+        return match[1]
+      }
+    }
+  }
+  return null
+}
+
+/**
+ * Detect user mood from their answer
+ */
+function detectMood(answer: string): 'positive' | 'negative' | 'neutral' {
+  const lower = answer.toLowerCase()
+  
+  const negativePatterns = /(bad|sad|not good|unhappy|bored|tired|upset|angry|lonely|terrible|awful|worst|hate|scared|scary|nervous|difficult|hard|stressed|worried|sick|ill|pain|hurt|died|passed away|lost|divorce|no money|can't afford|financial)/i
+  const positivePatterns = /(good|great|fine|happy|excellent|amazing|wonderful|awesome|nice|fantastic|love|excited|fun|enjoy|glad|pleased|beautiful|best)/i
+  
+  if (negativePatterns.test(lower)) return 'negative'
+  if (positivePatterns.test(lower)) return 'positive'
+  return 'neutral'
+}
+
+/**
+ * Extract key facts from user's answer
+ */
+function extractKeyFacts(answer: string, currentPiece: string): string[] {
+  const facts: string[] = []
+  const lower = answer.toLowerCase()
+  
+  // Age extraction
+  const ageMatch = answer.match(/(?:i am|i'm|am)\s*(\d+)(?:\s*years?\s*old)?/i)
+  if (ageMatch) {
+    facts.push(`user is ${ageMatch[1]} years old`)
+  }
+  
+  // Subject/favorite extraction
+  if (/favorite|favourite|like|love/i.test(currentPiece)) {
+    const subjectMatch = answer.match(/(?:i like|i love|my (?:favorite|favourite) is|it's)\s+([a-z]+)/i)
+    if (subjectMatch) {
+      facts.push(`user likes ${subjectMatch[1]}`)
+    }
+  }
+  
+  // Form/class extraction
+  const formMatch = answer.match(/(?:i am|i'm|am)\s+(?:in\s+)?(?:form\s*)?(\d+|one|two|three|four)/i)
+  if (formMatch) {
+    facts.push(`user is in Form ${formMatch[1]}`)
+  }
+  
+  // Living situation
+  if (/live with|who do you live/i.test(currentPiece)) {
+    const livingMatch = answer.match(/(?:i live with|with)\s+(.+?)(?:\.|$)/i)
+    if (livingMatch) {
+      facts.push(`user lives with ${livingMatch[1]}`)
+    }
+  }
+  
+  return facts
+}
+
+/**
+ * Extract user choices from choice questions
+ */
+function extractUserChoice(answer: string, currentPiece: string): { key: string; value: string } | null {
+  const lower = answer.toLowerCase()
+  const pieceLower = currentPiece.toLowerCase()
+  
+  // Detect choice questions (contains "or")
+  if (!/\bor\b/i.test(pieceLower)) return null
+  
+  // Common choice patterns
+  const choicePatterns: { pattern: RegExp; key: string }[] = [
+    { pattern: /\b(pharmacy|chemist)\b/i, key: 'destination' },
+    { pattern: /\b(clinic|hospital|doctor)\b/i, key: 'destination' },
+    { pattern: /\b(mobile money|cash|card|mpesa|airtel money)\b/i, key: 'paymentMethod' },
+    { pattern: /\b(study|work|school|job)\b/i, key: 'activity' },
+    { pattern: /\b(yes|no)\b/i, key: 'decision' },
+  ]
+  
+  for (const { pattern, key } of choicePatterns) {
+    const match = lower.match(pattern)
+    if (match) {
+      return { key, value: match[1] }
+    }
+  }
+  
+  return null
+}
+
+/**
+ * Detect if this is a "user is expert" scenario
+ * In these cases, the user's answer is authoritative and should be accepted
+ */
+function isUserExpertScenario(currentPiece: string): { isExpert: boolean; type: string | null } {
+  const pieceLower = currentPiece.toLowerCase()
+  
+  // AI asking for directions
+  const directionsPatterns = [
+    /where (?:is|can i find|do i find|can i get)/i,
+    /how (?:do i|can i) (?:get|go|find|reach)/i,
+    /which way (?:is|to|should)/i,
+    /can you (?:tell me|show me|help me find)/i,
+    /i(?:'m| am) (?:looking for|trying to find)/i,
+  ]
+  
+  for (const pattern of directionsPatterns) {
+    if (pattern.test(pieceLower)) {
+      return { isExpert: true, type: 'directions' }
+    }
+  }
+  
+  // AI asking for help/advice
+  const helpPatterns = [
+    /can you help me/i,
+    /what should i (?:do|say|buy|take)/i,
+    /should i (?:go|buy|take|do)/i,
+    /what do you (?:think|suggest|recommend)/i,
+    /do you know (?:where|how|what|when)/i,
+  ]
+  
+  for (const pattern of helpPatterns) {
+    if (pattern.test(pieceLower)) {
+      return { isExpert: true, type: 'advice' }
+    }
+  }
+  
+  // AI asking for information the user would know
+  const infoPatterns = [
+    /how long (?:will|does|would) it take/i,
+    /what time (?:do|does|is)/i,
+    /is there a .* near/i,
+    /do they (?:accept|have|sell)/i,
+  ]
+  
+  for (const pattern of infoPatterns) {
+    if (pattern.test(pieceLower)) {
+      return { isExpert: true, type: 'information' }
+    }
+  }
+  
+  return { isExpert: false, type: null }
+}
+
+/**
+ * Extract direction-related content from user's answer
+ */
+function extractDirections(answer: string): string | null {
+  const lower = answer.toLowerCase()
+  
+  // Common direction patterns
+  const patterns = [
+    /(go |turn |take |walk |head )?(straight|left|right|north|south|east|west)/gi,
+    /(at the |near the |past the |after the )?(\w+\s)?(lights?|corner|intersection|building|shop|store|street|road)/gi,
+    /(\d+)\s*(minutes?|meters?|metres?|km|kilometers?|kilometres?|blocks?)/gi,
+  ]
+  
+  const parts: string[] = []
+  for (const pattern of patterns) {
+    const matches = answer.match(pattern)
+    if (matches) {
+      parts.push(...matches)
+    }
+  }
+  
+  return parts.length > 0 ? parts.join(' ').trim() : null
+}
+
+/**
+ * Build compact context string from state (replaces full history)
+ */
+function buildCompactContext(state: ConversationState): string {
+  const parts: string[] = []
+  
+  // AI Character
+  if (state.aiName || state.aiRole) {
+    const aiInfo = [state.aiName, state.aiGender, state.aiRole].filter(Boolean).join(', ')
+    parts.push(`AI character: ${aiInfo}`)
+  }
+  
+  // User info
+  if (state.userName) {
+    parts.push(`User's name: ${state.userName}`)
+  }
+  parts.push(`User's current mood: ${state.userMood}`)
+  
+  // Key facts
+  if (state.keyFacts.length > 0) {
+    parts.push(`Key facts about user: ${state.keyFacts.join('; ')}`)
+  }
+  
+  // User choices
+  const choices = Object.entries(state.userChoices)
+  if (choices.length > 0) {
+    const choiceStr = choices.map(([k, v]) => `${k}: ${v}`).join(', ')
+    parts.push(`User's choices made: ${choiceStr}`)
+  }
+  
+  // Progress
+  parts.push(`Progress: Question ${state.questionIndex + 1} of ${state.totalQuestions}`)
+  
+  // Last answer
+  if (state.lastCorrectAnswer) {
+    parts.push(`User's last answer: "${state.lastCorrectAnswer}"`)
+  }
+  
+  return parts.join('\n')
+}
+
+// ============================================================================
+// Main Handler
+// ============================================================================
 export default defineEventHandler(async (event) => {
   if (event.method !== 'POST') {
     throw createError({
@@ -15,6 +293,9 @@ export default defineEventHandler(async (event) => {
       currentPiece = '',
       currentIndex = 0,
       userAnswer = '',
+      // NEW: Accept compact state instead of full history
+      conversationState = null,
+      // DEPRECATED: Keep for backward compatibility
       conversationHistory = [],
     } = body
 
@@ -32,26 +313,29 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // TODO: Replace with actual API endpoint when backend is ready
-    // const auth_token = getCookie(event, "signInAccessToken")
-    // const response = await fetch(`${apiDocs.conversation.validate}`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${auth_token}`,
-    //   },
-    //   body: JSON.stringify({
-    //     conversationContext,
-    //     currentPiece,
-    //     currentIndex,
-    //     userAnswer,
-    //     conversationHistory,
-    //   }),
-    // })
-    // const result = await response.json()
-    // return result
+    // Initialize or use provided state
+    let state: ConversationState = conversationState || {
+      aiName: null,
+      aiGender: 'female',
+      aiRole: null,
+      userName: null,
+      userMood: 'neutral',
+      userChoices: {},
+      keyFacts: [],
+      questionIndex: currentIndex,
+      totalQuestions: conversationContext.length,
+      lastCorrectAnswer: null,
+    }
 
-    // Temporary: Use OpenAI to validate answer contextually
+    // Extract AI info if not already set
+    if (!state.aiName) {
+      state.aiName = extractAIName(conversationContext)
+    }
+    if (!state.aiRole) {
+      state.aiRole = extractAIRole(conversationContext)
+    }
+
+    // TODO: Replace with actual API endpoint when backend is ready
     const config = useRuntimeConfig()
     const openaiApiKey = config.OPENAI_API_KEY || process.env.OPENAI_API_KEY || ''
 
@@ -62,126 +346,119 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Build context for validation
-    const previousContext = conversationHistory
-      .map((item: any) => `AI: ${item.ai}\nUser: ${item.user || '(no response)'}`)
-      .join('\n\n')
+    // Build compact context instead of full history
+    const compactContext = buildCompactContext(state)
+
+    // For backward compatibility, also support old format
+    const previousContext = conversationHistory.length > 0
+      ? conversationHistory.map((item: any) => `AI: ${item.ai}\nUser: ${item.user || '(no response)'}`).join('\n\n')
+      : null
 
     const nextPiece = currentIndex < conversationContext.length - 1
       ? conversationContext[currentIndex + 1]
       : null
 
-    // Create validation prompt that considers:
-    // 1. The current conversation piece
-    // 2. The next piece (to understand context, but DON'T require user to ask it)
-    // 3. Previous conversation history
-    // 4. Whether the user's answer is contextually appropriate
-    // 5. Always provide contextual adaptation based on user's emotions/answers
+    // Detect if user is the "expert" in this scenario
+    const expertScenario = isUserExpertScenario(currentPiece)
+    const userDirections = expertScenario.isExpert ? extractDirections(userAnswer) : null
+
+    // Build validation prompt with compact state
     const validationPrompt = `You are evaluating an English conversation practice session for beginner-level students. Be LENIENT, encouraging, and teacher-like.
 
-Context:
+**CONVERSATION STATE (Compact Memory):**
+${compactContext}
+
+**CURRENT CONTEXT:**
 - Current conversation piece (what AI just said): "${currentPiece}"
-${nextPiece ? `- Next conversation piece (what AI will say next - for context/compatibility only, NOT what the user should say now): "${nextPiece}"` : '- This is the last piece in the conversation'}
-${previousContext ? `- Previous conversation (for context):\n${previousContext}` : '- This is the beginning of the conversation'}
+${nextPiece ? `- Next conversation piece (scripted response - may need adaptation): "${nextPiece}"` : '- This is the last piece in the conversation'}
+${expertScenario.isExpert ? `\n**IMPORTANT: USER IS THE EXPERT HERE** (type: ${expertScenario.type})` : ''}
 
-User's answer: "${userAnswer}"
+**User's answer:** "${userAnswer}"
 
-IMPORTANT:
-- Evaluate the user's answer as a response to the CURRENT piece.
-- Use the NEXT piece ONLY to check compatibility/consistency (i.e., reject only if the answer clearly contradicts what the next piece assumes).
-- Do NOT require the student to “guess” the next line. Only ensure the conversation can still logically continue.
+**IMPORTANT - USE THE COMPACT STATE:**
+- The user's name is: ${state.userName || 'unknown'}
+- The user's mood is: ${state.userMood}
+- User has made these choices: ${JSON.stringify(state.userChoices)}
+- Key facts about user: ${state.keyFacts.join(', ') || 'none yet'}
+- If user previously chose something (e.g., "clinic" instead of "pharmacy"), ACKNOWLEDGE that choice and adapt accordingly
+- If the next piece contradicts a user choice, ADAPT it to match what they said
 
-EVALUATION RULES (general textbook dialogue practice):
-1) CONTEXTUALLY APPROPRIATE: The answer should make logical sense as a reply to the current piece.
-2) COMPATIBILITY CHECK (using next piece): Use the next piece ONLY to catch DIRECT contradictions that would make the next piece illogical.
-   - Only mark WRONG for contradictions of REQUIRED FACTS (yes/no facts, identity, time, place) that the next piece depends on.
-   - Do NOT mark WRONG for emotional tone, opinions, or normal details unless they negate a required fact.
+**EVALUATION RULES:**
+${expertScenario.isExpert ? `**CRITICAL - USER IS THE EXPERT:**
+The AI is asking for help/directions/advice. The USER knows the answer, not the AI.
+- ACCEPT any reasonable response from the user (they are the one giving information)
+- If user says "turn right" instead of scripted "turn left" → ACCEPT IT (user knows where things are)
+- If user gives different time estimates, prices, etc. → ACCEPT IT (user knows the local area)
+- ADAPT the next piece to match what the user said, don't force the script
+- Example: AI asks "Where is the pharmacy?" Script says "left", User says "right" → CORRECT, adapt to "right"
+- Example: AI asks "How long to walk?" Script says "10 min", User says "5 min" → CORRECT, use "5 min"
+
+` : ''}1) CONTEXTUALLY APPROPRIATE: The answer should make logical sense as a reply to the current piece.
+2) COMPATIBILITY CHECK (using next piece): Only mark WRONG for DIRECT contradictions of REQUIRED FACTS.
+   - Do NOT mark WRONG for emotional tone, opinions, or normal details.
+   - Do NOT mark WRONG when user is the expert giving information
    - Examples (WRONG):
      - Current: "Are you a student here?" Next: "Which class are you in?" User: "No" → WRONG.
-     - Current: "Is today your first day at school?" Next: "How was your first day?" User: "No" → WRONG.
    - Examples (CORRECT):
-     - Current: "How was your first day at secondary school?" Next: "What is your favourite subject and why?" User: "It was bad, I didn't make any new friends." → CORRECT (no contradiction).
-     - Current: "How are you?" Next: "What is your favourite subject and why?" User: "Not good today." → CORRECT.
-     - Current: "Are you a Form 1 student?" Next: "How was your first day at secondary school?" User: any clear YES (e.g., "Yes", "Yes I am", "Yes I'm Form One", "Yeah I'm a Form 1 student") → CORRECT (supports next piece; do NOT flag as contradiction).
-     - Current: "Are you a Form 1 student?" Next: "How was your first day at secondary school?" User: "No" → WRONG (direct contradiction).
-     - Generic pattern: If the next piece assumes a fact F, then any affirmative/compatible answer to F is CORRECT; only explicit negation of F is WRONG.
-3) DIALOGUE STRUCTURE (CRITICAL for school conversation practice):
-   - If the NEXT piece contains the AI ANSWERING a question (like "I am Michael" = answering about name, "I am 20 years old" = answering about age, "My favorite is science" = answering about favorite subject), then the user MUST have asked that question in their response.
-   - The user can be as creative/funny as they want in HOW they ask, but they MUST ask the appropriate question.
-   - Examples (WRONG - missing required question):
-     - Current: "hi what's your name?" Next: "Okay! I am Michael. How old are you?" User: "I'm an alien called Clark Kent" → WRONG (user answered but didn't ask "what's your name?" back).
-     - Current: "I am John, nice to meet you" Next: "I am 20 years old. What is your favorite subject?" User: "Nice to meet you too!" → WRONG (user didn't ask "how old are you?").
-   - Examples (CORRECT - proper dialogue structure):
-     - Current: "hi what's your name?" Next: "Okay! I am Michael. How old are you?" User: "I'm an alien called Clark Kent, what's your name?" → CORRECT (asked the question, even with humor).
-     - Current: "hi what's your name?" Next: "Okay! I am Michael. How old are you?" User: "My name is Sarah! What about you?" → CORRECT (asked for name).
-     - Current: "I am John, nice to meet you" Next: "I am 20 years old. What is your favorite subject?" User: "Nice to meet you too! How old are you?" → CORRECT.
-   - Detection patterns for AI answering:
-     - "I am [name]" / "My name is [name]" → User should have asked about name
-     - "I am [number] years old" / "I'm [age]" → User should have asked about age
-     - "My favorite is [thing]" / "I like [thing]" → User should have asked about favorites/preferences
-     - "I live with [people]" → User should have asked about living situation
-   - If next piece does NOT contain AI answering (just asking another question or general statement), this rule doesn't apply.
-4) HUMOR IS OK (when it still answers): Allow light humor/playfulness IF the answer still meaningfully responds to the current piece and stays compatible with the next piece.
-   - If the humor makes the answer nonsensical/unrelated or breaks the lesson reality, mark it WRONG.
-   - Examples:
-     - "How are you?" → "I'm fine—my stomach is smiling today!" → CORRECT.
-     - "Are you a student?" → "Yes, I'm a student (not an alien 😄)." → CORRECT.
-     - "Are you a student?" → "I'm an alien" → WRONG (breaks reality/lesson).
-5) IF "WHY" IS ASKED: A reason must be provided.
-   - Accept any simple/reasonable reason (e.g., "because I like it", "because it's delicious", "because it's easy").
-   - Reject reasons that are nonsensical or unrelated to the topic.
-   - Example: "What food do you like and why?" → "Ugali because of gravity" → WRONG.
-6) Be lenient about grammar/spelling. Short answers are OK if they match the question.
+     - Current: "How are you?" User: "Not good today." → CORRECT.
+     - Current: "Are you a Form 1 student?" User: any YES → CORRECT.
+     - Current: "Where is the pharmacy?" User: any directions → CORRECT (user knows).
+3) DIALOGUE STRUCTURE: If the NEXT piece contains the AI ANSWERING a question, the user MUST have asked that question.
+   - Detection patterns:
+     - "I am [name]" → User should have asked about name
+     - "I am [age] years old" → User should have asked about age
+     - "My favorite is [thing]" → User should have asked about favorites
+4) HUMOR IS OK when it still answers the question.
+5) IF "WHY" IS ASKED: Accept any reasonable reason. If missing, politely ask for it.
+6) Be lenient about grammar/spelling.
 
-TEACHER-LIKE FEEDBACK:
-- If correct: praise briefly and explain what was good.
-- If correct AND the student used appropriate humor: respond warmly and you may be lightly funny too (but still keep it beginner-friendly).
-- If wrong due to missing required question (dialogue structure): explain that in proper dialogue, when someone will answer your question, you need to ask it first.
-  Examples:
-  - "This is wrong. In a proper conversation, you need to ask 'What's your name?' so the other person can introduce themselves. You can be creative in how you ask, but you must ask!"
-  - "This is wrong. You answered the question, but you also need to ask 'How old are you?' back so the other person can answer."
-  - "This is wrong. Look at the next piece - the AI is going to answer a question. Make sure you ask that question in your response!"
-- If wrong due to compatibility with the next piece (DIRECT contradiction only): mention the next piece text and guide the student to rethink.
-  Use one of these patterns (do NOT provide the exact answer):
-  - "This is wrong. Based on the context of the next question '[NEXT PIECE]', what do you think your answer should be here?"
-  - "This is wrong because it contradicts the next question '[NEXT PIECE]'. Please answer in a way that keeps the conversation logical."
-- If wrong due to missing reason for "why": say they need to add a reason.
-- If wrong due to nonsense/unrelated: say it doesn't match the question/topic.
+**CONTEXTUAL MEMORY & COHERENCE:**
+- If user made a choice (e.g., "go to clinic"), ALWAYS acknowledge it
+- You CAN politely disagree but MUST acknowledge what they said
+- If next piece contradicts user's choice, ADAPT it to match
+- NEVER pretend the user didn't make a choice
 
-MINOR ADAPTATION (required when nextPiece exists AND the answer is correct):
-- If nextPiece exists AND the user's answer is correct: return an adaptedResponse that integrates the next piece naturally with the user's answer.
-- Do NOT output multiple options. Choose ONE best adaptation yourself.
-- Do not change the next piece's core meaning or ask a different question.
-- **The adaptation should be CONVERSATIONAL and COMPARATIVE** - relate the AI's answer to the user's answer!
+**TEACHER-LIKE FEEDBACK:**
+- If correct: praise briefly and explain what was good
+- If wrong due to dialogue structure: explain they need to ask the question first
+- If wrong due to contradiction: guide them without giving the answer
+- If wrong due to missing reason: ask for a reason
 
-**CRITICAL - COMPARATIVE & RELATIONAL ADAPTATION (make it feel like a real conversation):**
-- If the next piece contains the AI's answer to the same type of question the user just answered, COMPARE and RELATE them naturally:
-  * **Age comparison:**
-    - User: "I am 18" + Next: "I am 15 years old. What is your favorite subject?" → "Oh, you're 18! That's a bit older than me - I'm 15 years old. What is your favorite subject?"
-    - User: "I'm 14" + Next: "I am 15 years old. What is your favorite subject?" → "Oh, you're 14! We're almost the same age - I'm 15 years old. What is your favorite subject?"
-    - User: "I am 15" + Next: "I am 15 years old. What is your favorite subject?" → "Oh, you're 15 too! We're the same age! What is your favorite subject?"
-  * **Name introduction:**
-    - User: "I am Gabriel" + Next: "Okay! I am Michael. How old are you?" → "Nice to meet you, Gabriel! I am Michael. How old are you?"
-    - User: "My name is Sarah!" + Next: "I am Grace. Are you a Form 1 student?" → "Lovely to meet you, Sarah! I am Grace. Are you a Form 1 student?"
-  * **Favorite things:**
-    - User: "I like math" + Next: "My favorite is science. Do you like sports?" → "Oh, math is great! My favorite is science. Do you like sports?"
-    - User: "I love ugali" + Next: "I like rice and beans. Who do you live with?" → "Nice! Ugali is delicious. I like rice and beans. Who do you live with?"
-  * **Yes/No answers with context:**
-    - User: "Yes, I am a Form 1 student" + Next: "I am also Form 1! How was your first day?" → "Great! I am also Form 1! How was your first day?"
-  * **Emotional/experiential:**
-    - User: "My first day was amazing!" + Next: "Mine was good too. What is your favorite subject?" → "That's wonderful! Mine was good too. What is your favorite subject?"
-    - User: "My first day was scary" + Next: "Mine was a bit nervous too. What is your favorite subject?" → "I understand, mine was a bit nervous too. What is your favorite subject?"
+**COHERENCE CHECK (CRITICAL - before generating adaptedResponse):**
+Before responding, you MUST verify your adaptedResponse does NOT:
+1. Mention places/options the user DIDN'T suggest (e.g., if user said "pharmacy", don't mention "clinic")
+2. Contradict user's choices stored in userChoices: ${JSON.stringify(state.userChoices)}
+3. Claim the user said something they didn't say
+4. Introduce alternatives that weren't part of the conversation
 
-- **General tone adaptation (when no direct comparison is possible):**
-  - Negative answer → empathetic (e.g., "Oh, sorry to hear that.")
-  - Positive answer → encouraging (e.g., "That's great!")
-  - Simple factual → friendly (e.g., "Nice!" / "Okay!")
-  - Playful humor → respond playfully (e.g., "Haha, that's interesting!")
+If the scripted next piece mentions something the user didn't choose, ADAPT it to match what the user said.
+Example: Script says "clinic" but user chose "pharmacy" → Change to "pharmacy" in your response.
 
-- **Key principle:** Make the AI sound like it's LISTENING and RESPONDING to the user's specific answer, not just reading a script.
-- You have leeway to add 1-2 extra sentences to create natural flow and comparison.
-- If nextPiece is null OR the answer is incorrect: adaptedResponse must be null.
-`
+**ADAPTATION (when correct):**
+- Return an adaptedResponse that integrates the next piece naturally
+- Make it CONVERSATIONAL and COMPARATIVE - relate AI's answer to user's answer
+- Acknowledge user's mood: negative → empathetic, positive → encouraging
+- If user introduced themselves, greet them by name
+- Compare similar answers (e.g., ages, favorites)
+- ALWAYS respect user's established choices - never contradict them
+
+Respond with JSON only:
+{
+  "evaluation": {
+    "correct": boolean,
+    "feedback": "teacher-like explanation",
+    "contextuallyAppropriate": boolean,
+    "compatibility": boolean
+  },
+  "adaptedResponse": string | null,
+  "extractedFacts": {
+    "userName": string | null,
+    "userAge": number | null,
+    "userChoice": { "key": string, "value": string } | null,
+    "keyFact": string | null,
+    "detectedMood": "positive" | "negative" | "neutral"
+  }
+}`
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -202,7 +479,7 @@ MINOR ADAPTATION (required when nextPiece exists AND the answer is correct):
           },
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.5, // Increased for more creative/playful adaptations
+        temperature: 0.5,
       }),
     })
 
@@ -220,14 +497,66 @@ MINOR ADAPTATION (required when nextPiece exists AND the answer is correct):
 
     const result = JSON.parse(resultContent)
 
-    // Normalize shape from model (it may return either flat fields or under `evaluation`)
-    const evalBlock = (result as any).evaluation || {}
+    // ========================================================================
+    // State Enrichment: Update state based on model's extracted facts and our extraction
+    // ========================================================================
+    const enrichedState = { ...state }
+    
+    // Update from model's extraction
+    const extractedFacts = result.extractedFacts || {}
+    
+    // Update user name
+    if (extractedFacts.userName) {
+      enrichedState.userName = extractedFacts.userName
+    } else {
+      const extractedName = extractUserName(userAnswer)
+      if (extractedName) {
+        enrichedState.userName = extractedName
+      }
+    }
+    
+    // Update mood
+    if (extractedFacts.detectedMood) {
+      enrichedState.userMood = extractedFacts.detectedMood
+    } else {
+      enrichedState.userMood = detectMood(userAnswer)
+    }
+    
+    // Update user choices
+    if (extractedFacts.userChoice) {
+      enrichedState.userChoices[extractedFacts.userChoice.key] = extractedFacts.userChoice.value
+    } else {
+      const choice = extractUserChoice(userAnswer, currentPiece)
+      if (choice) {
+        enrichedState.userChoices[choice.key] = choice.value
+      }
+    }
+    
+    // Add key facts
+    if (extractedFacts.keyFact) {
+      if (!enrichedState.keyFacts.includes(extractedFacts.keyFact)) {
+        enrichedState.keyFacts.push(extractedFacts.keyFact)
+      }
+    }
+    const localFacts = extractKeyFacts(userAnswer, currentPiece)
+    for (const fact of localFacts) {
+      if (!enrichedState.keyFacts.includes(fact)) {
+        enrichedState.keyFacts.push(fact)
+      }
+    }
+    
+    // Limit key facts to last 10 to keep state compact
+    if (enrichedState.keyFacts.length > 10) {
+      enrichedState.keyFacts = enrichedState.keyFacts.slice(-10)
+    }
 
+    // ========================================================================
+    // Process Validation Result
+    // ========================================================================
+    const evalBlock = (result as any).evaluation || {}
     const uaLower = String(userAnswer || '').toLowerCase()
-    const compatRaw = evalBlock.compatibility
-    // Start with model compatibility; default to true if not provided
-    let compatibilityFlag = typeof compatRaw === 'boolean' ? compatRaw : true
-    // If model said incompatible but the answer is contextually appropriate and not an explicit negation, soften to true
+    
+    let compatibilityFlag = typeof evalBlock.compatibility === 'boolean' ? evalBlock.compatibility : true
     if (compatibilityFlag === false && evalBlock.contextuallyAppropriate === true && !/\b(no|not|n't)\b/.test(uaLower)) {
       compatibilityFlag = true
     }
@@ -237,202 +566,207 @@ MINOR ADAPTATION (required when nextPiece exists AND the answer is correct):
         ? result.isCorrect
         : typeof evalBlock.correct === 'boolean'
           ? evalBlock.correct
-          : typeof evalBlock.result === 'string'
-            ? ['correct', 'right', 'true'].includes(evalBlock.result.toLowerCase())
-            : false
+          : typeof evalBlock.correctness === 'string'
+            ? ['correct', 'right', 'true'].includes(evalBlock.correctness.toLowerCase())
+            : typeof evalBlock.result === 'string'
+              ? ['correct', 'right', 'true'].includes(evalBlock.result.toLowerCase())
+              : false
 
-    const explicitNegation = /\b(no|not|n't)\b/.test(uaLower)
+    // USER IS EXPERT OVERRIDE: If user is the expert, accept any reasonable answer
+    // and store their answer as authoritative
+    let userExpertOverride = false
+    if (expertScenario.isExpert) {
+      // Check if user gave a meaningful response (not empty, not just "yes/no/okay")
+      const meaningfulResponse = userAnswer.trim().length > 3 && 
+        !/^(yes|no|okay|ok|sure|fine|um|uh)$/i.test(userAnswer.trim())
+      
+      if (meaningfulResponse) {
+        userExpertOverride = true
+        
+        // Store user's expert answer for future reference
+        if (expertScenario.type === 'directions' && userDirections) {
+          enrichedState.userChoices['userDirections'] = userDirections
+          enrichedState.keyFacts.push(`user gave directions: ${userDirections}`)
+        } else if (expertScenario.type === 'advice') {
+          enrichedState.keyFacts.push(`user advised: ${userAnswer.substring(0, 50)}`)
+        } else if (expertScenario.type === 'information') {
+          enrichedState.keyFacts.push(`user said: ${userAnswer.substring(0, 50)}`)
+        }
+      }
+    }
 
     const derivedIsCorrect =
+      userExpertOverride ||  // User is expert - accept their answer
       modelIsCorrectRaw ||
-      (evalBlock.contextuallyAppropriate === true && compatibilityFlag === true) ||
-      (!explicitNegation && compatibilityFlag === true)
+      (evalBlock.contextuallyAppropriate === true && compatibilityFlag === true)
 
     const modelFeedback =
       result.feedback ||
       evalBlock.feedback ||
       (derivedIsCorrect ? 'Correct!' : 'This is wrong. Try again.')
 
+    const extractAdapted = (val: any): string | null => {
+      if (typeof val === 'string') return val
+      if (val && typeof val === 'object' && typeof val.response === 'string') return val.response
+      return null
+    }
+
     const modelAdapted =
-      typeof result.adaptedResponse === 'string'
-        ? result.adaptedResponse
-        : typeof evalBlock.adaptedResponse === 'string'
-          ? evalBlock.adaptedResponse
-          : null
+      extractAdapted(result.adaptedResponse) ??
+      extractAdapted(evalBlock.adaptedResponse)
+
+    // Build final adapted response with fallbacks
+    let finalAdapted: string | null = null
+    if (nextPiece && derivedIsCorrect) {
+      const next = String(nextPiece).trim()
+      const negTone = /(bad|sad|not good|unhappy|bored|tired|upset|angry|lonely|terrible|awful|worst)/i
+      const posTone = /(good|fine|great|happy|excellent|amazing|wonderful|awesome|nice|fantastic|love)/i
+      
+      finalAdapted = modelAdapted || next
+      
+      // USER IS EXPERT: If user gave expert info, adapt the script to use their answer
+      if (userExpertOverride && expertScenario.isExpert) {
+        // The AI model should have already adapted, but let's make sure we acknowledge user's info
+        if (!modelAdapted || modelAdapted.toLowerCase() === next.toLowerCase()) {
+          let prefix = "Got it!"
+          if (expertScenario.type === 'directions') {
+            prefix = "Okay, I'll follow your directions!"
+          } else if (expertScenario.type === 'advice') {
+            prefix = "Thanks for the advice!"
+          } else if (expertScenario.type === 'information') {
+            prefix = "Thanks for letting me know!"
+          }
+          
+          // Adapt next piece to acknowledge user's expert input
+          finalAdapted = `${prefix} ${next}`
+        }
+      }
+      // Add prefix if adapted response is bare
+      else if (finalAdapted && finalAdapted.toLowerCase() === next.toLowerCase()) {
+        let prefix = "Okay!"
+        if (enrichedState.userMood === 'negative' || negTone.test(uaLower)) {
+          prefix = "I'm sorry to hear that."
+        } else if (enrichedState.userMood === 'positive' || posTone.test(uaLower)) {
+          prefix = "That's great!"
+        }
+        
+        // Add name greeting if we just learned their name
+        if (enrichedState.userName && !state.userName) {
+          prefix = `Nice to meet you, ${enrichedState.userName}!`
+        }
+        
+        finalAdapted = `${prefix} ${next}`
+      }
+    }
+
+    // Handle last question
+    const isLastQuestion = !nextPiece
+    let finalFeedback = modelFeedback
+    
+    if (isLastQuestion) {
+      const hasNegative = /\b(no|not|nope|nah|don't|sorry)\b/i.test(userAnswer)
+      
+      let closingStatement = ''
+      if (hasNegative) {
+        closingStatement = "I understand. That's okay! It was nice talking with you. Thank you for practicing with me."
+      } else {
+        const userName = enrichedState.userName ? `, ${enrichedState.userName}` : ''
+        closingStatement = `Thank you very much${userName}! It was wonderful talking with you. I'm glad we could practice together!`
+      }
+      
+      finalFeedback = closingStatement
+      
+      // Update state for last answer
+      enrichedState.lastCorrectAnswer = userAnswer
+      enrichedState.questionIndex = currentIndex
+
+      console.info('[conversation-validate] decision', {
+        currentPiece,
+        nextPiece,
+        userAnswer,
+        isLastQuestion: true,
+        enrichedState,
+      })
+
+      return {
+        success: true,
+        isCorrect: true,
+        feedback: finalFeedback,
+        adaptedResponse: closingStatement,
+        enrichedState, // Return updated state
+      }
+    }
+
+    // Process follow-up for "why" questions
+    const asksWhy = (txt: string): boolean => /[^?]*\bwhy\b[^?]*\?/i.test(txt)
+    const reasonWordRe = /\b(because|since|as|due to|thanks to|because of|for)\b/i
+    const needsReason = asksWhy(currentPiece)
+    const hasReason = reasonWordRe.test(userAnswer)
+    
+    let finalIsCorrect = derivedIsCorrect
+    let followUpInsert: string | null = null
+    let finalAdaptedResponse = nextPiece && derivedIsCorrect ? finalAdapted : null
+
+    // Feedback adjustments
+    const isModelNegative = /wrong|contradict|doesn['']?t match/i.test(String(modelFeedback))
+    const hasSeriousHardship = /(passed away|died|loss|divorce|financial trouble)/i.test(userAnswer)
+    
+    finalFeedback = derivedIsCorrect && isModelNegative && hasSeriousHardship
+      ? "Thanks for sharing. I'm sorry to hear that."
+      : derivedIsCorrect && isModelNegative
+        ? "Great job answering the question!"
+        : modelFeedback
+
+    // Handle missing "why" reason
+    const isDialogueStructureError = /proper conversation.*need to ask|didn't ask.*question/i.test(String(modelFeedback))
+    const cantAnswer = /\b(wouldn't know|don't know|not sure|no idea|can't tell)\b/i.test(userAnswer)
+    
+    if (needsReason && derivedIsCorrect && !hasReason && !isDialogueStructureError && !cantAnswer) {
+      const whyMatch = currentPiece.match(/why\s+(?:do\s+you\s+)?(like|think|prefer|choose|want|enjoy)\s+([^?]+)/i)
+      if (whyMatch) {
+        followUpInsert = `Why do you ${whyMatch[1]} ${whyMatch[2].trim()}?`
+      } else {
+        followUpInsert = 'Could you tell me why?'
+      }
+      finalIsCorrect = true
+    }
+
+    // Update state for successful answer
+    if (finalIsCorrect) {
+      enrichedState.lastCorrectAnswer = userAnswer
+      enrichedState.questionIndex = currentIndex
+    }
 
     const logDecision = (extra: Record<string, unknown> = {}) => {
       console.info('[conversation-validate] decision', {
         currentPiece,
         nextPiece,
         userAnswer,
-        result,
         modelIsCorrectRaw,
         derivedIsCorrect,
-        compatibilityFlag,
-        modelFeedback,
-        modelAdapted,
-        raw: resultContent,
+        userExpertOverride,
+        expertScenario: expertScenario.isExpert ? expertScenario : null,
+        finalIsCorrect,
+        enrichedState,
         ...extra,
       })
     }
 
-    const normalize = (s: any) => (typeof s === 'string' ? s.trim() : '')
-    let adapted = normalize(result.adaptedResponse)
-
-    if (nextPiece) {
-      const next = String(nextPiece).trim()
-
-      const playfulRe = /(haha|lol|lmao|rofl|\ud83d\ude02|\ud83d\ude04|\ud83e\udd23)/
-      const negativeRe = /(bad|sad|not good|unhappy|bored|tired|upset|angry|lonely|terrible|awful|worst|\bdidn't\b|\bdid not\b|no friends|nothing|hate|passed away|died|loss|lost my (mom|dad|mother|father|parent|parents|friend|sister|brother)|divorce|divorced|no money|didn't have enough money|couldn't afford|financial trouble|financial problem|didn't have school fees|school fees)/i
-      const positiveRe = /(good|fine|great|happy|excellent|amazing|wonderful|awesome|nice|fantastic|love)/i
-      const affirmativeRe = /(yes|yeah|yep|sure|ok|okay|alright)/i
-
-      // Fallback ONLY if the model did not provide a usable adaptedResponse.
-      // Keep this minimal; the model should normally choose the best transition itself.
-      if (!adapted || adapted === next) {
-        let prefix = 'Okay!'
-        if (playfulRe.test(uaLower)) prefix = 'Haha, nice one!'
-        else if (negativeRe.test(uaLower)) prefix = 'Oh, sorry to hear that.'
-        else if (positiveRe.test(uaLower)) prefix = "That's great!"
-        else if (affirmativeRe.test(uaLower)) prefix = "That's nice!"
-
-        adapted = `${prefix} ${next}`
-      }
-    }
-
-    // If there's an adapted response, we can use it to modify the next piece
-    // For now, we'll just return the validation result
-    // Build final adapted response with empathy fallback when needed
-    let finalAdapted: string | null = null
-    if (nextPiece && derivedIsCorrect) {
-      const next = String(nextPiece).trim()
-      // Reuse regexes for tone detection
-      const negTone = /(bad|sad|not good|unhappy|bored|tired|upset|angry|lonely|terrible|awful|worst|\bdidn't\b|\bdid not\b|no friends|nothing|hate|passed away|died|loss|lost my (mom|dad|mother|father|parent|parents|friend|sister|brother))/i
-      const posTone = /(good|fine|great|happy|excellent|amazing|wonderful|awesome|nice|fantastic|love)/i
-      const affTone = /(yes|yeah|yep|sure|ok|okay|alright)/i
-
-      // Start from modelAdapted if provided, else from fallback adapted
-      finalAdapted = modelAdapted || adapted || next
-      
-      // If the adapted response is just the bare next question (no acknowledgment),
-      // add an appropriate prefix based on the user's tone
-      if (finalAdapted) {
-        const lowerAdapted = finalAdapted.toLowerCase()
-        const lowerNext = next.toLowerCase()
-        const isBareNext = lowerAdapted === lowerNext || finalAdapted === next
-      
-        if (isBareNext) {
-          const uaLower = userAnswer.toLowerCase()
-          const hasPlayful = /haha|lol|lmao|rofl|😂|😄|🤣/i.test(userAnswer)
-          const hasNeg = negTone.test(uaLower)
-          const hasPos = posTone.test(uaLower)
-          const hasAff = affTone.test(uaLower)
-          
-          let prefix = "Okay!"
-          if (hasPlayful) {
-            prefix = "Haha, that's interesting!"
-          } else if (hasNeg) {
-            prefix = "I'm sorry to hear that."
-          } else if (hasPos) {
-            prefix = "That's great!"
-          } else if (hasAff) {
-            prefix = "That's nice!"
-          }
-          
-          finalAdapted = `${prefix} ${next}`
-        }
-      }
-    }
-
-    // Special handling for the last question - always accept the answer and provide graceful closing
-    const isLastQuestion = !nextPiece
-    let finalFeedback = modelFeedback
-    
-    if (isLastQuestion) {
-      // For the last question, any answer is acceptable
-      // Provide a graceful closing statement based on the user's response
-      const hasNegative = /\b(no|not|nope|nah|don't|sorry)\b/i.test(userAnswer)
-      
-      if (hasNegative) {
-        finalFeedback = "I understand. That's okay! It was nice talking with you. Thank you for practicing with me."
-      } else {
-        finalFeedback = "Thank you very much! It was wonderful talking with you. I'm glad we could practice together!"
-      }
-      
-      // Override derivedIsCorrect to always be true for last question
-      logDecision({ finalNextPiece: null, isLastQuestion: true })
-
-      return {
-        success: true,
-        isCorrect: true,
-        feedback: finalFeedback,
-        adaptedResponse: null, // No next question
-      }
-    }
-
-    const reasonTriggerRe = /\bwhy\b/i
-    const reasonWordRe = /\b(because|since|as|due to|thanks to|because of|for)\b/i
-    const currentText = String(currentPiece)
-    const needsReason = reasonTriggerRe.test(currentText)
-    const hasReason = reasonWordRe.test(userAnswer)
-
-    if (needsReason && derivedIsCorrect && !hasReason) {
-      const reasonFeedback = `That was a good answer! Could you also explain why? The question was "${currentText.trim()}".`
-      logDecision({
-        reasonMissing: true,
-        reasonRequired: true,
-        question: currentText,
-      })
-
-      return {
-        success: true,
-        isCorrect: false,
-        feedback: reasonFeedback,
-        adaptedResponse: null,
-      }
-    }
-
-    const adaptedResponse =
-      nextPiece && derivedIsCorrect
-        ? (finalAdapted ? finalAdapted : null)
-        : null
-
-    // Ensure feedback is positive/encouraging when we consider the answer correct,
-    // even if the model feedback text sounded negative. Do NOT include the next
-    // question in the feedback; empathy only.
-    const isModelNegative =
-      typeof modelFeedback === 'string' &&
-      /wrong|contradict|doesn['']?t match|inconsistent|illogical/i.test(modelFeedback)
-
-    // Only show empathetic feedback if answer contains clear hardship/loss
-    const hasSeriousHardship =
-      typeof userAnswer === 'string' &&
-      /(passed away|died|loss|lost my (mom|dad|mother|father|parent|parents|friend|sister|brother)|divorce|didn't have enough money|couldn't afford|financial trouble|no money)/i.test(
-        userAnswer
-      )
-
-    finalFeedback =
-      derivedIsCorrect && isModelNegative && hasSeriousHardship
-        ? "Thanks for sharing. I'm sorry to hear that."
-        : derivedIsCorrect && isModelNegative
-          ? "Great job answering the question!"
-          : modelFeedback
-
-    const finalNextPiece =
-      nextPiece && derivedIsCorrect
-        ? (adaptedResponse ? adaptedResponse : nextPiece)
-        : nextPiece
-
     logDecision({
-      finalNextPiece,
-      adaptedResponse,
+      feedback: finalFeedback,
+      adaptedResponse: finalAdaptedResponse,
+      followUp: followUpInsert,
     })
 
     return {
       success: true,
-      isCorrect: derivedIsCorrect,
+      isCorrect: finalIsCorrect,
       feedback: finalFeedback,
-      adaptedResponse,
+      adaptedResponse: finalAdaptedResponse,
+      insertFollowUp: !!followUpInsert,
+      followUp: followUpInsert,
+      originalNext: nextPiece,
+      enrichedState, // Return updated state for frontend to track
     }
   } catch (error) {
     console.error('Answer validation error:', error)

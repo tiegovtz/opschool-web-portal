@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event)
     const { text, conversationHistory = [], currentVoiceType = 'female' } = body
+    const historyArray = Array.isArray(conversationHistory) ? conversationHistory : []
 
     if (!text || typeof text !== 'string' || text.trim().length === 0) {
       throw createError({
@@ -44,7 +45,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Build conversation context from history
-    const historyContext = conversationHistory
+    const historyContext = historyArray
       .map((item: any) => `AI: ${item.ai}\nUser: ${item.user || '(no response)'}`)
       .join('\n\n')
 

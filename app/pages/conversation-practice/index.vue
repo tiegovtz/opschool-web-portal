@@ -67,16 +67,21 @@
 
         <!-- Conversation Display -->
         <div v-if="conversationStarted" class="space-y-4">
+          <!-- Compact State Debug (only in dev) -->
+          <div v-if="showDebugState" class="bg-gray-100 rounded-md p-3 text-xs font-mono">
+            <details>
+              <summary class="cursor-pointer text-gray-600">Conversation State (Debug)</summary>
+              <pre class="mt-2 whitespace-pre-wrap">{{ JSON.stringify(conversationState, null, 2) }}</pre>
+            </details>
+          </div>
+
           <!-- Current Conversation Piece -->
           <div class="bg-gray-50 rounded-md p-4">
-            <h3 class="text-sm font-medium text-gray-700 mb-2">
-              Current: {{ currentIndex + 1 }} / {{ conversationPieces.length }}
-            </h3>
             <p class="text-lg text-gray-800">{{ currentConversationPiece }}</p>
           </div>
 
           <!-- Next Question Preview (context) -->
-          <div v-if="nextConversationPiece && !isProcessing" class="bg-blue-50 border border-blue-200 rounded-md p-3">
+          <div v-if="nextConversationPiece && !isProcessing && !isConversationComplete" class="bg-blue-50 border border-blue-200 rounded-md p-3">
             <h4 class="text-xs font-medium text-blue-700 mb-1">Context of next question:</h4>
             <p class="text-sm text-blue-800">{{ nextConversationPiece }}</p>
           </div>
@@ -102,7 +107,7 @@
           </div>
 
           <!-- Recording Controls (Speech Mode) -->
-          <div v-if="!isGeneratingTTS && inputMode === 'speech'" class="flex flex-col items-center space-y-4">
+          <div v-if="!isConversationComplete && !isGeneratingTTS && inputMode === 'speech'" class="flex flex-col items-center space-y-4">
             <div v-if="!isRecording && !isProcessing" class="flex gap-4">
               <button
                 v-if="!isPlaying"
@@ -138,7 +143,7 @@
           </div>
 
           <!-- Text Input Controls (Text Mode) -->
-          <div v-if="inputMode === 'text'" class="flex flex-col items-center space-y-4 w-full">
+          <div v-if="!isConversationComplete && inputMode === 'text'" class="flex flex-col items-center space-y-4 w-full">
             <div v-if="!isProcessing" class="w-full max-w-2xl space-y-3">
               <textarea
                 v-model="textAnswer"
@@ -224,11 +229,36 @@ definePageMeta({
   layout: 'home-layout',
 })
 
-// State
+// ============================================================================
+// Compact Conversation State (NEW - replaces full history tracking)
+// ============================================================================
+const createDefaultState = () => ({
+  aiName: null,
+  aiGender: 'female',
+  aiRole: null,
+  userName: null,
+  userMood: 'neutral',
+  userChoices: {},
+  keyFacts: [],
+  questionIndex: 0,
+  totalQuestions: 0,
+  lastCorrectAnswer: null,
+})
+
+// Compact state that gets sent to backend instead of full history
+const conversationState = ref(createDefaultState())
+
+// Debug mode - show state in UI (toggle with URL param ?debug=1)
+const showDebugState = ref(false)
+
+// ============================================================================
+// UI State
+// ============================================================================
 const voiceType = ref('female')
-const playbackSpeed = ref(1.0) // Default playback speed (1.0 = normal, generation uses 0.85)
+const playbackSpeed = ref(1.0)
 const conversationInput = ref('')
 const conversationStarted = ref(false)
+const conversationCompleteMessage = ref('')
 const conversationPieces = ref([])
 const currentIndex = ref(0)
 const isPlaying = ref(false)
@@ -236,32 +266,44 @@ const isRecording = ref(false)
 const isProcessing = ref(false)
 const isGeneratingTTS = ref(false)
 const userAnswer = ref('')
-const textAnswer = ref('') // Text input for typing answers
-const inputMode = ref('speech') // 'speech' or 'text'
+const textAnswer = ref('')
+const inputMode = ref('speech')
 const statusMessage = ref(null)
-const conversationHistory = ref([])
+const conversationHistory = ref([]) // Still kept for display purposes
 const audioRef = ref(null)
 const currentAudioUrl = ref(null)
-// Cache audio URLs per piece to avoid regeneration
 const audioUrlCache = ref({})
 
 // Speech Recognition
 let recognition = null
 
-// Computed
+// ============================================================================
+// Computed Properties
+// ============================================================================
 const currentConversationPiece = computed(() => {
+  if (conversationCompleteMessage.value) return conversationCompleteMessage.value
   if (conversationPieces.value.length === 0) return ''
   return conversationPieces.value[currentIndex.value] || ''
 })
 
 const nextConversationPiece = computed(() => {
+  if (conversationCompleteMessage.value) return null
   if (conversationPieces.value.length === 0 || currentIndex.value >= conversationPieces.value.length - 1) return null
   return conversationPieces.value[currentIndex.value + 1] || null
 })
 
-// Initialize Speech Recognition
+const isConversationComplete = computed(() => !!conversationCompleteMessage.value)
+
+// ============================================================================
+// Lifecycle Hooks
+// ============================================================================
 onMounted(() => {
+  // Check for debug mode
   if (typeof window !== 'undefined') {
+    const urlParams = new URLSearchParams(window.location.search)
+    showDebugState.value = urlParams.get('debug') === '1'
+    
+    // Initialize Speech Recognition
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
     if (SpeechRecognition) {
       recognition = new SpeechRecognition()
@@ -304,28 +346,29 @@ onUnmounted(() => {
   }
 })
 
+// ============================================================================
 // Methods
+// ============================================================================
 const detectSpeakerGenderFromAllPieces = async () => {
-  // Analyze all conversation pieces together to detect the speaker's identity
-  // This ensures consistent voice from the very first piece
   try {
     const allPiecesText = conversationPieces.value.join(' ')
     const voiceDetection = await $fetch('/api/conversation/detect-voice', {
       method: 'POST',
       body: {
         text: allPiecesText,
-        conversationHistory: '', // Empty for initial detection
+        conversationHistory: '',
         currentVoiceType: voiceType.value,
       },
     })
 
     if (voiceDetection.success && voiceDetection.voiceType) {
       voiceType.value = voiceDetection.voiceType
-      console.log(`Speaker gender detected from full conversation: ${voiceDetection.voiceType} (${voiceDetection.reason || 'auto-detected'})`)
+      // Update state with detected gender
+      conversationState.value.aiGender = voiceDetection.voiceType
+      console.log(`Speaker gender detected: ${voiceDetection.voiceType}`)
     }
   } catch (error) {
     console.warn('Failed to pre-detect speaker gender:', error)
-    // Continue with default voice if detection fails
   }
 }
 
@@ -335,7 +378,6 @@ const startConversation = () => {
     return
   }
 
-  // Parse conversation pieces (split by newline)
   const pieces = conversationInput.value
     .split('\n')
     .map(p => p.trim())
@@ -346,6 +388,7 @@ const startConversation = () => {
     return
   }
 
+  // Initialize conversation
   conversationPieces.value = pieces
   conversationStarted.value = true
   currentIndex.value = 0
@@ -353,19 +396,26 @@ const startConversation = () => {
   userAnswer.value = ''
   textAnswer.value = ''
   statusMessage.value = null
+  conversationCompleteMessage.value = ''
+  audioUrlCache.value = {}
 
-  // Pre-analyze all conversation pieces to detect speaker's gender
-  // This ensures consistent voice from the first piece
+  // Initialize compact state
+  conversationState.value = {
+    ...createDefaultState(),
+    aiGender: voiceType.value,
+    totalQuestions: pieces.length,
+    questionIndex: 0,
+  }
+
+  // Pre-analyze conversation for speaker identity
   detectSpeakerGenderFromAllPieces()
 
   // Start with first piece
   nextTick(() => {
     if (inputMode.value === 'text') {
-      // Text mode: just show the text, no audio
       textAnswer.value = ''
       statusMessage.value = null
     } else {
-      // Speech mode: play audio
       playCurrentPiece()
     }
   })
@@ -374,21 +424,14 @@ const startConversation = () => {
 const playCurrentPiece = async () => {
   if (isPlaying.value || isGeneratingTTS.value || !currentConversationPiece.value) return
   
-  // Skip audio generation in text mode
-  if (inputMode.value === 'text') {
-    return
-  }
+  if (inputMode.value === 'text') return
 
-  // Check if audio is already cached for this piece
   const cachedAudioUrl = audioUrlCache.value[currentIndex.value]
   if (cachedAudioUrl) {
-    // Use cached audio - no need to regenerate
     if (audioRef.value) {
-      // Clean up previous audio URL if it was a blob
       if (currentAudioUrl.value && currentAudioUrl.value.startsWith('blob:')) {
         URL.revokeObjectURL(currentAudioUrl.value)
       }
-
       currentAudioUrl.value = cachedAudioUrl
       audioRef.value.src = cachedAudioUrl
       audioRef.value.playbackRate = playbackSpeed.value
@@ -404,41 +447,28 @@ const playCurrentPiece = async () => {
 
   try {
     isGeneratingTTS.value = true
-    // Clear status message when starting new piece
     statusMessage.value = null
 
-    // Detect voice type from conversation text (include history for context)
-    // Only update if a new character identity is established, otherwise keep current voice
+    // Voice detection
     try {
       const voiceDetection = await $fetch('/api/conversation/detect-voice', {
         method: 'POST',
         body: {
           text: currentConversationPiece.value,
           conversationHistory: conversationHistory.value,
-          currentVoiceType: voiceType.value, // Pass current voice to maintain consistency
+          currentVoiceType: voiceType.value,
         },
       })
 
-      if (voiceDetection.success) {
-        // Only update voice type if shouldUpdate is true (new identity established or first piece)
-        if (voiceDetection.shouldUpdate && voiceDetection.voiceType) {
-          voiceType.value = voiceDetection.voiceType
-          if (voiceDetection.isNewIdentity) {
-            console.log(`Voice established: ${voiceDetection.voiceType} (${voiceDetection.reason || 'auto-detected'})`)
-          } else {
-            console.log(`Voice updated: ${voiceDetection.voiceType} (${voiceDetection.reason || 'auto-detected'})`)
-          }
-        } else {
-          // Keep current voice type - maintain consistency
-          console.log(`Keeping current voice: ${voiceType.value} (maintaining established identity: ${voiceDetection.reason || 'no change needed'})`)
-        }
+      if (voiceDetection.success && voiceDetection.shouldUpdate && voiceDetection.voiceType) {
+        voiceType.value = voiceDetection.voiceType
+        conversationState.value.aiGender = voiceDetection.voiceType
       }
     } catch (detectionError) {
-      console.warn('Voice detection failed, using current voice type:', detectionError)
-      // Continue with current voiceType if detection fails
+      console.warn('Voice detection failed:', detectionError)
     }
 
-    // Generate TTS audio with detected/current voice type
+    // Generate TTS
     const response = await $fetch('/api/conversation/tts', {
       method: 'POST',
       body: {
@@ -448,24 +478,17 @@ const playCurrentPiece = async () => {
     })
 
     if (response.success && response.audioUrl) {
-      // Cache the audio URL for this piece
       audioUrlCache.value[currentIndex.value] = response.audioUrl
-      
-      // TTS generation complete, now play audio
       isGeneratingTTS.value = false
       isPlaying.value = true
 
-      // Play audio from URL (same as before optimization)
       if (audioRef.value) {
-        // Clean up previous audio URL if it was a blob
         if (currentAudioUrl.value && currentAudioUrl.value.startsWith('blob:')) {
           URL.revokeObjectURL(currentAudioUrl.value)
         }
-
-        // Use the URL directly
         currentAudioUrl.value = response.audioUrl
         audioRef.value.src = response.audioUrl
-        audioRef.value.playbackRate = playbackSpeed.value // Set initial playback speed
+        audioRef.value.playbackRate = playbackSpeed.value
         audioRef.value.play().catch(err => {
           console.error('Error playing audio:', err)
           isPlaying.value = false
@@ -484,26 +507,21 @@ const playCurrentPiece = async () => {
 }
 
 const stopAudioAndStartRecording = () => {
-  // Stop audio if playing
   if (audioRef.value && isPlaying.value) {
     audioRef.value.pause()
     audioRef.value.currentTime = 0
     isPlaying.value = false
   }
-  // Start recording immediately
   startRecording()
 }
 
 const onAudioEnded = () => {
   isPlaying.value = false
-  // Automatically start input based on mode after audio ends
   if (conversationStarted.value && currentIndex.value < conversationPieces.value.length) {
-    // Small delay before starting input
     setTimeout(() => {
       if (inputMode.value === 'speech') {
         startRecording()
       } else {
-        // Text mode: just clear and focus on text input (user will type)
         textAnswer.value = ''
         statusMessage.value = null
       }
@@ -518,10 +536,7 @@ const onAudioError = () => {
 }
 
 const onAudioTimeUpdate = () => {
-  // This confirms audio is actually playing
-  if (audioRef.value && !audioRef.value.paused) {
-    // Audio is playing (currentTime is updating)
-  }
+  // Audio progress tracking if needed
 }
 
 const startRecording = () => {
@@ -538,7 +553,6 @@ const startRecording = () => {
   try {
     isRecording.value = true
     userAnswer.value = ''
-    // Clear status message when starting to answer (user has seen the feedback)
     statusMessage.value = null
     recognition.start()
   } catch (error) {
@@ -558,7 +572,6 @@ const submitTextAnswer = () => {
   if (!textAnswer.value.trim()) return
   const answer = textAnswer.value.trim()
   textAnswer.value = ''
-  // Clear status message when submitting answer (user has seen the feedback)
   statusMessage.value = null
   validateAnswer(answer)
 }
@@ -570,6 +583,7 @@ const validateAnswer = async (answer) => {
   statusMessage.value = null
 
   try {
+    // Send compact state instead of full history
     const response = await $fetch('/api/conversation/validate', {
       method: 'POST',
       body: {
@@ -577,63 +591,66 @@ const validateAnswer = async (answer) => {
         currentPiece: currentConversationPiece.value,
         currentIndex: currentIndex.value,
         userAnswer: answer,
+        // NEW: Send compact state instead of full history
+        conversationState: conversationState.value,
+        // Keep for backward compatibility during transition
         conversationHistory: conversationHistory.value,
       },
     })
 
-        if (response.success) {
+    if (response.success) {
+      // Update compact state from backend's enriched state
+      if (response.enrichedState) {
+        conversationState.value = {
+          ...conversationState.value,
+          ...response.enrichedState,
+        }
+        console.log('State updated:', conversationState.value)
+      }
+
       if (response.isCorrect) {
-        // Get the next piece (may be adapted based on user's answer)
         let nextPiece = currentIndex.value < conversationPieces.value.length - 1
           ? conversationPieces.value[currentIndex.value + 1]
           : null
 
-        // ALWAYS use adapted response if provided (makes conversation contextually appropriate)
-        if (response.adaptedResponse) {
-          if (nextPiece) {
-            // Update the conversation piece for next iteration with adapted response
-            conversationPieces.value[currentIndex.value + 1] = response.adaptedResponse
-            console.log('Adapted response:', response.adaptedResponse)
-          }
-        } else if (nextPiece) {
-          // If no adapted response but next piece exists, log a warning
-          console.warn('No adapted response provided, using original next piece')
+        if (response.insertFollowUp && response.followUp) {
+          conversationPieces.value.splice(currentIndex.value + 1, 0, response.followUp)
+          nextPiece = conversationPieces.value[currentIndex.value + 1]
+          // Update total questions in state
+          conversationState.value.totalQuestions = conversationPieces.value.length
+        } else if (response.adaptedResponse && nextPiece) {
+          conversationPieces.value[currentIndex.value + 1] = response.adaptedResponse
         }
 
-        // Add to history
+        // Add to history (still kept for display)
         conversationHistory.value.push({
           ai: currentConversationPiece.value,
           user: answer,
         })
 
-        // Move to next piece
         currentIndex.value++
+        
+        // Update state progress
+        conversationState.value.questionIndex = currentIndex.value
+        conversationState.value.lastCorrectAnswer = answer
 
         if (currentIndex.value >= conversationPieces.value.length) {
-          // Conversation complete - show the graceful closing message from backend
-          showStatus('success', response.feedback || 'Conversation complete! Great job!')
+          conversationCompleteMessage.value = response.adaptedResponse || response.feedback || 'Thank you for practicing!'
+          statusMessage.value = null
           userAnswer.value = ''
         } else {
-          // Continue to next piece
           showStatus('success', response.feedback || 'Correct!')
           userAnswer.value = ''
-          // Don't auto-clear status - let it persist until user sees it
-          // User can proceed by answering the next question
-          // Status will clear when they start answering or when next piece plays
+          
           if (inputMode.value === 'text') {
-            // Text mode: clear text input, keep feedback visible
             textAnswer.value = ''
-            // Status stays visible - user can see why it was correct
           } else {
-            // Speech mode: wait a bit for feedback, then play audio (but keep feedback visible)
             setTimeout(() => {
               playCurrentPiece()
-              // Keep feedback visible - only clear when starting new answer
             }, 2000)
           }
         }
       } else {
-        // Wrong answer
         showStatus('error', response.feedback || 'This is wrong. Try again.')
         userAnswer.value = ''
       }
@@ -657,10 +674,14 @@ const resetConversation = () => {
   textAnswer.value = ''
   statusMessage.value = null
   conversationInput.value = ''
+  conversationCompleteMessage.value = ''
   isPlaying.value = false
   isRecording.value = false
   isProcessing.value = false
-  audioUrlCache.value = {} // Clear audio cache
+  audioUrlCache.value = {}
+  
+  // Reset compact state
+  conversationState.value = createDefaultState()
 
   if (audioRef.value) {
     audioRef.value.pause()
@@ -678,30 +699,32 @@ const updatePlaybackSpeed = () => {
   }
 }
 
-
 const saveConversation = () => {
   if (conversationHistory.value.length === 0) {
     showStatus('error', 'No conversation to save')
     return
   }
 
-  // Prepare conversation data
   const conversationData = {
     date: new Date().toISOString(),
     conversationPieces: conversationPieces.value,
     conversationHistory: conversationHistory.value,
+    conversationState: conversationState.value, // Include compact state
     totalPieces: conversationPieces.value.length,
     completedPieces: conversationHistory.value.length,
   }
 
-  // Create JSON string
-  const jsonString = JSON.stringify(conversationData, null, 2)
-
-  // Create text format (more readable)
   const textString = `Conversation Practice Session
 Date: ${new Date(conversationData.date).toLocaleString()}
 Total Pieces: ${conversationData.totalPieces}
 Completed Pieces: ${conversationData.completedPieces}
+
+--- Conversation State ---
+AI Name: ${conversationState.value.aiName || 'Unknown'}
+User Name: ${conversationState.value.userName || 'Unknown'}
+User Mood: ${conversationState.value.userMood}
+Key Facts: ${conversationState.value.keyFacts.join(', ') || 'None'}
+User Choices: ${JSON.stringify(conversationState.value.userChoices)}
 
 ${'='.repeat(60)}
 
@@ -712,7 +735,6 @@ ${conversationHistory.value.map((item, index) => {
 ${'='.repeat(60)}
 `
 
-  // Create blob and download
   const blob = new Blob([textString], { type: 'text/plain' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -728,9 +750,6 @@ ${'='.repeat(60)}
 
 const showStatus = (type, text) => {
   statusMessage.value = { type, text }
-  // Don't auto-clear status messages
-  // - Error messages stay until user clicks "Try Again"
-  // - Success messages stay until next piece plays or user action
 }
 </script>
 
