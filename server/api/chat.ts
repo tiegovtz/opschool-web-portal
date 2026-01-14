@@ -1,7 +1,11 @@
 import { defineEventHandler, readBody } from "h3";
-import { streamText, convertToModelMessages, stepCountIs } from "ai";
+import {
+  streamText,
+  convertToModelMessages,
+  stepCountIs,
+  type CoreMessage,
+} from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { studentTools } from "./utils/tools";
 
 // --------------------------------------
 // System Prompt Builder
@@ -93,13 +97,80 @@ Priority Rules:
   `.trim();
 }
 
+/**
+ * Detects if a message is in UIMessage format (has parts array) or simple format (has content)
+ */
+function isUIMessageFormat(message: any): boolean {
+  return (
+    message &&
+    (Array.isArray(message.parts) ||
+      (message.id !== undefined && message.parts !== undefined))
+  );
+}
+
+/**
+ * Converts messages to CoreMessage format
+ * Handles both UIMessage format (from Chat component) and simple format (from external API)
+ */
+function convertMessagesToCore(messages: any[]): CoreMessage[] {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return [];
+  }
+
+  // Check if any message has UIMessage format (parts array)
+  const hasUIMessageFormat = messages.some(isUIMessageFormat);
+
+  if (hasUIMessageFormat) {
+    // Use convertToModelMessages for UIMessage format (from Chat component)
+    try {
+      return convertToModelMessages(messages);
+    } catch (error) {
+      // Fallback: extract content from parts manually
+      return messages.map((msg: any) => {
+        let content = "";
+        if (Array.isArray(msg.parts)) {
+          content = msg.parts
+            .filter((p: any) => p?.type === "text" && p?.text)
+            .map((p: any) => String(p.text))
+            .join("");
+        } else if (msg.content) {
+          content = String(msg.content);
+        }
+
+        const role = msg.role || "user";
+        if (role === "user") {
+          return { role: "user", content };
+        } else if (role === "assistant") {
+          return { role: "assistant", content };
+        } else if (role === "system") {
+          return { role: "system", content };
+        }
+        return { role: "user", content };
+      });
+    }
+  } else {
+    // Simple format: convert directly to CoreMessage
+    return messages.map((msg: any) => {
+      const role = msg.role || "user";
+      const content = msg.content || "";
+
+      if (role === "user") {
+        return { role: "user", content };
+      } else if (role === "assistant") {
+        return { role: "assistant", content };
+      } else if (role === "system") {
+        return { role: "system", content };
+      }
+      return { role: "user", content };
+    });
+  }
+}
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
 
   // Safely parse user messages
-  const messages: UIMessage[] = Array.isArray(body?.messages)
-    ? body.messages
-    : [];
+  const messages: any[] = Array.isArray(body?.messages) ? body.messages : [];
 
   // Extract context if provided (for Subject AI Teacher mode)
   // Check both body and headers (headers are more reliable)
@@ -130,15 +201,15 @@ export default defineEventHandler(async (event) => {
     ? parseInt(chapterNoHeader)
     : body?.chapterNo ?? null;
 
-  const userMessage = messages.at(-1)?.content || "";
-
+  // Validate API key
   const apiKey = useRuntimeConfig().openaiApiKey;
-  if (!apiKey) throw new Error("Missing OpenAI API key");
+  if (!apiKey) {
+    throw new Error("Missing OpenAI API key");
+  }
 
   const openai = createOpenAI({ apiKey });
 
   // Validate chapterName - only use it if it's a real chapter name (not empty or default)
-  // This ensures we don't use "this competence" as the chapter name
   const validChapterName =
     chapterName && chapterName.trim() && chapterName !== "this competence"
       ? chapterName.trim()
@@ -164,20 +235,20 @@ export default defineEventHandler(async (event) => {
 REMINDER: You are currently helping with the chapter/competence: "${chapterName}". You MUST ONLY answer questions related to this specific chapter.`;
   }
 
-  // --------------------------------------
+  // Convert messages to CoreMessage format (handles both UIMessage and simple formats)
+  const coreMessages = convertMessagesToCore(messages);
+
   // Create Model Input
-  // --------------------------------------
   const modelInput = {
     model: openai(modelName),
     messages: [
       { role: "system", content: systemPrompt },
-      ...convertToModelMessages(messages),
-    ],
+      ...coreMessages,
+    ] as any,
     stopWhen: stepCountIs(10),
-    tools: studentTools,
   };
 
   // Stream the response
-  const result = streamText(modelInput);
+  const result = streamText(modelInput as any);
   return result.toUIMessageStreamResponse();
 });
