@@ -1,0 +1,98 @@
+{
+    "syllabus_title": "Physics Syllabus for Ordinary Secondary Education",
+    "level": "Form I",
+    "content": [
+        {
+            "main_competence": "1.0 Demonstrate mastery of the concepts, principles and processes of Physics",
+            "specific_competence": "1.1 Describe the fundamental concepts of Physics",
+            "number_of_periods": 30,
+            "learning_activities": [
+                {
+                    "activity": "(a) Explain the basic concepts of Physics (meaning, branches, importance and its relationship with other disciplines)",
+                    "teaching_learning_methods": [
+                        "Group discussion: Guide students in manageable groups to discuss meaning of physics, basic terminologies and branches of physics",
+                        "Brainstorming: Guide students to brainstorm on importance of physics in our daily life",
+                        "Jigsaw: Guide students in manageable groups to explain the relationship of Physics with other disciplines through jigsaw"
+                    ],
+                    "assessment_criteria": "The basic concept of Physics are clearly explained",
+                    "suggested_resources": "Charts, relevant text, and online resources on basic concept of physics"
+                },
+                {
+                    "activity": "(b) Describe measurement in Physics (units, instruments, and accuracy)",
+                    "teaching_learning_methods": [
+                        "Group Discussion: Guide students in manageable groups to discuss concept of measurement",
+                        "ICT-Based learning: Guide students to explain measurement units and instruments through simulation",
+                        "Experimentation: Guide students to measure various physical quantities using appropriate instruments"
+                    ],
+                    "assessment_criteria": "The concept of measurement is described clearly",
+                    "suggested_resources": "Measuring instruments, charts/models, and online resources on measurement"
+                },
+                {
+                    "activity": "(c) Describe motion (distance, displacement, speed, velocity, and acceleration)",
+                    "teaching_learning_methods": [
+                        "Field visit: Guide students to observe different types of motion in their environment",
+                        "Group Discussion: Guide students in manageable groups to discuss the concepts of motion",
+                        "ICT-Based learning: Guide students to explain motion concepts through simulation"
+                    ],
+                    "assessment_criteria": "Motion concepts are described clearly",
+                    "suggested_resources": "Motion charts/models, relevant equipment, and online resources on motion"
+                }
+            ]
+        },
+        {
+            "main_competence": "2.0 Apply Physics concepts to solve problems",
+            "specific_competence": "2.1 Solve problems involving motion and forces",
+            "number_of_periods": 35,
+            "learning_activities": [
+                {
+                    "activity": "(a) Describe forces and their effects",
+                    "teaching_learning_methods": [
+                        "Group discussion: Guide students to discuss types of forces and their effects",
+                        "Experimentation: Guide students to demonstrate effects of forces",
+                        "ICT-Based learning: Guide students to visualize forces through simulation"
+                    ],
+                    "assessment_criteria": "Forces and their effects are described clearly",
+                    "suggested_resources": "Force demonstration equipment, charts, and online resources"
+                },
+                {
+                    "activity": "(b) Describe energy and its forms",
+                    "teaching_learning_methods": [
+                        "Brainstorming: Guide students to brainstorm on different forms of energy",
+                        "Group Discussion: Guide students to discuss energy transformation",
+                        "Project: Guide students to identify energy forms in their environment"
+                    ],
+                    "assessment_criteria": "Energy and its forms are described clearly",
+                    "suggested_resources": "Energy demonstration equipment, charts, and online resources"
+                }
+            ]
+        },
+        {
+            "main_competence": "3.0 Conduct Physics investigations",
+            "specific_competence": "3.1 Demonstrate mastery of basic skills for conducting Physics investigations",
+            "number_of_periods": 25,
+            "learning_activities": [
+                {
+                    "activity": "(a) Describe the basic skills for conducting Physics experiments",
+                    "teaching_learning_methods": [
+                        "Group discussion: Guide students to visit physics laboratory to identify common apparatus and equipment",
+                        "Experimentation: Guide students to perform activities that involve observation and measurement"
+                    ],
+                    "assessment_criteria": "Basic skills for conducting Physics experiments are correctly described",
+                    "suggested_resources": "Physics laboratory equipment, online resources on experimental skills"
+                },
+                {
+                    "activity": "(b) Carry out investigations related to motion and forces",
+                    "teaching_learning_methods": [
+                        "Experimentation: Guide students to carry out investigations on motion and forces"
+                    ],
+                    "assessment_criteria": "Investigations related to motion and forces are carried out correctly",
+                    "suggested_resources": "Variety of equipment and apparatus, online resources on motion and forces"
+                }
+            ]
+        }
+    ]
+}
+
+
+
+

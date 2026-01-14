@@ -1,0 +1,124 @@
+{
+    "syllabus_title": "Biology Syllabus for Ordinary Secondary Education",
+    "level": "Form I",
+    "content": [
+        {
+            "main_competence": "1.0 Demonstrate mastery of the concepts, principles and processes of Biology",
+            "specific_competence": "1.1 Describe the physiological, anatomical and ecological processes of living organisms",
+            "number_of_periods": 27,
+            "learning_activities": [
+                {
+                    "activity": "(a) Explain the basic concepts of Biology (meaning, branches, basic terminologies, importance and its relationship with other disciplines)",
+                    "teaching_learning_methods": [
+                        "Group discussion: Guide students in manageable groups to discuss meaning of biology, basic biological terminologies and branches of biology",
+                        "Brainstorming: Guide students to brainstorm on importance of biology in our life",
+                        "Jigsaw: Guide students in manageable groups, to explain the relationship of Biology with other disciplines through jigsaw"
+                    ],
+                    "assessment_criteria": "The basic concept of Biology are clearly explained",
+                    "suggested_resources": "Charts, relevant text, and online resources on basic concept of biology"
+                },
+                {
+                    "activity": "(b) Describe a cell (meaning, types, structures and functions)",
+                    "teaching_learning_methods": [
+                        "Group Discussion: Guide students in manageable groups to discuss concept of cell",
+                        "ICT-Based learning: Guide students to explain cell structures and cell differentiation through simulation",
+                        "Experimentation: Guide students to prepare microscope slides of a plant and animal cell"
+                    ],
+                    "assessment_criteria": "The concept of cell is described clearly",
+                    "suggested_resources": "Cells charts/models, light microscope, slide covers, microscope slides, and cells online resources"
+                },
+                {
+                    "activity": "(c) Describe nutrition in plants (photosynthesis, leaf structure and mineral requirements)",
+                    "teaching_learning_methods": [
+                        "Field visit: Guide students to collect different plant leaves around the school compound to observe and explain the external structure of leaves",
+                        "Group Discussion: Guide students in manageable groups to discuss the concept of nutrition in plants, internal structure of a leaf and how photosynthesis occurs in the leaf",
+                        "Guest speaker: Invite guest speaker (Agricultural extension officer) to share with students on mineral requirements in plants"
+                    ],
+                    "assessment_criteria": "Nutrition in plants is described clearly",
+                    "suggested_resources": "Relevant equipment and apparati, heat sources, water, relevant chemicals and reagents, leaves, pond weeds, nutrition in plants models/charts, and nutrition in plants online resources"
+                }
+            ]
+        },
+        {
+            "main_competence": "2.0 Communicating using scientific biological terminologies",
+            "specific_competence": "2.1 Demonstrate mastery of scientific biological terminologies",
+            "number_of_periods": 28,
+            "learning_activities": [
+                {
+                    "activity": "(a) Explain the concept and systems of classification (meaning importance of classification, rules of scientific naming of organisms, artificial and natural classification systems)",
+                    "teaching_learning_methods": [
+                        "Field visit: Guide students to collect various living things around the school compound and group all the items according to their similarities",
+                        "Brainstorming: Guide students to brainstorm on the concept of classification",
+                        "Group Discussion: Guide students in manageable groups to discuss systems of classification and scientific rules of naming organisms",
+                        "Project: Guide students to assign scientific names to organisms and label trees around their school environment"
+                    ],
+                    "assessment_criteria": "Concept and systems of classification explained clearly",
+                    "suggested_resources": "Variety of living organisms, classification charts, and classification online resources"
+                },
+                {
+                    "activity": "(b) Describe the major groups of organisms: (Monera, Protista, Fungi, Plantae, Animalia and Viruses)",
+                    "teaching_learning_methods": [
+                        "Field vist: Guide students in groups to collect various living organisms around the school compound which are representatives of the major groups of organisms and classify them",
+                        "Group Discussion: Guide students in manageable groups, to identify the major groups of organisms and viruses, discuss their features and economic importance"
+                    ],
+                    "assessment_criteria": "The major groups of organisms and viruses are described clearly",
+                    "suggested_resources": "Variety of living organisms, preserved specimens, charts on major groups of organisms, and classification online resources"
+                }
+            ]
+        },
+        {
+            "main_competence": "3.0 Conduct biological investigations",
+            "specific_competence": "3.1 Demonstrate mastery of basic skills for conducting biological investigations",
+            "number_of_periods": 40,
+            "learning_activities": [
+                {
+                    "activity": "(a) Describe the basic skills for conducting biological experiments (observation, measurement and experimentation)",
+                    "teaching_learning_methods": [
+                        "Group discussion: Guide students to visit biology laboratory to identify common apparatus and equipment used in biological experiments",
+                        "Experimentation: Guide students to perform activities that involve observation, measurement and experimentation"
+                    ],
+                    "assessment_criteria": "Basic skills for conducting biological experiments are correctly described",
+                    "suggested_resources": "Basic skills for conducting biological expeiments online resources, colourful pictures, perfume, hot water, preserved specimen, live plants and animals specimens, thermometer, weighing scales, rulers, boxes, stones, variety of equipment and apparati used in conducting biological experiments"
+                },
+                {
+                    "activity": "(b) Carry out microscopic observation of a cell",
+                    "teaching_learning_methods": [
+                        "Group discussion: Guide students in manageable groups to explore procedures that are required to observe a cell under a microscope",
+                        "Laboratory practical: Guide students to observe cells of living things under light microscope"
+                    ],
+                    "assessment_criteria": "Microscopic observation of a cells carried out correctly",
+                    "suggested_resources": "Light microscope, slide covers, microscope slide, online resources on microscopic observation of a cell and relevant apparati"
+                },
+                {
+                    "activity": "(c) Carry out investigations related to photosynthesis (conditions necessary for photosynthesis)",
+                    "teaching_learning_methods": [
+                        "Experimentation: Guide students to carry out investigations on the conditions necessary for photosynthesis"
+                    ],
+                    "assessment_criteria": "Investigations related to photosynthesis are carried out correctly",
+                    "suggested_resources": "Variety of equipment and apparati, live plant specimens, relevant chemicals, reagents and photosynthesis online resources"
+                }
+            ]
+        },
+        {
+            "main_competence": "3.0 Conduct biological investigations",
+            "specific_competence": "3.2 Prepare and present results of biological investigations",
+            "number_of_periods": 10,
+            "learning_activities": [
+                {
+                    "activity": "(a) Prepare and present a report on cell and photosynthesis investigations",
+                    "teaching_learning_methods": [
+                        "Group discussion: Guide students in groups to discuss the steps in preparation of biological investigation report",
+                        "Project: Guide students to prepare a report using the steps in preparation of a biological investigation report",
+                        "Presentation: Guide students to present a biological investigation report"
+                    ],
+                    "assessment_criteria": "Investigation report on cell and photosynthesis is prepared and presented correctly",
+                    "suggested_resources": "Relevant text on steps for scientific investigations and report writing, online resources on report writing"
+                }
+            ]
+        }
+    ]
+}
+
+
+
+

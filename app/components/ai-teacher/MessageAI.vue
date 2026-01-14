@@ -26,13 +26,7 @@
             v-html="processMathInText(part.text)"
           ></div>
 
-          <!-- Tools -->
-          <pre
-            v-if="part.type.startsWith('tool-')"
-            class="text-xs bg-gray-50 p-3 rounded-lg mt-2 overflow-x-auto border border-gray-200"
-          >
-            {{ JSON.stringify(part, null, 2) }}
-          </pre>
+          <!-- Tool calls are hidden from the user - do not display them -->
         </div>
       </div>
     </div>
