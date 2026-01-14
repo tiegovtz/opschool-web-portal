@@ -112,34 +112,34 @@
             </div>
 
             <!-- Quiz Results List -->
-            <div v-if="quizResults.length > 0">
+          <div v-if="quizResults.length > 0">
               <h3 class="text-lg font-semibold text-gray-800 mb-4">Quiz Results</h3>
               <ul class="space-y-3">
-                <li
-                  v-for="(result, index) in quizResults"
-                  :key="`quiz-${index}`"
-                  :class="[
+              <li
+                v-for="(result, index) in quizResults"
+                :key="`quiz-${index}`"
+                :class="[
                     'p-4 rounded-lg border transition-all',
-                    result.isCorrect
+                  result.isCorrect
                       ? 'bg-green-50 border-green-200 hover:bg-green-100'
                       : 'bg-red-50 border-red-200 hover:bg-red-100',
-                  ]"
-                >
+                ]"
+              >
                   <div class="flex items-start justify-between mb-2">
                     <div class="flex-1">
                       <div class="font-medium text-gray-900 mb-1">
-                        {{ result.interaction.question }}
-                      </div>
+                  {{ result.interaction.question }}
+                </div>
                       <div class="text-sm text-gray-600 mt-1">
                         <span class="font-medium">Your answer:</span> 
                         <span class="ml-1">{{ getAnswerLabel(result.interaction, result.selectedAnswer) }}</span>
-                        <span
-                          :class="result.isCorrect ? 'text-green-700' : 'text-red-700'"
-                          class="ml-2 font-semibold"
-                        >
+                  <span
+                    :class="result.isCorrect ? 'text-green-700' : 'text-red-700'"
+                    class="ml-2 font-semibold"
+                  >
                           ({{ result.isCorrect ? '✓ Correct' : '✗ Incorrect' }})
-                        </span>
-                      </div>
+                  </span>
+                </div>
                     </div>
                     <div 
                       :class="result.isCorrect ? 'text-green-600' : 'text-red-600'"
@@ -156,9 +156,9 @@
                   <div class="text-xs text-gray-500 mt-2">
                     Answered at {{ formatTime(result.timestamp) }}
                   </div>
-                </li>
-              </ul>
-            </div>
+              </li>
+            </ul>
+          </div>
 
             <!-- Empty State -->
             <div v-else class="text-center py-8">
@@ -170,7 +170,7 @@
               <p class="text-gray-600 font-medium mb-1">No quiz results yet</p>
               <p class="text-sm text-gray-500">Complete interactive quizzes in the video to see your assessment here</p>
             </div>
-          </div>
+        </div>
       </div>
     </div>
     </NuxtLayout>

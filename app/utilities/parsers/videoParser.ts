@@ -11,9 +11,9 @@ const videoParser = (query: string): string => {
         return `
             <div class="video-container-wrapper my-4">
                 <video id='video-player' ${videoAttrs} controls controlslist="nodownload" oncontextmenu="return false;" preload="auto" aria-label="Educational video content">
-                  <source src="${`/api/video/`+sourceSrc}" type="video/mp4">
-                  Your browser does not support the video tag.
-                </video>
+              <source src="${`/api/video/`+sourceSrc}" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
                 <div class="flex items-center justify-end mt-3">
                     <a 
                         href="/interactive-video?videoId=${videoId}" 
