@@ -18,10 +18,10 @@ const apiDocs = {
     resetPassword: `${baseURL}/auth/reset-password`,
     changePassword: `${baseURL}/auth/change-password`,
     userExists: `${baseURL}/auth/user-exists`,
-    
+
     // GET
     profile: `${baseURL}/auth/profile`,
-    
+
     // PATCH or PUT
     profileEdit: `${baseURL}/auth/profile/edit`,
     updateTimeSpent: `${baseURL}/auth/update-time-spent`, // Update time spent on the platform
@@ -51,8 +51,8 @@ const apiDocs = {
 
   // education level
   educationLevel: {
-    getEducationLevels: `${baseURL}/educationLevels`,
-    getEducationLevelId: `${baseURL}/educationLevels/:id`,
+    getEducationLevels: `${baseURL}/education-levels`,
+    getEducationLevelId: `${baseURL}/education-levels/:id`,
   },
 
   // languages API
@@ -92,7 +92,7 @@ const apiDocs = {
     topicViewedRead: `${baseURL}/topics/{id}/read`,
   },
 
-  // VIDEO API 
+  // VIDEO API
   videos: {
     getStream: `${baseURL}/video-stream/`,
     getVideos: `${baseURL}/videos`,
@@ -107,10 +107,10 @@ const apiDocs = {
     getProgress: `${baseURL}/progress`,
     getProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
     putProgresschapterId: `${baseURL}/progress/chapters/{chapterId}`,
-    putProgresschapterIdVideoProgress : `${baseURL}/progress/chapters/{chapterId}/video-progress`,
+    putProgresschapterIdVideoProgress: `${baseURL}/progress/chapters/{chapterId}/video-progress`,
     putProgresschapterIdNotesProgress: `${baseURL}/progress/chapters/{chapterId}/notes-progress`,
     postProgresschapterIdExperimentAttempts: `${baseURL}/progress/chapters/{chapterId}/experiment-attempts`,
-    postQuizAssessment:`${baseURL}/progress/chapters/{chapterId}/assessment-attempts`,
+    postQuizAssessment: `${baseURL}/progress/chapters/{chapterId}/assessment-attempts`,
     getProgressSubjectsSubjectId: `${baseURL}/progress/subjects/{subjectId}`,
     getProgressTopicsTopicId: `${baseURL}/progress/topics/{topicId}`,
   },
@@ -133,6 +133,16 @@ const apiDocs = {
     getSearch: `${baseURL}/search`,
     aiSearch: `/api/ai/search`, // Nuxt server API route
   },
-}
+
+  // School
+  school: {
+    get:`${baseURL}/schools`,
+    getSchoolRegions: `${baseURL}/schools/regions`,
+    getSchoolDistricts: (region: string): string => `${baseURL}/schools/districts/${region}`,
+    // getSchools: `${baseURL}/schools`,
+    // getSchoolId: `${baseURL}/schools/:id`,
+    // searchSchools: `${baseURL}/schools/search`,
+  },
+};
 
 export default apiDocs;

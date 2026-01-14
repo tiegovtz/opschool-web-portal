@@ -1,7 +1,6 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from "axios";
 import { useSessionsSetup } from "../../../../composable/usesSessions.js";
 import apiDocs from '~/utilities/apiDocs.js';
 import { filterContentBySearch } from '~/utilities/filterJson.js';
@@ -256,6 +255,7 @@ const searchQuery = ref('');
 const selectedCategory = ref(null);
 const selectedSubject = ref(null);
 const selectedClassItem = ref(null);
+const modalContent = ref(null);
 const dialog = ref(false);
 const toasts = ref([]);
 const isValid = ref(false);
@@ -397,6 +397,25 @@ const submit = async () => {
 
 const selectClass = (classItem) => {
   selectedClassItem.value = classItem;
+  nextTick(() => {
+    try {
+      if (modalContent.value && typeof modalContent.value.focus === 'function') {
+        modalContent.value.focus();
+      } else {
+        const el = document.querySelector('.modal-content');
+        if (el) el.focus();
+      }
+    } catch (e) {
+      // ignore
+    }
+  });
+};
+
+const focusMain = () => {
+  nextTick(() => {
+    const el = document.getElementById('main-content');
+    if (el) el.focus();
+  });
 };
 
 const closeModal = () => {
@@ -413,11 +432,15 @@ const toggleSubscription = (classItem) => {
 
 // const joinClass = (selectedClassItem) => {
 //   router.push({ path: '/main/live-view' });
-// };
+//  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'"> 
+//};
 
 const joinClass = (selectedClassItem) => {
   localStorage.setItem('classData', JSON.stringify(selectedClassItem));
-  router.push({ path: '/smart-class/screen/live-view' });
+  router.push({
+    path: '/smart-class/screen/live-view',
+    query: router.currentRoute.value.fullPath.includes('header-less') ? { 'header-less': 'true' } : {}
+  });
 };
 
 
@@ -496,220 +519,6 @@ const selectedSubjectName = computed(() => {
 
 
 <template>
-  <!-- <v-dialog v-model="dialog" max-width="800px" scrollable> -->
-  <!-- <v-container class="upload-container" fluid>
-      <v-row justify="center">
-        <v-col cols="12" md="10" lg="8">
-          <v-card class="upload-card" elevation="0">
-            <v-card-text class="pa-8">
-              <v-form ref="uploadForm" v-model="formValid" lazy-validation> -->
-  <!-- Class Title -->
-  <!-- <v-text-field
-                    v-model="classData.title"
-                    label="Class Title"
-                    placeholder="Enter an engaging title for your class"
-                    variant="outlined"
-                    :rules="titleRules"
-                    class="custom-input mb-6"
-                    prepend-inner-icon="mdi-book-open-variant"
-                    required
-                ></v-text-field> -->
-
-  <!-- Instructor Name -->
-  <!-- <v-text-field
-                    v-model="classData.instructor"
-                    label="Instructor Name"
-                    placeholder="Your name or instructor name"
-                    variant="outlined"
-                    :rules="instructorRules"
-                    class="custom-input mb-6"
-                    prepend-inner-icon="mdi-account-tie"
-                    required
-                ></v-text-field> -->
-
-  <!-- Class Category -->
-  <!-- <v-select
-                    v-model="classData.category"
-                    :items="categories"
-                    label="Class Category"
-                    placeholder="Select a category for your class"
-                    variant="outlined"
-                    :rules="categoryRules"
-                    class="custom-select mb-6"
-                    prepend-inner-icon="mdi-tag"
-                    required
-                ></v-select> -->
-
-  <!-- Class Duration -->
-  <!-- <v-select
-                    v-model="classData.duration"
-                    :items="durations"
-                    label="Class Duration"
-                    placeholder="Select class duration"
-                    variant="outlined"
-                    :rules="durationRules"
-                    class="custom-select mb-6"
-                    prepend-inner-icon="mdi-clock-outline"
-                    required
-                ></v-select> -->
-
-  <!-- Class Description -->
-  <!-- <v-textarea
-                    v-model="classData.description"
-                    label="Class Description"
-                    placeholder="Describe what students will learn in this class..."
-                    variant="outlined"
-                    :rules="descriptionRules"
-                    class="custom-textarea mb-6"
-                    prepend-inner-icon="mdi-text"
-                    rows="4"
-                    required
-                ></v-textarea> -->
-
-  <!-- Video Upload Section -->
-  <!-- <div class="upload-section mb-6">
-                  <h3 class="upload-section-title">
-                    <v-icon class="mr-2">mdi-video</v-icon>
-                    Class Video
-                  </h3>
-                  <v-file-input
-                      v-model="classData.video"
-                      label="Upload Video File"
-                      placeholder="Choose video file"
-                      accept="video/*"
-                      variant="outlined"
-                      :rules="videoRules"
-                      class="custom-file-input"
-                      prepend-icon=""
-                      prepend-inner-icon="mdi-cloud-upload"
-                      show-size
-                      @change="handleVideoUpload"
-                  > -->
-  <!-- <template #selection="{ fileNames }">
-                      <template v-for="fileName in fileNames" :key="fileName">
-                        <v-chip
-                            class="file-chip"
-                            color="primary"
-                            variant="flat"
-                            prepend-icon="mdi-video"
-                        >
-                          {{ fileName }}
-                        </v-chip>
-                      </template>
-</template>
-</v-file-input> -->
-
-  <!-- Video Preview -->
-  <!-- <div v-if="videoPreview" class="video-preview mt-4">
-                    <video
-                        :src="videoPreview"
-                        controls
-                        class="preview-video"
-                        preload="metadata"
-                    ></video>
-                  </div>
-                </div> -->
-
-  <!-- Thumbnail Upload Section -->
-  <!-- <div class="upload-section mb-6">
-                  <h3 class="upload-section-title">
-                    <v-icon class="mr-2">mdi-image</v-icon>
-                    Class Thumbnail
-                  </h3>
-                  <v-file-input
-                      v-model="classData.thumbnail"
-                      label="Upload Thumbnail Image"
-                      placeholder="Choose thumbnail image"
-                      accept="image/*"
-                      variant="outlined"
-                      :rules="thumbnailRules"
-                      class="custom-file-input"
-                      prepend-icon=""
-                      prepend-inner-icon="mdi-image-plus"
-                      show-size
-                      @change="handleThumbnailUpload"
-                  > -->
-  <!-- <template #selection="{ fileNames }">
-                      <template v-for="fileName in fileNames" :key="fileName">
-                        <v-chip
-                            class="file-chip"
-                            color="secondary"
-                            variant="flat"
-                            prepend-icon="mdi-image"
-                        >
-                          {{ fileName }}
-                        </v-chip>
-                      </template>
-                    </template>
-                  </v-file-input> -->
-
-  <!-- Thumbnail Preview -->
-  <!-- <div v-if="thumbnailPreview" class="thumbnail-preview mt-4">
-                    <img
-                        :src="thumbnailPreview"
-                        alt="Thumbnail preview"
-                        class="preview-thumbnail"
-                    />
-                  </div>
-                </div> -->
-
-  <!-- Upload Progress -->
-  <!-- <v-progress-linear
-                    v-if="uploading"
-                    :model-value="uploadProgress"
-                    color="primary"
-                    height="8"
-                    class="mb-6"
-                    striped
-                ></v-progress-linear> -->
-
-  <!-- Action Buttons -->
-  <!-- <div class="upload-actions">
-                  <v-btn
-                      variant="outlined"
-                      size="large"
-                      class="secondary-btn mr-4"
-                      @click="resetForm"
-                  >
-                    <v-icon start>mdi-refresh</v-icon>
-                    Reset
-                  </v-btn> -->
-
-  <!-- <v-btn
-                      color="primary"
-                      size="large"
-                      class="primary-btn"
-                      :loading="uploading"
-                      :disabled="!formValid"
-                      @click="submitForm"
-                  >
-                    <v-icon start>mdi-cloud-upload</v-icon>
-                    {{ uploading ? 'Uploading...' : 'Upload Class' }}
-                  </v-btn>
-                </div>
-              </v-form>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-    </v-container>
-
-
-  </v-dialog> -->
-  <!-- Success Snackbar -->
-  <!-- <v-snackbar
-      v-model="snackbar.show"
-      :color="snackbar.color"
-      :timeout="4000"
-      location="top right"
-      elevation="6"
-  >
-    <div class="d-flex align-center">
-      <v-icon class="mr-2">{{ snackbar.icon }}</v-icon>
-      {{ snackbar.message }}
-    </div>
-  </v-snackbar> -->
-
   <!-- Dialog Container  -->
   <div  v-if="dialog" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 overflow-auto">
     <div
@@ -813,13 +622,16 @@ const selectedSubjectName = computed(() => {
 
   <!-- Snackbar -->
   <div v-if="snackbar.show"
+    role="status" aria-live="polite" aria-atomic="true"
     :class="['fixed top-4 right-4 px-4 py-3 rounded shadow text-white flex items-center gap-2', snackbar.color === 'success' ? 'bg-green-600' : 'bg-red-600']">
-    <i :class="['mdi', snackbar.icon]"></i> {{ snackbar.message }}
+    <i :class="['mdi', snackbar.icon]"></i>
+    <span :aria-label="snackbar.message">{{ snackbar.message }}</span>
   </div>
 
-  <NuxtLayout name="home-layout">
+  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
+    <a class="skip-link" href="#main-container" @click.prevent="focusMain">Skip to main content</a>
 
-    <div class="live-classes">
+    <div id="main-container" tabindex="-1" class="live-classes" role="main" aria-label="Recorded sessions main content">
       <!-- Header Section -->
       <div class="header">
         <div class="header-content">
@@ -879,8 +691,13 @@ const selectedSubjectName = computed(() => {
       <!-- Classes Grid -->
       <div class="classes-container">
         <div class="classes-grid">
-          <div v-for="classItem in filteredClasses" :key="classItem.id" class="class-card"
-            @click="selectClass(classItem)">
+            <div v-for="classItem in filteredClasses" :key="classItem.id" class="class-card"
+              role="button"
+              :aria-label="`Open details for ${classItem.title}`"
+              tabindex="0"
+              @click="selectClass(classItem)"
+              @keydown.enter.prevent="selectClass(classItem)"
+              @keydown.space.prevent="selectClass(classItem)">
             <div class="card-image">
               <img :src="classItem.thumbnail" :alt="classItem.title" />
               <div class="card-overlay">
@@ -891,13 +708,15 @@ const selectedSubjectName = computed(() => {
                 <div class="duration-badge">{{ classItem.duration }}</div>
               </div>
               <div class="hover-actions">
-                <button class="action-btn play-btn">
+                <button class="action-btn play-btn" :aria-label="`Play ${classItem.title}`">
                   <svg viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </button>
                 <button class="action-btn subscribe-btn" @click.stop="toggleSubscription(classItem)"
-                  :class="{ subscribed: classItem.isSubscribed }">
+                  :class="{ subscribed: classItem.isSubscribed }"
+                  :aria-pressed="classItem.isSubscribed"
+                  :aria-label="classItem.isSubscribed ? `Unsubscribe from ${classItem.title}` : `Subscribe to ${classItem.title}`">
                   <svg viewBox="0 0 24 24">
                     <path
                       d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -923,8 +742,8 @@ const selectedSubjectName = computed(() => {
 
       <!-- Class Modal -->
       <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal">
-        <div class="modal-content" @click.stop>
-          <button class="close-btn" @click="closeModal">
+            <div ref="modalContent" class="modal-content" @click.stop role="dialog" :aria-label="selectedClassItem?.title" tabindex="-1">
+            <button class="close-btn" @click="closeModal" aria-label="Close dialog">
             <svg viewBox="0 0 24 24">
               <path d="M6 6l12 12M6 18L18 6" />
             </svg>
@@ -990,6 +809,28 @@ const selectedSubjectName = computed(() => {
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
   color: white;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Skip link - hidden but visible on focus */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  color: #111;
+  z-index: 2000;
+  border-radius: 4px;
+  text-decoration: none;
 }
 
 /* Header Styles */
@@ -1739,6 +1580,12 @@ const selectedSubjectName = computed(() => {
 .action-btn:focus {
   outline: 2px solid #667eea;
   outline-offset: 2px;
+}
+
+.primary-btn:focus,
+.secondary-btn:focus {
+  outline: 3px solid #ffd93d;
+  outline-offset: 3px;
 }
 
 /* Accessibility */

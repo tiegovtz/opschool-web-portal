@@ -26,10 +26,9 @@ import { fetchAsyncData } from "~/composable/useAsyncFetch";
 import type { User } from "~/types/user.interface";
 import type { Subjects } from "~/types/subject.interface";
 import type { tabs } from "~/types/types.data";
-import { number } from "zod";
 import type { GroupedData } from "~/types/grouped.data";
 import type { Experiment } from "~/types/experiment.interface";
-import type { Videos } from "~/types/video.iunterface";
+import type { Videos } from "~/types/video.interface";
 import type { Audios } from "~/types/audio.interface";
 import type { Topic } from "~/types/topic.interface";
 import { getTabLabel } from "~/utilities/get.labels";
@@ -110,10 +109,11 @@ const { progress, isLoading } = useLoadingIndicator();
 
 // Checking Tab if is corresponde to route
 if (tab) {
-  tab == "learn-activities" ? (activeTab.value = "learn-activities") : "";
-  tab == "video" ? (activeTab.value = "video") : "";
-  tab == "audio" ? (activeTab.value = "audio") : "";
-  tab == "interactive-contents" ? (activeTab.value = "interactive-contents") : "";
+  if (tab == "learn-activities") activeTab.value = "learn-activities";
+  if (tab == "video") activeTab.value = "video";
+  if (tab == "class-videos") activeTab.value = "class-videos";
+  if (tab == "audio")activeTab.value = "audio";
+  if (tab == "interactive-contents")activeTab.value = "interactive-contents";
 }
 
 // First, fix the sliceData function
@@ -244,7 +244,7 @@ const fetchData = async (params?: any) => {
   }
 
   try {
-     announcement.value = `loading  ${getTabLabel(activeTab.value)} please wait.`;
+    announcement.value = `loading  ${getTabLabel(activeTab.value)} please wait.`;
     const { data: response, status: fetchStatus } = await fetchAsyncData(`tab-${tab}-${subjectId.value ? subjectId.value : ''}`, () => $fetch(url, {
       params: {
         ...params,
@@ -282,7 +282,7 @@ const fetchData = async (params?: any) => {
   } catch (err) {
     status.value = "error";
     error.value = err;
-    announcement.value=`Error occured while fetching ${getTabLabel(activeTab.value)}`;
+    announcement.value = `Error occured while fetching ${getTabLabel(activeTab.value)}`;
   }
 };
 
@@ -402,6 +402,9 @@ watch(
         data.value = [];
       }
     }
+
+    // clear filter value on tab change
+    filterValue.value = {};
   }
 );
 
@@ -519,7 +522,7 @@ const switchTab = async (tab: tabs) => {
         </div>
 
         <!-- data are in Grid -->
-        <div class="w-full xl:w-3/4">
+        <div  class="w-full xl:w-3/4"  id="main-container" aria-label="content list" role="region" tabindex="-1">
           <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
             <LoadingIndicator :is-loading="true" />
           </div>
@@ -542,7 +545,7 @@ const switchTab = async (tab: tabs) => {
           </div>
 
           <!-- Status Success -->
-          <div id="content-container-after-login" aria-label="content list" role="region" tabindex="-1"
+          <div
             v-else-if="status == 'success' && subjectId && data && data.length > 0">
             <ClientOnly>
               <customGridOne v-if="activeTab === 'subjects'">
@@ -552,7 +555,8 @@ const switchTab = async (tab: tabs) => {
                     :subject-id="subject._id" :subject-name="subject.name" :subject-image="subject.thumbnail"
                     :subject-description="subject.description" :total-views="subject.views ?? 0"
                     :is-logged-in="userToken != null || userToken != undefined" @emit-subject-name="activeTab = $event"
-                    @emit-subject-id="subjectId = $event" />
+                    @emit-subject-id="subjectId = $event" 
+                    :alt-text="subject.alt"/>
                 </template>
               </customGridOne>
 
@@ -565,7 +569,8 @@ const switchTab = async (tab: tabs) => {
                     :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-level="level"
                     :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
                     :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress"
-                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0" />
+                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0"
+                    :alt-text="topic.alt" />
                 </template>
               </customGridOne>
 
@@ -577,7 +582,9 @@ const switchTab = async (tab: tabs) => {
                     :experiment-title="experiment.title" :experiment-description="experiment.description"
                     :experiment-type="experiment.category" :experiment-subject="experiment.subject?.name"
                     :experiment-level="experiment.level?.name" :experiment-name="experiment.name"
-                    :experiment-file-url="experiment.stepsFileUrl" />
+                    :experiment-file-url="experiment.stepsFileUrl" 
+                    :alt-text="experiment.alt"
+                    />
                 </template>
               </customGridOne>
 
@@ -590,7 +597,10 @@ const switchTab = async (tab: tabs) => {
                   <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
                     :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
                     :is-deleted="video.isDeleted" :video-description="video.description"
-                    :video-subject="video.subject?.name" :video-type="video.videoType" />
+                    :video-subject="video.subject?.name" :video-type="video.videoType"
+                    :video-level="level" :video-standard="video.level?.name"
+                    :topic-progress="video.avgProgress" :topic-viewed="video.isViewed" 
+                    :alt-text="video.alt"/>
                 </template>
               </customGridOne>
               <div v-else-if="activeTab === 'audio'">
@@ -666,7 +676,7 @@ const switchTab = async (tab: tabs) => {
       <div v-else-if="status == 'success'" class="">
         <!-- client only -->
         <ClientOnly v-if="data && data.length > 0">
-          <div class="flex flex-col w-full">
+          <div id="main-container" tabindex="-1" class="flex flex-col w-full">
             <customGridTwo v-if="filters.level !== null && filters.subject !== null">
               <template #data>
                 <!-- Topic Cards -->
@@ -678,7 +688,7 @@ const switchTab = async (tab: tabs) => {
                       : topic.views
                         ? topic.views
                         : 0
-                    " :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
+                      " :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
                   :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
               </template>
             </customGridTwo>
@@ -731,8 +741,8 @@ const switchTab = async (tab: tabs) => {
 
     <!-- announcement -->
     <!-- screen reader notifier -->
-    <div class="sr-only" aria-live="assertive" aria-atomic role="status">
+    <!-- <div class="sr-only" aria-live="assertive" aria-atomic role="status">
       {{ announcement }}
-    </div>
+    </div> -->
   </NuxtLayout>
 </template>

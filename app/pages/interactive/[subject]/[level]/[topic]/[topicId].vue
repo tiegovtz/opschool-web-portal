@@ -818,7 +818,7 @@ definePageMeta({
         @emit-quiz-score="updateChapterProgress" />
     </div>
 
-    <section v-else class="relative inline-flex w-full h-full overflow-hidden center-height">
+    <section  v-else class="relative inline-flex w-full h-full overflow-hidden center-height">
       <!-- Loading state -->
       <div v-if="chapters.status == 'pending'" class="flex items-center justify-center w-full loading content-height">
         <LoadingIndicator :is-loading="true" />
@@ -841,7 +841,7 @@ definePageMeta({
         </div>
 
         <!-- Notes loaded successfully -->
-        <div aria-live="polite" aria-label="compitence content loaded successfully"  ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
+        <div id="main-container" tabindex="-1" aria-live="polite" aria-label="compitence content loaded successfully"  ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
           class="w-full py-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between">
@@ -851,7 +851,7 @@ definePageMeta({
               :to="{
                 path: '/',
                 query: {
-                  tab: 'interactive',
+                  tab: 'interactive-contents',
                   subject: topicLevel,
                   class: topicStandard,
                 },
@@ -943,7 +943,7 @@ definePageMeta({
         <div tabindex="0"
           class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2 lg:static bg-white">
           <div class="flex items-center justify-between mb-4">
-            <h1 aria-label="Activity list" class="pt-5 pl-4 font-medium capitalize text-medium">Activities</h1>
+            <h1 aria-label="Activity list" class="pt-5 pl-4 font-medium  text-medium">Learning contents</h1>
             <!-- toggle menu -->
             <div
               class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"

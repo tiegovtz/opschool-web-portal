@@ -1,6 +1,9 @@
 <template>
-  <NuxtLayout name="home-layout">
-    <div class="smart-class-entry min-h-screen bg-gradient-to-br from-slate-900 via-[#2a4469] to-slate-900 text-white font-sans">
+  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ? ('normal' as any) : ('home-layout' as any)">
+    <div ref="pageRoot" id="main-container" tabindex="-1" class="smart-class-entry min-h-screen bg-gradient-to-br from-slate-900 via-[#2a4469] to-slate-900 text-white font-sans">
+
+      <!-- Skip link for keyboard users -->
+      <a href="#main-content" class="skip-link">Skip to main content</a>
 
       <!-- Header Section -->
       <div class="relative h-[50vh] flex items-center justify-center bg-gradient-to-r from-[#56ade8] to-purple-600 overflow-hidden">
@@ -19,7 +22,7 @@
       </div>
 
       <!-- Main Content -->
-      <div class="container mx-auto px-4 py-12 max-w-7xl">
+      <div id="main-content" role="main" tabindex="-1" class="container mx-auto px-4 py-12 max-w-7xl">
         <!-- Back Button -->
         <NuxtLink
             v-if="canGoBack"
@@ -31,13 +34,17 @@
         </NuxtLink>
 
         <!-- Navigation Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12" role="list" aria-label="Smart Class navigation">
           <NuxtLink
               v-for="(item, index) in items"
+              @click="useNavigationStore().setGoBack($route.fullPath)"
               :key="index"
-              :to="item.value === 'smart-class' ? '/smart-class' : `/smart-class/screen/${item.value}`"
+              :to="item.value === 'smart-class' ? '/smart-class' : `/smart-class/screen/${item.value}${$router.currentRoute.value.fullPath.includes('header-less') ?'?header-less':''}`"
               class="nav-card group relative bg-[#56ade8]/10 backdrop-blur-lg rounded-3xl overflow-hidden transition-all duration-500 hover:-translate-y-4 hover:shadow-2xl border border-white/10 min-h-[280px] animate-slide-in"
               :style="{ animationDelay: `${index * 150}ms` }"
+              role="listitem"
+              :aria-label="`${item.title} - ${item.description}`"
+              tabindex="0"
           >
             <div class="absolute inset-0 bg-gradient-to-br from-[#56ade8]/30 to-purple-600/30 opacity-50 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"></div>
 
@@ -95,9 +102,9 @@
   </NuxtLayout>
 </template>
 
-<script setup>
-import {useRouter} from "vue-router";
+<script setup lang="ts">
 import {onMounted, ref} from "vue";
+import { useNavigationStore } from "~/stores/navigationStore";
 // Define meta info about page
 useHead({
   title: "Smart Class Hub - TIE Interactive Learning",
@@ -116,19 +123,8 @@ onMounted(() => {
   canGoBack.value = window.history.length > 1
 })
 
-const goBack = () => {
-  navigateTo(-1) // Nuxt's navigateTo function
-}
 
 const items = [
-  // {
-  //   title: 'Dashboard',
-  //   value: 'smart-class',
-  //   icon: 'mdi:view-dashboard',
-  //   description: 'Overview of your learning progress and achievements',
-  //   notifications: null,
-  //   isLive: false
-  // },
   {
     title: 'Live Classes',
     value: 'live-classes',
@@ -137,14 +133,6 @@ const items = [
     notifications: 3,
     isLive: true
   },
-  // {
-  //   title: 'Upcoming Classes',
-  //   value: 'upcoming-classes',
-  //   icon: 'mdi:calendar-clock',
-  //   description: 'View your scheduled learning sessions and events',
-  //   notifications: 5,
-  //   isLive: false
-  // },
   {
     title: 'SomaKwanza TV',
     value: 'live-tv',
@@ -181,7 +169,7 @@ const stats = [
   }
 ]
 
-const navigateTo = (path) => {
+const navigateTo = (path:string) => {
   if (path !== 'dashboard') {
     navigateTo(`/main/${path}`)
   }
@@ -245,7 +233,7 @@ const navigateTo = (path) => {
   .nav-card {
     border: 2px solid white;
   }
-
+header
   .bg-white\/10 {
     background-color: rgba(255, 255, 255, 0.2);
   }

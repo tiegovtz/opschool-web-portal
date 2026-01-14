@@ -1,5 +1,8 @@
 <script setup>
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import apiDocs from './utilities/api-docs'
+import { useBackspaceNavigation } from '@/composables/useBackspaceNavigation'
+import { useGlobalFocus } from '@/composables/useGlobalFocus'
 import {
   isGreaterToXL,
   isGreaterToLG,
@@ -100,6 +103,7 @@ if (import.meta.client) {
     }, 1000);
 
     webVisitor();
+    useGlobalFocus();
   })
 
   onBeforeUnmount(() => {
@@ -113,10 +117,13 @@ if (import.meta.client) {
     clearInterval(activityInterval)
     clearInterval(timeTick)
   });
+
 }
 </script>
 
 <template>
+
+  <a class="skip-link" href="#main-content" @click.prevent="focusMain">Skip to main content</a>
 
   <NuxtLayout>
     <NuxtLoadingIndicator color="#56ade8" errorColor="#f00" />
@@ -124,3 +131,37 @@ if (import.meta.client) {
   </NuxtLayout>
 
 </template>
+
+<script setup>
+import { nextTick } from 'vue'
+const focusMain = () => {
+  nextTick(() => {
+    const el = document.querySelector('[role="main"]') || document.getElementById('main-content')
+    if (el && typeof el.focus === 'function') el.focus()
+  })
+}
+</script>
+
+<style>
+/* Global skip link */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  color: #111;
+  z-index: 2000;
+  border-radius: 4px;
+  text-decoration: none;
+}
+</style>

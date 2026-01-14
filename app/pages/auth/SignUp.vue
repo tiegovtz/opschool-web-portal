@@ -9,6 +9,7 @@ import { CustomDropDownList } from "#components";
 
 // input tabs control
 const inputTabs = ref("tabOne");
+const headingRef = ref(null);
 
 const usersignUp = reactive({
   type: "",
@@ -55,10 +56,25 @@ const usersignUp = reactive({
   },
 });
 
+const normalizeUserTypeKey = (type) => {
+  const value = (type || "").toString().trim().toLowerCase().replace(/\s+/g, "");
+  return value === "educationstackeholder" ? "educationstakeholder" : value;
+};
+
+const toBackendUserType = (type) => {
+  const key = normalizeUserTypeKey(type);
+  if (key === "student") return "Student";
+  if (key === "teacher") return "Teacher";
+  if (key === "educationstakeholder") return "EducationStakeholder";
+  return type?.toString().trim() || "";
+};
+
 const signUp = async () => {
   if (usersignUp.userOrgRole.toLowerCase().trim() == 'others' && usersignUp.otherRole) {
     usersignUp.userOrgRole = usersignUp.otherRole
   }
+  const typeKey = normalizeUserTypeKey(usersignUp.type);
+  const backendType = toBackendUserType(usersignUp.type);
 
   if (
     usersignUp.age &&                                     // Age must be greater than 0
@@ -73,14 +89,14 @@ const signUp = async () => {
     usersignUp.district?.trim() &&                        // District is required
 
     // If not an "Education Stakeholder", user must provide their school
-    (usersignUp.type.toLowerCase().trim() !== 'education stackeholder' && usersignUp.school?.trim()) ||
+    (typeKey !== 'educationstakeholder' && usersignUp.school?.trim()) ||
 
     // If user is an "Education Stakeholder", they must provide organization and role
-    (usersignUp.type.toLowerCase().trim() === 'education stackeholder' &&
+    (typeKey === 'educationstakeholder' &&
       usersignUp.organization?.trim() && usersignUp.userOrgRole?.trim()) &&
 
     // Either user is not "Student"  they must provide both email and phone
-    (usersignUp.type.toLowerCase().trim() !== 'student' && (usersignUp.email?.trim() && usersignUp.phone?.trim()))
+    (typeKey !== 'student' && (usersignUp.email?.trim() && usersignUp.phone?.trim()))
   ) {
 
     // 
@@ -90,30 +106,32 @@ const signUp = async () => {
 
     // submit data
     await axios.post(apiDocs.auth.signUp,
-      usersignUp.type.toLowerCase().trim() == 'student' ?
+      typeKey == 'student' ?
         {
           name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
           password: usersignUp.password,
-          type: usersignUp.type,
+          type: backendType,
           gender: usersignUp.gender,
           region: usersignUp.region,
           school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
           district: usersignUp.district,
           ageGroup: usersignUp.age,
           terms: true,
+          roles: ['Student'],
           username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
         }
         :
-        usersignUp.type.toLowerCase().trim() == 'teacher' ?
+        typeKey == 'teacher' ?
 
           {
             name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
             password: usersignUp.password,
             phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
-            type: usersignUp.type,
+            type: backendType,
             email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
             gender: usersignUp.gender,
             region: usersignUp.region,
+            roles: ['Teacher'],
             school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
             district: usersignUp.district,
             ageGroup: usersignUp.age,
@@ -124,16 +142,17 @@ const signUp = async () => {
             name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
             password: usersignUp.password,
             phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
-            type: usersignUp.type,
+            type: backendType,
             email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
             gender: usersignUp.gender,
             region: usersignUp.region,
             school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
             district: usersignUp.district,
             ageGroup: usersignUp.age,
+            roles: ['EducationStakeholder'],
             terms: true,
             organization: usersignUp.organization,
-            role: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
+            stakeholder: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
           }
     )
       .then((response) => {
@@ -150,7 +169,7 @@ const signUp = async () => {
           usersignUp.controller.isSent = 'failed';
 
           // Check both student and Stakeholder and teacher already Exist
-          if (usersignUp.type.toLowerCase().trim() === 'student') {
+          if (typeKey === 'student') {
             usersignUp.controller.feedback = messages.error.auth.userExist;
           } else {
             usersignUp.controller.feedback = messages.error.auth.accountExists;
@@ -464,6 +483,7 @@ watch(
     }
   }
 );
+
 // confirm password watching
 watch(
   () => usersignUp.confirm_password,
@@ -521,7 +541,7 @@ const switchTab = (tabName) => {
 
     // school for student and teacher
     if ((!usersignUp.school || usersignUp.school.trim() == " ") &&
-      usersignUp.type.toLowerCase() !== "education stackeholder") {
+      normalizeUserTypeKey(usersignUp.type) !== "educationstakeholder") {
       usersignUp.controller.errors.school = messages.error.form.school;
       return;
     }
@@ -533,7 +553,7 @@ const switchTab = (tabName) => {
       usersignUp.gender &&
       usersignUp.region &&
       usersignUp.district &&
-      (usersignUp.type.toLowerCase() === "education stackeholder" ? true : usersignUp.school)
+      (normalizeUserTypeKey(usersignUp.type) === "educationstakeholder" ? true : usersignUp.school)
     ) {
 
       // Validate first name
@@ -569,7 +589,7 @@ const switchTab = (tabName) => {
       usersignUp.userName = usersignUp.fname + "." + usersignUp.lname;
 
       // One-liner equivalent to the if statement, use a logical && operator:
-      usersignUp.type.toLowerCase().trim() === 'student' && userExists();
+      normalizeUserTypeKey(usersignUp.type) === 'student' && userExists();
 
       // if (usersignUp.type.toLowerCase().trim() === 'student') {
       //   userExists();
@@ -604,7 +624,7 @@ const ageOptions = computed(() => {
 const userTypes = [
   { id: 'Student', name: 'Student' },
   { id: 'Teacher', name: 'Teacher' },
-  { id: 'Education Stackeholder', name: 'Education Stakeholder' },
+  { id: 'EducationStakeholder', name: 'Education Stakeholder' },
 ];
 
 const organization = [
@@ -615,10 +635,15 @@ const organization = [
   { id: 'others', name: 'others' },
 ];
 
+onMounted(() => {
+  headingRef.value?.focus();
+});
+
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b" aria-labelledby="signup-heading">
+  <div class="flex items-center justify-center min-h-screen py-2 md:bg-gradient-to-b" aria-labelledby="signup-heading"
+    tabindex="-1">
 
     <!-- Message Component -->
     <MessageComponent :message="usersignUp.controller.feedback"
@@ -626,39 +651,40 @@ const organization = [
       :icon="usersignUp.controller.isSent == 'success' ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
     <div class="w-full max-w-md px-4 py-10 rounded-lg md:bg-white md:shadow-2xl">
+
       <h1 class="font-bold text-center text-large" id="signup-heading" ref="headingRef" tabindex="-1">Sign Up</h1>
 
-      <NuxtLink to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
+      <NuxtLink to="/" aria-label="press to go home.The link contain TIE logo" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
         <NuxtImg tabindex="0" src="/logo/logo_tie.gif" class="object-contain w-full h-full"
           alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
       </NuxtLink>
 
       <form @submit.prevent="signUp" @keydown.enter.prevent
         class="text-textGray md:h-[530px] h-dvh relative overflow-hidden text-extraSmall" :class="[
-                {
-                  'md:h-[600px]':
-                    usersignUp.controller.errors.age ||
-                    usersignUp.controller.errors.fname ||
-                    usersignUp.controller.errors.gender ||
-                    usersignUp.controller.errors.lname ||
-                    usersignUp.controller.errors.password ||
-                    usersignUp.controller.errors.confirm_password,
-                },
-                { 'md:h-[650px]': usersignUp.userOrgRole.toLowerCase() === 'others' }
-              ]">
+          {
+            'md:h-[600px]':
+              usersignUp.controller.errors.age ||
+              usersignUp.controller.errors.fname ||
+              usersignUp.controller.errors.gender ||
+              usersignUp.controller.errors.lname ||
+              usersignUp.controller.errors.password ||
+              usersignUp.controller.errors.confirm_password,
+          },
+          { 'md:h-[650px]': usersignUp.userOrgRole.toLowerCase() === 'others' }
+        ]">
         <!-- First Input Group -->
         <div :class="[
-              'absolute top-0 flex flex-col px-6 transition-all duration-500 ',
-              inputTabs === 'tabOne' ? 'left-0 w-full' : '-left-full'
-            ]">
+          'absolute top-0 flex flex-col px-6 transition-all duration-500 ',
+          inputTabs === 'tabOne' ? 'left-0 w-full' : '-left-full'
+        ]">
           <!-- Select User Type -->
           <div :class="[
-              'mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-              {
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.type,
-              }
-            ]">
+            'mb-2 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.type,
+            }
+          ]">
             <div class="flex flex-col items-start w-full">
               <label for="type" class="font-semibold capitalize text-oceanBlue text-extraSmall">
                 Select User Type:</label>
@@ -676,12 +702,12 @@ const organization = [
 
           <!-- First Name -->
           <div :class="[
-              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-              {
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.fname,
-              }
-            ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.fname,
+            }
+          ]">
             <div class="flex items-center w-full">
               <input type="text" id="fname" v-model="usersignUp.fname" @keydown.space.prevent name="fname"
                 autocomplete="off"
@@ -698,12 +724,12 @@ const organization = [
 
           <!-- Last Name -->
           <div :class="[
-              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-              {
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.lname,
-              }
-            ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.lname,
+            }
+          ]">
             <div class="flex items-center w-full">
               <input type="text" id="lname" v-model="usersignUp.lname" @keydown.space.prevent name="lname"
                 autocomplete="off"
@@ -720,24 +746,24 @@ const organization = [
 
           <!-- region -->
           <div :class="[
-      'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-      {
-        'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-          usersignUp.controller.errors.region,
-      }
-    ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.region,
+            }
+          ]">
             <SelectionRegionSelection :error="usersignUp.controller.errors.region"
               @update-region="usersignUp.region = $event" />
           </div>
 
           <!-- District -->
           <div :class="[
-      'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-      {
-        'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-          usersignUp.controller.errors.district,
-      }
-    ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.district,
+            }
+          ]">
             <!-- select district -->
             <SelectionDistrictSelection :error="usersignUp.controller.errors.district" :region="usersignUp.region"
               @update-district="usersignUp.district = $event" />
@@ -745,12 +771,12 @@ const organization = [
 
           <!-- school -->
           <div v-if="usersignUp.type.toLowerCase() === 'student' || usersignUp.type.toLowerCase() === 'teacher'" :class="[
-      'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-      {
-        'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-          usersignUp.controller.errors.school,
-      }
-    ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.school,
+            }
+          ]">
 
             <!-- select school -->
             <SelectionSchoolSelection :district="usersignUp.district" :region="usersignUp.region"
@@ -760,12 +786,12 @@ const organization = [
 
           <!-- gender input radio -->
           <div :class="[
-      'py-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue',
-      {
-        'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-          usersignUp.controller.errors.gender,
-      }
-    ]">
+            'py-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.gender,
+            }
+          ]">
             <div class="flex flex-col items-center justify-start md:flex-row md:gap-10">
               <div class="font-semibold capitalize text-oceanBlue text-extraSmall">
                 Select Sex:
@@ -815,9 +841,9 @@ const organization = [
 
         <!-- Second Input Group -->
         <div :class="[
-            'absolute top-0 flex flex-col px-6 transition-all duration-500 -right-full',
-            inputTabs === 'tabTwo' ? 'right-0 w-full h-full' : ''
-          ]">
+          'absolute top-0 flex flex-col px-6 transition-all duration-500 -right-full',
+          inputTabs === 'tabTwo' ? 'right-0 w-full h-full' : ''
+        ]">
           <!-- Select Age -->
           <div :class="[
             'flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
@@ -844,12 +870,12 @@ const organization = [
 
             <!-- Email -->
             <div :class="[
-                'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                {
-                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                    usersignUp.controller.errors.email,
-                }
-              ]">
+              'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.email,
+              }
+            ]">
               <div class="flex items-center w-full">
                 <input type="text" id="email" v-model="usersignUp.email" @keydown.space.prevent name="username"
                   autocomplete="off"
@@ -866,12 +892,12 @@ const organization = [
 
             <!-- Phone Number -->
             <div :class="[
-                  'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                  {
-                    'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                      usersignUp.controller.errors.phone,
-                  }
-                ]">
+              'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.phone,
+              }
+            ]">
               <div class="flex items-center w-full">
                 <input type="tel" id="phone" v-model="usersignUp.phone" @keydown.space.prevent name="phone"
                   autocomplete="off"
@@ -887,15 +913,15 @@ const organization = [
             </div>
 
             <!-- organization informations for stakeholders -->
-            <div class="" id="organization" v-if="usersignUp.type.toLowerCase() === 'education stackeholder'">
+            <div class="" id="organization" v-if="normalizeUserTypeKey(usersignUp.type) === 'educationstakeholder'">
               <!-- organization name -->
               <div :class="[
-                    'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                    {
-                      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                        usersignUp.controller.errors.organization,
-                    }
-                  ]">
+                'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                {
+                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                    usersignUp.controller.errors.organization,
+                }
+              ]">
                 <div class="flex items-center w-full">
                   <input type="text" id="organization" v-model="usersignUp.organization" name="organization"
                     autocomplete="off"
@@ -911,12 +937,12 @@ const organization = [
 
               <!-- stakeholder role -->
               <div :class="[
-                    'flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                    {
-                      'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                        usersignUp.controller.errors.userOrgRole,
-                    }
-                  ]">
+                'flex flex-col mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                {
+                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                    usersignUp.controller.errors.userOrgRole,
+                }
+              ]">
 
                 <!-- Select Organization -->
                 <div class="flex flex-col">
@@ -936,12 +962,12 @@ const organization = [
 
               <!-- other user role in their org -->
               <div v-if="usersignUp.userOrgRole.toLowerCase() === 'others'" :class="[
-                  'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-                  {
-                    'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                      usersignUp.controller.errors.userOrgRole,
-                  }
-                ]">
+                'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+                {
+                  'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                    usersignUp.controller.errors.userOrgRole,
+                }
+              ]">
                 <div class="flex items-center w-full">
                   <input type="text" id="userOrgRole" v-model="usersignUp.otherRole" @keydown.space.prevent
                     name="organization" autocomplete="off"
@@ -959,12 +985,12 @@ const organization = [
 
           <!-- username student -->
           <div v-if="usersignUp.type.toLowerCase() === 'student'" :class="[
-              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-              {
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.userName,
-              }
-            ]">
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.userName,
+            }
+          ]">
             <div class="flex items-center w-full">
               <input type="text" id="userName" v-model="usersignUp.userName" @keydown.space.prevent name="userName"
                 autocomplete="off" readonly
@@ -981,12 +1007,12 @@ const organization = [
 
           <!-- Password -->
           <div :class="[
-              'flex flex-col items-center gap-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-              {
-                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                  usersignUp.controller.errors.password,
-              }
-            ]">
+            'flex flex-col items-center gap-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.password,
+            }
+          ]">
             <div class="flex items-center w-full">
               <input :type="showPassword ? 'text' : 'password'" id="password" v-model="usersignUp.password"
                 name="password" autocomplete="off"
@@ -1019,35 +1045,38 @@ const organization = [
           </div>
 
           <!-- Sign Up Button -->
-          <button type="submit"
+          <button type="submit" :aria-busy="usersignUp.controller.isSent === 'pending' ? 'true' : 'false'"
             class="w-full p-2 text-white transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
             <!-- submited successful -->
             <div class="flex items-center justify-center gap-2"
               v-if="usersignUp.controller.isSent === 'success' && usersignUp.controller.isSubmitted">
               Submitted
-              <Icon name="icons8:checked" class="w-5 h-5 text-white cursor-pointer" size="16" />
+              <Icon name="icons8:checked" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
             </div>
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'pending' && usersignUp.controller.isSubmitted">
-              Please Wait
-              <Icon name="eos-icons:loading" class="w-5 h-5 text-white cursor-pointer" size="16" />
+              Signing up, please wait.
+              <Icon name="eos-icons:loading" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
             </div>
 
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'failed' && usersignUp.controller.isSubmitted">
               Failed
-              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" />
+              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
             </div>
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'error' && usersignUp.controller.isSubmitted">
               Internal Error
-              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" />
+              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
             </div>
             <div class="flex items-center justify-center gap-2" v-else>
               Sign Up
-              <Icon name="mynaui:send" class="w-5 h-5 text-white cursor-pointer" size="16" />
+              <Icon name="mynaui:send" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
             </div>
           </button>
+          <span class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            {{ usersignUp.controller.isSent === 'pending' ? 'Signing up, please wait.' : '' }}
+          </span>
 
           <!-- Already have an account -->
           <div class="flex items-center justify-center gap-2 mt-4 mb-4">

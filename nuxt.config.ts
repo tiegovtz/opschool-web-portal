@@ -44,8 +44,6 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxt/icon",
     "nuxt-swiper",
-    "@pinia/nuxt",
-    "pinia-plugin-persistedstate/nuxt",
     "@nuxtjs/supabase",
   ],
 
@@ -65,8 +63,8 @@ export default defineNuxtConfig({
   },
 
   // devServer: {
-  //   host: '192.168.0.12',
-  //   port: 3000
+  //   host: "192.168.0.147",
+  //   port: 3000,
   // },
 
   build: {
@@ -93,10 +91,7 @@ export default defineNuxtConfig({
     redirect: false,
     url: process.env.NUXT_SUPABASE_URL,
     key: process.env.NUXT_SUPABASE_ANON_KEY,
-  
   },
-  
-
 });
 
 //

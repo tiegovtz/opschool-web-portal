@@ -1,6 +1,11 @@
-export default defineNuxtPlugin((nuxtApp) => {
-  const router = useRouter();
-  const navigationStore = useNavigationStore();
+import { useNavigationStore } from "~/stores/navigationStore";
+
+export default defineNuxtPlugin({
+  name: "block-navigation",
+  dependsOn: ["pinia"],
+  setup(nuxtApp) {
+    const router = useRouter();
+    const navigationStore = useNavigationStore();
 
   // Routes someone cannot access if NOT signed in
   const blockedBeforeLogin = [
@@ -8,8 +13,8 @@ export default defineNuxtPlugin((nuxtApp) => {
     "/admin",
   ];
 
-  router.beforeEach((to, from) => {
-    const user = useCookie("signInUserToken");
+    router.beforeEach((to, from) => {
+      const user = useCookie("signInUserToken");
 
     // 🔒 1. Not logged in → block protected pages
     if (!user.value) {
@@ -29,18 +34,18 @@ export default defineNuxtPlugin((nuxtApp) => {
     const allowList = [
       "/profile",
       "/feedback",
-      "/smart-class",
+      "/smart-class?header-less",
+       "/smart-class/screen/live-view?header-less",
+      "/smart-class/screen/live-tv?header-less",
+      "/smart-class/screen/recorded-sessions?header-less",
+      "/smart-class/screen/live-classes?header-less",
+      "/smart-class/screen/upcoming-classes?header-less",
+       "/smart-class",
        "/smart-class/screen/live-view",
       "/smart-class/screen/live-tv",
       "/smart-class/screen/recorded-sessions",
       "/smart-class/screen/live-classes",
-      "/smart-class/screen/upcoming-classes",
-      "/smart-class/header-less",
-      "/smart-class/header-less/screen/live-view",
-      "/smart-class/header-less/screen/live-tv",
-      "/smart-class/header-less/screen/recorded-sessions",
-      "/smart-class/header-less/screen/live-classes",
-      "/smart-class/header-less/screen/upcoming-classes",
+      "/smart-class/screen/upcoming-classes",        
       "/tie-ai-teacher",
       "/english-practice",
       "/interactive-video",
@@ -93,5 +98,6 @@ export default defineNuxtPlugin((nuxtApp) => {
     }
 
     return true;
-  });
+    });
+  },
 });

@@ -1,62 +1,5 @@
 <template>
-
-  <NuxtLayout name="home-layout">
-
-    <!-- <v-dialog v-model="dialog" max-width="600px">
-      <v-card>
-        <v-card-title>Create Session</v-card-title>
-
-        <v-card-text>
-          <v-form ref="formRef" v-model="isValid">
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-select v-model="formData.school_class" :items="schoolClasses" item-title="name" item-value="_id"
-                  label="Select Class" :rules="[v => !!v || 'Class is required']" />
-              </v-col>
-
-              <v-col cols="12" sm="6">
-                <v-select v-model="formData.subject" :items="schoolSubjects" item-title="name" item-value="_id"
-                  label="Subject" :rules="[v => !!v || 'Subject is required']" />
-
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-text-field v-model="formData.start_time" label="Start Time" type="time"
-                  :rules="[v => !!v || 'Required']" />
-              </v-col>
-
-              <v-col cols="12" sm="6">
-                <v-text-field v-model="formData.end_time" label="End Time" type="time"
-                  :rules="[v => !!v || 'Required']" />
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col cols="12" sm="6">
-                <v-text-field v-model="formData.topic" label="Topic" :rules="[v => !!v || 'Required']" />
-              </v-col>
-              <v-col cols="12" sm="6">
-                <v-text-field v-model="formData.room_name" label="Room Name" :rules="[v => !!v || 'Required']" />
-              </v-col>
-            </v-row>
-            <v-row>
-              <v-col cols="12" sm="12">
-                <v-text-field v-model="formData.details" label="Details" :rules="[v => !!v || 'Required']" />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer />
-          <v-btn color="blue darken-1" text @click="dialog = false">Cancel</v-btn>
-          <v-btn color="blue darken-1" text @click="submit">Submit</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog> -->
-
+  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
     <div
         v-if="dialog"
         class="fixed inset-0 flex items-center justify-center z-[100] bg-black bg-opacity-50"
@@ -175,7 +118,7 @@
 
 
 
-    <div class="live-classes">
+    <div id="main-container" tabindex="-1" class="live-classes">
       <!-- Header Section -->
       <div class="header">
         <div class="header-content">
