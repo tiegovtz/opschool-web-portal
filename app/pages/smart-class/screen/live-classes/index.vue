@@ -1,4 +1,5 @@
 <template>
+
   <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
     <div
         v-if="dialog"
@@ -118,7 +119,7 @@
 
 
 
-    <div id="main-container" tabindex="-1" class="live-classes">
+    <div class="live-classes">
       <!-- Header Section -->
       <div class="header">
         <div class="header-content">

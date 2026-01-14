@@ -1,7 +1,6 @@
 <template>
 
   <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
-    <a class="skip-link" href="#main-content" @click.prevent="focusMain">Skip to main content</a>
 
   <v-dialog v-model="dialog" max-width="600px">
     <v-card>
@@ -95,7 +94,7 @@
     </v-card>
   </v-dialog>
 
-  <div id="main-content" class="live-classes" role="main" tabindex="-1" aria-label="Live Classes main content">
+  <div class="live-classes">
     <!-- Header Section -->
     <div class="header">
       <div class="header-content">
@@ -176,15 +175,10 @@
     <div class="classes-container">
       <div class="classes-grid">
         <div
-          v-for="classItem in filteredClasses"
-          :key="classItem.id"
-          class="class-card"
-          role="button"
-          :aria-label="`Open details for ${classItem.title}`"
-          tabindex="0"
-          @click="selectClass(classItem)"
-          @keydown.enter.prevent="selectClass(classItem)"
-          @keydown.space.prevent="selectClass(classItem)"
+            v-for="classItem in filteredClasses"
+            :key="classItem.id"
+            class="class-card"
+            @click="selectClass(classItem)"
         >
           <div class="card-image">
             <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop" :alt="classItem.title" />
@@ -196,19 +190,16 @@
               <div class="duration-badge">{{ classItem.duration }}</div>
             </div>
             <div class="hover-actions">
-              <button class="action-btn play-btn" :aria-label="`Play ${classItem.title}`">
+              <button class="action-btn play-btn">
                 <svg viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
               </button>
-                <button
+              <button
                   class="action-btn subscribe-btn"
                   @click.stop="toggleSubscription(classItem)"
                   :class="{ subscribed: classItem.isSubscribed }"
-                  :aria-pressed="classItem.isSubscribed"
-                  :aria-label="classItem.isSubscribed ? `Unsubscribe from ${classItem.title}` : `Subscribe to ${classItem.title}`"
-                >
-                
+              >
                 <svg viewBox="0 0 24 24">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                 </svg>
@@ -238,9 +229,9 @@
     </div>
 
     <!-- Class Modal -->
-      <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal">
-      <div ref="modalContent" class="modal-content" @click.stop role="dialog" :aria-label="selectedClassItem?.title">
-        <button class="close-btn" @click="closeModal" aria-label="Close dialog">
+    <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <button class="close-btn" @click="closeModal">
           <svg viewBox="0 0 24 24">
             <path d="M6 6l12 12M6 18L18 6"/>
           </svg>
@@ -265,19 +256,17 @@
         </div>
 
         <div class="modal-actions">
-          <button class="primary-btn" @click="joinClass(selectedClassItem)" aria-label="Join class">
+          <button class="primary-btn" @click="joinClass(selectedClassItem)">
             <svg viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z"/>
             </svg>
             Join Class
           </button>
-            <button
+          <button
               class="secondary-btn"
               @click="toggleSubscription(selectedClassItem)"
               :class="{ subscribed: selectedClassItem.isSubscribed }"
-              :aria-pressed="selectedClassItem.isSubscribed"
-              :aria-label="selectedClassItem.isSubscribed ? 'Unsubscribe' : 'Subscribe'"
-            >
+          >
             <svg viewBox="0 0 24 24">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
@@ -288,14 +277,13 @@
     </div>
 
     <!-- Toast Notifications -->
-    <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+    <div class="toast-container">
       <div
           v-for="toast in toasts"
           :key="toast.id"
           class="toast"
           :class="toast.type"
-          :aria-label="toast.message"
-        >
+      >
         {{ toast.message }}
       </div>
     </div>
@@ -304,7 +292,7 @@
 </template>
 
 <script setup >
-import {ref, reactive, computed, onMounted, nextTick} from 'vue';
+import {ref, reactive, computed, onMounted} from 'vue';
 import { useRouter } from 'vue-router';
 import axios from "axios";
 import {useSessionsSetup} from "../../../composable/usesSessions.js";
@@ -377,7 +365,6 @@ onMounted(() => {
 const searchQuery = ref('');
 const selectedCategory = ref('all');
 const selectedClassItem = ref(null);
-const modalContent = ref(null);
 const dialog = ref(false);
 const toasts = ref([]);
 const school_classes = ref([]);
@@ -517,25 +504,6 @@ dialog.value = false;
 
 const selectClass = (classItem) => {
   selectedClassItem.value = classItem;
-  nextTick(() => {
-    try {
-      if (modalContent.value && typeof modalContent.value.focus === 'function') {
-        modalContent.value.focus();
-      } else {
-        const el = document.querySelector('.modal-content');
-        if (el) el.focus();
-      }
-    } catch (e) {
-      // ignore focus errors
-    }
-  });
-};
-
-const focusMain = () => {
-  nextTick(() => {
-    const el = document.getElementById('main-content');
-    if (el) el.focus();
-  });
 };
 
 const closeModal = () => {
@@ -593,28 +561,6 @@ const showToast = (message, type = 'info') => {
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
   color: white;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* Skip link - hidden but visible on focus */
-.skip-link {
-  position: absolute;
-  left: -999px;
-  top: auto;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-}
-.skip-link:focus {
-  left: 1rem;
-  top: 1rem;
-  width: auto;
-  height: auto;
-  padding: 0.5rem 1rem;
-  background: #fff;
-  color: #111;
-  z-index: 2000;
-  border-radius: 4px;
-  text-decoration: none;
 }
 
 /* Header Styles */
@@ -1340,12 +1286,6 @@ const showToast = (message, type = 'info') => {
 .action-btn:focus {
   outline: 2px solid #667eea;
   outline-offset: 2px;
-}
-
-.primary-btn:focus,
-.secondary-btn:focus {
-  outline: 3px solid #ffd93d;
-  outline-offset: 3px;
 }
 
 /* Accessibility */

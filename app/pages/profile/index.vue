@@ -10,7 +10,7 @@ definePageMeta({
 
 <template>
     <NuxtLayout name="home-layout">
-        <section id="main-container" tabindex="-1" class="flex items-center justify-center py-6">
+        <section class="flex items-center justify-center py-6">
             <ProfileCard />
         </section>
     </NuxtLayout>

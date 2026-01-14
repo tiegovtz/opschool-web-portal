@@ -1,22 +1,18 @@
 <template>
   <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
-    <a class="skip-link" href="#main-content" @click.prevent="focusMain">Skip to main content</a>
 
-  <div id="main-content" class="iframe-screen" role="main" tabindex="-1" aria-label="Live TV main content">
+  <div class="iframe-screen">
     <div class="header">
       <h1 class="title">Now Streaming</h1>
       <p class="subtitle">Enjoy your scheduled live class</p>
     </div>
 
-    <div class="iframe-wrapper" role="region" aria-label="SomaKwanza TV video" tabindex="0">
+    <div class="iframe-wrapper">
 
       <VidstackPlayer
-      id="main-container" tabindex="-1"
           v-if="iframeSrc"
-          ref="playerRef"
           :src="iframeSrc"
           title="SomaKwanza TV"
-          aria-label="SomaKwanza TV live video player"
       />
 <!--      <iframe-->
 <!--          v-if="iframeSrc"-->
@@ -26,42 +22,23 @@
 <!--          allowfullscreen-->
 <!--      ></iframe>-->
 
-      <div v-else class="no-class-msg" role="status" aria-live="polite">
+      <div v-else class="no-class-msg">
         No class is currently scheduled. Please check back later.
       </div>
     </div>
-    <div class="sr-only" aria-live="polite" aria-atomic="true">{{ streamStatus }}</div>
   </div>
   </NuxtLayout>
 </template>
 
 <script setup>
-import {onMounted, ref, watch, nextTick} from "vue";
+import {onMounted} from "vue";
 import VidstackPlayer from '~/components/video-player/VidstackPlayer.vue'
 
 const iframeSrc = ref("https://tv.somakwanza.tz/hls/stream.m3u8");
-const playerRef = ref(null)
-const streamStatus = ref('')
 
 onMounted(() => {
   iframeSrc.value = "https://tv.somakwanza.tz/hls/stream.m3u8";
 });
-
-// announce and focus when iframeSrc changes
-watch(iframeSrc, (newVal) => {
-  streamStatus.value = newVal ? 'Live stream available' : 'No live stream'
-  nextTick(() => {
-    const wrapper = document.querySelector('.iframe-wrapper')
-    if (wrapper && typeof wrapper.focus === 'function') wrapper.focus()
-  })
-})
-
-const focusMain = () => {
-  nextTick(() => {
-    const el = document.getElementById('main-content')
-    if (el) el.focus()
-  })
-}
 </script>
 
 <style scoped>
@@ -85,7 +62,6 @@ const focusMain = () => {
   font-size: 2.5rem;
   font-weight: bold;
   background: linear-gradient(45deg, #ff6b6b, #ffd93d, #4ecdc4);
-  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -103,46 +79,6 @@ const focusMain = () => {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-}
-
-/* focus-visible for iframe wrapper */
-.iframe-wrapper:focus {
-  outline: 3px solid #667eea;
-  outline-offset: 4px;
-}
-
-/* Screen-reader only helper */
-.sr-only { 
-  position: absolute !important; 
-  height: 1px; width: 1px; 
-  overflow: hidden; 
-  clip: rect(1px, 1px, 1px, 1px); 
-  white-space: nowrap; 
-  border: 0; 
-  padding: 0; 
-  margin: -1px; 
-}
-
-/* Skip link - hidden but visible on focus */
-.skip-link {
-  position: absolute;
-  left: -999px;
-  top: auto;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-}
-.skip-link:focus {
-  left: 1rem;
-  top: 1rem;
-  width: auto;
-  height: auto;
-  padding: 0.5rem 1rem;
-  background: #fff;
-  color: #111;
-  z-index: 2000;
-  border-radius: 4px;
-  text-decoration: none;
 }
 
 iframe {

@@ -18,7 +18,6 @@ const props = withDefaults(
         topicProgress?: number
         topicViewed?: boolean
         isDeleted?: boolean
-        altText?:string
     }>(),
     {
         audioThumbnail: '/images/default.webp',
@@ -57,7 +56,7 @@ const setAudioToListen = () => {
             'relative overflow-hidden transition-all duration-500 ease-in-out',
             layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
-            <NuxtImg :src="audioThumbnail" tabindex="0" :alt="audioName.toLowerCase()" :class="[
+            <NuxtImg :src="audioThumbnail" :alt="audioName.toLowerCase()" :class="[
                 'object-cover w-full h-full transition-transform duration-500',
             ]" />
 

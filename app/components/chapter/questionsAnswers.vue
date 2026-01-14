@@ -208,12 +208,10 @@ const playDemoAnimation = async () => {
 </script>
 
 <template>
-
   <section
     class="flex flex-col"
     v-if="questionType.toLowerCase() === 'multiple_choice'"
   >
-  <small>Choose the most correct answer.</small>
     <div class="inline-flex">
       <p class="pr-4">{{ number + ". " }}</p>
       <div class="flex flex-wrap items-center w-full">
@@ -252,7 +250,6 @@ const playDemoAnimation = async () => {
 
   <!-- drag and drop question and answer container -->
   <section v-else class="mt-6">
-     <small>Drag and Drop respective answers in blank provided.</small>
     <div class="flex flex-col gap-4">
       <!-- Question Text with inline blanks -->
       <div class="flex justify-start">

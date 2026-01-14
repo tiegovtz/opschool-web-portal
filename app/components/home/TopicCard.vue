@@ -22,8 +22,7 @@ const props = withDefaults(defineProps<{
 
   // progress
   topicProgress?: number,
-  topicViewed?: boolean,
-  altText?:string
+  topicViewed?: boolean
 
 }>(), {
   topicImage: '',
@@ -55,7 +54,7 @@ const userToken = useCookie('signInUserToken')
     :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`">
     <!-- profile view -->
     <div class="w-10 h-10 overflow-hidden rounded-full">
-      <NuxtImg :src="topicImage" tabindex="0" :alt="altText ?? topicTitle" class="object-cover w-full h-full" />
+      <NuxtImg :src="topicImage" :alt="topicTitle" class="object-cover w-full h-full" />
     </div>
     <div class="stat-content">
       <span class="stat-label">{{ topicTitle }}</span>
@@ -63,7 +62,7 @@ const userToken = useCookie('signInUserToken')
     </div>
   </NuxtLink>
 
-  <NuxtLink  v-else :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`"
+  <NuxtLink v-else :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`"
     @click="setTopicToView()" :class="[
       'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out min-w-[300px]',
       layoutEffect == 'grid' && modelType === 'card' ? 'flex-col lg:pb-4' : 'flex-row h-32',
@@ -77,7 +76,7 @@ const userToken = useCookie('signInUserToken')
       layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-full max-w-[200px]',
       { 'md:h-20 !h-full max-w-[80px]': modelType === 'search', },
     ]">
-      <NuxtImg :src="topicImage" tabindex="0" loading="lazy" :alt="altText ?? `Image of ${topicTitle}`" :class="[
+      <NuxtImg :src="topicImage" loading="lazy" :alt="'Image of ' + topicTitle" :class="[
         'object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110',
         { 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' },
       ]" />

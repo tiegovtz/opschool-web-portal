@@ -10,7 +10,6 @@ export default defineNuxtPlugin({
   // Routes someone cannot access if NOT signed in
   const blockedBeforeLogin = [
     "/tie-ai-teacher",
-    "/admin",
   ];
 
     router.beforeEach((to, from) => {
@@ -18,13 +17,8 @@ export default defineNuxtPlugin({
 
     // 🔒 1. Not logged in → block protected pages
     if (!user.value) {
-      // Check if route starts with any blocked path (for nested routes like /admin/video-interactions)
-      const isBlocked = blockedBeforeLogin.some(blockedPath => 
-        to.path === blockedPath || to.path.startsWith(blockedPath + '/')
-      );
-      
-      if (isBlocked) {
-        return "/auth"; // Redirect to login page
+      if (blockedBeforeLogin.includes(to.path)) {
+        return "/auth"; // or wherever your login page is
       }
       return true;
     }
@@ -47,26 +41,11 @@ export default defineNuxtPlugin({
       "/smart-class/screen/live-classes",
       "/smart-class/screen/upcoming-classes",        
       "/tie-ai-teacher",
-      "/english-practice",
-      "/interactive-video",
-      "/list-videos",
       "/home#content-container-after-login",
-      "/admin",
-      "/admin/video-interactions",
+      "/conversation-practice",
     ];
 
-    // Check if the base path (without query params) is in the allowlist
-    const basePath = to.path
-    
-    // Allow admin routes (all routes starting with /admin)
-    if (basePath.startsWith('/admin')) {
-      return true;
-    }
-    
-    if (allowList.includes(basePath) || allowList.includes(to.fullPath)) return true;
-    
-    // Also allow interactive-video with query parameters
-    if (basePath === '/interactive-video') return true;
+    if (allowList.includes(to.fullPath)) return true;
 
     // Allow direct navigation to content pages (video, interactive, audio, experiments)
     // These routes follow the pattern: /{type}/{subject}/{level}/{topic}/{id}
@@ -89,11 +68,7 @@ export default defineNuxtPlugin({
       return true;
     }
 
-    // Don't redirect admin routes or allowlist routes to home
-    const isAdminRoute = basePath.startsWith('/admin');
-    const isAllowedRoute = allowList.includes(basePath) || allowList.includes(to.fullPath);
-    
-    if (!routesStates && to.fullPath !== "/home" && !isAdminRoute && !isAllowedRoute) {
+    if (!routesStates && to.fullPath !== "/home") {
       return "/home";
     }
 

@@ -31,8 +31,8 @@ const setSeeMore = (seeMore:string) => {
 </script>
 
 <template>
-  <div  v-if="userToken">
-    <div id="main-container" tabindex="-1" v-if="activeTab === 'subjects'">
+  <div v-if="userToken">
+    <div v-if="activeTab === 'subjects'">
       <!-- Subject Cards are in Grid -->
       <customGridOne v-if="activeTab === 'subjects'">
         <template #data>
@@ -45,16 +45,14 @@ const setSeeMore = (seeMore:string) => {
             :subject-image="subject.thumbnail"
             :subject-description="subject.description"
             :total-views="subject.views ?? 0"
-            :alt-text="subject.alt"
             :is-logged-in="userToken != null || userToken != undefined"
             @emit-subject-name="emits('emittedSubjectName',$event)"
             @emit-subject-id="emits('emittedSubjectId',$event)"
-
           />
         </template>
       </customGridOne>
     </div>
-    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'interactive-contents'">
+    <div v-else-if="activeTab === 'interactive-contents'">
       <div v-for="(topics, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
@@ -123,7 +121,6 @@ const setSeeMore = (seeMore:string) => {
                 :topic-standard="topic.level?.name"
                 :topic-viewed="topic.isViewed"
                 :topic-progress="topic.avgProgress"
-                :alt-text="topic.alt"
               />
             </template>
           </customGridOne>
@@ -158,7 +155,6 @@ const setSeeMore = (seeMore:string) => {
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
               :topic-progress="topic.avgProgress"
-              :alt-text="topic.alt"
             />
           </div>
         </div>
@@ -188,13 +184,12 @@ const setSeeMore = (seeMore:string) => {
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
               :topic-progress="topic.avgProgress"
-              :alt-text="topic.alt"
             />
           </template>
         </customGridOne>
       </div>
     </div>
-    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'learn-activities'">
+    <div v-else-if="activeTab === 'learn-activities'">
       <div v-for="(experiments, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
@@ -257,7 +252,6 @@ const setSeeMore = (seeMore:string) => {
                 :experiment-level="experiment.level?.name"
                 :experiment-name="experiment.name"
                 :experiment-file-url="experiment.stepsFileUrl"
-                :alt-text="experiment.alt"
               />
             </template>
           </customGridOne>
@@ -282,7 +276,6 @@ const setSeeMore = (seeMore:string) => {
               :experiment-level="experiment.level?.name"
               :experiment-name="experiment.name"
               :experiment-file-url="experiment.stepsFileUrl"
-              :alt-text="experiment.alt"
             />
           </div>
         </div>
@@ -301,13 +294,12 @@ const setSeeMore = (seeMore:string) => {
               :experiment-level="experiment.level?.name"
               :experiment-name="experiment.name"
               :experiment-file-url="experiment.stepsFileUrl"
-              :alt-text="experiment.alt"
             />
           </template>
         </customGridOne>
       </div>
     </div>
-    <div id="main-container" tabindex="-1"
+    <div
       v-else-if="
         activeTab === 'video' ||
         activeTab === 'class-videos'
@@ -373,11 +365,6 @@ const setSeeMore = (seeMore:string) => {
                 :video-description="video.description"
                 :video-subject="video.subject?.name"
                 :video-type="video.videoType"
-                :video-level="video.level?.name"
-                :video-standard="video.level?.name"
-                :topic-progress="video.avgProgress"
-                :topic-viewed="video.isViewed"
-                :alt-text="video.alt"
               />
             </template>
           </customGridOne>
@@ -400,11 +387,6 @@ const setSeeMore = (seeMore:string) => {
               :video-description="video.description"
               :video-subject="video.subject?.name"
               :video-type="video.videoType"
-              :video-level="video.level?.name"
-              :video-standard="video.level?.name"
-              :topic-progress="video.avgProgress"
-              :topic-viewed="video.isViewed"
-              :alt-text="video.alt"
             />
           </div>
         </div>
@@ -422,17 +404,12 @@ const setSeeMore = (seeMore:string) => {
               :video-description="video.description"
               :video-subject="video.subject?.name"
               :video-type="video.videoType"
-              :video-level="video.level?.name"
-              :video-standard="video.level?.name"
-              :topic-progress="video.avgProgress"
-              :topic-viewed="video.isViewed"
-              :alt-text="video.alt"
             />
           </template>
         </customGridOne>
       </div>
     </div>
-    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'audio'">
+    <div v-else-if="activeTab === 'audio'">
        <div v-for="(audios, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()"
@@ -493,7 +470,6 @@ const setSeeMore = (seeMore:string) => {
                 :audio-description="audio.description"
                 :audio-subject="audio.subject?.name"
                 :audio-type="audio.audioType"
-                :alt-text="audio.alt"
               />
             </template>
           </customGridOne>
@@ -533,18 +509,17 @@ const setSeeMore = (seeMore:string) => {
                 :audio-description="audio.description"
                 :audio-subject="audio.subject?.name"
                 :audio-type="audio.audioType"
-                :alt-text="audio.alt"
               />
           </template>
         </customGridOne>
       </div>
     </div>
-    <div id="main-container" tabindex="-1" v-else>
+    <div v-else>
       <MessageTopicNotFound message="This page will be updated soon" />
     </div>
   </div>
   <div v-else>
-     <div id="main-container" tabindex="-1" v-if="activeTab === 'subjects'">
+     <div v-if="activeTab === 'subjects'">
       <!-- Subject Cards are in Grid -->
       <customGridTwo v-if="activeTab === 'subjects'">
         <template #data>
@@ -558,14 +533,13 @@ const setSeeMore = (seeMore:string) => {
             :subject-description="subject.description"
             :total-views="subject.views ?? 0"
             :is-logged-in="userToken != null || userToken != undefined"
-            :alt-text="subject.alt"
             @emit-subject-name="emits('emittedSubjectName',$event)"
             @emit-subject-id="emits('emittedSubjectId',$event)"
           />
         </template>
       </customGridTwo>
     </div>
-    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'interactive-contents'">
+    <div v-else-if="activeTab === 'interactive-contents'">
       <div v-for="(topics, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
@@ -635,7 +609,6 @@ const setSeeMore = (seeMore:string) => {
                 :topic-standard="topic.level?.name"
                 :topic-viewed="topic.isViewed"
                 :topic-progress="topic.avgProgress"
-                :alt-text="topic.alt"
               />
             </template>
           </customGridTwo>
@@ -670,7 +643,6 @@ const setSeeMore = (seeMore:string) => {
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
               :topic-progress="topic.avgProgress"
-              :alt-text="topic.alt"
             />
           </div>
         </div>
@@ -700,13 +672,12 @@ const setSeeMore = (seeMore:string) => {
               :subject-name="topic.subject?.name"
               :topic-viewed="topic.isViewed"
               :topic-progress="topic.avgProgress"
-              :alt-text="topic.alt"
             />
           </template>
         </customGridTwo>
       </div>
     </div>
-    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'learn-activities'">
+    <div v-else-if="activeTab === 'learn-activities'">
       <div v-for="(experiments, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
@@ -764,7 +735,6 @@ const setSeeMore = (seeMore:string) => {
                 :experiment-level="experiment.level?.name"
                 :experiment-name="experiment.name"
                 :experiment-file-url="experiment.stepsFileUrl"
-                :alt-text="experiment.alt"
               />
             </template>
           </customGridTwo>
@@ -789,7 +759,6 @@ const setSeeMore = (seeMore:string) => {
               :experiment-level="experiment.level?.name"
               :experiment-name="experiment.name"
               :experiment-file-url="experiment.stepsFileUrl"
-              :alt-text="experiment.alt"
             />
           </div>
         </div>
@@ -808,14 +777,12 @@ const setSeeMore = (seeMore:string) => {
               :experiment-level="experiment.level?.name"
               :experiment-name="experiment.name"
               :experiment-file-url="experiment.stepsFileUrl"
-              :alt-text="experiment.alt"
             />
           </template>
         </customGridTwo>
       </div>
     </div>
     <div
-    id="main-container" tabindex="-1"
       v-else-if="
         activeTab === 'video' ||
         activeTab === 'class-videos'
@@ -881,11 +848,6 @@ const setSeeMore = (seeMore:string) => {
                 :video-description="video.description"
                 :video-subject="video.subject?.name"
                 :video-type="video.videoType"
-                :video-level="video.level?.name"
-                :video-standard="video.level?.name"
-                :topic-progress="video.avgProgress"
-                :topic-viewed="video.isViewed"
-                :alt-text="video.alt"
               />
             </template>
           </customGridTwo>
@@ -908,11 +870,6 @@ const setSeeMore = (seeMore:string) => {
               :video-description="video.description"
               :video-subject="video.subject?.name"
               :video-type="video.videoType"
-              :video-level="video.level?.name"
-              :video-standard="video.level?.name"
-              :topic-progress="video.avgProgress"
-              :topic-viewed="video.isViewed"
-              :alt-text="video.alt"
             />
           </div>
         </div>
@@ -930,17 +887,12 @@ const setSeeMore = (seeMore:string) => {
               :video-description="video.description"
               :video-subject="video.subject?.name"
               :video-type="video.videoType"
-              :video-level="video.level?.name"
-              :video-standard="video.level?.name"
-              :topic-progress="video.avgProgress"
-              :topic-viewed="video.isViewed"
-              :alt-text="video.alt"
             />
           </template>
         </customGridTwo>
       </div>
     </div>
-    <div id="main-container" tabindex="-1" v-else-if="activeTab === 'audio'">
+    <div v-else-if="activeTab === 'audio'">
       <div v-for="(audios, index) in data" :key="index">
         <div
           v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey"
@@ -1001,7 +953,6 @@ const setSeeMore = (seeMore:string) => {
                 :audio-description="audio.description"
                 :audio-subject="audio.subject?.name"
                 :audio-type="audio.audioType"
-                :alt-text="audio.alt"
               />
             </template>
           </customGridTwo>
@@ -1024,7 +975,6 @@ const setSeeMore = (seeMore:string) => {
                 :audio-description="audio.description"
                 :audio-subject="audio.subject?.name"
                 :audio-type="audio.audioType"
-                :alt-text="audio.alt"
               />
           </div>
         </div>
@@ -1042,13 +992,12 @@ const setSeeMore = (seeMore:string) => {
                 :audio-description="audio.description"
                 :audio-subject="audio.subject?.name"
                 :audio-type="audio.audioType"
-                :alt-text="audio.alt"
               />
           </template>
         </customGridTwo>
       </div>
     </div>
-    <div id="main-container" tabindex="-1" v-else>
+    <div v-else>
       <MessageTopicNotFound message="This page will be updated soon" />
     </div>
   </div>

@@ -29,8 +29,11 @@ logs
 
 # cursor files
 *.curs
-*.ani   
+*.ani
 .cursor
 
 # public videos
 /public/video
+
+# temp audio cache
+/public/temp-audio

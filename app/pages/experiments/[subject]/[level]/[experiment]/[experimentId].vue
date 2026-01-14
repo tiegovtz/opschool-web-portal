@@ -109,30 +109,30 @@ const toggleSidebar = () => {
 
 // function for toggling  experiment fullscreeen
 const fullScreen = () => {
-    const experimentContainer = document.getElementById("experiment-container");
+  const experimentContainer = document.getElementById("experiment-container");
 
-    if (!experimentContainer) return;
+  if (!experimentContainer) return;
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-    if (isIOS) {
-        // Simulate fullscreen for iOS by applying styles
-        if (!isFullscreen.value) {
-            experimentContainer.classList.add("ios-fullscreen");
-        } else {
-            experimentContainer.classList.remove("ios-fullscreen");
-        }
-        isFullscreen.value = !isFullscreen.value;
-    } else if (document.fullscreenElement) {
-        document.exitFullscreen();
-        isFullscreen.value = false;
+  if (isIOS) {
+    // Simulate fullscreen for iOS by applying styles
+    if (!isFullscreen.value) {
+      experimentContainer.classList.add("ios-fullscreen");
     } else {
-        experimentContainer.requestFullscreen().then(() => {
-            isFullscreen.value = true;
-        }).catch((err) => {
-            console.error("Fullscreen error:", err);
-        });
+      experimentContainer.classList.remove("ios-fullscreen");
     }
+    isFullscreen.value = !isFullscreen.value;
+  } else if (document.fullscreenElement) {
+    document.exitFullscreen();
+    isFullscreen.value = false;
+  } else {
+    experimentContainer.requestFullscreen().then(() => {
+      isFullscreen.value = true;
+    }).catch((err) => {
+      console.error("Fullscreen error:", err);
+    });
+  }
 };
 
 // define authentication middleware
@@ -143,16 +143,16 @@ definePageMeta({
 // Define OnMounted
 onMounted(() => {
     //Add event listener to window screen /full/exit
-    document.addEventListener('fullscreenchange', () => {
+    document.addEventListener('fullscreenchange', () =>{
         isFullscreen.value = document.fullscreenElement !== null;
     })
-
+    
 })
 </script>
 <template>
     <NuxtLayout name="home-layout">
         <section class="relative inline-flex w-full overflow-hidden center-height" aria-labelledby="experiment-title"
-            role="main">
+    role="main">
             <!-- w-3/4 -->
             <div
                 class="w-full py-5 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
@@ -161,9 +161,8 @@ onMounted(() => {
                     <div class="flex items-center gap-2">
                         <NuxtLink
                             :to="{ path: '/', query: { tab: 'learn-activities', subject: experimentSubject, class: experimentStandard } }"
-                            class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue"
-                            aria-label="Go back to experiment list">
-                            <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" aria-hidden="true" />
+                            class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue" aria-label="Go back to experiment list">
+                            <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" aria-hidden="true"/>
                         </NuxtLink>
 
                         <!-- <NuxtLink
@@ -181,48 +180,51 @@ onMounted(() => {
 
                         <p class="font-medium text-medium" :id="'experiment-title'">
                             {{
-                                experimentTitle != null &&
-                                    experimentTitle != undefined &&
-                                    experimentTitle != "null"
-                                    ? experimentTitle
-                                    : `Introduction to
+                                    experimentTitle != null &&
+                                        experimentTitle != undefined &&
+                                        experimentTitle != "null"
+                                        ? experimentTitle
+                                        : `Introduction to
                             Physics`
-                            }}
+                                }}
                         </p>
                     </div>
                     <!-- Header Description -->
-                    <div class="flex lg:hidden" @click="toggleSidebar()" role="button" tabindex="0"
-                        aria-label="Open experiment sidebar menu">
-                        <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" aria-hidden="true" />
+                    <div class="flex lg:hidden" @click="toggleSidebar()" role="button"
+            tabindex="0"
+            aria-label="Open experiment sidebar menu">
+                        <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" aria-hidden="true"/>
                     </div>
                 </div>
 
                 <!-- Description -->
-                <div id="main-container" tabindex="-1" class="mx-auto notes md:px-4">
-                    <LoadingIndicator :is-loading="status == 'pending'" v-if="status == 'pending'" aria-live="polite" />
+                <div class="mx-auto notes md:px-4">
+                    <LoadingIndicator :is-loading="status == 'pending'" v-if="status == 'pending'"  aria-live="polite"/>
                     <MessagePageNotFound v-else-if="status == 'error'" message="Error while loading experiment"
-                        subMessage="Make sure you are connected to the stable internet or try to reload the page"
-                        role="alert" />
+                        subMessage="Make sure you are connected to the stable internet or try to reload the page" role="alert"/>
 
                     <div class="relative w-full overflow-y-scroll rounded-md center-height" id="experiment-container"
-                        v-else-if="status == 'success' && webglSupported" role="region" aria-label="Experiment viewer">
+                        v-else-if="status == 'success' && webglSupported" role="region" 
+                        aria-label="Experiment viewer">
                         <iframe :class="[
-                            ' w-full  rounded-md mt-6',
-                            isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
-                        ]" :src="experimentInfo.stepsFileUrl" frameborder="0" title="Interactive experiment steps"
-                            loading="lazy"></iframe>
+                                ' w-full  rounded-md mt-6',
+                                isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
+                            ]" :src="experimentInfo.stepsFileUrl" frameborder="0" title="Interactive experiment steps"
+            loading="lazy"></iframe>
                         <!-- full screen controls -->
                         <div class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"
-                            :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" @click="fullScreen"
-                            role="button" tabindex="0" aria-pressed="isFullscreen" aria-label="Toggle fullscreen mode">
-                            <Icon v-if="isFullscreen" name="qlementine-icons:fullscreen-exit-16" size="24"
-                                aria-hidden="true" />
-                            <Icon v-else name="qlementine-icons:fullscreen-16" size="24" aria-hidden="true" />
+                            :title="isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'" @click="fullScreen" role="button"
+            tabindex="0"
+            aria-pressed="isFullscreen"
+            aria-label="Toggle fullscreen mode">
+                            <Icon v-if="isFullscreen" name="qlementine-icons:fullscreen-exit-16" size="24" aria-hidden="true"/>
+                            <Icon v-else name="qlementine-icons:fullscreen-16" size="24" aria-hidden="true"/>
                         </div>
                     </div>
 
                     <div v-else-if="status == 'success' && !webglSupported"
-                        class="flex items-center justify-center w-full h-full" role="alert" aria-live="assertive">
+                        class="flex items-center justify-center w-full h-full" role="alert"
+            aria-live="assertive">
                         <p class="text-lg text-red-500">
                             This feature is not supported in your browser. Please try a different
                             browser or device.
@@ -231,7 +233,7 @@ onMounted(() => {
 
                     <!-- experiment Description and Thumbnail Image -->
                     <div class="flex items-center w-full h-full gap-4 my-4" v-if="experimentInfo" role="region"
-                        aria-label="Experiment details">
+            aria-label="Experiment details">
                         <!-- Thumbnail Image -->
                         <div class="hidden overflow-hidden rounded-full w-14 h-14 lg:flex">
                             <NuxtImg :src="experimentInfo?.thumbnail" :alt="experimentInfo?.name"
@@ -239,7 +241,7 @@ onMounted(() => {
                         </div>
 
                         <!-- experiment Description -->
-                        <div class="flex w-full">
+                        <div class="flex w-full" >
                             <p class="text-sm text-justify">
                                 {{ experimentInfo?.description }}
                             </p>
@@ -249,26 +251,22 @@ onMounted(() => {
                     <!-- Next and Previous BUTTON -->
                     <div :class="[
                         'flex items-center w-full',
-                        experimentInfo?.previous && experimentInfo?.next ? 'justify-between'
-                            : !experimentInfo?.previous && experimentInfo?.next ? 'justify-end'
-                                : !experimentInfo?.next && experimentInfo?.previous ? 'justify-start' : '',
-                    ]" role="navigation" aria-label="Experiment navigation">
+                        experimentInfo?.previous && experimentInfo?.next ? 'justify-between' 
+                        : !experimentInfo?.previous && experimentInfo?.next ? 'justify-end' 
+                        : !experimentInfo?.next && experimentInfo?.previous ? 'justify-start' : '',
+                        ]"  role="navigation" aria-label="Experiment navigation">
 
-                        <NuxtLink
-                            :to="{ path: `/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.previous?.name}/${experimentInfo?.previous?._id}` }"
-                            v-if="experimentInfo?.previous"
-                            class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
-                            aria-label="Go to previous experiment">
+                        <NuxtLink :to="{path:`/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.previous?.name}/${experimentInfo?.previous?._id}`}" 
+                        v-if="experimentInfo?.previous" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue" 
+                        aria-label="Go to previous experiment">
                             Previous experiment
                         </NuxtLink>
-                        <NuxtLink
-                            :to="{ path: `/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.next?.name}/${experimentInfo?.next?._id}` }"
-                            v-if="experimentInfo?.next"
-                            class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
-                            aria-label="Go to next experiment">
+                        <NuxtLink :to="{path:`/experiments/${experimentStandard}/${experimentSubject}/${experimentInfo?.next?.name}/${experimentInfo?.next?._id}`}" 
+                        v-if="experimentInfo?.next" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
+                        aria-label="Go to next experiment">
                             Next experiment
                         </NuxtLink>
-                    </div>
+                     </div>
                 </div>
             </div>
 

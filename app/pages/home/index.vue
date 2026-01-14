@@ -555,8 +555,7 @@ const switchTab = async (tab: tabs) => {
                     :subject-id="subject._id" :subject-name="subject.name" :subject-image="subject.thumbnail"
                     :subject-description="subject.description" :total-views="subject.views ?? 0"
                     :is-logged-in="userToken != null || userToken != undefined" @emit-subject-name="activeTab = $event"
-                    @emit-subject-id="subjectId = $event" 
-                    :alt-text="subject.alt"/>
+                    @emit-subject-id="subjectId = $event" />
                 </template>
               </customGridOne>
 
@@ -569,8 +568,7 @@ const switchTab = async (tab: tabs) => {
                     :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-level="level"
                     :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
                     :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress"
-                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0"
-                    :alt-text="topic.alt" />
+                    :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0" />
                 </template>
               </customGridOne>
 
@@ -582,9 +580,7 @@ const switchTab = async (tab: tabs) => {
                     :experiment-title="experiment.title" :experiment-description="experiment.description"
                     :experiment-type="experiment.category" :experiment-subject="experiment.subject?.name"
                     :experiment-level="experiment.level?.name" :experiment-name="experiment.name"
-                    :experiment-file-url="experiment.stepsFileUrl" 
-                    :alt-text="experiment.alt"
-                    />
+                    :experiment-file-url="experiment.stepsFileUrl" />
                 </template>
               </customGridOne>
 
@@ -599,8 +595,7 @@ const switchTab = async (tab: tabs) => {
                     :is-deleted="video.isDeleted" :video-description="video.description"
                     :video-subject="video.subject?.name" :video-type="video.videoType"
                     :video-level="level" :video-standard="video.level?.name"
-                    :topic-progress="video.avgProgress" :topic-viewed="video.isViewed" 
-                    :alt-text="video.alt"/>
+                    :topic-progress="video.avgProgress" :topic-viewed="video.isViewed" />
                 </template>
               </customGridOne>
               <div v-else-if="activeTab === 'audio'">
@@ -676,7 +671,7 @@ const switchTab = async (tab: tabs) => {
       <div v-else-if="status == 'success'" class="">
         <!-- client only -->
         <ClientOnly v-if="data && data.length > 0">
-          <div id="main-container" tabindex="-1" class="flex flex-col w-full">
+          <div class="flex flex-col w-full">
             <customGridTwo v-if="filters.level !== null && filters.subject !== null">
               <template #data>
                 <!-- Topic Cards -->

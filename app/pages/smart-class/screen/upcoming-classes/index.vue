@@ -1,7 +1,6 @@
 <template>
 
   <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
-  <a class="skip-link" href="#main-container">Skip to main content</a>
   <v-dialog v-model="dialog" max-width="600px">
     <v-card>
       <v-card-title>Create Session</v-card-title>
@@ -95,7 +94,6 @@
   </v-dialog>
 
   <div class="live-classes">
-    <main id="main-container" tabindex="-1" role="main">
     <!-- Header Section -->
     <div class="header">
       <div class="header-content">
@@ -176,18 +174,13 @@
     <div class="classes-container">
       <div class="classes-grid">
         <div
-          v-for="classItem in filteredClasses"
-          :key="classItem.id"
-          class="class-card"
-          role="button"
-          :tabindex="0"
-          @click="selectClass(classItem)"
-          @keydown.enter.prevent="selectClass(classItem)"
-          @keydown.space.prevent="selectClass(classItem)"
-          :aria-label="`View details for ${classItem.title}`"
+            v-for="classItem in filteredClasses"
+            :key="classItem.id"
+            class="class-card"
+            @click="selectClass(classItem)"
         >
-            <div class="card-image">
-            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop" :alt="classItem.title || 'Class thumbnail'" />
+          <div class="card-image">
+            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=225&fit=crop" :alt="classItem.title" />
             <div class="card-overlay">
               <div class="live-badge" v-if="classItem.isLive">
                 <span class="live-dot"></span>
@@ -196,7 +189,7 @@
               <div class="duration-badge">{{ classItem.duration }}</div>
             </div>
             <div class="hover-actions">
-              <button class="action-btn play-btn" :aria-label="`Play preview for ${classItem.title}`">
+              <button class="action-btn play-btn">
                 <svg viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
@@ -205,8 +198,6 @@
                   class="action-btn subscribe-btn"
                   @click.stop="toggleSubscription(classItem)"
                   :class="{ subscribed: classItem.isSubscribed }"
-                  :aria-pressed="classItem.isSubscribed"
-                  :aria-label="classItem.isSubscribed ? 'Unsubscribe' : 'Subscribe'"
               >
                 <svg viewBox="0 0 24 24">
                   <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -237,18 +228,18 @@
     </div>
 
     <!-- Class Modal -->
-    <div v-if="selectedClassItem" class="modal-overlay" role="dialog" aria-modal="true" :aria-labelledby="'modal-title-'+selectedClassItem.id" @click="closeModal">
-      <div class="modal-content" @click.stop ref="modalContent" tabindex="-1">
-        <button class="close-btn" @click="closeModal" aria-label="Close dialog">
+    <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <button class="close-btn" @click="closeModal">
           <svg viewBox="0 0 24 24">
             <path d="M6 6l12 12M6 18L18 6"/>
           </svg>
         </button>
 
         <div class="modal-header">
-          <img :src="selectedClassItem.thumbnail" :alt="selectedClassItem.title || 'Class thumbnail'" />
+          <img :src="selectedClassItem.thumbnail" :alt="selectedClassItem.title" />
           <div class="modal-info">
-            <h2 :id="'modal-title-'+selectedClassItem.id">{{ selectedClassItem.title }}</h2>
+            <h2>{{ selectedClassItem.title }}</h2>
             <p class="modal-instructor">with {{ selectedClassItem.instructor }}</p>
             <div class="modal-meta">
               <span class="modal-category">{{ selectedClassItem.category }}</span>
@@ -264,7 +255,7 @@
         </div>
 
         <div class="modal-actions">
-          <button class="primary-btn" @click="joinClass(selectedClassItem)" :aria-label="`Join ${selectedClassItem.title}`">
+          <button class="primary-btn" @click="joinClass(selectedClassItem)">
             <svg viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z"/>
             </svg>
@@ -274,8 +265,6 @@
               class="secondary-btn"
               @click="toggleSubscription(selectedClassItem)"
               :class="{ subscribed: selectedClassItem.isSubscribed }"
-              :aria-pressed="selectedClassItem.isSubscribed"
-              :aria-label="selectedClassItem.isSubscribed ? 'Unsubscribe from selected class' : 'Subscribe to selected class'"
           >
             <svg viewBox="0 0 24 24">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -287,18 +276,16 @@
     </div>
 
     <!-- Toast Notifications -->
-    <div class="toast-container" role="status" aria-live="polite">
+    <div class="toast-container">
       <div
           v-for="toast in toasts"
           :key="toast.id"
           class="toast"
           :class="toast.type"
-          role="note"
       >
         {{ toast.message }}
       </div>
     </div>
-    </main>
   </div>
   </NuxtLayout>
 
