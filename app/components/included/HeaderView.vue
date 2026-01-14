@@ -59,7 +59,7 @@ const dropDown = () => {
   <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat" role="navigation">
     <button
       class="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2 -z-30 focus:z-50 border border-blue-800 rounded-full px-4 py-1 bg-white"
-      aria-label="Press Enter to jump to main content" @click="moveFocus('main-container')" type="button">Skip to the
+      aria-label="Press Enter to jump to main content" @click="moveFocus('main-container')" type="button">Skip to
       Content</button>
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->
@@ -235,10 +235,10 @@ const dropDown = () => {
                 </div>
                 <p class="hidden capitalize lg:flex">Home</p>
               </NuxtLink>
-              <div class="flex items-center h-6 gap-2 p-2 cursor-pointer md:h-8" @click="logout" v-if="userToken"
-                role="button" tabindex="0" @keyup="announceLogout">
+              <button aria-label="Click to logout" class="flex items-center h-6 gap-2 p-2 cursor-pointer md:h-8" @click="logout" v-if="userToken"
+                role="button" @keyup="announceLogout">
                 <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
-              </div>
+              </button>
               <!-- sign in -->
               <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in" v-else
                 class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
