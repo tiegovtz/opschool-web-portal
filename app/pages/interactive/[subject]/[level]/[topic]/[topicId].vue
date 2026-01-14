@@ -232,7 +232,7 @@ const syncRemoteProgress = async (chapterId) => {
 // Store context in localStorage for AI Assistant
 const storeChapterContext = (chapterId, chapterNotes) => {
   if (!import.meta.client) return; // Only run on client
-  
+
   const context = {
     chapterId: chapterId,
     chapterName: chapterNotes?.name || 'this competence',
@@ -242,13 +242,13 @@ const storeChapterContext = (chapterId, chapterNotes) => {
     chapterNo: chapterNotes?.chapterNo || null,
     timestamp: Date.now(), // Store timestamp for cache invalidation
   };
-  
+
   // Only store if chapterName is valid (not "this competence" or empty)
   if (!context.chapterName || context.chapterName === 'this competence' || !context.chapterName.trim()) {
     console.warn('[Topic Page] ⚠️ Skipping context storage - invalid chapter name:', context.chapterName);
     return;
   }
-  
+
   try {
     localStorage.setItem('tie-ai-assistant-context', JSON.stringify(context));
     console.log('[Topic Page] ✅ Stored chapter context in localStorage:', context);
@@ -271,11 +271,17 @@ const getChapter = async (chapterId) => {
   chapters.currentChapterId = chapterId;
 
   await ensureAccessTokenValid();
-  announcement.value=`Loading activity of ${chapters.list?.filter(c=>c._id===chapterId)?.name} content please wait`;
+  announcement.value = `Loading activity of ${chapters.list?.filter(c => c._id === chapterId)?.name} content please wait`;
   try {
     const { data: response, status } = await fetchAsyncData(
       `chapter-${chapterId}`,
-      () => $fetch(`/api/topics/chapters/${chapterId}`)
+      () => $fetch(apiDocs.chapters.getChapterId.replaceAll(":id", chapterId),
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${signInAccessToken.value}`,
+          },
+        })
     );
 
     if (response) {
@@ -299,7 +305,7 @@ const getChapter = async (chapterId) => {
       }
 
       await Promise.allSettled(tasks);
-      announcement.value=`content of ${chapters.list?.filter(c=>c._id===chapterId)?.name} loaded successfully you may continue reading`;
+      announcement.value = `content of ${chapters.list?.filter(c => c._id === chapterId)?.name} loaded successfully you may continue reading`;
     }
   } catch (error) {
     chapters.notesStatus = "error";
@@ -342,7 +348,11 @@ const getQNTopicChapter = async (chapterId) => {
 };
 
 // Fetch chapters
-await useFetch(`/api/topics/${topicId}`)
+await useFetch(apiDocs.chapters.getByTopicId.replaceAll('{topicId}', topicId), {
+  headers: {
+    Authorization: `Bearer ${signInAccessToken.value}`,
+  }
+})
   .then((response) => {
     //  Check if the response is successful
     if (response) {
@@ -354,9 +364,8 @@ await useFetch(`/api/topics/${topicId}`)
         chapters.list = data.value;
         const firstChapterId = data.value[0]?._id;
         chapters.currentChapterId = firstChapterId;
-        
+
         // Prefetch and store context for the first chapter immediately
-        getChapter(firstChapterId);
         // This ensures context is available even before getChapter completes
         if (firstChapterId && data.value[0]) {
           const firstChapter = data.value[0];
@@ -365,9 +374,8 @@ await useFetch(`/api/topics/${topicId}`)
             chapterNo: firstChapter.chapterNo
           });
         }
-        console.log("[chapter list]:",data.value,'[firstChapterId]:',firstChapterId);
-        
         // Then load the full chapter details
+        getChapter(firstChapterId);
       }
       else if (status.value === 'error') {
         chapters.status = status.value;
@@ -811,7 +819,7 @@ definePageMeta({
 
     <!-- quiz -->
     <!-- bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat -->
-    <div  v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
+    <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :chapter-id="chapters.notes?._id ?? chapters.currentChapterId" :change-chapter="changeChapter"
@@ -819,7 +827,7 @@ definePageMeta({
         @emit-quiz-score="updateChapterProgress" />
     </div>
 
-    <section  v-else class="relative inline-flex w-full h-full overflow-hidden center-height">
+    <section v-else class="relative inline-flex w-full h-full overflow-hidden center-height">
       <!-- Loading state -->
       <div v-if="chapters.status == 'pending'" class="flex items-center justify-center w-full loading content-height">
         <LoadingIndicator :is-loading="true" />
@@ -842,14 +850,13 @@ definePageMeta({
         </div>
 
         <!-- Notes loaded successfully -->
-        <div id="main-container" tabindex="-1" aria-live="polite" aria-label="compitence content loaded successfully"  ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
+        <div id="main-container" tabindex="-1" aria-live="polite" aria-label="compitence content loaded successfully"
+          ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
           class="w-full py-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <NuxtLink 
-              aria-label="press link tp go back"
-              :to="{
+              <NuxtLink aria-label="press link tp go back" :to="{
                 path: '/',
                 query: {
                   tab: 'interactive-contents',
@@ -869,7 +876,8 @@ definePageMeta({
                 <!-- <span>Back</span> -->
               </NuxtLink>
 
-              <p :aria-label="`Competence header, ${chapters.notes?.name}`" role="heading" class="font-medium text-medium" v-if="chapters.status === 'success'">
+              <p :aria-label="`Competence header, ${chapters.notes?.name}`" role="heading"
+                class="font-medium text-medium" v-if="chapters.status === 'success'">
                 {{
                   chapters.notes?.name
                 }}
@@ -886,8 +894,9 @@ definePageMeta({
           <div class="relative flex flex-col justify-center w-full gap-2 py-3 content-view">
 
             <!-- Chapter Notes -->
-            <div v-mathjax class="mx-auto notes md:px-4 max-w-7xl" aria-label="Compitencies notes" aria-details="notes-extra-details"
-              role="region" v-html="enhanceAccessibility(experimentParser(modelParser(videoParser(chapters.notes?.content))))"></div>
+            <div v-mathjax class="mx-auto notes md:px-4 max-w-7xl" aria-label="Compitencies notes"
+              aria-details="notes-extra-details" role="region"
+              v-html="enhanceAccessibility(experimentParser(modelParser(videoParser(chapters.notes?.content))))"></div>
 
             <p id="notes-extra-details" class="sr-only">
               These notes include at least one video, two-dimensional images such as GIFs,
@@ -936,7 +945,8 @@ definePageMeta({
         </div>
 
         <!-- Notes failed to load -->
-        <div aria-live="polite" aria-label="error,activity not found" v-else class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
+        <div aria-live="polite" aria-label="error,activity not found" v-else
+          class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
           <MessageTopicNotFound message="This activity currently not available" />
         </div>
 
@@ -960,27 +970,21 @@ definePageMeta({
       </div>
 
       <!-- Default/idle state -->
-      <div v-else  class="idle">
+      <div v-else class="idle">
         <p>Try to reload the page, something went wrong</p>
       </div>
     </section>
 
     <!-- AI Assistant -->
-    <AIAssistant 
-      v-if="chapters.currentChapterId && chapters.notes"
-      :chapter-id="chapters.currentChapterId"
-      :chapter-name="chapters.notes?.name || 'this competence'"
-      :subject="topicStandard"
-      :level="topicLevel"
-      :topic="topicTitle"
-      :chapter-no="chapters.notes?.chapterNo"
-    />
+    <AIAssistant v-if="chapters.currentChapterId && chapters.notes" :chapter-id="chapters.currentChapterId"
+      :chapter-name="chapters.notes?.name || 'this competence'" :subject="topicStandard" :level="topicLevel"
+      :topic="topicTitle" :chapter-no="chapters.notes?.chapterNo" />
 
     <!--  -->
-      <!-- screen reader notifier -->
-      <div class="sr-only" aria-live="assertive" aria-atomic role="status">
-        {{ announcement }}
-      </div>
+    <!-- screen reader notifier -->
+    <div class="sr-only" aria-live="assertive" aria-atomic role="status">
+      {{ announcement }}
+    </div>
 
   </NuxtLayout>
 
