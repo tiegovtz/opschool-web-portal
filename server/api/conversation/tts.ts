@@ -8,7 +8,7 @@ import { tmpdir } from 'os'
 // Configuration from environment variables
 // ============================================================================
 const TTS_STEPS_SHORT = parseInt(process.env.TTS_STEPS_SHORT || '10', 10) // For single short sentences
-const TTS_STEPS_DEFAULT = parseInt(process.env.TTS_STEPS_DEFAULT || '6', 10) // For chunks in paragraphs
+const TTS_STEPS_DEFAULT = parseInt(process.env.TTS_STEPS_DEFAULT || '5', 10) // For chunks in paragraphs (matches sd-web-admin default)
 const TTS_STEPS_MIN = parseInt(process.env.TTS_STEPS_MIN || '2', 10) // Minimum when under time pressure
 const TTS_STEPS_MAX = parseInt(process.env.TTS_STEPS_MAX || '20', 10) // Maximum cap (increased to allow higher steps for names)
 const TTS_CHUNK_MAX_CHARS = parseInt(process.env.TTS_CHUNK_MAX_CHARS || '220', 10) // Max chars per chunk
@@ -22,8 +22,8 @@ const TTS_GLITCH_MAX_INTERNAL_SILENCE_MS = parseInt(process.env.TTS_GLITCH_MAX_I
 const TTS_GLITCH_MAX_INTERNAL_SILENCE_TOTAL_MS = parseInt(process.env.TTS_GLITCH_MAX_INTERNAL_SILENCE_TOTAL_MS || '2500', 10)
 const TTS_GLITCH_MIN_RMS = parseFloat(process.env.TTS_GLITCH_MIN_RMS || '0.008')
 const TTS_GLITCH_RETRY_LIMIT = parseInt(process.env.TTS_GLITCH_RETRY_LIMIT || '2', 10)
-const TTS_DEFAULT_VOICE_FEMALE = (process.env.TTS_DEFAULT_VOICE_FEMALE || 'F4').toUpperCase()
-const TTS_DEFAULT_VOICE_MALE = (process.env.TTS_DEFAULT_VOICE_MALE || 'M4').toUpperCase()
+const TTS_DEFAULT_VOICE_FEMALE = (process.env.TTS_DEFAULT_VOICE_FEMALE || 'F2').toUpperCase()
+const TTS_DEFAULT_VOICE_MALE = (process.env.TTS_DEFAULT_VOICE_MALE || 'M2').toUpperCase()
 // ============================================================================
 // Text preprocessing (quality/stability)
 // ============================================================================
@@ -256,6 +256,7 @@ function addSilence(samples: Float32Array, sampleRate: number, ms: number): Floa
   return out
 }
 
+// DEPRECATED: No longer used. Keeping for reference. Now using sd-web-admin's "pick 3rd of 4" strategy.
 function scoreAudio(samples: Float32Array, sampleRate: number): number {
   if (!samples || samples.length === 0) return -1e9
 
@@ -382,6 +383,7 @@ function isGlitchTake(samples: Float32Array, sampleRate: number): boolean {
   )
 }
 
+// DEPRECATED: No longer used. Keeping for reference. Now using sd-web-admin's "pick 3rd of 4" strategy.
 function pickBestTake(takes: Float32Array[], sampleRate: number): Float32Array {
   if (takes.length === 0) return new Float32Array(0)
   if (takes.length === 1) return takes[0]
@@ -568,7 +570,75 @@ function getCachedStyle(voiceId: string, helper: any): any {
 }
 
 // ============================================================================
-// Main TTS generation with adaptive steps and chunking
+// Simple TTS generation matching sd-web-admin (no chunking, no preprocessing, no glitch retry)
+// ============================================================================
+async function generateTTSSimple(
+  text: string,
+  voiceType: string,
+  voiceIdOverride?: string,
+  explicitSteps?: number
+): Promise<{ wav: Float32Array; sampleRate: number; metrics: TTSMetrics }> {
+  const startTime = Date.now()
+  const { helper, tts } = await loadSupertonicHelpers()
+
+  // Voice mapping
+  const preferredDefault = voiceType === 'male' ? TTS_DEFAULT_VOICE_MALE : TTS_DEFAULT_VOICE_FEMALE
+  const requested = isValidVoiceId(voiceIdOverride) ? voiceIdOverride.trim().toUpperCase() : null
+  const voiceId = (requested || preferredDefault).toUpperCase()
+  const style = getCachedStyle(voiceId, helper)
+
+  // Minimal cleaning (like sd-web-admin's cleanForTts)
+  let cleanedText = text.trim()
+  cleanedText = cleanedText.replace(/https?:\/\/\S+/g, '') // Remove URLs
+  cleanedText = cleanedText.replace(/#[\w\-_]+/g, '') // Remove hashtags
+  cleanedText = cleanedText.replace(/\s{2,}/g, ' ').trim() // Collapse whitespace
+  if (!/[.!?]$/.test(cleanedText)) {
+    cleanedText += '.' // Add period at end if missing
+  }
+
+  // Use explicit steps or default to 5 (like sd-web-admin)
+  const steps = explicitSteps !== undefined 
+    ? Math.min(Math.max(explicitSteps, TTS_STEPS_MIN), TTS_STEPS_MAX)
+    : 5
+
+  // Generate 4 takes and pick the 3rd (exactly like sd-web-admin)
+  const runs = 4
+  let chosen: Float32Array | null = null
+
+  for (let i = 0; i < runs; i++) {
+    const { wav } = await tts.call(cleanedText, style, steps, 1.0) // speed = 1.0 like admin
+    if (i === 2 || i === runs - 1) { // pick 3rd; fallback to last if fewer
+      chosen = wav
+    }
+  }
+
+  if (!chosen || chosen.length === 0) {
+    throw new Error('Failed to generate audio with Supertonic')
+  }
+
+  const totalTime = Date.now() - startTime
+
+  const metrics: TTSMetrics = {
+    inputLength: cleanedText.length,
+    numChunks: 1,
+    stepsPerChunk: [steps],
+    totalTimeMs: totalTime,
+    fallbackReduced: false,
+    voiceType,
+    voiceId,
+  }
+
+  logMetrics(metrics)
+
+  return {
+    wav: chosen,
+    sampleRate: tts.sampleRate,
+    metrics,
+  }
+}
+
+// ============================================================================
+// Complex TTS generation with adaptive steps and chunking (DEPRECATED - keeping for reference)
 // ============================================================================
 async function generateTTSAdaptive(
   text: string,
@@ -653,16 +723,15 @@ async function generateTTSAdaptive(
       }
     }
 
-    // Generate multiple takes and pick the best one (quality can vary slightly).
-    // Glitch guard: avoid takes with long internal silence.
-    const baseMaxRuns = Math.max(1, Math.min(TTS_BEST_OF_N, 6))
+    // Generate multiple takes and pick the 3rd one (consistent with sd-web-admin strategy)
+    // This empirically produces better quality than "best-of" scoring.
+    // Glitch guard: retry if selected take has issues.
     let attempt = 0
     let chosen: Float32Array | null = null
 
     while (attempt <= Math.max(0, TTS_GLITCH_RETRY_LIMIT)) {
-      const maxRuns = baseMaxRuns
-      // Short chunks benefit more from best-of; long chunks get at most 2 takes to avoid latency.
-      const runs = chunk.length <= 120 ? maxRuns : Math.min(maxRuns, 2)
+      // Always generate 4 takes (like sd-web-admin)
+      const runs = 4
 
       const takes: Float32Array[] = []
       for (let run = 0; run < runs; run++) {
@@ -670,7 +739,13 @@ async function generateTTSAdaptive(
         if (wav && wav.length) takes.push(wav)
       }
 
-      chosen = pickBestTake(takes, tts.sampleRate)
+      // Pick the 3rd take (index 2), or last if fewer than 3 (like sd-web-admin)
+      if (takes.length >= 3) {
+        chosen = takes[2]
+      } else if (takes.length > 0) {
+        chosen = takes[takes.length - 1]
+      }
+
       if (chosen && chosen.length > 0 && !isGlitchTake(chosen, tts.sampleRate)) {
         break
       }
@@ -782,8 +857,8 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Generate TTS with adaptive strategy
-    const { wav, sampleRate, metrics } = await generateTTSAdaptive(
+    // Generate TTS with simple strategy (matches sd-web-admin)
+    const { wav, sampleRate, metrics } = await generateTTSSimple(
       text.trim(),
       voiceType,
       voiceId,
