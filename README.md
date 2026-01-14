@@ -1,12 +1,4 @@
-**NB ## Update your branch with latest `master` (dev) before working to receive the latest updates from other developers**
 
-This ensures you are working with the latest changes from other developers and avoids conflicts later.
-
-1. Click Fetch origin → Pull origin (if available)
-2. Switch to `master`(dev) and Pull origin
-3. Switch back to your branch
-4. Branch → Merge into current branch → select `master`(dev)
-5. Push origin
 
 # Nuxt Minimal Starter
 
