@@ -5,14 +5,25 @@ export default defineEventHandler(async (event) => {
   const auth_token = getCookie(event, "signInAccessToken");
 
   if (!auth_token) {
-    throw createError({ statusCode: 401, message: "No authorization token provided" });
+    throw createError({
+      statusCode: 401,
+      message: "No authorization token provided",
+    });
   }
 
   if (!videoId) {
     throw createError({ statusCode: 400, message: "No video ID provided" });
   }
 
-  const videoUrl = `${apiDocs.videos.getStream}${videoId}`;
+  // ${apiDocs.videos.getStream}
+  //`https://41.59.102.150:5001/v1/video-stream/${videoId}`;
+  // const videoUrl = `https://http://127.0.0.1:5001/v1/video-stream/${videoId}`;
+
+  const videoUrl =
+    process.env.NODE_ENV === "production"
+      ? `https://127.0.0.1:5001/v1/video-stream/${videoId}`
+      : apiDocs.videos.getStream + videoId;
+
   const range = getHeader(event, "range");
 
   try {
@@ -31,7 +42,12 @@ export default defineEventHandler(async (event) => {
     }
 
     // Forward critical headers for video streaming
-    const headersToForward = ["content-type", "content-length", "content-range", "accept-ranges"];
+    const headersToForward = [
+      "content-type",
+      "content-length",
+      "content-range",
+      "accept-ranges",
+    ];
     headersToForward.forEach((key) => {
       const value = upstreamRes.headers.get(key);
       if (value) setHeader(event, key, value);
@@ -41,7 +57,11 @@ export default defineEventHandler(async (event) => {
     const reader = upstreamRes.body?.getReader();
     const res = event.node.res;
 
-    if (!reader) throw createError({ statusCode: 500, message: "Failed to read video stream" });
+    if (!reader)
+      throw createError({
+        statusCode: 500,
+        message: "Failed to read video stream",
+      });
 
     res.statusCode = upstreamRes.status;
 
