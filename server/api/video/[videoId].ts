@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   const videoUrl =
     process.env.NODE_ENV === "production"
       ? `https://127.0.0.1:5001/v1/video-stream/${videoId}`
-      : apiDocs.videos.getStream + videoId;
+      : `https://41.59.102.150:5001/v1/video-stream/${videoId}`;
 
   const range = getHeader(event, "range");
 
