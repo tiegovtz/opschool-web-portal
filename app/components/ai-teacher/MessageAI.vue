@@ -36,18 +36,61 @@
 <script setup lang="ts">
 import MarkdownIt from "markdown-it";
 import { ref, watch, nextTick, onMounted } from "vue";
+import { getImageFromShortcode } from "~/utilities/imageShortcodes";
 
 const md = new MarkdownIt({ html: true, breaks: true, linkify: true });
 const props = defineProps<{ message: any }>();
 const mathContainer = ref<HTMLElement[]>([]);
 
-// Process math delimiters - extract before markdown, restore after
+// Process math delimiters and image shortcodes - extract before markdown, restore after
 const processMathInText = (text: string): string => {
   if (!text) return "";
   
-  // Use a unique placeholder that markdown won't modify
+  // Use unique placeholders that markdown won't modify
   const mathPlaceholders: Array<{ placeholder: string; replacement: string }> = [];
+  const imagePlaceholders: Array<{ placeholder: string; replacement: string }> = [];
   let counter = 0;
+  
+  // Step 1: Extract image shortcodes first (before markdown processing)
+  // Pattern: [image:shortcode_name]
+  const imagePattern = /\[image:([^\]]+)\]/g;
+  text = text.replace(imagePattern, (match, shortcodeName) => {
+    const imageMeta = getImageFromShortcode(shortcodeName.trim());
+    const placeholder = `IMAGE_PLACEHOLDER_${counter}_END`;
+    
+    if (imageMeta) {
+      // Generate image HTML with proper styling and accessibility
+      const imageHtml = `<div class="my-4 flex justify-center">
+        <img 
+          src="${imageMeta.path}" 
+          alt="${imageMeta.alt}" 
+          class="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+          loading="lazy"
+          onerror="this.style.display='none'; this.nextElementSibling?.style.display='block';"
+        />
+        <span class="hidden text-gray-400 italic text-sm">Image not available: ${imageMeta.alt}</span>
+      </div>`;
+      
+      imagePlaceholders.push({
+        placeholder,
+        replacement: imageHtml
+      });
+    } else {
+      // If image not found, show placeholder text in dev mode, original shortcode in production
+      if (import.meta.dev) {
+        imagePlaceholders.push({
+          placeholder,
+          replacement: `<span class="text-gray-400 italic text-sm">[Image not found: ${shortcodeName.trim()}]</span>`
+        });
+      } else {
+        // In production, return original shortcode if not found
+        return match;
+      }
+    }
+    
+    counter++;
+    return placeholder;
+  });
   
   // Extract display math first ($$...$$ or \[...\])
   text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, content) => {
@@ -92,10 +135,18 @@ const processMathInText = (text: string): string => {
     return placeholder;
   });
   
-  // Now render markdown (placeholders will pass through as plain text)
+  // Step 2: Now render markdown (placeholders will pass through as plain text)
   let rendered = md.render(text);
   
-  // Restore math formulas
+  // Step 3: Restore image shortcodes as HTML img tags
+  imagePlaceholders.forEach(({ placeholder, replacement }) => {
+    // Escape special regex characters in placeholder
+    const escapedPlaceholder = placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedPlaceholder, 'g');
+    rendered = rendered.replace(regex, replacement);
+  });
+  
+  // Step 4: Restore math formulas
   mathPlaceholders.forEach(({ placeholder, replacement }) => {
     // Escape special regex characters in placeholder
     const escapedPlaceholder = placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

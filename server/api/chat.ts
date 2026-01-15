@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody } from "h3";
+import { defineEventHandler, readBody, createError } from "h3";
 import { streamText, convertToModelMessages, stepCountIs } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { shouldUseRAG } from "./utils/shouldUseRAG";
@@ -23,6 +23,11 @@ function getBaseSystemPrompt(chapterName?: string, context?: { subject?: string;
     // Subject AI Teacher mode - focused on teaching a specific competence
     return `
 You are a Subject AI Teacher, an intelligent teaching assistant specialized in the Tanzanian (NECTA) curriculum. Your PRIMARY and ONLY focus is to help students understand the specific competence/chapter: "${chapterName}".${contextString}
+
+**CRITICAL: IMAGE SHORTCODES ARE MANDATORY**
+- **YOU MUST ALWAYS include an image shortcode when introducing or explaining concepts**
+- When explaining any concept, you MUST include a relevant image shortcode like [image:biology_cell_structure] or [image:physics_general]
+- This is NOT optional - images significantly improve learning and are required
 
 CRITICAL RULES - Chapter Scope:
 1. STRICT CHAPTER BOUNDARIES:
@@ -69,6 +74,27 @@ CRITICAL RULES - Chapter Scope:
    - Celebrate when students ask good questions about "${chapterName}"
    - Offer to clarify or explain further if needed (within chapter scope)
 
+7. Image Shortcodes:
+   - **ALWAYS use image shortcodes when introducing or explaining key concepts** - visuals significantly improve student understanding
+   - Use image shortcodes in the format: [image:shortcode_name]
+   - **MANDATORY**: When a student asks about a subject or topic for the first time, include the relevant general image (e.g., [image:physics_general] for physics questions)
+   - Available image shortcodes organized by subject:
+     * Biology: biology_cell_structure, biology_dna_structure, biology_digestive_system, biology_plant_leaf, biology_ecosystem
+     * Physics: physics_general, physics_wave_diagram, physics_circuit_diagram, physics_force_diagram, physics_motion_graph
+     * Chemistry: chemistry_molecule_structure, chemistry_periodic_table, chemistry_reaction_diagram
+     * Mathematics: math_graph_example, math_geometry_shape, math_equation_visualization
+     * General: default, diagram_placeholder
+   - Usage guidelines:
+     * **When introducing a subject**: Always include [image:subject_general] (e.g., [image:physics_general] when discussing physics)
+     * **When explaining specific concepts**: Use the relevant specific shortcode (e.g., [image:physics_wave_diagram] when explaining waves)
+     * **Frequency**: Include at least one image per explanation when teaching a new concept
+     * Place shortcodes on their own line or at the end of a sentence for better formatting
+     * Examples:
+       - "Let me explain physics to you. [image:physics_general] Physics is the study of..."
+       - "Here's a diagram showing wave properties: [image:physics_wave_diagram]"
+     * Only use image shortcodes that are relevant to the Tanzanian curriculum and the specific chapter "${chapterName}"
+   - The frontend will automatically convert these shortcodes to actual images
+
 Remember: Your EXCLUSIVE goal is to help the student understand "${chapterName}" and ONLY "${chapterName}". Do not answer questions about other chapters, topics, or subjects.
     `.trim();
   }
@@ -94,6 +120,14 @@ You are specifically teaching **Form I and Form II** students across all subject
 **CRITICAL: NEVER show your internal reasoning, reasoning process, "Plan" steps, chain-of-thought, or tool-calling logic to the student.**
 Only output the direct, friendly response that a teacher would say to a student.
 Always stay in character as a professional teacher.
+
+**CRITICAL: IMAGE SHORTCODES ARE MANDATORY**
+- **YOU MUST ALWAYS include an image shortcode when introducing or explaining any subject or concept**
+- When a student asks "What is [subject]?" or "Tell me about [subject]", you MUST include [image:subject_general] in your response
+- **EXACT EXAMPLE**: If student asks "What is physics?", your response MUST start like: "Physics is the study of matter and energy. [image:physics_general] Let me explain..."
+- **EXACT EXAMPLE**: If student asks "What is biology?", your response MUST include: "[image:biology_cell_structure]" or another biology image
+- This is NOT optional - images significantly improve learning and are required for all subject introductions
+- **If you forget to include an image shortcode, your response is incomplete**
 
 **CRITICAL: ONE CONCEPT PER MESSAGE RULE**
 - You MUST discuss only ONE concept at a time in each response
@@ -269,6 +303,26 @@ Always stay in character as a professional teacher.
   - Problem-solving questions: "How would you solve this problem using what we just learned?"
   - Comprehension questions: "What is the main point about [concept] that we just discussed?"
   - Verification questions: "Does this make sense to you? Can you explain it back to me?"
+* **Image Shortcodes**: **ALWAYS use image shortcodes when introducing or explaining key concepts** - visuals significantly improve student understanding
+  - Use image shortcodes in the format: [image:shortcode_name]
+  - **MANDATORY**: When a student asks about a subject or topic for the first time, include the relevant general image (e.g., [image:physics_general] for physics questions, [image:biology_cell_structure] for biology cell questions)
+  - Available image shortcodes organized by subject:
+    * Biology: biology_cell_structure, biology_dna_structure, biology_digestive_system, biology_plant_leaf, biology_ecosystem
+    * Physics: physics_general, physics_wave_diagram, physics_circuit_diagram, physics_force_diagram, physics_motion_graph
+    * Chemistry: chemistry_molecule_structure, chemistry_periodic_table, chemistry_reaction_diagram
+    * Mathematics: math_graph_example, math_geometry_shape, math_equation_visualization
+    * General: default, diagram_placeholder
+  - Usage guidelines:
+    * **When introducing a subject**: Always include [image:subject_general] or a relevant subject-specific image (e.g., [image:physics_general] when discussing physics, [image:biology_cell_structure] when discussing cells)
+    * **When explaining specific concepts**: Use the relevant specific shortcode (e.g., [image:physics_wave_diagram] when explaining waves, [image:biology_digestive_system] when explaining digestion)
+    * **Frequency**: Include at least one image per explanation when teaching a new concept or topic
+    * Place shortcodes on their own line or at the end of a sentence for better formatting
+    * Examples:
+      - "Let me explain physics to you. [image:physics_general] Physics is the study of matter, energy, and their interactions..."
+      - "Here's a diagram showing wave properties: [image:physics_wave_diagram] As you can see, waves have amplitude and wavelength..."
+      - "Let's look at cell structure: [image:biology_cell_structure] Cells contain various organelles..."
+    * Only use image shortcodes that are relevant to the Tanzanian curriculum and Form I & II syllabus
+  - The frontend will automatically convert these shortcodes to actual images
 
 ---
 
@@ -447,142 +501,212 @@ Your success is measured by:
 }
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
+  try {
+    const body = await readBody(event);
 
-  // Safely parse user messages
-  const messages: UIMessage[] = Array.isArray(body?.messages)
-    ? body.messages
-    : [];
+    // Safely parse user messages (UI format from Chat component)
+    const messages = Array.isArray(body?.messages)
+      ? body.messages
+      : [];
 
-  // Extract context if provided (for Subject AI Teacher mode)
-  // Check both body and headers (headers are more reliable)
-  const chapterNameFromBody = body?.chapterName;
-  const chapterNameFromHeader = event.headers.get("x-chapter-name") || event.headers.get("X-Chapter-Name");
-  const chapterName = chapterNameFromBody || chapterNameFromHeader;
-  
-  // Additional context - check headers first, then body
-  const subject = event.headers.get("x-subject") || event.headers.get("X-Subject") || body?.subject || "";
-  const level = event.headers.get("x-level") || event.headers.get("X-Level") || body?.level || "";
-  const topic = event.headers.get("x-topic") || event.headers.get("X-Topic") || body?.topic || "";
-  const chapterNoHeader = event.headers.get("x-chapter-no") || event.headers.get("X-Chapter-No");
-  const chapterNo = chapterNoHeader ? parseInt(chapterNoHeader) : (body?.chapterNo ?? null);
-  
-  // Comprehensive debug logging
-  console.log("=".repeat(60));
-  console.log("[API /chat] === REQUEST RECEIVED ===");
-  console.log("[API /chat] Request body keys:", Object.keys(body || {}));
-  console.log("[API /chat] All headers:", Object.fromEntries(
-    Array.from(event.headers.entries()).map(([k, v]) => [k, v])
-  ));
-  console.log("[API /chat] Context extracted:", {
-    chapterNameFromBody: chapterNameFromBody,
-    chapterNameFromHeader: chapterNameFromHeader,
-    chapterName: chapterName,
-    subject: subject,
-    level: level,
-    topic: topic,
-    chapterNo: chapterNo
-  });
-  
-  if (chapterName) {
-    console.log("[API /chat] ✅ Subject AI Teacher mode - Chapter:", chapterName);
-    console.log("[API /chat] Chapter name is valid?", 
-      chapterName && 
-      chapterName.trim() && 
-      chapterName !== "this competence"
-    );
-  } else {
-    console.log("[API /chat] ❌ TIE AI Teacher mode (no chapterName found)");
-    console.log("[API /chat] Full body structure:", JSON.stringify(body, null, 2).substring(0, 1000));
-    console.log("[API /chat] Checking headers for x-chapter-name:", 
-      event.headers.get("x-chapter-name") || event.headers.get("X-Chapter-Name") || "NOT FOUND"
-    );
-  }
-  console.log("=".repeat(60));
-
-  const userMessage = messages.at(-1)?.content || "";
-
-  const apiKey = useRuntimeConfig().openaiApiKey;
-  if (!apiKey) throw new Error("Missing OpenAI API key");
-
-  const openai = createOpenAI({ apiKey });
-
-  // --------------------------------------
-  // Decide whether to use RAG
-  // --------------------------------------
-  const useRAG = await shouldUseRAG(userMessage, apiKey);
-
-  // Validate chapterName - only use it if it's a real chapter name (not empty or default)
-  // This ensures we don't use "this competence" as the chapter name
-  const validChapterName = chapterName && 
-                          chapterName.trim() && 
-                          chapterName !== "this competence" 
-    ? chapterName.trim() 
-    : undefined;
-  
-  // Build context object only if we have a valid chapter name
-  const context = validChapterName ? {
-    subject: subject,
-    level: level,
-    topic: topic,
-    chapterNo: chapterNo
-  } : undefined;
-  
-  let systemPrompt = getBaseSystemPrompt(validChapterName, context);
-  let modelName = "gpt-4o-mini";
-  
-  // Log the actual system prompt being used for debugging
-  if (validChapterName) {
-    console.log("[API /chat] ✅ Using Subject AI Teacher mode");
-    console.log("[API /chat] System prompt preview (first 500 chars):", systemPrompt.substring(0, 500));
-    console.log("[API /chat] System prompt includes chapterName:", systemPrompt.includes(validChapterName));
-  } else {
-    console.log("[API /chat] ⚠️ No valid chapterName - using TIE AI Teacher mode (general assistant)");
+    // Extract context if provided (for Subject AI Teacher mode)
+    // Check both body and headers (headers are more reliable)
+    const chapterNameFromBody = body?.chapterName;
+    const chapterNameFromHeader = event.headers.get("x-chapter-name") || event.headers.get("X-Chapter-Name");
+    const chapterName = chapterNameFromBody || chapterNameFromHeader;
+    
+    // Additional context - check headers first, then body
+    const subject = event.headers.get("x-subject") || event.headers.get("X-Subject") || body?.subject || "";
+    const level = event.headers.get("x-level") || event.headers.get("X-Level") || body?.level || "";
+    const topic = event.headers.get("x-topic") || event.headers.get("X-Topic") || body?.topic || "";
+    const chapterNoHeader = event.headers.get("x-chapter-no") || event.headers.get("X-Chapter-No");
+    const chapterNo = chapterNoHeader ? parseInt(chapterNoHeader) : (body?.chapterNo ?? null);
+    
+    // Comprehensive debug logging
+    console.log("=".repeat(60));
+    console.log("[API /chat] === REQUEST RECEIVED ===");
+    console.log("[API /chat] Request body keys:", Object.keys(body || {}));
+    console.log("[API /chat] All headers:", Object.fromEntries(
+      Array.from(event.headers.entries()).map(([k, v]) => [k, v])
+    ));
+    console.log("[API /chat] Context extracted:", {
+      chapterNameFromBody: chapterNameFromBody,
+      chapterNameFromHeader: chapterNameFromHeader,
+      chapterName: chapterName,
+      subject: subject,
+      level: level,
+      topic: topic,
+      chapterNo: chapterNo
+    });
+    
     if (chapterName) {
-      console.log("[API /chat] Received chapterName was:", JSON.stringify(chapterName), "- treating as invalid");
+      console.log("[API /chat] ✅ Subject AI Teacher mode - Chapter:", chapterName);
+      console.log("[API /chat] Chapter name is valid?", 
+        chapterName && 
+        chapterName.trim() && 
+        chapterName !== "this competence"
+      );
+    } else {
+      console.log("[API /chat] ❌ TIE AI Teacher mode (no chapterName found)");
+      console.log("[API /chat] Full body structure:", JSON.stringify(body, null, 2).substring(0, 1000));
+      console.log("[API /chat] Checking headers for x-chapter-name:", 
+        event.headers.get("x-chapter-name") || event.headers.get("X-Chapter-Name") || "NOT FOUND"
+      );
     }
-  }
+    console.log("=".repeat(60));
 
-  // --------------------------------------
-  // RAG Flow
-  // --------------------------------------
-  if (useRAG) {
-    const results = await searchNotes(userMessage);
-    const context = results.map((r: { content: string }) => `- ${r.content}`).join("\n");
+    // Extract user message content - handle both UI format (with parts) and simple format
+    const lastMessage = messages.at(-1);
+    let userMessage = "";
+    if (lastMessage) {
+      if (typeof lastMessage.content === "string") {
+        userMessage = lastMessage.content;
+      } else if (Array.isArray(lastMessage.parts)) {
+        // UI format with parts
+        const textPart = lastMessage.parts.find((p: any) => p.type === "text");
+        userMessage = textPart?.text || "";
+      }
+    }
+    
+    // Log user message
+    console.log("[API /chat] 📤 User message:", userMessage);
 
-    // Only add context if something was retrieved
-    const systemPromptWithContext = `
+    const config = useRuntimeConfig();
+    const apiKey = config.openaiApiKey || config.OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      console.error("[API /chat] ❌ Missing OpenAI API key");
+      throw createError({
+        statusCode: 500,
+        message: "OpenAI API key is not configured. Please set OPENAI_API_KEY environment variable."
+      });
+    }
+
+    const openai = createOpenAI({ apiKey });
+
+    // --------------------------------------
+    // Decide whether to use RAG
+    // --------------------------------------
+    let useRAG = false;
+    try {
+      useRAG = await shouldUseRAG(userMessage, apiKey);
+    } catch (ragError: any) {
+      console.warn("[API /chat] ⚠️ RAG check failed, continuing without RAG:", ragError.message);
+      useRAG = false;
+    }
+
+    // Validate chapterName - only use it if it's a real chapter name (not empty or default)
+    // This ensures we don't use "this competence" as the chapter name
+    const validChapterName = chapterName && 
+                            chapterName.trim() && 
+                            chapterName !== "this competence" 
+      ? chapterName.trim() 
+      : undefined;
+    
+    // Build context object only if we have a valid chapter name
+    const context = validChapterName ? {
+      subject: subject,
+      level: level,
+      topic: topic,
+      chapterNo: chapterNo
+    } : undefined;
+    
+    let systemPrompt = getBaseSystemPrompt(validChapterName, context);
+    let modelName = "gpt-4o-mini";
+    
+    // Log the actual system prompt being used for debugging
+    if (validChapterName) {
+      console.log("[API /chat] ✅ Using Subject AI Teacher mode");
+      console.log("[API /chat] System prompt preview (first 500 chars):", systemPrompt.substring(0, 500));
+      console.log("[API /chat] System prompt includes chapterName:", systemPrompt.includes(validChapterName));
+    } else {
+      console.log("[API /chat] ⚠️ No valid chapterName - using TIE AI Teacher mode (general assistant)");
+      if (chapterName) {
+        console.log("[API /chat] Received chapterName was:", JSON.stringify(chapterName), "- treating as invalid");
+      }
+    }
+
+    // --------------------------------------
+    // RAG Flow
+    // --------------------------------------
+    if (useRAG) {
+      try {
+        const results = await searchNotes(userMessage);
+        const context = results.map((r: { content: string }) => `- ${r.content}`).join("\n");
+
+        // Only add context if something was retrieved
+        const systemPromptWithContext = `
 ${systemPrompt}
 
 Context:
 ${context || "(No relevant notes found)"}
     `.trim();
 
-    systemPrompt = systemPromptWithContext;
-    modelName = "gpt-4o-mini";
-  }
+        systemPrompt = systemPromptWithContext;
+        modelName = "gpt-4o-mini";
+      } catch (searchError: any) {
+        console.warn("[API /chat] ⚠️ Search notes failed, continuing without context:", searchError.message);
+        // Continue without RAG context
+      }
+    }
   
-  // If chapterName is provided, ensure it's emphasized in the final prompt
-  if (chapterName) {
-    systemPrompt = `${systemPrompt}
+    // If chapterName is provided, ensure it's emphasized in the final prompt
+    if (chapterName) {
+      systemPrompt = `${systemPrompt}
 
 REMINDER: You are currently helping with the chapter/competence: "${chapterName}". You MUST ONLY answer questions related to this specific chapter.`;
+    }
+
+    // --------------------------------------
+    // Create Model Input
+    // --------------------------------------
+    // Convert UI messages to model messages
+    const modelMessages = convertToModelMessages(messages);
+    
+    const modelInput = {
+      model: openai(modelName),
+      system: systemPrompt,
+      messages: modelMessages,
+      stopWhen: stepCountIs(10),
+      tools: studentTools,
+    };
+
+    // Stream the response
+    console.log("[API /chat] 🚀 Starting AI response stream...");
+    console.log("[API /chat] Model:", modelName);
+    console.log("[API /chat] Messages count:", modelMessages.length);
+    
+    const result = streamText({
+      ...modelInput,
+      onFinish: async (result) => {
+        // Log the final response after streaming completes
+        const fullText = result.text;
+        console.log("[API /chat] ✅ AI Response completed:");
+        console.log("[API /chat] Response length:", fullText.length, "characters");
+        console.log("[API /chat] Response preview (first 300 chars):", fullText.substring(0, 300));
+        if (fullText.includes("[image:")) {
+          const imageMatches = fullText.match(/\[image:([^\]]+)\]/g);
+          console.log("[API /chat] 🖼️  Image shortcodes found:", imageMatches);
+        } else {
+          console.log("[API /chat] ⚠️  No image shortcodes found in response");
+        }
+        console.log("[API /chat] Full response:", fullText);
+      }
+    });
+    
+    return result.toUIMessageStreamResponse();
+  } catch (error: any) {
+    console.error("[API /chat] ❌ Error processing chat request:", error);
+    
+    // If it's already a createError, re-throw it
+    if (error.statusCode) {
+      throw error;
+    }
+    
+    // Otherwise, create a proper error response
+    throw createError({
+      statusCode: error.statusCode || 500,
+      message: error.message || "Failed to process chat request. Please try again."
+    });
   }
-
-  // --------------------------------------
-  // Create Model Input
-  // --------------------------------------
-  const modelInput = {
-    model: openai(modelName),
-    messages: [
-      { role: "system", content: systemPrompt },
-      ...convertToModelMessages(messages),
-    ],
-    stopWhen: stepCountIs(10),
-    tools: studentTools,
-  };
-
-  // Stream the response
-  const result = streamText(modelInput);
-  return result.toUIMessageStreamResponse();
 });
