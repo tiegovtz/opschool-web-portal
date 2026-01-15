@@ -72,6 +72,9 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    server:{
+      allowedHosts:['.local','localhost','opschool.tie.go.tz']
+    },
     css: {
       preprocessorOptions: {
         sass: {
