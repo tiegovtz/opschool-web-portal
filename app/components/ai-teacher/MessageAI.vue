@@ -36,7 +36,7 @@
 <script setup lang="ts">
 import MarkdownIt from "markdown-it";
 import { ref, watch, nextTick, onMounted } from "vue";
-import { getImageFromShortcode } from "~/utilities/imageShortcodes";
+import { getImageFromShortcode, loadDynamicShortcodes } from "~/utilities/imageShortcodes";
 
 const md = new MarkdownIt({ html: true, breaks: true, linkify: true });
 const props = defineProps<{ message: any }>();
@@ -187,7 +187,9 @@ watch(() => props.message, () => {
   renderMathJax();
 }, { deep: true });
 
-onMounted(() => {
+onMounted(async () => {
+  // Pre-load dynamic shortcodes from JSON file
+  await loadDynamicShortcodes();
   renderMathJax();
 });
 </script>

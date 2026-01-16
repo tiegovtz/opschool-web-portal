@@ -50,6 +50,7 @@ export default defineNuxtPlugin({
       "/english-practice",
       "/interactive-video",
       "/list-videos",
+      "/image-list",
       "/home#content-container-after-login",
       "/admin",
       "/admin/video-interactions",
