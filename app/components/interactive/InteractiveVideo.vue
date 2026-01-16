@@ -81,9 +81,9 @@
           </button>
           
           <!-- Time Display -->
-          <span class="text-white text-sm font-mono min-w-[45px]" aria-label="Current time">
+          <!-- <span class="text-white text-sm font-mono min-w-[45px]" aria-label="Current time">
             {{ formatTime(videoState.currentTime.value) }}
-          </span>
+          </span> -->
           
           <!-- Progress Bar -->
           <div class="flex-1 min-w-0" role="progressbar" :aria-valuenow="videoState.currentTime.value" :aria-valuemin="0" :aria-valuemax="videoState.duration.value" :aria-label="`Video progress: ${Math.round((videoState.currentTime.value / videoState.duration.value) * 100)}%`">
@@ -95,10 +95,10 @@
             />
           </div>
           
-          <span class="text-white text-sm font-mono min-w-[45px] text-right" aria-label="Total duration">
+          <!-- <span class="text-white text-sm font-mono min-w-[45px] text-right" aria-label="Total duration">
             {{ formatTime(videoState.duration.value) }}
           </span>
-          
+           -->
           <!-- Fullscreen Button -->
           <button
             class="flex-shrink-0 p-2.5 text-white hover:bg-white/25 rounded-full focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 backdrop-blur-sm bg-white/10"

@@ -2,6 +2,7 @@
 import apiDocs from "~/utilities/apiDocs";
 import questionsAnswers from "./questionsAnswers.vue";
 import type { Choice, Question } from "~/types/question.interface";
+import { generateSuggestion, parseTextAndLinks } from "~/utilities/linkfy.helper";
 
 // define Props
 const props = defineProps({
@@ -141,10 +142,10 @@ watch(
   }
 );
 
-const getChoiceReason = (question: Question) => {
+const getChoiceReason = (question: Question):string => {
   return question.choices.find(
     (choice: Choice) => choice.value === question.answer
-  )?.description;
+  )?.description || '';
 };
 
 
@@ -178,7 +179,7 @@ const getChoiceReason = (question: Question) => {
           </p>
         </div>
       </div>
-      <p v-if="quizAttempt.answeredQuestions !== questions.length  " class="my-2">
+      <p v-if="quizAttempt.answeredQuestions !== questions.length" class="my-2">
         Answer all questions.
       </p>
 
@@ -223,16 +224,12 @@ const getChoiceReason = (question: Question) => {
               </p>
               <!-- choice description (reason)-->
               <!--  -->
-              <p class="p-4 rounded-lg" v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description"
+              <div
+                v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description"
                 :aria-label="`Explanation to justify why you answer ${quizAttempt.clickedAnswer[index] == question.answer ? 'correct' : 'incorrect'}`"
-                :class="quizAttempt.clickedAnswer[index] == question.answer
-                  ? 'bg-normalGreener/20 text-[#005c1a] border border-normalGreen'
-                  : 'bg-red-600/20 text-[#960000] border border-red-600 '
-                  ">
-                <b>Explanation:
-                </b>
-                <i> {{ getChoiceReason(question) }}</i>
-              </p>
+                v-html="generateSuggestion(getChoiceReason(question),quizAttempt.clickedAnswer[index] == question.answer)"
+                >
+              </div>
             </div>
           </div>
         </div>

@@ -3,9 +3,7 @@ import { Chat } from "@ai-sdk/vue";
 import { ref } from "vue";
 
 const input = ref("");
-const chat = new Chat({
-  api: "/api/chat",
-});
+const chat = new Chat({});
 
 // Local state to show typing loader
 const isTyping = ref(false);

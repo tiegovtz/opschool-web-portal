@@ -7,6 +7,13 @@ import apiDocs from "~/utilities/apiDocs";
 import SearchResults from "./SearchResults.vue";
 import type { Topic } from "~/types/topic.interface";
 
+declare global {
+  interface Window {
+    mathJaxLoaded?: Promise<void>;
+    MathJaxRender?: (elements: HTMLElement[]) => Promise<void>;
+  }
+}
+
 const userToken = useCookie("signInUserToken");
 
 // Markdown renderer with MathJax support
@@ -28,7 +35,13 @@ const isLoadingAI = ref(false);
 const isLoadingTraditional = ref(false);
 const showFeedback = ref(false);
 const feedbackGiven = ref(false);
-const relatedContent = ref({
+const relatedContent = ref<{
+  topics: Array<{ _id: string; name: string; thumbnail?: string; level?: { name: string } | string |any; subject?: { name: string } | string|any }>;
+  videos: Array<{ _id: string; name: string; level?: { name: string } |any | string; subject?: { name: string } | string |any }>;
+  audio: Array<{ _id: string; name: string; level?: { name: string }|any | string; subject?: { name: string }|any | string }>;
+  experiments: Array<{ _id: string; name: string; level?: { name: string }|any | string; subject?: { name: string }|any | string }>;
+  suggestions: string;
+}>({
   topics: [],
   videos: [],
   audio: [],
@@ -68,11 +81,11 @@ const handleSearch = async () => {
 };
 
 // Process math delimiters - extract before markdown, restore after
-const processMathInText = (text) => {
+const processMathInText = (text:string) => {
   if (!text) return "";
   
   // Use a unique placeholder that markdown won't modify
-  const mathPlaceholders = [];
+  const mathPlaceholders:any[] = [];
   let counter = 0;
   
   // Extract display math first ($$...$$ or \[...\])
@@ -134,7 +147,7 @@ const processMathInText = (text) => {
 
 // Render AI answer with markdown and MathJax support
 const aiAnswerContainer = ref(null);
-const renderAIAnswer = (text) => {
+const renderAIAnswer = (text:string) => {
   if (!text) return "";
   return processMathInText(text);
 };
@@ -145,7 +158,7 @@ const renderMathJax = async () => {
   
   await nextTick();
   
-  if (window.mathJaxLoaded && window.MathJaxRender && aiAnswerContainer.value) {
+  if (window?.mathJaxLoaded && window.MathJaxRender && aiAnswerContainer.value) {
     try {
       await window.mathJaxLoaded;
       await window.MathJaxRender([aiAnswerContainer.value]);
@@ -171,19 +184,13 @@ const performAISearch = async () => {
 
   try {
     // Use $fetch for Nuxt server API routes
-    const data = await $fetch(apiDocs.search.aiSearch, {
+    
+    const data = await $fetch<any>(apiDocs.search.aiSearch, {
       method: "POST",
-      body: { query: searchReactive.search.trim() },
+      body: { query: searchReactive.search && searchReactive.search.trim() },
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value || ""}`,
       },
-    });
-
-    console.log("[AI Search Frontend] Response received:", {
-      success: data?.success,
-      hasAnswer: !!data?.answer,
-      hasResults: Array.isArray(data?.results),
-      resultCount: data?.results?.length || 0,
     });
 
     if (data && data.success && data.answer) {
@@ -259,8 +266,12 @@ const performAISearch = async () => {
 
 const performTraditionalSearch = async () => {
   isLoadingTraditional.value = true;
+  if(!searchReactive.search) {
+    isLoadingTraditional.value = false;
+    return;
+  }
   const url = userToken.value
-    ? `${apiDocs.search.getSearch}?query=${searchReactive.search.trim()}`
+    ? `${apiDocs.search.getSearch}?query=${ searchReactive.search.trim()}`
     : `${apiDocs.topics.filterTopics}?name=${searchReactive.search.trim()}`;
 
   try {
@@ -287,7 +298,7 @@ const performTraditionalSearch = async () => {
   }
 };
 
-const handleFeedback = (helpful) => {
+const handleFeedback = (helpful:boolean) => {
   feedbackGiven.value = true;
   showFeedback.value = false;
   // Could send feedback to analytics endpoint here
@@ -297,7 +308,7 @@ const handleFeedback = (helpful) => {
 const toggleAISearchMode = () => {
   aiSearchMode.value = !aiSearchMode.value;
   // Clear previous results when switching modes
-  searchReactive.searchResult = null;
+  searchReactive.searchResult = [];
   aiAnswer.value = "";
   showFeedback.value = false;
   feedbackGiven.value = false;
@@ -325,7 +336,7 @@ const inputSearch = (event:Event) => {
   if (newVal && newVal.trim() !== "") {
     // search();
   } else {
-    searchReactive.searchResult = null;
+    searchReactive.searchResult = [];
     aiAnswer.value = "";
     showFeedback.value = false;
     relatedContent.value = {
@@ -666,7 +677,7 @@ const mouseOut = () => {
                 />
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">{{ topic.name || topic.title }}</p>
+                <p class="text-sm font-medium text-gray-900 truncate">{{ topic?.name || (topic as any).title }}</p>
                 <p class="text-xs text-gray-500">
                   {{ topic.subject?.name || topic.subject || 'N/A' }} - {{ topic.level?.name || topic.level || 'Form 1' }}
                 </p>
@@ -689,7 +700,7 @@ const mouseOut = () => {
             >
               <Icon name="fluent:video-24-filled" class="text-red-500 flex-shrink-0" size="1.5rem" aria-hidden="true" />
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">{{ video.name || video.title }}</p>
+                <p class="text-sm font-medium text-gray-900 truncate">{{ video.name || (video as any).title }}</p>
                 <p class="text-xs text-gray-500">
                   {{ video.subject?.name || video.subject || 'N/A' }}
                 </p>
@@ -712,7 +723,7 @@ const mouseOut = () => {
             >
               <Icon name="famicons:headset-sharp" class="text-purple-500 flex-shrink-0" size="1.5rem" aria-hidden="true" />
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">{{ audioItem.name || audioItem.title }}</p>
+                <p class="text-sm font-medium text-gray-900 truncate">{{ audioItem.name || (audioItem as any).title }}</p>
                 <p class="text-xs text-gray-500">
                   {{ audioItem.subject?.name || audioItem.subject || 'N/A' }}
                 </p>
@@ -735,7 +746,7 @@ const mouseOut = () => {
             >
               <Icon name="icon-park-solid:experiment-one" class="text-green-500 flex-shrink-0" size="1.5rem" aria-hidden="true" />
               <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-gray-900 truncate">{{ experiment.name || experiment.title }}</p>
+                <p class="text-sm font-medium text-gray-900 truncate">{{ experiment.name || (experiment as any).title }}</p>
                 <p class="text-xs text-gray-500">
                   {{ experiment.subject?.name || experiment.subject || 'N/A' }}
                 </p>
