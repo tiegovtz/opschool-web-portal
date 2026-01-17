@@ -44,7 +44,10 @@ export default defineNuxtPlugin({
       "/home#content-container-after-login",
     ];
 
-    if (allowList.includes(to.fullPath)) return true;
+    // Check if path matches allowList (check both path and fullPath to handle query params)
+    if (allowList.includes(to.path) || allowList.includes(to.fullPath)) {
+      return true;
+    }
 
     // Allow direct navigation to content pages (video, interactive, audio, experiments)
     // These routes follow the pattern: /{type}/{subject}/{level}/{topic}/{id}

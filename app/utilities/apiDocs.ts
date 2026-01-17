@@ -1,4 +1,5 @@
 const baseURL = import.meta.env?.VITE_API_BASE_URL ??  "https://apitie.ekima.africa/v1" // define baseURL first
+// const baseURL = "https://uncasked-irrevocably-fausto.ngrok-free.dev/v1";
 
 const apiDocs = {
   baseURL: baseURL, // You can include it here for reference
@@ -132,6 +133,18 @@ const apiDocs = {
   search: {
     getSearch: `${baseURL}/search`,
     aiSearch: `/api/ai/search`, // Nuxt server API route
+  },
+
+  // Chat History API
+  chat: {
+    createSession: `${baseURL}/chat/sessions`,
+    getSessions: `${baseURL}/chat/sessions`,
+    getSession: `${baseURL}/chat/sessions/:id`,
+    updateSession: `${baseURL}/chat/sessions/:id`,
+    deleteSession: `${baseURL}/chat/sessions/:id`,
+    addMessage: `${baseURL}/chat/sessions/:id/messages`,
+    getMessages: `${baseURL}/chat/sessions/:id/messages`,
+    enforceRetention: `${baseURL}/chat/retention/enforce`,
   },
 }
 

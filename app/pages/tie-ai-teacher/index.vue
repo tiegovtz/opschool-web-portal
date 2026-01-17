@@ -1,34 +1,245 @@
 <script setup lang="ts">
 import { Chat } from "@ai-sdk/vue";
-import { ref } from "vue";
+import { ref, watch, onMounted } from "vue";
+import { useChatStore } from "~/stores/chatStore";
+import type { ChatMessage } from "~/types/chat.interface";
 
-const input = ref("");
+const route = useRoute();
+const router = useRouter();
+const chatStore = useChatStore();
+
+// Chat instance
 const chat = new Chat({});
 
-// Local state to show typing loader
+// Local state
 const isTyping = ref(false);
+const isHistoryOpen = ref(false);
+const isInitializing = ref(true);
+const lastMessageCount = ref(0);
+const savedMessageIds = ref(new Set<string>());
 
-const handleSubmit = (message: string) => {
+// Initialize session on mount
+onMounted(async () => {
+  try {
+    await chatStore.loadSessions();
+    
+    const sessionId = route.query.sessionId as string | undefined;
+    if (sessionId) {
+      await loadSession(sessionId);
+    } else {
+      await createNewSession();
+    }
+  } catch (error) {
+    console.error("[TIE AI Teacher] Initialization error:", error);
+    await createNewSession();
+  } finally {
+    isInitializing.value = false;
+  }
+});
+
+// Load existing session
+const loadSession = async (sessionId: string) => {
+  try {
+    const session = await chatStore.loadSession(sessionId);
+    
+    if (session.messages?.length) {
+      const chatMessages = session.messages.map(convertToChatMessage);
+      // @ts-ignore - messages is reactive array
+      chat.messages.splice(0, chat.messages.length, ...chatMessages);
+      lastMessageCount.value = session.messages.length;
+      // Track saved message IDs
+      savedMessageIds.value = new Set(session.messages.map((m: ChatMessage) => m.id));
+    } else {
+      // @ts-ignore
+      chat.messages.splice(0, chat.messages.length);
+      lastMessageCount.value = 0;
+      savedMessageIds.value = new Set();
+    }
+    
+    router.replace({ query: { sessionId } });
+  } catch (error) {
+    console.error("[TIE AI Teacher] Error loading session:", error);
+    await createNewSession();
+  }
+};
+
+// Create new session
+const createNewSession = async () => {
+  try {
+    const session = await chatStore.createSession();
+    // @ts-ignore
+    chat.messages.splice(0, chat.messages.length);
+    lastMessageCount.value = 0;
+    savedMessageIds.value = new Set();
+    router.replace({ query: { sessionId: session.id } });
+  } catch (error) {
+    console.error("[TIE AI Teacher] Error creating session:", error);
+  }
+};
+
+// Convert ChatMessage to Chat component format
+const convertToChatMessage = (msg: ChatMessage) => ({
+  id: msg.id,
+  role: msg.role,
+  parts: msg.parts || [{ type: "text", text: msg.content }],
+  content: msg.content,
+});
+
+// Extract text content from message
+const extractMessageContent = (message: any): string => {
+  if (message.content) return message.content;
+  const textPart = message.parts?.find((p: any) => p.type === "text");
+  return textPart?.text || "";
+};
+
+// Save a message to backend
+const saveMessage = async (message: any) => {
+  if (!message.id || savedMessageIds.value.has(message.id)) {
+    return; // Already saved
+  }
+
+  const content = extractMessageContent(message);
+  if (!content.trim()) return;
+
+  try {
+    await chatStore.addMessage({
+      role: message.role as "user" | "assistant" | "system",
+      content,
+      parts: message.parts,
+      metadata: { messageId: message.id },
+    });
+    savedMessageIds.value.add(message.id);
+  } catch (error) {
+    console.error("[TIE AI Teacher] Error saving message:", error);
+  }
+};
+
+// Watch for new messages - save user messages immediately, assistant messages after streaming
+watch(
+  () => chat.messages,
+  async (messages) => {
+    if (!chatStore.activeSessionId || isInitializing.value || !Array.isArray(messages)) {
+      return;
+    }
+
+    const currentCount = messages.length;
+    
+    // Save user messages immediately (they're complete when added)
+    const newMessages = messages.slice(lastMessageCount.value);
+    for (const message of newMessages) {
+      // Save user messages immediately
+      if (message.role === "user" && message.id) {
+        await saveMessage(message);
+      }
+      // Assistant messages will be saved when streaming completes
+    }
+
+    lastMessageCount.value = currentCount;
+  },
+  { deep: true }
+);
+
+// Watch chat status to save assistant messages when streaming completes
+watch(
+  () => chat.status,
+  async (status) => {
+    if (!chatStore.activeSessionId || isInitializing.value) return;
+    
+    // When streaming is complete, save any unsaved assistant messages
+    if (status === "ready") {
+      // Small delay to ensure message is fully complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // @ts-ignore
+      const messages = chat.messages || [];
+      for (const message of messages) {
+        // Save assistant messages that haven't been saved yet
+        if (message.role === "assistant" && message.id && !savedMessageIds.value.has(message.id)) {
+          await saveMessage(message);
+        }
+      }
+    }
+  }
+);
+
+// Watch URL for session changes
+watch(
+  () => route.query.sessionId,
+  async (sessionId) => {
+    if (sessionId && sessionId !== chatStore.activeSessionId) {
+      await loadSession(sessionId as string);
+    }
+  }
+);
+
+// Handle message submission
+const handleSubmit = async (message: string) => {
   if (!message.trim()) return;
 
-  isTyping.value = true; // Show loader immediately
-  chat.sendMessage({ text: message }).finally(() => {
-    isTyping.value = false; // Hide loader when done
-  });
-  input.value = "";
+  if (!chatStore.activeSessionId) {
+    await createNewSession();
+  }
+
+  isTyping.value = true;
+  
+  try {
+    // Send message to AI - the watch function will save user messages when they appear in chat.messages
+    await chat.sendMessage({ text: message });
+  } catch (error) {
+    console.error("[TIE AI Teacher] Error sending message:", error);
+  } finally {
+    isTyping.value = false;
+  }
+};
+
+// Handle new chat
+const handleNewChat = async () => {
+  await createNewSession();
+  isHistoryOpen.value = false;
+};
+
+// Handle session selection
+const handleSessionSelected = async (sessionId: string) => {
+  await loadSession(sessionId);
+  isHistoryOpen.value = false;
+};
+
+// Toggle history sidebar
+const toggleHistory = () => {
+  isHistoryOpen.value = !isHistoryOpen.value;
 };
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <AiTeacherHeader />
-    <AiTeacherMessages
-      :messages="chat.messages"
-      :isTyping="isTyping"
-    />
-    <AiTeacherInput
-      :chat="chat"
-      @sendMessage="handleSubmit"
-    />
+    <div class="relative">
+      <!-- Chat History Sidebar -->
+      <AiTeacherChatHistorySidebar
+        :is-open="isHistoryOpen"
+        @close="isHistoryOpen = false"
+        @new-chat="handleNewChat"
+        @session-selected="handleSessionSelected"
+      />
+
+      <!-- Main Content -->
+      <div :class="{ 'ml-80': isHistoryOpen }" class="transition-all duration-300">
+        <AiTeacherHeader @toggle-history="toggleHistory" />
+        
+        <div v-if="isInitializing" class="flex items-center justify-center h-64">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-oceanBlue"></div>
+        </div>
+        
+        <template v-else>
+          <AiTeacherMessages
+            :messages="chat.messages"
+            :isTyping="isTyping"
+          />
+          <AiTeacherInput
+            :chat="chat"
+            @sendMessage="handleSubmit"
+          />
+        </template>
+      </div>
+    </div>
   </NuxtLayout>
 </template>
