@@ -162,7 +162,11 @@ const sessions = computed(() => chatStore.sessions);
 
 // Get session title
 const getSessionTitle = (session: ChatSession): string => {
-  if (session.title) return session.title;
+  // Prioritize custom title (generated from first message)
+  if (session.title && session.title !== 'New Conversation') {
+    return session.title;
+  }
+  // Fallback to other fields
   if (session.topic) return session.topic;
   if (session.room_name) return session.room_name;
   if (session.details) {

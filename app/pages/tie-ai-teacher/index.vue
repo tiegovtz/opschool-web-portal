@@ -17,6 +17,7 @@ const isHistoryOpen = ref(false);
 const isInitializing = ref(true);
 const lastMessageCount = ref(0);
 const savedMessageIds = ref(new Set<string>());
+const hasTitleBeenSet = ref(false);
 
 // Initialize session on mount
 onMounted(async () => {
@@ -49,11 +50,14 @@ const loadSession = async (sessionId: string) => {
       lastMessageCount.value = session.messages.length;
       // Track saved message IDs
       savedMessageIds.value = new Set(session.messages.map((m: ChatMessage) => m.id));
+      // If session has a title, mark it as set
+      hasTitleBeenSet.value = !!session.title;
     } else {
       // @ts-ignore
       chat.messages.splice(0, chat.messages.length);
       lastMessageCount.value = 0;
       savedMessageIds.value = new Set();
+      hasTitleBeenSet.value = false;
     }
     
     router.replace({ query: { sessionId } });
@@ -71,6 +75,7 @@ const createNewSession = async () => {
     chat.messages.splice(0, chat.messages.length);
     lastMessageCount.value = 0;
     savedMessageIds.value = new Set();
+    hasTitleBeenSet.value = false;
     router.replace({ query: { sessionId: session.id } });
   } catch (error) {
     console.error("[TIE AI Teacher] Error creating session:", error);
@@ -90,6 +95,75 @@ const extractMessageContent = (message: any): string => {
   if (message.content) return message.content;
   const textPart = message.parts?.find((p: any) => p.type === "text");
   return textPart?.text || "";
+};
+
+// Generate a title from the first user message
+const generateTitleFromMessage = (message: string): string => {
+  // Clean the message
+  const cleaned = message.trim();
+  
+  if (!cleaned) return 'New Conversation';
+  
+  // Remove common question prefixes to make it more concise
+  const prefixes = [
+    /^explain\s+/i,
+    /^what\s+is\s+/i,
+    /^what\s+are\s+/i,
+    /^tell\s+me\s+about\s+/i,
+    /^tell\s+me\s+/i,
+    /^how\s+do\s+/i,
+    /^how\s+does\s+/i,
+    /^how\s+can\s+/i,
+    /^why\s+do\s+/i,
+    /^why\s+does\s+/i,
+    /^can\s+you\s+explain\s+/i,
+    /^can\s+you\s+tell\s+me\s+/i,
+    /^can\s+you\s+/i,
+    /^help\s+me\s+understand\s+/i,
+    /^help\s+me\s+/i,
+    /^i\s+want\s+to\s+know\s+about\s+/i,
+    /^i\s+want\s+to\s+learn\s+about\s+/i,
+  ];
+  
+  let title = cleaned;
+  
+  // Remove prefixes
+  for (const prefix of prefixes) {
+    if (prefix.test(title)) {
+      title = title.replace(prefix, '').trim();
+      break;
+    }
+  }
+  
+  // Capitalize first letter
+  if (title.length > 0) {
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+  }
+  
+  // Remove question marks and extra punctuation at the end
+  title = title.replace(/[?]+$/, '').trim();
+  
+  // Truncate to 50 characters max for better display
+  if (title.length > 50) {
+    title = title.substring(0, 47) + '...';
+  }
+  
+  return title || 'New Conversation';
+};
+
+// Update session title if not set
+const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
+  if (!chatStore.activeSessionId || hasTitleBeenSet.value) return;
+  
+  try {
+    const title = generateTitleFromMessage(firstUserMessage);
+    if (title && title !== 'New Conversation') {
+      await chatStore.updateSessionTitle(chatStore.activeSessionId, title);
+      hasTitleBeenSet.value = true;
+    }
+  } catch (error) {
+    console.error("[TIE AI Teacher] Error updating session title:", error);
+  }
 };
 
 // Save a message to backend
@@ -130,6 +204,14 @@ watch(
       // Save user messages immediately
       if (message.role === "user" && message.id) {
         await saveMessage(message);
+        
+        // Generate title from first user message
+        if (!hasTitleBeenSet.value) {
+          const content = extractMessageContent(message);
+          if (content.trim()) {
+            await updateSessionTitleIfNeeded(content);
+          }
+        }
       }
       // Assistant messages will be saved when streaming completes
     }
