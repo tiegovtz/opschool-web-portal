@@ -8,30 +8,31 @@ const navigationStore = useNavigationStore()
 
 // Define Props
 const props = withDefaults(defineProps<{
-  topicId:string,
-  topicImage?:string,
-  topicTitle:string,
-  topicDescription:string,
+  topicId: string,
+  topicImage?: string,
+  topicTitle: string,
+  topicDescription: string,
   topicDuration: string,
   topicLikes: number,
   topicViews: number,
-  topicLevel?:string,
-  topicStandard?:string,
-  subjectName?:string,
+  topicLevel?: string,
+  topicStandard?: string,
+  subjectName?: string,
   modelType?: string,
 
   // progress
   topicProgress?: number,
-  topicViewed?: boolean
+  topicViewed?: boolean,
+  altText?:string
 
-}>(),{
-topicImage:'',
-topicLevel:'Secondary',
-topicStandard:'Form One',
-subjectName:'Physics',
-modelType:'card',
-topicProgress:0,
-topicViewed:false,
+}>(), {
+  topicImage: '',
+  topicLevel: 'Secondary',
+  topicStandard: 'Form One',
+  subjectName: 'Physics',
+  modelType: 'card',
+  topicProgress: 0,
+  topicViewed: false,
 })
 
 const setTopicToView = () => {
@@ -50,13 +51,11 @@ const userToken = useCookie('signInUserToken')
 </script>
 
 <template>
-  <NuxtLink class="stat-card" v-if="modelType.toLowerCase() === 'profile'"
-  @click="setTopicToView()"
+  <NuxtLink class="stat-card" v-if="modelType.toLowerCase() === 'profile'" @click="setTopicToView()"
     :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`">
     <!-- profile view -->
     <div class="w-10 h-10 overflow-hidden rounded-full">
-      <NuxtImg :src="topicImage" :alt="topicTitle"
-        class="object-cover w-full h-full" />
+      <NuxtImg :src="topicImage" tabindex="0" :alt="altText ?? topicTitle" class="object-cover w-full h-full" />
     </div>
     <div class="stat-content">
       <span class="stat-label">{{ topicTitle }}</span>
@@ -64,26 +63,24 @@ const userToken = useCookie('signInUserToken')
     </div>
   </NuxtLink>
 
-  <NuxtLink v-else
-    :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`"
-    @click="setTopicToView()" 
-    :class="[
+  <NuxtLink  v-else :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`"
+    @click="setTopicToView()" :class="[
       'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out min-w-[300px]',
       layoutEffect == 'grid' && modelType === 'card' ? 'flex-col lg:pb-4' : 'flex-row h-32',
       { 'cursor-pointer flex-row my-2 pb-0 md:h-20 !max-h-14 ': modelType === 'search' },
-    ]">
+    ]"
+    :aria-label="`Visit this page to learn more about topic of ${topicTitle}`"
+    >
     <!-- topic image -->
-    <div 
-    :class="[
+    <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
       layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-full max-w-[200px]',
       { 'md:h-20 !h-full max-w-[80px]': modelType === 'search', },
     ]">
-      <NuxtImg :src="topicImage" loading="lazy" :alt="'Image of ' + topicTitle"
-        :class="[
-          'object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110',
-          { 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' },
-        ]" />
+      <NuxtImg :src="topicImage" tabindex="0" loading="lazy" :alt="altText ?? `Image of ${topicTitle}`" :class="[
+        'object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110',
+        { 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' },
+      ]" />
       <!-- topic standard -->
       <div v-if="modelType === 'card'" class="absolute right-0 -bottom-0">
         <div
@@ -92,14 +89,14 @@ const userToken = useCookie('signInUserToken')
         </div>
       </div>
     </div>
-    
+
     <!-- topic information -->
     <div
       class="flex-1 px-4 transition-all duration-500 ease-in-out bg-white group-hover:bg-deepBlue group-hover:text-white">
       <!-- topic progress bar -->
       <div v-if="userToken && modelType === 'card' && layoutEffect === 'grid'"
         class="flex items-center w-full max-w-full gap-2 mt-2">
-        
+
         <progress :value="Math.min(topicProgress ?? 0, 100)" max="100"
           class="transition-all duration-500 ease-in-out topic-card__progress-bar">
         </progress>
@@ -110,18 +107,17 @@ const userToken = useCookie('signInUserToken')
       </div>
       <!-- topic title and description -->
       <div class="flex flex-col my-auto transition-all duration-500 ease-in-out">
-        <p
-          :class="[
-            'text-[1.2rem] font-bold text-gray-800 group-hover:text-white',
+        <p :class="[
+          'text-[1.2rem] font-bold text-gray-800 group-hover:text-white',
           { 'mt-2': !userToken, 'md:text-[1.2rem] text-[1rem] font-medium': modelType === 'search' }
-          ]">
+        ]">
           {{ topicTitle }}
         </p>
         <p v-if="modelType === 'card'" class="text-small text-black/80 group-hover:text-white line-clamp-2">
           {{ topicDescription }}
         </p>
       </div>
-      
+
       <!-- topic subject name and metrics -->
       <div v-if="modelType === 'card'"
         class="flex items-center justify-between pt-2 pb-2 lg:pb-0 whitespace-nowrap text-extraSmall text-oceanBlue group-hover:text-white">
@@ -140,9 +136,9 @@ const userToken = useCookie('signInUserToken')
       </div>
     </div>
     <div>
-      
+
       <!-- learn more -->
-      <div v-if="modelType == 'card' && layoutEffect == 'grid' "
+      <div v-if="modelType == 'card' && layoutEffect == 'grid'"
         class="absolute bottom-0 z-10 items-center justify-between hidden w-full h-10 px-4 text-white transition-all duration-500 ease-in-out opacity-0 lg:flex bg-gradient-to-b from-deepBlue to-gray-800 group-hover:opacity-100">
         <p class="capitalize text-small">Start learning</p>
         <div class="flex items-center justify-center w-6 h-6 bg-white rounded-full animate-bounce-horizontal">
@@ -150,7 +146,7 @@ const userToken = useCookie('signInUserToken')
         </div>
       </div>
     </div>
-    
+
     <!-- learn more -->
     <div v-if="modelType == 'card'"
       class="flex items-center justify-between w-full h-8 px-4 text-white lg:hidden bg-gradient-to-b from-deepBlue to-gray-800 ">

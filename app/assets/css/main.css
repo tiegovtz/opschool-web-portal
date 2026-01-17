@@ -24,7 +24,7 @@
 
 @layer base {
   html {
-    @apply box-border p-0 m-0 overflow-auto leading-relaxed bg-white select-none scroll-smooth min-h-dvh;
+    @apply box-border p-0 m-0 overflow-auto leading-relaxed bg-white select-none scroll-smooth min-h-dvh scroll-smooth;
   }
 
   .title {
@@ -147,6 +147,9 @@
   /* color: #0077c7; */
 }
 
+.notes{
+  scroll-behavior: smooth !important;
+}
 
 /*  notes styles */
 .notes span,

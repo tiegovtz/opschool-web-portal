@@ -4,7 +4,7 @@
     <HeaderView />
 
     <!-- Main content -->
-    <main class="wrapper-container">
+    <main class="wrapper-container" tabindex="-1" role="main">
      <div class="md:shadow-2xl md:p-4 p-2 bg-white !center-height">
       <slot />
      </div>

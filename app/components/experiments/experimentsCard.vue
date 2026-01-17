@@ -1,52 +1,32 @@
-<script setup>
+<script setup lang="ts">
 import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
 const navigationStore = useNavigationStore()
 
-const props = defineProps({
-    experimentId: {
-        type: String,
-        required: true,
-    },
-    experimentName: {
-        type: String,
-        required: true,
-    },
-    experimentThumbnail: {
-        type: String,
-       default: '/images/background2.webp',
-    },
-    experimentFileUrl: {
-        type: String,
-        required: true,
-    },
-    experimentDescription: {
-        type: String,
-        required: true,
-    },
-    experimentType: {
-        type: String,
-        required: true,
-    },
-    experimentLevel: {
-        type: String,
-        default: 'Secondary',
-    },
-    experimentStandard: {
-        type: String,
-        default: 'Form One',
-    },
-    experimentSubject: {
-        type: String,
-        default: 'Physics'
-    },
-
+const props = withDefaults( 
+    defineProps<{
+    experimentId:string|any,
+    experimentName:string|any,
+    experimentThumbnail?:string|any,
+    experimentFileUrl: string|any,
+    experimentDescription: string|any,
+    experimentType: string|any,
+    experimentLevel: string|any,
+    experimentStandard?:string|any,
+    experimentSubject: string |any,
+    altText?:string
     // progress
-    topicProgress: {
-        type: Number,
-        default: 0,
-    },
-    topicViewed: Boolean
+    topicProgress?:number,
+    topicViewed?: boolean
+
+}>(),
+{
+
+    experimentThumbnail:'/images/background2.webp',
+    topicProgress:0,
+    experimentSubject:'Physics',
+    experimentStandard:'Form One',
+    experimentLevel:'Secondary',
 
 })
 
@@ -70,13 +50,14 @@ const setExperimentUrl =()=>{
         :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
             layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32'
-        ]">
+        ]"
+        >
         <!-- Thumbnail section -->
         <div :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
             layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
-            <NuxtImg :src="experimentThumbnail" :alt="experimentName"
+            <NuxtImg :src="experimentThumbnail" tabindex="0" :alt="altText??experimentName"
                 class="object-cover w-full h-full transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-black bg-opacity-70 to-transparent opacity-70" aria-hidden="true"></div>
 

@@ -1,0 +1,780 @@
+<template>
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+      <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold text-gray-800 mb-2 text-center">
+          Conversation Practice
+        </h1>
+        <p class="text-gray-600 text-center mb-8">
+          Practice conversations with AI using speech-to-text and text-to-speech
+        </p>
+
+      <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
+        <!-- Voice Settings -->
+        <div class="flex flex-col gap-4 mb-4">
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-medium text-gray-700">Voice Type:</label>
+            <select
+              v-model="voiceType"
+              class="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
+              :disabled="isPlaying || isRecording || isGeneratingTTS"
+            >
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-4">
+            <label class="text-sm font-medium text-gray-700 min-w-[120px]">Playback Speed:</label>
+            <input
+              v-model.number="playbackSpeed"
+              type="range"
+              min="0.5"
+              max="1.5"
+              step="0.05"
+              class="flex-1 accent-indigo-600"
+              :disabled="!currentAudioUrl || isGeneratingTTS"
+              @input="updatePlaybackSpeed"
+            />
+            <span class="text-sm text-gray-600 min-w-[50px]">{{ playbackSpeed.toFixed(2) }}x</span>
+          </div>
+        </div>
+
+        <!-- Conversation Input (Temporary - will be replaced with API) -->
+        <div v-if="!conversationStarted">
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Conversation Context (Temporary - will come from API)
+          </label>
+          <textarea
+            v-model="conversationInput"
+            placeholder="Enter conversation pieces separated by newlines. Example:&#10;What's your name?&#10;Nice to meet you, I am Grace.&#10;How are you?&#10;I am also well."
+            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 min-h-[200px]"
+            rows="6"
+          ></textarea>
+          <div class="mt-4 flex gap-4 justify-center">
+            <button
+              @click="inputMode = 'speech'; startConversation()"
+              class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            >
+              Start Interactive Conversation (Voice)
+            </button>
+            <button
+              @click="inputMode = 'text'; startConversation()"
+              class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              Start Conversation by Text
+            </button>
+          </div>
+        </div>
+
+        <!-- Conversation Display -->
+        <div v-if="conversationStarted" class="space-y-4">
+          <!-- Compact State Debug (only in dev) -->
+          <div v-if="showDebugState" class="bg-gray-100 rounded-md p-3 text-xs font-mono">
+            <details>
+              <summary class="cursor-pointer text-gray-600">Conversation State (Debug)</summary>
+              <pre class="mt-2 whitespace-pre-wrap">{{ JSON.stringify(conversationState, null, 2) }}</pre>
+            </details>
+          </div>
+
+          <!-- Current Conversation Piece -->
+          <div class="bg-gray-50 rounded-md p-4">
+            <p class="text-lg text-gray-800">{{ currentConversationPiece }}</p>
+          </div>
+
+          <!-- Next Question Preview (context) -->
+          <div v-if="nextConversationPiece && !isProcessing && !isConversationComplete" class="bg-blue-50 border border-blue-200 rounded-md p-3">
+            <h4 class="text-xs font-medium text-blue-700 mb-1">Context of next question:</h4>
+            <p class="text-sm text-blue-800">{{ nextConversationPiece }}</p>
+          </div>
+
+          <!-- Status Messages -->
+          <div v-if="statusMessage" :class="[
+            'rounded-md p-4 border-2',
+            statusMessage.type === 'error' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
+          ]">
+            <p class="text-gray-900 font-semibold">{{ statusMessage.text }}</p>
+          </div>
+
+          <!-- User Answer Display -->
+          <div v-if="userAnswer" class="bg-blue-50 rounded-md p-4">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Your Answer:</h3>
+            <p class="text-gray-800">{{ userAnswer }}</p>
+          </div>
+
+          <!-- TTS Loading Indicator -->
+          <div v-if="isGeneratingTTS" class="flex flex-col items-center justify-center py-8">
+            <LoadingIndicator :is-loading="true" />
+            <p class="mt-4 text-gray-600">Generating audio...</p>
+          </div>
+
+          <!-- Recording Controls (Speech Mode) -->
+          <div v-if="!isConversationComplete && !isGeneratingTTS && inputMode === 'speech'" class="flex flex-col items-center space-y-4">
+            <div v-if="!isRecording && !isProcessing" class="flex gap-4">
+              <button
+                v-if="!isPlaying"
+                @click="playCurrentPiece"
+                class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              >
+                Play Audio
+              </button>
+              <button
+                v-if="isPlaying"
+                @click="stopAudioAndStartRecording"
+                class="px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors"
+              >
+                Skip & Answer
+              </button>
+            </div>
+            <button
+              v-if="isRecording"
+              @click="stopRecording"
+              class="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2"
+            >
+              <span class="w-3 h-3 bg-white rounded-full animate-pulse"></span>
+              Stop Recording
+            </button>
+            <!-- Try Again Button (Speech Mode) -->
+            <button
+              v-if="statusMessage && statusMessage.type === 'error' && !isRecording && !isProcessing"
+              @click="startRecording"
+              class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+
+          <!-- Text Input Controls (Text Mode) -->
+          <div v-if="!isConversationComplete && inputMode === 'text'" class="flex flex-col items-center space-y-4 w-full">
+            <div v-if="!isProcessing" class="w-full max-w-2xl space-y-3">
+              <textarea
+                v-model="textAnswer"
+                placeholder="Type your answer here..."
+                class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 min-h-[100px]"
+                rows="4"
+                @keydown.enter.exact.prevent="submitTextAnswer"
+                @keydown.ctrl.enter.exact="submitTextAnswer"
+              ></textarea>
+              <div class="flex gap-4 justify-center">
+                <button
+                  @click="submitTextAnswer"
+                  :disabled="!textAnswer.trim()"
+                  class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  Submit Answer
+                </button>
+              </div>
+            </div>
+            <!-- Try Again Button (Text Mode) -->
+            <button
+              v-if="statusMessage && statusMessage.type === 'error' && !isProcessing"
+              @click="textAnswer = ''; statusMessage = null"
+              class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+
+          <!-- Conversation History -->
+          <div v-if="conversationHistory.length > 0" class="mt-6">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Conversation History:</h3>
+            <div class="space-y-2 max-h-60 overflow-y-auto">
+              <div
+                v-for="(item, idx) in conversationHistory"
+                :key="idx"
+                class="bg-gray-50 rounded-md p-3 text-sm"
+              >
+                <p class="font-semibold text-gray-700">AI: {{ item.ai }}</p>
+                <p v-if="item.user" class="text-gray-600 mt-1">You: {{ item.user }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-4 mt-4">
+            <button
+              @click="saveConversation"
+              :disabled="conversationHistory.length === 0"
+              class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            >
+              Save Conversation
+            </button>
+            <button
+              @click="resetConversation"
+              class="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+            >
+              Restart Conversation
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden Audio Element -->
+    <audio
+      ref="audioRef"
+      @ended="onAudioEnded"
+      @error="onAudioError"
+      @timeupdate="onAudioTimeUpdate"
+      class="hidden"
+      :volume="1.0"
+    ></audio>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import LoadingIndicator from '@/components/loading/loadingIndicator.vue'
+
+// Page metadata
+definePageMeta({
+  layout: 'home-layout',
+})
+
+// ============================================================================
+// Compact Conversation State (NEW - replaces full history tracking)
+// ============================================================================
+const createDefaultState = () => ({
+  aiName: null,
+  aiGender: 'female',
+  aiRole: null,
+  userName: null,
+  userMood: 'neutral',
+  userChoices: {},
+  keyFacts: [],
+  scenarioRoles: {
+    aiRole: null,
+    userRole: null,
+    aiNeed: null,
+  },
+  branchStack: [],
+  scriptProgress: {
+    totalScriptPieces: 0,
+    coveredIndices: [],
+    skippedIndices: [],
+    currentScriptIndex: 0,
+    currentActualIndex: 0,
+  },
+  inBranch: false,
+  branchDepth: 0,
+  questionIndex: 0,
+  totalQuestions: 0,
+  lastCorrectAnswer: null,
+})
+
+// Compact state that gets sent to backend instead of full history
+const conversationState = ref(createDefaultState())
+
+// Debug mode - show state in UI (toggle with URL param ?debug=1)
+const showDebugState = ref(false)
+
+// ============================================================================
+// UI State
+// ============================================================================
+const voiceType = ref('female')
+const playbackSpeed = ref(1.0)
+const conversationInput = ref('')
+const conversationStarted = ref(false)
+const conversationCompleteMessage = ref('')
+const conversationPieces = ref([])
+const currentIndex = ref(0)
+const isPlaying = ref(false)
+const isRecording = ref(false)
+const isProcessing = ref(false)
+const isGeneratingTTS = ref(false)
+const userAnswer = ref('')
+const textAnswer = ref('')
+const inputMode = ref('speech')
+const statusMessage = ref(null)
+const conversationHistory = ref([]) // Still kept for display purposes
+const audioRef = ref(null)
+const currentAudioUrl = ref(null)
+const audioUrlCache = ref({})
+
+// Speech Recognition
+let recognition = null
+
+// ============================================================================
+// Computed Properties
+// ============================================================================
+const currentConversationPiece = computed(() => {
+  if (conversationCompleteMessage.value) return conversationCompleteMessage.value
+  if (conversationPieces.value.length === 0) return ''
+  return conversationPieces.value[currentIndex.value] || ''
+})
+
+const nextConversationPiece = computed(() => {
+  if (conversationCompleteMessage.value) return null
+  if (conversationPieces.value.length === 0 || currentIndex.value >= conversationPieces.value.length - 1) return null
+  return conversationPieces.value[currentIndex.value + 1] || null
+})
+
+const isConversationComplete = computed(() => !!conversationCompleteMessage.value)
+
+// ============================================================================
+// Lifecycle Hooks
+// ============================================================================
+onMounted(() => {
+  // Check for debug mode
+  if (typeof window !== 'undefined') {
+    const urlParams = new URLSearchParams(window.location.search)
+    showDebugState.value = urlParams.get('debug') === '1'
+    
+    // Initialize Speech Recognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition()
+      recognition.continuous = false
+      recognition.interimResults = false
+      recognition.lang = 'en-US'
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript
+        userAnswer.value = transcript
+        validateAnswer(transcript)
+      }
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error)
+        isRecording.value = false
+        isProcessing.value = false
+        showStatus('error', `Speech recognition error: ${event.error}`)
+      }
+
+      recognition.onend = () => {
+        isRecording.value = false
+      }
+    } else {
+      showStatus('error', 'Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.')
+    }
+  }
+})
+
+onUnmounted(() => {
+  if (recognition) {
+    recognition.stop()
+  }
+  if (audioRef.value) {
+    audioRef.value.pause()
+    audioRef.value = null
+  }
+  if (currentAudioUrl.value) {
+    URL.revokeObjectURL(currentAudioUrl.value)
+  }
+})
+
+// ============================================================================
+// Methods
+// ============================================================================
+const detectSpeakerGenderFromAllPieces = async () => {
+  try {
+    const allPiecesText = conversationPieces.value.join(' ')
+    const voiceDetection = await $fetch('/api/conversation/detect-voice', {
+      method: 'POST',
+      body: {
+        text: allPiecesText,
+        conversationHistory: '',
+        currentVoiceType: voiceType.value,
+      },
+    })
+
+    if (voiceDetection.success && voiceDetection.voiceType) {
+      voiceType.value = voiceDetection.voiceType
+      // Update state with detected gender
+      conversationState.value.aiGender = voiceDetection.voiceType
+      console.log(`Speaker gender detected: ${voiceDetection.voiceType}`)
+    }
+  } catch (error) {
+    console.warn('Failed to pre-detect speaker gender:', error)
+  }
+}
+
+const startConversation = () => {
+  if (!conversationInput.value.trim()) {
+    showStatus('error', 'Please enter conversation context')
+    return
+  }
+
+  const pieces = conversationInput.value
+    .split('\n')
+    .map(p => p.trim())
+    .filter(p => p.length > 0)
+
+  if (pieces.length === 0) {
+    showStatus('error', 'Please enter at least one conversation piece')
+    return
+  }
+
+  // Initialize conversation
+  conversationPieces.value = pieces
+  conversationStarted.value = true
+  currentIndex.value = 0
+  conversationHistory.value = []
+  userAnswer.value = ''
+  textAnswer.value = ''
+  statusMessage.value = null
+  conversationCompleteMessage.value = ''
+  audioUrlCache.value = {}
+
+  // Initialize compact state
+  conversationState.value = {
+    ...createDefaultState(),
+    aiGender: voiceType.value,
+    totalQuestions: pieces.length,
+    questionIndex: 0,
+    scriptProgress: {
+      totalScriptPieces: pieces.length,
+      coveredIndices: [],
+      skippedIndices: [],
+      currentScriptIndex: 0,
+      currentActualIndex: 0,
+    },
+  }
+
+  // Pre-analyze conversation for speaker identity
+  detectSpeakerGenderFromAllPieces()
+
+  // Start with first piece
+  nextTick(() => {
+    if (inputMode.value === 'text') {
+      textAnswer.value = ''
+      statusMessage.value = null
+    } else {
+      playCurrentPiece()
+    }
+  })
+}
+
+const playCurrentPiece = async () => {
+  if (isPlaying.value || isGeneratingTTS.value || !currentConversationPiece.value) return
+  
+  if (inputMode.value === 'text') return
+
+  const cachedAudioUrl = audioUrlCache.value[currentIndex.value]
+  if (cachedAudioUrl) {
+    if (audioRef.value) {
+      if (currentAudioUrl.value && currentAudioUrl.value.startsWith('blob:')) {
+        URL.revokeObjectURL(currentAudioUrl.value)
+      }
+      currentAudioUrl.value = cachedAudioUrl
+      audioRef.value.src = cachedAudioUrl
+      audioRef.value.playbackRate = playbackSpeed.value
+      isPlaying.value = true
+      audioRef.value.play().catch(err => {
+        console.error('Error playing audio:', err)
+        isPlaying.value = false
+        showStatus('error', 'Failed to play audio')
+      })
+    }
+    return
+  }
+
+  try {
+    isGeneratingTTS.value = true
+    statusMessage.value = null
+
+    // Voice detection
+    try {
+      const voiceDetection = await $fetch('/api/conversation/detect-voice', {
+        method: 'POST',
+        body: {
+          text: currentConversationPiece.value,
+          conversationHistory: conversationHistory.value,
+          currentVoiceType: voiceType.value,
+        },
+      })
+
+      if (voiceDetection.success && voiceDetection.shouldUpdate && voiceDetection.voiceType) {
+        voiceType.value = voiceDetection.voiceType
+        conversationState.value.aiGender = voiceDetection.voiceType
+      }
+    } catch (detectionError) {
+      console.warn('Voice detection failed:', detectionError)
+    }
+
+    // Generate TTS
+    const response = await $fetch('/api/conversation/tts', {
+      method: 'POST',
+      body: {
+        text: currentConversationPiece.value,
+        voiceType: voiceType.value,
+      },
+    })
+
+    if (response.success && response.audioUrl) {
+      audioUrlCache.value[currentIndex.value] = response.audioUrl
+      isGeneratingTTS.value = false
+      isPlaying.value = true
+
+      if (audioRef.value) {
+        if (currentAudioUrl.value && currentAudioUrl.value.startsWith('blob:')) {
+          URL.revokeObjectURL(currentAudioUrl.value)
+        }
+        currentAudioUrl.value = response.audioUrl
+        audioRef.value.src = response.audioUrl
+        audioRef.value.playbackRate = playbackSpeed.value
+        audioRef.value.play().catch(err => {
+          console.error('Error playing audio:', err)
+          isPlaying.value = false
+          showStatus('error', 'Failed to play audio')
+        })
+      }
+    } else {
+      isGeneratingTTS.value = false
+      showStatus('error', response.error || 'Failed to generate audio')
+    }
+  } catch (error) {
+    console.error('Error generating TTS:', error)
+    isGeneratingTTS.value = false
+    showStatus('error', 'Failed to generate audio')
+  }
+}
+
+const stopAudioAndStartRecording = () => {
+  if (audioRef.value && isPlaying.value) {
+    audioRef.value.pause()
+    audioRef.value.currentTime = 0
+    isPlaying.value = false
+  }
+  startRecording()
+}
+
+const onAudioEnded = () => {
+  isPlaying.value = false
+  if (conversationStarted.value && currentIndex.value < conversationPieces.value.length) {
+    setTimeout(() => {
+      if (inputMode.value === 'speech') {
+        startRecording()
+      } else {
+        textAnswer.value = ''
+        statusMessage.value = null
+      }
+    }, 500)
+  }
+}
+
+const onAudioError = () => {
+  console.error('Audio element error:', audioRef.value?.error)
+  isPlaying.value = false
+  showStatus('error', `Error playing audio: ${audioRef.value?.error?.message || 'Unknown error'}`)
+}
+
+const onAudioTimeUpdate = () => {
+  // Audio progress tracking if needed
+}
+
+const startRecording = () => {
+  if (!recognition) {
+    showStatus('error', 'Speech recognition is not available')
+    return
+  }
+
+  if (isPlaying.value) {
+    showStatus('error', 'Please wait for audio to finish')
+    return
+  }
+
+  try {
+    isRecording.value = true
+    userAnswer.value = ''
+    statusMessage.value = null
+    recognition.start()
+  } catch (error) {
+    console.error('Error starting recording:', error)
+    isRecording.value = false
+    showStatus('error', 'Failed to start recording')
+  }
+}
+
+const stopRecording = () => {
+  if (recognition && isRecording.value) {
+    recognition.stop()
+  }
+}
+
+const submitTextAnswer = () => {
+  if (!textAnswer.value.trim()) return
+  const answer = textAnswer.value.trim()
+  textAnswer.value = ''
+  statusMessage.value = null
+  validateAnswer(answer)
+}
+
+const validateAnswer = async (answer) => {
+  if (!answer.trim()) return
+
+  isProcessing.value = true
+  statusMessage.value = null
+
+  try {
+    // Send compact state instead of full history
+    const response = await $fetch('/api/conversation/validate', {
+      method: 'POST',
+      body: {
+        conversationContext: conversationPieces.value,
+        currentPiece: currentConversationPiece.value,
+        currentIndex: currentIndex.value,
+        userAnswer: answer,
+        // NEW: Send compact state instead of full history
+        conversationState: conversationState.value,
+        // Keep for backward compatibility during transition
+        conversationHistory: conversationHistory.value,
+      },
+    })
+
+    if (response.success) {
+      // Update compact state from backend's enriched state
+      if (response.enrichedState) {
+        conversationState.value = {
+          ...conversationState.value,
+          ...response.enrichedState,
+        }
+        console.log('State updated:', conversationState.value)
+      }
+
+      if (response.isCorrect) {
+        let nextPiece = currentIndex.value < conversationPieces.value.length - 1
+          ? conversationPieces.value[currentIndex.value + 1]
+          : null
+
+        if (response.insertFollowUp && response.followUp) {
+          conversationPieces.value.splice(currentIndex.value + 1, 0, response.followUp)
+          nextPiece = conversationPieces.value[currentIndex.value + 1]
+          // Update total questions in state
+          conversationState.value.totalQuestions = conversationPieces.value.length
+        } else if (response.adaptedResponse && nextPiece) {
+          conversationPieces.value[currentIndex.value + 1] = response.adaptedResponse
+        }
+
+        // Add to history (still kept for display)
+        conversationHistory.value.push({
+          ai: currentConversationPiece.value,
+          user: answer,
+        })
+
+        currentIndex.value++
+        
+        // Update state progress
+        conversationState.value.questionIndex = currentIndex.value
+        conversationState.value.lastCorrectAnswer = answer
+
+        if (currentIndex.value >= conversationPieces.value.length) {
+          conversationCompleteMessage.value = response.adaptedResponse || response.feedback || 'Thank you for practicing!'
+          statusMessage.value = null
+          userAnswer.value = ''
+        } else {
+          showStatus('success', response.feedback || 'Correct!')
+          userAnswer.value = ''
+          
+          if (inputMode.value === 'text') {
+            textAnswer.value = ''
+          } else {
+            setTimeout(() => {
+              playCurrentPiece()
+            }, 2000)
+          }
+        }
+      } else {
+        showStatus('error', response.feedback || 'This is wrong. Try again.')
+        userAnswer.value = ''
+      }
+    } else {
+      showStatus('error', response.error || 'Failed to validate answer')
+    }
+  } catch (error) {
+    console.error('Error validating answer:', error)
+    showStatus('error', 'Failed to validate answer')
+  } finally {
+    isProcessing.value = false
+  }
+}
+
+const resetConversation = () => {
+  conversationStarted.value = false
+  conversationPieces.value = []
+  currentIndex.value = 0
+  conversationHistory.value = []
+  userAnswer.value = ''
+  textAnswer.value = ''
+  statusMessage.value = null
+  conversationInput.value = ''
+  conversationCompleteMessage.value = ''
+  isPlaying.value = false
+  isRecording.value = false
+  isProcessing.value = false
+  audioUrlCache.value = {}
+  
+  // Reset compact state
+  conversationState.value = createDefaultState()
+
+  if (audioRef.value) {
+    audioRef.value.pause()
+    audioRef.value.currentTime = 0
+  }
+  if (currentAudioUrl.value) {
+    URL.revokeObjectURL(currentAudioUrl.value)
+    currentAudioUrl.value = null
+  }
+}
+
+const updatePlaybackSpeed = () => {
+  if (audioRef.value && currentAudioUrl.value) {
+    audioRef.value.playbackRate = playbackSpeed.value
+  }
+}
+
+const saveConversation = () => {
+  if (conversationHistory.value.length === 0) {
+    showStatus('error', 'No conversation to save')
+    return
+  }
+
+  const conversationData = {
+    date: new Date().toISOString(),
+    conversationPieces: conversationPieces.value,
+    conversationHistory: conversationHistory.value,
+    conversationState: conversationState.value, // Include compact state
+    totalPieces: conversationPieces.value.length,
+    completedPieces: conversationHistory.value.length,
+  }
+
+  const textString = `Conversation Practice Session
+Date: ${new Date(conversationData.date).toLocaleString()}
+Total Pieces: ${conversationData.totalPieces}
+Completed Pieces: ${conversationData.completedPieces}
+
+--- Conversation State ---
+AI Name: ${conversationState.value.aiName || 'Unknown'}
+User Name: ${conversationState.value.userName || 'Unknown'}
+User Mood: ${conversationState.value.userMood}
+Key Facts: ${conversationState.value.keyFacts.join(', ') || 'None'}
+User Choices: ${JSON.stringify(conversationState.value.userChoices)}
+
+${'='.repeat(60)}
+
+${conversationHistory.value.map((item, index) => {
+  return `[${index + 1}]\nAI: ${item.ai}\nYou: ${item.user}\n`
+}).join('\n' + '-'.repeat(60) + '\n\n')}
+
+${'='.repeat(60)}
+`
+
+  const blob = new Blob([textString], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `conversation-${new Date().toISOString().split('T')[0]}-${Date.now()}.txt`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+
+  showStatus('success', 'Conversation saved!')
+}
+
+const showStatus = (type, text) => {
+  statusMessage.value = { type, text }
+}
+</script>
+
+<style scoped>
+/* Add any custom styles here */
+</style>

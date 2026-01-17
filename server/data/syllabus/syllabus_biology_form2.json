@@ -1,0 +1,82 @@
+{
+  "book_info": {
+    "title": "Biology for Secondary Schools",
+    "level": "Student’s Book - Form Two"
+  },
+  "chapters": [
+    {
+      "chapter_id": 1,
+      "title": "Nutrition in animals",
+      "start_page": 1,
+      "sections": [
+        {
+          "title": "Concept of nutrition in animals",
+          "page": 1
+        },
+        {
+          "title": "Nutrients",
+          "page": 5
+        },
+        {
+          "title": "Balanced diet",
+          "page": 14
+        },
+        {
+          "title": "Nutritional requirements for different groups of people",
+          "page": 16
+        },
+        {
+          "title": "Nutritional deficiencies and disorders",
+          "page": 20
+        },
+        {
+          "title": "Properties of food nutrients",
+          "page": 24
+        },
+        {
+          "title": "Revision exercise 1",
+          "page": 35
+        }
+      ]
+    },
+    {
+      "chapter_id": 2,
+      "title": "Digestive system",
+      "start_page": 38,
+      "sections": [
+        {
+          "title": "The digestion process",
+          "page": 39
+        },
+        {
+          "title": "The digestive system of ruminants",
+          "page": 50
+        },
+        {
+          "title": "Disorders and diseases of human digestive system",
+          "page": 53
+        },
+        {
+          "title": "Revision exercise 2",
+          "page": 60
+        }
+      ]
+    },
+    {
+      "chapter_id": 3,
+      "title": "Transport of materials in living organisms",
+      "start_page": 63,
+      "sections": [
+        {
+          "title": "Concept of transportation of materials",
+          "page": 63
+        },
+        {
+          "title": "Ways of transportation of materials",
+          "page": 64
+        },
+        {
+          "title": "Revision exercise 3",
+          "page": 73
+        }
+      ]

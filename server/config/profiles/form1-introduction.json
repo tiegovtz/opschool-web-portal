@@ -1,0 +1,31 @@
+{
+  "id": "form1-introduction",
+  "name": "Form 1 Introduction",
+  "description": "Conversation profile for Form 1 students practicing introductions and basic dialogue",
+  "targetLevel": "form1",
+  
+  "validation": {
+    "strictness": "lenient",
+    "requireDialogueStructure": true,
+    "allowHumor": true,
+    "contextualMemoryEnabled": true,
+    "requireReasonForWhy": false
+  },
+  
+  "adaptation": {
+    "emotionalResponses": true,
+    "comparativeResponses": true,
+    "nameAcknowledgment": true,
+    "acknowledgeUserChoices": true
+  },
+  
+  "voice": {
+    "defaultGender": "female",
+    "autoDetect": true,
+    "speed": 0.75
+  },
+  
+  "customPrompts": {
+    "feedbackStyle": "Be very encouraging and supportive. This is likely the student's first time practicing English conversation. Celebrate small wins and gently guide corrections."
+  }
+}

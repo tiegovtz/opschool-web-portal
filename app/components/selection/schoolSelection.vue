@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import { CustomDropDownList } from "#components";
-import axios from "axios";
 import { reactive, ref, watch } from "vue";
+import apiDocs from "~/utilities/apiDocs";
 
 const props = defineProps({
   region: String,
@@ -10,7 +10,7 @@ const props = defineProps({
   school: String,  // currently selected school id (optional)
 });
 
-const data = reactive({
+const data = reactive<{ schools: any[], status: 'idle' | 'pending' | 'success' | 'error', error: any }>({
   schools: [],
   status: "idle",  // 'idle' | 'pending' | 'success' | 'error'
   error: null,
@@ -19,7 +19,7 @@ const data = reactive({
 const emit = defineEmits(["updateSchool"]);
 
 // local v-model for dropdown
-const selectedSchool = ref(props.school ?? null);
+const selectedSchool = ref<string | null | any>(props.school ?? null);
 
 // Emit to parent whenever dropdown changes
 watch(selectedSchool, (val) => {
@@ -27,7 +27,7 @@ watch(selectedSchool, (val) => {
 });
 
 // Fetch schools function
-const fetchSchools = async (region, district) => {
+const fetchSchools = async (region: string, district: string) => {
   data.status = "pending";
   data.error = null;
 
@@ -38,19 +38,21 @@ const fetchSchools = async (region, district) => {
   }
 
   try {
-    const response = await axios.post(
-      "https://opschool.tie.go.tz:5001/v1/schools",
+    const response = await $fetch<any[]>(apiDocs.school.get,
       {
-        region: `${region}`.toUpperCase(),
-        district: `${district}`.toUpperCase(),
+        method:'post',
+        query: {
+          region: `${region}`.toLowerCase(),
+          district: `${district}`.toLowerCase(),
+        }
       }
     );
 
     data.status = "success";
-    data.schools = response.data;
+    data.schools = response;
   } catch (err) {
     data.status = "error";
-    data.error = err.message;
+    data.error = err;
   }
 };
 
@@ -59,7 +61,7 @@ watch(
   () => props.district,
   (district) => {
     if (district) {
-      fetchSchools(props.region, district);
+      fetchSchools(props.region as string, district);
     } else {
       data.status = "idle";
       data.schools = [];
@@ -71,7 +73,7 @@ watch(
   () => props.region,
   (region) => {
     if (region) {
-      fetchSchools(region, props.district);
+      fetchSchools(region, props.district as any);
     } else {
       data.status = "idle";
       data.schools = [];

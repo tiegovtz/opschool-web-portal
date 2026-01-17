@@ -8,14 +8,21 @@
       >
         <Icon name="heroicons:bars-3" class="text-white w-6 h-6" />
       </button>
-      <div class="w-12 h-12 bg-gradient-to-br from-oceanBlue to-deepBlue rounded-full flex items-center justify-center shadow-md">
+      <div tabindex="0" aria-label="bulb icon with white strokes on lightblue background" class="w-12 h-12 bg-gradient-to-br from-oceanBlue to-deepBlue rounded-full flex items-center justify-center shadow-md">
         <Icon name="heroicons:light-bulb" class="text-white w-6 h-6" />
       </div>
 
-      <div>
-        <h1 class="text-2xl font-bold text-gray-900">TIE AI Assistant</h1>
-        <p class="text-sm text-gray-500">Your intelligent learning companion</p>
+      <!-- Text content -->
+      <div tabindex="0" class="text-gray-900">
+        <h1 id="app-title" class="text-2xl font-bold">
+          TIE AI Assistant
+        </h1>
+
+        <p class="text-sm" id="app-description">
+          Your intelligent learning companion
+        </p>
       </div>
+
     </div>
   </header>
 </template>

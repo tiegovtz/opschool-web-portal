@@ -1,56 +1,31 @@
-<script setup>
-import { ar } from "zod/v4/locales";
+<script setup lang="ts">
 import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
 const navigationStore = useNavigationStore()
-const props = defineProps({
-    videoId: {
-        type: String,
-        required: true,
-    },
-    videoName: {
-        type: String,
-        required: true,
-    },
-    videoThumbnail: {
-        type: String,
-       default: '/public/images/default.webp',
-    },
-    videoFileUrl: {
-        type: String,
-        required: true,
-    },
-    videoDescription: {
-        type: String,
-        required: true,
-    },
-    videoType: {
-        type: String,
-        required: true,
-    },
-    videoLevel: {
-        type: String,
-        default: 'Secondary',
-    },
-    videoStandard: {
-        type: String,
-        default: 'Form One',
-    },
-    videoSubject: {
-        type: String,
-        default: 'Physics'
-    },
+const props = withDefaults( defineProps<{
+    videoId: string|any,
+    videoName: string|any,
+    videoThumbnail?: string|any,
+    videoFileUrl: string|any,
+    videoDescription:string|any,
+    videoType:string|any,
+    videoLevel: string|any,
+    videoStandard: string|any,
+    videoSubject: string|any,
+    altText?:string|any
 
     // progress
-    topicProgress: {
-        type: Number,
-        default: 0,
-    },
-    topicViewed: Boolean,
-    isDeleted:{
-        type: Boolean,
-        default: false,
-    }
+    topicProgress: number,
+    topicViewed: boolean,
+    isDeleted:boolean
+
+}>(),{
+    videoThumbnail:'/public/images/default.webp',
+    videoLevel:'Secondary',
+    videoStandard:'Form One',
+    videoSubject: 'Physics',
+    topicProgress:0,
+    isDeleted: false,
 
 })
 
@@ -84,7 +59,7 @@ const setVideoToView = () => {
             'relative overflow-hidden transition-all duration-500 ease-in-out',
             layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
-            <NuxtImg :src="videoThumbnail" :alt="videoName.toLowerCase()"
+            <NuxtImg :src="videoThumbnail" tabindex="0" :alt="altText ?? videoName.toLowerCase()"
                 :class="[
                     'object-cover w-full h-full transition-transform duration-500',
                 ]" />

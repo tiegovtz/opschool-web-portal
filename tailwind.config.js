@@ -23,7 +23,11 @@ export default {
         normalWhite: "#fff",
         normalGreener: "#4db139",
         grayLight: "#f0f0f0",
-        paleBrickRed:"#e55637bb"
+        paleBrickRed:"#e55637bb",
+        primary: {
+          DEFAULT: "#0a7ac8",
+          dark: "#0866a3",
+        },
       },
       
       fontFamily: {

@@ -345,7 +345,7 @@ watch(isHistoryOpen, (newValue) => {
           ></div>
         </div>
 
-        <template v-else>
+        <template role="main" aria-label="AI Teacher conversation" v-else>
           <AiTeacherMessages
             :messages="chat.messages"
             :isTyping="isTyping"
@@ -359,3 +359,4 @@ watch(isHistoryOpen, (newValue) => {
     </div>
   </NuxtLayout>
 </template>
+

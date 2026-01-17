@@ -1,7 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import { reactive, onMounted } from 'vue';
 import { CustomDropDownList } from '#components';
-import axios from 'axios';
+import apiDocs from '~/utilities/apiDocs';
 
 // Props
 const props = defineProps({
@@ -10,10 +10,10 @@ const props = defineProps({
 });
 
 // Reactive state
-const data = reactive({
+const data =  reactive<{ regions: any[], status: 'idle' | 'pending' | 'success' | 'error', error: any }>({
     regions: [],
     status: 'pending',   // 'pending' | 'success' | 'error'
-    error: null,         // fetch error
+    error: null,         // fetch error 
 });
 
 // Emit
@@ -25,15 +25,13 @@ const fetchRegion = async () => {
     data.status = 'pending';
 
     try {
-        const response = await axios.get(
-            'https://opschool.tie.go.tz:5001/v1/schools/regions'
-        );
+        const response = await $fetch<any[]>(apiDocs.school.getSchoolRegions);
 
         data.status = 'success';
-        data.regions = response.data || [];
+        data.regions = response || [];
     } catch (err) {
         data.status = 'error';
-        data.error = err?.message || 'Failed to fetch regions';
+        data.error = err || 'Failed to fetch regions';
     }
 };
 
@@ -64,6 +62,9 @@ onMounted(async () => {
         <!-- Fetch error state -->
         <p v-else-if="data.status === 'error'" class="mt-1 text-normalRed text-smallest" role="alert">
             Failed to fetch regions. Please try again.
+        </p>
+        <p v-else>
+            something went wrong
         </p>
 
         <!-- Validation error from parent (e.g. "Region is required") -->

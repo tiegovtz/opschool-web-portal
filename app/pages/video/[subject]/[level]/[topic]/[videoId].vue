@@ -115,7 +115,8 @@ definePageMeta({
                 <!-- Videovideo Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink :to="{ path: '/', query: { tab: 'video', subject: videoSubject, class: videoStandard } }"
+                        <NuxtLink
+                            :to="{ path: '/', query: { tab: `${videoInfo?.videoType === 'Conceptual' ? 'video' : 'class-videos'}`, subject: videoSubject, class: videoStandard } }"
                             class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
                             <!-- {{
                             videoSubject != null &&
@@ -125,7 +126,7 @@ definePageMeta({
                                 : `Secondary`
                         }}
                             <Icon name="weui:arrow-outlined" size="18" class="text-black" /> -->
-                            
+
                             <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
                         </NuxtLink>
 
@@ -160,7 +161,7 @@ definePageMeta({
 
                 <!-- Description -->
                 <div class=" md:px-4 notes">
-                    <video preload="auto" controls @contextmenu.prevent class="mx-auto rounded-md">
+                    <video id="main-container" tabindex="-1" preload="auto" controls @contextmenu.prevent class="mx-auto rounded-md">
                         <source :src="videoUrl" type="video/mp4">
                     </video>
 
@@ -179,23 +180,27 @@ definePageMeta({
                             </p>
                         </div>
                     </div>
-                    
+
                     <!-- Next and Prev BUTTON -->
-                     <div :class="[
+                    <div :class="[
                         'flex items-center w-full',
-                        videoInfo?.previous && videoInfo?.next ? 'justify-between' 
-                        : !videoInfo?.previous && videoInfo?.next ? 'justify-end' 
-                        : !videoInfo?.next && videoInfo?.previous ? 'justify-start' : '',
-                         ]">
-                        <NuxtLink :to="{path:`/video/${videoStandard}/${videoSubject}/${videoInfo?.previous?.name}/${videoInfo?.previous?._id}`}" 
-                        v-if="videoInfo?.previous" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
+                        videoInfo?.previous && videoInfo?.next ? 'justify-between'
+                            : !videoInfo?.previous && videoInfo?.next ? 'justify-end'
+                                : !videoInfo?.next && videoInfo?.previous ? 'justify-start' : '',
+                    ]">
+                        <NuxtLink
+                            :to="{ path: `/video/${videoStandard}/${videoSubject}/${videoInfo?.previous?.name}/${videoInfo?.previous?._id}` }"
+                            v-if="videoInfo?.previous"
+                            class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
                             Previous video
                         </NuxtLink>
-                        <NuxtLink :to="{path:`/video/${videoStandard}/${videoSubject}/${videoInfo?.next?.name}/${videoInfo?.next?._id}`}" 
-                        v-if="videoInfo?.next" class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
+                        <NuxtLink
+                            :to="{ path: `/video/${videoStandard}/${videoSubject}/${videoInfo?.next?.name}/${videoInfo?.next?._id}` }"
+                            v-if="videoInfo?.next"
+                            class="p-2 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
                             Next video
                         </NuxtLink>
-                     </div>
+                    </div>
                 </div>
             </div>
         </section>

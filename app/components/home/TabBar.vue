@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { HomeTabs } from '~/types/enum/tabs.enum';
 import type { tabs, videoType } from '~/types/types.data';
+import { moveFocus } from '~/utilities/focus.helper';
 
 
 // Define Emit
@@ -41,7 +42,7 @@ const tabCheck = (checkValue: tabs) => {
 </script>
 
 <template>
-  <section class="my-5" role="navigation">
+  <section class="my-5">
     <div
       class="flex items-center text-center justify-start gap-3 mb-6 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center">
 
@@ -56,8 +57,7 @@ const tabCheck = (checkValue: tabs) => {
           </div>
           {{ HomeTabs.subject }}
         </button>
-        <a class="sr-only" aria-label="Press to jump to subject list" role="navigation"
-          href="#content-container-after-login" >Skip content</a>
+        <button v-if="activeTab==='subjects'" type="button" class="sr-only" @click="moveFocus('main-container')" aria-label="Press enter to jump to subject list">Skip content</button>
       </div>
       <!-- Interactive Content -->
       <div v-if="isLoggedIn" class="">
@@ -70,8 +70,8 @@ const tabCheck = (checkValue: tabs) => {
           </div>
           {{ HomeTabs.interactive }}
         </button>
-        <a class="sr-only" aria-label="Press to jump to interactive contents list" role="navigation"
-          href="#content-container-after-login" >Skip content</a>
+        <button v-if="activeTab==='interactive-contents'" class="sr-only" @click="moveFocus('main-container')" aria-label="Press enter to jump to interactive contents list"
+          >Skip content</button>
       </div>
 
       <NuxtLink
@@ -98,8 +98,8 @@ const tabCheck = (checkValue: tabs) => {
           </div>
           {{ HomeTabs.activity }}
         </button>
-        <a class="sr-only" aria-label="Press to jump to learn activities list" role="navigation"
-          href="#content-container-after-login" >Skip content</a>
+        <button v-if="activeTab=== 'learn-activities'" class="sr-only" @click="moveFocus('main-container')" aria-label="Press enter to jump to learner activities list"
+          >Skip content</button>
       </div>
       <NuxtLink v-else
         :aria-label="`press to visit page of learning activities (experiments) ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
@@ -124,8 +124,8 @@ const tabCheck = (checkValue: tabs) => {
           </div>
           {{ HomeTabs.video }}
         </button>
-        <a class="sr-only" aria-label="Press to jump videos list" role="navigation"
-          href="#content-container-after-login" >Skip content</a>
+        <button v-if="activeTab==='video'" class="sr-only" @click="moveFocus('main-container')" aria-label="Press enter to jump videos list">Skip
+          content</button>
       </div>
       <NuxtLink v-else :aria-label="`press to visit page of Video ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
         :to="{
@@ -143,19 +143,19 @@ const tabCheck = (checkValue: tabs) => {
       </NuxtLink>
 
       <!-- Other Video -->
-       <div  v-if="isLoggedIn" class="">
-         <button role="tab" :class="[
-           'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-           { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'class-videos' || activeTab == 'class-videos' }
-         ]" @click="tabCheck('class-videos')">
-           <div class="flex items-center justify-center">
-             <Icon name="icon-park-solid:blackboard" size="20" />
-           </div>
-           {{ HomeTabs.classVideos }}
-          </button>
-          <a class="sr-only" aria-label="Press to jump to class videos list" role="navigation"
-            href="#content-container-after-login" >Skip content</a>
-       </div>
+      <div v-if="isLoggedIn" class="">
+        <button role="tab" :class="[
+          'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+          { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'class-videos' || activeTab == 'class-videos' }
+        ]" @click="tabCheck('class-videos')">
+          <div class="flex items-center justify-center">
+            <Icon name="icon-park-solid:blackboard" size="20" />
+          </div>
+          {{ HomeTabs.classVideos }}
+        </button>
+        <button v-if="activeTab==='class-videos'" class="sr-only" @click="moveFocus('main-container')" aria-label="Press enter to jump to class videos list"
+          >Skip content</button>
+      </div>
       <NuxtLink v-else
         :aria-label="`press to visit page of class video ${subjectTitle ? `for subject ${subjectTitle}` : ''}`" :to="{
           path: subjectTitle ? topicId ? `/video/${subjectTitle}/${topicId}` : `/video/${subjectTitle}` : `/video`,
@@ -173,19 +173,19 @@ const tabCheck = (checkValue: tabs) => {
       </NuxtLink>
 
       <!-- Audio -->
-       <div v-if="isLoggedIn" >
-         <button role="tab" :class="[
-           'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
-           { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'audio' || activeTab == 'audio' }
-         ]" @click="tabCheck('audio')">
-           <div class="flex items-center justify-center">
-             <Icon name="famicons:headset-sharp" size="20" />
-           </div>
-           {{ HomeTabs.audio }}
-          </button>
-          <a class="sr-only" aria-label="Press to jump to audios list" role="navigation"
-            href="#content-container-after-login" >Skip content</a>
-       </div>
+      <div v-if="isLoggedIn">
+        <button role="tab" :class="[
+          'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+          { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'audio' || activeTab == 'audio' }
+        ]" @click="tabCheck('audio')">
+          <div class="flex items-center justify-center">
+            <Icon name="famicons:headset-sharp" size="20" />
+          </div>
+          {{ HomeTabs.audio }}
+        </button>
+        <button v-if="activeTab==='audio'" class="sr-only" @click="moveFocus('main-container')" aria-label="Press enter to jump to audios list">Skip
+          content</button>
+      </div>
       <NuxtLink v-else
         :to="subjectTitle ? topicId ? `/audio/${subjectTitle}/${topicId}` : `/audio/${subjectTitle}` : `/audio`"
         :aria-label="`press to visit page of audio ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"

@@ -2,6 +2,7 @@
 import apiDocs from "~/utilities/apiDocs";
 import questionsAnswers from "./questionsAnswers.vue";
 import type { Choice, Question } from "~/types/question.interface";
+import { generateSuggestion, parseTextAndLinks } from "~/utilities/linkfy.helper";
 
 // define Props
 const props = defineProps({
@@ -38,7 +39,7 @@ const scoredComputed = computed(() => {
 });
 
 // Motivation Messages
-const getMotivationMessage = (score:number) => {
+const getMotivationMessage = (score: number) => {
   if (score >= 81) return "Excellent! Keep it up! 🎉";
   if (score >= 61) return "Great job! Aim higher! 💪";
   if (score >= 41) return "Good effort! Keep improving! 🌟";
@@ -47,7 +48,7 @@ const getMotivationMessage = (score:number) => {
 };
 
 // Function to set color based on score
-const getScoreColor = (score:number) => {
+const getScoreColor = (score: number) => {
   return {
     "text-green-500": score >= 81, // Excellent
     "text-blue-500": score >= 61 && score < 81, // Great
@@ -73,7 +74,7 @@ const resetQuiz = () => {
 };
 
 // Quize Attempt Answered Questions Function
-const answeredAttempt = async (isAnswered:any) => {
+const answeredAttempt = async (isAnswered: any) => {
   // If Is answer the question
   if (isAnswered) {
     quizAttempt.scored++;
@@ -94,7 +95,7 @@ const answeredAttempt = async (isAnswered:any) => {
 
 // shuffle Questions
 const shuffleQuestions = computed(() => {
-  return  props.questions
+  return props.questions
     .map((question) => ({ question, sort: Math.random() })) // Assign a random sort key
     .sort((a, b) => a.sort - b.sort) // Sort by random key
     .map(({ question }) => question) as Question[]; // Extract shuffled choices
@@ -141,10 +142,10 @@ watch(
   }
 );
 
-const getChoiceReason = (question: Question) => {
+const getChoiceReason = (question: Question):string => {
   return question.choices.find(
     (choice: Choice) => choice.value === question.answer
-  )?.description;
+  )?.description || '';
 };
 
 
@@ -178,7 +179,7 @@ const getChoiceReason = (question: Question) => {
           </p>
         </div>
       </div>
-      <p class="my-2">
+      <p v-if="quizAttempt.answeredQuestions !== questions.length" class="my-2">
         Answer all questions.
       </p>
 
@@ -195,10 +196,11 @@ const getChoiceReason = (question: Question) => {
         </div>
 
         <!-- Question with Answers -->
-        <div class="flex items-center w-full gap-2 my-2" v-for="(question, index) in shuffleQuestions" :key="index">
-          <div class="flex w-full">
-            <p class="flex">{{ index + 1 }}.</p>
-            <div class="pl-4 text-justify">
+        <div class="flex items-center w-full gap-20 my-2" v-for="(question, index) in shuffleQuestions" :key="index">
+          <div class="flex w-full rounded-lg shadow-[0px_0px_8px_3px_rgba(0,0,0,0.05)] p-4">
+            <span class="flex rounded-full bg-[#2b7efe] text-white h-6 w-6 p-2 items-center justify-center text-sm">{{
+              index + 1 }}</span>
+            <div class="pl-4 text-justify flex-1">
               <p class="mb-2">
                 {{
                   question.questionType === 'drag_and_drop'
@@ -221,11 +223,13 @@ const getChoiceReason = (question: Question) => {
                 <span v-else class="font-bold text-red-600">✗</span>
               </p>
               <!-- choice description (reason)-->
-              <p v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description" class="" >
-                 <b :class="['text-black']">Reason:
-                </b>
-                {{ getChoiceReason(question) }}
-              </p>
+              <!--  -->
+              <div
+                v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description"
+                :aria-label="`Explanation to justify why you answer ${quizAttempt.clickedAnswer[index] == question.answer ? 'correct' : 'incorrect'}`"
+                v-html="generateSuggestion(getChoiceReason(question),quizAttempt.clickedAnswer[index] == question.answer)"
+                >
+              </div>
             </div>
           </div>
         </div>
@@ -265,15 +269,13 @@ const getChoiceReason = (question: Question) => {
 
       <!-- Use currentQuestion instead of shuffleQuestions to determine which question to display -->
       <questionsAnswers v-else-if="shuffleQuestions" @question-answered="answeredAttempt($event)"
-        @clicked-choice="quizAttempt.clickedAnswer.push($event)" :question-type="shuffleQuestions[quizAttempt.currentQuestion]?.questionType ?? 'multiple_choice' 
+        @clicked-choice="quizAttempt.clickedAnswer.push($event)" :question-type="shuffleQuestions[quizAttempt.currentQuestion]?.questionType ?? 'multiple_choice'
           " :thumbnail="shuffleQuestions[quizAttempt.currentQuestion]?.thumbnail ?? ''"
-        :true-answer="shuffleQuestions[quizAttempt.currentQuestion]?.answer ??''"
+        :true-answer="shuffleQuestions[quizAttempt.currentQuestion]?.answer ?? ''"
         :choices="shuffleQuestions[quizAttempt.currentQuestion]?.choices ?? []"
-        :question="shuffleQuestions[quizAttempt.currentQuestion]?.question ?? '' "
-        :number="`${quizAttempt.currentQuestion + 1}`.toString()" 
-        :answer="shuffleQuestions[quizAttempt.currentQuestion]?.answer ?? ''"
-
-        />
+        :question="shuffleQuestions[quizAttempt.currentQuestion]?.question ?? ''"
+        :number="`${quizAttempt.currentQuestion + 1}`.toString()"
+        :answer="shuffleQuestions[quizAttempt.currentQuestion]?.answer ?? ''" />
     </div>
   </section>
 </template>

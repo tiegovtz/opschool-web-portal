@@ -1,57 +1,36 @@
-<script setup>
+<script setup lang="ts">
 import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
+
 const navigationStore = useNavigationStore()
-const props = defineProps({
-    audioId: {
-        type: String,
-        required: true,
-    },
-    audioName: {
-        type: String,
-        required: true,
-    },
-    audioThumbnail: {
-        type: String,
-        default: '/public/images/default.webp',
-    },
-    audioFileUrl: {
-        type: String,
-        required: true,
-    },
-    audioDescription: {
-        type: String,
-        required: true,
-    },
-    audioType: {
-        type: String,
-        default: 'lecture',
-    },
-    audioLevel: {
-        type: String,
-        default: 'Secondary',
-    },
-    audioStandard: {
-        type: String,
-        default: 'Form One',
-    },
-    audioSubject: {
-        type: String,
-        default: 'Physics'
-    },
 
-    // progress
-    topicProgress: {
-        type: Number,
-        default: 0,
-    },
-    topicViewed: Boolean,
-    isDeleted: {
-        type: Boolean,
-        default: false,
+const props = withDefaults(
+    defineProps<{
+        audioId: string
+        audioName: string
+        audioThumbnail?: string
+        audioFileUrl: string
+        audioDescription: string
+        audioType?: string
+        audioLevel?: string
+        audioStandard?: string
+        audioSubject?: string
+        topicProgress?: number
+        topicViewed?: boolean
+        isDeleted?: boolean
+        altText?:string
+    }>(),
+    {
+        audioThumbnail: '/images/default.webp',
+        audioType: 'lecture',
+        audioLevel: 'Secondary',
+        audioStandard: 'Form One',
+        audioSubject: 'Physics',
+        topicProgress: 0,
+        topicViewed: false,
+        isDeleted: false,
     }
-
-})
+)
 
 // Define Function
 const setAudioToListen = () => {
@@ -78,7 +57,7 @@ const setAudioToListen = () => {
             'relative overflow-hidden transition-all duration-500 ease-in-out',
             layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
-            <NuxtImg :src="audioThumbnail" :alt="audioName.toLowerCase()" :class="[
+            <NuxtImg :src="audioThumbnail" tabindex="0" :alt="audioName.toLowerCase()" :class="[
                 'object-cover w-full h-full transition-transform duration-500',
             ]" />
 

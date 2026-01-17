@@ -10,6 +10,7 @@ export default defineNuxtPlugin({
   // Routes someone cannot access if NOT signed in
   const blockedBeforeLogin = [
     "/tie-ai-teacher",
+    "/admin",
   ];
 
     router.beforeEach((to, from) => {
@@ -17,8 +18,13 @@ export default defineNuxtPlugin({
 
     // 🔒 1. Not logged in → block protected pages
     if (!user.value) {
-      if (blockedBeforeLogin.includes(to.path)) {
-        return "/auth"; // or wherever your login page is
+      // Check if route starts with any blocked path (for nested routes like /admin/video-interactions)
+      const isBlocked = blockedBeforeLogin.some(blockedPath => 
+        to.path === blockedPath || to.path.startsWith(blockedPath + '/')
+      );
+      
+      if (isBlocked) {
+        return "/auth"; // Redirect to login page
       }
       return true;
     }
@@ -28,26 +34,39 @@ export default defineNuxtPlugin({
     const allowList = [
       "/profile",
       "/feedback",
-      "/smart-class",
+      "/smart-class?header-less",
+       "/smart-class/screen/live-view?header-less",
+      "/smart-class/screen/live-tv?header-less",
+      "/smart-class/screen/recorded-sessions?header-less",
+      "/smart-class/screen/live-classes?header-less",
+      "/smart-class/screen/upcoming-classes?header-less",
+       "/smart-class",
        "/smart-class/screen/live-view",
       "/smart-class/screen/live-tv",
       "/smart-class/screen/recorded-sessions",
       "/smart-class/screen/live-classes",
-      "/smart-class/screen/upcoming-classes",
-      "/smart-class/header-less",
-      "/smart-class/header-less/screen/live-view",
-      "/smart-class/header-less/screen/live-tv",
-      "/smart-class/header-less/screen/recorded-sessions",
-      "/smart-class/header-less/screen/live-classes",
-      "/smart-class/header-less/screen/upcoming-classes",
+      "/smart-class/screen/upcoming-classes",        
       "/tie-ai-teacher",
+      "/english-practice",
+      "/interactive-video",
+      "/list-videos",
       "/home#content-container-after-login",
+      "/admin",
+      "/admin/video-interactions",
     ];
 
-    // Check if path matches allowList (check both path and fullPath to handle query params)
-    if (allowList.includes(to.path) || allowList.includes(to.fullPath)) {
+    // Check if the base path (without query params) is in the allowlist
+    const basePath = to.path
+    
+    // Allow admin routes (all routes starting with /admin)
+    if (basePath.startsWith('/admin')) {
       return true;
     }
+    
+    if (allowList.includes(basePath) || allowList.includes(to.fullPath)) return true;
+    
+    // Also allow interactive-video with query parameters
+    if (basePath === '/interactive-video') return true;
 
     // Allow direct navigation to content pages (video, interactive, audio, experiments)
     // These routes follow the pattern: /{type}/{subject}/{level}/{topic}/{id}
@@ -70,7 +89,11 @@ export default defineNuxtPlugin({
       return true;
     }
 
-    if (!routesStates && to.fullPath !== "/home") {
+    // Don't redirect admin routes or allowlist routes to home
+    const isAdminRoute = basePath.startsWith('/admin');
+    const isAllowedRoute = allowList.includes(basePath) || allowList.includes(to.fullPath);
+    
+    if (!routesStates && to.fullPath !== "/home" && !isAdminRoute && !isAllowedRoute) {
       return "/home";
     }
 

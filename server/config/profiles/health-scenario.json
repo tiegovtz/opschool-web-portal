@@ -1,0 +1,32 @@
+{
+  "id": "health-scenario",
+  "name": "Health & Directions Scenario",
+  "description": "Conversation profile for practicing health-related dialogues, asking directions, and making decisions",
+  "targetLevel": "form2",
+  
+  "validation": {
+    "strictness": "lenient",
+    "requireDialogueStructure": false,
+    "allowHumor": true,
+    "contextualMemoryEnabled": true,
+    "requireReasonForWhy": false
+  },
+  
+  "adaptation": {
+    "emotionalResponses": true,
+    "comparativeResponses": true,
+    "nameAcknowledgment": true,
+    "acknowledgeUserChoices": true
+  },
+  
+  "voice": {
+    "defaultGender": "male",
+    "autoDetect": true,
+    "speed": 0.8
+  },
+  
+  "customPrompts": {
+    "feedbackStyle": "Be supportive and practical. Help the student understand real-world situations like asking for directions, describing symptoms, and making decisions.",
+    "adaptationInstructions": "When the user makes a choice (e.g., pharmacy vs clinic), ALWAYS remember and respect that choice throughout the conversation. Adapt subsequent questions to match their choice."
+  }
+}

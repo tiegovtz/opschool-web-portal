@@ -1,11 +1,12 @@
 <template>
-  <NuxtLayout name="home-layout">
-  <div class="iframe-screen">
+  <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
+    <a class="skip-link" href="#main-content" @click.prevent="focusMain">Skip to main content</a>
+  <div id="main-content" class="iframe-screen" role="main" tabindex="-1" aria-label="Live view main content">
     <div class="header">
       <h1 class="title">Now Streaming</h1>
       <p class="subtitle">Enjoy your scheduled live class</p>
     </div>
-    <div class="iframe-wrapper">
+    <div class="iframe-wrapper" role="region" aria-label="Live stream video" tabindex="0">
       <ClientOnly>
         <template v-if="streamUrl">
 <!--          <VidstackPlayer-->
@@ -15,18 +16,22 @@
 <!--          />-->
 <!--          -->
           <VidstackPlayer
+             id="main-container" tabindex="-1"
               v-if="streamUrl"
+              ref="playerRef"
               :src="streamUrl"
               title="Live Class"
+              aria-label="Live class video player"
           />
         </template>
         <template v-else>
-          <div class="no-class-msg">
+          <div class="no-class-msg" role="status" aria-live="polite">
             No class is currently scheduled. Please check back later.
           </div>
         </template>
       </ClientOnly>
     </div>
+    <div class="sr-only" aria-live="polite" aria-atomic="true">{{ streamStatus }}</div>
   </div>
   </NuxtLayout>
 </template>
@@ -34,10 +39,12 @@
 
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch, nextTick } from 'vue'
 import VidstackPlayer from '~/components/video-player/VidstackPlayer.vue'
 
 const streamUrl = ref('')  // will be set dynamically
+const playerRef = ref(null)
+const streamStatus = ref('')
 
 onMounted(() => {
   streamUrl.value = 'https://tv.somakwanza.tz/hls/stream.m3u8'
@@ -52,11 +59,25 @@ onMounted(() => {
       console.error('Failed to parse classData:', e)
     }
   } else {
-    console.log("SOMAKWANZA TV");
     streamUrl.value = 'https://tv.somakwanza.tz'
   }
-  console.log("somakwanza : " + streamUrl.value);
 })
+
+// Announce stream availability and focus the wrapper when streamUrl changes
+watch(streamUrl, (newVal) => {
+  streamStatus.value = newVal ? 'Live stream available' : 'No live stream'
+  nextTick(() => {
+    const wrapper = document.querySelector('.iframe-wrapper')
+    if (wrapper && typeof wrapper.focus === 'function') wrapper.focus()
+  })
+})
+
+const focusMain = () => {
+  nextTick(() => {
+    const el = document.getElementById('main-content')
+    if (el) el.focus()
+  })
+}
 </script>
 
 <style scoped>
@@ -82,6 +103,7 @@ onMounted(() => {
   font-weight: bold;
   background: linear-gradient(45deg, #ff6b6b, #ffd93d, #4ecdc4);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -99,6 +121,46 @@ onMounted(() => {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+/* make wrapper focusable outline visible */
+.iframe-wrapper:focus {
+  outline: 3px solid #667eea;
+  outline-offset: 4px;
+}
+
+/* Screen-reader only helper */
+.sr-only { 
+  position: absolute !important; 
+  height: 1px; width: 1px; 
+  overflow: hidden; 
+  clip: rect(1px, 1px, 1px, 1px); 
+  white-space: nowrap; 
+  border: 0; 
+  padding: 0; 
+  margin: -1px; 
+}
+
+/* Skip link - hidden but visible on focus */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  background: #fff;
+  color: #111;
+  z-index: 2000;
+  border-radius: 4px;
+  text-decoration: none;
 }
 
 
