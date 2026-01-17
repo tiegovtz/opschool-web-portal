@@ -13,7 +13,10 @@ const chat = new Chat({});
 
 // Local state
 const isTyping = ref(false);
-const isHistoryOpen = ref(false);
+// Sidebar open by default, persist user preference
+const sidebarStateKey = "tie-ai-teacher-sidebar-open";
+const isHistoryOpen = ref(true); // Always default to true
+
 const isInitializing = ref(true);
 const lastMessageCount = ref(0);
 const savedMessageIds = ref(new Set<string>());
@@ -21,9 +24,17 @@ const hasTitleBeenSet = ref(false);
 
 // Initialize session on mount
 onMounted(async () => {
+  // Load saved sidebar preference
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem(sidebarStateKey);
+    if (saved !== null) {
+      isHistoryOpen.value = saved === "true";
+    }
+  }
+
   try {
     await chatStore.loadSessions();
-    
+
     const sessionId = route.query.sessionId as string | undefined;
     if (sessionId) {
       await loadSession(sessionId);
@@ -42,14 +53,16 @@ onMounted(async () => {
 const loadSession = async (sessionId: string) => {
   try {
     const session = await chatStore.loadSession(sessionId);
-    
+
     if (session.messages?.length) {
       const chatMessages = session.messages.map(convertToChatMessage);
       // @ts-ignore - messages is reactive array
       chat.messages.splice(0, chat.messages.length, ...chatMessages);
       lastMessageCount.value = session.messages.length;
       // Track saved message IDs
-      savedMessageIds.value = new Set(session.messages.map((m: ChatMessage) => m.id));
+      savedMessageIds.value = new Set(
+        session.messages.map((m: ChatMessage) => m.id)
+      );
       // If session has a title, mark it as set
       hasTitleBeenSet.value = !!session.title;
     } else {
@@ -59,7 +72,7 @@ const loadSession = async (sessionId: string) => {
       savedMessageIds.value = new Set();
       hasTitleBeenSet.value = false;
     }
-    
+
     router.replace({ query: { sessionId } });
   } catch (error) {
     console.error("[TIE AI Teacher] Error loading session:", error);
@@ -101,9 +114,9 @@ const extractMessageContent = (message: any): string => {
 const generateTitleFromMessage = (message: string): string => {
   // Clean the message
   const cleaned = message.trim();
-  
-  if (!cleaned) return 'New Conversation';
-  
+
+  if (!cleaned) return "New Conversation";
+
   // Remove common question prefixes to make it more concise
   const prefixes = [
     /^explain\s+/i,
@@ -124,40 +137,40 @@ const generateTitleFromMessage = (message: string): string => {
     /^i\s+want\s+to\s+know\s+about\s+/i,
     /^i\s+want\s+to\s+learn\s+about\s+/i,
   ];
-  
+
   let title = cleaned;
-  
+
   // Remove prefixes
   for (const prefix of prefixes) {
     if (prefix.test(title)) {
-      title = title.replace(prefix, '').trim();
+      title = title.replace(prefix, "").trim();
       break;
     }
   }
-  
+
   // Capitalize first letter
   if (title.length > 0) {
     title = title.charAt(0).toUpperCase() + title.slice(1);
   }
-  
+
   // Remove question marks and extra punctuation at the end
-  title = title.replace(/[?]+$/, '').trim();
-  
+  title = title.replace(/[?]+$/, "").trim();
+
   // Truncate to 50 characters max for better display
   if (title.length > 50) {
-    title = title.substring(0, 47) + '...';
+    title = title.substring(0, 47) + "...";
   }
-  
-  return title || 'New Conversation';
+
+  return title || "New Conversation";
 };
 
 // Update session title if not set
 const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
   if (!chatStore.activeSessionId || hasTitleBeenSet.value) return;
-  
+
   try {
     const title = generateTitleFromMessage(firstUserMessage);
-    if (title && title !== 'New Conversation') {
+    if (title && title !== "New Conversation") {
       await chatStore.updateSessionTitle(chatStore.activeSessionId, title);
       hasTitleBeenSet.value = true;
     }
@@ -192,19 +205,23 @@ const saveMessage = async (message: any) => {
 watch(
   () => chat.messages,
   async (messages) => {
-    if (!chatStore.activeSessionId || isInitializing.value || !Array.isArray(messages)) {
+    if (
+      !chatStore.activeSessionId ||
+      isInitializing.value ||
+      !Array.isArray(messages)
+    ) {
       return;
     }
 
     const currentCount = messages.length;
-    
+
     // Save user messages immediately (they're complete when added)
     const newMessages = messages.slice(lastMessageCount.value);
     for (const message of newMessages) {
       // Save user messages immediately
       if (message.role === "user" && message.id) {
         await saveMessage(message);
-        
+
         // Generate title from first user message
         if (!hasTitleBeenSet.value) {
           const content = extractMessageContent(message);
@@ -226,17 +243,21 @@ watch(
   () => chat.status,
   async (status) => {
     if (!chatStore.activeSessionId || isInitializing.value) return;
-    
+
     // When streaming is complete, save any unsaved assistant messages
     if (status === "ready") {
       // Small delay to ensure message is fully complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // @ts-ignore
       const messages = chat.messages || [];
       for (const message of messages) {
         // Save assistant messages that haven't been saved yet
-        if (message.role === "assistant" && message.id && !savedMessageIds.value.has(message.id)) {
+        if (
+          message.role === "assistant" &&
+          message.id &&
+          !savedMessageIds.value.has(message.id)
+        ) {
           await saveMessage(message);
         }
       }
@@ -263,7 +284,7 @@ const handleSubmit = async (message: string) => {
   }
 
   isTyping.value = true;
-  
+
   try {
     // Send message to AI - the watch function will save user messages when they appear in chat.messages
     await chat.sendMessage({ text: message });
@@ -277,24 +298,32 @@ const handleSubmit = async (message: string) => {
 // Handle new chat
 const handleNewChat = async () => {
   await createNewSession();
-  isHistoryOpen.value = false;
+  // Keep sidebar open when creating new chat
 };
 
 // Handle session selection
 const handleSessionSelected = async (sessionId: string) => {
   await loadSession(sessionId);
-  isHistoryOpen.value = false;
+  // Keep sidebar open when selecting session
 };
 
-// Toggle history sidebar
+// Toggle history sidebar (can be called from sidebar itself)
 const toggleHistory = () => {
   isHistoryOpen.value = !isHistoryOpen.value;
+  // State is persisted automatically via watch
 };
+
+// Watch sidebar state to persist changes
+watch(isHistoryOpen, (newValue) => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(sidebarStateKey, String(newValue));
+  }
+});
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="relative">
+    <div class="flex h-[calc(100vh-200px)] min-h-[calc(100vh-200px)]">
       <!-- Chat History Sidebar -->
       <AiTeacherChatHistorySidebar
         :is-open="isHistoryOpen"
@@ -304,13 +333,18 @@ const toggleHistory = () => {
       />
 
       <!-- Main Content -->
-      <div :class="{ 'ml-80': isHistoryOpen }" class="transition-all duration-300">
-        <AiTeacherHeader @toggle-history="toggleHistory" />
-        
-        <div v-if="isInitializing" class="flex items-center justify-center h-64">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-oceanBlue"></div>
+      <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <AiTeacherHeader @toggle-sidebar="toggleHistory" />
+
+        <div
+          v-if="isInitializing"
+          class="flex items-center justify-center h-64"
+        >
+          <div
+            class="animate-spin rounded-full h-8 w-8 border-b-2 border-oceanBlue"
+          ></div>
         </div>
-        
+
         <template v-else>
           <AiTeacherMessages
             :messages="chat.messages"
