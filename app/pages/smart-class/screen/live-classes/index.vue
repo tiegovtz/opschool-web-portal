@@ -1,5 +1,5 @@
 <template>
-  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
+  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ? 'normal' :'home-layout'">
     <div
         v-if="dialog"
         class="fixed inset-0 flex items-center justify-center z-[100] bg-black bg-opacity-50"
@@ -17,7 +17,7 @@
           <div>
             <label class="block mb-1 text-sm font-medium">Select Class</label>
             <CustomDropDownList
-                @update-model-value="formData.school_class = $event"
+                v-model="formData.school_class"
                 placeholder="Select class"
                 class="w-full !text-sm border border-gray-300 rounded-md shadow-sm h-14 bg-white placeholder-gray-500"
                 :list="schoolClasses"
@@ -28,7 +28,7 @@
           <div>
             <label class="block mb-1 text-sm font-medium">Subject</label>
             <CustomDropDownList
-                @update-model-value="formData.subject = $event"
+                v-model="formData.subject"
                 placeholder="Select subject"
                 class="w-full !text-sm border border-gray-300 rounded-md shadow-sm h-14 bg-white placeholder-gray-500"
                 :list="schoolSubjects"
@@ -185,24 +185,67 @@
             <!-- Search Field -->
             <div class="w-full md:w-1/3 lg:w-1/4">
               <div class="relative">
-                <input type="text" v-model="searchQuery" placeholder="Search classes..."
-                  class="w-full border border-gray-300 rounded-md px-10 py-2 focus:outline-none bg-transparent focus:ring-2 focus:ring-blue-500 h-14" />
+                <input
+                  type="text"
+                  v-model="searchQuery"
+                  placeholder="Search classes..."
+                  @keyup.enter.prevent="triggerSearch"
+                  class="w-full border border-gray-300 rounded-md px-10 py-2 pr-28 focus:outline-none bg-transparent focus:ring-2 focus:ring-blue-500 h-14"
+                />
                 <svg class="absolute left-3 top-4 w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
                   stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round"
                     d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
                 </svg>
+                <button
+                  type="button"
+                  class="absolute inset-y-1 right-1 flex items-center gap-2 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-md shadow-md hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  @click="triggerSearch"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
+                  </svg>
+                  <span>Search</span>
+                </button>
               </div>
             </div>
 
             <!-- Classes Dropdowns -->
             <div class="w-full md:w-1/3 lg:w-1/4">
-               <CustomDropDownList @update-model-value="selectedClass = $event" placeholder="select class" class="w-full !text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolClasses"/>
+               <CustomDropDownList v-model="selectedClass" placeholder="Select class" class="w-full !text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolClasses"/>
             </div>
 
             <!-- subject Dropdowns -->
             <div class="w-full md:w-1/3 lg:w-1/4">
-               <CustomDropDownList @update-model-value="selectedSubject=$event" placeholder="select subject" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolSubjects"/>
+               <CustomDropDownList v-model="selectedSubject" placeholder="Select subject" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolSubjects"/>
+            </div>
+
+            <!-- Teacher Dropdown -->
+            <div class="w-full md:w-1/3 lg:w-1/4">
+               <CustomDropDownList v-model="selectedTeacher" placeholder="Select teacher" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="teacherOptions"/>
+            </div>
+
+            <!-- School Dropdown -->
+            <div class="w-full md:w-1/3 lg:w-1/4">
+               <CustomDropDownList v-model="selectedSchool" placeholder="Select school" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolOptions"/>
+            </div>
+
+            <!-- Session Start Dropdown -->
+            <div class="w-full md:w-1/3 lg:w-1/4">
+               <CustomDropDownList v-model="selectedSessionStart" placeholder="Session start" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="sessionStartOptions"/>
+            </div>
+
+            <!-- Session End Dropdown -->
+            <div class="w-full md:w-1/3 lg:w-1/4">
+               <CustomDropDownList v-model="selectedSessionEnd" placeholder="Session end" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="sessionEndOptions"/>
+            </div>
+
+            <!-- Clear Filters Button -->
+            <div class="w-full md:w-auto flex justify-center items-center">
+              <button type="button" @click="clearFilters"
+                class="px-6 py-3 w-full md:w-auto bg-gray-100 text-gray-700 rounded-md border border-gray-300 hover:bg-gray-200 transition h-14">
+                Clear Filters
+              </button>
             </div>
           </div>
         </div>
@@ -322,22 +365,22 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSessionsSetup } from "../../../../composable/usesSessions.js";
 import apiDocs from "../../../../utilities/apiDocs.js";
-import { filterContentBySearch } from '~/utilities/filterJson.js';
 
 const router = useRouter();
 const userToken = useCookie("signInUserToken");
 const token = useCookie('signInAccessToken').value;
 const headers = {
   'Content-Type': 'application/json',
+  'accept': '*/*',
   'Authorization': `Bearer ${token}`,
 };
 
 // Import your composable
-const { postData, loading, error, getData } = useSessionsSetup();
+const { postData, loading, error } = useSessionsSetup();
 // Show toast function (replace with your UI lib's toast/snackbar)
 
 
@@ -362,7 +405,15 @@ function getDuration(start, end) {
   return `${hours > 0 ? hours + 'h ' : ''}${minutes}m`;
 }
 
-const mapSessionToClass = (session) => ({
+const mapSessionToClass = (session) => {
+  const teacherReference = session?.teacher || session?.teacherInfo || {};
+  const teacherId = teacherReference?._id || teacherReference?.id || session?.teacherId || session?.teacher_id;
+  const teacherName = teacherReference?.name || session?.teacher_name || session?.teacherName || session?.instructor || 'Unknown Instructor';
+  const schoolReference = session?.school || session?.schoolInfo || {};
+  const schoolRegistrationNumber = schoolReference?.registration_number || schoolReference?.registrationNumber || session?.school_registration_number || session?.schoolRegistrationNumber;
+  const schoolName = schoolReference?.name || session?.school_name || session?.schoolName || '';
+
+  return {
   id: session.id ?? session._id,
   title: session?.topic || 'Untitled Session',
   details: session.details || 'Karibu  sana',
@@ -376,17 +427,52 @@ const mapSessionToClass = (session) => ({
   isLive: session?.session_start ? new Date(session?.session_start) > new Date() : false,
   isSubscribed: false,
   class:session?.school_class?.name ?? session?.school_class ?? 'Form 1',
-  description: `Room: ${session?.room_name || 'N/A'}${session?.meet_link ? ', Meet Link available' : ''}`
-});
+  description: `Room: ${session?.room_name || 'N/A'}${session?.meet_link ? ', Meet Link available' : ''}`,
+  instructor: teacherName,
+  teacherId,
+  teacherName,
+  schoolRegistrationNumber,
+  schoolName,
+};
+};
+
+const buildFilterQuery = () => {
+  const params = new URLSearchParams();
+  let hasFilters = false;
+
+  const addParam = (key, value) => {
+    if (value !== undefined && value !== null && value !== '' && value !== 'all') {
+      params.set(key, value);
+      hasFilters = true;
+    }
+  };
+
+  addParam('q', searchQuery.value?.trim());
+  addParam('class', selectedClass.value);
+  addParam('subject', selectedSubject.value);
+  addParam('teacher', selectedTeacher.value);
+  addParam('school', selectedSchool.value);
+  addParam('session_start', selectedSessionStart.value);
+  addParam('session_end', selectedSessionEnd.value);
+
+  return hasFilters ? `?${params.toString()}` : '';
+};
+
+const normalizeSessions = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 const loadClasses = async () => {
   loading.value = true;
   try {
-
-    const sessions = await getData('live-classrooms/sessions');
-   if(sessions){
-    classes.value = sessions.map(mapSessionToClass);
-   }
+    const query = buildFilterQuery();
+    const sessions = await $fetch(`${apiDocs.baseURL}/live-classrooms/sessions${query}`, {
+      headers,
+    });
+    const normalizedSessions = normalizeSessions(sessions);
+    classes.value = normalizedSessions.map(mapSessionToClass);
   } catch (error) {
     console.error('Error fetching sessions:', error);
   } finally {
@@ -396,8 +482,12 @@ const loadClasses = async () => {
 
 // Refs and reactive state
 const searchQuery = ref('');
-const selectedClass = ref(null);
-const selectedSubject = ref(null);
+const selectedClass = ref('');
+const selectedSubject = ref('');
+const selectedTeacher = ref('');
+const selectedSchool = ref('');
+const selectedSessionStart = ref('');
+const selectedSessionEnd = ref('');
 const selectedClassItem = ref(null);
 const dialog = ref(false);
 const toasts = ref([]);
@@ -421,88 +511,83 @@ const formData = reactive({
 
 const categories = ref(['Form 1', 'Form 2']);
 
-const classes = ref([
-  {
-    id: 1,
-    title: 'Eaths Movements',
-    instructor: 'TET Studio',
-    category: 'Form 1',
-    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1748011759393-169009829.webp',
-    scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-    duration: '2h 30m',
-    viewers: 1247,
-     subject:'Geography',
-    rating: 4.9,
-    isLive: true,
-    meet_link: '',
-    isSubscribed: false,
-    description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
-  }, {
-    id: 1,
-    title: 'Introduction to physics',
-    instructor: 'TET Studio',
-    category: 'Form 1',
-    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/subjects/1744186746730-324675569.jpeg',
-    scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-    duration: '2h 30m',
-    viewers: 1247,
-    subject:'Physics',
-    rating: 4.9,
-    meet_link: '',
-    isLive: true,
-    isSubscribed: false,
-    description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
-  }, {
-    id: 1,
-    title: 'Fire Fighting',
-    instructor: 'TET Studio',
-    category: 'Form 1',
-    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1746029937249-12872049.jpg',
-    scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-    duration: '2h 30m',
-    viewers: 1247,
-    meet_link: '',
-     subject:'Chemistry',
-    rating: 4.9,
-    isLive: true,
-    isSubscribed: false,
-    description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
-  }
-]);
+const classes = ref([]);
 
-loadClasses();
+const teacherOptions = computed(() => {
+  const map = new Map();
+  classes.value.forEach((cls) => {
+    if (cls.teacherId) {
+      map.set(cls.teacherId, cls.teacherName || 'Teacher');
+    }
+  });
+  return [{ id: '', name: 'All teachers' }, ...Array.from(map.entries()).map(([id, name]) => ({ id, name }))];
+});
+
+const schoolOptions = computed(() => {
+  const map = new Map();
+  classes.value.forEach((cls) => {
+    if (cls.schoolRegistrationNumber) {
+      map.set(cls.schoolRegistrationNumber, cls.schoolName || cls.schoolRegistrationNumber);
+    }
+  });
+  return [{ id: '', name: 'All schools' }, ...Array.from(map.entries()).map(([id, name]) => ({ id, name }))];
+});
+
+const sessionStartOptions = [
+  { id: '', name: 'All start states' },
+  { id: 'true', name: 'Started' },
+  { id: 'false', name: 'Not started' }
+];
+
+const sessionEndOptions = [
+  { id: '', name: 'All end states' },
+  { id: 'true', name: 'Ended' },
+  { id: 'false', name: 'Ongoing' }
+];
 
 // Computed
-const filteredClasses = computed(() => {
-  let filtered = classes.value;
+const filteredClasses = computed(() => classes.value);
 
-  const className = selectedClass.value?.trim()
-    ? filterContentBySearch(schoolClasses.value, selectedClass.value)[0]?.name.toLowerCase() ?? ''
-    : '';
+let filterTimeout = null;
+const scheduleFilteredLoad = () => {
+  if (filterTimeout) clearTimeout(filterTimeout);
+  filterTimeout = setTimeout(() => {
+    loadClasses();
+  }, 400);
+};
 
-  const subjectName = selectedSubject.value?.trim()
-    ? filterContentBySearch(schoolSubjects.value, selectedSubject.value)[0]?.name.toLowerCase() ?? ''
-    : '';
-
-  if (className || subjectName) {
-    filtered = filtered.filter(cls => {
-      const matchClass = className ? cls.class.toLowerCase() === className : true;
-      const matchSubject = subjectName ? cls.subject.toLowerCase() === subjectName : true;
-      return matchClass && matchSubject;
-    });
-  }
-
-  if (searchQuery.value?.trim()) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(cls =>
-      cls.title.toLowerCase().includes(query) ||
-      cls.instructor.toLowerCase().includes(query) ||
-      cls.class.toLowerCase().includes(query)
-    );
-  }
-
-  return filtered;
+watch([selectedClass, selectedSubject, selectedTeacher, selectedSchool, selectedSessionStart, selectedSessionEnd], () => {
+  scheduleFilteredLoad();
 });
+
+watch(searchQuery, () => {
+  scheduleFilteredLoad();
+});
+
+const triggerSearch = () => {
+  if (filterTimeout) clearTimeout(filterTimeout);
+  filterTimeout = null;
+  loadClasses();
+};
+
+const clearFilters = () => {
+  searchQuery.value = '';
+  selectedClass.value = '';
+  selectedSubject.value = '';
+  selectedTeacher.value = '';
+  selectedSchool.value = '';
+  selectedSessionStart.value = '';
+  selectedSessionEnd.value = '';
+  if (filterTimeout) clearTimeout(filterTimeout);
+  filterTimeout = null;
+  loadClasses();
+};
+
+onBeforeUnmount(() => {
+  if (filterTimeout) clearTimeout(filterTimeout);
+});
+
+loadClasses();
 
 
 // Validation rules
