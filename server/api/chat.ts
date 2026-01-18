@@ -8,32 +8,42 @@ import {
 import { createOpenAI } from "@ai-sdk/openai";
 import apiDocs from "~/utilities/apiDocs";
 
-// --------------------------------------
-// System Prompt Builder
-// --------------------------------------
-function getBaseSystemPrompt(
-  chapterName?: string,
-  context?: {
-    subject?: string;
-    level?: string;
-    topic?: string;
-    chapterNo?: number;
-  }
-) {
-  if (chapterName) {
-    // Build context string
-    const contextParts = [];
-    if (context?.subject) contextParts.push(`Subject: ${context.subject}`);
-    if (context?.level) contextParts.push(`Level: ${context.level}`);
-    if (context?.topic) contextParts.push(`Topic: ${context.topic}`);
-    if (context?.chapterNo !== null && context?.chapterNo !== undefined) {
-      contextParts.push(`Chapter ${context.chapterNo}`);
-    }
-    const contextString =
-      contextParts.length > 0 ? `\n\nContext: ${contextParts.join(" | ")}` : "";
+// ============================================
+// Types & Interfaces
+// ============================================
 
-    // Subject AI Teacher mode - focused on teaching a specific competence
-    return `
+interface ChapterContext {
+  subject?: string;
+  level?: string;
+  topic?: string;
+  chapterNo?: number;
+}
+
+interface RequestContext {
+  chapterName?: string;
+  context?: ChapterContext;
+}
+
+// ============================================
+// Prompt Builders
+// ============================================
+
+function buildContextString(context?: ChapterContext): string {
+  if (!context) return "";
+
+  const parts: string[] = [];
+  if (context.subject) parts.push(`Subject: ${context.subject}`);
+  if (context.level) parts.push(`Level: ${context.level}`);
+  if (context.topic) parts.push(`Topic: ${context.topic}`);
+  if (context.chapterNo != null) parts.push(`Chapter ${context.chapterNo}`);
+
+  return parts.length > 0 ? `\n\nContext: ${parts.join(" | ")}` : "";
+}
+
+function getSubjectAITeacherPrompt(chapterName: string, context?: ChapterContext): string {
+  const contextString = buildContextString(context);
+
+  return `
 You are a Subject AI Teacher, an intelligent teaching assistant specialized in the Tanzanian (NECTA) curriculum. Your PRIMARY and ONLY focus is to help students understand the specific competence/chapter: "${chapterName}".${contextString}
 
 CRITICAL RULES - Chapter Scope:
@@ -81,10 +91,10 @@ CRITICAL RULES - Chapter Scope:
    - Offer to clarify or explain further if needed (within chapter scope)
 
 Remember: Your EXCLUSIVE goal is to help the student understand "${chapterName}" and ONLY "${chapterName}". Do not answer questions about other chapters, topics, or subjects.
-    `.trim();
-  }
+  `.trim();
+}
 
-  // TIE AI Teacher mode - general assistant
+function getGeneralAITeacherPrompt(): string {
   return `
 You are TIE AI, a student assistant specialized in the Tanzanian (NECTA) curriculum.
 
@@ -98,279 +108,14 @@ Priority Rules:
   `.trim();
 }
 
-/**
- * Detects if a message is in UIMessage format (has parts array) or simple format (has content)
- */
-function isUIMessageFormat(message: any): boolean {
-  return (
-    message &&
-    (Array.isArray(message.parts) ||
-      (message.id !== undefined && message.parts !== undefined))
-  );
+function getSystemPrompt(chapterName?: string, context?: ChapterContext): string {
+  return chapterName
+    ? getSubjectAITeacherPrompt(chapterName, context)
+    : getGeneralAITeacherPrompt();
 }
 
-/**
- * Extracts the latest user query from messages
- */
-function extractLatestUserQuery(messages: any[]): string | null {
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return null;
-  }
-
-  // Find the last user message (iterate backwards)
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const msg = messages[i];
-    const role = msg?.role || "";
-    
-    if (role === "user") {
-      // Handle UIMessage format
-      if (Array.isArray(msg.parts)) {
-        const content = msg.parts
-          .filter((p: any) => p?.type === "text" && p?.text)
-          .map((p: any) => String(p.text))
-          .join("");
-        return content.trim() || null;
-      }
-      // Handle simple format
-      if (msg.content) {
-        return String(msg.content).trim() || null;
-      }
-    }
-  }
-  
-  return null;
-}
-
-/**
- * Fetches relevant context from embeddings API using RAG
- */
-async function fetchRAGContext(searchQuery: string, authToken?: string): Promise<string> {
-  if (!searchQuery || searchQuery.trim().length === 0) {
-    return "";
-  }
-
-  try {
-    const baseURL = apiDocs.baseURL;
-    const embeddingsUrl = `${baseURL}/machine-learning/books/embeddings/search?search=${encodeURIComponent(searchQuery.trim())}`;
-    
-    console.log("[RAG] Fetching embeddings for query:", searchQuery.substring(0, 50));
-    
-    // Prepare headers with authentication if available
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    
-    if (authToken) {
-      headers["Authorization"] = `Bearer ${authToken}`;
-    }
-    
-    const response = await $fetch(embeddingsUrl, {
-      method: "GET",
-      headers,
-    });
-
-    // Handle different response formats
-    let contextText = "";
-    
-    if (Array.isArray(response)) {
-      // If response is an array, join the content
-      contextText = response
-        .map((item: any) => {
-          // Handle different possible structures
-          if (typeof item === "string") return item;
-          if (item?.content) return item.content;
-          if (item?.text) return item.text;
-          if (item?.chunk) return item.chunk;
-          if (item?.passage) return item.passage;
-          return JSON.stringify(item);
-        })
-        .filter((text: string) => text && text.trim().length > 0)
-        .join("\n\n");
-    } else if (response && typeof response === "object") {
-      // If response is an object, try to extract relevant fields
-      const responseObj = response as any;
-      if (responseObj.data && Array.isArray(responseObj.data)) {
-        contextText = responseObj.data
-          .map((item: any) => {
-            if (typeof item === "string") return item;
-            if (item?.content) return item.content;
-            if (item?.text) return item.text;
-            if (item?.chunk) return item.chunk;
-            return JSON.stringify(item);
-          })
-          .filter((text: string) => text && text.trim().length > 0)
-          .join("\n\n");
-      } else if (responseObj.content) {
-        contextText = String(responseObj.content);
-      } else if (responseObj.text) {
-        contextText = String(responseObj.text);
-      } else if (responseObj.results && Array.isArray(responseObj.results)) {
-        contextText = responseObj.results
-          .map((item: any) => {
-            if (typeof item === "string") return item;
-            if (item?.content) return item.content;
-            if (item?.text) return item.text;
-            return JSON.stringify(item);
-          })
-          .filter((text: string) => text && text.trim().length > 0)
-          .join("\n\n");
-      }
-    } else if (typeof response === "string") {
-      contextText = response;
-    }
-
-    if (contextText.trim().length > 0) {
-      console.log("[RAG] Successfully retrieved context (length:", contextText.length, "chars)");
-      return contextText.trim();
-    } else {
-      console.log("[RAG] No context found in response");
-      return "";
-    }
-  } catch (error: any) {
-    console.warn("[RAG] Failed to fetch embeddings:", error?.message || error);
-    // Don't throw - continue without RAG context if it fails
-    return "";
-  }
-}
-
-/**
- * Converts messages to CoreMessage format
- * Handles both UIMessage format (from Chat component) and simple format (from external API)
- */
-function convertMessagesToCore(messages: any[]): CoreMessage[] {
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return [];
-  }
-
-  // Check if any message has UIMessage format (parts array)
-  const hasUIMessageFormat = messages.some(isUIMessageFormat);
-
-  if (hasUIMessageFormat) {
-    // Use convertToModelMessages for UIMessage format (from Chat component)
-    try {
-      return convertToModelMessages(messages);
-    } catch (error) {
-      // Fallback: extract content from parts manually
-      return messages.map((msg: any) => {
-        let content = "";
-        if (Array.isArray(msg.parts)) {
-          content = msg.parts
-            .filter((p: any) => p?.type === "text" && p?.text)
-            .map((p: any) => String(p.text))
-            .join("");
-        } else if (msg.content) {
-          content = String(msg.content);
-        }
-
-        const role = msg.role || "user";
-        if (role === "user") {
-          return { role: "user", content };
-        } else if (role === "assistant") {
-          return { role: "assistant", content };
-        } else if (role === "system") {
-          return { role: "system", content };
-        }
-        return { role: "user", content };
-      });
-    }
-  } else {
-    // Simple format: convert directly to CoreMessage
-    return messages.map((msg: any) => {
-      const role = msg.role || "user";
-      const content = msg.content || "";
-
-      if (role === "user") {
-        return { role: "user", content };
-      } else if (role === "assistant") {
-        return { role: "assistant", content };
-      } else if (role === "system") {
-        return { role: "system", content };
-      }
-      return { role: "user", content };
-    });
-  }
-}
-
-export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
-
-  // Safely parse user messages
-  const messages: any[] = Array.isArray(body?.messages) ? body.messages : [];
-
-  // Extract context if provided (for Subject AI Teacher mode)
-  // Check both body and headers (headers are more reliable)
-  const chapterNameFromBody = body?.chapterName;
-  const chapterNameFromHeader =
-    event.headers.get("x-chapter-name") || event.headers.get("X-Chapter-Name");
-  const chapterName = chapterNameFromBody || chapterNameFromHeader;
-
-  // Additional context - check headers first, then body
-  const subject =
-    event.headers.get("x-subject") ||
-    event.headers.get("X-Subject") ||
-    body?.subject ||
-    "";
-  const level =
-    event.headers.get("x-level") ||
-    event.headers.get("X-Level") ||
-    body?.level ||
-    "";
-  const topic =
-    event.headers.get("x-topic") ||
-    event.headers.get("X-Topic") ||
-    body?.topic ||
-    "";
-  const chapterNoHeader =
-    event.headers.get("x-chapter-no") || event.headers.get("X-Chapter-No");
-  const chapterNo = chapterNoHeader
-    ? parseInt(chapterNoHeader)
-    : body?.chapterNo ?? null;
-
-  // Validate API key
-  const apiKey = useRuntimeConfig().openaiApiKey;
-  if (!apiKey) {
-    throw new Error("Missing OpenAI API key");
-  }
-
-  const openai = createOpenAI({ apiKey });
-
-  // Validate chapterName - only use it if it's a real chapter name (not empty or default)
-  const validChapterName =
-    chapterName && chapterName.trim() && chapterName !== "this competence"
-      ? chapterName.trim()
-      : undefined;
-
-  // Build context object only if we have a valid chapter name
-  const context = validChapterName
-    ? {
-        subject: subject,
-        level: level,
-        topic: topic,
-        chapterNo: chapterNo,
-      }
-    : undefined;
-
-  let systemPrompt = getBaseSystemPrompt(validChapterName, context);
-  const modelName = "gpt-4o";
-
-  // Get auth token for RAG API calls (from cookie or Authorization header)
-  const authToken =
-    getCookie(event, "signInAccessToken") ||
-    event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
-    undefined;
-
-  // Extract the latest user query for RAG
-  const latestUserQuery = extractLatestUserQuery(messages);
-  
-  // Fetch RAG context from embeddings API
-  let ragContext = "";
-  if (latestUserQuery) {
-    ragContext = await fetchRAGContext(latestUserQuery, authToken);
-  }
-
-  // Inject RAG context into system prompt if available
-  if (ragContext) {
-    systemPrompt = `${systemPrompt}
+function addRAGContextToPrompt(basePrompt: string, ragContext: string): string {
+  return `${basePrompt}
 
 RELEVANT CONTEXT FROM KNOWLEDGE BASE:
 The following information has been retrieved from the knowledge base to help answer the student's question. Use this context to provide accurate and comprehensive answers:
@@ -382,21 +127,264 @@ IMPORTANT: When using the context above:
 - If the context contains information outside the chapter scope (when in Subject AI Teacher mode), focus only on the relevant parts
 - Combine the context with your teaching approach to provide clear explanations
 - If the context contradicts the Tanzanian curriculum, prioritize the curriculum`;
-  }
+}
 
-  // If chapterName is provided, ensure it's emphasized in the final prompt
-  if (chapterName) {
-    systemPrompt = `${systemPrompt}
+function addChapterReminderToPrompt(prompt: string, chapterName: string): string {
+  return `${prompt}
 
 REMINDER: You are currently helping with the chapter/competence: "${chapterName}". You MUST ONLY answer questions related to this specific chapter.`;
+}
+
+// ============================================
+// Message Utilities
+// ============================================
+
+function isUIMessageFormat(message: any): boolean {
+  return (
+    message &&
+    (Array.isArray(message.parts) ||
+      (message.id !== undefined && message.parts !== undefined))
+  );
+}
+
+function extractMessageContent(msg: any): string {
+  if (Array.isArray(msg.parts)) {
+    return msg.parts
+      .filter((p: any) => p?.type === "text" && p?.text)
+      .map((p: any) => String(p.text))
+      .join("");
+  }
+  return msg.content ? String(msg.content) : "";
+}
+
+function extractLatestUserQuery(messages: any[]): string | null {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return null;
   }
 
-  // Convert messages to CoreMessage format (handles both UIMessage and simple formats)
-  const coreMessages = convertMessagesToCore(messages);
+  // Find the last user message (iterate backwards)
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg?.role === "user") {
+      const content = extractMessageContent(msg);
+      return content.trim() || null;
+    }
+  }
 
-  // Create Model Input
+  return null;
+}
+
+function convertMessageToCore(msg: any): CoreMessage {
+  const content = extractMessageContent(msg);
+  const role = msg.role || "user";
+
+  if (role === "user") return { role: "user", content };
+  if (role === "assistant") return { role: "assistant", content };
+  if (role === "system") return { role: "system", content };
+
+  return { role: "user", content };
+}
+
+function convertMessagesToCore(messages: any[]): CoreMessage[] {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return [];
+  }
+
+  const hasUIMessageFormat = messages.some(isUIMessageFormat);
+
+  if (hasUIMessageFormat) {
+    try {
+      return convertToModelMessages(messages);
+    } catch (error) {
+      // Fallback: extract content manually
+      return messages.map(convertMessageToCore);
+    }
+  }
+
+  return messages.map(convertMessageToCore);
+}
+
+// ============================================
+// RAG Utilities
+// ============================================
+
+function extractTextFromItem(item: any): string {
+  if (typeof item === "string") return item;
+  if (item?.content) return item.content;
+  if (item?.text) return item.text;
+  if (item?.chunk) return item.chunk;
+  if (item?.passage) return item.passage;
+  return JSON.stringify(item);
+}
+
+function parseRAGResponse(response: any): string {
+  if (Array.isArray(response)) {
+    return response
+      .map(extractTextFromItem)
+      .filter((text: string) => text?.trim().length > 0)
+      .join("\n\n");
+  }
+
+  if (response && typeof response === "object") {
+    const obj = response as any;
+
+    if (Array.isArray(obj.data)) {
+      return obj.data
+        .map(extractTextFromItem)
+        .filter((text: string) => text?.trim().length > 0)
+        .join("\n\n");
+    }
+
+    if (Array.isArray(obj.results)) {
+      return obj.results
+        .map(extractTextFromItem)
+        .filter((text: string) => text?.trim().length > 0)
+        .join("\n\n");
+    }
+
+    if (obj.content) return String(obj.content);
+    if (obj.text) return String(obj.text);
+  }
+
+  if (typeof response === "string") {
+    return response;
+  }
+
+  return "";
+}
+
+async function fetchRAGContext(searchQuery: string, authToken?: string): Promise<string> {
+  if (!searchQuery?.trim()) {
+    return "";
+  }
+
+  try {
+    const baseURL = apiDocs.baseURL;
+    const embeddingsUrl = `${baseURL}/machine-learning/books/embeddings/search?search=${encodeURIComponent(searchQuery.trim())}`;
+
+    // console.log("[RAG] Fetching embeddings for query:", searchQuery.substring(0, 50));
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
+
+    const response = await $fetch(embeddingsUrl, {
+      method: "GET",
+      headers,
+    });
+
+    const contextText = parseRAGResponse(response);
+
+    if (contextText.trim()) {
+      // console.log("[RAG] Successfully retrieved context (length:", contextText.length, "chars)");
+      return contextText.trim();
+    }
+
+    // console.log("[RAG] No context found in response");
+    return "";
+  } catch (error: any) {
+    console.warn("[RAG] Failed to fetch embeddings:", error?.message || error);
+    return "";
+  }
+}
+
+// ============================================
+// Request Parsing Utilities
+// ============================================
+
+function getHeaderValue(event: any, headerName: string): string | null {
+  return (
+    event.headers.get(headerName.toLowerCase()) ||
+    event.headers.get(headerName) ||
+    null
+  );
+}
+
+function extractRequestContext(event: any, body: any): RequestContext {
+  const chapterName =
+    body?.chapterName ||
+    getHeaderValue(event, "x-chapter-name") ||
+    undefined;
+
+  const subject =
+    getHeaderValue(event, "x-subject") || body?.subject || "";
+  const level = getHeaderValue(event, "x-level") || body?.level || "";
+  const topic = getHeaderValue(event, "x-topic") || body?.topic || "";
+
+  const chapterNoHeader = getHeaderValue(event, "x-chapter-no");
+  const chapterNo = chapterNoHeader
+    ? parseInt(chapterNoHeader)
+    : body?.chapterNo ?? null;
+
+  const validChapterName =
+    chapterName?.trim() && chapterName !== "this competence"
+      ? chapterName.trim()
+      : undefined;
+
+  const context: ChapterContext | undefined = validChapterName
+    ? { subject, level, topic, chapterNo }
+    : undefined;
+
+  return {
+    chapterName: validChapterName,
+    context,
+  };
+}
+
+function getAuthToken(event: any): string | undefined {
+  return (
+    getCookie(event, "signInAccessToken") ||
+    event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
+    undefined
+  );
+}
+
+// ============================================
+// Main Handler
+// ============================================
+
+export default defineEventHandler(async (event) => {
+  const body = await readBody(event);
+  const messages: any[] = Array.isArray(body?.messages) ? body.messages : [];
+
+  // Extract request context
+  const { chapterName, context } = extractRequestContext(event, body);
+
+  // Validate OpenAI API key
+  const apiKey = useRuntimeConfig().openaiApiKey;
+  if (!apiKey) {
+    throw new Error("Missing OpenAI API key");
+  }
+
+  // Build system prompt
+  let systemPrompt = getSystemPrompt(chapterName, context);
+
+  // Fetch RAG context if user query exists
+  const latestUserQuery = extractLatestUserQuery(messages);
+  if (latestUserQuery) {
+    const authToken = getAuthToken(event);
+    const ragContext = await fetchRAGContext(latestUserQuery, authToken);
+
+    if (ragContext) {
+      systemPrompt = addRAGContextToPrompt(systemPrompt, ragContext);
+    }
+  }
+
+  // Add chapter reminder if applicable
+  if (chapterName) {
+    systemPrompt = addChapterReminderToPrompt(systemPrompt, chapterName);
+  }
+
+  // Convert messages and prepare model input
+  const coreMessages = convertMessagesToCore(messages);
+  const openai = createOpenAI({ apiKey });
+
   const modelInput = {
-    model: openai(modelName),
+    model: openai("gpt-4o"),
     messages: [
       { role: "system", content: systemPrompt },
       ...coreMessages,
