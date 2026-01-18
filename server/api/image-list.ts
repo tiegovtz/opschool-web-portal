@@ -6,10 +6,13 @@ import { embedQuery } from "./utils/embeddings";
 /**
  * Save shortcodes to JSON file
  * @param images - Array of image objects with shortcodes
+ * Supports multiple URLs per figure (paths array) for figures with multiple images
  */
 async function saveShortcodesToFile(images: Array<{
   path: string;
+  paths?: string[];
   alt: string;
+  alts?: string[];
   shortcode: string;
   category: string;
   description?: string;
@@ -32,11 +35,38 @@ async function saveShortcodesToFile(images: Array<{
       // File doesn't exist yet, that's okay
       console.log('[image-list] No existing shortcodes file found, creating new one');
     }
+    
+    // Also load figure-metadata.json to match URLs to existing shortcodes
+    // ONLY update shortcodes that exist in figure-metadata.json - don't add new ones
+    let figureMetadataMap: Map<string, string> = new Map(); // figure_number+chapter+topic -> shortcode
+    let allowedShortcodes = new Set<string>(); // Only allow these shortcodes
+    try {
+      const metadataPath = join(dataDir, 'figure-metadata.json');
+      const metadataContent = await readFile(metadataPath, 'utf-8');
+      const metadataData = JSON.parse(metadataContent);
+      if (metadataData.images && Array.isArray(metadataData.images)) {
+        for (const fig of metadataData.images) {
+          if (fig.figure_number && fig.shortcode && fig.chapter && fig.topic) {
+            const key = `${fig.figure_number}|${fig.chapter}|${fig.topic}`.toLowerCase().trim();
+            figureMetadataMap.set(key, fig.shortcode);
+            allowedShortcodes.add(fig.shortcode);
+          }
+        }
+        console.log(`[image-list] Loaded ${figureMetadataMap.size} figure shortcodes from figure-metadata.json - ONLY these will be saved`);
+      }
+    } catch (error) {
+      // figure-metadata.json not found or invalid, that's okay - continue without matching
+      console.log('[image-list] Could not load figure-metadata.json for shortcode matching');
+    }
 
     // Create a mapping of shortcode to image metadata
+    // Supports multiple URLs (paths) and alt texts (alts) for figures with multiple images
+    // Single image: uses path/alt; Multi-image: uses paths/alts arrays
     const shortcodeMap: Record<string, {
-      path: string;
+      path?: string;
+      paths?: string[];
       alt: string;
+      alts?: string[];
       category: string;
       description?: string;
       chapterName?: string;
@@ -47,10 +77,41 @@ async function saveShortcodesToFile(images: Array<{
     }> = {};
 
     // Don't generate embeddings here - they should be generated manually via /api/generate-embeddings
+    // ONLY save shortcodes that exist in figure-metadata.json - don't add new ones
     for (const image of images) {
+      // Try to match this image to a shortcode from figure-metadata.json
+      // Match ONLY by figure number (extracted from description/alt text)
+      let matchedShortcode: string | null = null;
+      
+      if (image.chapterName && image.topicName) {
+        // Try to extract figure number from description or alt text
+        const searchText = `${image.description || ''} ${image.alt || ''}`.toLowerCase();
+        const figureMatch = searchText.match(/figure\s+(\d+\.\d+)/i);
+        
+        if (figureMatch) {
+          // Match by figure number + chapter + topic
+          const figureNumber = `Figure ${figureMatch[1]}`;
+          const key = `${figureNumber}|${image.chapterName}|${image.topicName}`.toLowerCase().trim();
+          matchedShortcode = figureMetadataMap.get(key) || null;
+          
+          if (matchedShortcode) {
+            console.log(`[image-list] ✅ Matched URL to figure-metadata shortcode: ${matchedShortcode} (${figureNumber})`);
+          }
+        }
+      }
+      
+      // Use matched shortcode from figure-metadata.json
+      // ONLY process if this shortcode is in figure-metadata.json - skip all others
+      const finalShortcode = matchedShortcode;
+      
+      // Skip this image if it doesn't match any shortcode in figure-metadata.json
+      if (!finalShortcode || !allowedShortcodes.has(finalShortcode)) {
+        continue; // Don't add new shortcodes - only update existing ones
+      }
+      
       // Create searchable text from all relevant fields
       const searchableText = [
-        image.shortcode,
+        finalShortcode,
         image.alt,
         image.description || '',
         image.chapterName || '',
@@ -58,39 +119,113 @@ async function saveShortcodesToFile(images: Array<{
         image.subjectName || ''
       ].filter(Boolean).join(' ');
 
-      // Preserve existing embedding if it exists
-      const existing = existingShortcodes[image.shortcode];
+      // Preserve existing embedding if it exists (check both the generated and matched shortcode)
+      const existing = existingShortcodes[finalShortcode] || existingShortcodes[image.shortcode];
       const existingEmbedding = existing?.embedding && Array.isArray(existing.embedding) && existing.embedding.length > 0
         ? existing.embedding
         : undefined;
 
-      shortcodeMap[image.shortcode] = {
-        path: image.path,
+      // If we matched a shortcode from figure-metadata.json, use that; otherwise use the generated one
+      // Handle multiple URLs (paths) and alts for figures with multiple images
+      // Check if existing entry has multiple images (paths array)
+      const existingPaths = existing?.paths;
+      const existingAlts = existing?.alts;
+      const isExistingMultiImage = Array.isArray(existingPaths) && existingPaths.length > 0;
+      
+      // Check if incoming image has multiple images
+      const incomingPaths = image.paths;
+      const incomingAlts = image.alts;
+      const isIncomingMultiImage = Array.isArray(incomingPaths) && incomingPaths.length > 1;
+      
+      // Build the entry based on whether it's single or multi-image
+      const entry: typeof shortcodeMap[string] = {
         alt: image.alt,
         category: image.category,
         description: image.description,
         chapterName: image.chapterName,
         topicName: image.topicName,
         subjectName: image.subjectName,
-        // Preserve existing embedding, or undefined if new
         embedding: existingEmbedding,
         searchableText: searchableText,
       };
+      
+      if (isExistingMultiImage || isIncomingMultiImage) {
+        // Multi-image figure: merge paths arrays
+        const currentPaths = existingPaths || (existing?.path ? [existing.path] : []);
+        const newPaths = incomingPaths || [image.path];
+        entry.paths = [...new Set([...currentPaths, ...newPaths])];
+        
+        const currentAlts = existingAlts || (existing?.alt ? [existing.alt] : []);
+        const newAlts = incomingAlts || [image.alt];
+        entry.alts = [...new Set([...currentAlts, ...newAlts])];
+      } else {
+        // Single image: just use path
+        entry.path = image.path;
+      }
+      
+      shortcodeMap[finalShortcode] = entry;
     }
 
-    // Prepare data structure
+    // Merge with existing shortcodes to preserve ones not updated
+    // Only keep shortcodes that are in figure-metadata.json
+    const mergedShortcodes: Record<string, any> = {};
+    
+    // First, preserve existing shortcodes that are in figure-metadata.json
+    for (const shortcode of allowedShortcodes) {
+      if (existingShortcodes[shortcode]) {
+        mergedShortcodes[shortcode] = existingShortcodes[shortcode];
+      }
+    }
+    
+    // Then, update with new URLs for matched shortcodes
+    for (const [shortcode, metadata] of Object.entries(shortcodeMap)) {
+      if (allowedShortcodes.has(shortcode)) {
+        mergedShortcodes[shortcode] = metadata;
+      }
+    }
+    
+    // Build images array with only matched shortcodes (for reference, but won't add new ones)
+    // Single image uses path/alt; Multi-image uses paths/alts arrays
+    const matchedImages = Array.from(allowedShortcodes).map(shortcode => {
+      const metadata = mergedShortcodes[shortcode];
+      if (!metadata) return null;
+      
+      const isMultiImage = Array.isArray(metadata.paths) && metadata.paths.length > 0;
+      
+      const imageEntry: Record<string, any> = {
+        alt: metadata.alt || '',
+        shortcode: shortcode,
+        category: metadata.category || 'biology',
+        description: metadata.description,
+        chapterName: metadata.chapterName,
+        topicName: metadata.topicName,
+      };
+      
+      if (isMultiImage) {
+        imageEntry.paths = metadata.paths;
+        imageEntry.alts = metadata.alts;
+      } else {
+        imageEntry.path = metadata.path || '';
+      }
+      
+      return imageEntry;
+    }).filter(Boolean);
+    
     const data = {
       generatedAt: new Date().toISOString(),
-      total: images.length,
+      total: Object.keys(mergedShortcodes).length,
       byCategory: {
-        biology: images.filter((img) => img.category === 'biology').length,
-        physics: images.filter((img) => img.category === 'physics').length,
-        chemistry: images.filter((img) => img.category === 'chemistry').length,
-        mathematics: images.filter((img) => img.category === 'mathematics').length,
-        general: images.filter((img) => img.category === 'general').length,
+        biology: Object.values(mergedShortcodes).filter((s: any) => s.category === 'biology').length,
+        physics: Object.values(mergedShortcodes).filter((s: any) => s.category === 'physics').length,
+        chemistry: Object.values(mergedShortcodes).filter((s: any) => s.category === 'chemistry').length,
+        mathematics: Object.values(mergedShortcodes).filter((s: any) => s.category === 'mathematics').length,
+        geography: Object.values(mergedShortcodes).filter((s: any) => s.category === 'geography').length,
+        horticulture: Object.values(mergedShortcodes).filter((s: any) => s.category === 'horticulture').length,
+        english: Object.values(mergedShortcodes).filter((s: any) => s.category === 'english').length,
+        'leather-goods': Object.values(mergedShortcodes).filter((s: any) => s.category === 'leather-goods').length,
       },
-      shortcodes: shortcodeMap,
-      images: images, // Full image list for reference
+      shortcodes: mergedShortcodes, // ONLY shortcodes from figure-metadata.json
+      images: matchedImages, // Only images with matched shortcodes
     };
 
     // Ensure directory exists
@@ -99,7 +234,7 @@ async function saveShortcodesToFile(images: Array<{
     // Write to file
     await writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
     
-    console.log(`[image-list] ✅ Saved ${Object.keys(shortcodeMap).length} shortcodes to ${filePath}`);
+    console.log(`[image-list] ✅ Saved ${Object.keys(mergedShortcodes).length} shortcodes (${Object.keys(shortcodeMap).length} updated from API) to ${filePath}`);
   } catch (error: any) {
     console.error('[image-list] Failed to save shortcodes to file:', error);
     // Don't throw - this is a non-critical operation
@@ -196,7 +331,7 @@ function extractImagesFromContent(
     const altLower = alt.toLowerCase();
     const textToAnalyze = `${pathLower} ${altLower} ${chapterName || ''} ${topicName || ''}`.toLowerCase();
 
-    let category = 'general';
+    let category: string | null = null;
 
     if (
       textToAnalyze.includes('biology') ||
@@ -238,24 +373,57 @@ function extractImagesFromContent(
       textToAnalyze.includes('calculus')
     ) {
       category = 'mathematics';
+    } else if (
+      textToAnalyze.includes('geography') ||
+      textToAnalyze.includes('geo') ||
+      textToAnalyze.includes('map') ||
+      textToAnalyze.includes('climate') ||
+      textToAnalyze.includes('terrain')
+    ) {
+      category = 'geography';
+    } else if (
+      textToAnalyze.includes('horticulture') ||
+      textToAnalyze.includes('crop') ||
+      textToAnalyze.includes('planting') ||
+      textToAnalyze.includes('farming')
+    ) {
+      category = 'horticulture';
+    } else if (
+      textToAnalyze.includes('english') ||
+      textToAnalyze.includes('language') ||
+      textToAnalyze.includes('grammar') ||
+      textToAnalyze.includes('vocabulary') ||
+      textToAnalyze.includes('writing')
+    ) {
+      category = 'english';
+    } else if (
+      textToAnalyze.includes('leather') ||
+      textToAnalyze.includes('footwear') ||
+      textToAnalyze.includes('shoe') ||
+      textToAnalyze.includes('craft')
+    ) {
+      category = 'leather-goods';
     }
 
-    // Generate shortcode from description (with fallbacks)
-    const shortcode = generateShortcodeFromDescription(
-      description || alt,  // Use description, fallback to alt text
-      category,
-      src.split('/').pop() || 'chapter_image'  // Final fallback to filename
-    );
+    // Only include images with a valid category (filter out uncategorized)
+    if (category) {
+      // Generate shortcode from description (with fallbacks)
+      const shortcode = generateShortcodeFromDescription(
+        description || alt,  // Use description, fallback to alt text
+        category,
+        src.split('/').pop() || 'chapter_image'  // Final fallback to filename
+      );
 
-    images.push({
-      path: src,
-      alt: alt || 'Chapter image',
-      shortcode,
-      category,
-      description: description || undefined,
-      chapterName,
-      topicName,
-    });
+      images.push({
+        path: src,
+        alt: alt || 'Chapter image',
+        shortcode,
+        category,
+        description: description || undefined,
+        chapterName,
+        topicName,
+      });
+    }
   }
 
   return images;
@@ -266,8 +434,75 @@ export default defineEventHandler(async (event) => {
     // Get query parameters
     const query = getQuery(event);
     const categoryFilter = query.category as string | undefined;
+    const subjectIdFilter = query.subjectId as string | undefined;
     const limit = query.limit ? parseInt(query.limit as string) : undefined;
     const keyword = query.keyword as string | undefined;
+    const refresh = query.refresh === 'true' || query.refresh === '1'; // Only fetch from API if explicitly requested
+
+    // Check if shortcodes file exists and use it by default (unless refresh requested)
+    if (!refresh) {
+      try {
+        const dataDir = join(process.cwd(), 'server', 'data');
+        const filePath = join(dataDir, 'image-shortcodes.json');
+        const existingContent = await readFile(filePath, 'utf-8');
+        const existingData = JSON.parse(existingContent);
+        
+        // If file exists and has valid data, use it
+        if (existingData && existingData.images && Array.isArray(existingData.images) && existingData.images.length > 0) {
+          console.log(`[image-list] ✅ Using existing shortcodes file (${existingData.images.length} images). Use ?refresh=true to regenerate.`);
+          
+          let filteredImages = existingData.images;
+          
+          // Apply filters to existing data
+          if (subjectIdFilter) {
+            filteredImages = filteredImages.filter((img: any) => img.subjectId === subjectIdFilter);
+          }
+          
+          if (categoryFilter && ['biology', 'physics', 'chemistry', 'mathematics', 'geography', 'general'].includes(categoryFilter)) {
+            filteredImages = filteredImages.filter((img: any) => img.category === categoryFilter);
+          }
+          
+          if (keyword) {
+            const keywordLower = keyword.toLowerCase();
+            filteredImages = filteredImages.filter(
+              (img: any) =>
+                img.alt?.toLowerCase().includes(keywordLower) ||
+                (img.path?.toLowerCase().includes(keywordLower)) ||
+                (Array.isArray(img.paths) && img.paths.some((p: string) => p.toLowerCase().includes(keywordLower))) ||
+                img.shortcode?.toLowerCase().includes(keywordLower) ||
+                img.description?.toLowerCase().includes(keywordLower) ||
+                img.chapterName?.toLowerCase().includes(keywordLower) ||
+                img.topicName?.toLowerCase().includes(keywordLower)
+            );
+          }
+          
+          if (limit && limit > 0) {
+            filteredImages = filteredImages.slice(0, limit);
+          }
+          
+          return {
+            success: true,
+            total: existingData.images.length,
+            filtered: filteredImages.length,
+            filters: {
+              category: categoryFilter || 'all',
+              subjectId: subjectIdFilter || null,
+              keyword: keyword || null,
+              limit: limit || null,
+            },
+            byCategory: existingData.byCategory || {},
+            images: filteredImages,
+            cached: true,
+            message: 'Using cached shortcodes. Use ?refresh=true to regenerate from API.',
+          };
+        }
+      } catch (fileError: any) {
+        // File doesn't exist or is invalid - continue to fetch from API
+        console.log('[image-list] Existing file not found or invalid, will fetch from API:', fileError.message);
+      }
+    } else {
+      console.log('[image-list] Refresh requested - will fetch from API');
+    }
 
     const allImages: Array<{
       path: string;
@@ -278,6 +513,7 @@ export default defineEventHandler(async (event) => {
       chapterName?: string;
       topicName?: string;
       subjectName?: string;
+      subjectId?: string;
     }> = [];
     const seenPaths = new Set<string>();
 
@@ -575,19 +811,107 @@ export default defineEventHandler(async (event) => {
             }
           }
           
-          // Determine category from simulation data (needed for shortcode prefix)
-          let category = 'general';
-          const simData = JSON.stringify(simulation).toLowerCase();
+          // Resolve subject first (BEFORE category detection) to improve category detection
+          let subjectName = simulation.subjectName || simulation.subject_name;
+          let subjectId = null;
           
-          if (simData.includes('biology') || simData.includes('bio') || simData.includes('cell')) {
-            category = 'biology';
-          } else if (simData.includes('physics') || simData.includes('wave') || simData.includes('circuit')) {
+          // Check if subject is an object (nested structure) - EXTRACT BOTH ID AND NAME
+          if (simulation.subject && typeof simulation.subject === 'object') {
+            // Extract ID if available (priority - needed for category detection)
+            if (simulation.subject._id) {
+              subjectId = simulation.subject._id;
+            } else if (simulation.subject.id) {
+              subjectId = simulation.subject.id;
+            }
+            // Extract name if available
+            if (simulation.subject.name) {
+              subjectName = simulation.subject.name;
+            }
+          }
+          // If subject is a string, it might be an ID
+          else if (simulation.subject && typeof simulation.subject === 'string') {
+            subjectId = simulation.subject;
+            // Try to resolve ID to name if possible
+            if (subjectIdToName[subjectId]) {
+              subjectName = subjectIdToName[subjectId];
+            }
+          }
+          
+          // If subject is an object with a name property, use that
+          if (subjectName && typeof subjectName === 'object' && subjectName.name) {
+            subjectName = subjectName.name;
+          }
+          // If subjectName is actually an ID string, resolve it to a name
+          else if (subjectName && typeof subjectName === 'string' && subjectIdToName[subjectName]) {
+            const originalSubjectName = subjectName;
+            if (!subjectId) {
+              subjectId = subjectName; // Store the ID
+            }
+            subjectName = subjectIdToName[subjectName];
+            console.log(`[image-list] Resolved subject ID "${originalSubjectName}" to name "${subjectName}"`);
+          }
+          // If we have subjectId but no name, resolve it
+          else if (subjectId && !subjectName && subjectIdToName[subjectId]) {
+            subjectName = subjectIdToName[subjectId];
+            console.log(`[image-list] Resolved subject ID "${subjectId}" to name "${subjectName}"`);
+          }
+          // Fallback: if we still don't have subjectId but have simulation.subject, try to extract it
+          else if (!subjectId && simulation.subject) {
+            if (typeof simulation.subject === 'string') {
+              subjectId = simulation.subject;
+            } else if (simulation.subject._id) {
+              subjectId = simulation.subject._id;
+            } else if (simulation.subject.id) {
+              subjectId = simulation.subject.id;
+            }
+          }
+          
+          // Determine category from subject ID and subject name only (NO keyword detection)
+          let category: string | null = null;
+          const resolvedSubjectNameLower = (subjectName || '').toLowerCase();
+          
+          // Subject ID to category mapping
+          const subjectIdToCategory: Record<string, string> = {
+            '665865487b076d51f6fc037a': 'physics',      // Physics
+            '665865867b076d51f6fc037f': 'chemistry',    // Chemistry
+            '6658658d7b076d51f6fc0381': 'biology',      // Biology
+            '67f50a3fb88b1b7c13b40b40': 'mathematics',  // Mathematics
+            '665865967b076d51f6fc0383': 'geography',    // Geography
+            '6960c874f17b11250e5da33f': 'horticulture', // Horticulture Attendant
+            '696a4063cae7037b37ce6758': 'english',      // English
+            '696b32ae90be598ced92fb13': 'leather-goods', // Leather Goods and Footwear
+          };
+          
+          // Check subject ID first (highest priority)
+          if (subjectId && subjectIdToCategory[subjectId]) {
+            category = subjectIdToCategory[subjectId];
+          }
+          // Fallback to subject name if ID not found or not mapped
+          else if (resolvedSubjectNameLower.includes('physics')) {
             category = 'physics';
-          } else if (simData.includes('chemistry') || simData.includes('molecule')) {
+          }
+          else if (resolvedSubjectNameLower.includes('biology') || resolvedSubjectNameLower.includes('bio')) {
+            category = 'biology';
+          }
+          else if (resolvedSubjectNameLower.includes('chemistry')) {
             category = 'chemistry';
-          } else if (simData.includes('math') || simData.includes('geometry')) {
+          }
+          else if (resolvedSubjectNameLower.includes('math') || resolvedSubjectNameLower.includes('mathematics')) {
             category = 'mathematics';
           }
+          else if (resolvedSubjectNameLower.includes('geography') || resolvedSubjectNameLower.includes('geo')) {
+            category = 'geography';
+          }
+          else if (resolvedSubjectNameLower.includes('horticulture')) {
+            category = 'horticulture';
+          }
+          else if (resolvedSubjectNameLower.includes('english')) {
+            category = 'english';
+          }
+          else if (resolvedSubjectNameLower.includes('leather') || resolvedSubjectNameLower.includes('footwear')) {
+            category = 'leather-goods';
+          }
+          // If no category match, category remains null (item will be filtered out)
           
           // Get alt text (needed for both new and existing shortcodes)
           const altText = simulation.name || simulation.title || simulation.label || 'Simulation image';
@@ -648,39 +972,14 @@ export default defineEventHandler(async (event) => {
             console.warn(`[image-list] Topic appears to be an ID but not found in mapping: "${topicName.substring(0, 20)}..."`);
           }
 
-          // Resolve subject name from ID if needed
-          let subjectName = simulation.subjectName || simulation.subject_name;
-          let subjectId = null;
-          
-          // Check if subject is an object (nested structure)
-          if (simulation.subject && typeof simulation.subject === 'object') {
-            if (simulation.subject.name) {
-              subjectName = simulation.subject.name;
-            } else if (simulation.subject._id) {
+          // Subject already resolved above (before category detection) - just ensure subjectId is stored
+          if (!subjectId && simulation.subject) {
+            // Try to extract ID from various formats (in case it wasn't captured earlier)
+            if (typeof simulation.subject === 'string' && !subjectIdToName[simulation.subject]) {
+              subjectId = simulation.subject;
+            } else if (simulation.subject && typeof simulation.subject === 'object' && simulation.subject._id) {
               subjectId = simulation.subject._id;
             }
-          }
-          
-          // If subject is an object with a name property, use that
-          if (subjectName && typeof subjectName === 'object' && subjectName.name) {
-            subjectName = subjectName.name;
-          }
-          // If subject is an ID string, resolve it to a name
-          else if (subjectName && typeof subjectName === 'string' && subjectIdToName[subjectName]) {
-            const originalSubjectName = subjectName;
-            subjectName = subjectIdToName[subjectName];
-            console.log(`[image-list] Resolved subject ID "${originalSubjectName}" to name "${subjectName}"`);
-          } else if (subjectId && subjectIdToName[subjectId]) {
-            subjectName = subjectIdToName[subjectId];
-            console.log(`[image-list] Resolved subject ID "${subjectId}" to name "${subjectName}"`);
-          }
-          // Fallback: check if simulation.subject is an ID
-          else if (!subjectName && simulation.subject && typeof simulation.subject === 'string' && subjectIdToName[simulation.subject]) {
-            subjectName = subjectIdToName[simulation.subject];
-            console.log(`[image-list] Resolved subject ID "${simulation.subject}" to name "${subjectName}"`);
-          } else if (subjectName && typeof subjectName === 'string' && subjectName.length > 20) {
-            // Likely an ID that wasn't found in mapping
-            console.warn(`[image-list] Subject appears to be an ID but not found in mapping: "${subjectName.substring(0, 20)}..."`);
           }
 
           // Resolve chapter name from ID if needed
@@ -713,16 +1012,20 @@ export default defineEventHandler(async (event) => {
             console.warn(`[image-list] Chapter appears to be an ID but not found in mapping: "${chapterName.substring(0, 20)}..."`);
           }
 
-          allImages.push({
-            path: imagePath,
-            alt: altText,
-            shortcode,
-            category,
-            description: description || undefined,
-            chapterName: chapterName || undefined,
-            topicName: topicName || undefined,
-            subjectName: subjectName || undefined,
-          });
+          // Only add images that have a valid category (filter out uncategorized)
+          if (category) {
+            allImages.push({
+              path: imagePath,
+              alt: altText,
+              shortcode,
+              category,
+              description: description || undefined,
+              chapterName: chapterName || undefined,
+              topicName: topicName || undefined,
+              subjectName: subjectName || undefined,
+              subjectId: subjectId || undefined,
+            });
+          }
           
           // Log if description was found
           if (description) {
@@ -804,34 +1107,63 @@ export default defineEventHandler(async (event) => {
               topicName = topicIdToName[topicId];
             }
 
-            // Resolve subject name from ID if needed
-            let subjectName = simulation.subjectName || simulation.subject_name;
-            let subjectId = null;
+            // Resolve subject name from ID if needed (for embedded images)
+            let embeddedSubjectName = simulation.subjectName || simulation.subject_name;
+            let embeddedSubjectId = null;
             
-            // Check if subject is an object (nested structure)
+            // Check if subject is an object (nested structure) - EXTRACT BOTH ID AND NAME
             if (simulation.subject && typeof simulation.subject === 'object') {
+              // Extract ID if available (priority - needed for category detection)
+              if (simulation.subject._id) {
+                embeddedSubjectId = simulation.subject._id;
+              } else if (simulation.subject.id) {
+                embeddedSubjectId = simulation.subject.id;
+              }
+              // Extract name if available
               if (simulation.subject.name) {
-                subjectName = simulation.subject.name;
-              } else if (simulation.subject._id) {
-                subjectId = simulation.subject._id;
+                embeddedSubjectName = simulation.subject.name;
+              }
+            }
+            // If subject is a string, it might be an ID
+            else if (simulation.subject && typeof simulation.subject === 'string') {
+              embeddedSubjectId = simulation.subject;
+              // Try to resolve ID to name if possible
+              if (subjectIdToName[embeddedSubjectId]) {
+                embeddedSubjectName = subjectIdToName[embeddedSubjectId];
               }
             }
             
             // If subject is an object with a name property, use that
-            if (subjectName && typeof subjectName === 'object' && subjectName.name) {
-              subjectName = subjectName.name;
+            if (embeddedSubjectName && typeof embeddedSubjectName === 'object' && embeddedSubjectName.name) {
+              embeddedSubjectName = embeddedSubjectName.name;
             }
             // If subject is an ID string, resolve it to a name
-            else if (subjectName && typeof subjectName === 'string' && subjectIdToName[subjectName]) {
-              subjectName = subjectIdToName[subjectName];
-            } else if (subjectId && subjectIdToName[subjectId]) {
-              subjectName = subjectIdToName[subjectId];
+            else if (embeddedSubjectName && typeof embeddedSubjectName === 'string' && subjectIdToName[embeddedSubjectName]) {
+              if (!embeddedSubjectId) {
+                embeddedSubjectId = embeddedSubjectName; // Store the ID before resolving
+              }
+              embeddedSubjectName = subjectIdToName[embeddedSubjectName];
+            } else if (embeddedSubjectId && !embeddedSubjectName && subjectIdToName[embeddedSubjectId]) {
+              embeddedSubjectName = subjectIdToName[embeddedSubjectId];
             }
-            // Fallback: check if simulation.subject is an ID
-            else if (!subjectName && simulation.subject) {
-              const possibleSubjectId = simulation.subject;
-              if (typeof possibleSubjectId === 'string' && subjectIdToName[possibleSubjectId]) {
-                subjectName = subjectIdToName[possibleSubjectId];
+            // Fallback: if we still don't have subjectId but have simulation.subject, try to extract it
+            else if (!embeddedSubjectId && simulation.subject) {
+              if (typeof simulation.subject === 'string') {
+                embeddedSubjectId = simulation.subject;
+                if (subjectIdToName[simulation.subject]) {
+                  embeddedSubjectName = subjectIdToName[simulation.subject];
+                }
+              } else if (simulation.subject._id) {
+                embeddedSubjectId = simulation.subject._id;
+              } else if (simulation.subject.id) {
+                embeddedSubjectId = simulation.subject.id;
+              }
+            }
+            if (!embeddedSubjectId && simulation.subject) {
+              if (typeof simulation.subject === 'string') {
+                embeddedSubjectId = simulation.subject;
+              } else if (simulation.subject && typeof simulation.subject === 'object' && simulation.subject._id) {
+                embeddedSubjectId = simulation.subject._id;
               }
             }
 
@@ -865,21 +1197,26 @@ export default defineEventHandler(async (event) => {
               console.warn(`[image-list] Chapter appears to be an ID but not found in mapping: "${chapterName.substring(0, 20)}..."`);
             }
 
-            allImages.push({
-              ...img,
-              shortcode: uniqueShortcode,
-              description: contentDescription && typeof contentDescription === 'string' ? contentDescription : img.description,
-              chapterName: chapterName || undefined,
-              topicName: topicName || undefined,
-              subjectName: subjectName || undefined,
-            });
+            // Only add embedded images that have a valid category (filter out uncategorized)
+            if (img.category) {
+              allImages.push({
+                ...img,
+                shortcode: uniqueShortcode,
+                description: contentDescription && typeof contentDescription === 'string' ? contentDescription : img.description,
+                chapterName: chapterName || undefined,
+                topicName: topicName || undefined,
+                subjectName: embeddedSubjectName || undefined,
+                subjectId: embeddedSubjectId || undefined,
+              });
+            }
           }
         }
       }
 
       console.log(`[image-list] ✅ Extracted ${allImages.length} images from simulations API`);
       
-      // Save shortcodes to JSON file
+      // Save shortcodes to JSON file for frontend use
+      // Note: figure-metadata.json is for AI (shortcodes only), image-shortcodes.json is for frontend (shortcodes + URLs)
       if (allImages.length > 0) {
         await saveShortcodesToFile(allImages);
       }
@@ -915,6 +1252,7 @@ export default defineEventHandler(async (event) => {
         filtered: 0,
         filters: {
           category: categoryFilter || 'all',
+          subjectId: subjectIdFilter || null,
           keyword: keyword || null,
           limit: limit || null,
         },
@@ -923,7 +1261,10 @@ export default defineEventHandler(async (event) => {
           physics: 0,
           chemistry: 0,
           mathematics: 0,
-          general: 0,
+          geography: 0,
+          horticulture: 0,
+          english: 0,
+          'leather-goods': 0,
         },
         images: [],
         message: 'No images found in simulations. The API may be empty or require authentication.',
@@ -933,8 +1274,15 @@ export default defineEventHandler(async (event) => {
     // Apply filters
     let filteredImages = allImages;
 
+      // Filter by subject ID (if provided)
+      if (subjectIdFilter) {
+        const beforeCount = filteredImages.length;
+        filteredImages = filteredImages.filter((img) => img.subjectId === subjectIdFilter);
+        console.log(`[image-list] Subject ID filter "${subjectIdFilter}": ${beforeCount} → ${filteredImages.length} images`);
+      }
+
       // Filter by category
-      if (categoryFilter && ['biology', 'physics', 'chemistry', 'mathematics', 'general'].includes(categoryFilter)) {
+      if (categoryFilter && ['biology', 'physics', 'chemistry', 'mathematics', 'geography', 'general'].includes(categoryFilter)) {
         filteredImages = filteredImages.filter((img) => img.category === categoryFilter);
       }
 
@@ -963,7 +1311,13 @@ export default defineEventHandler(async (event) => {
         physics: allImages.filter((img) => img.category === 'physics'),
         chemistry: allImages.filter((img) => img.category === 'chemistry'),
         mathematics: allImages.filter((img) => img.category === 'mathematics'),
-        general: allImages.filter((img) => img.category === 'general'),
+        geography: allImages.filter((img) => img.category === 'geography'),
+        horticulture: allImages.filter((img) => img.category === 'horticulture'),
+        english: allImages.filter((img) => img.category === 'english'),
+        'leather-goods': allImages.filter((img) => img.category === 'leather-goods'),
+        horticulture: allImages.filter((img) => img.category === 'horticulture'),
+        english: allImages.filter((img) => img.category === 'english'),
+        'leather-goods': allImages.filter((img) => img.category === 'leather-goods'),
       };
 
       return {
@@ -972,6 +1326,7 @@ export default defineEventHandler(async (event) => {
         filtered: filteredImages.length,
         filters: {
           category: categoryFilter || 'all',
+          subjectId: subjectIdFilter || null,
           keyword: keyword || null,
           limit: limit || null,
         },
@@ -980,7 +1335,10 @@ export default defineEventHandler(async (event) => {
           physics: byCategory.physics.length,
           chemistry: byCategory.chemistry.length,
           mathematics: byCategory.mathematics.length,
-          general: byCategory.general.length,
+          geography: byCategory.geography.length,
+          horticulture: byCategory.horticulture.length,
+          english: byCategory.english.length,
+          'leather-goods': byCategory['leather-goods'].length,
         },
         images: filteredImages,
         // Also provide categorized lists for convenience

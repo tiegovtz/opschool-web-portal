@@ -59,33 +59,57 @@ const processMathInText = (text: string): string => {
     const placeholder = `IMAGE_PLACEHOLDER_${counter}_END`;
     
     if (imageMeta) {
-      // Generate image HTML with proper styling and accessibility
-      const imageHtml = `<div class="my-4 flex justify-center">
-        <img 
-          src="${imageMeta.path}" 
-          alt="${imageMeta.alt}" 
-          class="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
-          loading="lazy"
-          onerror="this.style.display='none'; this.nextElementSibling?.style.display='block';"
-        />
-        <span class="hidden text-gray-400 italic text-sm">Image not available: ${imageMeta.alt}</span>
-      </div>`;
+      let imageHtml: string;
+      
+      // Check if this is a multi-image figure (has paths array)
+      if (imageMeta.paths && imageMeta.paths.length > 0) {
+        // Render multiple images in a responsive grid
+        const gridCols = Math.min(imageMeta.paths.length, 4);
+        const imageGrid = imageMeta.paths.map((imgPath, idx) => {
+          const altText = imageMeta.alts?.[idx] || imageMeta.alt;
+          return `<div class="flex flex-col items-center">
+            <img 
+              src="${imgPath}" 
+              alt="${altText}" 
+              class="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+              loading="lazy"
+              onerror="this.parentElement.style.display='none';"
+            />
+            <span class="text-xs text-gray-500 mt-1">${altText}</span>
+          </div>`;
+        }).join('');
+        
+        imageHtml = `<div class="my-4">
+          <div class="grid grid-cols-2 md:grid-cols-${gridCols} gap-3">
+            ${imageGrid}
+          </div>
+          <p class="text-center text-sm text-gray-600 mt-2 font-medium">${imageMeta.alt}</p>
+        </div>`;
+      } else {
+        // Single image - generate image HTML with proper styling and accessibility
+        // Images that fail to load will be silently hidden (no error message shown to users)
+        imageHtml = `<div class="my-4 flex justify-center">
+          <img 
+            src="${imageMeta.path}" 
+            alt="${imageMeta.alt}" 
+            class="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+            loading="lazy"
+            onerror="this.parentElement.style.display='none'; if(typeof console !== 'undefined' && console.warn) { console.warn('[MessageAI] Image failed to load:', '${imageMeta.path}'); }"
+          />
+        </div>`;
+      }
       
       imagePlaceholders.push({
         placeholder,
         replacement: imageHtml
       });
     } else {
-      // If image not found, show placeholder text in dev mode, original shortcode in production
-      if (import.meta.dev) {
-        imagePlaceholders.push({
-          placeholder,
-          replacement: `<span class="text-gray-400 italic text-sm">[Image not found: ${shortcodeName.trim()}]</span>`
-        });
-      } else {
-        // In production, return original shortcode if not found
-        return match;
+      // Log to server only, don't show to users
+      if (import.meta.server) {
+        console.warn(`[MessageAI] Image shortcode not found: ${shortcodeName.trim()}`);
       }
+      // Return empty string - fail silently for users (don't create placeholder)
+      return '';
     }
     
     counter++;

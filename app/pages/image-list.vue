@@ -15,6 +15,7 @@ interface ImageItem {
   chapterName?: string;
   topicName?: string;
   subjectName?: string;
+  subjectId?: string;
 }
 
 const images = ref<ImageItem[]>([]);
@@ -22,6 +23,7 @@ const isLoading = ref(false);
 const error = ref<string | null>(null);
 const selectedCategory = ref<string>('all');
 const searchKeyword = ref('');
+const subjectIdFilter = ref<string>(''); // Filter by subject ID (e.g., '665865487b076d51f6fc037a' for Physics)
 const stats = ref({
   total: 0,
   byCategory: {
@@ -29,7 +31,10 @@ const stats = ref({
     physics: 0,
     chemistry: 0,
     mathematics: 0,
-    general: 0,
+    geography: 0,
+    horticulture: 0,
+    english: 0,
+    'leather-goods': 0,
   }
 });
 
@@ -45,7 +50,10 @@ const categories = [
   { value: 'physics', label: 'Physics' },
   { value: 'chemistry', label: 'Chemistry' },
   { value: 'mathematics', label: 'Mathematics' },
-  { value: 'general', label: 'General' },
+  { value: 'geography', label: 'Geography' },
+  { value: 'horticulture', label: 'Horticulture' },
+  { value: 'english', label: 'English' },
+  { value: 'leather-goods', label: 'Leather Goods' },
 ];
 
 const fetchImages = async () => {
@@ -56,6 +64,9 @@ const fetchImages = async () => {
     const params = new URLSearchParams();
     if (selectedCategory.value !== 'all') {
       params.append('category', selectedCategory.value);
+    }
+    if (subjectIdFilter.value.trim()) {
+      params.append('subjectId', subjectIdFilter.value.trim());
     }
     if (searchKeyword.value.trim()) {
       params.append('keyword', searchKeyword.value.trim());
@@ -71,7 +82,10 @@ const fetchImages = async () => {
         physics: number;
         chemistry: number;
         mathematics: number;
-        general: number;
+        geography: number;
+        horticulture: number;
+        english: number;
+        'leather-goods': number;
       };
       images: ImageItem[];
     }>(url);
@@ -241,14 +255,26 @@ onMounted(() => {
             <div class="text-sm text-gray-600">Mathematics</div>
           </div>
           <div class="bg-white rounded-lg shadow p-4">
-            <div class="text-2xl font-bold text-gray-600">{{ stats.byCategory.general }}</div>
-            <div class="text-sm text-gray-600">General</div>
+            <div class="text-2xl font-bold text-teal-600">{{ stats.byCategory.geography }}</div>
+            <div class="text-sm text-gray-600">Geography</div>
+          </div>
+          <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-2xl font-bold text-emerald-600">{{ stats.byCategory.horticulture }}</div>
+            <div class="text-sm text-gray-600">Horticulture</div>
+          </div>
+          <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-2xl font-bold text-indigo-600">{{ stats.byCategory.english }}</div>
+            <div class="text-sm text-gray-600">English</div>
+          </div>
+          <div class="bg-white rounded-lg shadow p-4">
+            <div class="text-2xl font-bold text-amber-600">{{ stats.byCategory['leather-goods'] }}</div>
+            <div class="text-sm text-gray-600">Leather Goods</div>
           </div>
         </div>
 
         <!-- Filters -->
         <div class="bg-white rounded-lg shadow p-6 mb-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Category Filter -->
             <div>
               <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
@@ -264,6 +290,22 @@ onMounted(() => {
                   {{ cat.label }}
                 </option>
               </select>
+            </div>
+
+            <!-- Subject ID Filter -->
+            <div>
+              <label for="subjectId" class="block text-sm font-medium text-gray-700 mb-2">
+                Subject ID Filter
+              </label>
+              <input
+                id="subjectId"
+                v-model="subjectIdFilter"
+                type="text"
+                placeholder="e.g., 665865487b076d51f6fc037a"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-oceanBlue focus:border-oceanBlue text-sm"
+                @keyup.enter="fetchImages"
+              />
+              <p class="text-xs text-gray-500 mt-1">Leave empty to show all subjects</p>
             </div>
 
             <!-- Search -->
@@ -347,7 +389,10 @@ onMounted(() => {
                       'bg-purple-100 text-purple-800': image.category === 'physics',
                       'bg-green-100 text-green-800': image.category === 'chemistry',
                       'bg-orange-100 text-orange-800': image.category === 'mathematics',
-                      'bg-gray-100 text-gray-800': image.category === 'general',
+                      'bg-teal-100 text-teal-800': image.category === 'geography',
+                      'bg-emerald-100 text-emerald-800': image.category === 'horticulture',
+                      'bg-indigo-100 text-indigo-800': image.category === 'english',
+                      'bg-amber-100 text-amber-800': image.category === 'leather-goods',
                     }"
                   >
                     {{ image.category }}

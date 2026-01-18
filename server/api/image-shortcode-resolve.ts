@@ -28,16 +28,29 @@ export default defineEventHandler(async (event) => {
       const shortcodeData = data.shortcodes?.[shortcode];
 
       if (shortcodeData) {
+        // Check if this is a multi-image figure (has paths array) or single image (has path)
+        const isMultiImage = Array.isArray(shortcodeData.paths) && shortcodeData.paths.length > 0;
+        
+        const metadata: Record<string, any> = {
+          alt: shortcodeData.alt,
+          category: shortcodeData.category,
+          description: shortcodeData.description,
+          chapterName: shortcodeData.chapterName,
+          topicName: shortcodeData.topicName
+        };
+        
+        if (isMultiImage) {
+          // Multi-image figure: return paths and alts arrays
+          metadata.paths = shortcodeData.paths;
+          metadata.alts = shortcodeData.alts;
+        } else {
+          // Single image: return just path
+          metadata.path = shortcodeData.path;
+        }
+        
         return {
           success: true,
-          metadata: {
-            path: shortcodeData.path,
-            alt: shortcodeData.alt,
-            category: shortcodeData.category,
-            description: shortcodeData.description,
-            chapterName: shortcodeData.chapterName,
-            topicName: shortcodeData.topicName
-          }
+          metadata
         };
       }
 

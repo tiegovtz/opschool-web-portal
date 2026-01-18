@@ -51,8 +51,37 @@ async function readSyllabusFromFile(subject: string, level: string): Promise<Syl
     try {
       console.log(`[getSyllabus] Attempting to read: ${filePath}`);
       const fileContent = await readFile(filePath, "utf-8");
-      const syllabus: Syllabus = JSON.parse(fileContent);
-      console.log(`[getSyllabus] ✅ Successfully loaded syllabus: ${syllabus.syllabus_title}`);
+      const rawData = JSON.parse(fileContent);
+      
+      // Handle different JSON structures
+      let syllabus: Syllabus | null = null;
+      let isChapterFormat = false;
+      
+      // Check if it's the expected format (with syllabus_title, level, content)
+      if (rawData.syllabus_title && rawData.level && rawData.content) {
+        syllabus = rawData as Syllabus;
+        console.log(`[getSyllabus] ✅ Successfully loaded syllabus (standard format): ${syllabus.syllabus_title}`);
+      } 
+      // Handle book_metadata/book_info + chapters format
+      else if ((rawData.book_metadata || rawData.book_info) && rawData.chapters) {
+        const bookInfo = rawData.book_metadata || rawData.book_info;
+        // Transform to expected format - create a basic structure
+        syllabus = {
+          syllabus_title: bookInfo.title || "Syllabus",
+          level: bookInfo.level || level,
+          content: [] // Chapters don't map directly to competences, will be handled separately
+        };
+        isChapterFormat = true;
+        // Store raw data for later use
+        (syllabus as any).rawChapters = rawData.chapters;
+        console.log(`[getSyllabus] ✅ Successfully loaded syllabus (book format): ${syllabus.syllabus_title}`);
+        console.log(`[getSyllabus] ⚠️ Note: This file uses chapter structure, not competence structure. Chapters: ${rawData.chapters?.length || 0}`);
+      } 
+      else {
+        console.error(`[getSyllabus] ❌ Unknown file format. Expected syllabus_title/level/content or book_metadata/book_info/chapters`);
+        return null;
+      }
+      
       return syllabus;
     } catch (readError: any) {
       console.error(`[getSyllabus] ❌ Failed to read file: ${readError.message}`);
@@ -132,6 +161,194 @@ function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 export const studentTools = {
+  // Get chapter figures using chapter/topic filtering (PRIMARY METHOD - NO SEARCH ALGORITHM)
+  getChapterFigures: tool({
+    description: "MANDATORY: Get all available image figures for a specific chapter and optional topic. You MUST call this tool whenever you are teaching a chapter or topic from the syllabus. This is the ONLY method to get images - there is no search algorithm. CRITICAL: When the user asks about a specific topic, you MUST extract the exact topic name from the user's message or syllabus and pass it as the 'topic' parameter. The topic name should match exactly as it appears in the syllabus (e.g., 'Basic concepts and terminologies in Biology', 'The process of photosynthesis'). Provide the chapter name exactly as it appears in the syllabus (e.g., 'Chapter Six: Nutrition in plants', 'Chapter One: Introduction to Biology') and the exact topic name if the user is asking about a specific topic. You will receive all figures available for that chapter/topic. Returns a list of figures with their shortcodes that you MUST use with [image:shortcode] format in your response. All returned figures are guaranteed to be relevant because they're filtered by the exact chapter/topic you're teaching. Review all returned figures - if they are all highly relevant, use multiple [image:shortcode] in your response. If figures are returned, you MUST include at least one [image:shortcode] in your response.",
+    inputSchema: z.object({
+      chapter: z.string().describe("Chapter name using WORD form for numbers (e.g., 'Chapter One', 'Chapter Two', 'Chapter Six') NOT digits. Format: 'Chapter [WORD]: [Title]' (e.g., 'Chapter One: Introduction to Biology', 'Chapter Six: Nutrition in plants'). If syllabus shows chapter_number: 1, use 'Chapter One: [Title]' not 'Chapter 1: [Title]'. Must match exactly as in figure-metadata.json."),
+      topic: z.string().optional().describe("EXACT topic name from the user's message or syllabus. Extract the specific topic the user is asking about. Examples: 'Basic concepts and terminologies in Biology', 'Importance of studying Biology', 'The process of photosynthesis'. The topic name must match exactly as it appears in the syllabus. If the user mentions a specific topic, you MUST extract it and provide it here. If provided, only returns figures for this specific topic. DO NOT use 'all' - either provide the exact topic name or omit this parameter entirely."),
+    }),
+    execute: async ({ chapter, topic }) => {
+      try {
+        console.log(`[getChapterFigures] 🔍 TOOL CALLED - chapter: "${chapter}", topic: "${topic || 'all'}"`);
+        
+        // Load figure-metadata.json
+        const filePath = join(process.cwd(), 'server', 'data', 'figure-metadata.json');
+        let fileContent: string;
+        try {
+          fileContent = await readFile(filePath, 'utf-8');
+        } catch (fileError: any) {
+          console.error("[getChapterFigures] Failed to load figure-metadata.json:", fileError);
+          return {
+            found: false,
+            error: "Figure metadata file not available",
+            figures: []
+          };
+        }
+        
+        const data = JSON.parse(fileContent);
+        const images = data.images || [];
+        
+        if (images.length === 0) {
+          return {
+            found: false,
+            message: "No figure metadata available",
+            figures: []
+          };
+        }
+        
+        // Normalize chapter/topic for comparison
+        const normalizeChapter = (ch: string) => ch.toLowerCase().trim().replace(/\s+/g, ' ');
+        const normalizeTopic = (t: string) => t.toLowerCase().trim().replace(/\s+/g, ' ');
+        
+        const queryChapter = normalizeChapter(chapter);
+        
+        // Filter by chapter - try exact match first
+        let filtered = images.filter((img: any) => {
+          const imgChapter = normalizeChapter(img.chapter || '');
+          return imgChapter === queryChapter;
+        });
+        
+        // If no exact match found, try flexible matching by chapter number
+        if (filtered.length === 0) {
+          const chapterNumMatch = chapter.match(/chapter\s+(one|two|three|four|five|six|seven|eight|nine|ten|\d+)/i);
+          if (chapterNumMatch) {
+            const numberStr = chapterNumMatch[1].toLowerCase();
+            const wordToDigit: Record<string, string> = {
+              'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
+              'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10'
+            };
+            const digitToWord: Record<string, string> = {
+              '1': 'one', '2': 'two', '3': 'three', '4': 'four', '5': 'five',
+              '6': 'six', '7': 'seven', '8': 'eight', '9': 'nine', '10': 'ten'
+            };
+            const wordToWord: Record<string, string> = {
+              'one': 'one', 'two': 'two', 'three': 'three', 'four': 'four', 'five': 'five',
+              'six': 'six', 'seven': 'seven', 'eight': 'eight', 'nine': 'nine', 'ten': 'ten'
+            };
+            
+            // Determine if input is word or digit form
+            const isDigit = /^\d+$/.test(numberStr);
+            const chapterWord = isDigit ? digitToWord[numberStr] : wordToWord[numberStr] || null;
+            const chapterDigit = isDigit ? numberStr : wordToDigit[numberStr] || numberStr;
+            
+            // Try matching by chapter number (both word and digit form)
+            filtered = images.filter((img: any) => {
+              const imgChapter = normalizeChapter(img.chapter || '');
+              
+              // Match both word and digit forms regardless of input format
+              // If input is "Chapter 1", try matching "chapter 1:" and "chapter one:"
+              // If input is "Chapter One", try matching "chapter one:" and "chapter 1:"
+              if (imgChapter.startsWith(`chapter ${chapterWord}:`) || 
+                  imgChapter.startsWith(`chapter ${chapterDigit}:`)) {
+                return true;
+              }
+              
+              return false;
+            });
+            
+            if (filtered.length > 0) {
+              console.log(`[getChapterFigures] ✅ Matched "${chapter}" to chapter by number - found ${filtered.length} figures in "${filtered[0].chapter}"`);
+            }
+          }
+        }
+        
+        // If still no match, log available chapters for debugging
+        if (filtered.length === 0) {
+          const availableChapters = [...new Set(images.map((img: any) => img.chapter).filter(Boolean))].slice(0, 5);
+          console.log(`[getChapterFigures] ⚠️  No match found for chapter "${chapter}"`);
+          console.log(`[getChapterFigures] Available chapters (sample): ${availableChapters.join(', ')}`);
+        }
+        
+        // Filter by topic if provided (improved matching: exact first, then flexible for syllabus differences)
+        // Ignore invalid topic values like "all"
+        if (topic && topic.trim() && topic.trim().toLowerCase() !== 'all') {
+          const queryTopic = normalizeTopic(topic);
+          const queryWords = queryTopic.split(/\s+/).filter(w => w.length > 2);
+          const isSingleWord = queryWords.length === 1;
+          
+          // First, try exact match
+          let exactMatches = filtered.filter((img: any) => {
+            const imgTopic = normalizeTopic(img.topic || '');
+            return imgTopic === queryTopic;
+          });
+          
+          // If exact matches found, use only those (unless it's a single-word query from syllabus)
+          if (exactMatches.length > 0 && !isSingleWord) {
+            filtered = exactMatches;
+            console.log(`[getChapterFigures] ✅ Using exact topic match: ${filtered.length} figures`);
+          } else {
+            // For single-word queries or when no exact match, use flexible matching
+            filtered = filtered.filter((img: any) => {
+              const imgTopic = normalizeTopic(img.topic || '');
+              
+              // Exact match (highest priority)
+              if (imgTopic === queryTopic) return true;
+              
+              // For single-word queries (e.g., "photosynthesis" from syllabus)
+              if (isSingleWord) {
+                // Match topics containing that word (broad match for syllabus topic names)
+                return imgTopic.includes(queryWords[0]);
+              }
+              
+              // For multi-word queries, be more precise
+              // Only match if the query phrase is contained in the topic (not just individual words)
+              // This prevents "The process of photosynthesis" from matching "Structure of the leaf in relation to photosynthesis"
+              if (imgTopic.includes(queryTopic)) {
+                return true;
+              }
+              
+              // If query is contained in topic, that's a match
+              // But don't match if topic just contains individual words from query
+              return false;
+            });
+            
+            if (filtered.length > 0 && !isSingleWord) {
+              console.log(`[getChapterFigures] ✅ Using flexible topic match: ${filtered.length} figures`);
+            }
+          }
+        }
+        
+        // Map to return format
+        const figures = filtered.map((img: any) => ({
+          figure_number: img.figure_number || '',
+          caption: img.caption || '',
+          shortcode: img.shortcode || '',
+          page_number: img.page_number || null,
+          chapter: img.chapter || '',
+          topic: img.topic || ''
+        }));
+        
+        console.log(`[getChapterFigures] ✅ Found ${figures.length} figures for chapter "${chapter}"${topic ? `, topic "${topic}"` : ''}`);
+        
+        if (figures.length === 0) {
+          return {
+            found: false,
+            message: `No figures found for chapter "${chapter}"${topic ? `, topic "${topic}"` : ''}`,
+            figures: []
+          };
+        }
+        
+        return {
+          found: true,
+          total: figures.length,
+          chapter: chapter,
+          topic: topic || null,
+          figures: figures,
+          usage: "CRITICAL: You MUST include at least one [image:shortcode] in your response text. Use these shortcodes like: [image:shortcode_name]. Example: 'As shown in this diagram: [image:general_figure_2_1_hand_lens], the hand lens is used for...'. If multiple figures are returned and they are all highly relevant to what you're teaching, you SHOULD use multiple [image:shortcode] in your response - don't limit yourself to just one if all figures are relevant. Do not just acknowledge this result - you MUST use the shortcode(s) in your actual response.",
+          instruction: "MANDATORY: Review ALL returned figures. You MUST include at least one [image:shortcode] from the figures list in your response. If multiple figures are returned and they are all highly relevant to the topic you're teaching, use multiple [image:shortcode] - one for each relevant figure. Select which figures to use based on relevance: if they are all highly relevant, use them all. Use the shortcodes with [image:shortcode] format when referencing these figures. Example: 'Look at this: [image:general_figure_1_1] shows living things.' This is not optional - if figures are returned, you MUST use at least one, and you SHOULD use multiple if they are all relevant."
+        };
+      } catch (error: any) {
+        console.error("[getChapterFigures] Error:", error);
+        return {
+          found: false,
+          error: error.message || "Unknown error occurred",
+          figures: []
+        };
+      }
+    },
+  }),
+
   // Get syllabus for a subject and level from JSON files
   getSyllabus: tool({
     description: "Get the syllabus/curriculum for a given subject and level (Form I or Form II) from JSON files. Use this when you need to understand what competences, topics, or content should be covered for a specific subject and level. This helps ensure syllabus compliance and proper lesson planning. Available subjects: biology, physics. Available levels: Form I, Form II.",
@@ -155,19 +372,64 @@ export const studentTools = {
         }
 
         // Format syllabus for the agent
-        const formattedSyllabus = formatSyllabusForAgent(syllabus);
+        let formattedSyllabus: string;
+        let competences: any[] = [];
+        let totalCompetences = 0;
         
-        return {
-          subject: syllabus.syllabus_title.includes(subject) ? subject : syllabus.syllabus_title,
-          level: syllabus.level,
-          syllabus: formattedSyllabus,
-          competences: syllabus.content.map((c) => ({
+        // Check if this is a chapter-based format
+        const isChapterFormat = (syllabus as any).rawChapters !== undefined;
+        
+        if (isChapterFormat && (syllabus as any).rawChapters) {
+          // Chapter-based format - create a formatted string from chapters
+          const chapters = (syllabus as any).rawChapters;
+          formattedSyllabus = `SYLLABUS: ${syllabus.syllabus_title}\n`;
+          formattedSyllabus += `LEVEL: ${syllabus.level}\n\n`;
+          formattedSyllabus += "NOTE: This syllabus uses a chapter-based structure.\n\n";
+          formattedSyllabus += `TOTAL CHAPTERS: ${chapters.length}\n\n`;
+          formattedSyllabus += "=".repeat(80) + "\n\n";
+          
+          chapters.forEach((chapter: any, index: number) => {
+            formattedSyllabus += `CHAPTER ${chapter.chapter_number || chapter.chapter_id || index + 1}: ${chapter.title}\n`;
+            formattedSyllabus += `Start Page: ${chapter.start_page || 'N/A'}\n\n`;
+            if (chapter.sections && Array.isArray(chapter.sections)) {
+              formattedSyllabus += "Sections:\n";
+              chapter.sections.forEach((section: any, secIndex: number) => {
+                formattedSyllabus += `  ${secIndex + 1}. ${section.title} (Page ${section.page || 'N/A'})\n`;
+              });
+            }
+            formattedSyllabus += "\n" + "-".repeat(80) + "\n\n";
+          });
+          
+          totalCompetences = chapters.length;
+          competences = chapters.map((ch: any, idx: number) => ({
+            main: `Chapter ${ch.chapter_number || ch.chapter_id || idx + 1}`,
+            specific: ch.title,
+            periods: 0,
+            activities: ch.sections?.length || 0
+          }));
+        } else if (syllabus.content && syllabus.content.length > 0) {
+          // Standard format with competences
+          formattedSyllabus = formatSyllabusForAgent(syllabus);
+          competences = syllabus.content.map((c) => ({
             main: c.main_competence,
             specific: c.specific_competence,
             periods: c.number_of_periods,
             activities: c.learning_activities.length
-          })),
-          totalCompetences: syllabus.content.length,
+          }));
+          totalCompetences = syllabus.content.length;
+        } else {
+          // Fallback - empty syllabus
+          formattedSyllabus = `SYLLABUS: ${syllabus.syllabus_title}\n`;
+          formattedSyllabus += `LEVEL: ${syllabus.level}\n\n`;
+          formattedSyllabus += "No content found in syllabus file.";
+        }
+        
+        return {
+          subject: syllabus.syllabus_title.includes(subject.toLowerCase()) ? subject : syllabus.syllabus_title,
+          level: syllabus.level,
+          syllabus: formattedSyllabus,
+          competences: competences,
+          totalCompetences: totalCompetences,
           found: true
         };
       } catch (error: any) {
@@ -217,270 +479,5 @@ export const studentTools = {
     }),
   }),
 
-  // Get image shortcodes using semantic search
-  getImageShortcodes: tool({
-    description: "Search for image shortcodes from lesson chapters using hybrid keyword and semantic search for high accuracy. ALWAYS use this tool when explaining concepts - images are mandatory. The tool combines semantic search (meaning-based) and keyword matching to find the most relevant images. Returns shortcodes with similarity scores - use images with similarity > 0.3. Returns shortcodes you can use with [image:shortcode] format. The shortcodes are generated from descriptions of images in lesson chapters. Example: When explaining 'cell structure', call this tool with query='cell structure diagram', category='biology' to find relevant images.",
-    inputSchema: z.object({
-      query: z.string().describe("Natural language query describing what image you need (e.g., 'diagram showing how plants make food', 'electrical circuit', 'cell division process', 'wave properties')"),
-      category: z.enum(['biology', 'physics', 'chemistry', 'mathematics', 'general', 'all']).optional().default('all').describe("Filter by subject category"),
-      limit: z.number().optional().default(10).describe("Maximum number of results (default: 10, max: 20)"),
-      minSimilarity: z.number().optional().default(0.3).describe("Minimum similarity score (0-1, default: 0.3). The hybrid search (semantic + keyword) provides high accuracy, so 0.3 is sufficient for good results.")
-    }),
-    execute: async ({ query, category = 'all', limit = 10, minSimilarity = 0.3 }) => {
-      try {
-        console.log(`[getImageShortcodes] 🔍 TOOL CALLED - Searching for: "${query}", category: ${category}, limit: ${limit}`);
-        
-        const data = await loadImageShortcodesFromFile();
-        
-        if (!data || Object.keys(data.shortcodes).length === 0) {
-          return {
-            found: false,
-            message: "No image shortcodes available. The image list may not have been generated yet. Access /image-list to generate shortcodes.",
-            shortcodes: [],
-            total: 0
-          };
-        }
-
-        // 1. Generate embedding for the search query
-        let queryEmbedding: number[];
-        try {
-          queryEmbedding = await embedQuery(query);
-        } catch (embedError: any) {
-          console.error("[getImageShortcodes] Failed to generate query embedding:", embedError);
-          return {
-            found: false,
-            error: `Failed to process search query: ${embedError.message}`,
-            shortcodes: []
-          };
-        }
-
-        // 2. Calculate similarity for each shortcode using improved hybrid search
-        const scored: Array<{
-          shortcode: string;
-          metadata: any;
-          score: number;
-        }> = [];
-
-        let checkedCount = 0;
-        let withEmbeddings = 0;
-        const queryLower = query.toLowerCase().trim();
-        const queryWords = queryLower.split(/\s+/).filter(w => w.length > 1); // Words longer than 1 char
-        const queryLength = queryWords.length;
-
-        // Helper function for advanced keyword matching with field-specific boosting
-        function calculateKeywordScore(text: string, fieldWeight: number = 1.0): number {
-          if (!text) return 0;
-          const textLower = text.toLowerCase();
-          let score = 0;
-
-          // 1. Exact phrase match (highest priority)
-          if (textLower.includes(queryLower)) {
-            score = Math.max(score, 0.9 * fieldWeight);
-          }
-
-          // 2. All words present in order (high relevance)
-          if (queryWords.length > 1) {
-            const wordsInOrder = queryWords.every((word, idx) => {
-              const pos = textLower.indexOf(word);
-              if (pos === -1) return false;
-              // Check if words appear in roughly the same order
-              if (idx === 0) return true;
-              const prevWord = queryWords[idx - 1];
-              const prevPos = textLower.indexOf(prevWord);
-              return pos >= prevPos; // Current word comes after previous
-            });
-            if (wordsInOrder) {
-              score = Math.max(score, 0.75 * fieldWeight);
-            }
-          }
-
-          // 3. All words present (any order)
-          const allWordsPresent = queryWords.every(word => textLower.includes(word));
-          if (allWordsPresent) {
-            score = Math.max(score, 0.65 * fieldWeight);
-          }
-
-          // 4. Partial word matches (fuzzy matching)
-          const matchingWords = queryWords.filter(word => {
-            // Exact word match
-            if (textLower.includes(word)) return true;
-            // Partial match (word contains query word or vice versa)
-            const words = textLower.split(/\s+/);
-            return words.some(tw => tw.includes(word) || word.includes(tw));
-          });
-          
-          if (matchingWords.length > 0) {
-            const matchRatio = matchingWords.length / queryLength;
-            // Base score increases with match ratio
-            const baseScore = 0.3 + (matchRatio * 0.4); // Range: 0.3 to 0.7
-            score = Math.max(score, baseScore * fieldWeight);
-          }
-
-          // 5. Single word exact match (for short queries)
-          if (queryLength === 1 && textLower.includes(queryWords[0])) {
-            score = Math.max(score, 0.5 * fieldWeight);
-          }
-
-          return Math.min(score, 1.0); // Cap at 1.0
-        }
-
-        for (const [shortcode, metadata] of Object.entries(data.shortcodes)) {
-          // Filter by category first
-          if (category !== 'all' && metadata.category !== category) {
-            continue;
-          }
-
-          checkedCount++;
-
-          // IMPROVED HYBRID SEARCH: Enhanced semantic + advanced keyword matching
-          let semanticScore = 0;
-          let keywordScore = 0;
-          let hasEmbedding = false;
-
-          // 1. Semantic search (meaning-based) - if embedding is available
-          if (metadata.embedding && Array.isArray(metadata.embedding)) {
-            withEmbeddings++;
-            hasEmbedding = true;
-            semanticScore = cosineSimilarity(queryEmbedding, metadata.embedding);
-            // Normalize semantic score (cosine similarity is already -1 to 1, but we want 0 to 1)
-            semanticScore = Math.max(0, semanticScore);
-          }
-
-          // 2. Advanced keyword search with field-specific boosting
-          // Higher weight for more important fields (alt > description > chapter/topic)
-          const altText = (metadata.alt || '').toLowerCase();
-          const description = (metadata.description || '').toLowerCase();
-          const chapterName = (metadata.chapterName || '').toLowerCase();
-          const topicName = (metadata.topicName || '').toLowerCase();
-          const subjectName = (metadata.subjectName || '').toLowerCase();
-          const shortcodeText = shortcode.toLowerCase();
-
-          // Calculate keyword scores for each field with different weights
-          const altScore = calculateKeywordScore(altText, 1.2); // Alt text is most important
-          const descScore = calculateKeywordScore(description, 1.0);
-          const shortcodeScore = calculateKeywordScore(shortcodeText, 0.9); // Shortcode itself
-          const chapterScore = calculateKeywordScore(chapterName, 0.7);
-          const topicScore = calculateKeywordScore(topicName, 0.7);
-          const subjectScore = calculateKeywordScore(subjectName, 0.6);
-
-          // Combine field scores (weighted average, prioritizing higher scores)
-          const fieldScores = [altScore, descScore, shortcodeScore, chapterScore, topicScore, subjectScore]
-            .filter(s => s > 0)
-            .sort((a, b) => b - a); // Sort descending
-
-          if (fieldScores.length > 0) {
-            // Use weighted average: top score gets more weight
-            if (fieldScores.length === 1) {
-              keywordScore = fieldScores[0];
-            } else {
-              // Top 2 scores get more weight
-              const topScore = fieldScores[0];
-              const secondScore = fieldScores[1] || 0;
-              keywordScore = (topScore * 0.6) + (secondScore * 0.3) + 
-                             (fieldScores.slice(2).reduce((sum, s) => sum + s, 0) / Math.max(fieldScores.length - 2, 1) * 0.1);
-            }
-          }
-
-          // 3. Improved score combination with dynamic weighting
-          let finalSimilarity = 0;
-          
-          if (hasEmbedding && keywordScore > 0) {
-            // Both available: dynamic weighting based on confidence
-            // If keyword score is very high (>0.7), give it more weight
-            // If semantic score is very high (>0.6), give it more weight
-            let semanticWeight = 0.6;
-            let keywordWeight = 0.4;
-
-            if (keywordScore > 0.7) {
-              // Strong keyword match - increase keyword weight
-              keywordWeight = 0.5;
-              semanticWeight = 0.5;
-            } else if (semanticScore > 0.6) {
-              // Strong semantic match - keep semantic priority
-              semanticWeight = 0.65;
-              keywordWeight = 0.35;
-            }
-
-            finalSimilarity = (semanticScore * semanticWeight) + (keywordScore * keywordWeight);
-            
-            // Boost when both agree (consensus boost)
-            if (semanticScore > 0.4 && keywordScore > 0.5) {
-              const consensusBoost = (semanticScore + keywordScore) / 2;
-              finalSimilarity = Math.max(finalSimilarity, consensusBoost * 1.1); // 10% boost
-            }
-          } else if (hasEmbedding) {
-            // Only semantic available
-            finalSimilarity = semanticScore;
-          } else if (keywordScore > 0) {
-            // Only keyword available
-            finalSimilarity = keywordScore;
-          }
-
-          // 4. Additional boosting factors
-          // Boost if category matches query intent
-          if (category !== 'all' && metadata.category === category) {
-            finalSimilarity *= 1.05; // 5% boost for category match
-          }
-
-          // Boost exact shortcode matches (rare but very relevant)
-          if (shortcodeText.includes(queryLower.replace(/\s+/g, '_'))) {
-            finalSimilarity = Math.max(finalSimilarity, 0.85);
-          }
-
-          // Cap at 1.0
-          finalSimilarity = Math.min(finalSimilarity, 1.0);
-
-          // Include if similarity meets threshold
-          if (finalSimilarity >= minSimilarity) {
-            scored.push({
-              shortcode,
-              metadata,
-              score: finalSimilarity
-            });
-          }
-        }
-
-        console.log(`[getImageShortcodes] Hybrid search results: Checked ${checkedCount} shortcodes, ${withEmbeddings} had embeddings, ${scored.length} above threshold (${minSimilarity})`);
-        if (scored.length > 0) {
-          console.log(`[getImageShortcodes] Top 3 results:`, scored.slice(0, 3).map(s => ({ shortcode: s.shortcode, score: s.score.toFixed(2) })));
-        }
-
-        // 3. Sort by similarity (highest first)
-        scored.sort((a, b) => b.score - a.score);
-
-        // 4. Apply limit
-        const results = scored.slice(0, Math.min(limit, 20)).map(({ shortcode, metadata, score }) => ({
-          shortcode,
-          path: metadata.path,
-          alt: metadata.alt,
-          category: metadata.category,
-          description: metadata.description || 'No description',
-          chapterName: metadata.chapterName,
-          topicName: metadata.topicName,
-          similarity: Math.round(score * 100) / 100 // Round to 2 decimals
-        }));
-
-        const response = {
-          found: true,
-          total: scored.length,
-          returned: results.length,
-          shortcodes: results,
-          query: query,
-          category: category,
-          usage: "Use these shortcodes in your response like: [image:shortcode_name]",
-          instruction: "ALWAYS include at least one of these shortcodes in your response. The hybrid search (semantic + keyword) provides high accuracy, so these results are relevant. Use the highest similarity score first, but you can include multiple if they add value."
-        };
-        
-        console.log(`[getImageShortcodes] ✅ Found ${results.length} images. Top result: ${results[0]?.shortcode || 'none'}`);
-        return response;
-      } catch (error: any) {
-        console.error("[getImageShortcodes] Error:", error);
-        return {
-          found: false,
-          error: error.message || "Unknown error occurred",
-          shortcodes: []
-        };
-      }
-    },
-  }),
+  // REMOVED: getImageShortcodes tool - no search algorithm, use getChapterFigures for direct topic-based access instead
 };
