@@ -42,8 +42,8 @@ The Conversation Practice feature enables students to practice English conversat
 ┌───────────────────┤  ┌─────────────────┐   ├───────────────────┐
 │                   │  │   API Routes    │   │                   │
 │  ┌────────────┐   │  │                 │   │  ┌────────────┐   │
-│  │ TTS        │◄──┼──┤ /api/convo/tts │   │  │ OpenAI     │   │
-│  │ Supertonic │   │  │                 │   │  │ GPT-4o-mini│   │
+│  │ TTS        │◄──┼──┤ /api/conversation/tts │ │  │ OpenAI     │   │
+│  │ Piper      │   │  │                      │   │  │ GPT-4o-mini│   │
 │  └────────────┘   │  │ /api/convo/    │───┼──►            │   │
 │                   │  │ validate        │   │  └────────────┘   │
 │                   │  │                 │   │                   │
@@ -94,7 +94,7 @@ tie-web-portal/
 ### Prerequisites
 
 1. **Node.js** (v18+) and **pnpm**
-2. **Git LFS** (for Supertonic assets)
+2. **Python** with `piper-tts` installed
 3. **OpenAI API key** (for validation)
 
 ### Step 1: Clone and Install
@@ -108,30 +108,16 @@ cd tie-web-portal
 pnpm install
 ```
 
-### Step 2: Set Up Supertonic TTS
+### Step 2: Set Up Piper TTS
 
-Supertonic is a local text-to-speech engine:
+Piper is a local text-to-speech engine:
 
 ```bash
-# 1. Install Git LFS (if not already installed)
-# macOS
-brew install git-lfs
+# 1. Install Piper
+pip install piper-tts
 
-# Ubuntu/Debian
-sudo apt-get install git-lfs
-
-# Initialize Git LFS
-git lfs install
-
-# 2. Clone the Supertonic repository
-git clone https://github.com/supertone-inc/supertonic.git ~/supertonic
-
-# 3. Download voice assets from Hugging Face
-git clone https://huggingface.co/Supertone/supertonic ~/supertonic/assets
-
-# 4. Install Node.js dependencies for Supertonic
-cd ~/supertonic/nodejs
-npm install
+# 2. Download British English voice models and place them in a voices directory
+#    (example: /opt/piper/voices)
 ```
 
 ### Step 3: Configure Environment Variables
@@ -139,16 +125,14 @@ npm install
 Create or update `.env` in the project root:
 
 ```bash
-# Supertonic TTS Configuration
-SUPERTONIC_NODEJS=/Users/yourusername/supertonic/nodejs
-SUPERTONIC_ASSETS=/Users/yourusername/supertonic/assets
+# Piper TTS Configuration
+PIPER_PYTHON=/Users/yourusername/.venv/bin/python
+PIPER_VOICES_DIR=/Users/yourusername/piper/voices
 
-# TTS Quality Settings
-TTS_SPEED=0.75                    # Generation speed (0.5-1.5)
-TTS_STEPS_SHORT=10                # Steps for short sentences
-TTS_STEPS_DEFAULT=6               # Steps for regular chunks
-TTS_DEFAULT_VOICE_FEMALE=F4       # Default female voice (F1-F5)
-TTS_DEFAULT_VOICE_MALE=M4         # Default male voice (M1-M5)
+# TTS Settings
+TTS_SPEED=0.75                    # Piper length-scale (1.0 = normal, >1 slower, <1 faster)
+TTS_DEFAULT_VOICE_FEMALE=jenny_dioco
+TTS_DEFAULT_VOICE_MALE=northern_english_male
 
 # OpenAI Configuration
 OPENAI_API_KEY=sk-your-api-key-here
@@ -246,14 +230,14 @@ The backend automatically extracts facts from user answers:
 
 ### POST `/api/conversation/tts`
 
-Generates audio from text using Supertonic TTS.
+Generates audio from text using Piper TTS.
 
 **Request:**
 ```json
 {
   "text": "Hello, how are you?",
   "voiceType": "female",
-  "voiceId": "F4"
+  "voiceId": "jenny_dioco"
 }
 ```
 
@@ -266,7 +250,7 @@ Generates audio from text using Supertonic TTS.
     "inputLength": 19,
     "numChunks": 1,
     "totalTimeMs": 850,
-    "voiceId": "F4"
+    "voiceId": "jenny_dioco"
   }
 }
 ```
@@ -378,11 +362,11 @@ Create a JSON file in `server/config/profiles/`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `TTS_SPEED` | 0.75 | Audio generation speed |
-| `TTS_STEPS_SHORT` | 10 | Quality steps for short text |
-| `TTS_STEPS_DEFAULT` | 6 | Quality steps for normal text |
-| `TTS_DEFAULT_VOICE_FEMALE` | F4 | Default female voice ID |
-| `TTS_DEFAULT_VOICE_MALE` | M4 | Default male voice ID |
+| `PIPER_PYTHON` | `python` | Python executable with `piper-tts` installed |
+| `PIPER_VOICES_DIR` | `../piper/voices` | Directory containing Piper voice models |
+| `TTS_SPEED` | 1.0 | Piper length-scale (1.0 = normal, >1 slower, <1 faster) |
+| `TTS_DEFAULT_VOICE_FEMALE` | `jenny_dioco` | Default female voice ID |
+| `TTS_DEFAULT_VOICE_MALE` | `northern_english_male` | Default male voice ID |
 
 ---
 
@@ -439,14 +423,15 @@ Modify templates in `server/prompts/`:
 
 ### TTS Not Working
 
-1. Verify Supertonic paths in `.env`
-2. Check Git LFS pulled assets correctly: `git lfs ls-files`
-3. Restart the dev server after changes
+1. Verify `PIPER_PYTHON` and `PIPER_VOICES_DIR` in `.env`
+2. Confirm the voice model `.onnx` files exist in `PIPER_VOICES_DIR`
+3. Ensure `PIPER_PYTHON -m piper --help` works in your terminal
+4. Restart the dev server after changes
 
 ### Voice Sounds Wrong
 
-1. Check `TTS_SPEED` setting (0.75 recommended)
-2. Verify voice ID exists (F1-F5, M1-M5)
+1. Adjust `TTS_SPEED` (1.0 = normal, >1 slower, <1 faster)
+2. Try a different Piper voice ID (e.g., `cori`, `jenny_dioco`, `alba`, `vctk`)
 3. Check console logs for voice detection
 
 ### Validation Too Strict/Lenient
@@ -466,9 +451,8 @@ Modify templates in `server/prompts/`:
 ## Performance Considerations
 
 - **Audio Caching**: Generated audio is cached by piece index
-- **Voice Style Caching**: Voice styles loaded once per session
-- **Chunking**: Long text split for stable generation
-- **Time Budget**: Steps reduced if generation exceeds 10s
+- **Queueing**: Piper requests are serialized to avoid concurrent RAM spikes
+- **No Chunking**: Conversation pieces are short; keep single-pass generation
 - **Compact State**: Only essential context sent to OpenAI
 
 ---
