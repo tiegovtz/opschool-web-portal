@@ -246,6 +246,8 @@ const messages = ref([]);
 const messagesContainer = ref(null);
 const previousChapterId = ref(null); // will store the previous ID (old value)
 const shouldAutoScroll = ref(true); // Re-enabled for Subject AI Teacher
+const bottomOffset = ref(24); // Dynamic bottom offset in pixels (default: 24px near bottom)
+const footerObserver = ref(null); // Footer intersection observer
 
 // Cookie ref (reactive)
 const token = useCookie("signInAccessToken"); // keep as ref; use token.value when needed
@@ -773,12 +775,156 @@ const toggleSettings = () => {
   showSettings.value = !showSettings.value;
 };
 
+// Check footer position and calculate dynamic bottom offset
+const checkFooterPosition = () => {
+  if (!import.meta.client) return;
+  
+  const footer = document.querySelector('footer');
+  if (!footer) {
+    // No footer found, keep at default bottom position
+    bottomOffset.value = 24;
+    return;
+  }
+  
+  const footerRect = footer.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const footerTop = footerRect.top;
+  const footerHeight = footerRect.height;
+  
+  // AI Assistant dimensions
+  const assistantHeight = 600; // Fixed height from style
+  const defaultBottomOffset = 24; // Default position from bottom (always near bottom)
+  const minSpacing = 16; // Minimum spacing between assistant and footer
+  
+  // Calculate distance from viewport bottom to footer top
+  // If footer is below viewport, footerTop > viewportHeight
+  // If footer is visible, footerTop < viewportHeight
+  const distanceFromBottom = viewportHeight - footerTop;
+  
+  if (distanceFromBottom <= 0) {
+    // Footer is below viewport, use default bottom position
+    bottomOffset.value = defaultBottomOffset;
+  } else {
+    // Footer is visible or approaching viewport
+    // Calculate required space: assistant height + default offset + spacing
+    const requiredSpace = assistantHeight + defaultBottomOffset + minSpacing;
+    
+    // Available space from viewport bottom to footer top
+    const availableSpace = distanceFromBottom;
+    
+    if (availableSpace >= requiredSpace) {
+      // Enough space to fit assistant at default position without overlapping footer
+      bottomOffset.value = defaultBottomOffset;
+    } else {
+      // Not enough space - position assistant above footer with spacing
+      // Position assistant so its bottom is minSpacing pixels above footer top
+      // bottomOffset = distance from viewport bottom to assistant bottom
+      // = (viewportHeight - footerTop) + minSpacing
+      const calculatedOffset = distanceFromBottom + minSpacing;
+      
+      // Ensure it's never less than defaultBottomOffset (always near bottom when possible)
+      bottomOffset.value = Math.max(defaultBottomOffset, calculatedOffset);
+      
+      // Also ensure assistant doesn't go off top of screen
+      // If calculated position would push assistant above viewport, cap it
+      const maxOffset = viewportHeight - assistantHeight - 16; // 16px margin from top
+      if (bottomOffset.value > maxOffset) {
+        bottomOffset.value = maxOffset;
+      }
+    }
+  }
+  
+  // Debug logging (remove in production if needed)
+  if (import.meta.dev) {
+    console.log('[AI Assistant] Footer check:', {
+      footerTop,
+      footerHeight,
+      viewportHeight,
+      distanceFromBottom,
+      bottomOffset: bottomOffset.value,
+      availableSpace: viewportHeight - footerTop,
+      requiredSpace: assistantHeight + defaultBottomOffset + minSpacing
+    });
+  }
+};
+
+// Use Intersection Observer for more efficient footer detection
+const setupFooterObserver = () => {
+  if (!import.meta.client || typeof IntersectionObserver === 'undefined') {
+    // Fallback to scroll-based detection if IntersectionObserver is not available
+    return;
+  }
+  
+  // Wait a bit for DOM to be ready
+  setTimeout(() => {
+    const footer = document.querySelector('footer');
+    if (!footer) return;
+    
+    // Clean up existing observer
+    if (footerObserver.value) {
+      footerObserver.value.disconnect();
+    }
+    
+    // Create intersection observer with root margin to trigger before footer enters viewport
+    footerObserver.value = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // Recalculate position when footer visibility changes
+          checkFooterPosition();
+        });
+      },
+      {
+        root: null,
+        rootMargin: '0px 0px -100px 0px', // Trigger 100px before footer enters viewport
+        threshold: [0, 0.1, 0.5, 1],
+      }
+    );
+    
+    footerObserver.value.observe(footer);
+  }, 100);
+};
+
+// Scroll/resize handlers for footer detection
+let scrollTimeout = null;
+const throttledCheckFooter = () => {
+  if (scrollTimeout) return;
+  scrollTimeout = setTimeout(() => {
+    checkFooterPosition();
+    scrollTimeout = null;
+  }, 50); // Check every 50ms during scroll
+};
+
 // Combine onMounted tasks
 onMounted(() => {
   // Initialize stored context from localStorage
   initializeStoredContext();
   
   loadVoicePreference();
+  
+  // Setup footer observer for better detection
+  setupFooterObserver();
+  
+  // Also check on scroll/resize as fallback - use throttled version for performance
+  window.addEventListener('scroll', throttledCheckFooter, { passive: true });
+  window.addEventListener('resize', checkFooterPosition, { passive: true });
+  
+  // Initial check
+  checkFooterPosition();
+  
+  // Periodic check as backup (in case footer loads after component)
+  const footerCheckInterval = setInterval(() => {
+    checkFooterPosition();
+    const footer = document.querySelector('footer');
+    if (footer) {
+      // Footer found, stop checking
+      clearInterval(footerCheckInterval);
+    }
+  }, 500);
+  
+  // Clean up interval on unmount
+  onUnmounted(() => {
+    clearInterval(footerCheckInterval);
+  });
 
   // Click outside handler for settings
   const handleClickOutside = (event) => {
@@ -834,6 +980,21 @@ onMounted(() => {
     if (loadingTimeout) {
       clearTimeout(loadingTimeout);
     }
+    // Remove scroll/resize listeners
+    window.removeEventListener('scroll', throttledCheckFooter);
+    window.removeEventListener('resize', checkFooterPosition);
+    
+    // Clear any pending scroll timeout
+    if (scrollTimeout) {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = null;
+    }
+    
+    // Disconnect footer observer
+    if (footerObserver.value) {
+      footerObserver.value.disconnect();
+      footerObserver.value = null;
+    }
     // Restore original fetch when component unmounts
     if (typeof window !== 'undefined' && originalFetch) {
       window.fetch = originalFetch;
@@ -876,9 +1037,7 @@ const handleFormSubmit = async (e) => {
   currentQuestion.value = "";
   // Show typing indicator immediately when form is submitted
   isLoading.value = true;
-  if (isDev) {
-    console.log("[Subject AI Teacher] ✅ isLoading set to true - typing indicator should be visible");
-  }
+
 
   try {
     if (isDev) {
@@ -1268,7 +1427,11 @@ onUnmounted(() => {
   <button
     v-if="!isOpen"
     @click="toggleAssistant"
-    class="fixed z-50 flex items-center gap-2 p-4 text-white transition-all duration-300 rounded-full shadow-lg bottom-6 right-6 bg-oceanBlue hover:bg-deepBlue"
+    class="fixed z-50 flex items-center gap-2 p-4 text-white transition-all duration-300 rounded-full shadow-lg right-6 bg-oceanBlue hover:bg-deepBlue"
+    :style="{ 
+      bottom: `${bottomOffset}px`,
+      transition: 'bottom 0.3s ease-in-out'
+    }"
     title="Ask AI Subject Teacher"
   >
     <Icon
@@ -1281,8 +1444,13 @@ onUnmounted(() => {
   <!-- AI Assistant Panel -->
   <div
     v-if="isOpen"
-    class="fixed z-50 flex flex-col w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-2xl bottom-6 right-6"
-    style="height: 600px"
+    class="fixed z-50 flex flex-col w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-2xl right-6"
+    :style="{ 
+      height: '600px', 
+      bottom: `${bottomOffset}px`,
+      maxHeight: `calc(100vh - ${bottomOffset + 24}px)`,
+      transition: 'bottom 0.3s ease-in-out, max-height 0.3s ease-in-out'
+    }"
   >
     <!-- Header -->
     <div

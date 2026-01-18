@@ -1,0 +1,235 @@
+{
+    "book_info": {
+      "title": "Physics for Secondary Schools",
+      "level": "Student's Book Form One"
+    },
+    "chapters": [
+      {
+        "chapter_id": 1,
+        "title": "Introduction to Physics",
+        "start_page": 1,
+        "sections": [
+          {
+            "title": "Concept of Physics",
+            "page": 1
+          },
+          {
+            "title": "Contribution of Physics to the development of modern society",
+            "page": 6
+          },
+          {
+            "title": "Theories and principles of Physics",
+            "page": 12
+          },
+          {
+            "title": "Revision exercise 1",
+            "page": 24
+          }
+        ]
+      },
+      {
+        "chapter_id": 2,
+        "title": "Measurement",
+        "start_page": 27,
+        "sections": [
+          {
+            "title": "Concept of measurement",
+            "page": 27
+          },
+          {
+            "title": "Physical quantity",
+            "page": 28
+          },
+          {
+            "title": "Basic equipment/apparatus and their uses",
+            "page": 29
+          },
+          {
+            "title": "Revision exercise 2",
+            "page": 56
+          }
+        ]
+      },
+      {
+        "chapter_id": 3,
+        "title": "Introduction to force",
+        "start_page": 58,
+        "sections": [
+          {
+            "title": "Concept of force",
+            "page": 58
+          },
+          {
+            "title": "Effects of forces",
+            "page": 59
+          },
+          {
+            "title": "Types of forces",
+            "page": 60
+          },
+          {
+            "title": "Revision exercise 3",
+            "page": 73
+          }
+        ]
+      },
+      {
+        "chapter_id": 4,
+        "title": "Density and relative density",
+        "start_page": 77,
+        "sections": [
+          {
+            "title": "Concept of density",
+            "page": 77
+          },
+          {
+            "title": "Relative density of a substance",
+            "page": 86
+          },
+          {
+            "title": "Revision exercise 4",
+            "page": 91
+          }
+        ]
+      },
+      {
+        "chapter_id": 5,
+        "title": "Sinking and floating",
+        "start_page": 94,
+        "sections": [
+          {
+            "title": "Concept of sinking and floating",
+            "page": 94
+          },
+          {
+            "title": "Concept of upthrust",
+            "page": 96
+          },
+          {
+            "title": "Archimedes' Principle",
+            "page": 99
+          },
+          {
+            "title": "Law of floatation",
+            "page": 108
+          },
+          {
+            "title": "Revision exercise 5",
+            "page": 117
+          }
+        ]
+      },
+      {
+        "chapter_id": 6,
+        "title": "Mechanical properties of matter",
+        "start_page": 121,
+        "sections": [
+          {
+            "title": "Concept of elasticity",
+            "page": 121
+          },
+          {
+            "title": "Adhesion and cohesion",
+            "page": 125
+          },
+          {
+            "title": "Surface tension",
+            "page": 127
+          },
+          {
+            "title": "Capillarity",
+            "page": 130
+          },
+          {
+            "title": "Revision exercise 6",
+            "page": 133
+          }
+        ]
+      },
+      {
+        "chapter_id": 7,
+        "title": "Pressure",
+        "start_page": 136,
+        "sections": [
+          {
+            "title": "Concept of pressure",
+            "page": 136
+          },
+          {
+            "title": "Pressure due to solids",
+            "page": 138
+          },
+          {
+            "title": "Pressure in liquids",
+            "page": 141
+          },
+          {
+            "title": "Atmospheric Pressure",
+            "page": 150
+          },
+          {
+            "title": "Revision exercise 7",
+            "page": 162
+          }
+        ]
+      },
+      {
+        "chapter_id": 8,
+        "title": "Linear motion",
+        "start_page": 166,
+        "sections": [
+          {
+            "title": "Concept of motion",
+            "page": 166
+          },
+          {
+            "title": "Distance and displacement",
+            "page": 167
+          },
+          {
+            "title": "Speed and velocity",
+            "page": 168
+          },
+          {
+            "title": "Acceleration",
+            "page": 171
+          },
+          {
+            "title": "Equation of linear motion",
+            "page": 179
+          },
+          {
+            "title": "Motion under gravity",
+            "page": 186
+          },
+          {
+            "title": "Revision exercise 8",
+            "page": 192
+          }
+        ]
+      },
+      {
+        "chapter_id": 9,
+        "title": "Work, energy, and power",
+        "start_page": 198,
+        "sections": [
+          {
+            "title": "Concept of work",
+            "page": 198
+          },
+          {
+            "title": "Concept of energy",
+            "page": 202
+          },
+          {
+            "title": "Concept of power",
+            "page": 215
+          },
+          {
+            "title": "Revision exercise 9",
+            "page": 219
+          }
+        ]
+      }
+    ]
+  }

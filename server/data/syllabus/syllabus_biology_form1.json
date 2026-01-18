@@ -1,0 +1,182 @@
+{
+    "book_metadata": {
+      "title": "Biology for Secondary Schools",
+      "level": "Student’s Book Form One"
+    },
+    "chapters": [
+      {
+        "chapter_number": 1,
+        "title": "Introduction to Biology",
+        "start_page": 1,
+        "sections": [
+          {
+            "title": "Basic concepts and terminologies in Biology",
+            "page": 1
+          },
+          {
+            "title": "Importance of studying Biology",
+            "page": 3
+          },
+          {
+            "title": "Relationship between Biology and other scientific fields",
+            "page": 5
+          },
+          {
+            "title": "Revision exercise 1",
+            "page": 8
+          }
+        ]
+      },
+      {
+        "chapter_number": 2,
+        "title": "Scientific processes in Biology",
+        "start_page": 10,
+        "sections": [
+          {
+            "title": "Common Biology laboratory apparati, equipment and other resources",
+            "page": 10
+          },
+          {
+            "title": "Basic skills in scientific studies",
+            "page": 20
+          },
+          {
+            "title": "Scientific methods",
+            "page": 27
+          },
+          {
+            "title": "Simple biological experiments",
+            "page": 30
+          },
+          {
+            "title": "Revision exercise 2",
+            "page": 33
+          }
+        ]
+      },
+      {
+        "chapter_number": 3,
+        "title": "Cell structure and organization",
+        "start_page": 36,
+        "sections": [
+          {
+            "title": "The cell",
+            "page": 36
+          },
+          {
+            "title": "Types of cells",
+            "page": 37
+          },
+          {
+            "title": "Animal and plant cells",
+            "page": 38
+          },
+          {
+            "title": "Cell differentiation",
+            "page": 43
+          },
+          {
+            "title": "Revision exercise 3",
+            "page": 50
+          }
+        ]
+      },
+      {
+        "chapter_number": 4,
+        "title": "Classification of living things",
+        "start_page": 52,
+        "sections": [
+          {
+            "title": "Concept of classification",
+            "page": 52
+          },
+          {
+            "title": "Classification systems",
+            "page": 54
+          },
+          {
+            "title": "Major groups of living things",
+            "page": 58
+          },
+          {
+            "title": "Binomial nomenclature",
+            "page": 60
+          },
+          {
+            "title": "Revision exercise 4",
+            "page": 62
+          }
+        ]
+      },
+      {
+        "chapter_number": 5,
+        "title": "Viruses and major groups of living things",
+        "start_page": 64,
+        "sections": [
+          {
+            "title": "Viruses",
+            "page": 64
+          },
+          {
+            "title": "Kingdom Monera",
+            "page": 67
+          },
+          {
+            "title": "Kingdom Protoctista",
+            "page": 72
+          },
+          {
+            "title": "Kingdom Fungi",
+            "page": 79
+          },
+          {
+            "title": "Kingdom Plantae",
+            "page": 85
+          },
+          {
+            "title": "Classes of the division Angiospermophyta",
+            "page": 93
+          },
+          {
+            "title": "Kingdom Animalia",
+            "page": 95
+          },
+          {
+            "title": "Revision exercise 5",
+            "page": 111
+          }
+        ]
+      },
+      {
+        "chapter_number": 6,
+        "title": "Nutrition in plants",
+        "start_page": 114,
+        "sections": [
+          {
+            "title": "Concept of nutrition",
+            "page": 114
+          },
+          {
+            "title": "Photosynthesis",
+            "page": 115
+          },
+          {
+            "title": "Structure of the leaf in relation to photosynthesis",
+            "page": 116
+          },
+          {
+            "title": "Importance of photosynthesis",
+            "page": 123
+          },
+          {
+            "title": "Essential and non-essential elements in plants",
+            "page": 126
+          },
+          {
+            "title": "Revision exercise 6",
+            "page": 135
+          }
+        ]
+      }
+    ]
+  }

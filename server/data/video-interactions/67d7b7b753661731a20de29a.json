@@ -1,0 +1,150 @@
+[
+  {
+    "id": "quiz-1",
+    "type": "quiz",
+    "startTime": 57,
+    "endTime": 57,
+    "question": "Imagine a world without the interaction of matter and energy. What would be missing?",
+    "options": [
+      {
+        "id": "option-1",
+        "label": "A) Sunlight"
+      },
+      {
+        "id": "option-2",
+        "label": "B) Movement"
+      },
+      {
+        "id": "option-3",
+        "label": "C) Electricity"
+      },
+      {
+        "id": "option-4",
+        "label": "D) All of the above"
+      }
+    ],
+    "correctAnswer": "option-4",
+    "feedback": {
+      "correct": "Correct! Without the interaction of matter and energy, the universe as we know it—light, heat, motion—would simply not exist.",
+      "incorrect": "Think about how matter and energy interact to create the phenomena we observe. Try again!"
+    }
+  },
+  {
+    "id": "quiz-2",
+    "type": "quiz",
+    "startTime": 200,
+    "endTime": 205,
+    "question": "True or False: This statement is true.",
+    "options": [
+      {
+        "id": "option-1",
+        "label": "True"
+      },
+      {
+        "id": "option-2",
+        "label": "False"
+      }
+    ],
+    "correctAnswer": "option-1",
+    "feedback": {
+      "correct": "Correct!",
+      "incorrect": "Incorrect. Try again!"
+    }
+  },
+  {
+    "id": "quiz-3",
+    "type": "quiz",
+    "startTime": 245,
+    "endTime": 250,
+    "question": "The Kinyerezi station generates electricity using natural gas. This is an example of converting:",
+    "options": [
+      {
+        "id": "option-1",
+        "label": "A) Matter into Space"
+      },
+      {
+        "id": "option-2",
+        "label": "B) Chemical Energy into Electrical Energy"
+      },
+      {
+        "id": "option-3",
+        "label": "C) Motion into Time"
+      }
+    ],
+    "correctAnswer": "option-2",
+    "feedback": {
+      "correct": "Correct! Natural gas contains chemical energy that is converted to electrical energy.",
+      "incorrect": "Think about what type of energy conversion happens in power generation. Try again!"
+    }
+  },
+  {
+    "type": "quiz",
+    "startTime": 366.732595398688,
+    "endTime": 366.732595398688,
+    "question": "Am i a new interaction",
+    "options": [
+      {
+        "id": "option-1",
+        "label": "True "
+      },
+      {
+        "id": "option-2",
+        "label": "False"
+      }
+    ],
+    "correctAnswer": "option-1",
+    "feedback": {
+      "correct": "You did it",
+      "incorrect": "Got work to do"
+    },
+    "id": "interaction-1768292468397-do8lep8jx"
+  },
+  {
+    "type": "quiz",
+    "startTime": 478.557088,
+    "endTime": 478.557088,
+    "question": "which one is not a branch of physics",
+    "options": [
+      {
+        "id": "option-1",
+        "label": "Geophysics"
+      },
+      {
+        "id": "option-2",
+        "label": "Electronics"
+      },
+      {
+        "id": "option-1768295038298-kisl39ccq",
+        "label": "Geography"
+      }
+    ],
+    "correctAnswer": "option-1768295038298-kisl39ccq",
+    "feedback": {
+      "correct": "",
+      "incorrect": ""
+    },
+    "id": "interaction-1768295051672-blcpz4bwe"
+  },
+  {
+    "type": "quiz",
+    "startTime": 605.054841,
+    "endTime": 605.054841,
+    "question": "i am a new question",
+    "options": [
+      {
+        "id": "option-1",
+        "label": "true "
+      },
+      {
+        "id": "option-2",
+        "label": "fakse"
+      }
+    ],
+    "correctAnswer": "option-1",
+    "feedback": {
+      "correct": "",
+      "incorrect": ""
+    },
+    "id": "interaction-1768296299355-lph1j181i"
+  }
+]

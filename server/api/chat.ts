@@ -1,14 +1,24 @@
 import { defineEventHandler, readBody } from "h3";
-import { streamText, convertToModelMessages, stepCountIs } from "ai";
+import {
+  streamText,
+  convertToModelMessages,
+  stepCountIs,
+  type CoreMessage,
+} from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { shouldUseRAG } from "./utils/shouldUseRAG";
-import { searchNotes } from "./utils/searchNotes";
-import { studentTools } from "./utils/tools";
 
 // --------------------------------------
 // System Prompt Builder
 // --------------------------------------
-function getBaseSystemPrompt(chapterName?: string, context?: { subject?: string; level?: string; topic?: string; chapterNo?: number }) {
+function getBaseSystemPrompt(
+  chapterName?: string,
+  context?: {
+    subject?: string;
+    level?: string;
+    topic?: string;
+    chapterNo?: number;
+  }
+) {
   if (chapterName) {
     // Build context string
     const contextParts = [];
@@ -18,8 +28,9 @@ function getBaseSystemPrompt(chapterName?: string, context?: { subject?: string;
     if (context?.chapterNo !== null && context?.chapterNo !== undefined) {
       contextParts.push(`Chapter ${context.chapterNo}`);
     }
-    const contextString = contextParts.length > 0 ? `\n\nContext: ${contextParts.join(" | ")}` : "";
-    
+    const contextString =
+      contextParts.length > 0 ? `\n\nContext: ${contextParts.join(" | ")}` : "";
+
     // Subject AI Teacher mode - focused on teaching a specific competence
     return `
 You are a Subject AI Teacher, an intelligent teaching assistant specialized in the Tanzanian (NECTA) curriculum. Your PRIMARY and ONLY focus is to help students understand the specific competence/chapter: "${chapterName}".${contextString}
@@ -36,7 +47,6 @@ CRITICAL RULES - Chapter Scope:
    - Don't just retrieve and repeat information from the context
    - Actively teach by providing clear explanations, examples, analogies, and step-by-step guidance
    - Adapt your explanations to the student's level and learning style
-   - Use the vector store content as reference, but go beyond it to create effective learning experiences
    - ALL teaching must be strictly within the boundaries of "${chapterName}"
 
 3. Provide Additional Examples (chapter-specific):
@@ -72,7 +82,7 @@ CRITICAL RULES - Chapter Scope:
 Remember: Your EXCLUSIVE goal is to help the student understand "${chapterName}" and ONLY "${chapterName}". Do not answer questions about other chapters, topics, or subjects.
     `.trim();
   }
-  
+
   // TIE AI Teacher mode - general assistant
   return `
 You are TIE AI, a student assistant specialized in the Tanzanian (NECTA) curriculum.
@@ -87,122 +97,138 @@ Priority Rules:
   `.trim();
 }
 
+/**
+ * Detects if a message is in UIMessage format (has parts array) or simple format (has content)
+ */
+function isUIMessageFormat(message: any): boolean {
+  return (
+    message &&
+    (Array.isArray(message.parts) ||
+      (message.id !== undefined && message.parts !== undefined))
+  );
+}
+
+/**
+ * Converts messages to CoreMessage format
+ * Handles both UIMessage format (from Chat component) and simple format (from external API)
+ */
+function convertMessagesToCore(messages: any[]): CoreMessage[] {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return [];
+  }
+
+  // Check if any message has UIMessage format (parts array)
+  const hasUIMessageFormat = messages.some(isUIMessageFormat);
+
+  if (hasUIMessageFormat) {
+    // Use convertToModelMessages for UIMessage format (from Chat component)
+    try {
+      return convertToModelMessages(messages);
+    } catch (error) {
+      // Fallback: extract content from parts manually
+      return messages.map((msg: any) => {
+        let content = "";
+        if (Array.isArray(msg.parts)) {
+          content = msg.parts
+            .filter((p: any) => p?.type === "text" && p?.text)
+            .map((p: any) => String(p.text))
+            .join("");
+        } else if (msg.content) {
+          content = String(msg.content);
+        }
+
+        const role = msg.role || "user";
+        if (role === "user") {
+          return { role: "user", content };
+        } else if (role === "assistant") {
+          return { role: "assistant", content };
+        } else if (role === "system") {
+          return { role: "system", content };
+        }
+        return { role: "user", content };
+      });
+    }
+  } else {
+    // Simple format: convert directly to CoreMessage
+    return messages.map((msg: any) => {
+      const role = msg.role || "user";
+      const content = msg.content || "";
+
+      if (role === "user") {
+        return { role: "user", content };
+      } else if (role === "assistant") {
+        return { role: "assistant", content };
+      } else if (role === "system") {
+        return { role: "system", content };
+      }
+      return { role: "user", content };
+    });
+  }
+}
+
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
+  console.log(body);
 
   // Safely parse user messages
-  const messages: UIMessage[] = Array.isArray(body?.messages)
-    ? body.messages
-    : [];
+  const messages: any[] = Array.isArray(body?.messages) ? body.messages : [];
 
   // Extract context if provided (for Subject AI Teacher mode)
   // Check both body and headers (headers are more reliable)
   const chapterNameFromBody = body?.chapterName;
-  const chapterNameFromHeader = event.headers.get("x-chapter-name") || event.headers.get("X-Chapter-Name");
+  const chapterNameFromHeader =
+    event.headers.get("x-chapter-name") || event.headers.get("X-Chapter-Name");
   const chapterName = chapterNameFromBody || chapterNameFromHeader;
-  
+
   // Additional context - check headers first, then body
-  const subject = event.headers.get("x-subject") || event.headers.get("X-Subject") || body?.subject || "";
-  const level = event.headers.get("x-level") || event.headers.get("X-Level") || body?.level || "";
-  const topic = event.headers.get("x-topic") || event.headers.get("X-Topic") || body?.topic || "";
-  const chapterNoHeader = event.headers.get("x-chapter-no") || event.headers.get("X-Chapter-No");
-  const chapterNo = chapterNoHeader ? parseInt(chapterNoHeader) : (body?.chapterNo ?? null);
-  
-  // Comprehensive debug logging
-  console.log("=".repeat(60));
-  console.log("[API /chat] === REQUEST RECEIVED ===");
-  console.log("[API /chat] Request body keys:", Object.keys(body || {}));
-  console.log("[API /chat] All headers:", Object.fromEntries(
-    Array.from(event.headers.entries()).map(([k, v]) => [k, v])
-  ));
-  console.log("[API /chat] Context extracted:", {
-    chapterNameFromBody: chapterNameFromBody,
-    chapterNameFromHeader: chapterNameFromHeader,
-    chapterName: chapterName,
-    subject: subject,
-    level: level,
-    topic: topic,
-    chapterNo: chapterNo
-  });
-  
-  if (chapterName) {
-    console.log("[API /chat] ✅ Subject AI Teacher mode - Chapter:", chapterName);
-    console.log("[API /chat] Chapter name is valid?", 
-      chapterName && 
-      chapterName.trim() && 
-      chapterName !== "this competence"
-    );
-  } else {
-    console.log("[API /chat] ❌ TIE AI Teacher mode (no chapterName found)");
-    console.log("[API /chat] Full body structure:", JSON.stringify(body, null, 2).substring(0, 1000));
-    console.log("[API /chat] Checking headers for x-chapter-name:", 
-      event.headers.get("x-chapter-name") || event.headers.get("X-Chapter-Name") || "NOT FOUND"
-    );
-  }
-  console.log("=".repeat(60));
+  const subject =
+    event.headers.get("x-subject") ||
+    event.headers.get("X-Subject") ||
+    body?.subject ||
+    "";
+  const level =
+    event.headers.get("x-level") ||
+    event.headers.get("X-Level") ||
+    body?.level ||
+    "";
+  const topic =
+    event.headers.get("x-topic") ||
+    event.headers.get("X-Topic") ||
+    body?.topic ||
+    "";
+  const chapterNoHeader =
+    event.headers.get("x-chapter-no") || event.headers.get("X-Chapter-No");
+  const chapterNo = chapterNoHeader
+    ? parseInt(chapterNoHeader)
+    : body?.chapterNo ?? null;
 
-  const userMessage = messages.at(-1)?.content || "";
-
+  // Validate API key
   const apiKey = useRuntimeConfig().openaiApiKey;
-  if (!apiKey) throw new Error("Missing OpenAI API key");
+  if (!apiKey) {
+    throw new Error("Missing OpenAI API key");
+  }
 
   const openai = createOpenAI({ apiKey });
 
-  // --------------------------------------
-  // Decide whether to use RAG
-  // --------------------------------------
-  const useRAG = await shouldUseRAG(userMessage, apiKey);
-
   // Validate chapterName - only use it if it's a real chapter name (not empty or default)
-  // This ensures we don't use "this competence" as the chapter name
-  const validChapterName = chapterName && 
-                          chapterName.trim() && 
-                          chapterName !== "this competence" 
-    ? chapterName.trim() 
-    : undefined;
-  
+  const validChapterName =
+    chapterName && chapterName.trim() && chapterName !== "this competence"
+      ? chapterName.trim()
+      : undefined;
+
   // Build context object only if we have a valid chapter name
-  const context = validChapterName ? {
-    subject: subject,
-    level: level,
-    topic: topic,
-    chapterNo: chapterNo
-  } : undefined;
-  
+  const context = validChapterName
+    ? {
+        subject: subject,
+        level: level,
+        topic: topic,
+        chapterNo: chapterNo,
+      }
+    : undefined;
+
   let systemPrompt = getBaseSystemPrompt(validChapterName, context);
-  let modelName = "gpt-4o";
-  
-  // Log the actual system prompt being used for debugging
-  if (validChapterName) {
-    console.log("[API /chat] ✅ Using Subject AI Teacher mode");
-    console.log("[API /chat] System prompt preview (first 500 chars):", systemPrompt.substring(0, 500));
-    console.log("[API /chat] System prompt includes chapterName:", systemPrompt.includes(validChapterName));
-  } else {
-    console.log("[API /chat] ⚠️ No valid chapterName - using TIE AI Teacher mode (general assistant)");
-    if (chapterName) {
-      console.log("[API /chat] Received chapterName was:", JSON.stringify(chapterName), "- treating as invalid");
-    }
-  }
+  const modelName = "gpt-4o";
 
-  // --------------------------------------
-  // RAG Flow
-  // --------------------------------------
-  if (useRAG) {
-    const results = await searchNotes(userMessage);
-    const context = results.map((r: { content: string }) => `- ${r.content}`).join("\n");
-
-    // Only add context if something was retrieved
-    const systemPromptWithContext = `
-${systemPrompt}
-
-Context:
-${context || "(No relevant notes found)"}
-    `.trim();
-
-    systemPrompt = systemPromptWithContext;
-    modelName = "gpt-4o";
-  }
-  
   // If chapterName is provided, ensure it's emphasized in the final prompt
   if (chapterName) {
     systemPrompt = `${systemPrompt}
@@ -210,20 +236,20 @@ ${context || "(No relevant notes found)"}
 REMINDER: You are currently helping with the chapter/competence: "${chapterName}". You MUST ONLY answer questions related to this specific chapter.`;
   }
 
-  // --------------------------------------
+  // Convert messages to CoreMessage format (handles both UIMessage and simple formats)
+  const coreMessages = convertMessagesToCore(messages);
+
   // Create Model Input
-  // --------------------------------------
   const modelInput = {
     model: openai(modelName),
     messages: [
       { role: "system", content: systemPrompt },
-      ...convertToModelMessages(messages),
-    ],
+      ...coreMessages,
+    ] as any,
     stopWhen: stepCountIs(10),
-    tools: studentTools,
   };
 
   // Stream the response
-  const result = streamText(modelInput);
+  const result = streamText(modelInput as any);
   return result.toUIMessageStreamResponse();
 });
