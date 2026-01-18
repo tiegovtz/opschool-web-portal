@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody } from "h3";
+import { defineEventHandler, readBody, getCookie } from "h3";
 import {
   streamText,
   convertToModelMessages,
@@ -6,6 +6,7 @@ import {
   type CoreMessage,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
+import apiDocs from "~/utilities/apiDocs";
 
 // --------------------------------------
 // System Prompt Builder
@@ -109,6 +110,130 @@ function isUIMessageFormat(message: any): boolean {
 }
 
 /**
+ * Extracts the latest user query from messages
+ */
+function extractLatestUserQuery(messages: any[]): string | null {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return null;
+  }
+
+  // Find the last user message (iterate backwards)
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    const role = msg?.role || "";
+    
+    if (role === "user") {
+      // Handle UIMessage format
+      if (Array.isArray(msg.parts)) {
+        const content = msg.parts
+          .filter((p: any) => p?.type === "text" && p?.text)
+          .map((p: any) => String(p.text))
+          .join("");
+        return content.trim() || null;
+      }
+      // Handle simple format
+      if (msg.content) {
+        return String(msg.content).trim() || null;
+      }
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Fetches relevant context from embeddings API using RAG
+ */
+async function fetchRAGContext(searchQuery: string, authToken?: string): Promise<string> {
+  if (!searchQuery || searchQuery.trim().length === 0) {
+    return "";
+  }
+
+  try {
+    const baseURL = apiDocs.baseURL;
+    const embeddingsUrl = `${baseURL}/machine-learning/books/embeddings/search?search=${encodeURIComponent(searchQuery.trim())}`;
+    
+    console.log("[RAG] Fetching embeddings for query:", searchQuery.substring(0, 50));
+    
+    // Prepare headers with authentication if available
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    
+    if (authToken) {
+      headers["Authorization"] = `Bearer ${authToken}`;
+    }
+    
+    const response = await $fetch(embeddingsUrl, {
+      method: "GET",
+      headers,
+    });
+
+    // Handle different response formats
+    let contextText = "";
+    
+    if (Array.isArray(response)) {
+      // If response is an array, join the content
+      contextText = response
+        .map((item: any) => {
+          // Handle different possible structures
+          if (typeof item === "string") return item;
+          if (item?.content) return item.content;
+          if (item?.text) return item.text;
+          if (item?.chunk) return item.chunk;
+          if (item?.passage) return item.passage;
+          return JSON.stringify(item);
+        })
+        .filter((text: string) => text && text.trim().length > 0)
+        .join("\n\n");
+    } else if (response && typeof response === "object") {
+      // If response is an object, try to extract relevant fields
+      const responseObj = response as any;
+      if (responseObj.data && Array.isArray(responseObj.data)) {
+        contextText = responseObj.data
+          .map((item: any) => {
+            if (typeof item === "string") return item;
+            if (item?.content) return item.content;
+            if (item?.text) return item.text;
+            if (item?.chunk) return item.chunk;
+            return JSON.stringify(item);
+          })
+          .filter((text: string) => text && text.trim().length > 0)
+          .join("\n\n");
+      } else if (responseObj.content) {
+        contextText = String(responseObj.content);
+      } else if (responseObj.text) {
+        contextText = String(responseObj.text);
+      } else if (responseObj.results && Array.isArray(responseObj.results)) {
+        contextText = responseObj.results
+          .map((item: any) => {
+            if (typeof item === "string") return item;
+            if (item?.content) return item.content;
+            if (item?.text) return item.text;
+            return JSON.stringify(item);
+          })
+          .filter((text: string) => text && text.trim().length > 0)
+          .join("\n\n");
+      }
+    } else if (typeof response === "string") {
+      contextText = response;
+    }
+
+    if (contextText.trim().length > 0) {
+      console.log("[RAG] Successfully retrieved context (length:", contextText.length, "chars)");
+      return contextText.trim();
+    } else {
+      console.log("[RAG] No context found in response");
+      return "";
+    }
+  } catch (error: any) {
+    console.warn("[RAG] Failed to fetch embeddings:", error?.message || error);
+    // Don't throw - continue without RAG context if it fails
+    return "";
+  }
+}
+
+/**
  * Converts messages to CoreMessage format
  * Handles both UIMessage format (from Chat component) and simple format (from external API)
  */
@@ -168,7 +293,6 @@ function convertMessagesToCore(messages: any[]): CoreMessage[] {
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  console.log(body);
 
   // Safely parse user messages
   const messages: any[] = Array.isArray(body?.messages) ? body.messages : [];
@@ -228,6 +352,37 @@ export default defineEventHandler(async (event) => {
 
   let systemPrompt = getBaseSystemPrompt(validChapterName, context);
   const modelName = "gpt-4o";
+
+  // Get auth token for RAG API calls (from cookie or Authorization header)
+  const authToken =
+    getCookie(event, "signInAccessToken") ||
+    event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
+    undefined;
+
+  // Extract the latest user query for RAG
+  const latestUserQuery = extractLatestUserQuery(messages);
+  
+  // Fetch RAG context from embeddings API
+  let ragContext = "";
+  if (latestUserQuery) {
+    ragContext = await fetchRAGContext(latestUserQuery, authToken);
+  }
+
+  // Inject RAG context into system prompt if available
+  if (ragContext) {
+    systemPrompt = `${systemPrompt}
+
+RELEVANT CONTEXT FROM KNOWLEDGE BASE:
+The following information has been retrieved from the knowledge base to help answer the student's question. Use this context to provide accurate and comprehensive answers:
+
+${ragContext}
+
+IMPORTANT: When using the context above:
+- Prioritize information that directly relates to the student's question
+- If the context contains information outside the chapter scope (when in Subject AI Teacher mode), focus only on the relevant parts
+- Combine the context with your teaching approach to provide clear explanations
+- If the context contradicts the Tanzanian curriculum, prioritize the curriculum`;
+  }
 
   // If chapterName is provided, ensure it's emphasized in the final prompt
   if (chapterName) {
