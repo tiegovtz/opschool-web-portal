@@ -451,7 +451,7 @@ const playCurrentPiece = async () => {
   const cachedAudioUrl = audioUrlCache.value[currentIndex.value]
   if (cachedAudioUrl) {
     if (audioRef.value) {
-      if (currentAudioUrl.value && currentAudioUrl.value.startsWith('blob:')) {
+      if (currentAudioUrl.value && currentAudioUrl.value !== cachedAudioUrl && currentAudioUrl.value.startsWith('blob:')) {
         URL.revokeObjectURL(currentAudioUrl.value)
       }
       currentAudioUrl.value = cachedAudioUrl
@@ -496,20 +496,32 @@ const playCurrentPiece = async () => {
       body: {
         text: currentConversationPiece.value,
         voiceType: voiceType.value,
+        inline: true,
       },
     })
 
-    if (response.success && response.audioUrl) {
-      audioUrlCache.value[currentIndex.value] = response.audioUrl
+    if (response.success && (response.audioBase64 || response.audioUrl)) {
+      let resolvedUrl = response.audioUrl
+      if (response.audioBase64) {
+        const binary = atob(response.audioBase64)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i)
+        }
+        const blob = new Blob([bytes], { type: response.contentType || 'audio/wav' })
+        resolvedUrl = URL.createObjectURL(blob)
+      }
+
+      audioUrlCache.value[currentIndex.value] = resolvedUrl
       isGeneratingTTS.value = false
       isPlaying.value = true
 
       if (audioRef.value) {
-        if (currentAudioUrl.value && currentAudioUrl.value.startsWith('blob:')) {
+        if (currentAudioUrl.value && currentAudioUrl.value !== resolvedUrl && currentAudioUrl.value.startsWith('blob:')) {
           URL.revokeObjectURL(currentAudioUrl.value)
         }
-        currentAudioUrl.value = response.audioUrl
-        audioRef.value.src = response.audioUrl
+        currentAudioUrl.value = resolvedUrl
+        audioRef.value.src = resolvedUrl
         audioRef.value.playbackRate = playbackSpeed.value
         audioRef.value.play().catch(err => {
           console.error('Error playing audio:', err)
@@ -650,16 +662,29 @@ const validateAnswer = async (answer) => {
           user: answer,
         })
 
+        const previousIndex = currentIndex.value
         currentIndex.value++
         
         // Update state progress
         conversationState.value.questionIndex = currentIndex.value
         conversationState.value.lastCorrectAnswer = answer
 
+        const previousAudioUrl = audioUrlCache.value[previousIndex]
+        if (previousAudioUrl && previousAudioUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(previousAudioUrl)
+        }
+        delete audioUrlCache.value[previousIndex]
+
         if (currentIndex.value >= conversationPieces.value.length) {
           conversationCompleteMessage.value = response.adaptedResponse || response.feedback || 'Thank you for practicing!'
           statusMessage.value = null
           userAnswer.value = ''
+          Object.values(audioUrlCache.value).forEach((url) => {
+            if (typeof url === 'string' && url.startsWith('blob:')) {
+              URL.revokeObjectURL(url)
+            }
+          })
+          audioUrlCache.value = {}
         } else {
           showStatus('success', response.feedback || 'Correct!')
           userAnswer.value = ''
@@ -700,6 +725,11 @@ const resetConversation = () => {
   isPlaying.value = false
   isRecording.value = false
   isProcessing.value = false
+  Object.values(audioUrlCache.value).forEach((url) => {
+    if (typeof url === 'string' && url.startsWith('blob:')) {
+      URL.revokeObjectURL(url)
+    }
+  })
   audioUrlCache.value = {}
   
   // Reset compact state
