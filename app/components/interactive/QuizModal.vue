@@ -1,3 +1,99 @@
+<script setup lang="ts">
+import type { VideoInteraction } from '~/types/interactive-video.interface'
+
+interface Props {
+  quiz: VideoInteraction
+  isOpen: boolean
+  isFullscreen?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isFullscreen: false
+})
+
+const emit = defineEmits<{
+  submit: [answer: string, isCorrect: boolean]
+  continue: [isCorrect: boolean]
+  close: []
+}>()
+
+const selectedAnswer = ref<string | null>(null)
+const showFeedback = ref(false)
+const feedbackMessage = ref('')
+const isCorrect = ref(false)
+
+const handleSelectAnswer = (answerId: string) => {
+  selectedAnswer.value = answerId
+}
+
+const handleSubmit = () => {
+  if (!selectedAnswer.value) return
+
+  // Check if answer is correct
+  isCorrect.value = selectedAnswer.value === props.quiz.correctAnswer
+
+  // Set feedback message
+  feedbackMessage.value = isCorrect.value
+    ? (props.quiz.feedback?.correct || 'Correct!')
+    : (props.quiz.feedback?.incorrect || 'Incorrect. Try again!')
+
+  // Show feedback
+  showFeedback.value = true
+
+  // Emit submit event with correctness
+  emit('submit', selectedAnswer.value, isCorrect.value)
+}
+
+const handleContinue = () => {
+  // Store correctness before resetting
+  const wasCorrect = isCorrect.value
+  console.log('QuizModal handleContinue - wasCorrect:', wasCorrect)
+
+  // Reset UI state
+  showFeedback.value = false
+  selectedAnswer.value = null
+  feedbackMessage.value = ''
+  isCorrect.value = false
+
+  // Emit continue event with correctness so parent can handle video playback
+  emit('continue', wasCorrect)
+
+  // Close the modal
+  handleClose()
+}
+
+const handleClose = () => {
+  selectedAnswer.value = null
+  showFeedback.value = false
+  feedbackMessage.value = ''
+  isCorrect.value = false
+  emit('close')
+}
+
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    handleClose()
+  }
+}
+
+watch(() => props.isOpen, (isOpen) => {
+  if (!isOpen) {
+    selectedAnswer.value = null
+    showFeedback.value = false
+    feedbackMessage.value = ''
+    isCorrect.value = false
+  }
+})
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeyDown)
+})
+</script>
+
 <template>
   <Transition name="modal">
     <div
@@ -49,21 +145,21 @@
           <div v-else class="flex-1 px-4 sm:px-6 md:px-8 space-y-2 sm:space-y-3 overflow-y-auto pb-3 sm:pb-4" role="radiogroup" aria-labelledby="quiz-question">
             <button
               v-for="(option, index) in quiz.options"
-              :key="option.id"
+              :key="option"
               :class="[
                 'w-full text-left bg-white/95 backdrop-blur-sm rounded-lg p-3 sm:p-4 transition-all duration-200',
                 'hover:shadow-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#0a7ac8]/50',
-                selectedAnswer === option.id
+                selectedAnswer === option
                   ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-[#0a7ac8]/50 shadow-lg bg-white'
                   : '',
               ]"
-              :aria-label="`Option ${String.fromCharCode(65 + index)}: ${option.label.replace(/^[A-Z]\)\s*/, '')}`"
-              :aria-pressed="selectedAnswer === option.id"
+              :aria-label="`Option ${String.fromCharCode(65 + index)}: ${option.replace(/^[A-Z]\)\s*/, '')}`"
+              :aria-pressed="selectedAnswer === option"
               role="radio"
               :tabindex="0"
-              @click="handleSelectAnswer(option.id)"
-              @keydown.enter="handleSelectAnswer(option.id)"
-              @keydown.space.prevent="handleSelectAnswer(option.id)"
+              @click="handleSelectAnswer(option)"
+              @keydown.enter="handleSelectAnswer(option)"
+              @keydown.space.prevent="handleSelectAnswer(option)"
             >
               <div class="flex items-center gap-2 sm:gap-3 md:gap-4">
                 <!-- Letter indicator (A, B, C, D) - Black text with colon -->
@@ -72,20 +168,20 @@
                 </span>
                 
                 <!-- Option text -->
-                <span class="text-base sm:text-lg md:text-xl text-black flex-1 font-normal leading-tight sm:leading-normal">{{ option.label }}</span>
+                <span class="text-base sm:text-lg md:text-xl text-black flex-1 font-normal leading-tight sm:leading-normal">{{ option }}</span>
                 
                 <!-- Radio button - Gray circle on right -->
                 <div class="flex-shrink-0">
                   <div
                     :class="[
                       'w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center',
-                      selectedAnswer === option.id
+                      selectedAnswer === option
                         ? 'border-gray-700 bg-gray-700'
                         : 'border-gray-400 bg-white'
                     ]"
                   >
                     <div
-                      v-if="selectedAnswer === option.id"
+                      v-if="selectedAnswer === option"
                       class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white"
                     ></div>
                   </div>
@@ -157,21 +253,21 @@
           <div v-else class="flex-1 px-4 sm:px-6 md:px-8 space-y-2 sm:space-y-3 overflow-y-auto pb-3 sm:pb-4" role="radiogroup" aria-labelledby="quiz-question">
             <button
               v-for="(option, index) in quiz.options"
-              :key="option.id"
+              :key="option"
               :class="[
                 'w-full text-left bg-white/95 backdrop-blur-sm rounded-lg p-3 sm:p-4 transition-all duration-200',
                 'hover:shadow-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#0a7ac8]/50',
-                selectedAnswer === option.id
+                selectedAnswer === option
                   ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-[#0a7ac8]/50 shadow-lg bg-white'
                   : '',
               ]"
-              :aria-label="`Option ${String.fromCharCode(65 + index)}: ${option.label.replace(/^[A-Z]\)\s*/, '')}`"
-              :aria-pressed="selectedAnswer === option.id"
+              :aria-label="`Option ${String.fromCharCode(65 + index)}: ${option.replace(/^[A-Z]\)\s*/, '')}`"
+              :aria-pressed="selectedAnswer === option"
               role="radio"
               :tabindex="0"
-              @click="handleSelectAnswer(option.id)"
-              @keydown.enter="handleSelectAnswer(option.id)"
-              @keydown.space.prevent="handleSelectAnswer(option.id)"
+              @click="handleSelectAnswer(option)"
+              @keydown.enter="handleSelectAnswer(option)"
+              @keydown.space.prevent="handleSelectAnswer(option)"
             >
               <div class="flex items-center gap-2 sm:gap-3 md:gap-4">
                 <!-- Letter indicator (A, B, C, D) - Black text with colon -->
@@ -180,20 +276,20 @@
                 </span>
                 
                 <!-- Option text -->
-                <span class="text-base sm:text-lg md:text-xl text-black flex-1 font-normal leading-tight sm:leading-normal">{{ option.label }}</span>
+                <span class="text-base sm:text-lg md:text-xl text-black flex-1 font-normal leading-tight sm:leading-normal">{{ option }}</span>
                 
                 <!-- Radio button - Gray circle on right -->
                 <div class="flex-shrink-0">
                   <div
                     :class="[
                       'w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center',
-                      selectedAnswer === option.id
+                      selectedAnswer === option
                         ? 'border-gray-700 bg-gray-700'
                         : 'border-gray-400 bg-white'
                     ]"
                   >
                     <div
-                      v-if="selectedAnswer === option.id"
+                      v-if="selectedAnswer === option"
                       class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white"
                     ></div>
                   </div>
@@ -232,102 +328,6 @@
     </div>
   </Transition>
 </template>
-
-<script setup lang="ts">
-import type { QuizInteraction } from '~/types/interactive-video.interface'
-
-interface Props {
-  quiz: QuizInteraction
-  isOpen: boolean
-  isFullscreen?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  isFullscreen: false
-})
-
-const emit = defineEmits<{
-  submit: [answer: string, isCorrect: boolean]
-  continue: [isCorrect: boolean]
-  close: []
-}>()
-
-const selectedAnswer = ref<string | null>(null)
-const showFeedback = ref(false)
-const feedbackMessage = ref('')
-const isCorrect = ref(false)
-
-const handleSelectAnswer = (answerId: string) => {
-  selectedAnswer.value = answerId
-}
-
-const handleSubmit = () => {
-  if (!selectedAnswer.value) return
-  
-  // Check if answer is correct
-  isCorrect.value = selectedAnswer.value === props.quiz.correctAnswer
-  
-  // Set feedback message
-  feedbackMessage.value = isCorrect.value 
-    ? (props.quiz.feedback?.correct || 'Correct!')
-    : (props.quiz.feedback?.incorrect || 'Incorrect. Try again!')
-  
-  // Show feedback
-  showFeedback.value = true
-  
-  // Emit submit event with correctness
-  emit('submit', selectedAnswer.value, isCorrect.value)
-}
-
-const handleContinue = () => {
-  // Store correctness before resetting
-  const wasCorrect = isCorrect.value
-  console.log('QuizModal handleContinue - wasCorrect:', wasCorrect)
-  
-  // Reset UI state
-  showFeedback.value = false
-  selectedAnswer.value = null
-  feedbackMessage.value = ''
-  isCorrect.value = false
-  
-  // Emit continue event with correctness so parent can handle video playback
-  emit('continue', wasCorrect)
-  
-  // Close the modal
-  handleClose()
-}
-
-const handleClose = () => {
-  selectedAnswer.value = null
-  showFeedback.value = false
-  feedbackMessage.value = ''
-  isCorrect.value = false
-  emit('close')
-}
-
-const handleKeyDown = (event: KeyboardEvent) => {
-  if (event.key === 'Escape') {
-    handleClose()
-  }
-}
-
-watch(() => props.isOpen, (isOpen) => {
-  if (!isOpen) {
-    selectedAnswer.value = null
-    showFeedback.value = false
-    feedbackMessage.value = ''
-    isCorrect.value = false
-  }
-})
-
-onMounted(() => {
-  document.addEventListener('keydown', handleKeyDown)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeyDown)
-})
-</script>
 
 <style scoped>
 .modal-enter-active {
