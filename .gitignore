@@ -32,6 +32,7 @@ logs
 *.curs
 *.ani   
 .cursor
+.cursor/plans
 
 # public videos
 /public/video

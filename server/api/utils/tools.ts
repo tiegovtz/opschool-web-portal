@@ -55,30 +55,41 @@ async function readSyllabusFromFile(subject: string, level: string): Promise<Syl
       
       // Handle different JSON structures
       let syllabus: Syllabus | null = null;
-      let isChapterFormat = false;
       
-      // Check if it's the expected format (with syllabus_title, level, content)
-      if (rawData.syllabus_title && rawData.level && rawData.content) {
+      // NEW MERGED FORMAT: syllabus_metadata + book_metadata + competences + chapters
+      if (rawData.syllabus_metadata && rawData.competences && rawData.chapters) {
+        syllabus = {
+          syllabus_title: rawData.syllabus_metadata.title || "Syllabus",
+          level: rawData.syllabus_metadata.level || level,
+          content: rawData.competences || []
+        };
+        // Store additional data
+        (syllabus as any).chapters = rawData.chapters;
+        (syllabus as any).book_metadata = rawData.book_metadata;
+        (syllabus as any).syllabus_metadata = rawData.syllabus_metadata;
+        (syllabus as any).isMergedFormat = true;
+        console.log(`[getSyllabus] ✅ Successfully loaded syllabus (merged format): ${syllabus.syllabus_title}`);
+        console.log(`[getSyllabus] ✅ Competences: ${rawData.competences?.length || 0}, Chapters: ${rawData.chapters?.length || 0}`);
+      }
+      // Legacy format: syllabus_title, level, content
+      else if (rawData.syllabus_title && rawData.level && rawData.content) {
         syllabus = rawData as Syllabus;
         console.log(`[getSyllabus] ✅ Successfully loaded syllabus (standard format): ${syllabus.syllabus_title}`);
       } 
-      // Handle book_metadata/book_info + chapters format
+      // Legacy format: book_metadata/book_info + chapters only
       else if ((rawData.book_metadata || rawData.book_info) && rawData.chapters) {
         const bookInfo = rawData.book_metadata || rawData.book_info;
-        // Transform to expected format - create a basic structure
         syllabus = {
           syllabus_title: bookInfo.title || "Syllabus",
           level: bookInfo.level || level,
-          content: [] // Chapters don't map directly to competences, will be handled separately
+          content: []
         };
-        isChapterFormat = true;
-        // Store raw data for later use
-        (syllabus as any).rawChapters = rawData.chapters;
-        console.log(`[getSyllabus] ✅ Successfully loaded syllabus (book format): ${syllabus.syllabus_title}`);
-        console.log(`[getSyllabus] ⚠️ Note: This file uses chapter structure, not competence structure. Chapters: ${rawData.chapters?.length || 0}`);
+        (syllabus as any).chapters = rawData.chapters;
+        (syllabus as any).isChapterOnly = true;
+        console.log(`[getSyllabus] ✅ Successfully loaded syllabus (chapter-only format): ${syllabus.syllabus_title}`);
       } 
       else {
-        console.error(`[getSyllabus] ❌ Unknown file format. Expected syllabus_title/level/content or book_metadata/book_info/chapters`);
+        console.error(`[getSyllabus] ❌ Unknown file format.`);
         return null;
       }
       
@@ -375,54 +386,120 @@ export const studentTools = {
         // Format syllabus for the agent
         let formattedSyllabus: string;
         let competences: any[] = [];
+        let chapters: any[] = [];
         let totalCompetences = 0;
         
-        // Check if this is a chapter-based format
-        const isChapterFormat = (syllabus as any).rawChapters !== undefined;
+        // Check format type
+        const isMergedFormat = (syllabus as any).isMergedFormat === true;
+        const isChapterOnly = (syllabus as any).isChapterOnly === true;
         
-        if (isChapterFormat && (syllabus as any).rawChapters) {
-          // Chapter-based format - create a formatted string from chapters
-          const chapters = (syllabus as any).rawChapters;
+        // MERGED FORMAT: Has both competences AND chapters
+        if (isMergedFormat && syllabus.content && syllabus.content.length > 0) {
+          const syllabusMetadata = (syllabus as any).syllabus_metadata || {};
+          const rawChapters = (syllabus as any).chapters || [];
+          
           formattedSyllabus = `SYLLABUS: ${syllabus.syllabus_title}\n`;
-          formattedSyllabus += `LEVEL: ${syllabus.level}\n\n`;
-          formattedSyllabus += "NOTE: This syllabus uses a chapter-based structure.\n\n";
-          formattedSyllabus += `TOTAL CHAPTERS: ${chapters.length}\n\n`;
+          formattedSyllabus += `LEVEL: ${syllabus.level}\n`;
+          formattedSyllabus += `TOTAL PERIODS: ${syllabusMetadata.total_periods || 'N/A'}\n\n`;
           formattedSyllabus += "=".repeat(80) + "\n\n";
           
-          chapters.forEach((chapter: any, index: number) => {
-            formattedSyllabus += `CHAPTER ${chapter.chapter_number || chapter.chapter_id || index + 1}: ${chapter.title}\n`;
-            formattedSyllabus += `Start Page: ${chapter.start_page || 'N/A'}\n\n`;
-            if (chapter.sections && Array.isArray(chapter.sections)) {
-              formattedSyllabus += "Sections:\n";
-              chapter.sections.forEach((section: any, secIndex: number) => {
-                formattedSyllabus += `  ${secIndex + 1}. ${section.title} (Page ${section.page || 'N/A'})\n`;
+          // Format chapters for quick reference
+          formattedSyllabus += "CHAPTERS (Book Structure):\n";
+          rawChapters.forEach((ch: any) => {
+            formattedSyllabus += `  Chapter ${ch.chapter_number}: ${ch.title}\n`;
+            if (ch.sections) {
+              ch.sections.slice(0, 3).forEach((sec: any) => {
+                formattedSyllabus += `    - ${sec.title}\n`;
               });
+              if (ch.sections.length > 3) {
+                formattedSyllabus += `    ... and ${ch.sections.length - 3} more sections\n`;
+              }
             }
-            formattedSyllabus += "\n" + "-".repeat(80) + "\n\n";
+          });
+          formattedSyllabus += "\n" + "=".repeat(80) + "\n\n";
+          
+          // Format competences with teaching methods
+          formattedSyllabus += "COMPETENCES (Curriculum Requirements):\n\n";
+          syllabus.content.forEach((competence: any, index: number) => {
+            formattedSyllabus += `COMPETENCE ${index + 1}:\n`;
+            formattedSyllabus += `  Main: ${competence.main_competence}\n`;
+            formattedSyllabus += `  Specific: ${competence.specific_competence}\n`;
+            formattedSyllabus += `  Periods: ${competence.number_of_periods}\n\n`;
+            
+            formattedSyllabus += "  Learning Activities:\n";
+            competence.learning_activities?.forEach((activity: any, actIdx: number) => {
+              formattedSyllabus += `    ${actIdx + 1}. ${activity.activity}\n`;
+              formattedSyllabus += `       Related Chapters: ${activity.related_chapters?.join(', ') || 'N/A'}\n`;
+              formattedSyllabus += `       Teaching Methods:\n`;
+              activity.teaching_learning_methods?.forEach((method: string) => {
+                formattedSyllabus += `         • ${method}\n`;
+              });
+              formattedSyllabus += `       Assessment: ${activity.assessment_criteria}\n`;
+              formattedSyllabus += `       Resources: ${activity.suggested_resources}\n\n`;
+            });
+            formattedSyllabus += "-".repeat(80) + "\n\n";
           });
           
-          totalCompetences = chapters.length;
-          competences = chapters.map((ch: any, idx: number) => ({
-            main: `Chapter ${ch.chapter_number || ch.chapter_id || idx + 1}`,
-            specific: ch.title,
-            periods: 0,
-            activities: ch.sections?.length || 0
+          // Build competences array with full details
+          competences = syllabus.content.map((c: any) => ({
+            main_competence: c.main_competence,
+            specific_competence: c.specific_competence,
+            periods: c.number_of_periods,
+            learning_activities: c.learning_activities?.map((a: any) => ({
+              activity: a.activity,
+              related_chapters: a.related_chapters,
+              teaching_methods: a.teaching_learning_methods,
+              assessment_criteria: a.assessment_criteria,
+              suggested_resources: a.suggested_resources
+            })) || []
           }));
+          
+          // Build chapters array
+          chapters = rawChapters.map((ch: any) => ({
+            chapter_number: ch.chapter_number,
+            title: ch.title,
+            sections: ch.sections?.map((s: any) => s.title) || []
+          }));
+          
+          totalCompetences = syllabus.content.length;
+          
+        } else if (isChapterOnly && (syllabus as any).chapters) {
+          // Chapter-only format
+          const rawChapters = (syllabus as any).chapters;
+          formattedSyllabus = `SYLLABUS: ${syllabus.syllabus_title}\n`;
+          formattedSyllabus += `LEVEL: ${syllabus.level}\n\n`;
+          formattedSyllabus += "NOTE: This syllabus uses chapter-based structure only.\n\n";
+          formattedSyllabus += `TOTAL CHAPTERS: ${rawChapters.length}\n\n`;
+          
+          rawChapters.forEach((chapter: any) => {
+            formattedSyllabus += `CHAPTER ${chapter.chapter_number}: ${chapter.title}\n`;
+            if (chapter.sections) {
+              chapter.sections.forEach((sec: any, idx: number) => {
+                formattedSyllabus += `  ${idx + 1}. ${sec.title}\n`;
+              });
+            }
+            formattedSyllabus += "\n";
+          });
+          
+          chapters = rawChapters.map((ch: any) => ({
+            chapter_number: ch.chapter_number,
+            title: ch.title,
+            sections: ch.sections?.map((s: any) => s.title) || []
+          }));
+          totalCompetences = rawChapters.length;
+          
         } else if (syllabus.content && syllabus.content.length > 0) {
-          // Standard format with competences
+          // Legacy competence-only format
           formattedSyllabus = formatSyllabusForAgent(syllabus);
           competences = syllabus.content.map((c) => ({
-            main: c.main_competence,
-            specific: c.specific_competence,
+            main_competence: c.main_competence,
+            specific_competence: c.specific_competence,
             periods: c.number_of_periods,
-            activities: c.learning_activities.length
+            activities_count: c.learning_activities.length
           }));
           totalCompetences = syllabus.content.length;
         } else {
-          // Fallback - empty syllabus
-          formattedSyllabus = `SYLLABUS: ${syllabus.syllabus_title}\n`;
-          formattedSyllabus += `LEVEL: ${syllabus.level}\n\n`;
-          formattedSyllabus += "No content found in syllabus file.";
+          formattedSyllabus = `SYLLABUS: ${syllabus.syllabus_title}\nLEVEL: ${syllabus.level}\n\nNo content found.`;
         }
         
         return {
@@ -430,8 +507,11 @@ export const studentTools = {
           level: syllabus.level,
           syllabus: formattedSyllabus,
           competences: competences,
+          chapters: chapters,
           totalCompetences: totalCompetences,
-          found: true
+          totalChapters: chapters.length,
+          found: true,
+          instruction: "USE the teaching_methods from the competences to guide how you teach. CHECK understanding using the assessment_criteria. FOLLOW the chapters sequentially when teaching."
         };
       } catch (error: any) {
         console.error("[getSyllabus] Error:", error);
