@@ -6,7 +6,7 @@ import {
   type CoreMessage,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import apiDocs from "~/utilities/apiDocs";
+import { fetchRAGContext } from "../utils/rag";
 
 // ============================================
 // Types & Interfaces
@@ -118,7 +118,7 @@ function addRAGContextToPrompt(basePrompt: string, ragContext: string): string {
   return `${basePrompt}
 
 RELEVANT CONTEXT FROM KNOWLEDGE BASE:
-The following information has been retrieved from the knowledge base to help answer the student's question. Use this context to provide accurate and comprehensive answers:
+The following information has been retrieved from the knowledge base to help answer the student's question. Each piece of information includes its source in the format [Source: filename | Citation: citation]. Use this context to provide accurate and comprehensive answers:
 
 ${ragContext}
 
@@ -126,7 +126,8 @@ IMPORTANT: When using the context above:
 - Prioritize information that directly relates to the student's question
 - If the context contains information outside the chapter scope (when in Subject AI Teacher mode), focus only on the relevant parts
 - Combine the context with your teaching approach to provide clear explanations
-- If the context contradicts the Tanzanian curriculum, prioritize the curriculum`;
+- If the context contradicts the Tanzanian curriculum, prioritize the curriculum
+- ALWAYS cite your sources when using information from the knowledge base. Reference the source file name (e.g., "According to [filename.pdf]..." or "As mentioned in [filename.pdf]...") so students know where the information comes from`;
 }
 
 function addChapterReminderToPrompt(prompt: string, chapterName: string): string {
@@ -207,90 +208,8 @@ function convertMessagesToCore(messages: any[]): CoreMessage[] {
 // ============================================
 // RAG Utilities
 // ============================================
-
-function extractTextFromItem(item: any): string {
-  if (typeof item === "string") return item;
-  if (item?.content) return item.content;
-  if (item?.text) return item.text;
-  if (item?.chunk) return item.chunk;
-  if (item?.passage) return item.passage;
-  return JSON.stringify(item);
-}
-
-function parseRAGResponse(response: any): string {
-  if (Array.isArray(response)) {
-    return response
-      .map(extractTextFromItem)
-      .filter((text: string) => text?.trim().length > 0)
-      .join("\n\n");
-  }
-
-  if (response && typeof response === "object") {
-    const obj = response as any;
-
-    if (Array.isArray(obj.data)) {
-      return obj.data
-        .map(extractTextFromItem)
-        .filter((text: string) => text?.trim().length > 0)
-        .join("\n\n");
-    }
-
-    if (Array.isArray(obj.results)) {
-      return obj.results
-        .map(extractTextFromItem)
-        .filter((text: string) => text?.trim().length > 0)
-        .join("\n\n");
-    }
-
-    if (obj.content) return String(obj.content);
-    if (obj.text) return String(obj.text);
-  }
-
-  if (typeof response === "string") {
-    return response;
-  }
-
-  return "";
-}
-
-async function fetchRAGContext(searchQuery: string, authToken?: string): Promise<string> {
-  if (!searchQuery?.trim()) {
-    return "";
-  }
-
-  try {
-    const baseURL = apiDocs.baseURL;
-    const embeddingsUrl = `${baseURL}/machine-learning/books/embeddings/search?search=${encodeURIComponent(searchQuery.trim())}`;
-
-    // console.log("[RAG] Fetching embeddings for query:", searchQuery.substring(0, 50));
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-
-    if (authToken) {
-      headers["Authorization"] = `Bearer ${authToken}`;
-    }
-
-    const response = await $fetch(embeddingsUrl, {
-      method: "GET",
-      headers,
-    });
-
-    const contextText = parseRAGResponse(response);
-
-    if (contextText.trim()) {
-      // console.log("[RAG] Successfully retrieved context (length:", contextText.length, "chars)");
-      return contextText.trim();
-    }
-
-    // console.log("[RAG] No context found in response");
-    return "";
-  } catch (error: any) {
-    console.warn("[RAG] Failed to fetch embeddings:", error?.message || error);
-    return "";
-  }
-}
+// RAG functionality has been moved to ~/server/utils/rag.ts
+// Import fetchRAGContext from there
 
 // ============================================
 // Request Parsing Utilities
