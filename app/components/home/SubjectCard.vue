@@ -75,10 +75,10 @@ const setSubjectToView = () => {
       
       <!-- title and metrics -->
      <div  :class="[
-      'flex justify-between item-center transition-all duration-500 ease-in-out group-hover:text-white w-full',
+      'flex justify-between items-start transition-all duration-500 ease-in-out group-hover:text-white w-full',
      ]">
        <p
-       class="flex text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out"
+       class="text-left text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out"
      >
        {{ subjectName }}
      </p>
