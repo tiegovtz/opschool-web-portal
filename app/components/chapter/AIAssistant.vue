@@ -1037,9 +1037,7 @@ const handleFormSubmit = async (e) => {
   currentQuestion.value = "";
   // Show typing indicator immediately when form is submitted
   isLoading.value = true;
-  if (isDev) {
-    console.log("[Subject AI Teacher] ✅ isLoading set to true - typing indicator should be visible");
-  }
+
 
   try {
     if (isDev) {

@@ -4,64 +4,68 @@ import apiDocs from "~/utilities/apiDocs";
  * Extract plain text from HTML content, removing all HTML tags and formatting
  */
 function extractTextContent(html: string): string {
-  if (!html || typeof html !== 'string') {
-    return '';
+  if (!html || typeof html !== "string") {
+    return "";
   }
-  
+
   // Remove HTML comments
-  let text = html.replace(/<!--[\s\S]*?-->/g, '');
-  
+  let text = html.replace(/<!--[\s\S]*?-->/g, "");
+
   // Remove script and style tags with their content
-  text = text.replace(/<script[\s\S]*?<\/script>/gi, '');
-  text = text.replace(/<style[\s\S]*?<\/style>/gi, '');
-  
+  text = text.replace(/<script[\s\S]*?<\/script>/gi, "");
+  text = text.replace(/<style[\s\S]*?<\/style>/gi, "");
+
   // Remove HTML tags but preserve text content
-  text = text.replace(/<[^>]+>/g, ' ');
-  
+  text = text.replace(/<[^>]+>/g, " ");
+
   // Decode HTML entities
   text = text
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
     .replace(/&apos;/g, "'")
-    .replace(/&hellip;/g, '...')
-    .replace(/&mdash;/g, '—')
-    .replace(/&ndash;/g, '–');
-  
+    .replace(/&hellip;/g, "...")
+    .replace(/&mdash;/g, "—")
+    .replace(/&ndash;/g, "–");
+
   // Decode numeric entities
   text = text.replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec));
-  text = text.replace(/&#x([a-f\d]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
-  
+  text = text.replace(/&#x([a-f\d]+);/gi, (match, hex) =>
+    String.fromCharCode(parseInt(hex, 16))
+  );
+
   // Clean up whitespace - multiple spaces, newlines, tabs to single space
-  text = text.replace(/\s+/g, ' ').trim();
-  
+  text = text.replace(/\s+/g, " ").trim();
+
   // Remove any remaining special characters that might be from parsed content
   // (like expPackage, model tags, etc.)
-  text = text.replace(/expPackage="[^"]*"/g, '');
-  text = text.replace(/model="[^"]*"/g, '');
-  
+  text = text.replace(/expPackage="[^"]*"/g, "");
+  text = text.replace(/model="[^"]*"/g, "");
+
   return text;
 }
 
 export default defineEventHandler(async (event) => {
-  if (event.method !== 'POST') {
+  if (event.method !== "POST") {
     throw createError({
       statusCode: 405,
-      message: 'Method Not Allowed'
+      message: "Method Not Allowed",
     });
   }
 
   // Get auth token from cookie or Authorization header
-  const auth_token = getCookie(event, "signInAccessToken") || 
-                     event.headers.get('authorization')?.replace('Bearer ', '');
-  
+  const auth_token =
+    getCookie(event, "signInAccessToken") ||
+    event.headers.get("authorization")?.replace("Bearer ", "").trim();
+  console.log(auth_token);
+
   if (!auth_token) {
     throw createError({
       statusCode: 401,
-      message: "No authorization token provided. Please sign in."
+      message: "No authorization token provided. Please sign in.",
     });
   }
 
@@ -72,7 +76,7 @@ export default defineEventHandler(async (event) => {
     console.error("Error reading request body:", error);
     throw createError({
       statusCode: 400,
-      message: "Invalid request body"
+      message: "Invalid request body",
     });
   }
 
@@ -82,11 +86,11 @@ export default defineEventHandler(async (event) => {
     console.error("Missing required fields:", {
       hasQuestion: !!question,
       hasChapterId: !!chapterId,
-      body: body
+      body: body,
     });
     throw createError({
       statusCode: 400,
-      message: `Missing required fields. Question: ${!!question}, ChapterId: ${!!chapterId}`
+      message: `Missing required fields. Question: ${!!question}, ChapterId: ${!!chapterId}`,
     });
   }
 
@@ -98,57 +102,63 @@ export default defineEventHandler(async (event) => {
         method: "GET",
         headers: {
           Authorization: `Bearer ${auth_token}`,
-          "Content-Type": "application/json",
         },
       }
     );
 
     if (!chapterResponse.ok) {
-      const errorText = await chapterResponse.text().catch(() => '');
+      const errorText = await chapterResponse.text().catch(() => "");
       console.error("Chapter fetch error:", {
         status: chapterResponse.status,
         statusText: chapterResponse.statusText,
         chapterId,
         hasToken: !!auth_token,
-        error: errorText
+        error: errorText,
       });
-      
+
       if (chapterResponse.status === 401) {
         throw createError({
           statusCode: 401,
-          message: "Authentication failed. Your session may have expired. Please sign in again."
+          message:
+            "Authentication failed. Your session may have expired. Please sign in again.",
         });
       }
-      
+
       throw createError({
         statusCode: chapterResponse.status,
-        message: `Failed to fetch chapter content: ${chapterResponse.statusText || 'Unknown error'}`,
+        message: `Failed to fetch chapter content: ${
+          chapterResponse.statusText || "Unknown error"
+        }`,
       });
     }
 
     const chapterData = await chapterResponse.json();
-    
+
     // Extract raw content (may contain HTML)
-    const rawContent = chapterData?.content || chapterData?.notes || chapterData?.description || "";
-    
+    const rawContent =
+      chapterData?.content ||
+      chapterData?.notes ||
+      chapterData?.description ||
+      "";
+
     // Extract only text content, removing HTML tags and formatting
     const chapterContent = extractTextContent(rawContent);
-    
+
     const chapterName = chapterData?.name || "this competence";
-    
+
     // Log content length for debugging
     console.log("Chapter content extracted:", {
       chapterName,
       rawLength: rawContent.length,
       textLength: chapterContent.length,
-      hasContent: chapterContent.length > 0
+      hasContent: chapterContent.length > 0,
     });
-    
+
     // If no text content was extracted, provide a fallback message
     if (!chapterContent || chapterContent.trim().length === 0) {
       throw createError({
         statusCode: 400,
-        message: "Chapter content is empty or could not be extracted"
+        message: "Chapter content is empty or could not be extracted",
       });
     }
 
@@ -206,9 +216,9 @@ IMPORTANT RULES:
 
     // 3. Build conversation messages
     const messages: Array<{ role: string; content: string }> = [
-      { role: "system", content: systemPrompt }
+      { role: "system", content: systemPrompt },
     ];
-    
+
     // Limit conversation history to prevent token overflow (keep last 10 exchanges)
     const maxHistoryMessages = 20; // 10 user + 10 assistant messages
 
@@ -217,13 +227,13 @@ IMPORTANT RULES:
       // Filter and add previous messages (only user and assistant roles)
       // Keep only the most recent messages to prevent token overflow
       const recentHistory = conversationHistory
-        .filter((msg: any) => msg.role === 'user' || msg.role === 'assistant')
+        .filter((msg: any) => msg.role === "user" || msg.role === "assistant")
         .slice(-maxHistoryMessages);
-      
+
       recentHistory.forEach((msg: any) => {
         messages.push({
           role: msg.role,
-          content: msg.content
+          content: msg.content,
         });
       });
     }
@@ -233,36 +243,41 @@ IMPORTANT RULES:
 
     // 4. Call LLM API with GPT as primary and Gemma as fallback
     const config = useRuntimeConfig();
-    const openaiApiKey = config.OPENAI_API_KEY || process.env.OPENAI_API_KEY || '';
-    
+    const openaiApiKey =
+      config.OPENAI_API_KEY || process.env.OPENAI_API_KEY || "";
+
     // Primary: OpenAI GPT configuration
     const primaryConfig = {
-      baseUrl: 'https://api.openai.com/v1',
-      model: 'gpt-4o-mini',
-      provider: 'OpenAI',
+      baseUrl: "https://api.openai.com/v1",
+      model: "gpt-4o-mini",
+      provider: "OpenAI",
       maxTokens: 2000,
       timeout: 30000, // 30 seconds
       requiresAuth: true,
     };
-    
+
     // Fallback: Ollama Gemma configuration
     const fallbackConfig = {
-      baseUrl: 'http://localhost:11434/v1',
-      model: 'gemma3:1b',
-      provider: 'Ollama',
+      baseUrl: "http://localhost:11434/v1",
+      model: "gemma3:1b",
+      provider: "Ollama",
       maxTokens: 1500,
       timeout: 45000, // 45 seconds
       requiresAuth: false,
     };
-    
+
     // Limit chapter content length for faster processing (keep first 8000 chars for fallback)
-    const optimizedSystemPrompt = systemPrompt.length > 8000 
-      ? systemPrompt.substring(0, 8000) + "\n\n[Content truncated for faster response]"
-      : systemPrompt;
-    
+    const optimizedSystemPrompt =
+      systemPrompt.length > 8000
+        ? systemPrompt.substring(0, 8000) +
+          "\n\n[Content truncated for faster response]"
+        : systemPrompt;
+
     // Replace system message with optimized version if needed
-    const optimizedMessages = messages.map((msg, idx) => 
-      idx === 0 && msg.role === 'system' ? { ...msg, content: optimizedSystemPrompt } : msg
+    const optimizedMessages = messages.map((msg, idx) =>
+      idx === 0 && msg.role === "system"
+        ? { ...msg, content: optimizedSystemPrompt }
+        : msg
     );
 
     // Helper function to make LLM API call
@@ -270,69 +285,83 @@ IMPORTANT RULES:
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
-      
+
       if (llmConfig.requiresAuth && openaiApiKey) {
         headers["Authorization"] = `Bearer ${openaiApiKey}`;
       }
-      
-      console.log(`[AI Assistant] Attempting ${llmConfig.provider} with model: ${llmConfig.model}`);
+
+      console.log(
+        `[AI Assistant] Attempting ${llmConfig.provider} with model: ${llmConfig.model}`
+      );
       console.log(`[AI Assistant] API Base URL: ${llmConfig.baseUrl}`);
-      
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), llmConfig.timeout);
 
       try {
-        const llmResponse = await fetch(`${llmConfig.baseUrl}/chat/completions`, {
-          method: "POST",
-          headers: headers,
-          body: JSON.stringify({
-            model: llmConfig.model,
-            messages: optimizedMessages,
-            temperature: 0.7,
-            max_tokens: llmConfig.maxTokens,
-          }),
-          signal: controller.signal,
-        });
-        
+        const llmResponse = await fetch(
+          `${llmConfig.baseUrl}/chat/completions`,
+          {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify({
+              model: llmConfig.model,
+              messages: optimizedMessages,
+              temperature: 0.7,
+              max_tokens: llmConfig.maxTokens,
+            }),
+            signal: controller.signal,
+          }
+        );
+
         clearTimeout(timeoutId);
 
         if (!llmResponse.ok) {
-          const errorText = await llmResponse.text().catch(() => '');
+          const errorText = await llmResponse.text().catch(() => "");
           let error;
           try {
             error = JSON.parse(errorText);
           } catch {
             error = { message: errorText || llmResponse.statusText };
           }
-          
-          throw new Error(error.error?.message || error.message || `${llmConfig.provider} API error`);
+
+          throw new Error(
+            error.error?.message ||
+              error.message ||
+              `${llmConfig.provider} API error`
+          );
         }
 
         const aiData = await llmResponse.json();
         const choice = aiData.choices[0];
-        const answer = choice?.message?.content || "Sorry, I couldn't generate an answer.";
+        const answer =
+          choice?.message?.content || "Sorry, I couldn't generate an answer.";
         const finishReason = choice?.finish_reason;
 
         // Log if response was truncated
-        if (finishReason === 'length') {
-          console.warn(`[AI Assistant] Response from ${llmConfig.provider} was truncated due to token limit.`);
+        if (finishReason === "length") {
+          console.warn(
+            `[AI Assistant] Response from ${llmConfig.provider} was truncated due to token limit.`
+          );
         }
 
-        console.log(`[AI Assistant] ✅ Successfully received response from ${llmConfig.provider} (model: ${llmConfig.model})`);
-        
+        console.log(
+          `[AI Assistant] ✅ Successfully received response from ${llmConfig.provider} (model: ${llmConfig.model})`
+        );
+
         return {
           answer,
           finishReason,
           provider: llmConfig.provider,
-          model: llmConfig.model
+          model: llmConfig.model,
         };
       } catch (fetchError: any) {
         clearTimeout(timeoutId);
-        
-        if (fetchError.name === 'AbortError') {
+
+        if (fetchError.name === "AbortError") {
           throw new Error(`Request timed out after ${llmConfig.timeout}ms`);
         }
-        
+
         throw fetchError;
       }
     };
@@ -341,10 +370,12 @@ IMPORTANT RULES:
     try {
       // Check if OpenAI API key is available
       if (!openaiApiKey) {
-        console.log('[AI Assistant] OpenAI API key not found, skipping to fallback');
-        throw new Error('OpenAI API key not configured');
+        console.log(
+          "[AI Assistant] OpenAI API key not found, skipping to fallback"
+        );
+        throw new Error("OpenAI API key not configured");
       }
-      
+
       const result = await callLLM(primaryConfig);
       return {
         answer: result.answer,
@@ -352,12 +383,16 @@ IMPORTANT RULES:
         timestamp: new Date().toISOString(),
         finishReason: result.finishReason,
         provider: result.provider,
-        model: result.model
+        model: result.model,
       };
     } catch (primaryError: any) {
-      console.warn(`[AI Assistant] ⚠️ Primary provider (OpenAI) failed: ${primaryError.message}`);
-      console.log(`[AI Assistant] 🔄 Falling back to ${fallbackConfig.provider} (${fallbackConfig.model})`);
-      
+      console.warn(
+        `[AI Assistant] ⚠️ Primary provider (OpenAI) failed: ${primaryError.message}`
+      );
+      console.log(
+        `[AI Assistant] 🔄 Falling back to ${fallbackConfig.provider} (${fallbackConfig.model})`
+      );
+
       // Try fallback (Ollama Gemma)
       try {
         const result = await callLLM(fallbackConfig);
@@ -367,17 +402,18 @@ IMPORTANT RULES:
           timestamp: new Date().toISOString(),
           finishReason: result.finishReason,
           provider: result.provider,
-          model: result.model
+          model: result.model,
         };
       } catch (fallbackError: any) {
-        console.error(`[AI Assistant] ❌ Fallback provider (${fallbackConfig.provider}) also failed: ${fallbackError.message}`);
+        console.error(
+          `[AI Assistant] ❌ Fallback provider (${fallbackConfig.provider}) also failed: ${fallbackError.message}`
+        );
         throw createError({
           statusCode: 503,
-          message: `Both primary (OpenAI) and fallback (${fallbackConfig.provider}) providers failed. Primary error: ${primaryError.message}. Fallback error: ${fallbackError.message}`
+          message: `Both primary (OpenAI) and fallback (${fallbackConfig.provider}) providers failed. Primary error: ${primaryError.message}. Fallback error: ${fallbackError.message}`,
         });
       }
     }
-
   } catch (error: any) {
     console.error("AI Assistant error:", error);
     if (error.statusCode) {
@@ -385,8 +421,7 @@ IMPORTANT RULES:
     }
     throw createError({
       statusCode: error.statusCode || 500,
-      message: error.message || "Failed to get AI assistance"
+      message: error.message || "Failed to get AI assistance",
     });
   }
 });
-
