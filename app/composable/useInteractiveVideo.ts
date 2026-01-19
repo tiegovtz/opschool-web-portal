@@ -1,17 +1,21 @@
-import { ref, computed, readonly } from 'vue'
-import type { Interaction } from '~/types/interactive-video.interface'
+import { ref, computed, readonly, unref } from 'vue'
+import type { ComputedRef, Ref } from 'vue'
+import type { VideoInteraction } from '~/types/interactive-video.interface'
 
-export const useInteractiveVideo = (interactions: Interaction[]) => {
+export const useInteractiveVideo = (
+  interactions: Ref<VideoInteraction[]> | ComputedRef<VideoInteraction[]>
+) => {
   const currentTime = ref(0)
   const duration = ref(0)
   const isPlaying = ref(false)
-  const activeInteractions = ref<Interaction[]>([])
+  const activeInteractions = ref<VideoInteraction[]>([])
+  const interactionsRef = computed(() => unref(interactions))
 
   const updateTime = (time: number) => {
     currentTime.value = time
 
     // Find active interactions based on current time
-    activeInteractions.value = interactions.filter(
+    activeInteractions.value = interactionsRef.value.filter(
       (interaction) =>
         time >= interaction.startTime && time <= interaction.endTime
     )
@@ -39,8 +43,8 @@ export const useInteractiveVideo = (interactions: Interaction[]) => {
   const getTimelineMarkers = computed(() => {
     if (!duration.value) return []
 
-    return interactions.map((interaction) => ({
-      id: interaction.id,
+    return interactionsRef.value.map((interaction, index) => ({
+      id: interaction._id || `${index}`,
       time: interaction.startTime,
       percentage: (interaction.startTime / duration.value) * 100,
     }))
@@ -69,6 +73,5 @@ export const useInteractiveVideo = (interactions: Interaction[]) => {
     },
   }
 }
-
 
 
