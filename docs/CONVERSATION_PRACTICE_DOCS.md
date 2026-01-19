@@ -137,6 +137,12 @@ TTS_DEFAULT_VOICE_MALE=northern_english_male
 # OpenAI Configuration
 OPENAI_API_KEY=sk-your-api-key-here
 ```
+If you installed Piper inside a virtual environment, activate it and grab the Python path:
+```bash
+source /path/to/venv/bin/activate
+which python
+```
+Set `PIPER_PYTHON` to that path and restart the dev server.
 
 ### Step 4: Run the Application
 
@@ -426,7 +432,8 @@ Modify templates in `server/prompts/`:
 1. Verify `PIPER_PYTHON` and `PIPER_VOICES_DIR` in `.env`
 2. Confirm the voice model `.onnx` files exist in `PIPER_VOICES_DIR`
 3. Ensure `PIPER_PYTHON -m piper --help` works in your terminal
-4. Restart the dev server after changes
+4. If using a venv, make sure `PIPER_PYTHON` points to the venv Python
+5. Restart the dev server after changes
 
 ### Voice Sounds Wrong
 
