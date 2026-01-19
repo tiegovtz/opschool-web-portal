@@ -1,15 +1,53 @@
-<script setup>
+<script setup lang="ts">
 import messages from "~/utilities/messages";
 import { MessageComponent, ProfileDrawInitialLater } from "#components";
 import apiDocs from "~/utilities/apiDocs";
 
 // Define Cookie
-const signInAccessToken = useCookie("signInAccessToken");
-const userToken = useCookie("signInUserToken").value;
+const signInAccessToken = useCookie < string > ("signInAccessToken");
+const userToken = useCookie < any > ("signInUserToken").value;
 let uploadedPic;
 
+interface UserProfile {
+  fname: string,
+  lname: string,
+  email: string,
+  phone: string,
+  organization: string,
+  region: string,
+  district: string,
+  school: string,
+  level: string,
+  type: string,
+  profilePic: string,
+  controller: {
+    status: string | boolean,
+    errors: {
+      all: null | string,
+      type: string,
+      fname: null | string,
+      lname: null | string,
+      userName: null | string,
+      email: null | string,
+      phone: null | string,
+      gender: null | string,
+      age: null | string,
+      region: null | string,
+      password: null | string,
+      confirm_password: null | string,
+      school: null | string,
+      district: null | string,
+      organization: null | string,
+      userOrgRole: null | string,
+      otherRole: null | string,
+      profilePic: null | string,
+      level: null | string,
+    },
+  },
+}
+
 // Define One State
-const profile = reactive({
+const profile = reactive < UserProfile > ({
   fname: userToken.name.split(" ")[0],
   lname: userToken.name.split(" ")[1],
   email: userToken.email,
@@ -48,6 +86,7 @@ const profile = reactive({
       userOrgRole: null,
       otherRole: null,
       profilePic: null,
+      level: null,
     },
   },
 });
@@ -56,7 +95,7 @@ const profile = reactive({
 const isModified = ref(false);
 
 // Define Two State
-const data = reactive({
+const data = reactive < { regions: any[], district: any[], schools: any[], status: any, error: any } > ({
   regions: [],
   district: [],
   schools: [],
@@ -91,9 +130,9 @@ const updatedProfile = async () => {
       // Only update values if remote is valid (non-empty)
       for (const key in response) {
         if (Object.prototype.hasOwnProperty.call(response, key)) {
-          const remoteValue = response[key];
+          const remoteValue = (response as any)[key];
           if (remoteValue !== undefined && remoteValue !== null && remoteValue !== "") {
-            profile[key] = remoteValue;
+            (profile as any)[key] = remoteValue;
           }
         }
       }
@@ -105,7 +144,7 @@ const updatedProfile = async () => {
 };
 
 // Fetch Profile Data
-const { data: profileData, status, error } = await useFetch(apiDocs.auth.profile, {
+const { data: profileData, status, error } = await useFetch<any>(apiDocs.auth.profile, {
   headers: {
     Authorization: `Bearer ${signInAccessToken.value}`
   }
@@ -117,40 +156,38 @@ const fetchRegion = async () => {
   data.error = null;
 
   try {
-    const response = await $fetch(
-      `https://opschool.tie.go.tz:5001/v1/schools/regions`
+    const response = await $fetch < any[] > (
+      apiDocs.school.getSchoolRegions
     );
 
     data.status = "success";
     data.regions = response;
   } catch (err) {
     data.status = "error";
-    data.error = err.message;
+    data.error = (err as any).message;
   }
 };
 
 // Fetch district function
-const fetchDistricts = async (region) => {
+const fetchDistricts = async (region: string) => {
   data.status = "pending";
   data.error = null;
 
   try {
-    const response = await $fetch(
-      `https://opschool.tie.go.tz:5001/v1/schools/districts/${String(
-        region
-      ).toUpperCase()}`
+    const response = await $fetch<any[]>(
+      apiDocs.school.getSchoolDistricts(region.toUpperCase())
     );
 
     data.status = "success";
     data.district = response;
   } catch (err) {
     data.status = "error";
-    data.error = err.message;
+    data.error = (err as any).message;
   }
 };
 
 // Fetch schools function
-const fetchSchools = async (region, district) => {
+const fetchSchools = async (region: string, district: string) => {
   data.status = "pending";
   data.error = null;
   if (!region || !district || region === "" || district === "") {
@@ -159,7 +196,7 @@ const fetchSchools = async (region, district) => {
   }
 
   try {
-    const response = await $fetch("https://opschool.tie.go.tz:5001/v1/schools", {
+    const response = await $fetch < any[] > (apiDocs.school.get, {
       method: "POST",
       body: {
         region: `${region}`.toUpperCase(),
@@ -169,9 +206,10 @@ const fetchSchools = async (region, district) => {
 
     data.status = "success";
     data.schools = response;
+    
   } catch (err) {
     data.status = "error";
-    data.error = err.message;
+    data.error = (err as any).message;
   }
 };
 
@@ -213,7 +251,7 @@ watch(
   }
 );
 
-const onValueChanged = (inputName) => {
+const onValueChanged = (inputName: string) => {
   if (inputName == "fname" && profile.fname != userToken.name.split(" ")[0]) {
     isModified.value = true;
     profile.controller.errors.fname = messages.error.form.firstName;
@@ -225,7 +263,7 @@ const onValueChanged = (inputName) => {
     profile.controller.errors.lname = messages.error.form.lastName;
   } else if (inputName == "email" && profile.email != userToken.email) {
     isModified.value = true;
-    profile.controller.errors.email = messages.error.form.email;
+    profile.controller.errors.email = messages.error.form.emailRequired;
   } else if (inputName == "phone" && profile.phone != userToken.phoneNumber) {
     isModified.value = true;
     profile.controller.errors.phone = messages.error.validation.invalidPhone;
@@ -243,15 +281,33 @@ const onValueChanged = (inputName) => {
     profile.profilePic != userToken.profilePic
   ) {
     isModified.value = true;
-
-    // profile.controller.errors.profilePic = "Please enter your Profile";
-  } else {
+  }
+  else if (
+    inputName == "region" &&
+    profile.region != userToken.region
+  ) {
+    isModified.value = true;
+  } 
+  else if (
+    inputName == "district" &&
+    profile.district != userToken.district
+  ) {
+    isModified.value = true;
+  }
+  else if (
+    inputName == "school" &&
+    profile.school != userToken.school
+  ) {
+    isModified.value = true;
+  }
+  else {
     isModified.value = false;
   }
 };
 
-const choosePict = async (event) => {
-  const file = event.target.files?.[0];
+const choosePict = async (event:Event) => {
+  if (!event.target) return;
+  const file = (event.target as HTMLInputElement).files?.[0];
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
   const maxSize = 2 * 1024 * 1024; // 2MB
@@ -332,11 +388,11 @@ const discardChanges = () => {
 
   <div v-else-if="status == 'success'" class="flex flex-col items-center justify-center w-full max-w-7xl">
     <!-- Message Component -->
-    <MessageComponent :message="profile.controller.errors.profilePic"
+    <MessageComponent :message="profile.controller.errors.profilePic as string"
       :position="profile.controller.errors.profilePic ? true : false"
       :event-type="profile.controller.status ? 'success' : 'error'" :icon="profile.controller.status
-          ? 'icons8:checked'
-          : 'oui:cross-in-circle-empty'
+        ? 'icons8:checked'
+        : 'oui:cross-in-circle-empty'
         " />
 
     <!-- Profile Card -->
@@ -347,8 +403,8 @@ const discardChanges = () => {
           class="relative overflow-hidden transition-all duration-500 ease-in-out rounded-full cursor-pointer w-36 h-36 group">
           <!-- Profile Image -->
           <NuxtImg :src="profile.profilePic && profile.profilePic.trim() !== ''
-              ? uploadedPic ?profile.profilePic : apiDocs.baseURL.replace('v1', '') + profile.profilePic
-              : '/profile/profile2.jpeg'
+            ? uploadedPic ? profile.profilePic : apiDocs.baseURL.replace('v1', '') + profile.profilePic
+            : '/profile/profile2.jpeg'
             " alt="User Profile"
             class="object-cover w-full h-full transition-all duration-500 ease-in-out transform group-hover:scale-110 group-hover:opacity-10" />
 
@@ -391,7 +447,7 @@ const discardChanges = () => {
           </div>
           <div class="stat-content">
             <span class="stat-label">Compitences Opened</span>
-            <span class="stat-value">{{ profileData.totalTopicsOpened }}</span>
+            <span class="stat-value">{{ profileData?.totalTopicsOpened }}</span>
           </div>
         </div>
 
@@ -454,10 +510,7 @@ const discardChanges = () => {
           :topic-likes="topic?.topic_likes ? topic?.topic_likes : 100"
           :topic-views="topic?.viewedBy?.length ? topic?.viewedBy?.length : topic?.views ? topic?.views : 0"
           topic-level="lower secondary" :topic-standard="topic?.level?.name" :subject-name="topic?.subject?.name"
-          :topic-viewed="topic?.isViewed" :topic-progress="topic?.progress?.avgProgress" 
-          model-type="profile"
-          
-          />
+          :topic-viewed="topic?.isViewed" :topic-progress="topic?.progress?.avgProgress" model-type="profile" />
       </div>
     </div>
 
@@ -571,7 +624,7 @@ const discardChanges = () => {
                 </span>
 
                 <!-- Select input with space for the icon -->
-                <select name="region" id="region" v-model="profile.region"
+                <select name="region" id="region" @canplay="onValueChanged('region')" v-model="profile.region"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
                   <option value="" v-if="data.status === 'pending'">
                     Loading...
@@ -605,7 +658,7 @@ const discardChanges = () => {
                 </span>
 
                 <!-- Select input with space for the icon -->
-                <select name="district" id="district" v-model="profile.district"
+                <select name="district" id="district" @change="onValueChanged('district')" v-model="profile.district"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
                   <option value="" v-if="data.status === 'idle'">
                     Select Region First
@@ -643,6 +696,7 @@ const discardChanges = () => {
 
                 <!-- Select input with space for the icon -->
                 <select name="school" id="school" v-model="profile.school"
+                @change="onValueChanged('school')"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
                   <option value="" v-if="data.status === 'idle'">
                     Select Region and District First
@@ -661,7 +715,7 @@ const discardChanges = () => {
                       school.name
                         .split(" ")
                         .map(
-                          (word) =>
+                          (word:string) =>
                             word.charAt(0).toUpperCase() +
                             word.slice(1).toLowerCase()
                         )
