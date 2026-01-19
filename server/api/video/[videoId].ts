@@ -15,8 +15,6 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "No video ID provided" });
   }
 
-  // ${apiDocs.videos.getStream}
-  //`https://41.59.102.150:5001/v1/video-stream/${videoId}`;
   const videoUrl = apiDocs.videos.getStream + videoId;
   const range = getHeader(event, "range");
 

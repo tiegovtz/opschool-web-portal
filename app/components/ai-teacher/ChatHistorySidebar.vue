@@ -2,30 +2,39 @@
   <!-- Desktop Sidebar (beside content) -->
   <div
     v-if="isOpen"
-    class="hidden md:flex flex-shrink-0 w-80 h-full bg-white border-r border-gray-200 shadow-lg relative flex-col"
+    class="hidden md:flex flex-shrink-0 w-80 h-full shadow-lg relative flex-col"
   >
     <!-- Header -->
-    <div class="p-5 border-b bg-oceanBlue shadow-lg">
+    <div class="p-5">
       <div class="flex items-center justify-between mb-4">
-        <div class="flex items-center gap-3">
+        <div class="flex w-full items-center gap-3">
           <div
-            class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg ring-2 ring-white/10"
+            tabindex="0"
+            aria-label="bulb icon with black strokes on white background"
+            class="w-12 h-12 rounded-full flex items-center justify-center shadow-md"
           >
             <Icon
-              name="heroicons:bars-3"
-              class="text-white w-6 h-6"
+              name="heroicons:light-bulb"
+              class="w-6 h-6"
             />
           </div>
-          <div>
-            <h2 class="text-lg font-bold text-white tracking-tight">
-              Chat History
-            </h2>
-            <p class="text-xs text-white/80 font-medium">Your conversations</p>
+          <div class="">
+            <h2 class="text-lg font-bold tracking-tight">Chat History</h2>
+            <p class="text-xs font-medium">Your conversations</p>
           </div>
+          <!-- <button
+            @click="handleNewChat"
+            class="w-7 h-7 text-oceanBlue p-2 rounded-full font-semibold hover:bg-gray-50 transition-all duration-200 shadow-[0px_0px_50px_5px_rgba(0,0,0,0.1)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group"
+          >
+            <Icon
+              name="heroicons:plus"
+              class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300"
+            />
+          </button> -->
         </div>
         <button
           @click="$emit('close')"
-          class="text-white hover:bg-white/20 p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95"
+          class="md:hidden text-oceanBlue hover:bg-white/20 p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95"
           aria-label="Close sidebar"
         >
           <Icon
@@ -36,7 +45,7 @@
       </div>
       <button
         @click="handleNewChat"
-        class="w-full bg-white text-oceanBlue px-4 py-3 rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group"
+        class="w-full text-oceanBlue text-sm px-4 py-3 rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-[0px_0px_50px_5px_rgba(0,0,0,0.1)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group"
       >
         <Icon
           name="heroicons:plus"
@@ -47,29 +56,29 @@
     </div>
 
     <!-- Search Bar (optional enhancement) -->
-    <div
-      v-if="sessions.length > 3"
-      class="p-4 border-b border-gray-100 bg-gray-50/50"
-    >
-      <div class="relative">
-        <Icon
-          name="heroicons:magnifying-glass"
-          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-        />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search conversations..."
-          class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue/20 focus:border-oceanBlue/50 bg-white transition-all"
-        />
-      </div>
-    </div>
 
     <!-- Sessions List -->
-    <div 
+    <div
       ref="sessionsContainer"
       class="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400"
     >
+      <div
+        v-if="sessions.length > 3"
+        class="p-4 border-b border-gray-100 bg-gray-50/50"
+      >
+        <div class="relative">
+          <Icon
+            name="heroicons:magnifying-glass"
+            class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+          />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search conversations..."
+            class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue/20 focus:border-oceanBlue/50 bg-white transition-all"
+          />
+        </div>
+      </div>
       <div
         v-if="chatStore.loading && sessions.length === 0"
         class="p-4"
@@ -97,13 +106,11 @@
           <div
             class="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center"
           >
-            <Icon 
+            <Icon
               :name="
-                searchQuery
-                  ? 'heroicons:magnifying-glass'
-                  : 'heroicons:bars-3'
+                searchQuery ? 'heroicons:magnifying-glass' : 'heroicons:bars-3'
               "
-              class="w-10 h-10 text-gray-400" 
+              class="w-10 h-10 text-gray-400"
             />
           </div>
           <p class="text-sm font-semibold text-gray-700 mb-1">
@@ -133,7 +140,12 @@
         <div
           v-for="session in filteredSessions"
           :key="session.id"
-          :ref="el => { if (chatStore.activeSessionId === session.id) activeSessionRef = el as HTMLElement }"
+          :ref="
+            (el) => {
+              if (chatStore.activeSessionId === session.id)
+                activeSessionRef = el as HTMLElement;
+            }
+          "
           @click="handleSelectSession(session.id)"
           class="group relative p-4 rounded-xl cursor-pointer transition-all duration-200"
           :class="
@@ -360,9 +372,7 @@
           >
             <Icon
               :name="
-                searchQuery
-                  ? 'heroicons:magnifying-glass'
-                  : 'heroicons:bars-3'
+                searchQuery ? 'heroicons:magnifying-glass' : 'heroicons:bars-3'
               "
               class="w-10 h-10 text-gray-400"
             />
@@ -448,8 +458,8 @@
               </p>
               <div class="flex items-center gap-2.5 mt-2.5 flex-wrap">
                 <div class="flex items-center gap-1.5">
-                  <Icon 
-                    name="heroicons:clock" 
+                  <Icon
+                    name="heroicons:clock"
                     class="w-3.5 h-3.5"
                     :class="
                       chatStore.activeSessionId === session.id
@@ -588,8 +598,8 @@ const filteredSessions = computed(() => {
 
     return (
       title.includes(query) ||
-           topic.includes(query) || 
-           details.includes(query) || 
+      topic.includes(query) ||
+      details.includes(query) ||
       roomName.includes(query)
     );
   });
@@ -599,22 +609,22 @@ const filteredSessions = computed(() => {
 watch(
   () => props.isOpen,
   async (isOpen) => {
-  if (isOpen && chatStore.activeSessionId) {
-    await nextTick();
-    scrollToActiveSession();
-  }
-  }
+    if (isOpen && chatStore.activeSessionId) {
+      await nextTick();
+      scrollToActiveSession();
+    }
+  },
 );
 
 // Scroll to active session when it changes
 watch(
   () => chatStore.activeSessionId,
   async () => {
-  if (props.isOpen) {
-    await nextTick();
-    scrollToActiveSession();
-  }
-  }
+    if (props.isOpen) {
+      await nextTick();
+      scrollToActiveSession();
+    }
+  },
 );
 
 // Scroll to active session
@@ -622,15 +632,15 @@ const scrollToActiveSession = () => {
   if (activeSessionRef.value && sessionsContainer.value) {
     const container = sessionsContainer.value;
     const element = activeSessionRef.value as HTMLElement;
-    
+
     const containerRect = container.getBoundingClientRect();
     const elementRect = element.getBoundingClientRect();
-    
+
     const scrollTop = container.scrollTop;
     const elementTop = elementRect.top - containerRect.top + scrollTop;
     const elementBottom = elementTop + elementRect.height;
     const containerHeight = container.clientHeight;
-    
+
     // Scroll if element is not fully visible
     if (elementTop < scrollTop) {
       container.scrollTo({ top: elementTop - 20, behavior: "smooth" });
@@ -663,7 +673,7 @@ const getSessionTitle = (session: ChatSession): string => {
 // Format date with better relative time
 const formatDate = (dateString?: string): string => {
   if (!dateString) return "Just now";
-  
+
   try {
     const date = new Date(dateString);
     const now = new Date();
@@ -682,7 +692,7 @@ const formatDate = (dateString?: string): string => {
     if (diffWeeks < 4) return `${diffWeeks}w ago`;
     if (diffMonths < 12) return `${diffMonths}mo ago`;
     if (diffYears < 1) return `${diffYears}y ago`;
-    
+
     // For older dates, show formatted date
     const isThisYear = date.getFullYear() === now.getFullYear();
     if (isThisYear) {
@@ -729,7 +739,7 @@ const handleSelectSession = async (sessionId: string) => {
 const handleDeleteSession = (sessionId: string) => {
   const session = sessions.value.find((s) => s.id === sessionId);
   const sessionTitle = session ? getSessionTitle(session) : "this conversation";
-  
+
   pendingDeleteSessionId.value = sessionId;
   deleteConfirmMessage.value = `Are you sure you want to delete <strong>"${sessionTitle}"</strong>?<br><br>This action cannot be undone.`;
   showDeleteConfirm.value = true;
@@ -742,15 +752,15 @@ const confirmDelete = async () => {
   try {
     const sessionId = pendingDeleteSessionId.value;
     const wasActive = chatStore.activeSessionId === sessionId;
-    
+
     await chatStore.deleteSession(sessionId);
-    
+
     // If deleted session was active, create a new one
     if (wasActive) {
       await chatStore.createSession();
       router.replace({ query: { sessionId: chatStore.activeSessionId } });
     }
-    
+
     // Clear search if no results
     if (filteredSessions.value.length === 0) {
       searchQuery.value = "";
@@ -758,7 +768,8 @@ const confirmDelete = async () => {
   } catch (error) {
     console.error("[ChatHistory] Error deleting session:", error);
     // Show error message (could be enhanced with a toast notification)
-    deleteConfirmMessage.value = "Failed to delete conversation. Please try again.";
+    deleteConfirmMessage.value =
+      "Failed to delete conversation. Please try again.";
     // Keep modal open to show error, then close after a delay
     setTimeout(() => {
       showDeleteConfirm.value = false;
@@ -780,7 +791,7 @@ const cancelDelete = () => {
 // Keyboard navigation
 const handleKeyDown = (e: KeyboardEvent) => {
   if (!props.isOpen) return;
-  
+
   // Close on Escape
   if (e.key === "Escape" && !(e.target instanceof HTMLInputElement)) {
     emit("close");
