@@ -1,3 +1,142 @@
+<script setup lang="ts">
+import type { VideoInteraction } from '~/types/interactive-video.interface'
+
+interface Props {
+  interaction: VideoInteraction
+  isOpen: boolean
+  isFullscreen?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isFullscreen: false
+})
+
+const emit = defineEmits<{
+  submit: [answers: Record<string, string>]
+  continue: [isCorrect: boolean]
+  close: []
+}>()
+
+const selectedLabels = ref<Record<string, string>>({})
+const selectedItemId = ref<string | null>(null)
+const showFeedback = ref(false)
+const feedbackMessage = ref('')
+const isCorrect = ref(false)
+
+const availableLabels = computed(() => {
+  // Return labels that haven't been selected yet
+  const usedLabels = Object.values(selectedLabels.value)
+  return props.interaction.labels?.filter(label => !usedLabels.includes(label))
+})
+
+const isComplete = computed(() => {
+  // Check if all items have labels
+  return props.interaction.items?.every(item => selectedLabels.value[item.id])
+})
+
+const handleItemClick = (itemId: string) => {
+  // Toggle selection - if already selected, deselect; otherwise select
+  if (selectedItemId.value === itemId) {
+    selectedItemId.value = null
+  } else {
+    selectedItemId.value = itemId
+  }
+}
+
+const handleLabelSelect = (label: string) => {
+  if (!selectedItemId.value) return
+
+  // Remove label from previous item if it exists
+  Object.keys(selectedLabels.value).forEach(key => {
+    if (selectedLabels.value[key] === label) {
+      delete selectedLabels.value[key]
+    }
+  })
+
+  // Assign label to selected item
+  selectedLabels.value[selectedItemId.value] = label
+
+  // Clear selection and close menu
+  selectedItemId.value = null
+}
+
+const handleClickOutside = (event: MouseEvent) => {
+  // Close selection menu if clicking outside
+  const target = event.target as HTMLElement
+  if (!target.closest('.item-container') && !target.closest('.selection-menu')) {
+    selectedItemId.value = null
+  }
+}
+
+const handleSubmit = () => {
+  if (!isComplete.value) return
+
+  // Check if all answers are correct
+  const allCorrect = props.interaction.items?.every(item => {
+    return selectedLabels.value[item.id] === item.correctLabel
+  })
+
+  isCorrect.value = allCorrect as boolean
+
+  // Set feedback message
+  feedbackMessage.value = allCorrect
+    ? (props.interaction.feedback?.correct || 'Correct! All labels are matched correctly.')
+    : (props.interaction.feedback?.incorrect || 'Some labels are incorrect. Try again!')
+
+  // Show feedback
+  showFeedback.value = true
+
+  // Emit submit event with answers
+  emit('submit', { ...selectedLabels.value })
+}
+
+const handleContinue = () => {
+  // Store correctness before resetting
+  const wasCorrect = isCorrect.value
+  console.log('SelectionModal handleContinue - wasCorrect:', wasCorrect)
+
+  // Reset UI state
+  showFeedback.value = false
+  selectedLabels.value = {}
+  feedbackMessage.value = ''
+  isCorrect.value = false
+
+  // Emit continue event with correctness so parent can handle video playback
+  emit('continue', wasCorrect)
+
+  // Close the modal
+  handleClose()
+}
+
+const handleClose = () => {
+  selectedLabels.value = {}
+  showFeedback.value = false
+  feedbackMessage.value = ''
+  isCorrect.value = false
+  selectedItemId.value = null
+  emit('close')
+}
+
+watch(() => props.isOpen, (isOpen) => {
+  if (!isOpen) {
+    selectedLabels.value = {}
+    showFeedback.value = false
+    feedbackMessage.value = ''
+    isCorrect.value = false
+    selectedItemId.value = null
+  }
+})
+
+// Handle click outside to close selection menu
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+</script>
+
 <template>
   <Transition name="modal">
     <div
@@ -121,7 +260,7 @@
                           {{ label }}
                         </button>
                         <button
-                          v-if="availableLabels.length === 0"
+                          v-if="availableLabels?.length === 0"
                           class="w-full text-left px-4 py-3 rounded-lg text-gray-500 text-sm cursor-not-allowed min-h-[44px]"
                           disabled
                           aria-disabled="true"
@@ -276,7 +415,7 @@
                           {{ label }}
                         </button>
                         <button
-                          v-if="availableLabels.length === 0"
+                          v-if="availableLabels?.length === 0"
                           class="w-full text-left px-4 py-3 rounded-lg text-gray-500 text-sm cursor-not-allowed min-h-[44px]"
                           disabled
                           aria-disabled="true"
@@ -326,145 +465,6 @@
     </div>
   </Transition>
 </template>
-
-<script setup lang="ts">
-import type { SelectionInteraction } from '~/types/interactive-video.interface'
-
-interface Props {
-  interaction: SelectionInteraction
-  isOpen: boolean
-  isFullscreen?: boolean
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  isFullscreen: false
-})
-
-const emit = defineEmits<{
-  submit: [answers: Record<string, string>]
-  continue: [isCorrect: boolean]
-  close: []
-}>()
-
-const selectedLabels = ref<Record<string, string>>({})
-const selectedItemId = ref<string | null>(null)
-const showFeedback = ref(false)
-const feedbackMessage = ref('')
-const isCorrect = ref(false)
-
-const availableLabels = computed(() => {
-  // Return labels that haven't been selected yet
-  const usedLabels = Object.values(selectedLabels.value)
-  return props.interaction.labels.filter(label => !usedLabels.includes(label))
-})
-
-const isComplete = computed(() => {
-  // Check if all items have labels
-  return props.interaction.items.every(item => selectedLabels.value[item.id])
-})
-
-const handleItemClick = (itemId: string) => {
-  // Toggle selection - if already selected, deselect; otherwise select
-  if (selectedItemId.value === itemId) {
-    selectedItemId.value = null
-  } else {
-    selectedItemId.value = itemId
-  }
-}
-
-const handleLabelSelect = (label: string) => {
-  if (!selectedItemId.value) return
-  
-  // Remove label from previous item if it exists
-  Object.keys(selectedLabels.value).forEach(key => {
-    if (selectedLabels.value[key] === label) {
-      delete selectedLabels.value[key]
-    }
-  })
-  
-  // Assign label to selected item
-  selectedLabels.value[selectedItemId.value] = label
-  
-  // Clear selection and close menu
-  selectedItemId.value = null
-}
-
-const handleClickOutside = (event: MouseEvent) => {
-  // Close selection menu if clicking outside
-  const target = event.target as HTMLElement
-  if (!target.closest('.item-container') && !target.closest('.selection-menu')) {
-    selectedItemId.value = null
-  }
-}
-
-const handleSubmit = () => {
-  if (!isComplete.value) return
-  
-  // Check if all answers are correct
-  const allCorrect = props.interaction.items.every(item => {
-    return selectedLabels.value[item.id] === item.correctLabel
-  })
-  
-  isCorrect.value = allCorrect
-  
-  // Set feedback message
-  feedbackMessage.value = allCorrect
-    ? (props.interaction.feedback?.correct || 'Correct! All labels are matched correctly.')
-    : (props.interaction.feedback?.incorrect || 'Some labels are incorrect. Try again!')
-  
-  // Show feedback
-  showFeedback.value = true
-  
-  // Emit submit event with answers
-  emit('submit', { ...selectedLabels.value })
-}
-
-const handleContinue = () => {
-  // Store correctness before resetting
-  const wasCorrect = isCorrect.value
-  console.log('SelectionModal handleContinue - wasCorrect:', wasCorrect)
-  
-  // Reset UI state
-  showFeedback.value = false
-  selectedLabels.value = {}
-  feedbackMessage.value = ''
-  isCorrect.value = false
-  
-  // Emit continue event with correctness so parent can handle video playback
-  emit('continue', wasCorrect)
-  
-  // Close the modal
-  handleClose()
-}
-
-const handleClose = () => {
-  selectedLabels.value = {}
-  showFeedback.value = false
-  feedbackMessage.value = ''
-  isCorrect.value = false
-  selectedItemId.value = null
-  emit('close')
-}
-
-watch(() => props.isOpen, (isOpen) => {
-  if (!isOpen) {
-    selectedLabels.value = {}
-    showFeedback.value = false
-    feedbackMessage.value = ''
-    isCorrect.value = false
-    selectedItemId.value = null
-  }
-})
-
-// Handle click outside to close selection menu
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
-</script>
 
 <style scoped>
 .modal-enter-active {
