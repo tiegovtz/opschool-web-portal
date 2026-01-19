@@ -314,8 +314,10 @@ definePageMeta({
           <div class="text-center mb-8">
             <div class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4">
               <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span class="text-sm font-medium text-primary">Interactive Learning</span>
             </div>
@@ -340,28 +342,23 @@ definePageMeta({
             <div class="text-center">
               <div class="inline-block w-12 h-12 bg-red-100 rounded-full items-center justify-center mb-4">
                 <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
               <p class="text-red-600 font-semibold mb-2">Error loading video</p>
               <p class="text-gray-600 text-sm mb-4">{{ error }}</p>
-              
+
               <!-- Show login link if authentication error -->
               <div v-if="error.includes('Authentication') || error.includes('login')" class="mb-4">
-                <NuxtLink 
-                  to="/auth"
-                  class="inline-block px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium"
-                >
+                <NuxtLink to="/auth"
+                  class="inline-block px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors font-medium">
                   Go to Login Page
                 </NuxtLink>
               </div>
-              
+
               <!-- Retry button for other errors -->
-              <button 
-                v-else
-                @click="fetchVideoFromTopic"
-                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
-              >
+              <button v-else @click="fetchVideoFromTopic"
+                class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors">
                 Retry
               </button>
             </div>
@@ -373,15 +370,10 @@ definePageMeta({
               <p class="text-gray-600 mb-4">No video source available</p>
               <p class="text-sm text-gray-500">Video source: {{ videoSrc }}</p>
             </div>
-            <InteractiveVideo
-              v-else
-              ref="videoPlayerRef"
-              :video-src="videoSrc"
-              :interactions="interactions"
-              @quiz-submit="handleQuizSubmit"
-              @selection-submit="handleSelectionSubmit"
-            />
-            <div v-if="isLoadingInteractions" class="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+            <InteractiveVideo v-else ref="videoPlayerRef" :video-src="videoSrc" :interactions="interactions"
+              @quiz-submit="handleQuizSubmit" @selection-submit="handleSelectionSubmit" />
+            <div v-if="isLoadingInteractions"
+              class="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
               <div class="text-center text-white">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
                 <p>Loading interactions...</p>
@@ -394,12 +386,13 @@ definePageMeta({
             <div class="flex items-center gap-3 mb-6">
               <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
                 <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
               </div>
               <h2 class="text-2xl font-bold text-gray-900">Your Assessment</h2>
             </div>
-          
+
             <!-- Statistics Summary -->
             <div v-if="quizResults.length > 0 || interactions.length > 0" class="mb-6">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -419,67 +412,60 @@ definePageMeta({
             </div>
 
             <!-- Quiz Results List -->
-          <div v-if="quizResults.length > 0">
+            <div v-if="quizResults.length > 0">
               <h3 class="text-lg font-semibold text-gray-800 mb-4">Quiz Results</h3>
               <ul class="space-y-3">
-              <li
-                v-for="(result, index) in quizResults"
-                :key="`quiz-${index}`"
-                :class="[
-                    'p-4 rounded-lg border transition-all',
+                <li v-for="(result, index) in quizResults" :key="`quiz-${index}`" :class="[
+                  'p-4 rounded-lg border transition-all',
                   result.isCorrect
-                      ? 'bg-green-50 border-green-200 hover:bg-green-100'
-                      : 'bg-red-50 border-red-200 hover:bg-red-100',
-                ]"
-              >
+                    ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                    : 'bg-red-50 border-red-200 hover:bg-red-100',
+                ]">
                   <div class="flex items-start justify-between mb-2">
                     <div class="flex-1">
                       <div class="font-medium text-gray-900 mb-1">
-                  {{ result.interaction.question }}
-                </div>
+                        {{ result.interaction.question }}
+                      </div>
                       <div class="text-sm text-gray-600 mt-1">
-                        <span class="font-medium">Your answer:</span> 
+                        <span class="font-medium">Your answer:</span>
                         <span class="ml-1">{{ getAnswerLabel(result.interaction, result.selectedAnswer) }}</span>
-                  <span
-                    :class="result.isCorrect ? 'text-green-700' : 'text-red-700'"
-                    class="ml-2 font-semibold"
-                  >
+                        <span :class="['ml-2 font-semibold', result.isCorrect ? 'text-green-700' : 'text-red-700']">
                           ({{ result.isCorrect ? '✓ Correct' : '✗ Incorrect' }})
-                  </span>
-                </div>
+                        </span>
+                      </div>
                     </div>
-                    <div 
-                      :class="result.isCorrect ? 'text-green-600' : 'text-red-600'"
-                      class="ml-3 flex-shrink-0"
-                    >
-                      <svg v-if="result.isCorrect" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    <div :class="['ml-3 flex-shrink-0', result.isCorrect ? 'text-green-600' : 'text-red-600']">
+                      <svg v-if="result.isCorrect" class="w-6 h-6" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                       </svg>
                       <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </div>
                   </div>
                   <div class="text-xs text-gray-500 mt-2">
                     Answered at {{ formatTime(result.timestamp) }}
                   </div>
-              </li>
-            </ul>
-          </div>
+                </li>
+              </ul>
+            </div>
 
             <!-- Empty State -->
             <div v-else class="text-center py-8">
               <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
                 <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <p class="text-gray-600 font-medium mb-1">No quiz results yet</p>
               <p class="text-sm text-gray-500">Complete interactive quizzes in the video to see your assessment here</p>
             </div>
+          </div>
         </div>
       </div>
-    </div>
     </NuxtLayout>
     <template #fallback>
       <div class="min-h-screen flex items-center justify-center">
