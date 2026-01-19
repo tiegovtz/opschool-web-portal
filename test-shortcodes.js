@@ -142,10 +142,10 @@ function testFigure1_1Mapping() {
   const shortcodeData = loadJSON('server/data/image-shortcodes.json');
   if (!shortcodeData) return false;
 
-  const fig1_1 = shortcodeData.shortcodes['general_figure_1_1'];
+  const fig1_1 = shortcodeData.shortcodes['biology_form1_figure_1_1'];
   
   if (!fig1_1) {
-    log('❌ general_figure_1_1 not found', 'red');
+    log('❌ biology_form1_figure_1_1 not found', 'red');
     return false;
   }
 
@@ -197,7 +197,7 @@ function testAPIResponseFormat() {
   let passed = true;
 
   // Test multi-image response
-  const multiImage = shortcodeData.shortcodes['general_figure_1_1'];
+  const multiImage = shortcodeData.shortcodes['biology_form1_figure_1_1'];
   const isMulti = Array.isArray(multiImage.paths) && multiImage.paths.length > 0;
   
   if (isMulti) {
@@ -211,7 +211,7 @@ function testAPIResponseFormat() {
   }
 
   // Test single-image response
-  const singleImage = shortcodeData.shortcodes['general_figure_1_3'];
+  const singleImage = shortcodeData.shortcodes['biology_form1_figure_1_3'];
   const isSingle = !!singleImage.path && !singleImage.paths;
 
   if (isSingle) {

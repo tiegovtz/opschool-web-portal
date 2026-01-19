@@ -87,16 +87,16 @@ const processMathInText = (text: string): string => {
         </div>`;
       } else {
         // Single image - generate image HTML with proper styling and accessibility
-        // Images that fail to load will be silently hidden (no error message shown to users)
+      // Images that fail to load will be silently hidden (no error message shown to users)
         imageHtml = `<div class="my-4 flex justify-center">
-          <img 
-            src="${imageMeta.path}" 
-            alt="${imageMeta.alt}" 
-            class="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
-            loading="lazy"
-            onerror="this.parentElement.style.display='none'; if(typeof console !== 'undefined' && console.warn) { console.warn('[MessageAI] Image failed to load:', '${imageMeta.path}'); }"
-          />
-        </div>`;
+        <img 
+          src="${imageMeta.path}" 
+          alt="${imageMeta.alt}" 
+          class="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+          loading="lazy"
+          onerror="this.parentElement.style.display='none'; if(typeof console !== 'undefined' && console.warn) { console.warn('[MessageAI] Image failed to load:', '${imageMeta.path}'); }"
+        />
+      </div>`;
       }
       
       imagePlaceholders.push({

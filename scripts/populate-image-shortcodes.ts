@@ -155,3 +155,4 @@ async function populateImageShortcodes() {
 populateImageShortcodes().catch(console.error);
 
 export { populateImageShortcodes };
+

@@ -32,11 +32,11 @@ export default defineEventHandler(async (event) => {
         const isMultiImage = Array.isArray(shortcodeData.paths) && shortcodeData.paths.length > 0;
         
         const metadata: Record<string, any> = {
-          alt: shortcodeData.alt,
-          category: shortcodeData.category,
-          description: shortcodeData.description,
-          chapterName: shortcodeData.chapterName,
-          topicName: shortcodeData.topicName
+            alt: shortcodeData.alt,
+            category: shortcodeData.category,
+            description: shortcodeData.description,
+            chapterName: shortcodeData.chapterName,
+            topicName: shortcodeData.topicName
         };
         
         if (isMultiImage) {

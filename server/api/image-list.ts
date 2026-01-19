@@ -1,7 +1,97 @@
 import apiDocs from "~/utilities/apiDocs";
-import { writeFile, mkdir, readFile } from "fs/promises";
+import { writeFile, mkdir, readFile, stat } from "fs/promises";
 import { join } from "path";
 import { embedQuery } from "./utils/embeddings";
+import { setHeader } from "h3";
+
+/**
+ * Generate images array from shortcodes object
+ * This ensures images array is always in sync with shortcodes object
+ * Multi-image figures are included with their paths array AND expanded into separate entries for display
+ */
+function generateImagesFromShortcodes(shortcodes: Record<string, any>): Array<{
+  alt: string;
+  shortcode: string;
+  category: string;
+  description?: string;
+  chapterName?: string;
+  topicName?: string;
+  path?: string;
+  paths?: string[];
+  alts?: string[];
+  isPartOfMultiImage?: boolean;
+  parentShortcode?: string;
+  imageIndex?: number;
+}> {
+  const result: Array<{
+    alt: string;
+    shortcode: string;
+    category: string;
+    description?: string;
+    chapterName?: string;
+    topicName?: string;
+    path?: string;
+    paths?: string[];
+    alts?: string[];
+    isPartOfMultiImage?: boolean;
+    parentShortcode?: string;
+    imageIndex?: number;
+  }> = [];
+
+  for (const [shortcode, metadata] of Object.entries(shortcodes)) {
+    const isMultiImage = Array.isArray(metadata.paths) && metadata.paths.length > 0;
+    
+    if (isMultiImage) {
+      const paths = metadata.paths as string[];
+      const alts = (metadata.alts as string[]) || [];
+      
+      // FIRST: Add the parent shortcode entry with paths array (for AI shortcode resolution)
+      result.push({
+        alt: metadata.alt || '',
+        shortcode: shortcode,
+        category: metadata.category || 'biology',
+        description: metadata.description,
+        chapterName: metadata.chapterName,
+        topicName: metadata.topicName,
+        paths: paths,
+        alts: alts,
+      });
+      
+      // THEN: Expand multi-image figure into separate entries (for image-list display)
+      paths.forEach((path: string, index: number) => {
+        // Generate sub-shortcode like biology_form1_figure_1_1_a, biology_form1_figure_1_1_b, etc.
+        const subLetter = String.fromCharCode(97 + index); // 'a', 'b', 'c', 'd'...
+        const subShortcode = `${shortcode}_${subLetter}`;
+        
+        result.push({
+          alt: alts[index] || `${metadata.alt || ''} (part ${index + 1})`,
+          shortcode: subShortcode,
+          category: metadata.category || 'biology',
+          description: metadata.description,
+          chapterName: metadata.chapterName,
+          topicName: metadata.topicName,
+          path: path,
+          isPartOfMultiImage: true,
+          parentShortcode: shortcode,
+          imageIndex: index,
+        });
+      });
+    } else {
+      // Single image entry
+      result.push({
+        alt: metadata.alt || '',
+        shortcode: shortcode,
+        category: metadata.category || 'biology',
+        description: metadata.description,
+        chapterName: metadata.chapterName,
+        topicName: metadata.topicName,
+        path: metadata.path || '',
+      });
+    }
+  }
+
+  return result;
+}
 
 /**
  * Save shortcodes to JSON file
@@ -184,48 +274,28 @@ async function saveShortcodesToFile(images: Array<{
       }
     }
     
-    // Build images array with only matched shortcodes (for reference, but won't add new ones)
-    // Single image uses path/alt; Multi-image uses paths/alts arrays
-    const matchedImages = Array.from(allowedShortcodes).map(shortcode => {
-      const metadata = mergedShortcodes[shortcode];
-      if (!metadata) return null;
-      
-      const isMultiImage = Array.isArray(metadata.paths) && metadata.paths.length > 0;
-      
-      const imageEntry: Record<string, any> = {
-        alt: metadata.alt || '',
-        shortcode: shortcode,
-        category: metadata.category || 'biology',
-        description: metadata.description,
-        chapterName: metadata.chapterName,
-        topicName: metadata.topicName,
-      };
-      
-      if (isMultiImage) {
-        imageEntry.paths = metadata.paths;
-        imageEntry.alts = metadata.alts;
-      } else {
-        imageEntry.path = metadata.path || '';
+    // Only include shortcodes that are in figure-metadata.json
+    const filteredShortcodes: Record<string, any> = {};
+    for (const shortcode of allowedShortcodes) {
+      if (mergedShortcodes[shortcode]) {
+        filteredShortcodes[shortcode] = mergedShortcodes[shortcode];
       }
-      
-      return imageEntry;
-    }).filter(Boolean);
+    }
     
     const data = {
       generatedAt: new Date().toISOString(),
-      total: Object.keys(mergedShortcodes).length,
+      total: Object.keys(filteredShortcodes).length,
       byCategory: {
-        biology: Object.values(mergedShortcodes).filter((s: any) => s.category === 'biology').length,
-        physics: Object.values(mergedShortcodes).filter((s: any) => s.category === 'physics').length,
-        chemistry: Object.values(mergedShortcodes).filter((s: any) => s.category === 'chemistry').length,
-        mathematics: Object.values(mergedShortcodes).filter((s: any) => s.category === 'mathematics').length,
-        geography: Object.values(mergedShortcodes).filter((s: any) => s.category === 'geography').length,
-        horticulture: Object.values(mergedShortcodes).filter((s: any) => s.category === 'horticulture').length,
-        english: Object.values(mergedShortcodes).filter((s: any) => s.category === 'english').length,
-        'leather-goods': Object.values(mergedShortcodes).filter((s: any) => s.category === 'leather-goods').length,
+        biology: Object.values(filteredShortcodes).filter((s: any) => s.category === 'biology').length,
+        physics: Object.values(filteredShortcodes).filter((s: any) => s.category === 'physics').length,
+        chemistry: Object.values(filteredShortcodes).filter((s: any) => s.category === 'chemistry').length,
+        mathematics: Object.values(filteredShortcodes).filter((s: any) => s.category === 'mathematics').length,
+        geography: Object.values(filteredShortcodes).filter((s: any) => s.category === 'geography').length,
+        horticulture: Object.values(filteredShortcodes).filter((s: any) => s.category === 'horticulture').length,
+        english: Object.values(filteredShortcodes).filter((s: any) => s.category === 'english').length,
+        'leather-goods': Object.values(filteredShortcodes).filter((s: any) => s.category === 'leather-goods').length,
       },
-      shortcodes: mergedShortcodes, // ONLY shortcodes from figure-metadata.json
-      images: matchedImages, // Only images with matched shortcodes
+      shortcodes: filteredShortcodes, // Source of truth - images array is generated on-demand
     };
 
     // Ensure directory exists
@@ -431,6 +501,11 @@ function extractImagesFromContent(
 
 export default defineEventHandler(async (event) => {
   try {
+    // Set cache-control headers to prevent browser caching
+    setHeader(event, 'Cache-Control', 'no-cache, no-store, must-revalidate');
+    setHeader(event, 'Pragma', 'no-cache');
+    setHeader(event, 'Expires', '0');
+    
     // Get query parameters
     const query = getQuery(event);
     const categoryFilter = query.category as string | undefined;
@@ -444,14 +519,40 @@ export default defineEventHandler(async (event) => {
       try {
         const dataDir = join(process.cwd(), 'server', 'data');
         const filePath = join(dataDir, 'image-shortcodes.json');
+        
+        // Always read file fresh to pick up manual edits
         const existingContent = await readFile(filePath, 'utf-8');
         const existingData = JSON.parse(existingContent);
         
+        // Debug: Log the actual URL from the file to verify it's being read correctly
+        const testShortcode = 'biology_form1_figure_1_5';
+        if (existingData.shortcodes?.[testShortcode]) {
+          const testData = existingData.shortcodes[testShortcode];
+          console.log(`[image-list] 🔍 DEBUG: Reading ${testShortcode} from file:`, {
+            path: testData.path,
+            hasPaths: !!testData.paths,
+            pathsCount: testData.paths?.length || 0
+          });
+        }
+        
         // If file exists and has valid data, use it
-        if (existingData && existingData.images && Array.isArray(existingData.images) && existingData.images.length > 0) {
-          console.log(`[image-list] ✅ Using existing shortcodes file (${existingData.images.length} images). Use ?refresh=true to regenerate.`);
+        // Always generate images array from shortcodes (source of truth)
+        if (existingData && existingData.shortcodes && Object.keys(existingData.shortcodes).length > 0) {
+          const imagesArray = generateImagesFromShortcodes(existingData.shortcodes);
           
-          let filteredImages = existingData.images;
+          // Debug: Log the generated image to verify it matches the file
+          const testImage = imagesArray.find((img: any) => img.shortcode === testShortcode);
+          if (testImage) {
+            console.log(`[image-list] 🔍 DEBUG: Generated image for ${testShortcode}:`, {
+              path: testImage.path,
+              hasPaths: !!testImage.paths,
+              pathsCount: testImage.paths?.length || 0
+            });
+          }
+          
+          console.log(`[image-list] ✅ Reading image-shortcodes.json (${imagesArray.length} images) at ${new Date().toISOString()}. Manual edits are automatically detected.`);
+          
+          let filteredImages = imagesArray;
           
           // Apply filters to existing data
           if (subjectIdFilter) {
@@ -480,9 +581,18 @@ export default defineEventHandler(async (event) => {
             filteredImages = filteredImages.slice(0, limit);
           }
           
+          // Get file modification time for cache validation
+          let fileMtime: number | null = null;
+          try {
+            const fileStats = await stat(filePath);
+            fileMtime = fileStats.mtimeMs;
+          } catch (e) {
+            // Ignore stat errors
+          }
+          
           return {
             success: true,
-            total: existingData.images.length,
+            total: imagesArray.length,
             filtered: filteredImages.length,
             filters: {
               category: categoryFilter || 'all',
@@ -493,7 +603,9 @@ export default defineEventHandler(async (event) => {
             byCategory: existingData.byCategory || {},
             images: filteredImages,
             cached: true,
-            message: 'Using cached shortcodes. Use ?refresh=true to regenerate from API.',
+            fileModifiedAt: fileMtime, // Timestamp for cache validation
+            responseTimestamp: Date.now(), // Response timestamp for debugging
+            message: 'Using image-shortcodes.json file. File is read fresh on each request - manual edits are automatically detected. Use ?refresh=true to regenerate from API.',
           };
         }
       } catch (fileError: any) {

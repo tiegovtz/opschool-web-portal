@@ -19,18 +19,36 @@ export interface ImageMetadata {
 // Cache for dynamic shortcodes loaded from JSON file
 let dynamicShortcodesCache: Record<string, ImageMetadata> = {};
 let cacheLoadPromise: Promise<void> | null = null;
+let lastFileModifiedAt: number | null = null;
+
+/**
+ * Clear the shortcodes cache (useful when image-shortcodes.json is manually updated)
+ */
+export function clearShortcodesCache(): void {
+  dynamicShortcodesCache = {};
+  cacheLoadPromise = null;
+  console.log('[imageShortcodes] Cache cleared');
+}
 
 /**
  * Pre-load all dynamic shortcodes from API (call this on app init or component mount)
+ * @param forceReload - If true, clears cache and reloads even if already loaded
  */
-export async function loadDynamicShortcodes(): Promise<void> {
-  // Only load once
-  if (cacheLoadPromise) {
+export async function loadDynamicShortcodes(forceReload: boolean = false): Promise<void> {
+  // Clear cache if force reload is requested
+  if (forceReload) {
+    clearShortcodesCache();
+  }
+  
+  // Only load once unless force reload
+  if (cacheLoadPromise && !forceReload) {
     return cacheLoadPromise;
   }
 
   cacheLoadPromise = (async () => {
     try {
+      // Add cache-busting timestamp to ensure fresh data
+      const timestamp = Date.now();
       // Load all shortcodes from the JSON file via API
       const response = await $fetch<{
         success: boolean;
@@ -44,9 +62,16 @@ export async function loadDynamicShortcodes(): Promise<void> {
           description?: string;
         }>;
         error?: string;
-      }>('/api/image-list?limit=1000'); // Get all shortcodes
+      }>(`/api/image-list?limit=1000&_t=${timestamp}`); // Cache-busting parameter
 
       if (response.success && response.images) {
+        // Check if file was modified (if timestamp is provided)
+        const fileModifiedAt = (response as any).fileModifiedAt;
+        if (fileModifiedAt && lastFileModifiedAt && fileModifiedAt > lastFileModifiedAt) {
+          console.log('[imageShortcodes] File was modified - cache updated');
+        }
+        lastFileModifiedAt = fileModifiedAt || null;
+        
         // Convert to cache format - supports both single and multi-image figures
         for (const image of response.images) {
           const metadata: ImageMetadata = {

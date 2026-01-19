@@ -239,10 +239,10 @@ export const studentTools = {
               // Match both word and digit forms regardless of input format
               // If input is "Chapter 1", try matching "chapter 1:" and "chapter one:"
               // If input is "Chapter One", try matching "chapter one:" and "chapter 1:"
-              if (imgChapter.startsWith(`chapter ${chapterWord}:`) || 
-                  imgChapter.startsWith(`chapter ${chapterDigit}:`)) {
-                return true;
-              }
+                if (imgChapter.startsWith(`chapter ${chapterWord}:`) || 
+                    imgChapter.startsWith(`chapter ${chapterDigit}:`)) {
+                  return true;
+                }
               
               return false;
             });
@@ -309,10 +309,11 @@ export const studentTools = {
           }
         }
         
-        // Map to return format
+        // Map to return format - include description so AI can understand what the image shows
         const figures = filtered.map((img: any) => ({
           figure_number: img.figure_number || '',
           caption: img.caption || '',
+          description: img.description || '',  // Rich description of what the image shows
           shortcode: img.shortcode || '',
           page_number: img.page_number || null,
           chapter: img.chapter || '',
@@ -335,8 +336,8 @@ export const studentTools = {
           chapter: chapter,
           topic: topic || null,
           figures: figures,
-          usage: "CRITICAL: You MUST include at least one [image:shortcode] in your response text. Use these shortcodes like: [image:shortcode_name]. Example: 'As shown in this diagram: [image:general_figure_2_1_hand_lens], the hand lens is used for...'. If multiple figures are returned and they are all highly relevant to what you're teaching, you SHOULD use multiple [image:shortcode] in your response - don't limit yourself to just one if all figures are relevant. Do not just acknowledge this result - you MUST use the shortcode(s) in your actual response.",
-          instruction: "MANDATORY: Review ALL returned figures. You MUST include at least one [image:shortcode] from the figures list in your response. If multiple figures are returned and they are all highly relevant to the topic you're teaching, use multiple [image:shortcode] - one for each relevant figure. Select which figures to use based on relevance: if they are all highly relevant, use them all. Use the shortcodes with [image:shortcode] format when referencing these figures. Example: 'Look at this: [image:general_figure_1_1] shows living things.' This is not optional - if figures are returned, you MUST use at least one, and you SHOULD use multiple if they are all relevant."
+          usage: "CRITICAL: You MUST include at least one [image:shortcode] in your response text. Use these shortcodes like: [image:shortcode_name]. Example: 'As shown in this diagram: [image:biology_form1_figure_2_1], the hand lens is used for...'. If multiple figures are returned and they are all highly relevant to what you're teaching, you SHOULD use multiple [image:shortcode] in your response - don't limit yourself to just one if all figures are relevant. Do not just acknowledge this result - you MUST use the shortcode(s) in your actual response.",
+          instruction: "MANDATORY: Review ALL returned figures. You MUST include at least one [image:shortcode] from the figures list in your response. If multiple figures are returned and they are all highly relevant to the topic you're teaching, use multiple [image:shortcode] - one for each relevant figure. Select which figures to use based on relevance: if they are all highly relevant, use them all. Use the shortcodes with [image:shortcode] format when referencing these figures. Example: 'Look at this: [image:biology_form1_figure_1_1] shows living things.' This is not optional - if figures are returned, you MUST use at least one, and you SHOULD use multiple if they are all relevant."
         };
       } catch (error: any) {
         console.error("[getChapterFigures] Error:", error);

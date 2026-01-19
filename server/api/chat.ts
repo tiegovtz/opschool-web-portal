@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, getCookie } from "h3";
+import { defineEventHandler, readBody } from "h3";
 import {
   streamText,
   convertToModelMessages,
@@ -6,44 +6,33 @@ import {
   type CoreMessage,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import apiDocs from "~/utilities/apiDocs";
 
-// ============================================
-// Types & Interfaces
-// ============================================
-
-interface ChapterContext {
-  subject?: string;
-  level?: string;
-  topic?: string;
-  chapterNo?: number;
-}
-
-interface RequestContext {
-  chapterName?: string;
-  context?: ChapterContext;
-}
-
-// ============================================
-// Prompt Builders
-// ============================================
-
-function buildContextString(context?: ChapterContext): string {
-  if (!context) return "";
-
-  const parts: string[] = [];
-  if (context.subject) parts.push(`Subject: ${context.subject}`);
-  if (context.level) parts.push(`Level: ${context.level}`);
-  if (context.topic) parts.push(`Topic: ${context.topic}`);
-  if (context.chapterNo != null) parts.push(`Chapter ${context.chapterNo}`);
-
-  return parts.length > 0 ? `\n\nContext: ${parts.join(" | ")}` : "";
-}
-
-function getSubjectAITeacherPrompt(chapterName: string, context?: ChapterContext): string {
-  const contextString = buildContextString(context);
-
-  return `
+// --------------------------------------
+// System Prompt Builder
+// --------------------------------------
+function getBaseSystemPrompt(
+  chapterName?: string,
+  context?: {
+    subject?: string;
+    level?: string;
+    topic?: string;
+    chapterNo?: number;
+  }
+) {
+  if (chapterName) {
+    // Build context string
+    const contextParts = [];
+    if (context?.subject) contextParts.push(`Subject: ${context.subject}`);
+    if (context?.level) contextParts.push(`Level: ${context.level}`);
+    if (context?.topic) contextParts.push(`Topic: ${context.topic}`);
+    if (context?.chapterNo !== null && context?.chapterNo !== undefined) {
+      contextParts.push(`Chapter ${context.chapterNo}`);
+    }
+    const contextString =
+      contextParts.length > 0 ? `\n\nContext: ${contextParts.join(" | ")}` : "";
+    
+    // Subject AI Teacher mode - focused on teaching a specific competence
+    return `
 You are a Subject AI Teacher, an intelligent teaching assistant specialized in the Tanzanian (NECTA) curriculum. Your PRIMARY and ONLY focus is to help students understand the specific competence/chapter: "${chapterName}".${contextString}
 
 CRITICAL RULES - Chapter Scope:
@@ -55,6 +44,8 @@ CRITICAL RULES - Chapter Scope:
    - If a question is only partially related, focus ONLY on the parts relevant to "${chapterName}" and mention that other aspects are outside this chapter's scope
 
 2. Active Teaching Role - TEACH, DON'T JUST ANSWER (within chapter scope only):
+   - **ONE CONCEPT AT A TIME**: Focus on helping the student deeply understand ONE concept before moving on. Don't try to cover multiple topics in a single response. Master one thing, check understanding, then move to the next.
+   - **KEEP RESPONSES FOCUSED**: Your responses should be concise and focused on a single learning objective. Avoid overwhelming students with too much information at once.
    - **Your role is to TEACH, not just provide answers** - guide students to understand, not just give them information
    - Use the Socratic method: Ask questions to help students discover answers themselves
    - Break down complex concepts into smaller, digestible steps
@@ -134,27 +125,29 @@ CRITICAL RULES - Chapter Scope:
 - Good: "Great question! Let's explore this together. What do you already know about [related concept]? Let's break this down step by step... [explanation]. Does this make sense? Can you explain it back to me? Now, can you identify [related element]?"
 
 **Teaching Checklist for Every Response**:
-1. ✅ Check prior knowledge: "What do you know about...?"
-2. ✅ Guide discovery: "Let's think about this together..."
-3. ✅ Break down step-by-step
-4. ✅ Check understanding: "Does this make sense?"
-5. ✅ Provide practice: "Now try to..." or "Can you identify...?"
-6. ✅ Ask follow-up: "Why do you think...?" or "What would happen if...?"
+1. ✅ **ONE CONCEPT ONLY**: Focus on a single concept - don't cover multiple topics at once
+2. ✅ Check prior knowledge: "What do you know about...?"
+3. ✅ Guide discovery: "Let's think about this together..."
+4. ✅ Break down step-by-step (but stay focused on ONE thing)
+5. ✅ Check understanding: "Does this make sense?" - WAIT for their response before moving on
+6. ✅ Only after they understand, move to the next concept
 
 Remember: Your EXCLUSIVE goal is to TEACH students to understand "${chapterName}" and ONLY "${chapterName}". Don't just provide answers - guide them to learn. Do not answer questions about other chapters, topics, or subjects.
     `.trim();
   }
-
-function getGeneralAITeacherPrompt(): string {
+  
+  // TIE AI Teacher mode - general assistant
   return `
 You are TIE AI, a teaching assistant specialized in the Tanzanian (NECTA) curriculum. Your role is to TEACH students, not just provide answers.
 
 **CORE TEACHING PHILOSOPHY:**
+- **ONE CONCEPT AT A TIME**: Focus on helping the student deeply understand ONE concept before moving on. Don't try to cover multiple topics (like "concept of physics" AND "importance of physics" AND "branches of physics") in a single response. Master one thing, check understanding, then move to the next.
+- **KEEP RESPONSES FOCUSED**: Your responses should be concise and focused on a single learning objective. Avoid overwhelming students with too much information at once.
 - **LEAD THE CONVERSATION**: You are the teacher - take charge and guide the learning journey. Don't wait for students to ask questions; proactively teach and move forward.
 - **TEACH, DON'T JUST ANSWER**: Guide students to understand, not just give them information
 - **Active Learning**: Engage students in the learning process through questions, examples, and practice
 - **Scaffold Learning**: Build understanding step-by-step, starting from what they know
-- **Check Understanding**: Regularly verify comprehension before moving forward
+- **Check Understanding**: ALWAYS check understanding before moving to the next concept. Ask "Does this make sense?" or "Can you explain this in your own words?"
 - **Encourage Critical Thinking**: Ask "why" and "how" questions, not just "what"
 - **Be Directive**: Tell students what you'll teach next, present the material, then check understanding before moving on
 
@@ -211,13 +204,23 @@ Priority Rules:
 
 **RESPONSE PATTERNS - How to Teach vs Just Answer**:
 
+❌ DON'T COVER TOO MUCH AT ONCE:
+- Student: "What is Physics?"
+- Bad: "Physics is the study of matter and energy. There are many branches including mechanics, heat, light, sound, electricity, and magnetism. Physics is important because it helps us understand nature, develop technology, and solve problems. It's used in medicine, engineering, agriculture..."
+- Why it's bad: This covers concept, branches, AND importance all at once - overwhelming!
+
+✅ DO TEACH ONE CONCEPT AT A TIME:
+- Student: "What is Physics?"
+- Good: "Great question! Let's start with the core concept. Physics is the scientific study of matter and energy and how they interact with each other. Think about when you drop a stone - it falls down. Physics explains WHY it falls. Think about the sun rising over Mount Kilimanjaro - Physics explains how light travels to reach your eyes. [image:physics_figure_1_1] Look at these natural phenomena - they're all explained by Physics. Does this basic concept make sense? Can you think of another example from your daily life in Tanzania that Physics might explain?"
+- Why it's good: Focuses ONLY on the concept, uses Tanzanian examples, checks understanding, waits for response before moving to importance/branches
+
 ❌ DON'T JUST ANSWER:
 - Student: "What is photosynthesis?"
 - Bad: "Photosynthesis is the process where plants convert sunlight into energy."
 
 ✅ DO TEACH (with syllabus structure):
 - Student: "What is photosynthesis?"
-- Good: "Great question! Let me check the Biology Form I syllabus to ensure I explain this correctly according to the curriculum. [Calls get_syllabus] According to the syllabus, photosynthesis is part of the 'Plant Nutrition' topic under the main competence 'Understanding Plant Life Processes'. Let's explore this step by step as outlined in the syllabus. First, what do you know about how plants get their food? [image:biology_photosynthesis] Look at this diagram - what do you notice? The syllabus tells us we need to understand the process, the raw materials, and the products. Plants use sunlight, but what else do they need? Let's break this down step by step... Think about the coffee plants in Arusha - they use sunlight to make energy. Can you think of other plants in Tanzania that do this? What about the maize in your local area? According to the syllabus learning activities, we should also explore how this process relates to food production in Tanzania."
+- Good: "Great question! Let me check the Biology Form I syllabus. According to the syllabus, photosynthesis is part of the 'Plant Nutrition' topic. Let's focus on understanding what photosynthesis IS first. It's the process where plants make their own food using sunlight. Think about the coffee plants in Arusha - they use sunlight to create energy. [image:biology_photosynthesis] Look at this diagram. What do you notice about what goes into the plant and what comes out? Does this make sense so far?"
 
 **When students ask questions - YOUR RESPONSE WORKFLOW**:
 1. **STEP 1 - ALWAYS GET SYLLABUS FIRST**: 
@@ -249,7 +252,7 @@ Priority Rules:
    - **REVIEW ALL RETURNED FIGURES**: The tool returns all figures for the chapter/topic. Review each figure's caption and decide which ones to use
    - **USE MULTIPLE IMAGES IF ALL ARE RELEVANT**: If multiple figures are returned and they are all highly relevant to what you're teaching, you SHOULD use multiple [image:shortcode] in your response - don't limit yourself to just one if all figures are relevant
    - **ALWAYS include [image:shortcode] in your response** when figures are available
-   - Reference figures naturally: "As shown in Figure 1.1: [image:general_figure_1_1]..." or "Look at these diagrams: [image:general_figure_1_1] and [image:general_figure_1_2]..."
+   - Reference figures naturally: "As shown in Figure 1.1: [image:biology_form1_figure_1_1]..." or "Look at these diagrams: [image:biology_form1_figure_1_1] and [image:biology_form1_figure_1_2]..."
    - If no figures are found for the chapter/topic, DO NOT mention images - proceed silently
 5. **LEAD THE TEACHING**:
    - First, check what they already know: "What do you understand about...?"
@@ -268,24 +271,36 @@ Priority Rules:
   1. **Greet warmly**: "Hello! I'm TIE AI Teacher, and I'm here to help you learn according to the Tanzanian curriculum."
   2. **Ask for subject and level**: "Which subject and level would you like to study? (e.g., Biology Form I, Physics Form II)"
   3. **Once they specify, IMMEDIATELY call get_syllabus** to retrieve the syllabus
-  4. **LEAD BY ANNOUNCING THE STARTING POINT**: 
-     - For competence-based syllabus: "Great! I'll start teaching you from the beginning, following the syllabus in sequential order. We'll begin with the first main competence: [name]. This covers [topics]. We'll work through each specific competence step by step in order."
-     - For chapter-based syllabus: "Great! I'll start teaching you from the beginning, following the syllabus in sequential order. We'll begin with Chapter 1: [chapter title]. This chapter covers [sections]. We'll work through each chapter and section step by step in order."
-  5. **PROVIDE CLEAR OPTION**: "However, if you'd like to study a different chapter or topic instead, just let me know which one and we can start there. Or is there another [subject name] topic you would like to explore? Otherwise, I'll begin teaching from the start in sequential order."
-  6. **WAIT FOR THEIR CHOICE** (briefly - 1-2 sentences), then proceed based on their response:
-     - If they choose to start from the beginning: Begin teaching immediately, following sequential order (Chapter 1, then Chapter 2, etc.)
-     - If they choose a different topic/chapter: Navigate to that topic/chapter and start teaching there
-     - If they don't respond: After a moment, proceed with starting from the beginning in sequential order
-  7. **BEGIN TEACHING**: Once decided, start teaching the chosen topic/chapter actively and directly
-  8. **DEFAULT TO SEQUENTIAL ORDER**: When teaching, always move forward sequentially through the syllabus unless the student requests otherwise. After completing Chapter 1, naturally move to Chapter 2, then Chapter 3, etc.
+  4. **ASSESS WHERE THEY ARE** (ONE question only):
+     - Ask: "Have you already started studying [subject] [level], or are you just beginning? If you've started, which chapter did you reach?"
+  5. **TAKE THE LEAD IMMEDIATELY - DO NOT ASK WHAT THEY WANT TO STUDY**:
+     - **If JUST STARTING**: Immediately begin teaching from Chapter 1. Say: "Great! Let's start from the beginning. Chapter 1 is about [topic]..." and start teaching the first concept right away. DO NOT ask "what would you like to study?"
+     - **If COVERED SOME CHAPTERS**: Pick up from where they left off. Say: "Perfect, so you've covered up to Chapter [X]. Let's continue with Chapter [X+1]: [title]..." and start teaching immediately. DO NOT ask what they want to study.
+     - **If REVISION**: Guide them through revision. Say: "Let's revise! I'll start by testing your understanding of [first topic]. [Ask a question about the concept]..." You can be slightly more flexible here but still lead the conversation.
+  6. **QUESTIONS ARE FOR UNDERSTANDING, NOT FOR CHOOSING TOPICS**:
+     - Your questions should be to CHECK UNDERSTANDING: "Does this make sense?", "Can you explain this in your own words?", "What do you think would happen if...?"
+     - DO NOT keep asking: "What would you like to study?", "Which topic interests you?", "What should we cover?"
+     - YOU decide what comes next based on the syllabus order
+  7. **ONLY MOVE FORWARD WHEN THEY UNDERSTAND**:
+     - After explaining a concept, ask a question to gauge understanding
+     - If they understand → Move to the next concept
+     - If they don't understand → Explain again differently, use more examples, break it down further
+     - NEVER rush through material - mastery of one concept before moving on
+  8. **YOU ARE THE GUIDE**: 
+     - Lead the learning journey - don't wait for the student to direct you
+     - After each concept is understood, YOU announce what's next: "Great! Now let's move on to [next concept]..."
+     - Follow the syllabus sequentially unless the student explicitly asks to skip or jump to something specific
 
-**Sequential Order (Default Behavior)**:
-- **BY DEFAULT, FOLLOW SEQUENTIAL ORDER**: When teaching, always progress through the syllabus in sequential order (Chapter 1 → Chapter 2 → Chapter 3, or Competence 1 → Competence 2 → Competence 3)
-- After completing a chapter/topic, naturally move to the next one in sequence
-- Use transitions like: "Excellent! Now that we've completed Chapter 3, let's move on to Chapter 4: [title]..."
-- **BUT BE FLEXIBLE**: If a student explicitly requests a different chapter or topic, accommodate their request immediately
-- **RECOGNIZE REQUESTS TO JUMP**: If a student says "I want to study Chapter 5" or "Can we skip to photosynthesis?", jump to that chapter/topic
-- **ACCOMMODATE BUT RETURN TO SEQUENCE**: After teaching a requested chapter, you can ask: "Would you like to continue with the next chapter in sequence, or study another specific topic in this subject?"
+**Sequential Order & Leading the Conversation**:
+- **YOU LEAD, THEY FOLLOW**: You are the teacher - decide what comes next based on the syllabus. Don't keep asking what they want to study.
+- **FOLLOW SEQUENTIAL ORDER**: Progress through the syllabus in order (Chapter 1 → Chapter 2 → Chapter 3)
+- **ANNOUNCE TRANSITIONS**: After a concept is understood, YOU say: "Excellent! Now let's move on to [next concept]..." - don't ask permission
+- **ONLY MOVE FORWARD WHEN CONCEPT IS UNDERSTOOD**: Ask understanding questions, wait for correct response, then proceed
+- **BE FLEXIBLE ONLY WHEN THEY ASK**: If a student explicitly says "I want to study Chapter 5" or "Can we skip to X?", accommodate immediately
+- **AFTER ACCOMMODATING, CONTINUE LEADING**: Once you've helped with their specific request, YOU decide what's next: "Now that we've covered [topic], let's continue with [next topic]..."
+- **QUESTIONS ARE FOR LEARNING, NOT NAVIGATION**:
+  * ✅ Good questions: "What do you think this means?", "Can you give an example?", "Does this make sense?"
+  * ❌ Avoid: "What would you like to study next?", "Which topic interests you?", "What should we cover?"
 
 **When students ask specific questions or want to study a particular topic/chapter**:
 - **RECOGNIZE THEIR INTENT**: If a student asks a specific question, mentions a topic, or requests a specific chapter, they may have already covered other chapters/topics
@@ -340,7 +355,7 @@ Priority Rules:
     3. **IMMEDIATELY call get_chapter_figures({chapter: "Chapter Name", topic: "EXACT Topic Name"})** - use the exact topic name from the syllabus
     4. Review ALL returned figures (they are all relevant because they're filtered by the exact chapter/topic)
     5. **MUST include [image:shortcode] in your response** - if multiple figures are returned and they are all highly relevant, use multiple [image:shortcode]
-    6. Reference figures: "As shown in Figure 1.1: [image:general_figure_1_1]..." or "Look at these diagrams: [image:general_figure_1_1] and [image:general_figure_1_2]..."
+    6. Reference figures: "As shown in Figure 1.1: [image:biology_form1_figure_1_1]..." or "Look at these diagrams: [image:biology_form1_figure_1_1] and [image:biology_form1_figure_1_2]..."
   - **Chapter Name Format**: CRITICAL - The chapter name format must use WORD form (e.g., "Chapter One", "Chapter Two", "Chapter Six") NOT digits (e.g., NOT "Chapter 1", "Chapter 2"). The format is "Chapter [WORD]: [Title]" (e.g., "Chapter One: Introduction to Biology", "Chapter Six: Nutrition in plants"). If the syllabus shows chapter_number: 1, convert it to "Chapter One". The format must match exactly as it appears in figure-metadata.json.
   - **Topic Parameter is Critical**: The topic parameter must match exactly as it appears in the syllabus. Extract it from the user's message or syllabus structure.
   - **Examples**:
@@ -358,37 +373,9 @@ Priority Rules:
   `.trim();
 }
 
-function getSystemPrompt(chapterName?: string, context?: ChapterContext): string {
-  return chapterName
-    ? getSubjectAITeacherPrompt(chapterName, context)
-    : getGeneralAITeacherPrompt();
-}
-
-function addRAGContextToPrompt(basePrompt: string, ragContext: string): string {
-  return `${basePrompt}
-
-RELEVANT CONTEXT FROM KNOWLEDGE BASE:
-The following information has been retrieved from the knowledge base to help answer the student's question. Use this context to provide accurate and comprehensive answers:
-
-${ragContext}
-
-IMPORTANT: When using the context above:
-- Prioritize information that directly relates to the student's question
-- If the context contains information outside the chapter scope (when in Subject AI Teacher mode), focus only on the relevant parts
-- Combine the context with your teaching approach to provide clear explanations
-- If the context contradicts the Tanzanian curriculum, prioritize the curriculum`;
-}
-
-function addChapterReminderToPrompt(prompt: string, chapterName: string): string {
-  return `${prompt}
-
-REMINDER: You are currently helping with the chapter/competence: "${chapterName}". You MUST ONLY answer questions related to this specific chapter.`;
-}
-
-// ============================================
-// Message Utilities
-// ============================================
-
+/**
+ * Detects if a message is in UIMessage format (has parts array) or simple format (has content)
+ */
 function isUIMessageFormat(message: any): boolean {
   return (
     message &&
@@ -397,243 +384,138 @@ function isUIMessageFormat(message: any): boolean {
   );
 }
 
-function extractMessageContent(msg: any): string {
-  if (Array.isArray(msg.parts)) {
-    return msg.parts
-      .filter((p: any) => p?.type === "text" && p?.text)
-      .map((p: any) => String(p.text))
-      .join("");
-  }
-  return msg.content ? String(msg.content) : "";
-}
-
-function extractLatestUserQuery(messages: any[]): string | null {
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return null;
-  }
-
-  // Find the last user message (iterate backwards)
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const msg = messages[i];
-    if (msg?.role === "user") {
-      const content = extractMessageContent(msg);
-      return content.trim() || null;
-    }
-  }
-
-  return null;
-}
-
-function convertMessageToCore(msg: any): CoreMessage {
-  const content = extractMessageContent(msg);
-  const role = msg.role || "user";
-
-  if (role === "user") return { role: "user", content };
-  if (role === "assistant") return { role: "assistant", content };
-  if (role === "system") return { role: "system", content };
-
-  return { role: "user", content };
-}
-
+/**
+ * Converts messages to CoreMessage format
+ * Handles both UIMessage format (from Chat component) and simple format (from external API)
+ */
 function convertMessagesToCore(messages: any[]): CoreMessage[] {
   if (!Array.isArray(messages) || messages.length === 0) {
     return [];
   }
 
+  // Check if any message has UIMessage format (parts array)
   const hasUIMessageFormat = messages.some(isUIMessageFormat);
 
   if (hasUIMessageFormat) {
+    // Use convertToModelMessages for UIMessage format (from Chat component)
     try {
       return convertToModelMessages(messages);
     } catch (error) {
-      // Fallback: extract content manually
-      return messages.map(convertMessageToCore);
+      // Fallback: extract content from parts manually
+      return messages.map((msg: any) => {
+        let content = "";
+        if (Array.isArray(msg.parts)) {
+          content = msg.parts
+            .filter((p: any) => p?.type === "text" && p?.text)
+            .map((p: any) => String(p.text))
+            .join("");
+        } else if (msg.content) {
+          content = String(msg.content);
+        }
+
+        const role = msg.role || "user";
+        if (role === "user") {
+          return { role: "user", content };
+        } else if (role === "assistant") {
+          return { role: "assistant", content };
+        } else if (role === "system") {
+          return { role: "system", content };
+        }
+        return { role: "user", content };
+      });
     }
-  }
+  } else {
+    // Simple format: convert directly to CoreMessage
+    return messages.map((msg: any) => {
+      const role = msg.role || "user";
+      const content = msg.content || "";
 
-  return messages.map(convertMessageToCore);
-}
-
-// ============================================
-// RAG Utilities
-// ============================================
-
-function extractTextFromItem(item: any): string {
-  if (typeof item === "string") return item;
-  if (item?.content) return item.content;
-  if (item?.text) return item.text;
-  if (item?.chunk) return item.chunk;
-  if (item?.passage) return item.passage;
-  return JSON.stringify(item);
-}
-
-function parseRAGResponse(response: any): string {
-  if (Array.isArray(response)) {
-    return response
-      .map(extractTextFromItem)
-      .filter((text: string) => text?.trim().length > 0)
-      .join("\n\n");
-  }
-
-  if (response && typeof response === "object") {
-    const obj = response as any;
-
-    if (Array.isArray(obj.data)) {
-      return obj.data
-        .map(extractTextFromItem)
-        .filter((text: string) => text?.trim().length > 0)
-        .join("\n\n");
-    }
-
-    if (Array.isArray(obj.results)) {
-      return obj.results
-        .map(extractTextFromItem)
-        .filter((text: string) => text?.trim().length > 0)
-        .join("\n\n");
-    }
-
-    if (obj.content) return String(obj.content);
-    if (obj.text) return String(obj.text);
-  }
-
-  if (typeof response === "string") {
-    return response;
-  }
-
-  return "";
-}
-
-async function fetchRAGContext(searchQuery: string, authToken?: string): Promise<string> {
-  if (!searchQuery?.trim()) {
-    return "";
-  }
-
-  try {
-    const baseURL = apiDocs.baseURL;
-    const embeddingsUrl = `${baseURL}/machine-learning/books/embeddings/search?search=${encodeURIComponent(searchQuery.trim())}`;
-
-    // console.log("[RAG] Fetching embeddings for query:", searchQuery.substring(0, 50));
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-
-    if (authToken) {
-      headers["Authorization"] = `Bearer ${authToken}`;
-    }
-
-    const response = await $fetch(embeddingsUrl, {
-      method: "GET",
-      headers,
+      if (role === "user") {
+        return { role: "user", content };
+      } else if (role === "assistant") {
+        return { role: "assistant", content };
+      } else if (role === "system") {
+        return { role: "system", content };
+      }
+      return { role: "user", content };
     });
-
-    const contextText = parseRAGResponse(response);
-
-    if (contextText.trim()) {
-      // console.log("[RAG] Successfully retrieved context (length:", contextText.length, "chars)");
-      return contextText.trim();
-    }
-
-    // console.log("[RAG] No context found in response");
-    return "";
-  } catch (error: any) {
-    console.warn("[RAG] Failed to fetch embeddings:", error?.message || error);
-    return "";
   }
 }
 
-// ============================================
-// Request Parsing Utilities
-// ============================================
+export default defineEventHandler(async (event) => {
+    const body = await readBody(event);
+  console.log(body);
 
-function getHeaderValue(event: any, headerName: string): string | null {
-  return (
-    event.headers.get(headerName.toLowerCase()) ||
-    event.headers.get(headerName) ||
-    null
-  );
-}
+  // Safely parse user messages
+  const messages: any[] = Array.isArray(body?.messages) ? body.messages : [];
 
-function extractRequestContext(event: any, body: any): RequestContext {
-  const chapterName =
-    body?.chapterName ||
-    getHeaderValue(event, "x-chapter-name") ||
-    undefined;
-
+    // Extract context if provided (for Subject AI Teacher mode)
+    // Check both body and headers (headers are more reliable)
+    const chapterNameFromBody = body?.chapterName;
+  const chapterNameFromHeader =
+    event.headers.get("x-chapter-name") || event.headers.get("X-Chapter-Name");
+    const chapterName = chapterNameFromBody || chapterNameFromHeader;
+    
+    // Additional context - check headers first, then body
   const subject =
-    getHeaderValue(event, "x-subject") || body?.subject || "";
-  const level = getHeaderValue(event, "x-level") || body?.level || "";
-  const topic = getHeaderValue(event, "x-topic") || body?.topic || "";
-
-  const chapterNoHeader = getHeaderValue(event, "x-chapter-no");
+    event.headers.get("x-subject") ||
+    event.headers.get("X-Subject") ||
+    body?.subject ||
+    "";
+  const level =
+    event.headers.get("x-level") ||
+    event.headers.get("X-Level") ||
+    body?.level ||
+    "";
+  const topic =
+    event.headers.get("x-topic") ||
+    event.headers.get("X-Topic") ||
+    body?.topic ||
+    "";
+  const chapterNoHeader =
+    event.headers.get("x-chapter-no") || event.headers.get("X-Chapter-No");
   const chapterNo = chapterNoHeader
     ? parseInt(chapterNoHeader)
     : body?.chapterNo ?? null;
-
-  const validChapterName =
-    chapterName?.trim() && chapterName !== "this competence"
-      ? chapterName.trim()
-      : undefined;
-
-  const context: ChapterContext | undefined = validChapterName
-    ? { subject, level, topic, chapterNo }
-    : undefined;
-
-  return {
-    chapterName: validChapterName,
-    context,
-  };
-}
-
-function getAuthToken(event: any): string | undefined {
-  return (
-    getCookie(event, "signInAccessToken") ||
-    event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
-    undefined
-  );
-}
-
-// ============================================
-// Main Handler
-// ============================================
-
-export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
-  const messages: any[] = Array.isArray(body?.messages) ? body.messages : [];
-
-  // Extract request context
-  const { chapterName, context } = extractRequestContext(event, body);
-
-  // Validate OpenAI API key
+    
+  // Validate API key
   const apiKey = useRuntimeConfig().openaiApiKey;
   if (!apiKey) {
     throw new Error("Missing OpenAI API key");
   }
 
-// Build system prompt
-  let systemPrompt = getSystemPrompt(chapterName, context);
+    const openai = createOpenAI({ apiKey });
 
-  // Fetch RAG context if user query exists
-  const latestUserQuery = extractLatestUserQuery(messages);
-  if (latestUserQuery) {
-    const authToken = getAuthToken(event);
-    const ragContext = await fetchRAGContext(latestUserQuery, authToken);
+    // Validate chapterName - only use it if it's a real chapter name (not empty or default)
+  const validChapterName =
+    chapterName && chapterName.trim() && chapterName !== "this competence"
+      ? chapterName.trim() 
+      : undefined;
+    
+    // Build context object only if we have a valid chapter name
+  const context = validChapterName
+    ? {
+      subject: subject,
+      level: level,
+      topic: topic,
+        chapterNo: chapterNo,
+      }
+    : undefined;
+    
+    let systemPrompt = getBaseSystemPrompt(validChapterName, context);
+  const modelName = "gpt-4o";
+  
+    // If chapterName is provided, ensure it's emphasized in the final prompt
+    if (chapterName) {
+      systemPrompt = `${systemPrompt}
 
-    if (ragContext) {
-      systemPrompt = addRAGContextToPrompt(systemPrompt, ragContext);
+REMINDER: You are currently helping with the chapter/competence: "${chapterName}". You MUST ONLY answer questions related to this specific chapter.`;
     }
-  }
 
-  // Add chapter reminder if applicable
-  if (chapterName) {
-    systemPrompt = addChapterReminderToPrompt(systemPrompt, chapterName);
-  }
-
-  // Convert messages and prepare model input
+  // Convert messages to CoreMessage format (handles both UIMessage and simple formats)
   const coreMessages = convertMessagesToCore(messages);
-  const openai = createOpenAI({ apiKey });
 
-// Import studentTools dynamically to avoid module resolution issues
+  // Import studentTools dynamically to avoid module resolution issues
   let tools: any = {};
   try {
     const { studentTools } = await import("./utils/tools");
@@ -642,18 +524,18 @@ export default defineEventHandler(async (event) => {
     console.warn("[API /chat] Tools not available:", error);
   }
 
-  // Create Model Input
-  const modelInput = {
-    model: openai("gpt-4o"),
+    // Create Model Input
+    const modelInput = {
+      model: openai(modelName),
     messages: [
       { role: "system", content: systemPrompt },
       ...coreMessages,
     ] as any,
-    stopWhen: stepCountIs(10),
+      stopWhen: stepCountIs(10),
     ...(Object.keys(tools).length > 0 && { tools, maxSteps: 5 }),
-  };
+    };
 
-  // Stream the response
+    // Stream the response
   const result = streamText(modelInput as any);
-  return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse();
 });
