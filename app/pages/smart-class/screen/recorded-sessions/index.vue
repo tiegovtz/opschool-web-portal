@@ -644,11 +644,18 @@ const selectedSubjectName = computed(() => {
       <!-- Filter Section -->
       <div class="filters-section relative z-50">
         <!-- Create Button -->
-        <div v-if="userToken?.type.toLowerCase() === 'teacher'" class="flex justify-end mb-4 px-2">
-          <button @click="onCreate"
-            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2">
-            <i class="mdi mdi-plus"></i>
-            Create
+        <div v-if="userToken?.roles.includes('TeacherAdmin')" class="flex justify-end mb-4 px-2">
+          <button 
+          type="button"
+          @click="onCreate"
+          @keyup.enter="onCreate"
+          @keyup.space.prevent="onCreate"
+          aria-label="Create new class" 
+            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2
+            focus:outline-none
+           focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
+            <i class="mdi mdi-plus" aria-hidden="true"></i>
+           <span>Create</span>
           </button>
         </div>
 

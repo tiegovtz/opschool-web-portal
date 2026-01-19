@@ -57,10 +57,10 @@ export default defineNuxtConfig({
     },
   },
 
-  // devServer: {
-  //   host: "192.168.0.147",
-  //   port: 3000,
-  // },
+  devServer: {
+    // host: "192.168.0.147",
+    port: 3010,
+  },
 
   build: {
     transpile: ["vuetify"],
@@ -81,11 +81,6 @@ export default defineNuxtConfig({
     head: {
       meta: [{ name: "generator", content: "" }],
     },
-  },
-  supabase: {
-    redirect: false,
-    url: process.env.NUXT_SUPABASE_URL,
-    key: process.env.NUXT_SUPABASE_ANON_KEY,
-  },
+  }
 });
 
