@@ -1,45 +1,28 @@
-export interface QuizOption {
-  id: string
-  label: string
-}
-
 export interface VideoInteraction {
-  id: string
-  startTime: number // seconds
-  endTime: number // seconds
-  type: 'quiz' | 'selection'
-}
+  _id: string;
+  videoId?: string;
+  type: "Quiz" | "Selection";
+  startTime: number;
+  endTime: number;
 
-export interface QuizInteraction extends VideoInteraction {
-  type: 'quiz'
-  question: string
-  options: QuizOption[]
-  correctAnswer: string // option id
+  // Quiz fields
+  question?: string;
+  options?: ReadonlyArray<string>;
+  correctAnswer?: string;
+
+  // Selection fields
+  task?: string;
+  items?: ReadonlyArray<{
+    id: string;
+    imageUrl: string;
+    imageAlt: string;
+    correctLabel: string;
+  }>;
+  labels?: ReadonlyArray<string>;
+
+  // Shared feedback
   feedback?: {
-    correct: string
-    incorrect: string
-  }
+    correct: string;
+    incorrect: string;
+  };
 }
-
-export interface SelectionItem {
-  id: string
-  imageUrl: string
-  imageAlt: string
-  correctLabel: string
-}
-
-export interface SelectionInteraction extends VideoInteraction {
-  type: 'selection'
-  task: string
-  items: SelectionItem[]
-  labels: string[] // Available labels to select
-  feedback?: {
-    correct: string
-    incorrect: string
-  }
-}
-
-export type Interaction = QuizInteraction | SelectionInteraction
-
-
-

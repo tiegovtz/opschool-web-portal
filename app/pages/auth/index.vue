@@ -42,8 +42,9 @@ const signIn = async () => {
 
   let isValid = true;
 
-  // Check for empty fields first
-  if (!auth.checkEmailPhoneOrUsername(userSignIn.username.trim())) {
+  // Check for empty fields first - safely handle null/undefined username
+  const username = (userSignIn.username || "").trim();
+  if (!username || !auth.checkEmailPhoneOrUsername(username)) {
     userSignIn.controller.errors.username = messages.error.form.usernameValid;
     isValid = false;
   }
@@ -192,7 +193,8 @@ watch(
   () => userSignIn.username,
   (username) => {
     if (username) {
-      if (auth.checkEmailPhoneOrUsername(username.trim())) {
+      const trimmedUsername = username.trim();
+      if (trimmedUsername && auth.checkEmailPhoneOrUsername(trimmedUsername)) {
         userSignIn.controller.errors.username = "";
       } else {
         userSignIn.controller.errors.username =

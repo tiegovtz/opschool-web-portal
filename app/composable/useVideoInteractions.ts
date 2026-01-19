@@ -1,7 +1,9 @@
-import type { Interaction } from '~/types/interactive-video.interface'
+import type { VideoInteraction } from '~/types/interactive-video.interface'
+import apiDocs from '~/utilities/apiDocs'
 
 export const useVideoInteractions = (videoId: string | Ref<string> | ComputedRef<string>) => {
-  const interactions = ref<Interaction[]>([])
+  const accessToken = useCookie("signInAccessToken");
+  const interactions = ref<VideoInteraction[]>([])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
@@ -16,7 +18,16 @@ export const useVideoInteractions = (videoId: string | Ref<string> | ComputedRef
       isLoading.value = true
       error.value = null
 
-      const data = await $fetch<Interaction[]>(`/api/videos/${id}/interactions`)
+      const data = await $fetch<VideoInteraction[]>(
+        apiDocs.videos.getVideoInteractionsLoad.replace("{id}", id),
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken.value}`,
+          },
+        },
+      );
       interactions.value = Array.isArray(data) ? data : []
     } catch (err: any) {
       console.error('Error loading interactions:', err)
@@ -48,6 +59,13 @@ export const useVideoInteractions = (videoId: string | Ref<string> | ComputedRef
     refresh
   }
 }
+
+
+
+
+
+
+
 
 
 

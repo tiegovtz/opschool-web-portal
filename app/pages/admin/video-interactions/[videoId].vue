@@ -9,10 +9,8 @@
               <h1 class="text-2xl font-bold text-gray-900">Manage Video Interactions</h1>
               <p v-if="videoInfo" class="text-gray-600 mt-1">{{ videoInfo.title || videoInfo.name || 'Video' }}</p>
             </div>
-            <NuxtLink
-              to="/admin/video-interactions"
-              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            >
+            <NuxtLink to="/admin/video-interactions"
+              class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
               ← Back to Videos
             </NuxtLink>
           </div>
@@ -24,55 +22,37 @@
             <!-- Video Player -->
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
               <div class="relative w-full aspect-video bg-black">
-                <InteractiveVideo
-                  v-if="videoSrc && interactions.length >= 0"
-                  ref="interactiveVideoRef"
-                  :video-src="videoSrc"
-                  :interactions="interactions"
-                  @quiz-submit="handleQuizSubmit"
-                  @selection-submit="handleSelectionSubmit"
-                />
+                <InteractiveVideo v-if="videoSrc && interactions.length >= 0" ref="interactiveVideoRef"
+                  :video-src="videoSrc" :interactions="interactions" @quiz-submit="handleQuizSubmit"
+                  @selection-submit="handleSelectionSubmit" />
               </div>
-              
+
               <!-- Interactive Timeline -->
               <div class="p-4 border-t border-gray-200">
                 <div class="mb-2 flex items-center justify-between text-sm text-gray-600">
                   <span>{{ formatTime(currentTime) }}</span>
                   <span>{{ formatTime(videoDuration) }}</span>
                 </div>
-                <div
-                  ref="timelineRef"
-                  class="relative h-12 bg-gray-200 rounded-lg cursor-pointer overflow-hidden"
-                  @click="handleTimelineClick"
-                >
+                <div ref="timelineRef" class="relative h-12 bg-gray-200 rounded-lg cursor-pointer overflow-hidden"
+                  @click="handleTimelineClick">
                   <!-- Progress Bar -->
-                  <div
-                    class="absolute top-0 left-0 h-full bg-primary transition-all duration-100"
-                    :style="{ width: `${(currentTime / videoDuration) * 100}%` }"
-                  />
-                  
+                  <div class="absolute top-0 left-0 h-full bg-primary transition-all duration-100"
+                    :style="{ width: `${(currentTime / videoDuration) * 100}%` }" />
+
                   <!-- Interaction Markers -->
                   <template v-if="videoDuration > 0">
-                    <div
-                      v-for="interaction in interactions"
-                      :key="interaction.id"
+                    <div v-for="interaction in interactions" :key="interaction._id"
                       class="absolute top-0 h-full w-1 z-10 cursor-pointer hover:opacity-80 transition-opacity transform -translate-x-1/2"
-                      :class="getMarkerColor(interaction.type)"
-                      :style="{
+                      :class="getMarkerColor(interaction.type)" :style="{
                         left: `${Math.max(0, Math.min(100, (interaction.startTime / videoDuration) * 100))}%`
-                      }"
-                      @click.stop="editInteraction(interaction)"
-                      :title="getInteractionTooltip(interaction)"
-                    />
+                      }" @click.stop="editInteraction(interaction)" :title="getInteractionTooltip(interaction)" />
                   </template>
-                  
+
                   <!-- Current Time Indicator -->
-                  <div
-                    class="absolute top-0 h-full w-1 bg-white shadow-lg"
-                    :style="{ left: `${(currentTime / videoDuration) * 100}%` }"
-                  />
+                  <div class="absolute top-0 h-full w-1 bg-white shadow-lg"
+                    :style="{ left: `${(currentTime / videoDuration) * 100}%` }" />
                 </div>
-                
+
                 <div class="mt-2 flex items-center justify-center gap-4 text-xs text-gray-500">
                   <div class="flex items-center gap-2">
                     <div class="w-3 h-3 bg-blue-500 rounded"></div>
@@ -87,11 +67,7 @@
             </div>
 
             <!-- Interactions List -->
-            <InteractionsList
-              :interactions="interactions"
-              @edit="editInteraction"
-              @delete="deleteInteraction"
-            />
+            <InteractionsList :interactions="interactions" @edit="editInteraction" @delete="deleteInteraction" />
           </div>
 
           <!-- Sidebar -->
@@ -100,17 +76,12 @@
             <div class="bg-white rounded-lg shadow-lg p-6">
               <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div class="space-y-3">
-                <button
-                  @click="openFormAtCurrentTime"
-                  class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium"
-                >
+                <button @click="openFormAtCurrentTime"
+                  class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium">
                   + Add Interaction at {{ formatTime(currentTime) }}
                 </button>
-                <button
-                  @click="saveAll"
-                  :disabled="saving"
-                  class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50"
-                >
+                <button @click="saveAll" :disabled="saving"
+                  class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50">
                   {{ saving ? 'Saving...' : 'Save All Changes' }}
                 </button>
               </div>
@@ -126,7 +97,9 @@
                 </div>
                 <div>
                   <span class="font-medium text-gray-700">Level:</span>
-                  <span class="ml-2 text-gray-600">{{ videoInfo.educationLevel?.name || videoInfo.educationLevel || 'N/A' }}</span>
+                  <span class="ml-2 text-gray-600">{{ videoInfo.educationLevel?.name || videoInfo.educationLevel ||
+                    'N/A'
+                    }}</span>
                 </div>
                 <div>
                   <span class="font-medium text-gray-700">Type:</span>
@@ -144,23 +117,15 @@
     </div>
 
     <!-- Interaction Form Modal -->
-    <InteractionForm
-      :is-open="showForm"
-      :interaction="editingInteraction"
-      :current-time="formStartTime"
-      @save="handleSaveInteraction"
-      @cancel="closeForm"
-    />
+    <InteractionForm :is-open="showForm" :interaction="editingInteraction" :current-time="formStartTime"
+      @save="handleSaveInteraction" @cancel="closeForm" />
 
     <!-- Success/Error Notifications -->
     <Transition name="notification">
-      <div
-        v-if="notification.show"
-        :class="[
-          'fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50',
-          notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-        ]"
-      >
+      <div v-if="notification.show" :class="[
+        'fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50',
+        notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+      ]">
         <p class="text-white font-medium">{{ notification.message }}</p>
       </div>
     </Transition>
@@ -168,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Interaction, QuizInteraction, SelectionInteraction } from '~/types/interactive-video.interface'
+import type { VideoInteraction } from '~/types/interactive-video.interface'
 import InteractiveVideo from '~/components/interactive/InteractiveVideo.vue'
 import InteractionForm from '~/components/admin/InteractionForm.vue'
 import InteractionsList from '~/components/admin/InteractionsList.vue'
@@ -189,11 +154,11 @@ const videoSrc = ref<string>('')
 const videoInfo = ref<any>(null)
 const videoDuration = ref(0)
 const currentTime = ref(0)
-const interactions = ref<Interaction[]>([])
+const interactions = ref<VideoInteraction[]>([])
 const isLoading = ref(true)
 const saving = ref(false)
 const showForm = ref(false)
-const editingInteraction = ref<Interaction | null>(null)
+const editingInteraction = ref<VideoInteraction | null>(null)
 const formStartTime = ref(0)
 
 const notification = ref({
@@ -205,15 +170,15 @@ const notification = ref({
 const loadVideo = async () => {
   try {
     isLoading.value = true
-    
+
     // Fetch video info
     const response = await $fetch(apiDocs.videos.getPublicVideo, {
       params: { limit: 1000 }
     })
-    
+
     const videos = Array.isArray(response) ? response : (response as any)?.data || []
     const video = videos.find((v: any) => (v._id || v.id) === videoId)
-    
+
     if (video) {
       videoInfo.value = video
       videoSrc.value = `/api/video/${videoId}`
@@ -268,12 +233,12 @@ const onTimeUpdate = () => {
 }
 
 // Handle events from InteractiveVideo component
-const handleQuizSubmit = (interaction: QuizInteraction, answer: string) => {
+const handleQuizSubmit = (interaction: VideoInteraction, answer: string) => {
   console.log('Quiz submitted in admin:', interaction, answer)
   // In admin mode, we don't need to do anything special, just log it
 }
 
-const handleSelectionSubmit = (interaction: SelectionInteraction, answers: Record<string, string>) => {
+const handleSelectionSubmit = (interaction: VideoInteraction, answers: Record<string, string>) => {
   console.log('Selection submitted in admin:', interaction, answers)
   // In admin mode, we don't need to do anything special, just log it
 }
@@ -309,16 +274,16 @@ const stopTimeSync = () => {
 
 const handleTimelineClick = (event: MouseEvent) => {
   if (!timelineRef.value || videoDuration.value === 0) return
-  
+
   const rect = timelineRef.value.getBoundingClientRect()
   const clickX = event.clientX - rect.left
   const percentage = clickX / rect.width
   const time = percentage * videoDuration.value
-  
+
   formStartTime.value = time
   editingInteraction.value = null
   showForm.value = true
-  
+
   // Note: InteractiveVideo manages its own video element, so seeking would need
   // to be done through the component's exposed methods or we'd need to add that functionality
   // For now, the form will open at the clicked time
@@ -330,27 +295,27 @@ const openFormAtCurrentTime = () => {
   showForm.value = true
 }
 
-const editInteraction = (interaction: Interaction) => {
+const editInteraction = (interaction: VideoInteraction) => {
   editingInteraction.value = interaction
   formStartTime.value = interaction.startTime
   showForm.value = true
-  
+
   // Note: InteractiveVideo manages its own video element
   // Seeking would need to be implemented through the component if needed
   // For now, the form will open with the interaction's time
 }
 
-const handleSaveInteraction = async (interaction: Partial<Interaction>) => {
+const handleSaveInteraction = async (interaction: Partial<VideoInteraction>) => {
   try {
     saving.value = true
-    
+
     console.log('Saving interaction:', interaction)
     console.log('Video ID:', videoId)
     console.log('Editing interaction:', editingInteraction.value)
-    
+
     if (editingInteraction.value) {
       // Update existing
-      const response = await $fetch(`/api/videos/${videoId}/interactions/${editingInteraction.value.id}`, {
+      const response = await $fetch(`/api/videos/${videoId}/interactions/${editingInteraction.value._id}`, {
         method: 'PUT',
         body: interaction
       })
@@ -365,7 +330,7 @@ const handleSaveInteraction = async (interaction: Partial<Interaction>) => {
       console.log('Create response:', response)
       showNotification('Interaction created successfully', 'success')
     }
-    
+
     await loadInteractions()
     closeForm()
   } catch (error: any) {
@@ -418,19 +383,19 @@ const formatTime = (seconds: number): string => {
 }
 
 const getMarkerColor = (type: string): string => {
-    const colors: Record<string, string> = {
-      quiz: 'bg-blue-500',
-      selection: 'bg-green-500'
-    }
+  const colors: Record<string, string> = {
+    quiz: 'bg-blue-500',
+    selection: 'bg-green-500'
+  }
   return colors[type] || 'bg-gray-500'
 }
 
-const getInteractionTooltip = (interaction: Interaction): string => {
-  if (interaction.type === 'quiz') {
-      return (interaction as any).question || 'Quiz'
-      } else if (interaction.type === 'selection') {
-        return (interaction as any).task || 'Selection'
-      }
+const getInteractionTooltip = (interaction: VideoInteraction): string => {
+  if (interaction.type === 'Quiz') {
+    return (interaction as any).question || 'Quiz'
+  } else if (interaction.type === 'Selection') {
+    return (interaction as any).task || 'Selection'
+  }
   return interaction.type
 }
 
@@ -479,4 +444,3 @@ useHead({
   transform: translateX(100%);
 }
 </style>
-
