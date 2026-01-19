@@ -1,4 +1,4 @@
-const baseURL = import.meta.env?.VITE_API_BASE_URL ??  "https://apitie.ekima.africa/v1" // define baseURL first
+const baseURL = import.meta.env?.VITE_API_BASE_URL // define baseURL first
 // const baseURL = "https://uncasked-irrevocably-fausto.ngrok-free.dev/v1";
 
 const apiDocs = {
