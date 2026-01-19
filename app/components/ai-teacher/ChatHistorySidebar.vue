@@ -527,12 +527,27 @@
     @click="$emit('close')"
     class="md:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-20 transition-opacity duration-300"
   ></div>
+
+  <!-- Confirmation Modal -->
+  <ConfirmationModal
+    :is-open="showDeleteConfirm"
+    title="Delete Conversation"
+    :message="deleteConfirmMessage"
+    confirm-text="Delete"
+    cancel-text="Cancel"
+    variant="danger"
+    icon="heroicons:trash"
+    @confirm="confirmDelete"
+    @cancel="cancelDelete"
+    @close="showDeleteConfirm = false"
+  />
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch, nextTick, onMounted, onUnmounted } from "vue";
 import { useChatStore } from "~/stores/chatStore";
 import type { ChatSession } from "~/types/chat.interface";
+import ConfirmationModal from "./ConfirmationModal.vue";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -552,6 +567,11 @@ const sessions = computed(() => chatStore.sessions);
 const searchQuery = ref("");
 const sessionsContainer = ref<HTMLElement | null>(null);
 const activeSessionRef = ref<HTMLElement | null>(null);
+
+// Delete confirmation state
+const showDeleteConfirm = ref(false);
+const deleteConfirmMessage = ref("");
+const pendingDeleteSessionId = ref<string | null>(null);
 
 // Filter sessions based on search query
 const filteredSessions = computed(() => {
@@ -705,21 +725,24 @@ const handleSelectSession = async (sessionId: string) => {
   // Keep sidebar open when selecting different session
 };
 
-// Handle delete session with better UX
-const handleDeleteSession = async (sessionId: string) => {
+// Handle delete session - show confirmation modal
+const handleDeleteSession = (sessionId: string) => {
   const session = sessions.value.find((s) => s.id === sessionId);
   const sessionTitle = session ? getSessionTitle(session) : "this conversation";
+  
+  pendingDeleteSessionId.value = sessionId;
+  deleteConfirmMessage.value = `Are you sure you want to delete <strong>"${sessionTitle}"</strong>?<br><br>This action cannot be undone.`;
+  showDeleteConfirm.value = true;
+};
 
-  if (
-    !confirm(
-      `Are you sure you want to delete "${sessionTitle}"?\n\nThis action cannot be undone.`
-    )
-  ) {
-    return;
-  }
+// Confirm delete action
+const confirmDelete = async () => {
+  if (!pendingDeleteSessionId.value) return;
 
   try {
+    const sessionId = pendingDeleteSessionId.value;
     const wasActive = chatStore.activeSessionId === sessionId;
+    
     await chatStore.deleteSession(sessionId);
     
     // If deleted session was active, create a new one
@@ -734,8 +757,24 @@ const handleDeleteSession = async (sessionId: string) => {
     }
   } catch (error) {
     console.error("[ChatHistory] Error deleting session:", error);
-    alert("Failed to delete conversation. Please try again.");
+    // Show error message (could be enhanced with a toast notification)
+    deleteConfirmMessage.value = "Failed to delete conversation. Please try again.";
+    // Keep modal open to show error, then close after a delay
+    setTimeout(() => {
+      showDeleteConfirm.value = false;
+      pendingDeleteSessionId.value = null;
+    }, 2000);
+  } finally {
+    if (pendingDeleteSessionId.value) {
+      pendingDeleteSessionId.value = null;
+    }
   }
+};
+
+// Cancel delete action
+const cancelDelete = () => {
+  pendingDeleteSessionId.value = null;
+  deleteConfirmMessage.value = "";
 };
 
 // Keyboard navigation
