@@ -100,6 +100,10 @@ const apiDocs = {
     getVideoById: `${baseURL}/videos/{id}`,
     getPublicVideo: `${baseURL}/public-videos`,
     getPublicVideoBySubjectId: `${baseURL}/public-videos/by-subject/{subjectId}`,
+
+    // Interactions
+    getVideoInteractions: `${baseURL}/video-interactions/{id}`,
+    getVideoInteractionsLoad: `${baseURL}/video-interactions/load-by-video/{id}`,
   },
 
   //  PROGRESS TRACKING API
@@ -149,9 +153,10 @@ const apiDocs = {
 
   // School
   school: {
-    get:`${baseURL}/schools`,
+    get: `${baseURL}/schools`,
     getSchoolRegions: `${baseURL}/schools/regions`,
-    getSchoolDistricts: (region: string): string => `${baseURL}/schools/districts/${region}`,
+    getSchoolDistricts: (region: string): string =>
+      `${baseURL}/schools/districts/${region}`,
     // getSchools: `${baseURL}/schools`,
     // getSchoolId: `${baseURL}/schools/:id`,
     // searchSchools: `${baseURL}/schools/search`,
