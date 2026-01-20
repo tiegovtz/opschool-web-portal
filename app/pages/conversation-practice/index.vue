@@ -1,14 +1,38 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+  <div
+    :class="isEmbedded
+      ? 'relative w-full h-full p-4'
+      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'"
+    @click.self="!isEmbedded && handleOverlayClick"
+  >
+    <div
+      class="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-8"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="conversation-practice-title"
+      @click.stop
+    >
+      <button
+        v-if="!isEmbedded"
+        type="button"
+        class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 hover:text-gray-900"
+        aria-label="Close conversation practice"
+        @click="closeModal"
+      >
+        <span class="text-xl leading-none">&times;</span>
+      </button>
       <div class="max-w-4xl mx-auto">
-        <h1 class="text-4xl font-bold text-gray-800 mb-2 text-center">
+        <h1
+          id="conversation-practice-title"
+          class="text-4xl font-bold text-gray-800 mb-2 text-center"
+        >
           Conversation Practice
         </h1>
         <p class="text-gray-600 text-center mb-8">
           Practice conversations with AI using speech-to-text and text-to-speech
         </p>
 
-      <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
+      <div class="bg-white rounded-lg p-6 space-y-6">
         <!-- Voice Settings -->
         <div class="flex flex-col gap-4 mb-4">
           <div class="flex items-center gap-4">
@@ -38,17 +62,19 @@
           </div>
         </div>
 
-        <!-- Conversation Input (Temporary - will be replaced with API) -->
+        <!-- Conversation Preview -->
         <div v-if="!conversationStarted">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Conversation Context (Temporary - will come from API)
-          </label>
-          <textarea
-            v-model="conversationInput"
-            placeholder="Enter conversation pieces separated by newlines. Example:&#10;What's your name?&#10;Nice to meet you, I am Grace.&#10;How are you?&#10;I am also well."
-            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 min-h-[200px]"
-            rows="6"
-          ></textarea>
+          <div class="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+            <p class="font-medium text-gray-800">Conversation preview</p>
+            <p v-if="previewLoading" class="text-gray-500">Loading preview...</p>
+            <p v-else-if="previewError" class="text-red-600">{{ previewError }}</p>
+            <ul v-else-if="previewPieces.length" class="mt-2 list-disc pl-5 space-y-1">
+              <li v-for="(piece, idx) in previewPieces.slice(0, 5)" :key="idx">
+                {{ piece }}
+              </li>
+            </ul>
+            <p v-else class="text-gray-500">Preview not available.</p>
+          </div>
           <div class="mt-4 flex gap-4 justify-center">
             <button
               @click="inputMode = 'speech'; startConversation()"
@@ -218,6 +244,7 @@
       :volume="1.0"
     ></audio>
   </div>
+</div>
 </template>
 
 <script setup>
@@ -226,8 +253,46 @@ import LoadingIndicator from '@/components/loading/loadingIndicator.vue'
 
 // Page metadata
 definePageMeta({
-  layout: 'home-layout',
+  layout: false,
 })
+
+const router = useRouter()
+const route = useRoute()
+const originalBodyOverflow = ref('')
+const allowOverlayClose = ref(false)
+const returnTo = ref('')
+
+const closeModal = () => {
+  if (
+    typeof window !== 'undefined' &&
+    window.parent &&
+    window.parent !== window &&
+    typeof window.parent.closeConversationPractice === 'function'
+  ) {
+    window.parent.closeConversationPractice()
+    return
+  }
+  if (returnTo.value) {
+    window.location.href = returnTo.value
+    return
+  }
+  if (typeof window !== 'undefined' && window.history.length > 1) {
+    router.back()
+    return
+  }
+  router.push('/')
+}
+
+const handleOverlayClick = () => {
+  if (!allowOverlayClose.value) return
+  closeModal()
+}
+
+const handleKeydown = (event) => {
+  if (event.key === 'Escape') {
+    closeModal()
+  }
+}
 
 // ============================================================================
 // Compact Conversation State (NEW - replaces full history tracking)
@@ -271,10 +336,13 @@ const showDebugState = ref(false)
 // ============================================================================
 const voiceType = ref('female')
 const playbackSpeed = ref(1.0)
-const conversationInput = ref('')
+const conversationMeta = ref({ chapterId: '', name: '' })
 const conversationStarted = ref(false)
 const conversationCompleteMessage = ref('')
 const conversationPieces = ref([])
+const previewPieces = ref([])
+const previewLoading = ref(false)
+const previewError = ref('')
 const currentIndex = ref(0)
 const isPlaying = ref(false)
 const isRecording = ref(false)
@@ -312,7 +380,41 @@ const isConversationComplete = computed(() => !!conversationCompleteMessage.valu
 // ============================================================================
 // Lifecycle Hooks
 // ============================================================================
+const isEmbedded = computed(() => String(route.query.embed || '') === '1')
+
 onMounted(() => {
+  if (typeof document !== 'undefined') {
+    if (!isEmbedded.value) {
+      originalBodyOverflow.value = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+    }
+    returnTo.value = String(route.query.returnTo || '').trim() || document.referrer || ''
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', handleKeydown)
+    if (!isEmbedded.value) {
+      // Avoid immediately closing the modal on the opening click.
+      setTimeout(() => {
+        allowOverlayClose.value = true
+      }, 0)
+    }
+  }
+  const initialChapterId = String(route.query.chapterId || '').trim()
+  const mode = String(route.query.mode || '').trim().toLowerCase()
+  if (mode === 'text' || mode === 'speech') {
+    inputMode.value = mode
+  }
+  if (initialChapterId) {
+    conversationMeta.value = {
+      ...conversationMeta.value,
+      chapterId: initialChapterId,
+    }
+  }
+  if (initialChapterId) {
+    fetchPreviewPieces()
+  } else {
+    previewError.value = 'Chapter ID not configured.'
+  }
   // Check for debug mode
   if (typeof window !== 'undefined') {
     const urlParams = new URLSearchParams(window.location.search)
@@ -349,6 +451,12 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', handleKeydown)
+  }
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = originalBodyOverflow.value
+  }
   if (recognition) {
     recognition.stop()
   }
@@ -387,19 +495,49 @@ const detectSpeakerGenderFromAllPieces = async () => {
   }
 }
 
-const startConversation = () => {
-  if (!conversationInput.value.trim()) {
-    showStatus('error', 'Please enter conversation context')
-    return
+const loadConversationPieces = async () => {
+  try {
+    const chapterId = String(route.query.chapterId || '').trim()
+    const identifier = String(route.query.identifier || '').trim()
+    const query = {}
+    if (chapterId) query.chapterId = chapterId
+    if (identifier) query.identifier = identifier
+    const response = await $fetch('/api/conversation/engage', { query })
+    const pieces = Array.isArray(response?.pieces) ? response.pieces : []
+    conversationMeta.value = {
+      chapterId: response?.chapterId || '',
+      name: response?.name || '',
+    }
+    return pieces
+  } catch (error) {
+    console.error('Failed to load conversation:', error)
+    showStatus('error', 'Failed to load conversation from backend')
+    return []
   }
+}
 
-  const pieces = conversationInput.value
-    .split('\n')
-    .map(p => p.trim())
-    .filter(p => p.length > 0)
+const fetchPreviewPieces = async () => {
+  previewLoading.value = true
+  previewError.value = ''
+  try {
+    const pieces = await loadConversationPieces()
+    previewPieces.value = pieces
+    if (!pieces.length) {
+      previewError.value = 'No preview available.'
+    }
+  } catch (error) {
+    previewError.value = 'Failed to load preview.'
+  } finally {
+    previewLoading.value = false
+  }
+}
 
-  if (pieces.length === 0) {
-    showStatus('error', 'Please enter at least one conversation piece')
+const startConversation = async () => {
+  const pieces = previewPieces.value.length
+    ? previewPieces.value
+    : await loadConversationPieces()
+  if (!pieces.length) {
+    showStatus('error', 'No conversation pieces found')
     return
   }
 
@@ -720,7 +858,6 @@ const resetConversation = () => {
   userAnswer.value = ''
   textAnswer.value = ''
   statusMessage.value = null
-  conversationInput.value = ''
   conversationCompleteMessage.value = ''
   isPlaying.value = false
   isRecording.value = false
