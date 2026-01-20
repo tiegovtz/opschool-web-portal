@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick, toRef } from 'vue'
 import { useInteractiveVideo } from '~/composable/useInteractiveVideo'
 import VideoTimeline from '~/components/interactive/VideoTimeline.vue'
 import QuizModal from '~/components/interactive/QuizModal.vue'
@@ -20,7 +20,7 @@ const emit = defineEmits<{
 
 const videoRef = ref<HTMLVideoElement | null>(null)
 const containerRef = ref<HTMLDivElement | null>(null)
-const videoState = useInteractiveVideo(props.interactions)
+const videoState = useInteractiveVideo(toRef(props, 'interactions'))
 const activeQuiz = ref<VideoInteraction | null>(null)
 const isQuizModalOpen = ref(false)
 const activeSelection = ref<VideoInteraction | null>(null)
@@ -655,4 +655,3 @@ onUnmounted(() => {
     </div>
   </ClientOnly>
 </template>
-

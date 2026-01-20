@@ -42,8 +42,9 @@ const signIn = async () => {
 
   let isValid = true;
 
-  // Check for empty fields first
-  if (!auth.checkEmailPhoneOrUsername(userSignIn.username.trim())) {
+  // Check for empty fields first - safely handle null/undefined username
+  const username = (userSignIn.username || "").trim();
+  if (!username || !auth.checkEmailPhoneOrUsername(username)) {
     userSignIn.controller.errors.username = messages.error.form.usernameValid;
     isValid = false;
   }
@@ -192,7 +193,8 @@ watch(
   () => userSignIn.username,
   (username) => {
     if (username) {
-      if (auth.checkEmailPhoneOrUsername(username.trim())) {
+      const trimmedUsername = username.trim();
+      if (trimmedUsername && auth.checkEmailPhoneOrUsername(trimmedUsername)) {
         userSignIn.controller.errors.username = "";
       } else {
         userSignIn.controller.errors.username =
@@ -219,7 +221,7 @@ watch(
 <template>
   <section class="flex items-center justify-center min-h-screen md:bg-gradient-to-b" aria-labelledby="signin-paging">
     <!-- Message Component (announce feedback changes) -->
-    <MessageComponent aria-live="polite" role="status" :message="userSignIn.controller.feedback"
+    <MessageComponent aria-live="assertive" role="status" :message="userSignIn.controller.feedback"
       :position="!!userSignIn.controller.feedback" :event-type="userSignIn.controller.isSucces ? 'success' : 'error'"
       :icon="userSignIn.controller.isSucces ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
@@ -263,7 +265,7 @@ watch(
           </div>
 
           <!-- Username error message -->
-          <small aria-live="polite" aria-atomic id="username-error" v-if="userSignIn.controller.errors.username" :class="[
+          <small aria-live="assertive" aria-atomic id="username-error" v-if="userSignIn.controller.errors.username" :class="[
             'w-full text-red-500 text-smallest',
             { 'mt-1': userSignIn.type.trim().toLowerCase() === 'student' },
             {
@@ -303,7 +305,7 @@ watch(
           </div>
 
           <!-- Password error message -->
-          <small aria-live="polite" aria-atomic id="password-error" v-if="userSignIn.controller.errors.password"
+          <small aria-live="assertive" aria-atomic id="password-error" v-if="userSignIn.controller.errors.password"
             class="w-full text-red-500 text-smallest" role="alert">
             {{ userSignIn.controller.errors.password }}
           </small>
@@ -331,7 +333,7 @@ watch(
           <span v-else>Signing in, please wait</span>
         </button>
 
-        <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        <p class="sr-only" role="status" aria-live="assertive" aria-atomic="true">
           {{ isDisable ? 'Signing in, please wait...' : '' }}
         </p>
 
@@ -346,7 +348,7 @@ watch(
       </form>
 
       <!-- Too many attempts state -->
-      <div v-else class="flex flex-col items-center justify-center w-full gap-2" aria-live="polite"
+      <div v-else class="flex flex-col items-center justify-center w-full gap-2" aria-live="assertive" role="alert"
         aria-label="sign in error">
         <div class="py-3 text-center">
           You have attempted to sign in

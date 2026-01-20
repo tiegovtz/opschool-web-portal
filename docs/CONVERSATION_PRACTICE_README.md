@@ -30,6 +30,12 @@ TTS_SPEED=0.75
 TTS_DEFAULT_VOICE_FEMALE=jenny_dioco
 TTS_DEFAULT_VOICE_MALE=northern_english_male
 ```
+If you installed Piper inside a virtual environment, activate it and set `PIPER_PYTHON` to that venv Python:
+```bash
+source /path/to/venv/bin/activate
+which python
+```
+Use the printed path as `PIPER_PYTHON`, then restart the dev server.
 
 ### 3) Install and prepare Piper
 - Install the Python package:

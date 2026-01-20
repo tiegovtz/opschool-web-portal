@@ -7,18 +7,18 @@ export interface VideoInteraction {
 
   // Quiz fields
   question?: string;
-  options?: string[];
+  options?: ReadonlyArray<string>;
   correctAnswer?: string;
 
   // Selection fields
   task?: string;
-  items?: {
+  items?: ReadonlyArray<{
     id: string;
     imageUrl: string;
     imageAlt: string;
     correctLabel: string;
-  }[];
-  labels?: string[];
+  }>;
+  labels?: ReadonlyArray<string>;
 
   // Shared feedback
   feedback?: {
