@@ -323,7 +323,7 @@ watch(isHistoryOpen, (newValue) => {
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="flex h-[calc(100vh-200px)] min-h-[calc(100vh-200px)]">
+    <div class="flex h-[calc(100vh-120px)] min-h-[calc(100vh-120px)]">
       <!-- Chat History Sidebar -->
       <AiTeacherChatHistorySidebar
         :is-open="isHistoryOpen"
