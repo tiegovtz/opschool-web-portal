@@ -328,7 +328,9 @@ const getChapter = async (chapterId:string) => {
 
       await Promise.allSettled(tasks);
       announcement.value = `content of ${chapters.list?.find(c => c._id === chapterId)?.name} loaded successfully you may continue reading`;
-      moveFocus('main-container');
+      await nextTick(()=>{
+        moveFocus('main-container');
+      });
     }
   } catch (error) {
     chapters.notesStatus = "error";
