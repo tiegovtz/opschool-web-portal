@@ -1,0 +1,114 @@
+{
+  "syllabus_metadata": {
+    "title": "Geography Syllabus for Ordinary Secondary Education",
+    "level": "Form I",
+    "subject": "Geography"
+  },
+  "book_metadata": {
+    "title": "Geography for Secondary Schools",
+    "level": "Student's Book Form One"
+  },
+  "competences": [
+    {
+      "main_competence": "1.0 Demonstrate mastery of the structure of the Earth",
+      "specific_competence": "1.1 Demonstrate an understanding of the origin and the structure of the Earth and Earth systems",
+      "number_of_periods": 89,
+      "learning_activities": [
+        {
+          "activity": "(a) Explain the concept and scope of Geography (branches, importance and relationship with other disciplines)",
+          "related_chapters": [1],
+          "teaching_learning_methods": [
+            "Brainstorming: In manageable groups students brainstorm on the meaning, branches and importance of Geography, and relationship between Geography and other disciplines",
+            "Field Observation: Guide students to observe landforms, vegetations and human activities to support the concept of geography and summarise their importance in relationship to other disciplines"
+          ],
+          "assessment_criteria": "Basic concepts of Geography are clearly explained",
+          "suggested_resources": "Relevant books, charts, and ICT simulation tools on the concept of Geography"
+        },
+        {
+          "activity": "(b) Describe the Earth (origin, shape, size, position and movements of the earth in the solar system, and parallels and meridians)",
+          "related_chapters": [2, 3],
+          "teaching_learning_methods": [
+            "Brainstorming: Guide students to brainstorm and present about the origin, shape, size, position and movements of the earth in the solar system, and parallels and meridians",
+            "Field Observation: Guide students to observe the Earth's surface and identify some of the components of the solar system",
+            "Project work: Group students to design a model on the components of the solar system (size, shape, distance, position), and then present in class"
+          ],
+          "assessment_criteria": "The Earth is described correctly",
+          "suggested_resources": "Relevant books, globe, picture of solar system, relevant ICT simulation tools and models on the planet earth"
+        }
+      ]
+    },
+    {
+      "main_competence": "1.0 Demonstrate mastery of the structure of the Earth",
+      "specific_competence": "1.2 Demonstrate an understanding of the major features of the Earth surface",
+      "number_of_periods": 76,
+      "learning_activities": [
+        {
+          "activity": "(a) Describe major features of the Earth's surface (continents, oceans, major relief features, large inland water bodies and vegetation zones)",
+          "related_chapters": [4],
+          "teaching_learning_methods": [
+            "Questions & Answers: Guide students to mention landforms available in their surroundings",
+            "Field observation: Guide students to visit the nearby landforms, vegetation and water bodies available in their communities to examine the formation, distribution and their importance to the communities",
+            "Group Discussion: Guide students to discuss the size and distribution of continents, then present in the class"
+          ],
+          "assessment_criteria": "The major features of the Earth are correctly described",
+          "suggested_resources": "Environment, relevant books, relief maps, globe/models, and relevant ICT simulation tools"
+        }
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "chapter_number": 1,
+      "title": "Introduction to Geography",
+      "start_page": 1,
+      "sections": [
+        { "title": "Concept of Geography", "page": 1 },
+        { "title": "Branches of Geography", "page": 2 },
+        { "title": "Importance of studying Geography", "page": 3 },
+        { "title": "The relationship between Geography and other disciplines", "page": 4 },
+        { "title": "Revision exercise 1", "page": 6 }
+      ]
+    },
+    {
+      "chapter_number": 2,
+      "title": "The planet Earth",
+      "start_page": 10,
+      "sections": [
+        { "title": "Origin of the Earth", "page": 10 },
+        { "title": "Position of the Earth in the Solar system", "page": 13 },
+        { "title": "Shape and size of the Earth", "page": 15 },
+        { "title": "Earth's curved horizon", "page": 18 },
+        { "title": "Revision exercise 2", "page": 19 }
+      ]
+    },
+    {
+      "chapter_number": 3,
+      "title": "Movements of the Earth in the Solar system",
+      "start_page": 20,
+      "sections": [
+        { "title": "Rotation of the Earth", "page": 20 },
+        { "title": "Evidences of the earth's rotation", "page": 21 },
+        { "title": "The effects of rotation", "page": 22 },
+        { "title": "Revolution of the Earth", "page": 25 },
+        { "title": "Parallels and meridians", "page": 33 },
+        { "title": "Revision exercise 3", "page": 41 }
+      ]
+    },
+    {
+      "chapter_number": 4,
+      "title": "Major features of the earth's surface",
+      "start_page": 42,
+      "sections": [
+        { "title": "Earth's surface", "page": 42 },
+        { "title": "Continents and oceans of the world", "page": 42 },
+        { "title": "Interaction between continental landmasses and water bodies", "page": 45 },
+        { "title": "Major relief features of the continents", "page": 49 },
+        { "title": "Water bodies on the earth's surface", "page": 53 },
+        { "title": "The ocean floor and its features", "page": 56 },
+        { "title": "Vegetation", "page": 58 },
+        { "title": "Revision exercise 4", "page": 68 }
+      ]
+    }
+  ]
+}
+

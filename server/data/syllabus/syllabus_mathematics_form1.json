@@ -1,0 +1,287 @@
+{
+  "syllabus_metadata": {
+    "title": "Mathematics Syllabus for Ordinary Secondary Education Form I-IV",
+    "level": "Form I",
+    "subject": "Mathematics"
+  },
+  "book_metadata": {
+    "title": "Mathematics for Secondary Schools",
+    "level": "Student's Book Form One"
+  },
+  "competences": [
+    {
+      "main_competence": "1.0 Demonstrate mastery of mathematical language",
+      "specific_competence": "1.1 Use numerical skills in different contexts",
+      "number_of_periods": 30,
+      "learning_activities": [
+        {
+          "activity": "(a) Explain the basic concepts of Mathematics (Meaning of mathematics, branches of mathematics, relationship between mathematics and other subjects, importance of mathematics)",
+          "related_chapters": [1],
+          "teaching_learning_methods": [
+            "Group discussion: Guide students to discuss meaning of mathematics and branches of mathematics",
+            "Brainstorming: Guide students to brainstorm on importance of mathematics in daily life",
+            "Jigsaw: Guide students to explain the relationship of mathematics with other disciplines"
+          ],
+          "assessment_criteria": "The basic concept of mathematics are clearly explained",
+          "suggested_resources": "Charts of relationships between mathematics and other fields, real life objects, Math Games and Apps, Educational channels"
+        },
+        {
+          "activity": "(b) Explain the concept of rational, irrational, and real numbers",
+          "related_chapters": [2],
+          "teaching_learning_methods": [
+            "Observation: Provide students with visual aids like bars/strips or circles and guide them to cut the aids in small equal parts. Relate their responses to the meaning of fractions",
+            "Problem solving: Organise students in manageable groups and assign each group word problems that require students to apply their knowledge of fractions, decimals and percentages to real word scenarios. Guide them to present the results and relate their findings with rational numbers",
+            "Exploration: Guide students to relate real numbers to real-life situations, for example, money and measurement"
+          ],
+          "assessment_criteria": "Rational, irrational, and real numbers are well explained",
+          "suggested_resources": "Calculator, Charts of real numbers, ruler, tape measure, graph papers, number line chart"
+        },
+        {
+          "activity": "(c) Convert repeating/recurring decimals into fractions and vice versa; Represent rational numbers on a number line",
+          "related_chapters": [2],
+          "teaching_learning_methods": [
+            "Problem solving: Provide students with examples of decimals and guide them to identify repeating/recurring decimals, and convert repeating/recurring decimals into fractions and vice versa and share with the rest of the class through presentations",
+            "Group discussion: Organise students in manageable groups to draw number lines. Guide them to discuss steps of representing rational numbers on a number line and share their results with the rest of the class through presentations",
+            "Problem solving: Guide students to suggest real-life problems involving rational numbers. Ask them to locate points on the number line and perform calculations based on the given scenario"
+          ],
+          "assessment_criteria": "Repeating/recurring decimals are correctly converted into fractions; Rational numbers are well represented on the number line",
+          "suggested_resources": "Calculator, Charts of real numbers, ruler, tape measure, graph papers"
+        },
+        {
+          "activity": "(d) Explain the concept of inequalities and absolute values of real numbers",
+          "related_chapters": [2],
+          "teaching_learning_methods": [
+            "Intuitive approach: Guide students visual aids such as number line charts and graphing tools to explore the basic concepts of inequalities and absolute values of real numbers"
+          ],
+          "assessment_criteria": "Absolute values and inequalities in real numbers are properly determined",
+          "suggested_resources": "Number line charts, graphing tools"
+        }
+      ]
+    },
+    {
+      "main_competence": "1.0 Demonstrate mastery of mathematical language",
+      "specific_competence": "1.2 Use ratios and proportions in daily life",
+      "number_of_periods": 36,
+      "learning_activities": [
+        {
+          "activity": "(a) Describe the importance of numbers in real-life situations; Explain the concept of ratios and proportions",
+          "related_chapters": [4],
+          "teaching_learning_methods": [
+            "Brainstorming: Guide the students to describe the importance of numbers and apply numbers in real-life situations",
+            "Group discussion: Organise students in manageable groups to discuss and come up with real-life scenarios involving the concept of ratios and proportions. Share with the rest of the class through presentations",
+            "Jigsaw: Guide students to explore how other subjects relate to concept of ratios and proportions"
+          ],
+          "assessment_criteria": "Importance of numbers are well described; Ratios and proportions are clearly explained",
+          "suggested_resources": "Money, charts of real-life scenarios, interest calculators, and games, real objects, and bank statements"
+        },
+        {
+          "activity": "(b) Solve ratio and proportion problems",
+          "related_chapters": [4],
+          "teaching_learning_methods": [
+            "Think-ink-pair-share: Guide students to solve ratio and proportion problems and share the results with classmates"
+          ],
+          "assessment_criteria": "Problems on ratios and proportions are correctly solved",
+          "suggested_resources": "Calculator, Charts of real numbers, ruler, tape measure, graph papers, number line chart"
+        }
+      ]
+    },
+    {
+      "main_competence": "2.0 Demonstrate mastery of basic concepts in geometry and algebra",
+      "specific_competence": "2.1 Use geometry, approximations, relations and functions in various contexts",
+      "number_of_periods": 34,
+      "learning_activities": [
+        {
+          "activity": "(a) Explain the concept of approximations (rounding off, significant figures, and decimal places)",
+          "related_chapters": [3],
+          "teaching_learning_methods": [
+            "Brainstorming: In manageable groups guide Students to explore the concept of approximations and share their findings with other groups",
+            "Think-ink-pair-share: Guide students to pair up to discuss their ideas, thereafter, some of the pairs share their ideas with the whole class"
+          ],
+          "assessment_criteria": "Approximations are clearly explained",
+          "suggested_resources": "Charts of a number line, estimation jars, estimation games and applications"
+        },
+        {
+          "activity": "(b) Round off numbers and estimate values of expressions; (c) Approximate numbers to the required significant figures and decimal places",
+          "related_chapters": [3],
+          "teaching_learning_methods": [
+            "Group discussion: In manageable groups, guide students to round off numbers and estimate values of expressions and share their findings",
+            "Jigsaw: Guide students to use real-life examples to approximate numbers to the required significant figures and decimal places",
+            "Problem solving: Assess the accuracy of answers provided by students when approximating numbers and provide them with feedback"
+          ],
+          "assessment_criteria": "Numbers are rounded off and values of expressions are correctly estimated; Numbers are approximated to required significant figures and decimal places correctly",
+          "suggested_resources": "Charts of a number line, estimation jars, estimation games and applications"
+        },
+        {
+          "activity": "(d) Use approximations in computations and measurements of quantities in various contexts",
+          "related_chapters": [3],
+          "teaching_learning_methods": [
+            "Jigsaw: Organise students in manageable groups to discover the use of approximations in computations and measurements of quantities in various contexts"
+          ],
+          "assessment_criteria": "Approximations are correctly applied in computations and measurements",
+          "suggested_resources": "Beam balance, mathematical software such as MATLAB, and GeoGebra, real objects"
+        }
+      ]
+    },
+    {
+      "main_competence": "2.0 Demonstrate mastery of basic concepts in geometry and algebra",
+      "specific_competence": "2.2 Use algebra and matrices in problem solving",
+      "number_of_periods": 45,
+      "learning_activities": [
+        {
+          "activity": "(a) Explore the basic tenets of algebra (algebraic expressions and equations, linear simultaneous equations of two unknowns, inequalities in one unknown)",
+          "related_chapters": [5],
+          "teaching_learning_methods": [
+            "Group discussion: Organize students in manageable groups, guide them to discuss algebraic expressions and equations",
+            "Visual representations: Provide learners with visual aids such as diagrams, charts, and graphs to illustrate the graphs of linear equations"
+          ],
+          "assessment_criteria": "The basic tenets of algebra are correctly explored",
+          "suggested_resources": "Beam balance, mathematical software such as MATLAB, and GeoGebra, real objects, Algebra animations"
+        },
+        {
+          "activity": "(b) Use algebraic expressions to model situations (word problems into algebraic expressions and equations)",
+          "related_chapters": [5],
+          "teaching_learning_methods": [
+            "Problem solving: Incorporate word problems that require students to translate verbal descriptions into algebraic expressions and equations. Guide them to identify key words that indicate mathematical operations"
+          ],
+          "assessment_criteria": "Algebraic expressions are applied to model situations correctly",
+          "suggested_resources": "Beam balance, mathematical software such as MATLAB, and GeoGebra, real objects, Algebra animations"
+        },
+        {
+          "activity": "(c) Solve simultaneous linear equations using substitution and elimination methods; Solve inequalities in one unknown",
+          "related_chapters": [5],
+          "teaching_learning_methods": [
+            "Think-ink-pair-share: Guide students in pair to solve simultaneous equations using substitution and elimination methods. Thereafter, allow some of the pairs to share their results with the whole class",
+            "Group discussion: In manageable groups, guide the students to solve inequalities in one unknown and present results for common understanding"
+          ],
+          "assessment_criteria": "Simultaneous linear equations are solved correctly; Inequalities are solved properly",
+          "suggested_resources": "Number line chart, graphing calculator, real objects"
+        }
+      ]
+    },
+    {
+      "main_competence": "3.0 Demonstrate mastery of basic concepts in coordinate geometry, trigonometry, circles, vectors, probability and statistics",
+      "specific_competence": "3.1 Use basic coordinate geometry, trigonometry and vectors skills in daily life",
+      "number_of_periods": 30,
+      "learning_activities": [
+        {
+          "activity": "(a) Explore the basic tenets of coordinate geometry (gradient and equations of a straight line, graphs of linear equations)",
+          "related_chapters": [6],
+          "teaching_learning_methods": [
+            "Collaborative learning: Guide students to use visual aids, such as graphs and coordinate planes to establish the relationship between coordinates and geometrical shapes"
+          ],
+          "assessment_criteria": "Basic tenets of coordinate geometry are explored",
+          "suggested_resources": "Mathematical software such as MATLAB, and GeoGebra, Maple, Mathematica, graph papers"
+        },
+        {
+          "activity": "(b) Find the gradient/ slope of a line",
+          "related_chapters": [6],
+          "teaching_learning_methods": [
+            "Problem solving: In manageable groups, guide the students to determine the slope of a given line"
+          ],
+          "assessment_criteria": "Gradient of line is found properly",
+          "suggested_resources": "Mathematical software, graph papers"
+        },
+        {
+          "activity": "(c) Determine the equation of a straight line and draw its graph",
+          "related_chapters": [6],
+          "teaching_learning_methods": [
+            "Visual representation: Utilize visual aids like diagrams and charts to illustrate the concept of a straight line visually. Provide examples of different types of straight lines and their corresponding equations and draw their graphs"
+          ],
+          "assessment_criteria": "Equation of straight line is determined and its graph is properly drawn",
+          "suggested_resources": "Mathematical software, graph papers"
+        },
+        {
+          "activity": "(d) Solve linear simultaneous equations graphically",
+          "related_chapters": [6],
+          "teaching_learning_methods": [
+            "Visual representation: Guide students to use visual aids such as a coordinate plane, graph paper, or interactive whiteboard to plot points, draw lines, and interpret the graph",
+            "Group discussion: In manageable groups, guide the students to solve linear simultaneous equations graphically"
+          ],
+          "assessment_criteria": "Simultaneous equations are correctly solved graphically",
+          "suggested_resources": "Mathematical software, graph papers"
+        },
+        {
+          "activity": "(e) Use mathematical software to solve and draw graphs of simultaneous equations",
+          "related_chapters": [6],
+          "teaching_learning_methods": [
+            "Use of technology: Guide students to use mathematical software such as Excel, GeoGebra, Mathematica, MATLAB to solve and draw graphs of simultaneous equations",
+            "Problem solving: In manageable groups, provide students with plenty examples and exercise to solve and draw graphs of simultaneous equations using mathematical software"
+          ],
+          "assessment_criteria": "Simultaneous equations are solved and drawn correctly",
+          "suggested_resources": "Excel, GeoGebra, Mathematica, MATLAB"
+        }
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "chapter_number": 1,
+      "title": "Concept of Mathematics",
+      "start_page": 1,
+      "sections": [
+        { "title": "Meaning of Mathematics", "page": 1 },
+        { "title": "Branches of Mathematics", "page": 1 },
+        { "title": "Relationship between Mathematics and other subjects", "page": 2 },
+        { "title": "Importance of Mathematics", "page": 5 }
+      ]
+    },
+    {
+      "chapter_number": 2,
+      "title": "Numbers",
+      "start_page": 7,
+      "sections": [
+        { "title": "Concept of numbers", "page": 7 },
+        { "title": "Rational numbers", "page": 7 },
+        { "title": "Irrational numbers", "page": 20 },
+        { "title": "Real numbers", "page": 22 },
+        { "title": "Inequalities in real numbers", "page": 24 },
+        { "title": "Absolute value of a real number", "page": 33 }
+      ]
+    },
+    {
+      "chapter_number": 3,
+      "title": "Approximations",
+      "start_page": 40,
+      "sections": [
+        { "title": "Meaning of approximations", "page": 40 },
+        { "title": "Rounding off numbers", "page": 40 },
+        { "title": "Significant figures", "page": 49 },
+        { "title": "Approximations in calculations", "page": 53 }
+      ]
+    },
+    {
+      "chapter_number": 4,
+      "title": "Ratios and proportions",
+      "start_page": 61,
+      "sections": [
+        { "title": "Ratios", "page": 61 },
+        { "title": "Proportions", "page": 66 }
+      ]
+    },
+    {
+      "chapter_number": 5,
+      "title": "Algebra",
+      "start_page": 72,
+      "sections": [
+        { "title": "Algebraic expressions", "page": 72 },
+        { "title": "Algebraic equations", "page": 80 },
+        { "title": "Linear simultaneous equations", "page": 90 },
+        { "title": "Solution of inequalities with one unknown", "page": 102 }
+      ]
+    },
+    {
+      "chapter_number": 6,
+      "title": "Coordinate geometry",
+      "start_page": 115,
+      "sections": [
+        { "title": "Basic concepts of coordinate geometry", "page": 115 },
+        { "title": "Gradient of a straight line", "page": 120 },
+        { "title": "Equation of a straight line", "page": 131 },
+        { "title": "General equation of a straight line", "page": 137 },
+        { "title": "Graphing linear equations", "page": 147 },
+        { "title": "Solving linear simultaneous equations graphically", "page": 155 }
+      ]
+    }
+  ]
+}
+

@@ -8,6 +8,65 @@ import type { Syllabus } from "~/types/syllabus.interface";
 import { embedQuery } from "./embeddings";
 
 /**
+ * Get available subjects from syllabus files
+ */
+async function getAvailableSubjects(): Promise<{ subjects: string[]; subjectLevels: Record<string, string[]> }> {
+  try {
+    const syllabusDir = join(process.cwd(), "server", "data", "syllabus");
+    const files = await readdir(syllabusDir);
+    const subjects = new Set<string>();
+    const subjectLevels: Record<string, string[]> = {};
+    
+    files.forEach(file => {
+      const match = file.match(/syllabus_(\w+)_form(\d+)\.json/);
+      if (match) {
+        const subject = match[1];
+        const formNum = match[2];
+        const level = formNum === "1" ? "Form I" : formNum === "2" ? "Form II" : `Form ${formNum}`;
+        
+        subjects.add(subject);
+        if (!subjectLevels[subject]) {
+          subjectLevels[subject] = [];
+        }
+        if (!subjectLevels[subject].includes(level)) {
+          subjectLevels[subject].push(level);
+        }
+      }
+    });
+    
+    return {
+      subjects: Array.from(subjects).sort(),
+      subjectLevels
+    };
+  } catch (error: any) {
+    console.warn(`[getAvailableSubjects] Error: ${error.message}`);
+    // Fallback to known subjects
+    return {
+      subjects: ["biology", "physics", "chemistry", "mathematics", "geography"],
+      subjectLevels: {
+        biology: ["Form I", "Form II"],
+        physics: ["Form I", "Form II"],
+        chemistry: ["Form I", "Form II"],
+        mathematics: ["Form I", "Form II"],
+        geography: ["Form I", "Form II"]
+      }
+    };
+  }
+}
+
+/**
+ * Format available subjects for display
+ */
+async function formatAvailableSubjects(): Promise<string> {
+  const { subjects, subjectLevels } = await getAvailableSubjects();
+  const formatted = subjects.map(subject => {
+    const levels = subjectLevels[subject] || [];
+    return `${subject} (${levels.join(", ")})`;
+  }).join(", ");
+  return formatted || "biology, physics, chemistry, mathematics, geography";
+}
+
+/**
  * Read syllabus from JSON file
  */
 async function readSyllabusFromFile(subject: string, level: string): Promise<Syllabus | null> {
@@ -174,7 +233,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
 export const studentTools = {
   // Get chapter figures using chapter/topic filtering (PRIMARY METHOD - NO SEARCH ALGORITHM)
   getChapterFigures: tool({
-    description: "MANDATORY: Get all available image figures for a specific chapter and optional topic. You MUST call this tool whenever you are teaching a chapter or topic from the syllabus. This is the ONLY method to get images - there is no search algorithm. CRITICAL: When the user asks about a specific topic, you MUST extract the exact topic name from the user's message or syllabus and pass it as the 'topic' parameter. The topic name should match exactly as it appears in the syllabus (e.g., 'Basic concepts and terminologies in Biology', 'The process of photosynthesis'). Provide the chapter name exactly as it appears in the syllabus (e.g., 'Chapter Six: Nutrition in plants', 'Chapter One: Introduction to Biology') and the exact topic name if the user is asking about a specific topic. You will receive all figures available for that chapter/topic. Returns a list of figures with their shortcodes that you MUST use with [image:shortcode] format in your response. All returned figures are guaranteed to be relevant because they're filtered by the exact chapter/topic you're teaching. Review all returned figures - if they are all highly relevant, use multiple [image:shortcode] in your response. If figures are returned, you MUST include at least one [image:shortcode] in your response.",
+    description: "MANDATORY: Get all available image figures for a specific chapter and optional topic. You MUST call this tool whenever you are teaching a chapter or topic from the syllabus. This is the ONLY method to get images - there is no search algorithm. CRITICAL: When the user asks about a specific topic or concept (e.g., 'Light', 'Photosynthesis', 'Force'), you MUST extract the topic name from the user's message or syllabus and pass it as the 'topic' parameter. The tool searches both topic names AND figure captions, so you can use concept names directly (e.g., if user asks about 'Light', pass topic: 'Light' and it will find figures with 'Light' in their caption even if the topic is different). Provide the chapter name exactly as it appears in the syllabus (e.g., 'Chapter Six: Nutrition in plants', 'Chapter One: Introduction to Biology') and the topic/concept name if the user is asking about a specific topic. You will receive all figures available for that chapter/topic. Returns a list of figures with their shortcodes that you MUST use with [image:shortcode] format in your response. All returned figures are guaranteed to be relevant because they're filtered by the exact chapter/topic you're teaching. Review all returned figures - if they are all highly relevant, use multiple [image:shortcode] in your response. If figures are returned, you MUST include at least one [image:shortcode] in your response.",
     inputSchema: z.object({
       chapter: z.string().describe("Chapter name using WORD form for numbers (e.g., 'Chapter One', 'Chapter Two', 'Chapter Six') NOT digits. Format: 'Chapter [WORD]: [Title]' (e.g., 'Chapter One: Introduction to Biology', 'Chapter Six: Nutrition in plants'). If syllabus shows chapter_number: 1, use 'Chapter One: [Title]' not 'Chapter 1: [Title]'. Must match exactly as in figure-metadata.json."),
       topic: z.string().optional().describe("EXACT topic name from the user's message or syllabus. Extract the specific topic the user is asking about. Examples: 'Basic concepts and terminologies in Biology', 'Importance of studying Biology', 'The process of photosynthesis'. The topic name must match exactly as it appears in the syllabus. If the user mentions a specific topic, you MUST extract it and provide it here. If provided, only returns figures for this specific topic. DO NOT use 'all' - either provide the exact topic name or omit this parameter entirely."),
@@ -290,32 +349,43 @@ export const studentTools = {
             console.log(`[getChapterFigures] ✅ Using exact topic match: ${filtered.length} figures`);
           } else {
             // For single-word queries or when no exact match, use flexible matching
+            // Check both topic AND caption for better matching
             filtered = filtered.filter((img: any) => {
               const imgTopic = normalizeTopic(img.topic || '');
+              const imgCaption = normalizeTopic(img.caption || '');
               
-              // Exact match (highest priority)
+              // Exact match (highest priority) - check topic first
               if (imgTopic === queryTopic) return true;
               
-              // For single-word queries (e.g., "photosynthesis" from syllabus)
+              // For single-word queries (e.g., "photosynthesis", "light" from user query)
               if (isSingleWord) {
                 // Match topics containing that word (broad match for syllabus topic names)
-                return imgTopic.includes(queryWords[0]);
+                if (imgTopic.includes(queryWords[0])) return true;
+                
+                // Also check caption for single-word queries (e.g., "Light" in caption)
+                if (imgCaption.includes(queryWords[0])) return true;
+                
+                return false;
               }
               
               // For multi-word queries, be more precise
-              // Only match if the query phrase is contained in the topic (not just individual words)
-              // This prevents "The process of photosynthesis" from matching "Structure of the leaf in relation to photosynthesis"
+              // Check if the query phrase is contained in the topic
               if (imgTopic.includes(queryTopic)) {
                 return true;
               }
               
-              // If query is contained in topic, that's a match
-              // But don't match if topic just contains individual words from query
+              // Also check caption for multi-word queries (fallback when topic doesn't match)
+              if (imgCaption.includes(queryTopic)) {
+                return true;
+              }
+              
               return false;
             });
             
             if (filtered.length > 0 && !isSingleWord) {
-              console.log(`[getChapterFigures] ✅ Using flexible topic match: ${filtered.length} figures`);
+              console.log(`[getChapterFigures] ✅ Using flexible topic/caption match: ${filtered.length} figures`);
+            } else if (filtered.length > 0 && isSingleWord) {
+              console.log(`[getChapterFigures] ✅ Using flexible topic/caption match (single-word): ${filtered.length} figures`);
             }
           }
         }
@@ -363,7 +433,7 @@ export const studentTools = {
 
   // Get syllabus for a subject and level from JSON files
   getSyllabus: tool({
-    description: "Get the syllabus/curriculum for a given subject and level (Form I or Form II) from JSON files. Use this when you need to understand what competences, topics, or content should be covered for a specific subject and level. This helps ensure syllabus compliance and proper lesson planning. Available subjects: biology, physics. Available levels: Form I, Form II.",
+    description: "Get the syllabus/curriculum for a given subject and level (Form I or Form II) from JSON files. Use this when you need to understand what competences, topics, or content should be covered for a specific subject and level. This helps ensure syllabus compliance and proper lesson planning. Available subjects include: biology, physics, chemistry, mathematics, geography. Available levels: Form I, Form II.",
     inputSchema: z.object({ 
       subject: z.string().describe("The subject name (e.g., 'biology', 'physics', 'mathematics', 'chemistry', 'geography', 'history', 'english', 'kiswahili')"),
       level: z.string().describe("The education level (e.g., 'Form I', 'Form II', 'form i', 'form ii')")
@@ -374,10 +444,11 @@ export const studentTools = {
         const syllabus = await readSyllabusFromFile(subject, level);
         
         if (!syllabus) {
+          const availableSubjects = await formatAvailableSubjects();
           return {
             subject,
             level,
-            syllabus: `No syllabus file found for ${subject} ${level}. Available files: biology (Form I, Form II), physics (Form I). You may need to rely on general knowledge of the Tanzanian curriculum for other subjects.`,
+            syllabus: `No syllabus file found for ${subject} ${level}. Available files: ${availableSubjects}. You may need to rely on general knowledge of the Tanzanian curriculum for other subjects.`,
             found: false,
             competences: []
           };
