@@ -1,30 +1,16 @@
 <template>
   <div class="flex justify-start animate-fade-in">
     <div class="flex gap-3 max-w-[85%]">
-      <div
-        class="w-8 h-8 bg-oceanBlue rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-md"
-      >
-        <Icon
-          name="heroicons:bolt"
-          class="w-5 h-5 text-white"
-        />
+      <div class="w-8 h-8 bg-oceanBlue rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-md">
+        <Icon name="heroicons:bolt" class="w-5 h-5 text-white" />
       </div>
 
-      <div
-        class="bg-white text-gray-800 px-5 py-3 rounded-2xl rounded-tl-sm shadow-md border border-gray-100"
-      >
-        <div
-          v-for="(part, idx) in message.parts"
-          :key="idx"
-          class="space-y-2"
-        >
+      <div class="bg-white text-gray-800 px-5 py-3 rounded-2xl rounded-tl-sm shadow-md border border-gray-100">
+        <div v-for="(part, idx) in message.parts" :key="idx" class="space-y-2">
           <!-- Markdown Support with MathJax -->
-          <div
-            v-if="part.type === 'text'"
-            ref="mathContainer"
-            class="prose prose-sm max-w-none"
-            v-html="processMathInText(part.text)"
-          ></div>
+          <div v-if="part.type === 'text'" ref="mathContainer" class="prose prose-sm max-w-none" role="log"
+            aria-live="polite" aria-relevant="additions" aria-atomic="false" v-html="processMathInText(part.text)">
+          </div>
 
           <!-- Tool calls are hidden from the user - do not display them -->
         </div>
@@ -45,22 +31,22 @@ const mathContainer = ref<HTMLElement[]>([]);
 // Process math delimiters and image shortcodes - extract before markdown, restore after
 const processMathInText = (text: string): string => {
   if (!text) return "";
-  
+
   // Use unique placeholders that markdown won't modify
   const mathPlaceholders: Array<{ placeholder: string; replacement: string }> = [];
   const imagePlaceholders: Array<{ placeholder: string; replacement: string }> = [];
   let counter = 0;
-  
+
   // Step 1: Extract image shortcodes first (before markdown processing)
   // Pattern: [image:shortcode_name]
   const imagePattern = /\[image:([^\]]+)\]/g;
   text = text.replace(imagePattern, (match, shortcodeName) => {
     const imageMeta = getImageFromShortcode(shortcodeName.trim());
     const placeholder = `IMAGE_PLACEHOLDER_${counter}_END`;
-    
+
     if (imageMeta) {
       let imageHtml: string;
-      
+
       // Check if this is a multi-image figure (has paths array)
       if (imageMeta.paths && imageMeta.paths.length > 0) {
         // Render multiple images in a responsive grid
@@ -78,7 +64,7 @@ const processMathInText = (text: string): string => {
             <span class="text-xs text-gray-500 mt-1">${altText}</span>
           </div>`;
         }).join('');
-        
+
         imageHtml = `<div class="my-4">
           <div class="grid grid-cols-2 md:grid-cols-${gridCols} gap-3">
             ${imageGrid}
@@ -87,7 +73,7 @@ const processMathInText = (text: string): string => {
         </div>`;
       } else {
         // Single image - generate image HTML with proper styling and accessibility
-      // Images that fail to load will be silently hidden (no error message shown to users)
+        // Images that fail to load will be silently hidden (no error message shown to users)
         imageHtml = `<div class="my-4 flex justify-center">
         <img 
           src="${imageMeta.path}" 
@@ -98,7 +84,7 @@ const processMathInText = (text: string): string => {
         />
       </div>`;
       }
-      
+
       imagePlaceholders.push({
         placeholder,
         replacement: imageHtml
@@ -111,11 +97,11 @@ const processMathInText = (text: string): string => {
       // Return empty string - fail silently for users (don't create placeholder)
       return '';
     }
-    
+
     counter++;
     return placeholder;
   });
-  
+
   // Extract display math first ($$...$$ or \[...\])
   text = text.replace(/\$\$([\s\S]*?)\$\$/g, (match, content) => {
     const placeholder = `MATHJAX_DISPLAY_PLACEHOLDER_${counter}_END`;
@@ -126,7 +112,7 @@ const processMathInText = (text: string): string => {
     counter++;
     return placeholder;
   });
-  
+
   text = text.replace(/\\\[([\s\S]*?)\\\]/g, (match, content) => {
     const placeholder = `MATHJAX_DISPLAY_PLACEHOLDER_${counter}_END`;
     mathPlaceholders.push({
@@ -136,7 +122,7 @@ const processMathInText = (text: string): string => {
     counter++;
     return placeholder;
   });
-  
+
   // Extract inline math ($...$ or \(...\))
   // Process $...$ but avoid matching $$ (already processed)
   text = text.replace(/(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/g, (match, content) => {
@@ -148,7 +134,7 @@ const processMathInText = (text: string): string => {
     counter++;
     return placeholder;
   });
-  
+
   text = text.replace(/\\\(([^)]+?)\\\)/g, (match, content) => {
     const placeholder = `MATHJAX_INLINE_PLACEHOLDER_${counter}_END`;
     mathPlaceholders.push({
@@ -158,10 +144,10 @@ const processMathInText = (text: string): string => {
     counter++;
     return placeholder;
   });
-  
+
   // Step 2: Now render markdown (placeholders will pass through as plain text)
   let rendered = md.render(text);
-  
+
   // Step 3: Restore image shortcodes as HTML img tags
   imagePlaceholders.forEach(({ placeholder, replacement }) => {
     // Escape special regex characters in placeholder
@@ -169,7 +155,7 @@ const processMathInText = (text: string): string => {
     const regex = new RegExp(escapedPlaceholder, 'g');
     rendered = rendered.replace(regex, replacement);
   });
-  
+
   // Step 4: Restore math formulas
   mathPlaceholders.forEach(({ placeholder, replacement }) => {
     // Escape special regex characters in placeholder
@@ -177,26 +163,26 @@ const processMathInText = (text: string): string => {
     const regex = new RegExp(escapedPlaceholder, 'g');
     rendered = rendered.replace(regex, replacement);
   });
-  
+
   return rendered;
 };
 
 // Render MathJax after content is updated
 const renderMathJax = async () => {
   if (import.meta.server) return;
-  
+
   await nextTick();
-  
+
   if (window.mathJaxLoaded && window.MathJaxRender) {
     try {
       await window.mathJaxLoaded;
       // Get all math containers
-      const containers = Array.isArray(mathContainer.value) 
-        ? mathContainer.value 
-        : mathContainer.value 
-          ? [mathContainer.value] 
+      const containers = Array.isArray(mathContainer.value)
+        ? mathContainer.value
+        : mathContainer.value
+          ? [mathContainer.value]
           : [];
-      
+
       if (containers.length > 0) {
         await window.MathJaxRender(containers);
       }
