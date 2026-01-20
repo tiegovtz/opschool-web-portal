@@ -75,6 +75,15 @@ export default defineNuxtConfig({
       },
     },
     plugins: [vidstack()],
+    optimizeDeps: {
+      force: true, // Force re-optimization of dependencies
+      include: ['pinia', 'pinia-plugin-persistedstate'],
+    },
+    server: {
+      fs: {
+        allow: ['..'], // Allow accessing files outside the project root
+      },
+    },
   },
 
   app: {

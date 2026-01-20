@@ -273,10 +273,37 @@ export const studentTools = {
         
         const queryChapter = normalizeChapter(chapter);
         
+        // Extract subject from chapter name if present (e.g., "Introduction to Physics" -> "physics")
+        const extractSubjectFromChapter = (ch: string): string | null => {
+          const lower = ch.toLowerCase();
+          if (lower.includes('biology')) return 'biology';
+          if (lower.includes('physics')) return 'physics';
+          if (lower.includes('chemistry')) return 'chemistry';
+          if (lower.includes('mathematics') || lower.includes('math')) return 'mathematics';
+          if (lower.includes('geography')) return 'geography';
+          return null;
+        };
+        
+        const querySubject = extractSubjectFromChapter(chapter);
+        
         // Filter by chapter - try exact match first
         let filtered = images.filter((img: any) => {
           const imgChapter = normalizeChapter(img.chapter || '');
-          return imgChapter === queryChapter;
+          const matchesChapter = imgChapter === queryChapter;
+          
+          // If we can extract a subject from the query, also filter by subject
+          if (querySubject && matchesChapter) {
+            const imgSubject = extractSubjectFromChapter(img.chapter || '') || 
+                              (img.subject || '').toLowerCase();
+            const imgShortcode = (img.shortcode || '').toLowerCase();
+            
+            // Check if image belongs to the same subject
+            const subjectMatch = imgSubject === querySubject || 
+                                imgShortcode.startsWith(querySubject);
+            return subjectMatch;
+          }
+          
+          return matchesChapter;
         });
         
         // If no exact match found, try flexible matching by chapter number
@@ -303,22 +330,33 @@ export const studentTools = {
             const chapterDigit = isDigit ? numberStr : wordToDigit[numberStr] || numberStr;
             
             // Try matching by chapter number (both word and digit form)
+            // BUT also filter by subject if we can extract it
             filtered = images.filter((img: any) => {
               const imgChapter = normalizeChapter(img.chapter || '');
               
               // Match both word and digit forms regardless of input format
-              // If input is "Chapter 1", try matching "chapter 1:" and "chapter one:"
-              // If input is "Chapter One", try matching "chapter one:" and "chapter 1:"
-                if (imgChapter.startsWith(`chapter ${chapterWord}:`) || 
-                    imgChapter.startsWith(`chapter ${chapterDigit}:`)) {
-                  return true;
-                }
+              const matchesChapterNumber = imgChapter.startsWith(`chapter ${chapterWord}:`) || 
+                                          imgChapter.startsWith(`chapter ${chapterDigit}:`);
               
-              return false;
+              if (!matchesChapterNumber) return false;
+              
+              // If we can extract a subject from the query, filter by subject too
+              if (querySubject) {
+                const imgSubject = extractSubjectFromChapter(img.chapter || '') || 
+                                  (img.subject || '').toLowerCase();
+                const imgShortcode = (img.shortcode || '').toLowerCase();
+                
+                // Check if image belongs to the same subject
+                const subjectMatch = imgSubject === querySubject || 
+                                    imgShortcode.startsWith(querySubject);
+                return subjectMatch;
+              }
+              
+              return true;
             });
             
             if (filtered.length > 0) {
-              console.log(`[getChapterFigures] ✅ Matched "${chapter}" to chapter by number - found ${filtered.length} figures in "${filtered[0].chapter}"`);
+              console.log(`[getChapterFigures] ✅ Matched "${chapter}" to chapter by number - found ${filtered.length} figures in "${filtered[0].chapter}"${querySubject ? ` (filtered by subject: ${querySubject})` : ''}`);
             }
           }
         }

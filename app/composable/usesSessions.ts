@@ -19,10 +19,12 @@ const token = useCookie('signInAccessToken').value;
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        timeout: 10000, // 10 second timeout
       });
       return data;
     } catch (err: any) {
       error.value = err?.data?.message || err.message || 'An error occurred';
+      console.error(`[useSessions] POST ${endpoint} failed:`, err);
       throw err;
     } finally {
       loading.value = false;
@@ -37,10 +39,15 @@ const token = useCookie('signInAccessToken').value;
       const data = await $fetch(`${baseUrl}/${endpoint}`, {
         method: 'PUT',
         body: payload,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: 10000, // 10 second timeout
       });
       return data;
     } catch (err: any) {
       error.value = err?.data?.message || err.message || 'An error occurred';
+      console.error(`[useSessions] PUT ${endpoint} failed:`, err);
       throw err;
     } finally {
       loading.value = false;
@@ -56,11 +63,14 @@ const token = useCookie('signInAccessToken').value;
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        timeout: 10000, // 10 second timeout
       }))
       return data.value;
     } catch (err: any) {
       error.value = err?.data?.message || err.message || 'An error occurred';
-      throw err;
+      console.error(`[useSessions] GET ${endpoint} failed:`, err);
+      // Return null instead of throwing to allow UI to continue
+      return null;
     } finally {
       loading.value = false;
     }
@@ -71,11 +81,17 @@ const token = useCookie('signInAccessToken').value;
     loading.value = true;
     error.value = null;
     try {
-      const data = await $fetch(`${baseUrl}/${endpoint}`);
+      const data = await $fetch(`${baseUrl}/${endpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: 10000, // 10 second timeout
+      });
       return data;
     } catch (err: any) {
       error.value = err?.data?.message || err.message || 'An error occurred';
-      throw err;
+      console.error(`[useSessions] GET ${endpoint} failed:`, err);
+      return null; // Return null instead of throwing
     } finally {
       loading.value = false;
     }
@@ -88,10 +104,15 @@ const token = useCookie('signInAccessToken').value;
     try {
       const data = await $fetch(`${baseUrl}/${endpoint}`, {
         method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: 10000, // 10 second timeout
       });
       return data;
     } catch (err: any) {
       error.value = err?.data?.message || err.message || 'An error occurred';
+      console.error(`[useSessions] DELETE ${endpoint} failed:`, err);
       throw err;
     } finally {
       loading.value = false;

@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody } from "h3";
+import { defineEventHandler, readBody, getCookie } from "h3";
 import {
   streamText,
   convertToModelMessages,
@@ -6,6 +6,7 @@ import {
   type CoreMessage,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
+import { fetchRAGContext } from "../utils/rag";
 
 // --------------------------------------
 // System Prompt Builder
@@ -518,6 +519,80 @@ export default defineEventHandler(async (event) => {
         chapterNo: chapterNo,
       }
     : undefined;
+
+  // Extract user's query from the last user message for RAG context (before conversion)
+  let ragContext = "";
+  const lastUserMessage = messages
+    .slice()
+    .reverse()
+    .find((msg: any) => msg.role === "user");
+  
+  console.log("[API /chat] RAG: Last user message found:", !!lastUserMessage);
+  
+  // Extract search query from message (handle both UIMessage format with parts and simple format)
+  let searchQuery = "";
+  if (lastUserMessage) {
+    // Handle UIMessage format (has parts array)
+    if (Array.isArray(lastUserMessage.parts)) {
+      searchQuery = lastUserMessage.parts
+        .filter((p: any) => p?.type === "text" && p?.text)
+        .map((p: any) => String(p.text))
+        .join(" ")
+        .trim();
+    }
+    // Handle simple format (has content string)
+    else if (typeof lastUserMessage.content === "string") {
+      searchQuery = lastUserMessage.content.trim();
+    }
+    // Handle CoreMessage format (already converted)
+    else if (lastUserMessage.content && typeof lastUserMessage.content === "string") {
+      searchQuery = lastUserMessage.content.trim();
+    }
+  }
+  
+  console.log("[API /chat] RAG: Search query extracted:", searchQuery ? searchQuery.substring(0, 100) : "empty");
+  
+  // Fetch RAG context if we have a search query
+  if (searchQuery) {
+    // Get auth token from cookie, headers, or body (matching pattern from other endpoints)
+    const authToken =
+      getCookie(event, "signInAccessToken") ||
+      event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
+      event.headers.get("Authorization")?.replace("Bearer ", "").trim() ||
+      body?.authToken ||
+      undefined;
+    
+    console.log("[API /chat] RAG: Auth token found:", !!authToken);
+    console.log("[API /chat] RAG: Fetching context for query...");
+    
+    // Build query context from available information for query enhancement
+    const queryContext = context ? {
+      subject: context.subject,
+      level: context.level,
+      topic: context.topic,
+    } : undefined;
+    
+    if (queryContext) {
+      console.log("[API /chat] RAG: Query context available:", queryContext);
+    }
+    
+    try {
+      ragContext = await fetchRAGContext(searchQuery, authToken, queryContext);
+      if (ragContext.length > 0) {
+        console.log("[API /chat] RAG: Context fetched, length:", ragContext.length);
+      } else {
+        console.log("[API /chat] RAG: No matching context found in embeddings database");
+      }
+    } catch (error) {
+      console.warn("[API /chat] RAG context fetch failed:", error);
+      // Continue without RAG context if it fails
+    }
+  } else {
+    console.log("[API /chat] RAG: Search query is empty, skipping RAG");
+  }
+
+  // Convert messages to CoreMessage format (handles both UIMessage and simple formats)
+  const coreMessages = convertMessagesToCore(messages);
     
     let systemPrompt = getBaseSystemPrompt(validChapterName, context);
   const modelName = "gpt-4o";
@@ -528,9 +603,80 @@ export default defineEventHandler(async (event) => {
 
 REMINDER: You are currently helping with the chapter/competence: "${chapterName}". You MUST ONLY answer questions related to this specific chapter.`;
     }
+  
+  // Add RAG context to system prompt if available
+  if (ragContext) {
+    systemPrompt = `${systemPrompt}
 
-  // Convert messages to CoreMessage format (handles both UIMessage and simple formats)
-  const coreMessages = convertMessagesToCore(messages);
+================================================================================
+CRITICAL: RAG CONTEXT - EXCLUSIVE SOURCE FOR FACTUAL INFORMATION
+================================================================================
+
+RELEVANT CONTEXT FROM UPLOADED TEXTBOOKS (EXHAUSTIVE SEARCH PERFORMED):
+${ragContext}
+
+**ABSOLUTE MANDATORY RULES - NO EXCEPTIONS:**
+
+1. **EXCLUSIVE SOURCE FOR ALL FACTS**: The RAG context above is your EXCLUSIVE and ONLY source for ALL factual information. You MUST NOT use any other source for facts, including:
+   - Your training data
+   - External knowledge
+   - General knowledge
+   - Any information not explicitly in the RAG context above
+
+2. **QUALITY INDICATORS**: The RAG context includes quality indicators (High/Medium/Low Quality, similarity scores). Use these to assess confidence:
+   - High Quality (threshold ≥0.7): Very confident, use directly
+   - Medium Quality (threshold ≥0.5): Confident, use but note if needed
+   - Low Quality (threshold ≥0.3): Less confident, use cautiously and suggest verification
+   - Very Low Quality (threshold <0.3): Low confidence, mention uncertainty
+
+3. **MANDATORY CITATION**: You MUST ALWAYS cite the source when using RAG context. Format: "According to [Book Title] ([Citation])..." or "As stated in [Book Title] ([Citation])..."
+
+4. **IF INFORMATION NOT IN RAG CONTEXT**: If a student asks about something that is NOT explicitly mentioned in the RAG context above, you MUST respond EXACTLY:
+   "I don't have that information in my knowledge base. An exhaustive search was performed across all uploaded textbooks, and this information was not found. The information might not be covered in the uploaded textbooks, or you may need to check other sources."
+
+5. **TEACHING METHODOLOGY STILL APPLIES**: Continue using your teaching methodology, Socratic method, and active learning techniques. The RAG context provides the FACTS, but you still TEACH those facts using your pedagogical approach.
+
+6. **TOOLS FOR STRUCTURE ONLY**: You can still use tools (get_syllabus, get_chapter_figures) for syllabus structure and images. These complement but DO NOT replace the RAG context for factual information.
+
+7. **COMBINE RAG + TEACHING**: Use the RAG context for factual accuracy, but present it using your teaching style - ask questions, check understanding, provide Tanzanian examples, scaffold learning, etc.
+
+**STRICT EXAMPLES:**
+
+✅ CORRECT (using RAG with citation):
+"Great question! According to Biology Textbook Form 1 (Page 5), photosynthesis is the process by which plants convert light energy into chemical energy. [Then teach using Socratic method, check understanding, provide Tanzanian examples]"
+
+❌ ABSOLUTELY FORBIDDEN (using external knowledge):
+"Photosynthesis is..." [without citing RAG context or using training data]
+
+✅ CORRECT (information not in RAG):
+"I don't have that information in my knowledge base. An exhaustive search was performed across all uploaded textbooks, and this information was not found. Could you rephrase your question, or would you like to explore a related topic that I can help with?"
+
+**REMEMBER**: 
+- RAG context = EXCLUSIVE SOURCE for ALL FACTS
+- Your teaching methodology = HOW you present those facts
+- If it's not in RAG context, it doesn't exist for you`;
+  } else {
+    // When RAG context is NOT available after exhaustive search
+    systemPrompt = `${systemPrompt}
+
+================================================================================
+CRITICAL: NO RAG CONTEXT AVAILABLE AFTER EXHAUSTIVE SEARCH
+================================================================================
+
+An exhaustive search was performed across all uploaded textbooks using multiple query variations and progressive threshold fallback, but no relevant context was found.
+
+**MANDATORY RESPONSE RULE:**
+If a student asks about factual information, you MUST respond:
+"I don't have that information in my knowledge base. An exhaustive search was performed across all uploaded textbooks, and this information was not found. The information might not be covered in the uploaded textbooks, or you may need to check other sources."
+
+**DO NOT** use your training data or external knowledge to answer factual questions. You can still:
+- Help with learning methodology and study techniques
+- Use tools (get_syllabus, get_chapter_figures) for syllabus structure and images
+- Provide general guidance on how to approach topics
+- Suggest rephrasing the question
+
+But you MUST NOT provide factual information that is not in the uploaded textbooks.`;
+  }
 
   // Import studentTools dynamically to avoid module resolution issues
   let tools: any = {};
