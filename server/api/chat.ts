@@ -488,7 +488,6 @@ function getLastUserMessageText(messages: CoreMessage[]): string {
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event);
-  console.log(body);
 
   // Safely parse user messages
   const messages: any[] = Array.isArray(body?.messages) ? body.messages : [];
