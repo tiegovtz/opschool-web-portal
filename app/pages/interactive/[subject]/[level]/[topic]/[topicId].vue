@@ -3,6 +3,7 @@ import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from "~/utilities/parsers/modelParser";
 import videoParser from "~/utilities/parsers/videoParser";
+import conversationParser from "~/utilities/parsers/conversationParser";
 import { currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import AIAssistant from "~/components/chapter/AIAssistant.vue";
@@ -896,7 +897,7 @@ definePageMeta({
             <!-- Chapter Notes -->
             <div v-mathjax class="mx-auto notes md:px-4 max-w-7xl" aria-label="Compitencies notes"
               aria-details="notes-extra-details" role="region"
-              v-html="enhanceAccessibility(experimentParser(modelParser(videoParser(chapters.notes?.content))))"></div>
+              v-html="enhanceAccessibility(conversationParser(experimentParser(modelParser(videoParser(chapters.notes?.content)))))"></div>
 
             <p id="notes-extra-details" class="sr-only">
               These notes include at least one video, two-dimensional images such as GIFs,
