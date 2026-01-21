@@ -48,6 +48,7 @@ export default defineNuxtPlugin({
       "/smart-class/screen/upcoming-classes",        
       "/tie-ai-teacher",
       "/english-practice",
+      "/conversation-practice",
       "/interactive-video",
       "/list-videos",
       "/image-list",

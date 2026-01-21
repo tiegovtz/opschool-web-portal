@@ -133,11 +133,12 @@ const updatedProfile = async () => {
           const remoteValue = (response as any)[key];
           if (remoteValue !== undefined && remoteValue !== null && remoteValue !== "") {
             (profile as any)[key] = remoteValue;
+            (signInAccessToken.value as any)[key] = remoteValue;
           }
         }
       }
-      isModified.value = false;
     }
+    isModified.value = false;
   } catch (error) {
     console.log(error);
   }

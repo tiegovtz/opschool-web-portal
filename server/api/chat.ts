@@ -461,12 +461,42 @@ function convertMessagesToCore(messages: any[]): CoreMessage[] {
   }
 }
 
+function extractMessageText(content: any): string {
+  if (!content) return "";
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part === "string") return part;
+        if (part?.type === "text" && part.text) return String(part.text);
+        if (part?.text) return String(part.text);
+        return "";
+      })
+      .join("");
+  }
+  return "";
+}
+
+function getLastUserMessageText(messages: CoreMessage[]): string {
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const message = messages[i];
+    if (message?.role === "user") {
+      return extractMessageText(message.content).trim();
+    }
+  }
+  return "";
+}
+
 export default defineEventHandler(async (event) => {
     const body = await readBody(event);
-  console.log(body);
 
   // Safely parse user messages
   const messages: any[] = Array.isArray(body?.messages) ? body.messages : [];
+  if (messages.length === 0 && typeof body?.message === "string") {
+    messages.push({ role: "user", content: body.message });
+  } else if (messages.length === 0 && typeof body?.question === "string") {
+    messages.push({ role: "user", content: body.question });
+  }
 
     // Extract context if provided (for Subject AI Teacher mode)
     // Check both body and headers (headers are more reliable)
@@ -677,6 +707,28 @@ If a student asks about factual information, you MUST respond:
 - Suggest rephrasing the question
 
 But you MUST NOT provide factual information that is not in the uploaded textbooks.`;
+  }
+
+  const authToken =
+    event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
+    getCookie(event, "signInAccessToken") ||
+    "";
+
+  const lastUserMessage = getLastUserMessageText(coreMessages);
+  const ragContext = lastUserMessage
+    ? await fetchRAGContext(lastUserMessage, authToken || undefined)
+    : "";
+  const maxRagChars = 4000;
+  const cappedRagContext =
+    ragContext.length > maxRagChars
+      ? `${ragContext.slice(0, maxRagChars).trimEnd()}...`
+      : ragContext;
+
+  if (cappedRagContext) {
+    systemPrompt = `${systemPrompt}
+
+RETRIEVED CONTEXT (use only if relevant and within scope):
+${cappedRagContext}`;
   }
 
   // Import studentTools dynamically to avoid module resolution issues
