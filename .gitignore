@@ -42,3 +42,7 @@ logs
 
 # RAG vector store (generated data, too large for git)
 server/data/vector-store.json
+
+# Documentation files (generated reports and docs)
+*.md
+!README.md
