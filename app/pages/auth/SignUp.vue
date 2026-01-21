@@ -271,6 +271,10 @@ const signUp = async () => {
     if (!usersignUp.type) {
       usersignUp.controller.errors.type = messages.error.form.type;
     }
+
+     if (!usersignUp.userOrgRole.trim()) {
+      usersignUp.controller.errors.userOrgRole = messages.error.form.role;
+    }
   }
 };
 
@@ -589,11 +593,11 @@ const switchTab = (tabName) => {
       usersignUp.userName = usersignUp.fname + "." + usersignUp.lname;
 
       // One-liner equivalent to the if statement, use a logical && operator:
-      normalizeUserTypeKey(usersignUp.type) === 'student' && userExists();
+      // normalizeUserTypeKey(usersignUp.type) === 'student' && userExists();
 
-      // if (usersignUp.type.toLowerCase().trim() === 'student') {
-      //   userExists();
-      // }
+      if (usersignUp.type.toLowerCase().trim() === 'student') {
+        userExists();
+      }
 
       inputTabs.value = tabName;
     }
@@ -695,7 +699,7 @@ onMounted(() => {
             </div>
 
             <!-- Select User Type error message -->
-            <small v-if="usersignUp.controller.errors.type" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.type" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.type }`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.type }}
             </small>
           </div>
@@ -717,7 +721,7 @@ onMounted(() => {
             </div>
 
             <!-- First Name error message -->
-            <small v-if="usersignUp.controller.errors.fname" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.fname" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.fname }`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.fname }}
             </small>
           </div>
@@ -739,7 +743,7 @@ onMounted(() => {
             </div>
 
             <!-- Last Name error message -->
-            <small v-if="usersignUp.controller.errors.lname" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.lname" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.lname }`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.lname }}
             </small>
           </div>
@@ -815,7 +819,7 @@ onMounted(() => {
               </div>
             </div>
             <!-- Gender error message -->
-            <small v-if="usersignUp.controller.errors.gender" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.gender" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.gender }`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.gender }}
             </small>
           </div>
@@ -860,7 +864,7 @@ onMounted(() => {
             </div>
 
             <!-- Age error message -->
-            <small v-if="usersignUp.controller.errors.age" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.age" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.age }`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.age }}
             </small>
           </div>
@@ -885,7 +889,7 @@ onMounted(() => {
               </div>
 
               <!-- Email error message -->
-              <small v-if="usersignUp.controller.errors.email" class="w-full text-red-500 text-smallest">
+              <small v-if="usersignUp.controller.errors.email" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.email }`" class="w-full text-red-500 text-smallest">
                 {{ usersignUp.controller.errors.email }}
               </small>
             </div>
@@ -907,7 +911,7 @@ onMounted(() => {
               </div>
 
               <!-- Phone Number error message -->
-              <small v-if="usersignUp.controller.errors.phone" class="w-full text-red-500 text-smallest">
+              <small v-if="usersignUp.controller.errors.phone" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.phone }`" class="w-full text-red-500 text-smallest">
                 {{ usersignUp.controller.errors.phone }}
               </small>
             </div>
@@ -930,7 +934,7 @@ onMounted(() => {
                   <Icon name="tdesign:institution" class="w-5 h-5 text-textGray" />
                 </div>
                 <!-- org name error message -->
-                <small v-if="usersignUp.controller.errors.organization" class="w-full text-red-500 text-smallest">
+                <small v-if="usersignUp.controller.errors.organization" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.organization }`" class="w-full text-red-500 text-smallest">
                   {{ usersignUp.controller.errors.organization }}
                 </small>
               </div>
@@ -955,7 +959,7 @@ onMounted(() => {
                 </div>
 
                 <!-- Age error message -->
-                <small v-if="usersignUp.controller.errors.userOrgRole" class="w-full text-red-500 text-smallest">
+                <small v-if="usersignUp.controller.errors.userOrgRole" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.userOrgRole }`" class="w-full text-red-500 text-smallest">
                   {{ usersignUp.controller.errors.userOrgRole }}
                 </small>
               </div>
@@ -976,7 +980,7 @@ onMounted(() => {
                   <Icon name="mdi-light:shield" class="w-5 h-5 text-textGray" />
                 </div>
                 <!-- org name error message -->
-                <small v-if="usersignUp.controller.errors.otherRole" class="w-full text-red-500 text-smallest">
+                <small v-if="usersignUp.controller.errors.otherRole" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.otherRole }`" class="w-full text-red-500 text-smallest">
                   {{ usersignUp.controller.errors.otherRole }}
                 </small>
               </div>
@@ -1000,7 +1004,7 @@ onMounted(() => {
             </div>
 
             <!-- username error message -->
-            <small v-if="usersignUp.controller.errors.userName" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.userName" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.userName }`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.userName }}
             </small>
           </div>
@@ -1039,7 +1043,7 @@ onMounted(() => {
                 class="w-5 h-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
             </div>
             <!-- Password error message -->
-            <small v-if="usersignUp.controller.errors.confirm_password" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.confirm_password" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.confirm_password }`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.confirm_password }}
             </small>
           </div>
