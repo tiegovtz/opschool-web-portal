@@ -386,6 +386,7 @@ Priority Rules:
     * If you get the syllabus and identify a chapter/topic, you MUST call get_chapter_figures with the exact topic name
     * If get_chapter_figures returns multiple figures and they are all highly relevant, you SHOULD use multiple [image:shortcode]
     * If get_chapter_figures returns figures, you MUST use at least one [image:shortcode] in your response
+    * CRITICAL: ALWAYS use the EXACT format [image:shortcode] - NEVER write bare shortcodes like "biology_form1_figure_1_1" without the [image:] wrapper
     * There is no search algorithm - images are accessed directly by chapter/topic from figure-metadata.json
     * If no figures are found, DO NOT mention images - proceed silently
   `.trim();

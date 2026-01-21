@@ -8,8 +8,17 @@
       <div class="bg-white text-gray-800 px-5 py-3 rounded-2xl rounded-tl-sm shadow-md border border-gray-100">
         <div v-for="(part, idx) in message.parts" :key="idx" class="space-y-2">
           <!-- Markdown Support with MathJax -->
-          <div v-if="part.type === 'text'" ref="mathContainer" class="prose prose-sm max-w-none" role="log"
-            aria-live="polite" aria-relevant="additions" aria-atomic="false" v-html="processMathInText(part.text)">
+          <div 
+            v-if="part.type === 'text'" 
+            ref="mathContainer" 
+            class="prose prose-sm max-w-none" 
+            role="log"
+            aria-live="polite" 
+            aria-relevant="additions" 
+            aria-atomic="false" 
+            v-html="processMathInText(part.text)"
+            @click="handleLinkClick"
+          >
           </div>
 
           <!-- Tool calls are hidden from the user - do not display them -->
@@ -23,10 +32,30 @@
 import MarkdownIt from "markdown-it";
 import { ref, watch, nextTick, onMounted } from "vue";
 import { getImageFromShortcode, loadDynamicShortcodes } from "~/utilities/imageShortcodes";
+import { useRouter } from "vue-router";
 
 const md = new MarkdownIt({ html: true, breaks: true, linkify: true });
 const props = defineProps<{ message: any }>();
 const mathContainer = ref<HTMLElement[]>([]);
+const router = useRouter();
+
+// Handle link clicks - prevent navigation for shortcode-like paths
+const handleLinkClick = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  if (target.tagName === 'A') {
+    const href = (target as HTMLAnchorElement).href;
+    const pathname = new URL(href).pathname;
+    
+    // Check if this looks like a shortcode pattern (e.g., /biology_form1_figure_1_1)
+    const shortcodePattern = /^\/[a-z]+_form\d+_figure_\d+_\d+(_[a-z])?$/i;
+    if (shortcodePattern.test(pathname)) {
+      event.preventDefault();
+      event.stopPropagation();
+      // Don't navigate - this is a false positive from linkify
+      return false;
+    }
+  }
+};
 
 // Process math delimiters and image shortcodes - extract before markdown, restore after
 const processMathInText = (text: string): string => {
@@ -36,6 +65,56 @@ const processMathInText = (text: string): string => {
   const mathPlaceholders: Array<{ placeholder: string; replacement: string }> = [];
   const imagePlaceholders: Array<{ placeholder: string; replacement: string }> = [];
   let counter = 0;
+
+  // Step 0: Detect and convert bare shortcodes to [image:shortcode] format
+  // Pattern: standalone shortcodes like "biology_form1_figure_1_1" (not already in [image:] format)
+  // This handles cases where AI produces bare shortcodes instead of [image:shortcode]
+  // We need to check the context around each match to see if it's already in [image:] format
+  const bareShortcodePattern = /\b([a-z]+_form\d+_figure_\d+_\d+(_[a-z])?)\b/gi;
+  let lastIndex = 0;
+  const convertedText: string[] = [];
+  
+  let match: RegExpExecArray | null;
+  while ((match = bareShortcodePattern.exec(text)) !== null) {
+    const shortcode = match[1];
+    if (!shortcode) {
+      convertedText.push(match[0]);
+      lastIndex = match.index + match[0].length;
+      continue;
+    }
+    
+    const matchStart = match.index;
+    const matchEnd = matchStart + match[0].length;
+    
+    // Add text before this match
+    convertedText.push(text.substring(lastIndex, matchStart));
+    
+    // Check if this is already wrapped in [image:] format
+    const beforeContext = text.substring(Math.max(0, matchStart - 20), matchStart);
+    const afterContext = text.substring(matchEnd, Math.min(text.length, matchEnd + 10));
+    
+    // If it's already in [image:...] format, keep it as-is
+    if (beforeContext.includes('[image:') && afterContext.includes(']')) {
+      convertedText.push(match[0]);
+    } else {
+      // Check if this shortcode exists in our registry
+      const imageMeta = getImageFromShortcode(shortcode);
+      if (imageMeta) {
+        // Convert bare shortcode to proper format
+        console.log(`[MessageAI] Detected bare shortcode "${shortcode}" - converting to [image:${shortcode}] format`);
+        convertedText.push(`[image:${shortcode}]`);
+      } else {
+        // If shortcode doesn't exist, leave it as-is (might be a false positive)
+        convertedText.push(match[0]);
+      }
+    }
+    
+    lastIndex = matchEnd;
+  }
+  
+  // Add remaining text
+  convertedText.push(text.substring(lastIndex));
+  text = convertedText.join('');
 
   // Step 1: Extract image shortcodes first (before markdown processing)
   // Pattern: [image:shortcode_name]
@@ -147,6 +226,20 @@ const processMathInText = (text: string): string => {
 
   // Step 2: Now render markdown (placeholders will pass through as plain text)
   let rendered = md.render(text);
+
+  // Step 2.5: Fix linkify issue - remove links that match shortcode patterns
+  // MarkdownIt's linkify may still convert some bare shortcodes into links
+  // We need to remove these false-positive links and convert them to [image:] format
+  // Pattern: <a href="/biology_form1_figure_1_1">biology_form1_figure_1_1</a>
+  // Should become: [image:biology_form1_figure_1_1]
+  // Note: If the shortcode doesn't exist, the image rendering will handle it gracefully (no image shown)
+  rendered = rendered.replace(
+    /<a\s+href="\/([a-z]+_form\d+_figure_\d+_\d+(_[a-z])?)">\1<\/a>/gi,
+    (match, shortcode) => {
+      console.log(`[MessageAI] Detected linkified shortcode "${shortcode}" - converting to [image:${shortcode}] format`);
+      return `[image:${shortcode}]`;
+    }
+  );
 
   // Step 3: Restore image shortcodes as HTML img tags
   imagePlaceholders.forEach(({ placeholder, replacement }) => {
