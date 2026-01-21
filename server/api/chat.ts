@@ -611,6 +611,12 @@ export default defineEventHandler(async (event) => {
       ragContext = await fetchRAGContext(searchQuery, authToken, queryContext);
       if (ragContext.length > 0) {
         console.log("[API /chat] RAG: Context fetched, length:", ragContext.length);
+        // Cap RAG context to prevent overly long prompts (4000 chars max)
+        const maxRagChars = 4000;
+        if (ragContext.length > maxRagChars) {
+          ragContext = `${ragContext.slice(0, maxRagChars).trimEnd()}...`;
+          console.log("[API /chat] RAG: Context capped to", maxRagChars, "characters");
+        }
       } else {
         console.log("[API /chat] RAG: No matching context found in embeddings database");
       }
@@ -707,28 +713,6 @@ If a student asks about factual information, you MUST respond:
 - Suggest rephrasing the question
 
 But you MUST NOT provide factual information that is not in the uploaded textbooks.`;
-  }
-
-  const authToken =
-    event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
-    getCookie(event, "signInAccessToken") ||
-    "";
-
-  const lastUserMessage = getLastUserMessageText(coreMessages);
-  const ragContext = lastUserMessage
-    ? await fetchRAGContext(lastUserMessage, authToken || undefined)
-    : "";
-  const maxRagChars = 4000;
-  const cappedRagContext =
-    ragContext.length > maxRagChars
-      ? `${ragContext.slice(0, maxRagChars).trimEnd()}...`
-      : ragContext;
-
-  if (cappedRagContext) {
-    systemPrompt = `${systemPrompt}
-
-RETRIEVED CONTEXT (use only if relevant and within scope):
-${cappedRagContext}`;
   }
 
   // Import studentTools dynamically to avoid module resolution issues
