@@ -4,7 +4,7 @@ import { processQuery, isQueryExpansionEnabled, type QueryContext } from "../../
 
 /**
  * Search endpoint for testing RAG directly
- * GET /api/books/search?q=query&limit=5&threshold=0.7&enhance=true&subject=physics&level=Form I
+ * GET /api/books/search?q=query&limit=5&threshold=0.7&enhance=true&subject=physics&level=Form 1
  */
 export default defineEventHandler(async (event) => {
   if (event.method !== "GET") {
@@ -49,12 +49,11 @@ export default defineEventHandler(async (event) => {
         } : undefined;
         
         processedQuery = processQuery(searchQuery, queryContext);
-        queryToSearch = processedQuery.expanded;
+        queryToSearch = processedQuery.cleaned; // Use cleaned query instead of expanded
         
         console.log(`[Book Search] Query processing:`);
         console.log(`  Original: "${processedQuery.original}"`);
         console.log(`  Cleaned: "${processedQuery.cleaned}"`);
-        console.log(`  Expanded: "${processedQuery.expanded}"`);
         console.log(`  Type: ${processedQuery.type}`);
         console.log(`  Keywords: [${processedQuery.keywords.join(", ")}]`);
         if (processedQuery.subject) {
@@ -94,7 +93,6 @@ export default defineEventHandler(async (event) => {
       query: searchQuery,
       processedQuery: processedQuery ? {
         cleaned: processedQuery.cleaned,
-        expanded: processedQuery.expanded,
         type: processedQuery.type,
         keywords: processedQuery.keywords,
         subject: processedQuery.subject,

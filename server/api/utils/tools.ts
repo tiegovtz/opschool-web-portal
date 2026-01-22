@@ -7,6 +7,18 @@ import { dirname } from "path";
 import type { Syllabus } from "~/types/syllabus.interface";
 import { embedQuery } from "./embeddings";
 
+// Module-level variable to store auth token for AI tools
+// This is set by the chat endpoint before tools are executed
+let currentAuthToken: string | undefined = undefined;
+
+/**
+ * Set the authentication token for AI tools
+ * Called by the chat endpoint before tool execution
+ */
+export function setAuthTokenForTools(token: string | undefined): void {
+  currentAuthToken = token;
+}
+
 /**
  * Get available subjects from syllabus files
  */
@@ -22,7 +34,7 @@ async function getAvailableSubjects(): Promise<{ subjects: string[]; subjectLeve
       if (match) {
         const subject = match[1];
         const formNum = match[2];
-        const level = formNum === "1" ? "Form I" : formNum === "2" ? "Form II" : `Form ${formNum}`;
+        const level = `Form ${formNum}`;
         
         subjects.add(subject);
         if (!subjectLevels[subject]) {
@@ -44,11 +56,11 @@ async function getAvailableSubjects(): Promise<{ subjects: string[]; subjectLeve
     return {
       subjects: ["biology", "physics", "chemistry", "mathematics", "geography"],
       subjectLevels: {
-        biology: ["Form I", "Form II"],
-        physics: ["Form I", "Form II"],
-        chemistry: ["Form I", "Form II"],
-        mathematics: ["Form I", "Form II"],
-        geography: ["Form I", "Form II"]
+        biology: ["Form 1", "Form 2"],
+        physics: ["Form 1", "Form 2"],
+        chemistry: ["Form 1", "Form 2"],
+        mathematics: ["Form 1", "Form 2"],
+        geography: ["Form 1", "Form 2"]
       }
     };
   }
@@ -74,13 +86,14 @@ async function readSyllabusFromFile(subject: string, level: string): Promise<Syl
     // Normalize subject: lowercase, replace spaces with underscores
     const normalizedSubject = subject.toLowerCase().trim().replace(/\s+/g, "_");
     
-    // Normalize level: convert "Form I" -> "form1", "Form II" -> "form2", etc.
+    // Normalize level: convert "Form 1" -> "form1", "Form 2" -> "form2", etc.
+    // NO ROMAN NUMERALS - only numeric forms are supported
     let normalizedLevel = level.toLowerCase().trim();
-    // Handle Roman numerals and numbers
-    normalizedLevel = normalizedLevel.replace(/form\s*i+$/i, "form1"); // Form I, form i, FORM I -> form1
-    normalizedLevel = normalizedLevel.replace(/form\s*ii+$/i, "form2"); // Form II, form ii, FORM II -> form2
+    // Handle numeric forms only
     normalizedLevel = normalizedLevel.replace(/form\s*1$/i, "form1"); // Form 1 -> form1
     normalizedLevel = normalizedLevel.replace(/form\s*2$/i, "form2"); // Form 2 -> form2
+    normalizedLevel = normalizedLevel.replace(/form\s*3$/i, "form3"); // Form 3 -> form3
+    normalizedLevel = normalizedLevel.replace(/form\s*4$/i, "form4"); // Form 4 -> form4
     // If it still has spaces, replace with nothing
     normalizedLevel = normalizedLevel.replace(/\s+/g, "");
     
@@ -196,7 +209,9 @@ function formatSyllabusForAgent(syllabus: Syllabus): string {
 }
 
 /**
- * Load image shortcodes from JSON file
+ * Load image shortcodes from API
+ * @deprecated This function is kept for backward compatibility but is no longer used
+ * All figure data is now loaded directly from the API in getChapterFigures
  */
 async function loadImageShortcodesFromFile(): Promise<{
   shortcodes: Record<string, any>;
@@ -204,16 +219,52 @@ async function loadImageShortcodesFromFile(): Promise<{
   byCategory: Record<string, number>;
 } | null> {
   try {
-    const filePath = join(process.cwd(), 'server', 'data', 'image-shortcodes.json');
-    const fileContent = await readFile(filePath, 'utf-8');
-    const data = JSON.parse(fileContent);
+    const { getFigures } = await import('../../utils/figuresApi');
+    const figures = await getFigures({});
+    
+    if (!figures || figures.length === 0) {
+      return {
+        shortcodes: {},
+        total: 0,
+        byCategory: {}
+      };
+    }
+    
+    // Convert to the expected format
+    const shortcodes: Record<string, any> = {};
+    const byCategory: Record<string, number> = {};
+    
+    for (const figure of figures) {
+      const shortcodeData: any = {
+        alt: figure.alt,
+        category: figure.category,
+        description: figure.description,
+        chapterName: figure.chapterName,
+        topicName: figure.topicName,
+        subjectName: figure.subjectName
+      };
+      
+      if (figure.paths && figure.paths.length > 0) {
+        shortcodeData.paths = figure.paths;
+        shortcodeData.alts = figure.alts;
+      } else if (figure.path) {
+        shortcodeData.path = figure.path;
+      }
+      
+      shortcodes[figure.shortcode] = shortcodeData;
+      
+      // Count by category
+      const cat = figure.category || 'general';
+      byCategory[cat] = (byCategory[cat] || 0) + 1;
+    }
+    
     return {
-      shortcodes: data.shortcodes || {},
-      total: data.total || 0,
-      byCategory: data.byCategory || {}
+      shortcodes,
+      total: figures.length,
+      byCategory
     };
   } catch (error: any) {
-    console.error('[getImageShortcodes] Failed to load:', error.message);
+    console.error('[getImageShortcodes] Failed to load from API:', error.message);
     return null;
   }
 }
@@ -242,22 +293,35 @@ export const studentTools = {
       try {
         console.log(`[getChapterFigures] 🔍 TOOL CALLED - chapter: "${chapter}", topic: "${topic || 'all'}"`);
         
-        // Load figure-metadata.json
-        const filePath = join(process.cwd(), 'server', 'data', 'figure-metadata.json');
-        let fileContent: string;
+        // Load figures from API
+        let images: any[] = [];
         try {
-          fileContent = await readFile(filePath, 'utf-8');
-        } catch (fileError: any) {
-          console.error("[getChapterFigures] Failed to load figure-metadata.json:", fileError);
+          const { getFigures } = await import('../../utils/figuresApi');
+          // Use the token from module-level variable (set by chat endpoint)
+          const figures = await getFigures({}, currentAuthToken);
+          
+          // Convert API figures to the format expected by the rest of the function
+          images = figures.map((fig: any) => ({
+            figure_number: fig.figure_number || '',
+            caption: fig.alt || '',
+            description: fig.description || '',
+            shortcode: fig.shortcode || '',
+            page_number: fig.page_number || null,
+            chapter: fig.chapterName || '',
+            topic: fig.topicName || '',
+            subject: fig.subjectName || '',
+            path: fig.path || '',
+            paths: fig.paths || [],
+            category: fig.category || ''
+          }));
+        } catch (apiError: any) {
+          console.error("[getChapterFigures] Failed to load from API:", apiError);
           return {
             found: false,
-            error: "Figure metadata file not available",
+            error: "Figure metadata not available",
             figures: []
           };
         }
-        
-        const data = JSON.parse(fileContent);
-        const images = data.images || [];
         
         if (images.length === 0) {
           return {
@@ -440,6 +504,10 @@ export const studentTools = {
         }));
         
         console.log(`[getChapterFigures] ✅ Found ${figures.length} figures for chapter "${chapter}"${topic ? `, topic "${topic}"` : ''}`);
+        // Log the shortcodes that AI should use
+        if (figures.length > 0) {
+          console.log(`[getChapterFigures] 📸 Shortcodes to use: ${figures.map((f: any) => `[image:${f.shortcode}]`).join(', ')}`);
+        }
         
         if (figures.length === 0) {
           return {
@@ -449,14 +517,18 @@ export const studentTools = {
           };
         }
         
+        // Generate ready-to-use shortcode strings for the AI
+        const shortcodesToUse = figures.map((f: any) => `[image:${f.shortcode}]`);
+        
         return {
           found: true,
           total: figures.length,
           chapter: chapter,
           topic: topic || null,
           figures: figures,
-          usage: "CRITICAL: You MUST include at least one [image:shortcode] in your response text. Use these shortcodes EXACTLY in this format: [image:shortcode_name]. Example: 'As shown in this diagram: [image:biology_form1_figure_2_1], the hand lens is used for...'. If multiple figures are returned and they are all highly relevant to what you're teaching, you SHOULD use multiple [image:shortcode] in your response - don't limit yourself to just one if all figures are relevant. Do not just acknowledge this result - you MUST use the shortcode(s) in your actual response. NEVER write bare shortcodes like 'biology_form1_figure_1_1' - ALWAYS use the [image:shortcode] format.",
-          instruction: "MANDATORY: Review ALL returned figures. You MUST include at least one [image:shortcode] from the figures list in your response. If multiple figures are returned and they are all highly relevant to the topic you're teaching, use multiple [image:shortcode] - one for each relevant figure. Select which figures to use based on relevance: if they are all highly relevant, use them all. Use the shortcodes EXACTLY in this format: [image:shortcode]. Example: 'Look at this: [image:biology_form1_figure_1_1] shows living things.' NEVER write bare shortcodes without the [image:] wrapper - ALWAYS use [image:shortcode] format. This is not optional - if figures are returned, you MUST use at least one, and you SHOULD use multiple if they are all relevant."
+          shortcodes_ready_to_use: shortcodesToUse,
+          usage: `CRITICAL: You MUST include at least one image in your response. Copy-paste one of these EXACTLY into your response: ${shortcodesToUse.join(' or ')}. Example response: "Look at this diagram: ${shortcodesToUse[0]} - it shows..."`,
+          instruction: `MANDATORY: Include at least one of these shortcodes in your response text: ${shortcodesToUse.join(', ')}. If multiple figures are returned, consider using all of them if relevant. Just copy the shortcode exactly as shown (including the brackets).`
         };
       } catch (error: any) {
         console.error("[getChapterFigures] Error:", error);
@@ -471,10 +543,10 @@ export const studentTools = {
 
   // Get syllabus for a subject and level from JSON files
   getSyllabus: tool({
-    description: "Get the syllabus/curriculum for a given subject and level (Form I or Form II) from JSON files. Use this when you need to understand what competences, topics, or content should be covered for a specific subject and level. This helps ensure syllabus compliance and proper lesson planning. Available subjects include: biology, physics, chemistry, mathematics, geography. Available levels: Form I, Form II.",
+    description: "Get the syllabus/curriculum for a given subject and level (Form 1 or Form 2) from JSON files. Use this when you need to understand what competences, topics, or content should be covered for a specific subject and level. This helps ensure syllabus compliance and proper lesson planning. Available subjects include: biology, physics, chemistry, mathematics, geography. Available levels: Form 1, Form 2.",
     inputSchema: z.object({ 
       subject: z.string().describe("The subject name (e.g., 'biology', 'physics', 'mathematics', 'chemistry', 'geography', 'history', 'english', 'kiswahili')"),
-      level: z.string().describe("The education level (e.g., 'Form I', 'Form II', 'form i', 'form ii')")
+      level: z.string().describe("The education level (e.g., 'Form 1', 'Form 2', 'form 1', 'form 2')")
     }),
     execute: async ({ subject, level }) => {
       try {

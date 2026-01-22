@@ -68,10 +68,9 @@ function formatRAGContext(
  * 
  * This function implements a zero-miss strategy:
  * 1. Tries LLM-rewritten queries (if enabled)
- * 2. Tries rule-based expanded query
- * 3. Tries cleaned query
- * 4. Tries original query
- * 5. Tries keyword-only query
+ * 2. Tries cleaned query
+ * 3. Tries original query
+ * 4. Tries keyword-only query
  * 
  * For each query variation, uses progressive threshold fallback (0.7 -> 0.5 -> 0.3 -> 0.1)
  * Only returns empty after exhausting ALL strategies.
@@ -119,7 +118,6 @@ export async function fetchRAGContext(
         console.log("[RAG] Query processing:");
         console.log(`  Original: "${processedQuery.original}"`);
         console.log(`  Cleaned: "${processedQuery.cleaned}"`);
-        console.log(`  Expanded: "${processedQuery.expanded}"`);
         console.log(`  Type: ${processedQuery.type}`);
         console.log(`  Keywords: [${processedQuery.keywords.join(", ")}]`);
         if (processedQuery.subject) {
@@ -144,12 +142,7 @@ export async function fetchRAGContext(
       queryVariations.push(...processedQuery.llmRewritten);
     }
     
-    // Add rule-based expanded query
-    if (processedQuery?.expanded) {
-      queryVariations.push(processedQuery.expanded);
-    }
-    
-    // Add cleaned query
+    // Add cleaned query (expansion removed for now)
     if (processedQuery?.cleaned) {
       queryVariations.push(processedQuery.cleaned);
     }

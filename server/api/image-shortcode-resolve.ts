@@ -1,10 +1,9 @@
-import { readFile } from "fs/promises";
-import { join } from "path";
-import { defineEventHandler, getQuery } from "h3";
+import { defineEventHandler, getQuery, getCookie } from "h3";
+import { getFigureByShortcode } from "../utils/figuresApi";
 
 /**
  * API endpoint to resolve image shortcode to metadata
- * Used by frontend to get image paths for dynamic shortcodes from JSON file
+ * Used by frontend to get image paths for dynamic shortcodes from external API
  */
 export default defineEventHandler(async (event) => {
   try {
@@ -19,33 +18,35 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Load shortcodes from JSON file
+    // Get auth token from cookie or header
+    const authToken = getCookie(event, "signInAccessToken") ||
+                      event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
+                      undefined;
+
+    // Fetch figure from external API
     try {
-      const filePath = join(process.cwd(), 'server', 'data', 'image-shortcodes.json');
-      const fileContent = await readFile(filePath, 'utf-8');
-      const data = JSON.parse(fileContent);
+      const figure = await getFigureByShortcode(shortcode, authToken);
 
-      const shortcodeData = data.shortcodes?.[shortcode];
-
-      if (shortcodeData) {
+      if (figure) {
         // Check if this is a multi-image figure (has paths array) or single image (has path)
-        const isMultiImage = Array.isArray(shortcodeData.paths) && shortcodeData.paths.length > 0;
+        const isMultiImage = Array.isArray(figure.paths) && figure.paths.length > 0;
         
         const metadata: Record<string, any> = {
-            alt: shortcodeData.alt,
-            category: shortcodeData.category,
-            description: shortcodeData.description,
-            chapterName: shortcodeData.chapterName,
-            topicName: shortcodeData.topicName
+          alt: figure.alt,
+          category: figure.category,
+          description: figure.description,
+          chapterName: figure.chapterName,
+          topicName: figure.topicName,
+          subjectName: figure.subjectName
         };
         
         if (isMultiImage) {
           // Multi-image figure: return paths and alts arrays
-          metadata.paths = shortcodeData.paths;
-          metadata.alts = shortcodeData.alts;
+          metadata.paths = figure.paths;
+          metadata.alts = figure.alts;
         } else {
           // Single image: return just path
-          metadata.path = shortcodeData.path;
+          metadata.path = figure.path;
         }
         
         return {
@@ -59,8 +60,9 @@ export default defineEventHandler(async (event) => {
         error: "Shortcode not found",
         metadata: null
       };
-    } catch (fileError: any) {
-      // File doesn't exist or can't be read
+    } catch (apiError: any) {
+      // API call failed
+      console.error('[image-shortcode-resolve] API error:', apiError);
       return {
         success: false,
         error: "Shortcode registry not available",

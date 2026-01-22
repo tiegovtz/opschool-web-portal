@@ -1,5 +1,4 @@
-import { readFile, writeFile, open } from "fs/promises";
-import { readFileSync, writeFileSync } from "fs";
+import { readFile } from "fs/promises";
 import { join } from "path";
 
 interface SingleImageInput {
@@ -151,178 +150,79 @@ export default defineEventHandler(async (event) => {
     // Generate shortcode using subject name
     const shortcode = generateShortcode(body.subjectName || "", body.figureNumber);
 
-    // Read existing shortcodes file
-    const dataDir = join(process.cwd(), "server", "data");
-    const filePath = join(dataDir, "image-shortcodes.json");
+    // Get auth token from cookie or header
+    const authToken = getCookie(event, "signInAccessToken") ||
+                      event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
+                      undefined;
 
-    let existingData: {
-      generatedAt: string;
-      total: number;
-      byCategory: Record<string, number>;
-      shortcodes: Record<string, any>;
-    };
-
-    try {
-      const content = await readFile(filePath, "utf-8");
-      existingData = JSON.parse(content);
-    } catch {
-      // File doesn't exist, create new structure
-      existingData = {
-        generatedAt: new Date().toISOString(),
-        total: 0,
-        byCategory: {
-          biology: 0,
-          physics: 0,
-          chemistry: 0,
-          mathematics: 0,
-          geography: 0,
-          horticulture: 0,
-          english: 0,
-          "leather-goods": 0,
-        },
-        shortcodes: {},
-      };
-    }
-
-    // Check if shortcode already exists
-    if (existingData.shortcodes[shortcode]) {
+    // Check if shortcode already exists in API
+    const { getFigureByShortcode, createFigure } = await import('../utils/figuresApi');
+    const existing = await getFigureByShortcode(shortcode, authToken);
+    
+    if (existing) {
       throw createError({
         statusCode: 409,
         message: `Shortcode "${shortcode}" already exists. Use a different figure number or delete the existing entry first.`,
       });
     }
 
-    // Create the new entry
-    const searchableText = generateSearchableText(
-      shortcode,
-      body.figureNumber,
-      body.alt || (body.type === "multi" ? body.alts.join(" ") : ""),
-      body.description || "",
-      body.chapterName || "",
-      body.topicName || ""
-    );
-
-    let newEntry: Record<string, any>;
-
-    if (body.type === "single") {
-      newEntry = {
-        path: body.path,
-        alt: body.alt,
-        category: body.category,
-        description: body.description || "",
-        chapterName: body.chapterName || "",
-        topicName: body.topicName || "",
-        subjectName: body.subjectName || "",
-        searchableText,
-      };
-    } else {
-      newEntry = {
-        paths: body.paths,
-        alts: body.alts,
-        alt: body.alt || body.alts.join(" "),
-        category: body.category,
-        description: body.description || "",
-        chapterName: body.chapterName || "",
-        topicName: body.topicName || "",
-        subjectName: body.subjectName || "",
-        searchableText,
-      };
-    }
-
-    // Add the new entry
-    existingData.shortcodes[shortcode] = newEntry;
-
-    // Update counts
-    existingData.total = Object.keys(existingData.shortcodes).length;
-    existingData.generatedAt = new Date().toISOString();
-
-    // Recalculate category counts
-    const categoryCounts: Record<string, number> = {
-      biology: 0,
-      physics: 0,
-      chemistry: 0,
-      mathematics: 0,
-      geography: 0,
-      horticulture: 0,
-      english: 0,
-      "leather-goods": 0,
-    };
-
-    for (const entry of Object.values(existingData.shortcodes)) {
-      const cat = (entry as any).category || "biology";
-      if (categoryCounts[cat] !== undefined) {
-        categoryCounts[cat]++;
-      }
-    }
-    existingData.byCategory = categoryCounts;
-
-    // Prepare figure-metadata entry BEFORE writing anything
-    const figureMetadataPath = join(dataDir, "figure-metadata.json");
-    let figureMetadata: { images: any[] };
-
+    // Get page_number from figure-metadata.json if available
+    let pageNumber: number | undefined = undefined;
     try {
+      const dataDir = join(process.cwd(), "server", "data");
+      const figureMetadataPath = join(dataDir, "figure-metadata.json");
       const metadataContent = await readFile(figureMetadataPath, "utf-8");
-      figureMetadata = JSON.parse(metadataContent);
+      const figureMetadata = JSON.parse(metadataContent);
+      const metadataEntry = figureMetadata.images?.find((img: any) => img.shortcode === shortcode);
+      if (metadataEntry) {
+        pageNumber = metadataEntry.page_number;
+      }
     } catch {
-      // File doesn't exist, create new structure
-      figureMetadata = { images: [] };
+      // figure-metadata.json not found or invalid, that's okay
     }
 
-    const figureEntry = {
-      chapter: body.chapterName || "",
-      topic: body.topicName || "",
-      figure_number: `Figure ${body.figureNumber}`,
-      caption: body.alt || (body.type === "multi" ? body.alts.join(" ") : ""),
-      description: body.description || "",
+    // Create figure in API
+    console.log(`[image-shortcode-add] Creating figure ${shortcode} in API...`);
+    const createdFigure = await createFigure({
       shortcode: shortcode,
-      subject: body.subjectName || "",
+      alt: body.alt || (body.type === "multi" ? body.alts.join(" ") : ""),
+      description: body.description || body.alt || "No description available",
+      category: body.category,
+      subjectName: body.subjectName || "",
+      chapterName: body.chapterName || "",
+      topicName: body.topicName || "",
+      figureNumber: body.figureNumber,
+      path: body.type === "single" ? body.path : undefined,
+      paths: body.type === "multi" ? body.paths : undefined,
+      alts: body.type === "multi" ? body.alts : undefined,
+      page_number: pageNumber,
+    }, authToken);
+
+    if (!createdFigure) {
+      throw createError({
+        statusCode: 500,
+        message: "Failed to create figure in API",
+      });
+    }
+
+    console.log(`[image-shortcode-add] ✅ Successfully created figure ${shortcode} in API`);
+
+    // Build response entry
+    const newEntry: Record<string, any> = {
+      alt: createdFigure.alt,
+      category: createdFigure.category,
+      description: createdFigure.description,
+      chapterName: createdFigure.chapterName,
+      topicName: createdFigure.topicName,
+      subjectName: createdFigure.subjectName,
     };
 
-    figureMetadata.images.push(figureEntry);
-
-    // Prepare both JSON strings before writing
-    const shortcodesJson = JSON.stringify(existingData, null, 2);
-    const metadataJson = JSON.stringify(figureMetadata, null, 2);
-
-    // Use SYNCHRONOUS writes to ensure data is flushed to disk immediately
-    // This bypasses potential Nuxt dev server caching issues
-    console.log(`[image-shortcode-add] Writing shortcode ${shortcode} to image-shortcodes.json (sync)...`);
-    try {
-      writeFileSync(filePath, shortcodesJson, "utf-8");
-      console.log(`[image-shortcode-add] ✅ Successfully wrote to image-shortcodes.json`);
-    } catch (writeErr) {
-      console.error(`[image-shortcode-add] ❌ FAILED to write image-shortcodes.json:`, writeErr);
-      throw createError({
-        statusCode: 500,
-        message: `Failed to write image-shortcodes.json: ${(writeErr as Error).message}`,
-      });
+    if (createdFigure.paths && createdFigure.paths.length > 0) {
+      newEntry.paths = createdFigure.paths;
+      newEntry.alts = createdFigure.alts;
+    } else if (createdFigure.path) {
+      newEntry.path = createdFigure.path;
     }
-
-    // Then figure-metadata.json
-    console.log(`[image-shortcode-add] Writing to figure-metadata.json (sync)...`);
-    try {
-      writeFileSync(figureMetadataPath, metadataJson, "utf-8");
-      console.log(`[image-shortcode-add] ✅ Successfully wrote to figure-metadata.json`);
-    } catch (writeErr) {
-      console.error(`[image-shortcode-add] ❌ FAILED to write figure-metadata.json:`, writeErr);
-      // Don't throw here - image-shortcodes was already written
-    }
-
-    // Verify the write by reading back SYNCHRONOUSLY
-    console.log(`[image-shortcode-add] Verifying write...`);
-    const verifyContent = readFileSync(filePath, "utf-8");
-    const verifyData = JSON.parse(verifyContent);
-    if (!verifyData.shortcodes[shortcode]) {
-      console.error(`[image-shortcode-add] ❌ VERIFICATION FAILED - shortcode not found after write!`);
-      console.error(`[image-shortcode-add] File has ${Object.keys(verifyData.shortcodes).length} shortcodes`);
-      console.error(`[image-shortcode-add] Looking for: ${shortcode}`);
-      console.error(`[image-shortcode-add] Available: ${Object.keys(verifyData.shortcodes).join(', ')}`);
-      throw createError({
-        statusCode: 500,
-        message: "Write verification failed - shortcode not found in file after write",
-      });
-    }
-    console.log(`[image-shortcode-add] ✅ Verified shortcode ${shortcode} exists in file (total: ${verifyData.total})`);
 
     return {
       success: true,
