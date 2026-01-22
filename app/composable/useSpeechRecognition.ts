@@ -44,6 +44,7 @@ export const useSpeechRecognition = () => {
     rec.continuous = true;
     rec.interimResults = true;
     rec.lang = 'en-US';
+    rec.maxAlternatives = 1;
 
     rec.onstart = () => {
       isListening.value = true;
@@ -51,7 +52,7 @@ export const useSpeechRecognition = () => {
       transcript.value = '';
       interimTranscript.value = '';
       currentWords.value = [];
-      hasSpoken = false; // Reset on start
+      hasSpoken = false;
     };
 
     rec.onresult = (event: any) => {
@@ -111,6 +112,12 @@ export const useSpeechRecognition = () => {
 
     rec.onerror = (event: any) => {
       const errorMessage = event.error || 'Speech recognition error';
+      
+      // Ignore "no-speech" errors - they're expected when user doesn't speak
+      if (errorMessage === 'no-speech' || errorMessage.includes('no-speech')) {
+        return;
+      }
+      
       error.value = errorMessage;
       isListening.value = false;
       
@@ -131,6 +138,8 @@ export const useSpeechRecognition = () => {
 
   const start = () => {
     if (isListening.value) return;
+
+    hasSpoken = false;
 
     if (!recognition) {
       recognition = initializeRecognition();
@@ -167,6 +176,7 @@ export const useSpeechRecognition = () => {
     interimTranscript.value = '';
     currentWords.value = [];
     error.value = null;
+    hasSpoken = false;
   };
 
   onUnmounted(() => {

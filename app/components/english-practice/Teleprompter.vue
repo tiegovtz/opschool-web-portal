@@ -37,7 +37,7 @@
         <!-- Header with read-aloud controls -->
         <div class="flex items-center justify-between mb-3">
           <div class="text-xs text-gray-500 uppercase tracking-wider">
-            {{ currentScriptLine.speaker === 'student1' ? 'Student 1' : currentScriptLine.speaker === 'student2' ? 'Student 2' : 'AI Tutor' }}'s Line
+            {{ currentSpeakerLabel }}'s Line
           </div>
           <!-- Read-aloud controls -->
           <div class="flex items-center gap-2">
@@ -85,10 +85,18 @@
           </div>
         </div>
         
-        <!-- Teleprompter text with word highlighting -->
-        <div class="text-center">
+        <!-- Teleprompter text with word highlighting - scrollable container -->
+        <div class="text-center max-h-[60vh] overflow-y-auto overflow-x-hidden" ref="textContainer">
           <div
-            class="text-4xl md:text-5xl lg:text-6xl font-semibold leading-relaxed text-gray-900 select-none"
+            :class="[
+              'font-semibold leading-relaxed text-gray-900 select-none',
+              // Adjust text size based on line length - smaller for longer lines
+              scriptWords.length > 30
+                ? 'text-xl md:text-2xl lg:text-3xl'
+                : scriptWords.length > 20
+                ? 'text-2xl md:text-3xl lg:text-4xl'
+                : 'text-3xl md:text-4xl lg:text-5xl'
+            ]"
             style="line-height: 1.6;"
           >
             <span
@@ -157,7 +165,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
+import { computed, watch, ref, nextTick } from 'vue';
 import type { SpeakerType, PracticeMode } from '~/types/script.interface';
 import type { ScriptLine } from '~/types/script.interface';
 import { useReadAloud } from '~/composable/useReadAloud';
@@ -173,12 +181,18 @@ interface Props {
   mode: PracticeMode;
   isAISpeaking?: boolean;
   currentWordIndex?: number; // Track current position in script words
+  student1Name?: string;
+  student2Name?: string;
+  aiName?: string;
 }
 
 const props = defineProps<Props>();
 
 // Read-aloud composable
 const readAloud = useReadAloud();
+
+// Text container ref for scrolling
+const textContainer = ref<HTMLElement | null>(null);
 
 const scriptWords = computed(() => {
   if (!props.currentScriptLine?.text) return [];
@@ -224,11 +238,29 @@ const getWordState = (wordIndex: number, word: string): 'highlighted' | 'spoken'
 };
 
 const student1Name = computed(() => {
-  return 'Student 1';
+  return props.student1Name || 'Student 1';
 });
 
 const student2Name = computed(() => {
+  if (props.student2Name) {
+    return props.student2Name;
+  }
   return props.mode === 'single-user' ? 'AI Tutor' : 'Student 2';
+});
+
+const aiName = computed(() => props.aiName || 'AI Tutor');
+
+const currentSpeakerLabel = computed(() => {
+  if (!props.currentScriptLine) {
+    return '';
+  }
+  if (props.currentScriptLine.speaker === 'student1') {
+    return student1Name.value;
+  }
+  if (props.currentScriptLine.speaker === 'student2') {
+    return student2Name.value;
+  }
+  return aiName.value;
 });
 
 // Check if read-aloud should be disabled
@@ -305,6 +337,17 @@ watch(() => props.currentScriptLine?.id, () => {
   }
   // Reset hasPlayed for new line
   readAloud.hasPlayed.value = false;
+  // Scroll to top when line changes (but not when recording starts)
+  nextTick(() => {
+    if (textContainer.value && !props.isRecording) {
+      textContainer.value.scrollTop = 0;
+    }
+  });
+});
+
+// Don't scroll to top when recording starts - maintain current scroll position
+watch(() => props.isRecording, (isRecording) => {
+  // When recording starts, don't change scroll position
+  // This prevents the "jump to top" issue
 });
 </script>
-

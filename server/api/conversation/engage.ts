@@ -14,7 +14,8 @@ const matchesIdentifier = (value: unknown, identifier: string) => {
 
 function normalizePieces(
   payload: any,
-  identifier: string
+  identifier: string,
+  type?: string
 ): { name: string; pieces: string[] } {
   const items = Array.isArray(payload)
     ? payload
@@ -26,10 +27,23 @@ function normalizePieces(
 
   const sorted = items
     .filter(
-      (item) =>
-        item &&
-        typeof item.text === 'string' &&
-        matchesIdentifier(item?.identifier, identifier)
+      (item) => {
+        // Existing checks
+        if (!item || typeof item.text !== 'string') return false
+        if (!matchesIdentifier(item?.identifier, identifier)) return false
+        
+        // NEW: Filter by type
+        const itemType = String(item?.type || '').trim().toLowerCase()
+        const requestedType = String(type || '').trim().toLowerCase()
+        
+        if (requestedType === 'constant') {
+          // English practice: only include items with type="constant"
+          return itemType === 'constant'
+        } else {
+          // Conversation practice: include items with type="engage" or missing type
+          return itemType === 'engage' || itemType === ''
+        }
+      }
     )
     .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0))
 
@@ -52,6 +66,7 @@ export default defineEventHandler(async (event) => {
     process.env.CONVERSATION_CHAPTER_ID ||
     ''
   const identifier = normalizeQueryValue(query?.identifier)
+  const type = normalizeQueryValue(query?.type)
   if (!chapterId) {
     throw createError({
       statusCode: 500,
@@ -61,7 +76,15 @@ export default defineEventHandler(async (event) => {
 
   const baseUrl = process.env.VITE_API_BASE_URL || DEFAULT_BASE_URL
   const base = baseUrl.replace(/\/$/, '')
+  
+  // Build URLs based on type - backend might expect type in the path
+  const normalizedType = String(type || '').trim().toLowerCase()
+  const typePath = normalizedType === 'constant' ? 'constant' : 'engage'
+  
   const urls = [
+    `${base}/conversation/${typePath}/${encodeURIComponent(chapterId)}`,
+    `${base}/conversations/${typePath}/${encodeURIComponent(chapterId)}`,
+    // Fallback to old URLs for backward compatibility
     `${base}/conversation/engage/${encodeURIComponent(chapterId)}`,
     `${base}/conversations/engage/${encodeURIComponent(chapterId)}`,
   ]
@@ -101,7 +124,7 @@ export default defineEventHandler(async (event) => {
     payload = null
   }
 
-  const { name, pieces } = normalizePieces(payload, identifier)
+  const { name, pieces } = normalizePieces(payload, identifier, type)
 
   return {
     chapterId,
