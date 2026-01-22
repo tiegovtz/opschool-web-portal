@@ -1,26 +1,35 @@
 const conversationParser = (query: string): string => {
-  const regex = /conversation="([^"]+)",chapterId="([^"]+)"/g;
+  const regex = /conversation="([^"]+)",chapterId="([^"]+)"(?:,type="([^"]+)")?/g;
 
-  return query.replace(regex, (match, identifier, chapterId) => {
+  return query.replace(regex, (match, identifier, chapterId, type) => {
     const safeIdentifier = String(identifier || '').trim();
     const safeChapterId = String(chapterId || '').trim();
+    const safeType = String(type || '').trim();
+    const normalizedType = safeType.toLowerCase();
+    const isConstant = normalizedType === 'constant';
+    const buttonLabel = isConstant ? 'English Practice' : 'Conversation Practice';
 
     return `<button
         type="button"
         class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-oceanBlue text-white hover:bg-deepBlue transition-colors"
-        onclick="openConversationPractice('${safeChapterId}','${safeIdentifier}')"
+        onclick="openConversationPractice('${safeChapterId}','${safeIdentifier}','${safeType}')"
         data-conversation-identifier="${safeIdentifier}"
         data-conversation-chapter="${safeChapterId}"
-        aria-label="Open conversation practice"
+        data-conversation-type="${safeType}"
+        aria-label="Open ${buttonLabel.toLowerCase()}"
       >
-        Conversation Practice
+        ${buttonLabel}
       </button>`;
   });
 };
 
 declare global {
   interface Window {
-    openConversationPractice: (chapterId: string, identifier: string) => void;
+    openConversationPractice: (
+      chapterId: string,
+      identifier: string,
+      type?: string
+    ) => void;
     closeConversationPractice?: () => void;
   }
 }
@@ -37,10 +46,20 @@ if (typeof window !== 'undefined') {
 
   window.closeConversationPractice = closeOverlay;
 
-  window.openConversationPractice = (chapterId: string, identifier: string) => {
-    const url = `/conversation-practice?chapterId=${encodeURIComponent(
-      chapterId
-    )}&identifier=${encodeURIComponent(identifier)}&embed=1`;
+  window.openConversationPractice = (
+    chapterId: string,
+    identifier: string,
+    type?: string
+  ) => {
+    const normalizedType = String(type || '').trim().toLowerCase();
+    const baseRoute =
+      normalizedType === 'constant' ? '/english-practice' : '/conversation-practice';
+    const params = new URLSearchParams();
+    if (chapterId) params.set('chapterId', chapterId);
+    if (identifier) params.set('identifier', identifier);
+    if (normalizedType) params.set('type', normalizedType);
+    params.set('embed', '1');
+    const url = `${baseRoute}?${params.toString()}`;
 
     let overlay = document.getElementById(overlayId) as HTMLDivElement | null;
     let iframe = document.getElementById(iframeId) as HTMLIFrameElement | null;
