@@ -27,7 +27,7 @@ export function initAudioCanvasPlayers() {
       if (currentPlayingAudio && currentPlayingAudio !== audio) {
         currentPlayingAudio.pause();
         if (currentPlayingBtn) {
-          currentPlayingBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19.105 11.446a2.34 2.34 0 0 1-.21 1c-.15.332-.38.62-.67.84l-9.65 7.51a2.3 2.3 0 0 1-1.17.46h-.23a2.2 2.2 0 0 1-1-.24a2.29 2.29 0 0 1-1.28-2v-14a2.2 2.2 0 0 1 .33-1.17a2.27 2.27 0 0 1 2.05-1.1c.412.02.812.148 1.16.37l9.66 6.44c.294.204.54.47.72.78c.19.34.29.721.29 1.11"/></svg>`; // or your play icon SVG
+          currentPlayingBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M19.105 11.446a2.34 2.34 0 0 1-.21 1c-.15.332-.38.62-.67.84l-9.65 7.51a2.3 2.3 0 0 1-1.17.46h-.23a2.2 2.2 0 0 1-1-.24a2.29 2.29 0 0 1-1.28-2v-14a2.2 2.2 0 0 1 .33-1.17a2.27 2.27 0 0 1 2.05-1.1c.412.02.812.148 1.16.37l9.66 6.44c.294.204.54.47.72.78c.19.34.29.721.29 1.11"/></svg>`; // or your play icon SVG
         }
         currentPlayingAudio = null;
         currentPlayingBtn = null;
@@ -35,28 +35,77 @@ export function initAudioCanvasPlayers() {
 
       if (!playing) {
         audio.play();
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M10.25 5.5v13a1.75 1.75 0 0 1-1.75 1.75h-3a1.75 1.75 0 0 1-1.75-1.75v-13A1.76 1.76 0 0 1 5.5 3.75h3a1.75 1.75 0 0 1 1.75 1.75m10 0v13a1.75 1.75 0 0 1-1.75 1.75h-3a1.75 1.75 0 0 1-1.75-1.75v-13a1.76 1.76 0 0 1 1.75-1.75h3a1.75 1.75 0 0 1 1.75 1.75"/></svg>`;
-        // drawWave(analyser, ctx, canvas);
-          drawBars(analyser, ctx, canvas);
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M10.25 5.5v13a1.75 1.75 0 0 1-1.75 1.75h-3a1.75 1.75 0 0 1-1.75-1.75v-13A1.76 1.76 0 0 1 5.5 3.75h3a1.75 1.75 0 0 1 1.75 1.75m10 0v13a1.75 1.75 0 0 1-1.75 1.75h-3a1.75 1.75 0 0 1-1.75-1.75v-13a1.76 1.76 0 0 1 1.75-1.75h3a1.75 1.75 0 0 1 1.75 1.75"/></svg>`;
+        drawWave(analyser, ctx, canvas);
+        // drawGlow(analyser, ctx, canvas);
         currentPlayingAudio = audio;
         currentPlayingBtn = btn as HTMLButtonElement;
       } else {
         audio.pause();
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19.105 11.446a2.34 2.34 0 0 1-.21 1c-.15.332-.38.62-.67.84l-9.65 7.51a2.3 2.3 0 0 1-1.17.46h-.23a2.2 2.2 0 0 1-1-.24a2.29 2.29 0 0 1-1.28-2v-14a2.2 2.2 0 0 1 .33-1.17a2.27 2.27 0 0 1 2.05-1.1c.412.02.812.148 1.16.37l9.66 6.44c.294.204.54.47.72.78c.19.34.29.721.29 1.11"/></svg>`; 
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M19.105 11.446a2.34 2.34 0 0 1-.21 1c-.15.332-.38.62-.67.84l-9.65 7.51a2.3 2.3 0 0 1-1.17.46h-.23a2.2 2.2 0 0 1-1-.24a2.29 2.29 0 0 1-1.28-2v-14a2.2 2.2 0 0 1 .33-1.17a2.27 2.27 0 0 1 2.05-1.1c.412.02.812.148 1.16.37l9.66 6.44c.294.204.54.47.72.78c.19.34.29.721.29 1.11"/></svg>`;
         currentPlayingAudio = null;
         currentPlayingBtn = null;
       }
 
       playing = !playing;
     });
+
+    if(currentPlayingAudio) handleAudio()
   });
 }
 
+function drawGlow(
+  analyser: AnalyserNode,
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+) {
+  const data = new Uint8Array(analyser.frequencyBinCount);
+
+  const render = () => {
+    analyser.getByteFrequencyData(data);
+    
+    const avg = data.reduce((a, b) => a + b, 0) / data.length;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const radius = 14 + avg / 25;
+    const intensity = Math.min(avg / 255, 0.8);
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(86,173,232,${0.25 + intensity * 0.6})`;
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = "#56ade8";
+    ctx.stroke();
+
+    requestAnimationFrame(render);
+  };
+
+  render();
+}
+
+export function handleAudio() {
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden && !currentPlayingAudio?.paused) {
+      currentPlayingAudio?.pause();
+    }    
+  });
+
+    if (!currentPlayingAudio?.paused) {
+      currentPlayingAudio?.pause();
+      currentPlayingAudio=null;
+      
+    }
+
+}
 
 function drawWave(
   analyser: AnalyserNode,
   ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
 ) {
   const bufferLength = analyser.frequencyBinCount;
   const dataArray = new Uint8Array(bufferLength);
@@ -70,7 +119,7 @@ function drawWave(
     ctx.strokeStyle = "#56ade8";
     ctx.beginPath();
 
-    const sliceWidth = canvas.width / bufferLength;
+    const sliceWidth = (canvas.width / bufferLength)*2.5;
     let x = 0;
 
     for (let i = 0; i < bufferLength; i++) {
@@ -83,37 +132,6 @@ function drawWave(
 
     ctx.lineTo(canvas.width, canvas.height / 2);
     ctx.stroke();
-
-    requestAnimationFrame(render);
-  };
-
-  render();
-}
-
-function drawBars(
-  analyser: AnalyserNode,
-  ctx: CanvasRenderingContext2D,
-  canvas: HTMLCanvasElement
-) {
-  const bufferLength = analyser.frequencyBinCount;
-  const dataArray = new Uint8Array(bufferLength);
-
-  const render = () => {
-    analyser.getByteFrequencyData(dataArray); // frequency data for bars
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const barWidth = canvas.width / bufferLength;
-    let x = 0;
-
-    for (let i = 0; i < bufferLength; i++) {
-      const barHeight = ((dataArray[i] ?? 0) / 255) * canvas.height;
-
-      ctx.fillStyle = `rgb(${100 + barHeight}, 120, 255)`; // gradient color effect
-      ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-
-      x += barWidth;
-    }
 
     requestAnimationFrame(render);
   };

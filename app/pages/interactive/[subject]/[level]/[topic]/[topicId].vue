@@ -12,8 +12,7 @@ import { updateChapterProgress } from "~/utilities/progress";
 import { fetchAsyncData } from "~/composable/useAsyncFetch";
 import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
-import { string } from "zod";
-import { initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
+import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
 
 const route = useRoute();
 const router = useRouter();
@@ -292,7 +291,7 @@ const getChapter = async (chapterId: string) => {
   chapters.questions = null;
   chapters.isAttemptingQuizes = false; //close quiz
   chapters.currentChapterId = chapterId;
-
+  handleAudio(); // Pause any playing audio when chapter changes
   await ensureAccessTokenValid();
   announcement.value = `Loading activity of ${chapters.list?.find(c => c._id === chapterId)?.name} content please wait`;
   try {

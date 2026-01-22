@@ -43,7 +43,7 @@ const audioParser = (html: string): string => {
   const doc = parseHTML(html);
 
   const audios = doc.querySelectorAll("audio");
-  
+
   audios.forEach((audio, index) => {
     let src = audio.getAttribute("src");
 
@@ -53,24 +53,24 @@ const audioParser = (html: string): string => {
     }
     if (!src) return;
     const wrapper = doc.createElement("div");
-    wrapper.className = "audio-canvas-wrapper";
+    wrapper.className = "audio-canvas-wrapper inline-block";
     wrapper.innerHTML = `
-      <div class="flex items-center flex-row-reverse">
+      <div class="inline-flex items-center rounded-b-xl h-10 w-36 relative">
         <button 
-          class="play-btn bg-oceanBlue text-white px-3 py-1 rounded-full h-10 w-10 flex items-center justify-center"
+          class="play-btn bg-oceanBlue py-1 text-white rounded-full h-8 w-8 flex items-center justify-center"
           data-audio-src="${src}"
           aria-label="Play audio"
         >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M19.105 11.446a2.34 2.34 0 0 1-.21 1c-.15.332-.38.62-.67.84l-9.65 7.51a2.3 2.3 0 0 1-1.17.46h-.23a2.2 2.2 0 0 1-1-.24a2.29 2.29 0 0 1-1.28-2v-14a2.2 2.2 0 0 1 .33-1.17a2.27 2.27 0 0 1 2.05-1.1c.412.02.812.148 1.16.37l9.66 6.44c.294.204.54.47.72.78c.19.34.29.721.29 1.11"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M19.105 11.446a2.34 2.34 0 0 1-.21 1c-.15.332-.38.62-.67.84l-9.65 7.51a2.3 2.3 0 0 1-1.17.46h-.23a2.2 2.2 0 0 1-1-.24a2.29 2.29 0 0 1-1.28-2v-14a2.2 2.2 0 0 1 .33-1.17a2.27 2.27 0 0 1 2.05-1.1c.412.02.812.148 1.16.37l9.66 6.44c.294.204.54.47.72.78c.19.34.29.721.29 1.11"/></svg>
         </button>
 
         <canvas 
-          width="300" 
+          width="40" 
           height="40" 
-          class="audio-wave-canvas flex-1"
+          class="audio-wave-canvas flex-1 rounded-xl h-full"
           data-audio-src="${src}"
         ></canvas>
-      </div>
+    </div>
     `;
 
     audio.replaceWith(wrapper);
@@ -84,5 +84,5 @@ const mediaParser = (html: string): string => {
   let parsedHTML = videoParser(html);
   parsedHTML = audioParser(parsedHTML);
   return parsedHTML;
-}
-export { videoParser, audioParser ,mediaParser};
+};
+export { videoParser, audioParser, mediaParser };
