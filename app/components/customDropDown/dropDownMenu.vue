@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, nextTick } from "vue";
-import debounce from "lodash/debounce";
 import apiDocs from "~/utilities/apiDocs";
 import type { educationLevel } from "~/types/educationlevel.interface";
 import type { ClassLevel } from "~/types/classlevel.interface";
@@ -81,8 +80,17 @@ const selectSubject = async (name: string) => {
   emitUpdate();
 };
 
+// Lightweight debounce to avoid lodash dependency
+const createDebounce = <T extends (...args: any[]) => void>(fn: T, delay = 100) => {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  return (...args: Parameters<T>) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+};
+
 // Emit formatted API object
-const emitUpdate = debounce(() => {
+const emitUpdate = createDebounce(() => {
   const q: Record<string, any> = {};
 
   if (selected.level) q.educationLevel = selected.level.toLowerCase();
