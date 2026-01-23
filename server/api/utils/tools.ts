@@ -288,17 +288,74 @@ export const studentTools = {
     inputSchema: z.object({
       chapter: z.string().describe("Chapter name using WORD form for numbers (e.g., 'Chapter One', 'Chapter Two', 'Chapter Six') NOT digits. Format: 'Chapter [WORD]: [Title]' (e.g., 'Chapter One: Introduction to Biology', 'Chapter Six: Nutrition in plants'). If syllabus shows chapter_number: 1, use 'Chapter One: [Title]' not 'Chapter 1: [Title]'. Must match exactly as in figure-metadata.json."),
       topic: z.string().optional().describe("EXACT topic name from the user's message or syllabus. Extract the specific topic the user is asking about. Examples: 'Basic concepts and terminologies in Biology', 'Importance of studying Biology', 'The process of photosynthesis'. The topic name must match exactly as it appears in the syllabus. If the user mentions a specific topic, you MUST extract it and provide it here. If provided, only returns figures for this specific topic. DO NOT use 'all' - either provide the exact topic name or omit this parameter entirely."),
+      subject: z.string().optional().describe("Subject name to filter figures (e.g., 'biology', 'physics', 'chemistry'). If you know the subject from the syllabus or conversation context, provide it here to optimize the API request."),
     }),
-    execute: async ({ chapter, topic }) => {
+    execute: async ({ chapter, topic, subject }) => {
       try {
-        console.log(`[getChapterFigures] 🔍 TOOL CALLED - chapter: "${chapter}", topic: "${topic || 'all'}"`);
+        // Extract subject from chapter name if not provided
+        const extractSubjectFromChapter = (ch: string): string | null => {
+          const lower = ch.toLowerCase();
+          if (lower.includes('biology')) return 'biology';
+          if (lower.includes('physics')) return 'physics';
+          if (lower.includes('chemistry')) return 'chemistry';
+          if (lower.includes('mathematics') || lower.includes('math')) return 'mathematics';
+          if (lower.includes('geography')) return 'geography';
+          return null;
+        };
         
-        // Load figures from API
+        // Determine the subject/category for API filtering
+        const querySubject = subject?.toLowerCase() || extractSubjectFromChapter(chapter);
+        
+        console.log(`[getChapterFigures] 🔍 TOOL CALLED - chapter: "${chapter}", topic: "${topic || 'all'}", subject: "${querySubject || 'any'}"`);
+        
+        // Load figures from API with maximum filtering to reduce payload
+        // API supports: subject, category, chapter, topic filters
         let images: any[] = [];
         try {
           const { getFigures } = await import('../../utils/figuresApi');
+          
+          // Build filter options - use as many filters as possible
+          // This can reduce payload from ~800 figures to just 5-20 relevant ones
+          const filterOptions: { category?: string; chapter?: string; topic?: string } = {};
+          
+          // Always use category filter if we know the subject (biggest reduction)
+          if (querySubject) {
+            filterOptions.category = querySubject;
+          }
+          
+          // Use chapter filter for additional reduction
+          // Note: Chapter names in API may vary, so we try the original format
+          if (chapter) {
+            filterOptions.chapter = chapter;
+          }
+          
+          // Use topic filter if provided (most specific)
+          if (topic && topic.trim() && topic.trim().toLowerCase() !== 'all') {
+            filterOptions.topic = topic;
+          }
+          
+          const filterDesc = Object.entries(filterOptions)
+            .filter(([_, v]) => v)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(', ') || 'none';
+          console.log(`[getChapterFigures] 📉 API filters: ${filterDesc}`);
+          
           // Use the token from module-level variable (set by chat endpoint)
-          const figures = await getFigures({}, currentAuthToken);
+          let figures = await getFigures(filterOptions, currentAuthToken);
+          
+          // If no results with all filters, try with just category (chapter/topic names may not match exactly)
+          if (figures.length === 0 && querySubject && (filterOptions.chapter || filterOptions.topic)) {
+            console.log(`[getChapterFigures] ⚠️  No results with all filters, falling back to category only`);
+            figures = await getFigures({ category: querySubject }, currentAuthToken);
+          }
+          
+          // If still no results and we had a category filter, try without any filters (last resort)
+          if (figures.length === 0 && querySubject) {
+            console.log(`[getChapterFigures] ⚠️  No results with category filter, fetching all figures`);
+            figures = await getFigures({}, currentAuthToken);
+          }
+          
+          console.log(`[getChapterFigures] 📊 API returned ${figures.length} figures`);
           
           // Convert API figures to the format expected by the rest of the function
           images = figures.map((fig: any) => ({
@@ -336,19 +393,6 @@ export const studentTools = {
         const normalizeTopic = (t: string) => t.toLowerCase().trim().replace(/\s+/g, ' ');
         
         const queryChapter = normalizeChapter(chapter);
-        
-        // Extract subject from chapter name if present (e.g., "Introduction to Physics" -> "physics")
-        const extractSubjectFromChapter = (ch: string): string | null => {
-          const lower = ch.toLowerCase();
-          if (lower.includes('biology')) return 'biology';
-          if (lower.includes('physics')) return 'physics';
-          if (lower.includes('chemistry')) return 'chemistry';
-          if (lower.includes('mathematics') || lower.includes('math')) return 'mathematics';
-          if (lower.includes('geography')) return 'geography';
-          return null;
-        };
-        
-        const querySubject = extractSubjectFromChapter(chapter);
         
         // Filter by chapter - try exact match first
         let filtered = images.filter((img: any) => {
