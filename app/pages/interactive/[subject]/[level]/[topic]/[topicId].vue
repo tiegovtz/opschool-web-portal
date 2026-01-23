@@ -2,7 +2,7 @@
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from "~/utilities/parsers/modelParser";
-import videoParser from "~/utilities/parsers/videoParser";
+import { mediaParser } from "~/utilities/parsers/mediaParser";
 import conversationParser from "~/utilities/parsers/conversationParser";
 import { currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
@@ -13,7 +13,7 @@ import { updateChapterProgress } from "~/utilities/progress";
 import { fetchAsyncData } from "~/composable/useAsyncFetch";
 import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
-import { string } from "zod";
+import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
 
 const route = useRoute();
 const router = useRouter();
@@ -84,7 +84,7 @@ useHead({
 
 //  chapters informations
 const chapters = reactive<{
-  list: any[] ;
+  list: any[];
   notes: any | null;
   status: string;
   error: any;
@@ -94,7 +94,7 @@ const chapters = reactive<{
   number: number;
   isAttemptingQuizes: boolean;
 }>({
-  list:[],
+  list: [],
   notes: null,
   status: "pending",
   error: null,
@@ -118,7 +118,7 @@ let previousScrollTop = 0;
 const isFullscreen = ref(false);
 
 // Changer Chapter
-const changeChapter = (action:string) => {
+const changeChapter = (action: string) => {
   if (chapters.number >= 1 && chapters.number <= chapters.list?.length) {
     // p = Previous and n = Next
     if (action.toLowerCase() == "p") {
@@ -127,7 +127,7 @@ const changeChapter = (action:string) => {
       chapters.isAttemptingQuizes = false; //close quiz
     } else if (action.toLowerCase() == "n") {
       // n = Next Chapter
-      chapters.number ==  (chapters.list)?.length ? "" : chapters.number++;
+      chapters.number == (chapters.list)?.length ? "" : chapters.number++;
       getChapter(chapters.list[chapters.number - 1]._id);
       chapters.isAttemptingQuizes = false; //close quiz
     } else if (action.toLowerCase() == "r") {
@@ -179,7 +179,7 @@ const ensureAccessTokenValid = async () => {
   }
 };
 
-const initializeChapterProgress = (chapterId:string) => {
+const initializeChapterProgress = (chapterId: string) => {
   chapterProgress.value = {
     userId: (userToken.value as any)?._id,
     chapterId: chapterId,
@@ -192,7 +192,7 @@ const initializeChapterProgress = (chapterId:string) => {
   };
 };
 
-const postInitialProgressIfNeeded = async (chapterId:string) => {
+const postInitialProgressIfNeeded = async (chapterId: string) => {
   try {
     await $fetch("/api/progress/post-progress", {
       method: "POST",
@@ -214,7 +214,7 @@ const postInitialProgressIfNeeded = async (chapterId:string) => {
   }
 };
 
-const syncRemoteProgress = async (chapterId:string) => {
+const syncRemoteProgress = async (chapterId: string) => {
   try {
     const remoteProgress = await $fetch<{
       userId: string;
@@ -253,7 +253,7 @@ const syncRemoteProgress = async (chapterId:string) => {
 };
 
 // Store context in localStorage for AI Assistant
-const storeChapterContext = (chapterId:string, chapterNotes:any) => {
+const storeChapterContext = (chapterId: string, chapterNotes: any) => {
   if (!import.meta.client) return; // Only run on client
 
   const context = {
@@ -281,7 +281,7 @@ const storeChapterContext = (chapterId:string, chapterNotes:any) => {
 };
 
 // Main function 
-const getChapter = async (chapterId:string) => {
+const getChapter = async (chapterId: string) => {
   // validate if chapterId is null or undefined
   if (!chapterId) {
     console.error("Chapter ID is null or undefined");
@@ -292,7 +292,7 @@ const getChapter = async (chapterId:string) => {
   chapters.questions = null;
   chapters.isAttemptingQuizes = false; //close quiz
   chapters.currentChapterId = chapterId;
-
+  handleAudio(); // Pause any playing audio when chapter changes
   await ensureAccessTokenValid();
   announcement.value = `Loading activity of ${chapters.list?.find(c => c._id === chapterId)?.name} content please wait`;
   try {
@@ -329,7 +329,7 @@ const getChapter = async (chapterId:string) => {
 
       await Promise.allSettled(tasks);
       announcement.value = `content of ${chapters.list?.find(c => c._id === chapterId)?.name} loaded successfully you may continue reading`;
-      await nextTick(()=>{
+      await nextTick(() => {
         moveFocus('main-container');
       });
     }
@@ -343,7 +343,7 @@ const getChapter = async (chapterId:string) => {
 
 
 // Submit Topic viewed Read
-const topicViewedRead = async (topicId:string) => {
+const topicViewedRead = async (topicId: string) => {
   chapters.notesStatus = "pending";
   await $fetch(apiDocs.topics.topicViewedRead.replaceAll("{id}", topicId), {
     headers: {
@@ -353,7 +353,7 @@ const topicViewedRead = async (topicId:string) => {
 };
 
 // Fetch Questions by Topic Chapter
-const getQNTopicChapter = async (chapterId:string) => {
+const getQNTopicChapter = async (chapterId: string) => {
   try {
     const response = await $fetch<any[]>(apiDocs.chapters.getTopicChapterQNs, {
       method: "GET",
@@ -387,7 +387,7 @@ await useFetch<any[]>(apiDocs.chapters.getByTopicId.replaceAll('{topicId}', topi
       // on sucess save data to chapters
       if (status.value === 'success') {
         chapters.status = status.value;
-        chapters.list = data.value as any [];
+        chapters.list = data.value as any[];
         const firstChapterId = data.value && data.value[0]?._id;
         chapters.currentChapterId = firstChapterId;
 
@@ -446,13 +446,17 @@ onMounted(async () => {
 // Watch chapter notes and Then, Set Pic Center
 watch(
   () => chapters.notes,
-  (newNotes) => {
+  async (newNotes) => {
     if (newNotes) {
+      await nextTick();
       setPicCenter();
       // Update localStorage context when notes change
       if (chapters.currentChapterId) {
         storeChapterContext(chapters.currentChapterId, newNotes);
       }
+
+      // initilize audio players if any
+      initAudioCanvasPlayers();
     }
   }
 );
@@ -644,7 +648,7 @@ const observerContent = () => {
     const icon3D = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="currentColor" d="M7.47 21.5C4.2 19.94 1.86 16.76 1.5 13H0c.5 6.16 5.66 11 11.95 11l.66-.03l-3.81-3.81zm.89-6.54c-.19 0-.36-.03-.52-.08a1.1 1.1 0 0 1-.4-.24c-.11-.1-.2-.22-.26-.37c-.06-.14-.09-.3-.09-.47h-1.3c0 .36.07.7.21.95s.33.5.56.69c.24.18.51.32.82.41q.45.15.96.15c.37 0 .72-.05 1.03-.15c.32-.1.6-.25.83-.44s.42-.41.55-.72c.13-.29.2-.61.2-.97c0-.19-.02-.38-.07-.56c-.05-.16-.12-.35-.23-.51c-.1-.15-.24-.3-.4-.43c-.17-.13-.37-.22-.61-.31a2.07 2.07 0 0 0 .89-.75c.1-.16.17-.3.22-.46s.07-.32.07-.48q0-.54-.18-.96c-.14-.26-.29-.51-.51-.69c-.2-.19-.47-.33-.77-.43C9.05 8.05 8.71 8 8.34 8c-.34 0-.69.05-1 .16c-.3.11-.57.26-.79.45c-.21.19-.38.39-.51.67c-.12.26-.18.54-.18.85h1.3q0-.255.09-.45a.94.94 0 0 1 .25-.34c.11-.09.23-.17.38-.22s.3-.08.48-.08c.4 0 .7.1.89.31c.19.2.29.49.29.86c0 .18-.04.34-.08.49a.87.87 0 0 1-.25.37c-.11.1-.25.18-.41.24s-.36.09-.58.09h-.77v1.03h.77c.22 0 .42.02.6.07s.33.13.45.23c.12.11.23.24.29.4c.07.16.1.37.1.57c0 .41-.12.72-.35.93c-.23.23-.55.33-.95.33m8.55-5.92c-.32-.33-.7-.59-1.14-.77c-.43-.18-.92-.27-1.46-.27h-2.36v8h2.3c.55 0 1.06-.09 1.51-.27s.84-.43 1.16-.76s.58-.73.74-1.19c.17-.47.26-.99.26-1.57v-.4c0-.58-.09-1.1-.26-1.57c-.16-.47-.43-.87-.75-1.2m-.41 3.16c0 .42-.03.8-.12 1.13c-.1.33-.24.62-.43.85s-.45.41-.71.53q-.435.18-.99.18h-.91V9.12h.97c.72 0 1.27.23 1.64.69c.38.46.55 1.12.55 1.99M11.95 0l-.66.03l3.81 3.81l1.33-1.34c3.27 1.56 5.61 4.73 5.96 8.5h1.5c-.5-6.16-5.65-11-11.94-11"/></svg>`
     const showIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M17 8q-.425 0-.712-.288T16 7t.288-.712T17 6t.713.288T18 7t-.288.713T17 8m-8 6l2.7-3.5l1.55 2l2.3-3L19 14zm-5 8q-.825 0-1.412-.587T2 20V6h2v14h14v2zM6 9.375V4q0-.825.588-1.412T8 2h5v2H8v5.375zM8 18q-.825 0-1.412-.587T6 16v-4.625h2V16h5v2zm7 0v-2h5v-4.625h2V16q0 .825-.587 1.413T20 18zm5-8.625V4h-5V2h5q.825 0 1.413.588T22 4v5.375z"/></svg>`
 
-    modelViewer.forEach((element:HTMLElement) => {
+    modelViewer.forEach((element: HTMLElement) => {
       // === Elements Creation ===
       const zoomButton = document.createElement('button');
       const label = document.createElement('button');
@@ -921,7 +925,7 @@ definePageMeta({
             <!-- Chapter Notes -->
             <div v-mathjax class="mx-auto notes md:px-4 max-w-7xl" aria-label="Compitencies notes"
               aria-details="notes-extra-details" role="region"
-              v-html="enhanceAccessibility(conversationParser(experimentParser(modelParser(videoParser(chapters.notes?.content)))))"></div>
+              v-html="enhanceAccessibility(conversationParser(experimentParser(modelParser(mediaParser(chapters.notes?.content)))))"></div>
 
             <p id="notes-extra-details" class="sr-only">
               These notes include at least one video, two-dimensional images such as GIFs,
