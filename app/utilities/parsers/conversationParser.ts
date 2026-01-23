@@ -57,7 +57,9 @@ if (typeof window !== 'undefined') {
     const params = new URLSearchParams();
     if (chapterId) params.set('chapterId', chapterId);
     if (identifier) params.set('identifier', identifier);
-    if (normalizedType) params.set('type', normalizedType);
+    // Set type parameter: use provided type, or default to 'engage' if missing (since missing type means engage)
+    const typeToUse = normalizedType || 'engage';
+    params.set('type', typeToUse);
     params.set('embed', '1');
     const url = `${baseRoute}?${params.toString()}`;
 
