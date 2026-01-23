@@ -46,3 +46,6 @@ server/data/vector-store.json
 # Documentation files (generated reports and docs)
 *.md
 !README.md
+
+# Next.js migration package (separate project)
+nextjs-migration-package/

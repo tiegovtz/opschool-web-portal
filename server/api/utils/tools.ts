@@ -383,7 +383,7 @@ export const studentTools = {
         if (images.length === 0) {
           return {
             found: false,
-            message: "No figure metadata available",
+            message: "No figures available. DO NOT mention images, diagrams, or visual representations in your response. Teach using text-based explanations only.",
             figures: []
           };
         }
@@ -556,7 +556,7 @@ export const studentTools = {
         if (figures.length === 0) {
           return {
             found: false,
-            message: `No figures found for chapter "${chapter}"${topic ? `, topic "${topic}"` : ''}`,
+            message: `No figures available. DO NOT mention images, diagrams, or visual representations in your response. Teach using text-based explanations only.`,
             figures: []
           };
         }
