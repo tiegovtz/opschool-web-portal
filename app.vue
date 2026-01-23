@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
-import apiDocs from './utilities/api-docs'
+import apiDocs from './utilities/apiDocs'
 import { useBackspaceNavigation } from '@/composables/useBackspaceNavigation'
 import { useGlobalFocus } from '@/composables/useGlobalFocus'
 import {

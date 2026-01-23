@@ -64,6 +64,12 @@ const editFormAlts = ref<string[]>(['']);
 const editFormDescription = ref('');
 const editFormCategory = ref('biology');
 
+// Delete Confirmation State
+const isDeleteModalOpen = ref(false);
+const isDeletingImage = ref(false);
+const deleteError = ref<string | null>(null);
+const imageToDelete = ref<ImageItem | null>(null);
+
 // Syllabus data for cascading dropdowns
 const syllabusData = ref<SyllabusSubject[]>([]);
 const isSyllabusLoading = ref(false);
@@ -592,6 +598,46 @@ const generateEmbeddings = async () => {
   }
 };
 
+// Delete functions
+const handleOpenDeleteModal = (image: ImageItem) => {
+  // For sub-images, use the parent shortcode
+  imageToDelete.value = image;
+  deleteError.value = null;
+  isDeleteModalOpen.value = true;
+};
+
+const handleCloseDeleteModal = () => {
+  isDeleteModalOpen.value = false;
+  imageToDelete.value = null;
+  deleteError.value = null;
+};
+
+const handleConfirmDelete = async () => {
+  if (isDeletingImage.value || !imageToDelete.value) return;
+
+  const shortcodeToDelete = imageToDelete.value.parentShortcode || imageToDelete.value.shortcode;
+  isDeletingImage.value = true;
+  deleteError.value = null;
+
+  try {
+    const response = await $fetch<{ success: boolean; message: string }>('/api/figure-delete', {
+      method: 'POST',
+      body: { shortcode: shortcodeToDelete },
+    });
+
+    if (response.success) {
+      handleCloseDeleteModal();
+      // Refresh images list
+      fetchImages();
+    }
+  } catch (err: any) {
+    console.error('Error deleting image:', err);
+    deleteError.value = err.data?.message || err.message || 'Failed to delete image';
+  } finally {
+    isDeletingImage.value = false;
+  }
+};
+
 onMounted(() => {
   fetchImages();
 });
@@ -1081,14 +1127,23 @@ onMounted(() => {
                   <button
                     @click="copyShortcode(image.shortcode)"
                     class="flex-1 px-3 py-1.5 text-xs bg-oceanBlue text-white rounded hover:bg-deepBlue transition-colors"
+                    title="Copy shortcode"
                   >
                     Copy
                   </button>
                   <button
                     @click="handleOpenEditModal(image)"
                     class="flex-1 px-3 py-1.5 text-xs bg-amber-500 text-white rounded hover:bg-amber-600 transition-colors"
+                    title="Edit image"
                   >
                     Edit
+                  </button>
+                  <button
+                    @click="handleOpenDeleteModal(image)"
+                    class="px-3 py-1.5 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                    title="Delete figure"
+                  >
+                    🗑️
                   </button>
                 </div>
               </div>
@@ -1236,6 +1291,66 @@ onMounted(() => {
             class="px-6 py-2 bg-oceanBlue text-white rounded-md hover:bg-deepBlue disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             {{ isUpdatingImage ? 'Saving...' : 'Save Changes' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      v-if="isDeleteModalOpen"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      @click.self="handleCloseDeleteModal"
+    >
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h3 class="text-lg font-semibold text-gray-900">Delete Figure</h3>
+        </div>
+
+        <div class="px-6 py-4">
+          <!-- Error message -->
+          <div v-if="deleteError" class="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+            <p class="text-sm text-red-800">{{ deleteError }}</p>
+          </div>
+
+          <div class="flex items-start gap-4">
+            <!-- Preview thumbnail -->
+            <div v-if="imageToDelete?.path" class="w-20 h-20 flex-shrink-0 bg-gray-100 rounded-lg overflow-hidden">
+              <img :src="imageToDelete.path" :alt="imageToDelete.alt" class="w-full h-full object-contain" />
+            </div>
+            
+            <div>
+              <p class="text-gray-700">
+                Are you sure you want to delete this figure?
+              </p>
+              <p class="text-sm text-gray-500 mt-2">
+                <span class="font-medium">Figure:</span> 
+                <code class="bg-gray-100 px-1 rounded">{{ imageToDelete?.parentShortcode || imageToDelete?.shortcode }}</code>
+              </p>
+              <p v-if="imageToDelete?.isPartOfMultiImage" class="text-sm text-amber-600 mt-2">
+                ⚠️ This will delete the entire multi-image figure including all its parts.
+              </p>
+              <p class="text-sm text-red-600 mt-2 font-medium">
+                This action cannot be undone.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+          <button
+            @click="handleCloseDeleteModal"
+            :disabled="isDeletingImage"
+            class="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            @click="handleConfirmDelete"
+            :disabled="isDeletingImage"
+            class="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {{ isDeletingImage ? 'Deleting...' : 'Delete' }}
           </button>
         </div>
       </div>

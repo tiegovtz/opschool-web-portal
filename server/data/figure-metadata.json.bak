@@ -1,0 +1,99 @@
+{
+  "images": [
+    {
+      "chapter": "Chapter One: Introduction to Biology",
+      "topic": "Basic concepts and terminologies in Biology",
+      "figure_number": "Figure 1.1",
+      "caption": "Living things (a) tree (b) bird (c) hippopotamus (d) whale",
+      "description": "A composite image displaying four distinct living organisms to illustrate the variety of life: (a) a large green tree, (b) a bird with blue and white plumage perched on a branch, (c) a hippopotamus standing near water, and (d) a whale swimming in the ocean.",
+      "page_number": 8,
+      "shortcode": "biology_form1_figure_1_1",
+      "subject": "Biology Form 1"
+    },
+    {
+      "chapter": "Chapter One: Introduction to Biology",
+      "topic": "Importance of studying Biology",
+      "figure_number": "Figure 1.2",
+      "caption": "Chicken (a) indigenous breed (b) improved breed",
+      "description": "A comparison between two types of chicken: (a) a brown indigenous breed foraging on grass, and (b) a flock of white improved breed chickens.",
+      "page_number": 10,
+      "shortcode": "biology_form1_figure_1_2",
+      "subject": "Biology Form 1"
+    },
+    {
+      "chapter": "Chapter One: Introduction to Biology",
+      "topic": "Importance of studying Biology",
+      "figure_number": "Figure 1.3",
+      "caption": "Improved layer breed",
+      "description": "An image showing a brown chicken, specifically identified as an improved layer breed, standing against a white background.",
+      "page_number": 12,
+      "shortcode": "biology_form1_figure_1_3",
+      "subject": "Biology Form 1"
+    },
+    {
+      "chapter": "Chapter One: Introduction to Biology",
+      "topic": "Relationship between Biology and other scientific fields",
+      "figure_number": "Figure 1.4",
+      "caption": "Jersey cow",
+      "description": "A photograph of a light brown and white Jersey cow standing in a grassy field.",
+      "page_number": 13,
+      "shortcode": "biology_form1_figure_1_4",
+      "subject": "Biology Form 1"
+    },
+    {
+      "chapter": "Chapter One: Introduction to Biology",
+      "topic": "Relationship between Biology and other scientific fields",
+      "figure_number": "Figure 1.5",
+      "caption": "(a) Deforestation due to excessive cutting of trees (b) planted trees",
+      "description": "Two images contrasting environmental states: (a) a deforested area with dry grass and cut logs, and (b) a reforested area with rows of young, green trees.",
+      "page_number": 13,
+      "shortcode": "biology_form1_figure_1_5",
+      "subject": "Biology Form 1"
+    },
+    {
+      "chapter": "Chapter One: Introduction to Physics",
+      "topic": "Concept of Physics",
+      "figure_number": "Figure 1.1",
+      "caption": "(a) Eclipse (b) Sunrise and Sunset (c) Rainbow (d) Volcanic Eruption",
+      "description": "Natural phenomena",
+      "shortcode": "physics_figure_1_1",
+      "subject": "Physics"
+    },
+    {
+      "chapter": "Chapter One: Introduction to Physics",
+      "topic": "Concept of Physics",
+      "figure_number": "Figure 1.2",
+      "caption": "Kinyerezi power generation station",
+      "description": "",
+      "shortcode": "physics_figure_1_2",
+      "subject": "Physics"
+    },
+    {
+      "chapter": "Chapter One: Introduction to Physics",
+      "topic": "Concept of Physics",
+      "figure_number": "Figure Sim1",
+      "caption": "Mechanics",
+      "description": "This image is a close-up, macro view of a mechanical watch movement (the internal mechanism of a clock or watch). It captures the intricate interplay of gears and springs that allow the device to keep time.",
+      "shortcode": "physics_figure_Sim1",
+      "subject": "Physics"
+    },
+    {
+      "chapter": "Chapter One: Introduction to Physics",
+      "topic": "Concept of Physics",
+      "figure_number": "Figure Sim2",
+      "caption": "Heat",
+      "description": "A looping animation of a campfire burning in the dark, with bright orange flames flickering over charred wood logs and a bed of glowing red embers at the base.",
+      "shortcode": "physics_figure_Sim2",
+      "subject": "Physics"
+    },
+    {
+      "chapter": "Chapter One: Introduction to Physics",
+      "topic": "Concept of Physics",
+      "figure_number": "Figure Sim3",
+      "caption": "Light",
+      "description": "A dramatic landscape featuring a massive, glowing white-and-yellow sun resting directly on the horizon. The sky is filled with deep orange and amber hues with striated clouds, while the foreground consists of a pitch-black silhouette of rolling hills and trees.A burning candle in a dark background is shown after.",
+      "shortcode": "physics_figure_Sim3",
+      "subject": "Physics"
+    }
+  ]
+}
