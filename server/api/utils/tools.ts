@@ -7,6 +7,77 @@ import { dirname } from "path";
 import type { Syllabus } from "~/types/syllabus.interface";
 import { embedQuery } from "./embeddings";
 
+// Module-level variable to store auth token for AI tools
+// This is set by the chat endpoint before tools are executed
+let currentAuthToken: string | undefined = undefined;
+
+/**
+ * Set the authentication token for AI tools
+ * Called by the chat endpoint before tool execution
+ */
+export function setAuthTokenForTools(token: string | undefined): void {
+  currentAuthToken = token;
+}
+
+/**
+ * Get available subjects from syllabus files
+ */
+async function getAvailableSubjects(): Promise<{ subjects: string[]; subjectLevels: Record<string, string[]> }> {
+  try {
+    const syllabusDir = join(process.cwd(), "server", "data", "syllabus");
+    const files = await readdir(syllabusDir);
+    const subjects = new Set<string>();
+    const subjectLevels: Record<string, string[]> = {};
+    
+    files.forEach(file => {
+      const match = file.match(/syllabus_(\w+)_form(\d+)\.json/);
+      if (match) {
+        const subject = match[1];
+        const formNum = match[2];
+        const level = `Form ${formNum}`;
+        
+        subjects.add(subject);
+        if (!subjectLevels[subject]) {
+          subjectLevels[subject] = [];
+        }
+        if (!subjectLevels[subject].includes(level)) {
+          subjectLevels[subject].push(level);
+        }
+      }
+    });
+    
+    return {
+      subjects: Array.from(subjects).sort(),
+      subjectLevels
+    };
+  } catch (error: any) {
+    console.warn(`[getAvailableSubjects] Error: ${error.message}`);
+    // Fallback to known subjects
+    return {
+      subjects: ["biology", "physics", "chemistry", "mathematics", "geography"],
+      subjectLevels: {
+        biology: ["Form 1", "Form 2"],
+        physics: ["Form 1", "Form 2"],
+        chemistry: ["Form 1", "Form 2"],
+        mathematics: ["Form 1", "Form 2"],
+        geography: ["Form 1", "Form 2"]
+      }
+    };
+  }
+}
+
+/**
+ * Format available subjects for display
+ */
+async function formatAvailableSubjects(): Promise<string> {
+  const { subjects, subjectLevels } = await getAvailableSubjects();
+  const formatted = subjects.map(subject => {
+    const levels = subjectLevels[subject] || [];
+    return `${subject} (${levels.join(", ")})`;
+  }).join(", ");
+  return formatted || "biology, physics, chemistry, mathematics, geography";
+}
+
 /**
  * Read syllabus from JSON file
  */
@@ -15,13 +86,14 @@ async function readSyllabusFromFile(subject: string, level: string): Promise<Syl
     // Normalize subject: lowercase, replace spaces with underscores
     const normalizedSubject = subject.toLowerCase().trim().replace(/\s+/g, "_");
     
-    // Normalize level: convert "Form I" -> "form1", "Form II" -> "form2", etc.
+    // Normalize level: convert "Form 1" -> "form1", "Form 2" -> "form2", etc.
+    // NO ROMAN NUMERALS - only numeric forms are supported
     let normalizedLevel = level.toLowerCase().trim();
-    // Handle Roman numerals and numbers
-    normalizedLevel = normalizedLevel.replace(/form\s*i+$/i, "form1"); // Form I, form i, FORM I -> form1
-    normalizedLevel = normalizedLevel.replace(/form\s*ii+$/i, "form2"); // Form II, form ii, FORM II -> form2
+    // Handle numeric forms only
     normalizedLevel = normalizedLevel.replace(/form\s*1$/i, "form1"); // Form 1 -> form1
     normalizedLevel = normalizedLevel.replace(/form\s*2$/i, "form2"); // Form 2 -> form2
+    normalizedLevel = normalizedLevel.replace(/form\s*3$/i, "form3"); // Form 3 -> form3
+    normalizedLevel = normalizedLevel.replace(/form\s*4$/i, "form4"); // Form 4 -> form4
     // If it still has spaces, replace with nothing
     normalizedLevel = normalizedLevel.replace(/\s+/g, "");
     
@@ -137,7 +209,9 @@ function formatSyllabusForAgent(syllabus: Syllabus): string {
 }
 
 /**
- * Load image shortcodes from JSON file
+ * Load image shortcodes from API
+ * @deprecated This function is kept for backward compatibility but is no longer used
+ * All figure data is now loaded directly from the API in getChapterFigures
  */
 async function loadImageShortcodesFromFile(): Promise<{
   shortcodes: Record<string, any>;
@@ -145,16 +219,52 @@ async function loadImageShortcodesFromFile(): Promise<{
   byCategory: Record<string, number>;
 } | null> {
   try {
-    const filePath = join(process.cwd(), 'server', 'data', 'image-shortcodes.json');
-    const fileContent = await readFile(filePath, 'utf-8');
-    const data = JSON.parse(fileContent);
+    const { getFigures } = await import('../../utils/figuresApi');
+    const figures = await getFigures({});
+    
+    if (!figures || figures.length === 0) {
+      return {
+        shortcodes: {},
+        total: 0,
+        byCategory: {}
+      };
+    }
+    
+    // Convert to the expected format
+    const shortcodes: Record<string, any> = {};
+    const byCategory: Record<string, number> = {};
+    
+    for (const figure of figures) {
+      const shortcodeData: any = {
+        alt: figure.alt,
+        category: figure.category,
+        description: figure.description,
+        chapterName: figure.chapterName,
+        topicName: figure.topicName,
+        subjectName: figure.subjectName
+      };
+      
+      if (figure.paths && figure.paths.length > 0) {
+        shortcodeData.paths = figure.paths;
+        shortcodeData.alts = figure.alts;
+      } else if (figure.path) {
+        shortcodeData.path = figure.path;
+      }
+      
+      shortcodes[figure.shortcode] = shortcodeData;
+      
+      // Count by category
+      const cat = figure.category || 'general';
+      byCategory[cat] = (byCategory[cat] || 0) + 1;
+    }
+    
     return {
-      shortcodes: data.shortcodes || {},
-      total: data.total || 0,
-      byCategory: data.byCategory || {}
+      shortcodes,
+      total: figures.length,
+      byCategory
     };
   } catch (error: any) {
-    console.error('[getImageShortcodes] Failed to load:', error.message);
+    console.error('[getImageShortcodes] Failed to load from API:', error.message);
     return null;
   }
 }
@@ -174,36 +284,106 @@ function cosineSimilarity(a: number[], b: number[]): number {
 export const studentTools = {
   // Get chapter figures using chapter/topic filtering (PRIMARY METHOD - NO SEARCH ALGORITHM)
   getChapterFigures: tool({
-    description: "MANDATORY: Get all available image figures for a specific chapter and optional topic. You MUST call this tool whenever you are teaching a chapter or topic from the syllabus. This is the ONLY method to get images - there is no search algorithm. CRITICAL: When the user asks about a specific topic, you MUST extract the exact topic name from the user's message or syllabus and pass it as the 'topic' parameter. The topic name should match exactly as it appears in the syllabus (e.g., 'Basic concepts and terminologies in Biology', 'The process of photosynthesis'). Provide the chapter name exactly as it appears in the syllabus (e.g., 'Chapter Six: Nutrition in plants', 'Chapter One: Introduction to Biology') and the exact topic name if the user is asking about a specific topic. You will receive all figures available for that chapter/topic. Returns a list of figures with their shortcodes that you MUST use with [image:shortcode] format in your response. All returned figures are guaranteed to be relevant because they're filtered by the exact chapter/topic you're teaching. Review all returned figures - if they are all highly relevant, use multiple [image:shortcode] in your response. If figures are returned, you MUST include at least one [image:shortcode] in your response.",
+    description: "MANDATORY: Get all available image figures for a specific chapter and optional topic. You MUST call this tool whenever you are teaching a chapter or topic from the syllabus. This is the ONLY method to get images - there is no search algorithm. CRITICAL: When the user asks about a specific topic or concept (e.g., 'Light', 'Photosynthesis', 'Force'), you MUST extract the topic name from the user's message or syllabus and pass it as the 'topic' parameter. The tool searches both topic names AND figure captions, so you can use concept names directly (e.g., if user asks about 'Light', pass topic: 'Light' and it will find figures with 'Light' in their caption even if the topic is different). Provide the chapter name exactly as it appears in the syllabus (e.g., 'Chapter Six: Nutrition in plants', 'Chapter One: Introduction to Biology') and the topic/concept name if the user is asking about a specific topic. You will receive all figures available for that chapter/topic. Returns a list of figures with their shortcodes that you MUST use with [image:shortcode] format in your response. All returned figures are guaranteed to be relevant because they're filtered by the exact chapter/topic you're teaching. Review all returned figures - if they are all highly relevant, use multiple [image:shortcode] in your response. If figures are returned, you MUST include at least one [image:shortcode] in your response.",
     inputSchema: z.object({
       chapter: z.string().describe("Chapter name using WORD form for numbers (e.g., 'Chapter One', 'Chapter Two', 'Chapter Six') NOT digits. Format: 'Chapter [WORD]: [Title]' (e.g., 'Chapter One: Introduction to Biology', 'Chapter Six: Nutrition in plants'). If syllabus shows chapter_number: 1, use 'Chapter One: [Title]' not 'Chapter 1: [Title]'. Must match exactly as in figure-metadata.json."),
       topic: z.string().optional().describe("EXACT topic name from the user's message or syllabus. Extract the specific topic the user is asking about. Examples: 'Basic concepts and terminologies in Biology', 'Importance of studying Biology', 'The process of photosynthesis'. The topic name must match exactly as it appears in the syllabus. If the user mentions a specific topic, you MUST extract it and provide it here. If provided, only returns figures for this specific topic. DO NOT use 'all' - either provide the exact topic name or omit this parameter entirely."),
+      subject: z.string().optional().describe("Subject name to filter figures (e.g., 'biology', 'physics', 'chemistry'). If you know the subject from the syllabus or conversation context, provide it here to optimize the API request."),
     }),
-    execute: async ({ chapter, topic }) => {
+    execute: async ({ chapter, topic, subject }) => {
       try {
-        console.log(`[getChapterFigures] 🔍 TOOL CALLED - chapter: "${chapter}", topic: "${topic || 'all'}"`);
+        // Extract subject from chapter name if not provided
+        const extractSubjectFromChapter = (ch: string): string | null => {
+          const lower = ch.toLowerCase();
+          if (lower.includes('biology')) return 'biology';
+          if (lower.includes('physics')) return 'physics';
+          if (lower.includes('chemistry')) return 'chemistry';
+          if (lower.includes('mathematics') || lower.includes('math')) return 'mathematics';
+          if (lower.includes('geography')) return 'geography';
+          return null;
+        };
         
-        // Load figure-metadata.json
-        const filePath = join(process.cwd(), 'server', 'data', 'figure-metadata.json');
-        let fileContent: string;
+        // Determine the subject/category for API filtering
+        const querySubject = subject?.toLowerCase() || extractSubjectFromChapter(chapter);
+        
+        console.log(`[getChapterFigures] 🔍 TOOL CALLED - chapter: "${chapter}", topic: "${topic || 'all'}", subject: "${querySubject || 'any'}"`);
+        
+        // Load figures from API with maximum filtering to reduce payload
+        // API supports: subject, category, chapter, topic filters
+        let images: any[] = [];
         try {
-          fileContent = await readFile(filePath, 'utf-8');
-        } catch (fileError: any) {
-          console.error("[getChapterFigures] Failed to load figure-metadata.json:", fileError);
+          const { getFigures } = await import('../../utils/figuresApi');
+          
+          // Build filter options - use as many filters as possible
+          // This can reduce payload from ~800 figures to just 5-20 relevant ones
+          const filterOptions: { category?: string; chapter?: string; topic?: string } = {};
+          
+          // Always use category filter if we know the subject (biggest reduction)
+          if (querySubject) {
+            filterOptions.category = querySubject;
+          }
+          
+          // Use chapter filter for additional reduction
+          // Note: Chapter names in API may vary, so we try the original format
+          if (chapter) {
+            filterOptions.chapter = chapter;
+          }
+          
+          // Use topic filter if provided (most specific)
+          if (topic && topic.trim() && topic.trim().toLowerCase() !== 'all') {
+            filterOptions.topic = topic;
+          }
+          
+          const filterDesc = Object.entries(filterOptions)
+            .filter(([_, v]) => v)
+            .map(([k, v]) => `${k}=${v}`)
+            .join(', ') || 'none';
+          console.log(`[getChapterFigures] 📉 API filters: ${filterDesc}`);
+          
+          // Use the token from module-level variable (set by chat endpoint)
+          let figures = await getFigures(filterOptions, currentAuthToken);
+          
+          // If no results with all filters, try with just category (chapter/topic names may not match exactly)
+          if (figures.length === 0 && querySubject && (filterOptions.chapter || filterOptions.topic)) {
+            console.log(`[getChapterFigures] ⚠️  No results with all filters, falling back to category only`);
+            figures = await getFigures({ category: querySubject }, currentAuthToken);
+          }
+          
+          // If still no results and we had a category filter, try without any filters (last resort)
+          if (figures.length === 0 && querySubject) {
+            console.log(`[getChapterFigures] ⚠️  No results with category filter, fetching all figures`);
+            figures = await getFigures({}, currentAuthToken);
+          }
+          
+          console.log(`[getChapterFigures] 📊 API returned ${figures.length} figures`);
+          
+          // Convert API figures to the format expected by the rest of the function
+          images = figures.map((fig: any) => ({
+            figure_number: fig.figure_number || '',
+            caption: fig.alt || '',
+            description: fig.description || '',
+            shortcode: fig.shortcode || '',
+            page_number: fig.page_number || null,
+            chapter: fig.chapterName || '',
+            topic: fig.topicName || '',
+            subject: fig.subjectName || '',
+            path: fig.path || '',
+            paths: fig.paths || [],
+            category: fig.category || ''
+          }));
+        } catch (apiError: any) {
+          console.error("[getChapterFigures] Failed to load from API:", apiError);
           return {
             found: false,
-            error: "Figure metadata file not available",
+            error: "Figure metadata not available",
             figures: []
           };
         }
         
-        const data = JSON.parse(fileContent);
-        const images = data.images || [];
-        
         if (images.length === 0) {
           return {
             found: false,
-            message: "No figure metadata available",
+            message: "No figures available. DO NOT mention images, diagrams, or visual representations in your response. Teach using text-based explanations only.",
             figures: []
           };
         }
@@ -217,7 +397,21 @@ export const studentTools = {
         // Filter by chapter - try exact match first
         let filtered = images.filter((img: any) => {
           const imgChapter = normalizeChapter(img.chapter || '');
-          return imgChapter === queryChapter;
+          const matchesChapter = imgChapter === queryChapter;
+          
+          // If we can extract a subject from the query, also filter by subject
+          if (querySubject && matchesChapter) {
+            const imgSubject = extractSubjectFromChapter(img.chapter || '') || 
+                              (img.subject || '').toLowerCase();
+            const imgShortcode = (img.shortcode || '').toLowerCase();
+            
+            // Check if image belongs to the same subject
+            const subjectMatch = imgSubject === querySubject || 
+                                imgShortcode.startsWith(querySubject);
+            return subjectMatch;
+          }
+          
+          return matchesChapter;
         });
         
         // If no exact match found, try flexible matching by chapter number
@@ -244,22 +438,33 @@ export const studentTools = {
             const chapterDigit = isDigit ? numberStr : wordToDigit[numberStr] || numberStr;
             
             // Try matching by chapter number (both word and digit form)
+            // BUT also filter by subject if we can extract it
             filtered = images.filter((img: any) => {
               const imgChapter = normalizeChapter(img.chapter || '');
               
               // Match both word and digit forms regardless of input format
-              // If input is "Chapter 1", try matching "chapter 1:" and "chapter one:"
-              // If input is "Chapter One", try matching "chapter one:" and "chapter 1:"
-                if (imgChapter.startsWith(`chapter ${chapterWord}:`) || 
-                    imgChapter.startsWith(`chapter ${chapterDigit}:`)) {
-                  return true;
-                }
+              const matchesChapterNumber = imgChapter.startsWith(`chapter ${chapterWord}:`) || 
+                                          imgChapter.startsWith(`chapter ${chapterDigit}:`);
               
-              return false;
+              if (!matchesChapterNumber) return false;
+              
+              // If we can extract a subject from the query, filter by subject too
+              if (querySubject) {
+                const imgSubject = extractSubjectFromChapter(img.chapter || '') || 
+                                  (img.subject || '').toLowerCase();
+                const imgShortcode = (img.shortcode || '').toLowerCase();
+                
+                // Check if image belongs to the same subject
+                const subjectMatch = imgSubject === querySubject || 
+                                    imgShortcode.startsWith(querySubject);
+                return subjectMatch;
+              }
+              
+              return true;
             });
             
             if (filtered.length > 0) {
-              console.log(`[getChapterFigures] ✅ Matched "${chapter}" to chapter by number - found ${filtered.length} figures in "${filtered[0].chapter}"`);
+              console.log(`[getChapterFigures] ✅ Matched "${chapter}" to chapter by number - found ${filtered.length} figures in "${filtered[0].chapter}"${querySubject ? ` (filtered by subject: ${querySubject})` : ''}`);
             }
           }
         }
@@ -290,32 +495,43 @@ export const studentTools = {
             console.log(`[getChapterFigures] ✅ Using exact topic match: ${filtered.length} figures`);
           } else {
             // For single-word queries or when no exact match, use flexible matching
+            // Check both topic AND caption for better matching
             filtered = filtered.filter((img: any) => {
               const imgTopic = normalizeTopic(img.topic || '');
+              const imgCaption = normalizeTopic(img.caption || '');
               
-              // Exact match (highest priority)
+              // Exact match (highest priority) - check topic first
               if (imgTopic === queryTopic) return true;
               
-              // For single-word queries (e.g., "photosynthesis" from syllabus)
+              // For single-word queries (e.g., "photosynthesis", "light" from user query)
               if (isSingleWord) {
                 // Match topics containing that word (broad match for syllabus topic names)
-                return imgTopic.includes(queryWords[0]);
+                if (imgTopic.includes(queryWords[0])) return true;
+                
+                // Also check caption for single-word queries (e.g., "Light" in caption)
+                if (imgCaption.includes(queryWords[0])) return true;
+                
+                return false;
               }
               
               // For multi-word queries, be more precise
-              // Only match if the query phrase is contained in the topic (not just individual words)
-              // This prevents "The process of photosynthesis" from matching "Structure of the leaf in relation to photosynthesis"
+              // Check if the query phrase is contained in the topic
               if (imgTopic.includes(queryTopic)) {
                 return true;
               }
               
-              // If query is contained in topic, that's a match
-              // But don't match if topic just contains individual words from query
+              // Also check caption for multi-word queries (fallback when topic doesn't match)
+              if (imgCaption.includes(queryTopic)) {
+                return true;
+              }
+              
               return false;
             });
             
             if (filtered.length > 0 && !isSingleWord) {
-              console.log(`[getChapterFigures] ✅ Using flexible topic match: ${filtered.length} figures`);
+              console.log(`[getChapterFigures] ✅ Using flexible topic/caption match: ${filtered.length} figures`);
+            } else if (filtered.length > 0 && isSingleWord) {
+              console.log(`[getChapterFigures] ✅ Using flexible topic/caption match (single-word): ${filtered.length} figures`);
             }
           }
         }
@@ -332,14 +548,21 @@ export const studentTools = {
         }));
         
         console.log(`[getChapterFigures] ✅ Found ${figures.length} figures for chapter "${chapter}"${topic ? `, topic "${topic}"` : ''}`);
+        // Log the shortcodes that AI should use
+        if (figures.length > 0) {
+          console.log(`[getChapterFigures] 📸 Shortcodes to use: ${figures.map((f: any) => `[image:${f.shortcode}]`).join(', ')}`);
+        }
         
         if (figures.length === 0) {
           return {
             found: false,
-            message: `No figures found for chapter "${chapter}"${topic ? `, topic "${topic}"` : ''}`,
+            message: `No figures available. DO NOT mention images, diagrams, or visual representations in your response. Teach using text-based explanations only.`,
             figures: []
           };
         }
+        
+        // Generate ready-to-use shortcode strings for the AI
+        const shortcodesToUse = figures.map((f: any) => `[image:${f.shortcode}]`);
         
         return {
           found: true,
@@ -347,8 +570,9 @@ export const studentTools = {
           chapter: chapter,
           topic: topic || null,
           figures: figures,
-          usage: "CRITICAL: You MUST include at least one [image:shortcode] in your response text. Use these shortcodes like: [image:shortcode_name]. Example: 'As shown in this diagram: [image:biology_form1_figure_2_1], the hand lens is used for...'. If multiple figures are returned and they are all highly relevant to what you're teaching, you SHOULD use multiple [image:shortcode] in your response - don't limit yourself to just one if all figures are relevant. Do not just acknowledge this result - you MUST use the shortcode(s) in your actual response.",
-          instruction: "MANDATORY: Review ALL returned figures. You MUST include at least one [image:shortcode] from the figures list in your response. If multiple figures are returned and they are all highly relevant to the topic you're teaching, use multiple [image:shortcode] - one for each relevant figure. Select which figures to use based on relevance: if they are all highly relevant, use them all. Use the shortcodes with [image:shortcode] format when referencing these figures. Example: 'Look at this: [image:biology_form1_figure_1_1] shows living things.' This is not optional - if figures are returned, you MUST use at least one, and you SHOULD use multiple if they are all relevant."
+          shortcodes_ready_to_use: shortcodesToUse,
+          usage: `CRITICAL: You MUST include at least one image in your response. Copy-paste one of these EXACTLY into your response: ${shortcodesToUse.join(' or ')}. Example response: "Look at this diagram: ${shortcodesToUse[0]} - it shows..."`,
+          instruction: `MANDATORY: Include at least one of these shortcodes in your response text: ${shortcodesToUse.join(', ')}. If multiple figures are returned, consider using all of them if relevant. Just copy the shortcode exactly as shown (including the brackets).`
         };
       } catch (error: any) {
         console.error("[getChapterFigures] Error:", error);
@@ -363,10 +587,10 @@ export const studentTools = {
 
   // Get syllabus for a subject and level from JSON files
   getSyllabus: tool({
-    description: "Get the syllabus/curriculum for a given subject and level (Form I or Form II) from JSON files. Use this when you need to understand what competences, topics, or content should be covered for a specific subject and level. This helps ensure syllabus compliance and proper lesson planning. Available subjects: biology, physics. Available levels: Form I, Form II.",
+    description: "Get the syllabus/curriculum for a given subject and level (Form 1 or Form 2) from JSON files. Use this when you need to understand what competences, topics, or content should be covered for a specific subject and level. This helps ensure syllabus compliance and proper lesson planning. Available subjects include: biology, physics, chemistry, mathematics, geography. Available levels: Form 1, Form 2.",
     inputSchema: z.object({ 
       subject: z.string().describe("The subject name (e.g., 'biology', 'physics', 'mathematics', 'chemistry', 'geography', 'history', 'english', 'kiswahili')"),
-      level: z.string().describe("The education level (e.g., 'Form I', 'Form II', 'form i', 'form ii')")
+      level: z.string().describe("The education level (e.g., 'Form 1', 'Form 2', 'form 1', 'form 2')")
     }),
     execute: async ({ subject, level }) => {
       try {
@@ -374,10 +598,11 @@ export const studentTools = {
         const syllabus = await readSyllabusFromFile(subject, level);
         
         if (!syllabus) {
+          const availableSubjects = await formatAvailableSubjects();
           return {
             subject,
             level,
-            syllabus: `No syllabus file found for ${subject} ${level}. Available files: biology (Form I, Form II), physics (Form I). You may need to rely on general knowledge of the Tanzanian curriculum for other subjects.`,
+            syllabus: `No syllabus file found for ${subject} ${level}. Available files: ${availableSubjects}. You may need to rely on general knowledge of the Tanzanian curriculum for other subjects.`,
             found: false,
             competences: []
           };

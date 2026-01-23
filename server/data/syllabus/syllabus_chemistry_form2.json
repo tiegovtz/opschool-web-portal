@@ -1,0 +1,228 @@
+{
+  "syllabus_metadata": {
+    "title": "Chemistry Syllabus for Ordinary Secondary Education",
+    "level": "Form II",
+    "subject": "Chemistry"
+  },
+  "book_metadata": {
+    "title": "Chemistry for Secondary Schools",
+    "level": "Student's Book Form Two"
+  },
+  "competences": [
+    {
+      "main_competence": "1.0 Demonstrate mastery of basic concepts, theories and principles in Chemistry",
+      "specific_competence": "1.1 Demonstrate mastery of concepts, theories and principles in Chemistry",
+      "number_of_periods": 81,
+      "learning_activities": [
+        {
+          "activity": "(a) Describe the modern concept of atomic structure (Dalton's atomic structure and sub-atomic particles)",
+          "related_chapters": [1],
+          "teaching_learning_methods": [
+            "Think-ink-pair-share: Guide students in pair to think about the meaning of an atom and its structure",
+            "Technological-based learning: Guide students to account for the structure of an atom basing on ICT facilities and write a report"
+          ],
+          "assessment_criteria": "The modern concept of atomic structure is clearly described",
+          "suggested_resources": "Diagrams, pictures, wall charts, simulations and videos illustrating Dalton's atomic structure and sub-atomic particles"
+        },
+        {
+          "activity": "(b) Describe the concept of electronic arrangements in atoms",
+          "related_chapters": [1],
+          "teaching_learning_methods": [
+            "Technological-based learning: Guide students to watch visual aids for simulations and animations, showing the arrangements of electrons in atoms of elements in their shells and write a report",
+            "Group activity: Assign students in manageable groups to practice the arrangement of electrons in shells of atoms of different elements through models designing using locally available materials"
+          ],
+          "assessment_criteria": "The concept of electronic arrangements in atoms is clearly described",
+          "suggested_resources": "Diagrams, pictures, wall charts, simulations and videos illustrating energy shell diagram, and locally available materials for designing electronic models"
+        },
+        {
+          "activity": "(c) Use the concept of atomic structure to determine the atomic and mass numbers of an element",
+          "related_chapters": [1],
+          "teaching_learning_methods": [
+            "Group discussion: Guide students in manageable groups to calculate the atomic number and mass number of an element for the given compound"
+          ],
+          "assessment_criteria": "Atomic numbers and mass numbers of elements are correctly determined",
+          "suggested_resources": "Models, charts and pictures showing the atomic number of elements, and wall charts showing the number of protons and neutrons of elements"
+        },
+        {
+          "activity": "(d) Explain the concept of chemical formulae and nomenclature (valence, oxidation state, radicals and naming of binary inorganic compounds using the IUPAC system)",
+          "related_chapters": [3],
+          "teaching_learning_methods": [
+            "Inquiry-based learning: Assign students to collect commonly used substances and give their common names and identify their constituent elements",
+            "Group discussion: Guide student in manageable groups to describe the concepts of chemical formula, valence, oxidation state, radicals and name binary inorganic compounds using the IUPAC system",
+            "Gallery work: Guide students to brainstorm and share key rules in writing chemical formulae"
+          ],
+          "assessment_criteria": "The concept of chemical formulae and nomenclature are clearly explained",
+          "suggested_resources": "Valence cards, modern periodic table, wall charts showing oxidation states and common radicals, and labelled bottles containing different laboratory chemicals"
+        },
+        {
+          "activity": "(e) Determine empirical and molecular formulae of common compounds",
+          "related_chapters": [3],
+          "teaching_learning_methods": [
+            "Group discussion: Guide students in manageable groups to determine percentage compositions of each element and in a compound",
+            "Problem solving: Guide students to apply steps for calculating empirical formulae and molecular formulae of different compounds"
+          ],
+          "assessment_criteria": "Empirical formulae and molecular formulae of different compounds are correctly determined",
+          "suggested_resources": "Model depicting empirical formulae and molecular formulae, wall charts showing molecular formulae and modern periodic table"
+        },
+        {
+          "activity": "(f) Describe the concept of chemical bonding (covalent and electrovalent bonding)",
+          "related_chapters": [3],
+          "teaching_learning_methods": [
+            "Outdoor activity: Guide students to reflect on real-environment about bonding such as building blocks erecting a walls and relate with the concepts of bonding",
+            "Technological-based learning: Use software such as ChemDraw to demonstrate the process of bonding"
+          ],
+          "assessment_criteria": "The concept of chemical bonding is clearly described",
+          "suggested_resources": "Selected organic and inorganic structures, Computers installed with Chemistry software"
+        },
+        {
+          "activity": "(g) Describe the concept of chemical reactions (chemical equations, balancing chemical equations, and types of chemical reactions)",
+          "related_chapters": [4],
+          "teaching_learning_methods": [
+            "Group discussion: Guide students in manageable groups to write simple word equations and chemical equations with symbols",
+            "Think-ink-pair-share: Guide students in pairs to identify types of chemical reactions, balance chemical equations, interpret word equations into chemical equations",
+            "Experimentation: Guide students to perform an experiment to verify the law of conservation of matter and write the report"
+          ],
+          "assessment_criteria": "The concept of chemical reactions is clearly described",
+          "suggested_resources": "Kerosene, candles, KOH/NaOH, HCl, glycerine, selected apparatus and equipment"
+        },
+        {
+          "activity": "(h) Relate the types of chemical reactions with common processes in daily life such as burning of fuel and digestion in living organisms",
+          "related_chapters": [4],
+          "teaching_learning_methods": [
+            "Project works: Task students to carry-out project to examine applications of chemical reactions in the burning of fuel and digestion in living organisms"
+          ],
+          "assessment_criteria": "The types of chemical reactions are clearly related with common processes in daily life",
+          "suggested_resources": "Laboratory note book, heat source and fuel such as charcoal"
+        },
+        {
+          "activity": "(i) Describe acids, bases and salts (reactions of acids and bases with various substances) and their applications in daily life",
+          "related_chapters": [5],
+          "teaching_learning_methods": [
+            "Inquiry-based learning: Guide students to analyse various substances with acidic and basic properties commonly found in their environment and describe the concepts of acids, bases and salts",
+            "Group discussion: Guide students in manageable groups to describe the reactions of acids and bases",
+            "Field trips: Guide students to visit nearby food and beverages processing industries to examine the applications of acids, bases and salts"
+          ],
+          "assessment_criteria": "The concepts of acids, bases and salts are clearly described",
+          "suggested_resources": "Citrus fruits, vinegar, sour milk, apples, wood ash, tooth paste, baking powder, mineral acids, hydroxides and indicators"
+        }
+      ]
+    },
+    {
+      "main_competence": "1.0 Demonstrate mastery of basic concepts, theories and principles in Chemistry",
+      "specific_competence": "1.2 Demonstrate an understanding of the physical and chemical properties of elements on the basis of their arrangements in the periodic table",
+      "number_of_periods": 18,
+      "learning_activities": [
+        {
+          "activity": "(a) Explain the changes in the physical and chemical properties of elements across and down the periodic table",
+          "related_chapters": [2],
+          "teaching_learning_methods": [
+            "Group discussion: Guide students in manageable groups to explain the trends of metallic and non-metallic elements across the periods and down the groups of the periodic table"
+          ],
+          "assessment_criteria": "Changes in properties of elements across and down the periodic table are correctly explained",
+          "suggested_resources": "Diagrams, pictures, wall charts, simulations and videos illustrating changes in the physical and chemical properties of elements across and down the periodic table"
+        },
+        {
+          "activity": "(b) Use the electronic configuration of an element to locate their positions in the periodic table",
+          "related_chapters": [2],
+          "teaching_learning_methods": [
+            "Group discussion: Guide students in manageable groups to apply the periodic law in locating elements in the periodic table"
+          ],
+          "assessment_criteria": "The electronic configurations of elements are correctly used to locate the positions of elements in the periodic table",
+          "suggested_resources": "Wall charts of modern periodic table showing electronic configuration of some elements"
+        }
+      ]
+    },
+    {
+      "main_competence": "2.0 Conduct experiments in Chemistry",
+      "specific_competence": "2.1 Conduct experiments in Chemistry",
+      "number_of_periods": 18,
+      "learning_activities": [
+        {
+          "activity": "(a) Prepare acid-base indicators using locally available materials",
+          "related_chapters": [5],
+          "teaching_learning_methods": [
+            "Outdoor activity: Guide students to prepare acid-base indicators from locally available materials and write reports"
+          ],
+          "assessment_criteria": "Acid-base indicators are correctly prepared using locally available materials",
+          "suggested_resources": "Coloured flowers, coloured leaves, mortar and pestle, pieces of clothes, heat source, tripod stand, lemon juice, tomato juice, sour milk, vinegar, soft drinks and NaOH"
+        },
+        {
+          "activity": "(b) Use the prepared indicators to test acidity and alkalinity of substances found in the locality",
+          "related_chapters": [5],
+          "teaching_learning_methods": [
+            "Experimentation: Guide students to perform experiments using locally made indicators to test acidity and alkalinity of substances found in the locality"
+          ],
+          "assessment_criteria": "Acidity and alkalinity of substances found in the locality are tested using the prepared indicators",
+          "suggested_resources": "Locally prepared indicator, POP indicator, MO indicator, lemon juice, tomato juice, sour milk, vinegar and soft drinks"
+        }
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "chapter_number": 1,
+      "title": "Atomic structure",
+      "start_page": 1,
+      "sections": [
+        { "title": "Concept of atomic structure", "page": 1 },
+        { "title": "Dalton atomic theory", "page": 2 },
+        { "title": "Sub-atomic particles", "page": 3 },
+        { "title": "Electronic arrangement", "page": 6 },
+        { "title": "Determination of atomic number and mass number", "page": 10 },
+        { "title": "Revision exercise 1", "page": 21 }
+      ]
+    },
+    {
+      "chapter_number": 2,
+      "title": "Periodic classification",
+      "start_page": 24,
+      "sections": [
+        { "title": "Development of the periodic table", "page": 24 },
+        { "title": "Modern periodic table", "page": 25 },
+        { "title": "Electronic configuration and element positioning in the periodic table", "page": 27 },
+        { "title": "Trends in physical and chemical properties across periods and down groups", "page": 30 },
+        { "title": "Revision exercise 2", "page": 41 }
+      ]
+    },
+    {
+      "chapter_number": 3,
+      "title": "Chemical bonding, formula and nomenclature",
+      "start_page": 45,
+      "sections": [
+        { "title": "Concept of chemical bonding", "page": 45 },
+        { "title": "Chemical bonding", "page": 46 },
+        { "title": "Valency", "page": 55 },
+        { "title": "Radicals", "page": 55 },
+        { "title": "Oxidation state", "page": 57 },
+        { "title": "Concept of chemical formulas", "page": 59 },
+        { "title": "Nomenclature of binary inorganic compounds", "page": 66 },
+        { "title": "Revision exercise 3", "page": 72 }
+      ]
+    },
+    {
+      "chapter_number": 4,
+      "title": "Chemical reactions",
+      "start_page": 77,
+      "sections": [
+        { "title": "Concept of chemical reactions", "page": 77 },
+        { "title": "Chemical equations", "page": 78 },
+        { "title": "Types of chemical reactions", "page": 86 },
+        { "title": "Revision exercise 4", "page": 96 }
+      ]
+    },
+    {
+      "chapter_number": 5,
+      "title": "Acids, bases, and salts",
+      "start_page": 99,
+      "sections": [
+        { "title": "Acids", "page": 99 },
+        { "title": "Bases", "page": 106 },
+        { "title": "Acid-base indicators", "page": 119 },
+        { "title": "Salts", "page": 124 },
+        { "title": "Revision exercise 5", "page": 142 }
+      ]
+    }
+  ]
+}
+
+

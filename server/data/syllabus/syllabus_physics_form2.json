@@ -1,0 +1,261 @@
+{
+  "syllabus_metadata": {
+    "title": "Physics Syllabus for Ordinary Secondary Education",
+    "level": "Form II",
+    "subject": "Physics"
+  },
+  "book_metadata": {
+    "title": "Physics for Secondary Schools",
+    "level": "Student's Book Form Two"
+  },
+  "competences": [
+    {
+      "main_competence": "1.0 Apply knowledge of Physics in various contexts",
+      "specific_competence": "1.1 Demonstrate mastery of basic concepts, theories and principles of Physics",
+      "number_of_periods": 30,
+      "learning_activities": [
+        {
+          "activity": "(a) Describe the concept and principles of light (sources of light, propagation and transmission, image formation, colours, optical instruments)",
+          "related_chapters": [4, 5, 6],
+          "teaching_learning_methods": [
+            "Brainstorming: Guide students to brainstorm on the concepts and principles of light (sources of light, propagation and transmission, image formation, colours, optical instruments)",
+            "Group discussion: Guide students in manageable groups to explore the concepts and principles of light",
+            "Field trip: Organise field trips help students to explore applications of light"
+          ],
+          "assessment_criteria": "The concepts and principles of light are described correctly",
+          "suggested_resources": "Torch, candle, cardboard with slit, light emitting diodes and fluorescent tube"
+        },
+        {
+          "activity": "(b) Describe the concept and principles of magnetism (magnetization and demagnetization, magnetic fields)",
+          "related_chapters": [3],
+          "teaching_learning_methods": [
+            "Group discussion: Guide students to discuss the concepts and principles of magnetism through hands-on activities",
+            "ICT based learning: Guide the students through the use of interactive simulations and animations to visualise magnetic field patterns",
+            "Project work: Guide students in groups to work on different projects on magnetization and demagnetization of different materials"
+          ],
+          "assessment_criteria": "The concepts and principles of magnetism are described correctly",
+          "suggested_resources": "Different types of magnets, iron fillings, card board, connecting wires and batteries"
+        },
+        {
+          "activity": "(c) Explain the concept and principles of static electricity (detection of static charges, types of materials, capacitors, charge distributions and lightning conductor)",
+          "related_chapters": [1],
+          "teaching_learning_methods": [
+            "Practical Work and Experiment: Guide learners to explore the concepts and principles of static electricity through hands-on activities",
+            "Interactive simulations: Facilitate students to visualize and understand the concepts and principles of static electricity",
+            "Brainstorming: Guide students to explore the application of static electricity in their environment"
+          ],
+          "assessment_criteria": "The concepts and principles of static electricity are clearly explained",
+          "suggested_resources": "Small pieces of paper, plastic comb, polythene rod, capacitor and lighting conductor, rod and wires"
+        },
+        {
+          "activity": "(d) Describe the concept and laws of current electricity (electromotive force, potential difference, resistance, effect of electric current, domestic electrical installation)",
+          "related_chapters": [2],
+          "teaching_learning_methods": [
+            "Group discussion: Guide students in groups to discuss the concept of current electricity",
+            "Hands-on activity: Guide learners to explore the concept and laws of current electricity through hands-on activities",
+            "Interactive simulations: Facilitate students to visualize the flow of charges"
+          ],
+          "assessment_criteria": "The concept and laws of current electricity are described correctly",
+          "suggested_resources": "Ammeter, Voltmeter, switch, Meter bridge, resistors, connecting wire and batteries"
+        }
+      ]
+    },
+    {
+      "main_competence": "1.0 Apply knowledge of Physics in various contexts",
+      "specific_competence": "1.2 Use mathematics to explain physical principles and phenomena",
+      "number_of_periods": 9,
+      "learning_activities": [
+        {
+          "activity": "(a) Apply mathematical knowledge to describe various relations related to light and current electricity",
+          "related_chapters": [2, 4, 5, 6],
+          "teaching_learning_methods": [
+            "Group discussion: Guide students through manageable groups to apply mathematical knowledge to describe various relations related to light and current electricity",
+            "Think ink pair share: Guide students through think ink pair share to apply mathematical knowledge to describe various relations related to light and current electricity",
+            "Problem based learning: Guide students to relate the principles related to light and current electricity with real-life situation"
+          ],
+          "assessment_criteria": "Mathematical knowledge is applied correctly to describe various relations related to light and current electricity",
+          "suggested_resources": "Text books"
+        }
+      ]
+    },
+    {
+      "main_competence": "2.0 Conduct experiments in Physics",
+      "specific_competence": "2.1 Demonstrate mastery of basic experimental skills in Physics",
+      "number_of_periods": 20,
+      "learning_activities": [
+        {
+          "activity": "(a) Carry out experiments related to light, magnetism, static electricity and current electricity",
+          "related_chapters": [1, 2, 3, 4, 5, 6],
+          "teaching_learning_methods": [
+            "Practical works: Guide students through hands-on activities to investigate relationship between different parameters related to light, magnetism, static electricity and current electricity",
+            "ICT based approach: Guide students through interactive simulations to visualize and carry out experiments related to light, magnetism, static electricity, and current electricity"
+          ],
+          "assessment_criteria": "Experiments related to light, magnetism, static electricity and current electricity are carried out correctly",
+          "suggested_resources": "Ammeter, Voltmeter, switch, Meter bridge, resistor, connecting wire, Torch, card board with slits, triangular prism, plane mirrors and curved mirrors"
+        }
+      ]
+    },
+    {
+      "main_competence": "2.0 Conduct experiments in Physics",
+      "specific_competence": "2.2 Demonstrate mastery of data analysis, presentation and report writing in Physics",
+      "number_of_periods": 28,
+      "learning_activities": [
+        {
+          "activity": "(a) Use spreadsheet to process experimental data in physics",
+          "related_chapters": [1, 2, 3, 4, 5, 6],
+          "teaching_learning_methods": [
+            "ICT based approach: Guide students through the use of ICT-programs such as spreadsheet to process experimental data in Physics",
+            "Experimentation: Guide students through experiments to deduce the relationship between various parameters related to light, magnetism, static electricity and current electricity"
+          ],
+          "assessment_criteria": "Experimental data are correctly processed using various spreadsheet programs",
+          "suggested_resources": "Computer with spreadsheet software, experimental data sets"
+        },
+        {
+          "activity": "(b) Use graphs to analyse and determine mathematical relationships between various variables in Physics",
+          "related_chapters": [1, 2, 3, 4, 5, 6],
+          "teaching_learning_methods": [
+            "ICT based approach: Guide students through interactive simulations to collect and analyse the experimental data using graphs and use the graphs to establish the mathematical relationships between various variables in Physics",
+            "Group discussion: Facilitate the students through manageable groups to discuss the use of graphs to analyse the experimental data and use it to establish the relationship between the variables in Physics"
+          ],
+          "assessment_criteria": "The graphs are used appropriately to analyse and determine mathematical relationships between various variables in Physics",
+          "suggested_resources": "Online resources, graph paper, protractor, ruler, manila, chart and other resources"
+        },
+        {
+          "activity": "(c) Communicate experimental results orally",
+          "related_chapters": [1, 2, 3, 4, 5, 6],
+          "teaching_learning_methods": [
+            "Cooperative learning: Guide students to work in pairs or small groups to analyse and interpret graphs",
+            "Problem-based learning: Guide students with real-world problems that require them to analyse and interpret graphs to determine the mathematical relationship between variables",
+            "Guided practice approach: Facilitate students with guided practice in analysing and interpreting graphs"
+          ],
+          "assessment_criteria": "The experimental results are communicated orally correctly",
+          "suggested_resources": "Various graphs based on experimental data and online resources"
+        }
+      ]
+    },
+    {
+      "main_competence": "3.0 Evaluate and use information in Physics",
+      "specific_competence": "3.1 Collect, describe and relate physical data",
+      "number_of_periods": 8,
+      "learning_activities": [
+        {
+          "activity": "(a) Collect and analyse data to explain various physical quantities (light, magnetism, static electricity and current electricity)",
+          "related_chapters": [1, 2, 3, 4, 5, 6],
+          "teaching_learning_methods": [
+            "Problem-solving approach: Guide students with real-world problems that require them to analyse collected physics data to explain various physical quantities",
+            "Collaborative learning: Guide the students to work in pairs or small groups to analyse and interpret collected Physics data",
+            "ICT-based approach: Guide students through the use of technology such as computer software, online tools, and simulations to analyse and interpret collected data to explain various physical quantities"
+          ],
+          "assessment_criteria": "Collected physics data are correctly analysed to explain various physical quantities",
+          "suggested_resources": "Online resources and other relevant materials"
+        },
+        {
+          "activity": "(b) Collect and analyse data to explain experimental observations related to light, magnetism, static electricity and current electricity",
+          "related_chapters": [1, 2, 3, 4, 5, 6],
+          "teaching_learning_methods": [
+            "Experimentation: Guide students to use electrical equipment and light locally available materials to design experiments to investigate the properties of light, magnetism, static electricity and current electricity",
+            "ICT-based approach: Guide students through the use of technology such as computer software, online tools, and simulations to analyse and interpret collected data to explain various physical quantities"
+          ],
+          "assessment_criteria": "Collected physics data are correctly analysed to explain experimental observations related to light, magnetism, static electricity and current electricity",
+          "suggested_resources": "Online resources, watch, trolley and model"
+        }
+      ]
+    },
+    {
+      "main_competence": "3.0 Evaluate and use information in Physics",
+      "specific_competence": "3.2 Carry out a project in Physics",
+      "number_of_periods": 6,
+      "learning_activities": [
+        {
+          "activity": "(a) Develop prototype devices based on the concepts, theories, principles, and laws gained from the field of light, magnetism, static electricity and current electricity",
+          "related_chapters": [1, 2, 3, 4, 5, 6],
+          "teaching_learning_methods": [
+            "Inquiry-based approach: Guide the students to develop prototype devices based on the concepts, theories, principles, and laws gained from the field of light, magnetism, static electricity and current electricity",
+            "Problem-based approach: Guide the students in discussion to present the way the developed prototypes solve real world problems related to light and electricity"
+          ],
+          "assessment_criteria": "Appropriate prototype devices are developed based on the concepts, principles, theories and laws gained from given Physics concepts",
+          "suggested_resources": "Online resources and various materials for prototype development"
+        }
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "chapter_number": 1,
+      "title": "Static electricity",
+      "start_page": 1,
+      "sections": [
+        { "title": "Concept of static electricity", "page": 1 },
+        { "title": "Conductors and insulators", "page": 4 },
+        { "title": "Capacitors", "page": 20 },
+        { "title": "Charge distribution on a conductor", "page": 30 },
+        { "title": "Lightning and thunderstorms", "page": 32 },
+        { "title": "Revision exercise 1", "page": 35 }
+      ]
+    },
+    {
+      "chapter_number": 2,
+      "title": "Current electricity",
+      "start_page": 39,
+      "sections": [
+        { "title": "Concept of current electricity", "page": 39 },
+        { "title": "Resistance to an electric current", "page": 43 },
+        { "title": "Heating effect of an electric current", "page": 66 },
+        { "title": "Electrical installations", "page": 73 },
+        { "title": "Cells", "page": 80 },
+        { "title": "Revision exercise 2", "page": 90 }
+      ]
+    },
+    {
+      "chapter_number": 3,
+      "title": "Magnetism",
+      "start_page": 94,
+      "sections": [
+        { "title": "Concept of magnetism", "page": 94 },
+        { "title": "Magnetisation and demagnetisation", "page": 101 },
+        { "title": "Magnetic field of a magnet", "page": 108 },
+        { "title": "Earth's magnetic field", "page": 115 },
+        { "title": "Revision exercise 3", "page": 121 }
+      ]
+    },
+    {
+      "chapter_number": 4,
+      "title": "Nature and reflection of light",
+      "start_page": 124,
+      "sections": [
+        { "title": "Concept of light", "page": 124 },
+        { "title": "Propagation and transmission of light", "page": 126 },
+        { "title": "Reflection of light through the plane mirror", "page": 131 },
+        { "title": "Reflection of light from curved mirrors", "page": 140 },
+        { "title": "Revision exercise 4", "page": 161 }
+      ]
+    },
+    {
+      "chapter_number": 5,
+      "title": "Refraction and dispersion of light",
+      "start_page": 163,
+      "sections": [
+        { "title": "Concept of refraction of light", "page": 163 },
+        { "title": "Refraction of light by a glass prism", "page": 165 },
+        { "title": "Colours of light", "page": 181 },
+        { "title": "Refraction of light by lenses", "page": 193 },
+        { "title": "Revision exercise 5", "page": 208 }
+      ]
+    },
+    {
+      "chapter_number": 6,
+      "title": "Optical instruments",
+      "start_page": 211,
+      "sections": [
+        { "title": "Simple microscope", "page": 211 },
+        { "title": "Compound microscope", "page": 215 },
+        { "title": "Astronomical telescope", "page": 220 },
+        { "title": "Binoculars", "page": 223 },
+        { "title": "Lens camera", "page": 225 },
+        { "title": "The human eye", "page": 229 },
+        { "title": "Revision exercise 6", "page": 238 }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,174 @@
+{
+  "syllabus_metadata": {
+    "title": "Chemistry Syllabus for Ordinary Secondary Education",
+    "level": "Form I",
+    "subject": "Chemistry"
+  },
+  "book_metadata": {
+    "title": "Chemistry for Secondary Schools",
+    "level": "Student's Book Form One"
+  },
+  "competences": [
+    {
+      "main_competence": "1.0 Demonstrate mastery of basic concepts, theories and principles in Chemistry",
+      "specific_competence": "1.1 Demonstrate mastery of concepts, theories and principles in Chemistry",
+      "number_of_periods": 78,
+      "learning_activities": [
+        {
+          "activity": "(a) Describe the concept of Chemistry (meaning, branches, applications and relationships with other disciplines)",
+          "related_chapters": [1],
+          "teaching_learning_methods": [
+            "Brainstorming: Assign students in manageable groups to brainstorm on chemical basis of materials from their environment, give the meaning of Chemistry and justifying the reason for studying Chemistry",
+            "Project works: Guide students to explore the common industrial products in Tanzania and relate their applications to the importance of Chemistry"
+          ],
+          "assessment_criteria": "The concept of Chemistry is clearly described",
+          "suggested_resources": "Pictures, diagrams, simulations, animations or videos illustrating the meaning, branches, applications and relationship with other disciplines"
+        },
+        {
+          "activity": "(b) Discuss the contribution of Chemistry in the development of modern society",
+          "related_chapters": [1],
+          "teaching_learning_methods": [
+            "Field visit: Guide students to visit any nearby industry, health facilities, mining sites and agricultural farms to appreciate the importance of Chemistry in the development of societies"
+          ],
+          "assessment_criteria": "The contribution of Chemistry in the development of modern society is clearly recognised",
+          "suggested_resources": "Simulations, animations or videos illustrating the contribution of Chemistry in the development of modern society"
+        },
+        {
+          "activity": "(c) Describe the concept of matter (physical and chemical changes of matter)",
+          "related_chapters": [4],
+          "teaching_learning_methods": [
+            "Practical work: Guide students to carry-out hands-on activities to investigate the physical and chemical changes of matter using samples of substances found in their environment",
+            "Experimentation: Guide students to perform experiments basing on sublimation of compounds, rusting of iron nails, freezing and evaporation of water and dissolving of salts using distilled water"
+          ],
+          "assessment_criteria": "The concept of matter is clearly described",
+          "suggested_resources": "Ice, water, source of heat, evaporating basin, metal nails, beaker, table salt, sugar, iodine crystals, magnet, magnesium ribbon, acids, fruits, paper, CuSO4 solution, aluminium foil, candle, CaCO3, Pb(NO3)2 solution and simulations and videos illustrating physical and chemical changes of matter"
+        },
+        {
+          "activity": "(d) Describe the concepts of chemical elements (criteria for assigning chemical symbols), compounds (binary compound) and mixtures (types of solution and separation of mixtures)",
+          "related_chapters": [5],
+          "teaching_learning_methods": [
+            "Think-ink-pair-share: Guide students in pairs to think and share about various types of industrial products they commonly use in their home for various activities, reflect on their constituent elements and explain the meaning of element, compound and mixture",
+            "Hands-on-minds-on: Assign students to prepare solutions using materials available in their home settings and reflect their properties to practices of using them in various applications such as pharmaceuticals and domestic activities"
+          ],
+          "assessment_criteria": "The concepts of chemical elements, compounds and mixture are clearly described",
+          "suggested_resources": "Periodic table, copper, zinc, aluminium, iron, sulphur, hydrogen, common salt, iron filings, magnet, powdered sulphur, crucible and lid, heat source, HCl solution, water, chalk, FeS, milk, clay soil"
+        },
+        {
+          "activity": "(e) Compare the properties of compounds with those of constituent elements",
+          "related_chapters": [5],
+          "teaching_learning_methods": [
+            "Group discussion: Guide students in manageable groups to explore the properties of chemical compounds useful in real-life situation",
+            "Technological -based learning: Guide students to analyse features of compounds and element from real substances using visual aids"
+          ],
+          "assessment_criteria": "The properties of compounds are correctly compared with those of constituent elements",
+          "suggested_resources": "margarine, filter paper, funnel, ethanol, iodine crystals, kerosene, ink, sugar, wall charts, and pictures of distillers"
+        },
+        {
+          "activity": "(f) Explain the concept of the periodic table (1st 20 elements in the Periodic Table; metals and non-metals)",
+          "related_chapters": [5],
+          "teaching_learning_methods": [
+            "Outdoor activity: Assign students to collect materials in their environment and classify into metals and non-metals",
+            "Project works: Assign students to carry-out project task to investigate on different properties of metals and non-metals available in their real life setting and write a report"
+          ],
+          "assessment_criteria": "The concept of the periodic table is clearly explained",
+          "suggested_resources": "Diagrams, pictures, wall charts, simulations and videos illustrating 1st 20 elements in the Periodic Table; metals and non-metals"
+        }
+      ]
+    },
+    {
+      "main_competence": "2.0 Conduct experiments in Chemistry",
+      "specific_competence": "2.1 Conduct experiments in Chemistry",
+      "number_of_periods": 39,
+      "learning_activities": [
+        {
+          "activity": "(a) Describe basic Chemistry laboratory skills (chemistry laboratory rules and safety measures, first aid, fire and firefighting, and Chemistry laboratory apparatus)",
+          "related_chapters": [2, 3],
+          "teaching_learning_methods": [
+            "Group discussion: Guide students in manageable groups to interpret basic laboratory skills related to rules and precautions, safety measures and chemical warning signs",
+            "Guest speaker from fire brigade: Guide students to interpret classes of fire and practice on firefighting basing on speaker's instructions and write a report",
+            "Outdoor activity: Guide students to practice on extinguishing small fires"
+          ],
+          "assessment_criteria": "Basic Chemistry laboratory skills are clearly described",
+          "suggested_resources": "Laboratory manuals, models, wall charts with written rules, pictures, laboratory rules, first aid kit, laboratory apparatus, fire extinguishers and videos illustrating basic chemistry laboratory skills"
+        },
+        {
+          "activity": "(b) Perform experiments on the changes of matter from one state to another",
+          "related_chapters": [4],
+          "teaching_learning_methods": [
+            "Experimentation: Guide students to perform experiments on various materials from the environment and laboratory, and use chemicals to demonstrate changes of matter"
+          ],
+          "assessment_criteria": "Experiments on the changes of matter from one state to another are correctly performed",
+          "suggested_resources": "Ice, water, iron chips, heat source, clay soil, margarine, filter paper, funnel, iodine crystals, anhydrous CuSO4, kerosene, salt and sugar"
+        },
+        {
+          "activity": "(c) Perform experiments on separation of different mixtures using different methods",
+          "related_chapters": [5],
+          "teaching_learning_methods": [
+            "Home-based project: Assign students to carry-out simple experiments on separating mixtures in their daily life",
+            "Experimentation: Guide students to perform experiments on separating mixtures basing on specific properties of substances such as solubility and boiling point",
+            "Questions and answers: Guide students to present the common and commercial applications of the various methods for separating mixtures, for examples simple distillation, fractional distillation and decantation"
+          ],
+          "assessment_criteria": "Experiments on separation of different mixtures using different methods are correctly performed",
+          "suggested_resources": "Common salt, iron filings, magnet, powdered Sulphur, crucible and lid, heat source, HCl solution, FeS, milk, clay soil, margarine, kerosene, filter paper, funnel, ethanol, kerosene, ink, sugar, distillation system and animations or videos illustrating separation of different mixtures using different methods"
+        }
+      ]
+    }
+  ],
+  "chapters": [
+    {
+      "chapter_number": 1,
+      "title": "Introduction to Chemistry",
+      "start_page": 1,
+      "sections": [
+        { "title": "Concept of chemistry", "page": 1 },
+        { "title": "Relationships of chemistry with other related disciplines", "page": 2 },
+        { "title": "Applications of chemistry in the development of a modern society", "page": 4 },
+        { "title": "Revision exercise 1", "page": 12 }
+      ]
+    },
+    {
+      "chapter_number": 2,
+      "title": "Laboratory techniques and safety",
+      "start_page": 14,
+      "sections": [
+        { "title": "Laboratory safety measures", "page": 15 },
+        { "title": "First Aid", "page": 21 },
+        { "title": "Basic chemistry laboratory apparatus", "page": 38 },
+        { "title": "Revision exercise 2", "page": 55 }
+      ]
+    },
+    {
+      "chapter_number": 3,
+      "title": "Fire, firefighting and flames",
+      "start_page": 59,
+      "sections": [
+        { "title": "Fire", "page": 59 },
+        { "title": "Firefighting", "page": 60 },
+        { "title": "Flames", "page": 65 },
+        { "title": "Revision exercise 3", "page": 74 }
+      ]
+    },
+    {
+      "chapter_number": 4,
+      "title": "Matter",
+      "start_page": 76,
+      "sections": [
+        { "title": "States of matter", "page": 76 },
+        { "title": "Physical and chemical changes", "page": 90 },
+        { "title": "Revision exercise 4", "page": 94 }
+      ]
+    },
+    {
+      "chapter_number": 5,
+      "title": "Elements, compounds and mixtures",
+      "start_page": 95,
+      "sections": [
+        { "title": "Elements and chemical symbols", "page": 95 },
+        { "title": "Compounds and mixtures", "page": 101 },
+        { "title": "Separation of mixtures", "page": 110 },
+        { "title": "Revision exercise 5", "page": 123 }
+      ]
+    }
+  ]
+}
+

@@ -1,5 +1,6 @@
-import { readFile, writeFile } from "fs/promises";
+import { readFile } from "fs/promises";
 import { join } from "path";
+import { getCookie } from "h3";
 
 interface UpdateImageInput {
   shortcode: string;  // The shortcode to update
@@ -34,136 +35,101 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Read existing shortcodes file
-    const dataDir = join(process.cwd(), "server", "data");
-    const filePath = join(dataDir, "image-shortcodes.json");
+    // Get auth token from cookie or header
+    const authToken = getCookie(event, "signInAccessToken") ||
+                      event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
+                      undefined;
 
-    let existingData: {
-      generatedAt: string;
-      total: number;
-      byCategory: Record<string, number>;
-      shortcodes: Record<string, any>;
-    };
-
-    try {
-      const content = await readFile(filePath, "utf-8");
-      existingData = JSON.parse(content);
-    } catch {
-      throw createError({
-        statusCode: 404,
-        message: "Image shortcodes file not found",
-      });
-    }
-
+    // Update figure in API
+    const { getFigureByShortcode, updateFigure } = await import('../utils/figuresApi');
+    
     // Check if shortcode exists
-    if (!existingData.shortcodes[body.shortcode]) {
+    const existing = await getFigureByShortcode(body.shortcode, authToken);
+    if (!existing) {
       throw createError({
         statusCode: 404,
         message: `Shortcode "${body.shortcode}" not found`,
       });
     }
 
-    // Get existing entry
-    const existingEntry = existingData.shortcodes[body.shortcode];
-
-    // Update fields if provided
-    if (body.path !== undefined) {
-      existingEntry.path = body.path;
-      // Remove paths if switching to single image
-      delete existingEntry.paths;
-      delete existingEntry.alts;
-    }
-    if (body.paths !== undefined && body.paths.length > 0) {
-      existingEntry.paths = body.paths;
-      existingEntry.alts = body.alts || [];
-      // Remove path if switching to multi-image
-      delete existingEntry.path;
-    }
-    if (body.alt !== undefined) {
-      existingEntry.alt = body.alt;
-    }
-    if (body.alts !== undefined) {
-      existingEntry.alts = body.alts;
-    }
-    if (body.category !== undefined) {
-      existingEntry.category = body.category;
-    }
-    if (body.description !== undefined) {
-      existingEntry.description = body.description;
-    }
-    if (body.chapterName !== undefined) {
-      existingEntry.chapterName = body.chapterName;
-    }
-    if (body.topicName !== undefined) {
-      existingEntry.topicName = body.topicName;
-    }
-    if (body.subjectName !== undefined) {
-      existingEntry.subjectName = body.subjectName;
-    }
-
-    // Update searchable text
-    const figureMatch = body.shortcode.match(/figure_(\d+)_(\d+)/);
-    const figureNumber = figureMatch ? `${figureMatch[1]}.${figureMatch[2]}` : "";
-    existingEntry.searchableText = `${body.shortcode} Figure ${figureNumber} ${existingEntry.alt || ""} ${existingEntry.description || ""} ${existingEntry.chapterName || ""} ${existingEntry.topicName || ""}`.trim();
-
-    // Update the entry
-    existingData.shortcodes[body.shortcode] = existingEntry;
-    existingData.generatedAt = new Date().toISOString();
-
-    // Recalculate category counts
-    const categoryCounts: Record<string, number> = {
-      biology: 0,
-      physics: 0,
-      chemistry: 0,
-      mathematics: 0,
-      geography: 0,
-      horticulture: 0,
-      english: 0,
-      "leather-goods": 0,
-    };
-
-    for (const entry of Object.values(existingData.shortcodes)) {
-      const cat = (entry as any).category || "biology";
-      if (categoryCounts[cat] !== undefined) {
-        categoryCounts[cat]++;
+    // Extract figure number from shortcode if needed
+    let figureNumber: string | undefined = undefined;
+    const figureMatch = body.shortcode.match(/figure[_\s](\d+)[_\s](\d+)/i);
+    if (figureMatch) {
+      figureNumber = `${figureMatch[1]}.${figureMatch[2]}`;
+    } else {
+      const altMatch = body.shortcode.match(/figure[_\s](\d+)/i);
+      if (altMatch) {
+        figureNumber = altMatch[1];
+      } else {
+        const simMatch = body.shortcode.match(/Sim(\d+)/i);
+        if (simMatch) {
+          figureNumber = `Sim${simMatch[1]}`;
+        }
       }
     }
-    existingData.byCategory = categoryCounts;
 
-    // Write back to image-shortcodes.json
-    await writeFile(filePath, JSON.stringify(existingData, null, 2), "utf-8");
-
-    // Also update figure-metadata.json
-    const figureMetadataPath = join(dataDir, "figure-metadata.json");
+    // Get page_number from figure-metadata.json if available
+    let pageNumber: number | undefined = undefined;
     try {
+      const dataDir = join(process.cwd(), "server", "data");
+      const figureMetadataPath = join(dataDir, "figure-metadata.json");
       const metadataContent = await readFile(figureMetadataPath, "utf-8");
       const figureMetadata = JSON.parse(metadataContent);
-
-      // Find and update the corresponding entry
-      const metadataIndex = figureMetadata.images?.findIndex(
-        (img: any) => img.shortcode === body.shortcode
-      );
-
-      if (metadataIndex !== -1 && metadataIndex !== undefined) {
-        const metadataEntry = figureMetadata.images[metadataIndex];
-        if (body.alt !== undefined) metadataEntry.caption = body.alt;
-        if (body.description !== undefined) metadataEntry.description = body.description;
-        if (body.chapterName !== undefined) metadataEntry.chapter = body.chapterName;
-        if (body.topicName !== undefined) metadataEntry.topic = body.topicName;
-        if (body.subjectName !== undefined) metadataEntry.subject = body.subjectName;
-
-        await writeFile(figureMetadataPath, JSON.stringify(figureMetadata, null, 2), "utf-8");
+      const metadataEntry = figureMetadata.images?.find((img: any) => img.shortcode === body.shortcode);
+      if (metadataEntry) {
+        pageNumber = metadataEntry.page_number;
       }
-    } catch (err) {
-      // Silently fail if figure-metadata.json doesn't exist or can't be updated
-      console.warn("[image-shortcode-update] Could not update figure-metadata.json:", err);
+    } catch {
+      // figure-metadata.json not found or invalid, that's okay
+    }
+
+    console.log(`[image-shortcode-update] Updating figure ${body.shortcode} in API...`);
+    const updatedFigure = await updateFigure(body.shortcode, {
+      alt: body.alt,
+      description: body.description,
+      category: body.category,
+      subjectName: body.subjectName,
+      chapterName: body.chapterName,
+      topicName: body.topicName,
+      figureNumber: figureNumber,
+      path: body.path,
+      paths: body.paths,
+      alts: body.alts,
+      page_number: pageNumber,
+    }, authToken);
+
+    if (!updatedFigure) {
+      throw createError({
+        statusCode: 500,
+        message: "Failed to update figure in API",
+      });
+    }
+
+    console.log(`[image-shortcode-update] ✅ Successfully updated figure ${body.shortcode} in API`);
+
+    // Build response entry
+    const entry: Record<string, any> = {
+      alt: updatedFigure.alt,
+      category: updatedFigure.category,
+      description: updatedFigure.description,
+      chapterName: updatedFigure.chapterName,
+      topicName: updatedFigure.topicName,
+      subjectName: updatedFigure.subjectName,
+    };
+
+    if (updatedFigure.paths && updatedFigure.paths.length > 0) {
+      entry.paths = updatedFigure.paths;
+      entry.alts = updatedFigure.alts;
+    } else if (updatedFigure.path) {
+      entry.path = updatedFigure.path;
     }
 
     return {
       success: true,
       message: `Image "${body.shortcode}" updated successfully`,
       shortcode: body.shortcode,
-      entry: existingEntry,
+      entry: entry,
     };
   } catch (error: any) {
     // Re-throw if it's already a createError
