@@ -1,8 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import apiDocs from './utilities/apiDocs'
-import { useBackspaceNavigation } from '@/composables/useBackspaceNavigation'
-import { useGlobalFocus } from '@/composables/useGlobalFocus'
 import {
   isGreaterToXL,
   isGreaterToLG,
@@ -31,7 +29,7 @@ if (import.meta.client) {
   const widthGreater768 = computed(() => screenWidth.value >= 768 && screenWidth.value < 1024)
   const widthGreater640 = computed(() => screenWidth.value >= 640 && screenWidth.value < 768)
   const widthGreater320 = computed(() => screenWidth.value >= 320 && screenWidth.value < 640)
-
+  
   const handleResize = () => {
     screenWidth.value = window.innerWidth
     isGreaterToXL.value = widthGreater1280.value
@@ -82,7 +80,6 @@ if (import.meta.client) {
     screenWidth.value = window.innerWidth
     handleResize()
     window.addEventListener('resize', handleResize)
-
     const events = ['mousemove', 'keypress', 'click', 'scroll']
     events.forEach(e => window.addEventListener(e, activityHandler))
 
@@ -102,8 +99,7 @@ if (import.meta.client) {
       }
     }, 1000);
 
-    webVisitor();
-    useGlobalFocus();
+    webVisitor();// visitors tracking
   })
 
   onBeforeUnmount(() => {
@@ -119,49 +115,14 @@ if (import.meta.client) {
   });
 
 }
+
+console.log('gnjfnvifjunlk');
+
 </script>
 
 <template>
-
-  <a class="skip-link" href="#main-content" @click.prevent="focusMain">Skip to main content</a>
-
   <NuxtLayout>
     <NuxtLoadingIndicator color="#56ade8" errorColor="#f00" />
     <NuxtPage @contextmenu.prevent />
   </NuxtLayout>
-
 </template>
-
-<script setup>
-import { nextTick } from 'vue'
-const focusMain = () => {
-  nextTick(() => {
-    const el = document.querySelector('[role="main"]') || document.getElementById('main-content')
-    if (el && typeof el.focus === 'function') el.focus()
-  })
-}
-</script>
-
-<style>
-/* Global skip link */
-.skip-link {
-  position: absolute;
-  left: -999px;
-  top: auto;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-}
-.skip-link:focus {
-  left: 1rem;
-  top: 1rem;
-  width: auto;
-  height: auto;
-  padding: 0.5rem 1rem;
-  background: #fff;
-  color: #111;
-  z-index: 2000;
-  border-radius: 4px;
-  text-decoration: none;
-}
-</style>
