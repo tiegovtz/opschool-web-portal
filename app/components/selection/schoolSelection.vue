@@ -38,14 +38,12 @@ const fetchSchools = async (region: string, district: string) => {
   }
 
   try {
-    const response = await $fetch<any[]>(
-      apiDocs.school.get,
+    const response = await $fetch<any[]>(apiDocs.school.get,
       {
-        method: 'POST',
-        body: {
-          region: region.toUpperCase(),
-          district: district.toUpperCase(),
-        },
+        query: {
+          region,
+          district,
+        }
       }
     );
 
