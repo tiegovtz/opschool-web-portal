@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, nextTick, toRef } from 'vue'
-import { useInteractiveVideo } from '~/composable/useInteractiveVideo'
+import { useInteractiveVideo } from '~/composables/useInteractiveVideo'
 import VideoTimeline from '~/components/interactive/VideoTimeline.vue'
 import QuizModal from '~/components/interactive/QuizModal.vue'
 import SelectionModal from '~/components/interactive/SelectionModal.vue'

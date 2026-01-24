@@ -68,8 +68,8 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import type { VideoQuiz, BranchResult, QuizResult } from '~/types/video-quiz.interface';
-import { useVideoQuiz } from '~/composable/useVideoQuiz';
-import { useVideoBranching } from '~/composable/useVideoBranching';
+import { useVideoQuiz } from '~/composables/useVideoQuiz';
+import { useVideoBranching } from '~/composables/useVideoBranching';
 
 interface Props {
   src: string;

@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import type { VideoQuiz } from '~/types/video-quiz.interface';
-import { useVideoQuiz } from '~/composable/useVideoQuiz';
+import { useVideoQuiz } from '~/composables/useVideoQuiz';
 import VideoQuizContent from './VideoQuizContent.vue';
 
 interface Props {

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import { useSessionsSetup } from "../../../../composable/usesSessions.js";
+import { useSessionsSetup } from "../../../../composables/usesSessions.js";
 import apiDocs from '~/utilities/apiDocs.js';
 import { filterContentBySearch } from '~/utilities/filterJson.js';
 

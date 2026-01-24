@@ -22,7 +22,7 @@ import customGridTwo from "~/components/home/customGridTwo.vue";
 import DropDownMenu from "~/components/customDropDown/dropDownMenu.vue";
 import SubjectCard from "~/components/home/SubjectCard.vue";
 import { layoutEffect } from "~/utilities/controlls";
-import { fetchAsyncData } from "~/composable/useAsyncFetch";
+import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import type { User } from "~/types/user.interface";
 import type { Subjects } from "~/types/subject.interface";
 import type { tabs } from "~/types/types.data";

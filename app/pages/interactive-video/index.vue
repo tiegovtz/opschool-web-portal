@@ -2,7 +2,7 @@
 import InteractiveVideo from '~/components/interactive/InteractiveVideo.vue'
 import type { VideoInteraction } from '~/types/interactive-video.interface'
 import { isTokenExpiringSoon, refreshToken } from '~/utilities/jwToken'
-import { useVideoInteractions } from '~/composable/useVideoInteractions'
+import { useVideoInteractions } from '~/composables/useVideoInteractions'
 
 // Define meta info about page
 useHead({

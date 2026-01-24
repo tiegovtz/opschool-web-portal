@@ -168,7 +168,7 @@
 import { computed, watch, ref, nextTick } from 'vue';
 import type { SpeakerType, PracticeMode } from '~/types/script.interface';
 import type { ScriptLine } from '~/types/script.interface';
-import { useReadAloud } from '~/composable/useReadAloud';
+import { useReadAloud } from '~/composables/useReadAloud';
 
 interface Props {
   currentScriptLine?: ScriptLine;

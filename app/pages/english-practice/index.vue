@@ -110,9 +110,9 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { ConversationScript, ScriptLine, SpeakerType, PracticeMode } from '~/types/script.interface';
-import { useSpeechRecognition } from '~/composable/useSpeechRecognition';
-import { useTurnManager } from '~/composable/useTurnManager';
-import { useTextToSpeech } from '~/composable/useTextToSpeech';
+import { useSpeechRecognition } from '~/composables/useSpeechRecognition';
+import { useTurnManager } from '~/composables/useTurnManager';
+import { useTextToSpeech } from '~/composables/useTextToSpeech';
 
 // Page metadata - disable layout to remove header/footer
 definePageMeta({

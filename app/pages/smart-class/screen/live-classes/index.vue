@@ -427,7 +427,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
-import { useSessionsSetup } from "../../../../composable/usesSessions.js";
+import { useSessionsSetup } from "../../../../composables/usesSessions.js";
 import apiDocs from "../../../../utilities/apiDocs.js";
 
 const router = useRouter();

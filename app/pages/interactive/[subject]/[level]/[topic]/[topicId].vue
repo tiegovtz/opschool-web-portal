@@ -10,7 +10,7 @@ import AIAssistant from "~/components/chapter/AIAssistant.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 import apiDocs from "~/utilities/apiDocs";
 import { updateChapterProgress } from "~/utilities/progress";
-import { fetchAsyncData } from "~/composable/useAsyncFetch";
+import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
 import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";

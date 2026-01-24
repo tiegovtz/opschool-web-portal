@@ -8,7 +8,7 @@ import apiDocs from "~/utilities/apiDocs";
 import InputsSelection from '@/components/home/InputsSelection.vue'
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { HomeCustomScrollView } from "#components";
-import { fetchAsyncData } from '~/composable/useAsyncFetch';
+import { fetchAsyncData } from '~/composables/useAsyncFetch';
 
 useHead({
   title: "TIE - Video Resource",

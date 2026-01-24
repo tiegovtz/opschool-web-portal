@@ -14,7 +14,7 @@ import apiDocs from "~/utilities/apiDocs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import AudioCard from "~/components/audio/audioCard.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
-import { fetchAsyncData } from "~/composable/useAsyncFetch";
+import { fetchAsyncData } from "~/composables/useAsyncFetch";
 
 
 // Defin Route
