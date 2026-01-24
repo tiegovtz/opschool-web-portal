@@ -3,13 +3,71 @@ import {
   streamText,
   convertToModelMessages,
   stepCountIs,
-  type CoreMessage,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { fetchRAGContext } from "../utils/rag";
+
+// ✅ OPTIMIZATION 1: Static import instead of dynamic import on every request
+// This saves ~5-50ms per request
+import { studentTools, setAuthTokenForTools } from "./utils/tools";
+
+// ✅ OPTIMIZATION 2: Debug logging control - disable in production for performance
+const DEBUG = process.env.NODE_ENV !== 'production' || process.env.DEBUG_CHAT === 'true';
+const log = (...args: any[]) => DEBUG && console.log(...args);
+const warn = (...args: any[]) => console.warn(...args); // Always show warnings
+
+// Define CoreMessage type locally
+type CoreMessage = {
+  role: "user" | "assistant" | "system";
+  content: string;
+};
+
+// ✅ OPTIMIZATION 3: OpenAI client singleton - reuse across requests
+let cachedOpenAIClient: ReturnType<typeof createOpenAI> | null = null;
+let cachedApiKey: string | null = null;
+
+function getOpenAIClient(apiKey: string) {
+  if (!cachedOpenAIClient || cachedApiKey !== apiKey) {
+    cachedOpenAIClient = createOpenAI({ apiKey });
+    cachedApiKey = apiKey;
+  }
+  return cachedOpenAIClient;
+}
+
+// ✅ OPTIMIZATION 4: Cache system prompts - they're mostly static
+// LRU-style cache with max 50 entries (covers most chapter combinations)
+const SYSTEM_PROMPT_CACHE = new Map<string, string>();
+const MAX_CACHE_SIZE = 50;
+
+function getCacheKey(chapterName?: string, context?: { subject?: string; level?: string; topic?: string; chapterNo?: number }): string {
+  if (!chapterName) return 'general';
+  return `chapter:${chapterName}:${context?.subject || ''}:${context?.level || ''}:${context?.chapterNo ?? ''}`;
+}
+
+function getCachedSystemPrompt(chapterName?: string, context?: { subject?: string; level?: string; topic?: string; chapterNo?: number }): string {
+  const cacheKey = getCacheKey(chapterName, context);
+  
+  let cached = SYSTEM_PROMPT_CACHE.get(cacheKey);
+  if (cached) {
+    log("[API /chat] System prompt cache HIT for:", cacheKey);
+    return cached;
+  }
+  
+  // Generate and cache
+  cached = getBaseSystemPrompt(chapterName, context);
+  
+  // LRU eviction: remove oldest entry if cache is full
+  if (SYSTEM_PROMPT_CACHE.size >= MAX_CACHE_SIZE) {
+    const firstKey = SYSTEM_PROMPT_CACHE.keys().next().value;
+    if (firstKey) SYSTEM_PROMPT_CACHE.delete(firstKey);
+  }
+  
+  SYSTEM_PROMPT_CACHE.set(cacheKey, cached);
+  log("[API /chat] System prompt cache MISS, generated and cached for:", cacheKey);
+  return cached;
+}
 
 // --------------------------------------
-// System Prompt Builder
+// System Prompt Builder (called once per unique chapter/context combo)
 // --------------------------------------
 function getBaseSystemPrompt(
   chapterName?: string,
@@ -394,6 +452,41 @@ Priority Rules:
   `.trim();
 }
 
+// Tool usage instructions template
+const TOOL_USAGE_INSTRUCTIONS = `
+================================================================================
+MANDATORY TOOL USAGE - READ CAREFULLY
+================================================================================
+
+You have access to these tools. Use them APPROPRIATELY:
+
+**1. searchTextbooks** - Search uploaded textbooks for factual information
+   - USE FOR: Factual questions about curriculum content (e.g., "What is photosynthesis?", "Explain Newton's laws")
+   - DO NOT USE FOR: Greetings, questions about yourself, general conversation
+   - WHEN USED: You MUST cite the source: "According to [Book Title] ([Citation])..."
+   - IF NO RESULTS: Tell the student the information is not in the uploaded textbooks
+
+**2. getSyllabus** - Get the official syllabus structure
+   - USE FOR: Understanding curriculum structure, finding what topics to teach
+   - USE BEFORE: Teaching any curriculum content to know the correct order and depth
+
+**3. getChapterFigures** - Get images/diagrams for a chapter/topic
+   - USE FOR: Getting visual aids when teaching
+   - IF NO FIGURES RETURNED: DO NOT mention images/diagrams at all
+
+**DECISION FLOWCHART:**
+- Student says "Hello" / "Hi" → Just respond warmly, NO tools needed
+- Student asks "What is [concept]?" → Call searchTextbooks FIRST, then teach using results
+- Student asks about syllabus structure → Call getSyllabus
+- Teaching a topic → Call getChapterFigures to check for images
+
+**IMPORTANT:** 
+- For factual curriculum questions, ALWAYS call searchTextbooks before answering
+- If searchTextbooks returns results, use ONLY that information (cite sources)
+- If searchTextbooks returns no results, inform the student and suggest alternatives
+- You can still use your teaching methodology (Socratic method, examples) but the FACTS must come from searchTextbooks
+`;
+
 /**
  * Detects if a message is in UIMessage format (has parts array) or simple format (has content)
  */
@@ -420,31 +513,38 @@ function convertMessagesToCore(messages: any[]): CoreMessage[] {
   if (hasUIMessageFormat) {
     // Use convertToModelMessages for UIMessage format (from Chat component)
     try {
-      return convertToModelMessages(messages);
+      const converted = convertToModelMessages(messages);
+      // Ensure we always return an array
+      if (Array.isArray(converted)) {
+        return converted;
+      }
+      // If convertToModelMessages returned something unexpected, fall through to fallback
+      warn("[convertMessagesToCore] convertToModelMessages returned non-array, using fallback");
     } catch (error) {
-      // Fallback: extract content from parts manually
-      return messages.map((msg: any) => {
-        let content = "";
-        if (Array.isArray(msg.parts)) {
-          content = msg.parts
-            .filter((p: any) => p?.type === "text" && p?.text)
-            .map((p: any) => String(p.text))
-            .join("");
-        } else if (msg.content) {
-          content = String(msg.content);
-        }
-
-        const role = msg.role || "user";
-        if (role === "user") {
-          return { role: "user", content };
-        } else if (role === "assistant") {
-          return { role: "assistant", content };
-        } else if (role === "system") {
-          return { role: "system", content };
-        }
-        return { role: "user", content };
-      });
+      warn("[convertMessagesToCore] convertToModelMessages failed, using fallback:", error);
     }
+    // Fallback: extract content from parts manually
+    return messages.map((msg: any) => {
+      let content = "";
+      if (Array.isArray(msg.parts)) {
+        content = msg.parts
+          .filter((p: any) => p?.type === "text" && p?.text)
+          .map((p: any) => String(p.text))
+          .join("");
+      } else if (msg.content) {
+        content = String(msg.content);
+      }
+
+      const role = msg.role || "user";
+      if (role === "user") {
+        return { role: "user", content };
+      } else if (role === "assistant") {
+        return { role: "assistant", content };
+      } else if (role === "system") {
+        return { role: "system", content };
+      }
+      return { role: "user", content };
+    });
   } else {
     // Simple format: convert directly to CoreMessage
     return messages.map((msg: any) => {
@@ -463,34 +563,70 @@ function convertMessagesToCore(messages: any[]): CoreMessage[] {
   }
 }
 
-function extractMessageText(content: any): string {
-  if (!content) return "";
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((part) => {
-        if (typeof part === "string") return part;
-        if (part?.type === "text" && part.text) return String(part.text);
-        if (part?.text) return String(part.text);
-        return "";
-      })
-      .join("");
-  }
-  return "";
+/**
+ * Extract all request context in a single pass
+ */
+function extractRequestContext(event: any, body: any) {
+  // Chapter name
+  const chapterName = body?.chapterName || 
+    event.headers.get("x-chapter-name") || 
+    event.headers.get("X-Chapter-Name") || "";
+  
+  // Subject
+  const subject = event.headers.get("x-subject") ||
+    event.headers.get("X-Subject") ||
+    body?.subject || "";
+  
+  // Level
+  const level = event.headers.get("x-level") ||
+    event.headers.get("X-Level") ||
+    body?.level || "";
+  
+  // Topic
+  const topic = event.headers.get("x-topic") ||
+    event.headers.get("X-Topic") ||
+    body?.topic || "";
+  
+  // Chapter number
+  const chapterNoHeader = event.headers.get("x-chapter-no") || event.headers.get("X-Chapter-No");
+  const chapterNo = chapterNoHeader ? parseInt(chapterNoHeader) : body?.chapterNo ?? null;
+  
+  // Auth token
+  const authToken = getCookie(event, "signInAccessToken") ||
+    event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
+    event.headers.get("Authorization")?.replace("Bearer ", "").trim() ||
+    body?.authToken || undefined;
+  
+  return { chapterName, subject, level, topic, chapterNo, authToken };
 }
 
-function getLastUserMessageText(messages: CoreMessage[]): string {
-  for (let i = messages.length - 1; i >= 0; i -= 1) {
-    const message = messages[i];
-    if (message?.role === "user") {
-      return extractMessageText(message.content).trim();
-    }
+/**
+ * Build final system prompt with tool usage instructions
+ * RAG is now a tool (searchTextbooks) - AI decides when to call it
+ */
+function buildFinalPrompt(
+  basePrompt: string, 
+  chapterName: string | undefined
+): string {
+  let prompt = basePrompt;
+  
+  // Add chapter reminder if applicable
+  if (chapterName && chapterName.trim() && chapterName !== "this competence") {
+    prompt += `\n\nREMINDER: You are currently helping with the chapter/competence: "${chapterName}". You MUST ONLY answer questions related to this specific chapter.`;
   }
-  return "";
+  
+  // Add tool usage instructions
+  prompt += TOOL_USAGE_INSTRUCTIONS;
+  
+  return prompt;
 }
 
+// ✅ OPTIMIZATION 5: Main handler - simplified without automatic RAG
+// RAG is now a tool (searchTextbooks) that AI calls when needed
 export default defineEventHandler(async (event) => {
-    const body = await readBody(event);
+  const startTime = DEBUG ? performance.now() : 0;
+  
+  const body = await readBody(event);
 
   // Safely parse user messages
   const messages: any[] = Array.isArray(body?.messages) ? body.messages : [];
@@ -500,254 +636,63 @@ export default defineEventHandler(async (event) => {
     messages.push({ role: "user", content: body.question });
   }
 
-    // Extract context if provided (for Subject AI Teacher mode)
-    // Check both body and headers (headers are more reliable)
-    const chapterNameFromBody = body?.chapterName;
-  const chapterNameFromHeader =
-    event.headers.get("x-chapter-name") || event.headers.get("X-Chapter-Name");
-    const chapterName = chapterNameFromBody || chapterNameFromHeader;
-    
-    // Additional context - check headers first, then body
-  const subject =
-    event.headers.get("x-subject") ||
-    event.headers.get("X-Subject") ||
-    body?.subject ||
-    "";
-  const level =
-    event.headers.get("x-level") ||
-    event.headers.get("X-Level") ||
-    body?.level ||
-    "";
-  const topic =
-    event.headers.get("x-topic") ||
-    event.headers.get("X-Topic") ||
-    body?.topic ||
-    "";
-  const chapterNoHeader =
-    event.headers.get("x-chapter-no") || event.headers.get("X-Chapter-No");
-  const chapterNo = chapterNoHeader
-    ? parseInt(chapterNoHeader)
-    : body?.chapterNo ?? null;
-    
-  // Validate API key
+  // Validate API key early (fail fast)
   const apiKey = useRuntimeConfig().openaiApiKey;
   if (!apiKey) {
     throw new Error("Missing OpenAI API key");
   }
 
-    const openai = createOpenAI({ apiKey });
-
-    // Validate chapterName - only use it if it's a real chapter name (not empty or default)
-  const validChapterName =
-    chapterName && chapterName.trim() && chapterName !== "this competence"
-      ? chapterName.trim() 
-      : undefined;
-    
-    // Build context object only if we have a valid chapter name
+  // ✅ Extract all context in a single pass
+  const { chapterName, subject, level, topic, chapterNo, authToken } = extractRequestContext(event, body);
+  
+  // Validate chapterName
+  const validChapterName = chapterName && chapterName.trim() && chapterName !== "this competence"
+    ? chapterName.trim() 
+    : undefined;
+  
+  // Build context object
   const context = validChapterName
-    ? {
-      subject: subject,
-      level: level,
-      topic: topic,
-        chapterNo: chapterNo,
-      }
+    ? { subject, level, topic, chapterNo }
     : undefined;
 
-  // Extract user's query from the last user message for RAG context (before conversion)
-  let ragContext = "";
-  const lastUserMessage = messages
-    .slice()
-    .reverse()
-    .find((msg: any) => msg.role === "user");
-  
-  console.log("[API /chat] RAG: Last user message found:", !!lastUserMessage);
-  
-  // Extract search query from message (handle both UIMessage format with parts and simple format)
-  let searchQuery = "";
-  if (lastUserMessage) {
-    // Handle UIMessage format (has parts array)
-    if (Array.isArray(lastUserMessage.parts)) {
-      searchQuery = lastUserMessage.parts
-        .filter((p: any) => p?.type === "text" && p?.text)
-        .map((p: any) => String(p.text))
-        .join(" ")
-        .trim();
-    }
-    // Handle simple format (has content string)
-    else if (typeof lastUserMessage.content === "string") {
-      searchQuery = lastUserMessage.content.trim();
-    }
-    // Handle CoreMessage format (already converted)
-    else if (lastUserMessage.content && typeof lastUserMessage.content === "string") {
-      searchQuery = lastUserMessage.content.trim();
-    }
-  }
-  
-  console.log("[API /chat] RAG: Search query extracted:", searchQuery ? searchQuery.substring(0, 100) : "empty");
-  
-  // Fetch RAG context if we have a search query
-  if (searchQuery) {
-    // Get auth token from cookie, headers, or body (matching pattern from other endpoints)
-    const authToken =
-      getCookie(event, "signInAccessToken") ||
-      event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
-      event.headers.get("Authorization")?.replace("Bearer ", "").trim() ||
-      body?.authToken ||
-      undefined;
-    
-    console.log("[API /chat] RAG: Auth token found:", !!authToken);
-    console.log("[API /chat] RAG: Fetching context for query...");
-    
-    // Build query context from available information for query enhancement
-    const queryContext = context ? {
-      subject: context.subject,
-      level: context.level,
-      topic: context.topic,
-    } : undefined;
-    
-    if (queryContext) {
-      console.log("[API /chat] RAG: Query context available:", queryContext);
-    }
-    
-    try {
-      ragContext = await fetchRAGContext(searchQuery, authToken, queryContext);
-      if (ragContext.length > 0) {
-        console.log("[API /chat] RAG: Context fetched, length:", ragContext.length);
-        // Cap RAG context to prevent overly long prompts (4000 chars max)
-        const maxRagChars = 4000;
-        if (ragContext.length > maxRagChars) {
-          ragContext = `${ragContext.slice(0, maxRagChars).trimEnd()}...`;
-          console.log("[API /chat] RAG: Context capped to", maxRagChars, "characters");
-        }
-      } else {
-        console.log("[API /chat] RAG: No matching context found in embeddings database");
-      }
-    } catch (error) {
-      console.warn("[API /chat] RAG context fetch failed:", error);
-      // Continue without RAG context if it fails
-    }
-  } else {
-    console.log("[API /chat] RAG: Search query is empty, skipping RAG");
-  }
-
-  // Convert messages to CoreMessage format (handles both UIMessage and simple formats)
+  // Convert messages to CoreMessage format
   const coreMessages = convertMessagesToCore(messages);
-    
-    let systemPrompt = getBaseSystemPrompt(validChapterName, context);
-  const modelName = "gpt-4o";
-  
-    // If chapterName is provided, ensure it's emphasized in the final prompt
-    if (chapterName) {
-      systemPrompt = `${systemPrompt}
 
-REMINDER: You are currently helping with the chapter/competence: "${chapterName}". You MUST ONLY answer questions related to this specific chapter.`;
-    }
-  
-  // Add RAG context to system prompt if available
-  if (ragContext) {
-    systemPrompt = `${systemPrompt}
-
-================================================================================
-CRITICAL: RAG CONTEXT - EXCLUSIVE SOURCE FOR FACTUAL INFORMATION
-================================================================================
-
-RELEVANT CONTEXT FROM UPLOADED TEXTBOOKS (EXHAUSTIVE SEARCH PERFORMED):
-${ragContext}
-
-**ABSOLUTE MANDATORY RULES - NO EXCEPTIONS:**
-
-1. **EXCLUSIVE SOURCE FOR ALL FACTS**: The RAG context above is your EXCLUSIVE and ONLY source for ALL factual information. You MUST NOT use any other source for facts, including:
-   - Your training data
-   - External knowledge
-   - General knowledge
-   - Any information not explicitly in the RAG context above
-
-2. **QUALITY INDICATORS**: The RAG context includes quality indicators (High/Medium/Low Quality, similarity scores). Use these to assess confidence:
-   - High Quality (threshold ≥0.7): Very confident, use directly
-   - Medium Quality (threshold ≥0.5): Confident, use but note if needed
-   - Low Quality (threshold ≥0.3): Less confident, use cautiously and suggest verification
-   - Very Low Quality (threshold <0.3): Low confidence, mention uncertainty
-
-3. **MANDATORY CITATION**: You MUST ALWAYS cite the source when using RAG context. Format: "According to [Book Title] ([Citation])..." or "As stated in [Book Title] ([Citation])..."
-
-4. **IF INFORMATION NOT IN RAG CONTEXT**: If a student asks about something that is NOT explicitly mentioned in the RAG context above, you MUST respond EXACTLY:
-   "I don't have that information in my knowledge base. An exhaustive search was performed across all uploaded textbooks, and this information was not found. The information might not be covered in the uploaded textbooks, or you may need to check other sources."
-
-5. **TEACHING METHODOLOGY STILL APPLIES**: Continue using your teaching methodology, Socratic method, and active learning techniques. The RAG context provides the FACTS, but you still TEACH those facts using your pedagogical approach.
-
-6. **TOOLS FOR STRUCTURE ONLY**: You can still use tools (get_syllabus, get_chapter_figures) for syllabus structure and images. These complement but DO NOT replace the RAG context for factual information.
-
-7. **COMBINE RAG + TEACHING**: Use the RAG context for factual accuracy, but present it using your teaching style - ask questions, check understanding, provide Tanzanian examples, scaffold learning, etc.
-
-**STRICT EXAMPLES:**
-
-✅ CORRECT (using RAG with citation):
-"Great question! According to Biology Textbook Form 1 (Page 5), photosynthesis is the process by which plants convert light energy into chemical energy. [Then teach using Socratic method, check understanding, provide Tanzanian examples]"
-
-❌ ABSOLUTELY FORBIDDEN (using external knowledge):
-"Photosynthesis is..." [without citing RAG context or using training data]
-
-✅ CORRECT (information not in RAG):
-"I don't have that information in my knowledge base. An exhaustive search was performed across all uploaded textbooks, and this information was not found. Could you rephrase your question, or would you like to explore a related topic that I can help with?"
-
-**REMEMBER**: 
-- RAG context = EXCLUSIVE SOURCE for ALL FACTS
-- Your teaching methodology = HOW you present those facts
-- If it's not in RAG context, it doesn't exist for you`;
-  } else {
-    // When RAG context is NOT available after exhaustive search
-    systemPrompt = `${systemPrompt}
-
-================================================================================
-CRITICAL: NO RAG CONTEXT AVAILABLE AFTER EXHAUSTIVE SEARCH
-================================================================================
-
-An exhaustive search was performed across all uploaded textbooks using multiple query variations and progressive threshold fallback, but no relevant context was found.
-
-**MANDATORY RESPONSE RULE:**
-If a student asks about factual information, you MUST respond:
-"I don't have that information in my knowledge base. An exhaustive search was performed across all uploaded textbooks, and this information was not found. The information might not be covered in the uploaded textbooks, or you may need to check other sources."
-
-**DO NOT** use your training data or external knowledge to answer factual questions. You can still:
-- Help with learning methodology and study techniques
-- Use tools (get_syllabus, get_chapter_figures) for syllabus structure and images
-- Provide general guidance on how to approach topics
-- Suggest rephrasing the question
-
-But you MUST NOT provide factual information that is not in the uploaded textbooks.`;
+  // Safety check
+  if (!Array.isArray(coreMessages)) {
+    throw new Error("Failed to convert messages to CoreMessage format");
   }
 
-  // Get auth token for tools
-  const authToken =
-    getCookie(event, "signInAccessToken") ||
-    event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
-    event.headers.get("Authorization")?.replace("Bearer ", "").trim() ||
-    body?.authToken ||
-    undefined;
+  // ✅ Get cached system prompt
+  const basePrompt = getCachedSystemPrompt(validChapterName, context);
+  
+  // Build final prompt with tool usage instructions (no automatic RAG)
+  const systemPrompt = buildFinalPrompt(basePrompt, chapterName);
 
-  // Import studentTools dynamically to avoid module resolution issues
-  let tools: any = {};
-  try {
-    const { studentTools, setAuthTokenForTools } = await import("./utils/tools");
-    // Set auth token for tools before they're executed
-    setAuthTokenForTools(authToken);
-    tools = studentTools;
-  } catch (error) {
-    console.warn("[API /chat] Tools not available:", error);
-  }
+  // ✅ Set auth token for tools (searchTextbooks will use this for RAG)
+  setAuthTokenForTools(authToken);
 
-    // Create Model Input
-    const modelInput = {
-      model: openai(modelName),
+  // ✅ Get singleton OpenAI client
+  const openai = getOpenAIClient(apiKey);
+
+  // Create model input - AI will call searchTextbooks tool when it needs textbook info
+  const modelInput = {
+    model: openai("gpt-4o"),
     messages: [
       { role: "system", content: systemPrompt },
       ...coreMessages,
     ] as any,
-      stopWhen: stepCountIs(10),
-    ...(Object.keys(tools).length > 0 && { tools, maxSteps: 5 }),
-    };
+    stopWhen: stepCountIs(10),
+    tools: studentTools,
+    maxSteps: 7, // Increased to allow for tool calls (search + syllabus + figures)
+  };
 
-    // Stream the response
+  if (DEBUG) {
+    const elapsed = performance.now() - startTime;
+    log(`[API /chat] Pre-stream setup completed in ${elapsed.toFixed(2)}ms`);
+  }
+
+  // Stream the response
   const result = streamText(modelInput as any);
-    return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse();
 });

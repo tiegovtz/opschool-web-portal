@@ -5,10 +5,27 @@ import {
   isQueryExpansionEnabled, 
   type QueryContext 
 } from "./queryProcessor";
+// Import external RAG function for internal use only (not re-exported to avoid Nuxt auto-import conflicts)
+// Function uses underscore prefix to avoid Nuxt auto-import conflicts
+import { _fetchExternalRAGContext as fetchExternalRAG } from "./externalRagApi";
+
+// NOTE: External RAG functions (fetchExternalRAGContext, isExternalRAGAvailable, getExternalRAGConfig)
+// are available via direct import from "./externalRagApi" or Nuxt's auto-import system.
+// They are NOT re-exported from this file to avoid duplicate export errors.
 
 // ============================================
 // RAG Utility Functions
 // ============================================
+
+// RAG Source identifiers
+export type RAGSource = 'local' | 'external' | 'combined';
+
+export interface RAGContextResult {
+  context: string;
+  source: RAGSource;
+  localContext?: string;
+  externalContext?: string;
+}
 
 /**
  * Formats RAG search results into context text with citations and quality indicators
@@ -156,13 +173,19 @@ export async function fetchRAGContext(
     }
 
     // Remove duplicates while preserving order
-    const uniqueVariations = Array.from(new Set(queryVariations.map(q => q.trim().toLowerCase())))
-      .map(unique => queryVariations.find(q => q.trim().toLowerCase() === unique)!)
-      .filter(q => q && q.length > 0);
+    const uniqueVariations: string[] = [];
+    const seenLower = new Set<string>();
+    for (const q of queryVariations) {
+      const lower = q.trim().toLowerCase();
+      if (lower && !seenLower.has(lower)) {
+        seenLower.add(lower);
+        uniqueVariations.push(q.trim());
+      }
+    }
 
     // Limit to max variations (default: 5)
     const maxVariations = parseInt(process.env.MAX_QUERY_VARIATIONS || '5', 10);
-    const finalVariations = uniqueVariations.slice(0, maxVariations);
+    const finalVariations: string[] = uniqueVariations.slice(0, maxVariations);
 
     console.log(`[RAG] Generated ${finalVariations.length} query variations to try:`);
     finalVariations.forEach((q, i) => {
@@ -179,12 +202,14 @@ export async function fetchRAGContext(
     let bestQuery = "";
 
     for (let i = 0; i < finalVariations.length; i++) {
-      const query = finalVariations[i];
-      console.log(`[RAG] Trying query variation ${i + 1}/${finalVariations.length}: "${query.substring(0, 80)}${query.length > 80 ? '...' : ''}"`);
+      const queryVariation = finalVariations[i];
+      if (!queryVariation) continue; // TypeScript guard
+      
+      console.log(`[RAG] Trying query variation ${i + 1}/${finalVariations.length}: "${queryVariation.substring(0, 80)}${queryVariation.length > 80 ? '...' : ''}"`);
 
       try {
         // Use progressive threshold fallback
-        const searchResult = await searchWithProgressiveThreshold(query, {
+        const searchResult = await searchWithProgressiveThreshold(queryVariation, {
           limit: 5, // Top 5 most relevant chunks
           initialThreshold: 0.7, // Start with high threshold
         });
@@ -201,7 +226,7 @@ export async function fetchRAGContext(
               qualityLevel: searchResult.qualityLevel,
               averageSimilarity: searchResult.averageSimilarity,
             };
-            bestQuery = query;
+            bestQuery = queryVariation;
             
             // If we got high quality results, we can stop early
             if (searchResult.qualityLevel === 'high' && searchResult.thresholdUsed >= 0.7) {
@@ -243,4 +268,111 @@ export async function fetchRAGContext(
     // Return empty string on error to allow chat to continue without RAG context
     return "";
   }
+}
+
+// Alias for clarity - this is the LOCAL vector store search
+export const fetchLocalRAGContext = fetchRAGContext;
+
+/**
+ * Fetches RAG context from BOTH local vector store AND external API
+ * Combines results from both sources for comprehensive coverage
+ * 
+ * @param searchQuery - The search query
+ * @param authToken - Optional authentication token for external API
+ * @param context - Optional context for query enhancement
+ * @param options - Options for controlling which sources to use
+ * @returns Combined context with source information
+ */
+export async function fetchCombinedRAGContext(
+  searchQuery: string,
+  authToken?: string,
+  context?: QueryContext,
+  options: {
+    useLocal?: boolean;
+    useExternal?: boolean;
+    preferExternal?: boolean; // If true, external results shown first
+  } = {}
+): Promise<RAGContextResult> {
+  const { useLocal = true, useExternal = true, preferExternal = false } = options;
+
+  if (!searchQuery?.trim()) {
+    console.log("[Combined RAG] Empty search query, skipping");
+    return { context: "", source: 'combined' };
+  }
+
+  const query = searchQuery.trim();
+  console.log(`[Combined RAG] Starting combined search for: "${query.substring(0, 100)}"`);
+  console.log(`[Combined RAG] Sources: local=${useLocal}, external=${useExternal}, preferExternal=${preferExternal}`);
+
+  let localContext = "";
+  let externalContext = "";
+
+  // Fetch from both sources in parallel
+  const promises: Promise<string>[] = [];
+  
+  if (useLocal) {
+    promises.push(
+      fetchRAGContext(query, authToken, context)
+        .then(result => {
+          localContext = result;
+          return result;
+        })
+        .catch(error => {
+          console.error("[Combined RAG] Local search failed:", error?.message);
+          return "";
+        })
+    );
+  }
+
+  if (useExternal) {
+    promises.push(
+      fetchExternalRAG(query, authToken)
+        .then(result => {
+          externalContext = result;
+          return result;
+        })
+        .catch(error => {
+          console.error("[Combined RAG] External search failed:", error?.message);
+          return "";
+        })
+    );
+  }
+
+  // Wait for both to complete
+  await Promise.all(promises);
+
+  // Determine source and combine results
+  let combinedContext = "";
+  let source: RAGSource = 'combined';
+
+  if (localContext && externalContext) {
+    // Both sources have results
+    source = 'combined';
+    if (preferExternal) {
+      combinedContext = `=== EXTERNAL RAG CONTEXT (API) ===\n${externalContext}\n\n=== LOCAL RAG CONTEXT (Vector Store) ===\n${localContext}`;
+    } else {
+      combinedContext = `=== LOCAL RAG CONTEXT (Vector Store) ===\n${localContext}\n\n=== EXTERNAL RAG CONTEXT (API) ===\n${externalContext}`;
+    }
+    console.log(`[Combined RAG] Both sources returned results`);
+  } else if (localContext) {
+    // Only local has results
+    source = 'local';
+    combinedContext = `=== LOCAL RAG CONTEXT (Vector Store) ===\n${localContext}`;
+    console.log(`[Combined RAG] Only local source returned results`);
+  } else if (externalContext) {
+    // Only external has results
+    source = 'external';
+    combinedContext = `=== EXTERNAL RAG CONTEXT (API) ===\n${externalContext}`;
+    console.log(`[Combined RAG] Only external source returned results`);
+  } else {
+    // No results from either
+    console.log(`[Combined RAG] No results from any source`);
+  }
+
+  return {
+    context: combinedContext.trim(),
+    source,
+    localContext: localContext || undefined,
+    externalContext: externalContext || undefined,
+  };
 }

@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import type { Syllabus } from "~/types/syllabus.interface";
 import { embedQuery } from "./embeddings";
+import { fetchCombinedRAGContext, type RAGSource } from "../../utils/rag";
 
 // Module-level variable to store auth token for AI tools
 // This is set by the chat endpoint before tools are executed
@@ -17,6 +18,11 @@ let currentAuthToken: string | undefined = undefined;
  */
 export function setAuthTokenForTools(token: string | undefined): void {
   currentAuthToken = token;
+  if (token) {
+    console.log('[tools] Auth token set for tools (length:', token.length, ')');
+  } else {
+    console.warn('[tools] No auth token provided - tools will use service login fallback');
+  }
 }
 
 /**
@@ -339,6 +345,7 @@ export const studentTools = {
             .map(([k, v]) => `${k}=${v}`)
             .join(', ') || 'none';
           console.log(`[getChapterFigures] 📉 API filters: ${filterDesc}`);
+          console.log(`[getChapterFigures] 🔑 Auth token available: ${!!currentAuthToken}`);
           
           // Use the token from module-level variable (set by chat endpoint)
           let figures = await getFigures(filterOptions, currentAuthToken);
@@ -785,5 +792,98 @@ export const studentTools = {
     }),
   }),
 
-  // REMOVED: getImageShortcodes tool - no search algorithm, use getChapterFigures for direct topic-based access instead
+  // RAG Search Tool - searches uploaded textbooks for factual information
+  searchTextbooks: tool({
+    description: `Search uploaded textbooks for factual information about a topic. 
+    
+WHEN TO USE THIS TOOL:
+- When a student asks a FACTUAL question about curriculum content (e.g., "What is photosynthesis?", "Explain Newton's laws")
+- When you need ACCURATE information from official textbooks
+- When teaching concepts that require citations from educational materials
+
+WHEN NOT TO USE THIS TOOL:
+- For greetings (e.g., "Hello", "Hi", "How are you?")
+- For questions about yourself (e.g., "Who are you?", "What can you do?")
+- For general conversation or clarification questions
+- For questions about the syllabus structure (use get_syllabus instead)
+- For getting images (use get_chapter_figures instead)
+
+IMPORTANT: If this tool returns results, you MUST cite them in your response using the format: "According to [Book Title] ([Citation])..."
+If this tool returns no results, inform the student that the information is not in the uploaded textbooks.`,
+    inputSchema: z.object({ 
+      query: z.string().describe("The search query - be specific and include the topic/concept you need information about. Example: 'What is photosynthesis and how does it work?' or 'Newton's first law of motion'"),
+      subject: z.string().optional().describe("Optional: The subject area (biology, physics, chemistry, mathematics, geography) to help focus the search"),
+      level: z.string().optional().describe("Optional: The education level (Form 1, Form 2) to help focus the search"),
+    }),
+    execute: async ({ query, subject, level }) => {
+      console.log(`[searchTextbooks] 🔍 TOOL CALLED - query: "${query}", subject: "${subject || 'any'}", level: "${level || 'any'}"`);
+      
+      if (!query?.trim()) {
+        return {
+          found: false,
+          message: "No search query provided",
+          context: ""
+        };
+      }
+
+      try {
+        // Build context for query enhancement
+        const queryContext = (subject || level) ? {
+          subject: subject || undefined,
+          level: level || undefined,
+        } : undefined;
+
+        // Fetch from both local and external RAG sources
+        const ragResult = await fetchCombinedRAGContext(
+          query.trim(),
+          currentAuthToken, // Use the auth token set by chat endpoint
+          queryContext,
+          {
+            useLocal: true,
+            useExternal: true,
+            preferExternal: false,
+          }
+        );
+
+        if (!ragResult.context || ragResult.context.trim().length === 0) {
+          console.log(`[searchTextbooks] ❌ No results found for: "${query}"`);
+          return {
+            found: false,
+            query: query,
+            message: "No relevant information found in uploaded textbooks. The topic may not be covered in the available materials.",
+            context: "",
+            instruction: "Inform the student that this information is not available in the uploaded textbooks. Suggest they check other sources or rephrase their question."
+          };
+        }
+
+        // Cap context to prevent overly long responses
+        let context = ragResult.context;
+        const maxChars = ragResult.source === 'combined' ? 5000 : 3500;
+        if (context.length > maxChars) {
+          context = context.slice(0, maxChars).trimEnd() + "...";
+        }
+
+        console.log(`[searchTextbooks] ✅ Found results from: ${ragResult.source}, length: ${context.length}`);
+
+        return {
+          found: true,
+          query: query,
+          source: ragResult.source,
+          context: context,
+          hasLocalResults: !!ragResult.localContext,
+          hasExternalResults: !!ragResult.externalContext,
+          instruction: "You MUST use the context above to answer. ALWAYS cite the source using format: 'According to [Book Title] ([Citation])...'. Do NOT use information outside this context."
+        };
+      } catch (error: any) {
+        console.error(`[searchTextbooks] Error:`, error?.message || error);
+        return {
+          found: false,
+          query: query,
+          error: error?.message || "Search failed",
+          message: "An error occurred while searching textbooks. Please try again.",
+          context: ""
+        };
+      }
+    },
+  }),
 };

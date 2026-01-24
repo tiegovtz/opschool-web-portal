@@ -37,7 +37,14 @@ let tokenExpiresAt: number = 0;
 async function getServiceToken(): Promise<string> {
   // Return cached token if still valid (with 5 min buffer)
   if (cachedServiceToken && Date.now() < tokenExpiresAt - 300000) {
+    console.log('[figuresApi] Using cached service token');
     return cachedServiceToken;
+  }
+
+  // Check if service credentials are configured
+  if (!SERVICE_USERNAME || !SERVICE_PASSWORD) {
+    console.error('[figuresApi] Service account credentials not configured (SERVICE_USERNAME or SERVICE_PASSWORD missing)');
+    return '';
   }
 
   try {
@@ -52,7 +59,11 @@ async function getServiceToken(): Promise<string> {
     });
 
     if (!response.ok) {
-      console.error('[figuresApi] Service login failed:', response.status);
+      const errorText = await response.text().catch(() => '');
+      console.error(`[figuresApi] Service login failed: ${response.status} ${response.statusText}`, errorText);
+      // Clear cache on failure
+      cachedServiceToken = null;
+      tokenExpiresAt = 0;
       return '';
     }
 
@@ -67,10 +78,16 @@ async function getServiceToken(): Promise<string> {
       return token;
     }
 
-    console.error('[figuresApi] No token in service login response');
+    console.error('[figuresApi] No token in service login response:', data);
+    // Clear cache on failure
+    cachedServiceToken = null;
+    tokenExpiresAt = 0;
     return '';
-  } catch (error) {
-    console.error('[figuresApi] Service login error:', error);
+  } catch (error: any) {
+    console.error('[figuresApi] Service login error:', error?.message || error);
+    // Clear cache on failure
+    cachedServiceToken = null;
+    tokenExpiresAt = 0;
     return '';
   }
 }
@@ -80,10 +97,17 @@ async function getServiceToken(): Promise<string> {
  */
 async function getAuthToken(token?: string): Promise<string> {
   // Priority: provided token > environment variable > service login
-  if (token) return token;
-  if (process.env.FIGURES_API_TOKEN) return process.env.FIGURES_API_TOKEN;
+  if (token && token.trim()) {
+    console.log('[figuresApi] Using provided user token');
+    return token;
+  }
+  if (process.env.FIGURES_API_TOKEN) {
+    console.log('[figuresApi] Using environment variable token');
+    return process.env.FIGURES_API_TOKEN;
+  }
   
   // Fall back to service account login
+  console.log('[figuresApi] No user token provided, attempting service login...');
   return await getServiceToken();
 }
 
@@ -174,16 +198,20 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
       ...options.headers,
     };
 
-    if (authToken) {
+    if (authToken && authToken.trim()) {
       headers['Authorization'] = `Bearer ${authToken}`;
+      console.log(`[figuresApi] Using ${token ? 'provided' : 'service'} auth token for ${endpoint}`);
     } else {
-      console.warn('[figuresApi] No auth token available for request to', endpoint);
+      console.error('[figuresApi] No auth token available for request to', endpoint);
+      console.error('[figuresApi] Token source:', token ? 'provided' : 'service/environment');
       trackFiguresApiError({
         endpoint,
         method,
         errorType: 'auth',
         message: 'No authentication token available',
       });
+      // Don't make the request if we have no token - it will definitely fail
+      return null;
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
