@@ -486,7 +486,8 @@ const setPicCenter = async () => {
           if (span.querySelector("img")) {
             const images = span.querySelectorAll("img")
             if (images.length === 1 &&
-              images[0]?.classList.contains('desc-img'))
+              (images[0]?.classList.contains('desc-img') ||
+                images[0]?.classList.contains('desc-img-eng-think')))
               return;
 
             span.className = "flex justify-center flex-wrap gap-2";
