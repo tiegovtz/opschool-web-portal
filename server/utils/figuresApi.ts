@@ -3,11 +3,6 @@
  * 
  * Handles server-side interactions with the external Figures API
  * Maps API response fields to match JSON format (subject→subjectName, chapter→chapterName, topic→topicName)
- * 
- * Features:
- * - Service account authentication with token caching
- * - Redis/memory caching for improved performance
- * - Error tracking for monitoring and debugging
  */
 
 import type { ApiFigure, MappedFigure } from '~/types/figures.interface';
@@ -22,26 +17,22 @@ import {
 
 const API_BASE_URL = process.env.FIGURES_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
 
-// Service account credentials for server-side API access
 const SERVICE_USERNAME = process.env.FIGURES_API_USERNAME || 'eric.john';
 const SERVICE_PASSWORD = process.env.FIGURES_API_PASSWORD || 'Ejb201313!';
 
-// Cached service token
 let cachedServiceToken: string | null = null;
 let tokenExpiresAt: number = 0;
 
-/**
- * Get a service account token for server-side API access
- * Caches the token for 1 hour to avoid repeated logins
- */
 async function getServiceToken(): Promise<string> {
-  // Return cached token if still valid (with 5 min buffer)
   if (cachedServiceToken && Date.now() < tokenExpiresAt - 300000) {
     return cachedServiceToken;
   }
 
+  if (!SERVICE_USERNAME || !SERVICE_PASSWORD) {
+    return '';
+  }
+
   try {
-    console.log('[figuresApi] Logging in with service account...');
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -52,7 +43,8 @@ async function getServiceToken(): Promise<string> {
     });
 
     if (!response.ok) {
-      console.error('[figuresApi] Service login failed:', response.status);
+      cachedServiceToken = null;
+      tokenExpiresAt = 0;
       return '';
     }
 
@@ -61,36 +53,30 @@ async function getServiceToken(): Promise<string> {
 
     if (token) {
       cachedServiceToken = token;
-      // Cache for 1 hour
       tokenExpiresAt = Date.now() + 3600000;
-      console.log('[figuresApi] Service login successful, token cached');
       return token;
     }
 
-    console.error('[figuresApi] No token in service login response');
+    cachedServiceToken = null;
+    tokenExpiresAt = 0;
     return '';
-  } catch (error) {
-    console.error('[figuresApi] Service login error:', error);
+  } catch {
+    cachedServiceToken = null;
+    tokenExpiresAt = 0;
     return '';
   }
 }
 
-/**
- * Get authentication token from parameter, environment, or service login
- */
 async function getAuthToken(token?: string): Promise<string> {
-  // Priority: provided token > environment variable > service login
-  if (token) return token;
-  if (process.env.FIGURES_API_TOKEN) return process.env.FIGURES_API_TOKEN;
-  
-  // Fall back to service account login
+  if (token && token.trim()) {
+    return token;
+  }
+  if (process.env.FIGURES_API_TOKEN) {
+    return process.env.FIGURES_API_TOKEN;
+  }
   return await getServiceToken();
 }
 
-/**
- * Map API figure response to JSON format
- * Converts: subject → subjectName, chapter → chapterName, topic → topicName
- */
 function mapApiFigureToJsonFormat(apiFigure: ApiFigure): MappedFigure {
   const mapped: MappedFigure = {
     shortcode: apiFigure.shortcode,
@@ -98,58 +84,46 @@ function mapApiFigureToJsonFormat(apiFigure: ApiFigure): MappedFigure {
     category: (apiFigure.category as MappedFigure['category']) || 'general',
   };
 
-  // Map path fields - check for images array first (API format), then paths array, then path
   const apiFigureAny = apiFigure as any;
   if (apiFigureAny.images && Array.isArray(apiFigureAny.images) && apiFigureAny.images.length > 1) {
-    // Multi-image: API returns images array with { url, alt } objects
     mapped.paths = apiFigureAny.images.map((img: any) => img.url || img.path || img);
     mapped.alts = apiFigureAny.images.map((img: any) => img.alt || apiFigure.alt || '');
   } else if (apiFigureAny.images && Array.isArray(apiFigureAny.images) && apiFigureAny.images.length === 1) {
-    // Single image in images array - treat as single image, not multi-image
     const img = apiFigureAny.images[0];
     mapped.path = img.url || img.path || img;
     mapped.alt = img.alt || apiFigure.alt || apiFigure.caption || '';
   } else if (apiFigure.paths && apiFigure.paths.length > 1) {
-    // Multi-image from paths array
     mapped.paths = apiFigure.paths;
     mapped.alts = apiFigure.alts || [];
   } else if (apiFigure.paths && apiFigure.paths.length === 1) {
-    // Single image from paths array
     mapped.path = apiFigure.paths[0];
   } else if (apiFigure.path) {
     mapped.path = apiFigure.path;
   }
 
-  // Map metadata fields - API returns fields with "Name" suffix (subjectName, chapterName, topicName)
-  // Note: apiFigureAny is already declared above for handling images
   if (apiFigure.description) {
     mapped.description = apiFigure.description;
   }
-  // Handle both API formats: subjectName OR subject
   if (apiFigureAny.subjectName) {
     mapped.subjectName = apiFigureAny.subjectName;
   } else if (apiFigure.subject) {
     mapped.subjectName = apiFigure.subject;
   }
-  // Handle both API formats: chapterName OR chapter
   if (apiFigureAny.chapterName) {
     mapped.chapterName = apiFigureAny.chapterName;
   } else if (apiFigure.chapter) {
     mapped.chapterName = apiFigure.chapter;
   }
-  // Handle both API formats: topicName OR topic
   if (apiFigureAny.topicName) {
     mapped.topicName = apiFigureAny.topicName;
   } else if (apiFigure.topic) {
     mapped.topicName = apiFigure.topic;
   }
-  // Handle both: figureNumber OR figure_number
   if (apiFigureAny.figureNumber) {
     mapped.figure_number = apiFigureAny.figureNumber;
   } else if (apiFigure.figure_number) {
     mapped.figure_number = apiFigure.figure_number;
   }
-  // Handle both: pageNumber OR page_number
   if (apiFigureAny.pageNumber) {
     mapped.page_number = apiFigureAny.pageNumber;
   } else if (apiFigure.page_number) {
@@ -159,10 +133,6 @@ function mapApiFigureToJsonFormat(apiFigure: ApiFigure): MappedFigure {
   return mapped;
 }
 
-/**
- * Make authenticated API request (server-side)
- * Includes error tracking for monitoring failed requests
- */
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?: string): Promise<T | null> {
   const method = (options.method || 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   
@@ -174,16 +144,16 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
       ...options.headers,
     };
 
-    if (authToken) {
+    if (authToken && authToken.trim()) {
       headers['Authorization'] = `Bearer ${authToken}`;
     } else {
-      console.warn('[figuresApi] No auth token available for request to', endpoint);
       trackFiguresApiError({
         endpoint,
         method,
         errorType: 'auth',
         message: 'No authentication token available',
       });
+      return null;
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -195,11 +165,9 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
       const errorType = categorizeHttpError(response.status);
       
       if (response.status === 404) {
-        console.log('[figuresApi] 404 - Endpoint not found');
-        return null; // Not found - return null instead of throwing
+        return null;
       }
       
-      // Track non-404 errors
       trackFiguresApiError({
         endpoint,
         method,
@@ -208,15 +176,9 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
         message: `HTTP ${response.status}: ${response.statusText}`,
       });
       
-      if (response.status === 401) {
-        console.error('[figuresApi] 401 - Unauthorized. Check authentication token.');
-      } else {
-        console.error(`[figuresApi] API error ${response.status}: ${response.statusText}`);
-      }
       return null;
     }
 
-    // Check if response is empty
     const contentLength = response.headers.get('content-length');
     if (contentLength === '0') {
       return null;
@@ -224,21 +186,12 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
 
     const text = await response.text();
     if (!text || text.trim().length === 0) {
-      console.log('[figuresApi] Empty response body');
       return null;
     }
 
     try {
-      const parsed = JSON.parse(text) as T;
-      console.log(`[figuresApi] Successfully parsed response, type: ${typeof parsed}, isArray: ${Array.isArray(parsed)}`);
-      if (!Array.isArray(parsed) && typeof parsed === 'object') {
-        console.log(`[figuresApi] Response keys: ${Object.keys(parsed).join(', ')}`);
-      }
-      return parsed;
+      return JSON.parse(text) as T;
     } catch (parseError: any) {
-      console.error('[figuresApi] Failed to parse JSON response:', parseError);
-      console.error('[figuresApi] Response text (first 500 chars):', text.substring(0, 500));
-      
       trackFiguresApiError({
         endpoint,
         method,
@@ -246,12 +199,9 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
         message: `Failed to parse JSON: ${parseError.message}`,
         stack: parseError.stack,
       });
-      
       return null;
     }
   } catch (error: any) {
-    console.error('[figuresApi] Request failed:', error);
-    
     const errorType = error.name === 'AbortError' ? 'timeout' : 
                       error.name === 'TypeError' ? 'network' : 'unknown';
     
@@ -267,23 +217,12 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
   }
 }
 
-/**
- * Get a single figure by shortcode (server-side)
- * NOTE: The /figures/shortcode/:shortcode endpoint returns limited fields,
- * so we fetch from /figures and filter to get all metadata.
- * Uses caching to improve performance.
- * @param shortcode - The shortcode to look up
- * @param token - Optional authentication token (if not provided, uses environment variable)
- */
 export async function getFigureByShortcode(shortcode: string, token?: string): Promise<MappedFigure | null> {
-  // Check cache first
   const cached = await getCachedFigureByShortcode(shortcode);
   if (cached) {
-    console.log(`[figuresApi] Cache HIT for shortcode: ${shortcode}`);
     return cached;
   }
   
-  // Fetch all figures and find by shortcode (workaround for API returning limited fields)
   const figures = await getFigures({}, token);
   
   if (!figures || figures.length === 0) {
@@ -292,7 +231,6 @@ export async function getFigureByShortcode(shortcode: string, token?: string): P
   
   const figure = figures.find(f => f.shortcode === shortcode);
   
-  // Cache the result if found
   if (figure) {
     await setCachedFigure(figure);
   }
@@ -300,46 +238,29 @@ export async function getFigureByShortcode(shortcode: string, token?: string): P
   return figure || null;
 }
 
-/**
- * Get multiple figures with optional filtering (server-side)
- * NOTE: The API has a bug where limit/offset parameters return empty results.
- * Do NOT pass limit or offset - the API returns all figures without pagination.
- * Uses Redis/memory caching for improved performance.
- * @param options - Filtering options (limit/offset are ignored due to API bug)
- * @param token - Optional authentication token (if not provided, uses environment variable)
- */
 export async function getFigures(options: {
-  limit?: number;  // IGNORED - API bug returns 0 with pagination params
-  offset?: number; // IGNORED - API bug returns 0 with pagination params
+  limit?: number;
+  offset?: number;
   subject?: string;
   category?: string;
   chapter?: string;
   topic?: string;
 } = {}, token?: string): Promise<MappedFigure[]> {
-  // Check cache for unfiltered requests (most common case)
   const hasFilters = options.subject || options.category || options.chapter || options.topic;
   
   if (!hasFilters) {
     const cached = await getCachedFigures();
     if (cached) {
-      console.log(`[figuresApi] Cache HIT for all figures (${cached.length} items)`);
       return cached;
     }
   }
   
   const params = new URLSearchParams();
   
-  // NOTE: Do NOT add limit/offset - the API returns 0 items when these are present!
-  // This is an API bug that needs to be fixed on the backend.
-  // See: docs/API_BUG_REPORT_LIMIT_PARAMETER.md
-  // if (options.limit) params.append('limit', options.limit.toString());
-  // if (options.offset) params.append('offset', options.offset.toString());
-  
   if (options.subject) {
     params.append('subject', options.subject);
   }
   if (options.category) {
-    // API is case-sensitive - use lowercase
     params.append('category', options.category.toLowerCase());
   }
   if (options.chapter) {
@@ -351,56 +272,35 @@ export async function getFigures(options: {
 
   const queryString = params.toString();
   const endpoint = `/figures${queryString ? `?${queryString}` : ''}`;
-  console.log(`[figuresApi] Fetching from: ${endpoint}`);
   const response = await apiRequest<any>(endpoint, {}, token);
   
   if (!response) {
-    console.log('[figuresApi] No response from API');
     return [];
   }
 
-  // Handle different response formats
   let figuresArray: ApiFigure[] = [];
   
   if (Array.isArray(response)) {
-    // Format 1: Direct array
     figuresArray = response;
   } else if (response.data && Array.isArray(response.data)) {
-    // Format 2: Object with data property
     figuresArray = response.data;
   } else if (response.figures && Array.isArray(response.figures)) {
-    // Format 3: Object with figures property
     figuresArray = response.figures;
   } else if (response.results && Array.isArray(response.results)) {
-    // Format 4: Object with results property
     figuresArray = response.results;
   } else {
-    console.warn('[figuresApi] Unexpected response format:', {
-      isArray: Array.isArray(response),
-      keys: Object.keys(response || {}),
-      type: typeof response
-    });
     return [];
   }
 
-  console.log(`[figuresApi] Parsed ${figuresArray.length} figures from API response`);
-  
   const mapped = figuresArray.map(mapApiFigureToJsonFormat);
   
-  // Cache unfiltered results for future requests
   if (!hasFilters && mapped.length > 0) {
     await setCachedFigures(mapped);
-    console.log(`[figuresApi] Cached ${mapped.length} figures`);
   }
   
   return mapped;
 }
 
-/**
- * Create a new figure in the API (server-side)
- * @param data - Figure data to create
- * @param token - Optional authentication token (if not provided, uses environment variable)
- */
 export async function createFigure(data: {
   shortcode: string;
   alt: string;
@@ -418,7 +318,6 @@ export async function createFigure(data: {
   try {
     const authToken = getAuthToken(token);
     
-    // Prepare images array - API expects images array format
     const images: Array<{ url: string; alt?: string }> = [];
     if (data.paths && data.paths.length > 0) {
       data.paths.forEach((path, index) => {
@@ -434,7 +333,6 @@ export async function createFigure(data: {
       });
     }
 
-    // API expects JSON format field names (subjectName, chapterName, topicName)
     const apiData: any = {
       shortcode: data.shortcode,
       alt: data.alt,
@@ -467,7 +365,6 @@ export async function createFigure(data: {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error(`[figuresApi] Failed to create figure: ${response.status} - ${errorData.message || response.statusText}`);
       throw new Error(errorData.message || `Failed to create figure: ${response.statusText}`);
     }
 
@@ -479,13 +376,10 @@ export async function createFigure(data: {
     const apiFigure = JSON.parse(text) as ApiFigure;
     const mappedFigure = mapApiFigureToJsonFormat(apiFigure);
     
-    // Invalidate cache after successful creation
     await invalidateFigureCache();
     
     return mappedFigure;
   } catch (error: any) {
-    console.error('[figuresApi] Error creating figure:', error);
-    
     trackFiguresApiError({
       endpoint: '/figures',
       method: 'POST',
@@ -499,12 +393,6 @@ export async function createFigure(data: {
   }
 }
 
-/**
- * Update an existing figure in the API (server-side)
- * @param shortcode - The shortcode to update
- * @param data - Updated figure data
- * @param token - Optional authentication token (if not provided, uses environment variable)
- */
 export async function updateFigure(shortcode: string, data: {
   alt?: string;
   description?: string;
@@ -519,7 +407,6 @@ export async function updateFigure(shortcode: string, data: {
   page_number?: number;
 }, token?: string): Promise<MappedFigure | null> {
   try {
-    // First, get the existing figure to get its ID
     const existing = await getFigureByShortcode(shortcode, token);
     if (!existing) {
       throw new Error(`Figure with shortcode ${shortcode} not found`);
@@ -527,7 +414,6 @@ export async function updateFigure(shortcode: string, data: {
 
     const authToken = getAuthToken(token);
     
-    // Prepare images array if paths are provided
     let images: Array<{ url: string; alt?: string }> | undefined = undefined;
     if (data.paths && data.paths.length > 0) {
       images = data.paths.map((path, index) => ({
@@ -541,7 +427,6 @@ export async function updateFigure(shortcode: string, data: {
       }];
     }
 
-    // Build update data - only include provided fields
     const apiData: any = {};
     if (data.alt !== undefined) apiData.alt = data.alt;
     if (data.description !== undefined) apiData.description = data.description;
@@ -561,14 +446,12 @@ export async function updateFigure(shortcode: string, data: {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    // Try PUT /figures/shortcode/:shortcode first
     let response = await fetch(`${API_BASE_URL}/figures/shortcode/${shortcode}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(apiData),
     });
 
-    // If that doesn't work, try PATCH
     if (!response.ok && response.status !== 404) {
       response = await fetch(`${API_BASE_URL}/figures/shortcode/${shortcode}`, {
         method: 'PATCH',
@@ -579,25 +462,20 @@ export async function updateFigure(shortcode: string, data: {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error(`[figuresApi] Failed to update figure: ${response.status} - ${errorData.message || response.statusText}`);
       throw new Error(errorData.message || `Failed to update figure: ${response.statusText}`);
     }
 
     const text = await response.text();
     
-    // Invalidate cache after successful update
     await invalidateFigureCache(shortcode);
     
     if (!text || text.trim().length === 0) {
-      // If empty response, fetch the updated figure
       return await getFigureByShortcode(shortcode, token);
     }
 
     const apiFigure = JSON.parse(text) as ApiFigure;
     return mapApiFigureToJsonFormat(apiFigure);
   } catch (error: any) {
-    console.error('[figuresApi] Error updating figure:', error);
-    
     trackFiguresApiError({
       endpoint: `/figures/shortcode/${shortcode}`,
       method: 'PUT',
@@ -611,18 +489,10 @@ export async function updateFigure(shortcode: string, data: {
   }
 }
 
-/**
- * Delete a figure from the API (server-side)
- * The API requires the MongoDB _id for deletion, so we first fetch the figure by shortcode.
- * @param shortcode - The shortcode of the figure to delete
- * @param token - Optional authentication token
- */
 export async function deleteFigure(shortcode: string, token?: string): Promise<boolean> {
   try {
     const authToken = await getAuthToken(token);
     
-    // First, get the figure by shortcode to retrieve its _id
-    console.log(`[figuresApi] Looking up figure by shortcode: ${shortcode}`);
     const figureResponse = await fetch(`${API_BASE_URL}/figures/shortcode/${shortcode}`, {
       headers: { 
         'Authorization': `Bearer ${authToken}`,
@@ -649,9 +519,6 @@ export async function deleteFigure(shortcode: string, token?: string): Promise<b
       throw new Error(`Figure with shortcode "${shortcode}" has no _id`);
     }
 
-    console.log(`[figuresApi] Found figure _id: ${figureId}, proceeding with deletion`);
-
-    // Now delete using the _id
     const deleteResponse = await fetch(`${API_BASE_URL}/figures/${figureId}`, {
       method: 'DELETE',
       headers: { 
@@ -662,19 +529,13 @@ export async function deleteFigure(shortcode: string, token?: string): Promise<b
 
     if (!deleteResponse.ok) {
       const errorData = await deleteResponse.json().catch(() => ({}));
-      console.error(`[figuresApi] Failed to delete figure: ${deleteResponse.status} - ${errorData.message || deleteResponse.statusText}`);
       throw new Error(errorData.message || `Failed to delete figure: ${deleteResponse.statusText}`);
     }
 
-    console.log(`[figuresApi] Successfully deleted figure: ${shortcode} (id: ${figureId})`);
-    
-    // Invalidate cache after successful deletion
     await invalidateFigureCache(shortcode);
     
     return true;
   } catch (error: any) {
-    console.error('[figuresApi] Error deleting figure:', error);
-    
     trackFiguresApiError({
       endpoint: `/figures/${shortcode}`,
       method: 'DELETE',
@@ -686,4 +547,3 @@ export async function deleteFigure(shortcode: string, token?: string): Promise<b
     throw error;
   }
 }
-
