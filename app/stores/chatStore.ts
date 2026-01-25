@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import type { ChatSession, ChatMessage, ChatContext, AddMessageRequest, CreateSessionRequest } from '~/types/chat.interface';
-import { useChatHistory } from '~/composable/useChatHistory';
+import { useChatHistory } from '~/composables/useChatHistory';
 
 export const useChatStore = defineStore('chat', {
   state: () => ({

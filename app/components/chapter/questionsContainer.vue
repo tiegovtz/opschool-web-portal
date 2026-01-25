@@ -142,9 +142,9 @@ watch(
   }
 );
 
-const getChoiceReason = (question: Question):string => {
+const getChoiceReason = (question: Question,userAnswer:string):string => {
   return question.choices.find(
-    (choice: Choice) => choice.value === question.answer
+    (choice: Choice) => choice.value === userAnswer.trim()
   )?.description || '';
 };
 
@@ -227,7 +227,7 @@ const getChoiceReason = (question: Question):string => {
               <div
                 v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description"
                 :aria-label="`Explanation to justify why you answer ${quizAttempt.clickedAnswer[index] == question.answer ? 'correct' : 'incorrect'}`"
-                v-html="generateSuggestion(getChoiceReason(question),quizAttempt.clickedAnswer[index] == question.answer)"
+                v-html="generateSuggestion(getChoiceReason(question,quizAttempt.clickedAnswer[index] ?? ''),quizAttempt.clickedAnswer[index] == question.answer)"
                 >
               </div>
             </div>

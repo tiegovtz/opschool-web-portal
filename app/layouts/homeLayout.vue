@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white">
+  <div class="bg-white" @contextmenu.prevent >
     <!-- Header -->
     <HeaderView />
 
@@ -33,9 +33,5 @@
 <script setup>
 import FooterView from '@/components/included/FooterView.vue'
 import HeaderView from '~/components/included/HeaderView.vue'
-
 const route = useRoute()
-
-
-
 </script>

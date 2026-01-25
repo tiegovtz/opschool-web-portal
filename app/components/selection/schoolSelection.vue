@@ -40,10 +40,9 @@ const fetchSchools = async (region: string, district: string) => {
   try {
     const response = await $fetch<any[]>(apiDocs.school.get,
       {
-        method:'post',
         query: {
-          region: `${region}`.toLowerCase(),
-          district: `${district}`.toLowerCase(),
+          region,
+          district,
         }
       }
     );

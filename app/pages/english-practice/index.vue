@@ -1,11 +1,32 @@
 <template>
-  <NuxtLayout name="home-layout">
-    <div class="flex flex-col h-[calc(100vh-200px)] max-h-[800px] bg-white rounded-lg shadow-lg overflow-hidden">
+  <div
+    :class="isEmbedded
+      ? 'relative w-full h-full p-4'
+      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'"
+    @click.self="!isEmbedded && handleOverlayClick"
+  >
+    <div
+      class="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-8"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="english-practice-title"
+      @click.stop
+    >
+      <button
+        v-if="!isEmbedded"
+        type="button"
+        class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 hover:text-gray-900 shadow-md z-10"
+        aria-label="Close English practice"
+        @click="closeModal"
+      >
+        <span class="text-xl leading-none">&times;</span>
+      </button>
+      <div class="flex flex-col h-[calc(100vh-200px)] max-h-[800px] overflow-hidden">
       <!-- Header -->
       <header class="px-6 py-4 bg-gradient-to-r from-oceanBlue to-deepBlue text-white">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-2xl font-bold">English Speaking Practice</h1>
+            <h1 id="english-practice-title" class="text-2xl font-bold">English Speaking Practice</h1>
             <p class="text-sm text-blue-100 mt-1">
               {{ mode === 'multi-user' ? 'Practice with a partner' : 'Practice with AI tutor' }}
             </p>
@@ -45,6 +66,15 @@
       </header>
 
       <!-- Main content area -->
+      <div v-if="scriptLoading" class="text-center text-sm text-gray-500 mt-4 mb-2">
+        Loading conversation content…
+      </div>
+      <div
+        v-else-if="scriptError"
+        class="text-center text-sm text-red-600 mt-4 mb-2"
+      >
+        {{ scriptError }}
+      </div>
       <div class="flex-1 flex flex-col overflow-hidden relative">
         <!-- Teleprompter display -->
         <EnglishPracticeTeleprompter
@@ -58,6 +88,9 @@
           :mode="mode"
           :is-ai-speaking="textToSpeech.isSpeaking.value"
           :current-word-index="currentWordIndex"
+          :student1-name="student1DisplayName"
+          :student2-name="participantTwoName"
+          :ai-name="aiDisplayName"
         />
 
         <!-- Mic control -->
@@ -68,32 +101,26 @@
           @toggle="handleMicToggle"
         />
       </div>
+      </div>
     </div>
-  </NuxtLayout>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import type { ConversationScript, ScriptLine, SpeakerType, PracticeMode } from '~/types/script.interface';
-import { useSpeechRecognition } from '~/composable/useSpeechRecognition';
-import { useTurnManager } from '~/composable/useTurnManager';
-import { useTextToSpeech } from '~/composable/useTextToSpeech';
+import { useSpeechRecognition } from '~/composables/useSpeechRecognition';
+import { useTurnManager } from '~/composables/useTurnManager';
+import { useTextToSpeech } from '~/composables/useTextToSpeech';
 
-// Sample script for testing (can be replaced with API call or prop)
-const sampleScript: ConversationScript = {
-  id: 'sample-1',
-  title: 'Greetings and Introductions',
-  lines: [
-    { id: '1', speaker: 'student1', text: 'Hello, my name is John. What is your name?', order: 1 },
-    { id: '2', speaker: 'student2', text: 'Hi John! My name is Sarah. Nice to meet you.', order: 2 },
-    { id: '3', speaker: 'student1', text: 'Nice to meet you too, Sarah. Where are you from?', order: 3 },
-    { id: '4', speaker: 'student2', text: 'I am from Dar es Salaam. How about you?', order: 4 },
-    { id: '5', speaker: 'student1', text: 'I am from Arusha. It is a beautiful city.', order: 5 },
-  ],
-};
+// Page metadata - disable layout to remove header/footer
+definePageMeta({
+  layout: false,
+});
 
 // State
-const script = ref<ConversationScript | null>(sampleScript);
+const script = ref<ConversationScript | null>(null);
 const currentLineIndex = ref(0);
 const messages = ref<Array<{
   id: string;
@@ -106,6 +133,21 @@ const currentTranscript = ref<string>('');
 const spokenWords = ref<Set<string>>(new Set());
 const currentWordIndex = ref(0); // Track current position in script words
 const mode = ref<PracticeMode>('multi-user'); // Can be changed based on user detection
+const route = useRoute();
+const router = useRouter();
+const originalBodyOverflow = ref('');
+const allowOverlayClose = ref(false);
+const returnTo = ref('');
+const scriptLoading = ref(false);
+const scriptError = ref('');
+const student1DisplayName = ref('Student 1');
+const student2DisplayName = ref('Student 2');
+const aiDisplayName = ref('AI Tutor');
+const participantTwoName = computed(() =>
+  mode.value === 'single-user' ? aiDisplayName.value : student2DisplayName.value
+);
+
+const isEmbedded = computed(() => String(route.query.embed || '') === '1');
 
 // Composables
 const speechRecognition = useSpeechRecognition();
@@ -227,13 +269,18 @@ speechRecognition.onWord.value = (word) => {
   if (currentWordIndex.value < normalizedScriptWords.value.length) {
     const expectedWord = normalizedScriptWords.value[currentWordIndex.value];
     
-    // Use fuzzy matching to handle variations
-    if (normalizedSpoken === expectedWord || 
-        normalizedSpoken.includes(expectedWord) || 
-        expectedWord.includes(normalizedSpoken)) {
-      // Match! Highlight this word and advance position
-      highlightedWord.value = normalizedSpoken;
-      currentWordIndex.value++;
+    // Ensure expectedWord is defined before matching
+    if (expectedWord) {
+      const normalizedExpected = expectedWord.toLowerCase().trim();
+      
+      // Use fuzzy matching to handle variations
+      if (normalizedSpoken === normalizedExpected || 
+          normalizedSpoken.includes(normalizedExpected) || 
+          normalizedExpected.includes(normalizedSpoken)) {
+        // Match! Highlight this word and advance position
+        highlightedWord.value = normalizedSpoken;
+        currentWordIndex.value++;
+      }
     }
   }
 };
@@ -286,7 +333,10 @@ speechRecognition.onSilence.value = () => {
 };
 
 speechRecognition.onError.value = (error) => {
-  console.error('Speech recognition error:', error);
+  // Ignore "no-speech" errors - they're expected when user doesn't speak
+  if (error === 'no-speech' || error.includes('no-speech')) {
+    return;
+  }
 };
 
 // Text-to-speech handlers
@@ -363,6 +413,159 @@ const handleAITurn = () => {
   // (This will happen in the onEnd handler)
 };
 
+const normalizeQueryValue = (value: unknown): string => {
+  if (Array.isArray(value)) {
+    return String(value[0] || '').trim();
+  }
+  return String(value || '').trim();
+};
+
+const convertPiecesToScript = (
+  pieces: string[],
+  identifier?: string
+): { lines: ScriptLine[]; displayNames: { student1: string; student2: string; ai: string } } => {
+  const cleanedPieces = pieces
+    .map((piece) => String(piece || '').trim())
+    .filter((text) => text.length > 0);
+
+  const speakerAssignments = new Map<string, SpeakerType>();
+  let assignmentCount = 0;
+  const displayNames = {
+    student1: 'Student 1',
+    student2: 'Student 2',
+    ai: 'AI Tutor',
+  };
+
+  const lines: ScriptLine[] = [];
+
+  cleanedPieces.forEach((rawText, index) => {
+    let text = rawText;
+    let explicitSpeaker: string | null = null;
+    const colonIndex = rawText.indexOf(':');
+    if (colonIndex > 0) {
+      const potentialSpeaker = rawText.slice(0, colonIndex).trim();
+      const remaining = rawText.slice(colonIndex + 1).trim();
+      if (potentialSpeaker && remaining) {
+        explicitSpeaker = potentialSpeaker;
+        text = remaining;
+      }
+    }
+
+    let speaker: SpeakerType = index % 2 === 0 ? 'student1' : 'student2';
+
+    if (explicitSpeaker) {
+      const normalizedSpeaker = explicitSpeaker.toLowerCase();
+      if (
+        normalizedSpeaker.includes('ai') ||
+        normalizedSpeaker.includes('tutor') ||
+        normalizedSpeaker.includes('bot')
+      ) {
+        speaker = 'ai';
+        displayNames.ai = explicitSpeaker;
+      } else {
+        if (speakerAssignments.has(normalizedSpeaker)) {
+          speaker = speakerAssignments.get(normalizedSpeaker)!;
+        } else {
+          const nextRole: SpeakerType =
+            assignmentCount === 0
+              ? 'student1'
+              : assignmentCount === 1
+                ? 'student2'
+                : 'ai';
+          speakerAssignments.set(normalizedSpeaker, nextRole);
+          assignmentCount += 1;
+          if (nextRole === 'student1') {
+            displayNames.student1 = explicitSpeaker;
+          } else if (nextRole === 'student2') {
+            displayNames.student2 = explicitSpeaker;
+          }
+          speaker = nextRole;
+        }
+      }
+    }
+
+    const lineId = identifier ? `${identifier}-${index}` : `line-${index}`;
+    lines.push({
+      id: lineId,
+      speaker,
+      text,
+      order: index + 1,
+    });
+  });
+
+  return { lines, displayNames };
+};
+
+const loadConversationScript = async () => {
+  const chapterId = normalizeQueryValue(route.query.chapterId);
+  const identifier = normalizeQueryValue(route.query.identifier);
+  const typeFromUrl = normalizeQueryValue(route.query.type);
+  if (!chapterId) {
+    scriptError.value = 'Chapter ID not configured for this practice.';
+    return;
+  }
+
+  scriptLoading.value = true;
+  scriptError.value = '';
+
+  try {
+    // Use type from URL if provided, otherwise default to 'constant' for English practice
+    const type = typeFromUrl || 'constant';
+    const query: Record<string, string> = { chapterId, type };
+    if (identifier) {
+      query.identifier = identifier;
+    }
+    const response = await $fetch('/api/conversation/engage', { query });
+    const pieces = Array.isArray(response?.pieces) ? response.pieces : [];
+    
+    if (pieces.length === 0) {
+      scriptError.value = 'No conversation pieces were returned for this chapter.';
+      return;
+    }
+    const { lines, displayNames } = convertPiecesToScript(
+      pieces,
+      response?.identifier || identifier || ''
+    );
+    if (!lines.length) {
+      scriptError.value = 'The conversation data appears to be empty.';
+      return;
+    }
+
+    script.value = {
+      id: response?.identifier || `${chapterId}-${Date.now()}`,
+      title: response?.name || 'English Speaking Practice',
+      lines,
+    };
+    student1DisplayName.value = displayNames.student1 || 'Student 1';
+    student2DisplayName.value = displayNames.student2 || 'Student 2';
+    aiDisplayName.value = displayNames.ai || 'AI Tutor';
+    currentLineIndex.value = 0;
+    currentWordIndex.value = 0;
+    highlightedWord.value = '';
+    currentTranscript.value = '';
+    spokenWords.value.clear();
+    turnManager.reset();
+  } catch (error: any) {
+    console.error('Failed to load conversation for English practice:', error);
+    const errorMessage = error?.message || error?.toString() || 'Unknown error';
+    if (errorMessage.includes('Failed to load') || errorMessage.includes('response data')) {
+      scriptError.value = 'Unable to load conversation content. Please check your connection and try again.';
+    } else {
+      scriptError.value = `Unable to load conversation content: ${errorMessage}`;
+    }
+  } finally {
+    scriptLoading.value = false;
+  }
+};
+
+watch(
+  () => [route.query.chapterId, route.query.identifier],
+  () => {
+    loadConversationScript();
+  },
+  { immediate: true }
+);
+
 // Mode detection (can be enhanced with actual user detection)
 const detectMode = () => {
   // Check URL params first, then default to multi-user
@@ -413,15 +616,69 @@ watch(() => currentLineIndex.value, () => {
   currentWordIndex.value = 0; // Reset word index for new line
 });
 
+// Modal functionality
+const closeModal = () => {
+  if (
+    typeof window !== 'undefined' &&
+    window.parent &&
+    window.parent !== window &&
+    typeof window.parent.closeEnglishPractice === 'function'
+  ) {
+    window.parent.closeEnglishPractice();
+    return;
+  }
+  if (returnTo.value) {
+    window.location.href = returnTo.value;
+    return;
+  }
+  if (typeof window !== 'undefined' && window.history.length > 1) {
+    router.back();
+    return;
+  }
+  router.push('/');
+};
+
+const handleOverlayClick = () => {
+  if (!allowOverlayClose.value) return;
+  closeModal();
+};
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    closeModal();
+  }
+};
+
 // Lifecycle
 onMounted(() => {
+  if (typeof document !== 'undefined') {
+    if (!isEmbedded.value) {
+      originalBodyOverflow.value = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+    }
+    returnTo.value = String(route.query.returnTo || '').trim() || document.referrer || '';
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', handleKeydown);
+    if (!isEmbedded.value) {
+      // Avoid immediately closing the modal on the opening click
+      setTimeout(() => {
+        allowOverlayClose.value = true;
+      }, 0);
+    }
+  }
   detectMode();
   turnManager.reset();
 });
 
 onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', handleKeydown);
+  }
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = originalBodyOverflow.value;
+  }
   speechRecognition.stop();
   textToSpeech.stop();
 });
 </script>
-

@@ -8,7 +8,7 @@ export const webVisitor = async () => {
 
   const browserName = parsed.getBrowserName() || "Unknown Browser";
   const osName = parsed.getOSName() || "Unknown OS";
-
+  
   try {
      await $fetch(apiDocs.visitors.postVisitors, {
       method: "POST",

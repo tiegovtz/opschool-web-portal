@@ -1,7 +1,7 @@
 <script setup>
 import apiDocs from "~/utilities/apiDocs";
 import { ref, watchEffect, onMounted, onUnmounted } from "vue";
-import { fetchAsyncData } from "~/composable/useAsyncFetch";
+import { fetchAsyncData } from "~/composables/useAsyncFetch";
 
 const route = useRoute();
 const audioId = route.fullPath.split("/").pop();

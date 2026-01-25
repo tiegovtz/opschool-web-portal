@@ -1,5 +1,5 @@
 export enum HomeTabs{
-    video="Videos",
+    video="Instructional Videos",
     classVideos="Class Videos",
     activity="Learner's Activities",
     audio="Audios",
