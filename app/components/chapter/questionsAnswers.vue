@@ -26,7 +26,7 @@ const questionProps = defineProps<Question>();
 
 const emit = defineEmits(["questionAnswered", "clickedChoice"]);
 
-const markQuestion = (choice:string) => {
+const markQuestion = (choice: string) => {
   if (questionAnswer.disableAnswer) return;
 
   questionAnswer.selectedChoice = choice;
@@ -47,7 +47,7 @@ const markQuestion = (choice:string) => {
   }, 1000);
 };
 
-const indexToAlpha = (index:number) => String.fromCharCode(65 + index);
+const indexToAlpha = (index: number) => String.fromCharCode(65 + index);
 
 const shuffleChoices = computed(() => {
   const shuffled = questionProps.choices
@@ -74,7 +74,7 @@ watch(
   { immediate: true }
 );
 
-const handleDrop = (index:number, event: { dataTransfer: { getData: (arg0: string) => any; }; }) => {
+const handleDrop = (index: number, event: { dataTransfer: { getData: (arg0: string) => any; }; }) => {
   if (dropZoneAnswers.value[index]) return;
 
   const data = event.dataTransfer.getData("text");
@@ -123,7 +123,7 @@ const liveFilledSentence = computed(() => {
 });
 
 // playDemoAnimation and flyToTarget Function
-const flyToTarget = (sourceEl:HTMLElement, targetEl:HTMLElement, index?:number) => {
+const flyToTarget = (sourceEl: HTMLElement, targetEl: HTMLElement, index?: number) => {
   const clone = sourceEl.cloneNode(true) as HTMLElement;
   clone.innerText = "example";
 
@@ -142,9 +142,9 @@ const flyToTarget = (sourceEl:HTMLElement, targetEl:HTMLElement, index?:number) 
     zIndex: 9999,
     transition: 'all 1s ease-in-out',
     pointerEvents: 'none',
-    display:'flex',
-    justifyContent:'center',
-    alignItems:'center'
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
   });
 
   document.body.appendChild(clone);
@@ -209,16 +209,13 @@ const playDemoAnimation = async () => {
 
 <template>
 
-  <section
-    class="flex flex-col"
-    v-if="questionType.toLowerCase() === 'multiple_choice'"
-  >
-  <small>Choose the most correct answer.</small>
+  <section class="flex flex-col" v-if="questionType.toLowerCase() === 'multiple_choice'">
+    <p>Choose the most correct answer.</p>
     <div class="inline-flex">
       <p class="pr-4">{{ number + ". " }}</p>
       <div class="flex flex-wrap items-center w-full">
         <p class="mb-4 text-justify">
-          <b>{{ question }}</b>
+          {{ question }}
         </p>
         <!-- <p
           v-if="thumbnail"
@@ -231,18 +228,14 @@ const playDemoAnimation = async () => {
           />
         </p> -->
         <ol class="w-full text-small">
-          <li
-            v-for="(choice, index) in shuffleChoices"
-            :key="index"
+          <li v-for="(choice, index) in shuffleChoices" :key="index"
             class="flex items-center justify-between w-full px-3 py-2 my-2 transition-all duration-500 ease-in-out rounded-md cursor-pointer custom-box-shadow hover:bg-oceanBlue hover:text-white"
             :class="{
               'bg-deepBlue hover:!bg-deepBlue text-white':
                 questionAnswer.isAnswered &&
                 choice.value === questionAnswer.clickedChoice,
               'cursor-not-allowed': questionAnswer.disableAnswer,
-            }"
-            @click="markQuestion(choice.value)"
-          >
+            }" @click="markQuestion(choice.value)">
             <span>{{ indexToAlpha(index) + ") " + choice.value }}</span>
           </li>
         </ol>
@@ -252,7 +245,7 @@ const playDemoAnimation = async () => {
 
   <!-- drag and drop question and answer container -->
   <section v-else class="mt-6">
-     <small>Drag and Drop respective answers in blank provided.</small>
+    <p>Drag and Drop respective answers in blank provided.</p>
     <div class="flex flex-col gap-4">
       <!-- Question Text with inline blanks -->
       <div class="flex justify-start">
@@ -260,13 +253,9 @@ const playDemoAnimation = async () => {
         <p class="flex flex-wrap items-center justify-start gap-2 text-justify">
           <template v-for="(part, i) in renderQuestionWithBlanks">
             <span v-if="!part.isBlank" :key="part.key">{{ part.text }}</span>
-            <span
-              v-else
-              :key="part.key + i"
-              class="drag-zone inline-block min-w-[100px] px-2 py-1 border-b border-dashed border-oceanBlue text-center text-sm bg-blue-50 rounded-sm font-bold"
-              @drop.prevent="handleDrop(part.index as number, $event as any)"
-              @dragover.prevent
-            >
+            <span v-else :key="part.key + i"
+              class="drag-zone inline-block min-w-[100px] px-2 py-1 border-b border-dashed border-oceanBlue text-center text-sm bg-blue-50 rounded-sm"
+              @drop.prevent="handleDrop(part.index as number, $event as any)" @dragover.prevent>
               {{ dropZoneAnswers[part.index as number] || "____" }}
             </span>
           </template>
@@ -284,30 +273,22 @@ const playDemoAnimation = async () => {
       </p> -->
       <!-- Choices to Drag -->
       <div class="flex flex-wrap gap-4 pl-6 mt-4">
-        <div
-          v-for="(choice, index) in shuffleChoices"
-          :key="index"
+        <div v-for="(choice, index) in shuffleChoices" :key="index"
           class="p-2 transition-all duration-500 ease-in-out rounded-md shadow cursor-move bg-oceanBlue bg-opacity-20 hover:bg-oceanBlue hover:text-white drag-answers"
-          draggable="true"
-          @dragstart="(e) => (e as DragEvent).dataTransfer?.setData('text', choice.value)"
-        >
-        {{ choice.value }}
+          draggable="true" @dragstart="(e) => (e as DragEvent).dataTransfer?.setData('text', choice.value)">
+          {{ choice.value }}
         </div>
       </div>
       <!-- tips or Help information -->
       <div class="flex items-center gap-4 mt-4">
-        <div
-          @click="isTipsOpen()"
-          class="flex items-center justify-center p-2 bg-white rounded-full cursor-pointer custom-box-shadow-1"
-        >
+        <div @click="isTipsOpen()"
+          class="flex items-center justify-center p-2 bg-white rounded-full cursor-pointer custom-box-shadow-1">
           <Icon name="tabler:question-mark" size="20" />
         </div>
         <div class="flex items-center">
-          <p
-            :class="[
-              'max-w-2xl text-oceanBlue text-sm transition-all duration-500 ease-in-out',
-            ]"
-          >
+          <p :class="[
+            'max-w-2xl text-oceanBlue text-sm transition-all duration-500 ease-in-out',
+          ]">
             Drag each answer choice into the blank space by clicking and
             dragging with your mouse on desktop, or by tapping, holding, and
             sliding with your finger on mobile.
