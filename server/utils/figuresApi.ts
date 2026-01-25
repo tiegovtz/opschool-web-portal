@@ -17,64 +17,15 @@ import {
 
 const API_BASE_URL = process.env.FIGURES_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
 
-const SERVICE_USERNAME = process.env.FIGURES_API_USERNAME || 'eric.john';
-const SERVICE_PASSWORD = process.env.FIGURES_API_PASSWORD || 'Ejb201313!';
-
-let cachedServiceToken: string | null = null;
-let tokenExpiresAt: number = 0;
-
-async function getServiceToken(): Promise<string> {
-  if (cachedServiceToken && Date.now() < tokenExpiresAt - 300000) {
-    return cachedServiceToken;
-  }
-
-  if (!SERVICE_USERNAME || !SERVICE_PASSWORD) {
-    return '';
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: SERVICE_USERNAME,
-        password: SERVICE_PASSWORD,
-      }),
-    });
-
-    if (!response.ok) {
-      cachedServiceToken = null;
-      tokenExpiresAt = 0;
-      return '';
-    }
-
-    const data = await response.json();
-    const token = data.access_token || data.accessToken || data.token;
-
-    if (token) {
-      cachedServiceToken = token;
-      tokenExpiresAt = Date.now() + 3600000;
-      return token;
-    }
-
-    cachedServiceToken = null;
-    tokenExpiresAt = 0;
-    return '';
-  } catch {
-    cachedServiceToken = null;
-    tokenExpiresAt = 0;
-    return '';
-  }
-}
-
 async function getAuthToken(token?: string): Promise<string> {
+  // Only use provided user token - no fallbacks
   if (token && token.trim()) {
     return token;
   }
-  if (process.env.FIGURES_API_TOKEN) {
-    return process.env.FIGURES_API_TOKEN;
-  }
-  return await getServiceToken();
+  
+  // No token available - return empty string
+  // This will trigger proper error tracking in apiRequest
+  return '';
 }
 
 function mapApiFigureToJsonFormat(apiFigure: ApiFigure): MappedFigure {
@@ -147,13 +98,14 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
     if (authToken && authToken.trim()) {
       headers['Authorization'] = `Bearer ${authToken}`;
     } else {
+      const errorMessage = 'No user authentication token available. User must be authenticated to access figures API.';
       trackFiguresApiError({
         endpoint,
         method,
         errorType: 'auth',
-        message: 'No authentication token available',
+        message: errorMessage,
       });
-      return null;
+      throw new Error(errorMessage);
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -164,10 +116,26 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
     if (!response.ok) {
       const errorType = categorizeHttpError(response.status);
       
+      // 404 means resource not found - return null (not an error)
       if (response.status === 404) {
         return null;
       }
       
+      // 401/403 are authentication/authorization errors - throw error
+      if (response.status === 401 || response.status === 403) {
+        const errorText = await response.text().catch(() => response.statusText);
+        const errorMessage = `Authentication failed: HTTP ${response.status} - ${errorText}`;
+        trackFiguresApiError({
+          endpoint,
+          method,
+          statusCode: response.status,
+          errorType,
+          message: errorMessage,
+        });
+        throw new Error(errorMessage);
+      }
+      
+      // Other errors - log and return null (let caller decide)
       trackFiguresApiError({
         endpoint,
         method,
@@ -272,8 +240,13 @@ export async function getFigures(options: {
 
   const queryString = params.toString();
   const endpoint = `/figures${queryString ? `?${queryString}` : ''}`;
+  
+  // apiRequest will throw errors for auth failures (401/403) or missing tokens
+  // It returns null for 404 (not found) or empty responses
   const response = await apiRequest<any>(endpoint, {}, token);
   
+  // If apiRequest returns null, it means no figures found (404 or empty response)
+  // Auth errors would have been thrown above
   if (!response) {
     return [];
   }
@@ -316,7 +289,11 @@ export async function createFigure(data: {
   page_number?: number;
 }, token?: string): Promise<MappedFigure | null> {
   try {
-    const authToken = getAuthToken(token);
+    const authToken = await getAuthToken(token);
+    
+    if (!authToken || !authToken.trim()) {
+      throw new Error('No authentication token available for creating figure');
+    }
     
     const images: Array<{ url: string; alt?: string }> = [];
     if (data.paths && data.paths.length > 0) {
@@ -351,11 +328,8 @@ export async function createFigure(data: {
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`,
     };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
 
     const response = await fetch(`${API_BASE_URL}/figures`, {
       method: 'POST',
@@ -412,7 +386,11 @@ export async function updateFigure(shortcode: string, data: {
       throw new Error(`Figure with shortcode ${shortcode} not found`);
     }
 
-    const authToken = getAuthToken(token);
+    const authToken = await getAuthToken(token);
+    
+    if (!authToken || !authToken.trim()) {
+      throw new Error('No authentication token available for updating figure');
+    }
     
     let images: Array<{ url: string; alt?: string }> | undefined = undefined;
     if (data.paths && data.paths.length > 0) {
@@ -440,11 +418,8 @@ export async function updateFigure(shortcode: string, data: {
 
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`,
     };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
 
     let response = await fetch(`${API_BASE_URL}/figures/shortcode/${shortcode}`, {
       method: 'PUT',

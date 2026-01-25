@@ -180,6 +180,17 @@ export const studentTools = {
         
         const querySubject = subject?.toLowerCase() || extractSubjectFromChapter(chapter);
         
+        // Check if authentication token is available
+        if (!currentAuthToken || !currentAuthToken.trim()) {
+          console.error('[getChapterFigures] No authentication token available');
+          return {
+            found: false,
+            error: "Authentication required. User must be signed in to access figures.",
+            figures: [],
+            requiresAuth: true
+          };
+        }
+        
         let images: any[] = [];
         try {
           const { getFigures } = await import('../../utils/figuresApi');
@@ -198,15 +209,27 @@ export const studentTools = {
             filterOptions.topic = topic;
           }
           
+          console.log('[getChapterFigures] Fetching figures with options:', {
+            filterOptions,
+            hasToken: !!currentAuthToken,
+            chapter,
+            topic,
+            subject: querySubject
+          });
+          
           let figures = await getFigures(filterOptions, currentAuthToken);
           
           if (figures.length === 0 && querySubject && (filterOptions.chapter || filterOptions.topic)) {
+            console.log('[getChapterFigures] No figures with filters, trying with category only');
             figures = await getFigures({ category: querySubject }, currentAuthToken);
           }
           
           if (figures.length === 0 && querySubject) {
+            console.log('[getChapterFigures] No figures with category, trying all figures');
             figures = await getFigures({}, currentAuthToken);
           }
+          
+          console.log('[getChapterFigures] Found figures:', figures.length);
           
           images = figures.map((fig: any) => ({
             figure_number: fig.figure_number || '',
@@ -221,10 +244,34 @@ export const studentTools = {
             paths: fig.paths || [],
             category: fig.category || ''
           }));
-        } catch {
+        } catch (error: any) {
+          // Log the actual error for debugging
+          console.error('[getChapterFigures] Error fetching figures:', {
+            error: error.message,
+            stack: error.stack,
+            chapter,
+            topic,
+            subject: querySubject,
+            hasToken: !!currentAuthToken
+          });
+          
+          // Check if it's an authentication error
+          const errorMessage = error.message || String(error);
+          if (errorMessage.includes('401') || 
+              errorMessage.includes('authentication') || 
+              errorMessage.includes('Unauthorized') ||
+              errorMessage.includes('No user authentication token')) {
+            return {
+              found: false,
+              error: "Authentication failed. Please sign in to access figures.",
+              figures: [],
+              requiresAuth: true
+            };
+          }
+          
           return {
             found: false,
-            error: "Figure metadata not available",
+            error: `Figure metadata not available: ${errorMessage}`,
             figures: []
           };
         }
@@ -601,9 +648,9 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
           currentAuthToken,
           queryContext,
           {
-            useLocal: true,
+            useLocal: false,
             useExternal: true,
-            preferExternal: false,
+            preferExternal: true,
           }
         );
 
