@@ -20,7 +20,6 @@ export type RAGSource = 'local' | 'external' | 'combined';
 export interface RAGContextResult {
   context: string;
   source: RAGSource;
-  localContext?: string;
   externalContext?: string;
 }
 
@@ -214,8 +213,6 @@ export async function fetchCombinedRAGContext(
 
   const query = searchQuery.trim();
 
-  // LOCAL RAG DISABLED - Only using external RAG
-  // let localContext = "";
   let externalContext = "";
 
   const promises: Promise<string>[] = [];
@@ -268,7 +265,6 @@ export async function fetchCombinedRAGContext(
   return {
     context: combinedContext.trim(),
     source,
-    localContext: localContext || undefined,
     externalContext: externalContext || undefined,
   };
 }

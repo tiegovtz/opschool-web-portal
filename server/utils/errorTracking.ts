@@ -104,6 +104,35 @@ export function trackFiguresApiError(error: Omit<FiguresApiError, 'timestamp'>):
 }
 
 /**
+ * Track a RAG API error
+ */
+export function trackRagApiError(error: Omit<FiguresApiError, 'timestamp'>): void {
+  const fullError: FiguresApiError = {
+    ...error,
+    timestamp: new Date(),
+  };
+
+  apiErrors.push(fullError);
+  if (apiErrors.length > MAX_STORED_ERRORS) {
+    apiErrors.shift();
+  }
+
+  errorCounts.apiRequest++;
+
+  console.error('[ErrorTracking:RAGAPI]', JSON.stringify({
+    endpoint: fullError.endpoint,
+    method: fullError.method,
+    statusCode: fullError.statusCode,
+    errorType: fullError.errorType,
+    message: fullError.message,
+    timestamp: fullError.timestamp.toISOString(),
+    requestParams: fullError.requestParams,
+  }));
+
+  sendToExternalService('rag_api_error', fullError);
+}
+
+/**
  * Get error statistics for monitoring
  */
 export function getErrorStats(): {
@@ -269,5 +298,4 @@ export default {
   categorizeHttpError,
   createTrackedFetch,
 };
-
 
