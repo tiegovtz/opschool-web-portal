@@ -10,9 +10,9 @@ import type { educationLevel } from "~/types/educationlevel.interface";
 import type { Subjects } from "~/types/subject.interface";
 import { fetchCombinedRAGContext } from "../../utils/rag";
 import apiDocs from "~/utilities/apiDocs";
-import { authHeader } from "./auth";
+import { authToken } from "./auth";
 
-let currentAuthToken = authHeader();
+let currentAuthToken = authToken();
 let subjects: Subjects[] = [];
 let topics: Topic[] = [];
 let chapters: Chapter[] = [];
