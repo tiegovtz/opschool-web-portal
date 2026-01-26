@@ -28,9 +28,9 @@
         >
           Conversation Practice
         </h1>
-        <p class="text-gray-600 text-center mb-8">
+        <!-- <p class="text-gray-600 text-center mb-8">
           Practice conversations with AI using speech-to-text and text-to-speech
-        </p>
+        </p> -->
 
       <div class="bg-white rounded-lg p-6 space-y-6">
         <!-- Voice Settings -->
@@ -77,8 +77,11 @@
           </div>
           <div class="mt-4 flex gap-4 justify-center">
             <button
-              @click="inputMode = 'speech'; startConversation()"
-              class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              @click="startVoiceConversation"
+              :class="[
+                'px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold transition-colors',
+                isSpeechSupported ? 'hover:bg-blue-700' : 'opacity-70 cursor-not-allowed'
+              ]"
             >
               Start Interactive Conversation (Voice)
             </button>
@@ -217,13 +220,6 @@
           <!-- Action Buttons -->
           <div class="flex gap-4 mt-4">
             <button
-              @click="saveConversation"
-              :disabled="conversationHistory.length === 0"
-              class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              Save Conversation
-            </button>
-            <button
               @click="resetConversation"
               class="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
             >
@@ -243,6 +239,17 @@
       class="hidden"
       :volume="1.0"
     ></audio>
+
+    <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+      <div
+        v-for="toast in toasts"
+        :key="toast.id"
+        class="toast"
+        :class="[toast.type, { flicker: toast.flicker }]"
+      >
+        {{ toast.message }}
+      </div>
+    </div>
   </div>
 </div>
 </template>
@@ -356,6 +363,8 @@ const conversationHistory = ref([]) // Still kept for display purposes
 const audioRef = ref(null)
 const currentAudioUrl = ref(null)
 const audioUrlCache = ref({})
+const toasts = ref([])
+const isSpeechSupported = ref(true)
 
 // Speech Recognition
 let recognition = null
@@ -445,7 +454,7 @@ onMounted(() => {
         isRecording.value = false
       }
     } else {
-      showStatus('error', 'Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.')
+      isSpeechSupported.value = false
     }
   }
 })
@@ -579,6 +588,15 @@ const startConversation = async () => {
       playCurrentPiece()
     }
   })
+}
+
+const startVoiceConversation = () => {
+  if (!isSpeechSupported.value) {
+    showToast('Voice Conversation is not available in this browser. Try Chrome, Edge, or Safari.', 'error')
+    return
+  }
+  inputMode.value = 'speech'
+  startConversation()
 }
 
 const playCurrentPiece = async () => {
@@ -888,60 +906,79 @@ const updatePlaybackSpeed = () => {
   }
 }
 
-const saveConversation = () => {
-  if (conversationHistory.value.length === 0) {
-    showStatus('error', 'No conversation to save')
-    return
-  }
-
-  const conversationData = {
-    date: new Date().toISOString(),
-    conversationPieces: conversationPieces.value,
-    conversationHistory: conversationHistory.value,
-    conversationState: conversationState.value, // Include compact state
-    totalPieces: conversationPieces.value.length,
-    completedPieces: conversationHistory.value.length,
-  }
-
-  const textString = `Conversation Practice Session
-Date: ${new Date(conversationData.date).toLocaleString()}
-Total Pieces: ${conversationData.totalPieces}
-Completed Pieces: ${conversationData.completedPieces}
-
---- Conversation State ---
-AI Name: ${conversationState.value.aiName || 'Unknown'}
-User Name: ${conversationState.value.userName || 'Unknown'}
-User Mood: ${conversationState.value.userMood}
-Key Facts: ${conversationState.value.keyFacts.join(', ') || 'None'}
-User Choices: ${JSON.stringify(conversationState.value.userChoices)}
-
-${'='.repeat(60)}
-
-${conversationHistory.value.map((item, index) => {
-  return `[${index + 1}]\nAI: ${item.ai}\nYou: ${item.user}\n`
-}).join('\n' + '-'.repeat(60) + '\n\n')}
-
-${'='.repeat(60)}
-`
-
-  const blob = new Blob([textString], { type: 'text/plain' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `conversation-${new Date().toISOString().split('T')[0]}-${Date.now()}.txt`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-
-  showStatus('success', 'Conversation saved!')
-}
-
 const showStatus = (type, text) => {
   statusMessage.value = { type, text }
+}
+
+const showToast = (message, type = 'info') => {
+  const existingIndex = toasts.value.findIndex((t) => t.message === message && t.type === type)
+  const shouldFlicker = existingIndex !== -1
+  if (shouldFlicker) {
+    toasts.value.splice(existingIndex, 1)
+  }
+  const pushToast = () => {
+    const toast = { id: `${Date.now()}-${Math.random()}`, message, type, flicker: shouldFlicker }
+    toasts.value.push(toast)
+    setTimeout(() => {
+      toasts.value = toasts.value.filter((t) => t.id !== toast.id)
+    }, 4000)
+  }
+  if (shouldFlicker) {
+    nextTick(pushToast)
+  } else {
+    pushToast()
+  }
 }
 </script>
 
 <style scoped>
-/* Add any custom styles here */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 60;
+}
+
+.toast {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #111827;
+  color: #fff;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  max-width: 320px;
+}
+
+.toast.info {
+  background: #1f2937;
+}
+
+.toast.error {
+  background: #b91c1c;
+}
+
+.toast.flicker {
+  animation: toast-flicker 0.26s ease;
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+  .toast {
+    max-width: none;
+  }
+}
+
+@keyframes toast-flicker {
+  0% { opacity: 0; transform: translateY(6px) scale(0.98); }
+  45% { opacity: 1; transform: translateY(0) scale(1); }
+  70% { opacity: 0.4; transform: translateY(1px) scale(0.995); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
 </style>
