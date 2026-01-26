@@ -9,3 +9,21 @@ export interface Audios extends BaseEntity {
   audioFileUrl: string;
   syllabus: string;
 }
+
+export interface AudioFileInfo {
+  id: string;
+  filename: string;
+  name: string;
+  size?: number;
+  created: string;
+  modified: string;
+  url: string;
+  downloadUrl: string;
+  type: string;
+  audioFileUrl: string;
+  chapterId?: string;
+  chapterName?: string;
+  voiceType?: string;
+  thumbnail?: string;
+  description?: string;
+}

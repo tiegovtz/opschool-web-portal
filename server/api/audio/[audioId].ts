@@ -21,6 +21,8 @@ export default defineEventHandler(async (event) => {
   const audioUrl = `${apiDocs.audio.streamAudio.replaceAll('{id}', audioId)}`;
   const range = getHeader(event, "range");
 
+  console.log(`[audio-stream] Request for audioId: ${audioId}, upstream URL: ${audioUrl}`);
+
   try {
     const upstreamRes = await fetch(audioUrl, {
       headers: {
@@ -30,9 +32,15 @@ export default defineEventHandler(async (event) => {
     });
 
     if (!upstreamRes.ok) {
+      const errorText = await upstreamRes.text().catch(() => 'Unable to read error response');
+      console.error(`[audio-stream] Upstream API error for audioId ${audioId}:`, {
+        status: upstreamRes.status,
+        statusText: upstreamRes.statusText,
+        errorBody: errorText.substring(0, 200)
+      });
       throw createError({
         statusCode: upstreamRes.status,
-        message: `Upstream API returned ${upstreamRes.status}: ${upstreamRes.statusText}`,
+        message: `Audio not found or unavailable (${upstreamRes.status}): ${upstreamRes.statusText}. Audio ID: ${audioId}`,
       });
     }
 
@@ -80,10 +88,14 @@ export default defineEventHandler(async (event) => {
 
     return stream;
   } catch (error: any) {
-    console.error("Audio streaming error:", error);
+    console.error(`[audio-stream] Error streaming audio ${audioId}:`, {
+      error: error.message || error,
+      statusCode: error.statusCode,
+      stack: error.stack
+    });
     throw createError({
       statusCode: error.statusCode || 500,
-      message: error.message || "Audio streaming failed",
+      message: error.message || `Audio streaming failed for audio ID: ${audioId}`,
     });
   }
 });

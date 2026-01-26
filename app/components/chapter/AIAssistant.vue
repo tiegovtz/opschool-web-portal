@@ -366,10 +366,8 @@ const getContextHeaders = () => {
     headers["X-Chapter-No"] = String(context.chapterNo);
   }
   
-  const currentTokenValue = token?.value;
-  if (currentTokenValue) {
-    headers["Authorization"] = `Bearer ${currentTokenValue}`;
-  }
+  // Authentication is handled via cookies automatically by $fetch for Nuxt API routes
+  // No need to send Authorization header
   
   return headers;
 };
@@ -1095,13 +1093,7 @@ const preFetchAudios = async () => {
       // Set the active fetch chapterId to track this request
       activeFetchChapterId.value = currentChapterId;
       
-      const currentTokenValue = token?.value;
-      if (!currentTokenValue) {
-        isFetchingAudio.value = false;
-        activeFetchChapterId.value = null;
-        return;
-      }
-      
+      // Authentication is handled via cookies automatically by $fetch
       // Validate and normalize chapterId - use the captured value
       if (!currentChapterId || String(currentChapterId).trim() === '') {
         console.error('[AIAssistant] Invalid chapterId in preFetchAudios:', currentChapterId);
@@ -1140,14 +1132,12 @@ const preFetchAudios = async () => {
       }
       
       // Use fetchAsyncData for caching (like chapters do) - this makes subsequent fetches instant
+      // $fetch automatically sends cookies for same-origin requests
       const cacheKey = `generated-audios-${chapterIdValue}-${voiceGender.value || 'all'}`;
       const { data: response } = await fetchAsyncData(
         cacheKey,
         () => $fetch(`/api/generated-audios?${queryParams.toString()}`, {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${currentTokenValue}`,
-          },
           timeout: 30000, // 30 second timeout to prevent hanging
         })
       );
@@ -1349,10 +1339,10 @@ const askQuestion = async (
       model = "getChapterId";
     } else {
       // Normal AI assistant
+      // $fetch automatically sends cookies for same-origin requests
       const response = await $fetch("/api/ai-assistant/ask", {
         method: "POST",
         body: { question, chapterId: props.chapterId, conversationHistory },
-        headers: { Authorization: `Bearer ${currentTokenValue}` },
         signal,
       });
       if (isDev) {
@@ -1536,15 +1526,94 @@ const handleEnglishCrashCourse = async () => {
   }
 };
 
+// Helper function to generate user-friendly error messages for audio playback
+const getAudioErrorMessage = (errorMessage, errorCode, networkState, audioSrc) => {
+  const is404 = errorMessage?.includes('404') || errorMessage?.includes('not found') || 
+                (audioSrc?.includes('/api/audio/') && (networkState === 3 || errorCode === 2));
+  const isFormatError = errorMessage?.includes('Format error') || 
+                        errorMessage?.includes('no supported source') || 
+                        errorCode === 4 || errorCode === 3;
+  const isNetworkError = networkState === 3 || errorCode === 2;
+  
+  let message = 'Unable to play audio. ';
+  
+  if (is404) {
+    message += 'The audio file was not found. It may not be available yet. Please try again later or contact support.';
+  } else if (isFormatError) {
+    message += 'The audio format is not supported or the file is corrupted. Please try again or contact support.';
+  } else if (errorMessage?.includes('Audio URL not found')) {
+    message += 'The audio file information is missing. Please try refreshing the page or contact support.';
+  } else if (isNetworkError) {
+    message += 'There was a network error loading the audio. Please check your connection and try again.';
+  } else {
+    message += `${errorMessage || 'Unknown error'}. Please try again.`;
+  }
+  
+  return message;
+};
+
+// Helper function to add error message to chat and scroll
+const addErrorMessageToChat = (message) => {
+  messages.value.push({
+    role: "assistant",
+    content: message,
+    timestamp: new Date().toLocaleTimeString(),
+  });
+  nextTick(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    }
+  });
+};
+
 // Read (audio) - plays chapter audio files
 const handleRead = async () => {
-  if (isLoading.value || !props.chapterId) return;
+  const readActionId = `read-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const readStartTime = Date.now();
+  
+  if (isDev) {
+    console.log(`[AIAssistant] [${readActionId}] ===== READ BUTTON CLICKED =====`);
+    console.log(`[AIAssistant] [${readActionId}] Timestamp: ${new Date().toISOString()}`);
+    console.log(`[AIAssistant] [${readActionId}] ChapterId: ${props.chapterId}`);
+    console.log(`[AIAssistant] [${readActionId}] ChapterName: ${props.chapterName}`);
+    console.log(`[AIAssistant] [${readActionId}] Current state:`, {
+      isLoading: isLoading.value,
+      isPlayingAudio: isPlayingAudio.value,
+      isFetchingAudio: isFetchingAudio.value,
+      propsAudiosCount: props.audios?.length || 0,
+      fetchedAudiosCount: fetchedAudios.value?.length || 0,
+      currentAudioIndex: currentAudioIndex.value
+    });
+  }
+  
+  if (isLoading.value || !props.chapterId) {
+    if (isDev) {
+      console.warn(`[AIAssistant] [${readActionId}] Read action blocked:`, {
+        isLoading: isLoading.value,
+        hasChapterId: !!props.chapterId
+      });
+    }
+    return;
+  }
   
   // If already playing, do nothing (use stopReading to pause)
-  if (isPlayingAudio.value) return;
+  if (isPlayingAudio.value) {
+    if (isDev) {
+      console.log(`[AIAssistant] [${readActionId}] Audio already playing, ignoring click`);
+    }
+    return;
+  }
   
   // Determine which audios to use: props.audios or fetchedAudios
   let audiosToUse = props.audios && props.audios.length > 0 ? props.audios : fetchedAudios.value;
+  
+  if (isDev) {
+    console.log(`[AIAssistant] [${readActionId}] Audio source determined:`, {
+      usingPropsAudios: props.audios && props.audios.length > 0,
+      usingFetchedAudios: !props.audios || props.audios.length === 0,
+      audiosToUseCount: audiosToUse?.length || 0
+    });
+  }
   
   // If no audios available, try to fetch from API
   if (!audiosToUse || audiosToUse.length === 0) {
@@ -1594,18 +1663,20 @@ const handleRead = async () => {
     });
     
     try {
-      const currentTokenValue = token?.value;
-      if (!currentTokenValue) {
-        throw new Error("Authentication required. Please sign in.");
+      const fetchStartTime = Date.now();
+      
+      if (isDev) {
+        console.log(`[AIAssistant] [${readActionId}] Starting audio fetch process`);
       }
       
       // Validate and normalize chapterId - use the captured value
+      // Authentication is handled via cookies automatically by $fetch
       const chapterIdValue = String(currentChapterId).trim();
       
       // Double-check that props.chapterId hasn't changed
       if (props.chapterId !== currentChapterId) {
         if (isDev) {
-          console.warn('[AIAssistant] ChapterId changed during handleRead setup, aborting:', {
+          console.warn(`[AIAssistant] [${readActionId}] ChapterId changed during handleRead setup, aborting:`, {
             original: currentChapterId,
             current: props.chapterId
           });
@@ -1625,7 +1696,7 @@ const handleRead = async () => {
       }
       
       if (isDev) {
-        console.log('[AIAssistant] Fetching audios for chapterId (handleRead):', chapterIdValue);
+        console.log(`[AIAssistant] [${readActionId}] Fetching audios for chapterId: ${chapterIdValue}`);
       }
       
       // Build query parameters
@@ -1638,18 +1709,39 @@ const handleRead = async () => {
         queryParams.append("voiceType", voiceGender.value);
       }
       
+      if (isDev) {
+        console.log(`[AIAssistant] [${readActionId}] API request details:`, {
+          endpoint: `/api/generated-audios`,
+          queryParams: queryParams.toString(),
+          voiceType: voiceGender.value || 'all',
+          cacheKey: `generated-audios-${chapterIdValue}-${voiceGender.value || 'all'}`
+        });
+      }
+      
       // Use fetchAsyncData for caching (like chapters do) - this makes subsequent fetches instant
+      // $fetch automatically sends cookies for same-origin requests
       const cacheKey = `generated-audios-${chapterIdValue}-${voiceGender.value || 'all'}`;
+      const apiCallStartTime = Date.now();
+      
       const { data: response } = await fetchAsyncData(
         cacheKey,
         () => $fetch(`/api/generated-audios?${queryParams.toString()}`, {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${currentTokenValue}`,
-          },
           timeout: 30000, // 30 second timeout to prevent hanging
         })
       );
+      
+      const apiCallDuration = Date.now() - apiCallStartTime;
+      
+      if (isDev) {
+        console.log(`[AIAssistant] [${readActionId}] API call completed:`, {
+          duration: `${apiCallDuration}ms`,
+          hasResponse: !!response.value,
+          hasAudios: !!response.value?.audios,
+          audiosCount: response.value?.audios?.length || 0,
+          hasError: !!response.value?.error
+        });
+      }
       
       // Final check: make sure chapterId hasn't changed after fetch
       if (props.chapterId !== chapterIdValue || activeFetchChapterId.value !== chapterIdValue) {
@@ -1679,8 +1771,29 @@ const handleRead = async () => {
         audiosToUse = fetchedAudios.value;
         // Reset audio index when new audios are fetched
         currentAudioIndex.value = 0;
+        
+        const fetchDuration = Date.now() - fetchStartTime;
+        
+        if (isDev) {
+          console.log(`[AIAssistant] [${readActionId}] Audio fetch successful:`, {
+            duration: `${fetchDuration}ms`,
+            audiosReceived: response.value.audios.length,
+            audioIds: response.value.audios.slice(0, 3).map((a) => a.id || a._id || 'no-id')
+          });
+        }
       } else {
         // No audios found
+        const fetchDuration = Date.now() - fetchStartTime;
+        
+        if (isDev) {
+          console.warn(`[AIAssistant] [${readActionId}] No audios found:`, {
+            duration: `${fetchDuration}ms`,
+            hasResponse: !!response.value,
+            responseKeys: response.value ? Object.keys(response.value) : [],
+            error: response.value?.error
+          });
+        }
+        
         isFetchingAudio.value = false;
         activeFetchChapterId.value = null;
         messages.value.push({
@@ -1695,7 +1808,19 @@ const handleRead = async () => {
         return;
       }
     } catch (error) {
-      console.error('Error fetching audio:', error);
+      const fetchDuration = Date.now() - fetchStartTime;
+      const errorDetails = {
+        message: error?.message || 'Unknown error',
+        data: error?.data?.message,
+        status: error?.status,
+        statusCode: error?.statusCode,
+        duration: `${fetchDuration}ms`
+      };
+      
+      if (isDev) {
+        console.error(`[AIAssistant] [${readActionId}] Error fetching audio:`, errorDetails);
+      }
+      
       isFetchingAudio.value = false;
       activeFetchChapterId.value = null;
       messages.value.push({
@@ -1720,64 +1845,145 @@ const handleRead = async () => {
   // Re-check audios after potential fetch
   audiosToUse = props.audios && props.audios.length > 0 ? props.audios : fetchedAudios.value;
   
+  if (isDev) {
+    console.log(`[AIAssistant] [${readActionId}] Ready to play audio:`, {
+      totalAudios: audiosToUse?.length || 0,
+      currentIndex: currentAudioIndex.value,
+      selectedAudio: audiosToUse?.[currentAudioIndex.value] ? {
+        id: audiosToUse[currentAudioIndex.value].id || audiosToUse[currentAudioIndex.value]._id,
+        name: audiosToUse[currentAudioIndex.value].name,
+        url: audiosToUse[currentAudioIndex.value].audioFileUrl || audiosToUse[currentAudioIndex.value].url
+      } : null
+    });
+  }
+  
   // Now play the audio
+  // Declare audio, audioId, and finalAudioUrl before try block so they're accessible in catch block
+  const audio = audiosToUse[currentAudioIndex.value];
+  let audioId;
+  let finalAudioUrl;
+  
   try {
-    const audio = audiosToUse[currentAudioIndex.value];
     if (!audio) {
+      if (isDev) {
+        console.error(`[AIAssistant] [${readActionId}] Audio not found at index ${currentAudioIndex.value}`);
+      }
       throw new Error("Audio not found at current index");
     }
     
     // Extract audio ID - handle both formats from props and API
-    const audioId = audio._id || audio.id;
+    audioId = audio._id || audio.id;
     
     if (!audioId) {
+      if (isDev) {
+        console.error(`[AIAssistant] [${readActionId}] Audio ID not found in audio object:`, {
+          audioKeys: Object.keys(audio),
+          audioPreview: JSON.stringify(audio).substring(0, 200)
+        });
+      }
       throw new Error("Audio ID not found");
+    }
+    
+    if (isDev) {
+      console.log(`[AIAssistant] [${readActionId}] Starting audio playback:`, {
+        audioId: audioId,
+        audioName: audio.name || audio.title,
+        audioIndex: currentAudioIndex.value,
+        totalAudios: audiosToUse.length
+      });
     }
     
     isPlayingAudio.value = true;
     
     // Create audio element if it doesn't exist
     if (!audioElement.value) {
+      if (isDev) {
+        console.log(`[AIAssistant] [${readActionId}] Creating new Audio element`);
+      }
+      
       audioElement.value = new Audio();
       
       // Handle audio ended - optionally play next audio
       audioElement.value.addEventListener('ended', () => {
+        if (isDev) {
+          console.log(`[AIAssistant] [${readActionId}] Audio playback ended`);
+        }
         isPlayingAudio.value = false;
         // If there are more audios, play the next one
         if (currentAudioIndex.value < audiosToUse.length - 1) {
           currentAudioIndex.value++;
+          if (isDev) {
+            console.log(`[AIAssistant] [${readActionId}] Auto-playing next audio (index: ${currentAudioIndex.value})`);
+          }
           handleRead();
         } else {
           // Reset to first audio for next play
           currentAudioIndex.value = 0;
+          if (isDev) {
+            console.log(`[AIAssistant] [${readActionId}] All audios played, reset to index 0`);
+          }
         }
       });
       
       // Handle audio errors
       audioElement.value.addEventListener('error', (e) => {
-        console.error('Audio playback error:', e);
+        const target = e.target;
+        const errorCode = target?.error?.code;
+        const errorMessage = target?.error?.message || 'Unknown audio error';
+        const networkState = target?.networkState;
+        const readyState = target?.readyState;
+        const audioSrc = target?.src;
+        
+        const errorDetails = {
+          error: e,
+          code: errorCode,
+          message: errorMessage,
+          networkState: networkState,
+          readyState: readyState,
+          audioSrc: audioSrc
+        };
+        
+        if (isDev) {
+          console.error(`[AIAssistant] [${readActionId}] Audio element error event:`, errorDetails);
+        }
+        
         isPlayingAudio.value = false;
-        messages.value.push({
-          role: "assistant",
-          content: `Sorry, there was an error playing the audio. Please try again later.`,
-          timestamp: new Date().toLocaleTimeString(),
-        });
-        nextTick(() => {
-          if (messagesContainer.value)
-            messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-        });
+        const userMessage = getAudioErrorMessage(errorMessage, errorCode, networkState, audioSrc);
+        addErrorMessageToChat(userMessage);
       });
     }
     
     // Set audio source and preload for faster playback
-    // Use audioFileUrl or url from API response if it's a full URL, otherwise use /api/audio endpoint
-    const audioUrl = audio.audioFileUrl || audio.url;
-    let finalAudioUrl;
+    // Check all possible URL fields (filepath is primary from API, then url, audioFileUrl, audio_url)
+    const audioUrl = audio.filepath || audio.url || audio.audioFileUrl || audio.audio_url;
+    
+    if (isDev) {
+      console.log(`[AIAssistant] [${readActionId}] Audio URL resolution:`, {
+        audioId: audioId,
+        hasFilepath: !!audio.filepath,
+        hasUrl: !!audio.url,
+        hasAudioFileUrl: !!audio.audioFileUrl,
+        hasAudioUrl: !!audio.audio_url,
+        resolvedUrl: audioUrl ? `${audioUrl.substring(0, 100)}...` : 'NO URL FOUND',
+        audioKeys: Object.keys(audio)
+      });
+    }
+    
+    if (!audioUrl) {
+      throw new Error(`Audio URL not found for audio ID: ${audioId}. Audio object missing filepath, url, audioFileUrl, and audio_url fields.`);
+    }
+    
     if (audioUrl && (audioUrl.startsWith('http://') || audioUrl.startsWith('https://'))) {
       finalAudioUrl = audioUrl;
+      if (isDev) {
+        console.log(`[AIAssistant] [${readActionId}] Using direct audio URL: ${finalAudioUrl}`);
+      }
     } else {
       // Use the /api/audio endpoint which handles audio streaming
       finalAudioUrl = `/api/audio/${audioId}`;
+      if (isDev) {
+        console.log(`[AIAssistant] [${readActionId}] Using API audio endpoint: ${finalAudioUrl} (original URL was: ${audioUrl})`);
+      }
     }
     
     // Set source and configure for streaming
@@ -1787,32 +1993,102 @@ const handleRead = async () => {
     // 'auto' preloads more but works well with Range requests for streaming
     audioElement.value.preload = 'auto';
     
+    if (isDev) {
+      console.log(`[AIAssistant] [${readActionId}] Audio element configured:`, {
+        src: finalAudioUrl,
+        preload: audioElement.value.preload,
+        readyState: audioElement.value.readyState
+      });
+    }
+    
     // For streaming, we can start playing immediately - the browser will handle Range requests
     // The audio will start playing as soon as enough data is buffered
+    const loadStartTime = Date.now();
     try {
       // Load metadata first (this is fast and enables seeking)
       await audioElement.value.load();
+      const loadDuration = Date.now() - loadStartTime;
+      
+      if (isDev) {
+        console.log(`[AIAssistant] [${readActionId}] Audio load completed:`, {
+          duration: `${loadDuration}ms`,
+          readyState: audioElement.value.readyState,
+          networkState: audioElement.value.networkState
+        });
+      }
+      
       // Then play - streaming will start automatically
+      const playStartTime = Date.now();
       await audioElement.value.play();
+      const playDuration = Date.now() - playStartTime;
+      const totalDuration = Date.now() - readStartTime;
+      
+      if (isDev) {
+        console.log(`[AIAssistant] [${readActionId}] ===== AUDIO PLAYBACK STARTED =====`);
+        console.log(`[AIAssistant] [${readActionId}] Playback details:`, {
+          audioId: audioId,
+          audioUrl: finalAudioUrl,
+          loadDuration: `${loadDuration}ms`,
+          playDuration: `${playDuration}ms`,
+          totalDuration: `${totalDuration}ms`,
+          currentTime: audioElement.value.currentTime,
+          duration: audioElement.value.duration || 'unknown',
+          readyState: audioElement.value.readyState,
+          networkState: audioElement.value.networkState
+        });
+      }
     } catch (playError) {
+      const playDuration = Date.now() - loadStartTime;
+      const totalDuration = Date.now() - readStartTime;
+      
       // If play fails, it might be due to browser autoplay policy
       // User interaction is required for some browsers
-      console.warn('Audio play failed, may need user interaction:', playError);
+      if (isDev) {
+        console.error(`[AIAssistant] [${readActionId}] Audio play failed:`, {
+          error: playError,
+          playDuration: `${playDuration}ms`,
+          totalDuration: `${totalDuration}ms`,
+          audioUrl: finalAudioUrl,
+          readyState: audioElement.value.readyState,
+          networkState: audioElement.value.networkState,
+          note: 'May need user interaction due to browser autoplay policy'
+        });
+      }
       throw playError;
     }
     
   } catch (error) {
-    console.error('Error playing audio:', error);
+    const totalDuration = Date.now() - readStartTime;
+    const errorMessage = error?.message || 'Unknown error';
+    const networkState = audioElement.value?.networkState;
+    const errorCode = audioElement.value?.error?.code;
+    
+    const errorDetails = {
+      message: errorMessage,
+      audioId: audioId,
+      audioUrl: finalAudioUrl,
+      totalDuration: `${totalDuration}ms`,
+      readyState: audioElement.value?.readyState,
+      networkState: networkState,
+      errorCode: errorCode
+    };
+    
+    if (isDev) {
+      console.error(`[AIAssistant] [${readActionId}] ===== AUDIO PLAYBACK ERROR =====`);
+      console.error(`[AIAssistant] [${readActionId}] Error details:`, errorDetails);
+      console.error(`[AIAssistant] [${readActionId}] Audio object:`, {
+        id: audio?.id || audio?._id,
+        name: audio?.name || audio?.title,
+        filepath: audio?.filepath,
+        url: audio?.url,
+        audioFileUrl: audio?.audioFileUrl,
+        audio_url: audio?.audio_url
+      });
+    }
+    
     isPlayingAudio.value = false;
-    messages.value.push({
-      role: "assistant",
-      content: `Unable to play audio: ${error.message || 'Unknown error'}. Please try again.`,
-      timestamp: new Date().toLocaleTimeString(),
-    });
-    nextTick(() => {
-      if (messagesContainer.value)
-        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-    });
+    const userMessage = getAudioErrorMessage(errorMessage, errorCode, networkState, finalAudioUrl);
+    addErrorMessageToChat(userMessage);
   }
 };
 
