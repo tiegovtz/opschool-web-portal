@@ -25,12 +25,12 @@ async function getAvailableSubjects(): Promise<{ subjects: string[]; subjectLeve
         const formNum = match[2];
         const level = `Form ${formNum}`;
         
-        subjects.add(subject);
-        if (!subjectLevels[subject]) {
-          subjectLevels[subject] = [];
+        subjects.add(subject as string);
+        if (!subjectLevels[subject as string]) {
+          subjectLevels[subject as string] = [];
         }
-        if (!subjectLevels[subject].includes(level)) {
-          subjectLevels[subject].push(level);
+        if (!subjectLevels[subject as string]?.includes(level)) {
+          subjectLevels[subject as string]?.push(level);
         }
       }
     });
@@ -151,7 +151,7 @@ function formatSyllabusForAgent(syllabus: Syllabus): string {
 
 function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) return 0;
-  const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);
+  const dot = a.reduce((sum, val, i) => sum + val * (b[i] ?? 0), 0);
   const magA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
   const magB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
   if (magA === 0 || magB === 0) return 0;
@@ -308,7 +308,7 @@ export const studentTools = {
         
         if (filtered.length === 0) {
           const chapterNumMatch = chapter.match(/chapter\s+(one|two|three|four|five|six|seven|eight|nine|ten|\d+)/i);
-          if (chapterNumMatch) {
+          if (chapterNumMatch && chapterNumMatch[1]) {
             const numberStr = chapterNumMatch[1].toLowerCase();
             const wordToDigit: Record<string, string> = {
               'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
@@ -370,8 +370,8 @@ export const studentTools = {
               if (imgTopic === queryTopic) return true;
               
               if (isSingleWord) {
-                if (imgTopic.includes(queryWords[0])) return true;
-                if (imgCaption.includes(queryWords[0])) return true;
+                if (imgTopic?.includes(queryWords[0] as string)) return true;
+                if (imgCaption.includes(queryWords[0] as string)) return true;
                 return false;
               }
               

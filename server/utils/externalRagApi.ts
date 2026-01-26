@@ -11,6 +11,7 @@ import { trackFiguresApiError, categorizeHttpError } from './errorTracking';
 
 const API_BASE_URL = process.env.VITE_API_BASE_URL || "https://apitie.ekima.africa/v1";
 
+
 export interface ExternalRAGResult {
   content: string;
   similarity: number;
@@ -41,7 +42,8 @@ function getAuthToken(token?: string): string {
   return '';
 }
 
-async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?: string): Promise<T | null> {
+async function 
+apiRequest<T>(endpoint: string, options: RequestInit = {}, token?: string): Promise<T | null> {
   const method = (options.method || 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   
   try {
