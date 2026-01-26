@@ -4,8 +4,7 @@ import type { Audios } from "~/types/audio.interface";
 import type { AudioFileInfo } from "~/types/audio.interface";
 import apiDocs from "~/utilities/apiDocs";
 
-// Get base URL - use process.env on server side, fallback to apiDocs
-// NO FALLBACKS - use exactly what's in the environment
+// Get base URL - use process.env on server side, fallback to apiDocs if not set
 const getBaseURL = () => {
   // Use process.env first (server-side)
   const envUrl = process.env.VITE_API_BASE_URL;
@@ -289,7 +288,6 @@ export default defineEventHandler(async (event) => {
       // Extract audios from this specific chapter
       allAudios = extractAudioFromChapters([chapterData]);
     } catch (error) {
-      console.error(`[generated-audios] Failed to fetch chapter ${chapterId}:`, error);
       return {
         error: error instanceof Error ? error.message : "Failed to fetch chapter",
         audios: [],
@@ -329,7 +327,6 @@ export default defineEventHandler(async (event) => {
       count: transformedAudios.length,
     };
   } catch (error: any) {
-    console.error(`[generated-audios] Request error:`, error);
     return {
       error: error.message || "Failed to fetch audio files",
       audios: [],
