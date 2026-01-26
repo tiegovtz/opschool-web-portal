@@ -236,6 +236,7 @@ const props = defineProps({
   level: { type: String, default: "" },
   topic: { type: String, default: "" },
   chapterNo: { type: Number, default: null },
+  audios: { type: Array, default: () => [] },
 });
 
 // state refs
@@ -746,6 +747,8 @@ const isSummarizing = ref(false);
 const isEnglishCrashCourse = ref(false);
 const isPlayingAudio = ref(false);
 const currentAudio = ref(null);
+const audioElement = ref(null);
+const currentAudioIndex = ref(0);
 
 // Voice preference state
 const voiceGender = ref("female");
@@ -1069,6 +1072,7 @@ watch(
     // If there's an old chapter, store it in previousChapterId (so the name matches)
     if (oldChapterId && newChapterId !== oldChapterId) {
       stopReading();
+      currentAudioIndex.value = 0; // Reset audio index for new chapter
       messages.value = [];
       chat.messages = []; // Clear Chat component messages too
       previousChapterId.value = oldChapterId; // store old value
@@ -1375,24 +1379,97 @@ const handleEnglishCrashCourse = async () => {
   }
 };
 
-// Read (audio) placeholder
+// Read (audio) - plays chapter audio files
 const handleRead = async () => {
-  if (isLoading.value || isPlayingAudio.value || !props.chapterId) return;
-  messages.value.push({
-    role: "assistant",
-    content: `Text-to-speech feature is coming soon! The audio playback functionality will be available once the audio files are added. You can still use the voice settings to select your preferred voice (${
-      voiceGender.value === "male" ? "male" : "female"
-    }) for when the feature is ready.`,
-    timestamp: new Date().toLocaleTimeString(),
-  });
-  nextTick(() => {
-    if (messagesContainer.value)
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-  });
+  if (isLoading.value || !props.chapterId) return;
+  
+  // If already playing, do nothing (use stopReading to pause)
+  if (isPlayingAudio.value) return;
+  
+  // Check if there are audios available for this chapter
+  if (!props.audios || props.audios.length === 0) {
+    messages.value.push({
+      role: "assistant",
+      content: `No audio is available for this topic yet. The audio files will be added soon! You can still read the content above or ask me questions about the topic.`,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+    nextTick(() => {
+      if (messagesContainer.value)
+        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    });
+    return;
+  }
+  
+  try {
+    const audio = props.audios[currentAudioIndex.value];
+    const audioId = audio._id || audio.id;
+    
+    if (!audioId) {
+      throw new Error("Audio ID not found");
+    }
+    
+    isPlayingAudio.value = true;
+    
+    // Create audio element if it doesn't exist
+    if (!audioElement.value) {
+      audioElement.value = new Audio();
+      
+      // Handle audio ended - optionally play next audio
+      audioElement.value.addEventListener('ended', () => {
+        isPlayingAudio.value = false;
+        // If there are more audios, play the next one
+        if (currentAudioIndex.value < props.audios.length - 1) {
+          currentAudioIndex.value++;
+          handleRead();
+        } else {
+          // Reset to first audio for next play
+          currentAudioIndex.value = 0;
+        }
+      });
+      
+      // Handle audio errors
+      audioElement.value.addEventListener('error', (e) => {
+        console.error('Audio playback error:', e);
+        isPlayingAudio.value = false;
+        messages.value.push({
+          role: "assistant",
+          content: `Sorry, there was an error playing the audio. Please try again later.`,
+          timestamp: new Date().toLocaleTimeString(),
+        });
+        nextTick(() => {
+          if (messagesContainer.value)
+            messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        });
+      });
+    }
+    
+    // Set audio source and play
+    audioElement.value.src = `/api/audio/${audioId}`;
+    await audioElement.value.play();
+    
+  } catch (error) {
+    console.error('Error playing audio:', error);
+    isPlayingAudio.value = false;
+    messages.value.push({
+      role: "assistant",
+      content: `Unable to play audio: ${error.message || 'Unknown error'}. Please try again.`,
+      timestamp: new Date().toLocaleTimeString(),
+    });
+    nextTick(() => {
+      if (messagesContainer.value)
+        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    });
+  }
 };
 
 const stopReading = () => {
   try {
+    // Stop the audio element
+    if (audioElement.value) {
+      audioElement.value.pause();
+      audioElement.value.currentTime = 0;
+    }
+    // Also handle legacy currentAudio if it exists
     if (currentAudio.value) {
       currentAudio.value.pause();
       currentAudio.value.currentTime = 0;
@@ -1411,6 +1488,12 @@ const stopReading = () => {
 // cleanup
 onUnmounted(() => {
   stopReading();
+  // Clean up audio element
+  if (audioElement.value) {
+    audioElement.value.src = '';
+    audioElement.value = null;
+  }
+  currentAudioIndex.value = 0;
   showSettings.value = false;
   if (activeAbortController) {
     try {
