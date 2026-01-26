@@ -367,14 +367,6 @@ export const studentTools = {
 
   // getSubjectTopics removed: topic endpoint coverage is limited; rely on RAG + model knowledge instead.
 
-  convertFahrenheitToCelsius: tool({
-    description: "Convert a temperature in Fahrenheit to Celsius",
-    inputSchema: z.object({ temperature: z.number() }),
-    execute: async ({ temperature }) => ({
-      celsius: Math.round((temperature - 32) * (5 / 9)),
-    }),
-  }),
-
   math: tool({
     description: "Evaluate basic math expressions",
     inputSchema: z.object({ expression: z.string() }),
@@ -386,15 +378,6 @@ export const studentTools = {
         return { result: "Invalid expression" };
       }
     },
-  }),
-
-  weather: tool({
-    description: "Get the weather in a location (Fahrenheit)",
-    inputSchema: z.object({ location: z.string() }),
-    execute: async ({ location }) => ({
-      location,
-      temperature: Math.round(Math.random() * (90 - 32) + 32),
-    }),
   }),
 
   searchTextbooks: tool({

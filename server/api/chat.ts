@@ -371,10 +371,14 @@ function extractRequestContext(event: any, body: any) {
   return { chapterName, subject, level, topic, chapterNo, authToken };
 }
 
-function shouldUseRag(question: string): boolean {
+function shouldUseRag(
+  question: string,
+  context?: { chapterName?: string; subject?: string; level?: string; topic?: string }
+): boolean {
   if (!question) return false;
   const text = question.toLowerCase().trim();
-  if (text.length < 6) return false;
+  const cleanText = text.replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  if (cleanText.length < 2) return false;
 
   const nonRagPhrases = [
     "hi",
@@ -393,12 +397,18 @@ function shouldUseRag(question: string): boolean {
     "nice",
   ];
 
-  if (nonRagPhrases.some((phrase) => text === phrase || text.startsWith(`${phrase} `))) {
+  if (nonRagPhrases.some((phrase) => cleanText === phrase || cleanText.startsWith(`${phrase} `))) {
+    return false;
+  }
+
+  const mathLike = text.replace(/[=?]/g, "").replace(/\?/g, "").trim();
+  if (mathLike && /^[0-9+\-*/^().\s]+$/.test(mathLike)) {
     return false;
   }
 
   const ragSignals = [
     "what is",
+    "what are",
     "define",
     "explain",
     "describe",
@@ -407,6 +417,7 @@ function shouldUseRag(question: string): boolean {
     "list",
     "topic",
     "topics",
+    "tell me about",
     "give examples",
     "formula",
     "equation",
@@ -419,7 +430,22 @@ function shouldUseRag(question: string): boolean {
     "law of",
   ];
 
-  return ragSignals.some((signal) => text.includes(signal));
+  const hasRagSignal = ragSignals.some((signal) => text.includes(signal));
+  if (hasRagSignal) return true;
+
+  const tokens = cleanText.split(/\s+/).filter(Boolean);
+  const singleTopic = tokens.length === 1 && tokens[0].length >= 5;
+  const hasQuestionMark = question.includes("?");
+  const hasLongToken = tokens.some((token) => token.length >= 6);
+  const multiWordTopic = tokens.length >= 3 && hasLongToken;
+  const hasContext = Boolean(
+    context?.chapterName?.trim() ||
+      context?.subject?.trim() ||
+      context?.level?.trim() ||
+      context?.topic?.trim()
+  );
+
+  return singleTopic || hasQuestionMark || multiWordTopic || hasContext;
 }
 
 function buildFinalPrompt(basePrompt: string, chapterName: string | undefined): string {
@@ -473,7 +499,14 @@ export default defineEventHandler(async (event) => {
   const openai = getOpenAIClient(apiKey);
 
   const lastUserMessage = [...coreMessages].reverse().find((msg) => msg.role === "user");
-  const allowRag = lastUserMessage ? shouldUseRag(lastUserMessage.content) : false;
+  const allowRag = lastUserMessage
+    ? shouldUseRag(lastUserMessage.content, {
+        chapterName: validChapterName,
+        subject,
+        level,
+        topic,
+      })
+    : false;
   const { searchTextbooks: _searchTextbooks, ...nonRagTools } = studentTools;
 
   const modelInput = {
