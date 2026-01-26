@@ -268,6 +268,8 @@ const fetchData = async (params?: any) => {
       ]);
     } else {
       data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+      // remove some audio
+      data.value = removeDataFromArrayOfJson(data.value,'audioType','NARRATION')
     }
 
     status.value = fetchStatus.value;
