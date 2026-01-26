@@ -5,7 +5,7 @@ import {
   stepCountIs,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { studentTools, setAuthTokenForTools } from "./utils/tools";
+import { studentTools, setAuthTokenForTools, initizeData } from "./utils/tools";
 
 type CoreMessage = {
   role: "user" | "assistant" | "system";
@@ -396,26 +396,28 @@ export default defineEventHandler(async (event) => {
     throw new Error("Missing OpenAI API key");
   }
 
+  // initilaize data
   const { chapterName, subject, level, topic, chapterNo, authToken } = extractRequestContext(event, body);
   
   const validChapterName = chapterName && chapterName.trim() && chapterName !== "this competence"
-    ? chapterName.trim() 
-    : undefined;
+  ? chapterName.trim() 
+  : undefined;
   
   const context = validChapterName
     ? { subject, level, topic, chapterNo }
     : undefined;
 
-  const coreMessages = convertMessagesToCore(messages);
-
-  if (!Array.isArray(coreMessages)) {
-    throw new Error("Failed to convert messages to CoreMessage format");
-  }
-
-  const basePrompt = getCachedSystemPrompt(validChapterName, context);
-  const systemPrompt = buildFinalPrompt(basePrompt, chapterName);
-
-  setAuthTokenForTools(authToken);
+    const coreMessages = convertMessagesToCore(messages);
+    
+    if (!Array.isArray(coreMessages)) {
+      throw new Error("Failed to convert messages to CoreMessage format");
+    }
+    
+    const basePrompt = getCachedSystemPrompt(validChapterName, context);
+    const systemPrompt = buildFinalPrompt(basePrompt, chapterName);
+    
+    setAuthTokenForTools(authToken);
+    await initizeData()
 
   const openai = getOpenAIClient(apiKey);
 

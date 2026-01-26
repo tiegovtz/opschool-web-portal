@@ -7,7 +7,7 @@ interface AuthState {
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
-    token: ''
+    token: '' as string
   }),
 
   getters: {

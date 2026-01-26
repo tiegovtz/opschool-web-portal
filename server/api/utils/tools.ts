@@ -33,14 +33,14 @@ const getSubjectsList = async () => {
 // pull chapters list from API
 const getChapterList = async () => {
   try {
-    const c = await $fetch<Chapter[]>(apiDocs.chapters.getChapters,{
+    const c = await $fetch<Chapter[]>(apiDocs.chapters.getChapters, {
       headers: {
         Authorization: `Bearer ${currentAuthToken}`,
-      }
+      },
     });
-    
+
     chapters = c;
-    } catch (error) {
+  } catch (error) {
     console.error("[Error fetching chapters for AI]:", error);
   }
 };
@@ -49,9 +49,9 @@ const getChapterList = async () => {
 const getTopicsList = async () => {
   try {
     const t = await $fetch<Topic[]>(apiDocs.topics.filterTopics);
-    
+
     topics = t;
-   } catch (error) {
+  } catch (error) {
     console.error("[Error fetching Topics for AI]:", error);
   }
 };
@@ -60,9 +60,9 @@ const getTopicsList = async () => {
 const getClassList = async () => {
   try {
     const l = await $fetch<ClassLevel[]>(apiDocs.levels.getLevels);
-    
+
     classLevels = l;
-    } catch (error) {
+  } catch (error) {
     console.error("[Error fetching Level for AI]:", error);
   }
 };
@@ -70,8 +70,10 @@ const getClassList = async () => {
 // pull Education Level list from API
 const getEducationList = async () => {
   try {
-    const ed = await $fetch<educationLevel[]>(apiDocs.educationLevel.getEducationLevels);
-    
+    const ed = await $fetch<educationLevel[]>(
+      apiDocs.educationLevel.getEducationLevels,
+    );
+
     educationLevels = ed;
   } catch (error) {
     console.error("[Error fetching education Level for AI]:", error);
@@ -83,10 +85,20 @@ getSubjectsList();
 getTopicsList();
 getClassList();
 getEducationList();
-getChapterList();
 
 export function setAuthTokenForTools(token: string | undefined): void {
   currentAuthToken = token as string;
+}
+
+export async function initizeData() {
+  await Promise.allSettled([
+    getSubjectsList(),
+    getTopicsList(),
+    getClassList(),
+    getEducationList(),
+    getChapterList(),
+  ]);
+  formatAvailableSubjects();
 }
 
 async function getAvailableSubjects(): Promise<{
@@ -134,17 +146,23 @@ async function getAvailableSubjects(): Promise<{
   }
 }
 
-async function formatAvailableSubjects(): Promise<string> {
+function formatAvailableSubjects(): string {
   const formatted = subjects
     .map((subject) => {
-      const levels = topics.filter((t)=>t.subject ===subject.name).map((t)=>t.level) || [];
-      return `${subject} (${levels.join(", ")})`;
+      let levels =
+        topics.filter((t) => (t.subject as any)?.name === subject.name).map((t) => (t.level as any )?.name|| t.level ) ||
+        [];
+
+      // clear dublicate from  levels
+      levels = Array.from(new Set(levels));
+
+      return `${subject.name} (${levels.join(", ")})`;
     })
     .join(", ");
-  return formatted || subjects.map(s=>s.name).join(", ");
+
+  return formatted || subjects.map((s) => s.name).join(", ");
 }
 
-formatAvailableSubjects()
 async function readSyllabusFromFile(
   subject: string,
   level: string,
@@ -580,15 +598,16 @@ export const studentTools = {
     inputSchema: z.object({
       subject: z
         .string()
-        .describe(`The subject name (e.g.,${subjects.map(s=>s.name).join(", ")})`),
+        .describe(
+          `The subject name (e.g.,${subjects.map((s) => s.name).join(", ")})`,
+        ),
       level: z
         .string()
-        .describe(`The education level (e.g.${formatAvailableSubjects()},)`),
+        .describe(`The education level (e.g.${educationLevels.map((edl) => edl.name).join(", ")},)`),
     }),
     execute: async ({ subject, level }) => {
       try {
         const syllabus = await readSyllabusFromFile(subject, level);
-
         if (!syllabus) {
           const availableSubjects = await formatAvailableSubjects();
           return {
