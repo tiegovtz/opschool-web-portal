@@ -2,6 +2,7 @@
 import { ref, watch, nextTick, onUnmounted, onMounted, computed } from "vue";
 import { Chat } from "@ai-sdk/vue";
 import apiDocs from "~/utilities/apiDocs";
+import { fetchAsyncData } from "~/composables/useAsyncFetch";
 
 // Development mode flag for conditional logging
 const isDev = import.meta.dev;
@@ -246,6 +247,7 @@ const isLoading = ref(false);
 const messages = ref([]);
 const messagesContainer = ref(null);
 const previousChapterId = ref(null); // will store the previous ID (old value)
+const activeFetchChapterId = ref(null); // Track which chapterId we're currently fetching for
 const shouldAutoScroll = ref(true); // Re-enabled for Subject AI Teacher
 const bottomOffset = ref(24); // Dynamic bottom offset in pixels (default: 24px near bottom)
 const footerObserver = ref(null); // Footer intersection observer
@@ -749,6 +751,8 @@ const isPlayingAudio = ref(false);
 const currentAudio = ref(null);
 const audioElement = ref(null);
 const currentAudioIndex = ref(0);
+const fetchedAudios = ref([]);
+const isFetchingAudio = ref(false);
 
 // Voice preference state
 const voiceGender = ref("female");
@@ -771,6 +775,11 @@ const saveVoicePreference = (gender) => {
   voiceGender.value = gender;
   if (typeof window !== "undefined") {
     localStorage.setItem("tie-teacher-voice", gender);
+  }
+  // Re-fetch audios with new voice preference if we already have fetched audios
+  if (fetchedAudios.value.length > 0 && props.chapterId) {
+    fetchedAudios.value = []; // Clear old audios
+    preFetchAudios(); // Fetch with new voice preference
   }
 };
 
@@ -904,6 +913,11 @@ onMounted(() => {
   
   loadVoicePreference();
   
+  // Pre-fetch audios on mount if chapterId is available
+  if (props.chapterId) {
+    preFetchAudios();
+  }
+  
   // Setup footer observer for better detection
   setupFooterObserver();
   
@@ -1011,6 +1025,8 @@ const toggleAssistant = () => {
   if (isOpen.value) {
     shouldAutoScroll.value = true;
     nextTick(() => scrollToBottom(false));
+    // Pre-fetch audios when assistant opens (if not already fetched)
+    preFetchAudios();
   }
 };
 
@@ -1065,20 +1081,161 @@ const handleFormSubmit = async (e) => {
   // This ensures the typing indicator stays visible during streaming
 };
 
+// Pre-fetch audios for the current chapter (called in background)
+// Use useAsyncData for caching (like chapters do) to make subsequent fetches instant
+const preFetchAudios = async () => {
+  // Capture chapterId at the start to prevent race conditions
+  const currentChapterId = props.chapterId;
+  
+  // Only fetch if we don't have props.audios and haven't fetched yet
+  if ((!props.audios || props.audios.length === 0) && fetchedAudios.value.length === 0 && !isFetchingAudio.value && currentChapterId) {
+    try {
+      isFetchingAudio.value = true;
+      
+      // Set the active fetch chapterId to track this request
+      activeFetchChapterId.value = currentChapterId;
+      
+      const currentTokenValue = token?.value;
+      if (!currentTokenValue) {
+        isFetchingAudio.value = false;
+        activeFetchChapterId.value = null;
+        return;
+      }
+      
+      // Validate and normalize chapterId - use the captured value
+      if (!currentChapterId || String(currentChapterId).trim() === '') {
+        console.error('[AIAssistant] Invalid chapterId in preFetchAudios:', currentChapterId);
+        isFetchingAudio.value = false;
+        activeFetchChapterId.value = null;
+        return;
+      }
+      
+      const chapterIdValue = String(currentChapterId).trim();
+      
+      // Double-check that props.chapterId hasn't changed while we were setting up
+      if (props.chapterId !== currentChapterId) {
+        if (isDev) {
+          console.warn('[AIAssistant] ChapterId changed during preFetch setup, aborting:', { 
+            original: currentChapterId, 
+            current: props.chapterId 
+          });
+        }
+        isFetchingAudio.value = false;
+        activeFetchChapterId.value = null;
+        return;
+      }
+      
+      if (isDev) {
+        console.log('[AIAssistant] Pre-fetching audios for chapterId:', chapterIdValue);
+      }
+      
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        chapterId: chapterIdValue,
+      });
+      
+      // Add voiceType filter if user has a preference
+      if (voiceGender.value && (voiceGender.value === "male" || voiceGender.value === "female")) {
+        queryParams.append("voiceType", voiceGender.value);
+      }
+      
+      // Use fetchAsyncData for caching (like chapters do) - this makes subsequent fetches instant
+      const cacheKey = `generated-audios-${chapterIdValue}-${voiceGender.value || 'all'}`;
+      const { data: response } = await fetchAsyncData(
+        cacheKey,
+        () => $fetch(`/api/generated-audios?${queryParams.toString()}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${currentTokenValue}`,
+          },
+          timeout: 30000, // 30 second timeout to prevent hanging
+        })
+      );
+      
+      // Final check: make sure chapterId hasn't changed after fetch
+      if (props.chapterId !== chapterIdValue || activeFetchChapterId.value !== chapterIdValue) {
+        if (isDev) {
+          console.warn('[AIAssistant] ChapterId changed after fetch, ignoring results:', {
+            fetchedFor: chapterIdValue,
+            current: props.chapterId,
+            activeFetch: activeFetchChapterId.value
+          });
+        }
+        isFetchingAudio.value = false;
+        activeFetchChapterId.value = null;
+        return;
+      }
+      
+      if (response.value && response.value.audios && Array.isArray(response.value.audios) && response.value.audios.length > 0) {
+        fetchedAudios.value = response.value.audios;
+        currentAudioIndex.value = 0;
+        if (isDev) {
+          console.log('[AIAssistant] Pre-fetched', fetchedAudios.value.length, 'audio(s) for chapter:', chapterIdValue);
+        }
+      }
+    } catch (error) {
+      // Silently fail - we'll fetch again when user clicks Read if needed
+      console.warn('Pre-fetch audio failed (will retry on Read click):', error);
+    } finally {
+      // Only clear if this was the active fetch
+      if (activeFetchChapterId.value === currentChapterId) {
+        activeFetchChapterId.value = null;
+      }
+      isFetchingAudio.value = false;
+    }
+  }
+};
+
 // Reset conversation when chapter changes
 watch(
   () => props.chapterId,
   (newChapterId, oldChapterId) => {
+    // Log chapter change for debugging
+    if (isDev) {
+      console.log('[AIAssistant] Chapter changed:', { oldChapterId, newChapterId });
+    }
+    
     // If there's an old chapter, store it in previousChapterId (so the name matches)
     if (oldChapterId && newChapterId !== oldChapterId) {
       stopReading();
       currentAudioIndex.value = 0; // Reset audio index for new chapter
+      fetchedAudios.value = []; // Reset fetched audios for new chapter
       messages.value = [];
       chat.messages = []; // Clear Chat component messages too
       previousChapterId.value = oldChapterId; // store old value
       isSummarizing.value = false;
       isEnglishCrashCourse.value = false;
       showSettings.value = false;
+      
+      // Clear any active fetch to prevent stale requests
+      activeFetchChapterId.value = null;
+      isFetchingAudio.value = false;
+      
+      // Pre-fetch audios for the new chapter (with a small delay to ensure chapterId is stable)
+      nextTick(() => {
+        // Double-check the chapterId is still the new one before fetching
+        if (props.chapterId === newChapterId && props.chapterId) {
+          preFetchAudios();
+        } else if (isDev) {
+          console.warn('[AIAssistant] ChapterId changed again before preFetch, skipping:', {
+            expected: newChapterId,
+            actual: props.chapterId
+          });
+        }
+      });
+    } else if (newChapterId && !oldChapterId) {
+      // Initial load - pre-fetch audios
+      nextTick(() => {
+        // Double-check the chapterId is still valid before fetching
+        if (props.chapterId === newChapterId && props.chapterId) {
+          preFetchAudios();
+        } else if (isDev) {
+          console.warn('[AIAssistant] ChapterId changed before initial preFetch, skipping:', {
+            expected: newChapterId,
+            actual: props.chapterId
+          });
+        }
+      });
     }
   },
   { immediate: true }
@@ -1386,22 +1543,191 @@ const handleRead = async () => {
   // If already playing, do nothing (use stopReading to pause)
   if (isPlayingAudio.value) return;
   
-  // Check if there are audios available for this chapter
-  if (!props.audios || props.audios.length === 0) {
+  // Determine which audios to use: props.audios or fetchedAudios
+  let audiosToUse = props.audios && props.audios.length > 0 ? props.audios : fetchedAudios.value;
+  
+  // If no audios available, try to fetch from API
+  if (!audiosToUse || audiosToUse.length === 0) {
+    // Check if we're already fetching to avoid duplicate requests
+    if (isFetchingAudio.value) {
+      messages.value.push({
+        role: "assistant",
+        content: `Fetching audio for this topic... Please wait.`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+      nextTick(() => {
+        if (messagesContainer.value)
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+      });
+      return;
+    }
+    
+    // Fetch audios from API (fallback if pre-fetch didn't work)
+    // Capture chapterId at the start to prevent race conditions
+    const currentChapterId = props.chapterId;
+    
+    if (!currentChapterId || String(currentChapterId).trim() === '') {
+      messages.value.push({
+        role: "assistant",
+        content: `Invalid chapter ID. Please refresh the page and try again.`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+      nextTick(() => {
+        if (messagesContainer.value)
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+      });
+      return;
+    }
+    
+    isFetchingAudio.value = true;
+    // Set the active fetch chapterId to track this request
+    activeFetchChapterId.value = currentChapterId;
+    
     messages.value.push({
       role: "assistant",
-      content: `No audio is available for this topic yet. The audio files will be added soon! You can still read the content above or ask me questions about the topic.`,
+      content: `Fetching audio for this topic...`,
       timestamp: new Date().toLocaleTimeString(),
     });
     nextTick(() => {
       if (messagesContainer.value)
         messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     });
-    return;
+    
+    try {
+      const currentTokenValue = token?.value;
+      if (!currentTokenValue) {
+        throw new Error("Authentication required. Please sign in.");
+      }
+      
+      // Validate and normalize chapterId - use the captured value
+      const chapterIdValue = String(currentChapterId).trim();
+      
+      // Double-check that props.chapterId hasn't changed
+      if (props.chapterId !== currentChapterId) {
+        if (isDev) {
+          console.warn('[AIAssistant] ChapterId changed during handleRead setup, aborting:', {
+            original: currentChapterId,
+            current: props.chapterId
+          });
+        }
+        isFetchingAudio.value = false;
+        activeFetchChapterId.value = null;
+        messages.value.push({
+          role: "assistant",
+          content: `Chapter changed. Please try again.`,
+          timestamp: new Date().toLocaleTimeString(),
+        });
+        nextTick(() => {
+          if (messagesContainer.value)
+            messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        });
+        return;
+      }
+      
+      if (isDev) {
+        console.log('[AIAssistant] Fetching audios for chapterId (handleRead):', chapterIdValue);
+      }
+      
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        chapterId: chapterIdValue,
+      });
+      
+      // Add voiceType filter if user has a preference
+      if (voiceGender.value && (voiceGender.value === "male" || voiceGender.value === "female")) {
+        queryParams.append("voiceType", voiceGender.value);
+      }
+      
+      // Use fetchAsyncData for caching (like chapters do) - this makes subsequent fetches instant
+      const cacheKey = `generated-audios-${chapterIdValue}-${voiceGender.value || 'all'}`;
+      const { data: response } = await fetchAsyncData(
+        cacheKey,
+        () => $fetch(`/api/generated-audios?${queryParams.toString()}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${currentTokenValue}`,
+          },
+          timeout: 30000, // 30 second timeout to prevent hanging
+        })
+      );
+      
+      // Final check: make sure chapterId hasn't changed after fetch
+      if (props.chapterId !== chapterIdValue || activeFetchChapterId.value !== chapterIdValue) {
+        if (isDev) {
+          console.warn('[AIAssistant] ChapterId changed after fetch in handleRead, ignoring results:', {
+            fetchedFor: chapterIdValue,
+            current: props.chapterId,
+            activeFetch: activeFetchChapterId.value
+          });
+        }
+        isFetchingAudio.value = false;
+        activeFetchChapterId.value = null;
+        messages.value.push({
+          role: "assistant",
+          content: `Chapter changed during fetch. Please try again.`,
+          timestamp: new Date().toLocaleTimeString(),
+        });
+        nextTick(() => {
+          if (messagesContainer.value)
+            messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        });
+        return;
+      }
+      
+      if (response.value && response.value.audios && Array.isArray(response.value.audios) && response.value.audios.length > 0) {
+        fetchedAudios.value = response.value.audios;
+        audiosToUse = fetchedAudios.value;
+        // Reset audio index when new audios are fetched
+        currentAudioIndex.value = 0;
+      } else {
+        // No audios found
+        isFetchingAudio.value = false;
+        activeFetchChapterId.value = null;
+        messages.value.push({
+          role: "assistant",
+          content: `No audio is available for this topic yet. The audio files will be added soon! You can still read the content above or ask me questions about the topic.`,
+          timestamp: new Date().toLocaleTimeString(),
+        });
+        nextTick(() => {
+          if (messagesContainer.value)
+            messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Error fetching audio:', error);
+      isFetchingAudio.value = false;
+      activeFetchChapterId.value = null;
+      messages.value.push({
+        role: "assistant",
+        content: `Unable to fetch audio: ${error?.message || error?.data?.message || 'Unknown error'}. Please try again later.`,
+        timestamp: new Date().toLocaleTimeString(),
+      });
+      nextTick(() => {
+        if (messagesContainer.value)
+          messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+      });
+      return;
+    } finally {
+      // Only clear if this was the active fetch
+      if (activeFetchChapterId.value === currentChapterId) {
+        activeFetchChapterId.value = null;
+      }
+      isFetchingAudio.value = false;
+    }
   }
   
+  // Re-check audios after potential fetch
+  audiosToUse = props.audios && props.audios.length > 0 ? props.audios : fetchedAudios.value;
+  
+  // Now play the audio
   try {
-    const audio = props.audios[currentAudioIndex.value];
+    const audio = audiosToUse[currentAudioIndex.value];
+    if (!audio) {
+      throw new Error("Audio not found at current index");
+    }
+    
+    // Extract audio ID - handle both formats from props and API
     const audioId = audio._id || audio.id;
     
     if (!audioId) {
@@ -1418,7 +1744,7 @@ const handleRead = async () => {
       audioElement.value.addEventListener('ended', () => {
         isPlayingAudio.value = false;
         // If there are more audios, play the next one
-        if (currentAudioIndex.value < props.audios.length - 1) {
+        if (currentAudioIndex.value < audiosToUse.length - 1) {
           currentAudioIndex.value++;
           handleRead();
         } else {
@@ -1443,9 +1769,37 @@ const handleRead = async () => {
       });
     }
     
-    // Set audio source and play
-    audioElement.value.src = `/api/audio/${audioId}`;
-    await audioElement.value.play();
+    // Set audio source and preload for faster playback
+    // Use audioFileUrl or url from API response if it's a full URL, otherwise use /api/audio endpoint
+    const audioUrl = audio.audioFileUrl || audio.url;
+    let finalAudioUrl;
+    if (audioUrl && (audioUrl.startsWith('http://') || audioUrl.startsWith('https://'))) {
+      finalAudioUrl = audioUrl;
+    } else {
+      // Use the /api/audio endpoint which handles audio streaming
+      finalAudioUrl = `/api/audio/${audioId}`;
+    }
+    
+    // Set source and configure for streaming
+    audioElement.value.src = finalAudioUrl;
+    // Use 'metadata' for faster start with streaming, or 'auto' for better buffering
+    // 'metadata' loads only metadata (duration, etc.) and starts streaming on play
+    // 'auto' preloads more but works well with Range requests for streaming
+    audioElement.value.preload = 'auto';
+    
+    // For streaming, we can start playing immediately - the browser will handle Range requests
+    // The audio will start playing as soon as enough data is buffered
+    try {
+      // Load metadata first (this is fast and enables seeking)
+      await audioElement.value.load();
+      // Then play - streaming will start automatically
+      await audioElement.value.play();
+    } catch (playError) {
+      // If play fails, it might be due to browser autoplay policy
+      // User interaction is required for some browsers
+      console.warn('Audio play failed, may need user interaction:', playError);
+      throw playError;
+    }
     
   } catch (error) {
     console.error('Error playing audio:', error);
@@ -1766,14 +2120,15 @@ onUnmounted(() => {
         </button>
         <button
           @click="isPlayingAudio ? stopReading() : handleRead()"
-          :disabled="isLoading || !chapterId"
+          :disabled="isLoading || isFetchingAudio || !chapterId"
           class="flex-1 min-w-[100px] px-3 py-2 text-xs sm:text-sm bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 shadow-sm"
         >
           <Icon
-            :name="isPlayingAudio ? 'mdi:pause' : 'mdi:volume-high'"
+            :name="isPlayingAudio ? 'mdi:pause' : isFetchingAudio ? 'mdi:loading' : 'mdi:volume-high'"
             size="18"
+            :class="isFetchingAudio ? 'animate-spin' : ''"
           />
-          <span>{{ isPlayingAudio ? "Stop Reading" : "Read" }}</span>
+          <span>{{ isPlayingAudio ? "Stop Reading" : isFetchingAudio ? "Fetching..." : "Read" }}</span>
         </button>
       </div>
     </div>
