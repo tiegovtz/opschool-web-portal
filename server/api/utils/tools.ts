@@ -10,8 +10,9 @@ import type { educationLevel } from "~/types/educationlevel.interface";
 import type { Subjects } from "~/types/subject.interface";
 import { fetchCombinedRAGContext } from "../../utils/rag";
 import apiDocs from "~/utilities/apiDocs";
+import { authHeader } from "./auth";
 
-let currentAuthToken: string | undefined = undefined;
+let currentAuthToken = authHeader();
 let subjects: Subjects[] = [];
 let topics: Topic[] = [];
 let chapters: Chapter[] = [];
@@ -82,10 +83,10 @@ getSubjectsList();
 getTopicsList();
 getClassList();
 getEducationList();
-// getChapterList();
+getChapterList();
 
 export function setAuthTokenForTools(token: string | undefined): void {
-  currentAuthToken = token;
+  currentAuthToken = token as string;
 }
 
 async function getAvailableSubjects(): Promise<{

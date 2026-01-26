@@ -5,6 +5,7 @@ import { sanitize } from "~/utilities/sanitizeInput";
 import apiDocs from "~/utilities/apiDocs";
 import { dataEncrypt, dataDecrypt } from "~/utilities/encryption";
 import { useNavigationStore } from "~/stores/navigationStore";
+import { useAuthStore } from "~/stores/auth";
 
 // // Use the State
 const navigationStore = useNavigationStore();
@@ -152,7 +153,7 @@ const signIn = async () => {
       accessToken.value = response.access_token;
       refreshToken.value = response.refresh_token;
       userToken.value = response.user;
-
+      useAuthStore().setToken(accessToken.value);
       setTimeout(() => {
         const router = useRouter();
         if (returnPath) {
