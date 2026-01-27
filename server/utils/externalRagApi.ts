@@ -7,9 +7,24 @@
  * Uses the same base URL (VITE_API_BASE_URL) and authentication pattern as the rest of the app
  */
 
-import { trackFiguresApiError, categorizeHttpError } from './errorTracking';
+import { createHash } from "crypto";
+import { trackRagApiError, categorizeHttpError } from './errorTracking';
+import apiDocs from "~/utilities/apiDocs";
 
-const API_BASE_URL = process.env.VITE_API_BASE_URL || "https://apitie.ekima.africa/v1";
+const getBaseURL = () => {
+  const envUrl = process.env.VITE_API_BASE_URL;
+  if (envUrl) return envUrl;
+  if (apiDocs.baseURL) return apiDocs.baseURL;
+  throw new Error("VITE_API_BASE_URL is not set and apiDocs.baseURL is not available");
+};
+
+const resolveApiUrl = (docUrl: string, fallbackPath: string) => {
+  const baseUrl = getBaseURL();
+  if (docUrl && !docUrl.includes("undefined")) {
+    return docUrl.replace(apiDocs.baseURL || baseUrl, baseUrl);
+  }
+  return `${baseUrl}${fallbackPath}`;
+};
 
 export interface ExternalRAGResult {
   content: string;
@@ -41,7 +56,16 @@ function getAuthToken(token?: string): string {
   return '';
 }
 
-async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?: string): Promise<T | null> {
+const DEFAULT_TIMEOUT_MS = parseInt(process.env.EXTERNAL_RAG_TIMEOUT_MS || "2500", 10);
+const RETRY_TIMEOUT_MS = parseInt(process.env.EXTERNAL_RAG_RETRY_TIMEOUT_MS || "4000", 10);
+
+async function apiRequest<T>(
+  url: string,
+  options: RequestInit = {},
+  token?: string,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
+  throwOnTimeout: boolean = false
+): Promise<T | null> {
   const method = (options.method || 'GET') as 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   
   try {
@@ -60,12 +84,19 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
       Object.assign(headers, optHeaders);
     }
 
-    const fullUrl = `${API_BASE_URL}${endpoint}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    const response = await fetch(fullUrl, {
-      ...options,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const errorType = categorizeHttpError(response.status);
@@ -74,8 +105,8 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
         return null;
       }
       
-      trackFiguresApiError({
-        endpoint,
+      trackRagApiError({
+        endpoint: url,
         method,
         statusCode: response.status,
         errorType,
@@ -101,17 +132,21 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
       return null;
     }
   } catch (error: any) {
-    const errorType = error.name === 'AbortError' ? 'timeout' : 
+    const errorType = error.name === 'AbortError' ? 'timeout' :
                       error.name === 'TypeError' ? 'network' : 'unknown';
     
-    trackFiguresApiError({
-      endpoint,
-      method,
-      errorType,
-      message: error.message || 'Unknown request error',
-      stack: error.stack,
-    });
-    
+      trackRagApiError({
+        endpoint: url,
+        method,
+        errorType,
+        message: error.message || 'Unknown request error',
+        stack: error.stack,
+      });
+
+    if (throwOnTimeout && error.name === 'AbortError') {
+      throw new Error('timeout');
+    }
+
     return null;
   }
 }
@@ -140,9 +175,22 @@ export async function searchExternalRAG(
     params.append('threshold', options.threshold.toString());
   }
 
-  const endpoint = `/machine-learning/books/embeddings/search?${params.toString()}`;
+  const endpoint = resolveApiUrl(
+    apiDocs.machineLearning.searchBookEmbeddings,
+    "/machine-learning/books/embeddings/search"
+  );
+  const url = `${endpoint}?${params.toString()}`;
   
-  const response = await apiRequest<any>(endpoint, {}, token);
+  let response: any | null = null;
+  try {
+    response = await apiRequest<any>(url, {}, token, DEFAULT_TIMEOUT_MS, true);
+  } catch (error: any) {
+    if (error?.message === 'timeout') {
+      response = await apiRequest<any>(url, {}, token, RETRY_TIMEOUT_MS);
+    } else {
+      throw error;
+    }
+  }
   
   if (!response) {
     return [];
@@ -233,12 +281,25 @@ export async function _fetchExternalRAGContext(
 
   const query = searchQuery.trim();
 
+  const limit = parseInt(process.env.EXTERNAL_RAG_LIMIT || "3", 10);
+  const threshold = parseFloat(process.env.EXTERNAL_RAG_THRESHOLD || "0.5");
+  const cacheTtlMs = parseInt(process.env.EXTERNAL_RAG_CACHE_TTL_MS || "300000", 10);
+
+  const hash = createHash("sha256")
+    .update(`${authToken || "anon"}:${query}:${limit}:${threshold}`)
+    .digest("hex");
+
+  const cached = externalRagCache.get(hash);
+  if (cached && Date.now() - cached.timestamp < cacheTtlMs) {
+    return cached.value;
+  }
+
   try {
     const results = await searchExternalRAG(
       query,
       {
-        limit: 5,
-        threshold: 0.3,
+        limit,
+        threshold,
       },
       authToken
     );
@@ -252,22 +313,36 @@ export async function _fetchExternalRAGContext(
       includeQualityHeader: true,
     });
 
-    return contextText.trim();
+    const trimmed = contextText.trim();
+    externalRagCache.set(hash, { timestamp: Date.now(), value: trimmed });
+    return trimmed;
   } catch {
     return "";
   }
 }
 
+const externalRagCache = new Map<string, { timestamp: number; value: string }>();
+
 export function isExternalRAGAvailable(): boolean {
-  return !!API_BASE_URL;
+  try {
+    return !!getBaseURL();
+  } catch {
+    return false;
+  }
 }
 
 export function getExternalRAGConfig(): {
   baseUrl: string;
   isConfigured: boolean;
 } {
+  let baseUrl = "";
+  try {
+    baseUrl = getBaseURL();
+  } catch {
+    baseUrl = "";
+  }
   return {
-    baseUrl: API_BASE_URL,
-    isConfigured: !!API_BASE_URL,
+    baseUrl,
+    isConfigured: !!baseUrl,
   };
 }

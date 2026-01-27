@@ -139,6 +139,11 @@ const apiDocs = {
     aiSearch: `/api/ai/search`, // Nuxt server API route
   },
 
+  // Machine Learning API
+  machineLearning: {
+    searchBookEmbeddings: `${baseURL}/machine-learning/books/embeddings/search`,
+  },
+
   // Chat History API
   chat: {
     createSession: `${baseURL}/chat/sessions`,
