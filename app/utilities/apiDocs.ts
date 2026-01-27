@@ -1,5 +1,5 @@
-const baseURL = import.meta.env?.VITE_API_BASE_URL // define baseURL first
-// const baseURL = "https://uncasked-irrevocably-fausto.ngrok-free.dev/v1";
+const baseURL =
+  import.meta.env?.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
 
 const apiDocs = {
   baseURL: baseURL, // You can include it here for reference
