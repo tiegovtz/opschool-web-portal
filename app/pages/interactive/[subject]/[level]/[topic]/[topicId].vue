@@ -486,7 +486,8 @@ const setPicCenter = async () => {
           if (span.querySelector("img")) {
             const images = span.querySelectorAll("img")
             if (images.length === 1 &&
-              images[0]?.classList.contains('desc-img'))
+              (images[0]?.classList.contains('desc-img') ||
+                images[0]?.classList.contains('desc-img-eng-think')))
               return;
 
             span.className = "flex justify-center flex-wrap gap-2";
@@ -1005,9 +1006,10 @@ definePageMeta({
     </section>
 
     <!-- AI Assistant -->
-    <AIAssistant v-if="chapters.currentChapterId && chapters.notes" :chapter-id="chapters.currentChapterId"
+    <!-- Use chapters.notes._id as primary source since it's the actual ID from API response -->
+    <AIAssistant v-if="chapters.notes?._id" :chapter-id="chapters.notes._id"
       :chapter-name="chapters.notes?.name || 'this competence'" :subject="topicStandard" :level="topicLevel"
-      :topic="topicTitle" :chapter-no="chapters.notes?.chapterNo" />
+      :topic="topicTitle" :chapter-no="chapters.notes?.chapterNo" :audios="chapters.notes?.audios || []" />
 
     <!--  -->
     <!-- screen reader notifier -->

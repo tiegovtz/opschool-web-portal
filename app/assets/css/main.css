@@ -215,6 +215,11 @@
   display: inline-flex !important;
 }
 
+.notes .desc-img-eng-think {
+  width: 205px !important;
+  height: auto;
+  display: inline-flex !important;
+}
 .notes table td {
   padding:10px 20px !important;
   overflow: hidden;

@@ -34,7 +34,7 @@ const setSeeMore = (seeMore:string) => {
   <div  v-if="userToken">
     <div id="main-container" tabindex="-1" v-if="activeTab === 'subjects'">
       <!-- Subject Cards are in Grid -->
-      <customGridOne v-if="activeTab === 'subjects'">
+      <customGridOne active-tab="subjects" v-if="activeTab === 'subjects'">
         <template #data>
           <!-- Subject Cards are in Grid -->
           <SubjectCard

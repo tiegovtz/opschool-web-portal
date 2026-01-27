@@ -6,10 +6,8 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   debug: false,
   srcDir: "app/",
-
   // Add Vuetify styles here along with your existing CSS
   css: ["~/assets/css/main.css"],
-
   postcss: {
     plugins: {
       tailwindcss: {},

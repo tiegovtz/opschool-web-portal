@@ -166,7 +166,7 @@ const getChoiceReason = (question: Question,userAnswer:string):string => {
 
       <!-- Header and Button -->
       <div class="flex items-center justify-between">
-        <h1 class="tracking-wide underline text-large" v-if="questions.length > 0">
+        <h1 class="tracking-wide underline text-large font-bold" v-if="questions.length > 0">
           Quiz
         </h1>
 

@@ -312,19 +312,19 @@ definePageMeta({
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <!-- Header -->
           <div class="text-center mb-8">
-            <div class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4">
-              <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span class="text-sm font-medium text-primary">Interactive Learning</span>
+            <div class="flex items-center">
+              <button type="button" @click="$router.back()" aria-label="press link tp go back"
+                class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
+                <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
+              </button>
+             <div  class="flex flex-1 items-center justify-center">
+               <div tabindex="0" class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4">
+                <Icon name="heroicons-outline:play" size="18" class="text-primary" />
+                <span class="text-sm font-medium text-primary">Interactive Learning</span>
+              </div>
+             </div>
             </div>
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
-              Interactive Video Player
-            </h1>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p class="text-sm text-gray-600 max-w-2xl mx-auto">
               Engage with interactive quizzes and selection activities as you learn
             </p>
           </div>
@@ -365,7 +365,7 @@ definePageMeta({
           </div>
 
           <!-- Video Container -->
-          <div v-else class="bg-white rounded-2xl shadow-xl overflow-hidden mb-8 border border-gray-200">
+          <div id="main-container" tabindex="-1" aria-label="interactive player container" v-else class="bg-white rounded-2xl shadow-xl overflow-hidden mb-8 border border-gray-200">
             <div v-if="!videoSrc || videoSrc === '/videos/TestVideo.mp4'" class="p-12 text-center">
               <p class="text-gray-600 mb-4">No video source available</p>
               <p class="text-sm text-gray-500">Video source: {{ videoSrc }}</p>
