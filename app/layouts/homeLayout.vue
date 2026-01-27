@@ -17,7 +17,7 @@
     
     <!-- Combinations -->
      <div  v-if="route.path !== '/pdf'" class="fixed right-2 z-10 top-[55%] transform -rotate-90 origin-bottom-right bg-oceanBlue hover:bg-deepBlue transition-all duration-500 ease-in-out rounded-md cursor-pointer">
-      <NuxtLink to="/pdf" class="px-4 py-2 text-white">Combinations</NuxtLink>
+      <NuxtLink to="/pdf" class="px-4 py-2 text-white">Combinations of Subjects</NuxtLink>
      </div>
     
     <!-- 50 Years -->
