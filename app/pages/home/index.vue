@@ -32,6 +32,13 @@ import type { Videos } from "~/types/video.interface";
 import type { Audios } from "~/types/audio.interface";
 import type { Topic } from "~/types/topic.interface";
 import { getTabLabel } from "~/utilities/get.labels";
+import {
+  getSectionFromTab,
+  getTabFromSection,
+  SECTION_QUERY_KEY,
+  SUBJECT_ID_QUERY_KEY,
+  SUBJECT_QUERY_KEY,
+} from "~/utilities/homeSectionRouting";
 
 // Define meta info about page
 useHead({
@@ -81,7 +88,7 @@ useHead({
 // Define Cookie
 const userToken = useCookie("signInUserToken");
 const route = useRoute();
-let tab = route.query?.tab as tabs;
+const router = useRouter();
 // current page data
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(12);
@@ -94,9 +101,117 @@ const slicedData = ref(); // Initial slice data to 9
 const hideFilter = ref(false); // Initial Hide Filters
 const activeTab = ref<tabs>("subjects"); // Initial Active Tab State
 const filterValue = ref(); // Initial Filter Value State
-const subjectId = ref(); // Initial subjectId Value State
-const seeMoreDetails = ref<string | null>((route.query?.subject as string)?.toLowerCase() ?? null); // Initial See More
+const subjectId = ref<string>(""); // Initial subjectId Value State
+const subjectSlug = ref<string>(""); // Initial subject slug Value State
+const subjectName = ref<string>(""); // Initial subject name Value State
+const seeMoreDetails = ref<string | null>(null); // Initial See More
 const announcement = ref<string>();
+const isSyncingRoute = ref(false);
+const subjectResolveState = ref({ slug: "", isLoading: false });
+
+const isSubjectDetail = computed(
+  () =>
+    activeTab.value === "subjects" &&
+    (!!subjectId.value || !!subjectSlug.value)
+);
+
+const displayTab = computed<tabs>(() =>
+  isSubjectDetail.value ? "interactive-contents" : activeTab.value
+);
+
+const subjectDisplayName = computed(() => {
+  if (subjectName.value) return subjectName.value;
+  if (subjectSlug.value) return subjectSlug.value.replace(/-/g, " ");
+  return "Subject";
+});
+
+const slugifySubject = (value: string) =>
+  value ? value.toLowerCase().trim().replace(/\s+/g, "-") : "";
+
+const normalizeQueryValue = (value: unknown) =>
+  typeof value === "string" ? value.trim() : "";
+
+const stringifyQuery = (query: Record<string, any>) => {
+  const entries = Object.entries(query)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .map(([key, value]) => [key, Array.isArray(value) ? value.join(",") : String(value)]);
+  entries.sort(([a], [b]) => (a ?? "").localeCompare(b ?? ""));
+  return entries.map(([key, value]) => `${key}=${value}`).join("&");
+};
+
+const updateRouteState = ({
+  section,
+  subject,
+  subjectId: subjectIdParam,
+  replace = false,
+}: {
+  section?: string;
+  subject?: string;
+  subjectId?: string;
+  replace?: boolean;
+}) => {
+  const nextQuery = { ...route.query } as Record<string, any>;
+  const nextSection =
+    section ?? getSectionFromTab(activeTab.value) ?? "subjects";
+  nextQuery[SECTION_QUERY_KEY] = nextSection;
+  delete nextQuery.tab;
+
+  if (subjectIdParam) {
+    nextQuery[SUBJECT_ID_QUERY_KEY] = subjectIdParam;
+  } else {
+    delete nextQuery[SUBJECT_ID_QUERY_KEY];
+  }
+
+  if (subject) {
+    nextQuery[SUBJECT_QUERY_KEY] = subject;
+  } else {
+    delete nextQuery[SUBJECT_QUERY_KEY];
+  }
+
+  const currentQueryKey = stringifyQuery(route.query as Record<string, any>);
+  const nextQueryKey = stringifyQuery(nextQuery);
+  if (currentQueryKey === nextQueryKey) return;
+
+  const navigate = replace ? router.replace : router.push;
+  navigate({ path: route.path, query: nextQuery });
+};
+
+const resolveSubjectIdFromSlug = async (slug: string) => {
+  if (
+    !slug ||
+    subjectId.value ||
+    subjectResolveState.value.isLoading ||
+    subjectResolveState.value.slug === slug
+  ) {
+    return;
+  }
+
+  if (!userToken.value) return;
+
+  subjectResolveState.value = { slug, isLoading: true };
+  try {
+    const response = await $fetch<Subjects[] | unknown>(apiDocs.subjects.getPublicSubjects, {
+      headers: {
+        Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+      },
+    });
+    const rawSubjects = Array.isArray(response)
+      ? response
+      : removeDataFromArrayOfJson(response as Subjects[], "isDeleted", true);
+    const subjects = Array.isArray(rawSubjects) ? (rawSubjects as Subjects[]) : [];
+    const match = subjects.find(
+      (subject) => slugifySubject(subject.name) === slug
+    );
+    if (match?._id) {
+      subjectId.value = match._id;
+      subjectName.value = match.name;
+    }
+  } catch (error) {
+    console.warn("Failed to resolve subject from slug:", error);
+  } finally {
+    subjectResolveState.value = { slug, isLoading: false };
+  }
+};
 
 // Define Filters Reactive State
 const filters = reactive<{ level: number | string | null; subject: string | null }>({
@@ -107,14 +222,50 @@ const filters = reactive<{ level: number | string | null; subject: string | null
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
 
-// Checking Tab if is corresponde to route
-if (tab) {
-  if (tab == "learn-activities") activeTab.value = "learn-activities";
-  if (tab == "video") activeTab.value = "video";
-  if (tab == "class-videos") activeTab.value = "class-videos";
-  if (tab == "audio")activeTab.value = "audio";
-  if (tab == "interactive-contents")activeTab.value = "interactive-contents";
-}
+watch(
+  () => route.query,
+  (query) => {
+    isSyncingRoute.value = true;
+    const requestedTab = getTabFromSection(
+      query[SECTION_QUERY_KEY] ?? query.tab
+    );
+    if (requestedTab) {
+      activeTab.value = requestedTab;
+    }
+
+    const requestedSubjectId = normalizeQueryValue(query[SUBJECT_ID_QUERY_KEY]);
+    const requestedSubject = normalizeQueryValue(query[SUBJECT_QUERY_KEY]).toLowerCase();
+
+    if (activeTab.value === "subjects") {
+      subjectId.value = requestedSubjectId;
+      subjectSlug.value = requestedSubject;
+      if (requestedSubject && !subjectName.value) {
+        subjectName.value = requestedSubject.replace(/-/g, " ");
+      }
+    } else {
+      subjectId.value = "";
+      subjectSlug.value = "";
+    }
+
+    if (!subjectId.value && !subjectSlug.value) {
+      seeMoreDetails.value = requestedSubject || null;
+    } else {
+      seeMoreDetails.value = null;
+    }
+
+    isSyncingRoute.value = false;
+
+    if (!query[SECTION_QUERY_KEY] && !query.tab) {
+      updateRouteState({
+        section: getSectionFromTab(activeTab.value) ?? "subjects",
+        subject: subjectSlug.value || undefined,
+        subjectId: subjectId.value || undefined,
+        replace: true,
+      });
+    }
+  },
+  { immediate: true }
+);
 
 // First, fix the sliceData function
 const sliceData = (start: number, end: number) => {
@@ -141,7 +292,7 @@ const fetchData = async (params?: any) => {
   data.value = [];
   status.value = "pending";
   error.value = null;
-  const tab = activeTab.value;
+  const tab = displayTab.value;
 
   if (userToken.value) {
     // Check for specific tabs
@@ -244,7 +395,7 @@ const fetchData = async (params?: any) => {
   }
 
   try {
-    announcement.value = `loading  ${getTabLabel(activeTab.value)} please wait.`;
+    announcement.value = `loading  ${getTabLabel(tab)} please wait.`;
     const { data: response, status: fetchStatus } = await fetchAsyncData(`tab-${tab}-${subjectId.value ? subjectId.value : ''}`, () => $fetch(url, {
       params: {
         ...params,
@@ -280,16 +431,15 @@ const fetchData = async (params?: any) => {
       currentPage.value * pageSize.value
     );
 
-    announcement.value = ` ${response.value?.length} ${getTabLabel(activeTab.value)} found ready for preview`;
+    announcement.value = ` ${response.value?.length} ${getTabLabel(tab)} found ready for preview`;
   } catch (err) {
     status.value = "error";
     error.value = err;
-    announcement.value = `Error occured while fetching ${getTabLabel(activeTab.value)}`;
+    announcement.value = `Error occured while fetching ${getTabLabel(tab)}`;
   }
 };
 
-// Call Fetch Topics function
-fetchData();
+// Data loading handled by displayTab watcher.
 
 // shuffle Subject
 const shuffleSubject = (subjects: Subjects[]) => {
@@ -380,34 +530,41 @@ sliceData(
   currentPage.value * pageSize.value
 );
 
-// watch current tab
+// watch current tab (data panel uses displayTab, UI uses activeTab)
 watch(
-  () => activeTab.value,
-  (activeTab) => {
-    if (activeTab) {
-      seeMoreDetails.value = null;
-      if (activeTab === "subjects") {
-        subjectId.value = "";
-        fetchData();
-      } else if (activeTab === "interactive-contents") {
-        fetchData();
-      } else if (activeTab === "learn-activities") {
-        fetchData();
-      } else if (activeTab === "video") {
-        fetchData();
-      } else if (activeTab === "class-videos") {
-        fetchData();
-      } else if (activeTab === "audio") {
-        fetchData();
+  () => displayTab.value,
+  async (nextTab) => {
+    if (!nextTab) return;
+    if (!isSubjectDetail.value && nextTab === "subjects") {
+      subjectId.value = "";
+      subjectSlug.value = "";
+    }
+
+    if (
+      nextTab === "subjects" ||
+      nextTab === "interactive-contents" ||
+      nextTab === "learn-activities" ||
+      nextTab === "video" ||
+      nextTab === "class-videos" ||
+      nextTab === "audio"
+    ) {
+      if (isSubjectDetail.value && subjectSlug.value && !subjectId.value) {
+        await resolveSubjectIdFromSlug(subjectSlug.value);
+        if (!subjectId.value) {
+          data.value = [];
+          status.value = "success";
+          return;
+        }
       }
-      else {
-        data.value = [];
-      }
+      fetchData();
+    } else {
+      data.value = [];
     }
 
     // clear filter value on tab change
     filterValue.value = {};
-  }
+  },
+  { immediate: true }
 );
 
 // Watch User Token
@@ -418,6 +575,15 @@ watch(
       activeTab.value = "subjects";
       layoutEffect.value = "grid";
       fetchData();
+    }
+  }
+);
+
+watch(
+  () => subjectName.value,
+  (name) => {
+    if (name) {
+      subjectSlug.value = slugifySubject(name);
     }
   }
 );
@@ -440,13 +606,17 @@ watch(
   }
 );
 
-// watch Subject Id
 watch(
-  () => subjectId.value,
-  (valueId) => {
-    if (valueId) {
-      activeTab.value = "interactive-contents";
-    }
+  [() => activeTab.value, () => subjectId.value, () => subjectSlug.value],
+  ([nextTab, nextSubjectId, nextSubjectSlug]) => {
+    if (isSyncingRoute.value) return;
+    const shouldIncludeSubject =
+      nextTab === "subjects" && (!!nextSubjectId || !!nextSubjectSlug);
+    updateRouteState({
+      section: getSectionFromTab(nextTab) ?? "subjects",
+      subjectId: shouldIncludeSubject ? nextSubjectId : undefined,
+      subject: shouldIncludeSubject ? nextSubjectSlug : undefined,
+    });
   }
 );
 
@@ -455,6 +625,23 @@ const switchTab = async (tab: tabs) => {
   if (!tab) return;
 
   activeTab.value = tab;
+
+  if (tab !== "subjects") {
+    subjectId.value = "";
+    subjectSlug.value = "";
+    subjectName.value = "";
+  }
+};
+
+const clearSubjectDetail = () => {
+  subjectId.value = "";
+  subjectSlug.value = "";
+  subjectName.value = "";
+  updateRouteState({
+    section: getSectionFromTab("subjects") ?? "subjects",
+    subject: undefined,
+    subjectId: undefined,
+  });
 };
 
 </script>
@@ -463,7 +650,22 @@ const switchTab = async (tab: tabs) => {
   <NuxtLayout name="home-layout">
     <!-- User Has a Token -->
     <section v-if="userToken" :class="[' ', { ' animate-pulse': isLoading }]">
-      <HomeSearchbar appearance="rounded" />
+      <div v-if="isSubjectDetail" class="flex flex-col gap-2 p-4 mb-4 border border-gray-200 rounded-md bg-gray-50">
+        <p class="text-sm text-gray-500">Subjects</p>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h2 class="text-2xl font-semibold text-gray-800">
+            Subjects &gt; {{ subjectDisplayName }}
+          </h2>
+          <button
+            type="button"
+            class="text-sm text-oceanBlue hover:text-deepBlue underline"
+            @click="clearSubjectDetail"
+          >
+            Back to Subjects
+          </button>
+        </div>
+      </div>
+      <HomeSearchbar v-else appearance="rounded" />
       <TabBar :is-logged-in="true" @emit-active-tab="switchTab($event)" :active-tab="activeTab" />
 
       <!-- container filter Mobile -->
@@ -478,7 +680,7 @@ const switchTab = async (tab: tabs) => {
         </button>
 
         <!-- Side Bar Container Filter For Mobile View Only -->
-        <div v-if="activeTab !=='subjects'" :class="[
+        <div v-if="displayTab !=='subjects'" :class="[
           'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
           hideFilter ? 'z-30' : '-z-30',
         ]">
@@ -493,7 +695,7 @@ const switchTab = async (tab: tabs) => {
 
             <div class="flex flex-col gap-4 mt-10">
               <!-- Home Drop Down Menu -->
-              <DropDownMenu :active-tab="activeTab" @emit-update-filter-value="filterValue = $event" />
+              <DropDownMenu :active-tab="displayTab" @emit-update-filter-value="filterValue = $event" />
             </div>
           </div>
         </div>
@@ -515,16 +717,16 @@ const switchTab = async (tab: tabs) => {
       </div>
       <div class="flex items-center justify-center w-full gap-4 xl:items-start">
         <!-- container filter Desktop -->
-        <div v-if="activeTab !=='subjects'"  aria-label="Filters" role="group"
+        <div v-if="displayTab !=='subjects'"  aria-label="Filters" role="group"
           class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
           <!-- Home Drop Down Menu -->
-          <DropDownMenu @emit-update-filter-value="filterValue = $event" :active-tab="activeTab" :filter-value="[]" />
+          <DropDownMenu @emit-update-filter-value="filterValue = $event" :active-tab="displayTab" :filter-value="[]" />
 
           <!-- <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" /> -->
         </div>
 
         <!-- data are in Grid -->
-        <div  :class="['w-full ',activeTab !=='subjects'?'xl:w-3/4':'']"  id="main-container" aria-label="content list" role="region" tabindex="-1">
+        <div  :class="['w-full ',displayTab !=='subjects'?'xl:w-3/4':'']"  id="main-container" aria-label="content list" role="region" tabindex="-1">
           <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
             <LoadingIndicator :is-loading="true" />
           </div>
@@ -550,19 +752,20 @@ const switchTab = async (tab: tabs) => {
           <div
             v-else-if="status == 'success' && subjectId && data && data.length > 0">
             <ClientOnly>
-              <customGridOne active-tab="subjects" v-if="activeTab === 'subjects'">
+              <customGridOne active-tab="subjects" v-if="displayTab === 'subjects'">
                 <template #data>
                   <!-- Subject Cards are in Grid -->
                   <SubjectCard v-for="subject in shuffleSubject(slicedData)" :key="subject._id"
                     :subject-id="subject._id" :subject-name="subject.name" :subject-image="subject.thumbnail"
                     :subject-description="subject.description" :total-views="subject.views ?? 0"
-                    :is-logged-in="userToken != null || userToken != undefined" @emit-subject-name="activeTab = $event"
-                    @emit-subject-id="subjectId = $event" 
+                    :is-logged-in="userToken != null || userToken != undefined"
+                    @emit-subject-name="(name) => { subjectName = name; subjectSlug = slugifySubject(name); }"
+                    @emit-subject-id="(id) => { subjectId = id; activeTab = 'subjects'; }" 
                     :alt-text="subject.alt"/>
                 </template>
               </customGridOne>
 
-              <customGridOne v-else-if="activeTab === 'interactive-contents'">
+              <customGridOne v-else-if="displayTab === 'interactive-contents'">
                 <template #data>
                   <!-- Topic Cards are in Grid -->
                   <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
@@ -576,7 +779,7 @@ const switchTab = async (tab: tabs) => {
                 </template>
               </customGridOne>
 
-              <customGridOne v-else-if="activeTab === 'learn-activities'">
+              <customGridOne v-else-if="displayTab === 'learn-activities'">
                 <template #data>
                   <!-- Experiment Cards are in Grid -->
                   <ExperimentsCard v-for="experiment in slicedData" :key="experiment._id"
@@ -591,8 +794,8 @@ const switchTab = async (tab: tabs) => {
               </customGridOne>
 
               <customGridOne v-else-if="
-                activeTab === 'video' ||
-                activeTab === 'class-videos'
+                displayTab === 'video' ||
+                displayTab === 'class-videos'
               ">
                 <template #data>
                   <!-- Video Cards are in Grid -->
@@ -605,7 +808,7 @@ const switchTab = async (tab: tabs) => {
                     :alt-text="video.alt"/>
                 </template>
               </customGridOne>
-              <div v-else-if="activeTab === 'audio'">
+              <div v-else-if="displayTab === 'audio'">
                 <MessageTopicNotFound message="This page will be updated soon" />
               </div>
             </ClientOnly>
@@ -646,8 +849,10 @@ const switchTab = async (tab: tabs) => {
           <div v-else-if="status == 'success' && !subjectId && data && data.length > 0">
             <ClientOnly>
               <HomeCustomScrollView :shuffle-subject="shuffleSubject" :see-more-details="seeMoreDetails?.toString()"
-                :data="data" :active-tab="activeTab" @emittedSubjectId="subjectId = $event"
-                @emittedActiveTab="activeTab = $event" />
+                :data="data" :active-tab="displayTab"
+                @emittedSubjectId="(id) => { subjectId = id; activeTab = 'subjects'; }"
+                @emittedActiveTab="activeTab = $event"
+                @emittedSubjectName="(name) => { subjectName = name; subjectSlug = slugifySubject(name); }" />
             </ClientOnly>
           </div>
           <MessageTopicNotFound v-else />
@@ -701,7 +906,8 @@ const switchTab = async (tab: tabs) => {
                 <SubjectCard v-for="subject in shuffleSubject(slicedData)" :key="subject._id" :subject-id="subject._id"
                   :subject-name="subject.name" :subject-image="subject.thumbnail"
                   :subject-description="subject.description" :total-views="subject.views ?? 0"
-                  :is-logged-in="userToken != null || userToken != undefined" @emit-subject-name="activeTab = $event" />
+                  :is-logged-in="userToken != null || userToken != undefined"
+                  @emit-subject-name="(name) => { subjectName = name; subjectSlug = slugifySubject(name); }" />
               </template>
             </customGridTwo>
 
