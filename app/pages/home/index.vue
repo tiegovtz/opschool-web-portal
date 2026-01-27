@@ -268,6 +268,8 @@ const fetchData = async (params?: any) => {
       ]);
     } else {
       data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+      // remove some audio
+      data.value = removeDataFromArrayOfJson(data.value,'audioType','NARRATION')
     }
 
     status.value = fetchStatus.value;
@@ -476,7 +478,7 @@ const switchTab = async (tab: tabs) => {
         </button>
 
         <!-- Side Bar Container Filter For Mobile View Only -->
-        <div :class="[
+        <div v-if="activeTab !=='subjects'" :class="[
           'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
           hideFilter ? 'z-30' : '-z-30',
         ]">
@@ -513,7 +515,7 @@ const switchTab = async (tab: tabs) => {
       </div>
       <div class="flex items-center justify-center w-full gap-4 xl:items-start">
         <!-- container filter Desktop -->
-        <div aria-label="Filters" role="group"
+        <div v-if="activeTab !=='subjects'"  aria-label="Filters" role="group"
           class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
           <!-- Home Drop Down Menu -->
           <DropDownMenu @emit-update-filter-value="filterValue = $event" :active-tab="activeTab" :filter-value="[]" />
@@ -522,7 +524,7 @@ const switchTab = async (tab: tabs) => {
         </div>
 
         <!-- data are in Grid -->
-        <div  class="w-full xl:w-3/4"  id="main-container" aria-label="content list" role="region" tabindex="-1">
+        <div  :class="['w-full ',activeTab !=='subjects'?'xl:w-3/4':'']"  id="main-container" aria-label="content list" role="region" tabindex="-1">
           <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
             <LoadingIndicator :is-loading="true" />
           </div>
@@ -548,7 +550,7 @@ const switchTab = async (tab: tabs) => {
           <div
             v-else-if="status == 'success' && subjectId && data && data.length > 0">
             <ClientOnly>
-              <customGridOne v-if="activeTab === 'subjects'">
+              <customGridOne active-tab="subjects" v-if="activeTab === 'subjects'">
                 <template #data>
                   <!-- Subject Cards are in Grid -->
                   <SubjectCard v-for="subject in shuffleSubject(slicedData)" :key="subject._id"

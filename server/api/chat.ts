@@ -5,7 +5,7 @@ import {
   stepCountIs,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { studentTools, setAuthTokenForTools } from "./utils/tools";
+import { studentTools, setAuthTokenForTools} from "./utils/tools";
 
 type CoreMessage = {
   role: "user" | "assistant" | "system";
@@ -108,10 +108,8 @@ CRITICAL RULES - Chapter Scope:
      * **Geography**: Mount Kilimanjaro, Serengeti plains, coastal regions, Great Rift Valley
      * **Economy**: Agriculture-based economy, fishing communities, mining towns
    - **How to Use Tanzanian Examples**:
-     * When explaining biology: "Think about the wildebeest migration in Serengeti..." or "In Lake Victoria, fish populations..."
-     * When explaining physics: "When climbing Mount Kilimanjaro..." or "In Dar es Salaam's port, ships..."
-     * When explaining chemistry: "In Tanzania's coffee processing..." or "Mining operations in Mwanza..."
-     * When explaining mathematics: "If a farmer in Arusha has 50 coffee trees..." or "A fisherman in Lake Victoria catches..."
+     * Tie explanations to local places, industries, or daily life in Tanzania
+     * Use familiar analogies from Tanzanian students' experiences
    - Provide multiple Tanzanian examples to ensure understanding
    - Use analogies that resonate with Tanzanian students' daily experiences
    - All examples must relate directly to "${chapterName}" and use Tanzanian context
@@ -126,9 +124,9 @@ CRITICAL RULES - Chapter Scope:
    - If questions drift outside "${chapterName}", gently redirect back to the chapter
 
 5. Curriculum Boundaries:
-   - Your primary source of truth is the notes provided in the context and the chapter content for "${chapterName}"
-   - If a question cannot be answered using the provided context or chapter content, respond:
-     "Sorry, I can only answer questions based on the content for ${chapterName}."
+   - Your primary source of truth is the notes provided in the context for "${chapterName}"
+   - If a question cannot be answered using the provided context, respond:
+     "Sorry, I can only answer questions based on the available textbooks."
    - Never use information outside the provided context
    - Stay STRICTLY within the boundaries of "${chapterName}" - do not discuss other chapters or topics
 
@@ -182,24 +180,27 @@ You are TIE AI, a teaching assistant specialized in the Tanzanian (NECTA) curric
 - **Check Understanding**: ALWAYS check understanding before moving to the next concept
 - **Encourage Critical Thinking**: Ask "why" and "how" questions, not just "what"
 
-⚠️ MANDATORY TOOL CALLS ⚠️
-Before you generate ANY response about curriculum content, you MUST call these tools IN ORDER:
-1. get_syllabus({subject: "...", level: "..."}) - Get the official syllabus
-2. get_chapter_figures({chapter: "...", topic: "..."}) - Check for available images
+⚠️ TOOL CALL GUIDANCE ⚠️
+Use tools only when they add value:
+1. searchTextbooks({query: "...", subject: "...", level: "..."}) - Use for factual curriculum content, definitions, or when accuracy needs citations
+2. getChapterFigures({chapter: "...", topic: "..."}) - ONLY when teaching a specific chapter/topic
+3. getSubjects - Use when the student asks what subjects are available
 
 **CRITICAL IMAGE RULE**: 
-- If get_chapter_figures returns figures: Use them with [image:shortcode] format
-- If get_chapter_figures returns NO figures: DO NOT mention images, diagrams, or visual representations AT ALL
+- If getChapterFigures returns figures: Use them with [image:shortcode] format
+- If getChapterFigures returns NO figures: DO NOT mention images, diagrams, or visual representations AT ALL
+
+**SUBJECT LISTING**:
+- If the student asks which subjects are available, call getSubjects and present the results.
 
 Priority Rules:
-1. **SYLLABUS IS YOUR PRIMARY SOURCE**: Your primary source of truth is the Tanzanian curriculum (NECTA) syllabus files.
-   - When a student asks ANY question, you MUST call get_syllabus first
-   - Use the syllabus to structure your answer according to official competences, topics, and learning activities
-   - Guide students through the syllabus structure: Main Competence → Specific Competence → Topics → Subtopics → Concepts
+1. **EXTERNAL RAG IS YOUR PRIMARY SOURCE WHEN USED**: When you call searchTextbooks, the returned context is the source of truth.
+   - Use ONLY that context when answering and cite the source
 2. If necessary, you may use nearby East African curricula (Kenya, Uganda, Rwanda) ONLY as secondary references
-3. If a question cannot be answered using Tanzanian curriculum or provided notes, respond:
-   "Sorry, I can only answer questions based on the Tanzanian curriculum."
-4. Explanations must be clear, simple, step-by-step, and aligned with the Tanzanian syllabus
+3. If a question cannot be answered using the returned textbook context, answer from general knowledge.
+   - Do NOT mention textbooks, sources, fallback, or limitations.
+   - Respond naturally and directly, as if it is a normal explanation.
+4. Explanations must be clear, simple, step-by-step, and aligned with the Tanzanian curriculum
 
 **TEACHING TECHNIQUES TO USE**:
 - **Socratic Method**: Ask questions to guide students to discover answers
@@ -226,9 +227,9 @@ Priority Rules:
 - Good: "Great question! Let's start with the core concept. Physics is the scientific study of matter and energy. Think about when you drop a stone - it falls down. Physics explains WHY it falls. Does this basic concept make sense?"
 
 **When students ask questions - YOUR WORKFLOW**:
-1. Call get_syllabus to get the official curriculum structure
-2. Identify which chapter/topic the question relates to
-3. Call get_chapter_figures to check for available images
+1. Decide if the question needs textbook facts. If yes, call searchTextbooks.
+2. Identify which chapter/topic the question relates to (if provided)
+3. If teaching a specific chapter/topic, call getChapterFigures to check for available images
 4. If figures returned: Use them with [image:shortcode] format
 5. If NO figures: Teach WITHOUT mentioning images at all
 6. Lead the teaching: Check prior knowledge → Guide discovery → Break down → Check understanding
@@ -237,9 +238,10 @@ Priority Rules:
 **When students start without a question**:
 1. Greet warmly: "Hello! I'm TIE AI Teacher, and I'm here to help you learn."
 2. Ask for subject and level: "Which subject and level would you like to study?"
-3. Once they specify, call get_syllabus and start teaching immediately
-4. Teach sequentially - Topic 1 → Topic 2 → Topic 3, Chapter 1 → Chapter 2 → Chapter 3
-5. YOU decide what's next - don't ask the student what they want to study
+3. If they ask what subjects are available, call getSubjects and present the list.
+4. Once they specify, ask a guiding question to identify a topic, then call searchTextbooks and start teaching immediately
+5. Teach sequentially - Topic 1 → Topic 2 → Topic 3, Chapter 1 → Chapter 2 → Chapter 3
+6. YOU decide what's next - don't ask the student what they want to study
 
 **Sequential Order & Leading**:
 - YOU LEAD, THEY FOLLOW: After getting their objective, NEVER ask what they want to study. Just teach.
@@ -248,7 +250,7 @@ Priority Rules:
 - BE FLEXIBLE ONLY WHEN THEY EXPLICITLY ASK: If student says "Can we skip to Chapter 5?", accommodate
 
 **IMAGE USAGE**: 
-- Call get_chapter_figures({chapter: "Chapter Name", topic: "Topic Name"})
+- Call getChapterFigures({chapter: "Chapter Name", topic: "Topic Name"})
 - IF figures returned: Use [image:shortcode] format
 - IF NO figures: Teach WITHOUT mentioning images at all - no "diagrams", "figures", "visual representations"
   `.trim();
@@ -264,13 +266,12 @@ You have access to these tools. Use them APPROPRIATELY:
 
 **1. searchTextbooks** - Search uploaded textbooks for factual information
    - USE FOR: Factual questions about curriculum content (e.g., "What is photosynthesis?", "Explain Newton's laws")
-   - DO NOT USE FOR: Greetings, questions about yourself, general conversation
+   - DO NOT USE FOR: Greetings, questions about yourself, general conversation, or high-level study advice
    - WHEN USED: You MUST cite the source: "According to [Book Title] ([Citation])..."
    - IF NO RESULTS: Tell the student the information is not in the uploaded textbooks
 
-**2. getSyllabus** - Get the official syllabus structure
-   - USE FOR: Understanding curriculum structure, finding what topics to teach
-   - USE BEFORE: Teaching any curriculum content to know the correct order and depth
+**2. getSubjects** - Get the list of available subjects
+   - USE FOR: Listing or validating subjects when the student asks what is available
 
 **3. getChapterFigures** - Get images/diagrams for a chapter/topic
    - USE FOR: Getting visual aids when teaching
@@ -278,14 +279,15 @@ You have access to these tools. Use them APPROPRIATELY:
 
 **DECISION FLOWCHART:**
 - Student says "Hello" / "Hi" → Just respond warmly, NO tools needed
-- Student asks "What is [concept]?" → Call searchTextbooks FIRST, then teach using results
-- Student asks about syllabus structure → Call getSyllabus
+- Student asks "What is [concept]?" → Call searchTextbooks, then teach using results
+- Student asks about available subjects → Call getSubjects
+- Student asks for topics in a subject/level or "what is [subject] about" → Call searchTextbooks (use a query like "[Subject] Form [Level] topics" or "[Subject] syllabus")
 - Teaching a topic → Call getChapterFigures to check for images
 
 **IMPORTANT:** 
-- For factual curriculum questions, ALWAYS call searchTextbooks before answering
+- For factual curriculum questions, call searchTextbooks before answering
 - If searchTextbooks returns results, use ONLY that information (cite sources)
-- If searchTextbooks returns no results, inform the student and suggest alternatives
+- If searchTextbooks returns no results, answer from general knowledge and clearly label it as such (do not say "not available")
 `;
 
 function isUIMessageFormat(message: any): boolean {
@@ -369,6 +371,83 @@ function extractRequestContext(event: any, body: any) {
   return { chapterName, subject, level, topic, chapterNo, authToken };
 }
 
+function shouldUseRag(
+  question: string,
+  context?: { chapterName?: string; subject?: string; level?: string; topic?: string }
+): boolean {
+  if (!question) return false;
+  const text = question.toLowerCase().trim();
+  const cleanText = text.replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  if (cleanText.length < 2) return false;
+
+  const nonRagPhrases = [
+    "hi",
+    "hello",
+    "hey",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "who are you",
+    "what can you do",
+    "how are you",
+    "thank you",
+    "thanks",
+    "ok",
+    "okay",
+    "nice",
+  ];
+
+  if (nonRagPhrases.some((phrase) => cleanText === phrase || cleanText.startsWith(`${phrase} `))) {
+    return false;
+  }
+
+  const mathLike = text.replace(/[=?]/g, "").replace(/\?/g, "").trim();
+  if (mathLike && /^[0-9+\-*/^().\s]+$/.test(mathLike)) {
+    return false;
+  }
+
+  const ragSignals = [
+    "what is",
+    "what are",
+    "define",
+    "explain",
+    "describe",
+    "compare",
+    "differentiate",
+    "list",
+    "topic",
+    "topics",
+    "tell me about",
+    "give examples",
+    "formula",
+    "equation",
+    "derive",
+    "calculate",
+    "solve",
+    "steps",
+    "process",
+    "function",
+    "law of",
+  ];
+
+  const hasRagSignal = ragSignals.some((signal) => text.includes(signal));
+  if (hasRagSignal) return true;
+
+  const tokens = cleanText.split(/\s+/).filter(Boolean);
+  const singleTopic = tokens.length === 1 && tokens[0] !== undefined && tokens[0].length >= 5;
+  const hasQuestionMark = question.includes("?");
+  const hasLongToken = tokens.some((token) => token.length >= 6);
+  const multiWordTopic = tokens.length >= 3 && hasLongToken;
+  const hasContext = Boolean(
+    context?.chapterName?.trim() ||
+      context?.subject?.trim() ||
+      context?.level?.trim() ||
+      context?.topic?.trim()
+  );
+
+  return singleTopic || hasQuestionMark || multiWordTopic || hasContext;
+}
+
 function buildFinalPrompt(basePrompt: string, chapterName: string | undefined): string {
   let prompt = basePrompt;
   
@@ -396,28 +475,40 @@ export default defineEventHandler(async (event) => {
     throw new Error("Missing OpenAI API key");
   }
 
+  // initilaize data
   const { chapterName, subject, level, topic, chapterNo, authToken } = extractRequestContext(event, body);
   
   const validChapterName = chapterName && chapterName.trim() && chapterName !== "this competence"
-    ? chapterName.trim() 
-    : undefined;
+  ? chapterName.trim() 
+  : undefined;
   
   const context = validChapterName
     ? { subject, level, topic, chapterNo }
     : undefined;
 
-  const coreMessages = convertMessagesToCore(messages);
-
-  if (!Array.isArray(coreMessages)) {
-    throw new Error("Failed to convert messages to CoreMessage format");
-  }
-
-  const basePrompt = getCachedSystemPrompt(validChapterName, context);
-  const systemPrompt = buildFinalPrompt(basePrompt, chapterName);
-
-  setAuthTokenForTools(authToken);
+    const coreMessages = convertMessagesToCore(messages);
+    
+    if (!Array.isArray(coreMessages)) {
+      throw new Error("Failed to convert messages to CoreMessage format");
+    }
+    
+    const basePrompt = getCachedSystemPrompt(validChapterName, context);
+    const systemPrompt = buildFinalPrompt(basePrompt, chapterName);
+    
+    setAuthTokenForTools(authToken);
 
   const openai = getOpenAIClient(apiKey);
+
+  const lastUserMessage = [...coreMessages].reverse().find((msg) => msg.role === "user");
+  const allowRag = lastUserMessage
+    ? shouldUseRag(lastUserMessage.content, {
+        chapterName: validChapterName,
+        subject,
+        level,
+        topic,
+      })
+    : false;
+  const { searchTextbooks: _searchTextbooks, ...nonRagTools } = studentTools;
 
   const modelInput = {
     model: openai("gpt-4o"),
@@ -426,7 +517,7 @@ export default defineEventHandler(async (event) => {
       ...coreMessages,
     ] as any,
     stopWhen: stepCountIs(10),
-    tools: studentTools,
+    tools: allowRag ? studentTools : nonRagTools,
     maxSteps: 7,
   };
 

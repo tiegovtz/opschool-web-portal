@@ -90,6 +90,7 @@ const fetchAudios = async (param?: any) => {
 
     // Call State Define above
     audios.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
+    audios.value = removeDataFromArrayOfJson(audios.value, 'audioType', 'NARRATION')
     audios.value = filterKeyDataFromArrayOfJson(audios.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
     status.value = fetchStatus.value;
 

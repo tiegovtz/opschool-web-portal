@@ -20,7 +20,6 @@ export type RAGSource = 'local' | 'external' | 'combined';
 export interface RAGContextResult {
   context: string;
   source: RAGSource;
-  localContext?: string;
   externalContext?: string;
 }
 
@@ -206,7 +205,8 @@ export async function fetchCombinedRAGContext(
     preferExternal?: boolean;
   } = {}
 ): Promise<RAGContextResult> {
-  const { useLocal = true, useExternal = true, preferExternal = false } = options;
+ try {
+   const { useLocal = true, useExternal = true, preferExternal = false } = options;
 
   if (!searchQuery?.trim()) {
     return { context: "", source: 'combined' };
@@ -214,8 +214,6 @@ export async function fetchCombinedRAGContext(
 
   const query = searchQuery.trim();
 
-  // LOCAL RAG DISABLED - Only using external RAG
-  // let localContext = "";
   let externalContext = "";
 
   const promises: Promise<string>[] = [];
@@ -239,7 +237,7 @@ export async function fetchCombinedRAGContext(
           externalContext = result;
           return result;
         })
-        .catch(() => "")
+        .catch((err) => err)
     );
   }
 
@@ -268,7 +266,10 @@ export async function fetchCombinedRAGContext(
   return {
     context: combinedContext.trim(),
     source,
-    localContext: localContext || undefined,
     externalContext: externalContext || undefined,
   };
+ } catch (error) {
+  console.log("[External API call error in RAG]:",error);
+  return { context: "", source: 'combined' };
+ }
 }
