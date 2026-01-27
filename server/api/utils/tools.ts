@@ -1,275 +1,70 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { readFile, readdir } from "fs/promises";
-import { join } from "path";
-import type { Syllabus } from "~/types/syllabus.interface";
-import type { Chapter } from "~/types/chapter.interface";
-import type { Topic } from "~/types/topic.interface";
-import type { ClassLevel } from "~/types/classlevel.interface";
-import type { educationLevel } from "~/types/educationlevel.interface";
-import type { Subjects } from "~/types/subject.interface";
 import { fetchCombinedRAGContext } from "../../utils/rag";
 import apiDocs from "~/utilities/apiDocs";
-import { authToken } from "./auth";
 
-let currentAuthToken = authToken();
-let subjects: Subjects[] = [];
-let topics: Topic[] = [];
-let chapters: Chapter[] = [];
-let classLevels: ClassLevel[] = [];
-let educationLevels: educationLevel[] = [];
-
-// pull subjects list from API
-const getSubjectsList = async () => {
-  try {
-    const s = await $fetch<Subjects[]>(apiDocs.subjects.getPublicSubjects);
-
-    subjects = s;
-  } catch (error) {
-    console.error("[Error fetching subjects for AI]:", error);
-  }
-};
-
-// pull chapters list from API
-const getChapterList = async () => {
-  try {
-    const c = await $fetch<Chapter[]>(apiDocs.chapters.getChapters, {
-      headers: {
-        Authorization: `Bearer ${currentAuthToken}`,
-      },
-    });
-
-    chapters = c;
-  } catch (error) {
-    console.error("[Error fetching chapters for AI]:", error);
-  }
-};
-
-// pull subjects list from API
-const getTopicsList = async () => {
-  try {
-    const t = await $fetch<Topic[]>(apiDocs.topics.filterTopics);
-
-    topics = t;
-  } catch (error) {
-    console.error("[Error fetching Topics for AI]:", error);
-  }
-};
-
-// pull Class Level list from API
-const getClassList = async () => {
-  try {
-    const l = await $fetch<ClassLevel[]>(apiDocs.levels.getLevels);
-
-    classLevels = l;
-  } catch (error) {
-    console.error("[Error fetching Level for AI]:", error);
-  }
-};
-
-// pull Education Level list from API
-const getEducationList = async () => {
-  try {
-    const ed = await $fetch<educationLevel[]>(
-      apiDocs.educationLevel.getEducationLevels,
-    );
-
-    educationLevels = ed;
-  } catch (error) {
-    console.error("[Error fetching education Level for AI]:", error);
-  }
-};
-
-// Calling the functions to populate data
-getSubjectsList();
-getTopicsList();
-getClassList();
-getEducationList();
+let currentAuthToken: string | undefined = undefined;
 
 export function setAuthTokenForTools(token: string | undefined): void {
   currentAuthToken = token as string;
 }
 
-export async function initizeData() {
-  await Promise.allSettled([
-    getSubjectsList(),
-    getTopicsList(),
-    getClassList(),
-    getEducationList(),
-    getChapterList(),
-  ]);
-  formatAvailableSubjects();
-}
-
-async function getAvailableSubjects(): Promise<{
-  subjects: string[];
-  subjectLevels: Record<string, string[]>;
-}> {
-  try {
-    const syllabusDir = join(process.cwd(), "server", "data", "syllabus");
-    const files = await readdir(syllabusDir);
-    const subjects = new Set<string>();
-    const subjectLevels: Record<string, string[]> = {};
-
-    files.forEach((file) => {
-      const match = file.match(/syllabus_(\w+)_form(\d+)\.json/);
-      if (match) {
-        const subject = match[1];
-        const formNum = match[2];
-        const level = `Form ${formNum}`;
-
-        subjects.add(subject as string);
-        if (!subjectLevels[subject as string]) {
-          subjectLevels[subject as string] = [];
-        }
-        if (!subjectLevels[subject as string]?.includes(level)) {
-          subjectLevels[subject as string]?.push(level);
-        }
-      }
-    });
-
-    return {
-      subjects: Array.from(subjects).sort(),
-      subjectLevels,
-    };
-  } catch {
-    return {
-      subjects: ["biology", "physics", "chemistry", "mathematics", "geography"],
-      subjectLevels: {
-        biology: ["Form 1", "Form 2"],
-        physics: ["Form 1", "Form 2"],
-        chemistry: ["Form 1", "Form 2"],
-        mathematics: ["Form 1", "Form 2"],
-        geography: ["Form 1", "Form 2"],
-      },
-    };
+const resolveApiUrl = (docUrl: string, fallbackPath: string) => {
+  const baseUrl = apiDocs.baseURL;
+  if (docUrl && !docUrl.includes("undefined")) {
+    return docUrl.replace(apiDocs.baseURL || baseUrl, baseUrl);
   }
-}
+  return `${baseUrl}${fallbackPath}`;
+};
 
-function formatAvailableSubjects(): string {
-  const formatted = subjects
-    .map((subject) => {
-      let levels =
-        topics.filter((t) => (t.subject as any)?.name === subject.name).map((t) => (t.level as any )?.name|| t.level ) ||
-        [];
+async function fetchSubjectsFromApi(): Promise<any[]> {
+  const url = resolveApiUrl(apiDocs.subjects.getSubjects, "/subjects");
+  const publicUrl = resolveApiUrl(
+    apiDocs.subjects.getPublicSubjects,
+    "/public-subjects",
+  );
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
 
-      // clear dublicate from  levels
-      levels = Array.from(new Set(levels));
+  if (currentAuthToken?.trim()) {
+    headers.Authorization = `Bearer ${currentAuthToken.trim()}`;
+  }
 
-      return `${subject.name} (${levels.join(", ")})`;
-    })
-    .join(", ");
+  const extractList = (data: any) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.subjects)) return data.subjects;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.results)) return data.results;
+    return [];
+  };
 
-  return formatted || subjects.map((s) => s.name).join(", ");
-}
+  const response = await fetch(url, { headers });
+  if (response.ok) {
+    return extractList(await response.json());
+  }
 
-async function readSyllabusFromFile(
-  subject: string,
-  level: string,
-): Promise<Syllabus | null> {
-  try {
-    const normalizedSubject = subject.toLowerCase().trim().replace(/\s+/g, "_");
-
-    let normalizedLevel = level.toLowerCase().trim();
-    normalizedLevel = normalizedLevel.replace(/form\s*1$/i, "form1");
-    normalizedLevel = normalizedLevel.replace(/form\s*2$/i, "form2");
-    normalizedLevel = normalizedLevel.replace(/form\s*3$/i, "form3");
-    normalizedLevel = normalizedLevel.replace(/form\s*4$/i, "form4");
-    normalizedLevel = normalizedLevel.replace(/\s+/g, "");
-
-    const filename = `syllabus_${normalizedSubject}_${normalizedLevel}.json`;
-    const syllabusDir = join(process.cwd(), "server", "data", "syllabus");
-    const filePath = join(syllabusDir, filename);
-
-    try {
-      const fileContent = await readFile(filePath, "utf-8");
-      const rawData = JSON.parse(fileContent);
-
-      let syllabus: Syllabus | null = null;
-
-      if (
-        rawData.syllabus_metadata &&
-        rawData.competences &&
-        rawData.chapters
-      ) {
-        syllabus = {
-          syllabus_title: rawData.syllabus_metadata.title || "Syllabus",
-          level: rawData.syllabus_metadata.level || level,
-          content: rawData.competences || [],
-        };
-        (syllabus as any).chapters = rawData.chapters;
-        (syllabus as any).book_metadata = rawData.book_metadata;
-        (syllabus as any).syllabus_metadata = rawData.syllabus_metadata;
-        (syllabus as any).isMergedFormat = true;
-      } else if (rawData.syllabus_title && rawData.level && rawData.content) {
-        syllabus = rawData as Syllabus;
-      } else if (
-        (rawData.book_metadata || rawData.book_info) &&
-        rawData.chapters
-      ) {
-        const bookInfo = rawData.book_metadata || rawData.book_info;
-        syllabus = {
-          syllabus_title: bookInfo.title || "Syllabus",
-          level: bookInfo.level || level,
-          content: [],
-        };
-        (syllabus as any).chapters = rawData.chapters;
-        (syllabus as any).isChapterOnly = true;
-      } else {
-        return null;
-      }
-
-      return syllabus;
-    } catch {
-      return null;
+  if (
+    (response.status === 401 || response.status === 403) &&
+    !headers.Authorization
+  ) {
+    const publicResponse = await fetch(publicUrl, {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (publicResponse.ok) {
+      return extractList(await publicResponse.json());
     }
-  } catch {
-    return null;
   }
-}
 
-function formatSyllabusForAgent(syllabus: Syllabus): string {
-  let formatted = `SYLLABUS: ${syllabus.syllabus_title}\n`;
-  formatted += `LEVEL: ${syllabus.level}\n\n`;
-  formatted += `TOTAL COMPETENCES: ${syllabus.content.length}\n\n`;
-  formatted += "=".repeat(80) + "\n\n";
-
-  syllabus.content.forEach((competence, index) => {
-    formatted += `COMPETENCE ${index + 1}:\n`;
-    formatted += `Main Competence: ${competence.main_competence}\n`;
-    formatted += `Specific Competence: ${competence.specific_competence}\n`;
-    formatted += `Number of Periods: ${competence.number_of_periods}\n\n`;
-
-    formatted += "Learning Activities:\n";
-    competence.learning_activities.forEach((activity, actIndex) => {
-      formatted += `  ${actIndex + 1}. ${activity.activity}\n`;
-      formatted += `     Teaching Methods:\n`;
-      activity.teaching_learning_methods.forEach((method) => {
-        formatted += `       - ${method}\n`;
-      });
-      formatted += `     Assessment: ${activity.assessment_criteria}\n`;
-      formatted += `     Resources: ${activity.suggested_resources}\n\n`;
-    });
-
-    formatted += "-".repeat(80) + "\n\n";
-  });
-
-  return formatted;
-}
-
-function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length) return 0;
-  const dot = a.reduce((sum, val, i) => sum + val * (b[i] ?? 0), 0);
-  const magA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
-  const magB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
-  if (magA === 0 || magB === 0) return 0;
-  return dot / (magA * magB);
+  throw new Error(
+    `Subjects API error: ${response.status} ${response.statusText}`,
+  );
 }
 
 export const studentTools = {
   getChapterFigures: tool({
     description:
-      "MANDATORY: Get all available image figures for a specific chapter and optional topic. You MUST call this tool whenever you are teaching a chapter or topic from the syllabus. This is the ONLY method to get images. Provide the chapter name exactly as it appears in the syllabus (e.g., 'Chapter Six: Nutrition in plants', 'Chapter One: Introduction to Biology'). Returns a list of figures with their shortcodes that you MUST use with [image:shortcode] format in your response. If figures are returned, you MUST include at least one [image:shortcode] in your response.",
+      "MANDATORY: Get all available image figures for a specific chapter and optional topic. You MUST call this tool whenever you are teaching a specific chapter or topic. This is the ONLY method to get images. Provide the chapter name exactly as given in the request or context. Returns a list of figures with shortcodes that you MUST use with [image:shortcode] format in your response. If figures are returned, you MUST include at least one [image:shortcode] in your response.",
     inputSchema: z.object({
       chapter: z
         .string()
@@ -279,29 +74,39 @@ export const studentTools = {
       topic: z
         .string()
         .optional()
-        .describe("EXACT topic name from the user's message or syllabus."),
+        .describe("EXACT topic name from the user's message or context."),
       subject: z
         .string()
         .optional()
-        .describe(
-          "Subject name to filter figures (e.g., 'biology', 'physics', 'chemistry').",
-        ),
+        .describe("Subject name to filter figures."),
     }),
     execute: async ({ chapter, topic, subject }) => {
       try {
-        const extractSubjectFromChapter = (ch: string): string | null => {
-          const lower = ch.toLowerCase();
-          if (lower.includes("biology")) return "biology";
-          if (lower.includes("physics")) return "physics";
-          if (lower.includes("chemistry")) return "chemistry";
-          if (lower.includes("mathematics") || lower.includes("math"))
-            return "mathematics";
-          if (lower.includes("geography")) return "geography";
-          return null;
-        };
+        let querySubject = subject?.toLowerCase().trim() || null;
+        if (!querySubject) {
+          try {
+            const subjects = await fetchSubjectsFromApi();
+            const chapterLower = chapter.toLowerCase();
+            const subjectNames = subjects
+              .map(
+                (item: any) =>
+                  item?.name ||
+                  item?.title ||
+                  item?.subject ||
+                  item?.subject_name ||
+                  "",
+              )
+              .map((name: string) => name.toLowerCase().trim())
+              .filter((name: string) => name.length > 0);
 
-        const querySubject =
-          subject?.toLowerCase() || extractSubjectFromChapter(chapter);
+            querySubject =
+              subjectNames.find((name: string) =>
+                chapterLower.includes(name),
+              ) || null;
+          } catch {
+            querySubject = null;
+          }
+        }
 
         // Check if authentication token is available
         if (!currentAuthToken || !currentAuthToken.trim()) {
@@ -339,6 +144,14 @@ export const studentTools = {
             filterOptions.topic = topic;
           }
 
+          console.log("[getChapterFigures] Fetching figures with options:", {
+            filterOptions,
+            hasToken: !!currentAuthToken,
+            chapter,
+            topic,
+            subject: querySubject,
+          });
+
           let figures = await getFigures(filterOptions, currentAuthToken);
 
           if (
@@ -346,6 +159,9 @@ export const studentTools = {
             querySubject &&
             (filterOptions.chapter || filterOptions.topic)
           ) {
+            console.log(
+              "[getChapterFigures] No figures with filters, trying with category only",
+            );
             figures = await getFigures(
               { category: querySubject },
               currentAuthToken,
@@ -353,8 +169,13 @@ export const studentTools = {
           }
 
           if (figures.length === 0 && querySubject) {
+            console.log(
+              "[getChapterFigures] No figures with category, trying all figures",
+            );
             figures = await getFigures({}, currentAuthToken);
           }
+
+          console.log("[getChapterFigures] Found figures:", figures.length);
 
           images = figures.map((fig: any) => ({
             figure_number: fig.figure_number || "",
@@ -424,9 +245,7 @@ export const studentTools = {
           const matchesChapter = imgChapter === queryChapter;
 
           if (querySubject && matchesChapter) {
-            const imgSubject =
-              extractSubjectFromChapter(img.chapter || "") ||
-              (img.subject || "").toLowerCase();
+            const imgSubject = (img.subject || "").toLowerCase();
             const imgShortcode = (img.shortcode || "").toLowerCase();
 
             const subjectMatch =
@@ -499,9 +318,7 @@ export const studentTools = {
               if (!matchesChapterNumber) return false;
 
               if (querySubject) {
-                const imgSubject =
-                  extractSubjectFromChapter(img.chapter || "") ||
-                  (img.subject || "").toLowerCase();
+                const imgSubject = (img.subject || "").toLowerCase();
                 const imgShortcode = (img.shortcode || "").toLowerCase();
 
                 const subjectMatch =
@@ -592,181 +409,79 @@ export const studentTools = {
     },
   }),
 
-  getSyllabus: tool({
+  getSubjects: tool({
     description:
-      "Get the syllabus/curriculum for a given subject and level (Form 1 or Form 2) from JSON files. Use this when you need to understand what competences, topics, or content should be covered for a specific subject and level. Available subjects: biology, physics, chemistry, mathematics, geography. Available levels: Form 1, Form 2.",
+      "Get the current list of available subjects from the API. Use this when you need to know which subjects exist or to validate a subject name.",
     inputSchema: z.object({
-      subject: z
-        .string()
-        .describe(
-          `The subject name (e.g.,${subjects.map((s) => s.name).join(", ")})`,
-        ),
-      level: z
-        .string()
-        .describe(`The education level (e.g.${educationLevels.map((edl) => edl.name).join(", ")},)`),
+      includeLevels: z
+        .boolean()
+        .optional()
+        .describe("Include level information if available."),
     }),
-    execute: async ({ subject, level }) => {
+    execute: async ({ includeLevels }) => {
       try {
-        const syllabus = await readSyllabusFromFile(subject, level);
-        if (!syllabus) {
-          const availableSubjects = await formatAvailableSubjects();
-          return {
-            subject,
-            level,
-            syllabus: `No syllabus file found for ${subject} ${level}. Available files: ${availableSubjects}.`,
-            found: false,
-            competences: [],
-          };
-        }
+        const subjects = await fetchSubjectsFromApi();
+        const normalized = subjects
+          .map((subject: any) => ({
+            id:
+              subject?._id ||
+              subject?.id ||
+              subject?.subjectId ||
+              subject?.uuid ||
+              null,
+            name:
+              subject?.name ||
+              subject?.title ||
+              subject?.subject ||
+              subject?.subject_name ||
+              "",
+            level:
+              subject?.level ||
+              subject?.classLevel ||
+              subject?.educationLevel ||
+              subject?.levelName ||
+              null,
+            description:
+              subject?.description ||
+              subject?.summary ||
+              subject?.about ||
+              null,
+          }))
+          .filter((subject: any) => subject.name);
 
-        let formattedSyllabus: string;
-        let competences: any[] = [];
-        let chapters: any[] = [];
-        let totalCompetences = 0;
-
-        const isMergedFormat = (syllabus as any).isMergedFormat === true;
-        const isChapterOnly = (syllabus as any).isChapterOnly === true;
-
-        if (isMergedFormat && syllabus.content && syllabus.content.length > 0) {
-          const syllabusMetadata = (syllabus as any).syllabus_metadata || {};
-          const rawChapters = (syllabus as any).chapters || [];
-
-          formattedSyllabus = `SYLLABUS: ${syllabus.syllabus_title}\n`;
-          formattedSyllabus += `LEVEL: ${syllabus.level}\n`;
-          formattedSyllabus += `TOTAL PERIODS: ${syllabusMetadata.total_periods || "N/A"}\n\n`;
-          formattedSyllabus += "=".repeat(80) + "\n\n";
-
-          formattedSyllabus += "CHAPTERS (Book Structure):\n";
-          rawChapters.forEach((ch: any) => {
-            formattedSyllabus += `  Chapter ${ch.chapter_number}: ${ch.title}\n`;
-            if (ch.sections) {
-              ch.sections.slice(0, 3).forEach((sec: any) => {
-                formattedSyllabus += `    - ${sec.title}\n`;
-              });
-              if (ch.sections.length > 3) {
-                formattedSyllabus += `    ... and ${ch.sections.length - 3} more sections\n`;
+        const subjectList = normalized.map((subject: any) =>
+          includeLevels
+            ? {
+                id: subject.id,
+                name: subject.name,
+                level: subject.level,
+                description: subject.description,
               }
-            }
-          });
-          formattedSyllabus += "\n" + "=".repeat(80) + "\n\n";
-
-          formattedSyllabus += "COMPETENCES (Curriculum Requirements):\n\n";
-          syllabus.content.forEach((competence: any, index: number) => {
-            formattedSyllabus += `COMPETENCE ${index + 1}:\n`;
-            formattedSyllabus += `  Main: ${competence.main_competence}\n`;
-            formattedSyllabus += `  Specific: ${competence.specific_competence}\n`;
-            formattedSyllabus += `  Periods: ${competence.number_of_periods}\n\n`;
-
-            formattedSyllabus += "  Learning Activities:\n";
-            competence.learning_activities?.forEach(
-              (activity: any, actIdx: number) => {
-                formattedSyllabus += `    ${actIdx + 1}. ${activity.activity}\n`;
-                formattedSyllabus += `       Related Chapters: ${activity.related_chapters?.join(", ") || "N/A"}\n`;
-                formattedSyllabus += `       Teaching Methods:\n`;
-                activity.teaching_learning_methods?.forEach(
-                  (method: string) => {
-                    formattedSyllabus += `         • ${method}\n`;
-                  },
-                );
-                formattedSyllabus += `       Assessment: ${activity.assessment_criteria}\n`;
-                formattedSyllabus += `       Resources: ${activity.suggested_resources}\n\n`;
+            : {
+                id: subject.id,
+                name: subject.name,
+                description: subject.description,
               },
-            );
-            formattedSyllabus += "-".repeat(80) + "\n\n";
-          });
-
-          competences = syllabus.content.map((c: any) => ({
-            main_competence: c.main_competence,
-            specific_competence: c.specific_competence,
-            periods: c.number_of_periods,
-            learning_activities:
-              c.learning_activities?.map((a: any) => ({
-                activity: a.activity,
-                related_chapters: a.related_chapters,
-                teaching_methods: a.teaching_learning_methods,
-                assessment_criteria: a.assessment_criteria,
-                suggested_resources: a.suggested_resources,
-              })) || [],
-          }));
-
-          chapters = rawChapters.map((ch: any) => ({
-            chapter_number: ch.chapter_number,
-            title: ch.title,
-            sections: ch.sections?.map((s: any) => s.title) || [],
-          }));
-
-          totalCompetences = syllabus.content.length;
-        } else if (isChapterOnly && (syllabus as any).chapters) {
-          const rawChapters = (syllabus as any).chapters;
-          formattedSyllabus = `SYLLABUS: ${syllabus.syllabus_title}\n`;
-          formattedSyllabus += `LEVEL: ${syllabus.level}\n\n`;
-          formattedSyllabus +=
-            "NOTE: This syllabus uses chapter-based structure only.\n\n";
-          formattedSyllabus += `TOTAL CHAPTERS: ${rawChapters.length}\n\n`;
-
-          rawChapters.forEach((chapter: any) => {
-            formattedSyllabus += `CHAPTER ${chapter.chapter_number}: ${chapter.title}\n`;
-            if (chapter.sections) {
-              chapter.sections.forEach((sec: any, idx: number) => {
-                formattedSyllabus += `  ${idx + 1}. ${sec.title}\n`;
-              });
-            }
-            formattedSyllabus += "\n";
-          });
-
-          chapters = rawChapters.map((ch: any) => ({
-            chapter_number: ch.chapter_number,
-            title: ch.title,
-            sections: ch.sections?.map((s: any) => s.title) || [],
-          }));
-          totalCompetences = rawChapters.length;
-        } else if (syllabus.content && syllabus.content.length > 0) {
-          formattedSyllabus = formatSyllabusForAgent(syllabus);
-          competences = syllabus.content.map((c) => ({
-            main_competence: c.main_competence,
-            specific_competence: c.specific_competence,
-            periods: c.number_of_periods,
-            activities_count: c.learning_activities.length,
-          }));
-          totalCompetences = syllabus.content.length;
-        } else {
-          formattedSyllabus = `SYLLABUS: ${syllabus.syllabus_title}\nLEVEL: ${syllabus.level}\n\nNo content found.`;
-        }
+        );
 
         return {
-          subject: syllabus.syllabus_title.includes(subject.toLowerCase())
-            ? subject
-            : syllabus.syllabus_title,
-          level: syllabus.level,
-          syllabus: formattedSyllabus,
-          competences: competences,
-          chapters: chapters,
-          totalCompetences: totalCompetences,
-          totalChapters: chapters.length,
-          found: true,
+          found: subjectList.length > 0,
+          total: subjectList.length,
+          subjects: subjectList,
           instruction:
-            "USE the teaching_methods from the competences to guide how you teach. CHECK understanding using the assessment_criteria. FOLLOW the chapters sequentially when teaching.",
+            "Use this list to reference valid subjects. If the user's subject is not listed, ask them to choose from the available subjects.",
         };
       } catch (error: any) {
         return {
-          subject,
-          level,
-          syllabus: `Error retrieving syllabus: ${error.message}`,
           found: false,
-          error: true,
-          competences: [],
+          subjects: [],
+          error: error?.message || "Failed to load subjects",
         };
       }
     },
   }),
 
-  convertFahrenheitToCelsius: tool({
-    description: "Convert a temperature in Fahrenheit to Celsius",
-    inputSchema: z.object({ temperature: z.number() }),
-    execute: async ({ temperature }) => ({
-      celsius: Math.round((temperature - 32) * (5 / 9)),
-    }),
-  }),
+  // getSubjectTopics removed: topic endpoint coverage is limited; rely on RAG + model knowledge instead.
 
   math: tool({
     description: "Evaluate basic math expressions",
@@ -781,17 +496,8 @@ export const studentTools = {
     },
   }),
 
-  weather: tool({
-    description: "Get the weather in a location (Fahrenheit)",
-    inputSchema: z.object({ location: z.string() }),
-    execute: async ({ location }) => ({
-      location,
-      temperature: Math.round(Math.random() * (90 - 32) + 32),
-    }),
-  }),
-
   searchTextbooks: tool({
-    description: `Search uploaded textbooks for factual information about a topic. 
+    description: `Search uploaded textbooks (external RAG) for factual information about a topic. 
     
 WHEN TO USE THIS TOOL:
 - When a student asks a FACTUAL question about curriculum content (e.g., "What is photosynthesis?", "Explain Newton's laws")
@@ -801,8 +507,8 @@ WHEN NOT TO USE THIS TOOL:
 - For greetings (e.g., "Hello", "Hi", "How are you?")
 - For questions about yourself (e.g., "Who are you?", "What can you do?")
 - For general conversation or clarification questions
-- For questions about the syllabus structure (use get_syllabus instead)
-- For getting images (use get_chapter_figures instead)
+- For getting images (use getChapterFigures instead)
+- For listing subjects (use getSubjects instead)
 
 IMPORTANT: If this tool returns results, you MUST cite them using: "According to [Book Title] ([Citation])..."`,
     inputSchema: z.object({
@@ -811,16 +517,8 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
         .describe(
           "The search query - be specific and include the topic/concept you need information about.",
         ),
-      subject: z
-        .string()
-        .optional()
-        .describe(
-          "Optional: The subject area (biology, physics, chemistry, mathematics, geography)",
-        ),
-      level: z
-        .string()
-        .optional()
-        .describe("Optional: The education level (Form 1, Form 2)"),
+      subject: z.string().optional().describe("Optional: The subject area."),
+      level: z.string().optional().describe("Optional: The education level."),
     }),
     execute: async ({ query, subject, level }) => {
       if (!query?.trim()) {
@@ -840,26 +538,48 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
               }
             : undefined;
 
-        const ragResult = await fetchCombinedRAGContext(
-          query.trim(),
-          currentAuthToken,
-          queryContext,
-          {
+        const rawQuery = query.trim();
+        const normalized = rawQuery.toLowerCase();
+        const isSubjectTopicQuery =
+          /(topics?|syllabus|outline|subject|about)/i.test(rawQuery);
+        const cleanedQuery = normalized
+          .replace(
+            /what is|what are|about|topics?|subject|course|for|in|of/gi,
+            " ",
+          )
+          .replace(/form\s*\d+/gi, " ")
+          .replace(/[^a-z0-9\s]/gi, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        const expandedQuery =
+          isSubjectTopicQuery && cleanedQuery
+            ? `${cleanedQuery} syllabus topics outline`
+            : cleanedQuery;
+
+        const fetchContext = async (q: string) =>
+          fetchCombinedRAGContext(q, currentAuthToken, queryContext, {
             useLocal: false,
             useExternal: true,
             preferExternal: true,
-          },
-        );
+          });
+
+        let ragResult = await fetchContext(rawQuery);
+        if (
+          (!ragResult.context || ragResult.context.trim().length === 0) &&
+          expandedQuery &&
+          expandedQuery !== rawQuery
+        ) {
+          ragResult = await fetchContext(expandedQuery);
+        }
 
         if (!ragResult.context || ragResult.context.trim().length === 0) {
           return {
             found: false,
             query: query,
-            message:
-              "No relevant information found in uploaded textbooks. The topic may not be covered in the available materials.",
+            message: "No textbook context returned.",
             context: "",
             instruction:
-              "Inform the student that this information is not available in the uploaded textbooks. Suggest they check other sources or rephrase their question.",
+              "Answer using general knowledge. Do NOT say the information is unavailable. Clearly label the response as general knowledge (not from the textbooks) if needed.",
           };
         }
 
@@ -874,7 +594,6 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
           query: query,
           source: ragResult.source,
           context: context,
-          hasLocalResults: !!ragResult.localContext,
           hasExternalResults: !!ragResult.externalContext,
           instruction:
             "You MUST use the context above to answer. ALWAYS cite the source using format: 'According to [Book Title] ([Citation])...'. Do NOT use information outside this context.",

@@ -1006,7 +1006,8 @@ definePageMeta({
     </section>
 
     <!-- AI Assistant -->
-    <AIAssistant v-if="chapters.currentChapterId && chapters.notes" :chapter-id="chapters.currentChapterId"
+    <!-- Use chapters.notes._id as primary source since it's the actual ID from API response -->
+    <AIAssistant v-if="chapters.notes?._id" :chapter-id="chapters.notes._id"
       :chapter-name="chapters.notes?.name || 'this competence'" :subject="topicStandard" :level="topicLevel"
       :topic="topicTitle" :chapter-no="chapters.notes?.chapterNo" :audios="chapters.notes?.audios || []" />
 
