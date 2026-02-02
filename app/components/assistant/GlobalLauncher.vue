@@ -24,10 +24,6 @@ const EXCLUDED_PREFIXES = [
   "/smart-class",
 ];
 const EXCLUDED_EXACT = [
-  "/login",
-  "/register",
-  "/forgot-password",
-  "/reset-password",
 ];
 
 const isLoggedIn = computed(() => !!(userToken.value || accessToken.value));

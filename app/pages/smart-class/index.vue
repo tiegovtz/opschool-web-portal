@@ -341,7 +341,6 @@ const defaultRecordingThumbnail = "https://plus.unsplash.com/premium_photo-16775
 
 const accessTokenCookie = useCookie("signInAccessToken");
 const userTokenCookie = useCookie("signInUserToken");
-const accessToken = accessTokenCookie.value;
 
 const getHeaders = () => {
   const headers: Record<string, string> = {
