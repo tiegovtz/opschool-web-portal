@@ -15,7 +15,7 @@ import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import type { tabs } from "~/types/types.data";
-import InputsSelection from "~/components/home/InputsSelection.vue";
+import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
 
 const route = useRoute();
 const experimentId = route.fullPath.split("/").pop();
@@ -77,7 +77,6 @@ const status = ref("pending");
 const experiments = ref();
 const slicedData = ref();
 
-const level = ref();
 const activeTab = ref<tabs>("learn-activities");
 const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
   subjects: { path: "/home" },
@@ -238,32 +237,21 @@ const { progress, isLoading } = useLoadingIndicator();
 //##########################################################################
 //----------------- Define Filters Reactive State --------------------------
 //##########################################################################
-const filters = reactive<{
-  level: string | number | null;
-  subject: string | number | null;
-}>({
-  level: null,
-  subject: null,
-});
-
-//##########################################################################
-//----------------- watch emits changes ------------------------------------
-//##########################################################################
-watch(filters, (filters) => {
-  const payload: any = {};
-
-  if (filters.level) {
-    payload.level = filters.level.toString();
-  }
-
-  if (filters.subject) {
-    payload.subject = filters.subject.toString();
-  }
-
-  if (Object.keys(payload).length === 0) return;
-
-  fetchExperiments(payload);
-});
+const filterValue = ref<Record<string, any> | any[]>({});
+watch(
+  () => filterValue.value,
+  (newFilterValue) => {
+    if (Array.isArray(newFilterValue)) {
+      fetchExperiments();
+      return;
+    }
+    const filteredParams = Object.fromEntries(
+      Object.entries(newFilterValue || {}).filter(([_, v]) => v)
+    );
+    fetchExperiments(filteredParams);
+  },
+  { deep: true }
+);
 
 </script>
 
@@ -281,68 +269,74 @@ watch(filters, (filters) => {
       <!-- User Token Not Available -->
       <section v-else>
         <HeroSection />
-        <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
-          @emit-subject="filters.subject = $event" />
         <nav aria-label="Content categories">
           <TabBar :active-tab="activeTab" />
         </nav>
       </section>
+      <HomeTabContentShell
+        :active-tab="activeTab"
+        :results-count="experiments?.length || 0"
+        :filter-value="filterValue"
+        :show-filters="!!userToken"
+        @update-filter="filterValue = $event"
+        @reset-filter="filterValue = {}"
+      >
+        <div v-if="status === 'pending'" class="flex flex-col items-center justify-center" role="status"
+          aria-live="polite">
+          <LoadingIndicator :is-loading="true" />
+        </div>
 
-      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center" role="status"
-        aria-live="polite">
-        <LoadingIndicator :is-loading="true" />
-      </div>
+        <!-- Status Error -->
+        <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center"
+          role="alert" aria-live="assertive">
+          <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" aria-hidden="true" />
+          <p class="text-center">
+            Oops! Something went wrong.<br />
+            Try refreshing the page or check your internet connection.
+          </p>
+        </div>
+        <!-- Status Success -->
+        <div v-else-if="status == 'success'">
+          <!-- client only -->
+          <ClientOnly v-if="slicedData?.length > 0">
+            <div class="flex flex-col w-full px-2 lg:px-4">
 
-      <!-- Status Error -->
-      <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center"
-        role="alert" aria-live="assertive">
-        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" aria-hidden="true" />
-        <p class="text-center">
-          Oops! Something went wrong.<br />
-          Try refreshing the page or check your internet connection.
-        </p>
-      </div>
-      <!-- Status Success -->
-      <div v-else-if="status == 'success'">
-        <!-- client only -->
-        <ClientOnly v-if="slicedData?.length > 0">
-          <div class="flex flex-col w-full px-2 lg:px-4">
-
-            <!-- Scroll View -->
-            <section aria-label="Experiments list">
-              <HomeCustomScrollView :data="experiments" active-tab="interactive-contents" />
-            </section>
+              <!-- Scroll View -->
+              <section aria-label="Experiments list">
+                <HomeCustomScrollView :data="experiments" active-tab="interactive-contents" />
+              </section>
 
 
-            <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-10" aria-label="Pagination navigation">
-              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event"
-                  :aria-label="`Go to page ${page}`" />
-              </div>
-              <div v-else class="flex justify-center gap-2">
-                <!-- previous -->
-                <div class="flex items-center justify-center" v-if="currentPage > 5" aria-label="Go to previous page">
-                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" aria-hidden="true" />
+              <!-- pagination numbers based on data length greater to 9 -->
+              <div v-if="totalPages > 1" class="flex justify-center my-10" aria-label="Pagination navigation">
+                <div v-if="totalPages <= 5" class="flex justify-center gap-2">
+                  <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                    :is-active="page === currentPage" :disabled="page === currentPage"
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event"
+                    :aria-label="`Go to page ${page}`" />
                 </div>
+                <div v-else class="flex justify-center gap-2">
+                  <!-- previous -->
+                  <div class="flex items-center justify-center" v-if="currentPage > 5" aria-label="Go to previous page">
+                    <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" aria-hidden="true" />
+                  </div>
 
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event"
-                  :aria-label="`Go to page ${page}`" />
+                  <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                    :is-active="page === currentPage" :disabled="page === currentPage"
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event"
+                    :aria-label="`Go to page ${page}`" />
 
-                <!-- next button -->
-                <div class="flex items-center justify-center" v-if="currentPage > 4" aria-label="Go to next page">
-                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" aria-hidden="true" />
+                  <!-- next button -->
+                  <div class="flex items-center justify-center" v-if="currentPage > 4" aria-label="Go to next page">
+                    <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" aria-hidden="true" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </ClientOnly>
-        <MessageTopicNotFound v-else />
-      </div>
+          </ClientOnly>
+          <MessageTopicNotFound v-else />
+        </div>
+      </HomeTabContentShell>
     </section>
   </NuxtLayout>
 </template>
