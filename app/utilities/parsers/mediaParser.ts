@@ -21,7 +21,9 @@ const videoParser = (query: string): string => {
                 <div class="flex items-center justify-end mt-3">
                     <a 
                         href="/interactive-video?videoId=${videoId}" 
-                        class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                        class="interactive-video-link hidden items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                        data-interactive-video-link="true"
+                        data-video-id="${videoId}"
                         aria-label="Open video in interactive player with quizzes and assessments"
                         role="button"
                         tabindex="0"

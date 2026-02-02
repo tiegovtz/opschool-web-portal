@@ -443,6 +443,64 @@ onMounted(async () => {
   setPicCenter();
 });
 
+const updateInteractiveVideoLinks = async () => {
+  if (!import.meta.client || !notesContainer.value) return;
+  if (!signInAccessToken.value) return;
+
+  const container = notesContainer.value as HTMLElement;
+  const links = Array.from(
+    container.querySelectorAll<HTMLAnchorElement>(
+      'a[data-interactive-video-link="true"][data-video-id]'
+    )
+  );
+
+  if (links.length === 0) return;
+
+  await ensureAccessTokenValid();
+
+  const videoIds = Array.from(
+    new Set(
+      links
+        .map((link) => link.dataset.videoId)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const availability = new Map<string, boolean>();
+
+  await Promise.all(
+    videoIds.map(async (videoId) => {
+      try {
+        const data = await $fetch<any>(
+          apiDocs.videos.getVideoInteractionsLoad.replace("{id}", videoId),
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${signInAccessToken.value}`,
+            },
+          }
+        );
+        availability.set(videoId, Array.isArray(data) && data.length > 0);
+      } catch (err) {
+        availability.set(videoId, false);
+      }
+    })
+  );
+
+  links.forEach((link) => {
+    const videoId = link.dataset.videoId;
+    if (!videoId) return;
+    if (availability.get(videoId)) {
+      link.classList.remove("hidden");
+      link.classList.add("inline-flex");
+    } else {
+      link.classList.add("hidden");
+      link.classList.remove("inline-flex");
+    }
+  });
+};
+
 // Watch chapter notes and Then, Set Pic Center
 watch(
   () => chapters.notes,
@@ -450,6 +508,7 @@ watch(
     if (newNotes) {
       await nextTick();
       setPicCenter();
+      await updateInteractiveVideoLinks();
       // Update localStorage context when notes change
       if (chapters.currentChapterId) {
         storeChapterContext(chapters.currentChapterId, newNotes);
