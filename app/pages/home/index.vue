@@ -33,7 +33,6 @@ import type { Audios } from "~/types/audio.interface";
 import type { Topic } from "~/types/topic.interface";
 import { getTabLabel } from "~/utilities/get.labels";
 import {
-  getSectionFromTab,
   getTabFromSection,
   SECTION_QUERY_KEY,
   SUBJECT_ID_QUERY_KEY,
@@ -106,8 +105,16 @@ const subjectSlug = ref<string>(""); // Initial subject slug Value State
 const subjectName = ref<string>(""); // Initial subject name Value State
 const seeMoreDetails = ref<string | null>(null); // Initial See More
 const announcement = ref<string>();
-const isSyncingRoute = ref(false);
 const subjectResolveState = ref({ slug: "", isLoading: false });
+const TAB_TO_ROUTE: Record<tabs, { path: string; query?: Record<string, any> }> = {
+  subjects: { path: "/home" },
+  "interactive-contents": { path: "/interactive" },
+  "learn-activities": { path: "/experiments" },
+  video: { path: "/video", query: { type: "conc" } },
+  "class-videos": { path: "/video", query: { type: "oth" } },
+  audio: { path: "/audio" },
+  "smart-class": { path: "/smart-class" },
+};
 
 const isSubjectDetail = computed(
   () =>
@@ -130,51 +137,6 @@ const slugifySubject = (value: string) =>
 
 const normalizeQueryValue = (value: unknown) =>
   typeof value === "string" ? value.trim() : "";
-
-const stringifyQuery = (query: Record<string, any>) => {
-  const entries = Object.entries(query)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .map(([key, value]) => [key, Array.isArray(value) ? value.join(",") : String(value)]);
-  entries.sort(([a], [b]) => (a ?? "").localeCompare(b ?? ""));
-  return entries.map(([key, value]) => `${key}=${value}`).join("&");
-};
-
-const updateRouteState = ({
-  section,
-  subject,
-  subjectId: subjectIdParam,
-  replace = false,
-}: {
-  section?: string;
-  subject?: string;
-  subjectId?: string;
-  replace?: boolean;
-}) => {
-  const nextQuery = { ...route.query } as Record<string, any>;
-  const nextSection =
-    section ?? getSectionFromTab(activeTab.value) ?? "subjects";
-  nextQuery[SECTION_QUERY_KEY] = nextSection;
-  delete nextQuery.tab;
-
-  if (subjectIdParam) {
-    nextQuery[SUBJECT_ID_QUERY_KEY] = subjectIdParam;
-  } else {
-    delete nextQuery[SUBJECT_ID_QUERY_KEY];
-  }
-
-  if (subject) {
-    nextQuery[SUBJECT_QUERY_KEY] = subject;
-  } else {
-    delete nextQuery[SUBJECT_QUERY_KEY];
-  }
-
-  const currentQueryKey = stringifyQuery(route.query as Record<string, any>);
-  const nextQueryKey = stringifyQuery(nextQuery);
-  if (currentQueryKey === nextQueryKey) return;
-
-  const navigate = replace ? router.replace : router.push;
-  navigate({ path: route.path, query: nextQuery });
-};
 
 const resolveSubjectIdFromSlug = async (slug: string) => {
   if (
@@ -225,43 +187,22 @@ const { progress, isLoading } = useLoadingIndicator();
 watch(
   () => route.query,
   (query) => {
-    isSyncingRoute.value = true;
-    const requestedTab = getTabFromSection(
-      query[SECTION_QUERY_KEY] ?? query.tab
-    );
-    if (requestedTab) {
-      activeTab.value = requestedTab;
-    }
-
-    const requestedSubjectId = normalizeQueryValue(query[SUBJECT_ID_QUERY_KEY]);
-    const requestedSubject = normalizeQueryValue(query[SUBJECT_QUERY_KEY]).toLowerCase();
-
-    if (activeTab.value === "subjects") {
-      subjectId.value = requestedSubjectId;
-      subjectSlug.value = requestedSubject;
-      if (requestedSubject && !subjectName.value) {
-        subjectName.value = requestedSubject.replace(/-/g, " ");
+    const section = query[SECTION_QUERY_KEY] ?? query.tab;
+    const subjectParam = normalizeQueryValue(query[SUBJECT_QUERY_KEY]);
+    const subjectIdParam = normalizeQueryValue(query[SUBJECT_ID_QUERY_KEY]);
+    if (section) {
+      const tab = getTabFromSection(section);
+      const target = tab ? TAB_TO_ROUTE[tab] : null;
+      if (target) {
+        const targetQuery =
+          tab === "subjects" && (subjectParam || subjectIdParam)
+            ? {
+                subject: subjectParam || undefined,
+                subjectId: subjectIdParam || undefined,
+              }
+            : target.query;
+        router.replace({ path: target.path, query: targetQuery });
       }
-    } else {
-      subjectId.value = "";
-      subjectSlug.value = "";
-    }
-
-    if (!subjectId.value && !subjectSlug.value) {
-      seeMoreDetails.value = requestedSubject || null;
-    } else {
-      seeMoreDetails.value = null;
-    }
-
-    isSyncingRoute.value = false;
-
-    if (!query[SECTION_QUERY_KEY] && !query.tab) {
-      updateRouteState({
-        section: getSectionFromTab(activeTab.value) ?? "subjects",
-        subject: subjectSlug.value || undefined,
-        subjectId: subjectId.value || undefined,
-        replace: true,
-      });
     }
   },
   { immediate: true }
@@ -606,20 +547,6 @@ watch(
   }
 );
 
-watch(
-  [() => activeTab.value, () => subjectId.value, () => subjectSlug.value],
-  ([nextTab, nextSubjectId, nextSubjectSlug]) => {
-    if (isSyncingRoute.value) return;
-    const shouldIncludeSubject =
-      nextTab === "subjects" && (!!nextSubjectId || !!nextSubjectSlug);
-    updateRouteState({
-      section: getSectionFromTab(nextTab) ?? "subjects",
-      subjectId: shouldIncludeSubject ? nextSubjectId : undefined,
-      subject: shouldIncludeSubject ? nextSubjectSlug : undefined,
-    });
-  }
-);
-
 // switch tabs 
 const switchTab = async (tab: tabs) => {
   if (!tab) return;
@@ -631,17 +558,32 @@ const switchTab = async (tab: tabs) => {
     subjectSlug.value = "";
     subjectName.value = "";
   }
+
+  const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  await router.push(target);
 };
 
 const clearSubjectDetail = () => {
   subjectId.value = "";
   subjectSlug.value = "";
   subjectName.value = "";
-  updateRouteState({
-    section: getSectionFromTab("subjects") ?? "subjects",
-    subject: undefined,
-    subjectId: undefined,
-  });
+  router.push(TAB_TO_ROUTE.subjects ?? { path: "/home" });
+};
+
+const getSubjectRoute = (id?: string, slug?: string) => {
+  if (slug && id) return { path: `/interactive/${slug}/${id}` };
+  if (slug) return { path: `/interactive/${slug}` };
+  if (id) return { path: `/interactive/${id}` };
+  return { path: "/interactive" };
+};
+
+const handleSubjectSelect = async (id: string, name: string) => {
+  subjectId.value = id;
+  subjectName.value = name;
+  subjectSlug.value = slugifySubject(name);
+  activeTab.value = "subjects";
+  const target = getSubjectRoute(id, subjectSlug.value);
+  await router.push(target);
 };
 
 </script>
@@ -759,8 +701,8 @@ const clearSubjectDetail = () => {
                     :subject-id="subject._id" :subject-name="subject.name" :subject-image="subject.thumbnail"
                     :subject-description="subject.description" :total-views="subject.views ?? 0"
                     :is-logged-in="userToken != null || userToken != undefined"
-                    @emit-subject-name="(name) => { subjectName = name; subjectSlug = slugifySubject(name); }"
-                    @emit-subject-id="(id) => { subjectId = id; activeTab = 'subjects'; }" 
+                    @emit-subject-name="(name) => { subjectName = name; subjectSlug = slugifySubject(name); if(subjectId) handleSubjectSelect(subjectId, name); }"
+                    @emit-subject-id="(id) => { handleSubjectSelect(id, subjectName || subjectSlug || 'subject'); }" 
                     :alt-text="subject.alt"/>
                 </template>
               </customGridOne>
@@ -850,9 +792,9 @@ const clearSubjectDetail = () => {
             <ClientOnly>
               <HomeCustomScrollView :shuffle-subject="shuffleSubject" :see-more-details="seeMoreDetails?.toString()"
                 :data="data" :active-tab="displayTab"
-                @emittedSubjectId="(id) => { subjectId = id; activeTab = 'subjects'; }"
-                @emittedActiveTab="activeTab = $event"
-                @emittedSubjectName="(name) => { subjectName = name; subjectSlug = slugifySubject(name); }" />
+                @emittedSubjectId="(id) => { handleSubjectSelect(id, subjectName || subjectSlug || 'subject'); }"
+                @emittedActiveTab="switchTab($event)"
+                @emittedSubjectName="(name) => { subjectName = name; subjectSlug = slugifySubject(name); if(subjectId) handleSubjectSelect(subjectId, name); }" />
             </ClientOnly>
           </div>
           <MessageTopicNotFound v-else />
@@ -906,8 +848,7 @@ const clearSubjectDetail = () => {
                 <SubjectCard v-for="subject in shuffleSubject(slicedData)" :key="subject._id" :subject-id="subject._id"
                   :subject-name="subject.name" :subject-image="subject.thumbnail"
                   :subject-description="subject.description" :total-views="subject.views ?? 0"
-                  :is-logged-in="userToken != null || userToken != undefined"
-                  @emit-subject-name="(name) => { subjectName = name; subjectSlug = slugifySubject(name); }" />
+                  :is-logged-in="userToken != null || userToken != undefined" />
               </template>
             </customGridTwo>
 

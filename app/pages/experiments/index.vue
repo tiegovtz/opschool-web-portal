@@ -18,19 +18,11 @@ import type { tabs } from "~/types/types.data";
 import InputsSelection from "~/components/home/InputsSelection.vue";
 
 const route = useRoute();
-// const router = useRouter();
 const experimentId = route.fullPath.split("/").pop();
 const experimentTitle = String(route.fullPath.split("/")[4])
   .toString()
   .replaceAll("%20", " ")
   .replaceAll("-", " ");
-const experimentStandard = String(route.fullPath.split("/")[2])
-  .toString()
-  .replaceAll("%20", " ");
-const experimentLevel = String(route.fullPath.split("/")[3])
-  .toString()
-  .replaceAll("%20", " ");
-const experimentUrl = `/api/experiments/${experimentId}`;
 
 // Header
 useHead({
@@ -86,7 +78,23 @@ const experiments = ref();
 const slicedData = ref();
 
 const level = ref();
-const activeTab = ref<tabs>();
+const activeTab = ref<tabs>("learn-activities");
+const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
+  subjects: { path: "/home" },
+  "interactive-contents": { path: "/interactive" },
+  "learn-activities": { path: "/experiments" },
+  video: { path: "/video", query: { type: "conc" } },
+  "class-videos": { path: "/video", query: { type: "oth" } },
+  audio: { path: "/audio" },
+  "smart-class": { path: "/smart-class" },
+};
+
+const switchTab = async (tab: string) => {
+  if (!tab) return;
+  activeTab.value = tab as tabs;
+  const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  await useRouter().push(target);
+};
   
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(12);
@@ -266,7 +274,7 @@ watch(filters, (filters) => {
       <section v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
         <HomeSearchbar appearance="rounded" aria-label="Search experiments" />
         <nav aria-label="Content categories">
-          <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
+          <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" />
         </nav>
       </section>
 
@@ -276,7 +284,7 @@ watch(filters, (filters) => {
         <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
           @emit-subject="filters.subject = $event" />
         <nav aria-label="Content categories">
-          <TabBar />
+          <TabBar :active-tab="activeTab" />
         </nav>
       </section>
 

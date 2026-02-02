@@ -35,6 +35,3 @@ export const getTabFromSection = (value: unknown): tabs | null => {
   }
   return null;
 };
-
-export const getSectionFromTab = (tab: tabs): string | null =>
-  TAB_TO_SECTION[tab] ?? null;

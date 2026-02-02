@@ -2,7 +2,7 @@
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import apiDocs from "~/utilities/apiDocs";
 import InputsSelection from '@/components/home/InputsSelection.vue'
@@ -42,10 +42,8 @@ const status = ref('pending'); // Initial Status State
 const audios = ref();         // Initial Audios State
 const slicedData = ref();    // Initial slice data to 9
 const route = useRoute();
-const audioType = route.query?.type;
 
 // Define Cookie
-const auth_token = useCookie('signInAccessToken').value;
 const userToken = useCookie("signInUserToken");
 
 // First, fix the sliceData function
@@ -69,16 +67,25 @@ const sliceData = (start: number, end: number) => {
 // Define current page and Page size variable
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(12);
-const activeTab = ref<tabs>()
+const activeTab = ref<tabs>("audio")
+const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
+  subjects: { path: "/home" },
+  "interactive-contents": { path: "/interactive" },
+  "learn-activities": { path: "/experiments" },
+  video: { path: "/video", query: { type: "conc" } },
+  "class-videos": { path: "/video", query: { type: "oth" } },
+  audio: { path: "/audio" },
+  "smart-class": { path: "/smart-class" },
+};
+
+const switchTab = async (tab: string) => {
+  if (!tab) return;
+  activeTab.value = tab as tabs;
+  const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  await useRouter().push(target);
+};
 // Fetch audios From Server
 const fetchAudios = async (param?: any) => {
-
-  // if(!param){
-  //   param = {
-  //     audioType:audioType?audioType: 'Conceptual'
-  //   }
-  // }
-
   try {
     status.value = 'pending';
     const { data: response, status: fetchStatus } = await fetchAsyncData(`audios-${param?.toString()}`, () => $fetch(apiDocs.audio.getPublicAudio, {
@@ -215,7 +222,7 @@ watch(filters, (filters) => {
       <!-- User Token Available -->
       <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
         <HomeSearchbar appearance="rounded" />
-        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
+        <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" />
       </div>
 
       <!-- User Token Not Available -->
@@ -223,7 +230,7 @@ watch(filters, (filters) => {
         <HeroSection />
         <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
           @emit-subject="filters.subject = $event" />
-        <TabBar />
+        <TabBar :active-tab="activeTab" />
       </div>
 
       <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">

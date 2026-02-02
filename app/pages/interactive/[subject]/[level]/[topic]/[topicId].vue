@@ -255,10 +255,14 @@ const syncRemoteProgress = async (chapterId: string) => {
 // Store context in localStorage for AI Assistant
 const storeChapterContext = (chapterId: string, chapterNotes: any) => {
   if (!import.meta.client) return; // Only run on client
+  const fallbackChapterName =
+    chapterNotes?.name ||
+    chapters.list?.find((chapter: any) => chapter?._id === chapterId)?.name ||
+    "";
 
   const context = {
     chapterId: chapterId,
-    chapterName: chapterNotes?.name || 'this competence',
+    chapterName: fallbackChapterName || 'this competence',
     subject: topicStandard,
     level: topicLevel,
     topic: topicTitle,
