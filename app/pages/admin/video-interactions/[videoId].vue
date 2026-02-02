@@ -234,12 +234,10 @@ const onTimeUpdate = () => {
 
 // Handle events from InteractiveVideo component
 const handleQuizSubmit = (interaction: VideoInteraction, answer: string) => {
-  console.log('Quiz submitted in admin:', interaction, answer)
   // In admin mode, we don't need to do anything special, just log it
 }
 
 const handleSelectionSubmit = (interaction: VideoInteraction, answers: Record<string, string>) => {
-  console.log('Selection submitted in admin:', interaction, answers)
   // In admin mode, we don't need to do anything special, just log it
 }
 
@@ -391,9 +389,13 @@ const getMarkerColor = (type: string): string => {
 }
 
 const getInteractionTooltip = (interaction: VideoInteraction): string => {
-  if (interaction.type === 'Quiz') {
-    return (interaction as any).question || 'Quiz'
-  } else if (interaction.type === 'Selection') {
+  if (interaction.type === 'MultipleChoice') {
+    return (interaction as any).question || 'Multiple Choice'
+  }
+  if (interaction.type === 'TrueFalse') {
+    return (interaction as any).question || 'True / False'
+  }
+  if (interaction.type === 'Selection') {
     return (interaction as any).task || 'Selection'
   }
   return interaction.type
