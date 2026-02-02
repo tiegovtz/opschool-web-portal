@@ -220,15 +220,15 @@
                <CustomDropDownList v-model="selectedSubject" placeholder="Select subject" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolSubjects"/>
             </div>
 
-            <!-- Teacher Dropdown -->
+            <!-- Teacher Dropdown
             <div class="w-full md:w-1/3 lg:w-1/4">
                <CustomDropDownList v-model="selectedTeacher" placeholder="Select teacher" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="teacherOptions"/>
             </div>
 
             <!-- School Dropdown -->
-            <div class="w-full md:w-1/3 lg:w-1/4">
+            <!-- <div class="w-full md:w-1/3 lg:w-1/4">
                <CustomDropDownList v-model="selectedSchool" placeholder="Select school" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolOptions"/>
-            </div>
+            </div> -->
 
             <!-- Session Start Dropdown -->
             <div class="w-full md:w-1/3 lg:w-1/4">
