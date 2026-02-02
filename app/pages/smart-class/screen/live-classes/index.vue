@@ -169,44 +169,6 @@
 
       <!-- Filter Section -->
       <div class="filters-section relative z-50" role="region" aria-label="Search and filter controls">
-        <!-- <v-container fluid class="filters-section pa-4" elevation="1">
-          <v-row>
-            <v-col cols="12" class="d-flex justify-end">
-              <v-btn color="primary" prepend-icon="mdi-plus" @click="onCreate">
-                Create
-              </v-btn>
-            </v-col>
-          </v-row>
-          <v-row dense align="center" class="pa-2"> -->
-            <!-- Search Field -->
-            <!-- <v-col cols="12" sm="6" md="4" lg="3">
-              <v-text-field v-model="searchQuery" label="Search classes..." prepend-inner-icon="mdi-magnify"
-                variant="outlined" dense clearable hide-details />
-            </v-col> -->
-
-            <!-- Category Dropdown 1 -->
-            <!-- <v-col cols="12" sm="6" md="4" lg="3">
-              <v-select v-model="selectedClass" :items="['all', ...categories]" label="Category" variant="outlined"
-                dense hide-details />
-            </v-col> -->
-
-            <!-- Category Dropdown 2 -->
-            <!-- <v-col cols="12" sm="6" md="4" lg="3">
-              <v-select v-model="selectedClass" :items="['all', ...categories]" label="Category" variant="outlined"
-                dense hide-details />
-            </v-col> -->
-
-            <!-- Category Dropdown 3 -->
-            <!-- <v-col cols="12" sm="6" md="4" lg="3">
-              <v-select v-model="selectedClass" :items="['all', ...categories]" label="Category" variant="outlined"
-                dense hide-details />
-            </v-col>
-
-            <br>
-
-          </v-row>
-        </v-container> -->
-
         <div class="p-4">
           <!-- Create Button " -->
           <div v-if="userToken?.roles.includes('TeacherAdmin')" class="flex justify-end mb-4">
@@ -316,8 +278,23 @@
             @keydown.enter.prevent="selectClass(classItem)"
             @keydown.space.prevent="selectClass(classItem)">
             <div class="card-image">
-              <img :src="classItem.thumbnail"
-                :alt="classItem.title" />
+              <div
+                v-if="classItem.thumbnail"
+                class="card-image__photo"
+                :style="{ backgroundImage: `url(${classItem.thumbnail})` }"
+                :aria-label="`thumbnail for ${classItem.title}`"
+              ></div>
+              <div
+                v-else
+                class="card-image__pattern"
+                :style="{
+                  backgroundImage: `${classItem.iconPattern}, ${classItem.gradient}`,
+                  backgroundSize: '80px 80px, cover',
+                }"
+                aria-hidden="true"
+              >
+                <span class="pattern-icon">{{ classItem.iconSymbol }}</span>
+              </div>
               <div class="card-overlay">
                 <div class="live-badge" v-if="classItem.isLive">
                   <span class="live-dot"></span>
@@ -364,6 +341,11 @@
               </div>
             </div>
           </div>
+        </div>
+        <div class="pagination-controls" aria-label="Live classes pagination">
+          <button class="pagination-btn" :disabled="livePage <= 1" @click="previousLivePage" aria-label="Previous page">Previous</button>
+          <span class="pagination-info">Page {{ livePage }} of {{ liveTotalPages }}</span>
+          <button class="pagination-btn" :disabled="livePage >= liveTotalPages" @click="nextLivePage" aria-label="Next page">Next</button>
         </div>
       </div>
 
@@ -431,6 +413,17 @@ import { useSessionsSetup } from "../../../../composables/usesSessions.js";
 import apiDocs from "../../../../utilities/apiDocs.js";
 
 const router = useRouter();
+
+const authAccessToken = useCookie('signInAccessToken');
+const authUserToken = useCookie('signInUserToken');
+const handleUnauthorized = (error) => {
+  const status = error?.status || (error?.response?.status ?? null);
+  if (status === 401) {
+    authAccessToken.value = null;
+    authUserToken.value = null;
+    router.push('/auth/login');
+  }
+};
 const userToken = useCookie("signInUserToken");
 const token = useCookie('signInAccessToken').value;
 const headers = {
@@ -465,6 +458,26 @@ function getDuration(start, end) {
   return `${hours > 0 ? hours + 'h ' : ''}${minutes}m`;
 }
 
+const subjectThemes = {
+  chemistry: { icon: '⚗️', gradient: ['#3B82F6', '#6366F1'], color: '#1D4ED8' },
+  biology: { icon: '🧬', gradient: ['#10B981', '#059669'], color: '#047857' },
+  mathematics: { icon: '∑', gradient: ['#F97316', '#FDE68A'], color: '#EA580C' },
+  physics: { icon: '🔭', gradient: ['#6366F1', '#14B8A6'], color: '#0F766E' },
+  history: { icon: '📜', gradient: ['#D97706', '#FDE68A'], color: '#92400E' },
+  english: { icon: '📝', gradient: ['#EC4899', '#F472B6'], color: '#BE185D' },
+  default: { icon: '🎓', gradient: ['#0EA5E9', '#6366F1'], color: '#1E3A8A' },
+};
+
+const getSubjectTheme = (subject = 'General') => {
+  const key = subject.toString().toLowerCase().replace(/[^a-z]/g, '');
+  return subjectThemes[key] || subjectThemes.default;
+};
+
+const buildIconPattern = (icon, color) => {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='28' font-family='"Segoe UI", sans-serif' fill='${color}'>${icon}</text></svg>`;
+  return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+};
+
 const mapSessionToClass = (session) => {
   const teacherReference = session?.teacher || session?.teacherInfo || {};
   const teacherId = teacherReference?._id || teacherReference?.id || session?.teacherId || session?.teacher_id;
@@ -472,38 +485,42 @@ const mapSessionToClass = (session) => {
   const schoolReference = session?.school || session?.schoolInfo || {};
   const schoolRegistrationNumber = schoolReference?.registration_number || schoolReference?.registrationNumber || session?.school_registration_number || session?.schoolRegistrationNumber;
   const schoolName = schoolReference?.name || session?.school_name || session?.schoolName || '';
+  const subjectLabel = session?.subject?.name ?? session?.subject ?? 'General';
+  const classLabel = session?.school_class?.name ?? session?.school_class ?? session?.schoolClass ?? 'General';
+  const theme = getSubjectTheme(subjectLabel);
 
   return {
-  id: session.id ?? session._id,
-  title: session?.topic || 'Untitled Session',
-  details: session.details || 'Karibu  sana',
-  meet_link: session.meet_link || 'https://tv.somakwanza.tz',
-  subject:session?.subject?.name ?? session?.subject ??  'General',
-  thumbnail: 'https://images.unsplash.com/photo-1716654718430-c7f54c3125c8?w=400&h=225&fit=crop',
-  scheduledTime: session?.start_time ? new Date(session?.start_time) : null, // or session.start_time if valid ISO
-  duration: getDuration(session?.start_time, session?.end_time),
-  viewers: Math.floor(Math.random() * 1000),
-  rating: (Math.random() * 2 + 3).toFixed(1),
-  isLive: session?.session_start ? new Date(session?.session_start) > new Date() : false,
-  isSubscribed: false,
-  class:session?.school_class?.name ?? session?.school_class ?? 'Form 1',
-  description: `Room: ${session?.room_name || 'N/A'}${session?.meet_link ? ', Meet Link available' : ''}`,
-  instructor: teacherName,
-  teacherId,
-  teacherName,
-  schoolRegistrationNumber,
-  schoolName,
-};
+    id: session.id ?? session._id,
+    title: session?.topic || 'Untitled Session',
+    details: session.details || 'Karibu sana',
+    meet_link: session.meet_link || 'https://tv.somakwanza.tz',
+    subject: subjectLabel,
+    thumbnail: session?.thumbnail || '',
+    scheduledTime: session?.start_time ? new Date(session?.start_time) : null,
+    duration: getDuration(session?.start_time, session?.end_time),
+    viewers: Math.floor(Math.random() * 1000),
+    rating: (Math.random() * 2 + 3).toFixed(1),
+    isLive: session?.session_start ? new Date(session?.session_start) > new Date() : false,
+    isSubscribed: false,
+    class: classLabel,
+    description: `Room: ${session?.room_name || 'N/A'}${session?.meet_link ? ', Meet Link available' : ''}`,
+    instructor: teacherName,
+    teacherId,
+    teacherName,
+    schoolRegistrationNumber,
+    schoolName,
+    iconSymbol: theme.icon,
+    iconPattern: buildIconPattern(theme.icon, theme.color),
+    gradient: `linear-gradient(135deg, ${theme.gradient[0]}, ${theme.gradient[1]})`,
+  };
 };
 
 const buildFilterQuery = () => {
   const params = new URLSearchParams();
-  let hasFilters = false;
 
   const addParam = (key, value) => {
     if (value !== undefined && value !== null && value !== '' && value !== 'all') {
       params.set(key, value);
-      hasFilters = true;
     }
   };
 
@@ -514,27 +531,33 @@ const buildFilterQuery = () => {
   addParam('school', selectedSchool.value);
   addParam('session_start', selectedSessionStart.value);
   addParam('session_end', selectedSessionEnd.value);
+  params.set('limit', liveLimit.toString());
+  params.set('page', livePage.value.toString());
 
-  return hasFilters ? `?${params.toString()}` : '';
+  return `?${params.toString()}`;
 };
 
-const normalizeSessions = (payload) => {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.data)) return payload.data;
-  return [];
+const normalizeSessionPayload = (payload) => {
+  if (!payload) return { items: [], total: 0 };
+  if (Array.isArray(payload)) return { items: payload, total: payload.length };
+  if (Array.isArray(payload?.items)) return { items: payload.items, total: payload.total ?? payload.items.length };
+  if (Array.isArray(payload?.data)) return { items: payload.data, total: payload.total ?? payload.data.length };
+  return { items: [], total: 0 };
 };
 
 const loadClasses = async () => {
   loading.value = true;
   try {
     const query = buildFilterQuery();
-    const sessions = await $fetch(`${apiDocs.baseURL}/live-classrooms/sessions${query}`, {
+    const sessions = await $fetch(`${apiDocs.liveClassrooms.sessions}${query}`, {
       headers,
     });
-    const normalizedSessions = normalizeSessions(sessions);
-    classes.value = normalizedSessions.map(mapSessionToClass);
+    const { items, total } = normalizeSessionPayload(sessions);
+    liveTotal.value = total;
+    classes.value = items.map(mapSessionToClass);
   } catch (error) {
     console.error('Error fetching sessions:', error);
+    handleUnauthorized(error);
   } finally {
     loading.value = false;
   }
@@ -572,6 +595,10 @@ const formData = reactive({
 const categories = ref(['Form 1', 'Form 2']);
 
 const classes = ref([]);
+const livePage = ref(1);
+const liveLimit = 6;
+const liveTotal = ref(0);
+const liveTotalPages = computed(() => Math.max(1, Math.ceil(liveTotal.value / liveLimit)));
 
 const teacherOptions = computed(() => {
   const map = new Map();
@@ -617,10 +644,12 @@ const scheduleFilteredLoad = () => {
 };
 
 watch([selectedClass, selectedSubject, selectedTeacher, selectedSchool, selectedSessionStart, selectedSessionEnd], () => {
+  livePage.value = 1;
   scheduleFilteredLoad();
 });
 
 watch(searchQuery, () => {
+  livePage.value = 1;
   scheduleFilteredLoad();
 });
 
@@ -640,7 +669,22 @@ const clearFilters = () => {
   selectedSessionEnd.value = '';
   if (filterTimeout) clearTimeout(filterTimeout);
   filterTimeout = null;
+  livePage.value = 1;
   loadClasses();
+};
+
+const previousLivePage = () => {
+  if (livePage.value > 1) {
+    livePage.value -= 1;
+    loadClasses();
+  }
+};
+
+const nextLivePage = () => {
+  if (livePage.value < liveTotalPages.value) {
+    livePage.value += 1;
+    loadClasses();
+  }
 };
 
 onBeforeUnmount(() => {
@@ -985,6 +1029,36 @@ const showToast = (message, type = 'info') => {
   gap: 2rem;
 }
 
+.pagination-controls {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination-btn {
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+}
+
 .class-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
@@ -1008,14 +1082,24 @@ const showToast = (message, type = 'info') => {
   overflow: hidden;
 }
 
-.card-image img {
+.card-image__photo {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: all 0.3s ease;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.3s ease;
 }
 
-.class-card:hover .card-image img {
+.card-image__pattern {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-repeat: repeat;
+}
+
+.class-card:hover .card-image__photo {
   transform: scale(1.1);
 }
 
@@ -1059,6 +1143,12 @@ const showToast = (message, type = 'info') => {
   50% {
     opacity: 0.5;
   }
+}
+
+.pattern-icon {
+  font-size: 2.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 10px 20px rgba(15, 23, 42, 0.4);
 }
 
 .duration-badge {
