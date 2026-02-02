@@ -237,14 +237,55 @@ const quizResults = ref<
 >([])
 
 const handleQuizSubmit = (interaction: VideoInteraction, answer: string) => {
-  const isCorrect = answer === interaction.correctAnswer
+  const normalizeAnswer = (value: unknown) => {
+    return String(value ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/^[a-z]\)\s*|^[a-z]:\s*/i, '')
+  }
+
+  const getOptionLabel = (option: any): string => {
+    if (typeof option === 'string') return option
+    return option?.label ?? option?.id ?? ''
+  }
+
+  const getOptionValue = (option: any): string => {
+    if (typeof option === 'string') return option
+    return option?.id ?? option?.label ?? ''
+  }
+
+  const getOptionLabelById = (optionId: string, options: ReadonlyArray<any>) => {
+    const matched = options.find((opt) => typeof opt !== 'string' && opt?.id === optionId)
+    if (matched) {
+      return getOptionLabel(matched)
+    }
+    const indexMatch = optionId.match(/^option-(\d+)/i)
+    if (indexMatch) {
+      const index = Number(indexMatch[1]) - 1
+      const option = options[index]
+      return option ? getOptionLabel(option) : null
+    }
+    return null
+  }
+
+  const correctAnswer = interaction.correctAnswer ?? ''
+  const options = (interaction.options ?? []) as ReadonlyArray<any>
+  const selectedOption = options.find((opt) => getOptionValue(opt) === answer)
+  const selectedLabel = selectedOption ? getOptionLabel(selectedOption) : answer
+  const correctLabel = correctAnswer ? getOptionLabelById(correctAnswer, options) : null
+
+  const isCorrect =
+    answer === correctAnswer ||
+    (correctLabel && normalizeAnswer(selectedLabel) === normalizeAnswer(correctLabel)) ||
+    normalizeAnswer(answer) === normalizeAnswer(correctAnswer) ||
+    normalizeAnswer(selectedLabel) === normalizeAnswer(correctAnswer)
+
   quizResults.value.push({
     interaction,
     selectedAnswer: answer,
     isCorrect,
     timestamp: Date.now(),
   })
-  console.log('Quiz submitted:', { interaction, answer, isCorrect })
 }
 
 const selectionResults = ref<
@@ -292,8 +333,14 @@ const scorePercentage = computed(() => {
 
 // Helper function to get answer label from option ID
 const getAnswerLabel = (interaction: VideoInteraction, answerId: string): string => {
-  const option = interaction.options?.find(opt => opt === answerId)
-  return option || answerId
+  const options = (interaction.options ?? []) as ReadonlyArray<any>
+  const matched = options.find((opt) => {
+    if (typeof opt === 'string') return opt === answerId
+    return opt?.id === answerId
+  })
+  if (!matched) return answerId
+  if (typeof matched === 'string') return matched
+  return matched.label ?? matched.id ?? answerId
 }
 
 const videoPlayerRef = ref<InstanceType<typeof InteractiveVideo> | null>(null)
