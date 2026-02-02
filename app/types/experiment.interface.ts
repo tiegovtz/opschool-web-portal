@@ -10,4 +10,5 @@ export interface Experiment  extends BaseEntity{
     syllabus:string;
     language?:string;
     educationLevel?:string;
+    stepsFileUrl:string
 }
