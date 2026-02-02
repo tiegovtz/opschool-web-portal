@@ -8,7 +8,7 @@ import apiDocs from "~/utilities/apiDocs";
 import InputsSelection from '@/components/home/InputsSelection.vue'
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { HomeCustomScrollView } from "#components";
-import { fetchAsyncData } from '~/composable/useAsyncFetch';
+import { fetchAsyncData } from '~/composables/useAsyncFetch';
 import type { tabs } from '~/types/types.data';
 
 useHead({
@@ -90,6 +90,7 @@ const fetchAudios = async (param?: any) => {
 
     // Call State Define above
     audios.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
+    audios.value = removeDataFromArrayOfJson(audios.value, 'audioType', 'NARRATION')
     audios.value = filterKeyDataFromArrayOfJson(audios.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
     status.value = fetchStatus.value;
 

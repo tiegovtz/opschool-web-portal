@@ -68,7 +68,7 @@ onMounted(() => {
 
 <template>
   <section ref="messagesContainer" @scroll="handleScroll"
-    class="p-6 space-y-5 h-[calc(100vh-280px)] max-h-[600px] overflow-y-auto bg-gradient-to-b from-gray-50/30 to-white"
+    class="p-6 space-y-5 h-[calc(100vh-200px)] overflow-y-auto bg-gradient-to-b from-gray-50/30 to-white"
     role="log" aria-live="polite" aria-relevant="additions" aria-label="Chat messages" tabindex="0">
     <!-- Empty state -->
     <div v-if="messages.length === 0" class="flex flex-col items-center justify-center h-full px-4 text-center"

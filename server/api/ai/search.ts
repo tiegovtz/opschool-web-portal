@@ -1,7 +1,6 @@
 import { defineEventHandler, readBody, getQuery } from "h3";
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { searchNotes } from "../utils/searchNotes";
 import apiDocs from "~/utilities/apiDocs";
 
 export default defineEventHandler(async (event) => {
@@ -58,21 +57,7 @@ export default defineEventHandler(async (event) => {
                       getCookie(event, "signInAccessToken") || 
                       "";
 
-    // 1. Perform vector search using existing RAG infrastructure
-    let vectorResults: any[] = [];
-    let contextFromNotes = "";
-    try {
-      vectorResults = await searchNotes(searchQuery);
-      contextFromNotes = vectorResults
-        .map((r: { content: string; score: number }) => `- ${r.content}`)
-        .join("\n");
-      console.log("[AI Search] Vector search completed:", vectorResults.length, "results");
-    } catch (error) {
-      console.warn("[AI Search] Vector search failed:", error);
-      // Continue without vector results
-    }
-
-    // 2. Perform traditional search for topics/subjects
+    // Perform traditional search for topics/subjects
     let traditionalResults: any[] = [];
     try {
       const searchUrl = userToken
@@ -96,32 +81,27 @@ export default defineEventHandler(async (event) => {
       // Continue without traditional results
     }
 
-    // 3. Generate AI answer using LLM
-    // Determine if we have context to work with
-    const hasContext = contextFromNotes && contextFromNotes.trim() !== "" && contextFromNotes !== "(No specific context found in notes)";
+    // Generate AI answer using LLM
     const hasTopics = traditionalResults.length > 0;
     
     const systemPrompt = `You are TIE AI Search Assistant, a specialized educational assistant for the Tanzanian (NECTA) curriculum. Your role is to provide clear, concise answers to student questions based on the Tanzanian curriculum.
 
 CURRICULUM RULES:
-1. Your PRIMARY source of truth is the Tanzanian curriculum (NECTA) and the notes/content provided in the context.
-2. You can answer questions about topics that are part of the Tanzanian curriculum (physics, chemistry, mathematics, biology, geography, etc.) even if specific context isn't provided, as long as the question is clearly curriculum-related.
+1. Your PRIMARY source of truth is the Tanzanian curriculum (NECTA).
+2. You can answer questions about topics that are part of the Tanzanian curriculum (physics, chemistry, mathematics, biology, geography, etc.) as long as the question is clearly curriculum-related.
 3. If necessary, you may use nearby East African curricula (Kenya, Uganda, Rwanda) ONLY as secondary references — NEVER as replacements.
 4. ONLY refuse to answer if the question is clearly NOT related to the Tanzanian curriculum (e.g., current events, politics, non-educational topics).
 5. Explanations must be clear, simple, step-by-step, and aligned with the Tanzanian syllabus.
 6. Use Tanzanian context when providing examples (Tanzanian cities like Dar es Salaam, Arusha, Dodoma; Tanzanian culture, industries, geography, wildlife, agriculture, etc.).
 
-${hasContext ? `Context from educational materials:
-${contextFromNotes}` : "Note: No specific context found in notes, but you can still answer based on Tanzanian curriculum knowledge."}
-
 ${hasTopics ? `\nRelevant topics found in the platform: ${traditionalResults.map((r: any) => r.name || r.title).join(", ")}` : ""}
 
 ANSWER INSTRUCTIONS:
-1. ${hasContext ? "If context is available, prioritize using it. " : ""}Provide a direct, helpful answer to the user's question
+1. Provide a direct, helpful answer to the user's question
 2. If the question is about a curriculum topic (science, math, geography, etc.), answer it based on Tanzanian curriculum standards
 3. If relevant topics were found, mention them briefly to guide the student
 4. Keep answers concise (2-4 sentences maximum)
-5. ${hasContext ? "If context doesn't fully cover the question, use your curriculum knowledge to provide a helpful answer. " : "Use your knowledge of the Tanzanian curriculum to provide a helpful answer. "}Only refuse if the question is clearly outside the curriculum scope
+5. Use your knowledge of the Tanzanian curriculum to provide a helpful answer. Only refuse if the question is clearly outside the curriculum scope
 6. Be encouraging and educational in tone
 7. Always ensure your answer aligns with Tanzanian curriculum standards
 
@@ -500,7 +480,6 @@ Provide a brief, encouraging list of suggestions that align with the Tanzanian (
         experiments: relatedContent.experiments,
         suggestions: relatedContent.suggestions,
       },
-      contextUsed: vectorResults.length > 0,
       resultCount: traditionalResults.length,
     };
     

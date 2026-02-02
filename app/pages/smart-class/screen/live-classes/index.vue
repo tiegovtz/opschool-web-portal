@@ -3,94 +3,131 @@
     <div
         v-if="dialog"
         class="fixed inset-0 flex items-center justify-center z-[100] bg-black bg-opacity-50"
+        role="presentation"
+        @keydown.escape="dialog = false"
     >
-      <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl overflow-y-auto max-h-[90vh]">
+      <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl overflow-y-auto max-h-[90vh]" role="dialog" aria-modal="true" aria-labelledby="create-session-title">
         <!-- Header -->
         <div class="px-6 py-4 border-b border-gray-200">
-          <h3 class="text-xl font-bold text-gray-800">Create Session</h3>
+          <h3 id="create-session-title" class="text-xl font-bold text-gray-800">Create Session</h3>
         </div>
 
         <!-- Form Body -->
-        <form @submit.prevent="submit" ref="formRef" class="px-6 py-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-800">
+        <form @submit.prevent="submit" ref="formRef" class="px-6 py-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-800" aria-labelledby="create-session-title">
 
           <!-- Select Class -->
           <div>
-            <label class="block mb-1 text-sm font-medium">Select Class</label>
+            <label for="form-school-class" class="block mb-1 text-sm font-medium">Select Class</label>
             <CustomDropDownList
+                id="form-school-class"
                 v-model="formData.school_class"
                 placeholder="Select class"
-                class="w-full !text-sm border border-gray-300 rounded-md shadow-sm h-14 bg-white placeholder-gray-500"
+                class="w-full !text-sm border border-gray-300 rounded-md shadow-sm h-14 bg-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500"
                 :list="schoolClasses"
+                aria-label="Select the school class for this session"
+                aria-required="true"
+                aria-describedby="class-help"
             />
+            <small id="class-help" class="sr-only">This field is required. Choose the class where this live session will be held.</small>
           </div>
 
           <!-- Select Subject -->
           <div>
-            <label class="block mb-1 text-sm font-medium">Subject</label>
+            <label for="form-subject" class="block mb-1 text-sm font-medium">Subject</label>
             <CustomDropDownList
+                id="form-subject"
                 v-model="formData.subject"
                 placeholder="Select subject"
-                class="w-full !text-sm border border-gray-300 rounded-md shadow-sm h-14 bg-white placeholder-gray-500"
+                class="w-full !text-sm border border-gray-300 rounded-md shadow-sm h-14 bg-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500"
                 :list="schoolSubjects"
+                aria-label="Select the subject for this session"
+                aria-required="true"
+                aria-describedby="subject-help"
             />
+            <small id="subject-help" class="sr-only">This field is required. Choose the subject that will be taught in this session.</small>
           </div>
 
           <!-- Start Time -->
           <div>
-            <label class="block mb-1 text-sm font-medium">Start Time</label>
+            <label for="form-start-time" class="block mb-1 text-sm font-medium">Start Time</label>
             <input
+                id="form-start-time"
                 type="datetime-local"
                 v-model="formData.start_time"
                 required
-                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-blue-500 focus:outline-none"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                aria-label="Select the session start date and time"
+                aria-required="true"
+                aria-describedby="start-time-help"
             />
+            <small id="start-time-help" class="sr-only">This field is required. Enter the date and time when the live session will begin.</small>
           </div>
 
           <!-- End Time -->
           <div>
-            <label class="block mb-1 text-sm font-medium">End Time</label>
+            <label for="form-end-time" class="block mb-1 text-sm font-medium">End Time</label>
             <input
+                id="form-end-time"
                 type="datetime-local"
                 v-model="formData.end_time"
                 required
-                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-blue-500 focus:outline-none"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                aria-label="Select the session end date and time"
+                aria-required="true"
+                aria-describedby="end-time-help"
             />
+            <small id="end-time-help" class="sr-only">This field is required. Enter the date and time when the live session will end.</small>
           </div>
 
           <!-- Topic -->
           <div>
-            <label class="block mb-1 text-sm font-medium">Topic</label>
+            <label for="form-topic" class="block mb-1 text-sm font-medium">Topic</label>
             <input
+                id="form-topic"
                 type="text"
                 v-model="formData.topic"
                 required
                 placeholder="Enter topic"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-blue-500 focus:outline-none"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                aria-label="Enter the session topic or title"
+                aria-required="true"
+                aria-describedby="topic-help"
             />
+            <small id="topic-help" class="sr-only">This field is required. Enter a descriptive title or topic for this session.</small>
           </div>
 
           <!-- Room Name -->
           <div>
-            <label class="block mb-1 text-sm font-medium">Room Name</label>
+            <label for="form-room-name" class="block mb-1 text-sm font-medium">Room Name</label>
             <input
+                id="form-room-name"
                 type="text"
                 v-model="formData.room_name"
                 required
                 placeholder="Enter room name"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-blue-500 focus:outline-none"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                aria-label="Enter the meeting room name or identifier"
+                aria-required="true"
+                aria-describedby="room-help"
             />
+            <small id="room-help" class="sr-only">This field is required. Enter the name of the room where the session will be held.</small>
           </div>
 
           <!-- Details (full width) -->
           <div class="md:col-span-2">
-            <label class="block mb-1 text-sm font-medium">Details</label>
+            <label for="form-details" class="block mb-1 text-sm font-medium">Details</label>
             <input
+                id="form-details"
                 type="text"
                 v-model="formData.details"
                 required
                 placeholder="Enter details"
-                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-blue-500 focus:outline-none"
+                class="w-full border border-gray-300 rounded-md px-3 py-2 h-14 bg-white text-gray-800 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                aria-label="Enter additional session details or description"
+                aria-required="true"
+                aria-describedby="details-help"
             />
+            <small id="details-help" class="sr-only">This field is required. Provide additional information about the session that students should know.</small>
           </div>
 
         </form>
@@ -100,14 +137,16 @@
           <button
               type="button"
               @click="dialog = false"
-              class="px-5 py-2 rounded-md border border-red-500 text-white bg-red-500 hover:bg-red-600"
+              class="px-5 py-2 rounded-md border border-red-500 text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              aria-label="Close dialog without saving"
           >
             Cancel
           </button>
           <button
               type="submit"
               @click="submit"
-              class="px-5 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+              class="px-5 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
+              aria-label="Submit and create the new session"
           >
             Submit
           </button>
@@ -129,7 +168,7 @@
       </div>
 
       <!-- Filter Section -->
-      <div class="filters-section relative z-50">
+      <div class="filters-section relative z-50" role="region" aria-label="Search and filter controls">
         <!-- <v-container fluid class="filters-section pa-4" elevation="1">
           <v-row>
             <v-col cols="12" class="d-flex justify-end">
@@ -170,10 +209,11 @@
 
         <div class="p-4">
           <!-- Create Button " -->
-          <div v-if="userToken?.type.toLowerCase() === 'teacher'"  class="flex justify-end mb-4">
+          <div v-if="userToken?.roles.includes('TeacherAdmin')" class="flex justify-end mb-4">
             <button @click="onCreate"
-              class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
+              aria-label="Create new live class session">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               Create
@@ -184,16 +224,20 @@
           <div class="flex flex-wrap gap-4 justify-center">
             <!-- Search Field -->
             <div class="w-full md:w-1/3 lg:w-1/4">
+              <label for="search-field" class="sr-only">Search classes</label>
               <div class="relative">
                 <input
+                  id="search-field"
                   type="text"
                   v-model="searchQuery"
                   placeholder="Search classes..."
                   @keyup.enter.prevent="triggerSearch"
                   class="w-full border border-gray-300 rounded-md px-10 py-2 pr-28 focus:outline-none bg-transparent focus:ring-2 focus:ring-blue-500 h-14"
+                  aria-label="Search for live classes by title, instructor, or category"
+                  aria-describedby="search-help"
                 />
                 <svg class="absolute left-3 top-4 w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                  stroke-width="2" viewBox="0 0 24 24">
+                  stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round"
                     d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
                 </svg>
@@ -201,6 +245,7 @@
                   type="button"
                   class="absolute inset-y-1 right-1 flex items-center gap-2 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-md shadow-md hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   @click="triggerSearch"
+                  aria-label="Execute search for live classes"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z" />
@@ -208,16 +253,21 @@
                   <span>Search</span>
                 </button>
               </div>
+              <small id="search-help" class="sr-only">Type to filter classes by title, instructor name, or category. Press Enter or click Search to filter.</small>
             </div>
 
             <!-- Classes Dropdowns -->
             <div class="w-full md:w-1/3 lg:w-1/4">
-               <CustomDropDownList v-model="selectedClass" placeholder="Select class" class="w-full !text-sm border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolClasses"/>
+              <label for="class-filter" class="sr-only">Filter by class</label>
+               <CustomDropDownList id="class-filter" v-model="selectedClass" placeholder="Select class" class="w-full !text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolClasses" aria-label="Filter classes by class level" aria-describedby="class-filter-help"/>
+               <small id="class-filter-help" class="sr-only">Select a class level to filter displayed sessions, or leave blank to show all classes.</small>
             </div>
 
             <!-- subject Dropdowns -->
             <div class="w-full md:w-1/3 lg:w-1/4">
-               <CustomDropDownList v-model="selectedSubject" placeholder="Select subject" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolSubjects"/>
+              <label for="subject-filter" class="sr-only">Filter by subject</label>
+               <CustomDropDownList id="subject-filter" v-model="selectedSubject" placeholder="Select subject" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolSubjects" aria-label="Filter classes by subject" aria-describedby="subject-filter-help"/>
+               <small id="subject-filter-help" class="sr-only">Select a subject to filter displayed sessions, or leave blank to show all subjects.</small>
             </div>
 
             <!-- Teacher Dropdown
@@ -225,25 +275,30 @@
                <CustomDropDownList v-model="selectedTeacher" placeholder="Select teacher" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="teacherOptions"/>
             </div>
 
-            <!-- School Dropdown -->
-            <!-- <div class="w-full md:w-1/3 lg:w-1/4">
+            School Dropdown
+            <div class="w-full md:w-1/3 lg:w-1/4">
                <CustomDropDownList v-model="selectedSchool" placeholder="Select school" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="schoolOptions"/>
             </div> -->
 
             <!-- Session Start Dropdown -->
             <div class="w-full md:w-1/3 lg:w-1/4">
-               <CustomDropDownList v-model="selectedSessionStart" placeholder="Session start" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="sessionStartOptions"/>
+              <label for="session-start-filter" class="sr-only">Filter by session start status</label>
+               <CustomDropDownList id="session-start-filter" v-model="selectedSessionStart" placeholder="Session start" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="sessionStartOptions" aria-label="Filter classes by session start status" aria-describedby="session-start-help"/>
+               <small id="session-start-help" class="sr-only">Filter to show started or not-yet-started sessions.</small>
             </div>
 
             <!-- Session End Dropdown -->
             <div class="w-full md:w-1/3 lg:w-1/4">
-               <CustomDropDownList v-model="selectedSessionEnd" placeholder="Session end" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="sessionEndOptions"/>
+              <label for="session-end-filter" class="sr-only">Filter by session end status</label>
+               <CustomDropDownList id="session-end-filter" v-model="selectedSessionEnd" placeholder="Session end" class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" :list="sessionEndOptions" aria-label="Filter classes by session end status" aria-describedby="session-end-help"/>
+               <small id="session-end-help" class="sr-only">Filter to show ended or ongoing sessions.</small>
             </div>
 
             <!-- Clear Filters Button -->
             <div class="w-full md:w-auto flex justify-center items-center">
               <button type="button" @click="clearFilters"
-                class="px-6 py-3 w-full md:w-auto bg-gray-100 text-gray-700 rounded-md border border-gray-300 hover:bg-gray-200 transition h-14">
+                class="px-6 py-3 w-full md:w-auto bg-gray-100 text-gray-700 rounded-md border border-gray-300 hover:bg-gray-200 transition h-14 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
+                aria-label="Clear all search and filter settings">
                 Clear Filters
               </button>
             </div>
@@ -253,10 +308,13 @@
 
 
       <!-- Classes Grid -->
-      <div class="classes-container">
-        <div class="classes-grid">
-          <div v-for="classItem in filteredClasses" :key="classItem?.id ?? classItem?._id" class="class-card"
-            @click="selectClass(classItem)">
+      <div class="classes-container" role="region" aria-label="Live classes list" aria-live="polite" aria-atomic="false">
+        <div class="classes-grid" role="list">
+          <div v-for="classItem in filteredClasses" :key="classItem?.id ?? classItem?._id" class="class-card" role="listitem" tabindex="0"
+            :aria-label="`${classItem.title} with ${classItem.instructor}, Class: ${classItem.class}, Subject: ${classItem.subject}, ${classItem.isLive ? 'Currently live, ' : ''}${classItem.viewers} viewers. Press Enter or click to view details`"
+            @click="selectClass(classItem)"
+            @keydown.enter.prevent="selectClass(classItem)"
+            @keydown.space.prevent="selectClass(classItem)">
             <div class="card-image">
               <img :src="classItem.thumbnail"
                 :alt="classItem.title" />
@@ -268,14 +326,16 @@
                 <div class="duration-badge">{{ classItem.duration }}</div>
               </div>
               <div class="hover-actions">
-                <button class="action-btn play-btn">
-                  <svg viewBox="0 0 24 24">
+                <button class="action-btn play-btn" :aria-label="`Play ${classItem.title}. Current status: ${classItem.isLive ? 'LIVE' : 'Not started'}`" @click.stop="joinClass(classItem)" @keydown.enter.prevent="joinClass(classItem)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </button>
                 <button class="action-btn subscribe-btn" @click.stop="toggleSubscription(classItem)"
-                  :class="{ subscribed: classItem.isSubscribed }">
-                  <svg viewBox="0 0 24 24">
+                  :class="{ subscribed: classItem.isSubscribed }"
+                  :aria-pressed="classItem.isSubscribed"
+                  :aria-label="classItem.isSubscribed ? `You are subscribed to ${classItem.title}. Press to unsubscribe` : `Subscribe to ${classItem.title} to get notifications about future sessions`">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path
                       d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
@@ -308,23 +368,23 @@
       </div>
 
       <!-- Class Modal -->
-      <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal">
-        <div class="modal-content" @click.stop>
-          <button class="close-btn" @click="closeModal">
-            <svg viewBox="0 0 24 24">
+      <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal" @keydown.escape="closeModal" role="presentation">
+        <div class="modal-content" @click.stop role="dialog" aria-modal="true" :aria-labelledby="'modal-title-' + (selectedClassItem?.id ?? selectedClassItem?._id)">
+          <button class="close-btn" @click="closeModal" aria-label="Close class details dialog" title="Press Escape to close dialog">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 6l12 12M6 18L18 6" />
             </svg>
           </button>
 
           <div class="modal-header">
-            <img :src="selectedClassItem.thumbnail" :alt="selectedClassItem.title" />
+            <img :src="selectedClassItem.thumbnail" :alt="'Thumbnail for ' + selectedClassItem.title" />
             <div class="modal-info">
-              <h2>{{ selectedClassItem.title }}</h2>
-              <p class="modal-instructor">with {{ selectedClassItem.instructor }}</p>
+              <h2 :id="'modal-title-' + (selectedClassItem?.id ?? selectedClassItem?._id)">{{ selectedClassItem.title }}</h2>
+              <p class="modal-instructor" id="modal-instructor">with {{ selectedClassItem.instructor }}</p>
               <div class="modal-meta">
-                <span class="modal-category">{{ selectedClassItem.class ?? selectedClassItem?.class  }}</span>
-                <span class="modal-time">{{ formatTime(selectedClassItem.scheduledTime) }}</span>
-                <span class="modal-duration">{{ selectedClassItem.duration }}</span>
+                <span class="modal-category" aria-label="Class level">{{ selectedClassItem.class ?? selectedClassItem?.class  }}</span>
+                <span class="modal-time" aria-label="Scheduled time">{{ formatTime(selectedClassItem.scheduledTime) }}</span>
+                <span class="modal-duration" aria-label="Session duration">{{ selectedClassItem.duration }}</span>
               </div>
             </div>
           </div>
@@ -335,8 +395,8 @@
           </div>
 
           <div class="modal-actions">
-            <button class="primary-btn max-w-xs mx-auto" @click="joinClass(selectedClassItem)">
-              <svg viewBox="0 0 24 24">
+            <button class="primary-btn max-w-xs mx-auto" @click="joinClass(selectedClassItem)" aria-label="Join this class session now">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M8 5v14l11-7z" />
               </svg>
               Join Class
@@ -354,8 +414,8 @@
       </div>
 
       <!-- Toast Notifications -->
-      <div class="toast-container">
-        <div v-for="toast in toasts" :key="toast.id" class="toast" :class="toast.type">
+      <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+        <div v-for="toast in toasts" :key="toast.id" class="toast" :class="toast.type" :aria-label="toast.message">
           {{ toast.message }}
         </div>
       </div>
@@ -367,7 +427,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
-import { useSessionsSetup } from "../../../../composable/usesSessions.js";
+import { useSessionsSetup } from "../../../../composables/usesSessions.js";
 import apiDocs from "../../../../utilities/apiDocs.js";
 
 const router = useRouter();
@@ -736,6 +796,19 @@ const showToast = (message, type = 'info') => {
   box-sizing: border-box;
 }
 
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .live-classes {
   min-height: 100vh;
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
@@ -860,9 +933,9 @@ const showToast = (message, type = 'info') => {
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #ffd93d;
   background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 0 20px rgba(255, 217, 61, 0.5);
 }
 
 .search-input::placeholder {
@@ -1048,6 +1121,11 @@ const showToast = (message, type = 'info') => {
   color: white;
 }
 
+.action-btn:focus {
+  outline: 3px solid #ffd93d;
+  outline-offset: 2px;
+}
+
 .action-btn svg {
   width: 20px;
   height: 20px;
@@ -1072,7 +1150,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .class-instructor {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.85);
   margin: 0 0 1rem 0;
   font-size: 0.9rem;
 }
@@ -1092,7 +1170,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .class-time {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
 }
 
@@ -1100,7 +1178,7 @@ const showToast = (message, type = 'info') => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.85rem;
 }
 
@@ -1151,7 +1229,7 @@ const showToast = (message, type = 'info') => {
   top: 1rem;
   right: 1rem;
   background: none;
-  border: none;
+  border: 2px solid transparent;
   color: white;
   cursor: pointer;
   width: 40px;
@@ -1164,7 +1242,13 @@ const showToast = (message, type = 'info') => {
 }
 
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.close-btn:focus {
+  outline: 3px solid #ffd93d;
+  outline-offset: 2px;
 }
 
 .close-btn svg {
@@ -1193,7 +1277,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .modal-instructor {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.85);
   margin: 0 0 1rem 0;
 }
 
@@ -1212,14 +1296,14 @@ const showToast = (message, type = 'info') => {
 
 .modal-time,
 .modal-duration {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 0.9rem;
 }
 
 .modal-description {
   margin-bottom: 2rem;
   line-height: 1.6;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .modal-actions {
@@ -1255,6 +1339,11 @@ const showToast = (message, type = 'info') => {
   box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
 }
 
+.primary-btn:focus {
+  outline: 3px solid #ffd93d;
+  outline-offset: 3px;
+}
+
 .secondary-btn {
   background: rgba(255, 255, 255, 0.1);
   color: white;
@@ -1264,6 +1353,11 @@ const showToast = (message, type = 'info') => {
 .secondary-btn:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+}
+
+.secondary-btn:focus {
+  outline: 3px solid #ffd93d;
+  outline-offset: 3px;
 }
 
 .secondary-btn.subscribed {
@@ -1483,12 +1577,7 @@ const showToast = (message, type = 'info') => {
 
 /* Custom Focus Styles */
 .class-card:focus {
-  outline: 2px solid #667eea;
-  outline-offset: 2px;
-}
-
-.action-btn:focus {
-  outline: 2px solid #667eea;
+  outline: 3px solid #ffd93d;
   outline-offset: 2px;
 }
 

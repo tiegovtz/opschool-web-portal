@@ -6,10 +6,8 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   debug: false,
   srcDir: "app/",
-
   // Add Vuetify styles here along with your existing CSS
   css: ["~/assets/css/main.css"],
-
   postcss: {
     plugins: {
       tailwindcss: {},
@@ -26,10 +24,6 @@ export default defineNuxtConfig({
   runtimeConfig: {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY || "",
-    public: {
-      supabaseUrl: process.env.NUXT_SUPABASE_URL,
-      supabaseKey: process.env.NUXT_SUPABASE_ANON_KEY,
-    },
   },
 
   plugins: [
@@ -44,7 +38,6 @@ export default defineNuxtConfig({
     "@nuxt/image",
     "@nuxt/icon",
     "nuxt-swiper",
-    "@nuxtjs/supabase",
   ],
 
   image: {
@@ -63,8 +56,8 @@ export default defineNuxtConfig({
   },
 
   // devServer: {
-  //   host: "192.168.0.147",
-  //   port: 3000,
+  //   // host: "192.168.0.147",
+  //   port: 3010,
   // },
 
   build: {
@@ -80,17 +73,21 @@ export default defineNuxtConfig({
       },
     },
     plugins: [vidstack()],
+    optimizeDeps: {
+      force: true, // Force re-optimization of dependencies
+      include: ['pinia', 'pinia-plugin-persistedstate'],
+    },
+    server: {
+      fs: {
+        allow: ['..'], // Allow accessing files outside the project root
+      },
+    },
   },
 
   app: {
     head: {
       meta: [{ name: "generator", content: "" }],
     },
-  },
-  supabase: {
-    redirect: false,
-    url: process.env.NUXT_SUPABASE_URL,
-    key: process.env.NUXT_SUPABASE_ANON_KEY,
-  },
+  }
 });
 

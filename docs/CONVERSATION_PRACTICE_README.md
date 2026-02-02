@@ -1,6 +1,6 @@
 # Conversation Practice Feature
 
-This feature lets anyone practice conversations with AI using speech-to-text (STT) in the browser and text-to-speech (TTS) generated locally by Supertonic.
+This feature lets anyone practice conversations with AI using speech-to-text (STT) in the browser and text-to-speech (TTS) generated locally by Piper (British English).
 
 ## Access
 
@@ -14,7 +14,7 @@ You can access it directly by typing the URL in your browser.
 ### Prerequisites
 - Node.js and pnpm installed
 - Access to this repo (`tie-web-portal`)
-- Supertonic binaries + assets (download directly from the official Supertonic repo; no `sd-web-admin` required)
+- Piper TTS installed (Python) and British English voice models downloaded
 
 ### 1) Install dependencies
 ```bash
@@ -22,32 +22,28 @@ pnpm install
 ```
 
 ### 2) Configure environment variables
-Create or update `.env` in `tie-web-portal` with absolute paths to Supertonic (adjust to your machine):
+Create or update `.env` in `tie-web-portal` with Piper paths (adjust to your machine):
 ```bash
-SUPERTONIC_NODEJS=/absolute/path/to/sd-web-admin/supertonic/nodejs
-SUPERTONIC_ASSETS=/absolute/path/to/sd-web-admin/supertonic/assets
+PIPER_PYTHON=/absolute/path/to/python
+PIPER_VOICES_DIR=/absolute/path/to/piper/voices
+TTS_SPEED=0.75
+TTS_DEFAULT_VOICE_FEMALE=jenny_dioco
+TTS_DEFAULT_VOICE_MALE=northern_english_male
 ```
+If you installed Piper inside a virtual environment, activate it and set `PIPER_PYTHON` to that venv Python:
+```bash
+source /path/to/venv/bin/activate
+which python
+```
+Use the printed path as `PIPER_PYTHON`, then restart the dev server.
 
-### 3) Install and prepare Supertonic 
-- Clone official Supertonic:
+### 3) Install and prepare Piper
+- Install the Python package:
   ```bash
-  git clone https://github.com/supertone-inc/supertonic.git ~/supertonic
+  pip install piper-tts
   ```
-- Install Git LFS (required for large files), then pull assets:
-  ```bash
-  git lfs install
-  git clone https://huggingface.co/Supertone/supertonic ~/supertonic/assets
-  ```
-- Install Node deps for the NodeJS binding (only needed for TTS here):
-  ```bash
-  cd ~/supertonic/nodejs
-  npm install
-  ```
-- Point `.env` to your cloned paths:
-  ```bash
-  SUPERTONIC_NODEJS=/Users/you/supertonic/nodejs
-  SUPERTONIC_ASSETS=/Users/you/supertonic/assets
-  ```
+- Download British English voice models and place them in a `voices` directory.
+- Point `.env` to your Python executable and voices directory (see Step 2).
 
 ### 4) Run the app
 ```bash
@@ -62,7 +58,7 @@ Then open `http://localhost:3000/conversation-practice`.
 - **Manual Conversation Input**: Enter conversation lines (one per line) in the UI
 - **Input Modes**: Start by voice or by text (choose a start button)
 - **STT (Speech-to-Text)**: Browser Web Speech API captures spoken answers
-- **TTS (Text-to-Speech)**: Supertonic generates AI audio (M1 male, F2 female)
+- **TTS (Text-to-Speech)**: Piper generates AI audio (British English voices)
 - **Voice Detection**: Auto-switches male/female based on conversation identity
 - **Contextual Validation**: AI checks answers with current + next piece + history; gives feedback and light personalization (acknowledge mood/name) without changing the question meaning
 - **Playback Control**: Playback speed slider (post-generation only)
@@ -70,7 +66,7 @@ Then open `http://localhost:3000/conversation-practice`.
 
 ### Future Implementation (When Backend API is Ready)
 - Replace manual input with backend-provided conversation context
-- Use backend TTS if desired (currently local Supertonic)
+- Use backend TTS if desired (currently local Piper)
 - Use backend validation endpoint instead of OpenAI prompt
 
 ## How It Works
@@ -109,13 +105,14 @@ Flow:
 
 ### POST `/api/conversation/tts`
 
-Generates TTS audio using Supertonic.
+Generates TTS audio using Piper.
 
 **Request:**
 ```json
 {
   "text": "Hello, how are you?",
-  "voiceType": "female" // or "male"
+  "voiceType": "female", // or "male"
+  "voiceId": "jenny_dioco"
 }
 ```
 
@@ -155,13 +152,13 @@ Validates user's answer contextually.
 ## Files Created
 
 1. **`app/pages/conversation-practice/index.vue`**: Main conversation practice page
-2. **`server/api/conversation/tts.ts`**: TTS generation endpoint using Supertonic
+2. **`server/api/conversation/tts.ts`**: TTS generation endpoint using Piper
 3. **`server/api/conversation/validate.ts`**: Answer validation endpoint with contextual awareness
 
 ## Notes
 
 - The page uses browser Web Speech API for STT (works in Chrome, Edge, Safari)
-- Supertonic TTS requires proper setup with environment variables
+- Piper TTS requires `PIPER_PYTHON` and `PIPER_VOICES_DIR` to be set
 - Audio files are temporarily stored in `public/temp-audio/` directory
 - The validation logic considers conversation context and adapts responses based on user input
 - When backend APIs are ready, uncomment the TODO sections in the code

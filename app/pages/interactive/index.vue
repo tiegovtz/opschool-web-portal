@@ -8,7 +8,7 @@ import InputsSelection from '@/components/home/InputsSelection.vue'
 import apiDocs from "~/utilities/apiDocs";
 import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
-import { fetchAsyncData } from "~/composable/useAsyncFetch";
+import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import type { User } from "~/types/user.interface";
 import type { Subjects } from "~/types/subject.interface";
 

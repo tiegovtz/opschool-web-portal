@@ -1,7 +1,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import { useSessionsSetup } from "../../../../composable/usesSessions.js";
+import { useSessionsSetup } from "../../../../composables/usesSessions.js";
 import apiDocs from '~/utilities/apiDocs.js';
 import { filterContentBySearch } from '~/utilities/filterJson.js';
 
@@ -479,24 +479,25 @@ const { data: pubSubject, status: subStatus } = useAsyncData('public-subjects', 
 }))
 
 
-const filteredClasses = computed(() => {
-  let filtered = classes.value;
 
-  
 const selectedCategoryName = computed(() => {
-  const match = filterContentBySearch(classLevels.value || [], selectedCategory.value ?? '');
+  if (!selectedCategory.value) return '';
+  const match = filterContentBySearch(classLevels.value || [], selectedCategory.value);
   return match?.[0]?.name?.toLowerCase?.() || '';
 });
 
 const selectedSubjectName = computed(() => {
-  const match = filterContentBySearch(pubSubject.value || [], selectedSubject.value ?? '');
+  if (!selectedSubject.value) return '';
+  const match = filterContentBySearch(pubSubject.value || [], selectedSubject.value);
   return match?.[0]?.name?.toLowerCase?.() || '';
 });
 
+const filteredClasses = computed(() => {
+  let filtered = classes.value;
 
   filtered = filtered.filter(cls => {
-    const categoryMatch = selectedCategory.value ? cls.category.toLowerCase() === selectedCategoryName.value : true;
-    const subjectMatch = selectedSubject.value ? cls.subject.toLowerCase() === selectedSubjectName.value : true;
+    const categoryMatch = !selectedCategory.value || cls.category.toLowerCase().includes(selectedCategoryName.value);
+    const subjectMatch = !selectedSubject.value || cls.category.toLowerCase().includes(selectedSubjectName.value);
     return categoryMatch && subjectMatch;
   });
 
@@ -642,13 +643,19 @@ const selectedSubjectName = computed(() => {
       </div>
 
       <!-- Filter Section -->
-      <div class="filters-section relative z-50">
+      <div class="filters-section relative z-50" role="region" aria-label="Search and filter controls">
         <!-- Create Button -->
-        <div v-if="userToken?.type.toLowerCase() === 'teacher'" class="flex justify-end mb-4 px-2">
-          <button @click="onCreate"
-            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2">
-            <i class="mdi mdi-plus"></i>
-            Create
+        <div v-if="userToken?.roles.includes('TeacherAdmin')" class="flex justify-end mb-4 px-2">
+          <button 
+          type="button"
+          @click="onCreate"
+          @keyup.enter="onCreate"
+          @keyup.space.prevent="onCreate"
+          aria-label="Create new recorded session" 
+            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            <i class="mdi mdi-plus" aria-hidden="true"></i>
+           <span>Create</span>
           </button>
         </div>
 
@@ -656,44 +663,58 @@ const selectedSubjectName = computed(() => {
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 px-2  max-w-screen-xl mx-auto">
           <!-- Search Field -->
           <div>
-            <label class="block text-sm font-medium text-white mb-1">Search classes...</label>
+            <label for="search-sessions" class="block text-sm font-medium text-white mb-1">Search classes</label>
             <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400" aria-hidden="true">
                 <i class="mdi mdi-magnify"></i>
               </span>
-              <input v-model="searchQuery" type="text" placeholder="Search..."
-                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent" />
+              <input 
+                id="search-sessions"
+                v-model="searchQuery" 
+                type="text" 
+                placeholder="Search by title, instructor, or category..."
+                aria-label="Search recorded sessions"
+                aria-describedby="search-help"
+                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent focus:outline-none" />
+              <small id="search-help" class="sr-only">Type to filter sessions by title, instructor name, or category.</small>
             </div>
           </div>
 
           <!-- Category Dropdown 1 -->
           <div>
-            <label class="block text-sm font-medium text-white mb-1">Class</label>
+            <label for="class-filter" class="block text-sm font-medium text-white mb-1">Class</label>
             <CustomDropDownList 
-            @update-model-value="selectedCategory =$event"
+              id="class-filter"
+              v-model="selectedCategory"
               :placeholder="clsStatus === 'pending' ? 'Loading' : clsStatus === 'success' ? 'Select class' : 'something went wrong'"
-              class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
-              :list="classLevels ?? [{ id: 0, name: '' }]" />
+              class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
+              :list="classLevels ?? [{ id: 0, name: '' }]"
+              aria-label="Filter recorded sessions by class level"
+              aria-describedby="class-filter-help" />
+            <small id="class-filter-help" class="sr-only">Select a class level to filter displayed sessions, or leave blank to show all classes.</small>
           </div>
 
           <!-- Category Dropdown 2 -->
           <div>
-            <label class="block text-sm font-medium text-white mb-1">Subject</label>
+            <label for="subject-filter" class="block text-sm font-medium text-white mb-1">Subject</label>
             <CustomDropDownList
-              @update-model-value="selectedSubject = $event"
+              id="subject-filter"
+              v-model="selectedSubject"
               :placeholder="subStatus === 'pending' ? 'Loading' : subStatus === 'success' ? 'Select subject' : 'something went wrong'"
-              class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
-              :list="pubSubject ?? [{ id: 0, name: '' }]" />
+              class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
+              :list="pubSubject ?? [{ id: 0, name: '' }]"
+              aria-label="Filter recorded sessions by subject"
+              aria-describedby="subject-filter-help" />
+            <small id="subject-filter-help" class="sr-only">Select a subject to filter displayed sessions, or leave blank to show all subjects.</small>
           </div>
         </div>
       </div>
 
       <!-- Classes Grid -->
-      <div class="classes-container">
-        <div class="classes-grid">
-            <div v-for="classItem in filteredClasses" :key="classItem.id" class="class-card"
-              role="button"
-              :aria-label="`Open details for ${classItem.title}`"
+      <div class="classes-container" role="region" aria-label="Recorded sessions list" aria-live="polite" aria-atomic="false">
+        <div class="classes-grid" role="list">
+            <div v-for="classItem in filteredClasses" :key="classItem.id" class="class-card" role="listitem"
+              :aria-label="`${classItem.title} with ${classItem.instructor}, Category: ${classItem.category}, Duration: ${classItem.duration}. Press Enter or click to view details`"
               tabindex="0"
               @click="selectClass(classItem)"
               @keydown.enter.prevent="selectClass(classItem)"
@@ -708,16 +729,16 @@ const selectedSubjectName = computed(() => {
                 <div class="duration-badge">{{ classItem.duration }}</div>
               </div>
               <div class="hover-actions">
-                <button class="action-btn play-btn" :aria-label="`Play ${classItem.title}`">
-                  <svg viewBox="0 0 24 24">
+                <button class="action-btn play-btn" :aria-label="`Play ${classItem.title}`" @click.stop="joinClass(classItem)" @keydown.enter.prevent="joinClass(classItem)">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </button>
                 <button class="action-btn subscribe-btn" @click.stop="toggleSubscription(classItem)"
                   :class="{ subscribed: classItem.isSubscribed }"
                   :aria-pressed="classItem.isSubscribed"
-                  :aria-label="classItem.isSubscribed ? `Unsubscribe from ${classItem.title}` : `Subscribe to ${classItem.title}`">
-                  <svg viewBox="0 0 24 24">
+                  :aria-label="classItem.isSubscribed ? `You are subscribed to ${classItem.title}. Press to unsubscribe` : `Subscribe to ${classItem.title} to get notifications about future sessions`">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path
                       d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
@@ -741,23 +762,23 @@ const selectedSubjectName = computed(() => {
       </div>
 
       <!-- Class Modal -->
-      <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal">
-            <div ref="modalContent" class="modal-content" @click.stop role="dialog" :aria-label="selectedClassItem?.title" tabindex="-1">
-            <button class="close-btn" @click="closeModal" aria-label="Close dialog">
-            <svg viewBox="0 0 24 24">
+      <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal" @keydown.escape="closeModal" role="presentation">
+            <div ref="modalContent" class="modal-content" @click.stop role="dialog" aria-modal="true" :aria-labelledby="'modal-title-' + selectedClassItem.id" tabindex="-1">
+            <button class="close-btn" @click="closeModal" aria-label="Close class details dialog" title="Press Escape to close dialog">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 6l12 12M6 18L18 6" />
             </svg>
           </button>
 
           <div class="modal-header">
-            <img :src="selectedClassItem.thumbnail" :alt="selectedClassItem.title" />
+            <img :src="selectedClassItem.thumbnail" :alt="'Thumbnail for ' + selectedClassItem.title" />
             <div class="modal-info">
-              <h2>{{ selectedClassItem.title }}</h2>
-              <p class="modal-instructor">with {{ selectedClassItem.instructor }}</p>
+              <h2 :id="'modal-title-' + selectedClassItem.id">{{ selectedClassItem.title }}</h2>
+              <p class="modal-instructor" id="modal-instructor">with {{ selectedClassItem.instructor }}</p>
               <div class="modal-meta">
-                <span class="modal-category">{{ selectedClassItem.category }}</span>
-                <span class="modal-time">{{ formatTime(selectedClassItem.scheduledTime) }}</span>
-                <span class="modal-duration">{{ selectedClassItem.duration }}</span>
+                <span class="modal-category" aria-label="Category">{{ selectedClassItem.category }}</span>
+                <span class="modal-time" aria-label="Scheduled time">{{ formatTime(selectedClassItem.scheduledTime) }}</span>
+                <span class="modal-duration" aria-label="Session duration">{{ selectedClassItem.duration }}</span>
               </div>
             </div>
           </div>
@@ -768,15 +789,17 @@ const selectedSubjectName = computed(() => {
           </div>
 
           <div class="modal-actions">
-            <button class="primary-btn" @click="joinClass(selectedClassItem)">
-              <svg viewBox="0 0 24 24">
+            <button class="primary-btn" @click="joinClass(selectedClassItem)" aria-label="Play this recorded session">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M8 5v14l11-7z" />
               </svg>
-              Join Class
+              Play
             </button>
             <button class="secondary-btn" @click="toggleSubscription(selectedClassItem)"
-              :class="{ subscribed: selectedClassItem.isSubscribed }">
-              <svg viewBox="0 0 24 24">
+              :class="{ subscribed: selectedClassItem.isSubscribed }"
+              :aria-pressed="selectedClassItem.isSubscribed"
+              :aria-label="selectedClassItem.isSubscribed ? `You are subscribed. Press to unsubscribe` : `Subscribe to this session to get notifications`">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
@@ -809,6 +832,19 @@ const selectedSubjectName = computed(() => {
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
   color: white;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Screen reader only - hidden but accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 /* Skip link - hidden but visible on focus */
@@ -951,8 +987,8 @@ const selectedSubjectName = computed(() => {
 .search-input:focus {
   outline: none;
   border-color: #667eea;
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3), 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
 .search-input::placeholder {
@@ -1016,6 +1052,11 @@ const selectedSubjectName = computed(() => {
   transform: translateY(-10px);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   background: rgba(255, 255, 255, 0.1);
+}
+
+.class-card:focus {
+  outline: 3px solid #ffd93d;
+  outline-offset: 2px;
 }
 
 .card-image {
@@ -1113,6 +1154,11 @@ const selectedSubjectName = computed(() => {
   backdrop-filter: blur(10px);
 }
 
+.action-btn:focus {
+  outline: 2px solid #ffd93d;
+  outline-offset: 2px;
+}
+
 .play-btn {
   background: rgba(255, 255, 255, 0.9);
   color: #333;
@@ -1123,14 +1169,24 @@ const selectedSubjectName = computed(() => {
   transform: scale(1.1);
 }
 
+.play-btn:focus {
+  outline: 2px solid #ffd93d;
+  outline-offset: 2px;
+}
+
 .subscribe-btn {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   color: white;
 }
 
 .subscribe-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.35);
   transform: scale(1.1);
+}
+
+.subscribe-btn:focus {
+  outline: 2px solid #ffd93d;
+  outline-offset: 2px;
 }
 
 .subscribe-btn.subscribed {
@@ -1254,6 +1310,12 @@ const selectedSubjectName = computed(() => {
 }
 
 .close-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.close-btn:focus {
+  outline: 2px solid #ffd93d;
+  outline-offset: 2px;
   background: rgba(255, 255, 255, 0.1);
 }
 
@@ -1345,15 +1407,27 @@ const selectedSubjectName = computed(() => {
   box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
 }
 
+.primary-btn:focus {
+  outline: 2px solid #ffd93d;
+  outline-offset: 2px;
+  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
 .secondary-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.15);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .secondary-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.secondary-btn:focus {
+  outline: 2px solid #ffd93d;
+  outline-offset: 2px;
 }
 
 .secondary-btn.subscribed {

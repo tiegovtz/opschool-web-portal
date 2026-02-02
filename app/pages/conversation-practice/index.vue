@@ -1,14 +1,38 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
+  <div
+    :class="isEmbedded
+      ? 'relative w-full h-full p-4'
+      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'"
+    @click.self="!isEmbedded && handleOverlayClick"
+  >
+    <div
+      class="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-8"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="conversation-practice-title"
+      @click.stop
+    >
+      <button
+        v-if="!isEmbedded"
+        type="button"
+        class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 hover:text-gray-900"
+        aria-label="Close conversation practice"
+        @click="closeModal"
+      >
+        <span class="text-xl leading-none">&times;</span>
+      </button>
       <div class="max-w-4xl mx-auto">
-        <h1 class="text-4xl font-bold text-gray-800 mb-2 text-center">
+        <h1
+          id="conversation-practice-title"
+          class="text-4xl font-bold text-gray-800 mb-2 text-center"
+        >
           Conversation Practice
         </h1>
-        <p class="text-gray-600 text-center mb-8">
+        <!-- <p class="text-gray-600 text-center mb-8">
           Practice conversations with AI using speech-to-text and text-to-speech
-        </p>
+        </p> -->
 
-      <div class="bg-white rounded-lg shadow-lg p-6 space-y-6">
+      <div class="bg-white rounded-lg p-6 space-y-6">
         <!-- Voice Settings -->
         <div class="flex flex-col gap-4 mb-4">
           <div class="flex items-center gap-4">
@@ -38,21 +62,26 @@
           </div>
         </div>
 
-        <!-- Conversation Input (Temporary - will be replaced with API) -->
+        <!-- Conversation Preview -->
         <div v-if="!conversationStarted">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Conversation Context (Temporary - will come from API)
-          </label>
-          <textarea
-            v-model="conversationInput"
-            placeholder="Enter conversation pieces separated by newlines. Example:&#10;What's your name?&#10;Nice to meet you, I am Grace.&#10;How are you?&#10;I am also well."
-            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 min-h-[200px]"
-            rows="6"
-          ></textarea>
+          <div class="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+            <p class="font-medium text-gray-800">Conversation preview</p>
+            <p v-if="previewLoading" class="text-gray-500">Loading preview...</p>
+            <p v-else-if="previewError" class="text-red-600">{{ previewError }}</p>
+            <ul v-else-if="previewPieces.length" class="mt-2 list-disc pl-5 space-y-1">
+              <li v-for="(piece, idx) in previewPieces.slice(0, 5)" :key="idx">
+                {{ piece }}
+              </li>
+            </ul>
+            <p v-else class="text-gray-500">Preview not available.</p>
+          </div>
           <div class="mt-4 flex gap-4 justify-center">
             <button
-              @click="inputMode = 'speech'; startConversation()"
-              class="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              @click="startVoiceConversation"
+              :class="[
+                'px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold transition-colors',
+                isSpeechSupported ? 'hover:bg-blue-700' : 'opacity-70 cursor-not-allowed'
+              ]"
             >
               Start Interactive Conversation (Voice)
             </button>
@@ -191,13 +220,6 @@
           <!-- Action Buttons -->
           <div class="flex gap-4 mt-4">
             <button
-              @click="saveConversation"
-              :disabled="conversationHistory.length === 0"
-              class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              Save Conversation
-            </button>
-            <button
               @click="resetConversation"
               class="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
             >
@@ -217,7 +239,19 @@
       class="hidden"
       :volume="1.0"
     ></audio>
+
+    <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+      <div
+        v-for="toast in toasts"
+        :key="toast.id"
+        class="toast"
+        :class="[toast.type, { flicker: toast.flicker }]"
+      >
+        {{ toast.message }}
+      </div>
+    </div>
   </div>
+</div>
 </template>
 
 <script setup>
@@ -226,8 +260,46 @@ import LoadingIndicator from '@/components/loading/loadingIndicator.vue'
 
 // Page metadata
 definePageMeta({
-  layout: 'home-layout',
+  layout: false,
 })
+
+const router = useRouter()
+const route = useRoute()
+const originalBodyOverflow = ref('')
+const allowOverlayClose = ref(false)
+const returnTo = ref('')
+
+const closeModal = () => {
+  if (
+    typeof window !== 'undefined' &&
+    window.parent &&
+    window.parent !== window &&
+    typeof window.parent.closeConversationPractice === 'function'
+  ) {
+    window.parent.closeConversationPractice()
+    return
+  }
+  if (returnTo.value) {
+    window.location.href = returnTo.value
+    return
+  }
+  if (typeof window !== 'undefined' && window.history.length > 1) {
+    router.back()
+    return
+  }
+  router.push('/')
+}
+
+const handleOverlayClick = () => {
+  if (!allowOverlayClose.value) return
+  closeModal()
+}
+
+const handleKeydown = (event) => {
+  if (event.key === 'Escape') {
+    closeModal()
+  }
+}
 
 // ============================================================================
 // Compact Conversation State (NEW - replaces full history tracking)
@@ -271,10 +343,13 @@ const showDebugState = ref(false)
 // ============================================================================
 const voiceType = ref('female')
 const playbackSpeed = ref(1.0)
-const conversationInput = ref('')
+const conversationMeta = ref({ chapterId: '', name: '' })
 const conversationStarted = ref(false)
 const conversationCompleteMessage = ref('')
 const conversationPieces = ref([])
+const previewPieces = ref([])
+const previewLoading = ref(false)
+const previewError = ref('')
 const currentIndex = ref(0)
 const isPlaying = ref(false)
 const isRecording = ref(false)
@@ -288,6 +363,8 @@ const conversationHistory = ref([]) // Still kept for display purposes
 const audioRef = ref(null)
 const currentAudioUrl = ref(null)
 const audioUrlCache = ref({})
+const toasts = ref([])
+const isSpeechSupported = ref(true)
 
 // Speech Recognition
 let recognition = null
@@ -312,7 +389,41 @@ const isConversationComplete = computed(() => !!conversationCompleteMessage.valu
 // ============================================================================
 // Lifecycle Hooks
 // ============================================================================
+const isEmbedded = computed(() => String(route.query.embed || '') === '1')
+
 onMounted(() => {
+  if (typeof document !== 'undefined') {
+    if (!isEmbedded.value) {
+      originalBodyOverflow.value = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+    }
+    returnTo.value = String(route.query.returnTo || '').trim() || document.referrer || ''
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', handleKeydown)
+    if (!isEmbedded.value) {
+      // Avoid immediately closing the modal on the opening click.
+      setTimeout(() => {
+        allowOverlayClose.value = true
+      }, 0)
+    }
+  }
+  const initialChapterId = String(route.query.chapterId || '').trim()
+  const mode = String(route.query.mode || '').trim().toLowerCase()
+  if (mode === 'text' || mode === 'speech') {
+    inputMode.value = mode
+  }
+  if (initialChapterId) {
+    conversationMeta.value = {
+      ...conversationMeta.value,
+      chapterId: initialChapterId,
+    }
+  }
+  if (initialChapterId) {
+    fetchPreviewPieces()
+  } else {
+    previewError.value = 'Chapter ID not configured.'
+  }
   // Check for debug mode
   if (typeof window !== 'undefined') {
     const urlParams = new URLSearchParams(window.location.search)
@@ -343,12 +454,18 @@ onMounted(() => {
         isRecording.value = false
       }
     } else {
-      showStatus('error', 'Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.')
+      isSpeechSupported.value = false
     }
   }
 })
 
 onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', handleKeydown)
+  }
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = originalBodyOverflow.value
+  }
   if (recognition) {
     recognition.stop()
   }
@@ -387,19 +504,49 @@ const detectSpeakerGenderFromAllPieces = async () => {
   }
 }
 
-const startConversation = () => {
-  if (!conversationInput.value.trim()) {
-    showStatus('error', 'Please enter conversation context')
-    return
+const loadConversationPieces = async () => {
+  try {
+    const chapterId = String(route.query.chapterId || '').trim()
+    const identifier = String(route.query.identifier || '').trim()
+    const query = {}
+    if (chapterId) query.chapterId = chapterId
+    if (identifier) query.identifier = identifier
+    const response = await $fetch('/api/conversation/engage', { query })
+    const pieces = Array.isArray(response?.pieces) ? response.pieces : []
+    conversationMeta.value = {
+      chapterId: response?.chapterId || '',
+      name: response?.name || '',
+    }
+    return pieces
+  } catch (error) {
+    console.error('Failed to load conversation:', error)
+    showStatus('error', 'Failed to load conversation from backend')
+    return []
   }
+}
 
-  const pieces = conversationInput.value
-    .split('\n')
-    .map(p => p.trim())
-    .filter(p => p.length > 0)
+const fetchPreviewPieces = async () => {
+  previewLoading.value = true
+  previewError.value = ''
+  try {
+    const pieces = await loadConversationPieces()
+    previewPieces.value = pieces
+    if (!pieces.length) {
+      previewError.value = 'No preview available.'
+    }
+  } catch (error) {
+    previewError.value = 'Failed to load preview.'
+  } finally {
+    previewLoading.value = false
+  }
+}
 
-  if (pieces.length === 0) {
-    showStatus('error', 'Please enter at least one conversation piece')
+const startConversation = async () => {
+  const pieces = previewPieces.value.length
+    ? previewPieces.value
+    : await loadConversationPieces()
+  if (!pieces.length) {
+    showStatus('error', 'No conversation pieces found')
     return
   }
 
@@ -443,6 +590,15 @@ const startConversation = () => {
   })
 }
 
+const startVoiceConversation = () => {
+  if (!isSpeechSupported.value) {
+    showToast('Voice Conversation is not available in this browser. Try Chrome, Edge, or Safari.', 'error')
+    return
+  }
+  inputMode.value = 'speech'
+  startConversation()
+}
+
 const playCurrentPiece = async () => {
   if (isPlaying.value || isGeneratingTTS.value || !currentConversationPiece.value) return
   
@@ -451,7 +607,7 @@ const playCurrentPiece = async () => {
   const cachedAudioUrl = audioUrlCache.value[currentIndex.value]
   if (cachedAudioUrl) {
     if (audioRef.value) {
-      if (currentAudioUrl.value && currentAudioUrl.value.startsWith('blob:')) {
+      if (currentAudioUrl.value && currentAudioUrl.value !== cachedAudioUrl && currentAudioUrl.value.startsWith('blob:')) {
         URL.revokeObjectURL(currentAudioUrl.value)
       }
       currentAudioUrl.value = cachedAudioUrl
@@ -496,20 +652,32 @@ const playCurrentPiece = async () => {
       body: {
         text: currentConversationPiece.value,
         voiceType: voiceType.value,
+        inline: true,
       },
     })
 
-    if (response.success && response.audioUrl) {
-      audioUrlCache.value[currentIndex.value] = response.audioUrl
+    if (response.success && (response.audioBase64 || response.audioUrl)) {
+      let resolvedUrl = response.audioUrl
+      if (response.audioBase64) {
+        const binary = atob(response.audioBase64)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i)
+        }
+        const blob = new Blob([bytes], { type: response.contentType || 'audio/wav' })
+        resolvedUrl = URL.createObjectURL(blob)
+      }
+
+      audioUrlCache.value[currentIndex.value] = resolvedUrl
       isGeneratingTTS.value = false
       isPlaying.value = true
 
       if (audioRef.value) {
-        if (currentAudioUrl.value && currentAudioUrl.value.startsWith('blob:')) {
+        if (currentAudioUrl.value && currentAudioUrl.value !== resolvedUrl && currentAudioUrl.value.startsWith('blob:')) {
           URL.revokeObjectURL(currentAudioUrl.value)
         }
-        currentAudioUrl.value = response.audioUrl
-        audioRef.value.src = response.audioUrl
+        currentAudioUrl.value = resolvedUrl
+        audioRef.value.src = resolvedUrl
         audioRef.value.playbackRate = playbackSpeed.value
         audioRef.value.play().catch(err => {
           console.error('Error playing audio:', err)
@@ -650,16 +818,29 @@ const validateAnswer = async (answer) => {
           user: answer,
         })
 
+        const previousIndex = currentIndex.value
         currentIndex.value++
         
         // Update state progress
         conversationState.value.questionIndex = currentIndex.value
         conversationState.value.lastCorrectAnswer = answer
 
+        const previousAudioUrl = audioUrlCache.value[previousIndex]
+        if (previousAudioUrl && previousAudioUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(previousAudioUrl)
+        }
+        delete audioUrlCache.value[previousIndex]
+
         if (currentIndex.value >= conversationPieces.value.length) {
           conversationCompleteMessage.value = response.adaptedResponse || response.feedback || 'Thank you for practicing!'
           statusMessage.value = null
           userAnswer.value = ''
+          Object.values(audioUrlCache.value).forEach((url) => {
+            if (typeof url === 'string' && url.startsWith('blob:')) {
+              URL.revokeObjectURL(url)
+            }
+          })
+          audioUrlCache.value = {}
         } else {
           showStatus('success', response.feedback || 'Correct!')
           userAnswer.value = ''
@@ -695,11 +876,15 @@ const resetConversation = () => {
   userAnswer.value = ''
   textAnswer.value = ''
   statusMessage.value = null
-  conversationInput.value = ''
   conversationCompleteMessage.value = ''
   isPlaying.value = false
   isRecording.value = false
   isProcessing.value = false
+  Object.values(audioUrlCache.value).forEach((url) => {
+    if (typeof url === 'string' && url.startsWith('blob:')) {
+      URL.revokeObjectURL(url)
+    }
+  })
   audioUrlCache.value = {}
   
   // Reset compact state
@@ -721,60 +906,79 @@ const updatePlaybackSpeed = () => {
   }
 }
 
-const saveConversation = () => {
-  if (conversationHistory.value.length === 0) {
-    showStatus('error', 'No conversation to save')
-    return
-  }
-
-  const conversationData = {
-    date: new Date().toISOString(),
-    conversationPieces: conversationPieces.value,
-    conversationHistory: conversationHistory.value,
-    conversationState: conversationState.value, // Include compact state
-    totalPieces: conversationPieces.value.length,
-    completedPieces: conversationHistory.value.length,
-  }
-
-  const textString = `Conversation Practice Session
-Date: ${new Date(conversationData.date).toLocaleString()}
-Total Pieces: ${conversationData.totalPieces}
-Completed Pieces: ${conversationData.completedPieces}
-
---- Conversation State ---
-AI Name: ${conversationState.value.aiName || 'Unknown'}
-User Name: ${conversationState.value.userName || 'Unknown'}
-User Mood: ${conversationState.value.userMood}
-Key Facts: ${conversationState.value.keyFacts.join(', ') || 'None'}
-User Choices: ${JSON.stringify(conversationState.value.userChoices)}
-
-${'='.repeat(60)}
-
-${conversationHistory.value.map((item, index) => {
-  return `[${index + 1}]\nAI: ${item.ai}\nYou: ${item.user}\n`
-}).join('\n' + '-'.repeat(60) + '\n\n')}
-
-${'='.repeat(60)}
-`
-
-  const blob = new Blob([textString], { type: 'text/plain' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = `conversation-${new Date().toISOString().split('T')[0]}-${Date.now()}.txt`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
-
-  showStatus('success', 'Conversation saved!')
-}
-
 const showStatus = (type, text) => {
   statusMessage.value = { type, text }
+}
+
+const showToast = (message, type = 'info') => {
+  const existingIndex = toasts.value.findIndex((t) => t.message === message && t.type === type)
+  const shouldFlicker = existingIndex !== -1
+  if (shouldFlicker) {
+    toasts.value.splice(existingIndex, 1)
+  }
+  const pushToast = () => {
+    const toast = { id: `${Date.now()}-${Math.random()}`, message, type, flicker: shouldFlicker }
+    toasts.value.push(toast)
+    setTimeout(() => {
+      toasts.value = toasts.value.filter((t) => t.id !== toast.id)
+    }, 4000)
+  }
+  if (shouldFlicker) {
+    nextTick(pushToast)
+  } else {
+    pushToast()
+  }
 }
 </script>
 
 <style scoped>
-/* Add any custom styles here */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 60;
+}
+
+.toast {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #111827;
+  color: #fff;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  max-width: 320px;
+}
+
+.toast.info {
+  background: #1f2937;
+}
+
+.toast.error {
+  background: #b91c1c;
+}
+
+.toast.flicker {
+  animation: toast-flicker 0.26s ease;
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+  .toast {
+    max-width: none;
+  }
+}
+
+@keyframes toast-flicker {
+  0% { opacity: 0; transform: translateY(6px) scale(0.98); }
+  45% { opacity: 1; transform: translateY(0) scale(1); }
+  70% { opacity: 0.4; transform: translateY(1px) scale(0.995); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
 </style>

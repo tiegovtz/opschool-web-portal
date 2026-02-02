@@ -1,4 +1,5 @@
-const baseURL = import.meta.env?.VITE_API_BASE_URL ??  "https://apitie.ekima.africa/v1" // define baseURL first
+const baseURL =
+  import.meta.env?.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
 
 const apiDocs = {
   baseURL: baseURL, // You can include it here for reference
@@ -99,6 +100,10 @@ const apiDocs = {
     getVideoById: `${baseURL}/videos/{id}`,
     getPublicVideo: `${baseURL}/public-videos`,
     getPublicVideoBySubjectId: `${baseURL}/public-videos/by-subject/{subjectId}`,
+
+    // Interactions
+    getVideoInteractions: `${baseURL}/video-interactions/{id}`,
+    getVideoInteractionsLoad: `${baseURL}/video-interactions/load-by-video/{id}`,
   },
 
   //  PROGRESS TRACKING API
@@ -134,11 +139,29 @@ const apiDocs = {
     aiSearch: `/api/ai/search`, // Nuxt server API route
   },
 
+  // Machine Learning API
+  machineLearning: {
+    searchBookEmbeddings: `${baseURL}/machine-learning/books/embeddings/search`,
+  },
+
+  // Chat History API
+  chat: {
+    createSession: `${baseURL}/chat/sessions`,
+    getSessions: `${baseURL}/chat/sessions`,
+    getSession: `${baseURL}/chat/sessions/:id`,
+    updateSession: `${baseURL}/chat/sessions/:id`,
+    deleteSession: `${baseURL}/chat/sessions/:id`,
+    addMessage: `${baseURL}/chat/sessions/:id/messages`,
+    getMessages: `${baseURL}/chat/sessions/:id/messages`,
+    enforceRetention: `${baseURL}/chat/retention/enforce`,
+  },
+
   // School
   school: {
-    get:`${baseURL}/schools`,
+    get: `${baseURL}/schools`,
     getSchoolRegions: `${baseURL}/schools/regions`,
-    getSchoolDistricts: (region: string): string => `${baseURL}/schools/districts/${region}`,
+    getSchoolDistricts: (region: string): string =>
+      `${baseURL}/schools/districts/${region}`,
     // getSchools: `${baseURL}/schools`,
     // getSchoolId: `${baseURL}/schools/:id`,
     // searchSchools: `${baseURL}/schools/search`,

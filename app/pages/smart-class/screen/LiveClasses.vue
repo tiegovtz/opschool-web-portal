@@ -5,10 +5,10 @@
 
   <v-dialog v-model="dialog" max-width="600px">
     <v-card>
-      <v-card-title>Create Session</v-card-title>
+      <v-card-title id="create-session-title">Create Session</v-card-title>
 
       <v-card-text>
-        <v-form ref="formRef" v-model="isValid">
+        <v-form ref="formRef" v-model="isValid" aria-labelledby="create-session-title">
           <v-row>
             <v-col cols="12" sm="6">
               <v-select
@@ -21,7 +21,11 @@
                   item-value="id"
                   label="Select Class"
                   :rules="[v => !!v || 'Class is required']"
+                  aria-label="Select the school class for this session"
+                  aria-required="true"
+                  aria-describedby="class-error"
               />
+              <small id="class-error" class="sr-only-text">This field is required. Choose the class where this live session will be held.</small>
             </v-col>
 
             <v-col cols="12" sm="6">
@@ -35,7 +39,11 @@
                   item-value="id"
                   label="Subject"
                   :rules="[v => !!v || 'Subject is required']"
+                  aria-label="Select the subject for this session"
+                  aria-required="true"
+                  aria-describedby="subject-error"
               />
+              <small id="subject-error" class="sr-only-text">This field is required. Choose the subject that will be taught in this session.</small>
             </v-col>
           </v-row>
 
@@ -46,7 +54,11 @@
                   label="Start Time"
                   type="time"
                   :rules="[v => !!v || 'Required']"
+                  aria-label="Select the session start time"
+                  aria-required="true"
+                  aria-describedby="start-time-error"
               />
+              <small id="start-time-error" class="sr-only-text">This field is required. Enter the time when the live session will begin.</small>
             </v-col>
 
             <v-col cols="12" sm="6">
@@ -55,7 +67,11 @@
                   label="End Time"
                   type="time"
                   :rules="[v => !!v || 'Required']"
+                  aria-label="Select the session end time"
+                  aria-required="true"
+                  aria-describedby="end-time-error"
               />
+              <small id="end-time-error" class="sr-only-text">This field is required. Enter the time when the live session will end.</small>
             </v-col>
           </v-row>
 
@@ -65,14 +81,22 @@
                   v-model="formData.topic"
                   label="Topic"
                   :rules="[v => !!v || 'Required']"
+                  aria-label="Enter the session topic or title"
+                  aria-required="true"
+                  aria-describedby="topic-error"
               />
+              <small id="topic-error" class="sr-only-text">This field is required. Enter a descriptive title or topic for this session.</small>
             </v-col>
             <v-col cols="12" sm="6">
               <v-text-field
                   v-model="formData.room_name"
                   label="Room Name"
                   :rules="[v => !!v || 'Required']"
+                  aria-label="Enter the meeting room name or identifier"
+                  aria-required="true"
+                  aria-describedby="room-error"
               />
+              <small id="room-error" class="sr-only-text">This field is required. Enter the name of the room where the session will be held.</small>
             </v-col>
           </v-row>
           <v-row>
@@ -81,7 +105,11 @@
                   v-model="formData.details"
                   label="Details"
                   :rules="[v => !!v || 'Required']"
+                  aria-label="Enter additional session details or description"
+                  aria-required="true"
+                  aria-describedby="details-error"
               />
+              <small id="details-error" class="sr-only-text">This field is required. Provide additional information about the session that students should know.</small>
             </v-col>
           </v-row>
         </v-form>
@@ -89,8 +117,22 @@
 
       <v-card-actions>
         <v-spacer />
-        <v-btn color="blue darken-1" text @click="dialog = false">Cancel</v-btn>
-        <v-btn color="blue darken-1" text @click="submit">Submit</v-btn>
+        <v-btn 
+          color="blue darken-1" 
+          text 
+          @click="dialog = false"
+          aria-label="Close dialog without saving"
+        >
+          Cancel
+        </v-btn>
+        <v-btn 
+          color="blue darken-1" 
+          text 
+          @click="submit"
+          aria-label="Submit and create the new session"
+        >
+          Submit
+        </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -106,11 +148,16 @@
     </div>
 
     <!-- Filter Section -->
-     <div class="filters-section">
+     <div class="filters-section" role="region" aria-label="Search and filter controls">
        <v-container fluid class="filters-section pa-4" elevation="1">
          <v-row>
            <v-col cols="12" class="d-flex justify-end">
-             <v-btn color="primary" prepend-icon="mdi-plus" @click="onCreate">
+             <v-btn 
+               color="primary" 
+               prepend-icon="mdi-plus" 
+               @click="onCreate"
+               aria-label="Create new live class session"
+             >
                Create
              </v-btn>
            </v-col>
@@ -118,7 +165,9 @@
          <v-row dense align="center" class="pa-2">
            <!-- Search Field -->
            <v-col cols="12" sm="6" md="4" lg="3">
+             <label for="search-field" class="sr-only-label">Search classes</label>
              <v-text-field
+                 id="search-field"
                  v-model="searchQuery"
                  label="Search classes..."
                  prepend-inner-icon="mdi-magnify"
@@ -126,46 +175,71 @@
                  dense
                  clearable
                  hide-details
+                 aria-label="Search for live classes by title, instructor, or category"
+                 aria-describedby="search-help"
+                 @keydown.enter="$event.target.blur()"
              />
+             <small id="search-help" class="sr-only-text">
+               Type to filter classes by title, instructor name, or category. Results update as you type.
+             </small>
            </v-col>
 
            <!-- Category Dropdown 1 -->
            <v-col cols="12" sm="6" md="4" lg="3">
+             <label for="category-filter-1" class="sr-only-label">Filter by first category</label>
              <v-select
+                 id="category-filter-1"
                  v-model="selectedCategory"
                  :items="['all', ...categories]"
                  label="Category"
                  variant="outlined"
                  dense
                  hide-details
+                 aria-label="Filter classes by category (first filter)"
+                 aria-describedby="category-help-1"
              />
+             <small id="category-help-1" class="sr-only-text">
+               Select a category to filter displayed classes, or select 'all' to show all categories.
+             </small>
            </v-col>
 
            <!-- Category Dropdown 2 -->
            <v-col cols="12" sm="6" md="4" lg="3">
+             <label for="category-filter-2" class="sr-only-label">Filter by second category</label>
              <v-select
+                 id="category-filter-2"
                  v-model="selectedCategory"
                  :items="['all', ...categories]"
                  label="Category"
                  variant="outlined"
                  dense
                  hide-details
+                 aria-label="Filter classes by category (second filter)"
+                 aria-describedby="category-help-2"
              />
+             <small id="category-help-2" class="sr-only-text">
+               Select a category to filter displayed classes, or select 'all' to show all categories.
+             </small>
            </v-col>
 
            <!-- Category Dropdown 3 -->
            <v-col cols="12" sm="6" md="4" lg="3">
+             <label for="category-filter-3" class="sr-only-label">Filter by third category</label>
              <v-select
+                 id="category-filter-3"
                  v-model="selectedCategory"
                  :items="['all', ...categories]"
                  label="Category"
                  variant="outlined"
                  dense
                  hide-details
+                 aria-label="Filter classes by category (third filter)"
+                 aria-describedby="category-help-3"
              />
+             <small id="category-help-3" class="sr-only-text">
+               Select a category to filter displayed classes, or select 'all' to show all categories.
+             </small>
            </v-col>
-
-          <br>
 
          </v-row>
        </v-container>
@@ -173,14 +247,14 @@
 
 
     <!-- Classes Grid -->
-    <div class="classes-container">
-      <div class="classes-grid">
+    <div class="classes-container" role="region" aria-label="Live classes list" aria-live="polite" aria-atomic="false">
+      <div class="classes-grid" role="list">
         <div
           v-for="classItem in filteredClasses"
           :key="classItem.id"
           class="class-card"
-          role="button"
-          :aria-label="`Open details for ${classItem.title}`"
+          role="listitem"
+          :aria-label="`${classItem.title} with ${classItem.instructor}, Category: ${classItem.category}, ${classItem.isLive ? 'Currently live, ' : ''}${classItem.viewers} viewers`"
           tabindex="0"
           @click="selectClass(classItem)"
           @keydown.enter.prevent="selectClass(classItem)"
@@ -196,7 +270,11 @@
               <div class="duration-badge">{{ classItem.duration }}</div>
             </div>
             <div class="hover-actions">
-              <button class="action-btn play-btn" :aria-label="`Play ${classItem.title}`">
+              <button 
+                class="action-btn play-btn" 
+                :aria-label="`Play ${classItem.title}. Current status: ${classItem.isLive ? 'LIVE' : 'Not started'}`"
+                @keydown.enter.prevent="joinClass(classItem)"
+              >
                 <svg viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
@@ -206,7 +284,7 @@
                   @click.stop="toggleSubscription(classItem)"
                   :class="{ subscribed: classItem.isSubscribed }"
                   :aria-pressed="classItem.isSubscribed"
-                  :aria-label="classItem.isSubscribed ? `Unsubscribe from ${classItem.title}` : `Subscribe to ${classItem.title}`"
+                  :aria-label="classItem.isSubscribed ? `You are subscribed to ${classItem.title}. Press to unsubscribe` : `Subscribe to ${classItem.title} to get notifications about future sessions`"
                 >
                 
                 <svg viewBox="0 0 24 24">
@@ -238,23 +316,28 @@
     </div>
 
     <!-- Class Modal -->
-      <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal">
-      <div ref="modalContent" class="modal-content" @click.stop role="dialog" :aria-label="selectedClassItem?.title">
-        <button class="close-btn" @click="closeModal" aria-label="Close dialog">
+      <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal" @keydown.escape="closeModal">
+      <div ref="modalContent" class="modal-content" @click.stop role="dialog" aria-modal="true" :aria-labelledby="'modal-title-' + selectedClassItem.id">
+        <button 
+          class="close-btn" 
+          @click="closeModal" 
+          aria-label="Close class details dialog"
+          title="Press Escape to close dialog (Ctrl+Alt+W)"
+        >
           <svg viewBox="0 0 24 24">
             <path d="M6 6l12 12M6 18L18 6"/>
           </svg>
         </button>
 
         <div class="modal-header">
-          <img :src="selectedClassItem.thumbnail" :alt="selectedClassItem.title" />
+          <img :src="selectedClassItem.thumbnail" :alt="'Thumbnail for ' + selectedClassItem.title" />
           <div class="modal-info">
-            <h2>{{ selectedClassItem.title }}</h2>
-            <p class="modal-instructor">with {{ selectedClassItem.instructor }}</p>
+            <h2 :id="'modal-title-' + selectedClassItem.id">{{ selectedClassItem.title }}</h2>
+            <p class="modal-instructor" id="modal-instructor">with {{ selectedClassItem.instructor }}</p>
             <div class="modal-meta">
-              <span class="modal-category">{{ selectedClassItem.category }}</span>
-              <span class="modal-time">{{ formatTime(selectedClassItem.scheduledTime) }}</span>
-              <span class="modal-duration">{{ selectedClassItem.duration }}</span>
+              <span class="modal-category" aria-label="Category">{{ selectedClassItem.category }}</span>
+              <span class="modal-time" aria-label="Scheduled time">{{ formatTime(selectedClassItem.scheduledTime) }}</span>
+              <span class="modal-duration" aria-label="Session duration">{{ selectedClassItem.duration }}</span>
             </div>
           </div>
         </div>
@@ -265,7 +348,11 @@
         </div>
 
         <div class="modal-actions">
-          <button class="primary-btn" @click="joinClass(selectedClassItem)" aria-label="Join class">
+          <button 
+            class="primary-btn" 
+            @click="joinClass(selectedClassItem)" 
+            aria-label="Join this class session now"
+          >
             <svg viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z"/>
             </svg>
@@ -276,7 +363,7 @@
               @click="toggleSubscription(selectedClassItem)"
               :class="{ subscribed: selectedClassItem.isSubscribed }"
               :aria-pressed="selectedClassItem.isSubscribed"
-              :aria-label="selectedClassItem.isSubscribed ? 'Unsubscribe' : 'Subscribe'"
+              :aria-label="selectedClassItem.isSubscribed ? `You are subscribed. Click to unsubscribe from ${selectedClassItem.title}` : `Subscribe to ${selectedClassItem.title} to receive future session notifications`"
             >
             <svg viewBox="0 0 24 24">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -307,7 +394,7 @@
 import {ref, reactive, computed, onMounted, nextTick} from 'vue';
 import { useRouter } from 'vue-router';
 import axios from "axios";
-import {useSessionsSetup} from "../../../composable/usesSessions.js";
+import {useSessionsSetup} from "../../../composables/usesSessions.js";
 
 const router = useRouter();
 
@@ -617,6 +704,33 @@ const showToast = (message, type = 'info') => {
   text-decoration: none;
 }
 
+/* Screen reader only text - for accessibility hints */
+.sr-only-label,
+.sr-only-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Enhanced focus indicators for keyboard navigation */
+.class-card:focus,
+.action-btn:focus,
+.primary-btn:focus,
+.secondary-btn:focus,
+.filter-chip:focus,
+.search-input:focus,
+.v-text-field:focus-within,
+.v-select:focus-within {
+  outline: 3px solid #ffd93d;
+  outline-offset: 2px;
+}
+
 /* Header Styles */
 .header {
   position: relative;
@@ -727,9 +841,9 @@ const showToast = (message, type = 'info') => {
 
 .search-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #ffd93d;
   background: rgba(255,255,255,0.15);
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 0 20px rgba(255, 217, 61, 0.5);
 }
 
 .search-input::placeholder {
@@ -764,6 +878,11 @@ const showToast = (message, type = 'info') => {
   background: linear-gradient(45deg, #667eea, #764ba2);
   border-color: #667eea;
   box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+}
+
+.filter-chip:focus {
+  outline: 3px solid #ffd93d;
+  outline-offset: 2px;
 }
 
 /* Classes Grid */
@@ -932,7 +1051,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .class-instructor {
-  color: rgba(255,255,255,0.7);
+  color: rgba(255,255,255,0.85);
   margin: 0 0 1rem 0;
   font-size: 0.9rem;
 }
@@ -952,7 +1071,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .class-time {
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.8);
   font-size: 0.9rem;
 }
 
@@ -960,7 +1079,7 @@ const showToast = (message, type = 'info') => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.85);
   font-size: 0.85rem;
 }
 
@@ -1011,7 +1130,7 @@ const showToast = (message, type = 'info') => {
   top: 1rem;
   right: 1rem;
   background: none;
-  border: none;
+  border: 2px solid transparent;
   color: white;
   cursor: pointer;
   width: 40px;
@@ -1024,7 +1143,13 @@ const showToast = (message, type = 'info') => {
 }
 
 .close-btn:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.close-btn:focus {
+  outline: 3px solid #ffd93d;
+  outline-offset: 2px;
 }
 
 .close-btn svg {
@@ -1053,7 +1178,7 @@ const showToast = (message, type = 'info') => {
 }
 
 .modal-instructor {
-  color: rgba(255,255,255,0.7);
+  color: rgba(255,255,255,0.85);
   margin: 0 0 1rem 0;
 }
 
@@ -1071,14 +1196,14 @@ const showToast = (message, type = 'info') => {
 }
 
 .modal-time, .modal-duration {
-  color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.8);
   font-size: 0.9rem;
 }
 
 .modal-description {
   margin-bottom: 2rem;
   line-height: 1.6;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255,255,255,0.95);
 }
 
 .modal-actions {
@@ -1113,6 +1238,11 @@ const showToast = (message, type = 'info') => {
   box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
 }
 
+.primary-btn:focus {
+  outline: 3px solid #ffd93d;
+  outline-offset: 3px;
+}
+
 .secondary-btn {
   background: rgba(255,255,255,0.1);
   color: white;
@@ -1122,6 +1252,11 @@ const showToast = (message, type = 'info') => {
 .secondary-btn:hover {
   background: rgba(255,255,255,0.2);
   transform: translateY(-2px);
+}
+
+.secondary-btn:focus {
+  outline: 3px solid #ffd93d;
+  outline-offset: 3px;
 }
 
 .secondary-btn.subscribed {
@@ -1333,12 +1468,12 @@ const showToast = (message, type = 'info') => {
 
 /* Custom Focus Styles */
 .class-card:focus {
-  outline: 2px solid #667eea;
+  outline: 3px solid #ffd93d;
   outline-offset: 2px;
 }
 
 .action-btn:focus {
-  outline: 2px solid #667eea;
+  outline: 3px solid #ffd93d;
   outline-offset: 2px;
 }
 
