@@ -85,7 +85,10 @@ onMounted(async () => {
     if (sessionId) {
       await loadSession(sessionId);
     } else {
-      await createNewSession();
+      const reused = await reuseEmptySessionIfAvailable();
+      if (!reused) {
+        await createNewSession();
+      }
     }
   } catch (error) {
     console.error("[TIE AI Teacher] Initialization error:", error);
@@ -139,6 +142,52 @@ const createNewSession = async () => {
   } catch (error) {
     console.error("[TIE AI Teacher] Error creating session:", error);
   }
+};
+
+const hasConversationStarted = () => {
+  // Check local messages first (covers unsynced messages)
+  // @ts-ignore
+  if (Array.isArray(chat.messages) && chat.messages.length > 0) return true;
+
+  const messageCount = chatStore.currentSession?.messageCount ?? 0;
+  return messageCount > 0;
+};
+
+const getReusableEmptySessionId = () => {
+  const emptySessions = chatStore.sessions.filter(
+    (session) => session.messageCount === 0,
+  );
+  if (emptySessions.length === 0) return null;
+
+  const latest = emptySessions.reduce((currentLatest, session) => {
+    const currentTime = new Date(
+      currentLatest.updatedAt || currentLatest.createdAt,
+    ).getTime();
+    const sessionTime = new Date(
+      session.updatedAt || session.createdAt,
+    ).getTime();
+    return sessionTime > currentTime ? session : currentLatest;
+  }, emptySessions[0]);
+
+  return latest.id;
+};
+
+const reuseEmptySessionIfAvailable = async () => {
+  const reusableSessionId = getReusableEmptySessionId();
+  if (!reusableSessionId) return false;
+
+  if (
+    chatStore.activeSessionId === reusableSessionId &&
+    !hasConversationStarted()
+  ) {
+    if (route.query.sessionId !== reusableSessionId) {
+      router.replace({ query: { sessionId: reusableSessionId } });
+    }
+    return true;
+  }
+
+  await loadSession(reusableSessionId);
+  return true;
 };
 
 // Convert ChatMessage to Chat component format
@@ -343,6 +392,21 @@ const handleSubmit = async (message: string) => {
 
 // Handle new chat
 const handleNewChat = async () => {
+  if (!hasConversationStarted()) {
+    if (chatStore.activeSessionId) {
+      if (route.query.sessionId !== chatStore.activeSessionId) {
+        router.replace({ query: { sessionId: chatStore.activeSessionId } });
+      }
+      return;
+    }
+
+    const reused = await reuseEmptySessionIfAvailable();
+    if (reused) return;
+  } else {
+    const reused = await reuseEmptySessionIfAvailable();
+    if (reused) return;
+  }
+
   await createNewSession();
   // Keep sidebar open when creating new chat
 };
