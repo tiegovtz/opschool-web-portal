@@ -153,8 +153,14 @@ const updateRouteState = ({
   const nextQuery = { ...route.query } as Record<string, any>;
   const nextSection =
     section ?? getSectionFromTab(activeTab.value) ?? "subjects";
-  nextQuery[SECTION_QUERY_KEY] = nextSection;
   delete nextQuery.tab;
+  const shouldUseBaseHome =
+    !userToken.value && nextSection === "subjects" && !subjectIdParam && !subject;
+  if (shouldUseBaseHome) {
+    delete nextQuery[SECTION_QUERY_KEY];
+  } else {
+    nextQuery[SECTION_QUERY_KEY] = nextSection;
+  }
 
   if (subjectIdParam) {
     nextQuery[SUBJECT_ID_QUERY_KEY] = subjectIdParam;
@@ -225,6 +231,28 @@ const { progress, isLoading } = useLoadingIndicator();
 watch(
   () => route.query,
   (query) => {
+    if (!userToken.value) {
+      isSyncingRoute.value = true;
+      activeTab.value = "subjects";
+      subjectId.value = "";
+      subjectSlug.value = "";
+      subjectName.value = "";
+      seeMoreDetails.value = null;
+      isSyncingRoute.value = false;
+
+      const cleanedQuery = { ...query } as Record<string, any>;
+      delete cleanedQuery[SECTION_QUERY_KEY];
+      delete cleanedQuery[SUBJECT_QUERY_KEY];
+      delete cleanedQuery[SUBJECT_ID_QUERY_KEY];
+      delete cleanedQuery.tab;
+      const currentQueryKey = stringifyQuery(query as Record<string, any>);
+      const cleanedQueryKey = stringifyQuery(cleanedQuery);
+      if (currentQueryKey !== cleanedQueryKey) {
+        router.replace({ path: route.path, query: cleanedQuery });
+      }
+      return;
+    }
+
     isSyncingRoute.value = true;
     const requestedTab = getTabFromSection(
       query[SECTION_QUERY_KEY] ?? query.tab
@@ -255,7 +283,7 @@ watch(
 
     isSyncingRoute.value = false;
 
-    if (!query[SECTION_QUERY_KEY] && !query.tab) {
+    if (!query[SECTION_QUERY_KEY] && !query.tab && activeTab.value !== "subjects") {
       updateRouteState({
         section: getSectionFromTab(activeTab.value) ?? "subjects",
         subject: subjectSlug.value || undefined,
@@ -609,7 +637,7 @@ watch(
 watch(
   [() => activeTab.value, () => subjectId.value, () => subjectSlug.value],
   ([nextTab, nextSubjectId, nextSubjectSlug]) => {
-    if (isSyncingRoute.value) return;
+    if (isSyncingRoute.value || !userToken.value) return;
     const shouldIncludeSubject =
       nextTab === "subjects" && (!!nextSubjectId || !!nextSubjectSlug);
     updateRouteState({
@@ -906,8 +934,7 @@ const clearSubjectDetail = () => {
                 <SubjectCard v-for="subject in shuffleSubject(slicedData)" :key="subject._id" :subject-id="subject._id"
                   :subject-name="subject.name" :subject-image="subject.thumbnail"
                   :subject-description="subject.description" :total-views="subject.views ?? 0"
-                  :is-logged-in="userToken != null || userToken != undefined"
-                  @emit-subject-name="(name) => { subjectName = name; subjectSlug = slugifySubject(name); }" />
+                  :is-logged-in="userToken != null || userToken != undefined" />
               </template>
             </customGridTwo>
 
