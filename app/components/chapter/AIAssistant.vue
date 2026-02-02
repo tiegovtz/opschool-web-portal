@@ -2183,7 +2183,7 @@ onUnmounted(() => {
     title="Ask AI Subject Teacher"
   >
     <Icon
-      name="mdi:robot"
+      name="fluent:bot-28-filled"
       size="24"
     />
     <span class="hidden md:block">AI Subject Teacher</span>
