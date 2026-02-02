@@ -38,7 +38,6 @@ import {
   SUBJECT_ID_QUERY_KEY,
   SUBJECT_QUERY_KEY,
 } from "~/utilities/homeSectionRouting";
-import { isNavigationFailure } from "vue-router";
 
 // Define meta info about page
 useHead({
@@ -106,7 +105,6 @@ const subjectSlug = ref<string>(""); // Initial subject slug Value State
 const subjectName = ref<string>(""); // Initial subject name Value State
 const seeMoreDetails = ref<string | null>(null); // Initial See More
 const announcement = ref<string>();
-const isSyncingRoute = ref(false);
 const subjectResolveState = ref({ slug: "", isLoading: false });
 const TAB_TO_ROUTE: Record<tabs, { path: string; query?: Record<string, any> }> = {
   subjects: { path: "/home" },
@@ -203,10 +201,6 @@ watch(
                 subjectId: subjectIdParam || undefined,
               }
             : target.query;
-        console.log("// TEMP DEBUG redirect /home query -> real route", {
-          from: route.fullPath,
-          to: { path: target.path, query: targetQuery },
-        });
         router.replace({ path: target.path, query: targetQuery });
       }
     }
@@ -553,18 +547,6 @@ watch(
   }
 );
 
-watch(
-  [() => activeTab.value, () => subjectId.value, () => subjectSlug.value],
-  ([nextTab, nextSubjectId, nextSubjectSlug]) => {
-    if (isSyncingRoute.value || !userToken.value) return;
-    console.log("// TEMP DEBUG state watcher (no sync)", {
-      nextTab,
-      nextSubjectId,
-      nextSubjectSlug,
-    });
-  }
-);
-
 // switch tabs 
 const switchTab = async (tab: tabs) => {
   if (!tab) return;
@@ -578,27 +560,7 @@ const switchTab = async (tab: tabs) => {
   }
 
   const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
-  const resolved = router.resolve(target);
-  console.log("// TEMP DEBUG switchTab before push", {
-    tab,
-    target,
-    resolvedPath: resolved.fullPath,
-    current: router.currentRoute.value.fullPath,
-  });
-  const result = await router.push(target).catch((err) => err);
-  if (isNavigationFailure(result)) {
-    console.log("// TEMP DEBUG switchTab nav failure", {
-      type: result.type,
-      to: resolved.fullPath,
-      current: router.currentRoute.value.fullPath,
-    });
-  } else if (result instanceof Error) {
-    console.log("// TEMP DEBUG switchTab nav error", result);
-  } else {
-    console.log("// TEMP DEBUG switchTab after push", {
-      current: router.currentRoute.value.fullPath,
-    });
-  }
+  await router.push(target);
 };
 
 const clearSubjectDetail = () => {
@@ -621,16 +583,7 @@ const handleSubjectSelect = async (id: string, name: string) => {
   subjectSlug.value = slugifySubject(name);
   activeTab.value = "subjects";
   const target = getSubjectRoute(id, subjectSlug.value);
-  console.log("// TEMP DEBUG handleSubjectSelect before push", {
-    id,
-    name,
-    target,
-    current: router.currentRoute.value.fullPath,
-  });
   await router.push(target);
-  console.log("// TEMP DEBUG handleSubjectSelect after push", {
-    current: router.currentRoute.value.fullPath,
-  });
 };
 
 </script>

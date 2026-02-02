@@ -2,7 +2,7 @@
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import apiDocs from "~/utilities/apiDocs";
 import InputsSelection from '@/components/home/InputsSelection.vue'
@@ -46,7 +46,6 @@ const videoType = route.query?.type;
 const activeTab = ref<tabs>(videoType === 'oth' ? 'class-videos' : 'video');
 
 // Define Cookie
-const auth_token = useCookie('signInAccessToken').value;
 const userToken = useCookie("signInUserToken");
 
 // First, fix the sliceData function
@@ -85,8 +84,6 @@ const switchTab = async (tab: string) => {
   if (!tab) return;
   activeTab.value = tab as tabs;
   const target = VIDEO_TAB_TO_ROUTE[tab] ?? { path: "/home" };
-  const resolved = useRouter().resolve(target);
-  console.log("// TEMP DEBUG video switchTab", { tab, target, resolvedPath: resolved.fullPath });
   await useRouter().push(target);
 };
 

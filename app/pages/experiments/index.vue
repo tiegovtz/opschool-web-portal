@@ -18,19 +18,11 @@ import type { tabs } from "~/types/types.data";
 import InputsSelection from "~/components/home/InputsSelection.vue";
 
 const route = useRoute();
-// const router = useRouter();
 const experimentId = route.fullPath.split("/").pop();
 const experimentTitle = String(route.fullPath.split("/")[4])
   .toString()
   .replaceAll("%20", " ")
   .replaceAll("-", " ");
-const experimentStandard = String(route.fullPath.split("/")[2])
-  .toString()
-  .replaceAll("%20", " ");
-const experimentLevel = String(route.fullPath.split("/")[3])
-  .toString()
-  .replaceAll("%20", " ");
-const experimentUrl = `/api/experiments/${experimentId}`;
 
 // Header
 useHead({
@@ -101,8 +93,6 @@ const switchTab = async (tab: string) => {
   if (!tab) return;
   activeTab.value = tab as tabs;
   const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
-  const resolved = useRouter().resolve(target);
-  console.log("// TEMP DEBUG experiments switchTab", { tab, target, resolvedPath: resolved.fullPath });
   await useRouter().push(target);
 };
   

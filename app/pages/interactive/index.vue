@@ -2,7 +2,7 @@
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
-import { ref, computed, onMounted, watch, reactive } from 'vue';
+import { ref, computed, watch, reactive } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import InputsSelection from '@/components/home/InputsSelection.vue'
 import apiDocs from "~/utilities/apiDocs";
@@ -201,8 +201,6 @@ const switchTab = async (tab: any) => {
   if (!tab) return;
   activeTab.value = tab;
   const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
-  const resolved = useRouter().resolve(target);
-  console.log("// TEMP DEBUG interactive switchTab", { tab, target, resolvedPath: resolved.fullPath });
   await useRouter().push(target);
 };
 

@@ -111,8 +111,6 @@ const switchTab = async (tab: string) => {
   if (!tab) return;
   activeTab.value = tab as tabs;
   const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
-  const resolved = router.resolve(target);
-  console.log("// TEMP DEBUG interactive detail switchTab", { tab, target, resolvedPath: resolved.fullPath });
   await router.push(target);
 };
 
