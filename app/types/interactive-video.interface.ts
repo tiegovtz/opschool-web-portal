@@ -1,7 +1,7 @@
 export interface VideoInteraction {
   _id: string;
   videoId?: string;
-  type: "Quiz" | "Selection";
+  type: "MultipleChoice" | "TrueFalse" | "Selection";
   startTime: number;
   endTime: number;
 

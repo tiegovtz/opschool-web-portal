@@ -278,7 +278,7 @@ const formatTime = (timestamp: number): string => {
 
 // Assessment statistics
 const totalQuizzes = computed(() => {
-  return interactions.value.filter((i: VideoInteraction) => i.type === 'Quiz').length
+  return interactions.value.filter((i: VideoInteraction) => i.type === 'MultipleChoice' || i.type === 'TrueFalse' || i.type === 'Selection').length
 })
 
 const correctAnswers = computed(() => {
@@ -317,12 +317,12 @@ definePageMeta({
                 class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
                 <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
               </button>
-             <div  class="flex flex-1 items-center justify-center">
-               <div tabindex="0" class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4">
-                <Icon name="heroicons-outline:play" size="18" class="text-primary" />
-                <span class="text-sm font-medium text-primary">Interactive Learning</span>
+              <div class="flex flex-1 items-center justify-center">
+                <div tabindex="0" class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-4">
+                  <Icon name="heroicons-outline:play" size="18" class="text-primary" />
+                  <span class="text-sm font-medium text-primary">Interactive Learning</span>
+                </div>
               </div>
-             </div>
             </div>
             <p class="text-sm text-gray-600 max-w-2xl mx-auto">
               Engage with interactive quizzes and selection activities as you learn
@@ -365,7 +365,8 @@ definePageMeta({
           </div>
 
           <!-- Video Container -->
-          <div id="main-container" tabindex="-1" aria-label="interactive player container" v-else class="bg-white rounded-2xl shadow-xl overflow-hidden mb-8 border border-gray-200">
+          <div id="main-container" tabindex="-1" aria-label="interactive player container" v-else
+            class="bg-white rounded-2xl shadow-xl overflow-hidden mb-8 border border-gray-200">
             <div v-if="!videoSrc || videoSrc === '/videos/TestVideo.mp4'" class="p-12 text-center">
               <p class="text-gray-600 mb-4">No video source available</p>
               <p class="text-sm text-gray-500">Video source: {{ videoSrc }}</p>
