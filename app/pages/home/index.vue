@@ -3,7 +3,7 @@ import HeroSection from "~/components/home/HeroSection.vue";
 import TopicCard from "~/components/home/TopicCard.vue";
 import TabBar from "~/components/home/TabBar.vue";
 import LoadingIndicator from "~/components/loading/loadingIndicator.vue";
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, watch, reactive } from "vue";
 import {
   isGreaterToXL,
   isGreaterToLG,
