@@ -87,12 +87,17 @@ onMounted(async () => {
     } else {
       const reused = await reuseEmptySessionIfAvailable();
       if (!reused) {
-        await createNewSession();
+        chatStore.clearActiveSession();
+        resetLocalSessionState();
       }
     }
   } catch (error) {
     console.error("[TIE AI Teacher] Initialization error:", error);
-    await createNewSession();
+    const reused = await reuseEmptySessionIfAvailable();
+    if (!reused) {
+      chatStore.clearActiveSession();
+      resetLocalSessionState();
+    }
   } finally {
     isInitializing.value = false;
   }
@@ -115,17 +120,18 @@ const loadSession = async (sessionId: string) => {
       // If session has a title, mark it as set
       hasTitleBeenSet.value = !!session.title;
     } else {
-      // @ts-ignore
-      chat.messages.splice(0, chat.messages.length);
-      lastMessageCount.value = 0;
-      savedMessageIds.value = new Set();
-      hasTitleBeenSet.value = false;
+      resetLocalSessionState();
     }
 
     router.replace({ query: { sessionId } });
   } catch (error) {
     console.error("[TIE AI Teacher] Error loading session:", error);
-    await createNewSession();
+    const reused = await reuseEmptySessionIfAvailable();
+    if (!reused) {
+      chatStore.clearActiveSession();
+      resetLocalSessionState();
+      clearSessionIdFromRoute();
+    }
   }
 };
 
@@ -133,15 +139,26 @@ const loadSession = async (sessionId: string) => {
 const createNewSession = async () => {
   try {
     const session = await chatStore.createSession();
-    // @ts-ignore
-    chat.messages.splice(0, chat.messages.length);
-    lastMessageCount.value = 0;
-    savedMessageIds.value = new Set();
-    hasTitleBeenSet.value = false;
+    resetLocalSessionState();
     router.replace({ query: { sessionId: session.id } });
   } catch (error) {
     console.error("[TIE AI Teacher] Error creating session:", error);
   }
+};
+
+const resetLocalSessionState = () => {
+  // @ts-ignore
+  chat.messages.splice(0, chat.messages.length);
+  lastMessageCount.value = 0;
+  savedMessageIds.value = new Set();
+  hasTitleBeenSet.value = false;
+};
+
+const clearSessionIdFromRoute = () => {
+  if (!route.query.sessionId) return;
+  const nextQuery = { ...route.query };
+  delete nextQuery.sessionId;
+  router.replace({ query: nextQuery });
 };
 
 const hasConversationStarted = () => {
@@ -375,7 +392,10 @@ const handleSubmit = async (message: string) => {
   if (!message.trim()) return;
 
   if (!chatStore.activeSessionId) {
-    await createNewSession();
+    const reused = await reuseEmptySessionIfAvailable();
+    if (!reused) {
+      await createNewSession();
+    }
   }
 
   isTyping.value = true;
@@ -402,13 +422,19 @@ const handleNewChat = async () => {
 
     const reused = await reuseEmptySessionIfAvailable();
     if (reused) return;
-  } else {
-    const reused = await reuseEmptySessionIfAvailable();
-    if (reused) return;
+
+    resetLocalSessionState();
+    clearSessionIdFromRoute();
+    return;
   }
 
-  await createNewSession();
-  // Keep sidebar open when creating new chat
+  const reused = await reuseEmptySessionIfAvailable();
+  if (reused) return;
+
+  chatStore.clearActiveSession();
+  resetLocalSessionState();
+  clearSessionIdFromRoute();
+  // Keep sidebar open when starting a new chat
 };
 
 // Handle session selection
