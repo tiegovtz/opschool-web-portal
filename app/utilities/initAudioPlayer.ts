@@ -3,6 +3,7 @@ let currentPlayingBtn: HTMLButtonElement | null = null;
 
 export function initAudioCanvasPlayers() {
   document.querySelectorAll(".play-btn").forEach((btn) => {
+   
     const src = btn.getAttribute("data-audio-src");
     if (!src) return;
 
@@ -22,6 +23,7 @@ export function initAudioCanvasPlayers() {
 
     btn.addEventListener("click", async () => {
       await audioCtx.resume();
+      //  btn.classList.toggle('glow-breathe')
 
       // Pause currently playing audio if it's not this one
       if (currentPlayingAudio && currentPlayingAudio !== audio) {
