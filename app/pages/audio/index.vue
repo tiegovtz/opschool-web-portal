@@ -69,7 +69,25 @@ const sliceData = (start: number, end: number) => {
 // Define current page and Page size variable
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(12);
-const activeTab = ref<tabs>()
+const activeTab = ref<tabs>("audio")
+const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
+  subjects: { path: "/home" },
+  "interactive-contents": { path: "/interactive" },
+  "learn-activities": { path: "/experiments" },
+  video: { path: "/video", query: { type: "conc" } },
+  "class-videos": { path: "/video", query: { type: "oth" } },
+  audio: { path: "/audio" },
+  "smart-class": { path: "/smart-class" },
+};
+
+const switchTab = async (tab: string) => {
+  if (!tab) return;
+  activeTab.value = tab as tabs;
+  const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  const resolved = useRouter().resolve(target);
+  console.log("// TEMP DEBUG audio switchTab", { tab, target, resolvedPath: resolved.fullPath });
+  await useRouter().push(target);
+};
 // Fetch audios From Server
 const fetchAudios = async (param?: any) => {
 
@@ -215,7 +233,7 @@ watch(filters, (filters) => {
       <!-- User Token Available -->
       <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
         <HomeSearchbar appearance="rounded" />
-        <TabBar :is-logged-in="true" @emit-active-tab="activeTab = $event" />
+        <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" />
       </div>
 
       <!-- User Token Not Available -->
@@ -223,7 +241,7 @@ watch(filters, (filters) => {
         <HeroSection />
         <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
           @emit-subject="filters.subject = $event" />
-        <TabBar />
+        <TabBar :active-tab="activeTab" />
       </div>
 
       <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">

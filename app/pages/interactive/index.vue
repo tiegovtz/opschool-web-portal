@@ -11,6 +11,7 @@ import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utili
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import type { User } from "~/types/user.interface";
 import type { Subjects } from "~/types/subject.interface";
+import type { tabs } from "~/types/types.data";
 
 // Define meta info about page
 useHead({
@@ -170,6 +171,7 @@ const filters = reactive<{ level: string | number | null; subject: string | null
 )
 
 const level = ref<string | null>(null)  // Initial Level State
+const activeTab = ref<tabs>("interactive-contents");
 // watch emits changes
 watch(filters, (current) => {
   const payload: Record<string, string> = {};
@@ -185,6 +187,25 @@ watch(filters, (current) => {
   fetchTopics(payload);
 }, { deep: true });
 
+const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
+  subjects: { path: "/home" },
+  "interactive-contents": { path: "/interactive" },
+  "learn-activities": { path: "/experiments" },
+  video: { path: "/video", query: { type: "conc" } },
+  "class-videos": { path: "/video", query: { type: "oth" } },
+  audio: { path: "/audio" },
+  "smart-class": { path: "/smart-class" },
+};
+
+const switchTab = async (tab: any) => {
+  if (!tab) return;
+  activeTab.value = tab;
+  const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  const resolved = useRouter().resolve(target);
+  console.log("// TEMP DEBUG interactive switchTab", { tab, target, resolvedPath: resolved.fullPath });
+  await useRouter().push(target);
+};
+
 </script>
 
 <template>
@@ -197,7 +218,7 @@ watch(filters, (current) => {
       <!-- User Token Available -->
       <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
         <HomeSearchbar appearance="rounded" />
-        <TabBar />
+        <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" />
       </div>
 
       <!-- User Token Not Available -->
@@ -205,7 +226,7 @@ watch(filters, (current) => {
         <HeroSection />
         <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
           @emit-subject="filters.subject = $event" />
-        <TabBar />
+        <TabBar :active-tab="activeTab" />
       </div>
 
       <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">

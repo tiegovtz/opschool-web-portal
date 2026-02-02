@@ -1,8 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import TopicCard from "@/components/home/TopicCard.vue";
-import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, watch } from "vue";
+import type { tabs } from "~/types/types.data";
 import {
   isGreaterToXL,
   isGreaterToLG,
@@ -10,7 +10,6 @@ import {
   isGreaterToSM,
   screenWidth,
 } from "@/utilities/controlls";
-import InputsSelection from "@/components/home/InputsSelection.vue";
 import apiDocs from "~/utilities/apiDocs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
@@ -67,12 +66,16 @@ useHead({
   ],
 });
 
+const accessToken = useCookie("signInAccessToken");
 const userToken = useCookie("signInUserToken");
+const isLoggedIn = computed(() => !!(accessToken?.value || userToken?.value));
 
 // Define Ref State
 const status = ref("pending"); // Initial Status State
 const topic = ref([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
+// Keep Subjects highlighted for continuity when browsing a subject
+const activeTab = ref<tabs>("subjects");
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
@@ -94,6 +97,24 @@ const sliceData = (start, end) => {
 // current page data
 const currentPage = ref(1);
 const pageSize = ref();
+const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
+  subjects: { path: "/home" },
+  "interactive-contents": { path: "/interactive" },
+  "learn-activities": { path: "/experiments" },
+  video: { path: "/video", query: { type: "conc" } },
+  "class-videos": { path: "/video", query: { type: "oth" } },
+  audio: { path: "/audio" },
+  "smart-class": { path: "/smart-class" },
+};
+
+const switchTab = async (tab: string) => {
+  if (!tab) return;
+  activeTab.value = tab as tabs;
+  const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  const resolved = router.resolve(target);
+  console.log("// TEMP DEBUG interactive detail switchTab", { tab, target, resolvedPath: resolved.fullPath });
+  await router.push(target);
+};
 
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params) => {
@@ -213,8 +234,17 @@ watch(filters, (filters) => {
 <template>
   <NuxtLayout name="home-layout">
     <div class="" :class="{ ' animate-pulse': isLoading }">
-      <HeroSection />
-      <TabBar :subject-title="subjectTitle" :topic-id="subjectId" />
+      <div class="flex flex-col gap-4">
+        <!-- Keep hero-style search visible for both logged-in and logged-out -->
+        <HomeSearchbar appearance="not-normal" />
+        <TabBar
+          :is-logged-in="isLoggedIn"
+          :active-tab="activeTab"
+          @emit-active-tab="switchTab($event)"
+          :subject-title="subjectTitle"
+          :topic-id="subjectId"
+        />
+      </div>
       <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />
       </div>

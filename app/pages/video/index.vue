@@ -9,6 +9,7 @@ import InputsSelection from '@/components/home/InputsSelection.vue'
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { HomeCustomScrollView } from "#components";
 import { fetchAsyncData } from '~/composables/useAsyncFetch';
+import type { tabs } from "~/types/types.data";
 
 useHead({
   title: "TIE - Video Resource",
@@ -42,6 +43,7 @@ const videos = ref();         // Initial videos State
 const slicedData = ref();    // Initial slice data to 9
 const route = useRoute();
 const videoType = route.query?.type;
+const activeTab = ref<tabs>(videoType === 'oth' ? 'class-videos' : 'video');
 
 // Define Cookie
 const auth_token = useCookie('signInAccessToken').value;
@@ -68,6 +70,25 @@ const sliceData = (start:number, end:number) => {
 // Define current page and Page size variable
 const currentPage = ref(1);
 const pageSize = ref();
+
+const VIDEO_TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
+  subjects: { path: "/home" },
+  "interactive-contents": { path: "/interactive" },
+  "learn-activities": { path: "/experiments" },
+  video: { path: "/video", query: { type: "conc" } },
+  "class-videos": { path: "/video", query: { type: "oth" } },
+  audio: { path: "/audio" },
+  "smart-class": { path: "/smart-class" },
+};
+
+const switchTab = async (tab: string) => {
+  if (!tab) return;
+  activeTab.value = tab as tabs;
+  const target = VIDEO_TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  const resolved = useRouter().resolve(target);
+  console.log("// TEMP DEBUG video switchTab", { tab, target, resolvedPath: resolved.fullPath });
+  await useRouter().push(target);
+};
 
 // Fetch Videos From Server
 const fetchVideos = async (param:any) => {
@@ -209,11 +230,15 @@ watch(filters, (current) => {
       { ' animate-pulse': isLoading }
     ]">
       <!-- User Token Not Available -->
-      <div>
+      <div v-if="!userToken">
         <HeroSection />
         <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
           @emit-subject="filters.subject = $event" />
-        <TabBar />
+        <TabBar :active-tab="activeTab" />
+      </div>
+      <div v-else class="flex flex-col items-center justify-center w-full gap-4 pt-4">
+        <HomeSearchbar appearance="rounded" />
+        <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" />
       </div>
 
       <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
