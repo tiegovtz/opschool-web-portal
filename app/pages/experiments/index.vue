@@ -16,6 +16,7 @@ import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utili
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import type { tabs } from "~/types/types.data";
 import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
+import { layoutEffect } from '@/utilities/controlls';
 
 const route = useRoute();
 const experimentId = route.fullPath.split("/").pop();
@@ -273,6 +274,20 @@ watch(
           <TabBar :active-tab="activeTab" />
         </nav>
       </section>
+      <div class="items-center justify-end hidden gap-2 md:flex" role="group" aria-label="Layout options">
+        <button @click="layoutEffect = 'grid'" :aria-pressed="layoutEffect === 'grid'" aria-label="Grid layout" :class="[
+          'cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]">
+          <Icon name="bxs:grid-alt" size="1.5rem" aria-hidden="true" />
+        </button>
+        <button @click="layoutEffect = 'list'" :aria-pressed="layoutEffect === 'list'" aria-label="List layout" :class="[
+          'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]">
+          <Icon name="fa-solid:list" size="1.5rem" aria-hidden="true" />
+        </button>
+      </div>
       <HomeTabContentShell
         :active-tab="activeTab"
         :results-count="experiments?.length || 0"
