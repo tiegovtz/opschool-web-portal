@@ -644,7 +644,7 @@ const prepareNavigation = () => {
                   <span class="text-xs font-medium text-primary">LIVE</span>
                 </div>
 
-                <video
+                <iframe
                   v-if="activeTabPanel.streamUrl"
                   :src="activeTabPanel.streamUrl"
                   class="h-[420px] w-full"
@@ -861,7 +861,7 @@ const prepareNavigation = () => {
 
             <div class="p-6">
               <div v-if="playableUrl" class="overflow-hidden rounded-xl bg-black">
-                <video :src="playableUrl" class="h-[420px] w-full" controls autoplay playsinline />
+                <iframe :src="playableUrl" class="h-[420px] w-full" controls autoplay playsinline />
               </div>
 
               <div v-else-if="meetingEmbedUrl" class="overflow-hidden rounded-xl bg-black">
