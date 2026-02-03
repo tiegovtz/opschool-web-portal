@@ -10,6 +10,7 @@ import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utili
 import { HomeCustomScrollView } from "#components";
 import { fetchAsyncData } from '~/composables/useAsyncFetch';
 import type { tabs } from "~/types/types.data";
+import { layoutEffect } from '@/utilities/controlls';
 
 useHead({
   title: "TIE - Video Resource",
@@ -231,6 +232,20 @@ watch(
       <div v-else class="flex flex-col items-center justify-center w-full gap-4 pt-4">
         <HomeSearchbar appearance="rounded" />
         <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" />
+      </div>
+      <div class="items-center justify-end hidden gap-2 md:flex" role="group" aria-label="Layout options">
+        <button @click="layoutEffect = 'grid'" :aria-pressed="layoutEffect === 'grid'" aria-label="Grid layout" :class="[
+          'cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]">
+          <Icon name="bxs:grid-alt" size="1.5rem" aria-hidden="true" />
+        </button>
+        <button @click="layoutEffect = 'list'" :aria-pressed="layoutEffect === 'list'" aria-label="List layout" :class="[
+          'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]">
+          <Icon name="fa-solid:list" size="1.5rem" aria-hidden="true" />
+        </button>
       </div>
       <HomeTabContentShell
         :active-tab="activeTab"
