@@ -34,8 +34,8 @@ const setSeeMore = (seeMore: string) => {
   }
 };
 
-// general level
-const currentLevel = ref<Record<string, string>>({})
+// general level (per subject key)
+const currentLevels = ref<Record<string, string>>({})
 const getLevels = (data: any[]) => {
   // extracting levels 
   let list = data?.map((t: any) => (t?.level as any).name || t?.level);
@@ -43,8 +43,8 @@ const getLevels = (data: any[]) => {
 }
 
 const setLevel = (key: string, lvl: string) => {
-  currentLevel.value = {
-    ...currentLevel.value,
+  currentLevels.value = {
+    ...currentLevels.value,
     [key]: lvl
   };
 }
@@ -108,7 +108,7 @@ const setLevel = (key: string, lvl: string) => {
             <template #data>
               <!-- Topic Cards  -->
               <TopicCard
-                v-for="topic in (topics?.data as Topic[]).filter(t => (t.level as any)?.name === currentLevel[(topics?.dataOfKey as any)?.toLowerCase()])"
+                v-for="topic in (topics?.data as Topic[]).filter(t => (t.level as any)?.name === currentLevels[(topics?.dataOfKey as any)?.toLowerCase()])"
                 :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail" :topic-title="topic.name"
                 :topic-description="topic.descriptions" :subject-name="(topic.subject as any)?.name" :topic-views="topic.viewedBy?.length
                   ? topic.viewedBy?.length
@@ -427,7 +427,7 @@ const setLevel = (key: string, lvl: string) => {
 
             <!-- exrteact levels from data -->
             <CustomDropDownList class="px-2 cursor-pointer"
-              v-model="currentLevel[(topics?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              v-model="currentLevels[(topics?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
               :list="Array.from(getLevels(topics.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
 
             <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
@@ -465,9 +465,9 @@ const setLevel = (key: string, lvl: string) => {
             <TopicCard v-for="topic in (
               (() => {
                 const key = (topics?.dataOfKey as any)?.toLowerCase();
-                return currentLevel[key]
+                return currentLevels[key]
                   ? (topics?.data as Topic[]).filter(
-                    t => (t.level as any)?.name === currentLevel[key]
+                    t => (t.level as any)?.name === currentLevels[key]
                   )
                   : (topics?.data as Topic[]);
               })()
@@ -600,7 +600,7 @@ const setLevel = (key: string, lvl: string) => {
 
             <!-- exrteact levels from data -->
             <CustomDropDownList class="px-2 cursor-pointer"
-              v-model="currentLevel[(videos?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              v-model="currentLevels[(videos?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
               :list="Array.from(getLevels(videos.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
 
             <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
@@ -683,7 +683,7 @@ const setLevel = (key: string, lvl: string) => {
 
             <!-- exrteact levels from data -->
             <CustomDropDownList class="px-2 cursor-pointer"
-              v-model="currentLevel[(audios?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              v-model="currentLevels[(audios?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
               :list="Array.from(getLevels(audios.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
 
             <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"

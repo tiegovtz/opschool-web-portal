@@ -3,9 +3,13 @@ import { refreshToken, isTokenExpiringSoon } from "~/utilities/jwToken";
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const user = useCookie("signInUserToken");
   const userAccessToken = useCookie("signInAccessToken");
+  const redirectTarget = to.fullPath || to.path;
 
   if (!user.value) {
-    return navigateTo("/auth"); // Redirect to login page
+    return navigateTo({
+      path: "/auth",
+      query: { redirect: redirectTarget },
+    }); // Redirect to login page
   }
 
   // 🔹 Check if access token is expiring soon (within 60 seconds)
@@ -14,7 +18,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     if (newToken?.access_token) {
       userAccessToken.value = newToken.access_token;
     } else {
-      return navigateTo("/auth"); // Redirect to login if refresh fails
+      return navigateTo({
+        path: "/auth",
+        query: { redirect: redirectTarget },
+      }); // Redirect to login if refresh fails
     }
   }
 });

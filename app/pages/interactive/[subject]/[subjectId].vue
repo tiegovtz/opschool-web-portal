@@ -18,8 +18,16 @@ import { fetchAsyncData } from "~/composables/useAsyncFetch";
 // Defin Route
 const route = useRoute();
 const router = useRouter();
-const subjectId = route.fullPath.split("/").pop();
-const subjectTitle = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
+const decodeParam = (value: unknown) => {
+  const raw = typeof value === "string" ? value : "";
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+};
+const subjectId = String(route.params.subjectId ?? "");
+const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
 
 // Define meta info about page
 useHead({
@@ -74,7 +82,6 @@ const isLoggedIn = computed(() => !!(accessToken?.value || userToken?.value));
 const status = ref("pending"); // Initial Status State
 const topic = ref([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
-// Keep Subjects highlighted for continuity when browsing a subject
 const activeTab = ref<tabs>("subjects");
 
 // First, fix the sliceData function
@@ -107,10 +114,38 @@ const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }
   "smart-class": { path: "/smart-class" },
 };
 
+const subjectSlug = computed(() => subjectTitle.toLowerCase().trim().replace(/\s+/g, "-"));
+
+const buildTabTarget = (tab: string) => {
+  if (tab === "subjects") return TAB_TO_ROUTE.subjects;
+  if (tab === "smart-class") return TAB_TO_ROUTE["smart-class"];
+
+  const hasSubjectContext = !!subjectId && !!subjectSlug.value;
+  if (!hasSubjectContext) return TAB_TO_ROUTE[tab] ?? { path: "/home" };
+
+  if (tab === "interactive-contents") {
+    return { path: `/interactive/${subjectSlug.value}/${subjectId}` };
+  }
+  if (tab === "learn-activities") {
+    return { path: `/experiments/${subjectSlug.value}/${subjectId}` };
+  }
+  if (tab === "video") {
+    return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "conc" } };
+  }
+  if (tab === "class-videos") {
+    return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "oth" } };
+  }
+  if (tab === "audio") {
+    return { path: `/audio/${subjectSlug.value}/${subjectId}` };
+  }
+
+  return TAB_TO_ROUTE[tab] ?? { path: "/home" };
+};
+
 const switchTab = async (tab: string) => {
   if (!tab) return;
   activeTab.value = tab as tabs;
-  const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  const target = buildTabTarget(tab);
   await router.push(target);
 };
 

@@ -3,17 +3,18 @@ import apiDocs from "~/utilities/apiDocs";
 
 const route = useRoute();
 // const router = useRouter();
-const experimentId = route.fullPath.split("/").pop();
-const experimentTitle = String(route.fullPath.split("/")[4])
-    .toString()
-    .replaceAll("%20", " ")
-    .replaceAll("-", " ");
-const experimentStandard = String(route.fullPath.split("/")[2])
-    .toString()
-    .replaceAll("%20", " ");
-const experimentSubject = String(route.fullPath.split("/")[3])
-    .toString()
-    .replaceAll("%20", " ");
+const safeDecode = (value) => {
+    const raw = typeof value === "string" ? value : "";
+    try {
+        return decodeURIComponent(raw);
+    } catch {
+        return raw;
+    }
+};
+const experimentId = String(route.params.experimentId ?? "");
+const experimentTitle = safeDecode(route.params.experiment).replaceAll("-", " ");
+const experimentStandard = safeDecode(route.params.subject);
+const experimentSubject = safeDecode(route.params.level);
 
 // Header
 useHead({
