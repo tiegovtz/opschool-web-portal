@@ -64,20 +64,20 @@ const handleTimeUpdate = () => {
   // Since interactions appear when paused at a specific time, we check if we're at or near that time
   const quizInteraction = props.interactions.find(
     (interaction) =>
-      interaction.type === 'Quiz' &&
+      (interaction.type === 'MultipleChoice' || interaction.type === 'TrueFalse' || interaction.type === 'Selection') &&
       !answeredQuizIds.value.has(interaction._id) && // Don't show already answered quizzes
       Math.abs(currentTime - interaction.startTime) <= INTERACTION_THRESHOLD // Within threshold of interaction time
   ) as VideoInteraction | undefined
 
   // Show quiz if we're at the interaction time and modal isn't already open
   if (quizInteraction && !isQuizModalOpen.value && activeQuiz.value?._id !== quizInteraction._id) {
-    console.log('Quiz detected at time:', currentTime, 'Quiz:', quizInteraction)
+
     activeQuiz.value = quizInteraction
     isQuizModalOpen.value = true
     // Store the current time when quiz appears (before pausing)
     if (videoRef.value) {
       quizPauseTime.value = videoRef.value.currentTime
-      console.log('Stored quiz pause time:', quizPauseTime.value)
+
       if (!videoRef.value.paused) {
         videoRef.value.pause()
       }
@@ -88,7 +88,7 @@ const handleTimeUpdate = () => {
   if (activeQuiz.value && !quizInteraction) {
     const timeDiff = Math.abs(currentTime - activeQuiz.value.startTime)
     if (timeDiff > INTERACTION_THRESHOLD) {
-      console.log('Hiding quiz, moved away from interaction time')
+
       isQuizModalOpen.value = false
       activeQuiz.value = null
     }
@@ -104,13 +104,13 @@ const handleTimeUpdate = () => {
 
   // Show selection if we're at the interaction time and modal isn't already open
   if (selectionInteraction && !isSelectionModalOpen.value && activeSelection.value?._id !== selectionInteraction._id) {
-    console.log('Selection detected at time:', currentTime, 'Interaction:', selectionInteraction)
+
     activeSelection.value = selectionInteraction
     isSelectionModalOpen.value = true
     // Store the current time when interaction appears (before pausing)
     if (videoRef.value) {
       selectionPauseTime.value = videoRef.value.currentTime
-      console.log('Stored selection pause time:', selectionPauseTime.value)
+
       if (!videoRef.value.paused) {
         videoRef.value.pause()
       }
@@ -121,7 +121,7 @@ const handleTimeUpdate = () => {
   if (activeSelection.value && !selectionInteraction) {
     const timeDiff = Math.abs(currentTime - activeSelection.value.startTime)
     if (timeDiff > INTERACTION_THRESHOLD) {
-      console.log('Hiding selection, moved away from interaction time')
+
       isSelectionModalOpen.value = false
       activeSelection.value = null
     }
@@ -134,7 +134,9 @@ const handleLoadedMetadata = () => {
 
   // Check if we should show a quiz at the start
   const initialQuiz = videoState.activeInteractions.value.find(
-    (interaction: VideoInteraction) => interaction.type === 'Quiz' && interaction.startTime === 0
+    (interaction: VideoInteraction) =>
+      (interaction.type === 'MultipleChoice' || interaction.type === 'TrueFalse' || interaction.type === 'Selection') &&
+      interaction.startTime === 0
   ) as VideoInteraction | undefined
 
   if (initialQuiz && !isQuizModalOpen.value) {
@@ -171,7 +173,7 @@ const handlePause = () => {
 }
 
 const handleLoadStart = () => {
-  console.log('Video load started. Source:', props.videoSrc)
+
 }
 
 const handleVideoError = (event: Event) => {
@@ -208,14 +210,14 @@ const handleVideoError = (event: Event) => {
 // Watch for video source changes and reload
 watch(() => props.videoSrc, (newSrc, oldSrc) => {
   if (newSrc && newSrc !== oldSrc && videoRef.value) {
-    console.log('Video source changed from', oldSrc, 'to', newSrc)
+
     videoRef.value.load() // Force reload
   }
 }, { immediate: false })
 
 // Watch for interactions changes and check if we should show any at current time
 watch(() => props.interactions, (newInteractions) => {
-  console.log('Interactions updated:', newInteractions.length)
+
   // If video is paused, check if we're at an interaction time
   if (videoRef.value && videoRef.value.paused) {
     handleTimeUpdate()
@@ -245,7 +247,7 @@ const handleQuizSubmit = (answer: string, isCorrect: boolean) => {
 }
 
 const handleQuizContinue = (isCorrect: boolean) => {
-  console.log('handleQuizContinue called with isCorrect:', isCorrect, 'quizPauseTime:', quizPauseTime.value)
+
 
   if (!videoRef.value || !activeQuiz.value) {
     console.error('Video ref or active quiz is null in handleQuizContinue')
@@ -254,7 +256,7 @@ const handleQuizContinue = (isCorrect: boolean) => {
 
   // Mark this quiz as answered so it won't show again
   answeredQuizIds.value.add(activeQuiz.value._id)
-  console.log('Marked quiz as answered:', activeQuiz.value._id)
+
 
   // Close the quiz modal first
   isQuizModalOpen.value = false
@@ -264,17 +266,19 @@ const handleQuizContinue = (isCorrect: boolean) => {
   // Handle video playback based on answer correctness when user clicks Continue
   if (isCorrect === true) {
     // Correct answer: resume from where it was paused, but skip past the quiz time range
-    console.log('Resuming video from:', quizPauseTime.value)
+
     const resumeTime = quizPauseTime.value > 0 ? quizPauseTime.value : videoRef.value.currentTime
 
     // Find the quiz interaction to get its end time
-    const quizInteraction = props.interactions.find(i => i._id === quizId && i.type === 'Quiz') as VideoInteraction | undefined
+    const quizInteraction = props.interactions.find(
+      i => i._id === quizId && (i.type === 'MultipleChoice' || i.type === 'TrueFalse' || i.type === 'Selection')
+    ) as VideoInteraction | undefined
     const quizEndTime = quizInteraction?.endTime || resumeTime
 
     // Skip to just after the quiz time range to prevent it from showing again
     const skipTime = Math.max(resumeTime, quizEndTime + 0.5)
     videoRef.value.currentTime = skipTime
-    console.log('Skipping to time:', skipTime, 'to avoid quiz time range')
+
 
     videoRef.value.play().catch(e => {
       console.error('Failed to resume video:', e)
@@ -285,7 +289,7 @@ const handleQuizContinue = (isCorrect: boolean) => {
     })
   } else if (isCorrect === false) {
     // Incorrect answer: go back to just after the previous interaction's end time + 1 second
-    console.log('Incorrect answer - finding previous interaction')
+
 
     // Sort all interactions by startTime to find the previous one
     const sortedInteractions = [...props.interactions].sort((a, b) => a.startTime - b.startTime)
@@ -306,11 +310,11 @@ const handleQuizContinue = (isCorrect: boolean) => {
     if (previousInteraction) {
       // Jump to previous interaction's end time + 1 second
       const jumpTime = previousInteraction.endTime + 1
-      console.log('Jumping to previous interaction end time + 1s:', jumpTime, 'Previous interaction:', previousInteraction._id)
+
       videoRef.value.currentTime = jumpTime
     } else {
       // If no previous interaction, restart from beginning
-      console.log('No previous interaction found - restarting from beginning')
+
       videoRef.value.currentTime = 0
     }
 
@@ -341,12 +345,12 @@ const selectionPauseTime = ref<number>(0)
 
 const handleSelectionSubmit = (answers: Record<string, string>) => {
   if (!activeSelection.value) return
-  console.log('Selection submitted with answers:', answers)
+
   emit('selectionSubmit', activeSelection.value, answers)
 }
 
 const handleSelectionContinue = (isCorrect: boolean) => {
-  console.log('handleSelectionContinue called with isCorrect:', isCorrect, 'pauseTime:', selectionPauseTime.value)
+
 
   if (!videoRef.value || !activeSelection.value) {
     console.error('Video ref or active selection is null')
@@ -355,7 +359,7 @@ const handleSelectionContinue = (isCorrect: boolean) => {
 
   // Mark this interaction as answered so it won't show again
   answeredQuizIds.value.add(activeSelection.value._id)
-  console.log('Marked selection as answered:', activeSelection.value._id)
+
 
   // Close the modal first
   isSelectionModalOpen.value = false
@@ -365,7 +369,7 @@ const handleSelectionContinue = (isCorrect: boolean) => {
   // Handle video playback based on answer correctness
   if (isCorrect === true) {
     // Correct answer: resume from where it was paused, but skip past the interaction time range
-    console.log('Resuming video from:', selectionPauseTime.value)
+
     const resumeTime = selectionPauseTime.value > 0 ? selectionPauseTime.value : videoRef.value.currentTime
 
     // Find the interaction to get its end time
@@ -375,7 +379,7 @@ const handleSelectionContinue = (isCorrect: boolean) => {
     // Skip to just after the interaction time range
     const skipTime = Math.max(resumeTime, endTime + 0.5)
     videoRef.value.currentTime = skipTime
-    console.log('Skipping to time:', skipTime)
+
 
     videoRef.value.play().catch(e => {
       console.error('Failed to resume video:', e)
@@ -385,7 +389,7 @@ const handleSelectionContinue = (isCorrect: boolean) => {
     })
   } else if (isCorrect === false) {
     // Incorrect answer: go back to just after the previous interaction's end time + 1 second
-    console.log('Incorrect answer - finding previous interaction')
+
 
     // Sort all interactions by startTime to find the previous one
     const sortedInteractions = [...props.interactions].sort((a, b) => a.startTime - b.startTime)
@@ -406,11 +410,11 @@ const handleSelectionContinue = (isCorrect: boolean) => {
     if (previousInteraction) {
       // Jump to previous interaction's end time + 1 second
       const jumpTime = previousInteraction.endTime + 1
-      console.log('Jumping to previous interaction end time + 1s:', jumpTime, 'Previous interaction:', previousInteraction._id)
+
       videoRef.value.currentTime = jumpTime
     } else {
       // If no previous interaction, restart from beginning
-      console.log('No previous interaction found - restarting from beginning')
+
       videoRef.value.currentTime = 0
     }
 
@@ -433,17 +437,19 @@ const handleSelectionClose = () => {
 
 // Expose method to manually trigger quiz (for testing)
 const triggerQuiz = (quizId?: string) => {
-  console.log('triggerQuiz called with quizId:', quizId)
-  console.log('Available interactions:', props.interactions)
   const quizToShow = quizId
-    ? props.interactions.find(i => i._id === quizId && i.type === 'Quiz') as VideoInteraction | undefined
-    : props.interactions.find(i => i.type === 'Quiz') as VideoInteraction | undefined
+    ? props.interactions.find(
+      i => i._id === quizId && (i.type === 'MultipleChoice' || i.type === 'TrueFalse' || i.type === 'Selection')
+    ) as VideoInteraction | undefined
+    : props.interactions.find(
+      i => i.type === 'MultipleChoice' || i.type === 'TrueFalse' || i.type === 'Selection'
+    ) as VideoInteraction | undefined
 
   if (quizToShow) {
-    console.log('Manually triggering quiz:', quizToShow)
+
     activeQuiz.value = quizToShow
     isQuizModalOpen.value = true
-    console.log('Quiz state - activeQuiz:', activeQuiz.value, 'isOpen:', isQuizModalOpen.value)
+
     if (videoRef.value && !videoRef.value.paused) {
       videoRef.value.pause()
     }
@@ -494,25 +500,12 @@ onUnmounted(() => {
 <template>
   <ClientOnly>
     <div ref="containerRef" class="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
-      <video
-        ref="videoRef"
-        class="w-full h-full object-contain"
-        preload="auto"
-        aria-label="Interactive educational video with quizzes"
-        aria-describedby="video-description"
-        @timeupdate="handleTimeUpdate"
-        @loadedmetadata="handleLoadedMetadata"
-        @click="handleVideoClick"
-        @play="handlePlay"
-        @pause="handlePause"
-        @mouseenter="showControls = true"
-        @mousemove="resetControlsTimer"
-        @mouseleave="startControlsTimer"
-        @error="handleVideoError"
-        @loadstart="handleLoadStart"
-        @contextmenu.prevent
-        crossorigin="use-credentials"
-      >
+      <video ref="videoRef" class="w-full h-full object-contain" preload="auto"
+        aria-label="Interactive educational video with quizzes" aria-describedby="video-description"
+        @timeupdate="handleTimeUpdate" @loadedmetadata="handleLoadedMetadata" @click="handleVideoClick"
+        @play="handlePlay" @pause="handlePause" @mouseenter="showControls = true" @mousemove="resetControlsTimer"
+        @mouseleave="startControlsTimer" @error="handleVideoError" @loadstart="handleLoadStart" @contextmenu.prevent
+        crossorigin="use-credentials">
         <source :src="videoSrc" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
@@ -522,72 +515,52 @@ onUnmounted(() => {
 
 
       <!-- Enhanced Play/Pause Button Overlay -->
-      <button
-        v-if="!videoState.isPlaying.value"
+      <button v-if="!videoState.isPlaying.value"
         class="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/50 transition-all duration-300 z-20 group"
-        @click="handleVideoClick"
-        aria-label="Play video"
-      >
+        @click="handleVideoClick" aria-label="Play video">
         <div class="relative">
           <div class="absolute inset-0 bg-white/20 rounded-full animate-ping opacity-75"></div>
-          <div class="relative w-20 h-20 bg-white/90 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform duration-300">
+          <div
+            class="relative w-20 h-20 bg-white/90 rounded-full flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform duration-300">
             <svg class="w-10 h-10 text-primary ml-1" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z"/>
+              <path d="M8 5v14l11-7z" />
             </svg>
           </div>
         </div>
       </button>
 
       <!-- Enhanced Timeline Controls -->
-      <div 
+      <div
         class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-4 backdrop-blur-sm z-40 transition-opacity duration-300"
-        :class="showControls || isQuizModalOpen ? 'opacity-100' : 'opacity-0'"
-        role="toolbar"
-        aria-label="Video player controls"
-        @mouseenter="showControls = true"
-        @mouseleave="startControlsTimer"
-      >
+        :class="showControls || isQuizModalOpen ? 'opacity-100' : 'opacity-0'" role="toolbar"
+        aria-label="Video player controls" @mouseenter="showControls = true" @mouseleave="startControlsTimer">
         <div class="flex items-center gap-3">
           <!-- Play/Pause Button -->
           <button
             class="flex-shrink-0 p-2.5 text-white hover:bg-white/25 rounded-full focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 backdrop-blur-sm bg-white/10"
             :aria-label="videoState.isPlaying.value ? 'Pause video' : 'Play video'"
-            :aria-pressed="videoState.isPlaying.value"
-            @click="handleVideoClick"
-          >
-            <svg
-              v-if="!videoState.isPlaying.value"
-              class="w-5 h-5"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M8 5v14l11-7z"/>
+            :aria-pressed="videoState.isPlaying.value" @click="handleVideoClick">
+            <svg v-if="!videoState.isPlaying.value" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
             </svg>
-            <svg
-              v-else
-              class="w-5 h-5"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+            <svg v-else class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
             </svg>
           </button>
-          
+
           <!-- Time Display -->
           <!-- <span class="text-white text-sm font-mono min-w-[45px]" aria-label="Current time">
             {{ formatTime(videoState.currentTime.value) }}
           </span> -->
-          
+
           <!-- Progress Bar -->
-          <div class="flex-1 min-w-0" role="progressbar" :aria-valuenow="videoState.currentTime.value" :aria-valuemin="0" :aria-valuemax="videoState.duration.value" :aria-label="`Video progress: ${Math.round((videoState.currentTime.value / videoState.duration.value) * 100)}%`">
-            <VideoTimeline
-              :current-time="videoState.currentTime.value || 0"
-              :duration="videoState.duration.value || 0"
-              :markers="[...(videoState.timelineMarkers.value || [])]"
-              @seek="handleSeek"
-            />
+          <div class="flex-1 min-w-0" role="progressbar" :aria-valuenow="videoState.currentTime.value"
+            :aria-valuemin="0" :aria-valuemax="videoState.duration.value"
+            :aria-label="`Video progress: ${Math.round((videoState.currentTime.value / videoState.duration.value) * 100)}%`">
+            <VideoTimeline :current-time="videoState.currentTime.value || 0" :duration="videoState.duration.value || 0"
+              :markers="[...(videoState.timelineMarkers.value || [])]" @seek="handleSeek" />
           </div>
-          
+
           <!-- <span class="text-white text-sm font-mono min-w-[45px] text-right" aria-label="Total duration">
             {{ formatTime(videoState.duration.value) }}
           </span>
@@ -595,63 +568,29 @@ onUnmounted(() => {
           <!-- Fullscreen Button -->
           <button
             class="flex-shrink-0 p-2.5 text-white hover:bg-white/25 rounded-full focus:outline-none focus:ring-2 focus:ring-white/50 transition-all duration-200 backdrop-blur-sm bg-white/10"
-            :aria-label="isFullscreen ? 'Exit fullscreen mode' : 'Enter fullscreen mode'"
-            :aria-pressed="isFullscreen"
-            @click="toggleFullscreen"
-          >
-            <svg
-              v-if="!isFullscreen"
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-              />
+            :aria-label="isFullscreen ? 'Exit fullscreen mode' : 'Enter fullscreen mode'" :aria-pressed="isFullscreen"
+            @click="toggleFullscreen">
+            <svg v-if="!isFullscreen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
             </svg>
-            <svg
-              v-else
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"
-              />
+            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
             </svg>
           </button>
         </div>
       </div>
 
       <!-- Quiz Modal - Positioned within video container -->
-      <QuizModal
-        v-if="activeQuiz && isQuizModalOpen"
-        :quiz="activeQuiz"
-        :is-open="isQuizModalOpen"
-        :is-fullscreen="isFullscreen"
-        @submit="handleQuizSubmit"
-        @continue="handleQuizContinue"
-        @close="handleQuizClose"
-      />
-      
+      <QuizModal v-if="activeQuiz && isQuizModalOpen" :quiz="activeQuiz" :is-open="isQuizModalOpen"
+        :is-fullscreen="isFullscreen" @submit="handleQuizSubmit" @continue="handleQuizContinue"
+        @close="handleQuizClose" />
+
       <!-- Selection Modal -->
-      <SelectionModal
-        v-if="activeSelection && isSelectionModalOpen"
-        :interaction="activeSelection"
-        :is-open="isSelectionModalOpen"
-        :is-fullscreen="isFullscreen"
-        @submit="handleSelectionSubmit"
-        @continue="handleSelectionContinue"
-        @close="handleSelectionClose"
-      />
+      <SelectionModal v-if="activeSelection && isSelectionModalOpen" :interaction="activeSelection"
+        :is-open="isSelectionModalOpen" :is-fullscreen="isFullscreen" @submit="handleSelectionSubmit"
+        @continue="handleSelectionContinue" @close="handleSelectionClose" />
     </div>
   </ClientOnly>
 </template>

@@ -56,7 +56,7 @@ const setSubjectToView = () => {
     <!-- image -->
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
-      layoutEffect == 'grid' ? 'h-56' : 'w-full max-w-[200px] h-32'
+      layoutEffect == 'grid' ? 'aspect-video' : 'w-full max-w-[200px] h-32'
     ]">
       <NuxtImg
         :src="subjectImage"

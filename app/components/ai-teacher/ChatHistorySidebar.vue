@@ -2,7 +2,10 @@
   <!-- Desktop Sidebar (beside content) -->
   <div
     v-if="isOpen"
-    class="hidden md:flex flex-shrink-0 w-80 h-full shadow-lg relative flex-col"
+    :class="[
+      'flex-shrink-0 w-80 h-full bg-white shadow-lg relative flex-col',
+      compact ? 'flex' : 'hidden md:flex'
+    ]"
   >
     <!-- Header -->
     <div class="p-5">
@@ -275,7 +278,7 @@
 
   <!-- Mobile Sidebar (overlay) -->
   <div
-    v-show="isOpen"
+    v-show="isOpen && !compact"
     class="md:hidden fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-xl z-30 w-80 flex flex-col"
   >
     <!-- Header -->
@@ -561,6 +564,7 @@ import ConfirmationModal from "./ConfirmationModal.vue";
 
 const props = defineProps<{
   isOpen: boolean;
+  compact?: boolean;
 }>();
 
 const emit = defineEmits<{

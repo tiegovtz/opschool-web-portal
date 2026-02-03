@@ -7,4 +7,6 @@ export interface Videos extends BaseEntity {
     videoFileUrl:string;
     language?:string;
     educationLevel?:string;
+    description:string;
+    level:string
 } 

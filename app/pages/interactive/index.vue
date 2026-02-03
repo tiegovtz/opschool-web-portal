@@ -2,16 +2,18 @@
 import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
-import { ref, computed, onMounted, watch, reactive } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
-import InputsSelection from '@/components/home/InputsSelection.vue'
+import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
 import apiDocs from "~/utilities/apiDocs";
 import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import type { User } from "~/types/user.interface";
 import type { Subjects } from "~/types/subject.interface";
-
+import type { tabs } from "~/types/types.data";
+import { layoutEffect } from '@/utilities/controlls';
+import InputsSelection from '~/components/home/InputsSelection.vue';
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania Interactive Learning Platform",
@@ -47,7 +49,7 @@ const topic = ref<any[]>();        // Initial Topics State
 const slicedData = ref();    // Initial slice data to 9
 
 // First, fix the sliceData function
-const sliceData = (start:number, end:number) => {
+const sliceData = (start: number, end: number) => {
 
   if (!topic.value || !Array.isArray(topic.value) || topic.value.length === 0) {
     slicedData.value = [];
@@ -56,7 +58,7 @@ const sliceData = (start:number, end:number) => {
 
   // If only one page of data or less, return all data
   if (topic.value.length <= pageSize.value) {
-    slicedData.value = topic.value;      
+    slicedData.value = topic.value;
     return;
   }
 
@@ -69,21 +71,21 @@ const currentPage = ref(1);
 const pageSize = ref();
 
 // Then, update fetchTopics to call sliceData after data is loaded
-const fetchTopics = async (params?:any) => {
+const fetchTopics = async (params?: any) => {
 
-  const url = userToken.value ?
-    apiDocs.topics.filterTopicsByUser.replace('{userId}', (userToken.value as unknown as User)?._id) :
-    apiDocs.topics.filterTopics
-
+  const url = apiDocs.topics.filterTopics
+  if (userToken.value) {
+    params = {...params,userId:(userToken.value as any)?._id}
+  }
   try {
     status.value = 'pending';
-    const {data:response,status:fetchStatus} = await  fetchAsyncData('interactive',()=>$fetch(url, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData('interactive', () => $fetch(url, {
       params: params
     }))
 
     // Call State Define above
     topic.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
-    topic.value = filterKeyDataFromArrayOfJson(topic.value,"subject.name",['physics','chemistry','mathematics','biology','geography']);
+    topic.value = filterKeyDataFromArrayOfJson(topic.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography']);
     status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
@@ -161,30 +163,66 @@ const prevPage = () => {
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator()
 
+const filterValue = ref<Record<string, any> | any[]>({});
+const activeTab = ref<tabs>("interactive-contents");
+watch(
+  () => filterValue.value,
+  (newFilterValue) => {
+    if (Array.isArray(newFilterValue)) {
+      fetchTopics({});
+      return;
+    }
+    const filteredParams = Object.fromEntries(
+      Object.entries(newFilterValue || {}).filter(([_, v]) => v)
+    );
+    fetchTopics(filteredParams);
+  },
+  { deep: true }
+);
+
+const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
+  subjects: { path: "/home" },
+  "interactive-contents": { path: "/interactive" },
+  "learn-activities": { path: "/experiments" },
+  video: { path: "/video", query: { type: "conc" } },
+  "class-videos": { path: "/video", query: { type: "oth" } },
+  audio: { path: "/audio" },
+  "smart-class": { path: "/smart-class" },
+};
+
+const switchTab = async (tab: any) => {
+  if (!tab) return;
+  activeTab.value = tab;
+  const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  await useRouter().push(target);
+};
+
 // Define Filters Reactive State
-const filters = reactive<{ level: string | number | null; subject: string | null }>(
-  {
-    level: null,
-    subject: null,
-  }
-)
+const filters = reactive<{
+  level: string | number | null;
+  subject: string | number | null;
+}>({
+  level: null,
+  subject: null,
+});
 
-const level = ref<string | null>(null)  // Initial Level State
+const level = ref()  // Initial Level State
 // watch emits changes
-watch(filters, (current) => {
-  const payload: Record<string, string> = {};
+watch(filters, (filters) => {
+  const payload: any = {};
 
-  if (current.level != null) {
-    payload.level = String(current.level);
+  if (filters.level) {
+    payload.level = filters.level.toString();
   }
 
-  if (current.subject != null) {
-    payload.subject = String(current.subject);
+  if (filters.subject) {
+    payload.subject = filters.subject.toString();
   }
+
+  if (Object.keys(payload).length === 0) return;
 
   fetchTopics(payload);
-}, { deep: true });
-
+});
 </script>
 
 <template>
@@ -197,7 +235,7 @@ watch(filters, (current) => {
       <!-- User Token Available -->
       <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
         <HomeSearchbar appearance="rounded" />
-        <TabBar />
+        <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" />
       </div>
 
       <!-- User Token Not Available -->
@@ -205,60 +243,80 @@ watch(filters, (current) => {
         <HeroSection />
         <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
           @emit-subject="filters.subject = $event" />
-        <TabBar />
+        <TabBar :active-tab="activeTab" />
       </div>
 
-      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
-        <LoadingIndicator :is-loading="true" />
-      </div>
-      <!-- Status Error -->
-      <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center">
-        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
-        <p class="text-center">
-          Oops! Something went wrong.<br />
-          Try refreshing the page or check your internet connection.
-        </p>
+      <div class="items-center justify-end hidden gap-2 md:flex" role="group" aria-label="Layout options">
+        <button @click="layoutEffect = 'grid'" :aria-pressed="layoutEffect === 'grid'" aria-label="Grid layout" :class="[
+          'cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]">
+          <Icon name="bxs:grid-alt" size="1.5rem" aria-hidden="true" />
+        </button>
+        <button @click="layoutEffect = 'list'" :aria-pressed="layoutEffect === 'list'" aria-label="List layout" :class="[
+          'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]">
+          <Icon name="fa-solid:list" size="1.5rem" aria-hidden="true" />
+        </button>
       </div>
 
-      <!-- Status Success -->
-      <div v-else-if="status == 'success'">
-        <!-- client only -->
-        <ClientOnly v-if="slicedData?.length > 0">
-          <div class="flex flex-col w-full">
-           <HomeCustomScrollView :data="topic ??[]" active-tab="interactive-contents" />
+      <HomeTabContentShell :active-tab="activeTab" :results-count="topic?.length || 0" :filter-value="filterValue"
+        :show-filters="!!userToken" @update-filter="filterValue = $event" @reset-filter="filterValue = {}">
+        <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
+          <LoadingIndicator :is-loading="true" />
+        </div>
+        <!-- Status Error -->
+        <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center">
+          <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+          <p class="text-center">
+            Oops! Something went wrong.<br />
+            Try refreshing the page or check your internet connection.
+          </p>
+        </div>
 
-            <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-10">
-              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
-              </div>
-              <div v-else class="flex justify-center gap-2">
-                <!-- previous -->
-                <div class="flex items-center justify-center" v-if="currentPage > 5">
-                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+        <!-- Status Success -->
+        <div v-else-if="status == 'success'">
+          <!-- client only -->
+          <ClientOnly v-if="slicedData?.length > 0">
+            <div class="flex flex-col w-full">
+              <HomeCustomScrollView :data="topic ?? []" active-tab="interactive-contents" />
+
+              <!-- pagination numbers based on data length greater to 9 -->
+              <div v-if="totalPages > 1" class="flex justify-center my-10">
+                <div v-if="totalPages <= 5" class="flex justify-center gap-2">
+                  <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                    :is-active="page === currentPage" :disabled="page === currentPage"
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                    @send-page-number="currentPage = $event" />
                 </div>
+                <div v-else class="flex justify-center gap-2">
+                  <!-- previous -->
+                  <div class="flex items-center justify-center" v-if="currentPage > 5">
+                    <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+                  </div>
 
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                  <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                    :is-active="page === currentPage" :disabled="page === currentPage"
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                    @send-page-number="currentPage = $event" />
 
-                <!-- next button -->
-                <div class="flex items-center justify-center" v-if="currentPage > 4">
-                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+                  <!-- next button -->
+                  <div class="flex items-center justify-center" v-if="currentPage > 4">
+                    <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </ClientOnly>
-        <MessageTopicNotFound v-else />
-      </div>
+          </ClientOnly>
+          <MessageTopicNotFound v-else />
+        </div>
 
-      <!-- Even Data was not success should be handle here -->
-      <div class="flex flex-col w-full" v-else>
-        <div class="">Try to refresh the page, Something went Wrong</div>
-      </div>
+        <!-- Even Data was not success should be handle here -->
+        <div class="flex flex-col w-full" v-else>
+          <div class="">Try to refresh the page, Something went Wrong</div>
+        </div>
+      </HomeTabContentShell>
     </div>
   </NuxtLayout>
 </template>
