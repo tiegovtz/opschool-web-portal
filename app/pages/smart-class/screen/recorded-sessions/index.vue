@@ -3,6 +3,7 @@ import { ref, reactive, computed, watch, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSessionsSetup } from "../../../../composables/usesSessions.js";
 import apiDocs from '~/utilities/apiDocs.js';
+import { FaPlayCircle, FaHeart } from 'react-icons/fa';
 
 const router = useRouter();
 const authAccessToken = useCookie('signInAccessToken');
@@ -334,6 +335,7 @@ const selectedCategory = ref(null);
 const selectedSubject = ref(null);
 const selectedClassItem = ref(null);
 const modalContent = ref(null);
+const meetingModalContent = ref(null);
 const dialog = ref(false);
 const toasts = ref([]);
 const isValid = ref(false);
@@ -500,6 +502,43 @@ const showToast = (message, type = 'info') => {
   }, 3000);
 };
 
+const meetingVideoPattern = /\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i;
+const meetingModalItem = ref(null);
+
+const isVideoMeetingLink = (link) => {
+  if (!link) return false;
+  return meetingVideoPattern.test(link);
+};
+
+const meetingModalLink = computed(() => meetingModalItem.value?.meet_link || '');
+const meetingModalIsVideo = computed(() => isVideoMeetingLink(meetingModalLink.value));
+
+const openMeetingModal = (classItem) => {
+  const link = classItem?.meet_link?.trim();
+  if (!link) {
+    showToast('Meeting link unavailable for this session.', 'info');
+    return;
+  }
+  meetingModalItem.value = classItem;
+  nextTick(() => {
+    if (meetingModalContent.value && typeof meetingModalContent.value.focus === 'function') {
+      meetingModalContent.value.focus();
+    }
+  });
+};
+
+const closeMeetingModal = () => {
+  meetingModalItem.value = null;
+};
+
+const openMeetingInNewTab = () => {
+  const link = meetingModalLink.value;
+  if (!link) return;
+  if (typeof window !== 'undefined') {
+    window.open(link, '_blank');
+  }
+};
+
 
 const { data: classLevels, status: clsStatus } = useAsyncData('class-levels', () => $fetch(apiDocs.levels.getLevels, { headers }).then((response) => {
   if (response)
@@ -555,7 +594,8 @@ loadClasses();
 
 <template>
   <!-- Dialog Container  -->
-  <div  v-if="dialog" class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 overflow-auto">
+  <div v-if="dialog"
+    class="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 overflow-auto">
     <div
       class=" rounded-lg shadow-lg w-full max-w-4xl p-6 bg-transparent backdrop-blur-md overflow-y-scroll scrollbar-none">
 
@@ -584,21 +624,19 @@ loadClasses();
         <!-- Class Category -->
         <div>
           <label class="block text-sm font-medium text-white">Class Category</label>
-           <CustomDropDownList 
-            @update-model-value="classData.category =$event"
-              :placeholder="clsStatus === 'pending' ? 'Loading' : clsStatus === 'success' ? 'Select class' : 'something went wrong'"
-              class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
-              :list="classLevels ?? [{ id: 0, name: '' }]" />
+          <CustomDropDownList @update-model-value="classData.category = $event"
+            :placeholder="clsStatus === 'pending' ? 'Loading' : clsStatus === 'success' ? 'Select class' : 'something went wrong'"
+            class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
+            :list="classLevels ?? [{ id: 0, name: '' }]" />
         </div>
 
         <!-- Class Duration -->
         <div>
           <label class="block text-sm font-medium text-white">Class Duration</label>
-          <CustomDropDownList 
-            @update-model-value="classData.duration =durations[$event]"
-              :placeholder="'Select duration'"
-              class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
-              :list="durations.map((d,i)=>({id:i,name:d})) ?? [{ id: 0, name: '' }]" />
+          <CustomDropDownList @update-model-value="classData.duration = durations[$event]"
+            :placeholder="'Select duration'"
+            class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
+            :list="durations.map((d, i) => ({ id: i, name: d })) ?? [{ id: 0, name: '' }]" />
         </div>
 
         <!-- Class Description -->
@@ -656,14 +694,13 @@ loadClasses();
   </div>
 
   <!-- Snackbar -->
-  <div v-if="snackbar.show"
-    role="status" aria-live="polite" aria-atomic="true"
+  <div v-if="snackbar.show" role="status" aria-live="polite" aria-atomic="true"
     :class="['fixed top-4 right-4 px-4 py-3 rounded shadow text-white flex items-center gap-2', snackbar.color === 'success' ? 'bg-green-600' : 'bg-red-600']">
     <i :class="['mdi', snackbar.icon]"></i>
     <span :aria-label="snackbar.message">{{ snackbar.message }}</span>
   </div>
 
-  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
+  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ? 'normal' : 'home-layout'">
     <a class="skip-link" href="#main-container" @click.prevent="focusMain">Skip to main content</a>
 
     <div id="main-container" tabindex="-1" class="live-classes" role="main" aria-label="Recorded sessions main content">
@@ -680,16 +717,11 @@ loadClasses();
       <div class="filters-section relative z-50" role="region" aria-label="Search and filter controls">
         <!-- Create Button -->
         <div v-if="userToken?.roles.includes('TeacherAdmin')" class="flex justify-end mb-4 px-2">
-          <button 
-          type="button"
-          @click="onCreate"
-          @keyup.enter="onCreate"
-          @keyup.space.prevent="onCreate"
-          aria-label="Create new recorded session" 
-            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2
+          <button type="button" @click="onCreate" @keyup.enter="onCreate" @keyup.space.prevent="onCreate"
+            aria-label="Create new recorded session" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
             <i class="mdi mdi-plus" aria-hidden="true"></i>
-           <span>Create</span>
+            <span>Create</span>
           </button>
         </div>
 
@@ -702,72 +734,56 @@ loadClasses();
               <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400" aria-hidden="true">
                 <i class="mdi mdi-magnify"></i>
               </span>
-              <input 
-                id="search-sessions"
-                v-model="searchQuery" 
-                type="text" 
-                placeholder="Search by title, instructor, or category..."
-                aria-label="Search recorded sessions"
+              <input id="search-sessions" v-model="searchQuery" type="text"
+                placeholder="Search by title, instructor, or category..." aria-label="Search recorded sessions"
                 aria-describedby="search-help"
                 class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent focus:outline-none" />
-              <small id="search-help" class="sr-only">Type to filter sessions by title, instructor name, or category.</small>
+              <small id="search-help" class="sr-only">Type to filter sessions by title, instructor name, or
+                category.</small>
             </div>
           </div>
 
           <!-- Category Dropdown 1 -->
           <div>
             <label for="class-filter" class="block text-sm font-medium text-white mb-1">Class</label>
-            <CustomDropDownList 
-              id="class-filter"
-              v-model="selectedCategory"
+            <CustomDropDownList id="class-filter" v-model="selectedCategory"
               :placeholder="clsStatus === 'pending' ? 'Loading' : clsStatus === 'success' ? 'Select class' : 'something went wrong'"
               class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
-              :list="classLevels ?? [{ id: 0, name: '' }]"
-              aria-label="Filter recorded sessions by class level"
+              :list="classLevels ?? [{ id: 0, name: '' }]" aria-label="Filter recorded sessions by class level"
               aria-describedby="class-filter-help" />
-            <small id="class-filter-help" class="sr-only">Select a class level to filter displayed sessions, or leave blank to show all classes.</small>
+            <small id="class-filter-help" class="sr-only">Select a class level to filter displayed sessions, or leave
+              blank to show all classes.</small>
           </div>
 
           <!-- Category Dropdown 2 -->
           <div>
             <label for="subject-filter" class="block text-sm font-medium text-white mb-1">Subject</label>
-            <CustomDropDownList
-              id="subject-filter"
-              v-model="selectedSubject"
+            <CustomDropDownList id="subject-filter" v-model="selectedSubject"
               :placeholder="subStatus === 'pending' ? 'Loading' : subStatus === 'success' ? 'Select subject' : 'something went wrong'"
               class="w-full border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-14 bg-transparent"
-              :list="pubSubject ?? [{ id: 0, name: '' }]"
-              aria-label="Filter recorded sessions by subject"
+              :list="pubSubject ?? [{ id: 0, name: '' }]" aria-label="Filter recorded sessions by subject"
               aria-describedby="subject-filter-help" />
-            <small id="subject-filter-help" class="sr-only">Select a subject to filter displayed sessions, or leave blank to show all subjects.</small>
+            <small id="subject-filter-help" class="sr-only">Select a subject to filter displayed sessions, or leave
+              blank to show all subjects.</small>
           </div>
         </div>
       </div>
 
       <!-- Classes Grid -->
-      <div class="classes-container" role="region" aria-label="Recorded sessions list" aria-live="polite" aria-atomic="false">
+      <div class="classes-container" role="region" aria-label="Recorded sessions list" aria-live="polite"
+        aria-atomic="false">
         <div class="classes-grid" role="list">
-            <div v-for="classItem in filteredClasses" :key="classItem.id" class="class-card" role="listitem"
-              :aria-label="`${classItem.title} with ${classItem.instructor}, Category: ${classItem.category}, Duration: ${classItem.duration}. Press Enter or click to view details`"
-              tabindex="0"
-              @click="selectClass(classItem)"
-              @keydown.enter.prevent="selectClass(classItem)"
-              @keydown.space.prevent="selectClass(classItem)">
+          <div v-for="classItem in filteredClasses" :key="classItem.id" class="class-card group" role="listitem"
+            :aria-label="`${classItem.title} with ${classItem.instructor}, Category: ${classItem.category}, Duration: ${classItem.duration}. Press Enter or click to view details`"
+            tabindex="0" @click="selectClass(classItem)" @keydown.enter.prevent="selectClass(classItem)"
+            @keydown.space.prevent="selectClass(classItem)">
             <div class="card-image">
-              <div
-                v-if="classItem.thumbnail"
-                class="card-image__photo"
-                :style="{ backgroundImage: `url(${classItem.thumbnail})` }"
-              ></div>
-              <div
-                v-else
-                class="card-image__pattern"
-                :style="{
-                  backgroundImage: `${classItem.iconPattern}, ${classItem.gradient}`,
-                  backgroundSize: '80px 80px, cover',
-                }"
-                aria-hidden="true"
-              >
+              <div v-if="classItem.thumbnail" class="card-image__photo"
+                :style="{ backgroundImage: `url(${classItem.thumbnail})` }"></div>
+              <div v-else class="card-image__pattern" :style="{
+                backgroundImage: `${classItem.iconPattern}, ${classItem.gradient}`,
+                backgroundSize: '80px 80px, cover',
+              }" aria-hidden="true">
                 <span class="pattern-icon">{{ classItem.iconSymbol }}</span>
               </div>
               <div class="card-overlay">
@@ -777,20 +793,27 @@ loadClasses();
                 </div>
                 <div class="duration-badge">{{ classItem.duration }}</div>
               </div>
-              <div class="hover-actions">
-                <button class="action-btn play-btn" :aria-label="`Play ${classItem.title}`" @click.stop="joinClass(classItem)" @keydown.enter.prevent="joinClass(classItem)">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
+              <div class="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/70 bg-slate-900/60 p-0 opacity-0 scale-90 shadow-[0_15px_30px_rgba(0,0,0,0.45)] transition duration-300 group-hover:opacity-100 group-hover:scale-100 pointer-events-none">
+                <FaPlayCircle class="h-10 w-10 text-white" aria-hidden="true" />
+              </div>
+              <div class="absolute bottom-4 right-4 flex gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <button
+                  class="action-btn play-btn"
+                  type="button"
+                  :aria-label="`Open meeting for ${classItem.title}`"
+                  @click.stop="openMeetingModal(classItem)"
+                  @keydown.enter.prevent="openMeetingModal(classItem)"
+                >
+                  <FaPlayCircle class="h-5 w-5" aria-hidden="true" />
                 </button>
-                <button class="action-btn subscribe-btn" @click.stop="toggleSubscription(classItem)"
+                <button
+                  class="action-btn subscribe-btn"
+                  @click.stop="toggleSubscription(classItem)"
                   :class="{ subscribed: classItem.isSubscribed }"
                   :aria-pressed="classItem.isSubscribed"
-                  :aria-label="classItem.isSubscribed ? `You are subscribed to ${classItem.title}. Press to unsubscribe` : `Subscribe to ${classItem.title} to get notifications about future sessions`">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path
-                      d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
+                  :aria-label="classItem.isSubscribed ? `You are subscribed to ${classItem.title}. Press to unsubscribe` : `Subscribe to ${classItem.title} to get notifications about future sessions`"
+                >
+                  <FaHeart class="h-5 w-5" aria-hidden="true" />
                 </button>
               </div>
             </div>
@@ -809,16 +832,21 @@ loadClasses();
           </div>
         </div>
         <div class="pagination-controls recorded" aria-label="Recorded sessions pagination">
-          <button class="pagination-btn" :disabled="recordedPage <= 1" @click="previousRecordedPage" aria-label="Previous page">Previous</button>
+          <button class="pagination-btn" :disabled="recordedPage <= 1" @click="previousRecordedPage"
+            aria-label="Previous page">Previous</button>
           <span class="pagination-info">Page {{ recordedPage }} of {{ recordedTotalPages }}</span>
-          <button class="pagination-btn" :disabled="recordedPage >= recordedTotalPages" @click="nextRecordedPage" aria-label="Next page">Next</button>
+          <button class="pagination-btn" :disabled="recordedPage >= recordedTotalPages" @click="nextRecordedPage"
+            aria-label="Next page">Next</button>
         </div>
       </div>
 
       <!-- Class Modal -->
-      <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal" @keydown.escape="closeModal" role="presentation">
-            <div ref="modalContent" class="modal-content" @click.stop role="dialog" aria-modal="true" :aria-labelledby="'modal-title-' + selectedClassItem.id" tabindex="-1">
-            <button class="close-btn" @click="closeModal" aria-label="Close class details dialog" title="Press Escape to close dialog">
+      <div v-if="selectedClassItem" class="modal-overlay" @click="closeModal" @keydown.escape="closeModal"
+        role="presentation">
+        <div ref="modalContent" class="modal-content" @click.stop role="dialog" aria-modal="true"
+          :aria-labelledby="'modal-title-' + selectedClassItem.id" tabindex="-1">
+          <button class="close-btn" @click="closeModal" aria-label="Close class details dialog"
+            title="Press Escape to close dialog">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 6l12 12M6 18L18 6" />
             </svg>
@@ -831,7 +859,8 @@ loadClasses();
               <p class="modal-instructor" id="modal-instructor">with {{ selectedClassItem.instructor }}</p>
               <div class="modal-meta">
                 <span class="modal-category" aria-label="Category">{{ selectedClassItem.category }}</span>
-                <span class="modal-time" aria-label="Scheduled time">{{ formatTime(selectedClassItem.scheduledTime) }}</span>
+                <span class="modal-time" aria-label="Scheduled time">{{ formatTime(selectedClassItem.scheduledTime)
+                  }}</span>
                 <span class="modal-duration" aria-label="Session duration">{{ selectedClassItem.duration }}</span>
               </div>
             </div>
@@ -850,14 +879,55 @@ loadClasses();
               Play
             </button>
             <button class="secondary-btn" @click="toggleSubscription(selectedClassItem)"
-              :class="{ subscribed: selectedClassItem.isSubscribed }"
-              :aria-pressed="selectedClassItem.isSubscribed"
+              :class="{ subscribed: selectedClassItem.isSubscribed }" :aria-pressed="selectedClassItem.isSubscribed"
               :aria-label="selectedClassItem.isSubscribed ? `You are subscribed. Press to unsubscribe` : `Subscribe to this session to get notifications`">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
               </svg>
               {{ selectedClassItem.isSubscribed ? 'Subscribed' : 'Subscribe' }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <div v-if="meetingModalItem"
+        class="fixed inset-0 z-[1100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-2xl"
+        @click="closeMeetingModal" @keydown.escape="closeMeetingModal" role="presentation">
+        <div ref="meetingModalContent"
+          class="w-full max-w-[1100px] max-h-[90vh] overflow-hidden rounded-[24px] border border-white/10 bg-[#080920]/95 p-6 flex flex-col gap-6 shadow-[0_20px_40px_rgba(0,0,0,0.7)]"
+          @click.stop role="dialog" aria-modal="true" :aria-labelledby="'meeting-title-' + meetingModalItem.id"
+          tabindex="-1">
+          <button class="close-btn" type="button" @click="closeMeetingModal" aria-label="Close meeting preview">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12M6 18L18 6" />
+            </svg>
+          </button>
+
+          <div class="flex flex-col gap-1">
+            <p class="text-[0.65rem] uppercase tracking-[0.25em] text-white/60">Live meeting</p>
+            <h3 :id="'meeting-title-' + meetingModalItem.id" class="text-2xl font-semibold text-white">{{
+              meetingModalItem.title }}</h3>
+            <p class="text-sm text-white/70">with {{ meetingModalItem.instructor }}</p>
+          </div>
+
+          <div class="flex-1 flex items-center justify-center">
+            <video v-if="meetingModalIsVideo" :src="meetingModalLink" controls autoplay playsinline
+              class="w-full h-[min(60vh,480px)] rounded-[18px] border border-white/10 bg-black object-cover"></video>
+            <iframe v-else :src="meetingModalLink"
+              class="w-full h-[min(60vh,480px)] rounded-[18px] border border-white/10" loading="lazy"
+              :title="`${meetingModalItem.title} meeting preview`"></iframe>
+          </div>
+
+          <div class="flex flex-wrap justify-end gap-3">
+            <button class="primary-btn" type="button" :disabled="!meetingModalLink" @click="openMeetingInNewTab"
+              aria-label="Open meeting link in a new tab">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5v2H7v10h10v-5h2v7H5V5h7z" />
+              </svg>
+              Open on web
+            </button>
+            <button class="secondary-btn" type="button" @click="closeMeetingModal" aria-label="Close meeting preview">
+              Close
             </button>
           </div>
         </div>
@@ -910,6 +980,7 @@ loadClasses();
   height: 1px;
   overflow: hidden;
 }
+
 .skip-link:focus {
   left: 1rem;
   top: 1rem;
@@ -1227,19 +1298,6 @@ loadClasses();
   text-shadow: 0 10px 20px rgba(15, 23, 42, 0.4);
 }
 
-.hover-actions {
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
-  display: flex;
-  gap: 0.5rem;
-  opacity: 0;
-  transition: all 0.3s ease;
-}
-
-.class-card:hover .hover-actions {
-  opacity: 1;
-}
 
 .action-btn {
   width: 40px;
@@ -1467,6 +1525,7 @@ loadClasses();
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
 }
+
 
 .modal-description {
   margin-bottom: 2rem;
