@@ -19,8 +19,48 @@ import { fetchAsyncData } from "~/composables/useAsyncFetch";
 
 // Defin Route
 const route = useRoute();
-const subjectId = route.fullPath.split("/").pop();
-const subjectTitle = String(route.fullPath.split("/")[2]).toString().replaceAll('%20', ' ');
+const router = useRouter();
+const decodeParam = (value) => {
+  const raw = typeof value === "string" ? value : "";
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+};
+const subjectId = String(route.params.subjectId ?? "");
+const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
+const activeTab = ref(route.query?.type === "oth" ? "class-videos" : "video");
+const subjectSlug = computed(() => (subjectTitle || "").toLowerCase().trim().replace(/\s+/g, "-"));
+
+const buildTabTarget = (tab) => {
+  if (tab === "subjects") return { path: "/home" };
+  if (tab === "smart-class") return { path: "/smart-class" };
+
+  const hasSubjectContext = !!subjectId && !!subjectSlug.value;
+  if (!hasSubjectContext) {
+    if (tab === "interactive-contents") return { path: "/interactive" };
+    if (tab === "learn-activities") return { path: "/experiments" };
+    if (tab === "video") return { path: "/video", query: { type: "conc" } };
+    if (tab === "class-videos") return { path: "/video", query: { type: "oth" } };
+    if (tab === "audio") return { path: "/audio" };
+    return { path: "/home" };
+  }
+
+  if (tab === "interactive-contents") return { path: `/interactive/${subjectSlug.value}/${subjectId}` };
+  if (tab === "learn-activities") return { path: `/experiments/${subjectSlug.value}/${subjectId}` };
+  if (tab === "video") return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "conc" } };
+  if (tab === "class-videos") return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "oth" } };
+  if (tab === "audio") return { path: `/audio/${subjectSlug.value}/${subjectId}` };
+
+  return { path: "/home" };
+};
+
+const switchTab = async (tab) => {
+  if (!tab) return;
+  activeTab.value = tab;
+  await router.push(buildTabTarget(tab));
+};
 
 // Define meta info about page
 useHead({
@@ -223,6 +263,7 @@ watch(filters, (filters) => {
 });
 
 watch (()=>route.query?.type,()=>{
+  activeTab.value = route.query?.type === "oth" ? "class-videos" : "video";
   
   fetchVideos({
     videoType: route.query?.type == 'conc'? 'Conceptual' : 'others'
@@ -236,8 +277,12 @@ watch (()=>route.query?.type,()=>{
       ' ',
       { ' animate-pulse': isLoading }
     ]">
-      <HeroSection />
+      <HomeSearchbar v-if="userToken" appearance="rounded" />
+      <HeroSection v-else />
         <TabBar 
+          :is-logged-in="!!userToken"
+          :active-tab="activeTab"
+          @emit-active-tab="switchTab($event)"
           :subject-title="subjectTitle"
           :topic-id="subjectId"
         />
