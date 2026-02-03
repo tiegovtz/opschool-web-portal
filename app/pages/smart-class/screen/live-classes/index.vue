@@ -1261,11 +1261,6 @@ const { data: schoolClasses, status: clStatus } = await useAsyncData('class-leve
   fill: currentColor;
 }
 
-width: 34px;
-height: 34px;
-fill: #fff;
-}
-
 .card-content {
   padding: 1.5rem;
 }
