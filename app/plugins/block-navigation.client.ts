@@ -107,8 +107,14 @@ export default defineNuxtPlugin({
     const isAdminRoute = basePath.startsWith('/admin');
     const isAllowedRoute = allowList.includes(basePath) || allowList.includes(to.fullPath);
     
+    // On hard refresh/direct entry, do not force-redirect to /home.
+    // This preserves deep links like /interactive/... across reloads.
+    if (!routesStates && from.matched.length === 0) {
+      return true;
+    }
+
     if (!routesStates && to.fullPath !== "/home" && !isAdminRoute && !isAllowedRoute) {
-      return "/home";
+      return true;
     }
 
     return true;

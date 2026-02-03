@@ -197,14 +197,6 @@ const tabCheck = (checkValue: tabs) => {
         {{ HomeTabs.audio }}
       </NuxtLink>
 
-      <NuxtLink :to="'/smart-class'"
-        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
-        active-class="text-white !bg-deepBlue" aria-label="press to visit page of smart class page for livessession ">
-        <div class="flex items-center justify-center">
-          <Icon name="mdi:television" size="20" />
-        </div>
-        {{ HomeTabs.smartClass }}
-      </NuxtLink>
     </div>
   </section>
 </template>

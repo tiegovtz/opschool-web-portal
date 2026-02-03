@@ -104,7 +104,7 @@ const handleClick = async () => {
       :disabled="isBusy"
       @click="handleClick"
     >
-      <Icon name="mdi:robot" size="24" />
+      <Icon name="fluent:bot-28-filled" size="24" />
     </button>
   </Teleport>
 </template>

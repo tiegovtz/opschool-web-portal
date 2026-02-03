@@ -5,7 +5,7 @@ import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import { ref, computed, watch } from 'vue';
 import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
 import apiDocs from "~/utilities/apiDocs";
-import InputsSelection from '@/components/home/InputsSelection.vue'
+import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
 import { HomeCustomScrollView } from "#components";
 import { fetchAsyncData } from '~/composables/useAsyncFetch';
@@ -193,30 +193,27 @@ watch (()=>route.query?.type,()=>{
 })
 
 // Define Filters Reactive State
-const filters = reactive<{ level: string | number | null; subject: string | null }>(
-  {
-    level: null,
-    subject: null,
-  }
-)
-const level = ref<string | null>(null)  // Initial Level State
-// watch emits changes
-watch(filters, (current) => {
-  const payload: Record<string, string> = {};
-
-  if (current.level != null) {
-    payload.level = String(current.level);
-  }
-
-  if (current.subject != null) {
-    payload.subject = String(current.subject);
-  }
-
-  fetchVideos({
-    videoType: route.query?.type == 'conc'? 'Conceptual' : 'others',
-    ...payload
-  })
-}, { deep: true });
+const filterValue = ref<Record<string, any> | any[]>({});
+watch(
+  () => filterValue.value,
+  (newFilterValue) => {
+    const basePayload = {
+      videoType: route.query?.type == 'conc' ? 'Conceptual' : 'others',
+    };
+    if (Array.isArray(newFilterValue)) {
+      fetchVideos(basePayload);
+      return;
+    }
+    const filteredParams = Object.fromEntries(
+      Object.entries(newFilterValue || {}).filter(([_, v]) => v)
+    );
+    fetchVideos({
+      ...basePayload,
+      ...filteredParams,
+    });
+  },
+  { deep: true }
+);
 
 </script>
 
@@ -229,67 +226,73 @@ watch(filters, (current) => {
       <!-- User Token Not Available -->
       <div v-if="!userToken">
         <HeroSection />
-        <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
-          @emit-subject="filters.subject = $event" />
         <TabBar :active-tab="activeTab" />
       </div>
       <div v-else class="flex flex-col items-center justify-center w-full gap-4 pt-4">
         <HomeSearchbar appearance="rounded" />
         <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" />
       </div>
+      <HomeTabContentShell
+        :active-tab="activeTab"
+        :results-count="videos?.length || 0"
+        :filter-value="filterValue"
+        :show-filters="!!userToken"
+        @update-filter="filterValue = $event"
+        @reset-filter="filterValue = {}"
+      >
+        <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
+          <LoadingIndicator :is-loading="true" />
+        </div>
+      <!-- Status Error -->
+            <div
+              v-else-if="status === 'error'"
+              class="md:min-h-[342px] flex flex-col justify-center items-center">
+              <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+              <p class="text-center">
+                Oops! Something went wrong.<br />
+                Try refreshing the page or check your internet connection.
+              </p>
+            </div>
+        <!-- Status Success -->
+        <div v-else-if="status == 'success'">
+          <!-- client only -->
+          <ClientOnly v-if="slicedData?.length > 0">
+            <div class="flex flex-col w-full">
+              <HomeCustomScrollView :data="videos" active-tab="video" />
 
-      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
-        <LoadingIndicator :is-loading="true" />
-      </div>
-     <!-- Status Error -->
-          <div
-            v-else-if="status === 'error'"
-            class="md:min-h-[342px] flex flex-col justify-center items-center">
-            <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
-            <p class="text-center">
-              Oops! Something went wrong.<br />
-              Try refreshing the page or check your internet connection.
-            </p>
-          </div>
-      <!-- Status Success -->
-      <div v-else-if="status == 'success'">
-        <!-- client only -->
-        <ClientOnly v-if="slicedData?.length > 0">
-          <div class="flex flex-col w-full">
-            <HomeCustomScrollView :data="videos" active-tab="video" />
-
-            <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-10">
-              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
-              </div>
-              <div v-else class="flex justify-center gap-2">
-                <!-- previous -->
-                <div class="flex items-center justify-center" v-if="currentPage > 5">
-                  <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+              <!-- pagination numbers based on data length greater to 9 -->
+              <div v-if="totalPages > 1" class="flex justify-center my-10">
+                <div v-if="totalPages <= 5" class="flex justify-center gap-2">
+                  <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                    :is-active="page === currentPage" :disabled="page === currentPage"
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
                 </div>
+                <div v-else class="flex justify-center gap-2">
+                  <!-- previous -->
+                  <div class="flex items-center justify-center" v-if="currentPage > 5">
+                    <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
+                  </div>
 
-                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                  :is-active="page === currentPage" :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                  <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
+                    :is-active="page === currentPage" :disabled="page === currentPage"
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
 
-                <!-- next button -->
-                <div class="flex items-center justify-center" v-if="currentPage > 4">
-                  <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+                  <!-- next button -->
+                  <div class="flex items-center justify-center" v-if="currentPage > 4">
+                    <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </ClientOnly>
-        <MessageTopicNotFound v-else />
-      </div>
+          </ClientOnly>
+          <MessageTopicNotFound v-else />
+        </div>
 
-      <!-- Even Data was not success should be handle here -->
-      <div class="flex flex-col w-full" v-else>
-        <div class="">Try to refresh the page, Something went Wrong</div>
-      </div>
+        <!-- Even Data was not success should be handle here -->
+        <div class="flex flex-col w-full" v-else>
+          <div class="">Try to refresh the page, Something went Wrong</div>
+        </div>
+      </HomeTabContentShell>
     </section>
   </NuxtLayout>
 </template>

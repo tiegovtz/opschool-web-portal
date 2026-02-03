@@ -106,7 +106,12 @@ const dropDown = () => {
         <!-- Media Screen -->
         <div
           class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container">
-          <NuxtLink aria-label="Go home" to="/" class="flex gap-2 pl-2">
+          <NuxtLink
+            aria-label="Go home"
+            to="/home"
+            class="flex gap-2 pl-2 pr-2 rounded-md"
+            active-class="text-white !bg-deepBlue"
+          >
             <div class="flex items-center justify-center">
               <Icon name="ant-design:home-filled" size="20" />
             </div>
@@ -121,6 +126,17 @@ const dropDown = () => {
             </div>
             <p class="hidden capitalize lg:flex">TIE Library</p>
           </a>
+          <NuxtLink
+            to="/smart-class"
+            aria-label="Go to Smart Class"
+            class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium rounded-md"
+            active-class="text-white !bg-deepBlue"
+          >
+            <div class="flex items-center justify-center">
+              <Icon name="mdi:television" size="20" />
+            </div>
+            <p class="hidden capitalize lg:flex">Smart Class</p>
+          </NuxtLink>
           <!-- title (TIE online public school) -->
           <div class="flex-1" role="navigation">
             <NuxtLink aria-label="Go home" to="/">
@@ -200,6 +216,16 @@ const dropDown = () => {
                   <Icon name="ph:notebook-fill" size="20" />
                 </div>
               </a>
+              <NuxtLink
+                to="/smart-class"
+                aria-label="Go to Smart Class"
+                class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45 rounded-md"
+                active-class="text-white !bg-deepBlue"
+              >
+                <div class="flex items-center justify-center">
+                  <Icon name="mdi:television" size="20" />
+                </div>
+              </NuxtLink>
             </div>
 
             <!-- Paragraph Text -->
@@ -211,7 +237,12 @@ const dropDown = () => {
 
             <!-- Logout and Sign in -->
             <div class="flex items-center">
-              <NuxtLink aria-label="Go home" to="/" class="flex gap-2 pr-2">
+              <NuxtLink
+                aria-label="Go home"
+                to="/home"
+                class="flex gap-2 pr-2 pl-2 rounded-md"
+                active-class="text-white !bg-deepBlue"
+              >
                 <div class="flex items-center justify-center">
                   <Icon name="ant-design:home-filled" size="20" />
                 </div>
