@@ -821,6 +821,16 @@ const prepareNavigation = () => {
                 <video :src="playableUrl" class="h-[420px] w-full" controls autoplay playsinline />
               </div>
 
+              <div v-else-if="meetingEmbedUrl" class="overflow-hidden rounded-xl bg-black">
+                <iframe
+                  :src="meetingEmbedUrl"
+                  class="h-[420px] w-full"
+                  allow="microphone; camera; autoplay; encrypted-media; picture-in-picture"
+                  allowfullscreen
+                  loading="lazy"
+                />
+              </div>
+
               <div v-else class="rounded-xl border-dashed border-primary bg-gray-50 p-6">
                 <p class="text-sm text-gray-700 text-center text-primary/80">This session doesn’t have a playable URL yet.</p>
               </div>
