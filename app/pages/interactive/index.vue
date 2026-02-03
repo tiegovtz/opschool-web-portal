@@ -13,6 +13,7 @@ import type { User } from "~/types/user.interface";
 import type { Subjects } from "~/types/subject.interface";
 import type { tabs } from "~/types/types.data";
 import { layoutEffect } from '@/utilities/controlls';
+import InputsSelection from '~/components/home/InputsSelection.vue';
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania Interactive Learning Platform",
@@ -48,7 +49,7 @@ const topic = ref<any[]>();        // Initial Topics State
 const slicedData = ref();    // Initial slice data to 9
 
 // First, fix the sliceData function
-const sliceData = (start:number, end:number) => {
+const sliceData = (start: number, end: number) => {
 
   if (!topic.value || !Array.isArray(topic.value) || topic.value.length === 0) {
     slicedData.value = [];
@@ -57,7 +58,7 @@ const sliceData = (start:number, end:number) => {
 
   // If only one page of data or less, return all data
   if (topic.value.length <= pageSize.value) {
-    slicedData.value = topic.value;      
+    slicedData.value = topic.value;
     return;
   }
 
@@ -70,21 +71,21 @@ const currentPage = ref(1);
 const pageSize = ref();
 
 // Then, update fetchTopics to call sliceData after data is loaded
-const fetchTopics = async (params?:any) => {
+const fetchTopics = async (params?: any) => {
 
-  const url = userToken.value ?
-    apiDocs.topics.filterTopicsByUser.replace('{userId}', (userToken.value as unknown as User)?._id) :
-    apiDocs.topics.filterTopics
-
+  const url = apiDocs.topics.filterTopics
+  if (userToken.value) {
+    params = {...params,userId:(userToken.value as any)?._id}
+  }
   try {
     status.value = 'pending';
-    const {data:response,status:fetchStatus} = await  fetchAsyncData('interactive',()=>$fetch(url, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData('interactive', () => $fetch(url, {
       params: params
     }))
 
     // Call State Define above
     topic.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
-    topic.value = filterKeyDataFromArrayOfJson(topic.value,"subject.name",['physics','chemistry','mathematics','biology','geography']);
+    topic.value = filterKeyDataFromArrayOfJson(topic.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography']);
     status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
@@ -196,6 +197,32 @@ const switchTab = async (tab: any) => {
   await useRouter().push(target);
 };
 
+// Define Filters Reactive State
+const filters = reactive<{
+  level: string | number | null;
+  subject: string | number | null;
+}>({
+  level: null,
+  subject: null,
+});
+
+const level = ref()  // Initial Level State
+// watch emits changes
+watch(filters, (filters) => {
+  const payload: any = {};
+
+  if (filters.level) {
+    payload.level = filters.level.toString();
+  }
+
+  if (filters.subject) {
+    payload.subject = filters.subject.toString();
+  }
+
+  if (Object.keys(payload).length === 0) return;
+
+  fetchTopics(payload);
+});
 </script>
 
 <template>
@@ -214,6 +241,8 @@ const switchTab = async (tab: any) => {
       <!-- User Token Not Available -->
       <div v-else>
         <HeroSection />
+        <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+          @emit-subject="filters.subject = $event" />
         <TabBar :active-tab="activeTab" />
       </div>
 
@@ -232,14 +261,8 @@ const switchTab = async (tab: any) => {
         </button>
       </div>
 
-      <HomeTabContentShell
-        :active-tab="activeTab"
-        :results-count="topic?.length || 0"
-        :filter-value="filterValue"
-        :show-filters="!!userToken"
-        @update-filter="filterValue = $event"
-        @reset-filter="filterValue = {}"
-      >
+      <HomeTabContentShell :active-tab="activeTab" :results-count="topic?.length || 0" :filter-value="filterValue"
+        :show-filters="!!userToken" @update-filter="filterValue = $event" @reset-filter="filterValue = {}">
         <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
           <LoadingIndicator :is-loading="true" />
         </div>
@@ -257,14 +280,15 @@ const switchTab = async (tab: any) => {
           <!-- client only -->
           <ClientOnly v-if="slicedData?.length > 0">
             <div class="flex flex-col w-full">
-             <HomeCustomScrollView :data="topic ??[]" active-tab="interactive-contents" />
+              <HomeCustomScrollView :data="topic ?? []" active-tab="interactive-contents" />
 
               <!-- pagination numbers based on data length greater to 9 -->
               <div v-if="totalPages > 1" class="flex justify-center my-10">
                 <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                   <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                     :is-active="page === currentPage" :disabled="page === currentPage"
-                    @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                    @send-page-number="currentPage = $event" />
                 </div>
                 <div v-else class="flex justify-center gap-2">
                   <!-- previous -->
@@ -274,7 +298,8 @@ const switchTab = async (tab: any) => {
 
                   <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                     :is-active="page === currentPage" :disabled="page === currentPage"
-                    @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                    @send-page-number="currentPage = $event" />
 
                   <!-- next button -->
                   <div class="flex items-center justify-center" v-if="currentPage > 4">

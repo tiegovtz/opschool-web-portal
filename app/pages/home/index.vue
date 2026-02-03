@@ -386,7 +386,7 @@ const fetchData = async (params?: any) => {
 const shuffleSubject = (subjects: Subjects[]) => {
   return subjects
     .map((subject: Subjects) => ({ subject, sort: Math.random() })) // Assign a random sort key
-    .sort((a: any, b: any) => a.sort - b.sort) // Sort by random key
+    .sort((a: any, b: any) => a.name - b.name) // Sort by random key
     .map(({ subject }: { subject: Subjects }) => subject); // Extract shuffled choices
 };
 
@@ -592,22 +592,7 @@ const handleSubjectSelect = async (id: string, name: string) => {
   <NuxtLayout name="home-layout">
     <!-- User Has a Token -->
     <section v-if="userToken" :class="[' ', { ' animate-pulse': isLoading }]">
-      <div v-if="isSubjectDetail" class="flex flex-col gap-2 p-4 mb-4 border border-gray-200 rounded-md bg-gray-50">
-        <p class="text-sm text-gray-500">Subjects</p>
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 class="text-2xl font-semibold text-gray-800">
-            Subjects &gt; {{ subjectDisplayName }}
-          </h2>
-          <button
-            type="button"
-            class="text-sm text-oceanBlue hover:text-deepBlue underline"
-            @click="clearSubjectDetail"
-          >
-            Back to Subjects
-          </button>
-        </div>
-      </div>
-      <HomeSearchbar v-else appearance="rounded" />
+      <HomeSearchbar appearance="rounded" />
       <TabBar :is-logged-in="true" @emit-active-tab="switchTab($event)" :active-tab="activeTab" />
 
       <!-- container filter Mobile -->

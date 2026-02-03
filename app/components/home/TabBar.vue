@@ -33,6 +33,7 @@ const videoType = ref<videoType>('conceptual') //Conceptual and other initial
 
 // Define a Function
 const tabCheck = (checkValue: tabs) => {
+  if(!checkValue) return
   tabState.isChecked = true;
   tabState.checkedValueButton = checkValue;
   emit('emitActiveTab', tabState.checkedValueButton);

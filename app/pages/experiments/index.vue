@@ -17,6 +17,7 @@ import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import type { tabs } from "~/types/types.data";
 import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
 import { layoutEffect } from '@/utilities/controlls';
+import InputsSelection from "~/components/home/InputsSelection.vue";
 
 const route = useRoute();
 const experimentId = route.fullPath.split("/").pop();
@@ -254,6 +255,33 @@ watch(
   { deep: true }
 );
 
+// Define Filters Reactive State
+const filters = reactive<{
+  level: string | number | null;
+  subject: string | number | null;
+}>({
+  level: null,
+  subject: null,
+});
+
+const level = ref()  // Initial Level State
+// watch emits changes
+watch(filters, (filters) => {
+  const payload: any = {};
+
+  if (filters.level) {
+    payload.level = filters.level.toString();
+  }
+
+  if (filters.subject) {
+    payload.subject = filters.subject.toString();
+  }
+
+  if (Object.keys(payload).length === 0) return;
+
+  fetchExperiments(payload);
+});
+
 </script>
 
 <template>
@@ -270,6 +298,8 @@ watch(
       <!-- User Token Not Available -->
       <section v-else>
         <HeroSection />
+        <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+          @emit-subject="filters.subject = $event" />
         <nav aria-label="Content categories">
           <TabBar :active-tab="activeTab" />
         </nav>

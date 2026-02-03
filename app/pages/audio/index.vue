@@ -11,6 +11,7 @@ import { HomeCustomScrollView } from "#components";
 import { fetchAsyncData } from '~/composables/useAsyncFetch';
 import type { tabs } from '~/types/types.data';
 import { layoutEffect } from '@/utilities/controlls';
+import InputsSelection from '~/components/home/InputsSelection.vue';
 
 useHead({
   title: "TIE - Audio Resource",
@@ -98,7 +99,7 @@ const fetchAudios = async (param?: any) => {
 
     // Call State Define above
     audios.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
-    audios.value = removeDataFromArrayOfJson(audios.value, 'audioType', 'NARRATION')
+    audios.value = removeDataFromArrayOfJson(audios.value, 'audioType', 'NARRATION');
     audios.value = filterKeyDataFromArrayOfJson(audios.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
     status.value = fetchStatus.value;
 
@@ -201,6 +202,32 @@ watch(
   { deep: true }
 );
 
+// Define Filters Reactive State
+const filters = reactive<{
+  level: string | number | null;
+  subject: string | number | null;
+}>({
+  level: null,
+  subject: null,
+});
+
+const level = ref()  // Initial Level State
+// watch emits changes
+watch(filters, (filters) => {
+  const payload: any = {};
+
+  if (filters.level) {
+    payload.level = filters.level.toString();
+  }
+
+  if (filters.subject) {
+    payload.subject = filters.subject.toString();
+  }
+
+  if (Object.keys(payload).length === 0) return;
+
+  fetchAudios(payload);
+});
 </script>
 
 <template>
@@ -219,6 +246,8 @@ watch(
       <!-- User Token Not Available -->
       <div v-else>
         <HeroSection />
+        <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+          @emit-subject="filters.subject = $event" />
         <TabBar :active-tab="activeTab" />
       </div>
       <div class="items-center justify-end hidden gap-2 md:flex" role="group" aria-label="Layout options">

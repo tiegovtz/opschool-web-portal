@@ -33,6 +33,8 @@ const hasActiveFilter = computed(() => {
   return false;
 });
 
+const token =useCookie("signInAccessToken");
+
 const handleFilterUpdate = (value: Record<string, any> | any[]) => {
   emit("update-filter", value);
 };
@@ -115,7 +117,7 @@ const handleReset = () => {
       </div>
 
       <div
-        :class="['w-full', !isSubjectsTab ? 'xl:w-3/4' : '']"
+        :class="['w-full', !isSubjectsTab && token ? 'xl:w-3/4' : '']"
         id="main-container"
         aria-label="content list"
         role="region"
