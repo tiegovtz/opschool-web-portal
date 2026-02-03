@@ -764,10 +764,10 @@ const prepareNavigation = () => {
 
               <button
                 type="button"
-                class="rounded-lg border border-primary px-2 py-1 text-sm font-semibold text-primary hover:text-primary/60"
+                class="rounded-full border border-red-500 px-3 py-1.5 text-base font-semibold text-red-500 hover:bg-red-500 hover:text-white hover:border-white transition duration-500 ease-in-out"
                 @click="closeViewAll"
               >
-                Close
+                x
               </button>
             </header>
 
@@ -853,10 +853,10 @@ const prepareNavigation = () => {
 
               <button
                 type="button"
-                class="rounded-lg border border-primary px-3 py-1.5 text-sm font-semibold text-primary hover:text-primary/60"
+                class="rounded-full border border-red-500 px-3 py-1.5 text-base font-semibold text-red-500 hover:bg-red-500 hover:text-white hover:border-white transition duration-500 ease-in-out"
                 @click="closeSessionModal"
               >
-                Close
+                x
               </button>
             </header>
 
@@ -900,10 +900,10 @@ const prepareNavigation = () => {
               <h2 class="text-lg font-semibold text-primary">Session expired</h2>
               <button
                 type="button"
-                class="rounded-lg border border-primary px-3 py-1.5 text-sm font-semibold text-primary hover:text-primary/60"
+                class="rounded-full border border-red-500 px-3 py-1.5 text-base font-semibold text-red-500 hover:bg-red-500 hover:text-white hover:border-white transition duration-500 ease-in-out"
                 @click="sessionExpiredModalOpen = false; if (!viewAllDialog && !sessionModalOpen && process.client) document.documentElement.style.overflow = ''"
               >
-                Close
+                x
               </button>
             </header>
 
