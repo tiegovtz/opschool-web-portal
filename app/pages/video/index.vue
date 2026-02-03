@@ -11,6 +11,7 @@ import { HomeCustomScrollView } from "#components";
 import { fetchAsyncData } from '~/composables/useAsyncFetch';
 import type { tabs } from "~/types/types.data";
 import { layoutEffect } from '@/utilities/controlls';
+import InputsSelection from '~/components/home/InputsSelection.vue';
 
 useHead({
   title: "TIE - Video Resource",
@@ -216,6 +217,34 @@ watch(
   { deep: true }
 );
 
+
+// Define Filters Reactive State
+const filters = reactive<{
+  level: string | number | null;
+  subject: string | number | null;
+}>({
+  level: null,
+  subject: null,
+});
+
+const level = ref()  // Initial Level State
+// watch emits changes
+watch(filters, (filters) => {
+  const payload: any = {};
+
+  if (filters.level) {
+    payload.level = filters.level.toString();
+  }
+
+  if (filters.subject) {
+    payload.subject = filters.subject.toString();
+  }
+
+  if (Object.keys(payload).length === 0) return;
+
+  fetchVideos(payload);
+});
+
 </script>
 
 <template>
@@ -227,6 +256,8 @@ watch(
       <!-- User Token Not Available -->
       <div v-if="!userToken">
         <HeroSection />
+        <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+          @emit-subject="filters.subject = $event" />
         <TabBar :active-tab="activeTab" />
       </div>
       <div v-else class="flex flex-col items-center justify-center w-full gap-4 pt-4">
