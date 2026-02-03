@@ -20,10 +20,9 @@ const openSubjectTeacherSignal = useState<number>(
 const EXCLUDED_PREFIXES = [
   "/tie-ai-teacher",
   "/auth",
-  "/admin",
   "/smart-class",
 ];
-const EXCLUDED_EXACT = [
+const EXCLUDED_EXACT:string[] = [
 ];
 
 const isLoggedIn = computed(() => !!(userToken.value || accessToken.value));

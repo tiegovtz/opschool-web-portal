@@ -9,8 +9,7 @@ export default defineNuxtPlugin({
 
   // Routes someone cannot access if NOT signed in
   const blockedBeforeLogin = [
-    "/tie-ai-teacher",
-    "/admin",
+    "/tie-ai-teacher"
   ];
 
     router.beforeEach((to, from) => {
@@ -53,8 +52,6 @@ export default defineNuxtPlugin({
       "/list-videos",
       "/image-list",
       "/home#content-container-after-login",
-      "/admin",
-      "/admin/video-interactions",
       "/interactive",
       "/experiments",
       "/video",
@@ -63,11 +60,6 @@ export default defineNuxtPlugin({
 
     // Check if the base path (without query params) is in the allowlist
     const basePath = to.path
-    
-    // Allow admin routes (all routes starting with /admin)
-    if (basePath.startsWith('/admin')) {
-      return true;
-    }
     
     if (
       allowList.includes(basePath) ||
@@ -102,9 +94,7 @@ export default defineNuxtPlugin({
       
       return true;
     }
-
-    // Don't redirect admin routes or allowlist routes to home
-    const isAdminRoute = basePath.startsWith('/admin');
+    
     const isAllowedRoute = allowList.includes(basePath) || allowList.includes(to.fullPath);
     
     // On hard refresh/direct entry, do not force-redirect to /home.
@@ -113,7 +103,7 @@ export default defineNuxtPlugin({
       return true;
     }
 
-    if (!routesStates && to.fullPath !== "/home" && !isAdminRoute && !isAllowedRoute) {
+    if (!routesStates && to.fullPath !== "/home" && !isAllowedRoute) {
       return true;
     }
 
