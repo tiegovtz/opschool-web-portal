@@ -10,6 +10,7 @@ import { useAuthStore } from "~/stores/auth";
 // // Use the State
 const navigationStore = useNavigationStore();
 const returnPath = navigationStore.getLatestRoute();
+const route = useRoute();
 const userRememberMe = useCookie("userRememberMe");
 const pass = userRememberMe?.value?.password?.length > 0 ? dataDecrypt(userRememberMe?.value?.password) : null
 useCookie("signInUserToken").value ? useCookie("signInUserToken").value = null : '';
@@ -156,12 +157,11 @@ const signIn = async () => {
       useAuthStore().setToken(accessToken.value);
       setTimeout(() => {
         const router = useRouter();
-        if (returnPath) {
-
-          router.replace(returnPath);
-        } else {
-          router.replace("/home");
-        }
+        const redirectPath =
+          typeof route.query.redirect === "string" && route.query.redirect.length > 0
+            ? route.query.redirect
+            : returnPath;
+        router.replace(redirectPath || "/home");
       }, 1500)
     } catch (error) {
       userSignIn.controller.attemps++;

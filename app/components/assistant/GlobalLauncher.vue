@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { isAllowedSubjectSlug, normalizeSubjectSlug } from "~/config/aiLauncherConfig";
+import apiDocs from "~/utilities/apiDocs";
+import { extractSubjectSlugs, normalizeSubjectSlug } from "~/config/aiLauncherConfig";
 
 const route = useRoute();
 const router = useRouter();
@@ -12,10 +13,12 @@ const tieOverlayOpen = useState<boolean>("tie-ai-overlay-open", () => false);
 const tieOverlayBackground = useState<string>("tie-ai-overlay-background", () => "");
 const tieOverlayPushed = useState<boolean>("tie-ai-overlay-pushed", () => false);
 const subjectTeacherOpen = useState<boolean>("ai-subject-teacher-is-open", () => false);
+const allowedSubjectSlugs = useState<string[]>("ai-launcher-allowed-subjects", () => []);
 const openSubjectTeacherSignal = useState<number>(
   "ai-subject-teacher-open-signal",
   () => 0
 );
+const isLoadingAllowedSubjects = ref(false);
 
 const EXCLUDED_PREFIXES = [
   "/tie-ai-teacher",
@@ -37,6 +40,25 @@ const isExcluded = computed(() => {
   return EXCLUDED_PREFIXES.some((prefix) => path.startsWith(prefix));
 });
 
+const loadAllowedSubjects = async () => {
+  if (!isLoggedIn.value) return;
+  if (isLoadingAllowedSubjects.value || allowedSubjectSlugs.value.length > 0) return;
+
+  isLoadingAllowedSubjects.value = true;
+  try {
+    const response = await $fetch(apiDocs.subjects.getPublicSubjects);
+    allowedSubjectSlugs.value = extractSubjectSlugs(response);
+  } catch (error) {
+    console.warn("[GlobalLauncher] Failed to load allowed subjects:", error);
+  } finally {
+    isLoadingAllowedSubjects.value = false;
+  }
+};
+
+watch(isLoggedIn, (loggedIn) => {
+  if (loggedIn) loadAllowedSubjects();
+}, { immediate: true });
+
 const hasValidSubjectContext = computed(() => {
   const params = route.params as Record<string, unknown>;
   const idCandidates = [
@@ -56,7 +78,12 @@ const hasValidSubjectContext = computed(() => {
     typeof route.query.subject === "string" ? route.query.subject : "";
   const subjectSlugRaw = params.level ?? params.subject ?? params.subjectSlug ?? querySubject;
   const subjectSlug = normalizeSubjectSlug(subjectSlugRaw);
-  return hasValidId && isAllowedSubjectSlug(subjectSlug);
+  const isAllowed =
+    allowedSubjectSlugs.value.length === 0
+      ? Boolean(subjectSlug)
+      : allowedSubjectSlugs.value.includes(subjectSlug);
+
+  return hasValidId && isAllowed;
 });
 
 const showLauncher = computed(
@@ -96,15 +123,20 @@ const handleClick = async () => {
 
 <template>
   <Teleport to="body">
-    <button
+    <div
       v-if="showLauncher"
-      type="button"
-      class="fixed z-[80] flex h-14 w-14 items-center justify-center rounded-full bg-oceanBlue text-white shadow-lg transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue right-4 bottom-[calc(16px+env(safe-area-inset-bottom))]"
-      aria-label="Open AI assistant"
-      :disabled="isBusy"
-      @click="handleClick"
+      class="fixed z-[80] right-4 bottom-[calc(16px+env(safe-area-inset-bottom))]"
     >
-      <Icon name="fluent:bot-28-filled" size="24" />
-    </button>
+      <div class="absolute inset-0 rounded-full bg-[rgba(245,245,245,0.35)] backdrop-blur-sm pointer-events-none"></div>
+      <button
+        type="button"
+        class="relative flex h-14 w-14 items-center justify-center rounded-full bg-oceanBlue text-white border border-white/80 ring-2 ring-white/90 shadow-2xl transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue"
+        aria-label="Open AI assistant"
+        :disabled="isBusy"
+        @click="handleClick"
+      >
+        <Icon name="fluent:bot-28-filled" size="24" />
+      </button>
+    </div>
   </Teleport>
 </template>

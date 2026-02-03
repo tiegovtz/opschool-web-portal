@@ -17,16 +17,18 @@ import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer
 
 const route = useRoute();
 const router = useRouter();
-const topicId = route.fullPath.split("/").pop();
-const topicTitle = String(route.fullPath.split("/")[4])
-  .toString()
-  .replaceAll("%20", " ");
-const topicStandard = String(route.fullPath.split("/")[2])
-  .toString()
-  .replaceAll("%20", " ");
-const topicLevel = String(route.fullPath.split("/")[3])
-  .toString()
-  .replaceAll("%20", " ");
+const safeDecode = (value: unknown) => {
+  const raw = typeof value === "string" ? value : "";
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+};
+const topicId = String(route.params.topicId ?? "");
+const topicTitle = safeDecode(route.params.topic).replaceAll("-", " ");
+const topicStandard = safeDecode(route.params.subject);
+const topicLevel = safeDecode(route.params.level);
 currentTopic.value = topicTitle;
 
 // tokens cookies
