@@ -12,7 +12,7 @@ import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import type { User } from "~/types/user.interface";
 import type { Subjects } from "~/types/subject.interface";
 import type { tabs } from "~/types/types.data";
-
+import { layoutEffect } from '@/utilities/controlls';
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania Interactive Learning Platform",
@@ -215,6 +215,21 @@ const switchTab = async (tab: any) => {
       <div v-else>
         <HeroSection />
         <TabBar :active-tab="activeTab" />
+      </div>
+
+      <div class="items-center justify-end hidden gap-2 md:flex" role="group" aria-label="Layout options">
+        <button @click="layoutEffect = 'grid'" :aria-pressed="layoutEffect === 'grid'" aria-label="Grid layout" :class="[
+          'cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]">
+          <Icon name="bxs:grid-alt" size="1.5rem" aria-hidden="true" />
+        </button>
+        <button @click="layoutEffect = 'list'" :aria-pressed="layoutEffect === 'list'" aria-label="List layout" :class="[
+          'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]">
+          <Icon name="fa-solid:list" size="1.5rem" aria-hidden="true" />
+        </button>
       </div>
 
       <HomeTabContentShell
