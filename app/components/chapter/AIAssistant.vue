@@ -242,6 +242,15 @@ const props = defineProps({
 
 // state refs
 const isOpen = ref(false);
+const showLocalLauncher = false;
+const openFromGlobalSignal = useState(
+  "ai-subject-teacher-open-signal",
+  () => 0
+);
+const subjectTeacherOpenState = useState(
+  "ai-subject-teacher-is-open",
+  () => false
+);
 const currentQuestion = ref("");
 const isLoading = ref(false);
 const messages = ref([]);
@@ -251,6 +260,14 @@ const activeFetchChapterId = ref(null); // Track which chapterId we're currently
 const shouldAutoScroll = ref(true); // Re-enabled for Subject AI Teacher
 const bottomOffset = ref(24); // Dynamic bottom offset in pixels (default: 24px near bottom)
 const footerObserver = ref(null); // Footer intersection observer
+
+watch(
+  () => isOpen.value,
+  (open) => {
+    subjectTeacherOpenState.value = open;
+  },
+  { immediate: true }
+);
 
 // Cookie ref (reactive)
 const token = useCookie("signInAccessToken"); // keep as ref; use token.value when needed
@@ -1017,15 +1034,33 @@ onMounted(() => {
   });
 });
 
-// Toggle assistant open/close and auto-scroll
-const toggleAssistant = () => {
-  isOpen.value = !isOpen.value;
+const openAssistant = () => {
+  if (isOpen.value) return;
+  isOpen.value = true;
   if (isOpen.value) {
     shouldAutoScroll.value = true;
     nextTick(() => scrollToBottom(false));
     // Pre-fetch audios when assistant opens (if not already fetched)
     preFetchAudios();
   }
+};
+
+watch(
+  () => openFromGlobalSignal.value,
+  (next, prev) => {
+    if (next !== prev) {
+      openAssistant();
+    }
+  }
+);
+
+// Toggle assistant open/close and auto-scroll
+const toggleAssistant = () => {
+  if (isOpen.value) {
+    isOpen.value = false;
+    return;
+  }
+  openAssistant();
 };
 
 // Handle form submit - use Chat component for regular messages
@@ -2138,7 +2173,7 @@ onUnmounted(() => {
 <template>
   <!-- Floating AI Assistant Button -->
   <button
-    v-if="!isOpen"
+    v-if="showLocalLauncher && !isOpen"
     @click="toggleAssistant"
     class="fixed z-50 flex items-center gap-2 p-4 text-white transition-all duration-300 rounded-full shadow-lg right-6 bg-oceanBlue hover:bg-deepBlue"
     :style="{ 
@@ -2148,7 +2183,7 @@ onUnmounted(() => {
     title="Ask AI Subject Teacher"
   >
     <Icon
-      name="mdi:robot"
+      name="fluent:bot-28-filled"
       size="24"
     />
     <span class="hidden md:block">AI Subject Teacher</span>

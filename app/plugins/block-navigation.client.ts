@@ -55,6 +55,10 @@ export default defineNuxtPlugin({
       "/home#content-container-after-login",
       "/admin",
       "/admin/video-interactions",
+      "/interactive",
+      "/experiments",
+      "/video",
+      "/audio",
     ];
 
     // Check if the base path (without query params) is in the allowlist
@@ -65,7 +69,15 @@ export default defineNuxtPlugin({
       return true;
     }
     
-    if (allowList.includes(basePath) || allowList.includes(to.fullPath)) return true;
+    if (
+      allowList.includes(basePath) ||
+      allowList.includes(to.fullPath) ||
+      basePath.startsWith("/interactive") ||
+      basePath.startsWith("/experiments") ||
+      basePath.startsWith("/video") ||
+      basePath.startsWith("/audio")
+    )
+      return true;
     
     // Also allow interactive-video with query parameters
     if (basePath === '/interactive-video') return true;
@@ -95,8 +107,14 @@ export default defineNuxtPlugin({
     const isAdminRoute = basePath.startsWith('/admin');
     const isAllowedRoute = allowList.includes(basePath) || allowList.includes(to.fullPath);
     
+    // On hard refresh/direct entry, do not force-redirect to /home.
+    // This preserves deep links like /interactive/... across reloads.
+    if (!routesStates && from.matched.length === 0) {
+      return true;
+    }
+
     if (!routesStates && to.fullPath !== "/home" && !isAdminRoute && !isAllowedRoute) {
-      return "/home";
+      return true;
     }
 
     return true;

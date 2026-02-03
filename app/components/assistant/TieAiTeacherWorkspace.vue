@@ -1,77 +1,47 @@
 <script setup lang="ts">
 import { Chat } from "@ai-sdk/vue";
-import { ref, watch, onMounted, computed } from "vue";
+import { ref, watch, onMounted, defineAsyncComponent } from "vue";
 import { useChatStore } from "~/stores/chatStore";
+import { useChatHistory } from "~/composables/useChatHistory";
 import type { ChatMessage } from "~/types/chat.interface";
 
 const route = useRoute();
 const router = useRouter();
 const chatStore = useChatStore();
-const canMinimize = computed(() => {
-  const stateFromRoute = route.state as Record<string, unknown> | undefined;
-  const stateFromHistory =
-    typeof window !== "undefined"
-      ? (window.history.state as Record<string, unknown> | null)
-      : null;
-  const background =
-    (stateFromRoute?.aiOverlayBackground as string) ||
-    (stateFromHistory?.aiOverlayBackground as string) ||
-    "";
-  return Boolean(background);
-});
-const backgroundUrl = computed(() => {
-  const stateFromRoute = route.state as Record<string, unknown> | undefined;
-  const stateFromHistory =
-    typeof window !== "undefined"
-      ? (window.history.state as Record<string, unknown> | null)
-      : null;
-  const background =
-    (stateFromRoute?.aiOverlayBackground as string) ||
-    (stateFromHistory?.aiOverlayBackground as string) ||
-    "";
-  return background || "";
-});
 
-const minimizeToOverlay = async () => {
-  if (!backgroundUrl.value) return;
-  const sessionId = typeof route.query.sessionId === "string" ? route.query.sessionId : "";
-  await router.push({
-    path: backgroundUrl.value,
-    query: {
-      overlay: "1",
-      ...(sessionId ? { sessionId } : {}),
-    },
-    state: {
-      aiOverlay: true,
-      aiOverlayBackground: backgroundUrl.value,
-      aiOverlayPushed: true,
-    },
-  });
-};
+const props = defineProps<{
+  externalSessionId?: string;
+  compact?: boolean;
+}>();
 
-const closeToBackground = async () => {
-  if (!backgroundUrl.value) return;
-  await router.replace(backgroundUrl.value);
-};
+const AiTeacherChatHistorySidebar = defineAsyncComponent(
+  () => import("~/components/ai-teacher/ChatHistorySidebar.vue")
+);
+const AiTeacherHeader = defineAsyncComponent(
+  () => import("~/components/ai-teacher/Header.vue")
+);
+const AiTeacherMessages = defineAsyncComponent(
+  () => import("~/components/ai-teacher/Messages.vue")
+);
+const AiTeacherInput = defineAsyncComponent(
+  () => import("~/components/ai-teacher/Input.vue")
+);
 
-// Chat instance
 const chat = new Chat({});
-
-// Local state
 const isTyping = ref(false);
-// Sidebar open by default, persist user preference
 const sidebarStateKey = "tie-ai-teacher-sidebar-open";
-const isHistoryOpen = ref(true); // Always default to true
-
+const isHistoryOpen = ref(true);
 const isInitializing = ref(true);
 const lastMessageCount = ref(0);
 const savedMessageIds = ref(new Set<string>());
 const hasTitleBeenSet = ref(false);
+const chatHistory = useChatHistory();
 
-// Initialize session on mount
 onMounted(async () => {
-  // Load saved sidebar preference
-  if (typeof window !== "undefined") {
+  if (props.compact) {
+    // Compact overlay starts with drawer closed; open via header button.
+    isHistoryOpen.value = false;
+  } else if (typeof window !== "undefined") {
     const saved = localStorage.getItem(sidebarStateKey);
     if (saved !== null) {
       isHistoryOpen.value = saved === "true";
@@ -80,36 +50,36 @@ onMounted(async () => {
 
   try {
     await chatStore.loadSessions();
-
-    const sessionId = route.query.sessionId as string | undefined;
-    if (sessionId) {
-      await loadSession(sessionId);
-    } else {
-      await createNewSession();
-    }
+    // Always start with a blank draft view; create/load only on user action.
+    // @ts-ignore
+    chat.messages.splice(0, chat.messages.length);
+    chatStore.clearActiveSession();
+    lastMessageCount.value = 0;
+    savedMessageIds.value = new Set();
+    hasTitleBeenSet.value = false;
   } catch (error) {
     console.error("[TIE AI Teacher] Initialization error:", error);
-    await createNewSession();
+    // Keep workspace usable; session will be created on first message.
+    // @ts-ignore
+    chat.messages.splice(0, chat.messages.length);
+    chatStore.clearActiveSession();
   } finally {
     isInitializing.value = false;
   }
 });
 
-// Load existing session
 const loadSession = async (sessionId: string) => {
   try {
     const session = await chatStore.loadSession(sessionId);
 
     if (session.messages?.length) {
       const chatMessages = session.messages.map(convertToChatMessage);
-      // @ts-ignore - messages is reactive array
+      // @ts-ignore
       chat.messages.splice(0, chat.messages.length, ...chatMessages);
       lastMessageCount.value = session.messages.length;
-      // Track saved message IDs
       savedMessageIds.value = new Set(
         session.messages.map((m: ChatMessage) => m.id)
       );
-      // If session has a title, mark it as set
       hasTitleBeenSet.value = !!session.title;
     } else {
       // @ts-ignore
@@ -119,14 +89,13 @@ const loadSession = async (sessionId: string) => {
       hasTitleBeenSet.value = false;
     }
 
-    router.replace({ query: { sessionId } });
+    router.replace({ query: { ...route.query, sessionId } });
   } catch (error) {
     console.error("[TIE AI Teacher] Error loading session:", error);
     await createNewSession();
   }
 };
 
-// Create new session
 const createNewSession = async () => {
   try {
     const session = await chatStore.createSession();
@@ -135,13 +104,12 @@ const createNewSession = async () => {
     lastMessageCount.value = 0;
     savedMessageIds.value = new Set();
     hasTitleBeenSet.value = false;
-    router.replace({ query: { sessionId: session.id } });
+    router.replace({ query: { ...route.query, sessionId: session.id } });
   } catch (error) {
     console.error("[TIE AI Teacher] Error creating session:", error);
   }
 };
 
-// Convert ChatMessage to Chat component format
 const convertToChatMessage = (msg: ChatMessage) => ({
   id: msg.id,
   role: msg.role,
@@ -149,21 +117,17 @@ const convertToChatMessage = (msg: ChatMessage) => ({
   content: msg.content,
 });
 
-// Extract text content from message
 const extractMessageContent = (message: any): string => {
   if (message.content) return message.content;
   const textPart = message.parts?.find((p: any) => p.type === "text");
   return textPart?.text || "";
 };
 
-// Generate a title from the first user message
 const generateTitleFromMessage = (message: string): string => {
-  // Clean the message
   const cleaned = message.trim();
 
   if (!cleaned) return "New Conversation";
 
-  // Remove common question prefixes to make it more concise
   const prefixes = [
     /^explain\s+/i,
     /^what\s+is\s+/i,
@@ -185,8 +149,6 @@ const generateTitleFromMessage = (message: string): string => {
   ];
 
   let title = cleaned;
-
-  // Remove prefixes
   for (const prefix of prefixes) {
     if (prefix.test(title)) {
       title = title.replace(prefix, "").trim();
@@ -194,15 +156,11 @@ const generateTitleFromMessage = (message: string): string => {
     }
   }
 
-  // Capitalize first letter
   if (title.length > 0) {
     title = title.charAt(0).toUpperCase() + title.slice(1);
   }
 
-  // Remove question marks and extra punctuation at the end
   title = title.replace(/[?]+$/, "").trim();
-
-  // Truncate to 50 characters max for better display
   if (title.length > 50) {
     title = title.substring(0, 47) + "...";
   }
@@ -210,7 +168,6 @@ const generateTitleFromMessage = (message: string): string => {
   return title || "New Conversation";
 };
 
-// Update session title if not set
 const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
   if (!chatStore.activeSessionId || hasTitleBeenSet.value) return;
 
@@ -225,11 +182,8 @@ const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
   }
 };
 
-// Save a message to backend
 const saveMessage = async (message: any) => {
-  if (!message.id || savedMessageIds.value.has(message.id)) {
-    return; // Already saved
-  }
+  if (!message.id || savedMessageIds.value.has(message.id)) return;
 
   const content = extractMessageContent(message);
   if (!content.trim()) return;
@@ -247,7 +201,6 @@ const saveMessage = async (message: any) => {
   }
 };
 
-// Watch for new messages - save user messages immediately, assistant messages after streaming
 watch(
   () => chat.messages,
   async (messages) => {
@@ -260,15 +213,10 @@ watch(
     }
 
     const currentCount = messages.length;
-
-    // Save user messages immediately (they're complete when added)
     const newMessages = messages.slice(lastMessageCount.value);
     for (const message of newMessages) {
-      // Save user messages immediately
       if (message.role === "user" && message.id) {
         await saveMessage(message);
-
-        // Generate title from first user message
         if (!hasTitleBeenSet.value) {
           const content = extractMessageContent(message);
           if (content.trim()) {
@@ -276,7 +224,6 @@ watch(
           }
         }
       }
-      // Assistant messages will be saved when streaming completes
     }
 
     lastMessageCount.value = currentCount;
@@ -284,21 +231,15 @@ watch(
   { deep: true }
 );
 
-// Watch chat status to save assistant messages when streaming completes
 watch(
   () => chat.status,
   async (status) => {
     if (!chatStore.activeSessionId || isInitializing.value) return;
-
-    // When streaming is complete, save any unsaved assistant messages
     if (status === "ready") {
-      // Small delay to ensure message is fully complete
       await new Promise((resolve) => setTimeout(resolve, 100));
-
       // @ts-ignore
       const messages = chat.messages || [];
       for (const message of messages) {
-        // Save assistant messages that haven't been saved yet
         if (
           message.role === "assistant" &&
           message.id &&
@@ -311,28 +252,13 @@ watch(
   }
 );
 
-// Watch URL for session changes
-watch(
-  () => route.query.sessionId,
-  async (sessionId) => {
-    if (sessionId && sessionId !== chatStore.activeSessionId) {
-      await loadSession(sessionId as string);
-    }
-  }
-);
-
-// Handle message submission
 const handleSubmit = async (message: string) => {
   if (!message.trim()) return;
-
   if (!chatStore.activeSessionId) {
     await createNewSession();
   }
-
   isTyping.value = true;
-
   try {
-    // Send message to AI - the watch function will save user messages when they appear in chat.messages
     await chat.sendMessage({ text: message });
   } catch (error) {
     console.error("[TIE AI Teacher] Error sending message:", error);
@@ -341,26 +267,20 @@ const handleSubmit = async (message: string) => {
   }
 };
 
-// Handle new chat
 const handleNewChat = async () => {
   await createNewSession();
-  // Keep sidebar open when creating new chat
 };
 
-// Handle session selection
 const handleSessionSelected = async (sessionId: string) => {
   await loadSession(sessionId);
-  // Keep sidebar open when selecting session
 };
 
-// Toggle history sidebar (can be called from sidebar itself)
 const toggleHistory = () => {
   isHistoryOpen.value = !isHistoryOpen.value;
-  // State is persisted automatically via watch
 };
 
-// Watch sidebar state to persist changes
 watch(isHistoryOpen, (newValue) => {
+  if (props.compact) return;
   if (typeof window !== "undefined") {
     localStorage.setItem(sidebarStateKey, String(newValue));
   }
@@ -368,61 +288,60 @@ watch(isHistoryOpen, (newValue) => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
-    <div class="relative flex h-[calc(100vh-120px)] min-h-[calc(100vh-120px)]">
-      <div
-        v-if="canMinimize"
-        class="absolute right-3 top-3 z-20 flex items-center gap-1"
+  <div class="relative flex h-full min-h-0">
+    <template v-if="compact">
+      <Transition
+        enter-active-class="transition-all duration-200 ease-out"
+        enter-from-class="opacity-0 -translate-x-2"
+        enter-to-class="opacity-100 translate-x-0"
+        leave-active-class="transition-all duration-150 ease-in"
+        leave-from-class="opacity-100 translate-x-0"
+        leave-to-class="opacity-0 -translate-x-2"
       >
-        <button
-          type="button"
-          class="rounded bg-white/90 p-1 text-gray-700 shadow hover:text-black"
-          aria-label="Minimize to overlay"
-          @click="minimizeToOverlay"
-        >
-          <Icon name="mdi:arrow-collapse" size="20" />
-        </button>
-        <button
-          type="button"
-          class="rounded bg-white/90 p-1 text-gray-700 shadow hover:text-black"
-          aria-label="Close and return"
-          @click="closeToBackground"
-        >
-          <Icon name="mdi:close" size="20" />
-        </button>
+      <div
+        v-if="isHistoryOpen"
+        class="absolute -left-80 top-0 bottom-0 z-30 w-80 max-w-[90%] bg-white border border-gray-200 shadow-xl rounded-l-lg pointer-events-auto"
+      >
+        <AiTeacherChatHistorySidebar
+          :is-open="true"
+          :compact="true"
+          @close="isHistoryOpen = false"
+          @new-chat="handleNewChat"
+          @session-selected="handleSessionSelected"
+        />
       </div>
-      <!-- Chat History Sidebar -->
-      <AiTeacherChatHistorySidebar
-        :is-open="isHistoryOpen"
-        @close="isHistoryOpen = false"
-        @new-chat="handleNewChat"
-        @session-selected="handleSessionSelected"
-      />
+      </Transition>
+    </template>
+    <AiTeacherChatHistorySidebar
+      v-else
+      :is-open="isHistoryOpen"
+      @close="isHistoryOpen = false"
+      @new-chat="handleNewChat"
+      @session-selected="handleSessionSelected"
+    />
 
-      <!-- Main Content -->
-      <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <AiTeacherHeader @toggle-sidebar="toggleHistory" />
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <AiTeacherHeader @toggle-sidebar="toggleHistory" />
 
+      <div
+        v-if="isInitializing"
+        class="flex items-center justify-center h-64"
+      >
         <div
-          v-if="isInitializing"
-          class="flex items-center justify-center h-64"
-        >
-          <div
-            class="animate-spin rounded-full h-8 w-8 border-b-2 border-oceanBlue"
-          ></div>
-        </div>
-
-        <template role="main" aria-label="AI Teacher conversation" v-else>
-          <AiTeacherMessages
-            :messages="chat.messages"
-            :isTyping="isTyping"
-          />
-          <AiTeacherInput
-            :chat="chat"
-            @sendMessage="handleSubmit"
-          />
-        </template>
+          class="animate-spin rounded-full h-8 w-8 border-b-2 border-oceanBlue"
+        ></div>
       </div>
+
+      <template role="main" aria-label="AI Teacher conversation" v-else>
+        <AiTeacherMessages
+          :messages="chat.messages"
+          :isTyping="isTyping"
+        />
+        <AiTeacherInput
+          :chat="chat"
+          @sendMessage="handleSubmit"
+        />
+      </template>
     </div>
-  </NuxtLayout>
+  </div>
 </template>

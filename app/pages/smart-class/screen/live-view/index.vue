@@ -41,26 +41,63 @@
 <script setup>
 import { onMounted, ref, watch, nextTick } from 'vue'
 import VidstackPlayer from '~/components/video-player/VidstackPlayer.vue'
+import apiDocs from '~/utilities/apiDocs'
 
-const streamUrl = ref('')  // will be set dynamically
+const token = useCookie('signInAccessToken').value
+const headers = {
+  accept: 'application/json',
+  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+};
+
+const fallbackStream = 'https://tv.somakwanza.tz/hls/stream.m3u8'
+const streamUrl = ref(fallbackStream)
 const playerRef = ref(null)
 const streamStatus = ref('')
 
-onMounted(() => {
-  streamUrl.value = 'https://tv.somakwanza.tz/hls/stream.m3u8'
+const recordedHostUrl = apiDocs.baseURL.replace(/\/v1\/?$/, '')
+
+const setStreamFromStored = () => {
   const stored = localStorage.getItem('classData')
   if (stored) {
     try {
       const classData = JSON.parse(stored)
       if (classData?.meet_link) {
         streamUrl.value = classData.meet_link
+        return
       }
     } catch (e) {
       console.error('Failed to parse classData:', e)
     }
-  } else {
-    streamUrl.value = 'https://tv.somakwanza.tz'
   }
+  streamUrl.value = streamUrl.value || fallbackStream
+}
+
+const resolveActiveStreamingLink = (payload) => {
+  if (!payload) return null
+  const items = Array.isArray(payload) ? payload : payload.items ?? payload.data ?? []
+  const active = (Array.isArray(items) ? items : []).find(link => link?.is_active || link?.isActive)
+  return active?.url ?? active?.streamUrl ?? active?.link ?? active?.streamingUrl
+}
+
+const loadStreamingLink = async () => {
+  try {
+    const response = await $fetch(`${apiDocs.liveClassrooms.streamingLinks}`, {
+      headers,
+    })
+    const link = resolveActiveStreamingLink(response)
+    if (link) {
+      streamUrl.value = link
+      return
+    }
+  } catch (error) {
+    console.error('Failed to load streaming link:', error)
+  }
+
+  setStreamFromStored()
+}
+
+onMounted(() => {
+  loadStreamingLink()
 })
 
 // Announce stream availability and focus the wrapper when streamUrl changes

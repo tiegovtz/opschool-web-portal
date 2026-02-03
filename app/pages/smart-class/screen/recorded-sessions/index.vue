@@ -1,11 +1,21 @@
 <script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue';
+import { ref, reactive, computed, watch, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSessionsSetup } from "../../../../composables/usesSessions.js";
 import apiDocs from '~/utilities/apiDocs.js';
-import { filterContentBySearch } from '~/utilities/filterJson.js';
 
 const router = useRouter();
+const authAccessToken = useCookie('signInAccessToken');
+const authUserToken = useCookie('signInUserToken');
+
+const handleUnauthorized = (error) => {
+  const status = error?.status || (error?.response?.status ?? null);
+  if (status === 401) {
+    authAccessToken.value = null;
+    authUserToken.value = null;
+    router.push('/auth/login');
+  }
+};
 const userToken = useCookie("signInUserToken");
 
 const token = useCookie('signInAccessToken').value;
@@ -210,43 +220,111 @@ const showSnackbar = (message, color = 'success', icon = 'mdi-check-circle') => 
   snackbar.icon = icon
   snackbar.show = true
 }
-const mapSessionToClass = (session) => ({
-  id: session.id,
-  title: session.topic || 'Untitled Session',
-  meet_link: session.meet_link || 'https://tv.somakwanza.tz',
-  instructor: session.teacher ? `Instructor ${session.teacher}` : 'Unknown Instructor',
-  category: session.subject ? `${session.subject.name}` : 'General',
-  thumbnail: 'https://via.placeholder.com/400x225.png?text=Class+Thumbnail',
-  scheduledTime: session.start_time ? new Date(session.created_at) : null, // or session.start_time if valid ISO
-  duration: getDuration(session.start_time, session.end_time),
-  viewers: Math.floor(Math.random() * 1000),
-  rating: (Math.random() * 2 + 3).toFixed(1),
-  isLive: session.session_start || false,
-  isSubscribed: false,
-  description: `Room: ${session.room_name || 'N/A'}${session.meet_link ? ', Meet Link available' : ''}`
-});
+const recordedSubjectThemes = {
+  chemistry: { icon: '⚗️', gradient: ['#3B82F6', '#6366F1'], color: '#1D4ED8' },
+  biology: { icon: '🧬', gradient: ['#10B981', '#059669'], color: '#047857' },
+  mathematics: { icon: '∑', gradient: ['#F97316', '#FDE68A'], color: '#EA580C' },
+  physics: { icon: '🔭', gradient: ['#6366F1', '#14B8A6'], color: '#0F766E' },
+  history: { icon: '📜', gradient: ['#D97706', '#FDE68A'], color: '#92400E' },
+  english: { icon: '📝', gradient: ['#EC4899', '#F472B6'], color: '#BE185D' },
+  default: { icon: '🎓', gradient: ['#0EA5E9', '#6366F1'], color: '#1E3A8A' },
+};
+
+const getSubjectTheme = (subject = 'Recorded') => {
+  const key = subject.toString().toLowerCase().replace(/[^a-z]/g, '');
+  return recordedSubjectThemes[key] || recordedSubjectThemes.default;
+};
+
+const buildIconPattern = (icon, color) => {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='28' font-family='"Segoe UI", sans-serif' fill='${color}'>${icon}</text></svg>`;
+  return `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
+};
+
+const recordedHostUrl = apiDocs.baseURL.replace(/\/v1\/?$/, '');
+const buildAssetUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${recordedHostUrl}/${path.replace(/^\//, '')}`;
+};
+
+const mapRecordedSessionToCard = (session) => {
+  const video = session?.video || {}
+  const classLabel = session?.schoolClass?.name || session?.school_class?.name || session?.school_class || session?.class || 'Recorded'
+  const subjectLabel = typeof session?.subject === 'object'
+    ? session.subject?.name
+    : session?.subject || classLabel
+  const timestamp = session?.createdAt || session?.updatedAt || video?.createdAt || video?.updatedAt
+  const theme = getSubjectTheme(subjectLabel)
+  const thumbnail = buildAssetUrl(video?.thumbnail) || ''
+
+  return {
+    id: session?._id ?? session?.videoId ?? session?.id,
+    title: session?.title || video?.name || 'Recorded Session',
+    meet_link: video?.videoFileUrl || session?.recordingUrl || session?.meet_link || '',
+    recordingUrl: buildAssetUrl(video?.videoFileUrl) || session?.recordingUrl || session?.meet_link || '',
+    instructor: session?.teacher?.name || session?.teacherName || session?.teacher_name || 'SomaKwanza Teacher',
+    category: classLabel,
+    subject: subjectLabel,
+    thumbnail,
+    scheduledTime: timestamp ? new Date(timestamp) : null,
+    duration: session?.duration || video?.duration || 'Recorded',
+    viewers: session?.viewers ?? Math.floor(Math.random() * 400 + 50),
+    rating: session?.rating ?? (Math.random() * 2 + 3).toFixed(1),
+    isLive: false,
+    isSubscribed: false,
+    description: session?.description || session?.details || video?.description || 'Replay available',
+    details: session?.description || session?.details || video?.description || '',
+    iconSymbol: theme.icon,
+    iconPattern: buildIconPattern(theme.icon, theme.color),
+    gradient: `linear-gradient(135deg, ${theme.gradient[0]}, ${theme.gradient[1]})`,
+  }
+}
+
+const normalizeRecordedResponse = (payload) => {
+  if (!payload) return { items: [], total: 0, page: recordedPage.value };
+  if (Array.isArray(payload)) return { items: payload, total: payload.length, page: recordedPage.value };
+  const items = Array.isArray(payload.items)
+    ? payload.items
+    : Array.isArray(payload.data)
+      ? payload.data
+      : [];
+  const total = payload.total ?? items.length;
+  const page = payload.page ?? recordedPage.value;
+  return { items, total, page };
+};
+
+const buildRecordedQuery = () => {
+  const params = new URLSearchParams()
+  const addParam = (key, value) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.set(key, value)
+    }
+  }
+
+  addParam('q', searchQuery.value?.trim())
+  addParam('class', selectedCategory.value)
+  addParam('subject', selectedSubject.value)
+  params.set('isRecorded', 'true')
+  params.set('limit', recordedLimit.toString())
+  params.set('page', recordedPage.value.toString())
+
+  return params.toString() ? `?${params.toString()}` : ''
+}
 
 const loadClasses = async () => {
-  loading.value = true;
   try {
-    // const tokenRes = await axios.post('/api/auth/token/', {
-    //   username: 'Nick',
-    //   password: 1234
-    // });
-
-    const sessions = await getData(token);
-    // if (Array.isArray(sessions)) {
-    //   classes.value = sessions.map(mapSessionToClass);
-    // } else {
-    //   console.error('Expected array of sessions but got:', sessions);
-    //   classes.value = [];
-    // }
+    const query = buildRecordedQuery()
+    const response = await getDataList(`live-classrooms/recorded-sessions${query}`)
+    const normalized = normalizeRecordedResponse(response)
+    recordedTotal.value = normalized.total
+    recordedPage.value = normalized.page
+    classes.value = normalized.items.map(mapRecordedSessionToCard)
   } catch (error) {
-    console.error('Error fetching sessions:', error);
-  } finally {
-    loading.value = false;
+    console.error('Error fetching recorded sessions:', error)
+    handleUnauthorized(error)
+    classes.value = []
   }
-};
+}
 
 
 
@@ -278,56 +356,14 @@ const formData = reactive({
 
 // const categories = ref(['Programming', 'Design', 'Business', 'Marketing', 'Photography']);
 
-const classes = ref([
-  {
-    id: 1,
-    title: 'Numbers',
-    instructor: 'TET Studio',
-    category: 'Form 1',
-    subject: 'Mathematics',
-    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1745417330621-661767195.jpg',
-    scheduledTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-    duration: '2h 30m',
-    viewers: 1247,
-    rating: 4.9,
-    isLive: true,
-    isSubscribed: false,
-    description: 'Deep dive into advanced Vue.js concepts including composition API, custom directives, and performance optimization techniques.'
-  },
-  {
-    id: 2,
-    title: 'Introduction to Biology',
-    instructor: 'TET Studio',
-    category: 'Form 1',
-    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1745820321892-41054422.webp',
-    scheduledTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
-    duration: '1h 45m',
-    viewers: 892,
-    subject: 'Biology',
-    rating: 4.8,
-    isLive: false,
-    isSubscribed: true,
-    description: 'Learn the fundamental principles of user interface and user experience design with practical examples and case studies.'
-  },
-  {
-    id: 3,
-    title: 'Force energy and work',
-    instructor: 'TET Studio',
-    category: 'Form 1',
-    thumbnail: 'https://opschool.tie.go.tz:5001/uploads/1742375348123-474943153.webp',
-    scheduledTime: new Date(Date.now() + 6 * 60 * 60 * 1000),
-    duration: '2h 15m',
-    viewers: 634,
-    rating: 4.7,
-    subject: 'Physics',
-    isLive: false,
-    isSubscribed: false,
-    description: 'Comprehensive guide to digital marketing strategies including social media, content marketing, and analytics.'
-  }
-]);
+const classes = ref([]);
+const recordedPage = ref(1);
+const recordedLimit = 6;
+const recordedTotal = ref(0);
+const recordedTotalPages = computed(() => Math.max(1, Math.ceil(recordedTotal.value / recordedLimit)));
 
 // Import your composable
-const { postData, loading, error, getData } = useSessionsSetup();
+const { postData, loading, error, getDataList } = useSessionsSetup();
 // Show toast function (replace with your UI lib's toast/snackbar)
 
 
@@ -465,53 +501,51 @@ const showToast = (message, type = 'info') => {
 };
 
 
-loadClasses();
-
 const { data: classLevels, status: clsStatus } = useAsyncData('class-levels', () => $fetch(apiDocs.levels.getLevels, { headers }).then((response) => {
   if (response)
     return response.map((c) => ({ id: c?._id, name: c?.name }));
-   
 }))
 
 const { data: pubSubject, status: subStatus } = useAsyncData('public-subjects', () => $fetch(apiDocs.subjects.getPublicSubjects, { headers }).then((response) => {
   if (response)
-    return response.map((c) => ({ id: c?._id, name: c?.name }));    
+    return response.map((c) => ({ id: c?._id, name: c?.name }));
 }))
 
+const filteredClasses = computed(() => classes.value);
 
+let filterTimeout = null;
+const scheduleRecordedLoad = () => {
+  if (filterTimeout) clearTimeout(filterTimeout);
+  filterTimeout = setTimeout(() => {
+    loadClasses();
+  }, 400);
+};
 
-const selectedCategoryName = computed(() => {
-  if (!selectedCategory.value) return '';
-  const match = filterContentBySearch(classLevels.value || [], selectedCategory.value);
-  return match?.[0]?.name?.toLowerCase?.() || '';
+watch([searchQuery, selectedCategory, selectedSubject], () => {
+  recordedPage.value = 1;
+  scheduleRecordedLoad();
 });
 
-const selectedSubjectName = computed(() => {
-  if (!selectedSubject.value) return '';
-  const match = filterContentBySearch(pubSubject.value || [], selectedSubject.value);
-  return match?.[0]?.name?.toLowerCase?.() || '';
+onBeforeUnmount(() => {
+  if (filterTimeout) clearTimeout(filterTimeout);
 });
 
-const filteredClasses = computed(() => {
-  let filtered = classes.value;
-
-  filtered = filtered.filter(cls => {
-    const categoryMatch = !selectedCategory.value || cls.category.toLowerCase().includes(selectedCategoryName.value);
-    const subjectMatch = !selectedSubject.value || cls.category.toLowerCase().includes(selectedSubjectName.value);
-    return categoryMatch && subjectMatch;
-  });
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter(cls =>
-      cls.title.toLowerCase().includes(query) ||
-      cls.instructor.toLowerCase().includes(query) ||
-      cls.category.toLowerCase().includes(query)
-    );
+const previousRecordedPage = () => {
+  if (recordedPage.value > 1) {
+    recordedPage.value -= 1;
+    loadClasses();
   }
+};
 
-  return filtered;
-});
+const nextRecordedPage = () => {
+  if (recordedPage.value < recordedTotalPages.value) {
+    recordedPage.value += 1;
+    loadClasses();
+  }
+};
+
+
+loadClasses();
 
 
 </script>
@@ -720,7 +754,22 @@ const filteredClasses = computed(() => {
               @keydown.enter.prevent="selectClass(classItem)"
               @keydown.space.prevent="selectClass(classItem)">
             <div class="card-image">
-              <img :src="classItem.thumbnail" :alt="classItem.title" />
+              <div
+                v-if="classItem.thumbnail"
+                class="card-image__photo"
+                :style="{ backgroundImage: `url(${classItem.thumbnail})` }"
+              ></div>
+              <div
+                v-else
+                class="card-image__pattern"
+                :style="{
+                  backgroundImage: `${classItem.iconPattern}, ${classItem.gradient}`,
+                  backgroundSize: '80px 80px, cover',
+                }"
+                aria-hidden="true"
+              >
+                <span class="pattern-icon">{{ classItem.iconSymbol }}</span>
+              </div>
               <div class="card-overlay">
                 <div class="live-badge" v-if="classItem.isLive">
                   <span class="live-dot"></span>
@@ -758,6 +807,11 @@ const filteredClasses = computed(() => {
               </div>
             </div>
           </div>
+        </div>
+        <div class="pagination-controls recorded" aria-label="Recorded sessions pagination">
+          <button class="pagination-btn" :disabled="recordedPage <= 1" @click="previousRecordedPage" aria-label="Previous page">Previous</button>
+          <span class="pagination-info">Page {{ recordedPage }} of {{ recordedTotalPages }}</span>
+          <button class="pagination-btn" :disabled="recordedPage >= recordedTotalPages" @click="nextRecordedPage" aria-label="Next page">Next</button>
         </div>
       </div>
 
@@ -1038,6 +1092,36 @@ const filteredClasses = computed(() => {
   gap: 2rem;
 }
 
+.pagination-controls {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination-btn {
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+}
+
 .class-card {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 20px;
@@ -1066,14 +1150,24 @@ const filteredClasses = computed(() => {
   overflow: hidden;
 }
 
-.card-image img {
+.card-image__photo {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: all 0.3s ease;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.3s ease;
 }
 
-.class-card:hover .card-image img {
+.card-image__pattern {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-repeat: repeat;
+}
+
+.class-card:hover .card-image__photo {
   transform: scale(1.1);
 }
 
@@ -1125,6 +1219,12 @@ const filteredClasses = computed(() => {
   border-radius: 20px;
   font-size: 0.75rem;
   backdrop-filter: blur(10px);
+}
+
+.pattern-icon {
+  font-size: 2.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 10px 20px rgba(15, 23, 42, 0.4);
 }
 
 .hover-actions {
