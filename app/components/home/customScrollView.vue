@@ -35,15 +35,18 @@ const setSeeMore = (seeMore: string) => {
 };
 
 // general level
-const curentLevel = ref<string>()
-const getLevels = (data:any[]) => {
+const currentLevel = ref<Record<string, string>>({})
+const getLevels = (data: any[]) => {
   // extracting levels 
   let list = data?.map((t: any) => (t?.level as any).name || t?.level);
   return new Set(list);
 }
 
-const setLevel =(lvl:string)=>{
-  curentLevel.value=lvl;  
+const setLevel = (key: string, lvl: string) => {
+  currentLevel.value = {
+    ...currentLevel.value,
+    [key]: lvl
+  };
 }
 </script>
 
@@ -71,7 +74,7 @@ const setLevel =(lvl:string)=>{
             {{ (topics?.dataOfKey as any)?.toLowerCase() }}
           </h2>
           <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n"
             :aria-label="seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase() ? `See less ${(topics?.dataOfKey as any)?.toLowerCase()}` : `See all ${(topics?.dataOfKey as any)?.toLowerCase()}`">
             {{
               seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
@@ -86,11 +89,11 @@ const setLevel =(lvl:string)=>{
           </p>
           <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(topics.data)" :key="`levels-${(topics?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <small class="x-2 cursor-pointer" v-for="(lvl, i) in getLevels(topics.data)"
+              :key="`levels-${(topics?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((topics?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small>
             <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
-              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n">
               {{
                 seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
                   ? "See Less"
@@ -104,14 +107,15 @@ const setLevel =(lvl:string)=>{
           <customGridOne v-if="seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()">
             <template #data>
               <!-- Topic Cards  -->
-              <TopicCard v-for="topic in (topics?.data as Topic[]).filter(t=>(t.level as any)?.name === curentLevel)" :key="topic._id" :topic-id="topic._id"
-                :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
-                :subject-name="(topic.subject as any)?.name"  :topic-views="topic.viewedBy?.length
-                    ? topic.viewedBy?.length
-                    : topic.views
-                      ? topic.views
-                      : 0
-                    " :topic-standard="(topic.level as any)?.name" :topic-viewed="topic.isViewed"
+              <TopicCard
+                v-for="topic in (topics?.data as Topic[]).filter(t => (t.level as any)?.name === currentLevel[(topics?.dataOfKey as any)?.toLowerCase()])"
+                :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail" :topic-title="topic.name"
+                :topic-description="topic.descriptions" :subject-name="(topic.subject as any)?.name" :topic-views="topic.viewedBy?.length
+                  ? topic.viewedBy?.length
+                  : topic.views
+                    ? topic.views
+                    : 0
+                  " :topic-standard="(topic.level as any)?.name" :topic-viewed="topic.isViewed"
                 :topic-progress="topic.avgProgress" :alt-text="topic.alt" />
             </template>
           </customGridOne>
@@ -157,7 +161,7 @@ const setLevel =(lvl:string)=>{
             {{ (experiments?.dataOfKey as any)?.toLowerCase() }}
           </p>
           <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n"
             role="button" tabindex="0"
             :aria-label="`See less ${(experiments?.dataOfKey as any)?.toLowerCase()} experiments`">
             {{
@@ -171,13 +175,14 @@ const setLevel =(lvl:string)=>{
           <p class="font-bold text-[1.3rem] capitalize">
             {{ (experiments?.dataOfKey as any)?.toLowerCase() }}
           </p>
-           <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(experiments.data)" :key="`levels-${(experiments?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <small class="x-2 cursor-pointer" v-for="(lvl, i) in getLevels(experiments.data)"
+              :key="`levels-${(experiments?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((experiments?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl
+              }}</small>
             <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
-              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n">
               {{
                 seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
                   ? "See Less"
@@ -237,7 +242,7 @@ const setLevel =(lvl:string)=>{
             {{ (videos?.dataOfKey as any)?.toLowerCase() }}
           </h2>
           <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n"
             role="button" tabindex="0" :aria-label="`See less ${(videos?.dataOfKey as any)?.toLowerCase()} videos`">
             {{
               seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()
@@ -250,13 +255,13 @@ const setLevel =(lvl:string)=>{
           <p class="font-bold text-[1.3rem] capitalize">
             {{ (videos?.dataOfKey as any)?.toLowerCase() }}
           </p>
-           <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)" :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <small class="x-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)"
+              :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((videos?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small>
             <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
-              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n">
               {{
                 seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()
                   ? "See Less"
@@ -314,7 +319,7 @@ const setLevel =(lvl:string)=>{
             {{ (audios?.dataOfKey as any)?.toLowerCase() }}
           </p>
           <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n"
             role="button" tabindex="0"
             :aria-label="`See less ${(audios?.dataOfKey as any)?.toLowerCase()} audio files`">
             {{
@@ -330,11 +335,11 @@ const setLevel =(lvl:string)=>{
           </p>
           <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)" :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <small class="x-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)"
+              :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((audios?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small>
             <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"
-              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n">
               {{
                 seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()
                   ? "See Less"
@@ -401,7 +406,7 @@ const setLevel =(lvl:string)=>{
             {{ (topics?.dataOfKey as any)?.toLowerCase() }}
           </h2>
           <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n"
             :aria-label="seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase() ? `See less ${(topics?.dataOfKey as any)?.toLowerCase()}` : `See all ${(topics?.dataOfKey as any)?.toLowerCase()}`">
             {{
               seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
@@ -414,13 +419,19 @@ const setLevel =(lvl:string)=>{
           <h2 class="font-bold text-[1.3rem] capitalize">
             {{ (topics?.dataOfKey as any)?.toLowerCase() }}
           </h2>
-           <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(topics.data)" :key="`levels-${(topics?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <!-- <small class="x-2 cursor-pointer" v-for="(lvl, i) in getLevels(topics.data)"
+              :key="`levels-${(topics?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((topics?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small> -->
+
+            <!-- exrteact levels from data -->
+            <CustomDropDownList class="px-2 cursor-pointer"
+              v-model="currentLevel[(topics?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              :list="Array.from(getLevels(topics.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
+
             <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
-              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue whitespace-nowrap">
               {{
                 seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
                   ? "See Less"
@@ -451,9 +462,17 @@ const setLevel =(lvl:string)=>{
             layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
           ]">
             <!-- Topic Cards  -->
-            <TopicCard v-for="topic in (topics?.data as Topic[])" :key="topic._id" :topic-id="topic._id"
-              :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
-              :subject-name="(topic.subject as any)?.name" :topic-views="topic.viewedBy?.length
+            <TopicCard v-for="topic in (
+              (() => {
+                const key = (topics?.dataOfKey as any)?.toLowerCase();
+                return currentLevel[key]
+                  ? (topics?.data as Topic[]).filter(
+                    t => (t.level as any)?.name === currentLevel[key]
+                  )
+                  : (topics?.data as Topic[]);
+              })()
+            )" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail" :topic-title="topic.name"
+              :topic-description="topic.descriptions" :subject-name="(topic.subject as any)?.name" :topic-views="topic.viewedBy?.length
                 ? topic.viewedBy?.length
                 : topic.views
                   ? topic.views
@@ -487,7 +506,7 @@ const setLevel =(lvl:string)=>{
             {{ (experiments?.dataOfKey as any)?.toLowerCase() }}
           </h2>
           <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n"
             :aria-label="seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase() ? `See less ${(experiments?.dataOfKey as any)?.toLowerCase()}` : `See all ${(experiments?.dataOfKey as any)?.toLowerCase()}`">
             {{
               seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
@@ -501,7 +520,7 @@ const setLevel =(lvl:string)=>{
             {{ (experiments?.dataOfKey as any)?.toLowerCase() }}
           </p>
           <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n">
             {{
               seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
                 ? "See Less"
@@ -560,7 +579,7 @@ const setLevel =(lvl:string)=>{
             {{ videos?.dataOfKey }}
           </p>
           <small @click="setSeeMore(videos?.dataOfKey as any)"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n"
             role="button" tabindex="0" :aria-label="`See less ${videos?.dataOfKey} videos`">
             {{
               seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)
@@ -573,13 +592,19 @@ const setLevel =(lvl:string)=>{
           <p class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey }}
           </p>
-           <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)" :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <!-- <small class="x-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)" :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`" 
+            @click="setLevel((videos?.dataOfKey as any)?.toLowerCase(), lvl)"
+            >{{ lvl }}</small> -->
+
+            <!-- exrteact levels from data -->
+            <CustomDropDownList class="px-2 cursor-pointer"
+              v-model="currentLevel[(videos?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              :list="Array.from(getLevels(videos.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
+
             <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
-              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n">
               {{
                 seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()
                   ? "See Less"
@@ -637,7 +662,7 @@ const setLevel =(lvl:string)=>{
             {{ audios?.dataOfKey }}
           </p>
           <small @click="setSeeMore(audios?.dataOfKey as any)"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n"
             role="button" tabindex="0" :aria-label="`See less ${audios?.dataOfKey} audio files`">
             {{
               seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)
@@ -652,11 +677,17 @@ const setLevel =(lvl:string)=>{
           </p>
           <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)" :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <!-- <small class="x-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)"
+              :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((audios?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small> -->
+
+            <!-- exrteact levels from data -->
+            <CustomDropDownList class="px-2 cursor-pointer"
+              v-model="currentLevel[(audios?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              :list="Array.from(getLevels(audios.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
+
             <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"
-              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue n">
               {{
                 seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()
                   ? "See Less"
@@ -690,9 +721,9 @@ const setLevel =(lvl:string)=>{
           <template #data>
             <!-- audio Cards  -->
             <AudioCard v-for="audio in (audios?.data as Audios[])" :key="audio._id" :audio-id="audio._id"
-                :is-deleted="audio.isDeleted" :audio-name="audio.name" :audio-thumbnail="audio.thumbnail"
-                :audio-file-url="audio.audioFileUrl" :audio-description="audio.description"
-                :audio-subject="audio.subject?.name" :audio-type="audio.audioType" :alt-text="audio.alt" />
+              :is-deleted="audio.isDeleted" :audio-name="audio.name" :audio-thumbnail="audio.thumbnail"
+              :audio-file-url="audio.audioFileUrl" :audio-description="audio.description"
+              :audio-subject="audio.subject?.name" :audio-type="audio.audioType" :alt-text="audio.alt" />
           </template>
         </customGridTwo>
       </div>
