@@ -523,7 +523,7 @@ const prepareNavigation = () => {
         <NuxtLink
           v-if="canGoBack"
           to="/"
-          class="mb-6 inline-flex items-center gap-2 rounded-full border border-primary bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          class="mb-6 inline-flex items-center gap-2 rounded-full border border-primary bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm hover:bg-gray-50"
         >
           <Icon name="mdi:arrow-left" size="18" />
           Back
