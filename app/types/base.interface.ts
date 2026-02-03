@@ -9,4 +9,8 @@ export interface BaseEntity {
   thumbnail?:string;
   syllabus?:string;
   views?:number;
+  viewedBy?:any[];
+  isViewed?:boolean;
+  avgProgress?:number;
+  isDeleted?:boolean
 }

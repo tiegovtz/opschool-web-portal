@@ -8,6 +8,7 @@ export interface Audios extends BaseEntity {
   subject: Subjects;
   audioFileUrl: string;
   syllabus: string;
+  description: string;
 }
 
 export interface AudioFileInfo {

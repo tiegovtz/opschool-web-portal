@@ -55,7 +55,7 @@ const setExperimentUrl =()=>{
         <!-- Thumbnail section -->
         <div :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
+            layoutEffect == 'grid' ? 'aspect-video' : 'h-full w-full max-w-[200px]'
         ]">
             <NuxtImg :src="experimentThumbnail" tabindex="0" :alt="altText??experimentName"
                 class="object-cover w-full h-full transition-transform duration-500" />

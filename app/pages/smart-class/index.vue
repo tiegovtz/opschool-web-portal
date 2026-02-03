@@ -99,8 +99,8 @@ const somakwanzaStreamMeta = ref({
 const defaultThumbnail =
   "https://media.istockphoto.com/id/1425207399/photo/book-sign-3d-render-concept-for-study-earn-knowledge-reading-and.webp?a=1&b=1&s=612x612&w=0&k=20&c=c94CC40l2cSPQARpJLbGK8J8u9EfEYUQzVe41xr0G6A=";
 
-const defaultRecordingThumbnail =
-  "https://plus.unsplash.com/premium_photo-1677589330395-4a9e1ae99b10?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTN8fGNvb2wlMjBmYWxsYmFjayUyMHJlY29yZGluZyUyMGljb24lMjBpbWFnZXxlbnwwfHwwfHx8MA%3D%3D";
+const accessTokenCookie = useCookie("signInAccessToken");
+const userTokenCookie = useCookie("signInUserToken");
 
 const getHeaders = () => {
   const headers: Record<string, string> = {

@@ -7,6 +7,8 @@ import {
   isGreaterToXS,
   screenWidth
 } from './utilities/controlls'
+import GlobalLauncher from '@/components/assistant/GlobalLauncher.vue'
+import TieAiTeacherModalHost from '@/components/assistant/TieAiTeacherModalHost.vue'
 
 // Resize state
 const widthGreater1280 = computed(() => screenWidth.value >= 1280)
@@ -40,5 +42,7 @@ onBeforeUnmount(() => {
   <NuxtLayout>
     <NuxtLoadingIndicator color="#56ade8" errorColor="#f00" />
     <NuxtPage @contextmenu.prevent />
+    <GlobalLauncher />
+    <TieAiTeacherModalHost />
   </NuxtLayout>
 </template>

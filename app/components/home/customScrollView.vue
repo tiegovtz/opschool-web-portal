@@ -8,533 +8,373 @@ import { VideoCard } from "#components";
 import { layoutEffect } from "~/utilities/controlls";
 import AudioCard from "../audio/audioCard.vue";
 import type { tabs } from "~/types/types.data";
+import type { Topic } from "~/types/topic.interface";
+import type { Experiment } from "~/types/experiment.interface";
+import type { Videos } from "~/types/video.interface";
+import type { Audios } from "~/types/audio.interface";
+import type { Subjects } from "~/types/subject.interface";
 
-const emits = defineEmits(['emittedSubjectId','emittedActiveTab','emittedSubjectName']);
+const emits = defineEmits(['emittedSubjectId', 'emittedActiveTab', 'emittedSubjectName']);
 
-const props=defineProps<{
-  data:any[],
-  activeTab:tabs 
+const props = defineProps<{
+  data: any[],
+  activeTab: tabs
   seeMoreDetails?: string,
   shuffleSubject?: Function,
 }>();
 
-const seeMoreDetails = ref<string|null>(props.seeMoreDetails ?? null); // Initial See More
+const seeMoreDetails = ref<string | null>(props.seeMoreDetails ?? null); // Initial See More
 const userToken = useCookie("signInUserToken");
 // modify see more
-const setSeeMore = (seeMore:string) => {
+const setSeeMore = (seeMore: string) => {
   if (seeMoreDetails.value === seeMore) {
     seeMoreDetails.value = null;
   } else {
     seeMoreDetails.value = seeMore;
   }
 };
+
+// general level (per subject key)
+const currentLevels = ref<Record<string, string>>({})
+const getLevels = (data: any[]) => {
+  // extracting levels 
+  let list = data?.map((t: any) => (t?.level as any).name || t?.level);
+  return new Set(list);
+}
+
+const setLevel = (key: string, lvl: string) => {
+  currentLevels.value[key] = lvl;
+}
 </script>
 
 <template>
-  <div  v-if="userToken">
+  <div v-if="userToken">
     <div id="main-container" tabindex="-1" v-if="activeTab === 'subjects'">
       <!-- Subject Cards are in Grid -->
       <customGridOne active-tab="subjects" v-if="activeTab === 'subjects'">
         <template #data>
           <!-- Subject Cards are in Grid -->
-          <SubjectCard
-            v-for="subject in shuffleSubject?.(data)"
-            :key="subject._id"
-            :subject-id="subject._id"
-            :subject-name="subject.name"
-            :subject-image="subject.thumbnail"
-            :subject-description="subject.description"
-            :total-views="subject.views ?? 0"
-            :alt-text="subject.alt"
+          <SubjectCard v-for="subject in shuffleSubject?.(data)" :key="subject._id" :subject-id="subject._id"
+            :subject-name="subject.name" :subject-image="subject.thumbnail" :subject-description="subject.description"
+            :total-views="subject.views ?? 0" :alt-text="subject.alt"
             :is-logged-in="userToken != null || userToken != undefined"
-            @emit-subject-name="emits('emittedSubjectName',$event)"
-            @emit-subject-id="emits('emittedSubjectId',$event)"
-
-          />
+            @emit-subject-name="emits('emittedSubjectName', $event)"
+            @emit-subject-id="emits('emittedSubjectId', $event)" />
         </template>
       </customGridOne>
     </div>
     <div id="main-container" tabindex="-1" v-else-if="activeTab === 'interactive-contents'">
       <div v-for="(topics, index) in data" :key="index">
-        <div
-          v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-if="seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()"
+          class="flex items-center justify-between py-4">
           <h2 class="font-bold text-[1.3rem] capitalize">
-            {{ topics?.dataOfKey.toLowerCase() }}
+            {{ (topics?.dataOfKey as any)?.toLowerCase() }}
           </h2>
-          <small
-            @click="setSeeMore(topics?.dataOfKey.toLowerCase())"
+          <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            :aria-label="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase() ? `See less ${topics?.dataOfKey.toLowerCase()}` : `See all ${topics?.dataOfKey.toLowerCase()}`"
-          >
+            :aria-label="seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase() ? `See less ${(topics?.dataOfKey as any)?.toLowerCase()}` : `See all ${(topics?.dataOfKey as any)?.toLowerCase()}`">
             {{
-              seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()
+              seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
           </small>
         </div>
-        <div
-          v-else-if="!seeMoreDetails"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-else-if="!seeMoreDetails" class="flex items-center justify-between py-4">
           <p class="font-bold text-[1.3rem] capitalize">
-            {{ topics?.dataOfKey.toLowerCase() }}
+            {{ (topics?.dataOfKey as any)?.toLowerCase() }}
           </p>
-          <small
-            @click="setSeeMore(topics?.dataOfKey.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-          >
-            {{
-              seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+          <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(topics.data)"
+              :key="`levels-${(topics?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((topics?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small>
+            <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              {{
+                seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
 
-        <div v-if="data.length > 1">
-          <customGridOne
-            v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
-          >
+        <div v-if="(data as any)?.length > 1">
+          <customGridOne v-if="seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()">
             <template #data>
               <!-- Topic Cards  -->
-              <TopicCard
-                v-for="topic in topics?.data"
-                :key="topic._id"
-                :topic-id="topic._id"
-                :topic-image="topic.thumbnail"
-                :topic-title="topic.name"
-                :topic-description="topic.descriptions"
-                :subject-name="topic.subject?.name"
-                :topic-duration="
-                  topic.topic_duration ? topic.topic_duration : '10 min'
-                "
-                :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                :topic-views="
-                  topic.viewedBy?.length
-                    ? topic.viewedBy?.length
-                    : topic.views
+              <TopicCard v-for="topic in (topics?.data as Topic[]).filter(t => {
+                const key = ((topics?.dataOfKey as any) ?? '').toLowerCase();
+                const selected = currentLevels.value?.[key];
+                return selected ? (t.level as any)?.name === selected : true;
+              })" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail" :topic-title="topic.name"
+                :topic-description="topic.descriptions" :subject-name="(topic.subject as any)?.name" :topic-views="topic.viewedBy?.length
+                  ? topic.viewedBy?.length
+                  : topic.views
                     ? topic.views
                     : 0
-                "
-
-                :topic-standard="topic.level?.name"
-                :topic-viewed="topic.isViewed"
-                :topic-progress="topic.avgProgress"
-                :alt-text="topic.alt"
-              />
+                  " :topic-standard="(topic.level as any)?.name" :topic-viewed="topic.isViewed"
+                :topic-progress="topic.avgProgress" :alt-text="topic.alt" />
             </template>
           </customGridOne>
 
-          <div
-            v-else-if="!seeMoreDetails"
-            :class="[
-              'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
-              layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
-            ]"
-          >
+          <div v-else-if="!seeMoreDetails" :class="[
+            'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+            layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+          ]">
             <!-- Topic Cards  -->
-            <TopicCard
-              v-for="topic in topics?.data"
-              :key="topic._id"
-              :topic-id="topic._id"
-              :topic-image="topic.thumbnail"
-              :topic-title="topic.name"
-              :topic-description="topic.descriptions"
-              :topic-duration="
-                topic.topic_duration ? topic.topic_duration : '10 min'
-              "
-              :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-              :topic-views="
-                topic.viewedBy?.length
-                  ? topic.viewedBy?.length
-                  : topic.views
+            <TopicCard v-for="topic in (topics?.data as Topic[])" :key="topic._id" :topic-id="topic._id"
+              :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
+              :topic-views="topic.viewedBy?.length
+                ? topic.viewedBy?.length
+                : topic.views
                   ? topic.views
                   : 0
-              "
-              :topic-standard="topic.level?.name"
-              :subject-name="topic.subject?.name"
-              :topic-viewed="topic.isViewed"
-              :topic-progress="topic.avgProgress"
-              :alt-text="topic.alt"
-            />
+                " :topic-standard="(topic.level as any)?.name" :subject-name="(topic.subject as any)?.name"
+              :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" :alt-text="topic.alt" />
           </div>
         </div>
 
         <customGridOne v-else>
           <template #data>
             <!-- Topic Cards  -->
-            <TopicCard
-              v-for="topic in topics?.data"
-              :key="topic._id"
-              :topic-id="topic._id"
-              :topic-image="topic.thumbnail"
-              :topic-title="topic.name"
-              :topic-description="topic.descriptions"
-              :topic-duration="
-                topic.topic_duration ? topic.topic_duration : '10 min'
-              "
-              :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-              :topic-views="
-                topic.viewedBy?.length
-                  ? topic.viewedBy?.length
-                  : topic.views
+            <TopicCard v-for="topic in (topics?.data as Topic[])" :key="topic._id" :topic-id="topic._id"
+              :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
+              :topic-views="topic.viewedBy?.length
+                ? topic.viewedBy?.length
+                : topic.views
                   ? topic.views
                   : 0
-              "
-              :topic-standard="topic.level?.name"
-              :subject-name="topic.subject?.name"
-              :topic-viewed="topic.isViewed"
-              :topic-progress="topic.avgProgress"
-              :alt-text="topic.alt"
-            />
+                " :topic-standard="(topic.level as any)?.name" :subject-name="(topic.subject as any)?.name"
+              :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" :alt-text="topic.alt" />
           </template>
         </customGridOne>
       </div>
     </div>
     <div id="main-container" tabindex="-1" v-else-if="activeTab === 'learn-activities'">
       <div v-for="(experiments, index) in data" :key="index">
-        <div
-          v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-if="seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()"
+          class="flex items-center justify-between py-4">
           <p class="font-bold text-[1.3rem] capitalize">
-            {{ experiments?.dataOfKey.toLowerCase() }}
+            {{ (experiments?.dataOfKey as any)?.toLowerCase() }}
           </p>
-          <small
-            @click="setSeeMore(experiments?.dataOfKey.toLowerCase())"
+          <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button"
-            tabindex="0"
-            :aria-label="`See less ${experiments?.dataOfKey.toLowerCase()} experiments`"
-          >
+            role="button" tabindex="0"
+            :aria-label="`See less ${(experiments?.dataOfKey as any)?.toLowerCase()} experiments`">
             {{
-              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()
+              seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
           </small>
         </div>
-        <div
-          v-else-if="!seeMoreDetails"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-else-if="!seeMoreDetails" class="flex items-center justify-between py-4">
           <p class="font-bold text-[1.3rem] capitalize">
-            {{ experiments?.dataOfKey.toLowerCase() }}
+            {{ (experiments?.dataOfKey as any)?.toLowerCase() }}
           </p>
-          <small
-            @click="setSeeMore(experiments?.dataOfKey.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button"
-            tabindex="0"
-            :aria-label="`See all ${experiments?.dataOfKey.toLowerCase()} experiments`"
-          >
-            {{
-              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+          <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(experiments.data)"
+              :key="`levels-${(experiments?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((experiments?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl
+              }}</small>
+            <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              {{
+                seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
 
-        <div v-if="data.length > 1">
-          <customGridOne
-            v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
-          >
+        <div v-if="(data as any)?.length > 1">
+          <customGridOne v-if="seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()">
             <template #data>
               <!-- Experiment Cards  -->
-              <ExperimentsCard
-                v-for="experiment in experiments?.data"
-                :key="experiment._id"
-                :experiment-id="experiment._id"
-                :experiment-thumbnail="experiment.thumbnail"
-                :experiment-title="experiment.title"
-                :experiment-description="experiment.description"
-                :experiment-type="experiment.category"
-                :experiment-subject="experiment.subject?.name"
-                :experiment-level="experiment.level?.name"
-                :experiment-name="experiment.name"
-                :experiment-file-url="experiment.stepsFileUrl"
-                :alt-text="experiment.alt"
-              />
+              <ExperimentsCard v-for="experiment in (experiments?.data as Experiment[])" :key="experiment._id"
+                :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
+                :experiment-description="experiment.description" :experiment-type="experiment.category"
+                :experiment-subject="(experiment.subject as any)?.name"
+                :experiment-level="(experiment.level as any)?.name" :experiment-name="experiment.name"
+                :experiment-file-url="experiment.stepsFileUrl" :alt-text="experiment.alt" />
             </template>
           </customGridOne>
 
-          <div
-            v-else-if="!seeMoreDetails"
-            :class="[
-              'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
-              layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
-            ]"
-          >
+          <div v-else-if="!seeMoreDetails" :class="[
+            'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+            layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+          ]">
             <!-- Experiment Cards  -->
-            <ExperimentsCard
-              v-for="experiment in experiments?.data"
-              :key="experiment._id"
-              :experiment-id="experiment._id"
-              :experiment-thumbnail="experiment.thumbnail"
-              :experiment-title="experiment.title"
-              :experiment-description="experiment.description"
-              :experiment-type="experiment.category"
-              :experiment-subject="experiment.subject?.name"
-              :experiment-level="experiment.level?.name"
-              :experiment-name="experiment.name"
-              :experiment-file-url="experiment.stepsFileUrl"
-              :alt-text="experiment.alt"
-            />
+            <ExperimentsCard v-for="experiment in (experiments?.data as Experiment[])" :key="experiment._id"
+              :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
+              :experiment-description="experiment.description" :experiment-type="experiment.category"
+              :experiment-subject="(experiment.subject as any)?.name"
+              :experiment-level="(experiment.level as any)?.name" :experiment-name="experiment.name"
+              :experiment-file-url="experiment.stepsFileUrl" :alt-text="experiment.alt" />
           </div>
         </div>
         <customGridOne v-else>
           <template #data>
             <!-- Experiments Cards  -->
-            <ExperimentsCard
-              v-for="experiment in experiments?.data"
-              :key="experiment._id"
-              :experiment-id="experiment._id"
-              :experiment-thumbnail="experiment.thumbnail"
-              :experiment-title="experiment.title"
-              :experiment-description="experiment.description"
-              :experiment-type="experiment.category"
-              :experiment-subject="experiment.subject?.name"
-              :experiment-level="experiment.level?.name"
-              :experiment-name="experiment.name"
-              :experiment-file-url="experiment.stepsFileUrl"
-              :alt-text="experiment.alt"
-            />
+            <ExperimentsCard v-for="experiment in (experiments?.data as Experiment[])" :key="experiment._id"
+              :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
+              :experiment-description="experiment.description" :experiment-type="experiment.category"
+              :experiment-subject="(experiment.subject as any)?.name"
+              :experiment-level="(experiment.level as any)?.name" :experiment-name="experiment.name"
+              :experiment-file-url="experiment.stepsFileUrl" :alt-text="experiment.alt" />
           </template>
         </customGridOne>
       </div>
     </div>
-    <div id="main-container" tabindex="-1"
-      v-else-if="
-        activeTab === 'video' ||
-        activeTab === 'class-videos'
-      "
-    >
+    <div id="main-container" tabindex="-1" v-else-if="
+      activeTab === 'video' ||
+      activeTab === 'class-videos'
+    ">
       <div v-for="(videos, index) in data" :key="index">
-        <div
-          v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-if="seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()"
+          class="flex items-center justify-between py-4">
           <h2 class="font-bold text-[1.3rem] capitalize">
-            {{ videos?.dataOfKey.toLowerCase() }}
+            {{ (videos?.dataOfKey as any)?.toLowerCase() }}
           </h2>
-          <small
-            @click="setSeeMore(videos?.dataOfKey.toLowerCase())"
+          <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button"
-            tabindex="0"
-            :aria-label="`See less ${videos?.dataOfKey.toLowerCase()} videos`"
-          >
+            role="button" tabindex="0" :aria-label="`See less ${(videos?.dataOfKey as any)?.toLowerCase()} videos`">
             {{
-              seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()
+              seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
           </small>
         </div>
-        <div
-          v-else-if="!seeMoreDetails"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-else-if="!seeMoreDetails" class="flex items-center justify-between py-4">
           <p class="font-bold text-[1.3rem] capitalize">
-            {{ videos?.dataOfKey.toLowerCase() }}
+            {{ (videos?.dataOfKey as any)?.toLowerCase() }}
           </p>
-          <small
-            @click="setSeeMore(videos?.dataOfKey.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button"
-            tabindex="0"
-            :aria-label="`See all ${videos?.dataOfKey.toLowerCase()} videos`"
-          >
-            {{
-              seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+          <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)"
+              :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((videos?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small>
+            <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              {{
+                seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
-        <div v-if="data.length > 1">
-          <customGridOne
-            v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey.toLowerCase()"
-          >
+        <div v-if="(data as any)?.length > 1">
+          <customGridOne v-if="seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()">
             <template #data>
               <!-- Video Cards  -->
-              <VideoCard
-                v-for="video in videos?.data"
-                :key="video._id"
-                :video-id="video._id"
-                :is-deleted="video.isDeleted"
-                :video-name="video.name"
-                :video-thumbnail="video.thumbnail"
-                :video-file-url="video.videoFileUrl"
-                :video-description="video.description"
-                :video-subject="video.subject?.name"
-                :video-type="video.videoType"
-                :video-level="video.level?.name"
-                :video-standard="video.level?.name"
-                :topic-progress="video.avgProgress"
-                :topic-viewed="video.isViewed"
-                :alt-text="video.alt"
-              />
+              <VideoCard v-for="video in (videos?.data as Videos[])" :key="video._id" :video-id="video._id"
+                :is-deleted="(video.isDeleted as boolean)" :video-name="video.name" :video-thumbnail="video.thumbnail"
+                :video-file-url="video.videoFileUrl" :video-description="video.description"
+                :video-subject="(video.subject as any)?.name" :video-type="video.videoType"
+                :video-level="(video.level as any)?.name" :video-standard="(video.level as any)?.name"
+                :topic-progress="(video.avgProgress as number)" :topic-viewed="(video.isViewed as boolean)"
+                :alt-text="video.alt" />
             </template>
           </customGridOne>
 
-          <div
-            v-else-if="!seeMoreDetails"
-            :class="[
-              'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
-              layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
-            ]"
-          >
-            <VideoCard
-              v-for="video in videos?.data"
-              :key="video._id"
-              :video-id="video._id"
-              :is-deleted="video.isDeleted"
-              :video-name="video.name"
-              :video-thumbnail="video.thumbnail"
-              :video-file-url="video.videoFileUrl"
-              :video-description="video.description"
-              :video-subject="video.subject?.name"
-              :video-type="video.videoType"
-              :video-level="video.level?.name"
-              :video-standard="video.level?.name"
-              :topic-progress="video.avgProgress"
-              :topic-viewed="video.isViewed"
-              :alt-text="video.alt"
-            />
+          <div v-else-if="!seeMoreDetails" :class="[
+            'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+            layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+          ]">
+            <VideoCard v-for="video in (videos?.data as Videos[])" :key="video._id" :video-id="video._id"
+              :is-deleted="(video.isDeleted as boolean)" :video-name="video.name" :video-thumbnail="video.thumbnail"
+              :video-file-url="video.videoFileUrl" :video-description="video.description"
+              :video-subject="(video.subject as any)?.name" :video-type="video.videoType"
+              :video-level="(video.level as any)?.name" :video-standard="(video.level as any)?.name"
+              :topic-progress="(video.avgProgress as number)" :topic-viewed="(video.isViewed as boolean)"
+              :alt-text="video.alt" />
           </div>
         </div>
         <customGridOne v-else>
           <template #data>
             <!-- Video Cards  -->
-            <VideoCard
-              v-for="video in videos?.data"
-              :key="video._id"
-              :video-id="video._id"
-              :is-deleted="video.isDeleted"
-              :video-name="video.name"
-              :video-thumbnail="video.thumbnail"
-              :video-file-url="video.videoFileUrl"
-              :video-description="video.description"
-              :video-subject="video.subject?.name"
-              :video-type="video.videoType"
-              :video-level="video.level?.name"
-              :video-standard="video.level?.name"
-              :topic-progress="video.avgProgress"
-              :topic-viewed="video.isViewed"
-              :alt-text="video.alt"
-            />
+            <VideoCard v-for="video in (videos?.data as Videos[])" :key="video._id" :video-id="video._id"
+              :is-deleted="(video.isDeleted as boolean)" :video-name="video.name" :video-thumbnail="video.thumbnail"
+              :video-file-url="video.videoFileUrl" :video-description="video.description"
+              :video-subject="(video.subject as any)?.name" :video-type="video.videoType"
+              :video-level="(video.level as any)?.name" :video-standard="(video.level as any)?.name"
+              :topic-progress="(video.avgProgress as number)" :topic-viewed="(video.isViewed as boolean)"
+              :alt-text="video.alt" />
           </template>
         </customGridOne>
       </div>
     </div>
     <div id="main-container" tabindex="-1" v-else-if="activeTab === 'audio'">
-       <div v-for="(audios, index) in data" :key="index">
-        <div
-          v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()"
-          class="flex items-center justify-between py-4"
-        >
+      <div v-for="(audios, index) in data" :key="index">
+        <div v-if="seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()"
+          class="flex items-center justify-between py-4">
           <p class="font-bold text-[1.3rem] capitalize">
-            {{ audios?.dataOfKey.toLowerCase() }}
+            {{ (audios?.dataOfKey as any)?.toLowerCase() }}
           </p>
-          <small
-            @click="setSeeMore(audios?.dataOfKey.toLowerCase())"
+          <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button"
-            tabindex="0"
-            :aria-label="`See less ${audios?.dataOfKey.toLowerCase()} audio files`"
-          >
+            role="button" tabindex="0"
+            :aria-label="`See less ${(audios?.dataOfKey as any)?.toLowerCase()} audio files`">
             {{
-              seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()
+              seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
           </small>
         </div>
-        <div
-          v-else-if="!seeMoreDetails"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-else-if="!seeMoreDetails" class="flex items-center justify-between py-4">
           <p class="font-bold text-[1.3rem] capitalize">
-            {{ audios?.dataOfKey.toLowerCase() }}
+            {{ (audios?.dataOfKey as any)?.toLowerCase() }}
           </p>
-          <small
-            @click="setSeeMore(audios?.dataOfKey.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button"
-            tabindex="0"
-            :aria-label="`See all ${audios?.dataOfKey.toLowerCase()} audio files`"
-          >
-            {{
-              seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+          <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)"
+              :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((audios?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small>
+            <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              {{
+                seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
-        <div v-if="data.length > 1">
-          <customGridOne
-            v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey.toLowerCase()"
-          >
+        <div v-if="(data as any)?.length > 1">
+          <customGridOne v-if="seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()">
             <template #data>
               <!-- audio Cards  -->
-              <AudioCard
-                v-for="audio in audios?.data"
-                :key="audio._id"
-                :audio-id="audio._id"
-                :is-deleted="audio.isDeleted"
-                :audio-name="audio.name"
-                :audio-thumbnail="audio.thumbnail"
-                :audio-file-url="audio.audioFileUrl"
-                :audio-description="audio.description"
-                :audio-subject="audio.subject?.name"
-                :audio-type="audio.audioType"
-                :alt-text="audio.alt"
-              />
+              <AudioCard v-for="audio in (audios?.data as Audios[])" :key="audio._id" :audio-id="audio._id"
+                :is-deleted="audio.isDeleted" :audio-name="audio.name" :audio-thumbnail="audio.thumbnail"
+                :audio-file-url="audio.audioFileUrl" :audio-description="audio.description"
+                :audio-subject="audio.subject?.name" :audio-type="audio.audioType" :alt-text="audio.alt" />
             </template>
           </customGridOne>
 
-          <div
-            v-else-if="!seeMoreDetails"
-            :class="[
-              'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
-              layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
-            ]"
-          >
-            <AudioCard
-                v-for="audio in audios?.data"
-                :key="audio._id"
-                :audio-id="audio._id"
-                :is-deleted="audio.isDeleted"
-                :audio-name="audio.name"
-                :audio-thumbnail="audio.thumbnail"
-                :audio-file-url="audio.audioFileUrl"
-                :audio-description="audio.description"
-                :audio-subject="audio.subject?.name"
-                :audio-type="audio.audioType"
-              />
+          <div v-else-if="!seeMoreDetails" :class="[
+            'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+            layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+          ]">
+            <AudioCard v-for="audio in (audios?.data as Audios[])" :key="audio._id" :audio-id="audio._id"
+              :is-deleted="audio.isDeleted" :audio-name="audio.name" :audio-thumbnail="audio.thumbnail"
+              :audio-file-url="audio.audioFileUrl" :audio-description="audio.description"
+              :audio-subject="audio.subject?.name" :audio-type="audio.audioType" :alt-text="audio.alt" />
           </div>
         </div>
         <customGridOne v-else>
           <template #data>
             <!-- Video Cards  -->
-            <AudioCard
-                v-for="audio in audios?.data"
-                :key="audio._id"
-                :audio-id="audio._id"
-                :is-deleted="audio.isDeleted"
-                :audio-name="audio.name"
-                :audio-thumbnail="audio.thumbnail"
-                :audio-file-url="audio.audioFileUrl"
-                :audio-description="audio.description"
-                :audio-subject="audio.subject?.name"
-                :audio-type="audio.audioType"
-                :alt-text="audio.alt"
-              />
+            <AudioCard v-for="audio in (audios?.data as Audios[])" :key="audio._id" :audio-id="audio._id"
+              :is-deleted="audio.isDeleted" :audio-name="audio.name" :audio-thumbnail="audio.thumbnail"
+              :audio-file-url="audio.audioFileUrl" :audio-description="audio.description"
+              :audio-subject="audio.subject?.name" :audio-type="audio.audioType" :alt-text="audio.alt" />
           </template>
         </customGridOne>
       </div>
@@ -544,506 +384,337 @@ const setSeeMore = (seeMore:string) => {
     </div>
   </div>
   <div v-else>
-     <div id="main-container" tabindex="-1" v-if="activeTab === 'subjects'">
+    <div id="main-container" tabindex="-1" v-if="activeTab === 'subjects'">
       <!-- Subject Cards are in Grid -->
       <customGridTwo v-if="activeTab === 'subjects'">
         <template #data>
           <!-- Subject Cards are in Grid -->
-          <SubjectCard
-            v-for="subject in data"
-            :key="subject._id"
-            :subject-id="subject._id"
-            :subject-name="subject.name"
-            :subject-image="subject.thumbnail"
-            :subject-description="subject.description"
-            :total-views="subject.views ?? 0"
-            :is-logged-in="userToken != null || userToken != undefined"
-            :alt-text="subject.alt"
-            @emit-subject-name="emits('emittedSubjectName',$event)"
-            @emit-subject-id="emits('emittedSubjectId',$event)"
-          />
+          <SubjectCard v-for="subject in (data as unknown as Subjects[])" :key="subject._id" :subject-id="subject._id"
+            :subject-name="subject.name" :subject-image="subject.thumbnail" :subject-description="subject.description"
+            :total-views="subject.views ?? 0" :is-logged-in="userToken != null || userToken != undefined"
+            :alt-text="subject.alt" @emit-subject-name="emits('emittedSubjectName', $event)"
+            @emit-subject-id="emits('emittedSubjectId', $event)" />
         </template>
       </customGridTwo>
     </div>
     <div id="main-container" tabindex="-1" v-else-if="activeTab === 'interactive-contents'">
       <div v-for="(topics, index) in data" :key="index">
-        <div
-          v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-if="seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()"
+          class="flex items-center justify-between py-4">
           <h2 class="font-bold text-[1.3rem] capitalize">
-            {{ topics?.dataOfKey.toLowerCase() }}
+            {{ (topics?.dataOfKey as any)?.toLowerCase() }}
           </h2>
-          <small
-            @click="setSeeMore(topics?.dataOfKey.toLowerCase())"
+          <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            :aria-label="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase() ? `See less ${topics?.dataOfKey.toLowerCase()}` : `See all ${topics?.dataOfKey.toLowerCase()}`"
-          >
+            :aria-label="seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase() ? `See less ${(topics?.dataOfKey as any)?.toLowerCase()}` : `See all ${(topics?.dataOfKey as any)?.toLowerCase()}`">
             {{
-              seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()
+              seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
           </small>
         </div>
-        <div
-          v-else-if="!seeMoreDetails"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-else-if="!seeMoreDetails" class="flex items-center justify-between py-4">
           <h2 class="font-bold text-[1.3rem] capitalize">
-            {{ topics?.dataOfKey.toLowerCase() }}
+            {{ (topics?.dataOfKey as any)?.toLowerCase() }}
           </h2>
-          <small
-            @click="setSeeMore(topics?.dataOfKey.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            :aria-label="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase() ? `See less ${topics?.dataOfKey.toLowerCase()}` : `See all ${topics?.dataOfKey.toLowerCase()}`"
-          >
-            {{
-              seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+          <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <!-- <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(topics.data)"
+              :key="`levels-${(topics?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((topics?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small> -->
+
+            <!-- exrteact levels from data -->
+            <CustomDropDownList class="border-r-2  px-2 cursor-pointer"
+              v-model="currentLevels[(topics?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              :list="Array.from(getLevels(topics.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
+
+            <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue w-20">
+              {{
+                seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
 
-        <div v-if="data.length > 1">
-          <customGridTwo
-            v-if="seeMoreDetails && seeMoreDetails === topics?.dataOfKey.toLowerCase()"
-          >
+        <div v-if="(data as any)?.length > 1">
+          <customGridTwo v-if="seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()">
             <template #data>
               <!-- Topic Cards  -->
-              <TopicCard
-                v-for="topic in topics?.data"
-                :key="topic._id"
-                :topic-id="topic._id"
-                :topic-image="topic.thumbnail"
-                :topic-title="topic.name"
-                :topic-description="topic.descriptions"
-                :subject-name="topic.subject?.name"
-                :topic-duration="
-                  topic.topic_duration ? topic.topic_duration : '10 min'
-                "
-                :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-                :topic-views="
-                  topic.viewedBy?.length
-                    ? topic.viewedBy?.length
-                    : topic.views
+              <TopicCard v-for="topic in (topics?.data as Topic[])" :key="topic._id" :topic-id="topic._id"
+                :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
+                :subject-name="(topic.subject as any)?.name" :topic-views="topic.viewedBy?.length
+                  ? topic.viewedBy?.length
+                  : topic.views
                     ? topic.views
                     : 0
-                "
-
-                :topic-standard="topic.level?.name"
-                :topic-viewed="topic.isViewed"
-                :topic-progress="topic.avgProgress"
-                :alt-text="topic.alt"
-              />
+                  " :topic-standard="(topic.level as any)?.name" :topic-viewed="topic.isViewed"
+                :topic-progress="topic.avgProgress" :alt-text="topic.alt" />
             </template>
           </customGridTwo>
 
-          <div
-            v-else-if="!seeMoreDetails"
-            :class="[
-              'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
-              layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
-            ]"
-          >
+          <div v-else-if="!seeMoreDetails" :class="[
+            'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+            layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+          ]">
             <!-- Topic Cards  -->
-            <TopicCard
-              v-for="topic in topics?.data"
-              :key="topic._id"
-              :topic-id="topic._id"
-              :topic-image="topic.thumbnail"
-              :topic-title="topic.name"
-              :topic-description="topic.descriptions"
-              :topic-duration="
-                topic.topic_duration ? topic.topic_duration : '10 min'
-              "
-              :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-              :topic-views="
-                topic.viewedBy?.length
-                  ? topic.viewedBy?.length
-                  : topic.views
+            <TopicCard v-for="topic in (topics?.data as Topic[])" :key="topic._id" :topic-id="topic._id"
+              :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
+              :subject-name="(topic.subject as any)?.name" :topic-views="topic.viewedBy?.length
+                ? topic.viewedBy?.length
+                : topic.views
                   ? topic.views
                   : 0
-              "
-              :topic-standard="topic.level?.name"
-              :subject-name="topic.subject?.name"
-              :topic-viewed="topic.isViewed"
-              :topic-progress="topic.avgProgress"
-              :alt-text="topic.alt"
-            />
+                " :topic-standard="(topic.level as any)?.name" :topic-viewed="topic.isViewed"
+              :topic-progress="topic.avgProgress" :alt-text="topic.alt" />
           </div>
         </div>
 
         <customGridTwo v-else>
           <template #data>
             <!-- Topic Cards  -->
-            <TopicCard
-              v-for="topic in topics?.data"
-              :key="topic._id"
-              :topic-id="topic._id"
-              :topic-image="topic.thumbnail"
-              :topic-title="topic.name"
-              :topic-description="topic.descriptions"
-              :topic-duration="
-                topic.topic_duration ? topic.topic_duration : '10 min'
-              "
-              :topic-likes="topic.topic_likes ? topic.topic_likes : 100"
-              :topic-views="
-                topic.viewedBy?.length
-                  ? topic.viewedBy?.length
-                  : topic.views
+            <TopicCard v-for="topic in (topics?.data as Topic[])" :key="topic._id" :topic-id="topic._id"
+              :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
+              :subject-name="(topic.subject as any)?.name" :topic-views="topic.viewedBy?.length
+                ? topic.viewedBy?.length
+                : topic.views
                   ? topic.views
                   : 0
-              "
-              :topic-standard="topic.level?.name"
-              :subject-name="topic.subject?.name"
-              :topic-viewed="topic.isViewed"
-              :topic-progress="topic.avgProgress"
-              :alt-text="topic.alt"
-            />
+                " :topic-standard="(topic.level as any)?.name" :topic-viewed="topic.isViewed"
+              :topic-progress="topic.avgProgress" :alt-text="topic.alt" />
           </template>
         </customGridTwo>
       </div>
     </div>
     <div id="main-container" tabindex="-1" v-else-if="activeTab === 'learn-activities'">
       <div v-for="(experiments, index) in data" :key="index">
-        <div
-          v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-if="seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()"
+          class="flex items-center justify-between py-4">
           <h2 class="font-bold text-[1.3rem] capitalize">
-            {{ experiments?.dataOfKey.toLowerCase() }}
+            {{ (experiments?.dataOfKey as any)?.toLowerCase() }}
           </h2>
-          <small
-            @click="setSeeMore(experiments?.dataOfKey.toLowerCase())"
+          <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            :aria-label="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase() ? `See less ${experiments?.dataOfKey.toLowerCase()}` : `See all ${experiments?.dataOfKey.toLowerCase()}`"
-          >
+            :aria-label="seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase() ? `See less ${(experiments?.dataOfKey as any)?.toLowerCase()}` : `See all ${(experiments?.dataOfKey as any)?.toLowerCase()}`">
             {{
-              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()
+              seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
           </small>
         </div>
-        <div
-          v-else-if="!seeMoreDetails"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-else-if="!seeMoreDetails" class="flex items-center justify-between py-4">
           <p class="font-bold text-[1.3rem] capitalize">
-            {{ experiments?.dataOfKey.toLowerCase() }}
+            {{ (experiments?.dataOfKey as any)?.toLowerCase() }}
           </p>
-          <small
-            @click="setSeeMore(experiments?.dataOfKey.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-          >
+          <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
+            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
             {{
-              seeMoreDetails && seeMoreDetails === experiments?.dataOfKey.toLowerCase()
+              seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
                 ? "See Less"
                 : "See All"
             }}
           </small>
         </div>
 
-        <div v-if="data.length > 1">
-          <customGridTwo
-            v-if="seeMoreDetails && seeMoreDetails === experiments?.dataOfKey"
-          >
+        <div v-if="(data as any)?.length > 1">
+          <customGridTwo v-if="seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)">
             <template #data>
               <!-- Experiment Cards  -->
-              <ExperimentsCard
-                v-for="experiment in experiments?.data"
-                :key="experiment._id"
-                :experiment-id="experiment._id"
-                :experiment-thumbnail="experiment.thumbnail"
-                :experiment-title="experiment.title"
-                :experiment-description="experiment.description"
-                :experiment-type="experiment.category"
-                :experiment-subject="experiment.subject?.name"
-                :experiment-level="experiment.level?.name"
-                :experiment-name="experiment.name"
-                :experiment-file-url="experiment.stepsFileUrl"
-                :alt-text="experiment.alt"
-              />
+              <ExperimentsCard v-for="experiment in (experiments?.data as Experiment[])" :key="experiment._id"
+                :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
+                :experiment-description="experiment.description" :experiment-type="experiment.category"
+                :experiment-subject="(experiment.subject as any)?.name"
+                :experiment-level="(experiment.level as any)?.name" :experiment-name="experiment.name"
+                :experiment-file-url="experiment.stepsFileUrl" :alt-text="experiment.alt" />
             </template>
           </customGridTwo>
 
-          <div
-            v-else-if="!seeMoreDetails"
-            :class="[
-              'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
-              layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
-            ]"
-          >
+          <div v-else-if="!seeMoreDetails" :class="[
+            'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+            layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+          ]">
             <!-- Experiment Cards  -->
-            <ExperimentsCard
-              v-for="experiment in experiments?.data"
-              :key="experiment._id"
-              :experiment-id="experiment._id"
-              :experiment-thumbnail="experiment.thumbnail"
-              :experiment-title="experiment.title"
-              :experiment-description="experiment.description"
-              :experiment-type="experiment.category"
-              :experiment-subject="experiment.subject?.name"
-              :experiment-level="experiment.level?.name"
-              :experiment-name="experiment.name"
-              :experiment-file-url="experiment.stepsFileUrl"
-              :alt-text="experiment.alt"
-            />
+            <ExperimentsCard v-for="experiment in (experiments?.data as Experiment[])" :key="experiment._id"
+              :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
+              :experiment-description="experiment.description" :experiment-type="experiment.category"
+              :experiment-subject="(experiment.subject as any)?.name"
+              :experiment-level="(experiment.level as any)?.name" :experiment-name="experiment.name"
+              :experiment-file-url="experiment.stepsFileUrl" :alt-text="experiment.alt" />
           </div>
         </div>
         <customGridTwo v-else>
           <template #data>
             <!-- Experiments Cards  -->
-            <ExperimentsCard
-              v-for="experiment in experiments?.data"
-              :key="experiment._id"
-              :experiment-id="experiment._id"
-              :experiment-thumbnail="experiment.thumbnail"
-              :experiment-title="experiment.title"
-              :experiment-description="experiment.description"
-              :experiment-type="experiment.category"
-              :experiment-subject="experiment.subject?.name"
-              :experiment-level="experiment.level?.name"
-              :experiment-name="experiment.name"
-              :experiment-file-url="experiment.stepsFileUrl"
-              :alt-text="experiment.alt"
-            />
+            <ExperimentsCard v-for="experiment in (experiments?.data as Experiment[])" :key="experiment._id"
+              :experiment-id="experiment._id" :experiment-thumbnail="experiment.thumbnail"
+              :experiment-description="experiment.description" :experiment-type="experiment.category"
+              :experiment-subject="(experiment.subject as any)?.name"
+              :experiment-level="(experiment.level as any)?.name" :experiment-name="experiment.name"
+              :experiment-file-url="experiment.stepsFileUrl" :alt-text="experiment.alt" />
           </template>
         </customGridTwo>
       </div>
     </div>
-    <div
-    id="main-container" tabindex="-1"
-      v-else-if="
-        activeTab === 'video' ||
-        activeTab === 'class-videos'
-      "
-    >
+    <div id="main-container" tabindex="-1" v-else-if="
+      activeTab === 'video' ||
+      activeTab === 'class-videos'
+    ">
       <div v-for="(videos, index) in data" :key="index">
-        <div
-          v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-if="seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)"
+          class="flex items-center justify-between py-4">
           <p class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey }}
           </p>
-          <small
-            @click="setSeeMore(videos?.dataOfKey)"
+          <small @click="setSeeMore(videos?.dataOfKey as any)"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button"
-            tabindex="0"
-            :aria-label="`See less ${videos?.dataOfKey} videos`"
-          >
+            role="button" tabindex="0" :aria-label="`See less ${videos?.dataOfKey} videos`">
             {{
-              seeMoreDetails && seeMoreDetails === videos?.dataOfKey
+              seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)
                 ? "See Less"
                 : "See All"
             }}
           </small>
         </div>
-        <div
-          v-else-if="!seeMoreDetails"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-else-if="!seeMoreDetails" class="flex items-center justify-between py-4">
           <p class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey }}
           </p>
-          <small
-            @click="setSeeMore(videos?.dataOfKey)"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button"
-            tabindex="0"
-            :aria-label="`See all ${videos?.dataOfKey} videos`"
-          >
-            {{
-              seeMoreDetails && seeMoreDetails === videos?.dataOfKey
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+          <div class="flex items-center gap-4">
+            <!-- exrteact levels from data -->
+            <!-- <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)" :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`" 
+            @click="setLevel((videos?.dataOfKey as any)?.toLowerCase(), lvl)"
+            >{{ lvl }}</small> -->
+
+            <!-- exrteact levels from data -->
+            <CustomDropDownList class="border-r-2  px-2 cursor-pointer"
+              v-model="currentLevels[(videos?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              :list="Array.from(getLevels(videos.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
+
+            <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue w-20">
+              {{
+                seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
-        <div v-if="data.length > 1">
-          <customGridTwo
-            v-if="seeMoreDetails && seeMoreDetails === videos?.dataOfKey"
-          >
+        <div v-if="(data as any)?.length > 1">
+          <customGridTwo v-if="seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)">
             <template #data>
               <!-- Video Cards  -->
-              <VideoCard
-                v-for="video in videos?.data"
-                :key="video._id"
-                :video-id="video._id"
-                :is-deleted="video.isDeleted"
-                :video-name="video.name"
-                :video-thumbnail="video.thumbnail"
-                :video-file-url="video.videoFileUrl"
-                :video-description="video.description"
-                :video-subject="video.subject?.name"
-                :video-type="video.videoType"
-                :video-level="video.level?.name"
-                :video-standard="video.level?.name"
-                :topic-progress="video.avgProgress"
-                :topic-viewed="video.isViewed"
-                :alt-text="video.alt"
-              />
+              <VideoCard v-for="video in (videos?.data as Videos[])" :key="video._id" :video-id="video._id"
+                :is-deleted="(video.isDeleted as boolean)" :video-name="video.name" :video-thumbnail="video.thumbnail"
+                :video-file-url="video.videoFileUrl" :video-description="video.description"
+                :video-subject="(video.subject as any)?.name" :video-type="video.videoType"
+                :video-level="(video.level as any)?.name" :video-standard="(video.level as any)?.name"
+                :topic-progress="(video.avgProgress as number)" :topic-viewed="(video.isViewed as boolean)"
+                :alt-text="video.alt" />
             </template>
           </customGridTwo>
 
-          <div
-            v-else-if="!seeMoreDetails"
-            :class="[
-              'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
-              layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
-            ]"
-          >
-            <VideoCard
-              v-for="video in videos?.data"
-              :key="video._id"
-              :video-id="video._id"
-              :is-deleted="video.isDeleted"
-              :video-name="video.name"
-              :video-thumbnail="video.thumbnail"
-              :video-file-url="video.videoFileUrl"
-              :video-description="video.description"
-              :video-subject="video.subject?.name"
-              :video-type="video.videoType"
-              :video-level="video.level?.name"
-              :video-standard="video.level?.name"
-              :topic-progress="video.avgProgress"
-              :topic-viewed="video.isViewed"
-              :alt-text="video.alt"
-            />
+          <div v-else-if="!seeMoreDetails" :class="[
+            'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+            layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+          ]">
+            <VideoCard v-for="video in (videos?.data as Videos[])" :key="video._id" :video-id="video._id"
+              :is-deleted="(video.isDeleted as boolean)" :video-name="video.name" :video-thumbnail="video.thumbnail"
+              :video-file-url="video.videoFileUrl" :video-description="video.description"
+              :video-subject="(video.subject as any)?.name" :video-type="video.videoType"
+              :video-level="(video.level as any)?.name" :video-standard="(video.level as any)?.name"
+              :topic-progress="(video.avgProgress as number)" :topic-viewed="(video.isViewed as boolean)"
+              :alt-text="video.alt" />
           </div>
         </div>
         <customGridTwo v-else>
           <template #data>
             <!-- Video Cards  -->
-            <VideoCard
-              v-for="video in videos?.data"
-              :key="video._id"
-              :video-id="video._id"
-              :is-deleted="video.isDeleted"
-              :video-name="video.name"
-              :video-thumbnail="video.thumbnail"
-              :video-file-url="video.videoFileUrl"
-              :video-description="video.description"
-              :video-subject="video.subject?.name"
-              :video-type="video.videoType"
-              :video-level="video.level?.name"
-              :video-standard="video.level?.name"
-              :topic-progress="video.avgProgress"
-              :topic-viewed="video.isViewed"
-              :alt-text="video.alt"
-            />
+            <VideoCard v-for="video in (videos?.data as Videos[])" :key="video._id" :video-id="video._id"
+              :is-deleted="(video.isDeleted as boolean)" :video-name="video.name" :video-thumbnail="video.thumbnail"
+              :video-file-url="video.videoFileUrl" :video-description="video.description"
+              :video-subject="(video.subject as any)?.name" :video-type="video.videoType"
+              :video-level="(video.level as any)?.name" :video-standard="(video.level as any)?.name"
+              :topic-progress="(video.avgProgress as number)" :topic-viewed="(video.isViewed as boolean)"
+              :alt-text="video.alt" />
           </template>
         </customGridTwo>
       </div>
     </div>
     <div id="main-container" tabindex="-1" v-else-if="activeTab === 'audio'">
       <div v-for="(audios, index) in data" :key="index">
-        <div
-          v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-if="seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)"
+          class="flex items-center justify-between py-4">
           <p class="font-bold text-[1.3rem] capitalize">
             {{ audios?.dataOfKey }}
           </p>
-          <small
-            @click="setSeeMore(audios?.dataOfKey)"
+          <small @click="setSeeMore(audios?.dataOfKey as any)"
             class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button"
-            tabindex="0"
-            :aria-label="`See less ${audios?.dataOfKey} audio files`"
-          >
+            role="button" tabindex="0" :aria-label="`See less ${audios?.dataOfKey} audio files`">
             {{
-              seeMoreDetails && seeMoreDetails === audios?.dataOfKey
+              seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)
                 ? "See Less"
                 : "See All"
             }}
           </small>
         </div>
-        <div
-          v-else-if="!seeMoreDetails"
-          class="flex items-center justify-between py-4"
-        >
+        <div v-else-if="!seeMoreDetails" class="flex items-center justify-between py-4">
           <p class="font-bold text-[1.3rem] capitalize">
             {{ audios?.dataOfKey }}
           </p>
-          <small
-            @click="setSeeMore(audios?.dataOfKey)"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button"
-            tabindex="0"
-            :aria-label="`See all ${audios?.dataOfKey} audio files`"
-          >
-            {{
-              seeMoreDetails && seeMoreDetails === audios?.dataOfKey
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+          <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <!-- <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)"
+              :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((audios?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small> -->
+
+            <!-- exrteact levels from data -->
+            <CustomDropDownList class="border-r-2  px-2 cursor-pointer"
+              v-model="currentLevels[(audios?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              :list="Array.from(getLevels(audios.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
+
+            <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue w-20">
+              {{
+                seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
-        <div v-if="data.length > 1">
-          <customGridTwo
-            v-if="seeMoreDetails && seeMoreDetails === audios?.dataOfKey"
-          >
+        <div v-if="(data as any)?.length > 1">
+          <customGridTwo v-if="seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)">
             <template #data>
               <!-- audio Cards  -->
-               <AudioCard
-                v-for="audio in audios?.data"
-                :key="audio._id"
-                :audio-id="audio._id"
-                :is-deleted="audio.isDeleted"
-                :audio-name="audio.name"
-                :audio-thumbnail="audio.thumbnail"
-                :audio-file-url="audio.audioFileUrl"
-                :audio-description="audio.description"
-                :audio-subject="audio.subject?.name"
-                :audio-type="audio.audioType"
-                :alt-text="audio.alt"
-              />
+              <AudioCard v-for="audio in (audios?.data as Audios[])" :key="audio._id" :audio-id="audio._id"
+                :is-deleted="audio.isDeleted" :audio-name="audio.name" :audio-thumbnail="audio.thumbnail"
+                :audio-file-url="audio.audioFileUrl" :audio-description="audio.description"
+                :audio-subject="audio.subject?.name" :audio-type="audio.audioType" :alt-text="audio.alt" />
             </template>
           </customGridTwo>
 
-          <div
-            v-else-if="!seeMoreDetails"
-            :class="[
-              'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
-              layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
-            ]"
-          >
-              <AudioCard
-                v-for="audio in audios?.data"
-                :key="audio._id"
-                :audio-id="audio._id"
-                :is-deleted="audio.isDeleted"
-                :audio-name="audio.name"
-                :audio-thumbnail="audio.thumbnail"
-                :audio-file-url="audio.audioFileUrl"
-                :audio-description="audio.description"
-                :audio-subject="audio.subject?.name"
-                :audio-type="audio.audioType"
-                :alt-text="audio.alt"
-              />
+          <div v-else-if="!seeMoreDetails" :class="[
+            'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
+            layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+          ]">
+            <AudioCard v-for="audio in (audios?.data as Audios[])" :key="audio._id" :audio-id="audio._id"
+              :is-deleted="audio.isDeleted" :audio-name="audio.name" :audio-thumbnail="audio.thumbnail"
+              :audio-file-url="audio.audioFileUrl" :audio-description="audio.description"
+              :audio-subject="audio.subject?.name" :audio-type="audio.audioType" :alt-text="audio.alt" />
           </div>
         </div>
         <customGridTwo v-else>
           <template #data>
             <!-- audio Cards  -->
-              <AudioCard
-                v-for="audio in audios?.data"
-                :key="audio._id"
-                :audio-id="audio._id"
-                :is-deleted="audio.isDeleted"
-                :audio-name="audio.name"
-                :audio-thumbnail="audio.thumbnail"
-                :audio-file-url="audio.audioFileUrl"
-                :audio-description="audio.description"
-                :audio-subject="audio.subject?.name"
-                :audio-type="audio.audioType"
-                :alt-text="audio.alt"
-              />
+            <AudioCard v-for="audio in (audios?.data as Audios[])" :key="audio._id" :audio-id="audio._id"
+              :is-deleted="audio.isDeleted" :audio-name="audio.name" :audio-thumbnail="audio.thumbnail"
+              :audio-file-url="audio.audioFileUrl" :audio-description="audio.description"
+              :audio-subject="audio.subject?.name" :audio-type="audio.audioType" :alt-text="audio.alt" />
           </template>
         </customGridTwo>
       </div>
