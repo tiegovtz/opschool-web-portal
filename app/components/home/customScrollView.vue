@@ -34,16 +34,16 @@ const setSeeMore = (seeMore: string) => {
   }
 };
 
-// general level
-const curentLevel = ref<string>()
-const getLevels = (data:any[]) => {
+// general level (per subject key)
+const currentLevels = ref<Record<string, string>>({})
+const getLevels = (data: any[]) => {
   // extracting levels 
   let list = data?.map((t: any) => (t?.level as any).name || t?.level);
   return new Set(list);
 }
 
-const setLevel =(lvl:string)=>{
-  curentLevel.value=lvl;  
+const setLevel = (key: string, lvl: string) => {
+  currentLevels.value[key] = lvl;
 }
 </script>
 
@@ -86,9 +86,9 @@ const setLevel =(lvl:string)=>{
           </p>
           <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(topics.data)" :key="`levels-${(topics?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(topics.data)"
+              :key="`levels-${(topics?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((topics?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small>
             <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
               class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
               {{
@@ -104,14 +104,17 @@ const setLevel =(lvl:string)=>{
           <customGridOne v-if="seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()">
             <template #data>
               <!-- Topic Cards  -->
-              <TopicCard v-for="topic in (topics?.data as Topic[]).filter(t=>(t.level as any)?.name === curentLevel)" :key="topic._id" :topic-id="topic._id"
-                :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
-                :subject-name="(topic.subject as any)?.name"  :topic-views="topic.viewedBy?.length
-                    ? topic.viewedBy?.length
-                    : topic.views
-                      ? topic.views
-                      : 0
-                    " :topic-standard="(topic.level as any)?.name" :topic-viewed="topic.isViewed"
+              <TopicCard v-for="topic in (topics?.data as Topic[]).filter(t => {
+                const key = ((topics?.dataOfKey as any) ?? '').toLowerCase();
+                const selected = currentLevels.value?.[key];
+                return selected ? (t.level as any)?.name === selected : true;
+              })" :key="topic._id" :topic-id="topic._id" :topic-image="topic.thumbnail" :topic-title="topic.name"
+                :topic-description="topic.descriptions" :subject-name="(topic.subject as any)?.name" :topic-views="topic.viewedBy?.length
+                  ? topic.viewedBy?.length
+                  : topic.views
+                    ? topic.views
+                    : 0
+                  " :topic-standard="(topic.level as any)?.name" :topic-viewed="topic.isViewed"
                 :topic-progress="topic.avgProgress" :alt-text="topic.alt" />
             </template>
           </customGridOne>
@@ -171,11 +174,12 @@ const setLevel =(lvl:string)=>{
           <p class="font-bold text-[1.3rem] capitalize">
             {{ (experiments?.dataOfKey as any)?.toLowerCase() }}
           </p>
-           <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(experiments.data)" :key="`levels-${(experiments?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(experiments.data)"
+              :key="`levels-${(experiments?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((experiments?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl
+              }}</small>
             <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
               class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
               {{
@@ -250,11 +254,11 @@ const setLevel =(lvl:string)=>{
           <p class="font-bold text-[1.3rem] capitalize">
             {{ (videos?.dataOfKey as any)?.toLowerCase() }}
           </p>
-           <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)" :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)"
+              :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((videos?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small>
             <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
               class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
               {{
@@ -330,9 +334,9 @@ const setLevel =(lvl:string)=>{
           </p>
           <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)" :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)"
+              :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((audios?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small>
             <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"
               class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
               {{
@@ -414,13 +418,19 @@ const setLevel =(lvl:string)=>{
           <h2 class="font-bold text-[1.3rem] capitalize">
             {{ (topics?.dataOfKey as any)?.toLowerCase() }}
           </h2>
-           <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(topics.data)" :key="`levels-${(topics?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <!-- <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(topics.data)"
+              :key="`levels-${(topics?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((topics?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small> -->
+
+            <!-- exrteact levels from data -->
+            <CustomDropDownList class="border-r-2  px-2 cursor-pointer"
+              v-model="currentLevels[(topics?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              :list="Array.from(getLevels(topics.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
+
             <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
-              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue w-20">
               {{
                 seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
                   ? "See Less"
@@ -573,13 +583,19 @@ const setLevel =(lvl:string)=>{
           <p class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey }}
           </p>
-           <div class="flex items-center gap-2">
+          <div class="flex items-center gap-4">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)" :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <!-- <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)" :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`" 
+            @click="setLevel((videos?.dataOfKey as any)?.toLowerCase(), lvl)"
+            >{{ lvl }}</small> -->
+
+            <!-- exrteact levels from data -->
+            <CustomDropDownList class="border-r-2  px-2 cursor-pointer"
+              v-model="currentLevels[(videos?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              :list="Array.from(getLevels(videos.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
+
             <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
-              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue w-20">
               {{
                 seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()
                   ? "See Less"
@@ -652,11 +668,17 @@ const setLevel =(lvl:string)=>{
           </p>
           <div class="flex items-center gap-2">
             <!-- exrteact levels from data -->
-            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)" :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`" 
-            @click="setLevel(lvl)"
-            >{{ lvl }}</small>
+            <!-- <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)"
+              :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`"
+              @click="setLevel((audios?.dataOfKey as any)?.toLowerCase(), lvl)">{{ lvl }}</small> -->
+
+            <!-- exrteact levels from data -->
+            <CustomDropDownList class="border-r-2  px-2 cursor-pointer"
+              v-model="currentLevels[(audios?.dataOfKey as any)?.toLowerCase()]" placeholder="select class level"
+              :list="Array.from(getLevels(audios.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
+
             <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"
-              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue w-20">
               {{
                 seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()
                   ? "See Less"
@@ -690,9 +712,9 @@ const setLevel =(lvl:string)=>{
           <template #data>
             <!-- audio Cards  -->
             <AudioCard v-for="audio in (audios?.data as Audios[])" :key="audio._id" :audio-id="audio._id"
-                :is-deleted="audio.isDeleted" :audio-name="audio.name" :audio-thumbnail="audio.thumbnail"
-                :audio-file-url="audio.audioFileUrl" :audio-description="audio.description"
-                :audio-subject="audio.subject?.name" :audio-type="audio.audioType" :alt-text="audio.alt" />
+              :is-deleted="audio.isDeleted" :audio-name="audio.name" :audio-thumbnail="audio.thumbnail"
+              :audio-file-url="audio.audioFileUrl" :audio-description="audio.description"
+              :audio-subject="audio.subject?.name" :audio-type="audio.audioType" :alt-text="audio.alt" />
           </template>
         </customGridTwo>
       </div>
