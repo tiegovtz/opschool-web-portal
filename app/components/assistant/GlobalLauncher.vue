@@ -88,6 +88,13 @@ const hasValidSubjectContext = computed(() => {
 const showLauncher = computed(
   () => isLoggedIn.value && !isExcluded.value && !isBusy.value
 );
+const launcherLabel = computed(() =>
+  hasValidSubjectContext.value ? "AI Subject Teacher" : "AI Teacher"
+);
+const launcherHoverLabel = computed(() =>
+  hasValidSubjectContext.value ? "Ask AI Subject Teacher" : "Ask AI Teacher"
+);
+const isLauncherHovered = ref(false);
 
 const openTieOverlay = async () => {
   if (tieOverlayOpen.value || tieOverlayOpening.value) return;
@@ -130,13 +137,23 @@ const handleClick = async () => {
         <div class="absolute inset-0 rounded-full bg-[rgba(245,245,245,0.35)] backdrop-blur-sm pointer-events-none"></div>
         <button
           type="button"
-          class="relative flex h-14 w-14 items-center justify-center rounded-full bg-oceanBlue text-white border border-white/80 ring-2 ring-white/90 shadow-2xl transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue"
-          aria-label="Open AI assistant"
+          class="relative flex items-center justify-center gap-2 p-4 rounded-full bg-oceanBlue text-white border border-white/80 ring-2 ring-white/90 shadow-2xl transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue whitespace-nowrap"
+          :aria-label="launcherLabel"
           :disabled="isBusy"
+          @mouseenter="isLauncherHovered = true"
+          @mouseleave="isLauncherHovered = false"
           @click="handleClick"
         >
           <Icon name="fluent:bot-28-filled" size="24" />
+          <span class="hidden md:block">{{ launcherLabel }}</span>
         </button>
+        <div
+          v-if="isLauncherHovered"
+          class="absolute right-0 bottom-[calc(100%+10px)] rounded-md bg-black/80 px-3 py-2 text-xs text-white shadow-lg whitespace-nowrap pointer-events-none"
+          role="tooltip"
+        >
+          {{ launcherHoverLabel }}
+        </div>
       </div>
     </client-only>
   </Teleport>
