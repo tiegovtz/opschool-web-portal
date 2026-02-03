@@ -552,7 +552,7 @@ const setPicCenter = async () => {
             const images = span.querySelectorAll("img")
             if (images.length === 1 &&
               (images[0]?.classList.contains('desc-img') ||
-                images[0]?.classList.contains('desc-img-eng-think')))
+                images[0]?.classList.contains('desc-img-eng-think') || images[0]?.classList.contains('desc-img-eng-doyouknow')))
               return;
 
             span.className = "flex justify-center flex-wrap gap-2";
@@ -578,7 +578,8 @@ const setPicCenter = async () => {
 
           const images = p.querySelectorAll("img")
           if (images.length === 1 &&
-            images[0]?.classList.contains('desc-img'))
+            (images[0]?.classList.contains('desc-img') ||
+              images[0]?.classList.contains('desc-img-eng-think') || images[0]?.classList.contains('desc-img-eng-doyouknow')))
             return;
 
           p.className = "flex items-center justify-center flex-wrap"
@@ -991,7 +992,8 @@ definePageMeta({
             <!-- Chapter Notes -->
             <div v-mathjax class="mx-auto notes md:px-4 max-w-7xl" aria-label="Compitencies notes"
               aria-details="notes-extra-details" role="region"
-              v-html="enhanceAccessibility(conversationParser(experimentParser(modelParser(mediaParser(chapters.notes?.content)))))"></div>
+              v-html="enhanceAccessibility(conversationParser(experimentParser(modelParser(mediaParser(chapters.notes?.content)))))">
+            </div>
 
             <p id="notes-extra-details" class="sr-only">
               These notes include at least one video, two-dimensional images such as GIFs,

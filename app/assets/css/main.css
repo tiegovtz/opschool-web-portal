@@ -214,9 +214,15 @@
   width: 48px !important;
   display: inline-flex !important;
 }
-
+/* english */
 .notes .desc-img-eng-think {
   width: 205px !important;
+  height: auto;
+  display: inline-flex !important;
+}
+/* do you know */
+.notes .desc-img-eng-doyouknow {
+  width: 841px !important;
   height: auto;
   display: inline-flex !important;
 }
