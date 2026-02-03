@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useNavigationStore } from "~/stores/navigationStore";
 import apiDocs from "~/utilities/apiDocs";
+import EmptyState from "~/components/common/EmptyState.vue";
 
 const canGoBack = ref(false);
 const route = useRoute();
@@ -91,7 +92,7 @@ const streamHeaders = {
 
 const somakwanzaStreamUrl = ref("https://tv.somakwanza.tz");
 const somakwanzaStreamMeta = ref({
-  title: "Educational Programs",
+  title: "SomaKwanza TV",
   description: "Educational live broadcast.",
 });
 
@@ -403,6 +404,32 @@ const activeCards = computed(() => {
   return [];
 });
 
+const emptyStateMessages: Record<TabKey, { title: string; description: string }> = {
+  "live-classes": {
+    title: "No live classes yet",
+    description: "New live lessons will appear here when scheduled.",
+  },
+  "recorded-sessions": {
+    title: "No recorded sessions",
+    description: "Once lessons are recorded they will appear in this library.",
+  },
+  "live-tv": {
+    title: "TV stream unavailable",
+    description: "SomaKwanza TV is not broadcasting at the moment.",
+  },
+};
+
+const currentEmptyStateMessage = computed(() => emptyStateMessages[activeTab.value]);
+const shouldShowEmptyState = computed(
+  () => !isLoadingCards.value && activeTab.value !== "live-tv" && activeCards.value.length === 0
+);
+const viewAllEmptyStateMessage = computed(
+  () => emptyStateMessages[viewAllSection.value] ?? emptyStateMessages["live-classes"]
+);
+const showViewAllEmptyState = computed(
+  () => !isLoadingCards.value && viewAllCards.value.length === 0
+);
+
 /* View All Dialog */
 const viewAllDialog = ref(false);
 const viewAllSection = ref<TabKey>("live-classes");
@@ -647,65 +674,74 @@ const prepareNavigation = () => {
             </div>
 
             <!-- CARDS -->
-            <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <article
-                v-for="card in activeCards"
-                :key="card.id ?? card.title"
-                class="group rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-              >
-                <!-- Image -->
-                <div class="relative h-44 overflow-hidden rounded-t-2xl bg-gray-100">
-                  <img v-if="card.thumbnail" :src="card.thumbnail" class="h-full w-full object-cover" />
+            <div v-else>
+              <div v-if="shouldShowEmptyState">
+                <EmptyState
+                  :title="currentEmptyStateMessage?.title"
+                  :description="currentEmptyStateMessage?.description"
+                />
+              </div>
 
-                  <div
-                    v-else
-                    class="flex h-full w-full items-center justify-center subject-gradient"
-                    :style="{ backgroundImage: card.subjectGradient }"
-                  >
-                    <span class="subject-gradient__initials">
-                      {{ card.subjectInitials }}
-                    </span>
+              <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <article
+                  v-for="card in activeCards"
+                  :key="card.id ?? card.title"
+                  class="group rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <!-- Image -->
+                  <div class="relative h-44 overflow-hidden rounded-t-2xl bg-gray-100">
+                    <img v-if="card.thumbnail" :src="card.thumbnail" class="h-full w-full object-cover" />
+
+                    <div
+                      v-else
+                      class="flex h-full w-full items-center justify-center subject-gradient"
+                      :style="{ backgroundImage: card.subjectGradient }"
+                    >
+                      <span class="subject-gradient__initials">
+                        {{ card.subjectInitials }}
+                      </span>
+                    </div>
+
+                    <div class="subject-gradient-overlay" :style="{ backgroundImage: card.subjectGradient }"></div>
+
+                    <!-- Play overlay -->
+                    <button
+                      type="button"
+                      class="absolute inset-0 z-10 grid place-items-center bg-black/0 opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100"
+                      aria-label="Play session"
+                      @click.stop="openSessionModal(card)"
+                    >
+                      <span class="grid place-items-center rounded-full bg-white/90 p-3 shadow-lg transition group-hover:scale-110">
+                        <Icon name="mdi:play-circle" size="44" class="text-primary" />
+                      </span>
+                    </button>
                   </div>
 
-                  <div class="subject-gradient-overlay" :style="{ backgroundImage: card.subjectGradient }"></div>
+                  <!-- Body -->
+                  <div class="p-4">
+                    <h3 class="font-semibold">
+                      {{ card.title || "Upcoming session" }}
+                    </h3>
 
-                  <!-- Play overlay -->
-                  <button
-                    type="button"
-                    class="absolute inset-0 z-10 grid place-items-center bg-black/0 opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100"
-                    aria-label="Play session"
-                    @click.stop="openSessionModal(card)"
-                  >
-                    <span class="grid place-items-center rounded-full bg-white/90 p-3 shadow-lg transition group-hover:scale-110">
-                      <Icon name="mdi:play-circle" size="44" class="text-primary" />
-                    </span>
-                  </button>
-                </div>
+                    <p class="mt-1 text-sm text-gray-600">
+                      {{ card.instructor || "SomaKwanza Teacher" }}
+                    </p>
 
-                <!-- Body -->
-                <div class="p-4">
-                  <h3 class="font-semibold">
-                    {{ card.title || "Upcoming session" }}
-                  </h3>
+                    <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
+                      <span>{{ card.subject ?? card.category }}</span>
+                      <span>{{ card.time }}</span>
+                    </div>
 
-                  <p class="mt-1 text-sm text-gray-600">
-                    {{ card.instructor || "SomaKwanza Teacher" }}
-                  </p>
+                    <p class="mt-3 text-sm text-gray-600">
+                      {{ card.description || "No description available." }}
+                    </p>
 
-                  <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
-                    <span>{{ card.subject ?? card.category }}</span>
-                    <span>{{ card.time }}</span>
+                    <p v-if="card.viewers" class="mt-2 text-xs text-gray-400">
+                      {{ card.viewers }}
+                    </p>
                   </div>
-
-                  <p class="mt-3 text-sm text-gray-600">
-                    {{ card.description || "No description available." }}
-                  </p>
-
-                  <p v-if="card.viewers" class="mt-2 text-xs text-gray-400">
-                    {{ card.viewers }}
-                  </p>
-                </div>
-              </article>
+                </article>
+              </div>
             </div>
           </div>
         </section>
@@ -735,7 +771,14 @@ const prepareNavigation = () => {
             </header>
 
             <div class="p-6">
-              <div class="grid gap-4 md:grid-cols-2">
+              <div v-if="showViewAllEmptyState" class="space-y-3">
+                <EmptyState
+                  :title="viewAllEmptyStateMessage?.title"
+                  :description="viewAllEmptyStateMessage?.description"
+                />
+              </div>
+
+              <div v-else class="grid gap-4 md:grid-cols-2">
                 <article
                   v-for="card in viewAllCards"
                   :key="card.id ?? card.title"
