@@ -487,6 +487,7 @@ const isLiveMeeting = computed(() => {
 const allowedEmbedHosts = new Set([
   "meet.jit.si",
   "meet.somakwanza.com",
+  // "www.youtube.com",
   "8x8.vc",
 ]);
 
