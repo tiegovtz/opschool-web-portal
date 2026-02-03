@@ -171,16 +171,20 @@ const setLevel =(lvl:string)=>{
           <p class="font-bold text-[1.3rem] capitalize">
             {{ (experiments?.dataOfKey as any)?.toLowerCase() }}
           </p>
-          <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button" tabindex="0"
-            :aria-label="`See all ${(experiments?.dataOfKey as any)?.toLowerCase()} experiments`">
-            {{
-              seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+           <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(experiments.data)" :key="`levels-${(experiments?.dataOfKey as any)?.toLowerCase()}-${i}`" 
+            @click="setLevel(lvl)"
+            >{{ lvl }}</small>
+            <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              {{
+                seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
 
         <div v-if="(data as any)?.length > 1">
@@ -246,15 +250,20 @@ const setLevel =(lvl:string)=>{
           <p class="font-bold text-[1.3rem] capitalize">
             {{ (videos?.dataOfKey as any)?.toLowerCase() }}
           </p>
-          <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button" tabindex="0" :aria-label="`See all ${(videos?.dataOfKey as any)?.toLowerCase()} videos`">
-            {{
-              seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+           <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)" :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`" 
+            @click="setLevel(lvl)"
+            >{{ lvl }}</small>
+            <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              {{
+                seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
         <div v-if="(data as any)?.length > 1">
           <customGridOne v-if="seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()">
@@ -319,15 +328,20 @@ const setLevel =(lvl:string)=>{
           <p class="font-bold text-[1.3rem] capitalize">
             {{ (audios?.dataOfKey as any)?.toLowerCase() }}
           </p>
-          <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button" tabindex="0" :aria-label="`See all ${(audios?.dataOfKey as any)?.toLowerCase()} audio files`">
-            {{
-              seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+          <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)" :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`" 
+            @click="setLevel(lvl)"
+            >{{ lvl }}</small>
+            <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              {{
+                seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
         <div v-if="(data as any)?.length > 1">
           <customGridOne v-if="seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()">
@@ -400,15 +414,20 @@ const setLevel =(lvl:string)=>{
           <h2 class="font-bold text-[1.3rem] capitalize">
             {{ (topics?.dataOfKey as any)?.toLowerCase() }}
           </h2>
-          <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            :aria-label="seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase() ? `See less ${(topics?.dataOfKey as any)?.toLowerCase()}` : `See all ${(topics?.dataOfKey as any)?.toLowerCase()}`">
-            {{
-              seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+           <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(topics.data)" :key="`levels-${(topics?.dataOfKey as any)?.toLowerCase()}-${i}`" 
+            @click="setLevel(lvl)"
+            >{{ lvl }}</small>
+            <small @click="setSeeMore((topics?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              {{
+                seeMoreDetails && seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
 
         <div v-if="(data as any)?.length > 1">
@@ -554,15 +573,20 @@ const setLevel =(lvl:string)=>{
           <p class="font-bold text-[1.3rem] capitalize">
             {{ videos?.dataOfKey }}
           </p>
-          <small @click="setSeeMore(videos?.dataOfKey as any)"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button" tabindex="0" :aria-label="`See all ${videos?.dataOfKey} videos`">
-            {{
-              seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+           <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(videos.data)" :key="`levels-${(videos?.dataOfKey as any)?.toLowerCase()}-${i}`" 
+            @click="setLevel(lvl)"
+            >{{ lvl }}</small>
+            <small @click="setSeeMore((videos?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              {{
+                seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
         <div v-if="(data as any)?.length > 1">
           <customGridTwo v-if="seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)">
@@ -626,15 +650,20 @@ const setLevel =(lvl:string)=>{
           <p class="font-bold text-[1.3rem] capitalize">
             {{ audios?.dataOfKey }}
           </p>
-          <small @click="setSeeMore(audios?.dataOfKey as any)"
-            class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue"
-            role="button" tabindex="0" :aria-label="`See all ${audios?.dataOfKey} audio files`">
-            {{
-              seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)
-                ? "See Less"
-                : "See All"
-            }}
-          </small>
+          <div class="flex items-center gap-2">
+            <!-- exrteact levels from data -->
+            <small class="border-r-2 px-2 cursor-pointer" v-for="(lvl, i) in getLevels(audios.data)" :key="`levels-${(audios?.dataOfKey as any)?.toLowerCase()}-${i}`" 
+            @click="setLevel(lvl)"
+            >{{ lvl }}</small>
+            <small @click="setSeeMore((audios?.dataOfKey as any)?.toLowerCase())"
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue">
+              {{
+                seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()
+                  ? "See Less"
+                  : "See All"
+              }}
+            </small>
+          </div>
         </div>
         <div v-if="(data as any)?.length > 1">
           <customGridTwo v-if="seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)">

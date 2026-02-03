@@ -95,7 +95,8 @@ const handleClick = async () => {
 
 <template>
   <Teleport to="body">
-    <button
+   <client-only>
+     <button
       v-if="showLauncher"
       type="button"
       class="fixed z-[80] flex h-14 w-14 items-center justify-center rounded-full bg-oceanBlue text-white shadow-lg transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue right-4 bottom-[calc(16px+env(safe-area-inset-bottom))]"
@@ -105,5 +106,6 @@ const handleClick = async () => {
     >
       <Icon name="fluent:bot-28-filled" size="24" />
     </button>
+   </client-only>
   </Teleport>
 </template>
