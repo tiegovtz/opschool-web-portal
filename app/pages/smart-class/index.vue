@@ -97,10 +97,7 @@ const somakwanzaStreamMeta = ref({
 });
 
 const defaultThumbnail =
-  "https://media.istockphoto.com/id/1425207399/photo/book-sign-3d-render-concept-for-study-earn-knowledge-reading-and.webp?a=1&b=1&s=612x612&w=0&k=20&c=c94CC40l2cSPQARpJLbGK8J8u9EfEYUQzVe41xr0G6A=";
-
-const accessTokenCookie = useCookie("signInAccessToken");
-const userTokenCookie = useCookie("signInUserToken");
+  `https://media.istockphoto.com/id/1425207399/photo/book-sign-3d-render-concept-for-study-earn-knowledge-reading-and.webp?a=1&b=1&s=612x612&w=0&k=20&c=c94CC40l2cSPQARpJLbGK8J8u9EfEYUQzVe41xr0G6A=`;
 
 const getHeaders = () => {
   const headers: Record<string, string> = {
@@ -182,7 +179,7 @@ const getSubjectInitials = (label?: string | null) => {
   if (!label) return "SC";
   const words = label.trim().split(" ").filter(Boolean);
   if (words.length === 0) return "SC";
-  if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+  if (words.length === 1) return  words[0].substring(0, 2).toUpperCase();
   const [first, second] = words;
   const firstChar = first?.[0] ?? "";
   const secondChar = second?.[0] ?? "";
