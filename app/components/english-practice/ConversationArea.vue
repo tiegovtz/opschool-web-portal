@@ -94,9 +94,10 @@ const props = defineProps<Props>();
 const containerRef = ref<HTMLElement | null>(null);
 
 const getAvatarName = (speaker: SpeakerType): string => {
-  if (speaker === 'student1') return 'Student 1';
-  if (speaker === 'student2') return 'Student 2';
-  return 'AI Tutor';
+  const normalized = String(speaker || '').trim();
+  if (!normalized) return 'Speaker';
+  if (normalized === 'ai') return 'Speaker';
+  return normalized;
 };
 
 // Auto-scroll to bottom when new messages arrive
@@ -116,4 +117,3 @@ onMounted(() => {
   scrollToBottom();
 });
 </script>
-
