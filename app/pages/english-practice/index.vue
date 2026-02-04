@@ -109,6 +109,16 @@
           </button>
         </div>
       </div>
+      <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+        <div
+          v-for="toast in toasts"
+          :key="toast.id"
+          class="toast"
+          :class="[toast.type]"
+        >
+          {{ toast.message }}
+        </div>
+      </div>
       </div>
     </div>
   </div>
@@ -147,7 +157,7 @@ const isDebugMode = computed(() => {
   const debugParam = route.query.debug;
   return Array.isArray(debugParam) ? debugParam[0] === '1' : debugParam === '1';
 });
-const showDebugSkipButton = isDebugMode;
+const showDebugSkipButton = computed(() => isDebugMode.value); // TEMP: only show when ?debug=1
 if (String(route.query.mode || '').trim().toLowerCase() === 'single') {
   mode.value = 'single-user';
 }
@@ -156,6 +166,10 @@ const allowOverlayClose = ref(false);
 const returnTo = ref('');
 const scriptLoading = ref(false);
 const scriptError = ref('');
+const practiceCompleted = ref(false);
+const autoCloseSeconds = ref<number>(0);
+let autoCloseTimer: number | null = null;
+const toasts = ref<Array<{ id: string; message: string; type: 'info' | 'error' }>>([]);
 const participants = ref<ConversationParticipant[]>([]);
 const participantNameMap = computed(() => {
   const map = new Map<string, string>();
@@ -294,6 +308,50 @@ const logTtsDebug = (message: string, payload: Record<string, unknown> = {}) => 
   });
 };
 
+const showToast = (message: string, type: 'info' | 'error' = 'info', duration = 4000) => {
+  if (isEmbedded.value && typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    window.parent.postMessage(
+      { type: 'CONVERSATION_OVERLAY_TOAST', message, tone: type },
+      window.location.origin
+    );
+    return;
+  }
+  const existingIndex = toasts.value.findIndex((t) => t.message === message && t.type === type);
+  if (existingIndex !== -1) {
+    toasts.value.splice(existingIndex, 1);
+  }
+  const toast = { id: `${Date.now()}-${Math.random()}`, message, type };
+  toasts.value.push(toast);
+  setTimeout(() => {
+    toasts.value = toasts.value.filter((t) => t.id !== toast.id);
+  }, duration);
+};
+
+const startCompletionCountdown = (autoClose: boolean) => {
+  if (practiceCompleted.value) return;
+  practiceCompleted.value = true;
+  autoCloseSeconds.value = 3;
+  showToast(`Closing in ${autoCloseSeconds.value}...`, 'info', 900);
+  if (autoCloseTimer) window.clearInterval(autoCloseTimer);
+  autoCloseTimer = window.setInterval(() => {
+    if (!autoCloseSeconds.value) return;
+    autoCloseSeconds.value -= 1;
+    if (autoCloseSeconds.value > 0) {
+      showToast(`Closing in ${autoCloseSeconds.value}...`, 'info', 900);
+      return;
+    }
+    if (autoCloseTimer) {
+      window.clearInterval(autoCloseTimer);
+      autoCloseTimer = null;
+    }
+    if (autoClose) {
+      closeModal();
+    } else {
+      showToast('Practice complete.', 'info', 1200);
+    }
+  }, 1000);
+};
+
 const advanceToNextLine = (
   triggerSource: 'speech' | 'ai',
   reason = ''
@@ -305,6 +363,15 @@ const advanceToNextLine = (
   const canAdvance = currentLineIndex.value < (script.value?.lines.length || 0) - 1;
   if (!canAdvance) {
     turnManager.setTurn(primarySpeakerId.value);
+    if (reason === 'manual_skip_button') {
+      startCompletionCountdown(false);
+      logTtsDebug('advanceToNextLine blocked at end (manual skip)', {
+        triggerSource,
+        reason,
+      });
+      return;
+    }
+    startCompletionCountdown(true);
     logTtsDebug('advanceToNextLine blocked at end', {
       triggerSource,
       reason,
@@ -484,26 +551,38 @@ const getPiperAudioForText = async (
     },
   });
 
-  if (!response?.success || !response?.audioBase64) {
+  if (!response || typeof response !== 'object' || !('success' in response) || !response.success) {
     logTtsDebug('piper request failed response', {
       voiceType,
-      hasSuccess: Boolean(response?.success),
-      hasAudioBase64: Boolean(response?.audioBase64),
+      hasSuccess: Boolean(response && typeof response === 'object' && 'success' in response && response.success),
     });
-    throw new Error('Piper TTS response is missing audio data');
+    throw new Error('Piper TTS request failed');
   }
-  logTtsDebug('piper request success', {
-    voiceType,
-    hasContentType: Boolean(response?.contentType),
-  });
 
-  const binary = atob(response.audioBase64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
+  if ('audioBase64' in response && typeof response.audioBase64 === 'string' && response.audioBase64.length > 0) {
+    logTtsDebug('piper request success (inline)', {
+      voiceType,
+      hasContentType: 'contentType' in response && Boolean(response.contentType),
+    });
+    const binary = atob(response.audioBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const contentType =
+      'contentType' in response && typeof response.contentType === 'string' && response.contentType
+        ? response.contentType
+        : 'audio/wav';
+    const blob = new Blob([bytes], { type: contentType });
+    return URL.createObjectURL(blob);
   }
-  const blob = new Blob([bytes], { type: response.contentType || 'audio/wav' });
-  return URL.createObjectURL(blob);
+
+  if ('audioUrl' in response && typeof response.audioUrl === 'string' && response.audioUrl) {
+    logTtsDebug('piper request success (url)', { voiceType });
+    return resolvePlayableAudio(response.audioUrl);
+  }
+
+  throw new Error('Piper TTS response is missing audio data');
 };
 
 const playAiAudio = async (audioUrl: string) => {
@@ -540,19 +619,21 @@ const playAiAudio = async (audioUrl: string) => {
 const resolveAiLineAudio = async (
   line: ScriptLine
 ): Promise<{ audioUrl: string; source: 'constant' | 'piper' }> => {
-  if (lineAudioMap.value[line.id]) {
+  const constantAudio = lineAudioMap.value[line.id];
+  if (constantAudio) {
     logTtsDebug('resolveAiLineAudio chose constant', {
       targetLineId: line.id,
       source: 'constant',
     });
-    return { audioUrl: lineAudioMap.value[line.id], source: 'constant' };
+    return { audioUrl: constantAudio, source: 'constant' };
   }
-  if (piperAudioMap.value[line.id]) {
+  const cachedPiperAudio = piperAudioMap.value[line.id];
+  if (cachedPiperAudio) {
     logTtsDebug('resolveAiLineAudio chose cached piper', {
       targetLineId: line.id,
       source: 'piper',
     });
-    return { audioUrl: piperAudioMap.value[line.id], source: 'piper' };
+    return { audioUrl: cachedPiperAudio, source: 'piper' };
   }
 
   const speakerName = participantNameMap.value.get(line.speaker) || '';
@@ -1329,6 +1410,15 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 };
 
+const handlePopstate = () => {
+  if (isEmbedded.value) return;
+  setTimeout(() => {
+    if (route.path === '/english-practice') {
+      closeModal();
+    }
+  }, 0);
+};
+
 // Lifecycle
 onMounted(() => {
   if (typeof document !== 'undefined') {
@@ -1336,10 +1426,11 @@ onMounted(() => {
       originalBodyOverflow.value = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
     }
-    returnTo.value = String(route.query.returnTo || '').trim() || document.referrer || '';
+    returnTo.value = String(route.query.returnTo || '').trim();
   }
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', handleKeydown);
+    window.addEventListener('popstate', handlePopstate);
     if (!isEmbedded.value) {
       // Avoid immediately closing the modal on the opening click
       setTimeout(() => {
@@ -1372,6 +1463,7 @@ onMounted(() => {
 onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', handleKeydown);
+    window.removeEventListener('popstate', handlePopstate);
   }
   if (typeof document !== 'undefined') {
     document.body.style.overflow = originalBodyOverflow.value;
@@ -1381,6 +1473,10 @@ onUnmounted(() => {
     aiAudio.pause();
     aiAudio.onended = null;
     aiAudio.onerror = null;
+  }
+  if (autoCloseTimer) {
+    window.clearInterval(autoCloseTimer);
+    autoCloseTimer = null;
   }
   if (currentAudioUrl.value && currentAudioUrl.value.startsWith('blob:')) {
     URL.revokeObjectURL(currentAudioUrl.value);
@@ -1392,3 +1488,47 @@ onUnmounted(() => {
   });
 });
 </script>
+
+<style scoped>
+.toast-container {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 1200;
+  width: min(92vw, 520px);
+  pointer-events: none;
+}
+
+.toast {
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  width: 100%;
+  text-align: center;
+}
+
+.toast.info {
+  background: #ffffff;
+}
+
+.toast.error {
+  background: #ffffff;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+@media (max-width: 640px) {
+  .toast-container {
+    top: 12px;
+    width: calc(100vw - 24px);
+  }
+}
+</style>
