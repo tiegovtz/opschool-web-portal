@@ -57,7 +57,7 @@ const setVideoToView = () => {
         <!-- Thumbnail section -->
         <div :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? 'aspect-video' : 'h-full w-full max-w-[200px]'
+            layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
             <NuxtImg :src="videoThumbnail" tabindex="0" :alt="altText ?? videoName.toLowerCase()"
                 :class="[

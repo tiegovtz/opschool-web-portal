@@ -55,7 +55,7 @@ const setAudioToListen = () => {
         <!-- Thumbnail section -->
         <div :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? 'aspect-video' : 'h-full w-full max-w-[200px]'
+            layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
             <NuxtImg :src="audioThumbnail" tabindex="0" :alt="audioName.toLowerCase()" :class="[
                 'object-cover w-full h-full transition-transform duration-500',
