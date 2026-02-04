@@ -1,17 +1,72 @@
-<script setup>
+<script setup lang="ts">
 import messages from "~/utilities/messages";
 import { sanitize } from "~/utilities/sanitizeInput";
 import { auth } from "~/utilities/validationInput";
-import axios from 'axios'
 import { generateRandomID } from "~/utilities/generateRandomNumber";
 import apiDocs from "~/utilities/apiDocs";
 import { CustomDropDownList } from "#components";
+import type { Level } from "~/types/level.interface";
+import type { FetchError } from "ofetch";
 
 // input tabs control
 const inputTabs = ref("tabOne");
-const headingRef = ref(null);
+const headingRef = ref<HTMLElement | null>(null);
+const listLevel = ref<Level[]>([]);
+const classLevel = ref<string>('');
 
-const usersignUp = reactive({
+type userType = 'Student' | 'Teacher' | 'EducationStakeholder';
+
+interface userSignUp {
+  type: string;
+  fname: string | null;
+  lname: string | null;
+  email: string | null;
+  phone: string | null;
+  gender: string | null;
+  userName: string | null;
+  age: string;
+  region: string;
+  school: string;
+  district: string;
+  organization: string | null;
+  userOrgRole: string;
+  otherRole: string | null;
+  password: string | null;
+  confirm_password: string | null;
+  controller: {
+    userExists: boolean;
+    isSubmitted: boolean;
+    feedback: string | null;
+    isSent: string | null;
+    errors: {
+      all: string | null;
+      type: string | null;
+      fname: string | null;
+      lname: string | null;
+      userName: string | null;
+      email: string | null;
+      phone: string | null;
+      gender: string | null;
+      age: string | null;
+      region: string | null;
+      password: string | null;
+      confirm_password: string | null;
+      school: string | null;
+      district: string | null;
+      organization: string | null;
+      userOrgRole: string | null;
+      otherRole: string | null;
+      userExist: string | null;
+    }
+  }
+}
+
+// List
+const levelsLists = computed(() =>
+  (listLevel.value ?? []).map((level) => ({ id: level._id, name: level.name }))
+)
+
+const usersignUp = reactive<userSignUp>({
   type: "",
   fname: null,
   lname: null,
@@ -56,17 +111,28 @@ const usersignUp = reactive({
   },
 });
 
-const normalizeUserTypeKey = (type) => {
-  const value = (type || "").toString().trim().toLowerCase().replace(/\s+/g, "");
-  return value === "educationstackeholder" ? "educationstakeholder" : value;
+const normalizeUserTypeKey = (type: string) => {
+  const value = (type || "").toString().trim().toLowerCase().replace(/\s+/g, "") as userType;
+  return value;
 };
 
-const toBackendUserType = (type) => {
+const toBackendUserType = (type: string) => {
   const key = normalizeUserTypeKey(type);
-  if (key === "student") return "Student";
-  if (key === "teacher") return "Teacher";
-  if (key === "educationstakeholder") return "EducationStakeholder";
+  if (key === "Student") return "Student";
+  if (key === "Teacher") return "Teacher";
+  if (key === "EducationStakeholder") return "EducationStakeholder";
   return type?.toString().trim() || "";
+};
+
+const getLevel = async () => {
+  try {
+    const response = await $fetch<Level[]>(apiDocs.levels.getLevels, {
+      method: "GET",
+    });
+    listLevel.value = response;
+  } catch (error) {
+    console.error("Error fetching levels:", error);
+  }
 };
 
 const signUp = async () => {
@@ -77,26 +143,26 @@ const signUp = async () => {
   const backendType = toBackendUserType(usersignUp.type);
 
   if (
-    usersignUp.age &&                                     // Age must be greater than 0
-    usersignUp.confirm_password?.trim() &&                // Confirm password is required
-    usersignUp.fname?.trim() &&                           // First name is required
-    usersignUp.lname?.trim() &&                           // Last name is required
-    usersignUp.gender?.trim() &&                          // Gender is required
-    usersignUp.password?.trim() &&                        // Password is required
-    usersignUp.password === usersignUp.confirm_password && // Passwords must match
-    usersignUp.region?.trim() &&                          // Region is required
-    usersignUp.type?.trim() &&                            // User type is required
-    usersignUp.district?.trim() &&                        // District is required
+    usersignUp.age &&                                       // Age must be greater than 0
+    usersignUp.confirm_password?.trim() &&                  // Confirm password is required
+    usersignUp.fname?.trim() &&                             // First name is required
+    usersignUp.lname?.trim() &&                             // Last name is required
+    usersignUp.gender?.trim() &&                            // Gender is required
+    usersignUp.password?.trim() &&                          // Password is required
+    usersignUp.password === usersignUp.confirm_password &&  // Passwords must match
+    usersignUp.region?.trim() &&                            // Region is required
+    usersignUp.type?.trim() &&                              // User type is required
+    usersignUp.district?.trim() &&                          // District is required
 
     // If not an "Education Stakeholder", user must provide their school
-    (typeKey !== 'educationstakeholder' && usersignUp.school?.trim()) ||
+    (typeKey !== 'EducationStakeholder' && usersignUp.school?.trim()) ||
 
     // If user is an "Education Stakeholder", they must provide organization and role
-    (typeKey === 'educationstakeholder' &&
-      usersignUp.organization?.trim() && usersignUp.userOrgRole?.trim()) &&
+    (typeKey === 'EducationStakeholder' &&
+      usersignUp.organization?.trim() && usersignUp.userOrgRole?.trim()) ||
 
     // Either user is not "Student"  they must provide both email and phone
-    (typeKey !== 'student' && (usersignUp.email?.trim() && usersignUp.phone?.trim()))
+    (typeKey !== 'Student' && (usersignUp.email?.trim() && usersignUp.phone?.trim()))
   ) {
 
     // 
@@ -104,126 +170,127 @@ const signUp = async () => {
     usersignUp.controller.isSubmitted = true;
     // user role other,
 
-    // submit data
-    await axios.post(apiDocs.auth.signUp,
-      typeKey == 'student' ?
-        {
-          name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
-          password: usersignUp.password,
-          type: backendType,
-          gender: usersignUp.gender,
-          region: usersignUp.region,
-          school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
-          district: usersignUp.district,
-          ageGroup: usersignUp.age,
-          terms: true,
-          roles: ['Student'],
-          username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
-        }
-        :
-        typeKey == 'teacher' ?
-
+    try {
+      const response = await $fetch.raw(apiDocs.auth.signUp, {
+        method: "POST",
+        body: typeKey == 'Student' ?
           {
             name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
             password: usersignUp.password,
-            phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
             type: backendType,
-            email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
             gender: usersignUp.gender,
             region: usersignUp.region,
-            roles: ['Teacher'],
             school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
             district: usersignUp.district,
             ageGroup: usersignUp.age,
+            level: classLevel.value,
             terms: true,
+            roles: ['Student'],
+            username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
           }
           :
-          {
-            name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
-            password: usersignUp.password,
-            phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == 0 ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
-            type: backendType,
-            email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
-            gender: usersignUp.gender,
-            region: usersignUp.region,
-            school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
-            district: usersignUp.district,
-            ageGroup: usersignUp.age,
-            roles: ['EducationStakeholder'],
-            terms: true,
-            organization: usersignUp.organization,
-            stakeholder: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
-          }
-    )
-      .then((response) => {
-        if (response.status >= 200 && response.status < 300) {
-          usersignUp.controller.isSent = 'success';
-          usersignUp.controller.feedback = messages.success.auth.registered;
-          setTimeout(() => {
-            // router
-            const router = useRouter()
-            router.push('/auth');
-          }, 5000)
+          typeKey == 'Teacher' ?
 
-        } else {
-          usersignUp.controller.isSent = 'failed';
-
-          // Check both student and Stakeholder and teacher already Exist
-          if (typeKey === 'student') {
-            usersignUp.controller.feedback = messages.error.auth.userExist;
-          } else {
-            usersignUp.controller.feedback = messages.error.auth.accountExists;
-          }
-        }
-
-      })
-      .catch((error) => {
-        usersignUp.controller.isSent = 'error';
-        const errorMessage = JSON.stringify(error?.response?.data?.errors);
-        if (error.response) {
-          // The request was made, but the server responded with a status code
-          switch (error.response.status) {
-            case 400:
-              usersignUp.controller.feedback = "Bad request. Please check your input.";
-              break;
-            case 401:
-              usersignUp.controller.feedback = "Unauthorized access. Please log in.";
-              break;
-            case 403:
-              usersignUp.controller.feedback = "Forbidden. You do not have permission.";
-              break;
-            case 404:
-              usersignUp.controller.feedback = "Requested resource not found.";
-              break;
-            case 422:
-              if (errorMessage.includes('email')) {
-                usersignUp.controller.feedback = 'This email already exists.';
-              } else if (errorMessage.includes('phone')) {
-                usersignUp.controller.feedback = 'This phone number is already registered.';
-              } else if (errorMessage.includes('username')) {
-                usersignUp.controller.feedback = 'This username is already taken.';
-              } else {
-                usersignUp.controller.feedback = 'An unexpected error occurred. Please try again.';
-              }
-              break;
-            case 500:
-              usersignUp.controller.feedback = "Internal server error. Please try again later.";
-              break;
-            case 503:
-              usersignUp.controller.feedback = "Service unavailable. Server is currently down.";
-              break;
-            default:
-
-              usersignUp.controller.feedback = 'An unexpected error occurred. Please try again.';
-          }
-        } else if (error.request) {
-          // The request was made but no response was received
-          usersignUp.controller.feedback = "No response from the server. Please check your internet connection.";
-        } else {
-          // Something else went wrong in setting up the request
-          usersignUp.controller.feedback = "Request failed due to an unknown error.";
-        }
+            {
+              name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
+              password: usersignUp.password,
+              phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == '0' ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
+              type: backendType,
+              email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
+              gender: usersignUp.gender,
+              region: usersignUp.region,
+              roles: ['Teacher'],
+              school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
+              district: usersignUp.district,
+              ageGroup: usersignUp.age,
+              terms: true,
+            }
+            :
+            {
+              name: sanitize.input(usersignUp.fname + " " + usersignUp.lname),
+              password: usersignUp.password,
+              phoneNumber: usersignUp.phone ? sanitize.input(usersignUp.phone[0] == '0' ? String(usersignUp.phone).slice(1) : String(usersignUp.phone).slice(4)) : null,
+              type: backendType,
+              email: usersignUp.email ? sanitize.input(usersignUp.email) : null,
+              gender: usersignUp.gender,
+              region: usersignUp.region,
+              school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
+              district: usersignUp.district,
+              ageGroup: usersignUp.age,
+              roles: ['EducationStakeholder'],
+              terms: true,
+              organization: usersignUp.organization,
+              stakeholder: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
+            }
       });
+
+      if (response.status >= 200 && response.status < 300) {
+        usersignUp.controller.isSent = 'success';
+        usersignUp.controller.feedback = messages.success.auth.registered;
+        setTimeout(() => {
+          // router
+          const router = useRouter()
+          router.push('/auth');
+        }, 5000)
+
+      } else {
+        usersignUp.controller.isSent = 'failed';
+
+        // Check both student and Stakeholder and teacher already Exist
+        if (typeKey === 'Student') {
+          usersignUp.controller.feedback = messages.error.auth.userExist;
+        } else {
+          usersignUp.controller.feedback = messages.error.auth.accountExists;
+        }
+      }
+    } catch (error: unknown) {
+      const fetchError = error as FetchError;
+      usersignUp.controller.isSent = 'error';
+      const errorMessage = JSON.stringify(fetchError?.response?._data?.errors ?? fetchError?.data?.errors);
+      const status = fetchError?.response?.status ?? fetchError?.status;
+      if (status) {
+        // The request was made, but the server responded with a status code
+        switch (status) {
+          case 400:
+            usersignUp.controller.feedback = "Bad request. Please check your input.";
+            break;
+          case 401:
+            usersignUp.controller.feedback = "Unauthorized access. Please log in.";
+            break;
+          case 403:
+            usersignUp.controller.feedback = "Forbidden. You do not have permission.";
+            break;
+          case 404:
+            usersignUp.controller.feedback = "Requested resource not found.";
+            break;
+          case 422:
+            if (errorMessage.includes('email')) {
+              usersignUp.controller.feedback = 'This email already exists.';
+            } else if (errorMessage.includes('phone')) {
+              usersignUp.controller.feedback = 'This phone number is already registered.';
+            } else if (errorMessage.includes('username')) {
+              usersignUp.controller.feedback = 'This username is already taken.';
+            } else {
+              usersignUp.controller.feedback = 'An unexpected error occurred. Please try again.';
+            }
+            break;
+          case 500:
+            usersignUp.controller.feedback = "Internal server error. Please try again later.";
+            break;
+          case 503:
+            usersignUp.controller.feedback = "Service unavailable. Server is currently down.";
+            break;
+          default:
+            usersignUp.controller.feedback = 'An unexpected error occurred. Please try again.';
+        }
+      } else if (fetchError?.request) {
+        // The request was made but no response was received
+        usersignUp.controller.feedback = "No response from the server. Please check your internet connection.";
+      } else {
+        // Something else went wrong in setting up the request
+        usersignUp.controller.feedback = "Request failed due to an unknown error.";
+      }
+    }
 
     setTimeout(() => {
       usersignUp.controller.isSent = null;
@@ -271,7 +338,7 @@ const signUp = async () => {
       usersignUp.controller.errors.type = messages.error.form.type;
     }
 
-     if (!usersignUp.userOrgRole.trim()) {
+    if (!usersignUp.userOrgRole.trim()) {
       usersignUp.controller.errors.userOrgRole = messages.error.form.role;
     }
   }
@@ -280,7 +347,7 @@ const signUp = async () => {
 // check user exists in records
 const userExists = async () => {
   try {
-    const response = await $fetch(apiDocs.auth.userExists, {
+    const response = await $fetch<string>(apiDocs.auth.userExists, {
       method: "POST",
       body: {
         username: usersignUp.userName,
@@ -299,8 +366,10 @@ const userExists = async () => {
       usersignUp.controller.userExists = false;
       usersignUp.controller.errors.userName = null;
     }
-  } catch (error) {
+  } catch (error: unknown) {
+    const fetchError = error as FetchError;
     usersignUp.controller.userExists = true;
+    console.error(fetchError);
     usersignUp.controller.feedback = messages.error.server.internalError;
   }
 }
@@ -311,7 +380,7 @@ watch(
   (fname) => {
     if (fname) {
       // Validate first name
-      const name = auth.isValidName(fname);
+      const name: any = auth.isValidName(fname);
       if (!name.isMinLength) {
         usersignUp.controller.errors.fname = messages.error.form.isMinLength;
       } else if (!name.hasNoSpecialChars) {
@@ -335,7 +404,7 @@ watch(
   (lname) => {
     if (lname) {
       // Validate last name
-      const name = auth.isValidName(lname);
+      const name: any = auth.isValidName(lname);
       if (!name.isMinLength) {
         usersignUp.controller.errors.lname = messages.error.form.isMinLength;
       } else if (!name.hasNoSpecialChars) {
@@ -414,7 +483,7 @@ watch(
     if (type) {
       usersignUp.controller.errors.type = null;
     } else {
-      usersignUp.controller.errors.type = messages.error.validation.type;
+      usersignUp.controller.errors.type = messages.error.form.type;
     }
   }
 );
@@ -453,7 +522,7 @@ watch(
     if (gender) {
       usersignUp.controller.errors.gender = null;
     } else {
-      usersignUp.controller.errors.gender = messages.error.validation.gender;
+      usersignUp.controller.errors.gender = messages.error.form.gender;
     }
   }
 );
@@ -518,7 +587,7 @@ const toggleConfirmPassword = () => {
 };
 
 // input tabs control
-const switchTab = (tabName) => {
+const switchTab = (tabName: string) => {
   if (tabName === "tabTwo") {
 
     if (!usersignUp.type || usersignUp.type.trim() === " ") {
@@ -544,7 +613,7 @@ const switchTab = (tabName) => {
 
     // school for student and teacher
     if ((!usersignUp.school || usersignUp.school.trim() == " ") &&
-      normalizeUserTypeKey(usersignUp.type) !== "educationstakeholder") {
+      normalizeUserTypeKey(usersignUp.type) !== "EducationStakeholder") {
       usersignUp.controller.errors.school = messages.error.form.school;
       return;
     }
@@ -556,11 +625,11 @@ const switchTab = (tabName) => {
       usersignUp.gender &&
       usersignUp.region &&
       usersignUp.district &&
-      (normalizeUserTypeKey(usersignUp.type) === "educationstakeholder" ? true : usersignUp.school)
+      (normalizeUserTypeKey(usersignUp.type) === "EducationStakeholder" ? true : usersignUp.school)
     ) {
 
       // Validate first name
-      const fname = auth.isValidName(usersignUp.fname);
+      const fname: any = auth.isValidName(usersignUp.fname);
       if (!fname.isMinLength) {
         usersignUp.controller.errors.fname = messages.error.form.isMinLength;
         return;
@@ -575,7 +644,7 @@ const switchTab = (tabName) => {
       }
 
       // Validate Last name
-      const lname = auth.isValidName(usersignUp.lname);
+      const lname: any = auth.isValidName(usersignUp.lname);
       if (!lname.isMinLength) {
         usersignUp.controller.errors.lname = messages.error.form.isMinLength;
         return;
@@ -638,8 +707,11 @@ const organization = [
   { id: 'others', name: 'others' },
 ];
 
-onMounted(() => {
+onMounted(async () => {
   headingRef.value?.focus();
+
+  // Get Levels
+  await getLevel();
 });
 
 </script>
@@ -649,32 +721,32 @@ onMounted(() => {
     tabindex="-1">
 
     <!-- Message Component -->
-    <MessageComponent :message="usersignUp.controller.feedback"
-      :position="usersignUp.controller.feedback ? true : false" :event-type="usersignUp.controller.isSent"
+    <MessageComponent :message="(usersignUp.controller.feedback as string)"
+      :position="usersignUp.controller.feedback ? true : false" :event-type="(usersignUp.controller.isSent as string)"
       :icon="usersignUp.controller.isSent == 'success' ? 'icons8:checked' : 'oui:cross-in-circle-empty'" />
 
     <div class="w-full max-w-md px-4 py-10 rounded-lg md:bg-white md:shadow-2xl">
 
       <h1 class="font-bold text-center text-large" id="signup-heading" ref="headingRef" tabindex="-1">Sign Up</h1>
 
-      <NuxtLink to="/" aria-label="press to go home.The link contain TIE logo" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
+      <NuxtLink to="/" aria-label="press to go home.The link contain TIE logo"
+        class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
         <NuxtImg tabindex="0" src="/logo/logo_tie.gif" class="object-contain w-full h-full"
           alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
       </NuxtLink>
 
-      <form @submit.prevent="signUp" @keydown.enter.prevent
-        class="text-textGray md:h-[530px] h-dvh relative overflow-hidden text-extraSmall" :class="[
-          {
-            'md:h-[600px]':
-              usersignUp.controller.errors.age ||
-              usersignUp.controller.errors.fname ||
-              usersignUp.controller.errors.gender ||
-              usersignUp.controller.errors.lname ||
-              usersignUp.controller.errors.password ||
-              usersignUp.controller.errors.confirm_password,
-          },
-          { 'md:h-[650px]': usersignUp.userOrgRole.toLowerCase() === 'others' }
-        ]">
+      <form @submit.prevent="signUp" @keydown.enter.prevent :class="['text-textGray md:h-[530px] h-dvh relative overflow-hidden text-extraSmall lg:scroll-height lg:overflow-y-scroll',
+        {
+          'md:h-[600px]':
+            usersignUp.controller.errors.age ||
+            usersignUp.controller.errors.fname ||
+            usersignUp.controller.errors.gender ||
+            usersignUp.controller.errors.lname ||
+            usersignUp.controller.errors.password ||
+            usersignUp.controller.errors.confirm_password,
+        },
+        { 'md:h-[650px]': usersignUp.userOrgRole.toLowerCase() === 'others' }
+      ]">
         <!-- First Input Group -->
         <div :class="[
           'absolute top-0 flex flex-col px-6 transition-all duration-500 ',
@@ -698,7 +770,8 @@ onMounted(() => {
             </div>
 
             <!-- Select User Type error message -->
-            <small v-if="usersignUp.controller.errors.type" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.type }`" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.type" aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.type}`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.type }}
             </small>
           </div>
@@ -720,7 +793,8 @@ onMounted(() => {
             </div>
 
             <!-- First Name error message -->
-            <small v-if="usersignUp.controller.errors.fname" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.fname }`" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.fname" aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.fname}`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.fname }}
             </small>
           </div>
@@ -742,7 +816,8 @@ onMounted(() => {
             </div>
 
             <!-- Last Name error message -->
-            <small v-if="usersignUp.controller.errors.lname" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.lname }`" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.lname" aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.lname}`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.lname }}
             </small>
           </div>
@@ -755,7 +830,7 @@ onMounted(() => {
                 usersignUp.controller.errors.region,
             }
           ]">
-            <SelectionRegionSelection :error="usersignUp.controller.errors.region"
+            <SelectionRegionSelection :error="(usersignUp.controller.errors.region as string)"
               @update-region="usersignUp.region = $event" />
           </div>
 
@@ -768,8 +843,8 @@ onMounted(() => {
             }
           ]">
             <!-- select district -->
-            <SelectionDistrictSelection :error="usersignUp.controller.errors.district" :region="usersignUp.region"
-              @update-district="usersignUp.district = $event" />
+            <SelectionDistrictSelection :error="(usersignUp.controller.errors.district as string)"
+              :region="usersignUp.region" @update-district="usersignUp.district = $event" />
           </div>
 
           <!-- school -->
@@ -784,7 +859,15 @@ onMounted(() => {
             <!-- select school -->
             <SelectionSchoolSelection :district="usersignUp.district" :region="usersignUp.region"
               :school="usersignUp.school" @update-school="usersignUp.school = $event"
-              :error="usersignUp.controller.errors.school" />
+              :error="(usersignUp.controller.errors.school as string)" />
+
+            <div class="flex flex-col items-start w-full my-2">
+              <label for="level" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+                Class Level:</label>
+              <!-- Use the Custom Dropdown instead of <select> -->
+              <CustomDropDownList v-model="classLevel" :list="levelsLists"
+                placeholder="(eg: Baraa Secondary School ...)" @update-model-value="usersignUp.type = $event" />
+            </div>
           </div>
 
           <!-- gender input radio -->
@@ -818,7 +901,8 @@ onMounted(() => {
               </div>
             </div>
             <!-- Gender error message -->
-            <small v-if="usersignUp.controller.errors.gender" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.gender }`" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.gender" aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.gender}`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.gender }}
             </small>
           </div>
@@ -863,7 +947,8 @@ onMounted(() => {
             </div>
 
             <!-- Age error message -->
-            <small v-if="usersignUp.controller.errors.age" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.age }`" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.age" aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.age}`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.age }}
             </small>
           </div>
@@ -888,7 +973,8 @@ onMounted(() => {
               </div>
 
               <!-- Email error message -->
-              <small v-if="usersignUp.controller.errors.email" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.email }`" class="w-full text-red-500 text-smallest">
+              <small v-if="usersignUp.controller.errors.email" aria-live="assertive"
+                :aria-label="`${usersignUp.controller.errors.email}`" class="w-full text-red-500 text-smallest">
                 {{ usersignUp.controller.errors.email }}
               </small>
             </div>
@@ -910,13 +996,14 @@ onMounted(() => {
               </div>
 
               <!-- Phone Number error message -->
-              <small v-if="usersignUp.controller.errors.phone" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.phone }`" class="w-full text-red-500 text-smallest">
+              <small v-if="usersignUp.controller.errors.phone" aria-live="assertive"
+                :aria-label="`${usersignUp.controller.errors.phone}`" class="w-full text-red-500 text-smallest">
                 {{ usersignUp.controller.errors.phone }}
               </small>
             </div>
 
             <!-- organization informations for stakeholders -->
-            <div class="" id="organization" v-if="normalizeUserTypeKey(usersignUp.type) === 'educationstakeholder'">
+            <div class="" id="organization" v-if="normalizeUserTypeKey(usersignUp.type) === 'EducationStakeholder'">
               <!-- organization name -->
               <div :class="[
                 'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
@@ -933,7 +1020,9 @@ onMounted(() => {
                   <Icon name="tdesign:institution" class="w-5 h-5 text-textGray" />
                 </div>
                 <!-- org name error message -->
-                <small v-if="usersignUp.controller.errors.organization" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.organization }`" class="w-full text-red-500 text-smallest">
+                <small v-if="usersignUp.controller.errors.organization" aria-live="assertive"
+                  :aria-label="`${usersignUp.controller.errors.organization}`"
+                  class="w-full text-red-500 text-smallest">
                   {{ usersignUp.controller.errors.organization }}
                 </small>
               </div>
@@ -958,7 +1047,8 @@ onMounted(() => {
                 </div>
 
                 <!-- Age error message -->
-                <small v-if="usersignUp.controller.errors.userOrgRole" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.userOrgRole }`" class="w-full text-red-500 text-smallest">
+                <small v-if="usersignUp.controller.errors.userOrgRole" aria-live="assertive"
+                  :aria-label="`${usersignUp.controller.errors.userOrgRole}`" class="w-full text-red-500 text-smallest">
                   {{ usersignUp.controller.errors.userOrgRole }}
                 </small>
               </div>
@@ -979,7 +1069,8 @@ onMounted(() => {
                   <Icon name="mdi-light:shield" class="w-5 h-5 text-textGray" />
                 </div>
                 <!-- org name error message -->
-                <small v-if="usersignUp.controller.errors.otherRole" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.otherRole }`" class="w-full text-red-500 text-smallest">
+                <small v-if="usersignUp.controller.errors.otherRole" aria-live="assertive"
+                  :aria-label="`${usersignUp.controller.errors.otherRole}`" class="w-full text-red-500 text-smallest">
                   {{ usersignUp.controller.errors.otherRole }}
                 </small>
               </div>
@@ -1003,7 +1094,8 @@ onMounted(() => {
             </div>
 
             <!-- username error message -->
-            <small v-if="usersignUp.controller.errors.userName" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.userName }`" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.userName" aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.userName}`" class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.userName }}
             </small>
           </div>
@@ -1042,7 +1134,9 @@ onMounted(() => {
                 class="w-5 h-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
             </div>
             <!-- Password error message -->
-            <small v-if="usersignUp.controller.errors.confirm_password" aria-live="assertive" :aria-label="`${ usersignUp.controller.errors.confirm_password }`" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.confirm_password" aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.confirm_password}`"
+              class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.confirm_password }}
             </small>
           </div>
@@ -1065,12 +1159,14 @@ onMounted(() => {
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'failed' && usersignUp.controller.isSubmitted">
               Failed
-              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
+              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16"
+                aria-hidden="true" />
             </div>
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'error' && usersignUp.controller.isSubmitted">
               Internal Error
-              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
+              <Icon name="oui:cross-in-circle-empty" class="w-5 h-5 text-white cursor-pointer" size="16"
+                aria-hidden="true" />
             </div>
             <div class="flex items-center justify-center gap-2" v-else>
               Sign Up
