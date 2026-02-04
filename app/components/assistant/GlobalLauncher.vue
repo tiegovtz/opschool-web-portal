@@ -24,6 +24,8 @@ const EXCLUDED_PREFIXES = [
   "/tie-ai-teacher",
   "/auth",
   "/smart-class",
+  "/english-practice",
+  "/conversation-practice",
 ];
 const EXCLUDED_EXACT:string[] = [
 ];

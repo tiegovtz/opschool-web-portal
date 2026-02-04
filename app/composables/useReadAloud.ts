@@ -1,22 +1,51 @@
 import { ref, onUnmounted } from 'vue';
-import { useTextToSpeech } from './useTextToSpeech';
 
 export const useReadAloud = () => {
-  const textToSpeech = useTextToSpeech();
   const isPlaying = ref(false);
   const currentPlaybackWordIndex = ref(-1);
   const hasPlayed = ref(false);
+  const isLoading = ref(false);
   
-  // Track playback intervals for cleanup
-  let wordHighlightIntervals: NodeJS.Timeout[] = [];
+  let wordHighlightIntervals: Array<ReturnType<typeof setTimeout>> = [];
+  let audioElement: HTMLAudioElement | null = null;
+  let objectUrl: string | null = null;
+
+  const clearWordHighlights = () => {
+    wordHighlightIntervals.forEach((interval) => clearTimeout(interval));
+    wordHighlightIntervals = [];
+    currentPlaybackWordIndex.value = -1;
+  };
+
+  const decodeAudioBase64 = (audioBase64: string, contentType = 'audio/wav') => {
+    const binary = atob(audioBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: contentType });
+    return URL.createObjectURL(blob);
+  };
+
+  const scheduleWordHighlighting = (
+    text: string,
+    durationMs: number,
+    onWordProgress?: (wordIndex: number) => void
+  ) => {
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return;
+
+    const timePerWord = Math.max(durationMs / words.length, 120);
+    words.forEach((_, index) => {
+      const timeout = setTimeout(() => {
+        if (!isPlaying.value) return;
+        currentPlaybackWordIndex.value = index;
+        onWordProgress?.(index);
+      }, Math.round(index * timePerWord));
+      wordHighlightIntervals.push(timeout);
+    });
+  };
   
-  /**
-   * Play a line of text with synchronized word highlighting
-   * @param text - The text to speak
-   * @param onWordProgress - Optional callback for word highlighting updates
-   * @param options - Speech options (rate, pitch, etc.)
-   */
-  const playLine = (
+  const playLine = async (
     text: string,
     onWordProgress?: (wordIndex: number) => void,
     options?: {
@@ -24,135 +53,92 @@ export const useReadAloud = () => {
       pitch?: number;
       rate?: number;
       volume?: number;
+      voiceType?: 'male' | 'female';
     }
   ) => {
-    if (!text || text.trim().length === 0) {
-      console.warn('[useReadAloud] Empty text provided');
-      return;
-    }
+    const normalizedText = String(text || '').trim();
+    if (!normalizedText) return;
+    if (typeof window === 'undefined') return;
 
-    // If already playing, stop and restart
     if (isPlaying.value) {
       stop();
-      // Wait a bit before restarting
-      setTimeout(() => {
-        playLine(text, onWordProgress, options);
-      }, 100);
-      return;
     }
 
-    const words = text.trim().split(/\s+/);
-    if (words.length === 0) return;
+    isLoading.value = true;
+    try {
+      const response = await $fetch('/api/conversation/tts', {
+        method: 'POST',
+        body: {
+          text: normalizedText,
+          voiceType: options?.voiceType || 'female',
+          inline: true,
+        },
+      });
 
-    currentPlaybackWordIndex.value = -1;
-    hasPlayed.value = true;
-    isPlaying.value = true;
-
-    // Clear any existing intervals
-    wordHighlightIntervals.forEach(interval => clearTimeout(interval));
-    wordHighlightIntervals = [];
-
-    // Calculate estimated word timings based on text length and speech rate
-    // Rough estimate: average speaking rate is ~150 words per minute
-    // For more accuracy, we could use a more sophisticated timing algorithm
-    const speechRate = options?.rate || 1;
-    const wordsPerMinute = 150 * speechRate;
-    const millisecondsPerWord = (60 / wordsPerMinute) * 1000;
-    
-    const wordTimings: number[] = [];
-    let currentTime = 0;
-    
-    words.forEach((word) => {
-      wordTimings.push(currentTime);
-      // Estimate time based on word length (longer words take more time)
-      // Base time + additional time per character
-      const wordDuration = millisecondsPerWord * (0.5 + word.length * 0.1);
-      currentTime += wordDuration;
-    });
-
-    // Set up word highlighting intervals
-    words.forEach((word, index) => {
-      const timeout = setTimeout(() => {
-        if (isPlaying.value) {
-          currentPlaybackWordIndex.value = index;
-          if (onWordProgress) {
-            onWordProgress(index);
-          }
-        }
-      }, wordTimings[index]);
-      
-      wordHighlightIntervals.push(timeout);
-    });
-
-    // Set up end handler to reset highlighting
-    const originalOnEnd = textToSpeech.onEnd.value;
-    textToSpeech.onEnd.value = () => {
-      isPlaying.value = false;
-      // Keep the last word highlighted briefly, then reset
-      setTimeout(() => {
-        currentPlaybackWordIndex.value = -1;
-        if (onWordProgress) {
-          onWordProgress(-1);
-        }
-      }, 300);
-      
-      // Call original handler if it exists
-      if (originalOnEnd) {
-        originalOnEnd();
+      if (!response?.success || !response?.audioBase64) {
+        throw new Error('TTS audio unavailable');
       }
-    };
 
-    // Set up error handler
-    const originalOnError = textToSpeech.onError.value;
-    textToSpeech.onError.value = (error: string) => {
-      isPlaying.value = false;
-      currentPlaybackWordIndex.value = -1;
-      wordHighlightIntervals.forEach(interval => clearTimeout(interval));
-      wordHighlightIntervals = [];
-      
-      if (originalOnError) {
-        originalOnError(error);
+      hasPlayed.value = true;
+      isPlaying.value = true;
+      clearWordHighlights();
+
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        objectUrl = null;
       }
-    };
+      objectUrl = decodeAudioBase64(response.audioBase64, response.contentType || 'audio/wav');
 
-    // Start speaking
-    textToSpeech.speak(text, {
-      lang: options?.lang || 'en-US',
-      rate: speechRate,
-      pitch: options?.pitch ?? 1.1,
-      volume: options?.volume ?? 1,
-    });
+      if (!audioElement) {
+        audioElement = new Audio();
+      }
+      audioElement.src = objectUrl;
+      audioElement.playbackRate = options?.rate || 1;
+      audioElement.onended = () => {
+        isPlaying.value = false;
+        setTimeout(() => {
+          clearWordHighlights();
+          onWordProgress?.(-1);
+        }, 150);
+      };
+      audioElement.onerror = () => {
+        isPlaying.value = false;
+        clearWordHighlights();
+      };
+
+      const estimatedDurationMs = Math.max(normalizedText.split(/\s+/).length * 420, 1200);
+      scheduleWordHighlighting(normalizedText, estimatedDurationMs, onWordProgress);
+      await audioElement.play();
+    } catch (error) {
+      console.error('[useReadAloud] Piper TTS failed:', error);
+      isPlaying.value = false;
+      clearWordHighlights();
+    } finally {
+      isLoading.value = false;
+    }
   };
 
   /**
    * Play a single word (useful for word-by-word pronunciation)
    */
   const playWord = (word: string) => {
-    if (isPlaying.value) {
-      stop();
-    }
-    
     const normalizedWord = word.replace(/[.,!?;:]/g, '').trim();
     if (!normalizedWord) return;
-
-    textToSpeech.speak(normalizedWord, {
-      lang: 'en-US',
-      rate: 0.8, // Slower for word pronunciation
-      pitch: 1.1,
-    });
+    playLine(normalizedWord, undefined, { rate: 0.85 });
   };
 
   /**
    * Stop playback and reset state
    */
   const stop = () => {
-    textToSpeech.stop();
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+      audioElement.onended = null;
+      audioElement.onerror = null;
+    }
     isPlaying.value = false;
-    currentPlaybackWordIndex.value = -1;
-    
-    // Clear all intervals
-    wordHighlightIntervals.forEach(interval => clearTimeout(interval));
-    wordHighlightIntervals = [];
+    clearWordHighlights();
   };
 
   /**
@@ -166,6 +152,7 @@ export const useReadAloud = () => {
       pitch?: number;
       rate?: number;
       volume?: number;
+      voiceType?: 'male' | 'female';
     }
   ) => {
     stop();
@@ -185,6 +172,7 @@ export const useReadAloud = () => {
       pitch?: number;
       rate?: number;
       volume?: number;
+      voiceType?: 'male' | 'female';
     }
   ) => {
     if (isPlaying.value) {
@@ -197,10 +185,15 @@ export const useReadAloud = () => {
   // Cleanup on unmount
   onUnmounted(() => {
     stop();
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+      objectUrl = null;
+    }
   });
 
   return {
     isPlaying,
+    isLoading,
     currentPlaybackWordIndex,
     hasPlayed,
     playLine,
@@ -210,9 +203,6 @@ export const useReadAloud = () => {
     toggle,
   };
 };
-
-
-
 
 
 
