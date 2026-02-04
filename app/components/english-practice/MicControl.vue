@@ -49,6 +49,7 @@ import type { SpeakerType } from '~/types/script.interface';
 interface Props {
   isRecording: boolean;
   currentTurn?: SpeakerType;
+  currentSpeakerName?: string;
   canRecord?: boolean;
 }
 
@@ -67,15 +68,9 @@ const handleClick = () => {
 };
 
 const turnMessage = computed(() => {
+  const name = String(props.currentSpeakerName || '').trim();
   if (!props.currentTurn) return 'Ready to start';
-  
-  if (props.currentTurn === 'student1') {
-    return "Student 1's turn";
-  } else if (props.currentTurn === 'student2') {
-    return "Student 2's turn";
-  } else {
-    return "AI's turn";
-  }
+  if (name) return `${name}'s turn`;
+  return "Speaker's turn";
 });
 </script>
-

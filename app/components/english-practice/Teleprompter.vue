@@ -3,20 +3,20 @@
     <!-- Avatars at top -->
     <div class="w-full max-w-4xl flex items-center justify-between mb-8">
       <EnglishPracticeAvatar
-        :name="student1Name"
-        type="student"
+        :name="primaryAvatar.name"
+        :type="primaryAvatar.type"
         position="left"
-        :is-active="currentTurn === 'student1'"
-        :is-speaking="currentTurn === 'student1' && isRecording"
-        :is-waiting="currentTurn !== 'student1' && !isRecording"
+        :is-active="currentTurn === primaryAvatar.id"
+        :is-speaking="currentTurn === primaryAvatar.id && (primaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
+        :is-waiting="currentTurn !== primaryAvatar.id && !(primaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
       />
       <EnglishPracticeAvatar
-        :name="student2Name"
-        :type="mode === 'single-user' ? 'ai' : 'student'"
+        :name="secondaryAvatar.name"
+        :type="secondaryAvatar.type"
         position="right"
-        :is-active="currentTurn === (mode === 'single-user' ? 'ai' : 'student2')"
-        :is-speaking="(currentTurn === 'student2' || currentTurn === 'ai') && (isRecording || isAISpeaking)"
-        :is-waiting="currentTurn !== 'student2' && currentTurn !== 'ai' && !isRecording && !isAISpeaking"
+        :is-active="currentTurn === secondaryAvatar.id"
+        :is-speaking="currentTurn === secondaryAvatar.id && (secondaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
+        :is-waiting="currentTurn !== secondaryAvatar.id && !(secondaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
       />
     </div>
 
@@ -166,9 +166,10 @@
 
 <script setup lang="ts">
 import { computed, watch, ref, nextTick } from 'vue';
-import type { SpeakerType, PracticeMode } from '~/types/script.interface';
+import type { SpeakerType, PracticeMode, ConversationParticipant } from '~/types/script.interface';
 import type { ScriptLine } from '~/types/script.interface';
 import { useReadAloud } from '~/composables/useReadAloud';
+import { inferVoiceTypeByName } from '~/utilities/inferVoiceTypeByName';
 
 interface Props {
   currentScriptLine?: ScriptLine;
@@ -181,9 +182,7 @@ interface Props {
   mode: PracticeMode;
   isAISpeaking?: boolean;
   currentWordIndex?: number; // Track current position in script words
-  student1Name?: string;
-  student2Name?: string;
-  aiName?: string;
+  participants?: ConversationParticipant[];
 }
 
 const props = defineProps<Props>();
@@ -237,30 +236,56 @@ const getWordState = (wordIndex: number, word: string): 'highlighted' | 'spoken'
   return 'default';
 };
 
-const student1Name = computed(() => {
-  return props.student1Name || 'Student 1';
-});
-
-const student2Name = computed(() => {
-  if (props.student2Name) {
-    return props.student2Name;
+const participants = computed<ConversationParticipant[]>(() => {
+  if (Array.isArray(props.participants) && props.participants.length) {
+    return props.participants;
   }
-  return props.mode === 'single-user' ? 'AI Tutor' : 'Student 2';
+  return [
+    { id: 'speaker-1', name: 'Speaker 1', type: 'student' },
+    { id: 'speaker-2', name: 'Speaker 2', type: props.mode === 'single-user' ? 'ai' : 'student' },
+  ];
 });
 
-const aiName = computed(() => props.aiName || 'AI Tutor');
+const primaryAvatar = computed<ConversationParticipant>(() => {
+  return participants.value[0] || { id: 'speaker-1', name: 'Speaker 1', type: 'student' };
+});
+
+const shownSecondarySpeakerId = ref<string>('');
+
+const secondaryAvatar = computed<ConversationParticipant>(() => {
+  const fallback = participants.value.find((participant) => participant.id !== primaryAvatar.value.id)
+    || { id: 'speaker-2', name: 'Speaker 2', type: 'student' as const };
+
+  const match = participants.value.find(
+    (participant) => participant.id === shownSecondarySpeakerId.value && participant.id !== primaryAvatar.value.id
+  );
+  return match || fallback;
+});
+
+const participantNameMap = computed(() => {
+  const map = new Map<string, string>();
+  participants.value.forEach((participant, index) => {
+    map.set(participant.id, participant.name || `Speaker ${index + 1}`);
+  });
+  return map;
+});
+
+watch(
+  () => props.currentTurn,
+  (turn) => {
+    if (!turn) return;
+    if (turn !== primaryAvatar.value.id) {
+      shownSecondarySpeakerId.value = String(turn);
+    }
+  },
+  { immediate: true }
+);
 
 const currentSpeakerLabel = computed(() => {
   if (!props.currentScriptLine) {
     return '';
   }
-  if (props.currentScriptLine.speaker === 'student1') {
-    return student1Name.value;
-  }
-  if (props.currentScriptLine.speaker === 'student2') {
-    return student2Name.value;
-  }
-  return aiName.value;
+  return participantNameMap.value.get(props.currentScriptLine.speaker) || 'Speaker';
 });
 
 // Check if read-aloud should be disabled
@@ -288,6 +313,7 @@ const handleReadAloudToggle = () => {
       rate: 1,
       pitch: 1.1,
       volume: 1,
+      voiceType: inferVoiceTypeByName(currentSpeakerLabel.value),
     }
   );
 };
@@ -312,6 +338,7 @@ const handleRepeat = () => {
       rate: 1,
       pitch: 1.1,
       volume: 1,
+      voiceType: inferVoiceTypeByName(currentSpeakerLabel.value),
     }
   );
 };
