@@ -179,9 +179,9 @@ const getChoiceReason = (question: Question,userAnswer:string):string => {
           </p>
         </div>
       </div>
-      <p v-if="quizAttempt.answeredQuestions !== questions.length" class="my-2">
+      <!-- <p v-if="quizAttempt.answeredQuestions !== questions.length" class="my-2">
         Answer all questions.
-      </p>
+      </p> -->
 
       <!-- Outputs or results or Marks -->
       <div v-if="quizAttempt.quizCompleted && quizAttempt.isAttempting" class="w-full">
