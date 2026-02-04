@@ -104,7 +104,7 @@ async function fetchPublicTopicsFromApi(params: {
 export const studentTools = {
   checkSyllabus: tool({
     description:
-      "Check the Tanzanian syllabus topics via the public-topics endpoint. Use this BEFORE answering a curriculum question to verify the topic is in-syllabus. Query params supported: name, level, subject. If no topics are found, the question is OUT OF SYLLABUS and you MUST say so, then give a brief meaning/definition in the same response (preface with 'If you still want the meaning:').",
+      "Check the Tanzanian syllabus topics via the public-topics endpoint. Use this BEFORE answering a curriculum question to verify the topic is in-syllabus. Query params supported: name, level, subject. If no topics are found, this tool also checks textbook RAG to avoid false 'out of syllabus' for concepts that are in the books but not listed as topics.",
     inputSchema: z.object({
       name: z
         .string()
@@ -178,15 +178,45 @@ export const studentTools = {
           }))
           .filter((topic: any) => topic.name);
 
+        const syllabusFound = normalized.length > 0;
+        let ragFound = false;
+
+        if (!syllabusFound) {
+          const ragQuery =
+            nameValue ||
+            [subjectValue, levelValue].filter(Boolean).join(" ").trim();
+
+          if (ragQuery) {
+            const ragResult = await fetchCombinedRAGContext(
+              ragQuery,
+              currentAuthToken,
+              {
+                subject: subjectValue || undefined,
+                level: levelValue || undefined,
+              },
+              {
+                useLocal: false,
+                useExternal: true,
+                preferExternal: true,
+              },
+            );
+            ragFound = Boolean(ragResult?.context?.trim());
+          }
+        }
+
         return {
-          found: normalized.length > 0,
+          found: syllabusFound || ragFound,
           total: normalized.length,
+          syllabusFound,
+          ragFound,
           query: usedQuery,
           topics: normalized,
           instruction:
-            normalized.length > 0
+            syllabusFound
               ? "Topic is in syllabus. Proceed with normal teaching flow."
-              : "Topic is OUT OF SYLLABUS. You MUST say: 'This is out of syllabus.' Then provide a brief meaning/definition in the same response, prefaced with 'If you still want the meaning:'.",
+              : ragFound
+                ? "Topic not listed in syllabus topics, but textbook context exists. Proceed with normal teaching flow and DO NOT say out of syllabus."
+                : "Topic is OUT OF SYLLABUS. You MUST say: 'This is out of syllabus.' Then provide a brief meaning/definition in the same response, prefaced with 'If you still want the meaning:'.",
         };
       } catch (error: any) {
         return {
