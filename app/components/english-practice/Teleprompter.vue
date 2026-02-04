@@ -47,7 +47,7 @@
               @keydown.space.prevent="handleReadAloudToggle"
               :disabled="isReadAloudDisabled"
               :aria-label="readAloud.isPlaying ? 'Pause pronunciation' : 'Play pronunciation'"
-              :aria-pressed="readAloud.isPlaying"
+              :aria-pressed="readAloud.isPlaying ? 'true' : 'false'"
               tabindex="0"
               :class="[
                 'p-2 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-oceanBlue focus:ring-offset-2',
@@ -105,9 +105,9 @@
               :class="[
                 'transition-all duration-200 px-1 rounded',
                 // During read-aloud playback
-                readAloud.isPlaying && readAloud.currentPlaybackWordIndex === index
+                readAloud.isPlaying && readAloud.currentPlaybackWordIndex.value === index
                   ? 'bg-purple-300 text-gray-900 font-bold scale-110'
-                  : readAloud.isPlaying && readAloud.currentPlaybackWordIndex > index
+                  : readAloud.isPlaying && readAloud.currentPlaybackWordIndex.value > index
                   ? 'text-purple-600 font-medium'
                   // During speech recognition
                   : getWordState(index, word) === 'highlighted'
