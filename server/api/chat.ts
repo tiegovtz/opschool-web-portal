@@ -130,7 +130,14 @@ CRITICAL RULES - Chapter Scope:
    - Never use information outside the provided context
    - Stay STRICTLY within the boundaries of "${chapterName}" - do not discuss other chapters or topics
 
-6. Teaching Style - Active Pedagogy:
+6. Syllabus Guardrail (CONDITIONAL):
+   - Use checkSyllabus ONLY when the student explicitly asks if something is in the syllabus OR when you have a specific topic + subject/level context.
+   - Do NOT use checkSyllabus for general subject definitions (e.g., "what is physics").
+   - If checkSyllabus returns no topics, you MUST say: "This is out of syllabus." Then provide a brief meaning/definition in the same response, prefaced with "If you still want the meaning:".
+   - If the question is clearly non-curriculum, respond with "This is out of syllabus." + brief meaning without calling tools.
+   - If in syllabus, proceed with normal teaching flow.
+
+7. Teaching Style - Active Pedagogy:
    - When introducing yourself, mention: "I'm here to help you understand ${chapterName}. I'll guide you through the concepts and check your understanding as we go!"
    - **TEACHING TECHNIQUES TO USE**:
      * **Questioning**: Ask probing questions like "What do you already know about...?" or "Why might this be important?"
@@ -182,6 +189,7 @@ You are TIE AI, a teaching assistant specialized in the Tanzanian (NECTA) curric
 
 ⚠️ TOOL CALL GUIDANCE ⚠️
 Use tools only when they add value:
+0. checkSyllabus({name: "...", subject: "...", level: "..."}) - Use BEFORE answering curriculum questions to ensure the topic is in-syllabus
 1. searchTextbooks({query: "...", subject: "...", level: "..."}) - Use for factual curriculum content, definitions, or when accuracy needs citations
 2. getChapterFigures({chapter: "...", topic: "..."}) - ONLY when teaching a specific chapter/topic
 3. getSubjects - Use when the student asks what subjects are available
@@ -200,7 +208,13 @@ Priority Rules:
 3. If a question cannot be answered using the returned textbook context, answer from general knowledge.
    - Do NOT mention textbooks, sources, fallback, or limitations.
    - Respond naturally and directly, as if it is a normal explanation.
-4. Explanations must be clear, simple, step-by-step, and aligned with the Tanzanian curriculum
+4. **SYLLABUS RULE (CONDITIONAL)**:
+   - Use checkSyllabus ONLY when the student explicitly asks if something is in the syllabus OR when you have a specific topic + subject/level context.
+   - Do NOT use checkSyllabus for general subject definitions (e.g., "what is physics").
+   - If checkSyllabus returns no topics, say: "This is out of syllabus." Then provide a brief meaning/definition in the same response, prefaced with "If you still want the meaning:".
+   - If the question is clearly non-curriculum, respond with "This is out of syllabus." + brief meaning without calling tools.
+   - If in syllabus, proceed with normal teaching flow (and use searchTextbooks for factual content).
+5. Explanations must be clear, simple, step-by-step, and aligned with the Tanzanian curriculum
 
 **TEACHING TECHNIQUES TO USE**:
 - **Socratic Method**: Ask questions to guide students to discover answers
@@ -227,13 +241,15 @@ Priority Rules:
 - Good: "Great question! Let's start with the core concept. Physics is the scientific study of matter and energy. Think about when you drop a stone - it falls down. Physics explains WHY it falls. Does this basic concept make sense?"
 
 **When students ask questions - YOUR WORKFLOW**:
-1. Decide if the question needs textbook facts. If yes, call searchTextbooks.
-2. Identify which chapter/topic the question relates to (if provided)
-3. If teaching a specific chapter/topic, call getChapterFigures to check for available images
-4. If figures returned: Use them with [image:shortcode] format
-5. If NO figures: Teach WITHOUT mentioning images at all
-6. Lead the teaching: Check prior knowledge → Guide discovery → Break down → Check understanding
-7. Proactively move forward to the next concept
+1. If the student explicitly asks about syllabus inclusion OR you have a specific topic + subject/level context, call checkSyllabus.
+2. If out of syllabus: say so, then provide a brief meaning/definition in the same response, prefaced with "If you still want the meaning:"
+3. Decide if the question needs textbook facts. If yes, call searchTextbooks.
+4. Identify which chapter/topic the question relates to (if provided)
+5. If teaching a specific chapter/topic, call getChapterFigures to check for available images
+6. If figures returned: Use them with [image:shortcode] format
+7. If NO figures: Teach WITHOUT mentioning images at all
+8. Lead the teaching: Check prior knowledge → Guide discovery → Break down → Check understanding
+9. Proactively move forward to the next concept
 
 **When students start without a question**:
 1. Greet warmly: "Hello! I'm TIE AI Teacher, and I'm here to help you learn."
@@ -264,6 +280,12 @@ MANDATORY TOOL USAGE
 
 You have access to these tools. Use them APPROPRIATELY:
 
+**0. checkSyllabus** - Verify whether a topic is in the syllabus via public-topics endpoint
+   - USE FOR: When the student explicitly asks about syllabus inclusion OR when you have a specific topic + subject/level context
+   - DO NOT USE FOR: General subject definitions (e.g., "what is physics")
+   - PARAMS: name (topic keyword), subject, level
+   - IF NO RESULTS: You MUST say: "This is out of syllabus." Then provide a brief meaning/definition in the same response, prefaced with "If you still want the meaning:"
+
 **1. searchTextbooks** - Search uploaded textbooks for factual information
    - USE FOR: Factual questions about curriculum content (e.g., "What is photosynthesis?", "Explain Newton's laws")
    - DO NOT USE FOR: Greetings, questions about yourself, general conversation, or high-level study advice
@@ -279,13 +301,15 @@ You have access to these tools. Use them APPROPRIATELY:
 
 **DECISION FLOWCHART:**
 - Student says "Hello" / "Hi" → Just respond warmly, NO tools needed
+- Student explicitly asks about syllabus inclusion → Call checkSyllabus
+- If checkSyllabus returns no topics → Say it's out of syllabus, then give a brief meaning/definition in the same response (preface with "If you still want the meaning:")
 - Student asks "What is [concept]?" → Call searchTextbooks, then teach using results
 - Student asks about available subjects → Call getSubjects
 - Student asks for topics in a subject/level or "what is [subject] about" → Call searchTextbooks (use a query like "[Subject] Form [Level] topics" or "[Subject] syllabus")
 - Teaching a topic → Call getChapterFigures to check for images
 
 **IMPORTANT:** 
-- For factual curriculum questions, call searchTextbooks before answering
+- For curriculum questions, call checkSyllabus first; if in-syllabus and factual, call searchTextbooks before answering
 - If searchTextbooks returns results, use ONLY that information (cite sources)
 - If searchTextbooks returns no results, answer from general knowledge and clearly label it as such (do not say "not available")
 `;
@@ -371,6 +395,142 @@ function extractRequestContext(event: any, body: any) {
   return { chapterName, subject, level, topic, chapterNo, authToken };
 }
 
+const SUBJECT_KEYWORDS = new Set([
+  "physics",
+  "chemistry",
+  "biology",
+  "mathematics",
+  "math",
+  "geography",
+  "history",
+  "civics",
+  "english",
+  "kiswahili",
+  "swahili",
+  "science",
+  "agriculture",
+  "computer studies",
+  "ict",
+  "economics",
+  "commerce",
+  "accounting",
+  "literature",
+  "religion",
+  "cre",
+  "ire",
+  "religious studies",
+  "business studies",
+  "entrepreneurship",
+  "fine art",
+  "home economics",
+]);
+
+function isGeneralSubjectDefinition(text: string): boolean {
+  const cleaned = text.toLowerCase().trim();
+  const match = cleaned.match(/^(what is|define)\s+(.+)$/);
+  if (!match) return false;
+  const term = match[2]?.trim() || "";
+  if (!term) return false;
+  if (SUBJECT_KEYWORDS.has(term)) return true;
+  return false;
+}
+
+function isExplicitSyllabusCheck(text: string): boolean {
+  return (
+    /\bsyllabus\b/i.test(text) ||
+    /\bcurriculum\b/i.test(text) ||
+    /\bout of syllabus\b/i.test(text) ||
+    /\bin syllabus\b/i.test(text) ||
+    /\bis this in\b/i.test(text) ||
+    /\bcovered in\b/i.test(text)
+  );
+}
+
+function isClearlyNonCurriculum(text: string): boolean {
+  const lower = text.toLowerCase();
+  const nonCurriculumSignals = [
+    "9/11",
+    "september 11",
+    "world trade center",
+    "terrorist attack",
+    "celebrity",
+    "singer",
+    "rapper",
+    "song",
+    "lyrics",
+    "movie",
+    "film",
+    "premier league",
+    "epl",
+    "nba",
+    "nfl",
+    "score",
+    "weather",
+    "stock",
+    "bitcoin",
+    "crypto",
+    "iphone",
+    "tiktok",
+    "instagram",
+    "facebook",
+    "twitter",
+    "x.com",
+  ];
+  return nonCurriculumSignals.some((signal) => lower.includes(signal));
+}
+
+function shouldUseSyllabus(
+  question: string,
+  context?: { subject?: string; level?: string; topic?: string }
+): boolean {
+  if (!question) return false;
+  const text = question.toLowerCase().trim();
+  const cleanText = text.replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  if (cleanText.length < 2) return false;
+  if (isClearlyNonCurriculum(text)) return false;
+  if (isGeneralSubjectDefinition(text)) return false;
+  if (isExplicitSyllabusCheck(text)) return true;
+
+  const hasContext = Boolean(
+    context?.subject?.trim() || context?.level?.trim() || context?.topic?.trim()
+  );
+  if (!hasContext) return false;
+
+  const topicSignals = [
+    "what is",
+    "what are",
+    "define",
+    "explain",
+    "describe",
+    "compare",
+    "differentiate",
+    "list",
+    "topic",
+    "topics",
+    "tell me about",
+    "give examples",
+    "formula",
+    "equation",
+    "derive",
+    "calculate",
+    "solve",
+    "steps",
+    "process",
+    "function",
+    "law of",
+  ];
+
+  const hasTopicSignal = topicSignals.some((signal) => text.includes(signal));
+  if (hasTopicSignal) return true;
+
+  const tokens = cleanText.split(/\s+/).filter(Boolean);
+  const hasLongToken = tokens.some((token) => token.length >= 6);
+  const multiWordTopic = tokens.length >= 3 && hasLongToken;
+  const hasQuestionMark = question.includes("?");
+
+  return multiWordTopic || hasQuestionMark;
+}
+
 function shouldUseRag(
   question: string,
   context?: { chapterName?: string; subject?: string; level?: string; topic?: string }
@@ -379,6 +539,9 @@ function shouldUseRag(
   const text = question.toLowerCase().trim();
   const cleanText = text.replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
   if (cleanText.length < 2) return false;
+
+  if (isClearlyNonCurriculum(text)) return false;
+  if (isExplicitSyllabusCheck(text)) return false;
 
   const nonRagPhrases = [
     "hi",
@@ -508,7 +671,21 @@ export default defineEventHandler(async (event) => {
         topic,
       })
     : false;
-  const { searchTextbooks: _searchTextbooks, ...nonRagTools } = studentTools;
+  const allowSyllabus = lastUserMessage
+    ? shouldUseSyllabus(lastUserMessage.content, {
+        subject,
+        level,
+        topic,
+      })
+    : false;
+
+  const toolsForRequest = { ...studentTools } as typeof studentTools;
+  if (!allowRag) {
+    delete (toolsForRequest as any).searchTextbooks;
+  }
+  if (!allowSyllabus) {
+    delete (toolsForRequest as any).checkSyllabus;
+  }
 
   const modelInput = {
     model: openai("gpt-4o"),
@@ -517,7 +694,7 @@ export default defineEventHandler(async (event) => {
       ...coreMessages,
     ] as any,
     stopWhen: stepCountIs(10),
-    tools: allowRag ? studentTools : nonRagTools,
+    tools: toolsForRequest,
     maxSteps: 7,
   };
 

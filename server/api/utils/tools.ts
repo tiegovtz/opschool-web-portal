@@ -61,7 +61,144 @@ async function fetchSubjectsFromApi(): Promise<any[]> {
   );
 }
 
+async function fetchPublicTopicsFromApi(params: {
+  name?: string;
+  level?: string;
+  subject?: string;
+}): Promise<any[]> {
+  const url = resolveApiUrl(apiDocs.topics.filterTopics, "/public-topics");
+  const query = new URLSearchParams();
+
+  if (params.name?.trim()) query.append("name", params.name.trim());
+  if (params.level?.trim()) query.append("level", params.level.trim());
+  if (params.subject?.trim()) query.append("subject", params.subject.trim());
+
+  const finalUrl = query.toString() ? `${url}?${query}` : url;
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (currentAuthToken?.trim()) {
+    headers.Authorization = `Bearer ${currentAuthToken.trim()}`;
+  }
+
+  const extractList = (data: any) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.topics)) return data.topics;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.results)) return data.results;
+    return [];
+  };
+
+  const response = await fetch(finalUrl, { headers });
+  if (!response.ok) {
+    throw new Error(
+      `Public topics API error: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  return extractList(await response.json());
+}
+
 export const studentTools = {
+  checkSyllabus: tool({
+    description:
+      "Check the Tanzanian syllabus topics via the public-topics endpoint. Use this BEFORE answering a curriculum question to verify the topic is in-syllabus. Query params supported: name, level, subject. If no topics are found, the question is OUT OF SYLLABUS and you MUST say so, then give a brief meaning/definition in the same response (preface with 'If you still want the meaning:').",
+    inputSchema: z.object({
+      name: z
+        .string()
+        .optional()
+        .describe("Topic name or keyword to match against syllabus topics."),
+      level: z
+        .string()
+        .optional()
+        .describe("Education level to filter topics (e.g., Form 1, O-Level)."),
+      subject: z
+        .string()
+        .optional()
+        .describe("Subject name to filter topics (e.g., Biology, Physics)."),
+    }),
+    execute: async ({ name, level, subject }) => {
+      const nameValue = name?.trim() || "";
+      const levelValue = level?.trim() || "";
+      const subjectValue = subject?.trim() || "";
+
+      if (!nameValue && !levelValue && !subjectValue) {
+        return {
+          found: false,
+          total: 0,
+          topics: [],
+          message:
+            "No syllabus filter provided. Provide at least a topic name, subject, or level.",
+        };
+      }
+
+      try {
+        let topics = await fetchPublicTopicsFromApi({
+          name: nameValue || undefined,
+          level: levelValue || undefined,
+          subject: subjectValue || undefined,
+        });
+
+        let usedQuery = {
+          name: nameValue || undefined,
+          level: levelValue || undefined,
+          subject: subjectValue || undefined,
+        };
+
+        // Fallback: if name-only yields no results, try treating name as subject
+        if (topics.length === 0 && !subjectValue && nameValue) {
+          topics = await fetchPublicTopicsFromApi({
+            subject: nameValue,
+            level: levelValue || undefined,
+          });
+          if (topics.length > 0) {
+            usedQuery = {
+              name: undefined,
+              level: levelValue || undefined,
+              subject: nameValue,
+            };
+          }
+        }
+
+        const normalized = topics
+          .map((topic: any) => ({
+            id: topic?._id || topic?.id || topic?.topicId || null,
+            name: topic?.name || topic?.title || topic?.topic || "",
+            subject:
+              topic?.subject?.name || topic?.subject || topic?.subjectName || null,
+            level:
+              topic?.level?.name || topic?.level || topic?.levelName || null,
+            chapter:
+              topic?.chapter?.name ||
+              topic?.chapterName ||
+              topic?.chapterTitle ||
+              null,
+          }))
+          .filter((topic: any) => topic.name);
+
+        return {
+          found: normalized.length > 0,
+          total: normalized.length,
+          query: usedQuery,
+          topics: normalized,
+          instruction:
+            normalized.length > 0
+              ? "Topic is in syllabus. Proceed with normal teaching flow."
+              : "Topic is OUT OF SYLLABUS. You MUST say: 'This is out of syllabus.' Then provide a brief meaning/definition in the same response, prefaced with 'If you still want the meaning:'.",
+        };
+      } catch (error: any) {
+        return {
+          found: false,
+          total: 0,
+          topics: [],
+          error: error?.message || "Failed to load syllabus topics",
+        };
+      }
+    },
+  }),
+
   getChapterFigures: tool({
     description:
       "MANDATORY: Get all available image figures for a specific chapter and optional topic. You MUST call this tool whenever you are teaching a specific chapter or topic. This is the ONLY method to get images. Provide the chapter name exactly as given in the request or context. Returns a list of figures with shortcodes that you MUST use with [image:shortcode] format in your response. If figures are returned, you MUST include at least one [image:shortcode] in your response.",
