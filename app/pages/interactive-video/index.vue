@@ -97,8 +97,6 @@ const fetchVideo = async () => {
     if (videoId.value) {
       const videoPath = `/api/video/${videoId.value}`
       videoSrc.value = videoPath
-      console.log('Video ID provided:', videoId.value)
-      console.log('Video source set to:', videoPath)
       // Wait a bit for the video element to update
       await nextTick()
       isLoading.value = false
@@ -110,7 +108,6 @@ const fetchVideo = async () => {
     // If video URL is provided directly, use it
     if (videoUrl.value) {
       videoSrc.value = videoUrl.value
-      console.log('Video source set to:', videoSrc.value)
       // Wait a bit for the video element to update
       await nextTick()
       isLoading.value = false
@@ -309,7 +306,6 @@ const handleSelectionSubmit = (interaction: VideoInteraction, answers: Record<st
     isCorrect: allCorrect as boolean,
     timestamp: Date.now(),
   })
-  console.log('Selection submitted:', { interaction, answers, isCorrect: allCorrect })
 }
 
 const formatTime = (timestamp: number): string => {
