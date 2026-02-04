@@ -112,7 +112,7 @@ const usersignUp = reactive<userSignUp>({
 });
 
 const normalizeUserTypeKey = (type: string) => {
-  const value = (type || "").toString().trim().toLowerCase().replace(/\s+/g, "") as userType;
+  const value = (type || "").toString().trim().replace(/\s+/g, "") as userType;
   return value;
 };
 
@@ -227,11 +227,10 @@ const signUp = async () => {
       if (response.status >= 200 && response.status < 300) {
         usersignUp.controller.isSent = 'success';
         usersignUp.controller.feedback = messages.success.auth.registered;
-        setTimeout(() => {
-          // router
-          const router = useRouter()
-          router.push('/auth');
-        }, 5000)
+        
+        // Navigate to auth page
+        const router = useRouter()
+        router.push('/auth');
 
       } else {
         usersignUp.controller.isSent = 'failed';
@@ -292,10 +291,8 @@ const signUp = async () => {
       }
     }
 
-    setTimeout(() => {
-      usersignUp.controller.isSent = null;
-      usersignUp.controller.feedback = null;
-    }, 5000)
+    usersignUp.controller.isSent = null;
+    usersignUp.controller.feedback = null;
 
   } else {
     usersignUp.controller.isSubmitted = false;

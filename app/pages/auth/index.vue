@@ -155,14 +155,14 @@ const signIn = async () => {
       refreshToken.value = response.refresh_token;
       userToken.value = response.user;
       useAuthStore().setToken(accessToken.value);
-      setTimeout(() => {
-        const router = useRouter();
-        const redirectPath =
-          typeof route.query.redirect === "string" && route.query.redirect.length > 0
-            ? route.query.redirect
-            : returnPath;
-        router.replace(redirectPath || "/home");
-      }, 1500)
+      
+      // Navigate to the intended page after login
+      const router = useRouter();
+      const redirectPath =
+        typeof route.query.redirect === "string" && route.query.redirect.length > 0
+          ? route.query.redirect
+          : returnPath;
+      router.replace(redirectPath || "/home");
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
