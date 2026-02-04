@@ -626,7 +626,7 @@ const setLevel = (key: string, lvl: string) => {
               :list="Array.from(getLevels(experiments.data)).map((lvl) => ({ id: lvl, name: lvl }))" />
 
             <small @click="setSeeMore((experiments?.dataOfKey as any)?.toLowerCase())"
-              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue whitespace-nowrap whitespace-nowrap">
+              class="capitalize transition-all duration-500 ease-in-out border-b-2 cursor-pointer text-oceanBlue hover:border-deepBlue hover:text-deepBlue whitespace-nowrap">
               {{
                 seeMoreDetails && seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
                   ? "See Less"
