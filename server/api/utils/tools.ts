@@ -5,6 +5,24 @@ import apiDocs from "~/utilities/apiDocs";
 
 let currentAuthToken: string | undefined = undefined;
 
+const PUBLIC_TOPICS_TIMEOUT_MS = parseInt(
+  process.env.PUBLIC_TOPICS_TIMEOUT_MS || "2500",
+  10,
+);
+const PUBLIC_TOPICS_RETRY_TIMEOUT_MS = parseInt(
+  process.env.PUBLIC_TOPICS_RETRY_TIMEOUT_MS || "4000",
+  10,
+);
+const PUBLIC_TOPICS_CACHE_TTL_MS = parseInt(
+  process.env.PUBLIC_TOPICS_CACHE_TTL_MS || "300000",
+  10,
+);
+
+const publicTopicsCache = new Map<
+  string,
+  { timestamp: number; value: any[] }
+>();
+
 export function setAuthTokenForTools(token: string | undefined): void {
   currentAuthToken = token as string;
 }
@@ -16,6 +34,43 @@ const resolveApiUrl = (docUrl: string, fallbackPath: string) => {
   }
   return `${baseUrl}${fallbackPath}`;
 };
+
+const normalizeSyllabusName = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const buildPublicTopicsCacheKey = (params: {
+  name?: string;
+  level?: string;
+  subject?: string;
+}) => {
+  const tokenKey = currentAuthToken?.trim() || "anon";
+  return [
+    tokenKey,
+    params.name || "",
+    params.level || "",
+    params.subject || "",
+  ]
+    .map((value) => value.toLowerCase())
+    .join("|");
+};
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 async function fetchSubjectsFromApi(): Promise<any[]> {
   const url = resolveApiUrl(apiDocs.subjects.getSubjects, "/subjects");
@@ -61,7 +116,211 @@ async function fetchSubjectsFromApi(): Promise<any[]> {
   );
 }
 
+async function fetchPublicTopicsFromApi(params: {
+  name?: string;
+  level?: string;
+  subject?: string;
+}): Promise<any[]> {
+  const url = resolveApiUrl(apiDocs.topics.filterTopics, "/public-topics");
+  const query = new URLSearchParams();
+
+  if (params.name?.trim()) query.append("name", params.name.trim());
+  if (params.level?.trim()) query.append("level", params.level.trim());
+  if (params.subject?.trim()) query.append("subject", params.subject.trim());
+
+  const finalUrl = query.toString() ? `${url}?${query}` : url;
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (currentAuthToken?.trim()) {
+    headers.Authorization = `Bearer ${currentAuthToken.trim()}`;
+  }
+
+  const extractList = (data: any) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.topics)) return data.topics;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data?.results)) return data.results;
+    return [];
+  };
+
+  const cacheKey = buildPublicTopicsCacheKey(params);
+  const cached = publicTopicsCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < PUBLIC_TOPICS_CACHE_TTL_MS) {
+    return cached.value;
+  }
+
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(finalUrl, { headers }, PUBLIC_TOPICS_TIMEOUT_MS);
+  } catch (error: any) {
+    if (error?.name === "AbortError") {
+      response = await fetchWithTimeout(
+        finalUrl,
+        { headers },
+        PUBLIC_TOPICS_RETRY_TIMEOUT_MS,
+      );
+    } else {
+      throw error;
+    }
+  }
+  if (!response.ok) {
+    throw new Error(
+      `Public topics API error: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  const value = extractList(await response.json());
+  publicTopicsCache.set(cacheKey, { timestamp: Date.now(), value });
+  return value;
+}
+
 export const studentTools = {
+  checkSyllabus: tool({
+    description:
+      "Check the Tanzanian syllabus topics via the public-topics endpoint. Use this BEFORE answering a curriculum question to verify the topic is in-syllabus. Query params supported: name, level, subject. If no topics are found, this tool also checks textbook RAG to avoid false 'out of syllabus' for concepts that are in the books but not listed as topics.",
+    inputSchema: z.object({
+      name: z
+        .string()
+        .optional()
+        .describe("Topic name or keyword to match against syllabus topics."),
+      level: z
+        .string()
+        .optional()
+        .describe("Education level to filter topics (e.g., Form 1, O-Level)."),
+      subject: z
+        .string()
+        .optional()
+        .describe("Subject name to filter topics (e.g., Biology, Physics)."),
+    }),
+    execute: async ({ name, level, subject }) => {
+      const nameValue = name?.trim() || "";
+      const normalizedName = nameValue ? normalizeSyllabusName(nameValue) : "";
+      const levelValue = level?.trim() || "";
+      const subjectValue = subject?.trim() || "";
+
+      if (!nameValue && !levelValue && !subjectValue) {
+        return {
+          found: false,
+          total: 0,
+          topics: [],
+          message:
+            "No syllabus filter provided. Provide at least a topic name, subject, or level.",
+        };
+      }
+
+      try {
+        let topics = await fetchPublicTopicsFromApi({
+          name: nameValue || undefined,
+          level: levelValue || undefined,
+          subject: subjectValue || undefined,
+        });
+
+        let usedQuery = {
+          name: nameValue || undefined,
+          level: levelValue || undefined,
+          subject: subjectValue || undefined,
+        };
+
+        if (topics.length === 0 && normalizedName && normalizedName !== nameValue) {
+          topics = await fetchPublicTopicsFromApi({
+            name: normalizedName,
+            level: levelValue || undefined,
+            subject: subjectValue || undefined,
+          });
+          if (topics.length > 0) {
+            usedQuery = {
+              name: normalizedName,
+              level: levelValue || undefined,
+              subject: subjectValue || undefined,
+            };
+          }
+        }
+
+        // Fallback: if name-only yields no results, try treating name as subject
+        if (topics.length === 0 && !subjectValue && nameValue) {
+          topics = await fetchPublicTopicsFromApi({
+            subject: nameValue,
+            level: levelValue || undefined,
+          });
+          if (topics.length > 0) {
+            usedQuery = {
+              name: undefined,
+              level: levelValue || undefined,
+              subject: nameValue,
+            };
+          }
+        }
+
+        const normalized = topics
+          .map((topic: any) => ({
+            id: topic?._id || topic?.id || topic?.topicId || null,
+            name: topic?.name || topic?.title || topic?.topic || "",
+            subject:
+              topic?.subject?.name || topic?.subject || topic?.subjectName || null,
+            level:
+              topic?.level?.name || topic?.level || topic?.levelName || null,
+            chapter:
+              topic?.chapter?.name ||
+              topic?.chapterName ||
+              topic?.chapterTitle ||
+              null,
+          }))
+          .filter((topic: any) => topic.name);
+
+        const syllabusFound = normalized.length > 0;
+        let ragFound = false;
+
+        if (!syllabusFound) {
+          const ragQuery =
+            nameValue ||
+            [subjectValue, levelValue].filter(Boolean).join(" ").trim();
+
+          if (ragQuery) {
+            const ragResult = await fetchCombinedRAGContext(
+              ragQuery,
+              currentAuthToken,
+              {
+                subject: subjectValue || undefined,
+                level: levelValue || undefined,
+              },
+              {
+                useLocal: false,
+                useExternal: true,
+                preferExternal: true,
+              },
+            );
+            ragFound = Boolean(ragResult?.context?.trim());
+          }
+        }
+
+        return {
+          found: syllabusFound || ragFound,
+          total: normalized.length,
+          syllabusFound,
+          ragFound,
+          query: usedQuery,
+          topics: normalized,
+          instruction:
+            syllabusFound
+              ? "Topic is in syllabus. Proceed with normal teaching flow."
+              : ragFound
+                ? "Topic not listed in syllabus topics, but textbook context exists. Proceed with normal teaching flow and DO NOT say out of syllabus."
+                : "Topic is OUT OF SYLLABUS. You MUST say: 'This is out of syllabus.' Then provide a brief meaning/definition in the same response, prefaced with 'If you still want the meaning:'.",
+        };
+      } catch (error: any) {
+        return {
+          found: false,
+          total: 0,
+          topics: [],
+          error: error?.message || "Failed to load syllabus topics",
+        };
+      }
+    },
+  }),
+
   getChapterFigures: tool({
     description:
       "MANDATORY: Get all available image figures for a specific chapter and optional topic. You MUST call this tool whenever you are teaching a specific chapter or topic. This is the ONLY method to get images. Provide the chapter name exactly as given in the request or context. Returns a list of figures with shortcodes that you MUST use with [image:shortcode] format in your response. If figures are returned, you MUST include at least one [image:shortcode] in your response.",
