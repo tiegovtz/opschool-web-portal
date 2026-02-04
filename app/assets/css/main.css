@@ -221,8 +221,8 @@
   display: inline-flex !important;
 }
 /* do you know */
-.notes .desc-img-eng-doyouknow {
-  width: 841px !important;
+.notes .desc-img-eng-doyoknow {
+  width: clamp(250px,25vw,841px) !important;
   height: auto;
   display: inline-flex !important;
 }
