@@ -3,7 +3,6 @@ import { ref, reactive, computed, watch, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSessionsSetup } from "../../../../composables/usesSessions.js";
 import apiDocs from '~/utilities/apiDocs.js';
-import { FaPlayCircle, FaHeart } from 'react-icons/fa';
 
 const router = useRouter();
 const authAccessToken = useCookie('signInAccessToken');
@@ -794,7 +793,7 @@ loadClasses();
                 <div class="duration-badge">{{ classItem.duration }}</div>
               </div>
               <div class="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/70 bg-slate-900/60 p-0 opacity-0 scale-90 shadow-[0_15px_30px_rgba(0,0,0,0.45)] transition duration-300 group-hover:opacity-100 group-hover:scale-100 pointer-events-none">
-                <FaPlayCircle class="h-10 w-10 text-white" aria-hidden="true" />
+                <Icon name="fa-solid:play-circle" class="h-10 w-10 text-white" aria-hidden="true" />
               </div>
               <div class="absolute bottom-4 right-4 flex gap-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                 <button
@@ -804,7 +803,7 @@ loadClasses();
                   @click.stop="openMeetingModal(classItem)"
                   @keydown.enter.prevent="openMeetingModal(classItem)"
                 >
-                  <FaPlayCircle class="h-5 w-5" aria-hidden="true" />
+                  <Icon name="fa-solid:play-circle" class="h-5 w-5" aria-hidden="true" />
                 </button>
                 <button
                   class="action-btn subscribe-btn"
@@ -813,7 +812,7 @@ loadClasses();
                   :aria-pressed="classItem.isSubscribed"
                   :aria-label="classItem.isSubscribed ? `You are subscribed to ${classItem.title}. Press to unsubscribe` : `Subscribe to ${classItem.title} to get notifications about future sessions`"
                 >
-                  <FaHeart class="h-5 w-5" aria-hidden="true" />
+                  <Icon name="fa-solid:heart" class="h-5 w-5" aria-hidden="true" />
                 </button>
               </div>
             </div>
