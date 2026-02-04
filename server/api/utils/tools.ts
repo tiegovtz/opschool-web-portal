@@ -5,6 +5,24 @@ import apiDocs from "~/utilities/apiDocs";
 
 let currentAuthToken: string | undefined = undefined;
 
+const PUBLIC_TOPICS_TIMEOUT_MS = parseInt(
+  process.env.PUBLIC_TOPICS_TIMEOUT_MS || "2500",
+  10,
+);
+const PUBLIC_TOPICS_RETRY_TIMEOUT_MS = parseInt(
+  process.env.PUBLIC_TOPICS_RETRY_TIMEOUT_MS || "4000",
+  10,
+);
+const PUBLIC_TOPICS_CACHE_TTL_MS = parseInt(
+  process.env.PUBLIC_TOPICS_CACHE_TTL_MS || "300000",
+  10,
+);
+
+const publicTopicsCache = new Map<
+  string,
+  { timestamp: number; value: any[] }
+>();
+
 export function setAuthTokenForTools(token: string | undefined): void {
   currentAuthToken = token as string;
 }
@@ -16,6 +34,43 @@ const resolveApiUrl = (docUrl: string, fallbackPath: string) => {
   }
   return `${baseUrl}${fallbackPath}`;
 };
+
+const normalizeSyllabusName = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const buildPublicTopicsCacheKey = (params: {
+  name?: string;
+  level?: string;
+  subject?: string;
+}) => {
+  const tokenKey = currentAuthToken?.trim() || "anon";
+  return [
+    tokenKey,
+    params.name || "",
+    params.level || "",
+    params.subject || "",
+  ]
+    .map((value) => value.toLowerCase())
+    .join("|");
+};
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 async function fetchSubjectsFromApi(): Promise<any[]> {
   const url = resolveApiUrl(apiDocs.subjects.getSubjects, "/subjects");
@@ -91,14 +146,35 @@ async function fetchPublicTopicsFromApi(params: {
     return [];
   };
 
-  const response = await fetch(finalUrl, { headers });
+  const cacheKey = buildPublicTopicsCacheKey(params);
+  const cached = publicTopicsCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < PUBLIC_TOPICS_CACHE_TTL_MS) {
+    return cached.value;
+  }
+
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(finalUrl, { headers }, PUBLIC_TOPICS_TIMEOUT_MS);
+  } catch (error: any) {
+    if (error?.name === "AbortError") {
+      response = await fetchWithTimeout(
+        finalUrl,
+        { headers },
+        PUBLIC_TOPICS_RETRY_TIMEOUT_MS,
+      );
+    } else {
+      throw error;
+    }
+  }
   if (!response.ok) {
     throw new Error(
       `Public topics API error: ${response.status} ${response.statusText}`,
     );
   }
 
-  return extractList(await response.json());
+  const value = extractList(await response.json());
+  publicTopicsCache.set(cacheKey, { timestamp: Date.now(), value });
+  return value;
 }
 
 export const studentTools = {
@@ -121,6 +197,7 @@ export const studentTools = {
     }),
     execute: async ({ name, level, subject }) => {
       const nameValue = name?.trim() || "";
+      const normalizedName = nameValue ? normalizeSyllabusName(nameValue) : "";
       const levelValue = level?.trim() || "";
       const subjectValue = subject?.trim() || "";
 
@@ -146,6 +223,21 @@ export const studentTools = {
           level: levelValue || undefined,
           subject: subjectValue || undefined,
         };
+
+        if (topics.length === 0 && normalizedName && normalizedName !== nameValue) {
+          topics = await fetchPublicTopicsFromApi({
+            name: normalizedName,
+            level: levelValue || undefined,
+            subject: subjectValue || undefined,
+          });
+          if (topics.length > 0) {
+            usedQuery = {
+              name: normalizedName,
+              level: levelValue || undefined,
+              subject: subjectValue || undefined,
+            };
+          }
+        }
 
         // Fallback: if name-only yields no results, try treating name as subject
         if (topics.length === 0 && !subjectValue && nameValue) {

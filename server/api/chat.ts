@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, getCookie } from "h3";
+import { defineEventHandler, readBody, getCookie, setHeader } from "h3";
 import {
   streamText,
   convertToModelMessages,
@@ -6,6 +6,7 @@ import {
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { studentTools, setAuthTokenForTools} from "./utils/tools";
+import { buildDecision } from "../utils/aiDecision";
 
 type CoreMessage = {
   role: "user" | "assistant" | "system";
@@ -83,7 +84,7 @@ CRITICAL RULES - Chapter Scope:
 
 2. Active Teaching Role - TEACH, DON'T JUST ANSWER (within chapter scope only):
    - **ONE CONCEPT AT A TIME**: Focus on helping the student deeply understand ONE concept before moving on. Don't try to cover multiple topics in a single response. Master one thing, check understanding, then move to the next.
-   - **KEEP RESPONSES FOCUSED**: Your responses should be concise and focused on a single learning objective. Avoid overwhelming students with too much information at once.
+   - **KEEP RESPONSES FOCUSED BUT THOROUGH**: Responses should still be focused on a single learning objective, but provide enough detail for understanding. Avoid being too brief.
    - **Your role is to TEACH, not just provide answers** - guide students to understand, not just give them information
    - Use the Socratic method: Ask questions to help students discover answers themselves
    - Break down complex concepts into smaller, digestible steps
@@ -91,11 +92,12 @@ CRITICAL RULES - Chapter Scope:
    - Use scaffolding: Start with what they know, build up to new concepts gradually
    - Encourage critical thinking: Ask "Why do you think...?" or "What would happen if...?"
    - Don't just explain - guide them through the thinking process
-   - Provide examples and analogies, then ask students to create their own
+   - Provide clear examples and analogies, then ask students to create their own
    - Give practice opportunities: "Try to solve this..." or "Can you identify...?"
    - Use formative assessment: Ask questions to gauge understanding before proceeding
    - Adapt your explanations to the student's level and learning style
    - ALL teaching must be strictly within the boundaries of "${chapterName}"
+   - **DEPTH REQUIREMENT**: Every answer must include (1) a clear definition/explanation, (2) a simple step-by-step breakdown, and (3) at least one concrete Tanzanian example when applicable.
 
 3. Provide Additional Examples (chapter-specific) - ALWAYS USE TANZANIAN CONTEXT:
    - **MANDATORY**: Always use examples from Tanzania when explaining concepts from "${chapterName}"
@@ -167,9 +169,19 @@ CRITICAL RULES - Chapter Scope:
 1. ✅ **ONE CONCEPT ONLY**: Focus on a single concept - don't cover multiple topics at once
 2. ✅ Check prior knowledge: "What do you know about...?"
 3. ✅ Guide discovery: "Let's think about this together..."
-4. ✅ Break down step-by-step (but stay focused on ONE thing)
+4. ✅ Break down step-by-step (but stay focused on ONE thing) with enough detail to be clear
 5. ✅ Check understanding: "Does this make sense?" - WAIT for their response before moving on
 6. ✅ Only after they understand, move to the next concept
+
+**Response Shape (Mandatory)**:
+1. Definition/explanation in simple language
+2. Step-by-step breakdown (short steps)
+3. Tanzanian example or analogy (when applicable)
+4. Check understanding question
+
+**Length Guidance**: Usually 4-8 sentences (or a short paragraph) so the explanation is clear, unless the student explicitly asks for a brief answer.
+
+**Length Guidance**: Usually 4-8 sentences (or a short paragraph) so the explanation is clear, unless the student explicitly asks for a brief answer.
 
 Remember: Your EXCLUSIVE goal is to TEACH students to understand "${chapterName}" and ONLY "${chapterName}". Don't just provide answers - guide them to learn.
     `.trim();
@@ -180,7 +192,7 @@ You are TIE AI, a teaching assistant specialized in the Tanzanian (NECTA) curric
 
 **CORE TEACHING PHILOSOPHY:**
 - **ONE CONCEPT AT A TIME**: Focus on helping the student deeply understand ONE concept before moving on. Master one thing, check understanding, then move to the next.
-- **KEEP RESPONSES FOCUSED**: Your responses should be concise and focused on a single learning objective.
+- **KEEP RESPONSES FOCUSED BUT THOROUGH**: Responses should be focused on a single learning objective, but give enough detail for real understanding.
 - **LEAD THE CONVERSATION**: You are the teacher - take charge and guide the learning journey.
 - **TEACH, DON'T JUST ANSWER**: Guide students to understand, not just give them information
 - **Active Learning**: Engage students in the learning process through questions, examples, and practice
@@ -230,6 +242,13 @@ Priority Rules:
   * Agriculture: Coffee, tea, cotton, cashew nuts, maize, rice farming
   * Industries: Mining (gold, diamonds, tanzanite), fishing, tourism
   * Culture: Swahili language, traditional practices, local foods
+ - **DEPTH REQUIREMENT**: Each answer should include (1) a clear definition/explanation, (2) a step-by-step breakdown, and (3) at least one concrete example when applicable.
+
+**Response Shape (Mandatory)**:
+1. Definition/explanation in simple language
+2. Step-by-step breakdown (short steps)
+3. Tanzanian example or analogy (when applicable)
+4. Check understanding question
 
 **RESPONSE PATTERNS**:
 
@@ -240,7 +259,7 @@ Priority Rules:
 
 ✅ DO TEACH ONE CONCEPT AT A TIME:
 - Student: "What is Physics?"
-- Good: "Great question! Let's start with the core concept. Physics is the scientific study of matter and energy. Think about when you drop a stone - it falls down. Physics explains WHY it falls. Does this basic concept make sense?"
+- Good: "Great question! Let's start with the core concept. Physics is the scientific study of matter and energy. Step-by-step: (1) We observe events like a stone falling in Dodoma. (2) We ask why it falls. (3) Physics gives rules (like gravity) that explain the motion. For example, a ball thrown in Dar es Salaam follows a curved path. Does this basic concept make sense?"
 
 **When students ask questions - YOUR WORKFLOW**:
 1. If the student explicitly asks about syllabus inclusion OR the question is about a specific topic, call checkSyllabus.
@@ -398,222 +417,7 @@ function extractRequestContext(event: any, body: any) {
   return { chapterName, subject, level, topic, chapterNo, authToken };
 }
 
-const SUBJECT_KEYWORDS = new Set([
-  "physics",
-  "chemistry",
-  "biology",
-  "mathematics",
-  "math",
-  "geography",
-  "history",
-  "civics",
-  "english",
-  "kiswahili",
-  "swahili",
-  "science",
-  "agriculture",
-  "computer studies",
-  "ict",
-  "economics",
-  "commerce",
-  "accounting",
-  "literature",
-  "religion",
-  "cre",
-  "ire",
-  "religious studies",
-  "business studies",
-  "entrepreneurship",
-  "fine art",
-  "home economics",
-]);
-
-function isGeneralSubjectDefinition(text: string): boolean {
-  const cleaned = text.toLowerCase().trim();
-  const match = cleaned.match(/^(what is|define)\s+(.+)$/);
-  if (!match) return false;
-  const term = match[2]?.trim() || "";
-  if (!term) return false;
-  if (SUBJECT_KEYWORDS.has(term)) return true;
-  return false;
-}
-
-function isExplicitSyllabusCheck(text: string): boolean {
-  return (
-    /\bsyllabus\b/i.test(text) ||
-    /\bcurriculum\b/i.test(text) ||
-    /\bout of syllabus\b/i.test(text) ||
-    /\bin syllabus\b/i.test(text) ||
-    /\bis this in\b/i.test(text) ||
-    /\bcovered in\b/i.test(text)
-  );
-}
-
-function isClearlyNonCurriculum(text: string): boolean {
-  const lower = text.toLowerCase();
-  const nonCurriculumSignals = [
-    "9/11",
-    "september 11",
-    "world trade center",
-    "terrorist attack",
-    "celebrity",
-    "singer",
-    "rapper",
-    "song",
-    "lyrics",
-    "movie",
-    "film",
-    "premier league",
-    "epl",
-    "nba",
-    "nfl",
-    "score",
-    "weather",
-    "stock",
-    "bitcoin",
-    "crypto",
-    "iphone",
-    "tiktok",
-    "instagram",
-    "facebook",
-    "twitter",
-    "x.com",
-  ];
-  return nonCurriculumSignals.some((signal) => lower.includes(signal));
-}
-
-function shouldUseSyllabus(
-  question: string,
-  context?: { subject?: string; level?: string; topic?: string }
-): boolean {
-  if (!question) return false;
-  const text = question.toLowerCase().trim();
-  const cleanText = text.replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-  if (cleanText.length < 2) return false;
-  if (isClearlyNonCurriculum(text)) return false;
-  if (isGeneralSubjectDefinition(text)) return false;
-  if (isExplicitSyllabusCheck(text)) return true;
-
-  const topicSignals = [
-    "what is",
-    "what are",
-    "define",
-    "explain",
-    "describe",
-    "compare",
-    "differentiate",
-    "list",
-    "topic",
-    "topics",
-    "tell me about",
-    "give examples",
-    "formula",
-    "equation",
-    "derive",
-    "calculate",
-    "solve",
-    "steps",
-    "process",
-    "function",
-    "law of",
-  ];
-
-  const hasTopicSignal = topicSignals.some((signal) => text.includes(signal));
-  if (hasTopicSignal) return true;
-
-  const tokens = cleanText.split(/\s+/).filter(Boolean);
-  const hasLongToken = tokens.some((token) => token.length >= 6);
-  const multiWordTopic = tokens.length >= 3 && hasLongToken;
-  const hasQuestionMark = question.includes("?");
-
-  const hasContext = Boolean(
-    context?.subject?.trim() || context?.level?.trim() || context?.topic?.trim()
-  );
-
-  if (hasContext) return true;
-
-  return multiWordTopic || hasQuestionMark;
-}
-
-function shouldUseRag(
-  question: string,
-  context?: { chapterName?: string; subject?: string; level?: string; topic?: string }
-): boolean {
-  if (!question) return false;
-  const text = question.toLowerCase().trim();
-  const cleanText = text.replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-  if (cleanText.length < 2) return false;
-
-  if (isClearlyNonCurriculum(text)) return false;
-  if (isExplicitSyllabusCheck(text)) return false;
-
-  const nonRagPhrases = [
-    "hi",
-    "hello",
-    "hey",
-    "good morning",
-    "good afternoon",
-    "good evening",
-    "who are you",
-    "what can you do",
-    "how are you",
-    "thank you",
-    "thanks",
-    "ok",
-    "okay",
-    "nice",
-  ];
-
-  if (nonRagPhrases.some((phrase) => cleanText === phrase || cleanText.startsWith(`${phrase} `))) {
-    return false;
-  }
-
-  const mathLike = text.replace(/[=?]/g, "").replace(/\?/g, "").trim();
-  if (mathLike && /^[0-9+\-*/^().\s]+$/.test(mathLike)) {
-    return false;
-  }
-
-  const ragSignals = [
-    "what is",
-    "what are",
-    "define",
-    "explain",
-    "describe",
-    "compare",
-    "differentiate",
-    "list",
-    "topic",
-    "topics",
-    "tell me about",
-    "give examples",
-    "formula",
-    "equation",
-    "derive",
-    "calculate",
-    "solve",
-    "steps",
-    "process",
-    "function",
-    "law of",
-  ];
-
-  const hasRagSignal = ragSignals.some((signal) => text.includes(signal));
-  if (hasRagSignal) return true;
-
-  const tokens = cleanText.split(/\s+/).filter(Boolean);
-  const singleTopic = tokens.length === 1 && tokens[0] !== undefined && tokens[0].length >= 5;
-  const hasQuestionMark = question.includes("?");
-  const hasLongToken = tokens.some((token) => token.length >= 6);
-  const multiWordTopic = tokens.length >= 3 && hasLongToken;
-  const hasContext = Boolean(
-    context?.chapterName?.trim() ||
-      context?.subject?.trim() ||
-      context?.level?.trim() ||
-      context?.topic?.trim()
-  );
-
-  return singleTopic || hasQuestionMark || multiWordTopic || hasContext;
-}
+// Decision logic moved to server/utils/aiDecision.ts
 
 function buildFinalPrompt(basePrompt: string, chapterName: string | undefined): string {
   let prompt = basePrompt;
@@ -660,34 +464,37 @@ export default defineEventHandler(async (event) => {
     }
     
     const basePrompt = getCachedSystemPrompt(validChapterName, context);
-    const systemPrompt = buildFinalPrompt(basePrompt, chapterName);
+    let systemPrompt = buildFinalPrompt(basePrompt, chapterName);
     
     setAuthTokenForTools(authToken);
 
   const openai = getOpenAIClient(apiKey);
 
   const lastUserMessage = [...coreMessages].reverse().find((msg) => msg.role === "user");
-  const allowRag = lastUserMessage
-    ? shouldUseRag(lastUserMessage.content, {
+  const decision = lastUserMessage
+    ? buildDecision(lastUserMessage.content, {
         chapterName: validChapterName,
         subject,
         level,
         topic,
       })
-    : false;
-  const allowSyllabus = lastUserMessage
-    ? shouldUseSyllabus(lastUserMessage.content, {
-        subject,
-        level,
-        topic,
-      })
-    : false;
+    : buildDecision("", { chapterName: validChapterName, subject, level, topic });
+
+  if (decision.needsClarification) {
+    systemPrompt += `\n\nCLARIFY FIRST:\n- Ask the student to specify the subject and level before checking syllabus or answering.\n- Do NOT answer the question until the subject and level are provided.`;
+  }
+
+  const debugFlag =
+    event.headers.get("x-ai-debug") === "1" || body?.debug === true;
+  if (debugFlag) {
+    setHeader(event, "x-ai-decision", JSON.stringify(decision));
+  }
 
   const toolsForRequest = { ...studentTools } as typeof studentTools;
-  if (!allowRag) {
+  if (!decision.allowRag) {
     delete (toolsForRequest as any).searchTextbooks;
   }
-  if (!allowSyllabus) {
+  if (!decision.allowSyllabus) {
     delete (toolsForRequest as any).checkSyllabus;
   }
 
