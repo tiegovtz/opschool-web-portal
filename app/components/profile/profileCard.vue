@@ -3,6 +3,10 @@ import messages from "~/utilities/messages";
 import { MessageComponent, ProfileDrawInitialLater } from "#components";
 import apiDocs from "~/utilities/apiDocs";
 import type { Level } from "~/types/level.interface";
+import { FetchError } from "ofetch";
+
+// Defien Status
+type Status = "idle" | "pending" | "loading" | "success" | "error";
 
 // Define Cookie
 const signInAccessToken = useCookie<string>("signInAccessToken");
@@ -22,7 +26,8 @@ interface UserProfile {
   type: string,
   profilePic: string,
   controller: {
-    status: string | boolean,
+    status: Status,
+    feedback: string,
     errors: {
       all: null | string,
       type: string,
@@ -49,7 +54,7 @@ interface UserProfile {
 
 // Define State
 const listLevel = ref<Level[]>([]);
-const isModified = ref(false);
+const isModified = ref<Boolean>(false);
 
 const profile = reactive<UserProfile>({
   fname: userToken.name.split(" ")[0],
@@ -70,7 +75,8 @@ const profile = reactive<UserProfile>({
   type: userToken.type,
   profilePic: userToken.profilePic,
   controller: {
-    status: "",
+    status: "idle",
+    feedback: '',
     errors: {
       all: null,
       type: "",
@@ -96,7 +102,7 @@ const profile = reactive<UserProfile>({
 });
 
 // Define Two State
-const data = reactive<{ regions: any[], district: any[], schools: any[], status: any, error: any }>({
+const data = reactive<{ regions: any[], district: any[], schools: any[], status: Status, error: any,}>({
   regions: [],
   district: [],
   schools: [],
@@ -148,7 +154,8 @@ const districtPlaceholder = computed(() => {
 
 // Define Update Function
 const updatedProfile = async () => {
-
+  profile.controller.status = "loading";
+  isModified.value = true;
   try {
     const response = await $fetch(apiDocs.auth.profileEdit, {
       method: "PATCH",
@@ -169,6 +176,7 @@ const updatedProfile = async () => {
       },
     });
 
+
     if (response) {
       // Only update values if remote is valid (non-empty)
       for (const key in response) {
@@ -176,14 +184,24 @@ const updatedProfile = async () => {
           const remoteValue = (response as any)[key];
           if (remoteValue !== undefined && remoteValue !== null && remoteValue !== "") {
             (profile as any)[key] = remoteValue;
-            (signInAccessToken.value as any)[key] = remoteValue;
+            (userToken.value as any)[key] = remoteValue;
           }
         }
       }
     }
+
+    profile.controller.status = "success";
+    profile.controller.feedback = "Profile updated successfully!";
     isModified.value = false;
-  } catch (error) {
-    console.log(error);
+
+  } catch (error: any) {
+    isModified.value = false;
+    profile.controller.status = "error";
+    profile.controller.feedback = "Failed to update profile.";
+    const fetchError = error as FetchError;
+    const status = fetchError?.response?.status;
+    const message = fetchError?.data?.message || fetchError?.message || "An error occurred while updating the profile.";
+    console.error(error, { status: status, message: message });
   }
 };
 
@@ -372,19 +390,19 @@ const choosePict = async (event: Event) => {
 
   setTimeout(() => {
     profile.controller.errors.profilePic = null;
-    profile.controller.status = false;
-  }, 4000)
+    profile.controller.status = 'idle';
+  }, 1500)
 
   if (!allowedTypes.includes(file.type)) {
     profile.controller.errors.profilePic =
       "Only JPG, PNG, or WEBP images are allowed.";
-    profile.controller.status = false;
+    profile.controller.status = 'error';
     return;
   }
 
   if (file.size > maxSize) {
     profile.controller.errors.profilePic = "File size must be under 2MB.";
-    profile.controller.status = false;
+    profile.controller.status = 'error';
     return;
   }
 
@@ -404,12 +422,12 @@ const choosePict = async (event: Event) => {
   }).then((response) => {
     if (response) {
       // profile.profilePic = response;
-      profile.controller.status = true;
-      profile.controller.errors.profilePic = 'profile picture updated successfully';
+      profile.controller.status = 'success';
+      profile.controller.feedback = 'profile picture updated successfully';
     }
   }).catch((error) => {
-    profile.controller.status = false;
-    profile.controller.errors.profilePic = error.message;
+    profile.controller.status = 'error';
+    profile.controller.feedback = error.message;
   });
 };
 
@@ -793,15 +811,40 @@ const discardChanges = () => {
 
     <!-- Submit Button -->
     <div class="flex items-center justify-between w-full gap-4 mt-8" v-if="isModified">
+      <!-- Discard Changes -->
       <button type="reset" @click="discardChanges"
         class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium transition-colors duration-500 ease-in-out border-2 rounded-md hover:text-white text-deepBlue border-oceanBlue hover:bg-gradient-to-r from-deepBlue to-oceanBlue hover:shadow-md">
         Discard Changes
         <Icon name="heroicons:arrow-right" class="w-4 h-4" />
       </button>
-      <button type="submit" @click="updatedProfile()"
-        class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium text-white transition-all duration-500 rounded-md bg-gradient-to-r to-oceanBlue from-deepBlue hover:shadow-md">
-        Save Changes
-        <Icon name="heroicons:arrow-right" class="w-4 h-4" />
+
+      <!-- save Changes -->
+      <button type="submit" @click="updatedProfile()" :disabled="profile.controller.status === 'loading' || isModified == false"
+        :aria-busy="profile.controller.status === 'loading' ? 'true' : 'false'" :class="[
+          'flex items-center justify-center w-full gap-2 px-6 py-3 font-medium text-white transition-all duration-500 rounded-md bg-gradient-to-r to-oceanBlue from-deepBlue hover:shadow-md',
+          profile.controller.status === 'loading' ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
+          profile.controller.status === 'success' ? 'bg-green-500 cursor-not-allowed' : 'cursor-pointer',
+          profile.controller.feedback === 'error' ? 'bg-red-500 cursor-not-allowed' : 'cursor-pointer'
+        ]">
+        <div class="flex items-center justify-center gap-4" v-if="profile.controller.status === 'loading'">
+          <span>Please Wait...</span>
+          <IconsLoading class="text-white" :size="20" />
+        </div>
+
+        <div class="flex items-center justify-center gap-4" v-else-if="profile.controller.status === 'success'">
+          <span>Changes Saved Successfully!</span>
+          <IconsChecked class="text-white" :size="20" />
+        </div>
+
+        <div class="flex items-center justify-center gap-4" v-else-if="profile.controller.feedback === 'error'">
+          <span>Changes Failed to Save!</span>
+          <IconsCrossCircle class="text-white" :size="20" />
+        </div>
+
+        <div class="flex items-center justify-center gap-4" v-else>
+          Save Changes
+          <Icon name="heroicons:arrow-right" class="w-4 h-4" />
+        </div>
       </button>
     </div>
   </div>

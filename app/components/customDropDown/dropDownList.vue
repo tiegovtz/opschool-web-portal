@@ -63,7 +63,7 @@ const selectItem = (item) => {
   selectedLabel.value = item.name;
   selected.value = item.name;
 
-  emit('update:modelValue', item.id ?? item.name);
+  emit('updateModelValue', item.id ?? item.name);
 
   isOpen.value = false;
 };
