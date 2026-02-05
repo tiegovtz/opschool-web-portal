@@ -77,11 +77,11 @@ const setExperimentUrl =()=>{
         <!-- Content section -->
         <div class="flex flex-col flex-grow p-4">
             <p
-                class="mb-4 text-sm text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
+                class="mb-2 text-[1.2rem] font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
                 {{ experimentName }}
             </p>
             <p
-                class="mb-4 text-sm text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
+                class="mb-2 text-[1rem] text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
                 {{ experimentDescription }}
             </p>
 

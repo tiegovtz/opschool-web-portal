@@ -108,12 +108,12 @@ const userToken = useCookie('signInUserToken')
       <!-- topic title and description -->
       <div class="flex flex-col my-auto transition-all duration-500 ease-in-out">
         <p :class="[
-          'text-[1.2rem] font-bold text-gray-800 group-hover:text-white',
-          { 'mt-2': !userToken, 'md:text-[1.2rem] text-[1rem] font-medium': modelType === 'search' }
+          'md:text-[1.2rem] font-bold text-gray-800 group-hover:text-white',
+          { 'mt-2': !userToken, 'text-[1rem] font-medium': modelType === 'search' }
         ]">
           {{ topicTitle }}
         </p>
-        <p v-if="modelType === 'card'" class="text-small text-black/80 group-hover:text-white line-clamp-2">
+        <p v-if="modelType === 'card'" class="text-[1rem] text-black/80 group-hover:text-white line-clamp-2">
           {{ topicDescription }}
         </p>
       </div>
