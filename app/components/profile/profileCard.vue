@@ -810,43 +810,47 @@ const discardChanges = () => {
     </div>
 
     <!-- Submit Button -->
-    <div class="flex items-center justify-between w-full gap-4 mt-8" v-if="isModified">
-      <!-- Discard Changes -->
-      <button type="reset" @click="discardChanges"
-        class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium transition-colors duration-500 ease-in-out border-2 rounded-md hover:text-white text-deepBlue border-oceanBlue hover:bg-gradient-to-r from-deepBlue to-oceanBlue hover:shadow-md">
-        Discard Changes
-        <Icon name="heroicons:arrow-right" class="w-4 h-4" />
-      </button>
-
-      <!-- save Changes -->
-      <button type="submit" @click="updatedProfile()" :disabled="profile.controller.status === 'loading' || isModified == false"
-        :aria-busy="profile.controller.status === 'loading' ? 'true' : 'false'" :class="[
-          'flex items-center justify-center w-full gap-2 px-6 py-3 font-medium text-white transition-all duration-500 rounded-md bg-gradient-to-r to-oceanBlue from-deepBlue hover:shadow-md',
-          profile.controller.status === 'loading' ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
-          profile.controller.status === 'success' ? 'bg-green-500 cursor-not-allowed' : 'cursor-pointer',
-          profile.controller.feedback === 'error' ? 'bg-red-500 cursor-not-allowed' : 'cursor-pointer'
-        ]">
-        <div class="flex items-center justify-center gap-4" v-if="profile.controller.status === 'loading'">
-          <span>Please Wait...</span>
-          <IconsLoading class="text-white" :size="20" />
-        </div>
-
-        <div class="flex items-center justify-center gap-4" v-else-if="profile.controller.status === 'success'">
-          <span>Changes Saved Successfully!</span>
-          <IconsChecked class="text-white" :size="20" />
-        </div>
-
-        <div class="flex items-center justify-center gap-4" v-else-if="profile.controller.feedback === 'error'">
-          <span>Changes Failed to Save!</span>
-          <IconsCrossCircle class="text-white" :size="20" />
-        </div>
-
-        <div class="flex items-center justify-center gap-4" v-else>
-          Save Changes
+   <Transition name="fade">
+      <div class="flex items-center justify-between w-full gap-4 mt-8" v-if="isModified">
+        <!-- Discard Changes -->
+        <button type="reset" @click="discardChanges"
+          class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium transition-colors duration-500 ease-in-out border-2 rounded-md hover:text-white text-deepBlue border-oceanBlue hover:bg-gradient-to-r from-deepBlue to-oceanBlue hover:shadow-md">
+          Discard Changes
           <Icon name="heroicons:arrow-right" class="w-4 h-4" />
-        </div>
-      </button>
-    </div>
+        </button>
+
+        <!-- save Changes -->
+        <button type="submit" @click="updatedProfile()"
+          :disabled="profile.controller.status === 'loading' || isModified == false"
+          :aria-busy="profile.controller.status === 'loading' ? 'true' : 'false'" :class="[
+            'flex items-center justify-center w-full gap-2 px-6 py-3 font-medium text-white transition-all duration-500 rounded-md bg-gradient-to-r to-oceanBlue from-deepBlue hover:shadow-md',
+            profile.controller.status === 'loading' ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
+            profile.controller.status === 'success' ? 'bg-green-500 cursor-not-allowed' : 'cursor-pointer',
+            profile.controller.feedback === 'error' ? 'bg-red-500 cursor-not-allowed' : 'cursor-pointer'
+          ]">
+          <div class="flex items-center justify-center gap-4" v-if="profile.controller.status === 'loading'">
+            <span>Please Wait...</span>
+            <IconsLoading class="text-white" :size="20" />
+          </div>
+
+          <div class="flex items-center justify-center gap-4" v-else-if="profile.controller.status === 'success'">
+            <span>Changes Saved Successfully!</span>
+            <IconsChecked class="text-white" :size="20" />
+          </div>
+
+          <div class="flex items-center justify-center gap-4" v-else-if="profile.controller.feedback === 'error'">
+            <span>Changes Failed to Save!</span>
+            <IconsCrossCircle class="text-white" :size="20" />
+          </div>
+
+          <div class="flex items-center justify-center gap-4" v-else>
+            Save Changes
+            <Icon name="heroicons:arrow-right" class="w-4 h-4" />
+          </div>
+        </button>
+      </div>
+
+   </Transition>
   </div>
   <div v-else-if="status == 'error'" class="flex items-center justify-center w-full max-w-7xl'">
     <MessagePageNotFound />
@@ -857,3 +861,17 @@ const discardChanges = () => {
     </p>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  will-change: opacity, transform;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+</style>
