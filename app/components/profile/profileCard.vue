@@ -2,6 +2,7 @@
 import messages from "~/utilities/messages";
 import { MessageComponent, ProfileDrawInitialLater } from "#components";
 import apiDocs from "~/utilities/apiDocs";
+import type { Level } from "~/types/level.interface";
 
 // Define Cookie
 const signInAccessToken = useCookie<string>("signInAccessToken");
@@ -46,7 +47,10 @@ interface UserProfile {
   },
 }
 
-// Define One State
+// Define State
+const listLevel = ref<Level[]>([]);
+const isModified = ref(false);
+
 const profile = reactive<UserProfile>({
   fname: userToken.name.split(" ")[0],
   lname: userToken.name.split(" ")[1],
@@ -91,9 +95,6 @@ const profile = reactive<UserProfile>({
   },
 });
 
-// Define Three State
-const isModified = ref(false);
-
 // Define Two State
 const data = reactive<{ regions: any[], district: any[], schools: any[], status: any, error: any }>({
   regions: [],
@@ -101,6 +102,48 @@ const data = reactive<{ regions: any[], district: any[], schools: any[], status:
   schools: [],
   status: "idle",
   error: null,
+});
+
+// List 
+const levelsLists = computed(() =>
+  (listLevel.value ?? []).map((level) => ({ id: level._id, name: level.name }))
+)
+
+const schoolOptions = computed(() =>
+  (data.schools ?? []).map((school) => ({ id: school._id, name: school.name }))
+)
+
+const districtOptions = computed(() =>
+  (data.district ?? []).map((district) => ({ id: district.toLowerCase(), name: district }))
+)
+
+const regionOptions = computed(() =>
+  (data.regions ?? []).map((region) => ({ id: region.toLowerCase(), name: region }))
+)
+
+// Region, District and School Placeholders
+const regionPlaceholder = computed(() => {
+  if (data.status === "idle") return "Select Region";
+  if (data.status === "pending") return "Loading...";
+  if (data.status === "error") return data.error ?? "An error occurred.";
+  if (data.regions && data.status === "success") return "Eg (Mwanza) ...";
+  return "Select Region";
+});
+
+const schoolPlaceholder = computed(() => {
+  if (data.status === "idle") return "Select Region and District First";
+  if (data.status === "pending") return "Loading...";
+  if (data.status === "error") return data.error ?? "An error occurred.";
+  if (data.schools && data.status === "success") return "Eg (Taifa Secondary School) ...";
+  return "Select School";
+});
+
+const districtPlaceholder = computed(() => {
+  if (data.status === "idle") return "Select Region First";
+  if (data.status === "pending") return "Loading...";
+  if (data.status === "error") return data.error ?? "An error occurred.";
+  if (data.district && data.status === "success") return "Eg (Mwanza) ...";
+  return "Select District";
 });
 
 // Define Update Function
@@ -151,6 +194,16 @@ const { data: profileData, status, error } = await useFetch<any>(apiDocs.auth.pr
   }
 });
 
+const getLevel = async () => {
+  try {
+    const response = await $fetch<Level[]>(apiDocs.levels.getLevels, {
+      method: "GET",
+    });
+    listLevel.value = response;
+  } catch (error) {
+    console.error("Error fetching levels:", error);
+  }
+};
 
 // Fetch Region function
 const fetchRegion = async () => {
@@ -213,10 +266,13 @@ const fetchSchools = async (region: string, district: string) => {
   }
 };
 
-// Initial fetch
-fetchRegion();
-fetchDistricts(profile.region);
-fetchSchools(profile.region, profile.district);
+// On Mounted
+onMounted(async () => {
+  await getLevel();
+  await fetchRegion();
+  await fetchDistricts(profile.region);
+  await fetchSchools(profile.region, profile.district);
+})
 
 // Watch for changes in region or district (School)
 watch(
@@ -516,7 +572,7 @@ const discardChanges = () => {
 
     <!-- Personal Information -->
     <div class="w-full mx-auto my-6">
-      <div class="overflow-hidden bg-white border border-gray-100 rounded-md shadow-md">
+      <div class="bg-white border border-gray-100 rounded-md shadow-md">
         <!-- Header -->
         <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
           <h3 class="text-lg font-semibold text-white">Personal Information</h3>
@@ -616,6 +672,7 @@ const discardChanges = () => {
               <label for="region" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 Region
               </label>
+
               <div class="relative flex items-center">
                 <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
@@ -624,7 +681,14 @@ const discardChanges = () => {
                 </span>
 
                 <!-- Select input with space for the icon -->
-                <select name="region" id="region" @canplay="onValueChanged('region')" v-model="profile.region"
+
+                <CustomDropDownList id="region" name="region" v-model="profile.region" :list="regionOptions"
+                  :placeholder="regionPlaceholder"
+                  @update-model-value="(value: string) => { profile.region = value; onValueChanged('region'); }"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
+
+
+                <!-- <select name="region" id="region" @canplay="onValueChanged('region')" v-model="profile.region"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
                   <option value="" v-if="data.status === 'pending'">
                     Loading...
@@ -641,7 +705,7 @@ const discardChanges = () => {
                       `${region}`.slice(1).toLowerCase()
                     }}
                   </option>
-                </select>
+                </select> -->
               </div>
             </div>
 
@@ -650,6 +714,7 @@ const discardChanges = () => {
               <label for="district" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 District
               </label>
+
               <div class="relative flex items-center">
                 <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
@@ -658,7 +723,13 @@ const discardChanges = () => {
                 </span>
 
                 <!-- Select input with space for the icon -->
-                <select name="district" id="district" @change="onValueChanged('district')" v-model="profile.district"
+
+                <CustomDropDownList id="district" name="district" v-model="profile.district" :list="districtOptions"
+                  :placeholder="districtPlaceholder"
+                  @update-model-value="(value: string) => { profile.district = value; onValueChanged('district'); }"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
+
+                <!-- <select name="district" id="district" @change="onValueChanged('district')" v-model="profile.district"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
                   <option value="" v-if="data.status === 'idle'">
                     Select Region First
@@ -678,7 +749,7 @@ const discardChanges = () => {
                       `${district}`.slice(1).toLowerCase()
                     }}
                   </option>
-                </select>
+                </select> -->
               </div>
             </div>
 
@@ -687,6 +758,7 @@ const discardChanges = () => {
               <label for="school" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 School
               </label>
+
               <div class="relative flex items-center">
                 <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
@@ -694,36 +766,26 @@ const discardChanges = () => {
                     class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue" />
                 </span>
 
-                <!-- Select input with space for the icon -->
-                <select name="school" id="school" v-model="profile.school" @change="onValueChanged('school')"
-                  class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
-                  <option value="" v-if="data.status === 'idle'">
-                    Select Region and District First
-                  </option>
-                  <option value="" v-if="data.status === 'pending'">
-                    Loading...
-                  </option>
-                  <option value="" v-if="data.status === 'error'">
-                    {{ data.error }}
-                  </option>
-                  <option value="" v-else-if="data.schools && data.status === 'success'">
-                    Eg (Taifa Secondary School) ...
-                  </option>
-                  <option v-for="school in data.schools" :key="school._id" :value="school._id">
-                    {{
-                      school.name
-                        .split(" ")
-                        .map(
-                          (word: string) =>
-                            word.charAt(0).toUpperCase() +
-                            word.slice(1).toLowerCase()
-                        )
-                        .join(" ")
-                    }}
-                  </option>
-                </select>
+                <CustomDropDownList id="school" name="school" v-model="profile.school" :list="schoolOptions"
+                  :placeholder="schoolPlaceholder"
+                  @update-model-value="(value: string) => { profile.school = value; onValueChanged('school'); }"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
               </div>
             </div>
+
+            <div class="relative group">
+              <label for="level" class="block mb-1 ml-1 text-xs font-medium text-textGray">
+                Level
+              </label>
+
+              <div class="relative flex items-center">
+                <!-- Use the Custom Dropdown instead of <select> -->
+                <CustomDropDownList v-model="profile.level" :list="levelsLists" placeholder="(eg: Form 1, Form 2 ...)"
+                  @update-model-value="(value: string) => { profile.level = value; onValueChanged('level'); }"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
