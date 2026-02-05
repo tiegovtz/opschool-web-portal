@@ -17,6 +17,10 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  buttonClass: {
+    type: String,
+    default: ''
   }
 });
 
@@ -37,6 +41,15 @@ watch(() => props.modelValue, (newVal) => {
   }
 }, { immediate: true });
 
+watch(() => props.list, (newVal) => {
+  if (props.list !== null && props.list !== undefined) {
+    const item = newVal.find(i => i.id === props.modelValue);
+    selected.value = item ? item.name : '';
+  } else {
+    selected.value = '';
+  }
+}, { immediate: true });
+
 // Toggle dropdown open/close
 const toggleOpen = () => {
   if (!props.disabled) {
@@ -50,7 +63,7 @@ const selectItem = (item) => {
   selectedLabel.value = item.name;
   selected.value = item.name;
 
-  emit('update:modelValue', item.id ?? item.name);
+  emit('updateModelValue', item.id ?? item.name);
 
   isOpen.value = false;
 };
@@ -74,7 +87,10 @@ onBeforeUnmount(() => {
   <div ref="dropdownRef" class="relative w-full text-left">
     <!-- Dropdown button -->
     <button type="button"
-      class="flex items-center justify-between w-full h-full px-4 py-2 text-gray-700 rounded-md shadow-sm focus:outline-none"
+      :class="[
+        'flex items-center justify-between w-full h-full px-4 py-2 text-gray-700 rounded-md shadow-sm focus:outline-none',
+        buttonClass
+      ]"
       @click.stop="toggleOpen" role="combobox" aria-haspopup="listbox"
       :aria-expanded="(!disabled && isOpen) ? 'true' : 'false'"
       :aria-controls="$attrs.id ? `${$attrs.id}-listbox` : 'dropdown-listbox'" :disabled="disabled"

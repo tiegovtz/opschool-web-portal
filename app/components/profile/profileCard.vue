@@ -2,10 +2,15 @@
 import messages from "~/utilities/messages";
 import { MessageComponent, ProfileDrawInitialLater } from "#components";
 import apiDocs from "~/utilities/apiDocs";
+import type { Level } from "~/types/level.interface";
+import { FetchError } from "ofetch";
+
+// Defien Status
+type Status = "idle" | "pending" | "loading" | "success" | "error";
 
 // Define Cookie
-const signInAccessToken = useCookie < string > ("signInAccessToken");
-const userToken = useCookie < any > ("signInUserToken").value;
+const signInAccessToken = useCookie<string>("signInAccessToken");
+const userToken = useCookie<any>("signInUserToken").value;
 let uploadedPic;
 
 interface UserProfile {
@@ -21,7 +26,8 @@ interface UserProfile {
   type: string,
   profilePic: string,
   controller: {
-    status: string | boolean,
+    status: Status,
+    feedback: string,
     errors: {
       all: null | string,
       type: string,
@@ -46,8 +52,11 @@ interface UserProfile {
   },
 }
 
-// Define One State
-const profile = reactive < UserProfile > ({
+// Define State
+const listLevel = ref<Level[]>([]);
+const isModified = ref<Boolean>(false);
+
+const profile = reactive<UserProfile>({
   fname: userToken.name.split(" ")[0],
   lname: userToken.name.split(" ")[1],
   email: userToken.email,
@@ -66,7 +75,8 @@ const profile = reactive < UserProfile > ({
   type: userToken.type,
   profilePic: userToken.profilePic,
   controller: {
-    status: "",
+    status: "idle",
+    feedback: '',
     errors: {
       all: null,
       type: "",
@@ -91,11 +101,8 @@ const profile = reactive < UserProfile > ({
   },
 });
 
-// Define Three State
-const isModified = ref(false);
-
 // Define Two State
-const data = reactive < { regions: any[], district: any[], schools: any[], status: any, error: any } > ({
+const data = reactive<{ regions: any[], district: any[], schools: any[], status: Status, error: any,}>({
   regions: [],
   district: [],
   schools: [],
@@ -103,9 +110,52 @@ const data = reactive < { regions: any[], district: any[], schools: any[], statu
   error: null,
 });
 
+// List 
+const levelsLists = computed(() =>
+  (listLevel.value ?? []).map((level) => ({ id: level._id, name: level.name }))
+)
+
+const schoolOptions = computed(() =>
+  (data.schools ?? []).map((school) => ({ id: school._id, name: school.name }))
+)
+
+const districtOptions = computed(() =>
+  (data.district ?? []).map((district) => ({ id: district.toLowerCase(), name: district }))
+)
+
+const regionOptions = computed(() =>
+  (data.regions ?? []).map((region) => ({ id: region.toLowerCase(), name: region }))
+)
+
+// Region, District and School Placeholders
+const regionPlaceholder = computed(() => {
+  if (data.status === "idle") return "Select Region";
+  if (data.status === "pending") return "Loading...";
+  if (data.status === "error") return data.error ?? "An error occurred.";
+  if (data.regions && data.status === "success") return "Eg (Mwanza) ...";
+  return "Select Region";
+});
+
+const schoolPlaceholder = computed(() => {
+  if (data.status === "idle") return "Select Region and District First";
+  if (data.status === "pending") return "Loading...";
+  if (data.status === "error") return data.error ?? "An error occurred.";
+  if (data.schools && data.status === "success") return "Eg (Taifa Secondary School) ...";
+  return "Select School";
+});
+
+const districtPlaceholder = computed(() => {
+  if (data.status === "idle") return "Select Region First";
+  if (data.status === "pending") return "Loading...";
+  if (data.status === "error") return data.error ?? "An error occurred.";
+  if (data.district && data.status === "success") return "Eg (Mwanza) ...";
+  return "Select District";
+});
+
 // Define Update Function
 const updatedProfile = async () => {
-
+  profile.controller.status = "loading";
+  isModified.value = true;
   try {
     const response = await $fetch(apiDocs.auth.profileEdit, {
       method: "PATCH",
@@ -126,6 +176,7 @@ const updatedProfile = async () => {
       },
     });
 
+
     if (response) {
       // Only update values if remote is valid (non-empty)
       for (const key in response) {
@@ -133,14 +184,24 @@ const updatedProfile = async () => {
           const remoteValue = (response as any)[key];
           if (remoteValue !== undefined && remoteValue !== null && remoteValue !== "") {
             (profile as any)[key] = remoteValue;
-            (signInAccessToken.value as any)[key] = remoteValue;
+            (userToken.value as any)[key] = remoteValue;
           }
         }
       }
     }
+
+    profile.controller.status = "success";
+    profile.controller.feedback = "Profile updated successfully!";
     isModified.value = false;
-  } catch (error) {
-    console.log(error);
+
+  } catch (error: any) {
+    isModified.value = false;
+    profile.controller.status = "error";
+    profile.controller.feedback = "Failed to update profile.";
+    const fetchError = error as FetchError;
+    const status = fetchError?.response?.status;
+    const message = fetchError?.data?.message || fetchError?.message || "An error occurred while updating the profile.";
+    console.error(error, { status: status, message: message });
   }
 };
 
@@ -151,13 +212,23 @@ const { data: profileData, status, error } = await useFetch<any>(apiDocs.auth.pr
   }
 });
 
+const getLevel = async () => {
+  try {
+    const response = await $fetch<Level[]>(apiDocs.levels.getLevels, {
+      method: "GET",
+    });
+    listLevel.value = response;
+  } catch (error) {
+    console.error("Error fetching levels:", error);
+  }
+};
 
 // Fetch Region function
 const fetchRegion = async () => {
   data.error = null;
 
   try {
-    const response = await $fetch < any[] > (
+    const response = await $fetch<any[]>(
       apiDocs.school.getSchoolRegions
     );
 
@@ -197,27 +268,29 @@ const fetchSchools = async (region: string, district: string) => {
   }
 
   try {
-    const response = await $fetch < any[] > (apiDocs.school.get, {
-      method: "POST",
-      body: {
-        region: `${region}`.toUpperCase(),
-        district: `${district}`.toUpperCase(),
-      },
+    const response = await $fetch<any[]>(apiDocs.school.get, {
+      query: {
+        region: region.toUpperCase(),
+        district: district.toUpperCase(),
+      }
     });
 
     data.status = "success";
     data.schools = response;
-    
+
   } catch (err) {
     data.status = "error";
     data.error = (err as any).message;
   }
 };
 
-// Initial fetch
-fetchRegion();
-fetchDistricts(profile.region);
-fetchSchools(profile.region, profile.district);
+// On Mounted
+onMounted(async () => {
+  await getLevel();
+  await fetchRegion();
+  await fetchDistricts(profile.region);
+  await fetchSchools(profile.region, profile.district);
+})
 
 // Watch for changes in region or district (School)
 watch(
@@ -288,7 +361,7 @@ const onValueChanged = (inputName: string) => {
     profile.region != userToken.region
   ) {
     isModified.value = true;
-  } 
+  }
   else if (
     inputName == "district" &&
     profile.district != userToken.district
@@ -306,7 +379,7 @@ const onValueChanged = (inputName: string) => {
   }
 };
 
-const choosePict = async (event:Event) => {
+const choosePict = async (event: Event) => {
   if (!event.target) return;
   const file = (event.target as HTMLInputElement).files?.[0];
 
@@ -317,19 +390,19 @@ const choosePict = async (event:Event) => {
 
   setTimeout(() => {
     profile.controller.errors.profilePic = null;
-    profile.controller.status = false;
-  }, 4000)
+    profile.controller.status = 'idle';
+  }, 1500)
 
   if (!allowedTypes.includes(file.type)) {
     profile.controller.errors.profilePic =
       "Only JPG, PNG, or WEBP images are allowed.";
-    profile.controller.status = false;
+    profile.controller.status = 'error';
     return;
   }
 
   if (file.size > maxSize) {
     profile.controller.errors.profilePic = "File size must be under 2MB.";
-    profile.controller.status = false;
+    profile.controller.status = 'error';
     return;
   }
 
@@ -349,12 +422,12 @@ const choosePict = async (event:Event) => {
   }).then((response) => {
     if (response) {
       // profile.profilePic = response;
-      profile.controller.status = true;
-      profile.controller.errors.profilePic = 'profile picture updated successfully';
+      profile.controller.status = 'success';
+      profile.controller.feedback = 'profile picture updated successfully';
     }
   }).catch((error) => {
-    profile.controller.status = false;
-    profile.controller.errors.profilePic = error.message;
+    profile.controller.status = 'error';
+    profile.controller.feedback = error.message;
   });
 };
 
@@ -517,7 +590,7 @@ const discardChanges = () => {
 
     <!-- Personal Information -->
     <div class="w-full mx-auto my-6">
-      <div class="overflow-hidden bg-white border border-gray-100 rounded-md shadow-md">
+      <div class="bg-white border border-gray-100 rounded-md shadow-md">
         <!-- Header -->
         <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
           <h3 class="text-lg font-semibold text-white">Personal Information</h3>
@@ -617,6 +690,7 @@ const discardChanges = () => {
               <label for="region" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 Region
               </label>
+
               <div class="relative flex items-center">
                 <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
@@ -625,7 +699,14 @@ const discardChanges = () => {
                 </span>
 
                 <!-- Select input with space for the icon -->
-                <select name="region" id="region" @canplay="onValueChanged('region')" v-model="profile.region"
+
+                <CustomDropDownList id="region" name="region" v-model="profile.region" :list="regionOptions"
+                  :placeholder="regionPlaceholder"
+                  @update-model-value="(value: string) => { profile.region = value; onValueChanged('region'); }"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
+
+
+                <!-- <select name="region" id="region" @canplay="onValueChanged('region')" v-model="profile.region"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
                   <option value="" v-if="data.status === 'pending'">
                     Loading...
@@ -642,7 +723,7 @@ const discardChanges = () => {
                       `${region}`.slice(1).toLowerCase()
                     }}
                   </option>
-                </select>
+                </select> -->
               </div>
             </div>
 
@@ -651,6 +732,7 @@ const discardChanges = () => {
               <label for="district" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 District
               </label>
+
               <div class="relative flex items-center">
                 <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
@@ -659,7 +741,13 @@ const discardChanges = () => {
                 </span>
 
                 <!-- Select input with space for the icon -->
-                <select name="district" id="district" @change="onValueChanged('district')" v-model="profile.district"
+
+                <CustomDropDownList id="district" name="district" v-model="profile.district" :list="districtOptions"
+                  :placeholder="districtPlaceholder"
+                  @update-model-value="(value: string) => { profile.district = value; onValueChanged('district'); }"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
+
+                <!-- <select name="district" id="district" @change="onValueChanged('district')" v-model="profile.district"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
                   <option value="" v-if="data.status === 'idle'">
                     Select Region First
@@ -679,7 +767,7 @@ const discardChanges = () => {
                       `${district}`.slice(1).toLowerCase()
                     }}
                   </option>
-                </select>
+                </select> -->
               </div>
             </div>
 
@@ -688,6 +776,7 @@ const discardChanges = () => {
               <label for="school" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 School
               </label>
+
               <div class="relative flex items-center">
                 <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
@@ -695,37 +784,26 @@ const discardChanges = () => {
                     class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue" />
                 </span>
 
-                <!-- Select input with space for the icon -->
-                <select name="school" id="school" v-model="profile.school"
-                @change="onValueChanged('school')"
-                  class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
-                  <option value="" v-if="data.status === 'idle'">
-                    Select Region and District First
-                  </option>
-                  <option value="" v-if="data.status === 'pending'">
-                    Loading...
-                  </option>
-                  <option value="" v-if="data.status === 'error'">
-                    {{ data.error }}
-                  </option>
-                  <option value="" v-else-if="data.schools && data.status === 'success'">
-                    Eg (Taifa Secondary School) ...
-                  </option>
-                  <option v-for="school in data.schools" :key="school._id" :value="school._id">
-                    {{
-                      school.name
-                        .split(" ")
-                        .map(
-                          (word:string) =>
-                            word.charAt(0).toUpperCase() +
-                            word.slice(1).toLowerCase()
-                        )
-                        .join(" ")
-                    }}
-                  </option>
-                </select>
+                <CustomDropDownList id="school" name="school" v-model="profile.school" :list="schoolOptions"
+                  :placeholder="schoolPlaceholder"
+                  @update-model-value="(value: string) => { profile.school = value; onValueChanged('school'); }"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
               </div>
             </div>
+
+            <div class="relative group">
+              <label for="level" class="block mb-1 ml-1 text-xs font-medium text-textGray">
+                Level
+              </label>
+
+              <div class="relative flex items-center">
+                <!-- Use the Custom Dropdown instead of <select> -->
+                <CustomDropDownList v-model="profile.level" :list="levelsLists" placeholder="(eg: Form 1, Form 2 ...)"
+                  @update-model-value="(value: string) => { profile.level = value; onValueChanged('level'); }"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -733,15 +811,40 @@ const discardChanges = () => {
 
     <!-- Submit Button -->
     <div class="flex items-center justify-between w-full gap-4 mt-8" v-if="isModified">
+      <!-- Discard Changes -->
       <button type="reset" @click="discardChanges"
         class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium transition-colors duration-500 ease-in-out border-2 rounded-md hover:text-white text-deepBlue border-oceanBlue hover:bg-gradient-to-r from-deepBlue to-oceanBlue hover:shadow-md">
         Discard Changes
         <Icon name="heroicons:arrow-right" class="w-4 h-4" />
       </button>
-      <button type="submit" @click="updatedProfile()"
-        class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium text-white transition-all duration-500 rounded-md bg-gradient-to-r to-oceanBlue from-deepBlue hover:shadow-md">
-        Save Changes
-        <Icon name="heroicons:arrow-right" class="w-4 h-4" />
+
+      <!-- save Changes -->
+      <button type="submit" @click="updatedProfile()" :disabled="profile.controller.status === 'loading' || isModified == false"
+        :aria-busy="profile.controller.status === 'loading' ? 'true' : 'false'" :class="[
+          'flex items-center justify-center w-full gap-2 px-6 py-3 font-medium text-white transition-all duration-500 rounded-md bg-gradient-to-r to-oceanBlue from-deepBlue hover:shadow-md',
+          profile.controller.status === 'loading' ? 'cursor-not-allowed opacity-70' : 'cursor-pointer',
+          profile.controller.status === 'success' ? 'bg-green-500 cursor-not-allowed' : 'cursor-pointer',
+          profile.controller.feedback === 'error' ? 'bg-red-500 cursor-not-allowed' : 'cursor-pointer'
+        ]">
+        <div class="flex items-center justify-center gap-4" v-if="profile.controller.status === 'loading'">
+          <span>Please Wait...</span>
+          <IconsLoading class="text-white" :size="20" />
+        </div>
+
+        <div class="flex items-center justify-center gap-4" v-else-if="profile.controller.status === 'success'">
+          <span>Changes Saved Successfully!</span>
+          <IconsChecked class="text-white" :size="20" />
+        </div>
+
+        <div class="flex items-center justify-center gap-4" v-else-if="profile.controller.feedback === 'error'">
+          <span>Changes Failed to Save!</span>
+          <IconsCrossCircle class="text-white" :size="20" />
+        </div>
+
+        <div class="flex items-center justify-center gap-4" v-else>
+          Save Changes
+          <Icon name="heroicons:arrow-right" class="w-4 h-4" />
+        </div>
       </button>
     </div>
   </div>
