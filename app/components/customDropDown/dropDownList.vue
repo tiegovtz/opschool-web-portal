@@ -124,7 +124,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.2s ease-in-out;
 } 
 
 .fade-enter-from,
