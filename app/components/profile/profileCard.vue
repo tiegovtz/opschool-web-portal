@@ -190,9 +190,9 @@ const updatedProfile = async () => {
       }
     }
 
+    isModified.value = false;
     profile.controller.status = "success";
     profile.controller.feedback = "Profile updated successfully!";
-    isModified.value = false;
 
   } catch (error: any) {
     isModified.value = false;
