@@ -4,8 +4,8 @@ import { MessageComponent, ProfileDrawInitialLater } from "#components";
 import apiDocs from "~/utilities/apiDocs";
 
 // Define Cookie
-const signInAccessToken = useCookie < string > ("signInAccessToken");
-const userToken = useCookie < any > ("signInUserToken").value;
+const signInAccessToken = useCookie<string>("signInAccessToken");
+const userToken = useCookie<any>("signInUserToken").value;
 let uploadedPic;
 
 interface UserProfile {
@@ -47,7 +47,7 @@ interface UserProfile {
 }
 
 // Define One State
-const profile = reactive < UserProfile > ({
+const profile = reactive<UserProfile>({
   fname: userToken.name.split(" ")[0],
   lname: userToken.name.split(" ")[1],
   email: userToken.email,
@@ -95,7 +95,7 @@ const profile = reactive < UserProfile > ({
 const isModified = ref(false);
 
 // Define Two State
-const data = reactive < { regions: any[], district: any[], schools: any[], status: any, error: any } > ({
+const data = reactive<{ regions: any[], district: any[], schools: any[], status: any, error: any }>({
   regions: [],
   district: [],
   schools: [],
@@ -157,7 +157,7 @@ const fetchRegion = async () => {
   data.error = null;
 
   try {
-    const response = await $fetch < any[] > (
+    const response = await $fetch<any[]>(
       apiDocs.school.getSchoolRegions
     );
 
@@ -197,17 +197,16 @@ const fetchSchools = async (region: string, district: string) => {
   }
 
   try {
-    const response = await $fetch < any[] > (apiDocs.school.get, {
-      method: "POST",
-      body: {
-        region: `${region}`.toUpperCase(),
-        district: `${district}`.toUpperCase(),
-      },
+    const response = await $fetch<any[]>(apiDocs.school.get, {
+      query: {
+        region: region.toUpperCase(),
+        district: district.toUpperCase(),
+      }
     });
 
     data.status = "success";
     data.schools = response;
-    
+
   } catch (err) {
     data.status = "error";
     data.error = (err as any).message;
@@ -288,7 +287,7 @@ const onValueChanged = (inputName: string) => {
     profile.region != userToken.region
   ) {
     isModified.value = true;
-  } 
+  }
   else if (
     inputName == "district" &&
     profile.district != userToken.district
@@ -306,7 +305,7 @@ const onValueChanged = (inputName: string) => {
   }
 };
 
-const choosePict = async (event:Event) => {
+const choosePict = async (event: Event) => {
   if (!event.target) return;
   const file = (event.target as HTMLInputElement).files?.[0];
 
@@ -696,8 +695,7 @@ const discardChanges = () => {
                 </span>
 
                 <!-- Select input with space for the icon -->
-                <select name="school" id="school" v-model="profile.school"
-                @change="onValueChanged('school')"
+                <select name="school" id="school" v-model="profile.school" @change="onValueChanged('school')"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
                   <option value="" v-if="data.status === 'idle'">
                     Select Region and District First
@@ -716,7 +714,7 @@ const discardChanges = () => {
                       school.name
                         .split(" ")
                         .map(
-                          (word:string) =>
+                          (word: string) =>
                             word.charAt(0).toUpperCase() +
                             word.slice(1).toLowerCase()
                         )
