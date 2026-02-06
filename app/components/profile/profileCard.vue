@@ -492,7 +492,7 @@ const discardChanges = () => {
           class="absolute rounded-full bottom-2 right-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-oceanBlue"
           aria-label="Upload new profile picture">
           <div class="flex items-center justify-center p-2 bg-white rounded-full shadow-md">
-            <Icon name="fluent:camera-add-48-filled" class="w-6 h-6 text-deepBlue" />
+            <IconsCamera :size="24" class="text-deepBlue" />
           </div>
         </label>
         <input type="file" id="picture_input" @change="choosePict" class="hidden" accept="image/*" style="display: none"

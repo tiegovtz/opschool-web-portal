@@ -113,19 +113,22 @@ const dropDown = () => {
             active-class="text-white !bg-deepBlue"
           >
             <div class="flex items-center justify-center">
-              <Icon name="ant-design:home-filled" size="20" />
+              <IconsHome :size="20" />
             </div>
             <p class="hidden capitalize lg:flex">Home</p>
           </NuxtLink>
+
           <!-- TIE Library Books -->
           <a aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
             class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
-              <Icon name="ph:notebook-fill" size="20" />
+              <IconsTieLibrary :size="20" />
             </div>
             <p class="hidden capitalize lg:flex">TIE Library</p>
           </a>
+
+          <!-- Smart Class Hub -->
           <NuxtLink
             to="/smart-class"
             aria-label="Go to Smart Class"
@@ -133,10 +136,11 @@ const dropDown = () => {
             active-class="text-white !bg-deepBlue"
           >
             <div class="flex items-center justify-center">
-              <Icon name="mdi:television" size="20" />
+              <IconsSmartClassHub :size="20" />
             </div>
             <p class="hidden capitalize lg:flex">Smart Class</p>
           </NuxtLink>
+
           <!-- title (TIE online public school) -->
           <div class="flex-1" role="navigation">
             <NuxtLink aria-label="Go home" to="/">
@@ -158,7 +162,7 @@ const dropDown = () => {
                       <NuxtImg :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic" alt="User Profile"
                         class="object-cover w-full h-full rounded-full" />
                     </div>
-                    <Icon v-else name="iconamoon:profile-circle-thin" class="" size="2rem" />
+                    <IconsProfileCircle v-else :size="24" />
                     <p class="capitalize text-medium line-clamp-1 max-w-60">
                       Hello,
                       {{ String(userToken.name).split(" ")[0] }}
@@ -172,7 +176,7 @@ const dropDown = () => {
                 class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
                 @click="announceLogout" @keyup="announceLogout">
                 <span class="capitalize"> Logout </span>
-                <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
+                <IconsLogout :size="20" title="Sign out" />
               </button>
             </div>
 
@@ -180,14 +184,14 @@ const dropDown = () => {
               <!-- sign in -->
               <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
-                <Icon name="solar:login-2-outline" class="" size="1.5rem" />
+                <IconsSignIn :size="20" />
                 <p class="hidden capitalize lg:flex">Sign in</p>
               </NuxtLink>
 
               <!-- sign up -->
               <NuxtLink aria-label="Go to sign up page" to="/auth/SignUp" title="Sign Up"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
-                <Icon name="iconamoon:profile-thin" class="" size="1.5rem" />
+                <IconsProfileCircle :size="24" />
                 <p class="hidden capitalize lg:flex">Create Account</p>
               </NuxtLink>
             </div>
@@ -201,19 +205,20 @@ const dropDown = () => {
             <div class="flex">
 
               <NuxtLink aria-label="Go to profile page" to="/profile" v-if="userToken" class="flex items-center pl-1">
-                <Icon name="iconamoon:profile-circle-thin" class="" size="1.2rem" />
+                <IconsProfileCircle :size="20" />
               </NuxtLink>
 
               <NuxtLink to="/auth/SignUp" title="Sign Up" v-else
                 class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
-                <Icon name="iconamoon:profile-thin" class="" size="1.2rem" />
+                <IconsProfileCircle :size="20" />
               </NuxtLink>
+              
               <!-- TIE Library Books -->
               <a aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
                 class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45"
                 active-class="text-white !bg-deepBlue">
                 <div class="flex items-center justify-center">
-                  <Icon name="ph:notebook-fill" size="20" />
+                  <IconsSubjects :size="20" />
                 </div>
               </a>
               <NuxtLink
@@ -223,7 +228,7 @@ const dropDown = () => {
                 active-class="text-white !bg-deepBlue"
               >
                 <div class="flex items-center justify-center">
-                  <Icon name="mdi:television" size="20" />
+                  <IconsSmartClassHub :size="20" />
                 </div>
               </NuxtLink>
             </div>
@@ -244,24 +249,23 @@ const dropDown = () => {
                 active-class="text-white !bg-deepBlue"
               >
                 <div class="flex items-center justify-center">
-                  <Icon name="ant-design:home-filled" size="20" />
+                  <IconsHome :size="20" />
                 </div>
                 <p class="hidden capitalize lg:flex">Home</p>
               </NuxtLink>
               <div class="flex items-center h-6 gap-2 p-2 cursor-pointer md:h-8" @click="logout" v-if="userToken"
                 role="button" tabindex="0" @keyup="announceLogout">
-                <Icon name="solar:logout-2-outline" class="" size="1.2rem" title="Sign out" />
+                <IconsLogout :size="20" class="" title="Sign out" />
               </div>
               <!-- sign in -->
               <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in" v-else
                 class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
-                <Icon name="solar:login-2-outline" class="" size="1.2rem" />
+                <IconsSignIn :size="20" class="" />
               </NuxtLink>
             </div>
           </div>
         </div>
         <div ref="logoutAlert" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
-
       </div>
     </nav>
   </header>

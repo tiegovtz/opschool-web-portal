@@ -27,7 +27,7 @@ const EXCLUDED_PREFIXES = [
   "/english-practice",
   "/conversation-practice",
 ];
-const EXCLUDED_EXACT:string[] = [
+const EXCLUDED_EXACT: string[] = [
 ];
 
 const isLoggedIn = computed(() => !!(userToken.value || accessToken.value));
@@ -132,28 +132,19 @@ const handleClick = async () => {
 <template>
   <Teleport to="body">
     <client-only>
-      <div
-        v-if="showLauncher"
-        class="fixed z-[80] right-4 bottom-[calc(16px+env(safe-area-inset-bottom))]"
-      >
-        <div class="absolute inset-0 rounded-full bg-[rgba(245,245,245,0.35)] backdrop-blur-sm pointer-events-none"></div>
-        <button
-          type="button"
+      <div v-if="showLauncher" class="fixed z-[80] right-4 bottom-[calc(16px+env(safe-area-inset-bottom))]">
+        <div class="absolute inset-0 rounded-full bg-[rgba(245,245,245,0.35)] backdrop-blur-sm pointer-events-none">
+        </div>
+        <button type="button"
           class="relative flex items-center justify-center gap-2 p-4 rounded-full bg-oceanBlue text-white border border-white/80 ring-2 ring-white/90 shadow-2xl transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue whitespace-nowrap"
-          :aria-label="launcherLabel"
-          :disabled="isBusy"
-          @mouseenter="isLauncherHovered = true"
-          @mouseleave="isLauncherHovered = false"
-          @click="handleClick"
-        >
-          <Icon name="fluent:bot-28-filled" size="24" />
+          :aria-label="launcherLabel" :disabled="isBusy" @mouseenter="isLauncherHovered = true"
+          @mouseleave="isLauncherHovered = false" @click="handleClick">
+          <IconsRobotAi :size="24" />
           <span class="hidden md:block">{{ launcherLabel }}</span>
         </button>
-        <div
-          v-if="isLauncherHovered"
+        <div v-if="isLauncherHovered"
           class="absolute right-0 bottom-[calc(100%+10px)] rounded-md bg-black/80 px-3 py-2 text-xs text-white shadow-lg whitespace-nowrap pointer-events-none"
-          role="tooltip"
-        >
+          role="tooltip">
           {{ launcherHoverLabel }}
         </div>
       </div>
