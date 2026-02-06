@@ -704,26 +704,6 @@ const discardChanges = () => {
                   :placeholder="regionPlaceholder"
                   @update-model-value="(value: string) => { profile.region = value; onValueChanged('region'); }"
                   button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
-
-
-                <!-- <select name="region" id="region" @canplay="onValueChanged('region')" v-model="profile.region"
-                  class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
-                  <option value="" v-if="data.status === 'pending'">
-                    Loading...
-                  </option>
-                  <option value="" v-else-if="data.status === 'error'">
-                    {{ data.error }}
-                  </option>
-                  <option value="" v-else-if="data.regions && data.status === 'success'">
-                    Eg ( Arusha ) ...
-                  </option>
-                  <option v-for="(region, index) in data.regions" :key="index" :value="region.toLowerCase()">
-                    {{
-                      `${region}`.charAt(0).toUpperCase() +
-                      `${region}`.slice(1).toLowerCase()
-                    }}
-                  </option>
-                </select> -->
               </div>
             </div>
 
@@ -746,33 +726,11 @@ const discardChanges = () => {
                   :placeholder="districtPlaceholder"
                   @update-model-value="(value: string) => { profile.district = value; onValueChanged('district'); }"
                   button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
-
-                <!-- <select name="district" id="district" @change="onValueChanged('district')" v-model="profile.district"
-                  class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue">
-                  <option value="" v-if="data.status === 'idle'">
-                    Select Region First
-                  </option>
-                  <option value="" v-if="data.status === 'pending'">
-                    Loading...
-                  </option>
-                  <option value="" v-if="data.status === 'error'">
-                    {{ data.error }}
-                  </option>
-                  <option value="" v-else-if="data.district && data.status === 'success'">
-                    Eg (Arusha CC) ...
-                  </option>
-                  <option v-for="(district, index) in data.district" :key="index" :value="district.toLowerCase()">
-                    {{
-                      `${district}`.charAt(0).toUpperCase() +
-                      `${district}`.slice(1).toLowerCase()
-                    }}
-                  </option>
-                </select> -->
               </div>
             </div>
 
             <!-- School -->
-            <div class="relative group">
+            <div class="relative group" v-if="profile.type.toLowerCase() !== 'educationstakeholder'">
               <label for="school" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 School
               </label>
@@ -791,7 +749,7 @@ const discardChanges = () => {
               </div>
             </div>
 
-            <div class="relative group">
+            <div class="relative group" v-if="!['teacher', 'educationstakeholder'].includes(profile.type.toLowerCase())">
               <label for="level" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 Level
               </label>
@@ -803,7 +761,6 @@ const discardChanges = () => {
                   button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
               </div>
             </div>
-
           </div>
         </div>
       </div>
