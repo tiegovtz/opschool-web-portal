@@ -227,7 +227,7 @@ const signUp = async () => {
       if (response.status >= 200 && response.status < 300) {
         usersignUp.controller.isSent = 'success';
         usersignUp.controller.feedback = messages.success.auth.registered;
-        
+
         // Navigate to auth page
         const router = useRouter()
         router.push('/auth');
