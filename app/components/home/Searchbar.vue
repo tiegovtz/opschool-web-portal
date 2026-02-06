@@ -387,7 +387,7 @@ const mouseOut = () => {
               tabindex="0"
               @keydown.enter="toggleAISearchMode"
             >
-              <Icon name="mdi:robot" size="1rem" aria-hidden="true" />
+              <IconsRobot :size="20" aria-hidden="true" />
               <span class="text-xs">{{ aiSearchMode ? 'AI Mode' : 'Ask Question' }}</span>
             </button>
           </div>
@@ -398,7 +398,7 @@ const mouseOut = () => {
 
         <div class="flex items-center w-full">
           <!-- Search Icon -->
-          <Icon name="mdi:magnify" aria-label="search icon" class="text-gray-400" size="1.5rem" aria-hidden="true" />
+          <IconsMagnify aria-label="search icon" class="text-gray-400" :size="24" aria-hidden="true" />
 
           <!-- Search Input -->
           <label for="search-normal" class="sr-only">Search for compitence</label>
@@ -414,7 +414,7 @@ const mouseOut = () => {
               class="items-center justify-center hidden px-4 py-2 overflow-hidden text-white transition-colors duration-500 ease-in-out rounded-b-none cursor-pointer md:flex rounded-t-md bg-oceanBlue hover:bg-deepBlue disabled:opacity-50 disabled:cursor-not-allowed"
               @click="handleSearch"
               :aria-label="(isLoadingTraditional || isLoadingAI) ? 'Searching...' : 'Search'">
-              <Icon v-if="isLoadingTraditional || isLoadingAI" name="mdi:loading" class="animate-spin" size="1rem" aria-hidden="true" />
+              <IconsLoading v-if="isLoadingTraditional || isLoadingAI" class="animate-spin" :size="20" aria-hidden="true" />
               <span v-else>Search</span>
         </button>
       </form>
@@ -450,7 +450,7 @@ const mouseOut = () => {
 
         <div class="flex items-center w-full pl-4">
           <!-- Search Icon -->
-          <Icon name="mdi:magnify" class="text-gray-400" size="1.5rem" aria-hidden="true" />
+          <IconsMagnify aria-label="search icon" class="text-gray-400" :size="24" aria-hidden="true" />
 
           <!-- Search Input -->
           <label for="search-large" class="sr-only">Search for compitence</label>
@@ -486,7 +486,7 @@ const mouseOut = () => {
         @click.stop.prevent
       >
         <div class="flex items-start gap-3">
-          <Icon name="mdi:robot" class="text-oceanBlue flex-shrink-0 mt-1" size="1.5rem" aria-hidden="true" />
+          <IconsRobot class="text-oceanBlue flex-shrink-0 mt-1" :size="18" aria-hidden="true" />
           <div class="flex-1">
             <h3 class="text-sm font-semibold text-gray-800 mb-2">AI Answer</h3>
             <div 
@@ -539,7 +539,7 @@ const mouseOut = () => {
         aria-label="Searching"
       >
         <div class="flex items-center gap-3">
-          <Icon name="mdi:loading" class="animate-spin text-oceanBlue" size="1.5rem" aria-hidden="true" />
+          <IconsLoading name="mdi:loading" class="animate-spin text-oceanBlue" :size="20" aria-hidden="true" />
           <p class="text-sm text-gray-600">Searching...</p>
         </div>
       </div>
@@ -557,7 +557,7 @@ const mouseOut = () => {
         aria-label="AI is analyzing"
       >
         <div class="flex items-center gap-2">
-          <Icon name="mdi:loading" class="animate-spin text-oceanBlue" size="1rem" aria-hidden="true" />
+          <IconsLoading name="mdi:loading" class="animate-spin text-oceanBlue" :size="20" aria-hidden="true" />
           <p class="text-xs text-gray-600">AI is analyzing your search...</p>
         </div>
       </div>
@@ -647,7 +647,7 @@ const mouseOut = () => {
         @click.stop
       >
         <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
-          <Icon name="mdi:lightbulb-on" class="text-yellow-500" size="1.2rem" aria-hidden="true" />
+          <IconsLightbulbOn class="text-yellow-500" :size="20" aria-hidden="true" />
           Related Content
         </h3>
 
@@ -682,7 +682,7 @@ const mouseOut = () => {
                   {{ topic.subject?.name || topic.subject || 'N/A' }} - {{ topic.level?.name || topic.level || 'Form 1' }}
                 </p>
               </div>
-              <Icon name="mdi:chevron-right" class="text-gray-400 flex-shrink-0" size="1.2rem" aria-hidden="true" />
+              <IconsChevronRight class="text-gray-400 flex-shrink-0" :size="16" aria-hidden="true" />
             </NuxtLink>
           </div>
         </div>
@@ -705,7 +705,7 @@ const mouseOut = () => {
                   {{ video.subject?.name || video.subject || 'N/A' }}
                 </p>
               </div>
-              <Icon name="mdi:chevron-right" class="text-gray-400 flex-shrink-0" size="1.2rem" aria-hidden="true" />
+              <IconsChevronRight class="text-gray-400 flex-shrink-0" :size="16" aria-hidden="true" />
             </NuxtLink>
           </div>
         </div>
@@ -728,7 +728,7 @@ const mouseOut = () => {
                   {{ audioItem.subject?.name || audioItem.subject || 'N/A' }}
                 </p>
               </div>
-              <Icon name="mdi:chevron-right" class="text-gray-400 flex-shrink-0" size="1.2rem" aria-hidden="true" />
+              <IconsChevronRight class="text-gray-400 flex-shrink-0" :size="16" aria-hidden="true" />
             </NuxtLink>
           </div>
         </div>
@@ -751,7 +751,7 @@ const mouseOut = () => {
                   {{ experiment.subject?.name || experiment.subject || 'N/A' }}
                 </p>
               </div>
-              <Icon name="mdi:chevron-right" class="text-gray-400 flex-shrink-0" size="1.2rem" aria-hidden="true" />
+              <IconsChevronRight class="text-gray-400 flex-shrink-0" :size="16" aria-hidden="true" />
             </NuxtLink>
           </div>
         </div>
