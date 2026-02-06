@@ -24,7 +24,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['updateModelValue', 'update:modelValue']);
+const emit = defineEmits(['updateModelValue']);
 
 const isOpen = ref(false);
 const selected = ref('');
@@ -63,9 +63,7 @@ const selectItem = (item) => {
   selectedLabel.value = item.name;
   selected.value = item.name;
 
-  const nextValue = item.id ?? item.name;
-  emit('updateModelValue', nextValue);
-  emit('update:modelValue', nextValue);
+  emit('updateModelValue', item.id ?? item.name);
 
   isOpen.value = false;
 };
