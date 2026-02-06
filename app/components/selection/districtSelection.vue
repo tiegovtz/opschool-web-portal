@@ -9,9 +9,11 @@ const props = defineProps({
   error: String,
 });
 
-const data = reactive<{ district: any[], status: 'idle' | 'pending' | 'success' | 'error', error: any }>({
+type statusType = "idle" | "pending" | "success" | "error";
+
+const data = reactive<{ district: any[], status: statusType, error: any }>({
   district: [],
-  status: "idle", // idle | pending | success | error
+  status: "idle",
   error: null,
 });
 
