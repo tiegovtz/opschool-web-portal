@@ -10,9 +10,11 @@ const props = defineProps({
   school: String,  // currently selected school id (optional)
 });
 
-const data = reactive<{ schools: any[], status: 'idle' | 'pending' | 'success' | 'error', error: any }>({
+type statusType = "idle" | "pending" | "success" | "error";
+
+const data = reactive<{ schools: any[], status: statusType, error: any }>({
   schools: [],
-  status: "idle",  // 'idle' | 'pending' | 'success' | 'error'
+  status: "idle",
   error: null,
 });
 

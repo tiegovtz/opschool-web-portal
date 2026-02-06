@@ -13,7 +13,7 @@ type statusType = "idle" | "pending" | "success" | "error";
 
 const data = reactive<{ district: any[], status: statusType, error: any }>({
   district: [],
-  status: "idle", // idle | pending | success | error
+  status: "idle",
   error: null,
 });
 

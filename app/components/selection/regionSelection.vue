@@ -9,10 +9,12 @@ const props = defineProps({
     region: String,      // current selected region value
 });
 
+type statusType = "idle" | "pending" | "success" | "error";
+
 // Reactive state
-const data =  reactive<{ regions: any[], status: 'idle' | 'pending' | 'success' | 'error', error: any }>({
+const data =  reactive<{ regions: any[], status: statusType, error: any }>({
     regions: [],
-    status: 'pending',   // 'pending' | 'success' | 'error'
+    status: "pending",
     error: null,         // fetch error 
 });
 
@@ -51,7 +53,7 @@ onMounted(async () => {
         <CustomDropDownList v-if="data.status === 'success' && data.regions.length" id="region-select"
             :list="data.regions.map((regionName) => ({ id: regionName, name: regionName }))"
             placeholder="Eg ( Arusha ) ..." :model-value="region" :aria-invalid="!!error"
-            aria-describedby="region-error" @update:modelValue="emit('updateRegion', $event)" />
+            aria-describedby="region-error" @update-model-value="emit('updateRegion', $event)" />
 
         <!-- Loading state (announced to screen readers) -->
         <p v-else-if="data.status === 'pending'" role="status" aria-live="polite"
