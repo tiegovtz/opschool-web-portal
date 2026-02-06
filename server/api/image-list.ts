@@ -174,9 +174,9 @@ export default defineEventHandler(async (event) => {
         // Count only displayable images (those with a single path, not parent entries with paths array)
         const displayableImages = imagesArray.filter(img => img.path && !img.paths);
         
-        console.log(`[image-list] ✅ Fetched ${figures.length} figures from API, generated ${displayableImages.length} displayable images at ${new Date().toISOString()}.`);
-        
-        let filteredImages = displayableImages;
+        // Return ALL entries (parent shortcodes with paths + child entries with path) so the client
+        // can resolve [image:parent_shortcode] reliably. Filter this full list for category/keyword/limit.
+        let filteredImages = imagesArray;
         
         // Apply filters
         if (subjectIdFilter) {
@@ -204,6 +204,8 @@ export default defineEventHandler(async (event) => {
         if (limit && limit > 0) {
           filteredImages = filteredImages.slice(0, limit);
         }
+        
+        console.log(`[image-list] ✅ Fetched ${figures.length} figures from API, ${displayableImages.length} displayable, ${filteredImages.length} returned (incl. parent shortcodes) at ${new Date().toISOString()}.`);
         
         // Calculate byCategory from figures
         const byCategory: Record<string, number> = {};

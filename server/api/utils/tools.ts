@@ -23,6 +23,22 @@ const publicTopicsCache = new Map<
   { timestamp: number; value: any[] }
 >();
 
+const SYLLABUS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const syllabusCache = new Map<
+  string,
+  { timestamp: number; value: any }
+>();
+
+const SUBJECT_ID_FALLBACK: Record<string, string> = {
+  physics: "665865487b076d51f6fc037a",
+  chemistry: "665865867b076d51f6fc037f",
+  biology: "6658658d7b076d51f6fc0381",
+  geography: "665865967b076d51f6fc0383",
+  mathematics: "67f50a3fb88b1b7c13b40b40",
+  "horticulture attendant": "695f54ae50ae29af5c1968d8",
+  english: "696e182925b5df0cc3330d19",
+};
+
 export function setAuthTokenForTools(token: string | undefined): void {
   currentAuthToken = token as string;
 }
@@ -201,7 +217,13 @@ export const studentTools = {
       const levelValue = level?.trim() || "";
       const subjectValue = subject?.trim() || "";
 
+      console.log("[checkSyllabus] Entry", {
+        params: { name: nameValue || "(empty)", level: levelValue || "(empty)", subject: subjectValue || "(empty)" },
+        normalizedName: normalizedName || "(none)",
+      });
+
       if (!nameValue && !levelValue && !subjectValue) {
+        console.log("[checkSyllabus] Early exit: no filter provided");
         return {
           found: false,
           total: 0,
@@ -218,6 +240,11 @@ export const studentTools = {
           subject: subjectValue || undefined,
         });
 
+        console.log("[checkSyllabus] Initial API fetch", {
+          topicsCount: topics.length,
+          query: { name: nameValue || undefined, level: levelValue || undefined, subject: subjectValue || undefined },
+        });
+
         let usedQuery = {
           name: nameValue || undefined,
           level: levelValue || undefined,
@@ -225,6 +252,7 @@ export const studentTools = {
         };
 
         if (topics.length === 0 && normalizedName && normalizedName !== nameValue) {
+          console.log("[checkSyllabus] Retry with normalized name", { normalizedName });
           topics = await fetchPublicTopicsFromApi({
             name: normalizedName,
             level: levelValue || undefined,
@@ -236,11 +264,13 @@ export const studentTools = {
               level: levelValue || undefined,
               subject: subjectValue || undefined,
             };
+            console.log("[checkSyllabus] Normalized retry succeeded", { topicsCount: topics.length });
           }
         }
 
         // Fallback: if name-only yields no results, try treating name as subject
         if (topics.length === 0 && !subjectValue && nameValue) {
+          console.log("[checkSyllabus] Fallback: treat name as subject", { nameValue });
           topics = await fetchPublicTopicsFromApi({
             subject: nameValue,
             level: levelValue || undefined,
@@ -251,6 +281,7 @@ export const studentTools = {
               level: levelValue || undefined,
               subject: nameValue,
             };
+            console.log("[checkSyllabus] Subject fallback succeeded", { topicsCount: topics.length });
           }
         }
 
@@ -273,6 +304,12 @@ export const studentTools = {
         const syllabusFound = normalized.length > 0;
         let ragFound = false;
 
+        console.log("[checkSyllabus] Syllabus result", {
+          syllabusFound,
+          normalizedCount: normalized.length,
+          usedQuery,
+        });
+
         if (!syllabusFound) {
           const ragQuery =
             nameValue ||
@@ -293,8 +330,17 @@ export const studentTools = {
               },
             );
             ragFound = Boolean(ragResult?.context?.trim());
+            console.log("[checkSyllabus] RAG fallback", { ragFound, ragQuery });
           }
         }
+
+        const finalFound = syllabusFound || ragFound;
+        console.log("[checkSyllabus] Final result", {
+          found: finalFound,
+          syllabusFound,
+          ragFound,
+          topicsCount: normalized.length,
+        });
 
         return {
           found: syllabusFound || ragFound,
@@ -311,6 +357,10 @@ export const studentTools = {
                 : "Topic is OUT OF SYLLABUS. You MUST say: 'This is out of syllabus.' Then provide a brief meaning/definition in the same response, prefaced with 'If you still want the meaning:'.",
         };
       } catch (error: any) {
+        console.error("[checkSyllabus] Error", {
+          error: error?.message,
+          stack: error?.stack,
+        });
         return {
           found: false,
           total: 0,
@@ -321,14 +371,240 @@ export const studentTools = {
     },
   }),
 
+  getSyllabus: tool({
+    description:
+      "Fetch the syllabus (topics and chapters) for a subject. Use this when you need to know which chapters exist for a subject so you can map the user's question to the right chapter, then call getChapterFigures with that chapter name. Returns topics with their chapters and level (e.g. Form 1, Form 2).",
+    inputSchema: z.object({
+      subject: z
+        .string()
+        .describe(
+          "Subject name (e.g. physics, biology, chemistry) or subject ID. Use lowercase for names.",
+        ),
+    }),
+    execute: async ({ subject }) => {
+      const subjectParam = subject?.trim() || "";
+      console.log("[getSyllabus] Entry", { subject: subjectParam || "(empty)" });
+
+      if (!subjectParam) {
+        console.log("[getSyllabus] Early exit: subject required");
+        return {
+          success: false,
+          error: "Subject is required. Provide a subject name or ID.",
+          subjectId: null,
+          subjectName: null,
+          topics: [],
+        };
+      }
+
+      const cacheKey = `syllabus:${subjectParam.toLowerCase()}`;
+      const cached = syllabusCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < SYLLABUS_CACHE_TTL_MS) {
+        console.log("[getSyllabus] Cache hit", { cacheKey, topicsCount: cached.value?.topics?.length ?? 0 });
+        return cached.value;
+      }
+      console.log("[getSyllabus] Cache miss, fetching", { cacheKey });
+
+      let subjectId: string | null = null;
+      let subjectName: string | null = null;
+
+      const resolveSubjectId = async (): Promise<string | null> => {
+        const lower = subjectParam.toLowerCase().trim();
+        if (/^[a-f0-9]{24}$/i.test(lower)) {
+          return lower;
+        }
+        try {
+          const subjects = await fetchSubjectsFromApi();
+          const match = subjects.find(
+            (s: any) =>
+              (s?.name || s?.title || s?.subject || "")
+                .toLowerCase()
+                .trim() === lower,
+          );
+          if (match) {
+            subjectName = match?.name || match?.title || match?.subject || subjectParam;
+            return match?._id ?? match?.id ?? match?.subjectId ?? null;
+          }
+        } catch {
+          // Fall through to fallback map
+        }
+        const fallbackId = SUBJECT_ID_FALLBACK[lower];
+        if (fallbackId) {
+          subjectName = subjectParam;
+          return fallbackId;
+        }
+        return null;
+      };
+
+      subjectId = await resolveSubjectId();
+      console.log("[getSyllabus] Subject resolution", {
+        subjectParam,
+        subjectId,
+        subjectName: subjectName || "(none)",
+      });
+
+      if (!subjectId) {
+        console.log("[getSyllabus] Subject not found", { subjectParam });
+        return {
+          success: false,
+          error: `Subject "${subjectParam}" not found. Use getSubjects to see available subjects.`,
+          subjectId: null,
+          subjectName: null,
+          topics: [],
+        };
+      }
+
+      const topicsUrl = apiDocs.topics.getSubjectId.replace(
+        "{subjectId}",
+        subjectId,
+      );
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (currentAuthToken?.trim()) {
+        headers.Authorization = `Bearer ${currentAuthToken.trim()}`;
+      }
+
+      let topicsData: any;
+      try {
+        console.log("[getSyllabus] Fetching topics", { topicsUrl });
+        const topicsRes = await fetch(topicsUrl, { method: "GET", headers });
+        if (!topicsRes.ok) {
+          console.error("[getSyllabus] Topics API error", {
+            status: topicsRes.status,
+            statusText: topicsRes.statusText,
+          });
+          return {
+            success: false,
+            error: `Topics API error: ${topicsRes.status} ${topicsRes.statusText}`,
+            subjectId,
+            subjectName: subjectName || subjectParam,
+            topics: [],
+          };
+        }
+        topicsData = await topicsRes.json();
+        console.log("[getSyllabus] Topics fetched", {
+          rawTopicsCount: Array.isArray(topicsData) ? topicsData.length : (topicsData?.topics?.length ?? topicsData?.data?.length ?? 0),
+        });
+      } catch (e: any) {
+        console.error("[getSyllabus] Topics fetch error", { error: e?.message });
+        return {
+          success: false,
+          error: e?.message || "Failed to fetch topics",
+          subjectId,
+          subjectName: subjectName || subjectParam,
+          topics: [],
+        };
+      }
+
+      const extractTopics = (data: any): any[] => {
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data?.topics)) return data.topics;
+        if (Array.isArray(data?.data)) return data.data;
+        return [];
+      };
+
+      const extractChapters = (data: any): any[] => {
+        if (Array.isArray(data)) return data;
+        if (Array.isArray(data?.chapters)) return data.chapters;
+        if (Array.isArray(data?.data)) return data.data;
+        return [];
+      };
+
+      const topics = extractTopics(topicsData);
+      if (!subjectName && topics.length > 0) {
+        const firstSubject = topics[0]?.subject;
+        subjectName =
+          firstSubject?.name || firstSubject?.title || firstSubject || subjectParam;
+      }
+      if (!subjectName) subjectName = subjectParam;
+
+      const chaptersUrl = (topicId: string) =>
+        apiDocs.chapters.getByTopicId.replace("{topicId}", topicId);
+
+      const output: {
+        subjectId: string;
+        subjectName: string;
+        topics: Array<{
+          topicId: string;
+          topicName: string;
+          level: string | null;
+          chapters: Array<{ id: string; name: string }>;
+        }>;
+      } = {
+        subjectId,
+        subjectName,
+        topics: [],
+      };
+
+      console.log("[getSyllabus] Fetching chapters for topics", { topicsCount: topics.length });
+
+      for (const topic of topics) {
+        const topicId = topic._id ?? topic.id ?? "";
+        const topicName = topic.name ?? topic.title ?? topicId;
+        const level =
+          topic.level?.name ?? topic.levelName ?? topic.level ?? null;
+
+        const entry = {
+          topicId,
+          topicName,
+          level,
+          chapters: [] as Array<{ id: string; name: string }>,
+        };
+
+        const chRes = await fetch(chaptersUrl(topicId), {
+          method: "GET",
+          headers,
+        });
+        if (chRes.ok) {
+          const chData = await chRes.json();
+          const chapters = extractChapters(chData);
+          console.log("[getSyllabus] Topic chapters", {
+            topicName,
+            topicId,
+            chaptersCount: chapters.length,
+          });
+          entry.chapters = chapters.map((ch: any) => ({
+            id: ch._id ?? ch.id ?? "",
+            name: ch.name ?? ch.title ?? ch._id ?? ch.id ?? "",
+          }));
+        }
+
+        output.topics.push(entry);
+      }
+
+      const result = {
+        success: true,
+        subjectId,
+        subjectName,
+        topics: output.topics,
+        instruction:
+          "Use these topics and chapters to map the user's question to the best-matching chapter. Call getChapterFigures with the exact chapter name (e.g. 'Concept of Physics', 'Measurement')—no 'Chapter One' or 'Chapter X:' prefix.",
+      };
+
+      syllabusCache.set(cacheKey, { timestamp: Date.now(), value: result });
+      console.log("[getSyllabus] Success", {
+        subjectId,
+        subjectName,
+        topicsCount: output.topics.length,
+        totalChapters: output.topics.reduce((sum, t) => sum + t.chapters.length, 0),
+      });
+      if (syllabusCache.size > 50) {
+        const firstKey = syllabusCache.keys().next().value;
+        if (firstKey) syllabusCache.delete(firstKey);
+      }
+
+      return result;
+    },
+  }),
+
   getChapterFigures: tool({
     description:
-      "MANDATORY: Get all available image figures for a specific chapter and optional topic. You MUST call this tool whenever you are teaching a specific chapter or topic. This is the ONLY method to get images. Provide the chapter name exactly as given in the request or context. Returns a list of figures with shortcodes that you MUST use with [image:shortcode] format in your response. If figures are returned, you MUST include at least one [image:shortcode] in your response.",
+      "Get image figures for a chapter/topic. Call whenever you are teaching—do NOT wait for the student to ask for visual aids. ALWAYS pass subject (e.g. physics, biology, chemistry) so figures match the conversation; never show biology images in a chemistry answer. Returns figures filtered by subject, topic, and chapter. When found: true, include at least one [image:shortcode] and never say 'no visual aids'.",
     inputSchema: z.object({
       chapter: z
         .string()
         .describe(
-          "Chapter name using WORD form for numbers (e.g., 'Chapter One', 'Chapter Two', 'Chapter Six') NOT digits.",
+          "Exact chapter name from getSyllabus (e.g. 'Concept of Physics', 'Magnetism', 'Refraction and dispersion of light'). Maps to figures topic. Do NOT use 'Chapter One' or 'Chapter X:' prefix.",
         ),
       topic: z
         .string()
@@ -337,9 +613,18 @@ export const studentTools = {
       subject: z
         .string()
         .optional()
-        .describe("Subject name to filter figures."),
+        .describe("Subject name to filter figures (e.g. physics, biology, chemistry). Always pass when the conversation is about a specific subject so images match—e.g. biology question → only biology images."),
     }),
     execute: async ({ chapter, topic, subject }) => {
+      console.log("[getChapterFigures] Entry", {
+        chapter: chapter || "(empty)",
+        topic: topic || "(empty)",
+        subject: subject || "(empty)",
+        hasToken: !!currentAuthToken,
+      });
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:entry',message:'getChapterFigures called',data:{chapter:chapter||'',topic:topic||'',subject:subject||''},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
       try {
         let querySubject = subject?.toLowerCase().trim() || null;
         if (!querySubject) {
@@ -362,10 +647,15 @@ export const studentTools = {
               subjectNames.find((name: string) =>
                 chapterLower.includes(name),
               ) || null;
-          } catch {
+          } catch (e: any) {
+            console.log("[getChapterFigures] Subject resolution from API failed", { error: e?.message });
             querySubject = null;
           }
         }
+        console.log("[getChapterFigures] Subject for filter", {
+          querySubject: querySubject || "(none)",
+          source: subject ? "param" : "inferred",
+        });
 
         // Check if authentication token is available
         if (!currentAuthToken || !currentAuthToken.trim()) {
@@ -385,47 +675,19 @@ export const studentTools = {
         try {
           const { getFigures } = await import("../../utils/figuresApi");
 
-          const filterOptions: {
-            category?: string;
-            chapter?: string;
-            topic?: string;
-          } = {};
-
+          const filterOptions: { category?: string } = {};
           if (querySubject) {
             filterOptions.category = querySubject;
           }
 
-          if (chapter) {
-            filterOptions.chapter = chapter;
-          }
-
-          if (topic && topic.trim() && topic.trim().toLowerCase() !== "all") {
-            filterOptions.topic = topic;
-          }
-
-          console.log("[getChapterFigures] Fetching figures with options:", {
-            filterOptions,
+          console.log("[getChapterFigures] Fetching by category only (Option B)", {
+            category: filterOptions.category || "(none)",
             hasToken: !!currentAuthToken,
-            chapter,
-            topic,
-            subject: querySubject,
+            chapterRequested: chapter,
+            topicRequested: topic,
           });
 
           let figures = await getFigures(filterOptions, currentAuthToken);
-
-          if (
-            figures.length === 0 &&
-            querySubject &&
-            (filterOptions.chapter || filterOptions.topic)
-          ) {
-            console.log(
-              "[getChapterFigures] No figures with filters, trying with category only",
-            );
-            figures = await getFigures(
-              { category: querySubject },
-              currentAuthToken,
-            );
-          }
 
           if (figures.length === 0 && querySubject) {
             console.log(
@@ -435,6 +697,11 @@ export const studentTools = {
           }
 
           console.log("[getChapterFigures] Found figures:", figures.length);
+
+          // #region agent log
+          const firstCategory = figures[0]?.category || figures[0]?.subjectName || '';
+          fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:afterGetFigures',message:'Figures from API',data:{figuresCount:figures.length,querySubject,firstCategory},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+          // #endregion
 
           images = figures.map((fig: any) => ({
             figure_number: fig.figure_number || "",
@@ -484,6 +751,7 @@ export const studentTools = {
         }
 
         if (images.length === 0) {
+          console.log("[getChapterFigures] No images from API", { filterOptions });
           return {
             found: false,
             message:
@@ -492,141 +760,46 @@ export const studentTools = {
           };
         }
 
-        const normalizeChapter = (ch: string) =>
-          ch.toLowerCase().trim().replace(/\s+/g, " ");
-        const normalizeTopic = (t: string) =>
-          t.toLowerCase().trim().replace(/\s+/g, " ");
+        // Syllabus chapter maps to figures topic (Option 1). Filter by topic only.
+        const normalize = (s: string) =>
+          (s || "").toLowerCase().trim().replace(/\s+/g, " ");
 
-        const queryChapter = normalizeChapter(chapter);
+        const syllabusChapter = normalize(chapter);
 
+        const matchesFiguresTopic = (img: any) => {
+          const imgTopic = normalize(img.topic || "");
+          return (
+            imgTopic === syllabusChapter ||
+            imgTopic.includes(syllabusChapter) ||
+            syllabusChapter.includes(imgTopic)
+          );
+        };
+
+        console.log("[getChapterFigures] Filtering by topic (syllabus chapter → figures topic)", {
+          imagesCount: images.length,
+          syllabusChapter,
+          querySubject,
+        });
         let filtered = images.filter((img: any) => {
-          const imgChapter = normalizeChapter(img.chapter || "");
-          const matchesChapter = imgChapter === queryChapter;
+          const matchesTopic = matchesFiguresTopic(img);
+          if (!matchesTopic) return false;
 
-          if (querySubject && matchesChapter) {
-            const imgSubject = (img.subject || "").toLowerCase();
+          if (querySubject) {
+            const imgSubject = (img.subject || img.category || "").toLowerCase();
             const imgShortcode = (img.shortcode || "").toLowerCase();
-
-            const subjectMatch =
-              imgSubject === querySubject ||
-              imgShortcode.startsWith(querySubject);
-            return subjectMatch;
+            return (
+              imgSubject === querySubject || imgShortcode.startsWith(querySubject)
+            );
           }
 
-          return matchesChapter;
+          return true;
+        });
+        console.log("[getChapterFigures] After topic filter", {
+          filteredCount: filtered.length,
+          imagesCount: images.length,
         });
 
-        if (filtered.length === 0) {
-          const chapterNumMatch = chapter.match(
-            /chapter\s+(one|two|three|four|five|six|seven|eight|nine|ten|\d+)/i,
-          );
-          if (chapterNumMatch && chapterNumMatch[1]) {
-            const numberStr = chapterNumMatch[1].toLowerCase();
-            const wordToDigit: Record<string, string> = {
-              one: "1",
-              two: "2",
-              three: "3",
-              four: "4",
-              five: "5",
-              six: "6",
-              seven: "7",
-              eight: "8",
-              nine: "9",
-              ten: "10",
-            };
-            const digitToWord: Record<string, string> = {
-              "1": "one",
-              "2": "two",
-              "3": "three",
-              "4": "four",
-              "5": "five",
-              "6": "six",
-              "7": "seven",
-              "8": "eight",
-              "9": "nine",
-              "10": "ten",
-            };
-            const wordToWord: Record<string, string> = {
-              one: "one",
-              two: "two",
-              three: "three",
-              four: "four",
-              five: "five",
-              six: "six",
-              seven: "seven",
-              eight: "eight",
-              nine: "nine",
-              ten: "ten",
-            };
-
-            const isDigit = /^\d+$/.test(numberStr);
-            const chapterWord = isDigit
-              ? digitToWord[numberStr]
-              : wordToWord[numberStr] || null;
-            const chapterDigit = isDigit
-              ? numberStr
-              : wordToDigit[numberStr] || numberStr;
-
-            filtered = images.filter((img: any) => {
-              const imgChapter = normalizeChapter(img.chapter || "");
-
-              const matchesChapterNumber =
-                imgChapter.startsWith(`chapter ${chapterWord}:`) ||
-                imgChapter.startsWith(`chapter ${chapterDigit}:`);
-
-              if (!matchesChapterNumber) return false;
-
-              if (querySubject) {
-                const imgSubject = (img.subject || "").toLowerCase();
-                const imgShortcode = (img.shortcode || "").toLowerCase();
-
-                const subjectMatch =
-                  imgSubject === querySubject ||
-                  imgShortcode.startsWith(querySubject);
-                return subjectMatch;
-              }
-
-              return true;
-            });
-          }
-        }
-
-        if (topic && topic.trim() && topic.trim().toLowerCase() !== "all") {
-          const queryTopic = normalizeTopic(topic);
-          const queryWords = queryTopic
-            .split(/\s+/)
-            .filter((w) => w.length > 2);
-          const isSingleWord = queryWords.length === 1;
-
-          let exactMatches = filtered.filter((img: any) => {
-            const imgTopic = normalizeTopic(img.topic || "");
-            return imgTopic === queryTopic;
-          });
-
-          if (exactMatches.length > 0 && !isSingleWord) {
-            filtered = exactMatches;
-          } else {
-            filtered = filtered.filter((img: any) => {
-              const imgTopic = normalizeTopic(img.topic || "");
-              const imgCaption = normalizeTopic(img.caption || "");
-
-              if (imgTopic === queryTopic) return true;
-
-              if (isSingleWord) {
-                if (imgTopic?.includes(queryWords[0] as string)) return true;
-                if (imgCaption.includes(queryWords[0] as string)) return true;
-                return false;
-              }
-
-              if (imgTopic.includes(queryTopic)) return true;
-              if (imgCaption.includes(queryTopic)) return true;
-
-              return false;
-            });
-          }
-        }
-
-        const figures = filtered.map((img: any) => ({
+        let figures = filtered.map((img: any) => ({
           figure_number: img.figure_number || "",
           caption: img.caption || "",
           description: img.description || "",
@@ -636,7 +809,43 @@ export const studentTools = {
           topic: img.topic || "",
         }));
 
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:afterFilter',message:'After chapter/topic filter',data:{filteredCount:figures.length,imagesCount:images.length,firstShortcode:figures[0]?.shortcode||''},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H5'})}).catch(()=>{});
+        // #endregion
+
+        // When strict chapter/topic filter returns 0 but we have figures: only use fallback when we have a subject, and only return figures from THAT subject (never biology in chemistry chat)
+        let fallbackUsed = false;
+        if (figures.length === 0 && images.length > 0 && querySubject) {
+          const sameSubjectOnly = images.filter((img: any) => {
+            const cat = (img.category || img.subject || "").toLowerCase().trim();
+            const shortcode = (img.shortcode || "").toLowerCase();
+            return cat === querySubject || shortcode.startsWith(querySubject);
+          });
+          const fallbackCount = Math.min(20, sameSubjectOnly.length);
+          figures = sameSubjectOnly.slice(0, fallbackCount).map((img: any) => ({
+            figure_number: img.figure_number || "",
+            caption: img.caption || "",
+            description: img.description || "",
+            shortcode: img.shortcode || "",
+            page_number: img.page_number || null,
+            chapter: img.chapter || "",
+            topic: img.topic || "",
+          }));
+          fallbackUsed = figures.length > 0;
+          console.log("[getChapterFigures] Subject fallback used", {
+            fallbackCount: figures.length,
+            querySubject,
+          });
+          // #region agent log
+          const fallbackCategories = [...new Set(figures.map((f: any) => (f.shortcode || "").split("_")[0] || ""))];
+          fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:fallback',message:'Fallback figures used (subject-strict)',data:{fallbackUsed,querySubject,fallbackCount:figures.length,fallbackCategories},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{});
+          // #endregion
+        }
+
         if (figures.length === 0) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:returnNone',message:'Returning no figures',data:{found:false,imagesCount:images.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
+          // #endregion
           return {
             found: false,
             message: `No figures available. DO NOT mention images, diagrams, or visual representations in your response. Teach using text-based explanations only.`,
@@ -648,6 +857,21 @@ export const studentTools = {
           (f: any) => `[image:${f.shortcode}]`,
         );
 
+        console.log("[getChapterFigures] Success", {
+          found: true,
+          total: figures.length,
+          chapter,
+          topic: topic || null,
+          fallbackUsed,
+          shortcodesCount: shortcodesToUse.length,
+        });
+
+        // #region agent log
+        const firstShortcode = figures[0]?.shortcode || '';
+        const firstCategoryReturn = figures[0] ? (figures[0] as any).shortcode?.split("_")[0] || '' : '';
+        fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:return',message:'Returning figures to model',data:{found:true,total:figures.length,firstShortcode,firstCategoryReturn,fallbackUsed},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
+        // #endregion
+
         return {
           found: true,
           total: figures.length,
@@ -655,10 +879,18 @@ export const studentTools = {
           topic: topic || null,
           figures: figures,
           shortcodes_ready_to_use: shortcodesToUse,
-          usage: `CRITICAL: You MUST include at least one image in your response. Copy-paste one of these EXACTLY into your response: ${shortcodesToUse.join(" or ")}.`,
-          instruction: `MANDATORY: Include at least one of these shortcodes in your response text: ${shortcodesToUse.join(", ")}.`,
+          usage: `You have figures available. You MUST include at least one image in your response. Do NOT say "I don't have visual aids" or "no images". Copy-paste one of these EXACTLY into your response: ${shortcodesToUse.join(" or ")}.`,
+          instruction: `MANDATORY: Include at least one of these shortcodes in your response text. Never tell the student there are no visual aids—you have them: ${shortcodesToUse.join(", ")}.`,
+          ...(fallbackUsed ? { fallback: true, note: "Figures matched by subject/category; use them as relevant visual aids." } : {}),
         };
       } catch (error: any) {
+        console.error("[getChapterFigures] Outer catch error", {
+          error: error?.message,
+          stack: error?.stack,
+          chapter,
+          topic,
+          subject,
+        });
         return {
           found: false,
           error: error.message || "Unknown error occurred",
@@ -678,6 +910,7 @@ export const studentTools = {
         .describe("Include level information if available."),
     }),
     execute: async ({ includeLevels }) => {
+      console.log("[getSubjects] Entry", { includeLevels });
       try {
         const subjects = await fetchSubjectsFromApi();
         const normalized = subjects
@@ -723,6 +956,11 @@ export const studentTools = {
               },
         );
 
+        console.log("[getSubjects] Success", {
+          found: subjectList.length > 0,
+          total: subjectList.length,
+          subjectNames: subjectList.map((s: any) => s.name).slice(0, 5),
+        });
         return {
           found: subjectList.length > 0,
           total: subjectList.length,
@@ -731,6 +969,10 @@ export const studentTools = {
             "Use this list to reference valid subjects. If the user's subject is not listed, ask them to choose from the available subjects.",
         };
       } catch (error: any) {
+        console.error("[getSubjects] Error", {
+          error: error?.message,
+          stack: error?.stack,
+        });
         return {
           found: false,
           subjects: [],
@@ -780,7 +1022,13 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
       level: z.string().optional().describe("Optional: The education level."),
     }),
     execute: async ({ query, subject, level }) => {
+      console.log("[searchTextbooks] Entry", {
+        query: query?.trim() || "(empty)",
+        subject: subject || "(none)",
+        level: level || "(none)",
+      });
       if (!query?.trim()) {
+        console.log("[searchTextbooks] Early exit: no query provided");
         return {
           found: false,
           message: "No search query provided",
@@ -823,15 +1071,26 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
           });
 
         let ragResult = await fetchContext(rawQuery);
+        console.log("[searchTextbooks] Initial RAG fetch", {
+          rawQuery,
+          hasContext: !!(ragResult?.context?.trim()),
+          source: ragResult?.source,
+          contextLength: ragResult?.context?.length ?? 0,
+        });
         if (
           (!ragResult.context || ragResult.context.trim().length === 0) &&
           expandedQuery &&
           expandedQuery !== rawQuery
         ) {
           ragResult = await fetchContext(expandedQuery);
+          console.log("[searchTextbooks] Retry with expanded query", {
+            expandedQuery,
+            hasContext: !!(ragResult?.context?.trim()),
+          });
         }
 
         if (!ragResult.context || ragResult.context.trim().length === 0) {
+          console.log("[searchTextbooks] No context returned");
           return {
             found: false,
             query: query,
@@ -848,6 +1107,12 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
           context = context.slice(0, maxChars).trimEnd() + "...";
         }
 
+        console.log("[searchTextbooks] Success", {
+          found: true,
+          source: ragResult.source,
+          contextLength: context.length,
+          truncated: context.length >= maxChars,
+        });
         return {
           found: true,
           query: query,
@@ -858,6 +1123,11 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
             "You MUST use the context above to answer. ALWAYS cite the source using format: 'According to [Book Title] ([Citation])...'. Do NOT use information outside this context.",
         };
       } catch (error: any) {
+        console.error("[searchTextbooks] Error", {
+          error: error?.message,
+          stack: error?.stack,
+          query,
+        });
         return {
           found: false,
           query: query,
