@@ -458,6 +458,19 @@ export const studentTools = {
             }
           }
         }
+        let queryName = nameValue || undefined;
+
+        let topics = await fetchPublicTopicsFromApi({
+          name: queryName,
+          level: levelValue || undefined,
+          subject: subjectValue || undefined,
+        });
+
+        let usedQuery = {
+          name: queryName,
+          level: levelValue || undefined,
+          subject: subjectValue || undefined,
+        };
 
         // No syllabus match yet: fall back to filter API (e.g. no subject, or by-subject fetch failed)
         if (!syllabusFound) {
@@ -468,6 +481,9 @@ export const studentTools = {
           });
           if (topics.length === 0 && normalizedName && normalizedName !== nameValue) {
             topics = await fetchPublicTopicsFromApi({
+          if (topics.length > 0) {
+            queryName = normalizedName;
+            usedQuery = {
               name: normalizedName,
               level: levelValue || undefined,
               subject: subjectValue || undefined,
@@ -475,6 +491,38 @@ export const studentTools = {
           }
           if (topics.length === 0 && nameValue) {
             topics = await fetchPublicTopicsFromApi({
+        }
+
+        // Fallback: if no level is provided, try Form 1 and Form 2
+        if (topics.length === 0 && !levelValue && nameValue) {
+          const levelsToTry = ["Form 1", "Form 2"];
+          for (const fallbackLevel of levelsToTry) {
+            topics = await fetchPublicTopicsFromApi({
+              name: queryName || nameValue,
+              level: fallbackLevel,
+              subject: subjectValue || undefined,
+            });
+            if (topics.length > 0) {
+              usedQuery = {
+                name: queryName || nameValue,
+                level: fallbackLevel,
+                subject: subjectValue || undefined,
+              };
+              break;
+            }
+          }
+        }
+
+        // Fallback: if name-only yields no results, try treating name as subject
+        if (topics.length === 0 && !subjectValue && nameValue) {
+          topics = await fetchPublicTopicsFromApi({
+            subject: nameValue,
+            level: levelValue || undefined,
+          });
+          if (topics.length > 0) {
+            usedQuery = {
+              name: undefined,
+              level: levelValue || undefined,
               subject: nameValue,
               level: levelValue || undefined,
             });

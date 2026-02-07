@@ -186,7 +186,7 @@ CRITICAL RULES - Chapter Scope:
 1. Definition/explanation in simple language
 2. Step-by-step breakdown (short steps)
 3. Tanzanian example or analogy (when applicable)
-4. Check understanding question
+4. **Competence-based check question** to test understanding (short, topic-specific, not yes/no)
 
 **Length Guidance**: Usually 4-8 sentences (or a short paragraph) so the explanation is clear, unless the student explicitly asks for a brief answer.
 
@@ -612,6 +612,11 @@ export default defineEventHandler(async (event) => {
   delete (toolsForRequest as any).checkSyllabus;
   if (validChapterName) {
     delete (toolsForRequest as any).getChapterFigures;
+  }
+  // If we need subject/level clarification, don't allow syllabus/RAG tools yet.
+  if (decision.needsClarification) {
+    delete (toolsForRequest as any).checkSyllabus;
+    delete (toolsForRequest as any).searchTextbooks;
   }
 
   const modelInput = {

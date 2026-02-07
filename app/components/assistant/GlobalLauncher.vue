@@ -65,11 +65,6 @@ const hasValidSubjectContext = computed(() => {
   const idCandidates = [
     params.topicId,
     params.chapterId,
-    params.subjectId,
-    params.videoId,
-    params.audioId,
-    params.experimentId,
-    params.id,
   ];
   const hasValidId = idCandidates.some(
     (value) => typeof value === "string" && value.trim().length > 0
