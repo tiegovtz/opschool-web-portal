@@ -845,7 +845,7 @@ onMounted(async () => {
           </div>
 
           <!-- school -->
-          <div v-if="usersignUp.type.toLowerCase() === 'student' || usersignUp.type.toLowerCase() === 'teacher'" :class="[
+          <div v-if="['student', 'teacher'].includes(usersignUp.type.toLowerCase())" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -857,14 +857,14 @@ onMounted(async () => {
             <SelectionSchoolSelection :district="usersignUp.district" :region="usersignUp.region"
               :school="usersignUp.school" @update-school="usersignUp.school = $event"
               :error="(usersignUp.controller.errors.school as string)" />
+          </div>
 
-            <div class="flex flex-col items-start w-full my-2">
-              <label for="level" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-                Class Level:</label>
-              <!-- Use the Custom Dropdown instead of <select> -->
-              <CustomDropDownList v-model="classLevel" :list="levelsLists"
-                placeholder="(eg: Baraa Secondary School ...)" @update-model-value="usersignUp.type = $event" />
-            </div>
+          <div class="flex flex-col items-start w-full my-2" v-if="usersignUp.type.toLowerCase() === 'student'" >
+            <label for="level" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+              Class Level:</label>
+            <!-- Use the Custom Dropdown instead of <select> -->
+            <CustomDropDownList v-model="classLevel" :list="levelsLists" placeholder="(eg: Baraa Secondary School ...)"
+              @update-model-value="usersignUp.type = $event" />
           </div>
 
           <!-- gender input radio -->
