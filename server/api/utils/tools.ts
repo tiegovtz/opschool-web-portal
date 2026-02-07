@@ -766,38 +766,54 @@ export const studentTools = {
 
         const syllabusChapter = normalize(chapter);
 
-        const matchesFiguresTopic = (img: any) => {
+        const matchesTopicAgainst = (img: any, against: string) => {
           const imgTopic = normalize(img.topic || "");
+          const normalizedAgainst = normalize(against || "");
+          if (!normalizedAgainst) return false;
           return (
-            imgTopic === syllabusChapter ||
-            imgTopic.includes(syllabusChapter) ||
-            syllabusChapter.includes(imgTopic)
+            imgTopic === normalizedAgainst ||
+            imgTopic.includes(normalizedAgainst) ||
+            normalizedAgainst.includes(imgTopic)
           );
         };
 
-        console.log("[getChapterFigures] Filtering by topic (syllabus chapter → figures topic)", {
-          imagesCount: images.length,
-          syllabusChapter,
-          querySubject,
-        });
-        let filtered = images.filter((img: any) => {
-          const matchesTopic = matchesFiguresTopic(img);
-          if (!matchesTopic) return false;
-
-          if (querySubject) {
+        const applySubjectFilter = (imgs: any[]) => {
+          if (!querySubject) return imgs;
+          return imgs.filter((img: any) => {
             const imgSubject = (img.subject || img.category || "").toLowerCase();
             const imgShortcode = (img.shortcode || "").toLowerCase();
             return (
               imgSubject === querySubject || imgShortcode.startsWith(querySubject)
             );
-          }
+          });
+        };
 
-          return true;
+        // Step 1: Try chapter vs img.topic
+        console.log("[getChapterFigures] Filtering by topic (chapter → figures topic)", {
+          imagesCount: images.length,
+          syllabusChapter,
+          querySubject,
         });
-        console.log("[getChapterFigures] After topic filter", {
+        let filtered = images.filter((img: any) => matchesTopicAgainst(img, chapter));
+        filtered = applySubjectFilter(filtered);
+        console.log("[getChapterFigures] After chapter filter", {
           filteredCount: filtered.length,
           imagesCount: images.length,
         });
+
+        // Step 2: If no match and topic param provided, try topic vs img.topic
+        if (filtered.length === 0 && topic && topic.trim() && topic.trim().toLowerCase() !== "all") {
+          const syllabusTopic = normalize(topic);
+          console.log("[getChapterFigures] Chapter match yielded 0, trying topic param vs figures topic", {
+            syllabusTopic,
+          });
+          filtered = images.filter((img: any) => matchesTopicAgainst(img, topic));
+          filtered = applySubjectFilter(filtered);
+          console.log("[getChapterFigures] After topic filter", {
+            filteredCount: filtered.length,
+            imagesCount: images.length,
+          });
+        }
 
         let figures = filtered.map((img: any) => ({
           figure_number: img.figure_number || "",
@@ -812,35 +828,6 @@ export const studentTools = {
         // #region agent log
         fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:afterFilter',message:'After chapter/topic filter',data:{filteredCount:figures.length,imagesCount:images.length,firstShortcode:figures[0]?.shortcode||''},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H5'})}).catch(()=>{});
         // #endregion
-
-        // When strict chapter/topic filter returns 0 but we have figures: only use fallback when we have a subject, and only return figures from THAT subject (never biology in chemistry chat)
-        let fallbackUsed = false;
-        if (figures.length === 0 && images.length > 0 && querySubject) {
-          const sameSubjectOnly = images.filter((img: any) => {
-            const cat = (img.category || img.subject || "").toLowerCase().trim();
-            const shortcode = (img.shortcode || "").toLowerCase();
-            return cat === querySubject || shortcode.startsWith(querySubject);
-          });
-          const fallbackCount = Math.min(20, sameSubjectOnly.length);
-          figures = sameSubjectOnly.slice(0, fallbackCount).map((img: any) => ({
-            figure_number: img.figure_number || "",
-            caption: img.caption || "",
-            description: img.description || "",
-            shortcode: img.shortcode || "",
-            page_number: img.page_number || null,
-            chapter: img.chapter || "",
-            topic: img.topic || "",
-          }));
-          fallbackUsed = figures.length > 0;
-          console.log("[getChapterFigures] Subject fallback used", {
-            fallbackCount: figures.length,
-            querySubject,
-          });
-          // #region agent log
-          const fallbackCategories = [...new Set(figures.map((f: any) => (f.shortcode || "").split("_")[0] || ""))];
-          fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:fallback',message:'Fallback figures used (subject-strict)',data:{fallbackUsed,querySubject,fallbackCount:figures.length,fallbackCategories},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{});
-          // #endregion
-        }
 
         if (figures.length === 0) {
           // #region agent log
@@ -862,14 +849,13 @@ export const studentTools = {
           total: figures.length,
           chapter,
           topic: topic || null,
-          fallbackUsed,
           shortcodesCount: shortcodesToUse.length,
         });
 
         // #region agent log
         const firstShortcode = figures[0]?.shortcode || '';
         const firstCategoryReturn = figures[0] ? (figures[0] as any).shortcode?.split("_")[0] || '' : '';
-        fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:return',message:'Returning figures to model',data:{found:true,total:figures.length,firstShortcode,firstCategoryReturn,fallbackUsed},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
+        fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:return',message:'Returning figures to model',data:{found:true,total:figures.length,firstShortcode,firstCategoryReturn},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
         // #endregion
 
         return {
@@ -879,9 +865,8 @@ export const studentTools = {
           topic: topic || null,
           figures: figures,
           shortcodes_ready_to_use: shortcodesToUse,
-          usage: `You have figures available. You MUST include at least one image in your response. Do NOT say "I don't have visual aids" or "no images". Copy-paste one of these EXACTLY into your response: ${shortcodesToUse.join(" or ")}.`,
-          instruction: `MANDATORY: Include at least one of these shortcodes in your response text. Never tell the student there are no visual aids—you have them: ${shortcodesToUse.join(", ")}.`,
-          ...(fallbackUsed ? { fallback: true, note: "Figures matched by subject/category; use them as relevant visual aids." } : {}),
+          usage: `You have figures available. You MUST include at least one image in your response. Use ONLY the format [image:shortcode]—copy-paste one of these EXACTLY: ${shortcodesToUse.join(" or ")}. Do NOT use markdown image syntax like ![caption](shortcode); only [image:shortcode] displays correctly.`,
+          instruction: `MANDATORY: Include at least one of these shortcodes in your response using the exact format [image:shortcode] (e.g. ${shortcodesToUse[0] || "[image:shortcode]"}). Do NOT use ![](shortcode). Never tell the student there are no visual aids—you have them: ${shortcodesToUse.join(", ")}.`,
         };
       } catch (error: any) {
         console.error("[getChapterFigures] Outer catch error", {

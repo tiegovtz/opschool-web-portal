@@ -228,6 +228,11 @@ Use tools only when they add value:
 - When getChapterFigures returns figures (found: true): You MUST include at least one [image:shortcode] in your response. NEVER say "I don't have visual aids", "no images available", or "I cannot show images" when the tool returned figures.
 - When getChapterFigures returns NO figures (found: false): DO NOT mention images, diagrams, or visual representations AT ALL
 
+**IMAGE FORMAT (use exactly - required for figures to display)**:
+- To show a figure, use ONLY the format [image:shortcode] with the exact shortcode from the tool (e.g. [image:physics_figure_1_1], [image:biology_form1_figure_2_3]).
+- Do NOT use markdown image syntax like ![caption](shortcode) or ![](shortcode)—it will not display correctly. Use [image:shortcode] only.
+- Copy-paste the shortcode exactly as returned (e.g. [image:chemistry_form2_figure_1_1_a]). One shortcode per figure; repeat [image:shortcode] for multiple figures.
+
 **SUBJECT LISTING**:
 - If the student asks which subjects are available, call getSubjects and present the results.
 
@@ -308,6 +313,7 @@ Priority Rules:
 - Call getChapterFigures({chapter: "Concept of Physics", topic: "Introduction to Physics", subject: "physics"|"biology"|"chemistry"|...}) whenever you are teaching. Use the exact chapter name from getSyllabus (e.g. "Concept of Physics", "Measurement")—no "Chapter One" prefix. Always pass subject so images match the conversation.
 - IF figures returned (found: true): You MUST include at least one [image:shortcode] in your response. NEVER say "I don't have visual aids" or "no images" when the tool returned figures.
 - IF NO figures (found: false): Teach WITHOUT mentioning images at all - no "diagrams", "figures", "visual representations".
+- FIGURE FORMAT: Use ONLY [image:shortcode] (e.g. [image:physics_figure_1_1]). Do NOT use ![caption](shortcode)—use [image:shortcode] only so the image displays correctly.
   `.trim();
 }
 
@@ -350,6 +356,7 @@ You have access to these tools. Use them APPROPRIATELY:
 **4. getChapterFigures** - Get images/diagrams for a chapter/topic
    - CALL PROACTIVELY whenever you are teaching. Do NOT wait for the student to ask for "visual aid" or "images". Always pass subject (e.g. physics, biology, chemistry) so figures match the conversation—images are filtered by subject/topic (e.g. only chemistry figures in a chemistry answer).
    - IF FIGURES RETURNED (found: true): You MUST include at least one [image:shortcode] in your response. Decide whether to display all, one, or more figures based on relevance.
+   - IMAGE FORMAT (exact): Use ONLY [image:shortcode] with the exact shortcode from the tool (e.g. [image:physics_figure_1_1]). Do NOT use markdown image syntax ![caption](shortcode)—only [image:shortcode] displays correctly.
    - IF NO FIGURES RETURNED (found: false): DO NOT mention images/diagrams at all.
 
 **SYLLABUS-TO-FIGURES FLOW (when subject/chapter not in context):**
@@ -551,10 +558,24 @@ export default defineEventHandler(async (event) => {
   fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat.ts:validContext',message:'Valid chapter and context',data:{validChapterName:validChapterName||null,hasContext:!!context,subject:subject||'',topic:topic||''},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
   // #endregion
 
-    const coreMessages = convertMessagesToCore(messages);
+    let coreMessages = convertMessagesToCore(messages);
     
     if (!Array.isArray(coreMessages)) {
       throw new Error("Failed to convert messages to CoreMessage format");
+    }
+
+    // Add shortcode format reminder to the last user message so the model sees exact figure format with each turn
+    const lastUserIdx = [...coreMessages].reverse().findIndex((m) => m.role === "user");
+    if (lastUserIdx >= 0 && coreMessages.length > 0) {
+      const idx = coreMessages.length - 1 - lastUserIdx;
+      const lastUser = coreMessages[idx];
+      if (lastUser?.role === "user" && typeof lastUser.content === "string") {
+        coreMessages = [...coreMessages];
+        coreMessages[idx] = {
+          ...lastUser,
+          content: `${lastUser.content.trim()}\n\n(Please include visual aids when getChapterFigures returns figures. When including figures, use only the format [image:shortcode] with the exact shortcode from getChapterFigures, e.g. [image:physics_figure_1_1]. Do not use markdown image syntax ![](shortcode).)`,
+        };
+      }
     }
     
     const basePrompt = getCachedSystemPrompt(validChapterName, context);
