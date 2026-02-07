@@ -1,4 +1,11 @@
 const MALE_NAME_HINTS = new Set([
+  "Kipeto",
+  "Anande",
+  "Mfwimi",
+  "Balongage",
+  "Jontwa",
+  "Shedanga",
+  "Gulila",
   "hakeem",
   "hakim",
   "john",
@@ -19,6 +26,8 @@ const MALE_NAME_HINTS = new Set([
   "frank",
   "brian",
   "george",
+  "Jamal",
+  "Manjana",
 ]);
 
 const FEMALE_NAME_HINTS = new Set([
@@ -42,6 +51,11 @@ const FEMALE_NAME_HINTS = new Set([
   "sophia",
   "mary",
   "rose",
+  "Libe",
+  "Shamimu",
+  "Sesi",
+  "Fati",
+  "Nyenza",
 ]);
 
 export const inferVoiceTypeByName = (name: string): "male" | "female" => {
