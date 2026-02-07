@@ -24,7 +24,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['updateModelValue']);
+const emit = defineEmits(['updateModelValue', 'update:modelValue']);
 
 const isOpen = ref(false);
 const selected = ref('');
@@ -64,6 +64,7 @@ const selectItem = (item) => {
   selected.value = item.name;
 
   emit('updateModelValue', item.id ?? item.name);
+  emit('update:modelValue', item.id ?? item.name);
 
   isOpen.value = false;
 };
@@ -86,12 +87,10 @@ onBeforeUnmount(() => {
 <template>
   <div ref="dropdownRef" class="relative w-full text-left">
     <!-- Dropdown button -->
-    <button type="button"
-      :class="[
-        'flex items-center justify-between w-full h-full px-4 py-2 text-gray-700 rounded-md shadow-sm focus:outline-none',
-        buttonClass
-      ]"
-      @click.stop="toggleOpen" role="combobox" aria-haspopup="listbox"
+    <button type="button" :class="[
+      'flex items-center justify-between w-full h-full px-4 py-2 text-gray-700 rounded-md shadow-sm focus:outline-none',
+      buttonClass
+    ]" @click.stop="toggleOpen" role="combobox" aria-haspopup="listbox"
       :aria-expanded="(!disabled && isOpen) ? 'true' : 'false'"
       :aria-controls="$attrs.id ? `${$attrs.id}-listbox` : 'dropdown-listbox'" :disabled="disabled"
       :aria-disabled="disabled ? 'true' : 'false'" v-bind="$attrs">
@@ -125,7 +124,7 @@ onBeforeUnmount(() => {
 .fade-enter-active,
 .fade-leave-active {
   transition: all 0.2s ease-in-out;
-} 
+}
 
 .fade-enter-from,
 .fade-leave-to {
