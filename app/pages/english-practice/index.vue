@@ -95,6 +95,7 @@
           :current-turn="turnManager.currentTurn.value"
           :current-speaker-name="currentSpeakerName"
           :can-record="canRecord"
+          :is-speech-supported="isSpeechSupported"
           @toggle="handleMicToggle"
         />
 
@@ -170,6 +171,7 @@ const practiceCompleted = ref(false);
 const autoCloseSeconds = ref<number>(0);
 let autoCloseTimer: number | null = null;
 const toasts = ref<Array<{ id: string; message: string; type: 'info' | 'error' }>>([]);
+const isSpeechSupported = ref(true);
 const participants = ref<ConversationParticipant[]>([]);
 const participantNameMap = computed(() => {
   const map = new Map<string, string>();
@@ -498,6 +500,10 @@ const handleMicToggle = () => {
     spokenWords.value.clear();
   } else {
     if (canRecord.value) {
+      if (!isSpeechSupported.value) {
+        showToast('Speech-to-text is not available in this browser. Try Chrome, Edge, or Safari.', 'error');
+        return;
+      }
       // Reset word index when starting to speak
       currentWordIndex.value = 0;
       speechRecognition.start();
@@ -1436,6 +1442,12 @@ onMounted(() => {
       setTimeout(() => {
         allowOverlayClose.value = true;
       }, 0);
+    }
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      isSpeechSupported.value = false;
+      showToast('Speech-to-text is not available in this browser. Try Chrome, Edge, or Safari.', 'error');
     }
   }
   detectMode();

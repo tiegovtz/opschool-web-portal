@@ -14,12 +14,12 @@
       <!-- Mic button -->
       <button
         @click="handleClick"
-        :disabled="!canRecord"
+        :disabled="isMicDisabled"
         :class="[
           'w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 transform',
           isRecording
             ? 'bg-red-500 hover:bg-red-600 scale-110 animate-pulse'
-            : canRecord
+            : !isMicDisabled
             ? 'bg-oceanBlue hover:bg-deepBlue scale-100 hover:scale-105'
             : 'bg-gray-400 cursor-not-allowed scale-100',
           'focus:outline-none focus:ring-4 focus:ring-oceanBlue focus:ring-opacity-50'
@@ -35,6 +35,7 @@
       <!-- Status text -->
       <div class="text-xs text-gray-600 text-center">
         <span v-if="isRecording">Recording... Speak now</span>
+        <span v-else-if="!isSpeechSupported">Speech-to-text not supported in this browser</span>
         <span v-else-if="!canRecord">Waiting for turn...</span>
         <span v-else>Click to start speaking</span>
       </div>
@@ -51,10 +52,12 @@ interface Props {
   currentTurn?: SpeakerType;
   currentSpeakerName?: string;
   canRecord?: boolean;
+  isSpeechSupported?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   canRecord: true,
+  isSpeechSupported: true,
 });
 
 const emit = defineEmits<{
@@ -62,10 +65,12 @@ const emit = defineEmits<{
 }>();
 
 const handleClick = () => {
-  if (props.canRecord) {
+  if (props.canRecord && props.isSpeechSupported) {
     emit('toggle');
   }
 };
+
+const isMicDisabled = computed(() => !props.canRecord || !props.isSpeechSupported);
 
 const turnMessage = computed(() => {
   const name = String(props.currentSpeakerName || '').trim();
