@@ -552,7 +552,7 @@ const setPicCenter = async () => {
             const images = span.querySelectorAll("img")
             if (images.length === 1 &&
               (images[0]?.classList.contains('desc-img') ||
-                images[0]?.classList.contains('desc-img-eng-think')))
+                images[0]?.classList.contains('desc-img-eng-think') || images[0]?.classList.contains('desc-img-eng-doyoknow')))
               return;
 
             span.className = "flex justify-center flex-wrap gap-2";
@@ -578,7 +578,8 @@ const setPicCenter = async () => {
 
           const images = p.querySelectorAll("img")
           if (images.length === 1 &&
-            images[0]?.classList.contains('desc-img'))
+            (images[0]?.classList.contains('desc-img') ||
+              images[0]?.classList.contains('desc-img-eng-think') || images[0]?.classList.contains('desc-img-eng-doyoknow')))
             return;
 
           p.className = "flex items-center justify-center flex-wrap"
@@ -989,9 +990,10 @@ definePageMeta({
           <div class="relative flex flex-col justify-center w-full gap-2 py-3 content-view">
 
             <!-- Chapter Notes -->
-            <div v-mathjax class="mx-auto notes md:px-4 max-w-7xl" aria-label="Compitencies notes"
+            <div v-mathjax class="mx-auto notes md:px-4 w-full max-w-7xl" aria-label="Compitencies notes"
               aria-details="notes-extra-details" role="region"
-              v-html="enhanceAccessibility(conversationParser(experimentParser(modelParser(mediaParser(chapters.notes?.content)))))"></div>
+              v-html="enhanceAccessibility(conversationParser(experimentParser(modelParser(mediaParser(chapters.notes?.content)))))">
+            </div>
 
             <p id="notes-extra-details" class="sr-only">
               These notes include at least one video, two-dimensional images such as GIFs,
@@ -1047,7 +1049,7 @@ definePageMeta({
 
         <!-- Sidebar w-1/4 -->
         <div tabindex="0"
-          class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2 lg:static bg-white">
+          class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2 lg:static bg-white lg:scroll-height lg:overflow-y-scroll">
           <div class="flex items-center justify-between mb-4">
             <h1 aria-label="Activity list" class="pt-5 pl-4 font-medium  text-medium">Learning contents</h1>
             <!-- toggle menu -->

@@ -9,7 +9,6 @@ const emit = defineEmits([
   'emitActiveTab'
 ])
 
-
 // Define Props
 withDefaults(defineProps<{
   subjectTitle?: string,
@@ -22,6 +21,8 @@ withDefaults(defineProps<{
 })
 
 // Define State
+const videoType = ref<videoType>('conceptual') //Conceptual and other initial
+  
 const tabState = reactive<{
   isChecked: boolean,
   checkedValueButton: tabs | null
@@ -29,15 +30,13 @@ const tabState = reactive<{
   isChecked: false,
   checkedValueButton: null,
 });
-const videoType = ref<videoType>('conceptual') //Conceptual and other initial
 
 // Define a Function
 const tabCheck = (checkValue: tabs) => {
-  if(!checkValue) return
+  if(!checkValue) return  
   tabState.isChecked = true;
   tabState.checkedValueButton = checkValue;
   emit('emitActiveTab', tabState.checkedValueButton);
-
 }
 
 </script>
@@ -54,12 +53,13 @@ const tabCheck = (checkValue: tabs) => {
           { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'subjects' || activeTab == 'subjects' }
         ]" @click="tabCheck('subjects')">
           <div class="flex items-center justify-center">
-            <Icon aria-label="" name="mdi:notebook-edit" size="20" class="" />
+            <IconsSubjects :size="20" aria-label="Subjects" />
           </div>
           {{ HomeTabs.subject }}
         </button>
         <button v-if="activeTab==='subjects'" type="button" class="sr-only" @click="moveFocus('main-container')" aria-label="Press enter to jump to subject list">Skip content</button>
       </div>
+
       <!-- Interactive Content -->
       <div v-if="isLoggedIn" class="">
         <button role="tab" :class="[
@@ -67,7 +67,7 @@ const tabCheck = (checkValue: tabs) => {
           { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'interactive-contents' || activeTab == 'interactive-contents' }
         ]" @click="tabCheck('interactive-contents')">
           <div class="flex items-center justify-center">
-            <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
+            <IconsInteractive :size="20" class="" />
           </div>
           {{ HomeTabs.interactive }}
         </button>
@@ -82,7 +82,7 @@ const tabCheck = (checkValue: tabs) => {
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
         active-class="text-white !bg-deepBlue ">
         <div class="flex items-center justify-center">
-          <Icon name="streamline:vr-headset-2-solid" size="20" class="" />
+          <IconsInteractive :size="20" class="" />
         </div>
         {{ HomeTabs.interactive }}
       </NuxtLink>
@@ -95,7 +95,7 @@ const tabCheck = (checkValue: tabs) => {
           { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'learn-activities' || activeTab == 'learn-activities' }
         ]" @click="tabCheck('learn-activities')">
           <div class="flex items-center justify-center">
-            <Icon name="icon-park-solid:experiment-one" size="20" />
+            <IconsActivity :size="20" />
           </div>
           {{ HomeTabs.activity }}
         </button>
@@ -108,7 +108,7 @@ const tabCheck = (checkValue: tabs) => {
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
-          <Icon name="icon-park-solid:experiment-one" size="20" />
+          <IconsActivity :size="20" />
         </div>
         {{ HomeTabs.activity }}
       </NuxtLink>
@@ -121,7 +121,7 @@ const tabCheck = (checkValue: tabs) => {
           { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'video' || activeTab == 'video' }
         ]" @click="tabCheck('video')">
           <div class="flex items-center justify-center">
-            <Icon name="fluent:video-24-filled" size="20" />
+            <IconsConceptualVideo :size="20" />
           </div>
           {{ HomeTabs.video }}
         </button>
@@ -138,7 +138,7 @@ const tabCheck = (checkValue: tabs) => {
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
         :active-class="videoType == 'conceptual' ? 'text-white !bg-deepBlue' : 'text-white !bg-oceanBlue'">
         <div class="flex items-center justify-center">
-          <Icon name="fluent:video-24-filled" size="20" />
+          <IconsConceptualVideo :size="20" />
         </div>
         {{ HomeTabs.video }}
       </NuxtLink>
@@ -150,7 +150,7 @@ const tabCheck = (checkValue: tabs) => {
           { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'class-videos' || activeTab == 'class-videos' }
         ]" @click="tabCheck('class-videos')">
           <div class="flex items-center justify-center">
-            <Icon name="icon-park-solid:blackboard" size="20" />
+            <IconsOtherVideo :size="20" />
           </div>
           {{ HomeTabs.classVideos }}
         </button>
@@ -168,7 +168,7 @@ const tabCheck = (checkValue: tabs) => {
         :active-class="videoType == 'class-video' ? 'text-white !bg-deepBlue' : 'text-white !bg-oceanBlue'
           ">
         <div class="flex items-center justify-center">
-          <Icon name="icon-park-solid:blackboard" size="20" />
+          <IconsOtherVideo :size="20" />
         </div>
         {{ HomeTabs.classVideos }}
       </NuxtLink>
@@ -180,7 +180,7 @@ const tabCheck = (checkValue: tabs) => {
           { 'text-white !bg-deepBlue': tabState.isChecked && tabState.checkedValueButton == 'audio' || activeTab == 'audio' }
         ]" @click="tabCheck('audio')">
           <div class="flex items-center justify-center">
-            <Icon name="famicons:headset-sharp" size="20" />
+            <IconsAudio :size="20" />
           </div>
           {{ HomeTabs.audio }}
         </button>
@@ -193,7 +193,7 @@ const tabCheck = (checkValue: tabs) => {
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  text-medium lg:w-45"
         active-class="text-white !bg-deepBlue">
         <div class="flex items-center justify-center">
-          <Icon name="famicons:headset-sharp" size="20" />
+          <IconsAudio :size="20" />
         </div>
         {{ HomeTabs.audio }}
       </NuxtLink>

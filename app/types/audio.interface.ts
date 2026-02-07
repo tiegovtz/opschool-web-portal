@@ -9,6 +9,7 @@ export interface Audios extends BaseEntity {
   audioFileUrl: string;
   syllabus: string;
   description: string;
+  level:any
 }
 
 export interface AudioFileInfo {

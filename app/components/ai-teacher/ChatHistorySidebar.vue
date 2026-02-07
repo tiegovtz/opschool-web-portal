@@ -574,9 +574,6 @@ const emit = defineEmits<{
 }>();
 
 const chatStore = useChatStore();
-const route = useRoute();
-const router = useRouter();
-
 const sessions = computed(() => chatStore.sessions);
 const searchQuery = ref("");
 const sessionsContainer = ref<HTMLElement | null>(null);
@@ -761,8 +758,7 @@ const confirmDelete = async () => {
 
     // If deleted session was active, create a new one
     if (wasActive) {
-      await chatStore.createSession();
-      router.replace({ query: { sessionId: chatStore.activeSessionId } });
+      emit("newChat");
     }
 
     // Clear search if no results
