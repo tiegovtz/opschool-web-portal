@@ -21,7 +21,9 @@ const emit = defineEmits(["updateDistrict"]);
 
 const districtValue = computed({
   get: () => props.district,
-  set: (value) => emit("updateDistrict", value),
+  set: (value) => {
+    emit("updateDistrict", value); console.log(value);
+  }
 });
 
 const fetchDistricts = async (region: string) => {
@@ -75,12 +77,14 @@ const isDisabled = computed(
       Select district:
     </label>
 
-    <CustomDropDownList id="district-select" v-model="districtValue" :list="districtOptions" :placeholder="!props.region
-      ? 'Select a region first'
-      : data.status === 'pending'
-        ? 'Loading districts…'
-        : 'Select a district'
-      " :disabled="isDisabled" :aria-invalid="!!error" aria-describedby="district-status district-error" />
+    <CustomDropDownList id="district-select" v-model="districtValue" :list="districtOptions"
+      @update-model-value="emit('updateDistrict', $event);" aria-describedby="district-status district-error"
+      :placeholder="!props.region
+        ? 'Select a region first'
+        : data.status === 'pending'
+          ? 'Loading districts…'
+          : 'Select a district'
+        " :disabled="isDisabled" :aria-invalid="!!error" />
 
     <!-- Status / helper text -->
     <!-- <div id="district-status" class="w-full mt-1" aria-live="polite">
