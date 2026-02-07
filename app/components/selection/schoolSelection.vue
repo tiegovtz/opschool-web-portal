@@ -24,8 +24,13 @@ const emit = defineEmits(["updateSchool"]);
 const selectedSchool = ref<string | null | any>(props.school ?? null);
 
 // Emit to parent whenever dropdown changes
-watch(selectedSchool, (val) => {
-  emit("updateSchool", val);
+// watch(selectedSchool, (val) => {
+//   emit("updateSchool", val);
+// });
+
+// watch school prop changes to update local selectedSchool (e.g. when parent resets form)
+watch(() => props.school, (newVal) => {
+  selectedSchool.value = newVal ?? null;
 });
 
 // Fetch schools function
@@ -93,7 +98,7 @@ watch(
     <!-- Accessible dropdown -->
     <CustomDropDownList v-if="data.status === 'success' && data.schools.length" id="school" v-model="selectedSchool"
       :list="data.schools.map((school) => ({ id: school._id, name: school.name }))" placeholder="Choose a school"
-      :aria-invalid="!!error" aria-describedby="school-error" />
+      :aria-invalid="!!error" aria-describedby="school-error" @update-model-value="emit('updateSchool', $event)" />
 
     <!-- Status / helper messages (live region) -->
     <div v-else class="mt-2 text-textGray/40" role="status" aria-live="polite">

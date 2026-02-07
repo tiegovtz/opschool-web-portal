@@ -17,7 +17,7 @@ const classLevel = ref<string>('');
 type userType = 'Student' | 'Teacher' | 'EducationStakeholder';
 
 interface userSignUp {
-  type: string;
+  type: userType | string;
   fname: string | null;
   lname: string | null;
   email: string | null;
@@ -660,7 +660,7 @@ const switchTab = (tabName: string) => {
       // One-liner equivalent to the if statement, use a logical && operator:
       // normalizeUserTypeKey(usersignUp.type) === 'student' && userExists();
 
-      if (usersignUp.type.toLowerCase().trim() === 'student') {
+      if (usersignUp.type.trim() === 'Student') {
         userExists();
       }
 
@@ -673,9 +673,9 @@ const switchTab = (tabName: string) => {
 
 // Age Options
 const ageOptions = computed(() => {
-  const type = usersignUp.type.toLowerCase().trim();
+  const type = usersignUp.type.trim();
 
-  if (type === "student") {
+  if (type === "Student") {
     return [
       { id: "Child", name: "Kids (3 - 12)" },
       { id: "Teen", name: "Teens (13 - 19)" },
@@ -845,7 +845,7 @@ onMounted(async () => {
           </div>
 
           <!-- school -->
-          <div v-if="['student', 'teacher'].includes(usersignUp.type.toLowerCase())" :class="[
+          <div v-if="['Student', 'Teacher'].includes(usersignUp.type)" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -859,12 +859,12 @@ onMounted(async () => {
               :error="(usersignUp.controller.errors.school as string)" />
           </div>
 
-          <div class="flex flex-col items-start w-full my-2" v-if="usersignUp.type.toLowerCase() === 'student'" >
+          <div class="flex flex-col items-start w-full my-2" v-if="usersignUp.type === 'Student'">
             <label for="level" class="font-semibold capitalize text-oceanBlue text-extraSmall">
               Class Level:</label>
             <!-- Use the Custom Dropdown instead of <select> -->
-            <CustomDropDownList v-model="classLevel" :list="levelsLists" placeholder="(eg: Baraa Secondary School ...)"
-              @update-model-value="usersignUp.type = $event" />
+            <CustomDropDownList v-model="classLevel" :list="levelsLists"
+              placeholder="(eg: Baraa Secondary School ...)" @update-model-value="classLevel = $event" />
           </div>
 
           <!-- gender input radio -->
@@ -939,7 +939,7 @@ onMounted(async () => {
             <div class="flex flex-col">
               <label for="age" class="font-semibold capitalize text-oceanBlue text-extraSmall">Select Age:</label>
 
-              <CustomDropDownList v-model="usersignUp.age" :list="ageOptions" :placeholder="usersignUp.type.toLowerCase().trim() === 'student'
+              <CustomDropDownList v-model="usersignUp.age" :list="ageOptions" :placeholder="usersignUp.type.trim() === 'Student'
                 ? 'Eg: kids(3 - 12)' : 'Eg: YoungAdults(20 - 35)'" @update-model-value="usersignUp.age = $event" />
             </div>
 
@@ -951,7 +951,7 @@ onMounted(async () => {
           </div>
 
           <!-- Select email and phone for non student -->
-          <div v-if="usersignUp.type.toLowerCase() !== 'student'">
+          <div v-if="usersignUp.type !== 'Student'">
 
             <!-- Email -->
             <div :class="[
@@ -1075,7 +1075,7 @@ onMounted(async () => {
           </div>
 
           <!-- username student -->
-          <div v-if="usersignUp.type.toLowerCase() === 'student'" :class="[
+          <div v-if="usersignUp.type === 'Student'" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
