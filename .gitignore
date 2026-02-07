@@ -51,4 +51,5 @@ server/data/vector-store.json
 nextjs-migration-package/
 
 # Testing scripts
-scripts/test-generated-audios-endpoint.js
+scripts/test-*.js
+scripts/test-*.ts
