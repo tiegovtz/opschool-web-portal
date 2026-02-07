@@ -123,21 +123,8 @@ export default defineEventHandler(async (event) => {
     // Fetch figures from API
     try {
       const { getFigures } = await import('../utils/figuresApi');
-      console.log('[image-list] Fetching figures from API...', { hasAuthToken: !!authToken });
       const figures = await getFigures({}, authToken);
-      
-      console.log('[image-list] API response:', { 
-        figuresCount: figures?.length || 0, 
-        hasFigures: !!figures,
-        isArray: Array.isArray(figures),
-        firstFigure: figures && figures.length > 0 ? {
-          shortcode: figures[0].shortcode,
-          hasPath: !!figures[0].path,
-          hasPaths: Array.isArray(figures[0].paths) && figures[0].paths.length > 0,
-          category: figures[0].category,
-        } : null
-      });
-      
+
       if (figures && figures.length > 0) {
         // Convert API figures to shortcodes format for generateImagesFromShortcodes
         const shortcodes: Record<string, any> = {};
@@ -145,7 +132,6 @@ export default defineEventHandler(async (event) => {
         for (const figure of figures) {
           // Skip figures that don't have any image paths
           if (!figure.path && (!Array.isArray(figure.paths) || figure.paths.length === 0)) {
-            console.warn(`[image-list] Skipping figure ${figure.shortcode} - no path or paths`);
             skippedCount++;
             continue;
           }
@@ -162,13 +148,7 @@ export default defineEventHandler(async (event) => {
             alts: figure.alts,
           };
         }
-        
-        if (skippedCount > 0) {
-          console.log(`[image-list] Skipped ${skippedCount} figures without image paths`);
-        }
-        
-        console.log(`[image-list] Converted ${Object.keys(shortcodes).length} figures to shortcodes format`);
-        
+
         const imagesArray = generateImagesFromShortcodes(shortcodes);
         
         // Count only displayable images (those with a single path, not parent entries with paths array)
@@ -204,9 +184,7 @@ export default defineEventHandler(async (event) => {
         if (limit && limit > 0) {
           filteredImages = filteredImages.slice(0, limit);
         }
-        
-        console.log(`[image-list] ✅ Fetched ${figures.length} figures from API, ${displayableImages.length} displayable, ${filteredImages.length} returned (incl. parent shortcodes) at ${new Date().toISOString()}.`);
-        
+
         // Calculate byCategory from figures
         const byCategory: Record<string, number> = {};
         figures.forEach(fig => {
@@ -232,7 +210,6 @@ export default defineEventHandler(async (event) => {
         };
       } else {
         // No figures found in API - return empty result
-        console.log('[image-list] No figures found in API');
         return {
           success: true,
           total: 0,
@@ -251,7 +228,6 @@ export default defineEventHandler(async (event) => {
         };
       }
     } catch (apiError: any) {
-      console.error('[image-list] Failed to fetch from Figures API:', apiError.message);
       // Return error instead of falling back to local JSON
       throw createError({
         statusCode: apiError.statusCode || 500,
@@ -260,7 +236,6 @@ export default defineEventHandler(async (event) => {
       });
     }
   } catch (error: any) {
-    console.error('[image-list] Error:', error);
     throw createError({
       statusCode: 500,
       message: error.message || 'Failed to fetch images',
