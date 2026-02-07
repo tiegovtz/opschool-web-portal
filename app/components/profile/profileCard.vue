@@ -10,7 +10,7 @@ type Status = "idle" | "pending" | "loading" | "success" | "error";
 
 // Define Cookie
 const signInAccessToken = useCookie<string>("signInAccessToken");
-const userToken = useCookie<any>("signInUserToken").value;
+const userToken = useCookie<any>("signInUserToken");
 let uploadedPic;
 
 interface UserProfile {
@@ -22,7 +22,10 @@ interface UserProfile {
   region: string,
   district: string,
   school: string,
-  level: string,
+  level: {
+    _id: string,
+    name: string,
+  },
   type: string,
   profilePic: string,
   controller: {
@@ -57,23 +60,23 @@ const listLevel = ref<Level[]>([]);
 const isModified = ref<Boolean>(false);
 
 const profile = reactive<UserProfile>({
-  fname: userToken.name.split(" ")[0],
-  lname: userToken.name.split(" ")[1],
-  email: userToken.email,
-  phone: userToken.phoneNumber,
-  organization: userToken.organization,
-  region: userToken.region?.toLowerCase(),
+  fname: userToken.value.name.split(" ")[0],
+  lname: userToken.value.name.split(" ")[1],
+  email: userToken.value.email,
+  phone: userToken.value.phoneNumber,
+  organization: userToken.value.organization,
+  region: userToken.value.region?.toLowerCase(),
   district:
-    userToken.district == null || userToken.district == undefined
+    userToken.value.district == null || userToken.value.district == undefined
       ? ""
-      : userToken.district.toString().toLowerCase(),
+      : userToken.value.district.toString().toLowerCase(),
   school:
-    userToken.school == null || userToken.school == undefined
+    userToken.value.school == null || userToken.value.school == undefined
       ? ""
-      : userToken.school.toString().toLowerCase(),
-  level: userToken.level,
-  type: userToken.type,
-  profilePic: userToken.profilePic,
+      : userToken.value.school.toString().toLowerCase(),
+  level: userToken.value.level,
+  type: userToken.value.type,
+  profilePic: userToken.value.profilePic,
   controller: {
     status: "idle",
     feedback: '',
@@ -102,7 +105,7 @@ const profile = reactive<UserProfile>({
 });
 
 // Define Two State
-const data = reactive<{ regions: any[], district: any[], schools: any[], status: Status, error: any,}>({
+const data = reactive<{ regions: any[], district: any[], schools: any[], status: Status, error: any, }>({
   regions: [],
   district: [],
   schools: [],
@@ -167,7 +170,7 @@ const updatedProfile = async () => {
         region: profile.region,
         district: profile.district,
         school: profile.school,
-        level: profile.level,
+        level: profile.level._id,
         type: profile.type,
       },
 
@@ -326,51 +329,51 @@ watch(
 );
 
 const onValueChanged = (inputName: string) => {
-  if (inputName == "fname" && profile.fname != userToken.name.split(" ")[0]) {
+  if (inputName == "fname" && profile.fname != userToken.value.name.split(" ")[0]) {
     isModified.value = true;
     profile.controller.errors.fname = messages.error.form.firstName;
   } else if (
     inputName == "lname" &&
-    profile.lname != userToken.name.split(" ")[1]
+    profile.lname != userToken.value.name.split(" ")[1]
   ) {
     isModified.value = true;
     profile.controller.errors.lname = messages.error.form.lastName;
-  } else if (inputName == "email" && profile.email != userToken.email) {
+  } else if (inputName == "email" && profile.email != userToken.value.email) {
     isModified.value = true;
     profile.controller.errors.email = messages.error.form.emailRequired;
-  } else if (inputName == "phone" && profile.phone != userToken.phoneNumber) {
+  } else if (inputName == "phone" && profile.phone != userToken.value.phoneNumber) {
     isModified.value = true;
     profile.controller.errors.phone = messages.error.validation.invalidPhone;
   } else if (
     inputName == "organization" &&
-    profile.organization != userToken.organization
+    profile.organization != userToken.value.organization
   ) {
     isModified.value = true;
     profile.controller.errors.organization = "Please enter your organization";
-  } else if (inputName == "level" && profile.level != userToken.level) {
+  } else if (inputName == "level" && profile.level != userToken.value.level) {
     isModified.value = true;
     profile.controller.errors.level = "Please enter your level";
   } else if (
     inputName == "profilePic" &&
-    profile.profilePic != userToken.profilePic
+    profile.profilePic != userToken.value.profilePic
   ) {
     isModified.value = true;
   }
   else if (
     inputName == "region" &&
-    profile.region != userToken.region
+    profile.region != userToken.value.region
   ) {
     isModified.value = true;
   }
   else if (
     inputName == "district" &&
-    profile.district != userToken.district
+    profile.district != userToken.value.district
   ) {
     isModified.value = true;
   }
   else if (
     inputName == "school" &&
-    profile.school != userToken.school
+    profile.school != userToken.value.school
   ) {
     isModified.value = true;
   }
@@ -433,22 +436,22 @@ const choosePict = async (event: Event) => {
 
 // Define  Discard Changes Button
 const discardChanges = () => {
-  profile.fname = userToken.name.split(" ")[0];
-  profile.lname = userToken.name.split(" ")[1];
-  profile.email = userToken.email;
-  profile.phone = userToken.phoneNumber;
-  profile.organization = userToken.organization;
-  profile.region = userToken.region?.toLowerCase();
-  profile.district = userToken.district == null || userToken.district == undefined
+  profile.fname = userToken.value.name.split(" ")[0];
+  profile.lname = userToken.value.name.split(" ")[1];
+  profile.email = userToken.value.email;
+  profile.phone = userToken.value.phoneNumber;
+  profile.organization = userToken.value.organization;
+  profile.region = userToken.value.region?.toLowerCase();
+  profile.district = userToken.value.district == null || userToken.value.district == undefined
     ? ""
-    : userToken.district.toString().toLowerCase();
+    : userToken.value.district.toString().toLowerCase();
   profile.school =
-    userToken.school == null || userToken.school == undefined
+    userToken.value.school == null || userToken.value.school == undefined
       ? ""
-      : userToken.school.toString().toLowerCase();
-  profile.level = userToken.level;
-  profile.type = userToken.type;
-  profile.profilePic = userToken.profilePic;
+      : userToken.value.school.toString().toLowerCase();
+  profile.level = userToken.value.level;
+  profile.type = userToken.value.type;
+  profile.profilePic = userToken.value.profilePic;
   isModified.value = false;
 
 }
@@ -749,15 +752,17 @@ const discardChanges = () => {
               </div>
             </div>
 
-            <div class="relative group" v-if="!['teacher', 'educationstakeholder'].includes(profile.type.toLowerCase())">
+            <div class="relative group"
+              v-if="!['teacher', 'educationstakeholder'].includes(profile.type.toLowerCase())">
               <label for="level" class="block mb-1 ml-1 text-xs font-medium text-textGray">
                 Level
               </label>
 
               <div class="relative flex items-center">
                 <!-- Use the Custom Dropdown instead of <select> -->
-                <CustomDropDownList v-model="profile.level" :list="levelsLists" placeholder="(eg: Form 1, Form 2 ...)"
-                  @update-model-value="(value: string) => { profile.level = value; onValueChanged('level'); }"
+                <CustomDropDownList v-model="profile.level._id" :list="levelsLists"
+                  placeholder="(eg: Form 1, Form 2 ...)"
+                  @update-model-value="(value: string) => { profile.level._id = value; onValueChanged('level'); }"
                   button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
               </div>
             </div>
@@ -767,7 +772,7 @@ const discardChanges = () => {
     </div>
 
     <!-- Submit Button -->
-   <Transition name="fade">
+    <Transition name="fade">
       <div class="flex items-center justify-between w-full gap-4 mt-8" v-if="isModified">
         <!-- Discard Changes -->
         <button type="reset" @click="discardChanges"
@@ -807,7 +812,7 @@ const discardChanges = () => {
         </button>
       </div>
 
-   </Transition>
+    </Transition>
   </div>
   <div v-else-if="status == 'error'" class="flex items-center justify-center w-full max-w-7xl'">
     <MessagePageNotFound />
