@@ -86,7 +86,7 @@ function shouldAskClarify(text: string, context?: DecisionContext): boolean {
   const hasContext = Boolean(context?.subject?.trim() || context?.level?.trim());
 
   if (isExplicitSyllabusCheck(text) && !hasTopic) return true;
-  if (!isExplicitSyllabusCheck(text) && hasTopic && !hasContext) return false;
+  if (hasTopic && !hasContext) return true;
 
   const pronounOnly =
     /\b(this|it|that)\b/.test(cleaned) && cleaned.split(/\s+/).length <= 4;
