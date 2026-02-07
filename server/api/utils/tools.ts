@@ -212,14 +212,16 @@ export const studentTools = {
       }
 
       try {
+        let queryName = nameValue || undefined;
+
         let topics = await fetchPublicTopicsFromApi({
-          name: nameValue || undefined,
+          name: queryName,
           level: levelValue || undefined,
           subject: subjectValue || undefined,
         });
 
         let usedQuery = {
-          name: nameValue || undefined,
+          name: queryName,
           level: levelValue || undefined,
           subject: subjectValue || undefined,
         };
@@ -231,11 +233,32 @@ export const studentTools = {
             subject: subjectValue || undefined,
           });
           if (topics.length > 0) {
+            queryName = normalizedName;
             usedQuery = {
               name: normalizedName,
               level: levelValue || undefined,
               subject: subjectValue || undefined,
             };
+          }
+        }
+
+        // Fallback: if no level is provided, try Form 1 and Form 2
+        if (topics.length === 0 && !levelValue && nameValue) {
+          const levelsToTry = ["Form 1", "Form 2"];
+          for (const fallbackLevel of levelsToTry) {
+            topics = await fetchPublicTopicsFromApi({
+              name: queryName || nameValue,
+              level: fallbackLevel,
+              subject: subjectValue || undefined,
+            });
+            if (topics.length > 0) {
+              usedQuery = {
+                name: queryName || nameValue,
+                level: fallbackLevel,
+                subject: subjectValue || undefined,
+              };
+              break;
+            }
           }
         }
 
