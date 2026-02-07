@@ -22,10 +22,7 @@ interface UserProfile {
   region: string,
   district: string,
   school: string,
-  level: {
-    _id: string,
-    name: string,
-  },
+  level: string,
   type: string,
   profilePic: string,
   controller: {
@@ -74,7 +71,7 @@ const profile = reactive<UserProfile>({
     userToken.value.school == null || userToken.value.school == undefined
       ? ""
       : userToken.value.school.toString().toLowerCase(),
-  level: userToken.value.level,
+  level: userToken.value.level._id,
   type: userToken.value.type,
   profilePic: userToken.value.profilePic,
   controller: {
@@ -170,7 +167,7 @@ const updatedProfile = async () => {
         region: profile.region,
         district: profile.district,
         school: profile.school,
-        level: profile.level._id,
+        level: profile.level,
         type: profile.type,
       },
 
@@ -760,9 +757,8 @@ const discardChanges = () => {
 
               <div class="relative flex items-center">
                 <!-- Use the Custom Dropdown instead of <select> -->
-                <CustomDropDownList v-model="profile.level._id" :list="levelsLists"
-                  placeholder="(eg: Form 1, Form 2 ...)"
-                  @update-model-value="(value: string) => { profile.level._id = value; onValueChanged('level'); }"
+                <CustomDropDownList v-model="profile.level" :list="levelsLists" placeholder="(eg: Form 1, Form 2 ...)"
+                  @update-model-value="(value: string) => { profile.level = value; onValueChanged('level'); }"
                   button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue" />
               </div>
             </div>
