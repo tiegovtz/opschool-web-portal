@@ -228,10 +228,10 @@ Use tools only when they add value:
 - When getChapterFigures returns figures (found: true): You MUST include at least one [image:shortcode] in your response. NEVER say "I don't have visual aids", "no images available", or "I cannot show images" when the tool returned figures.
 - When getChapterFigures returns NO figures (found: false): DO NOT mention images, diagrams, or visual representations AT ALL
 
-**IMAGE FORMAT (use exactly - required for figures to display)**:
-- To show a figure, use ONLY the format [image:shortcode] with the exact shortcode from the tool (e.g. [image:physics_figure_1_1], [image:biology_form1_figure_2_3]).
-- Do NOT use markdown image syntax like ![caption](shortcode) or ![](shortcode)—it will not display correctly. Use [image:shortcode] only.
-- Copy-paste the shortcode exactly as returned (e.g. [image:chemistry_form2_figure_1_1_a]). One shortcode per figure; repeat [image:shortcode] for multiple figures.
+**IMAGE FORMAT (required for figures to display)**:
+- When getChapterFigures returns found: true, the response includes a "figures" array. Each item has a "shortcode" field. Use ONLY those shortcodes: write [image:<exact shortcode>]. Do NOT use any shortcode that is not in this response's figures array (do not invent or reuse from other turns).
+- Do NOT use markdown image syntax like ![caption](shortcode)—only [image:shortcode] displays correctly.
+- One shortcode per figure; repeat [image:shortcode] for multiple figures from the same result.
 
 **SUBJECT LISTING**:
 - If the student asks which subjects are available, call getSubjects and present the results.
@@ -313,7 +313,7 @@ Priority Rules:
 - Call getChapterFigures({chapter: "Concept of Physics", topic: "Introduction to Physics", subject: "physics"|"biology"|"chemistry"|...}) whenever you are teaching. Use the exact chapter name from getSyllabus (e.g. "Concept of Physics", "Measurement")—no "Chapter One" prefix. Always pass subject so images match the conversation.
 - IF figures returned (found: true): You MUST include at least one [image:shortcode] in your response. NEVER say "I don't have visual aids" or "no images" when the tool returned figures.
 - IF NO figures (found: false): Teach WITHOUT mentioning images at all - no "diagrams", "figures", "visual representations".
-- FIGURE FORMAT: Use ONLY [image:shortcode] (e.g. [image:physics_figure_1_1]). Do NOT use ![caption](shortcode)—use [image:shortcode] only so the image displays correctly.
+- FIGURE FORMAT: Use only shortcodes from the "figures" array in the getChapterFigures result for this turn. Format: [image:<exact shortcode>]. Do NOT use ![caption](shortcode).
   `.trim();
 }
 
@@ -355,8 +355,7 @@ You have access to these tools. Use them APPROPRIATELY:
 
 **4. getChapterFigures** - Get images/diagrams for a chapter/topic
    - CALL PROACTIVELY whenever you are teaching. Do NOT wait for the student to ask for "visual aid" or "images". Always pass subject (e.g. physics, biology, chemistry) so figures match the conversation—images are filtered by subject/topic (e.g. only chemistry figures in a chemistry answer).
-   - IF FIGURES RETURNED (found: true): You MUST include at least one [image:shortcode] in your response. Decide whether to display all, one, or more figures based on relevance.
-   - IMAGE FORMAT (exact): Use ONLY [image:shortcode] with the exact shortcode from the tool (e.g. [image:physics_figure_1_1]). Do NOT use markdown image syntax ![caption](shortcode)—only [image:shortcode] displays correctly.
+   - IF FIGURES RETURNED (found: true): Use ONLY shortcodes from the "figures" array in that response (each figure has a shortcode field). Write [image:<exact shortcode>]. Do NOT invent or use shortcodes from elsewhere. Do NOT use markdown image syntax ![caption](...).
    - IF NO FIGURES RETURNED (found: false): DO NOT mention images/diagrams at all.
 
 **SYLLABUS-TO-FIGURES FLOW (when subject/chapter not in context):**
@@ -573,7 +572,7 @@ export default defineEventHandler(async (event) => {
         coreMessages = [...coreMessages];
         coreMessages[idx] = {
           ...lastUser,
-          content: `${lastUser.content.trim()}\n\n(Please include visual aids when getChapterFigures returns figures. When including figures, use only the format [image:shortcode] with the exact shortcode from getChapterFigures, e.g. [image:physics_figure_1_1]. Do not use markdown image syntax ![](shortcode).)`,
+          content: `${lastUser.content.trim()}\n\n(Please include visual aids when getChapterFigures returns figures. Use only shortcodes from the "figures" array in that tool result—format [image:<exact shortcode>]. Do not invent or reuse shortcodes. Do not use markdown image syntax ![](shortcode).)`,
         };
       }
     }
@@ -609,9 +608,8 @@ export default defineEventHandler(async (event) => {
   if (!decision.allowRag) {
     delete (toolsForRequest as any).searchTextbooks;
   }
-  if (!decision.allowSyllabus) {
-    delete (toolsForRequest as any).checkSyllabus;
-  }
+  // checkSyllabus disabled for now
+  delete (toolsForRequest as any).checkSyllabus;
   if (validChapterName) {
     delete (toolsForRequest as any).getChapterFigures;
   }

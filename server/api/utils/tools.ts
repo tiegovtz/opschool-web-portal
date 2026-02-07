@@ -193,6 +193,132 @@ async function fetchPublicTopicsFromApi(params: {
   return value;
 }
 
+const extractTopicsFromPayload = (data: any): any[] => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.topics)) return data.topics;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+};
+
+const extractChaptersFromPayload = (data: any): any[] => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.chapters)) return data.chapters;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
+};
+
+type SyllabusTopic = {
+  topicId: string;
+  topicName: string;
+  level: string | null;
+  chapters: Array<{ id: string; name: string }>;
+};
+
+type SyllabusBySubjectResult = {
+  subjectId: string;
+  subjectName: string;
+  topics: SyllabusTopic[];
+};
+
+/**
+ * Fetch full syllabus (topics + chapters) by subject — same data source as getSyllabus.
+ * Used by getSyllabus (with cache) and checkSyllabus (for local name matching).
+ */
+async function fetchSyllabusBySubject(
+  subjectParam: string,
+): Promise<SyllabusBySubjectResult | null> {
+  const subjectIdFallback = SUBJECT_ID_FALLBACK[subjectParam.toLowerCase().trim()];
+  let subjectId: string | null = null;
+  let subjectName: string | null = null;
+
+  const lower = subjectParam.toLowerCase().trim();
+  if (/^[a-f0-9]{24}$/i.test(lower)) {
+    subjectId = lower;
+    subjectName = subjectParam;
+  }
+  if (!subjectId) {
+    try {
+      const subjects = await fetchSubjectsFromApi();
+      const match = subjects.find(
+        (s: any) =>
+          (s?.name || s?.title || s?.subject || "").toLowerCase().trim() === lower,
+      );
+      if (match) {
+        subjectName = match?.name || match?.title || match?.subject || subjectParam;
+        subjectId = match?._id ?? match?.id ?? match?.subjectId ?? null;
+      }
+    } catch {
+      // fall through
+    }
+  }
+  if (!subjectId && subjectIdFallback) {
+    subjectId = subjectIdFallback;
+    subjectName = subjectParam;
+  }
+  if (!subjectId) return null;
+
+  const topicsUrl = apiDocs.topics.getSubjectId.replace("{subjectId}", subjectId);
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (currentAuthToken?.trim()) {
+    headers.Authorization = `Bearer ${currentAuthToken.trim()}`;
+  }
+
+  let topicsData: any;
+  try {
+    const topicsRes = await fetch(topicsUrl, { method: "GET", headers });
+    if (!topicsRes.ok) return null;
+    topicsData = await topicsRes.json();
+  } catch {
+    return null;
+  }
+
+  const topics = extractTopicsFromPayload(topicsData);
+  if (!subjectName && topics.length > 0) {
+    const firstSubject = topics[0]?.subject;
+    subjectName =
+      firstSubject?.name || firstSubject?.title || firstSubject || subjectParam;
+  }
+  if (!subjectName) subjectName = subjectParam;
+
+  const chaptersUrl = (topicId: string) =>
+    apiDocs.chapters.getByTopicId.replace("{topicId}", topicId);
+
+  const output: SyllabusBySubjectResult = {
+    subjectId,
+    subjectName,
+    topics: [],
+  };
+
+  for (const topic of topics) {
+    const topicId = topic._id ?? topic.id ?? "";
+    const topicName = topic.name ?? topic.title ?? topicId;
+    const level =
+      topic.level?.name ?? topic.levelName ?? topic.level ?? null;
+    const entry: SyllabusTopic = {
+      topicId,
+      topicName,
+      level,
+      chapters: [],
+    };
+    try {
+      const chRes = await fetch(chaptersUrl(topicId), { method: "GET", headers });
+      if (chRes.ok) {
+        const chData = await chRes.json();
+        const chapters = extractChaptersFromPayload(chData);
+        entry.chapters = chapters.map((ch: any) => ({
+          id: ch._id ?? ch.id ?? "",
+          name: ch.name ?? ch.title ?? ch._id ?? ch.id ?? "",
+        }));
+      }
+    } catch {
+      // leave chapters empty
+    }
+    output.topics.push(entry);
+  }
+
+  return output;
+}
+
 export const studentTools = {
   checkSyllabus: tool({
     description:
@@ -233,88 +359,165 @@ export const studentTools = {
         };
       }
 
+      const usedQuery = {
+        name: nameValue || undefined,
+        level: levelValue || undefined,
+        subject: subjectValue || undefined,
+      };
+
       try {
-        let topics = await fetchPublicTopicsFromApi({
-          name: nameValue || undefined,
-          level: levelValue || undefined,
-          subject: subjectValue || undefined,
-        });
+        let syllabusFound = false;
+        let normalized: Array<{
+          id: string | null;
+          name: string;
+          subject: string | null;
+          level: string | null;
+          chapter: string | null;
+        }> = [];
 
-        console.log("[checkSyllabus] Initial API fetch", {
-          topicsCount: topics.length,
-          query: { name: nameValue || undefined, level: levelValue || undefined, subject: subjectValue || undefined },
-        });
+        // When subject is provided: use same data as getSyllabus (by-subject), then match name locally
+        if (subjectValue) {
+          const cacheKey = `syllabus:${subjectValue.toLowerCase()}`;
+          const cached = syllabusCache.get(cacheKey)?.value;
+          let syllabus: SyllabusBySubjectResult | null = cached?.topics
+            ? {
+                subjectId: cached.subjectId,
+                subjectName: cached.subjectName,
+                topics: cached.topics,
+              }
+            : null;
+          if (!syllabus) {
+            syllabus = await fetchSyllabusBySubject(subjectValue);
+          }
+          if (syllabus) {
+            if (!nameValue) {
+              // No name to search: subject is in syllabus, return topic/chapter list
+              const flat: Array<{
+                id: string | null;
+                name: string;
+                subject: string | null;
+                level: string | null;
+                chapter: string | null;
+              }> = [];
+              for (const topic of syllabus.topics) {
+                flat.push({
+                  id: topic.topicId,
+                  name: topic.topicName,
+                  subject: syllabus.subjectName,
+                  level: topic.level,
+                  chapter: null,
+                });
+                for (const ch of topic.chapters) {
+                  flat.push({
+                    id: ch.id,
+                    name: ch.name,
+                    subject: syllabus.subjectName,
+                    level: topic.level,
+                    chapter: ch.name,
+                  });
+                }
+              }
+              normalized = flat;
+              syllabusFound = true;
+            } else {
+              const searchTerms = [nameValue, normalizedName].filter(Boolean);
+              const uniqueTerms = [...new Set(searchTerms)];
+              const matches: Array<{
+                id: string | null;
+                name: string;
+                subject: string | null;
+                level: string | null;
+                chapter: string | null;
+              }> = [];
+              for (const topic of syllabus.topics) {
+                const topicNameLower = (topic.topicName || "").toLowerCase();
+                const topicMatches = uniqueTerms.some(
+                  (term) => term && topicNameLower.includes(term.toLowerCase()),
+                );
+                if (topicMatches) {
+                  matches.push({
+                    id: topic.topicId,
+                    name: topic.topicName,
+                    subject: syllabus.subjectName,
+                    level: topic.level,
+                    chapter: null,
+                  });
+                }
+                for (const ch of topic.chapters) {
+                  const chNameLower = (ch.name || "").toLowerCase();
+                  const chMatches = uniqueTerms.some(
+                    (term) => term && chNameLower.includes(term.toLowerCase()),
+                  );
+                  if (chMatches) {
+                    matches.push({
+                      id: ch.id,
+                      name: ch.name,
+                      subject: syllabus.subjectName,
+                      level: topic.level,
+                      chapter: ch.name,
+                    });
+                  }
+                }
+              }
+              normalized = matches;
+              syllabusFound = normalized.length > 0;
+            }
+            console.log("[checkSyllabus] Syllabus by subject", {
+              syllabusFound,
+              matchedCount: normalized.length,
+              subject: subjectValue,
+              topicsInSyllabus: syllabus.topics.length,
+            });
+          }
+        }
 
-        let usedQuery = {
-          name: nameValue || undefined,
-          level: levelValue || undefined,
-          subject: subjectValue || undefined,
-        };
-
-        if (topics.length === 0 && normalizedName && normalizedName !== nameValue) {
-          console.log("[checkSyllabus] Retry with normalized name", { normalizedName });
-          topics = await fetchPublicTopicsFromApi({
-            name: normalizedName,
+        // No syllabus match yet: fall back to filter API (e.g. no subject, or by-subject fetch failed)
+        if (!syllabusFound) {
+          let topics = await fetchPublicTopicsFromApi({
+            name: nameValue || undefined,
             level: levelValue || undefined,
             subject: subjectValue || undefined,
           });
-          if (topics.length > 0) {
-            usedQuery = {
+          if (topics.length === 0 && normalizedName && normalizedName !== nameValue) {
+            topics = await fetchPublicTopicsFromApi({
               name: normalizedName,
               level: levelValue || undefined,
               subject: subjectValue || undefined,
-            };
-            console.log("[checkSyllabus] Normalized retry succeeded", { topicsCount: topics.length });
+            });
           }
-        }
-
-        // Fallback: if name-only yields no results, try treating name as subject
-        if (topics.length === 0 && !subjectValue && nameValue) {
-          console.log("[checkSyllabus] Fallback: treat name as subject", { nameValue });
-          topics = await fetchPublicTopicsFromApi({
-            subject: nameValue,
-            level: levelValue || undefined,
-          });
-          if (topics.length > 0) {
-            usedQuery = {
-              name: undefined,
-              level: levelValue || undefined,
+          if (topics.length === 0 && nameValue) {
+            topics = await fetchPublicTopicsFromApi({
               subject: nameValue,
-            };
-            console.log("[checkSyllabus] Subject fallback succeeded", { topicsCount: topics.length });
+              level: levelValue || undefined,
+            });
           }
+          normalized = topics
+            .map((topic: any) => ({
+              id: topic?._id || topic?.id || topic?.topicId || null,
+              name: topic?.name || topic?.title || topic?.topic || "",
+              subject:
+                topic?.subject?.name || topic?.subject || topic?.subjectName || null,
+              level:
+                topic?.level?.name || topic?.level || topic?.levelName || null,
+              chapter:
+                topic?.chapter?.name ||
+                topic?.chapterName ||
+                topic?.chapterTitle ||
+                null,
+            }))
+            .filter((topic: any) => topic.name);
+          syllabusFound = normalized.length > 0;
+          console.log("[checkSyllabus] Filter API fallback", {
+            syllabusFound,
+            topicsCount: normalized.length,
+          });
         }
 
-        const normalized = topics
-          .map((topic: any) => ({
-            id: topic?._id || topic?.id || topic?.topicId || null,
-            name: topic?.name || topic?.title || topic?.topic || "",
-            subject:
-              topic?.subject?.name || topic?.subject || topic?.subjectName || null,
-            level:
-              topic?.level?.name || topic?.level || topic?.levelName || null,
-            chapter:
-              topic?.chapter?.name ||
-              topic?.chapterName ||
-              topic?.chapterTitle ||
-              null,
-          }))
-          .filter((topic: any) => topic.name);
-
-        const syllabusFound = normalized.length > 0;
         let ragFound = false;
-
-        console.log("[checkSyllabus] Syllabus result", {
-          syllabusFound,
-          normalizedCount: normalized.length,
-          usedQuery,
-        });
-
         if (!syllabusFound) {
           const ragQuery =
             nameValue ||
             [subjectValue, levelValue].filter(Boolean).join(" ").trim();
-
           if (ragQuery) {
             const ragResult = await fetchCombinedRAGContext(
               ragQuery,
@@ -343,7 +546,7 @@ export const studentTools = {
         });
 
         return {
-          found: syllabusFound || ragFound,
+          found: finalFound,
           total: normalized.length,
           syllabusFound,
           ragFound,
@@ -404,45 +607,8 @@ export const studentTools = {
       }
       console.log("[getSyllabus] Cache miss, fetching", { cacheKey });
 
-      let subjectId: string | null = null;
-      let subjectName: string | null = null;
-
-      const resolveSubjectId = async (): Promise<string | null> => {
-        const lower = subjectParam.toLowerCase().trim();
-        if (/^[a-f0-9]{24}$/i.test(lower)) {
-          return lower;
-        }
-        try {
-          const subjects = await fetchSubjectsFromApi();
-          const match = subjects.find(
-            (s: any) =>
-              (s?.name || s?.title || s?.subject || "")
-                .toLowerCase()
-                .trim() === lower,
-          );
-          if (match) {
-            subjectName = match?.name || match?.title || match?.subject || subjectParam;
-            return match?._id ?? match?.id ?? match?.subjectId ?? null;
-          }
-        } catch {
-          // Fall through to fallback map
-        }
-        const fallbackId = SUBJECT_ID_FALLBACK[lower];
-        if (fallbackId) {
-          subjectName = subjectParam;
-          return fallbackId;
-        }
-        return null;
-      };
-
-      subjectId = await resolveSubjectId();
-      console.log("[getSyllabus] Subject resolution", {
-        subjectParam,
-        subjectId,
-        subjectName: subjectName || "(none)",
-      });
-
-      if (!subjectId) {
+      const syllabus = await fetchSyllabusBySubject(subjectParam);
+      if (!syllabus) {
         console.log("[getSyllabus] Subject not found", { subjectParam });
         return {
           success: false,
@@ -453,140 +619,21 @@ export const studentTools = {
         };
       }
 
-      const topicsUrl = apiDocs.topics.getSubjectId.replace(
-        "{subjectId}",
-        subjectId,
-      );
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (currentAuthToken?.trim()) {
-        headers.Authorization = `Bearer ${currentAuthToken.trim()}`;
-      }
-
-      let topicsData: any;
-      try {
-        console.log("[getSyllabus] Fetching topics", { topicsUrl });
-        const topicsRes = await fetch(topicsUrl, { method: "GET", headers });
-        if (!topicsRes.ok) {
-          console.error("[getSyllabus] Topics API error", {
-            status: topicsRes.status,
-            statusText: topicsRes.statusText,
-          });
-          return {
-            success: false,
-            error: `Topics API error: ${topicsRes.status} ${topicsRes.statusText}`,
-            subjectId,
-            subjectName: subjectName || subjectParam,
-            topics: [],
-          };
-        }
-        topicsData = await topicsRes.json();
-        console.log("[getSyllabus] Topics fetched", {
-          rawTopicsCount: Array.isArray(topicsData) ? topicsData.length : (topicsData?.topics?.length ?? topicsData?.data?.length ?? 0),
-        });
-      } catch (e: any) {
-        console.error("[getSyllabus] Topics fetch error", { error: e?.message });
-        return {
-          success: false,
-          error: e?.message || "Failed to fetch topics",
-          subjectId,
-          subjectName: subjectName || subjectParam,
-          topics: [],
-        };
-      }
-
-      const extractTopics = (data: any): any[] => {
-        if (Array.isArray(data)) return data;
-        if (Array.isArray(data?.topics)) return data.topics;
-        if (Array.isArray(data?.data)) return data.data;
-        return [];
-      };
-
-      const extractChapters = (data: any): any[] => {
-        if (Array.isArray(data)) return data;
-        if (Array.isArray(data?.chapters)) return data.chapters;
-        if (Array.isArray(data?.data)) return data.data;
-        return [];
-      };
-
-      const topics = extractTopics(topicsData);
-      if (!subjectName && topics.length > 0) {
-        const firstSubject = topics[0]?.subject;
-        subjectName =
-          firstSubject?.name || firstSubject?.title || firstSubject || subjectParam;
-      }
-      if (!subjectName) subjectName = subjectParam;
-
-      const chaptersUrl = (topicId: string) =>
-        apiDocs.chapters.getByTopicId.replace("{topicId}", topicId);
-
-      const output: {
-        subjectId: string;
-        subjectName: string;
-        topics: Array<{
-          topicId: string;
-          topicName: string;
-          level: string | null;
-          chapters: Array<{ id: string; name: string }>;
-        }>;
-      } = {
-        subjectId,
-        subjectName,
-        topics: [],
-      };
-
-      console.log("[getSyllabus] Fetching chapters for topics", { topicsCount: topics.length });
-
-      for (const topic of topics) {
-        const topicId = topic._id ?? topic.id ?? "";
-        const topicName = topic.name ?? topic.title ?? topicId;
-        const level =
-          topic.level?.name ?? topic.levelName ?? topic.level ?? null;
-
-        const entry = {
-          topicId,
-          topicName,
-          level,
-          chapters: [] as Array<{ id: string; name: string }>,
-        };
-
-        const chRes = await fetch(chaptersUrl(topicId), {
-          method: "GET",
-          headers,
-        });
-        if (chRes.ok) {
-          const chData = await chRes.json();
-          const chapters = extractChapters(chData);
-          console.log("[getSyllabus] Topic chapters", {
-            topicName,
-            topicId,
-            chaptersCount: chapters.length,
-          });
-          entry.chapters = chapters.map((ch: any) => ({
-            id: ch._id ?? ch.id ?? "",
-            name: ch.name ?? ch.title ?? ch._id ?? ch.id ?? "",
-          }));
-        }
-
-        output.topics.push(entry);
-      }
-
       const result = {
         success: true,
-        subjectId,
-        subjectName,
-        topics: output.topics,
+        subjectId: syllabus.subjectId,
+        subjectName: syllabus.subjectName,
+        topics: syllabus.topics,
         instruction:
           "Use these topics and chapters to map the user's question to the best-matching chapter. Call getChapterFigures with the exact chapter name (e.g. 'Concept of Physics', 'Measurement')—no 'Chapter One' or 'Chapter X:' prefix.",
       };
 
       syllabusCache.set(cacheKey, { timestamp: Date.now(), value: result });
       console.log("[getSyllabus] Success", {
-        subjectId,
-        subjectName,
-        topicsCount: output.topics.length,
-        totalChapters: output.topics.reduce((sum, t) => sum + t.chapters.length, 0),
+        subjectId: syllabus.subjectId,
+        subjectName: syllabus.subjectName,
+        topicsCount: syllabus.topics.length,
+        totalChapters: syllabus.topics.reduce((sum, t) => sum + t.chapters.length, 0),
       });
       if (syllabusCache.size > 50) {
         const firstKey = syllabusCache.keys().next().value;
@@ -767,14 +814,15 @@ export const studentTools = {
         const syllabusChapter = normalize(chapter);
 
         const matchesTopicAgainst = (img: any, against: string) => {
-          const imgTopic = normalize(img.topic || "");
           const normalizedAgainst = normalize(against || "");
           if (!normalizedAgainst) return false;
-          return (
-            imgTopic === normalizedAgainst ||
-            imgTopic.includes(normalizedAgainst) ||
-            normalizedAgainst.includes(imgTopic)
-          );
+          const imgTopic = normalize(img.topic || "");
+          const imgChapter = normalize(img.chapter || "");
+          const check = (field: string) =>
+            field === normalizedAgainst ||
+            field.includes(normalizedAgainst) ||
+            normalizedAgainst.includes(field);
+          return check(imgTopic) || check(imgChapter);
         };
 
         const applySubjectFilter = (imgs: any[]) => {
@@ -788,30 +836,60 @@ export const studentTools = {
           });
         };
 
-        // Step 1: Try chapter vs img.topic
-        console.log("[getChapterFigures] Filtering by topic (chapter → figures topic)", {
-          imagesCount: images.length,
-          syllabusChapter,
-          querySubject,
-        });
-        let filtered = images.filter((img: any) => matchesTopicAgainst(img, chapter));
-        filtered = applySubjectFilter(filtered);
-        console.log("[getChapterFigures] After chapter filter", {
-          filteredCount: filtered.length,
-          imagesCount: images.length,
-        });
-
-        // Step 2: If no match and topic param provided, try topic vs img.topic
-        if (filtered.length === 0 && topic && topic.trim() && topic.trim().toLowerCase() !== "all") {
+        // Step 1: Try topic param vs img.topic first (if topic provided)
+        let filtered: any[] = [];
+        if (topic && topic.trim() && topic.trim().toLowerCase() !== "all") {
           const syllabusTopic = normalize(topic);
-          console.log("[getChapterFigures] Chapter match yielded 0, trying topic param vs figures topic", {
+          console.log("[getChapterFigures] Filtering by topic first (topic → figures topic/chapter)", {
+            imagesCount: images.length,
             syllabusTopic,
+            querySubject,
           });
           filtered = images.filter((img: any) => matchesTopicAgainst(img, topic));
           filtered = applySubjectFilter(filtered);
           console.log("[getChapterFigures] After topic filter", {
             filteredCount: filtered.length,
             imagesCount: images.length,
+          });
+        }
+
+        // Step 2: If no match, try chapter vs img.topic
+        if (filtered.length === 0) {
+          console.log("[getChapterFigures] Topic match yielded 0, trying chapter param vs figures topic/chapter", {
+            imagesCount: images.length,
+            syllabusChapter,
+            querySubject,
+          });
+          filtered = images.filter((img: any) => matchesTopicAgainst(img, chapter));
+          filtered = applySubjectFilter(filtered);
+          console.log("[getChapterFigures] After chapter filter", {
+            filteredCount: filtered.length,
+            imagesCount: images.length,
+          });
+          if (filtered.length === 0 && images.length > 0) {
+            const sample = images.slice(0, 3).map((img: any) => ({
+              shortcode: img.shortcode,
+              topic: img.topic || "(empty)",
+              chapter: img.chapter || "(empty)",
+            }));
+            console.log("[getChapterFigures] Sample figure topic/chapter from API (no match)", {
+              syllabusChapter: syllabusChapter,
+              sample,
+            });
+          }
+        }
+
+        // Step 3: Only return figures that have at least one URL so the frontend can resolve [image:shortcode]
+        const beforeUrlFilter = filtered.length;
+        filtered = filtered.filter(
+          (img: any) =>
+            (img.path && String(img.path).trim() !== "") ||
+            (Array.isArray(img.paths) && img.paths.length > 0)
+        );
+        if (beforeUrlFilter > filtered.length) {
+          console.log("[getChapterFigures] Excluded figures with no URL", {
+            excluded: beforeUrlFilter - filtered.length,
+            remaining: filtered.length,
           });
         }
 
@@ -840,16 +918,16 @@ export const studentTools = {
           };
         }
 
-        const shortcodesToUse = figures.map(
-          (f: any) => `[image:${f.shortcode}]`,
-        );
+        // Small sample for illustration only (do not list hundreds)
+        const exampleShortcodes = figures.slice(0, 5).map((f: any) => `[image:${f.shortcode}]`);
+        const exampleText = exampleShortcodes.length > 0 ? ` e.g. ${exampleShortcodes.join(", ")}` : "";
 
         console.log("[getChapterFigures] Success", {
           found: true,
           total: figures.length,
           chapter,
           topic: topic || null,
-          shortcodesCount: shortcodesToUse.length,
+          shortcodesCount: figures.length,
         });
 
         // #region agent log
@@ -864,9 +942,8 @@ export const studentTools = {
           chapter: chapter,
           topic: topic || null,
           figures: figures,
-          shortcodes_ready_to_use: shortcodesToUse,
-          usage: `You have figures available. You MUST include at least one image in your response. Use ONLY the format [image:shortcode]—copy-paste one of these EXACTLY: ${shortcodesToUse.join(" or ")}. Do NOT use markdown image syntax like ![caption](shortcode); only [image:shortcode] displays correctly.`,
-          instruction: `MANDATORY: Include at least one of these shortcodes in your response using the exact format [image:shortcode] (e.g. ${shortcodesToUse[0] || "[image:shortcode]"}). Do NOT use ![](shortcode). Never tell the student there are no visual aids—you have them: ${shortcodesToUse.join(", ")}.`,
+          usage: `You have figures available. Use ONLY shortcodes from the "figures" array in this tool result—each figure has a "shortcode" field. Write [image:<that exact shortcode>]. Do NOT invent or reuse shortcodes from other turns; only use shortcodes from this response. Do NOT use markdown image syntax ![caption](...). Include at least one figure in your response.${exampleText}`,
+          instruction: `MANDATORY: Include at least one image. Use only shortcodes from the figures array in this result (shortcode field). Format: [image:<exact shortcode>]. Do not use any shortcode not in this response.`,
         };
       } catch (error: any) {
         console.error("[getChapterFigures] Outer catch error", {
