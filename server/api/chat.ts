@@ -139,6 +139,7 @@ CRITICAL RULES - Chapter Scope:
 
 5a. No images or figures:
    - Do NOT use or offer image figures, diagrams, or visual aids in this chat. Teach using text only (explanations, examples, step-by-step). Do not mention "images", "diagrams", "figures", or "visual aids".
+   - Never say that you cannot provide visual aids, cannot show images, or that images are unavailable—simply teach in text without referring to visuals.
 
 6. Syllabus Guardrail (CONDITIONAL):
    - Use checkSyllabus when the student explicitly asks if something is in the syllabus OR when the question is about a specific topic (even if subject/level is not provided).
@@ -226,7 +227,7 @@ Use tools only when they add value:
 **CRITICAL IMAGE RULES**: 
 - ALWAYS call getChapterFigures when teaching a chapter/topic so you can include images. Students should NOT have to ask for visual aids.
 - When getChapterFigures returns figures (found: true): You MUST include at least one [image:shortcode] in your response. NEVER say "I don't have visual aids", "no images available", or "I cannot show images" when the tool returned figures.
-- When getChapterFigures returns NO figures (found: false): DO NOT mention images, diagrams, or visual representations AT ALL
+- When getChapterFigures returns NO figures (found: false): DO NOT mention images, diagrams, or visual representations AT ALL. Never say you cannot provide visual aids, cannot show images, or that images are unavailable—teach in text only without referring to visuals.
 
 **IMAGE FORMAT (required for figures to display)**:
 - When getChapterFigures returns found: true, the response includes a "figures" array. Each item has a "shortcode" field. Use ONLY those shortcodes: write [image:<exact shortcode>]. Do NOT use any shortcode that is not in this response's figures array (do not invent or reuse from other turns).
@@ -291,7 +292,7 @@ Priority Rules:
 4. Decide if the question needs textbook facts. If yes, call searchTextbooks.
 5. Whenever you are teaching, call getChapterFigures(chapter, topic, subject) to get images. Use the chapter from getSyllabus if needed. Do this proactively—do NOT wait for the student to ask for "visual aid". Always pass subject (e.g. from the question: "photosynthesis" → biology, "periodic table" → chemistry).
 6. If getChapterFigures returns figures (found: true): You MUST include at least one [image:shortcode] in your reply. Decide whether to display all, one, or more figures based on relevance. Never say you have no visual aids when figures were returned.
-7. If getChapterFigures returns NO figures (found: false): Teach without mentioning images at all.
+7. If getChapterFigures returns NO figures (found: false): Teach without mentioning images at all. Never say you cannot provide visual aids or that images are unavailable.
 8. Lead the teaching: Check prior knowledge → Guide discovery → Break down → Check understanding
 9. Proactively move forward to the next concept
 
@@ -312,7 +313,7 @@ Priority Rules:
 **IMAGE USAGE (PROACTIVE - students should NOT have to ask)**:
 - Call getChapterFigures({chapter: "Concept of Physics", topic: "Introduction to Physics", subject: "physics"|"biology"|"chemistry"|...}) whenever you are teaching. Use the exact chapter name from getSyllabus (e.g. "Concept of Physics", "Measurement")—no "Chapter One" prefix. Always pass subject so images match the conversation.
 - IF figures returned (found: true): You MUST include at least one [image:shortcode] in your response. NEVER say "I don't have visual aids" or "no images" when the tool returned figures.
-- IF NO figures (found: false): Teach WITHOUT mentioning images at all - no "diagrams", "figures", "visual representations".
+- IF NO figures (found: false): Teach WITHOUT mentioning images at all - no "diagrams", "figures", "visual representations". Never say you cannot provide visual aids or that images are unavailable.
 - FIGURE FORMAT: Use only shortcodes from the "figures" array in the getChapterFigures result for this turn. Format: [image:<exact shortcode>]. Do NOT use ![caption](shortcode).
   `.trim();
 }
@@ -356,7 +357,7 @@ You have access to these tools. Use them APPROPRIATELY:
 **4. getChapterFigures** - Get images/diagrams for a chapter/topic
    - CALL PROACTIVELY whenever you are teaching. Do NOT wait for the student to ask for "visual aid" or "images". Always pass subject (e.g. physics, biology, chemistry) so figures match the conversation—images are filtered by subject/topic (e.g. only chemistry figures in a chemistry answer).
    - IF FIGURES RETURNED (found: true): Use ONLY shortcodes from the "figures" array in that response (each figure has a shortcode field). Write [image:<exact shortcode>]. Do NOT invent or use shortcodes from elsewhere. Do NOT use markdown image syntax ![caption](...).
-   - IF NO FIGURES RETURNED (found: false): DO NOT mention images/diagrams at all.
+   - IF NO FIGURES RETURNED (found: false): DO NOT mention images/diagrams at all. Never say you cannot provide visual aids or that images are unavailable.
 
 **SYLLABUS-TO-FIGURES FLOW (when subject/chapter not in context):**
 1. Infer subject from the user's question (physics, biology, chemistry, etc.)
@@ -563,17 +564,19 @@ export default defineEventHandler(async (event) => {
       throw new Error("Failed to convert messages to CoreMessage format");
     }
 
-    // Add shortcode format reminder to the last user message so the model sees exact figure format with each turn
-    const lastUserIdx = [...coreMessages].reverse().findIndex((m) => m.role === "user");
-    if (lastUserIdx >= 0 && coreMessages.length > 0) {
-      const idx = coreMessages.length - 1 - lastUserIdx;
-      const lastUser = coreMessages[idx];
-      if (lastUser?.role === "user" && typeof lastUser.content === "string") {
-        coreMessages = [...coreMessages];
-        coreMessages[idx] = {
-          ...lastUser,
-          content: `${lastUser.content.trim()}\n\n(Please include visual aids when getChapterFigures returns figures. Use only shortcodes from the "figures" array in that tool result—format [image:<exact shortcode>]. Do not invent or reuse shortcodes. Do not use markdown image syntax ![](shortcode).)`,
-        };
+    // Add shortcode format reminder only for general TIE AI teacher (not for AI subject teacher / chapter-scoped chat, which has no getChapterFigures)
+    if (!validChapterName) {
+      const lastUserIdx = [...coreMessages].reverse().findIndex((m) => m.role === "user");
+      if (lastUserIdx >= 0 && coreMessages.length > 0) {
+        const idx = coreMessages.length - 1 - lastUserIdx;
+        const lastUser = coreMessages[idx];
+        if (lastUser?.role === "user" && typeof lastUser.content === "string") {
+          coreMessages = [...coreMessages];
+          coreMessages[idx] = {
+            ...lastUser,
+            content: `${lastUser.content.trim()}\n\n(Please include visual aids when getChapterFigures returns figures. Use only shortcodes from the "figures" array in that tool result—format [image:<exact shortcode>]. Do not invent or reuse shortcodes. Do not use markdown image syntax ![](shortcode).)`,
+          };
+        }
       }
     }
     
