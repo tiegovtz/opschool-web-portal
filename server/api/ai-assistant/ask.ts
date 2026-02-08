@@ -60,7 +60,6 @@ export default defineEventHandler(async (event) => {
   const auth_token =
     getCookie(event, "signInAccessToken") ||
     event.headers.get("authorization")?.replace("Bearer ", "").trim();
-  console.log(auth_token);
 
   if (!auth_token) {
     throw createError({
@@ -72,8 +71,7 @@ export default defineEventHandler(async (event) => {
   let body;
   try {
     body = await readBody(event);
-  } catch (error) {
-    console.error("Error reading request body:", error);
+  } catch {
     throw createError({
       statusCode: 400,
       message: "Invalid request body",
@@ -83,11 +81,6 @@ export default defineEventHandler(async (event) => {
   const { question, chapterId, conversationHistory } = body || {};
 
   if (!question || !chapterId) {
-    console.error("Missing required fields:", {
-      hasQuestion: !!question,
-      hasChapterId: !!chapterId,
-      body: body,
-    });
     throw createError({
       statusCode: 400,
       message: `Missing required fields. Question: ${!!question}, ChapterId: ${!!chapterId}`,
@@ -107,15 +100,6 @@ export default defineEventHandler(async (event) => {
     );
 
     if (!chapterResponse.ok) {
-      const errorText = await chapterResponse.text().catch(() => "");
-      console.error("Chapter fetch error:", {
-        status: chapterResponse.status,
-        statusText: chapterResponse.statusText,
-        chapterId,
-        hasToken: !!auth_token,
-        error: errorText,
-      });
-
       if (chapterResponse.status === 401) {
         throw createError({
           statusCode: 401,
@@ -145,14 +129,6 @@ export default defineEventHandler(async (event) => {
     const chapterContent = extractTextContent(rawContent);
 
     const chapterName = chapterData?.name || "this competence";
-
-    // Log content length for debugging
-    console.log("Chapter content extracted:", {
-      chapterName,
-      rawLength: rawContent.length,
-      textLength: chapterContent.length,
-      hasContent: chapterContent.length > 0,
-    });
 
     // If no text content was extracted, provide a fallback message
     if (!chapterContent || chapterContent.trim().length === 0) {
@@ -294,11 +270,6 @@ IMPORTANT RULES:
         headers["Authorization"] = `Bearer ${openaiApiKey}`;
       }
 
-      console.log(
-        `[AI Assistant] Attempting ${llmConfig.provider} with model: ${llmConfig.model}`
-      );
-      console.log(`[AI Assistant] API Base URL: ${llmConfig.baseUrl}`);
-
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), llmConfig.timeout);
 
@@ -342,17 +313,6 @@ IMPORTANT RULES:
           choice?.message?.content || "Sorry, I couldn't generate an answer.";
         const finishReason = choice?.finish_reason;
 
-        // Log if response was truncated
-        if (finishReason === "length") {
-          console.warn(
-            `[AI Assistant] Response from ${llmConfig.provider} was truncated due to token limit.`
-          );
-        }
-
-        console.log(
-          `[AI Assistant] ✅ Successfully received response from ${llmConfig.provider} (model: ${llmConfig.model})`
-        );
-
         return {
           answer,
           finishReason,
@@ -374,9 +334,6 @@ IMPORTANT RULES:
     try {
       // Check if OpenAI API key is available
       if (!openaiApiKey) {
-        console.log(
-          "[AI Assistant] OpenAI API key not found, skipping to fallback"
-        );
         throw new Error("OpenAI API key not configured");
       }
 
@@ -390,13 +347,6 @@ IMPORTANT RULES:
         model: result.model,
       };
     } catch (primaryError: any) {
-      console.warn(
-        `[AI Assistant] ⚠️ Primary provider (OpenAI) failed: ${primaryError.message}`
-      );
-      console.log(
-        `[AI Assistant] 🔄 Falling back to ${fallbackConfig.provider} (${fallbackConfig.model})`
-      );
-
       // Try fallback (Ollama Gemma)
       try {
         const result = await callLLM(fallbackConfig);
@@ -409,9 +359,6 @@ IMPORTANT RULES:
           model: result.model,
         };
       } catch (fallbackError: any) {
-        console.error(
-          `[AI Assistant] ❌ Fallback provider (${fallbackConfig.provider}) also failed: ${fallbackError.message}`
-        );
         throw createError({
           statusCode: 503,
           message: `Both primary (OpenAI) and fallback (${fallbackConfig.provider}) providers failed. Primary error: ${primaryError.message}. Fallback error: ${fallbackError.message}`,
@@ -419,7 +366,6 @@ IMPORTANT RULES:
       }
     }
   } catch (error: any) {
-    console.error("AI Assistant error:", error);
     if (error.statusCode) {
       throw error;
     }

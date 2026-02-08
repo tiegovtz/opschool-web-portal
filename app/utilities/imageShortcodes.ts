@@ -62,24 +62,20 @@ export async function loadDynamicShortcodes(forceReload: boolean = false): Promi
       const data = await response.json();
       
       if (data.success && data.images && data.images.length > 0) {
-        // Convert to cache format - supports both single and multi-image figures
+        // Convert to cache format - supports both single and multi-image figures.
+        // Include parent entries (paths only) so [image:parent_shortcode] resolves reliably.
         for (const figure of data.images) {
-          // Skip parent entries (multi-image containers without a direct path)
-          if (figure.paths && !figure.path) {
-            continue;
-          }
-          
           const metadata: ImageMetadata = {
             alt: figure.alt || '',
             category: (figure.category as ImageMetadata['category']) || 'general'
           };
           
-          // Handle path
+          // Handle single image path
           if (figure.path) {
             metadata.path = figure.path;
           }
           
-          // Handle multi-image figures (paths array)
+          // Handle multi-image figures (paths array) – keep parent shortcodes with paths only
           if (figure.paths && figure.paths.length > 0) {
             metadata.paths = figure.paths;
             metadata.alts = figure.alts || [];
