@@ -9,7 +9,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "migrate-figures-to-api": "npx tsx scripts/migrate-figures-to-api.ts",
-    "ai:decision-smoke": "npx tsx scripts/ai-decision-smoke.ts"
+    "ai:decision-smoke": "npx tsx scripts/ai-decision-smoke.ts",
+    "test:rag": "npx tsx scripts/test-rag.ts"
   },
   "browserslist": [
     "last 5 versions",
