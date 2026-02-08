@@ -481,16 +481,26 @@ export const studentTools = {
           });
           if (topics.length === 0 && normalizedName && normalizedName !== nameValue) {
             topics = await fetchPublicTopicsFromApi({
-          if (topics.length > 0) {
-            queryName = normalizedName;
-            usedQuery = {
               name: normalizedName,
               level: levelValue || undefined,
               subject: subjectValue || undefined,
             });
+            if (topics.length > 0) {
+              queryName = normalizedName;
+              usedQuery = {
+                name: normalizedName,
+                level: levelValue || undefined,
+                subject: subjectValue || undefined,
+              };
+            }
           }
           if (topics.length === 0 && nameValue) {
             topics = await fetchPublicTopicsFromApi({
+              name: nameValue,
+              level: levelValue || undefined,
+              subject: subjectValue || undefined,
+            });
+          }
         }
 
         // Fallback: if no level is provided, try Form 1 and Form 2
@@ -524,8 +534,7 @@ export const studentTools = {
               name: undefined,
               level: levelValue || undefined,
               subject: nameValue,
-              level: levelValue || undefined,
-            });
+            };
           }
           normalized = topics
             .map((topic: any) => ({
