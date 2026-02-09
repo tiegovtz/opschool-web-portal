@@ -81,6 +81,11 @@ const apiDocs = {
     getPublicSubjects: `${baseURL}/public-subjects`,
   },
 
+  // SYLLABUS API (rich syllabus by subject + level; query params: subject, level, educationLevel as IDs)
+  syllabus: {
+    getSyllabus: `${baseURL}/syllabus`,
+  },
+
   // TOPICS API
   topics: {
     getTopics: `${baseURL}/topics`,
