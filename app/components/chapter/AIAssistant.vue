@@ -942,12 +942,11 @@ const toggleAssistant = () => {
   openAssistant();
 };
 
-// Handle form submit - use Chat component for regular messages
+// Handle form submit - use legacy AI assistant (/api/ai-assistant/ask) for subject teacher
 const handleFormSubmit = async (e) => {
   e.preventDefault();
   const question = currentQuestion.value.trim();
   if (!question || isLoading.value || !props.chapterId) return;
-
 
   // Validate token
   const currentTokenValue = token?.value;
@@ -961,25 +960,7 @@ const handleFormSubmit = async (e) => {
   }
 
   currentQuestion.value = "";
-  // Show typing indicator immediately when form is submitted
-  isLoading.value = true;
-
-
-  try {
-    await chat.sendMessage({ text: question });
-  } catch (error) {
-    console.error("[AI Subject Teacher] Chat error:", error);
-    messages.value.push({
-      role: "assistant",
-      content:
-        error?.message || "Sorry, I encountered an error. Please try again.",
-      timestamp: new Date().toLocaleTimeString(),
-    });
-    // Turn off loading on error
-    isLoading.value = false;
-  }
-  // Note: Don't set isLoading to false here - let the chat.status watch handle it
-  // This ensures the typing indicator stays visible during streaming
+  await askQuestion(question, question, { useDocsAPI: false });
 };
 
 const getAvailableAudios = () =>
