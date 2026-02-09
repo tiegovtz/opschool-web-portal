@@ -170,7 +170,7 @@ function mapApiBookToBookInfo(api: ApiBook, chunkCount = 0, totalTokens = 0): Bo
 /**
  * List all books (optional filters: classLevel, subject). Access token from cookies (signInAccessToken) is required.
  */
-export async function listBooks(
+export async function listMLBooks(
   query: { classLevel?: string; subject?: string } | undefined,
   accessToken: string
 ): Promise<BookInfo[]> {
@@ -209,7 +209,7 @@ export async function listBooks(
 /**
  * Get a single book by id
  */
-export async function getBookById(bookId: string, accessToken: string): Promise<BookInfo | null> {
+export async function getMLBookById(bookId: string, accessToken: string): Promise<BookInfo | null> {
   try {
     const api = await request<ApiBook>("GET", `machine-learning/books/${encodeURIComponent(bookId)}`, {
       accessToken,
@@ -366,7 +366,7 @@ export async function deleteChunk(chunkId: string, accessToken: string): Promise
  */
 export async function getChunksByBookId(bookId: string, accessToken: string): Promise<DocumentPreview[]> {
   const chunks = await listChunks(accessToken);
-  const book = await getBookById(bookId, accessToken);
+  const book = await getMLBookById(bookId, accessToken);
   const title = book?.title;
   const filtered = chunks.filter(
     (c) => c.source === bookId || (title && c.source === title)
@@ -382,12 +382,12 @@ export async function getChunksByBookId(bookId: string, accessToken: string): Pr
 /**
  * Stats: totalDocuments, totalBooks, byBook (title -> chunk count)
  */
-export async function getStats(accessToken: string): Promise<{
+export async function getMLStats(accessToken: string): Promise<{
   totalDocuments: number;
   totalBooks: number;
   byBook: Record<string, number>;
 }> {
-  const [books, chunks] = await Promise.all([listBooks(undefined, accessToken), listChunks(accessToken)]);
+  const [books, chunks] = await Promise.all([listMLBooks(undefined, accessToken), listChunks(accessToken)]);
   const byBook: Record<string, number> = {};
   for (const c of chunks) {
     const src = c.source || "Unknown";
@@ -403,7 +403,7 @@ export async function getStats(accessToken: string): Promise<{
 /**
  * Delete all documents for a book (chunks + book). Returns number of chunks deleted.
  */
-export async function deleteByBookId(bookId: string, accessToken: string): Promise<number> {
+export async function deleteMLBookById(bookId: string, accessToken: string): Promise<number> {
   return deleteBook(bookId, accessToken);
 }
 
