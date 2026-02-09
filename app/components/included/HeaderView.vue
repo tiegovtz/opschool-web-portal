@@ -39,7 +39,9 @@ const announceLogout = (event) => {
   if (logoutAlert.value) {
     logoutAlert.value.textContent = "";
     setTimeout(() => {
-      logoutAlert.value.textContent = logoutMessage.value;
+      if (logoutAlert.value) {
+        logoutAlert.value.textContent = logoutMessage.value;
+      }
     }, 50);
   }
 
@@ -106,12 +108,8 @@ const dropDown = () => {
         <!-- Media Screen -->
         <div
           class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container">
-          <NuxtLink
-            aria-label="Go home"
-            to="/home"
-            class="flex gap-2 pl-2 pr-2 rounded-md"
-            active-class="text-white !bg-deepBlue"
-          >
+          <NuxtLink aria-label="Go home" to="/home" class="flex gap-2 pl-2 pr-2 rounded-md"
+            active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
               <IconsHome :size="20" />
             </div>
@@ -129,12 +127,9 @@ const dropDown = () => {
           </a>
 
           <!-- Smart Class Hub -->
-          <NuxtLink
-            to="/smart-class"
-            aria-label="Go to Smart Class"
+          <NuxtLink to="/smart-class" aria-label="Go to Smart Class"
             class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium rounded-md"
-            active-class="text-white !bg-deepBlue"
-          >
+            active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
               <IconsSmartClassHub :size="20" />
             </div>
@@ -212,7 +207,7 @@ const dropDown = () => {
                 class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                 <IconsProfileCircle :size="20" />
               </NuxtLink>
-              
+
               <!-- TIE Library Books -->
               <a aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
                 class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45"
@@ -221,12 +216,9 @@ const dropDown = () => {
                   <IconsSubjects :size="20" />
                 </div>
               </a>
-              <NuxtLink
-                to="/smart-class"
-                aria-label="Go to Smart Class"
+              <NuxtLink to="/smart-class" aria-label="Go to Smart Class"
                 class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45 rounded-md"
-                active-class="text-white !bg-deepBlue"
-              >
+                active-class="text-white !bg-deepBlue">
                 <div class="flex items-center justify-center">
                   <IconsSmartClassHub :size="20" />
                 </div>
@@ -242,12 +234,8 @@ const dropDown = () => {
 
             <!-- Logout and Sign in -->
             <div class="flex items-center">
-              <NuxtLink
-                aria-label="Go home"
-                to="/home"
-                class="flex gap-2 pr-2 pl-2 rounded-md"
-                active-class="text-white !bg-deepBlue"
-              >
+              <NuxtLink aria-label="Go home" to="/home" class="flex gap-2 pr-2 pl-2 rounded-md"
+                active-class="text-white !bg-deepBlue">
                 <div class="flex items-center justify-center">
                   <IconsHome :size="20" />
                 </div>

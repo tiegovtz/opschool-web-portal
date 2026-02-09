@@ -71,7 +71,7 @@ const profile = reactive<UserProfile>({
     userToken.value.school == null || userToken.value.school == undefined
       ? ""
       : userToken.value.school.toString().toLowerCase(),
-  level: userToken.value.level._id,
+  level: userToken.value.level?._id || "",
   type: userToken.value.type,
   profilePic: userToken.value.profilePic,
   controller: {
@@ -326,51 +326,51 @@ watch(
 );
 
 const onValueChanged = (inputName: string) => {
-  if (inputName == "fname" && profile.fname != userToken.value.name.split(" ")[0]) {
+  if (inputName == "fname" && profile.fname != userToken.value.name.split(" ")[0] && profile.fname.trim() !== "") {
     isModified.value = true;
     profile.controller.errors.fname = messages.error.form.firstName;
   } else if (
     inputName == "lname" &&
-    profile.lname != userToken.value.name.split(" ")[1]
+    profile.lname != userToken.value.name.split(" ")[1] && profile.lname.trim() !== ""
   ) {
     isModified.value = true;
     profile.controller.errors.lname = messages.error.form.lastName;
-  } else if (inputName == "email" && profile.email != userToken.value.email) {
+  } else if (inputName == "email" && profile.email != userToken.value.email && profile.email.trim() !== "") {
     isModified.value = true;
     profile.controller.errors.email = messages.error.form.emailRequired;
-  } else if (inputName == "phone" && profile.phone != userToken.value.phoneNumber) {
+  } else if (inputName == "phone" && profile.phone != userToken.value.phoneNumber && profile.phone.trim() !== "") {
     isModified.value = true;
     profile.controller.errors.phone = messages.error.validation.invalidPhone;
   } else if (
     inputName == "organization" &&
-    profile.organization != userToken.value.organization
+    profile.organization != userToken.value.organization && profile.organization.trim() !== ""
   ) {
     isModified.value = true;
     profile.controller.errors.organization = "Please enter your organization";
-  } else if (inputName == "level" && profile.level != userToken.value.level) {
+  } else if (inputName == "level" && profile.level != userToken.value.level && profile.level.trim() !== "") {
     isModified.value = true;
     profile.controller.errors.level = "Please enter your level";
   } else if (
     inputName == "profilePic" &&
-    profile.profilePic != userToken.value.profilePic
+    profile.profilePic != userToken.value.profilePic && profile.profilePic.trim() !== ""
   ) {
     isModified.value = true;
   }
   else if (
     inputName == "region" &&
-    profile.region != userToken.value.region
+    profile.region != userToken.value.region && profile.region.trim() !== ""
   ) {
     isModified.value = true;
   }
   else if (
     inputName == "district" &&
-    profile.district != userToken.value.district
+    profile.district != userToken.value.district && profile.district.trim() !== ""
   ) {
     isModified.value = true;
   }
   else if (
     inputName == "school" &&
-    profile.school != userToken.value.school
+    profile.school != userToken.value.school && profile.school.trim() !== ""
   ) {
     isModified.value = true;
   }
@@ -501,9 +501,9 @@ const discardChanges = () => {
       <!-- Profile Name and Type -->
       <div class="flex flex-col items-center justify-center mt-4">
         <!-- Full Name -->
-        <h1 class="font-bold text-large">{{ userToken.name }}</h1>
+        <h1 class="font-bold text-large">{{ userToken?.name }}</h1>
         <!-- Type -->
-        <h3 class="my-1 text-textGray text-medium">{{ userToken.type }}</h3>
+        <h3 class="my-1 text-textGray text-medium">{{ userToken?.type }}</h3>
       </div>
     </div>
 
