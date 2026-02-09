@@ -85,8 +85,9 @@ function shouldAskClarify(text: string, context?: DecisionContext): boolean {
   const hasTopic = isTopicSpecific(text, context);
   const hasContext = Boolean(context?.subject?.trim() || context?.level?.trim());
 
+  // Do NOT ask for subject/level when the user asked a direct content question—answer it.
+  if (hasTopic && !hasContext) return false;
   if (isExplicitSyllabusCheck(text) && !hasTopic) return true;
-  if (hasTopic && !hasContext) return true;
 
   const pronounOnly =
     /\b(this|it|that)\b/.test(cleaned) && cleaned.split(/\s+/).length <= 4;
