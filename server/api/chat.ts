@@ -610,6 +610,8 @@ export default defineEventHandler(async (event) => {
     delete (toolsForRequest as any).searchTextbooks;
   }
 
+  const promptCacheKey = `tie:${validChapterName || "general"}:${subject || ""}:${level || ""}:${chapterNo ?? ""}`;
+
   const usedFigureShortcodes = new Set<string>();
   for (const msg of coreMessages) {
     if (msg.role === "assistant" && typeof msg.content === "string") {
@@ -630,6 +632,11 @@ export default defineEventHandler(async (event) => {
     stopWhen: stepCountIs(10),
     tools: toolsForRequest,
     maxSteps: 7,
+    providerOptions: {
+      openai: {
+        promptCacheKey,
+      },
+    },
   };
 
   return runWithUsedFigureShortcodes(usedFigureShortcodes, () => {
