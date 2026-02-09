@@ -619,6 +619,8 @@ export default defineEventHandler(async (event) => {
     delete (toolsForRequest as any).searchTextbooks;
   }
 
+  const promptCacheKey = `tie:${validChapterName || "general"}:${subject || ""}:${level || ""}:${chapterNo ?? ""}`;
+
   const modelInput = {
     model: openai("gpt-4o-mini"),
     messages: [
@@ -628,6 +630,11 @@ export default defineEventHandler(async (event) => {
     stopWhen: stepCountIs(10),
     tools: toolsForRequest,
     maxSteps: 7,
+    providerOptions: {
+      openai: {
+        promptCacheKey,
+      },
+    },
   };
 
   const result = streamText(modelInput as any);

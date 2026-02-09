@@ -260,6 +260,8 @@ IMPORTANT RULES:
         : msg
     );
 
+    const promptCacheKey = `tie:ai-assistant:${chapterId}`;
+
     // Helper function to make LLM API call
     const callLLM = async (llmConfig: typeof primaryConfig): Promise<any> => {
       const headers: Record<string, string> = {
@@ -284,6 +286,7 @@ IMPORTANT RULES:
               messages: optimizedMessages,
               temperature: 0.7,
               max_tokens: llmConfig.maxTokens,
+              prompt_cache_key: promptCacheKey,
             }),
             signal: controller.signal,
           }
