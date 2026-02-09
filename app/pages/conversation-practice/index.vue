@@ -456,7 +456,7 @@ onMounted(() => {
       }
 
       recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error)
+        throw event.error;
         isRecording.value = false
         isProcessing.value = false
         showStatus('error', `Speech recognition error: ${event.error}`)
@@ -536,10 +536,9 @@ const detectSpeakerGenderFromAllPieces = async () => {
       voiceType.value = voiceDetection.voiceType
       // Update state with detected gender
       conversationState.value.aiGender = voiceDetection.voiceType
-      console.log(`Speaker gender detected: ${voiceDetection.voiceType}`)
     }
   } catch (error) {
-    console.warn('Failed to pre-detect speaker gender:', error)
+    void error;
   }
 }
 
@@ -558,7 +557,7 @@ const loadConversationPieces = async () => {
     }
     return pieces
   } catch (error) {
-    console.error('Failed to load conversation:', error)
+    void error;
     showStatus('error', 'Failed to load conversation from backend')
     return []
   }
@@ -654,7 +653,7 @@ const playCurrentPiece = async () => {
       audioRef.value.playbackRate = playbackSpeed.value
       isPlaying.value = true
       audioRef.value.play().catch(err => {
-        console.error('Error playing audio:', err)
+        void err;
         isPlaying.value = false
         showStatus('error', 'Failed to play audio')
       })
@@ -682,7 +681,7 @@ const playCurrentPiece = async () => {
         conversationState.value.aiGender = voiceDetection.voiceType
       }
     } catch (detectionError) {
-      console.warn('Voice detection failed:', detectionError)
+      void detectionError;
     }
 
     // Generate TTS
@@ -719,7 +718,7 @@ const playCurrentPiece = async () => {
         audioRef.value.src = resolvedUrl
         audioRef.value.playbackRate = playbackSpeed.value
         audioRef.value.play().catch(err => {
-          console.error('Error playing audio:', err)
+          void err;
           isPlaying.value = false
           showStatus('error', 'Failed to play audio')
         })
@@ -729,7 +728,7 @@ const playCurrentPiece = async () => {
       showStatus('error', response.error || 'Failed to generate audio')
     }
   } catch (error) {
-    console.error('Error generating TTS:', error)
+    void error;
     isGeneratingTTS.value = false
     showStatus('error', 'Failed to generate audio')
   }
@@ -759,7 +758,7 @@ const onAudioEnded = () => {
 }
 
 const onAudioError = () => {
-  console.error('Audio element error:', audioRef.value?.error)
+  void audioRef.value?.error;
   isPlaying.value = false
   showStatus('error', `Error playing audio: ${audioRef.value?.error?.message || 'Unknown error'}`)
 }
@@ -785,7 +784,7 @@ const startRecording = () => {
     statusMessage.value = null
     recognition.start()
   } catch (error) {
-    console.error('Error starting recording:', error)
+    void error;
     isRecording.value = false
     showStatus('error', 'Failed to start recording')
   }
@@ -834,7 +833,6 @@ const validateAnswer = async (answer) => {
           ...conversationState.value,
           ...response.enrichedState,
         }
-        console.log('State updated:', conversationState.value)
       }
 
       if (response.isCorrect) {
@@ -900,7 +898,7 @@ const validateAnswer = async (answer) => {
       showStatus('error', response.error || 'Failed to validate answer')
     }
   } catch (error) {
-    console.error('Error validating answer:', error)
+    void error;
     showStatus('error', 'Failed to validate answer')
   } finally {
     isProcessing.value = false

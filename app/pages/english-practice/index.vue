@@ -298,17 +298,7 @@ const getAudioDebugState = () => {
   };
 };
 
-const logTtsDebug = (message: string, payload: Record<string, unknown> = {}) => {
-  if (!isDebugMode.value) return;
-  console.debug(TTS_LOG_PREFIX, message, {
-    mode: mode.value,
-    lineIndex: currentLineIndex.value,
-    lineId: currentScriptLine.value?.id || activeAiLineId.value || '',
-    speaker: currentScriptLine.value?.speaker || '',
-    ...payload,
-    audio: getAudioDebugState(),
-  });
-};
+const logTtsDebug = (_message: string, _payload: Record<string, unknown> = {}) => {};
 
 const showToast = (message: string, type: 'info' | 'error' = 'info', duration = 4000) => {
   if (isEmbedded.value && typeof window !== 'undefined' && window.parent && window.parent !== window) {
@@ -422,7 +412,6 @@ speechRecognition.onResult.value = (result) => {
       advanceToNextLine('speech', 'speech_result_validated');
     } else {
       // Not enough words - keep recording and show feedback
-      console.log('Please continue speaking to complete the line. You need to say at least 80% of the words.');
       // The transcript will continue to accumulate
     }
   }
@@ -480,7 +469,6 @@ speechRecognition.onSilence.value = () => {
   } else if (transcript) {
     // Not enough words - show feedback but don't switch
     // Keep recording to allow student to continue
-    console.log('Please speak more words from the script. You need to say at least 80% of the words.');
   }
 };
 
@@ -1304,7 +1292,6 @@ const loadConversationScript = async () => {
     currentTranscript.value = '';
     spokenWords.value.clear();
   } catch (error: any) {
-    console.error('Failed to load conversation for English practice:', error);
     const errorMessage = error?.message || error?.toString() || 'Unknown error';
     if (errorMessage.includes('Failed to load') || errorMessage.includes('response data')) {
       scriptError.value = 'Unable to load conversation content. Please check your connection and try again.';
@@ -1342,7 +1329,6 @@ const detectMode = () => {
 const switchMode = (newMode: PracticeMode) => {
   // Don't switch if currently recording or speaking
   if (speechRecognition.isListening.value || isPlayingAiAudio.value || isAiAudioLoading.value) {
-    console.log('Cannot switch mode while recording or speaking');
     return;
   }
   
