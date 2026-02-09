@@ -620,7 +620,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const modelInput = {
-    model: openai("gpt-4o"),
+    model: openai("gpt-4o-mini"),
     messages: [
       { role: "system", content: systemPrompt },
       ...coreMessages,
