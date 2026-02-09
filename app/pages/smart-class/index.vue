@@ -54,7 +54,7 @@ const recordedCards = ref<SessionCard[]>([]);
 const isLoadingCards = ref(false);
 
 /**
- * ✅ Session-expired modal (shows on any 401 from requests on this page)
+ * Session-expired modal (shows on any 401 from requests on this page)
  */
 const sessionExpiredModalOpen = ref(false);
 const sessionExpiredMessage = ref("Your session has expired. Please sign in again.");
@@ -474,7 +474,7 @@ const playableUrl = computed(() => {
 });
 
 /**
- * ✅ Meeting embed
+ * Meeting embed
  * NOTE: some providers block embedding (Google Meet/Zoom/Teams).
  */
 const isLiveMeeting = computed(() => {
@@ -883,7 +883,7 @@ const prepareNavigation = () => {
           </div>
         </div>
 
-        <!-- ✅ Session Expired Modal -->
+        <!-- Session Expired Modal -->
         <div
           v-if="sessionExpiredModalOpen"
           class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-4 py-10"
