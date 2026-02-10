@@ -88,7 +88,7 @@ onBeforeUnmount(() => {
   <div ref="dropdownRef" class="relative w-full text-left">
     <!-- Dropdown button -->
     <button type="button" :class="[
-      'flex items-center justify-between w-full h-full px-4 py-2 text-gray-700 rounded-md shadow-sm focus:outline-none',
+      'flex items-center justify-between w-full h-full text-gray-700 rounded-md border border-gray-300 shadow-sm focus:outline-none',
       buttonClass
     ]" @click.stop="toggleOpen" role="combobox" aria-haspopup="listbox"
       :aria-expanded="(!disabled && isOpen) ? 'true' : 'false'"
