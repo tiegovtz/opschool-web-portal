@@ -12,6 +12,7 @@ const matchesIdentifier = (value: unknown, identifier: string) => {
 
 const normalizeAudioUrl = (item: any): string => {
   const candidate =
+    item?.audioFile ||
     item?.audioUrl ||
     item?.audioURL ||
     item?.audio_url ||
@@ -99,7 +100,7 @@ export default defineEventHandler(async (event) => {
           identifier: String(item?.identifier || '').trim(),
           text: String(item?.text || '').trim(),
           speaker: String(item?.speaker || item?.name || '').trim(),
-          audioUrl: normalizeAudioUrl(item),
+          audioFile: normalizeAudioUrl(item),
         }))
     : []
 
