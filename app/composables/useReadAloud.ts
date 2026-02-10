@@ -54,6 +54,8 @@ export const useReadAloud = () => {
       rate?: number;
       volume?: number;
       voiceType?: 'male' | 'female';
+      audioUrl?: string;
+      disableHighlighting?: boolean;
     }
   ) => {
     const normalizedText = String(text || '').trim();
@@ -66,33 +68,45 @@ export const useReadAloud = () => {
 
     isLoading.value = true;
     try {
-      const response = await $fetch('/api/conversation/tts', {
-        method: 'POST',
-        body: {
-          text: normalizedText,
-          voiceType: options?.voiceType || 'female',
-          inline: true,
-        },
-      });
+      const resolvedAudioUrl = String(options?.audioUrl || '').trim();
+      let audioSrc: string | null = null;
 
-      if (!response?.success || !response?.audioBase64) {
-        throw new Error('TTS audio unavailable');
+      if (resolvedAudioUrl) {
+        audioSrc = resolvedAudioUrl;
+      } else {
+        const response = await $fetch('/api/conversation/tts', {
+          method: 'POST',
+          body: {
+            text: normalizedText,
+            voiceType: options?.voiceType || 'female',
+            inline: true,
+          },
+        });
+
+        if (!response?.success || !response?.audioBase64) {
+          throw new Error('TTS audio unavailable');
+        }
+
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = null;
+        }
+        objectUrl = decodeAudioBase64(response.audioBase64, response.contentType || 'audio/wav');
+        audioSrc = objectUrl;
       }
 
       hasPlayed.value = true;
       isPlaying.value = true;
       clearWordHighlights();
 
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-        objectUrl = null;
+      if (!audioSrc) {
+        throw new Error('No audio source available');
       }
-      objectUrl = decodeAudioBase64(response.audioBase64, response.contentType || 'audio/wav');
 
       if (!audioElement) {
         audioElement = new Audio();
       }
-      audioElement.src = objectUrl;
+      audioElement.src = audioSrc;
       audioElement.playbackRate = options?.rate || 1;
       audioElement.onended = () => {
         isPlaying.value = false;
@@ -106,8 +120,13 @@ export const useReadAloud = () => {
         clearWordHighlights();
       };
 
-      const estimatedDurationMs = Math.max(normalizedText.split(/\s+/).length * 420, 1200);
-      scheduleWordHighlighting(normalizedText, estimatedDurationMs, onWordProgress);
+      if (!options?.disableHighlighting) {
+        const estimatedDurationMs = Math.max(normalizedText.split(/\s+/).length * 420, 1200);
+        scheduleWordHighlighting(normalizedText, estimatedDurationMs, onWordProgress);
+      } else {
+        currentPlaybackWordIndex.value = -1;
+        onWordProgress?.(-1);
+      }
       await audioElement.play();
     } catch (error) {
       console.error('[useReadAloud] Piper TTS failed:', error);
@@ -203,9 +222,6 @@ export const useReadAloud = () => {
     toggle,
   };
 };
-
-
-
 
 
 
