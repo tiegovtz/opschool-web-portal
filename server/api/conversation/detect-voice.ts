@@ -1,3 +1,5 @@
+import { inferVoiceTypeByName } from "~/utilities/inferVoiceTypeByName";
+
 export default defineEventHandler(async (event) => {
   if (event.method !== 'POST') {
     throw createError({
@@ -8,7 +10,12 @@ export default defineEventHandler(async (event) => {
 
   try {
     const body = await readBody(event)
-    const { text, conversationHistory = [], currentVoiceType = 'female' } = body
+    const {
+      text,
+      conversationHistory = [],
+      currentVoiceType = 'female',
+      speakerName = '',
+    } = body
     const historyArray = Array.isArray(conversationHistory) ? conversationHistory : []
 
     if (!text || typeof text !== 'string' || text.trim().length === 0) {
@@ -36,11 +43,15 @@ export default defineEventHandler(async (event) => {
     const openaiApiKey = config.OPENAI_API_KEY || process.env.OPENAI_API_KEY || ''
 
     if (!openaiApiKey) {
-      // If no API key, return neutral/default
+      const fallbackName = String(speakerName || '').trim()
+      const inferredVoice = fallbackName
+        ? inferVoiceTypeByName(fallbackName)
+        : currentVoiceType || 'female'
       return {
         success: true,
-        voiceType: 'female', // default
+        voiceType: inferredVoice,
         confidence: 0.5,
+        shouldUpdate: fallbackName ? inferredVoice !== currentVoiceType : false,
       }
     }
 
@@ -131,11 +142,19 @@ If uncertain or no identity indicators, set "shouldUpdate": false to maintain cu
     const isFirstPiece = !historyContext || conversationHistory.length === 0
     
     // Should update if: LLM says shouldUpdate is true, OR new identity is established
-    const shouldUpdate = result.shouldUpdate === true || isNewIdentity || (isFirstPiece && detectedVoice !== currentVoiceType)
+    let shouldUpdate = result.shouldUpdate === true || isNewIdentity || (isFirstPiece && detectedVoice !== currentVoiceType)
+    let finalVoiceType = detectedVoice
+
+    const fallbackName = String(speakerName || '').trim()
+    if (!isNewIdentity && result.shouldUpdate !== true && fallbackName) {
+      const inferredVoice = inferVoiceTypeByName(fallbackName)
+      finalVoiceType = inferredVoice
+      shouldUpdate = inferredVoice !== currentVoiceType
+    }
 
     return {
       success: true,
-      voiceType: detectedVoice,
+      voiceType: finalVoiceType,
       confidence: result.confidence ?? 0.5,
       reason: result.reason || '',
       isNewIdentity: isNewIdentity,

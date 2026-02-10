@@ -1224,7 +1224,8 @@ const loadConversationScript = async () => {
     const audioByOrder = new Map<number, string>();
     constantItems.forEach((item: any) => {
       const order = Number(item?.order) || 0;
-      const audioUrl = resolvePlayableAudio(String(item?.audioUrl || '').trim());
+      const rawAudio = String(item?.audioFile || '').trim();
+      const audioUrl = resolvePlayableAudio(rawAudio);
       if (order > 0 && audioUrl) {
         audioByOrder.set(order, audioUrl);
       }
