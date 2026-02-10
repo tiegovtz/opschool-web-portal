@@ -356,7 +356,9 @@ const conversationMeta = ref({ chapterId: '', name: '' })
 const conversationStarted = ref(false)
 const conversationCompleteMessage = ref('')
 const conversationPieces = ref([])
+const conversationEntries = ref([])
 const previewPieces = ref([])
+const previewEntries = ref([])
 const previewLoading = ref(false)
 const previewError = ref('')
 const currentIndex = ref(0)
@@ -387,6 +389,11 @@ const currentConversationPiece = computed(() => {
   if (conversationCompleteMessage.value) return conversationCompleteMessage.value
   if (conversationPieces.value.length === 0) return ''
   return conversationPieces.value[currentIndex.value] || ''
+})
+const currentConversationEntry = computed(() => {
+  if (conversationCompleteMessage.value) return null
+  if (conversationEntries.value.length === 0) return null
+  return conversationEntries.value[currentIndex.value] || null
 })
 
 const nextConversationPiece = computed(() => {
@@ -523,12 +530,16 @@ onUnmounted(() => {
 const detectSpeakerGenderFromAllPieces = async () => {
   try {
     const allPiecesText = conversationPieces.value.join(' ')
+    const fallbackSpeaker = String(
+      conversationEntries.value[0]?.speaker || ''
+    ).trim()
     const voiceDetection = await $fetch('/api/conversation/detect-voice', {
       method: 'POST',
       body: {
         text: allPiecesText,
         conversationHistory: '',
         currentVoiceType: voiceType.value,
+        speakerName: fallbackSpeaker,
       },
     })
 
@@ -551,15 +562,16 @@ const loadConversationPieces = async () => {
     if (identifier) query.identifier = identifier
     const response = await $fetch('/api/conversation/engage', { query })
     const pieces = Array.isArray(response?.pieces) ? response.pieces : []
+    const entries = Array.isArray(response?.entries) ? response.entries : []
     conversationMeta.value = {
       chapterId: response?.chapterId || '',
       name: response?.name || '',
     }
-    return pieces
+    return { pieces, entries }
   } catch (error) {
     void error;
     showStatus('error', 'Failed to load conversation from backend')
-    return []
+    return { pieces: [], entries: [] }
   }
 }
 
@@ -567,9 +579,10 @@ const fetchPreviewPieces = async () => {
   previewLoading.value = true
   previewError.value = ''
   try {
-    const pieces = await loadConversationPieces()
-    previewPieces.value = pieces
-    if (!pieces.length) {
+    const data = await loadConversationPieces()
+    previewPieces.value = data.pieces
+    previewEntries.value = data.entries
+    if (!data.pieces.length) {
       previewError.value = 'No preview available.'
     }
   } catch (error) {
@@ -580,16 +593,17 @@ const fetchPreviewPieces = async () => {
 }
 
 const startConversation = async () => {
-  const pieces = previewPieces.value.length
-    ? previewPieces.value
+  const data = previewPieces.value.length
+    ? { pieces: previewPieces.value, entries: previewEntries.value }
     : await loadConversationPieces()
-  if (!pieces.length) {
+  if (!data.pieces.length) {
     showStatus('error', 'No conversation pieces found')
     return
   }
 
   // Initialize conversation
-  conversationPieces.value = pieces
+  conversationPieces.value = data.pieces
+  conversationEntries.value = data.entries
   conversationStarted.value = true
   currentIndex.value = 0
   conversationHistory.value = []
@@ -603,10 +617,10 @@ const startConversation = async () => {
   conversationState.value = {
     ...createDefaultState(),
     aiGender: voiceType.value,
-    totalQuestions: pieces.length,
+    totalQuestions: data.pieces.length,
     questionIndex: 0,
     scriptProgress: {
-      totalScriptPieces: pieces.length,
+      totalScriptPieces: data.pieces.length,
       coveredIndices: [],
       skippedIndices: [],
       currentScriptIndex: 0,
@@ -673,6 +687,7 @@ const playCurrentPiece = async () => {
           text: currentConversationPiece.value,
           conversationHistory: conversationHistory.value,
           currentVoiceType: voiceType.value,
+          speakerName: String(currentConversationEntry.value?.speaker || '').trim(),
         },
       })
 
@@ -908,6 +923,7 @@ const validateAnswer = async (answer) => {
 const resetConversation = () => {
   conversationStarted.value = false
   conversationPieces.value = []
+  conversationEntries.value = []
   currentIndex.value = 0
   conversationHistory.value = []
   userAnswer.value = ''

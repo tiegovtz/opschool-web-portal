@@ -77,6 +77,7 @@
           :current-script-line="currentScriptLine"
           :current-line-index="currentLineIndex"
           :total-lines="script?.lines.length || 0"
+          :current-line-audio-url="currentLineAudioUrl"
           :current-turn="turnManager.currentTurn.value"
           :is-recording="speechRecognition.isListening.value"
           :highlighted-word="highlightedWord"
@@ -209,6 +210,12 @@ const currentScriptLine = computed<ScriptLine | undefined>(() => {
     return undefined;
   }
   return script.value.lines[currentLineIndex.value];
+});
+
+const currentLineAudioUrl = computed(() => {
+  const lineId = currentScriptLine.value?.id || '';
+  if (!lineId) return '';
+  return lineAudioMap.value[lineId] || '';
 });
 
 const canRecord = computed(() => {
@@ -1224,7 +1231,8 @@ const loadConversationScript = async () => {
     const audioByOrder = new Map<number, string>();
     constantItems.forEach((item: any) => {
       const order = Number(item?.order) || 0;
-      const audioUrl = resolvePlayableAudio(String(item?.audioUrl || '').trim());
+      const rawAudio = String(item?.audioFile || '').trim();
+      const audioUrl = resolvePlayableAudio(rawAudio);
       if (order > 0 && audioUrl) {
         audioByOrder.set(order, audioUrl);
       }
