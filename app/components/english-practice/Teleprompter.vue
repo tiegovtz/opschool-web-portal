@@ -175,6 +175,7 @@ interface Props {
   currentScriptLine?: ScriptLine;
   currentLineIndex: number;
   totalLines: number;
+  currentLineAudioUrl?: string;
   currentTurn?: SpeakerType;
   isRecording: boolean;
   highlightedWord?: string;
@@ -293,6 +294,14 @@ const isReadAloudDisabled = computed(() => {
   return props.isRecording || props.isAISpeaking || !props.currentScriptLine?.text;
 });
 
+const resolvePlayableAudio = (audioUrl: string): string => {
+  if (!audioUrl) return '';
+  if (/^(blob:|data:)/i.test(audioUrl)) return audioUrl;
+  if (/^https?:\/\//i.test(audioUrl)) return audioUrl;
+  if (audioUrl.startsWith('/')) return audioUrl;
+  return `/${audioUrl}`;
+};
+
 // Handle read-aloud toggle
 const handleReadAloudToggle = () => {
   if (isReadAloudDisabled.value) {
@@ -303,6 +312,7 @@ const handleReadAloudToggle = () => {
     return;
   }
 
+  const constantAudioUrl = resolvePlayableAudio(props.currentLineAudioUrl || '');
   readAloud.toggle(
     props.currentScriptLine.text,
     (wordIndex: number) => {
@@ -314,6 +324,8 @@ const handleReadAloudToggle = () => {
       pitch: 1.1,
       volume: 1,
       voiceType: inferVoiceTypeByName(currentSpeakerLabel.value),
+      audioUrl: constantAudioUrl,
+      disableHighlighting: Boolean(constantAudioUrl),
     }
   );
 };
@@ -328,6 +340,7 @@ const handleRepeat = () => {
     return;
   }
 
+  const constantAudioUrl = resolvePlayableAudio(props.currentLineAudioUrl || '');
   readAloud.repeat(
     props.currentScriptLine.text,
     (wordIndex: number) => {
@@ -339,6 +352,8 @@ const handleRepeat = () => {
       pitch: 1.1,
       volume: 1,
       voiceType: inferVoiceTypeByName(currentSpeakerLabel.value),
+      audioUrl: constantAudioUrl,
+      disableHighlighting: Boolean(constantAudioUrl),
     }
   );
 };
