@@ -172,7 +172,7 @@ const apiDocs = {
     sessions: `${baseURL}/live-classrooms/sessions`,
     recordedSessions: `${baseURL}/live-classrooms/recorded-sessions`,
     streamingLinks: `${baseURL}/live-classrooms/streaming-links`,
-    session: `${baseURL}/live-classrooms/session`,
+    session: `${baseURL}/live-classrooms/sessions`,
   },
 };
 
