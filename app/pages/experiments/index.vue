@@ -348,7 +348,7 @@ watch(filters, (filters) => {
 
               <!-- Scroll View -->
               <section aria-label="Experiments list">
-                <HomeCustomScrollView :data="experiments" active-tab="interactive-contents" />
+                <HomeCustomScrollView :data="experiments" active-tab="learn-activities" />
               </section>
 
 

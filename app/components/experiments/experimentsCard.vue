@@ -53,9 +53,10 @@ const setExperimentUrl =()=>{
         ]"
         >
         <!-- Thumbnail section -->
+         <!--    layoutEffect == 'grid' ? 'aspect-video' : 'h-full w-full max-w-[200px]'  -->
         <div :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? 'aspect-video' : 'h-full w-full max-w-[200px]'
+          layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
             <NuxtImg :src="experimentThumbnail" tabindex="0" :alt="altText??experimentName"
                 class="object-cover w-full h-full transition-transform duration-500" />
@@ -76,11 +77,11 @@ const setExperimentUrl =()=>{
         <!-- Content section -->
         <div class="flex flex-col flex-grow p-4">
             <p
-                class="mb-4 text-sm text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
+                class="mb-2 text-[1.2rem] font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
                 {{ experimentName }}
             </p>
             <p
-                class="mb-4 text-sm text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
+                class="mb-2 text-[1rem] text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
                 {{ experimentDescription }}
             </p>
 

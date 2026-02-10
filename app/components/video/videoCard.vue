@@ -57,7 +57,7 @@ const setVideoToView = () => {
         <!-- Thumbnail section -->
         <div :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? 'aspect-video' : 'h-full w-full max-w-[200px]'
+            layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
             <NuxtImg :src="videoThumbnail" tabindex="0" :alt="altText ?? videoName.toLowerCase()"
                 :class="[
@@ -81,11 +81,11 @@ const setVideoToView = () => {
             layoutEffect == 'grid' ? 'p-4' : 'px-2'
         ]">
             <h3
-                class="mb-2 text-lg font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white">
+                class="mb-2 text-[1.2rem] font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white">
                 {{ videoName }}
             </h3>
             <p
-                class="mb-4 text-sm text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
+                class="mb-4 text-[1rem] text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
                 {{ videoDescription }}
             </p>
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted } from 'vue';
+import { loadDynamicShortcodes } from '~/utilities/imageShortcodes';
 
 const props = defineProps<{ messages: any[]; isTyping?: boolean }>();
 
@@ -56,8 +57,9 @@ watch(() => props.isTyping, (newVal) => {
   }
 });
 
-// Scroll to bottom on mount if there are messages
+// Scroll to bottom on mount if there are messages; preload image shortcodes so visual aids resolve reliably
 onMounted(() => {
+  loadDynamicShortcodes();
   if (props.messages.length > 0) {
     nextTick(() => {
       scrollToBottom(false);

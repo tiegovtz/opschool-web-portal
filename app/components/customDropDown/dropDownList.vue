@@ -17,10 +17,14 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  buttonClass: {
+    type: String,
+    default: ''
   }
 });
 
-const emit = defineEmits(['updateModelValue']);
+const emit = defineEmits(['updateModelValue', 'update:modelValue']);
 
 const isOpen = ref(false);
 const selected = ref('');
@@ -31,6 +35,15 @@ const selectedLabel = ref('');
 watch(() => props.modelValue, (newVal) => {
   if (newVal !== null && newVal !== undefined) {
     const item = props.list.find(i => i.id === newVal);
+    selected.value = item ? item.name : '';
+  } else {
+    selected.value = '';
+  }
+}, { immediate: true });
+
+watch(() => props.list, (newVal) => {
+  if (props.list !== null && props.list !== undefined) {
+    const item = newVal.find(i => i.id === props.modelValue);
     selected.value = item ? item.name : '';
   } else {
     selected.value = '';
@@ -50,6 +63,7 @@ const selectItem = (item) => {
   selectedLabel.value = item.name;
   selected.value = item.name;
 
+  emit('updateModelValue', item.id ?? item.name);
   emit('update:modelValue', item.id ?? item.name);
 
   isOpen.value = false;
@@ -73,9 +87,10 @@ onBeforeUnmount(() => {
 <template>
   <div ref="dropdownRef" class="relative w-full text-left">
     <!-- Dropdown button -->
-    <button type="button"
-      class="flex items-center justify-between w-full h-full text-gray-700 rounded-md border border-gray-300 shadow-sm focus:outline-none"
-      @click.stop="toggleOpen" role="combobox" aria-haspopup="listbox"
+    <button type="button" :class="[
+      'flex items-center justify-between w-full h-full text-gray-700 rounded-md border border-gray-300 shadow-sm focus:outline-none',
+      buttonClass
+    ]" @click.stop="toggleOpen" role="combobox" aria-haspopup="listbox"
       :aria-expanded="(!disabled && isOpen) ? 'true' : 'false'"
       :aria-controls="$attrs.id ? `${$attrs.id}-listbox` : 'dropdown-listbox'" :disabled="disabled"
       :aria-disabled="disabled ? 'true' : 'false'" v-bind="$attrs">
@@ -108,8 +123,8 @@ onBeforeUnmount(() => {
 <style scoped>
 .fade-enter-active,
 .fade-leave-active {
-  transition: all 0.2s ease;
-} 
+  transition: all 0.2s ease-in-out;
+}
 
 .fade-enter-from,
 .fade-leave-to {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { isAllowedSubjectSlug, normalizeSubjectSlug } from "~/config/aiLauncherConfig";
+import apiDocs from "~/utilities/apiDocs";
+import { extractSubjectSlugs, normalizeSubjectSlug } from "~/config/aiLauncherConfig";
 
 const route = useRoute();
 const router = useRouter();
@@ -12,17 +13,21 @@ const tieOverlayOpen = useState<boolean>("tie-ai-overlay-open", () => false);
 const tieOverlayBackground = useState<string>("tie-ai-overlay-background", () => "");
 const tieOverlayPushed = useState<boolean>("tie-ai-overlay-pushed", () => false);
 const subjectTeacherOpen = useState<boolean>("ai-subject-teacher-is-open", () => false);
+const allowedSubjectSlugs = useState<string[]>("ai-launcher-allowed-subjects", () => []);
 const openSubjectTeacherSignal = useState<number>(
   "ai-subject-teacher-open-signal",
   () => 0
 );
+const isLoadingAllowedSubjects = ref(false);
 
 const EXCLUDED_PREFIXES = [
   "/tie-ai-teacher",
   "/auth",
   "/smart-class",
+  "/english-practice",
+  "/conversation-practice",
 ];
-const EXCLUDED_EXACT:string[] = [
+const EXCLUDED_EXACT: string[] = [
 ];
 
 const isLoggedIn = computed(() => !!(userToken.value || accessToken.value));
@@ -36,16 +41,30 @@ const isExcluded = computed(() => {
   return EXCLUDED_PREFIXES.some((prefix) => path.startsWith(prefix));
 });
 
+const loadAllowedSubjects = async () => {
+  if (!isLoggedIn.value) return;
+  if (isLoadingAllowedSubjects.value || allowedSubjectSlugs.value.length > 0) return;
+
+  isLoadingAllowedSubjects.value = true;
+  try {
+    const response = await $fetch(apiDocs.subjects.getPublicSubjects);
+    allowedSubjectSlugs.value = extractSubjectSlugs(response);
+  } catch (error) {
+    console.warn("[GlobalLauncher] Failed to load allowed subjects:", error);
+  } finally {
+    isLoadingAllowedSubjects.value = false;
+  }
+};
+
+watch(isLoggedIn, (loggedIn) => {
+  if (loggedIn) loadAllowedSubjects();
+}, { immediate: true });
+
 const hasValidSubjectContext = computed(() => {
   const params = route.params as Record<string, unknown>;
   const idCandidates = [
     params.topicId,
     params.chapterId,
-    params.subjectId,
-    params.videoId,
-    params.audioId,
-    params.experimentId,
-    params.id,
   ];
   const hasValidId = idCandidates.some(
     (value) => typeof value === "string" && value.trim().length > 0
@@ -55,12 +74,24 @@ const hasValidSubjectContext = computed(() => {
     typeof route.query.subject === "string" ? route.query.subject : "";
   const subjectSlugRaw = params.level ?? params.subject ?? params.subjectSlug ?? querySubject;
   const subjectSlug = normalizeSubjectSlug(subjectSlugRaw);
-  return hasValidId && isAllowedSubjectSlug(subjectSlug);
+  const isAllowed =
+    allowedSubjectSlugs.value.length === 0
+      ? Boolean(subjectSlug)
+      : allowedSubjectSlugs.value.includes(subjectSlug);
+
+  return hasValidId && isAllowed;
 });
 
 const showLauncher = computed(
   () => isLoggedIn.value && !isExcluded.value && !isBusy.value
 );
+const launcherLabel = computed(() =>
+  hasValidSubjectContext.value ? "AI Subject Teacher" : "AI Teacher"
+);
+const launcherHoverLabel = computed(() =>
+  hasValidSubjectContext.value ? "Ask AI Subject Teacher" : "Ask AI Teacher"
+);
+const isLauncherHovered = ref(false);
 
 const openTieOverlay = async () => {
   if (tieOverlayOpen.value || tieOverlayOpening.value) return;
@@ -95,17 +126,23 @@ const handleClick = async () => {
 
 <template>
   <Teleport to="body">
-   <client-only>
-     <button
-      v-if="showLauncher"
-      type="button"
-      class="fixed z-[80] flex h-14 w-14 items-center justify-center rounded-full bg-oceanBlue text-white shadow-lg transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue right-4 bottom-[calc(16px+env(safe-area-inset-bottom))]"
-      aria-label="Open AI assistant"
-      :disabled="isBusy"
-      @click="handleClick"
-    >
-      <Icon name="fluent:bot-28-filled" size="24" />
-    </button>
-   </client-only>
+    <client-only>
+      <div v-if="showLauncher" class="fixed z-[80] right-4 bottom-[calc(16px+env(safe-area-inset-bottom))]">
+        <div class="absolute inset-0 rounded-full bg-[rgba(245,245,245,0.35)] backdrop-blur-sm pointer-events-none">
+        </div>
+        <button type="button"
+          class="relative flex items-center justify-center gap-2 p-4 rounded-full bg-oceanBlue text-white border border-white/80 ring-2 ring-white/90 shadow-2xl transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue whitespace-nowrap"
+          :aria-label="launcherLabel" :disabled="isBusy" @mouseenter="isLauncherHovered = true"
+          @mouseleave="isLauncherHovered = false" @click="handleClick">
+          <IconsRobotAi :size="24" />
+          <span class="hidden md:block">{{ launcherLabel }}</span>
+        </button>
+        <div v-if="isLauncherHovered"
+          class="absolute right-0 bottom-[calc(100%+10px)] rounded-md bg-black/80 px-3 py-2 text-xs text-white shadow-lg whitespace-nowrap pointer-events-none"
+          role="tooltip">
+          {{ launcherHoverLabel }}
+        </div>
+      </div>
+    </client-only>
   </Teleport>
 </template>

@@ -24,11 +24,11 @@ declare global {
     }
 }
 
-// Define the global function to handle clicks
-// return source of the experiment clicked
-window.openActivity = (expSrc: string) => {
-    // You can add custom logic here (e.g., open modal, navigate, etc.)
-    // For now, just log the source of the experiment clicked
-    experimrntUrl.value= expSrc;
+// Define the global function to handle clicks (client-only)
+if (typeof window !== "undefined") {
+    window.openActivity = (expSrc: string) => {
+        // You can add custom logic here (e.g., open modal, navigate, etc.)
+        experimrntUrl.value = expSrc;
+    };
 }
 export default experimentParser;

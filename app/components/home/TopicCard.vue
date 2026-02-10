@@ -108,12 +108,12 @@ const userToken = useCookie('signInUserToken')
       <!-- topic title and description -->
       <div class="flex flex-col my-auto transition-all duration-500 ease-in-out">
         <p :class="[
-          'text-[1.2rem] font-bold text-gray-800 group-hover:text-white',
-          { 'mt-2': !userToken, 'md:text-[1.2rem] text-[1rem] font-medium': modelType === 'search' }
+          'md:text-[1.2rem] font-bold text-gray-800 group-hover:text-white',
+          { 'mt-2': !userToken, 'text-[1rem] font-medium': modelType === 'search' }
         ]">
           {{ topicTitle }}
         </p>
-        <p v-if="modelType === 'card'" class="text-small text-black/80 group-hover:text-white line-clamp-2">
+        <p v-if="modelType === 'card'" class="text-[1rem] text-black/80 group-hover:text-white line-clamp-2">
           {{ topicDescription }}
         </p>
       </div>
@@ -122,7 +122,7 @@ const userToken = useCookie('signInUserToken')
       <div v-if="modelType === 'card'"
         class="flex items-center justify-between pt-2 pb-2 lg:pb-0 whitespace-nowrap text-extraSmall text-oceanBlue group-hover:text-white">
         <div class="flex items-center gap-2">
-          <Icon name="material-symbols-light:menu-book-outline-rounded" class="text-medium" />
+          <IconsMenuBook class="" :size="20"/>
           <p class="capitalize">{{ subjectName }}</p>
         </div>
         <!-- <div class="flex items-center gap-2">
@@ -130,7 +130,7 @@ const userToken = useCookie('signInUserToken')
                 <p class="">{{ calculateTopicMetrics(topicLikes) + " Likes" }}</p>
               </div> -->
         <div class="flex items-center gap-2">
-          <Icon name="flowbite:users-outline" class="text-medium" />
+          <IconsUsersViews :size="20"/>
           <p class="">{{ calculateTopicMetrics(topicViews) + " Views" }}</p>
         </div>
       </div>
@@ -142,7 +142,7 @@ const userToken = useCookie('signInUserToken')
         class="absolute bottom-0 z-10 items-center justify-between hidden w-full h-10 px-4 text-white transition-all duration-500 ease-in-out opacity-0 lg:flex bg-gradient-to-b from-deepBlue to-gray-800 group-hover:opacity-100">
         <p class="capitalize text-small">Start learning</p>
         <div class="flex items-center justify-center w-6 h-6 bg-white rounded-full animate-bounce-horizontal">
-          <Icon name="weui:arrow-filled" size="20" class="text-deepBlue" />
+          <IconsArrowFilled :size="20" class="text-deepBlue" />
         </div>
       </div>
     </div>
@@ -152,7 +152,7 @@ const userToken = useCookie('signInUserToken')
       class="flex items-center justify-between w-full h-8 px-4 text-white lg:hidden bg-gradient-to-b from-deepBlue to-gray-800 ">
       <p class="capitalize text-small">Start learning</p>
       <div class="flex items-center justify-center w-6 h-6 bg-white rounded-full animate-bounce-horizontal">
-        <Icon name="weui:arrow-filled" size="20" class="text-deepBlue" />
+        <IconsArrowFilled :size="20" class="text-deepBlue" />
       </div>
     </div>
   </NuxtLink>

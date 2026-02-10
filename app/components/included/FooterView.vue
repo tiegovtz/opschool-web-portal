@@ -4,7 +4,7 @@ import { screenWidth } from '~/utilities/controlls';
 
 <template>
   <!-- Footer -->
-  <footer class="text-white bg-oceanBlue">
+  <footer class="text-white bg-oceanBlue transition-all duration-700 ease-in-out">
    <div class="p-4">
     <div class="flex flex-col items-center justify-between gap-2 xl:flex-row wrapper-container">
       <div class="flex flex-col items-start gap-1 text-center">

@@ -32,7 +32,12 @@ useHead({
     <NuxtLayout name="home-layout">
       <div class="container flex items-center justify-center w-full center-height">
         <!-- <EbookFlipBook class="w-full h-full"/> -->
-         <EbookBookViewer class="" pdfUrl="/pdf/TAHASUSI.pdf" />
+         <!-- <EbookBookViewer class="" pdfUrl="/pdf/TAHASUSI.pdf" /> -->
+         <iframe
+          class="w-full !center-height"
+          src="/pdf/TAHASUSI.pdf"
+          frameborder="0"
+        ></iframe>
       </div>
     </NuxtLayout>
   </template>

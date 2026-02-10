@@ -127,6 +127,13 @@ const processMathInText = (text: string): string => {
     console.log('[MessageAI] After Step 0 (bare shortcode conversion), text has [image:] patterns');
   }
 
+  // Step 0.5: Normalize markdown image syntax to a single [image:shortcode] so we don't get broken <img src="placeholder"> + duplicate image
+  // If the AI outputs ![caption](shortcode) or ![caption]([image:shortcode]), convert to just [image:shortcode] (one block, no markdown img)
+  text = text.replace(
+    /!\[[^\]]*\]\s*\(\s*\[image:([^\]]+)\]\s*\)/g,
+    (_, shortcode) => `[image:${shortcode.trim()}]`
+  );
+
   // Step 1: Extract image shortcodes first (before markdown processing)
   // Pattern: [image:shortcode_name]
   const imagePattern = /\[image:([^\]]+)\]/g;

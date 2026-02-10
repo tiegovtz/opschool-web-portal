@@ -16,13 +16,18 @@ function normalizePieces(
   payload: any,
   identifier: string,
   type?: string
-): { name: string; pieces: string[] } {
+): {
+  name: string
+  pieces: string[]
+  entries: Array<{ order: number; text: string; speaker: string }>
+  speakerNames: string[]
+} {
   const items = Array.isArray(payload)
     ? payload
     : payload?.data || payload?.results || payload?.items || []
 
   if (!Array.isArray(items)) {
-    return { name: '', pieces: [] }
+    return { name: '', pieces: [], entries: [], speakerNames: [] }
   }
 
   const sorted = items
@@ -52,7 +57,40 @@ function normalizePieces(
     .map((item) => String(item.text || '').trim())
     .filter((text) => text.length > 0)
 
-  return { name, pieces }
+  const entries = sorted
+    .map((item, index) => ({
+      order: Number(item?.order) || index + 1,
+      text: String(item?.text || '').trim(),
+      speaker: String(
+          item?.speaker ||
+          item?.speakerName ||
+          item?.actor ||
+          item?.name ||
+          item?.role ||
+          ''
+      ).trim(),
+    }))
+    .filter((entry) => entry.text.length > 0)
+
+  const rawSpeakerNames = [
+    ...(Array.isArray(payload?.names) ? payload.names : []),
+    ...(Array.isArray(payload?.speakers) ? payload.speakers : []),
+    ...(Array.isArray(payload?.participants)
+      ? payload.participants.map((participant: any) =>
+          typeof participant === 'string' ? participant : participant?.name
+        )
+      : []),
+  ]
+
+  const speakerNames = Array.from(
+    new Set(
+      rawSpeakerNames
+        .map((value: unknown) => String(value || '').trim())
+        .filter((value: string) => value.length > 0)
+    )
+  )
+
+  return { name, pieces, entries, speakerNames }
 }
 
 export default defineEventHandler(async (event) => {
@@ -82,11 +120,11 @@ export default defineEventHandler(async (event) => {
   const typePath = normalizedType === 'constant' ? 'constant' : 'engage'
   
   const urls = [
-    `${base}/conversation/${typePath}/${encodeURIComponent(chapterId)}`,
     `${base}/conversations/${typePath}/${encodeURIComponent(chapterId)}`,
+    `${base}/conversation/${typePath}/${encodeURIComponent(chapterId)}`,
     // Fallback to old URLs for backward compatibility
-    `${base}/conversation/engage/${encodeURIComponent(chapterId)}`,
     `${base}/conversations/engage/${encodeURIComponent(chapterId)}`,
+    `${base}/conversation/engage/${encodeURIComponent(chapterId)}`,
   ]
 
   const authToken =
@@ -124,12 +162,14 @@ export default defineEventHandler(async (event) => {
     payload = null
   }
 
-  const { name, pieces } = normalizePieces(payload, identifier, type)
+  const { name, pieces, entries, speakerNames } = normalizePieces(payload, identifier, type)
 
   return {
     chapterId,
     name,
     pieces,
+    entries,
+    speakerNames,
     identifier,
   }
 })

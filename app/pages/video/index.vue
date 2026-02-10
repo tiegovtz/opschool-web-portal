@@ -44,14 +44,20 @@ const status = ref('pending'); // Initial Status State
 const videos = ref();         // Initial videos State
 const slicedData = ref();    // Initial slice data to 9
 const route = useRoute();
-const videoType = route.query?.type;
-const activeTab = ref<tabs>(videoType === 'oth' ? 'class-videos' : 'video');
+const videoType = computed<string>(() => {
+  let type = route.query?.type as string;
+  if (type === 'oth') return 'Others';
+  if (type === 'conc') return 'Conceptual';
+
+  return '';
+});
+const activeTab = ref<tabs>(videoType.value === 'Others' ? 'class-videos' : 'video');
 
 // Define Cookie
 const userToken = useCookie("signInUserToken");
 
 // First, fix the sliceData function
-const sliceData = (start:number, end:number) => {
+const sliceData = (start: number, end: number) => {
 
   if (!videos.value || !Array.isArray(videos.value) || videos.value.length === 0) {
     slicedData.value = [];
@@ -90,26 +96,27 @@ const switchTab = async (tab: string) => {
 };
 
 // Fetch Videos From Server
-const fetchVideos = async (param:any) => {
-
-  if(!param){
-    param = {
-      videoType:videoType?videoType: 'Conceptual'
-    }
+const fetchVideos = async (param?: any) => {
+  param = {
+    ...param,
+    videoType: videoType.value
   }
-  
+
   try {
     status.value = 'pending';
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`videos-${param?.toString()}`,()=>$fetch(apiDocs.videos.getPublicVideo, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${videoType.value}`, () => $fetch(apiDocs.videos.getPublicVideo, {
       method: 'GET',
       params: {
-       ...param
+        ...param
       },
     }));
 
+
     // Call State Define above
     videos.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
-    videos.value = filterKeyDataFromArrayOfJson( videos.value,"subject.name",['physics','chemistry','mathematics','biology','geography'])
+    // remove type
+    // videos.value = videoType === 'conc' ? removeDataFromArrayOfJson( videos.value, 'videoType','Others' ):removeDataFromArrayOfJson( videos.value, 'videoType', 'Conceptual');
+    videos.value = filterKeyDataFromArrayOfJson(videos.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
     status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
@@ -187,10 +194,10 @@ const prevPage = () => {
 
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator()
-watch (()=>route.query?.type,()=>{
-  
+watch(() => route.query?.type, () => {
+
   fetchVideos({
-    videoType: route.query?.type == 'conc'? 'Conceptual' : 'others'
+    videoType: route.query?.type == 'conc' ? 'Conceptual' : 'others'
   })
 })
 
@@ -199,18 +206,15 @@ const filterValue = ref<Record<string, any> | any[]>({});
 watch(
   () => filterValue.value,
   (newFilterValue) => {
-    const basePayload = {
-      videoType: route.query?.type == 'conc' ? 'Conceptual' : 'others',
-    };
+   
     if (Array.isArray(newFilterValue)) {
-      fetchVideos(basePayload);
+      fetchVideos({});
       return;
     }
     const filteredParams = Object.fromEntries(
       Object.entries(newFilterValue || {}).filter(([_, v]) => v)
     );
     fetchVideos({
-      ...basePayload,
       ...filteredParams,
     });
   },
@@ -278,27 +282,19 @@ watch(filters, (filters) => {
           <Icon name="fa-solid:list" size="1.5rem" aria-hidden="true" />
         </button>
       </div>
-      <HomeTabContentShell
-        :active-tab="activeTab"
-        :results-count="videos?.length || 0"
-        :filter-value="filterValue"
-        :show-filters="!!userToken"
-        @update-filter="filterValue = $event"
-        @reset-filter="filterValue = {}"
-      >
+      <HomeTabContentShell :active-tab="activeTab" :results-count="videos?.length || 0" :filter-value="filterValue"
+        :show-filters="!!userToken" @update-filter="filterValue = $event" @reset-filter="filterValue = {}">
         <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
           <LoadingIndicator :is-loading="true" />
         </div>
-      <!-- Status Error -->
-            <div
-              v-else-if="status === 'error'"
-              class="md:min-h-[342px] flex flex-col justify-center items-center">
-              <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
-              <p class="text-center">
-                Oops! Something went wrong.<br />
-                Try refreshing the page or check your internet connection.
-              </p>
-            </div>
+        <!-- Status Error -->
+        <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center">
+          <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+          <p class="text-center">
+            Oops! Something went wrong.<br />
+            Try refreshing the page or check your internet connection.
+          </p>
+        </div>
         <!-- Status Success -->
         <div v-else-if="status == 'success'">
           <!-- client only -->
@@ -311,7 +307,8 @@ watch(filters, (filters) => {
                 <div v-if="totalPages <= 5" class="flex justify-center gap-2">
                   <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                     :is-active="page === currentPage" :disabled="page === currentPage"
-                    @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                    @send-page-number="currentPage = $event" />
                 </div>
                 <div v-else class="flex justify-center gap-2">
                   <!-- previous -->
@@ -321,7 +318,8 @@ watch(filters, (filters) => {
 
                   <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
                     :is-active="page === currentPage" :disabled="page === currentPage"
-                    @click="sliceData((page - 1) * pageSize, page * pageSize)" @send-page-number="currentPage = $event" />
+                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
+                    @send-page-number="currentPage = $event" />
 
                   <!-- next button -->
                   <div class="flex items-center justify-center" v-if="currentPage > 4">

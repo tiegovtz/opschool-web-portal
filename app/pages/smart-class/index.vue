@@ -62,7 +62,7 @@ const recordedCards = ref<SessionCard[]>([]);
 const isLoadingCards = ref(false);
 
 /**
- * ✅ Session-expired modal (shows on any 401 from requests on this page)
+ * Session-expired modal (shows on any 401 from requests on this page)
  */
 const sessionExpiredModalOpen = ref(false);
 const sessionExpiredMessage = ref("Your session has expired. Please sign in again.");
@@ -108,7 +108,7 @@ const somakwanzaError = ref(false);
 
 const defaultRecordingThumbnail = "https://media.istockphoto.com/id/2217581452/photo/podcast-broadcasting-studio-equipment.webp?a=1&b=1&s=612x612&w=0&k=20&c=BUm5U7iKNGKKXBjc3nqh-YKOVEwGOhE5mWV3x7_xaCY="
 const defaultThumbnail =
-  "https://media.istockphoto.com/id/1425207399/photo/book-sign-3d-render-concept-for-study-earn-knowledge-reading-and.webp?a=1&b=1&s=612x612&w=0&k=20&c=c94CC40l2cSPQARpJLbGK8J8u9EfEYUQzVe41xr0G6A=";
+  `https://media.istockphoto.com/id/1425207399/photo/book-sign-3d-render-concept-for-study-earn-knowledge-reading-and.webp?a=1&b=1&s=612x612&w=0&k=20&c=c94CC40l2cSPQARpJLbGK8J8u9EfEYUQzVe41xr0G6A=`;
 
 const getHeaders = () => {
   const headers: Record<string, string> = {
@@ -190,7 +190,7 @@ const getSubjectInitials = (label?: string | null) => {
   if (!label) return "SC";
   const words = label.trim().split(" ").filter(Boolean);
   if (words.length === 0) return "SC";
-  if (words.length === 1) return words[0].substring(0, 2).toUpperCase();
+  if (words.length === 1) return  words[0].substring(0, 2).toUpperCase();
   const [first, second] = words;
   const firstChar = first?.[0] ?? "";
   const secondChar = second?.[0] ?? "";
@@ -1138,8 +1138,54 @@ const handleMeetingReady = () => {
   meetingReady.value = true;
 };
 
+const canJoinSession = computed(() => {
+  if (!selectedSession.value) return false;
+  if (selectedSession.value.recordingUrl) return true;
+  if (meetingEmbedUrl.value) return true;
+  return false;
+});
+
+const isMeetingDisplayable = computed(() => !!playableUrl.value || !!meetingEmbedUrl.value);
+
+const startMeeting = async () => {
+  meetingCheckLoading.value = true;
+  meetingLoading.value = false;
+  meetingReady.value = false;
+  meetingPlayable.value = false;
+  meetingTimedOut.value = false;
+  if (meetingTimeoutId.value) {
+    clearTimeout(meetingTimeoutId.value);
+    meetingTimeoutId.value = null;
+  }
+
+  await Promise.resolve();
+  meetingCheckLoading.value = false;
+
+  meetingPlayable.value = isMeetingDisplayable.value;
+  joinRequested.value = true;
+
+  if (!meetingPlayable.value) return;
+
+  meetingLoading.value = true;
+  meetingTimeoutId.value = setTimeout(() => {
+    if (meetingReady.value) return;
+    meetingTimedOut.value = true;
+    meetingPlayable.value = false;
+    meetingLoading.value = false;
+  }, meetingTimeoutMs);
+};
+
+const handleMeetingReady = () => {
+  if (meetingTimeoutId.value) {
+    clearTimeout(meetingTimeoutId.value);
+    meetingTimeoutId.value = null;
+  }
+  meetingLoading.value = false;
+  meetingReady.value = true;
+};
+
 /**
- * ✅ Meeting embed
+ * Meeting embed
  * NOTE: some providers block embedding (Google Meet/Zoom/Teams).
  */
 const isLiveMeeting = computed(() => {
@@ -1717,7 +1763,7 @@ const prepareNavigation = () => {
           </div>
         </div>
 
-        <!-- ✅ Session Expired Modal -->
+        <!-- Session Expired Modal -->
         <div v-if="sessionExpiredModalOpen"
           class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-4 py-10" role="dialog"
           aria-modal="true" aria-label="Session expired" @click.self="sessionExpiredModalOpen = false">

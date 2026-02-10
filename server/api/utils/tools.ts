@@ -1,9 +1,56 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { tool } from "ai";
 import { z } from "zod";
 import { fetchCombinedRAGContext } from "../../utils/rag";
 import apiDocs from "~/utilities/apiDocs";
+import type { Syllabus } from "~/types/syllabus.interface";
 
 let currentAuthToken: string | undefined = undefined;
+
+const figureShortcodesStorage = new AsyncLocalStorage<{ usedShortcodes: Set<string> }>();
+
+export function runWithUsedFigureShortcodes<T>(usedShortcodes: Set<string>, fn: () => T): T {
+  return figureShortcodesStorage.run({ usedShortcodes }, fn);
+}
+
+function getUsedFigureShortcodes(): Set<string> {
+  const store = figureShortcodesStorage.getStore();
+  return store?.usedShortcodes ?? new Set();
+}
+
+const SYLLABUS_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const syllabusCache = new Map<
+  string,
+  { timestamp: number; value: any }
+>();
+
+const SYLLABUS_SUBJECTS: Array<{ _id: string; name: string }> = [
+  { _id: "665865487b076d51f6fc037a", name: "Physics" },
+  { _id: "665865867b076d51f6fc037f", name: "Chemistry" },
+  { _id: "6658658d7b076d51f6fc0381", name: "Biology" },
+  { _id: "665865967b076d51f6fc0383", name: "Geography" },
+  { _id: "67f50a3fb88b1b7c13b40b40", name: "Mathematics" },
+  { _id: "695f54ae50ae29af5c1968d8", name: "Horticulture Attendant" },
+  { _id: "696e182925b5df0cc3330d19", name: "English" },
+];
+
+const SYLLABUS_LEVELS: Array<{
+  _id: string;
+  name: string;
+  educationLevel: { _id: string; name: string };
+}> = [
+  { _id: "66571e097b076d51f6fb9fc5", name: "Form 1", educationLevel: { _id: "681afda6b6583d2ea309f83e", name: "Lower Secondary" } },
+  { _id: "6658663a7b076d51f6fc038b", name: "Form 2", educationLevel: { _id: "681afda6b6583d2ea309f83e", name: "Lower Secondary" } },
+  { _id: "665867b57b076d51f6fc039e", name: "Form 3", educationLevel: { _id: "681afda6b6583d2ea309f83e", name: "Lower Secondary" } },
+  { _id: "665867be7b076d51f6fc03a0", name: "Form 4", educationLevel: { _id: "681afda6b6583d2ea309f83e", name: "Lower Secondary" } },
+  { _id: "692fef2fe621c5077be4018a", name: "Form 5", educationLevel: { _id: "681afdb4b6583d2ea309f849", name: "Upper Secondary" } },
+  { _id: "692fef90e621c5077be401b1", name: "Form 6", educationLevel: { _id: "681afdb4b6583d2ea309f849", name: "Upper Secondary" } },
+  { _id: "692ff01be621c5077be401fc", name: "Diploma in Special Education", educationLevel: { _id: "681afdc3b6583d2ea309f850", name: "Teacher Education" } },
+  { _id: "692ff043e621c5077be40209", name: "Diploma in Primary Education", educationLevel: { _id: "681afdc3b6583d2ea309f850", name: "Teacher Education" } },
+  { _id: "692ff05de621c5077be40217", name: "Diploma in Pre-primary Education", educationLevel: { _id: "681afdc3b6583d2ea309f850", name: "Teacher Education" } },
+  { _id: "692ff082e621c5077be40224", name: "Diploma in Special Education", educationLevel: { _id: "681afdc3b6583d2ea309f850", name: "Teacher Education" } },
+  { _id: "692ff09ae621c5077be40231", name: "Diploma in Pysical Education", educationLevel: { _id: "681afdc3b6583d2ea309f850", name: "Teacher Education" } },
+];
 
 export function setAuthTokenForTools(token: string | undefined): void {
   currentAuthToken = token as string;
@@ -16,6 +63,172 @@ const resolveApiUrl = (docUrl: string, fallbackPath: string) => {
   }
   return `${baseUrl}${fallbackPath}`;
 };
+
+function resolveSubjectNameToId(subjectName: string): string | null {
+  const normalized = subjectName.trim().toLowerCase();
+  if (!normalized) return null;
+  const match = SYLLABUS_SUBJECTS.find(
+    (s) => s.name.trim().toLowerCase() === normalized
+  );
+  return match ? match._id : null;
+}
+
+function resolveLevelNameToIds(levelName: string): { levelId: string; educationLevelId: string } | null {
+  const normalized = levelName.trim().toLowerCase();
+  if (!normalized) return null;
+  const match = SYLLABUS_LEVELS.find(
+    (l) => l.name.trim().toLowerCase() === normalized
+  );
+  if (!match) return null;
+  return { levelId: match._id, educationLevelId: match.educationLevel._id };
+}
+
+async function fetchSyllabusFromApi(
+  subjectId: string,
+  levelId: string,
+  educationLevelId: string
+): Promise<any | null> {
+  const url = `${apiDocs.syllabus.getSyllabus}?subject=${encodeURIComponent(subjectId)}&level=${encodeURIComponent(levelId)}&educationLevel=${encodeURIComponent(educationLevelId)}`;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (currentAuthToken?.trim()) {
+    headers.Authorization = `Bearer ${currentAuthToken.trim()}`;
+  }
+  try {
+    const res = await fetch(url, { method: "GET", headers });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function formatSyllabusForAgent(syllabus: Syllabus): string {
+  let formatted = `SYLLABUS: ${syllabus.syllabus_title}\n`;
+  formatted += `LEVEL: ${syllabus.level}\n\n`;
+  formatted += `TOTAL COMPETENCES: ${syllabus.content.length}\n\n`;
+  formatted += "=".repeat(80) + "\n\n";
+  syllabus.content.forEach((competence, index) => {
+    formatted += `COMPETENCE ${index + 1}:\n`;
+    formatted += `Main Competence: ${competence.main_competence}\n`;
+    formatted += `Specific Competence: ${competence.specific_competence}\n`;
+    formatted += `Number of Periods: ${competence.number_of_periods}\n\n`;
+    formatted += "Learning Activities:\n";
+    competence.learning_activities.forEach((activity, actIndex) => {
+      formatted += `  ${actIndex + 1}. ${activity.activity}\n`;
+      formatted += `     Teaching Methods:\n`;
+      activity.teaching_learning_methods.forEach((method) => {
+        formatted += `       - ${method}\n`;
+      });
+      formatted += `     Assessment: ${activity.assessment_criteria}\n`;
+      formatted += `     Resources: ${activity.suggested_resources}\n\n`;
+    });
+    formatted += "-".repeat(80) + "\n\n";
+  });
+  return formatted;
+}
+
+function parseSyllabusResponse(rawData: any): {
+  syllabus: string;
+  competences: any[];
+  chapters: any[];
+  found: boolean;
+} {
+  if (!rawData || typeof rawData !== "object") {
+    return { syllabus: "", competences: [], chapters: [], found: false };
+  }
+  const competences: any[] = [];
+  const chapters: any[] = [];
+
+  if (rawData.syllabus_metadata && rawData.competences && rawData.chapters) {
+    const meta = rawData.syllabus_metadata;
+    const title = meta.title || "Syllabus";
+    const level = meta.level || "";
+    let syllabus = `SYLLABUS: ${title}\nLEVEL: ${level}\n`;
+    if (meta.total_periods) syllabus += `TOTAL PERIODS: ${meta.total_periods}\n`;
+    syllabus += "\n" + "=".repeat(80) + "\n\nCHAPTERS (Book Structure):\n";
+    const rawChapters = Array.isArray(rawData.chapters) ? rawData.chapters : [];
+    rawChapters.forEach((ch: any) => {
+      syllabus += `  Chapter ${ch.chapter_number ?? ""}: ${ch.title ?? ""}\n`;
+      if (Array.isArray(ch.sections)) {
+        ch.sections.slice(0, 3).forEach((sec: any) => {
+          syllabus += `    - ${sec.title ?? ""}\n`;
+        });
+        if (ch.sections.length > 3) {
+          syllabus += `    ... and ${ch.sections.length - 3} more sections\n`;
+        }
+      }
+      chapters.push({
+        chapter_number: ch.chapter_number,
+        title: ch.title ?? "",
+        sections: (ch.sections || []).map((s: any) => s.title),
+      });
+    });
+    syllabus += "\n" + "=".repeat(80) + "\n\nCOMPETENCES (Curriculum Requirements):\n\n";
+    (rawData.competences || []).forEach((c: any, index: number) => {
+      syllabus += `COMPETENCE ${index + 1}:\n  Main: ${c.main_competence ?? ""}\n  Specific: ${c.specific_competence ?? ""}\n  Periods: ${c.number_of_periods ?? ""}\n\n  Learning Activities:\n`;
+      (c.learning_activities || []).forEach((a: any, actIdx: number) => {
+        syllabus += `    ${actIdx + 1}. ${a.activity ?? ""}\n`;
+        syllabus += `       Related Chapters: ${(a.related_chapters || []).join(", ") || "N/A"}\n`;
+        (a.teaching_learning_methods || []).forEach((method: string) => {
+          syllabus += `         • ${method}\n`;
+        });
+        syllabus += `       Assessment: ${a.assessment_criteria ?? ""}\n       Resources: ${a.suggested_resources ?? ""}\n\n`;
+      });
+      syllabus += "-".repeat(80) + "\n\n";
+      competences.push({
+        main_competence: c.main_competence,
+        specific_competence: c.specific_competence,
+        periods: c.number_of_periods,
+        learning_activities: (c.learning_activities || []).map((a: any) => ({
+          activity: a.activity,
+          related_chapters: a.related_chapters,
+          teaching_methods: a.teaching_learning_methods,
+          assessment_criteria: a.assessment_criteria,
+          suggested_resources: a.suggested_resources,
+        })),
+      });
+    });
+    return { syllabus, competences, chapters, found: true };
+  }
+
+  if (rawData.syllabus_title && rawData.level && rawData.content) {
+    const syllabus = formatSyllabusForAgent(rawData as Syllabus);
+    const content = rawData.content || [];
+    content.forEach((c: any) => {
+      competences.push({
+        main_competence: c.main_competence,
+        specific_competence: c.specific_competence,
+        periods: c.number_of_periods,
+        activities_count: (c.learning_activities || []).length,
+      });
+    });
+    return { syllabus, competences, chapters, found: true };
+  }
+
+  if ((rawData.book_metadata || rawData.book_info) && rawData.chapters) {
+    const bookInfo = rawData.book_metadata || rawData.book_info;
+    const title = bookInfo.title || "Syllabus";
+    const level = bookInfo.level || "";
+    let syllabus = `SYLLABUS: ${title}\nLEVEL: ${level}\n\nNOTE: This syllabus uses chapter-based structure only.\n\n`;
+    const rawChapters = Array.isArray(rawData.chapters) ? rawData.chapters : [];
+    syllabus += `TOTAL CHAPTERS: ${rawChapters.length}\n\n`;
+    rawChapters.forEach((ch: any) => {
+      syllabus += `CHAPTER ${ch.chapter_number ?? ""}: ${ch.title ?? ""}\n`;
+      (ch.sections || []).forEach((sec: any, idx: number) => {
+        syllabus += `  ${idx + 1}. ${sec.title ?? ""}\n`;
+      });
+      syllabus += "\n";
+      chapters.push({
+        chapter_number: ch.chapter_number,
+        title: ch.title ?? "",
+        sections: (ch.sections || []).map((s: any) => s.title),
+      });
+    });
+    return { syllabus, competences, chapters, found: true };
+  }
+
+  return { syllabus: "", competences: [], chapters: [], found: false };
+}
 
 async function fetchSubjectsFromApi(): Promise<any[]> {
   const url = resolveApiUrl(apiDocs.subjects.getSubjects, "/subjects");
@@ -62,14 +275,125 @@ async function fetchSubjectsFromApi(): Promise<any[]> {
 }
 
 export const studentTools = {
+  getSyllabus: tool({
+    description:
+      "Fetch the syllabus (competences, chapters, learning activities) for a subject and level. Use when you need to know which chapters exist so you can map the user's question to the right chapter, then call getChapterFigures with that chapter name. Inputs are names only (e.g. biology, Form 2).",
+    inputSchema: z.object({
+      subject: z
+        .string()
+        .describe(
+          "Subject name (e.g. physics, biology, chemistry, mathematics, geography, Horticulture Attendant, English). Use exact name.",
+        ),
+      level: z
+        .string()
+        .describe(
+          "Level name (e.g. Form 1, Form 2, Form 3, Form 4, Form 5, Form 6). Use exact name.",
+        ),
+    }),
+    execute: async ({ subject, level }) => {
+      const subjectParam = subject?.trim() || "";
+      const levelParam = level?.trim() || "";
+
+      if (!subjectParam) {
+        return {
+          found: false,
+          error: "Subject is required. Use one of: Physics, Chemistry, Biology, Geography, Mathematics, Horticulture Attendant, English.",
+          syllabus: "",
+          competences: [],
+          chapters: [],
+        };
+      }
+      if (!levelParam) {
+        return {
+          found: false,
+          error: "Level is required. Use one of: Form 1, Form 2, Form 3, Form 4, Form 5, Form 6, or the Diploma levels.",
+          syllabus: "",
+          competences: [],
+          chapters: [],
+        };
+      }
+
+      const subjectId = resolveSubjectNameToId(subjectParam);
+      if (!subjectId) {
+        return {
+          found: false,
+          error: `Subject "${subjectParam}" not found. Use one of: Physics, Chemistry, Biology, Geography, Mathematics, Horticulture Attendant, English.`,
+          syllabus: "",
+          competences: [],
+          chapters: [],
+        };
+      }
+
+      const levelIds = resolveLevelNameToIds(levelParam);
+      if (!levelIds) {
+        return {
+          found: false,
+          error: `Level "${levelParam}" not found. Use one of: Form 1, Form 2, Form 3, Form 4, Form 5, Form 6.`,
+          syllabus: "",
+          competences: [],
+          chapters: [],
+        };
+      }
+
+      const cacheKey = `syllabus:${subjectId}:${levelIds.levelId}:${levelIds.educationLevelId}`;
+      const cached = syllabusCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < SYLLABUS_CACHE_TTL_MS) {
+        return cached.value;
+      }
+
+      const rawData = await fetchSyllabusFromApi(
+        subjectId,
+        levelIds.levelId,
+        levelIds.educationLevelId
+      );
+      if (!rawData) {
+        return {
+          found: false,
+          error: `No syllabus returned for ${subjectParam} ${levelParam}. The backend may not have syllabus data for this subject and level.`,
+          syllabus: "",
+          competences: [],
+          chapters: [],
+        };
+      }
+
+      const { syllabus: syllabusText, competences, chapters, found } = parseSyllabusResponse(rawData);
+      if (!found) {
+        return {
+          found: false,
+          error: "Syllabus response could not be parsed. Unexpected format from backend.",
+          syllabus: "",
+          competences: [],
+          chapters: [],
+        };
+      }
+
+      const result = {
+        found: true,
+        syllabus: syllabusText,
+        competences,
+        chapters,
+        instruction:
+          "Use chapters for content order and topics; use competences (main_competence, specific_competence, learning_activities) for what the student must achieve. Teach one concept at a time using both: chapter content for the topic and the associated competence for the learning goal. Call getChapterFigures with the exact chapter name (e.g. from chapters[].title)—no 'Chapter One' or 'Chapter X:' prefix.",
+      };
+
+      syllabusCache.set(cacheKey, { timestamp: Date.now(), value: result });
+      if (syllabusCache.size > 50) {
+        const firstKey = syllabusCache.keys().next().value;
+        if (firstKey) syllabusCache.delete(firstKey);
+      }
+
+      return result;
+    },
+  }),
+
   getChapterFigures: tool({
     description:
-      "MANDATORY: Get all available image figures for a specific chapter and optional topic. You MUST call this tool whenever you are teaching a specific chapter or topic. This is the ONLY method to get images. Provide the chapter name exactly as given in the request or context. Returns a list of figures with shortcodes that you MUST use with [image:shortcode] format in your response. If figures are returned, you MUST include at least one [image:shortcode] in your response.",
+      "Get image figures for a chapter/topic. Call whenever you are teaching—do NOT wait for the student to ask for visual aids. ALWAYS pass subject (e.g. physics, biology, chemistry) so figures match the conversation; never show biology images in a chemistry answer. Returns figures filtered by subject, topic, and chapter. When found: true, include at least one [image:shortcode] and never say 'no visual aids'.",
     inputSchema: z.object({
       chapter: z
         .string()
         .describe(
-          "Chapter name using WORD form for numbers (e.g., 'Chapter One', 'Chapter Two', 'Chapter Six') NOT digits.",
+          "Exact chapter name from getSyllabus (e.g. 'Concept of Physics', 'Magnetism', 'Refraction and dispersion of light'). Maps to figures topic. Do NOT use 'Chapter One' or 'Chapter X:' prefix.",
         ),
       topic: z
         .string()
@@ -78,9 +402,12 @@ export const studentTools = {
       subject: z
         .string()
         .optional()
-        .describe("Subject name to filter figures."),
+        .describe("Subject name to filter figures (e.g. physics, biology, chemistry). Always pass when the conversation is about a specific subject so images match—e.g. biology question → only biology images."),
     }),
     execute: async ({ chapter, topic, subject }) => {
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:entry',message:'getChapterFigures called',data:{chapter:chapter||'',topic:topic||'',subject:subject||''},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+      // #endregion
       try {
         let querySubject = subject?.toLowerCase().trim() || null;
         if (!querySubject) {
@@ -110,9 +437,6 @@ export const studentTools = {
 
         // Check if authentication token is available
         if (!currentAuthToken || !currentAuthToken.trim()) {
-          console.error(
-            "[getChapterFigures] No authentication token available",
-          );
           return {
             found: false,
             error:
@@ -126,56 +450,21 @@ export const studentTools = {
         try {
           const { getFigures } = await import("../../utils/figuresApi");
 
-          const filterOptions: {
-            category?: string;
-            chapter?: string;
-            topic?: string;
-          } = {};
-
+          const filterOptions: { category?: string } = {};
           if (querySubject) {
             filterOptions.category = querySubject;
           }
 
-          if (chapter) {
-            filterOptions.chapter = chapter;
-          }
-
-          if (topic && topic.trim() && topic.trim().toLowerCase() !== "all") {
-            filterOptions.topic = topic;
-          }
-
-          console.log("[getChapterFigures] Fetching figures with options:", {
-            filterOptions,
-            hasToken: !!currentAuthToken,
-            chapter,
-            topic,
-            subject: querySubject,
-          });
-
           let figures = await getFigures(filterOptions, currentAuthToken);
 
-          if (
-            figures.length === 0 &&
-            querySubject &&
-            (filterOptions.chapter || filterOptions.topic)
-          ) {
-            console.log(
-              "[getChapterFigures] No figures with filters, trying with category only",
-            );
-            figures = await getFigures(
-              { category: querySubject },
-              currentAuthToken,
-            );
-          }
-
           if (figures.length === 0 && querySubject) {
-            console.log(
-              "[getChapterFigures] No figures with category, trying all figures",
-            );
             figures = await getFigures({}, currentAuthToken);
           }
 
-          console.log("[getChapterFigures] Found figures:", figures.length);
+          // #region agent log
+          const firstCategory = figures[0]?.category || figures[0]?.subjectName || '';
+          fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:afterGetFigures',message:'Figures from API',data:{figuresCount:figures.length,querySubject,firstCategory},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+          // #endregion
 
           images = figures.map((fig: any) => ({
             figure_number: fig.figure_number || "",
@@ -191,16 +480,6 @@ export const studentTools = {
             category: fig.category || "",
           }));
         } catch (error: any) {
-          // Log the actual error for debugging
-          console.error("[getChapterFigures] Error fetching figures:", {
-            error: error.message,
-            stack: error.stack,
-            chapter,
-            topic,
-            subject: querySubject,
-            hasToken: !!currentAuthToken,
-          });
-
           // Check if it's an authentication error
           const errorMessage = error.message || String(error);
           if (
@@ -233,141 +512,55 @@ export const studentTools = {
           };
         }
 
-        const normalizeChapter = (ch: string) =>
-          ch.toLowerCase().trim().replace(/\s+/g, " ");
-        const normalizeTopic = (t: string) =>
-          t.toLowerCase().trim().replace(/\s+/g, " ");
+        // Syllabus chapter maps to figures topic (Option 1). Filter by topic only.
+        const normalize = (s: string) =>
+          (s || "").toLowerCase().trim().replace(/\s+/g, " ");
 
-        const queryChapter = normalizeChapter(chapter);
+        const syllabusChapter = normalize(chapter);
 
-        let filtered = images.filter((img: any) => {
-          const imgChapter = normalizeChapter(img.chapter || "");
-          const matchesChapter = imgChapter === queryChapter;
+        const matchesTopicAgainst = (img: any, against: string) => {
+          const normalizedAgainst = normalize(against || "");
+          if (!normalizedAgainst) return false;
+          const imgTopic = normalize(img.topic || "");
+          const imgChapter = normalize(img.chapter || "");
+          const check = (field: string) =>
+            field === normalizedAgainst ||
+            field.includes(normalizedAgainst) ||
+            normalizedAgainst.includes(field);
+          return check(imgTopic) || check(imgChapter);
+        };
 
-          if (querySubject && matchesChapter) {
-            const imgSubject = (img.subject || "").toLowerCase();
+        const applySubjectFilter = (imgs: any[]) => {
+          if (!querySubject) return imgs;
+          return imgs.filter((img: any) => {
+            const imgSubject = (img.subject || img.category || "").toLowerCase();
             const imgShortcode = (img.shortcode || "").toLowerCase();
-
-            const subjectMatch =
-              imgSubject === querySubject ||
-              imgShortcode.startsWith(querySubject);
-            return subjectMatch;
-          }
-
-          return matchesChapter;
-        });
-
-        if (filtered.length === 0) {
-          const chapterNumMatch = chapter.match(
-            /chapter\s+(one|two|three|four|five|six|seven|eight|nine|ten|\d+)/i,
-          );
-          if (chapterNumMatch && chapterNumMatch[1]) {
-            const numberStr = chapterNumMatch[1].toLowerCase();
-            const wordToDigit: Record<string, string> = {
-              one: "1",
-              two: "2",
-              three: "3",
-              four: "4",
-              five: "5",
-              six: "6",
-              seven: "7",
-              eight: "8",
-              nine: "9",
-              ten: "10",
-            };
-            const digitToWord: Record<string, string> = {
-              "1": "one",
-              "2": "two",
-              "3": "three",
-              "4": "four",
-              "5": "five",
-              "6": "six",
-              "7": "seven",
-              "8": "eight",
-              "9": "nine",
-              "10": "ten",
-            };
-            const wordToWord: Record<string, string> = {
-              one: "one",
-              two: "two",
-              three: "three",
-              four: "four",
-              five: "five",
-              six: "six",
-              seven: "seven",
-              eight: "eight",
-              nine: "nine",
-              ten: "ten",
-            };
-
-            const isDigit = /^\d+$/.test(numberStr);
-            const chapterWord = isDigit
-              ? digitToWord[numberStr]
-              : wordToWord[numberStr] || null;
-            const chapterDigit = isDigit
-              ? numberStr
-              : wordToDigit[numberStr] || numberStr;
-
-            filtered = images.filter((img: any) => {
-              const imgChapter = normalizeChapter(img.chapter || "");
-
-              const matchesChapterNumber =
-                imgChapter.startsWith(`chapter ${chapterWord}:`) ||
-                imgChapter.startsWith(`chapter ${chapterDigit}:`);
-
-              if (!matchesChapterNumber) return false;
-
-              if (querySubject) {
-                const imgSubject = (img.subject || "").toLowerCase();
-                const imgShortcode = (img.shortcode || "").toLowerCase();
-
-                const subjectMatch =
-                  imgSubject === querySubject ||
-                  imgShortcode.startsWith(querySubject);
-                return subjectMatch;
-              }
-
-              return true;
-            });
-          }
-        }
-
-        if (topic && topic.trim() && topic.trim().toLowerCase() !== "all") {
-          const queryTopic = normalizeTopic(topic);
-          const queryWords = queryTopic
-            .split(/\s+/)
-            .filter((w) => w.length > 2);
-          const isSingleWord = queryWords.length === 1;
-
-          let exactMatches = filtered.filter((img: any) => {
-            const imgTopic = normalizeTopic(img.topic || "");
-            return imgTopic === queryTopic;
+            return (
+              imgSubject === querySubject || imgShortcode.startsWith(querySubject)
+            );
           });
+        };
 
-          if (exactMatches.length > 0 && !isSingleWord) {
-            filtered = exactMatches;
-          } else {
-            filtered = filtered.filter((img: any) => {
-              const imgTopic = normalizeTopic(img.topic || "");
-              const imgCaption = normalizeTopic(img.caption || "");
-
-              if (imgTopic === queryTopic) return true;
-
-              if (isSingleWord) {
-                if (imgTopic?.includes(queryWords[0] as string)) return true;
-                if (imgCaption.includes(queryWords[0] as string)) return true;
-                return false;
-              }
-
-              if (imgTopic.includes(queryTopic)) return true;
-              if (imgCaption.includes(queryTopic)) return true;
-
-              return false;
-            });
-          }
+        // Step 1: Try topic param vs img.topic first (if topic provided)
+        let filtered: any[] = [];
+        if (topic && topic.trim() && topic.trim().toLowerCase() !== "all") {
+          filtered = images.filter((img: any) => matchesTopicAgainst(img, topic));
+          filtered = applySubjectFilter(filtered);
         }
 
-        const figures = filtered.map((img: any) => ({
+        // Step 2: If no match, try chapter vs img.topic
+        if (filtered.length === 0) {
+          filtered = images.filter((img: any) => matchesTopicAgainst(img, chapter));
+          filtered = applySubjectFilter(filtered);
+        }
+
+        // Step 3: Only return figures that have at least one URL so the frontend can resolve [image:shortcode]
+        filtered = filtered.filter(
+          (img: any) =>
+            (img.path && String(img.path).trim() !== "") ||
+            (Array.isArray(img.paths) && img.paths.length > 0)
+        );
+        let figures = filtered.map((img: any) => ({
           figure_number: img.figure_number || "",
           caption: img.caption || "",
           description: img.description || "",
@@ -377,7 +570,28 @@ export const studentTools = {
           topic: img.topic || "",
         }));
 
+        const usedShortcodes = getUsedFigureShortcodes();
+        if (usedShortcodes.size > 0) {
+          const before = figures.length;
+          figures = figures.filter((f: any) => !usedShortcodes.has(String(f.shortcode || "").trim()));
+          if (figures.length === 0) {
+            return {
+              found: false,
+              message:
+                "All figures for this chapter have already been shown in this conversation. Teach using text only—do NOT repeat an image. Do not mention images or visual aids.",
+              figures: [],
+            };
+          }
+        }
+
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:afterFilter',message:'After chapter/topic filter',data:{filteredCount:figures.length,imagesCount:images.length,firstShortcode:figures[0]?.shortcode||''},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H5'})}).catch(()=>{});
+        // #endregion
+
         if (figures.length === 0) {
+          // #region agent log
+          fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:returnNone',message:'Returning no figures',data:{found:false,imagesCount:images.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
+          // #endregion
           return {
             found: false,
             message: `No figures available. DO NOT mention images, diagrams, or visual representations in your response. Teach using text-based explanations only.`,
@@ -385,9 +599,15 @@ export const studentTools = {
           };
         }
 
-        const shortcodesToUse = figures.map(
-          (f: any) => `[image:${f.shortcode}]`,
-        );
+        // Small sample for illustration only (do not list hundreds)
+        const exampleShortcodes = figures.slice(0, 5).map((f: any) => `[image:${f.shortcode}]`);
+        const exampleText = exampleShortcodes.length > 0 ? ` e.g. ${exampleShortcodes.join(", ")}` : "";
+
+        // #region agent log
+        const firstShortcode = figures[0]?.shortcode || '';
+        const firstCategoryReturn = figures[0] ? (figures[0] as any).shortcode?.split("_")[0] || '' : '';
+        fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'tools.ts:getChapterFigures:return',message:'Returning figures to model',data:{found:true,total:figures.length,firstShortcode,firstCategoryReturn},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
+        // #endregion
 
         return {
           found: true,
@@ -395,9 +615,8 @@ export const studentTools = {
           chapter: chapter,
           topic: topic || null,
           figures: figures,
-          shortcodes_ready_to_use: shortcodesToUse,
-          usage: `CRITICAL: You MUST include at least one image in your response. Copy-paste one of these EXACTLY into your response: ${shortcodesToUse.join(" or ")}.`,
-          instruction: `MANDATORY: Include at least one of these shortcodes in your response text: ${shortcodesToUse.join(", ")}.`,
+          usage: `You have figures available. Use ONLY shortcodes from the "figures" array in this tool result—each figure has a "shortcode" field. Write [image:<that exact shortcode>]. Do NOT invent or reuse shortcodes from other turns; only use shortcodes from this response. Do NOT use markdown image syntax ![caption](...). Include at least one figure in your response.${exampleText}`,
+          instruction: `MANDATORY: Include at least one image. Use only shortcodes from the figures array in this result (shortcode field). Format: [image:<exact shortcode>]. Do not use any shortcode not in this response.`,
         };
       } catch (error: any) {
         return {

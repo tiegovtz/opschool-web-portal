@@ -10,6 +10,7 @@ import { useAuthStore } from "~/stores/auth";
 // // Use the State
 const navigationStore = useNavigationStore();
 const returnPath = navigationStore.getLatestRoute();
+const route = useRoute();
 const userRememberMe = useCookie("userRememberMe");
 const pass = userRememberMe?.value?.password?.length > 0 ? dataDecrypt(userRememberMe?.value?.password) : null
 useCookie("signInUserToken").value ? useCookie("signInUserToken").value = null : '';
@@ -154,15 +155,14 @@ const signIn = async () => {
       refreshToken.value = response.refresh_token;
       userToken.value = response.user;
       useAuthStore().setToken(accessToken.value);
-      setTimeout(() => {
-        const router = useRouter();
-        if (returnPath) {
-
-          router.replace(returnPath);
-        } else {
-          router.replace("/home");
-        }
-      }, 1500)
+      
+      // Navigate to the intended page after login
+      const router = useRouter();
+      const redirectPath =
+        typeof route.query.redirect === "string" && route.query.redirect.length > 0
+          ? route.query.redirect
+          : returnPath;
+      router.replace(redirectPath || "/home");
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = messages.error.auth.invalidCredentials;

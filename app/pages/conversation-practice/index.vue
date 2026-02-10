@@ -173,7 +173,7 @@
 
           <!-- Text Input Controls (Text Mode) -->
           <div v-if="!isConversationComplete && inputMode === 'text'" class="flex flex-col items-center space-y-4 w-full">
-            <div v-if="!isProcessing" class="w-full max-w-2xl space-y-3">
+            <div v-if="!isProcessing" class="w-full space-y-3">
               <textarea
                 v-model="textAnswer"
                 placeholder="Type your answer here..."
@@ -245,7 +245,7 @@
         v-for="toast in toasts"
         :key="toast.id"
         class="toast"
-        :class="[toast.type, { flicker: toast.flicker }]"
+        :class="[toast.type]"
       >
         {{ toast.message }}
       </div>
@@ -255,7 +255,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import LoadingIndicator from '@/components/loading/loadingIndicator.vue'
 
 // Page metadata
@@ -299,6 +299,15 @@ const handleKeydown = (event) => {
   if (event.key === 'Escape') {
     closeModal()
   }
+}
+
+const handlePopstate = () => {
+  if (isEmbedded.value) return
+  setTimeout(() => {
+    if (route.path === '/conversation-practice') {
+      closeModal()
+    }
+  }, 0)
 }
 
 // ============================================================================
@@ -365,6 +374,8 @@ const currentAudioUrl = ref(null)
 const audioUrlCache = ref({})
 const toasts = ref([])
 const isSpeechSupported = ref(true)
+const autoCloseSeconds = ref(0)
+let autoCloseInterval = null
 
 // Speech Recognition
 let recognition = null
@@ -397,10 +408,11 @@ onMounted(() => {
       originalBodyOverflow.value = document.body.style.overflow
       document.body.style.overflow = 'hidden'
     }
-    returnTo.value = String(route.query.returnTo || '').trim() || document.referrer || ''
+    returnTo.value = String(route.query.returnTo || '').trim()
   }
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', handleKeydown)
+    window.addEventListener('popstate', handlePopstate)
     if (!isEmbedded.value) {
       // Avoid immediately closing the modal on the opening click.
       setTimeout(() => {
@@ -444,7 +456,7 @@ onMounted(() => {
       }
 
       recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error)
+        throw event.error;
         isRecording.value = false
         isProcessing.value = false
         showStatus('error', `Speech recognition error: ${event.error}`)
@@ -459,9 +471,32 @@ onMounted(() => {
   }
 })
 
+watch(
+  () => conversationCompleteMessage.value,
+  (message) => {
+    if (!message) return
+    if (autoCloseInterval) return
+
+    autoCloseSeconds.value = 3
+    showToast(`Closing in ${autoCloseSeconds.value}...`, 'info', 900)
+
+    autoCloseInterval = setInterval(() => {
+      autoCloseSeconds.value -= 1
+      if (autoCloseSeconds.value > 0) {
+        showToast(`Closing in ${autoCloseSeconds.value}...`, 'info', 900)
+        return
+      }
+      clearInterval(autoCloseInterval)
+      autoCloseInterval = null
+      closeModal()
+    }, 1000)
+  }
+)
+
 onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', handleKeydown)
+    window.removeEventListener('popstate', handlePopstate)
   }
   if (typeof document !== 'undefined') {
     document.body.style.overflow = originalBodyOverflow.value
@@ -475,6 +510,10 @@ onUnmounted(() => {
   }
   if (currentAudioUrl.value) {
     URL.revokeObjectURL(currentAudioUrl.value)
+  }
+  if (autoCloseInterval) {
+    clearInterval(autoCloseInterval)
+    autoCloseInterval = null
   }
 })
 
@@ -497,10 +536,9 @@ const detectSpeakerGenderFromAllPieces = async () => {
       voiceType.value = voiceDetection.voiceType
       // Update state with detected gender
       conversationState.value.aiGender = voiceDetection.voiceType
-      console.log(`Speaker gender detected: ${voiceDetection.voiceType}`)
     }
   } catch (error) {
-    console.warn('Failed to pre-detect speaker gender:', error)
+    void error;
   }
 }
 
@@ -519,7 +557,7 @@ const loadConversationPieces = async () => {
     }
     return pieces
   } catch (error) {
-    console.error('Failed to load conversation:', error)
+    void error;
     showStatus('error', 'Failed to load conversation from backend')
     return []
   }
@@ -615,7 +653,7 @@ const playCurrentPiece = async () => {
       audioRef.value.playbackRate = playbackSpeed.value
       isPlaying.value = true
       audioRef.value.play().catch(err => {
-        console.error('Error playing audio:', err)
+        void err;
         isPlaying.value = false
         showStatus('error', 'Failed to play audio')
       })
@@ -643,7 +681,7 @@ const playCurrentPiece = async () => {
         conversationState.value.aiGender = voiceDetection.voiceType
       }
     } catch (detectionError) {
-      console.warn('Voice detection failed:', detectionError)
+      void detectionError;
     }
 
     // Generate TTS
@@ -680,7 +718,7 @@ const playCurrentPiece = async () => {
         audioRef.value.src = resolvedUrl
         audioRef.value.playbackRate = playbackSpeed.value
         audioRef.value.play().catch(err => {
-          console.error('Error playing audio:', err)
+          void err;
           isPlaying.value = false
           showStatus('error', 'Failed to play audio')
         })
@@ -690,7 +728,7 @@ const playCurrentPiece = async () => {
       showStatus('error', response.error || 'Failed to generate audio')
     }
   } catch (error) {
-    console.error('Error generating TTS:', error)
+    void error;
     isGeneratingTTS.value = false
     showStatus('error', 'Failed to generate audio')
   }
@@ -720,7 +758,7 @@ const onAudioEnded = () => {
 }
 
 const onAudioError = () => {
-  console.error('Audio element error:', audioRef.value?.error)
+  void audioRef.value?.error;
   isPlaying.value = false
   showStatus('error', `Error playing audio: ${audioRef.value?.error?.message || 'Unknown error'}`)
 }
@@ -746,7 +784,7 @@ const startRecording = () => {
     statusMessage.value = null
     recognition.start()
   } catch (error) {
-    console.error('Error starting recording:', error)
+    void error;
     isRecording.value = false
     showStatus('error', 'Failed to start recording')
   }
@@ -795,7 +833,6 @@ const validateAnswer = async (answer) => {
           ...conversationState.value,
           ...response.enrichedState,
         }
-        console.log('State updated:', conversationState.value)
       }
 
       if (response.isCorrect) {
@@ -861,7 +898,7 @@ const validateAnswer = async (answer) => {
       showStatus('error', response.error || 'Failed to validate answer')
     }
   } catch (error) {
-    console.error('Error validating answer:', error)
+    void error;
     showStatus('error', 'Failed to validate answer')
   } finally {
     isProcessing.value = false
@@ -910,75 +947,69 @@ const showStatus = (type, text) => {
   statusMessage.value = { type, text }
 }
 
-const showToast = (message, type = 'info') => {
+const showToast = (message, type = 'info', duration = 4000) => {
+  if (isEmbedded.value && typeof window !== 'undefined' && window.parent && window.parent !== window) {
+    window.parent.postMessage(
+      { type: 'CONVERSATION_OVERLAY_TOAST', message, tone: type },
+      window.location.origin
+    )
+    return
+  }
   const existingIndex = toasts.value.findIndex((t) => t.message === message && t.type === type)
-  const shouldFlicker = existingIndex !== -1
-  if (shouldFlicker) {
+  if (existingIndex !== -1) {
     toasts.value.splice(existingIndex, 1)
   }
-  const pushToast = () => {
-    const toast = { id: `${Date.now()}-${Math.random()}`, message, type, flicker: shouldFlicker }
-    toasts.value.push(toast)
-    setTimeout(() => {
-      toasts.value = toasts.value.filter((t) => t.id !== toast.id)
-    }, 4000)
-  }
-  if (shouldFlicker) {
-    nextTick(pushToast)
-  } else {
-    pushToast()
-  }
+  const toast = { id: `${Date.now()}-${Math.random()}`, message, type }
+  toasts.value.push(toast)
+  setTimeout(() => {
+    toasts.value = toasts.value.filter((t) => t.id !== toast.id)
+  }, duration)
 }
 </script>
 
 <style scoped>
 .toast-container {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  z-index: 60;
+  z-index: 1200;
+  width: min(92vw, 520px);
+  pointer-events: none;
 }
 
 .toast {
   padding: 12px 16px;
   border-radius: 10px;
-  background: #111827;
-  color: #fff;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
   font-size: 0.9rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-  max-width: 320px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  width: 100%;
+  text-align: center;
 }
 
 .toast.info {
-  background: #1f2937;
+  background: #ffffff;
 }
 
 .toast.error {
-  background: #b91c1c;
-}
-
-.toast.flicker {
-  animation: toast-flicker 0.26s ease;
+  background: #ffffff;
+  border-color: #fecaca;
+  color: #991b1b;
 }
 
 @media (max-width: 640px) {
   .toast-container {
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
+    top: 12px;
+    width: calc(100vw - 24px);
   }
   .toast {
-    max-width: none;
+    width: 100%;
   }
-}
-
-@keyframes toast-flicker {
-  0% { opacity: 0; transform: translateY(6px) scale(0.98); }
-  45% { opacity: 1; transform: translateY(0) scale(1); }
-  70% { opacity: 0.4; transform: translateY(1px) scale(0.995); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 </style>

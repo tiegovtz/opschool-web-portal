@@ -31,20 +31,70 @@ declare global {
       type?: string
     ) => void;
     closeConversationPractice?: () => void;
+    closeEnglishPractice?: () => void;
   }
 }
 
 if (typeof window !== 'undefined') {
   const overlayId = 'conversation-practice-overlay';
   const iframeId = 'conversation-practice-iframe';
+  const toastId = 'conversation-practice-overlay-toast';
+  let overlayRef: HTMLDivElement | null = null;
+  let iframeRef: HTMLIFrameElement | null = null;
+  let toastRef: HTMLDivElement | null = null;
+  let popstateBound = false;
+  let messageBound = false;
+  let popstateHandler: ((event: PopStateEvent) => void) | null = null;
+  let messageHandler: ((event: MessageEvent) => void) | null = null;
 
-  const closeOverlay = () => {
-    const overlay = document.getElementById(overlayId);
-    if (overlay) overlay.remove();
+  const renderOverlayToast = (message: string, tone: 'info' | 'error' = 'info') => {
+    if (!message) return;
+    let toast = toastRef || (document.getElementById(toastId) as HTMLDivElement | null);
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = toastId;
+      toast.style.cssText =
+        'position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:1201;width:min(92vw,520px);padding:12px 16px;border-radius:10px;background:#fff;color:#111827;border:1px solid #e5e7eb;box-shadow:0 8px 20px rgba(15,23,42,0.12);text-align:center;font-size:0.9rem;pointer-events:none;';
+      document.body.appendChild(toast);
+    }
+    toastRef = toast;
+    toast.textContent = message;
+    toast.style.borderColor = tone === 'error' ? '#fecaca' : '#e5e7eb';
+    toast.style.color = tone === 'error' ? '#991b1b' : '#111827';
+  };
+
+  const closeOverlay = ({ fromPopstate = false }: { fromPopstate?: boolean } = {}) => {
+    const overlay = overlayRef || (document.getElementById(overlayId) as HTMLDivElement | null);
+    if (!overlay) return;
+    if (!fromPopstate && window.history.state?.conversationOverlay) {
+      // Let popstate do the actual DOM close to avoid double-back.
+      window.history.back();
+      return;
+    }
+    overlay.remove();
+    overlayRef = null;
+    iframeRef = null;
+    const toast = toastRef || (document.getElementById(toastId) as HTMLDivElement | null);
+    if (toast) {
+      toast.remove();
+    }
+    toastRef = null;
     document.body.style.overflow = '';
+
+    if (popstateBound && popstateHandler) {
+      window.removeEventListener('popstate', popstateHandler);
+      popstateBound = false;
+      popstateHandler = null;
+    }
+    if (messageBound && messageHandler) {
+      window.removeEventListener('message', messageHandler);
+      messageBound = false;
+      messageHandler = null;
+    }
   };
 
   window.closeConversationPractice = closeOverlay;
+  window.closeEnglishPractice = closeOverlay;
 
   window.openConversationPractice = (
     chapterId: string,
@@ -63,11 +113,12 @@ if (typeof window !== 'undefined') {
     params.set('embed', '1');
     const url = `${baseRoute}?${params.toString()}`;
 
-    let overlay = document.getElementById(overlayId) as HTMLDivElement | null;
-    let iframe = document.getElementById(iframeId) as HTMLIFrameElement | null;
+    let overlay = overlayRef || (document.getElementById(overlayId) as HTMLDivElement | null);
+    let iframe = iframeRef || (document.getElementById(iframeId) as HTMLIFrameElement | null);
 
     if (!overlay) {
       overlay = document.createElement('div');
+      overlayRef = overlay;
       overlay.id = overlayId;
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
@@ -90,6 +141,7 @@ if (typeof window !== 'undefined') {
       closeButton.addEventListener('click', closeOverlay);
 
       iframe = document.createElement('iframe');
+      iframeRef = iframe;
       iframe.id = iframeId;
       iframe.src = url;
       iframe.title = 'Conversation practice';
@@ -101,6 +153,41 @@ if (typeof window !== 'undefined') {
       overlay.appendChild(container);
       document.body.appendChild(overlay);
       document.body.style.overflow = 'hidden';
+
+      if (!window.history.state?.conversationOverlay) {
+        window.history.pushState(
+          { ...(window.history.state || {}), conversationOverlay: true },
+          ''
+        );
+      }
+
+      if (!popstateBound) {
+        popstateHandler = () => {
+          if (document.getElementById(overlayId)) {
+            closeOverlay({ fromPopstate: true });
+          }
+        };
+        window.addEventListener('popstate', popstateHandler);
+        popstateBound = true;
+      }
+
+      if (!messageBound) {
+        messageHandler = (event: MessageEvent) => {
+          if (event.origin !== window.location.origin) return;
+          const data = event.data;
+          if (!data || typeof data !== 'object') return;
+          const typedData = data as { type?: string; message?: string; tone?: 'info' | 'error' };
+          if (typedData.type === 'CLOSE_CONVERSATION_OVERLAY') {
+            closeOverlay();
+            return;
+          }
+          if (typedData.type === 'CONVERSATION_OVERLAY_TOAST') {
+            renderOverlayToast(String(typedData.message || ''), typedData.tone || 'info');
+          }
+        };
+        window.addEventListener('message', messageHandler);
+        messageBound = true;
+      }
       return;
     }
 
