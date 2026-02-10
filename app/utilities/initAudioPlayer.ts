@@ -2,6 +2,7 @@ let currentPlayingAudio: HTMLAudioElement | null = null;
 let currentPlayingBtn: HTMLButtonElement | null = null;
 
 export function initAudioCanvasPlayers() {
+  if (typeof document === "undefined") return;
   document.querySelectorAll(".play-btn").forEach((btn) => {
    
     const src = btn.getAttribute("data-audio-src");
@@ -90,6 +91,7 @@ function drawGlow(
 }
 
 export function handleAudio() {
+  if (typeof document === "undefined") return;
   document.addEventListener("visibilitychange", () => {
     if (document.hidden && !currentPlayingAudio?.paused) {
       currentPlayingAudio?.pause();

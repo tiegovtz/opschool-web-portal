@@ -128,21 +128,6 @@
       </div>
     </div>
 
-    <!-- Spoken transcript display (what was actually said) -->
-    <div
-      v-if="currentTranscript"
-      class="w-full max-w-5xl mt-8"
-    >
-      <div class="bg-gray-100 rounded-xl p-6 border border-gray-200">
-        <div class="text-xs text-gray-500 mb-2 text-center uppercase tracking-wider">
-          What You Said
-        </div>
-        <div class="text-2xl md:text-3xl font-medium text-gray-700 text-center leading-relaxed">
-          {{ currentTranscript }}
-        </div>
-      </div>
-    </div>
-
     <!-- Empty state -->
     <div
       v-if="!currentScriptLine"
