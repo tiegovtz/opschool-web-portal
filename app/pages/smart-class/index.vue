@@ -181,8 +181,9 @@ const buildAssetUrl = (path?: string | null) => {
 
 const buildGradient = (subject?: string | null) => {
   const key = (subject ?? "default").toString().toLowerCase().replace(/\s+/g, "-");
-  const palette = subjectPalettes[key] ?? subjectPalettes.default;
-  const [primaryColor, secondaryColor] = palette ?? subjectPalettes.default;
+  const fallbackPalette: [string, string] = ["#38BDF8", "#6366F1"];
+  const palette: [string, string] = subjectPalettes[key] ?? subjectPalettes.default ?? fallbackPalette;
+  const [primaryColor, secondaryColor] = palette;
   return `linear-gradient(135deg, ${primaryColor}, ${secondaryColor})`;
 };
 
@@ -190,7 +191,10 @@ const getSubjectInitials = (label?: string | null) => {
   if (!label) return "SC";
   const words = label.trim().split(" ").filter(Boolean);
   if (words.length === 0) return "SC";
-  if (words.length === 1) return  words[0].substring(0, 2).toUpperCase();
+  if (words.length === 1) {
+    const firstWord = words[0] ?? "";
+    return firstWord.substring(0, 2).toUpperCase();
+  }
   const [first, second] = words;
   const firstChar = first?.[0] ?? "";
   const secondChar = second?.[0] ?? "";
@@ -622,8 +626,15 @@ const tabItems: TabItem[] = [
   },
 ];
 
-const activeTab = ref<TabKey>(tabItems[0].value);
-const activeItem = computed(() => tabItems.find((i) => i.value === activeTab.value) ?? tabItems[0]);
+const activeTab = ref<TabKey>(tabItems[0]?.value ?? "live-classes");
+const activeItem = computed(() => tabItems.find((i) => i.value === activeTab.value) ?? tabItems[0] ?? {
+  title: "Live Classes",
+  value: "live-classes" as TabKey,
+  icon: "mdi:video",
+  notifications: 0,
+  availability: "",
+  note: "",
+});
 
 /* Panels */
 type PanelConfig = {
@@ -1085,58 +1096,19 @@ const closeSessionModal = () => {
   }
 };
 
+const closeSessionExpiredModal = () => {
+  sessionExpiredModalOpen.value = false;
+  if (!viewAllDialog.value && !sessionModalOpen.value && process.client) {
+    document.documentElement.style.overflow = "";
+  }
+};
+
 const playableUrl = computed(() => {
   if (!selectedSession.value) return "";
   if (selectedSession.value.recordingUrl) return selectedSession.value.recordingUrl;
   if (selectedSession.value.streamUrl) return selectedSession.value.streamUrl;
   return "";
 });
-
-const canJoinSession = computed(() => {
-  if (!selectedSession.value) return false;
-  if (selectedSession.value.recordingUrl) return true;
-  if (meetingEmbedUrl.value) return true;
-  return false;
-});
-
-const isMeetingDisplayable = computed(() => !!playableUrl.value || !!meetingEmbedUrl.value);
-
-const startMeeting = async () => {
-  meetingCheckLoading.value = true;
-  meetingLoading.value = false;
-  meetingReady.value = false;
-  meetingPlayable.value = false;
-  meetingTimedOut.value = false;
-  if (meetingTimeoutId.value) {
-    clearTimeout(meetingTimeoutId.value);
-    meetingTimeoutId.value = null;
-  }
-
-  await Promise.resolve();
-  meetingCheckLoading.value = false;
-
-  meetingPlayable.value = isMeetingDisplayable.value;
-  joinRequested.value = true;
-
-  if (!meetingPlayable.value) return;
-
-  meetingLoading.value = true;
-  meetingTimeoutId.value = setTimeout(() => {
-    if (meetingReady.value) return;
-    meetingTimedOut.value = true;
-    meetingPlayable.value = false;
-    meetingLoading.value = false;
-  }, meetingTimeoutMs);
-};
-
-const handleMeetingReady = () => {
-  if (meetingTimeoutId.value) {
-    clearTimeout(meetingTimeoutId.value);
-    meetingTimeoutId.value = null;
-  }
-  meetingLoading.value = false;
-  meetingReady.value = true;
-};
 
 const canJoinSession = computed(() => {
   if (!selectedSession.value) return false;
@@ -1766,13 +1738,13 @@ const prepareNavigation = () => {
         <!-- Session Expired Modal -->
         <div v-if="sessionExpiredModalOpen"
           class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-4 py-10" role="dialog"
-          aria-modal="true" aria-label="Session expired" @click.self="sessionExpiredModalOpen = false">
+          aria-modal="true" aria-label="Session expired" @click.self="closeSessionExpiredModal">
           <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
             <header class="flex items-center justify-between border-b px-6 py-4">
               <h2 class="text-lg font-semibold text-primary">Session expired</h2>
               <button type="button"
                 class="rounded-full border border-red-500 px-3 py-1.5 text-base font-semibold text-red-500 hover:bg-red-500 hover:text-white hover:border-white transition duration-500 ease-in-out"
-                @click="sessionExpiredModalOpen = false; if (!viewAllDialog && !sessionModalOpen && process.client) document.documentElement.style.overflow = ''">
+                @click="closeSessionExpiredModal">
                 x
               </button>
             </header>
@@ -1785,7 +1757,7 @@ const prepareNavigation = () => {
               <div class="mt-5 flex items-center justify-end gap-3">
                 <button type="button"
                   class="rounded-full border border-gray-200 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                  @click="sessionExpiredModalOpen = false; if (!viewAllDialog && !sessionModalOpen && process.client) document.documentElement.style.overflow = ''">
+                  @click="closeSessionExpiredModal">
                   Cancel
                 </button>
 
