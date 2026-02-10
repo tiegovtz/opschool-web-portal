@@ -172,11 +172,10 @@ const normalizeList = (payload: any) => {
   return [];
 };
 
-const hostUrl = apiDocs.baseURL.replace(/\/v1\/?$/, "");
 const buildAssetUrl = (path?: string | null) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
-  return `${hostUrl}/${path.replace(/^\//, "")}`;
+  return `${apiDocs.baseURL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 };
 
 const buildGradient = (subject?: string | null) => {
@@ -319,7 +318,7 @@ const mapRecordedSessionToCard = (session: any): SessionCard => {
     badge: "Recorded",
     subjectGradient: buildGradient(subjectLabel ?? classLabel),
     subjectInitials: getSubjectInitials(subjectLabel ?? classLabel),
-    recordingUrl: buildAssetUrl(video?.videoFileUrl) || "",
+    recordingUrl: buildAssetUrl(video?.videoFileUrl || session?.recordingUrl || session?.videoFileUrl) || "",
   };
 };
 
@@ -1110,12 +1109,9 @@ const playableUrl = computed(() => {
   return "";
 });
 
-const canJoinSession = computed(() => {
-  if (!selectedSession.value) return false;
-  if (selectedSession.value.recordingUrl) return true;
-  if (meetingEmbedUrl.value) return true;
-  return false;
-});
+const isRecordedSelected = computed(
+  () => selectedSession.value?.badge === "Recorded" || !!selectedSession.value?.recordingUrl
+);
 
 const isMeetingDisplayable = computed(() => !!playableUrl.value || !!meetingEmbedUrl.value);
 
@@ -1133,7 +1129,7 @@ const startMeeting = async () => {
   await Promise.resolve();
   meetingCheckLoading.value = false;
 
-  meetingPlayable.value = isMeetingDisplayable.value;
+  meetingPlayable.value = isRecordedSelected.value ? !!playableUrl.value : isMeetingDisplayable.value;
   joinRequested.value = true;
 
   if (!meetingPlayable.value) return;
@@ -1154,6 +1150,17 @@ const handleMeetingReady = () => {
   }
   meetingLoading.value = false;
   meetingReady.value = true;
+};
+
+const handlePlayerError = () => {
+  if (meetingTimeoutId.value) {
+    clearTimeout(meetingTimeoutId.value);
+    meetingTimeoutId.value = null;
+  }
+  meetingTimedOut.value = true;
+  meetingPlayable.value = false;
+  meetingLoading.value = false;
+  meetingReady.value = false;
 };
 
 /**
@@ -1403,7 +1410,13 @@ const prepareNavigation = () => {
                   @keydown.space.prevent="openSessionModal(card)">
                   <!-- Image -->
                   <div class="relative h-44 overflow-hidden rounded-t-2xl bg-gray-100">
-                    <img v-if="card.thumbnail" :src="card.thumbnail" class="h-full w-full object-cover" />
+                    <img
+                      v-if="card.thumbnail"
+                      :src="card.thumbnail"
+                      class="block h-full w-full object-cover object-center"
+                      loading="lazy"
+                      decoding="async"
+                    />
 
                     <div v-else class="flex h-full w-full items-center justify-center subject-gradient"
                       :style="{ backgroundImage: card.subjectGradient }">
@@ -1474,7 +1487,7 @@ const prepareNavigation = () => {
         <!-- View All Modal -->
         <div v-if="viewAllDialog" class="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4 py-10"
           role="dialog" aria-modal="true" :aria-labelledby="'view-all-title'" @click.self="closeViewAll">
-          <div class="w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+          <div class="w-full max-w-7xl overflow-hidden rounded-2xl bg-white shadow-2xl">
             <header class="flex items-center justify-between border-b px-6 py-4">
               <h2 id="view-all-title" class="text-lg font-semibold text-primary">
                 {{ viewAllSection === "live-classes" ? "All Live Classes" : "All Recorded Sessions" }}
@@ -1505,8 +1518,13 @@ const prepareNavigation = () => {
                   role="listitem" tabindex="0" @keydown.enter.prevent="openSessionModal(card)"
                   @keydown.space.prevent="openSessionModal(card)">
                   <div class="relative h-32 w-32 flex-shrink-0 overflow-hidden rounded-l-lg bg-slate-200">
-                    <div v-if="card.thumbnail" class="h-full w-full bg-cover bg-center"
-                      :style="{ backgroundImage: `url(${card.thumbnail})` }"></div>
+                    <img
+                      v-if="card.thumbnail"
+                      :src="card.thumbnail"
+                      class="block h-full w-full object-cover object-center"
+                      loading="lazy"
+                      decoding="async"
+                    />
 
                     <div v-else class="flex h-full w-full items-center justify-center"
                       :style="{ backgroundImage: card.subjectGradient }">
@@ -1570,14 +1588,29 @@ const prepareNavigation = () => {
             </header>
 
             <div class="p-6">
-              <form class="grid grid-cols-1 gap-4 md:grid-cols-2" @submit.prevent="submitCreateSession"
+              <div v-if="createOptionsLoading" class="grid grid-cols-1 gap-4 md:grid-cols-2" aria-hidden="true">
+                <div class="md:col-span-2 h-11 rounded-lg bg-gray-100 animate-pulse"></div>
+                <div class="h-11 rounded-lg bg-gray-100 animate-pulse"></div>
+                <div class="h-11 rounded-lg bg-gray-100 animate-pulse"></div>
+                <div class="h-11 rounded-lg bg-gray-100 animate-pulse"></div>
+                <div class="h-11 rounded-lg bg-gray-100 animate-pulse"></div>
+                <div class="h-11 rounded-lg bg-gray-100 animate-pulse"></div>
+                <div class="h-11 rounded-lg bg-gray-100 animate-pulse"></div>
+                <div class="md:col-span-2 h-24 rounded-lg bg-gray-100 animate-pulse"></div>
+                <div class="md:col-span-2 flex justify-end gap-3">
+                  <div class="h-10 w-28 rounded-full bg-gray-100 animate-pulse"></div>
+                  <div class="h-10 w-32 rounded-full bg-gray-100 animate-pulse"></div>
+                </div>
+              </div>
+
+              <form v-else class="grid grid-cols-1 gap-4 md:grid-cols-2" @submit.prevent="submitCreateSession"
                 aria-live="polite">
                 <div class="md:col-span-2">
                   <label class="mb-1 block text-sm font-medium text-gray-700" for="create-school-class">
                     School class
                   </label>
                   <CustomDropDownList id="create-school-class" v-model="createForm.schoolClass"
-                    class="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    buttonClass="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     :list="classOptions" placeholder="Select class" :disabled="createOptionsLoading" />
                 </div>
 
@@ -1586,7 +1619,7 @@ const prepareNavigation = () => {
                     Subject
                   </label>
                   <CustomDropDownList id="create-subject" v-model="createForm.subject"
-                    class="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    buttonClass="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     :list="subjectOptions" placeholder="Select subject" :disabled="createOptionsLoading" />
                 </div>
 
@@ -1595,7 +1628,7 @@ const prepareNavigation = () => {
                     Topic
                   </label>
                   <CustomDropDownList id="create-topic" v-model="createForm.topic"
-                    class="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    buttonClass="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     :list="filteredTopicOptions" placeholder="Select topic" :disabled="createOptionsLoading" />
                 </div>
 
@@ -1679,7 +1712,9 @@ const prepareNavigation = () => {
                   <img
                     :src="selectedSession?.badge === 'Recorded' ? defaultRecordingThumbnail : defaultThumbnail"
                     alt=""
-                    class="h-full w-full rounded-md"
+                    class="block h-full w-full rounded-md object-cover object-center"
+                    loading="lazy"
+                    decoding="async"
                   >
                 </div>
                 <div>
@@ -1700,7 +1735,7 @@ const prepareNavigation = () => {
                 <button type="button"
                   class="w-full rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   :disabled="!selectedSession || meetingCheckLoading" @click="startMeeting">
-                  {{ meetingCheckLoading ? "Checking..." : "Join Session" }}
+                  {{ meetingCheckLoading ? "Checking..." : (isRecordedSelected ? "Play" : "Join Session") }}
                 </button>
               </div>
 
@@ -1711,18 +1746,31 @@ const prepareNavigation = () => {
                     role="status" aria-live="polite">
                     <div class="flex items-center gap-3 text-sm text-gray-600">
                       <span class="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-primary"></span>
-                      Preparing live class...
+                      {{ isRecordedSelected ? "Preparing video..." : "Preparing live class..." }}
                     </div>
                   </div>
 
-                  <iframe v-if="playableUrl" :src="playableUrl"
+                  <video
+                    v-if="isRecordedSelected"
+                    :src="playableUrl"
                     :class="meetingReady ? 'h-[420px] w-full rounded-xl bg-black' : 'h-0 w-0 opacity-0 pointer-events-none'"
-                    controls autoplay playsinline @load="handleMeetingReady" />
+                    controls
+                    autoplay
+                    playsinline
+                    preload="metadata"
+                    @loadeddata="handleMeetingReady"
+                    @canplay="handleMeetingReady"
+                    @error="handlePlayerError"
+                  />
+
+                  <iframe v-else-if="playableUrl" :src="playableUrl"
+                    :class="meetingReady ? 'h-[420px] w-full rounded-xl bg-black' : 'h-0 w-0 opacity-0 pointer-events-none'"
+                    controls autoplay playsinline loading="lazy" @load="handleMeetingReady" />
 
                   <iframe v-else :src="meetingEmbedUrl"
                     :class="meetingReady ? 'h-[420px] w-full rounded-xl bg-black' : 'h-0 w-0 opacity-0 pointer-events-none'"
                     allow="microphone; camera; autoplay; encrypted-media; picture-in-picture" allowfullscreen
-                    loading="lazy" @load="handleMeetingReady" />
+                    loading="lazy" @load="handleMeetingReady" @error="handlePlayerError" />
                 </div>
 
                 <div v-else class="rounded-xl border-dashed border-primary bg-gray-50 p-6 min-h-[200px] flex items-center justify-center">
