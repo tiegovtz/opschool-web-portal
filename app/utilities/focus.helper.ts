@@ -14,6 +14,7 @@
  * moveFocus('main-container');
  */
 const moveFocus = (id: string) => {
+  if (typeof document === 'undefined') return;
   const target = document.getElementById(id);
   if (target) {
     target.focus();
