@@ -22,7 +22,7 @@ export const useSpeechRecognition = () => {
 
   let recognition: any = null;
   let silenceTimeout: NodeJS.Timeout | null = null;
-  const SILENCE_THRESHOLD = 4000; // 4 seconds - increased for more reliable detection
+  const SILENCE_THRESHOLD = 2000; // advance after 2s of silence once enough is spoken
   let hasSpoken = false; // Track if student has actually started speaking
 
   const onResult = ref<((result: SpeechRecognitionResult) => void) | null>(null);
@@ -201,4 +201,3 @@ export const useSpeechRecognition = () => {
     onError,
   };
 };
-
