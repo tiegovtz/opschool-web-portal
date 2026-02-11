@@ -1,16 +1,6 @@
 <template>
   <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
     <div class="flex flex-col items-center gap-3">
-      <!-- Turn indicator -->
-      <div
-        v-if="currentTurn"
-        class="px-4 py-2 bg-white rounded-full shadow-lg border-2 border-oceanBlue"
-      >
-        <span class="text-sm font-medium text-gray-800">
-          {{ turnMessage }}
-        </span>
-      </div>
-
       <!-- Mic button -->
       <button
         @click="handleClick"
@@ -31,6 +21,16 @@
           class="w-8 h-8 text-white"
         />
       </button>
+
+      <!-- Turn indicator -->
+      <div
+        v-if="currentTurn"
+        class="px-4 py-2 bg-white rounded-full shadow-lg border-2 border-oceanBlue"
+      >
+        <span class="text-sm font-medium text-gray-800">
+          {{ turnMessage }}
+        </span>
+      </div>
 
       <!-- Status text -->
       <div class="text-xs text-gray-600 text-center">

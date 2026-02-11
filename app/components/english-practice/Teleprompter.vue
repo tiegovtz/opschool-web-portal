@@ -102,6 +102,7 @@
             <span
               v-for="(word, index) in scriptWords"
               :key="index"
+              :ref="(el) => setWordRef(index, el)"
               :class="[
                 'transition-all duration-200 px-1 rounded',
                 // During read-aloud playback
@@ -178,11 +179,15 @@ const readAloud = useReadAloud();
 
 // Text container ref for scrolling
 const textContainer = ref<HTMLElement | null>(null);
-
+const wordRefs = ref<Array<HTMLElement | null>>([]);
 const scriptWords = computed(() => {
   if (!props.currentScriptLine?.text) return [];
   return props.currentScriptLine.text.trim().split(/\s+/);
 });
+
+const setWordRef = (index: number, el: Element | null) => {
+  wordRefs.value[index] = el as HTMLElement | null;
+};
 
 // Get word state based on sequential position
 const getWordState = (wordIndex: number, word: string): 'highlighted' | 'spoken' | 'next' | 'upcoming' | 'default' => {
@@ -364,7 +369,7 @@ watch(() => props.currentScriptLine?.id, () => {
   }
   // Reset hasPlayed for new line
   readAloud.hasPlayed.value = false;
-  // Scroll to top when line changes (but not when recording starts)
+  wordRefs.value = [];
   nextTick(() => {
     if (textContainer.value && !props.isRecording) {
       textContainer.value.scrollTop = 0;
@@ -372,9 +377,14 @@ watch(() => props.currentScriptLine?.id, () => {
   });
 });
 
-// Don't scroll to top when recording starts - maintain current scroll position
-watch(() => props.isRecording, (isRecording) => {
-  // When recording starts, don't change scroll position
-  // This prevents the "jump to top" issue
-});
+watch(
+  () => [props.currentWordIndex, props.isRecording],
+  ([index, isRecording]) => {
+    if (!isRecording) return;
+    if (!textContainer.value || index == null || index < 0) return;
+    const el = wordRefs.value[index];
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+  }
+);
 </script>

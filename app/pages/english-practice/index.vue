@@ -12,6 +12,7 @@
       aria-labelledby="english-practice-title"
       @click.stop
     >
+      <div ref="topAnchor" class="sr-only" aria-hidden="true"></div>
       <button
         v-if="!isEmbedded"
         type="button"
@@ -21,7 +22,7 @@
       >
         <span class="text-xl leading-none">&times;</span>
       </button>
-      <div class="flex flex-col h-[calc(100vh-200px)] max-h-[800px] overflow-y-auto min-h-0">
+      <div class="flex flex-col h-[calc(100vh-200px)] max-h-[800px] min-h-0">
       <!-- Header -->
       <header class="flex flex-col px-6 py-4 bg-gradient-to-r from-oceanBlue to-deepBlue text-white flex-shrink-0">
         <div class="flex items-center justify-between">
@@ -91,16 +92,14 @@
         />
 
         <!-- Mic control -->
-        <div class="absolute inset-x-0 bottom-6 flex justify-center">
-          <EnglishPracticeMicControl
-            :is-recording="speechRecognition.isListening.value"
-            :current-turn="turnManager.currentTurn.value"
-            :current-speaker-name="currentSpeakerName"
-            :can-record="canRecord"
-            :is-speech-supported="isSpeechSupported"
-            @toggle="handleMicToggle"
-          />
-        </div>
+        <EnglishPracticeMicControl
+          :is-recording="speechRecognition.isListening.value"
+          :current-turn="turnManager.currentTurn.value"
+          :current-speaker-name="currentSpeakerName"
+          :can-record="canRecord"
+          :is-speech-supported="isSpeechSupported"
+          @toggle="handleMicToggle"
+        />
 
         <!-- TEMP DEBUG: Manual skip for faster QA without speaking every turn -->
         <div v-if="showDebugSkipButton" class="absolute right-6 bottom-6 z-50">
@@ -124,12 +123,19 @@
         </div>
       </div>
       </div>
+      <div
+        v-if="isDebugMode && scrollDebug"
+        class="fixed bottom-4 right-4 z-50 rounded-md bg-orange-500/90 px-3 py-2 text-xs text-white shadow"
+      >
+        {{ scrollDebug.tag }} {{ scrollDebug.className }} |
+        {{ scrollDebug.scrollTop }} / {{ scrollDebug.scrollHeight }}
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import type { ConversationScript, ScriptLine, SpeakerType, PracticeMode, ConversationParticipant } from '~/types/script.interface';
 import { useSpeechRecognition } from '~/composables/useSpeechRecognition';
@@ -214,6 +220,16 @@ const currentScriptLine = computed<ScriptLine | undefined>(() => {
   return script.value.lines[currentLineIndex.value];
 });
 
+const scrollDebug = ref<{
+  tag: string;
+  className: string;
+  scrollTop: number;
+  scrollHeight: number;
+  clientHeight: number;
+} | null>(null);
+const lastScrollTarget = ref<HTMLElement | null>(null);
+const topAnchor = ref<HTMLElement | null>(null);
+
 const currentLineAudioUrl = computed(() => {
   const lineId = currentScriptLine.value?.id || '';
   if (!lineId) return '';
@@ -249,34 +265,145 @@ const normalizedScriptWords = computed(() => {
     .filter(w => w.length > 0);
 });
 
-// Function to check if enough words have been spoken
-const hasSpokenEnoughWords = (transcript: string): boolean => {
-  if (!currentScriptLine.value || normalizedScriptWords.value.length === 0) return false;
-  
-  const spoken = transcript
+const HONORIFICS = ['ms', 'miss', 'mrs', 'mr', 'mister', 'madam', 'maam'];
+
+const normalizeWords = (text: string) => {
+  const tokens = text
     .toLowerCase()
     .replace(/[.,!?;:]/g, '')
     .split(/\s+/)
-    .filter(w => w.length > 0);
+    .map((word) => word.trim())
+    .filter(Boolean);
+
+  const expanded: string[] = [];
+  tokens.forEach((token) => {
+    const honorific = HONORIFICS.find((prefix) => token.startsWith(prefix) && token.length > prefix.length + 1);
+    if (honorific) {
+      expanded.push(honorific);
+      expanded.push(token.slice(honorific.length));
+      return;
+    }
+    expanded.push(token);
+  });
+
+  return expanded.filter((word) => {
+    if (word.length === 1) {
+      return word === 'a' || word === 'i';
+    }
+    return true;
+  });
+};
+
+const toSoundex = (word: string) => {
+  const normalized = String(word || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (!normalized) return '';
+  const first = normalized[0].toUpperCase();
+  const map: Record<string, string> = {
+    b: '1',
+    f: '1',
+    p: '1',
+    v: '1',
+    c: '2',
+    g: '2',
+    j: '2',
+    k: '2',
+    q: '2',
+    s: '2',
+    x: '2',
+    z: '2',
+    d: '3',
+    t: '3',
+    l: '4',
+    m: '5',
+    n: '5',
+    r: '6',
+  };
+  let lastCode = '';
+  let result = first;
+  for (let i = 1; i < normalized.length; i += 1) {
+    const code = map[normalized[i]] || '0';
+    if (code !== '0' && code !== lastCode) {
+      result += code;
+    }
+    lastCode = code;
+  }
+  return (result + '000').slice(0, 4);
+};
+
+const normalizeToken = (word: string) => {
+  const normalized = String(word || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (!normalized) return '';
+  const honorifics: Record<string, string> = {
+    ms: 'ms',
+    miss: 'ms',
+    mrs: 'mrs',
+    missus: 'mrs',
+    mr: 'mr',
+    mister: 'mr',
+    madam: 'madam',
+    maam: 'madam',
+    sir: 'sir',
+  };
+  return honorifics[normalized] || normalized;
+};
+
+const OPTIONAL_SCRIPT_WORDS = new Set(['ms', 'mr', 'mrs']);
+const MATCH_THRESHOLD = 0.9;
+
+const isFuzzyMatch = (scriptWord: string, spokenWord: string) => {
+  const normalizedScript = normalizeToken(scriptWord);
+  const normalizedSpoken = normalizeToken(spokenWord);
+  if (
+    normalizedSpoken === normalizedScript ||
+    normalizedSpoken.includes(normalizedScript) ||
+    normalizedScript.includes(normalizedSpoken)
+  ) {
+    return true;
+  }
+  if (normalizedSpoken.length < 3 || normalizedScript.length < 3) {
+    return false;
+  }
+  return toSoundex(normalizedSpoken) === toSoundex(normalizedScript);
+};
+
+const getOrderedMatchCount = (spokenWords: string[]) => {
+  let scriptIndex = 0;
+  for (const spokenWord of spokenWords) {
+    if (scriptIndex >= normalizedScriptWords.value.length) break;
+    let scriptWord = normalizedScriptWords.value[scriptIndex];
+
+    while (
+      scriptWord &&
+      OPTIONAL_SCRIPT_WORDS.has(normalizeToken(scriptWord)) &&
+      !isFuzzyMatch(scriptWord, spokenWord)
+    ) {
+      const nextWord = normalizedScriptWords.value[scriptIndex + 1];
+      if (nextWord && isFuzzyMatch(nextWord, spokenWord)) {
+        scriptIndex += 1;
+        scriptWord = normalizedScriptWords.value[scriptIndex];
+        break;
+      }
+      break;
+    }
+
+    if (scriptWord && isFuzzyMatch(scriptWord, spokenWord)) {
+      scriptIndex += 1;
+    }
+  }
+  return scriptIndex;
+};
+
+// Function to check if enough words have been spoken
+const hasSpokenEnoughWords = (transcript: string): boolean => {
+  if (!currentScriptLine.value || normalizedScriptWords.value.length === 0) return false;
+
+  const spoken = normalizeWords(transcript);
   
   if (spoken.length === 0) return false;
   
-  // Check how many script words appear in spoken transcript
-  // Use fuzzy matching - word contains or is contained by script word
-  const matchedWords = normalizedScriptWords.value.filter(scriptWord => 
-    spoken.some(spokenWord => {
-      const normalizedScript = scriptWord.toLowerCase().trim();
-      const normalizedSpoken = spokenWord.toLowerCase().trim();
-      // Exact match or contains match
-      return normalizedSpoken === normalizedScript || 
-             normalizedSpoken.includes(normalizedScript) || 
-             normalizedScript.includes(normalizedSpoken);
-    })
-  );
-  
-  // Require at least 80% of words to be spoken
-  const matchPercentage = matchedWords.length / normalizedScriptWords.value.length;
-  return matchPercentage >= 0.8;
+  const matchedCount = getOrderedMatchCount(spoken);
+  const matchPercentage = matchedCount / normalizedScriptWords.value.length;
+  return matchPercentage >= MATCH_THRESHOLD;
 };
 
 // Speech recognition handlers
@@ -405,56 +532,23 @@ const advanceToNextLine = (
 speechRecognition.onResult.value = (result) => {
   if (result.isFinal && result.transcript) {
     const transcript = result.transcript.trim();
-    
-    // Check if enough words were spoken
-    if (hasSpokenEnoughWords(transcript)) {
-      const currentTurn = turnManager.currentTurn.value;
-      
-      // Clear transcript display
-      currentTranscript.value = '';
-      highlightedWord.value = '';
-      spokenWords.value.clear();
-      currentWordIndex.value = 0; // Reset word index for next line
-
-      // Stop recording
-      speechRecognition.stop();
-      advanceToNextLine('speech', 'speech_result_validated');
-    } else {
-      // Not enough words - keep recording and show feedback
-      // The transcript will continue to accumulate
-    }
+    // Don't advance immediately on final result; wait for silence timeout
   }
 };
 
-speechRecognition.onWord.value = (word) => {
-  if (!currentScriptLine.value) return;
-  
-  const normalizedSpoken = word.toLowerCase().replace(/[.,!?;:]/g, '');
-  
-  // Check if the spoken word matches the next expected word in sequence
-  if (currentWordIndex.value < normalizedScriptWords.value.length) {
-    const expectedWord = normalizedScriptWords.value[currentWordIndex.value];
-    
-    // Ensure expectedWord is defined before matching
-    if (expectedWord) {
-      const normalizedExpected = expectedWord.toLowerCase().trim();
-      
-      // Use fuzzy matching to handle variations
-      if (normalizedSpoken === normalizedExpected || 
-          normalizedSpoken.includes(normalizedExpected) || 
-          normalizedExpected.includes(normalizedSpoken)) {
-        // Match! Highlight this word and advance position
-        highlightedWord.value = normalizedSpoken;
-        currentWordIndex.value++;
-      }
-    }
-  }
-};
+speechRecognition.onWord.value = () => {};
 
 // Update current transcript in real-time
 watch(() => speechRecognition.transcript.value + speechRecognition.interimTranscript.value, (fullTranscript) => {
   if (speechRecognition.isListening.value) {
-    currentTranscript.value = fullTranscript.trim();
+    const transcript = fullTranscript.trim();
+    currentTranscript.value = transcript;
+    const spoken = normalizeWords(transcript);
+    const matchedCount = getOrderedMatchCount(spoken);
+    const cappedIndex = Math.min(matchedCount, normalizedScriptWords.value.length);
+    currentWordIndex.value = cappedIndex;
+    highlightedWord.value =
+      normalizedScriptWords.value[Math.min(cappedIndex, normalizedScriptWords.value.length - 1)] || '';
   }
 });
 
@@ -1319,6 +1413,50 @@ watch(
     loadConversationScript();
   },
   { immediate: true }
+);
+
+onMounted(() => {
+  if (typeof document === 'undefined') return;
+  const onScroll = (event: Event) => {
+    if (!isDebugMode.value) return;
+    const target = event.target as HTMLElement | null;
+    if (!target || typeof target.scrollTop !== 'number') return;
+    if (target.scrollHeight <= target.clientHeight) return;
+    if (lastScrollTarget.value && lastScrollTarget.value !== target) {
+      lastScrollTarget.value.style.outline = '';
+    }
+    target.style.outline = '2px solid #f97316';
+    lastScrollTarget.value = target;
+    scrollDebug.value = {
+      tag: target.tagName.toLowerCase(),
+      className: target.className || '',
+      scrollTop: Math.round(target.scrollTop),
+      scrollHeight: Math.round(target.scrollHeight),
+      clientHeight: Math.round(target.clientHeight),
+    };
+  };
+  document.addEventListener('scroll', onScroll, true);
+  onUnmounted(() => {
+    document.removeEventListener('scroll', onScroll, true);
+    if (lastScrollTarget.value) {
+      lastScrollTarget.value.style.outline = '';
+    }
+  });
+});
+
+watch(
+  () => currentScriptLine.value?.id,
+  () => {
+    nextTick(() => {
+      if (!topAnchor.value) return;
+      topAnchor.value.scrollIntoView({ block: 'start', behavior: 'auto' });
+      requestAnimationFrame(() => {
+        if (topAnchor.value) {
+          topAnchor.value.scrollIntoView({ block: 'start', behavior: 'auto' });
+        }
+      });
+    });
+  }
 );
 
 // Mode detection (can be enhanced with actual user detection)
