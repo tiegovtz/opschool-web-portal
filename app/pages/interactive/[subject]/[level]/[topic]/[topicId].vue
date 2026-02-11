@@ -442,7 +442,7 @@ const updateInteractiveVideoLinks = async () => {
 
   const container = notesContainer.value as HTMLElement;
   const links = Array.from(
-    container.querySelectorAll<HTMLAnchorElement>(
+    container?.querySelectorAll<HTMLAnchorElement>(
       'a[data-interactive-video-link="true"][data-video-id]'
     )
   );
