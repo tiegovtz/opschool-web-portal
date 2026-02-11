@@ -1774,7 +1774,7 @@ const prepareNavigation = () => {
                 </div>
 
                 <div v-else class="rounded-xl border-dashed border-primary bg-gray-50 p-6 min-h-[200px] flex items-center justify-center">
-                  <p class="text-sm text-gray-700 text-center text-gray-400">
+                  <p class="text-sm text-center text-gray-400">
                     Live class not available.
                   </p>
                 </div>
