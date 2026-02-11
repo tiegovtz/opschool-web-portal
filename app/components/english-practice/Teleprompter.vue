@@ -33,7 +33,7 @@
         </div>
       </div>
       
-      <div class="bg-white rounded-2xl shadow-2xl p-8 border-2 border-oceanBlue/20">
+      <div class="bg-white rounded-2xl shadow-2xl p-8 border-2 border-oceanBlue/20 flex flex-col flex-1 min-h-0">
         <!-- Header with read-aloud controls -->
         <div class="flex items-center justify-between mb-3">
           <div class="text-xs text-gray-500 uppercase tracking-wider">
@@ -86,7 +86,7 @@
         </div>
         
         <!-- Teleprompter text with word highlighting - scrollable container -->
-        <div class="text-center max-h-[60vh] overflow-y-auto overflow-x-hidden" ref="textContainer">
+        <div class="text-center overflow-y-auto overflow-x-hidden flex-1 min-h-0" ref="textContainer">
           <div
             :class="[
               'font-semibold leading-relaxed text-gray-900 select-none',
@@ -102,6 +102,7 @@
             <span
               v-for="(word, index) in scriptWords"
               :key="index"
+              :ref="(el) => setWordRef(index, el)"
               :class="[
                 'transition-all duration-200 px-1 rounded',
                 // During read-aloud playback
@@ -124,21 +125,6 @@
               {{ word }}{{ index < scriptWords.length - 1 ? ' ' : '' }}
             </span>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Spoken transcript display (what was actually said) -->
-    <div
-      v-if="currentTranscript"
-      class="w-full max-w-5xl mt-8"
-    >
-      <div class="bg-gray-100 rounded-xl p-6 border border-gray-200">
-        <div class="text-xs text-gray-500 mb-2 text-center uppercase tracking-wider">
-          What You Said
-        </div>
-        <div class="text-2xl md:text-3xl font-medium text-gray-700 text-center leading-relaxed">
-          {{ currentTranscript }}
         </div>
       </div>
     </div>
@@ -193,11 +179,15 @@ const readAloud = useReadAloud();
 
 // Text container ref for scrolling
 const textContainer = ref<HTMLElement | null>(null);
-
+const wordRefs = ref<Array<HTMLElement | null>>([]);
 const scriptWords = computed(() => {
   if (!props.currentScriptLine?.text) return [];
   return props.currentScriptLine.text.trim().split(/\s+/);
 });
+
+const setWordRef = (index: number, el: Element | null) => {
+  wordRefs.value[index] = el as HTMLElement | null;
+};
 
 // Get word state based on sequential position
 const getWordState = (wordIndex: number, word: string): 'highlighted' | 'spoken' | 'next' | 'upcoming' | 'default' => {
@@ -379,7 +369,7 @@ watch(() => props.currentScriptLine?.id, () => {
   }
   // Reset hasPlayed for new line
   readAloud.hasPlayed.value = false;
-  // Scroll to top when line changes (but not when recording starts)
+  wordRefs.value = [];
   nextTick(() => {
     if (textContainer.value && !props.isRecording) {
       textContainer.value.scrollTop = 0;
@@ -387,9 +377,14 @@ watch(() => props.currentScriptLine?.id, () => {
   });
 });
 
-// Don't scroll to top when recording starts - maintain current scroll position
-watch(() => props.isRecording, (isRecording) => {
-  // When recording starts, don't change scroll position
-  // This prevents the "jump to top" issue
-});
+watch(
+  () => [props.currentWordIndex, props.isRecording],
+  ([index, isRecording]) => {
+    if (!isRecording) return;
+    if (!textContainer.value || index == null || index < 0) return;
+    const el = wordRefs.value[index];
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+  }
+);
 </script>

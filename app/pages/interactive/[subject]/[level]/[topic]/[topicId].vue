@@ -10,9 +10,9 @@ import AIAssistant from "~/components/chapter/AIAssistant.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
 import apiDocs from "~/utilities/apiDocs";
 import { updateChapterProgress } from "~/utilities/progress";
-import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
+import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
 
 const route = useRoute();
@@ -37,6 +37,7 @@ const userToken = useCookie("signInUserToken");
 // search anouncement to screen reders
 const announcement = ref();
 const chapterProgress = useCookie<any>("chapterProgress");
+const userViewedTopic = useState("userViewedTopic");
 
 // Define meta info about page
 useHead({
@@ -302,19 +303,18 @@ const getChapter = async (chapterId: string) => {
   await ensureAccessTokenValid();
   announcement.value = `Loading activity of ${chapters.list?.find(c => c._id === chapterId)?.name} content please wait`;
   try {
-    const { data: response, status } = await fetchAsyncData(
-      `chapter-${chapterId}`,
-      () => $fetch(apiDocs.chapters.getChapterId.replaceAll(":id", chapterId),
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${signInAccessToken.value}`,
-          },
-        })
+    const response = await $fetch(
+      apiDocs.chapters.getChapterId.replaceAll(":id", chapterId),
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${signInAccessToken.value}`,
+        },
+      }
     );
 
     if (response) {
-      chapters.notesStatus = status.value;
+      chapters.notesStatus = "success";
       chapters.notes = response;
 
       // Store context in localStorage for AI Assistant
@@ -380,56 +380,43 @@ const getQNTopicChapter = async (chapterId: string) => {
 };
 
 // Fetch chapters
-await useFetch<any[]>(apiDocs.chapters.getByTopicId.replaceAll('{topicId}', topicId as string), {
-  headers: {
-    Authorization: `Bearer ${signInAccessToken.value}`,
+try {
+  const { data: response, status } = await fetchAsyncData(
+    `chapters-${topicId}`,
+    () => $fetch(apiDocs.chapters.getByTopicId.replaceAll('{topicId}', topicId as string), {
+      headers: {
+        Authorization: `Bearer ${signInAccessToken.value}`,
+      },
+    })
+  );
+
+  if (response) {
+    chapters.status = status.value;
+    chapters.list = (response.value as any[]) || [];
+    const firstChapterId = chapters.list[0]?._id;
+    chapters.currentChapterId = firstChapterId || null;
+
+    if (firstChapterId && chapters.list.length) {
+      const firstChapter = chapters.list[0];
+      storeChapterContext(firstChapterId, {
+        name: firstChapter.name,
+        chapterNo: firstChapter.chapterNo,
+      });
+      getChapter(firstChapterId);
+    }
   }
-})
-  .then((response) => {
-    //  Check if the response is successful
-    if (response) {
-      // extracting data ,status  from response
-      const { data, status } = response;
-      // on sucess save data to chapters
-      if (status.value === 'success') {
-        chapters.status = status.value;
-        chapters.list = data.value as any[];
-        const firstChapterId = data.value && data.value[0]?._id;
-        chapters.currentChapterId = firstChapterId;
+} catch (error) {
+  chapters.status = "error";
+  chapters.error = error;
+  signInAccessToken.value = null;
+  userToken.value = null;
+  router.replace("/auth");
+}
 
-        // Prefetch and store context for the first chapter immediately
-        // This ensures context is available even before getChapter completes
-        if (firstChapterId && data.value) {
-          const firstChapter = data.value[0];
-          storeChapterContext(firstChapterId, {
-            name: firstChapter.name,
-            chapterNo: firstChapter.chapterNo
-          });
-        }
-        // Then load the full chapter details
-        getChapter(firstChapterId);
-      }
-      else if (status.value === 'error') {
-        chapters.status = status.value;
-        signInAccessToken.value = null;
-        userToken.value = null;
-        navigateTo('/auth', { replace: true });
-      }
-    }
-
-    // Call Submit Topic Viewed Read
-    if (!useState("userViewedTopic").value) {
-      topicViewedRead(topicId as string);
-    }
-  })
-  .catch((error) => {
-    (chapters.status = "error"),
-      (chapters.error = error);
-    // clear all cookies
-    signInAccessToken.value = null;
-    userToken.value = null;
-    navigateTo('/auth', { replace: true });
-  });
+// Call Submit Topic Viewed Read
+if (!userViewedTopic.value) {
+  topicViewedRead(topicId as string);
+}
 
 watch(
   () => userToken.value,
@@ -455,7 +442,7 @@ const updateInteractiveVideoLinks = async () => {
 
   const container = notesContainer.value as HTMLElement;
   const links = Array.from(
-    container.querySelectorAll<HTMLAnchorElement>(
+    container?.querySelectorAll<HTMLAnchorElement>(
       'a[data-interactive-video-link="true"][data-video-id]'
     )
   );

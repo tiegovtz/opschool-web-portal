@@ -1017,7 +1017,7 @@ const askQuestion = async (
   maskedMessage = null,
   options = {}
 ) => {
-  const { useDocsAPI = false } = options;
+  const { useDocsAPI = false, docsField = null } = options;
 
   const question = actualQuestion ?? currentQuestion.value.trim();
   if (!question || isLoading.value || !props.chapterId) return;
@@ -1089,13 +1089,19 @@ const askQuestion = async (
         signal,
       });
 
-      answer =
-        safeContent(summaryData?.crashCourse) ||
-        // safeContent(summaryData?.summary) ||
-        // safeContent(summaryData?.description) ||
-        // safeContent(summaryData?.content) ||
-        
-        JSON.stringify(summaryData, null, 2);
+      const preferredField = docsField || "crashCourse";
+      const preferredContent = safeContent(summaryData?.[preferredField]);
+      const fallbackContent =
+        preferredField === "summary"
+          ? safeContent(summaryData?.summary) ||
+            safeContent(summaryData?.content) ||
+            safeContent(summaryData?.description)
+          : safeContent(summaryData?.crashCourse) ||
+            safeContent(summaryData?.content) ||
+            safeContent(summaryData?.description) ||
+            safeContent(summaryData?.summary);
+
+      answer = preferredContent || fallbackContent || JSON.stringify(summaryData, null, 2);
       provider = "Docs API";
       model = "getChapterId";
     } else {
@@ -1262,7 +1268,10 @@ const handleSummarize = async () => {
   isSummarizing.value = true;
   const prompt = `Please provide a comprehensive summary of this chapter/competence: ${props.chapterName}. Include main concepts, key points, and important information.`;
   try {
-    await askQuestion(prompt, "Create a summary", { useDocsAPI: true });
+    await askQuestion(prompt, "Create a summary", {
+      useDocsAPI: true,
+      docsField: "summary",
+    });
   } finally {
     isSummarizing.value = false;
   }
@@ -1275,6 +1284,7 @@ const handleEnglishCrashCourse = async () => {
   try {
     await askQuestion(prompt, "Help with English crash course", {
       useDocsAPI: true,
+      docsField: "crashCourse",
     });
   } finally {
     isEnglishCrashCourse.value = false;
