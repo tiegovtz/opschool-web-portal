@@ -33,7 +33,7 @@
         </div>
       </div>
       
-      <div class="bg-white rounded-2xl shadow-2xl p-8 border-2 border-oceanBlue/20">
+      <div class="bg-white rounded-2xl shadow-2xl p-8 border-2 border-oceanBlue/20 flex flex-col flex-1 min-h-0">
         <!-- Header with read-aloud controls -->
         <div class="flex items-center justify-between mb-3">
           <div class="text-xs text-gray-500 uppercase tracking-wider">
@@ -86,7 +86,7 @@
         </div>
         
         <!-- Teleprompter text with word highlighting - scrollable container -->
-        <div class="text-center max-h-[60vh] overflow-y-auto overflow-x-hidden" ref="textContainer">
+        <div class="text-center overflow-y-auto overflow-x-hidden flex-1 min-h-0" ref="textContainer">
           <div
             :class="[
               'font-semibold leading-relaxed text-gray-900 select-none',
