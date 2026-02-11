@@ -4,6 +4,8 @@ import { useRoute, useRouter } from "vue-router";
 import { useNavigationStore } from "~/stores/navigationStore";
 import apiDocs from "~/utilities/apiDocs";
 import EmptyState from "~/components/common/EmptyState.vue";
+import PaginationControls from "~/components/common/PaginationControls.vue";
+import VidstackPlayer from "~/components/video-player/VidstackPlayer.vue";
 import { CustomDropDownList } from "#components";
 import CustomDate from "~/components/common/CustomDate.vue";
 
@@ -35,6 +37,7 @@ type SessionCard = {
   topicLoading?: boolean;
   duration?: string;
   time?: string;
+  createdAt?: string;
   startTime?: string;
   endTime?: string;
   viewers?: number;
@@ -71,15 +74,17 @@ const openSessionExpiredModal = (message?: string) => {
   // Avoid spamming if multiple requests fail at the same time
   if (sessionExpiredModalOpen.value) return;
 
+  rememberCurrentFocus();
+  announceForScreenReader("Session expired dialog opened.");
   sessionExpiredMessage.value = message || "Your session has expired. Please sign in again.";
   sessionExpiredModalOpen.value = true;
 
   // Close other modals for clarity (optional)
   sessionModalOpen.value = false;
-  viewAllDialog.value = false;
   selectedSession.value = null;
 
   if (process.client) document.documentElement.style.overflow = "hidden";
+  focusModalContainer(() => sessionExpiredModalRef.value);
 };
 
 const clearSessionAndRedirect = async () => {
@@ -105,6 +110,13 @@ const somakwanzaStreamMeta = ref({
 });
 const somakwanzaLoading = ref(true);
 const somakwanzaError = ref(false);
+const somakwanzaReady = ref(false);
+const somaPlaybackRate = ref(1);
+const somaPollIntervalMs = 1000;
+const somaRecoverDelayMs = 1500;
+const somaPollId = ref<ReturnType<typeof setInterval> | null>(null);
+const somaRecoverTimeoutId = ref<ReturnType<typeof setTimeout> | null>(null);
+const somaIsRecovering = ref(false);
 
 const defaultRecordingThumbnail = "https://media.istockphoto.com/id/2217581452/photo/podcast-broadcasting-studio-equipment.webp?a=1&b=1&s=612x612&w=0&k=20&c=BUm5U7iKNGKKXBjc3nqh-YKOVEwGOhE5mWV3x7_xaCY="
 const defaultThumbnail =
@@ -213,9 +225,6 @@ const updateCardsWithTopicName = (topicId: string, name: string) => {
   liveCards.value = liveCards.value.map((card) =>
     card.topicId === topicId ? { ...card, title: name, topicLoading: false } : card
   );
-  viewAllCards.value = viewAllCards.value.map((card) =>
-    card.topicId === topicId ? { ...card, title: name, topicLoading: false } : card
-  );
 };
 
 const fetchTopicName = async (topicId: string) => {
@@ -279,6 +288,7 @@ const mapLiveSessionToCard = (session: any): SessionCard => {
     duration: deriveDuration(start, end),
     description: session?.details || session?.description || "Interactive live lesson",
     time: formatSessionTime(start),
+    createdAt: session?.createdAt || session?.updatedAt || start,
     startTime: start,
     endTime: end,
     badge,
@@ -315,6 +325,7 @@ const mapRecordedSessionToCard = (session: any): SessionCard => {
     duration: session?.duration || video?.duration || "Recorded",
     description: session?.description || session?.details || video?.description || "Replay available",
     time: formatSessionTime(timestamp),
+    createdAt: timestamp,
     badge: "Recorded",
     subjectGradient: buildGradient(subjectLabel ?? classLabel),
     subjectInitials: getSubjectInitials(subjectLabel ?? classLabel),
@@ -336,7 +347,6 @@ const fetchLiveCards = async () => {
     const headers = getHeaders();
     const response: any = await $fetch(`${apiDocs.liveClassrooms.sessions}`, {
       headers,
-      query: { limit: 6 },
     });
 
     const items = normalizeList(response);
@@ -345,7 +355,7 @@ const fetchLiveCards = async () => {
       const bTime = new Date(b?.createdAt || b?.updatedAt || b?.start_time || 0).getTime();
       return bTime - aTime;
     });
-    liveCards.value = sorted.slice(0, 6).map(mapLiveSessionToCard);
+    liveCards.value = sorted.map(mapLiveSessionToCard);
   } catch (err) {
     console.error("Failed to load live cards:", err);
     handleUnauthorized(err);
@@ -357,7 +367,7 @@ const fetchRecordedCards = async () => {
     const headers = getHeaders();
     const response: any = await $fetch(`${apiDocs.liveClassrooms.recordedSessions}`, {
       headers,
-      query: { isRecorded: true, limit: 6 },
+      query: { isRecorded: true },
     });
 
     const items = normalizeList(response);
@@ -366,7 +376,7 @@ const fetchRecordedCards = async () => {
       const bTime = new Date(b?.createdAt || b?.updatedAt || b?.video?.createdAt || b?.video?.updatedAt || 0).getTime();
       return bTime - aTime;
     });
-    recordedCards.value = sorted.slice(0, 6).map(mapRecordedSessionToCard);
+    recordedCards.value = sorted.map(mapRecordedSessionToCard);
   } catch (err) {
     console.error("Failed to load recorded cards:", err);
     handleUnauthorized(err);
@@ -382,10 +392,14 @@ const loadTabCards = async () => {
   }
 };
 
-const loadSomaStream = async () => {
+const loadSomaStream = async (options?: { silent?: boolean }) => {
+  const silent = !!options?.silent;
   try {
-    somakwanzaLoading.value = true;
-    somakwanzaError.value = false;
+    if (!silent) {
+      somakwanzaLoading.value = true;
+      somakwanzaError.value = false;
+      somakwanzaReady.value = false;
+    }
     const response: any = await $fetch(`${apiDocs.liveClassrooms.streamingLinks}`, {
       headers: streamHeaders,
     });
@@ -396,12 +410,17 @@ const loadSomaStream = async () => {
     );
 
     if (activeLink) {
-      somakwanzaStreamUrl.value =
+      const latestUrl =
         activeLink.url ||
         activeLink.streamUrl ||
         activeLink.link ||
         activeLink.streamingUrl ||
         somakwanzaStreamUrl.value;
+
+      somakwanzaStreamUrl.value = latestUrl;
+      somakwanzaLoading.value = false;
+      somakwanzaError.value = false;
+      somakwanzaReady.value = !!latestUrl;
 
       somakwanzaStreamMeta.value = {
         title: activeLink.title || somakwanzaStreamMeta.value.title,
@@ -411,7 +430,7 @@ const loadSomaStream = async () => {
   } catch (err) {
     console.error("Failed to load SomaKwanza stream:", err);
     handleUnauthorized(err);
-    somakwanzaError.value = true;
+    if (!silent) somakwanzaError.value = true;
   } finally {
     if (!somakwanzaStreamUrl.value) {
       somakwanzaLoading.value = false;
@@ -419,11 +438,86 @@ const loadSomaStream = async () => {
   }
 };
 
+const clearSomaRecoverTimeout = () => {
+  if (!somaRecoverTimeoutId.value) return;
+  clearTimeout(somaRecoverTimeoutId.value);
+  somaRecoverTimeoutId.value = null;
+};
+
+const pollSomaStreamUrl = async () => {
+  const targetUrl = somakwanzaStreamUrl.value;
+  if (!targetUrl || !process.client) return;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    // Poll the actual stream URL, not the streamingLinks endpoint.
+    await fetch(targetUrl, {
+      method: "GET",
+      cache: "no-store",
+      mode: "no-cors",
+      signal: controller.signal,
+    });
+  } catch {
+    // Keep URL polling observational only.
+    // Do not trigger recovery from poll request failures (can fail due to CORS/network policy).
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
+
+const recoverSomaStream = async () => {
+  if (somaIsRecovering.value) return;
+  somaIsRecovering.value = true;
+  clearSomaRecoverTimeout();
+  try {
+    const wasReady = somakwanzaReady.value;
+    if (!wasReady) somakwanzaLoading.value = true;
+    somakwanzaError.value = false;
+    // Only refetch streaming links if no URL is currently available.
+    if (!somakwanzaStreamUrl.value) {
+      await loadSomaStream({ silent: true });
+    }
+  } finally {
+    somaIsRecovering.value = false;
+  }
+};
+
+const scheduleSomaRecover = () => {
+  if (somaRecoverTimeoutId.value) return;
+  somaRecoverTimeoutId.value = setTimeout(() => {
+    recoverSomaStream();
+  }, somaRecoverDelayMs);
+};
+
+const startSomaPolling = () => {
+  if (somaPollId.value || !process.client) return;
+  somaPollId.value = setInterval(() => {
+    pollSomaStreamUrl();
+  }, somaPollIntervalMs);
+};
+
+const stopSomaPolling = () => {
+  if (somaPollId.value) {
+    clearInterval(somaPollId.value);
+    somaPollId.value = null;
+  }
+  clearSomaRecoverTimeout();
+};
+
+const handleSomakwanzaError = () => {
+  if (somakwanzaReady.value) return;
+  somakwanzaLoading.value = false;
+  somakwanzaError.value = true;
+};
+
 /* Create live class (TeacherAdmin only) */
 const createDialogOpen = ref(false);
 const createSubmitting = ref(false);
 const createError = ref("");
 const createSuccess = ref("");
+const createModalRef = ref<HTMLElement | null>(null);
 
 const classOptions = ref<Array<{ id: string; name: string }>>([]);
 const subjectOptions = ref<Array<{ id: string; name: string }>>([]);
@@ -522,15 +616,19 @@ watch(
 const openCreateDialog = () => {
   if (!isTeacherAdmin.value) return;
   resetCreateForm();
+  rememberCurrentFocus();
+  announceForScreenReader("Create live class dialog opened.");
   createDialogOpen.value = true;
   if (process.client) document.documentElement.style.overflow = "hidden";
+  focusModalContainer(() => createModalRef.value);
 };
 
 const closeCreateDialog = () => {
   createDialogOpen.value = false;
-  if (!viewAllDialog.value && !sessionModalOpen.value && !sessionExpiredModalOpen.value && process.client) {
+  if (!sessionModalOpen.value && !sessionExpiredModalOpen.value && process.client) {
     document.documentElement.style.overflow = "";
   }
+  restoreLastFocus();
 };
 
 const submitCreateSession = async () => {
@@ -667,12 +765,6 @@ const tabPanels = computed<Record<TabKey, PanelConfig>>(() => ({
 const activeTabPanel = computed<PanelConfig>(
   () => tabPanels.value[activeTab.value] ?? tabPanels.value["live-classes"]
 );
-
-const activeCards = computed(() => {
-  if (activeTab.value === "live-classes") return liveFilteredCards.value;
-  if (activeTab.value === "recorded-sessions") return recordedCards.value;
-  return [];
-});
 
 type LiveFilterKey = "all" | "today" | "tomorrow" | "week" | "active" | "past";
 const liveFilterGroups: Array<Array<{ key: LiveFilterKey; label: string }>> = [
@@ -834,13 +926,76 @@ const liveFilteredCards = computed(() => {
     return true;
   });
 
-  if (activeLiveFilter.value === "all") return filtered.slice(0, 6);
   return filtered;
 });
 
-const liveMoreCount = computed(() => {
-  if (activeLiveFilter.value !== "all") return 0;
-  return Math.max(0, liveSortedCards.value.length - 6);
+const liveSearch = ref("");
+const recordedSearch = ref("");
+const livePage = ref(1);
+const recordedPage = ref(1);
+const livePageSize = ref(6);
+const recordedPageSize = ref(6);
+const pageSizeOptions = [6, 12, 24, 48];
+const pageSizeDropdownOptions = pageSizeOptions.map((size) => ({
+  id: String(size),
+  name: `${size} per page`,
+}));
+const livePageSizeSelection = ref(String(livePageSize.value));
+const recordedPageSizeSelection = ref(String(recordedPageSize.value));
+const liveCustomPageSize = ref("");
+const recordedCustomPageSize = ref("");
+
+const applySessionSearch = (cards: SessionCard[], query: string) => {
+  const value = query.trim().toLowerCase();
+  if (!value) return cards;
+  return cards.filter((card) => {
+    const haystack = [
+      card.title,
+      card.instructor,
+      card.subject,
+      card.category,
+      card.description,
+      card.details,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(value);
+  });
+};
+
+const liveSearchFilteredCards = computed(() => applySessionSearch(liveFilteredCards.value, liveSearch.value));
+const recordedSortedCards = computed(() =>
+  [...recordedCards.value].sort((a, b) => {
+    const aTime = new Date(a.createdAt || 0).getTime();
+    const bTime = new Date(b.createdAt || 0).getTime();
+    return bTime - aTime;
+  })
+);
+const recordedSearchFilteredCards = computed(() =>
+  applySessionSearch(recordedSortedCards.value, recordedSearch.value)
+);
+
+const livePageCount = computed(() =>
+  Math.max(1, Math.ceil(liveSearchFilteredCards.value.length / livePageSize.value))
+);
+const recordedPageCount = computed(() =>
+  Math.max(1, Math.ceil(recordedSearchFilteredCards.value.length / recordedPageSize.value))
+);
+
+const livePaginatedCards = computed(() => {
+  const start = (livePage.value - 1) * livePageSize.value;
+  return liveSearchFilteredCards.value.slice(start, start + livePageSize.value);
+});
+const recordedPaginatedCards = computed(() => {
+  const start = (recordedPage.value - 1) * recordedPageSize.value;
+  return recordedSearchFilteredCards.value.slice(start, start + recordedPageSize.value);
+});
+
+const activeCards = computed(() => {
+  if (activeTab.value === "live-classes") return livePaginatedCards.value;
+  if (activeTab.value === "recorded-sessions") return recordedPaginatedCards.value;
+  return [];
 });
 
 const emptyStateMessages: Record<TabKey, { title: string; description: string }> = {
@@ -859,6 +1014,18 @@ const emptyStateMessages: Record<TabKey, { title: string; description: string }>
 };
 
 const currentEmptyStateMessage = computed(() => {
+  if (activeTab.value === "live-classes" && liveSearch.value.trim()) {
+    return {
+      title: "No matching live classes",
+      description: "Try another keyword to find a live class.",
+    };
+  }
+  if (activeTab.value === "recorded-sessions" && recordedSearch.value.trim()) {
+    return {
+      title: "No matching recordings",
+      description: "Try another keyword to find a recorded session.",
+    };
+  }
   if (activeTab.value !== "live-classes") return emptyStateMessages[activeTab.value];
   switch (activeLiveFilter.value) {
     case "today":
@@ -891,167 +1058,90 @@ const currentEmptyStateMessage = computed(() => {
   }
 });
 const shouldShowEmptyState = computed(
-  () => !isLoadingCards.value && activeTab.value !== "live-tv" && activeCards.value.length === 0
-);
-const viewAllEmptyStateMessage = computed(
-  () => emptyStateMessages[viewAllSection.value] ?? emptyStateMessages["live-classes"]
-);
-const showViewAllEmptyState = computed(
   () =>
     !isLoadingCards.value &&
-    !viewAllLoadingMore.value &&
-    filteredViewAllCards.value.length === 0
+    activeTab.value !== "live-tv" &&
+    ((activeTab.value === "live-classes" && liveSearchFilteredCards.value.length === 0) ||
+      (activeTab.value === "recorded-sessions" && recordedSearchFilteredCards.value.length === 0))
 );
+const setLivePage = (value: number) => {
+  livePage.value = Math.min(Math.max(value, 1), livePageCount.value);
+};
+const setRecordedPage = (value: number) => {
+  recordedPage.value = Math.min(Math.max(value, 1), recordedPageCount.value);
+};
+const handlePaginationPrev = () => {
+  if (activeTab.value === "live-classes") {
+    setLivePage(livePage.value - 1);
+    return;
+  }
+  setRecordedPage(recordedPage.value - 1);
+};
+const handlePaginationNext = () => {
+  if (activeTab.value === "live-classes") {
+    setLivePage(livePage.value + 1);
+    return;
+  }
+  setRecordedPage(recordedPage.value + 1);
+};
+const handlePaginationPageSizeSelection = (value: string) => {
+  if (activeTab.value === "live-classes") {
+    livePageSizeSelection.value = value;
+    return;
+  }
+  recordedPageSizeSelection.value = value;
+};
+const handlePaginationCustomPageSize = (value: string) => {
+  if (activeTab.value === "live-classes") {
+    liveCustomPageSize.value = value;
+    return;
+  }
+  recordedCustomPageSize.value = value;
+};
 
-/* View All Dialog */
-const viewAllDialog = ref(false);
-const viewAllSection = ref<TabKey>("live-classes");
-const viewAllSearch = ref("");
-const viewAllCards = ref<SessionCard[]>([]);
-const viewAllPage = ref(1);
-const viewAllHasMore = ref(true);
-const viewAllLoadingMore = ref(false);
-const viewAllSearchTimeout = ref<ReturnType<typeof setTimeout> | null>(null);
-const viewAllObserver = ref<IntersectionObserver | null>(null);
-const viewAllSentinel = ref<HTMLElement | null>(null);
-const viewAllPageSize = 6;
-
-const filteredViewAllCards = computed(() => {
-  const query = viewAllSearch.value.trim().toLowerCase();
-  if (!query) return viewAllCards.value;
-  return viewAllCards.value.filter((card) => {
-    const haystack = [
-      card.title,
-      card.instructor,
-      card.subject,
-      card.category,
-      card.description,
-      card.details,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(query);
-  });
+watch([activeLiveFilter, liveSearch, livePageSize], () => {
+  livePage.value = 1;
 });
-
-const resetViewAllState = () => {
-  viewAllCards.value = [];
-  viewAllPage.value = 1;
-  viewAllHasMore.value = true;
-};
-
-const buildViewAllQuery = () => {
-  const query: Record<string, any> = {
-    limit: viewAllPageSize,
-    page: viewAllPage.value,
-  };
-  if (viewAllSearch.value.trim()) query.q = viewAllSearch.value.trim();
-  if (viewAllSection.value === "recorded-sessions") {
-    query.isRecorded = true;
-  }
-  return query;
-};
-
-const fetchViewAllPage = async () => {
-  if (viewAllLoadingMore.value || !viewAllHasMore.value) return;
-  viewAllLoadingMore.value = true;
-  try {
-    const headers = getHeaders();
-    const endpoint =
-      viewAllSection.value === "live-classes"
-        ? apiDocs.liveClassrooms.sessions
-        : apiDocs.liveClassrooms.recordedSessions;
-    const response: any = await $fetch(endpoint, {
-      headers,
-      query: buildViewAllQuery(),
-    });
-    const items = normalizeList(response);
-    const mapped =
-      viewAllSection.value === "live-classes"
-        ? items.map(mapLiveSessionToCard)
-        : items.map(mapRecordedSessionToCard);
-    viewAllCards.value = [...viewAllCards.value, ...mapped];
-    if (items.length < viewAllPageSize) {
-      viewAllHasMore.value = false;
-    } else {
-      viewAllPage.value += 1;
-    }
-  } catch (error) {
-    console.error("Failed to load view all cards:", error);
-  } finally {
-    viewAllLoadingMore.value = false;
-  }
-};
-
-const openViewAll = (section: TabKey) => {
-  viewAllSection.value = section;
-  viewAllDialog.value = true;
-  resetViewAllState();
-  fetchViewAllPage();
-  if (process.client) document.documentElement.style.overflow = "hidden";
-};
-
-const closeViewAll = () => {
-  viewAllDialog.value = false;
-  if (viewAllObserver.value) viewAllObserver.value.disconnect();
-  if (!sessionModalOpen.value && !sessionExpiredModalOpen.value && process.client) {
-    document.documentElement.style.overflow = "";
-  }
-};
-
-const setupViewAllObserver = () => {
-  if (!process.client) return;
-  if (viewAllObserver.value) {
-    viewAllObserver.value.disconnect();
-  }
-  viewAllObserver.value = new IntersectionObserver(
-    (entries) => {
-      if (entries[0]?.isIntersecting) {
-        fetchViewAllPage();
-      }
-    },
-    { rootMargin: "200px" }
-  );
-  if (viewAllSentinel.value) {
-    viewAllObserver.value.observe(viewAllSentinel.value);
-  }
-};
-
-watch(
-  () => viewAllDialog.value,
-  (isOpen) => {
-    if (!isOpen) return;
-    nextTick(() => setupViewAllObserver());
-  }
-);
-
-watch(
-  () => viewAllSection.value,
-  () => {
-    if (!viewAllDialog.value) return;
-    resetViewAllState();
-    fetchViewAllPage();
-  }
-);
-
-watch(
-  () => viewAllSearch.value,
-  () => {
-    if (viewAllSearchTimeout.value) {
-      clearTimeout(viewAllSearchTimeout.value);
-    }
-    viewAllSearchTimeout.value = setTimeout(() => {
-      if (!viewAllDialog.value) return;
-      resetViewAllState();
-      fetchViewAllPage();
-    }, 300);
-  }
-);
+watch([recordedSearch, recordedPageSize], () => {
+  recordedPage.value = 1;
+});
+watch(activeTab, (tab) => {
+  if (tab === "live-classes") livePage.value = 1;
+  if (tab === "recorded-sessions") recordedPage.value = 1;
+});
+watch(livePageCount, (count) => {
+  if (livePage.value > count) livePage.value = count;
+});
+watch(recordedPageCount, (count) => {
+  if (recordedPage.value > count) recordedPage.value = count;
+});
+watch(livePageSizeSelection, (value) => {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return;
+  livePageSize.value = parsed;
+  if (liveCustomPageSize.value) liveCustomPageSize.value = "";
+});
+watch(recordedPageSizeSelection, (value) => {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return;
+  recordedPageSize.value = parsed;
+  if (recordedCustomPageSize.value) recordedCustomPageSize.value = "";
+});
+watch(liveCustomPageSize, (value) => {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return;
+  livePageSize.value = parsed;
+});
+watch(recordedCustomPageSize, (value) => {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return;
+  recordedPageSize.value = parsed;
+});
 
 /* Session Player Modal */
 const sessionModalOpen = ref(false);
 const selectedSession = ref<SessionCard | null>(null);
+const sessionModalRef = ref<HTMLElement | null>(null);
 const joinRequested = ref(false);
 const meetingLoading = ref(false);
 const meetingReady = ref(false);
@@ -1060,8 +1150,83 @@ const meetingPlayable = ref(false);
 const meetingTimedOut = ref(false);
 const meetingTimeoutMs = 10000;
 const meetingTimeoutId = ref<ReturnType<typeof setTimeout> | null>(null);
+const recordedPlayerRef = ref<HTMLVideoElement | null>(null);
+const recordedPlaybackRate = ref(1);
+const sessionExpiredModalRef = ref<HTMLElement | null>(null);
+const lastFocusedElement = ref<HTMLElement | null>(null);
+const srAnnouncement = ref("");
+const srAnnouncementTimeoutId = ref<ReturnType<typeof setTimeout> | null>(null);
+
+const announceForScreenReader = (message: string) => {
+  if (!process.client) return;
+  srAnnouncement.value = "";
+  if (srAnnouncementTimeoutId.value) {
+    clearTimeout(srAnnouncementTimeoutId.value);
+  }
+  srAnnouncementTimeoutId.value = setTimeout(() => {
+    srAnnouncement.value = message;
+  }, 60);
+};
+
+const getFocusableElements = (container: HTMLElement | null) => {
+  if (!container || !process.client) return [] as HTMLElement[];
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )
+  ).filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true");
+};
+
+const rememberCurrentFocus = () => {
+  if (!process.client) return;
+  lastFocusedElement.value = document.activeElement as HTMLElement | null;
+};
+
+const restoreLastFocus = () => {
+  if (!process.client) return;
+  if (createDialogOpen.value || sessionModalOpen.value || sessionExpiredModalOpen.value) return;
+  const target = lastFocusedElement.value;
+  if (target && document.contains(target)) target.focus();
+  lastFocusedElement.value = null;
+};
+
+const focusModalContainer = async (resolveContainer: () => HTMLElement | null) => {
+  if (!process.client) return;
+  await nextTick();
+  const container = resolveContainer();
+  if (!container) return;
+  const focusable = getFocusableElements(container);
+  (focusable[0] ?? container).focus();
+};
+
+const trapFocusInModal = (container: HTMLElement | null, event: KeyboardEvent) => {
+  if (!container || event.key !== "Tab") return;
+  const focusable = getFocusableElements(container);
+  if (focusable.length === 0) {
+    event.preventDefault();
+    container.focus();
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  const active = document.activeElement as HTMLElement | null;
+
+  if (event.shiftKey && (active === first || !active || !container.contains(active))) {
+    event.preventDefault();
+    last?.focus();
+    return;
+  }
+
+  if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first?.focus();
+  }
+};
 
 const openSessionModal = (card: SessionCard) => {
+  rememberCurrentFocus();
+  announceForScreenReader("Session player dialog opened.");
   selectedSession.value = card;
   sessionModalOpen.value = true;
   joinRequested.value = false;
@@ -1075,6 +1240,7 @@ const openSessionModal = (card: SessionCard) => {
     meetingTimeoutId.value = null;
   }
   if (process.client) document.documentElement.style.overflow = "hidden";
+  focusModalContainer(() => sessionModalRef.value);
 };
 
 const closeSessionModal = () => {
@@ -1090,16 +1256,18 @@ const closeSessionModal = () => {
     clearTimeout(meetingTimeoutId.value);
     meetingTimeoutId.value = null;
   }
-  if (!viewAllDialog.value && !sessionExpiredModalOpen.value && process.client) {
+  if (!sessionExpiredModalOpen.value && process.client) {
     document.documentElement.style.overflow = "";
   }
+  restoreLastFocus();
 };
 
 const closeSessionExpiredModal = () => {
   sessionExpiredModalOpen.value = false;
-  if (!viewAllDialog.value && !sessionModalOpen.value && process.client) {
+  if (!sessionModalOpen.value && process.client) {
     document.documentElement.style.overflow = "";
   }
+  restoreLastFocus();
 };
 
 const playableUrl = computed(() => {
@@ -1112,6 +1280,23 @@ const playableUrl = computed(() => {
 const isRecordedSelected = computed(
   () => selectedSession.value?.badge === "Recorded" || !!selectedSession.value?.recordingUrl
 );
+
+const isSelectedLiveSessionJoinable = computed(() => {
+  if (!selectedSession.value || isRecordedSelected.value) return true;
+  const start = selectedSession.value.startTime ? new Date(selectedSession.value.startTime) : null;
+  const end = selectedSession.value.endTime ? new Date(selectedSession.value.endTime) : null;
+  if (!start || !end) return false;
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+  const now = new Date();
+  return now >= start && now <= end;
+});
+
+const isSelectedLiveSessionEnded = computed(() => {
+  if (!selectedSession.value || isRecordedSelected.value) return false;
+  const end = selectedSession.value.endTime ? new Date(selectedSession.value.endTime) : null;
+  if (!end || Number.isNaN(end.getTime())) return false;
+  return new Date() > end;
+});
 
 const isMeetingDisplayable = computed(() => !!playableUrl.value || !!meetingEmbedUrl.value);
 
@@ -1150,6 +1335,9 @@ const handleMeetingReady = () => {
   }
   meetingLoading.value = false;
   meetingReady.value = true;
+  if (recordedPlayerRef.value) {
+    recordedPlayerRef.value.playbackRate = recordedPlaybackRate.value;
+  }
 };
 
 const handlePlayerError = () => {
@@ -1161,6 +1349,58 @@ const handlePlayerError = () => {
   meetingPlayable.value = false;
   meetingLoading.value = false;
   meetingReady.value = false;
+};
+
+type PlayerTarget = "soma" | "recorded";
+
+const getPlayerElement = (target: PlayerTarget) =>
+  target === "soma" ? null : recordedPlayerRef.value;
+
+const togglePlayerPlayback = (target: PlayerTarget) => {
+  const player = getPlayerElement(target);
+  if (!player) return;
+  if (player.paused) {
+    player.play().catch(() => {});
+    return;
+  }
+  player.pause();
+};
+
+const togglePlayerMute = (target: PlayerTarget) => {
+  const player = getPlayerElement(target);
+  if (!player) return;
+  player.muted = !player.muted;
+};
+
+const seekPlayer = (target: PlayerTarget, seconds: number) => {
+  const player = getPlayerElement(target);
+  if (!player) return;
+  if (!Number.isFinite(player.duration)) return;
+  const nextTime = player.currentTime + seconds;
+  player.currentTime = Math.min(Math.max(nextTime, 0), player.duration);
+};
+
+const cyclePlaybackRate = (target: PlayerTarget) => {
+  const rates = [0.5, 1, 1.25, 1.5, 2];
+  const rateRef = target === "soma" ? somaPlaybackRate : recordedPlaybackRate;
+  const currentIndex = rates.findIndex((rate) => rate === rateRef.value);
+  const nextRate = rates[(currentIndex + 1) % rates.length] ?? 1;
+  rateRef.value = nextRate;
+  const player = getPlayerElement(target);
+  if (player) player.playbackRate = nextRate;
+};
+
+const togglePlayerFullscreen = async (target: PlayerTarget) => {
+  if (!process.client) return;
+  const player = getPlayerElement(target);
+  if (!player) return;
+  if (document.fullscreenElement) {
+    await document.exitFullscreen();
+    return;
+  }
+  if (player.requestFullscreen) {
+    await player.requestFullscreen();
+  }
 };
 
 /**
@@ -1199,16 +1439,28 @@ const meetingEmbedUrl = computed(() => {
 });
 
 const onKeydown = (e: KeyboardEvent) => {
+  if (e.key === "Tab") {
+    if (sessionExpiredModalOpen.value) {
+      trapFocusInModal(sessionExpiredModalRef.value, e);
+      return;
+    }
+    if (sessionModalOpen.value) {
+      trapFocusInModal(sessionModalRef.value, e);
+      return;
+    }
+    if (createDialogOpen.value) {
+      trapFocusInModal(createModalRef.value, e);
+      return;
+    }
+  }
+
   if (e.key === "Escape") {
     if (sessionExpiredModalOpen.value) {
-      sessionExpiredModalOpen.value = false;
-      if (!viewAllDialog.value && !sessionModalOpen.value && process.client) {
-        document.documentElement.style.overflow = "";
-      }
+      closeSessionExpiredModal();
       return;
     }
     if (sessionModalOpen.value) closeSessionModal();
-    if (viewAllDialog.value) closeViewAll();
+    if (createDialogOpen.value) closeCreateDialog();
   }
 };
 
@@ -1216,14 +1468,18 @@ onMounted(() => {
   canGoBack.value = window.history.length > 1;
   loadTabCards();
   loadSomaStream();
+  startSomaPolling();
   fetchCreateOptions();
   window.addEventListener("keydown", onKeydown);
 });
 
 onUnmounted(() => {
   window.removeEventListener("keydown", onKeydown);
-  if (viewAllObserver.value) viewAllObserver.value.disconnect();
-  if (viewAllSearchTimeout.value) clearTimeout(viewAllSearchTimeout.value);
+  stopSomaPolling();
+  if (srAnnouncementTimeoutId.value) {
+    clearTimeout(srAnnouncementTimeoutId.value);
+    srAnnouncementTimeoutId.value = null;
+  }
 });
 
 const getItemPath = (value: TabKey) => `/smart-class/screen/${value}`;
@@ -1237,6 +1493,7 @@ const prepareNavigation = () => {
   <NuxtLayout
     :name="$router.currentRoute.value.fullPath.includes('header-less') ? ('normal' as any) : ('home-layout' as any)">
     <main ref="pageRoot" id="main-container" tabindex="-1" class="min-h-screen bg-white font-sans text-gray-900">
+      <p class="sr-only" aria-live="assertive" aria-atomic="true">{{ srAnnouncement }}</p>
       <div class="container mx-auto max-w-7xl px-4 py-10">
         <!-- Back -->
         <NuxtLink v-if="canGoBack" to="/"
@@ -1297,11 +1554,6 @@ const prepareNavigation = () => {
                   @click="openCreateDialog">
                   Create class
                 </button>
-                <button type="button"
-                  class="rounded-full border border-primary px-5 py-2 text-sm font-semibold text-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                  @click="openViewAll(activeTab)">
-                  View all
-                </button>
               </div>
             </div>
           </div>
@@ -1333,9 +1585,9 @@ const prepareNavigation = () => {
                   </span>
                 </div>
 
-                <video v-if="activeTabPanel.streamUrl && !somakwanzaError" :src="activeTabPanel.streamUrl"
-                  class="h-[420px] w-full" loading="lazy" autoplay playsinline @loadeddata="somakwanzaLoading = false"
-                  @canplay="somakwanzaLoading = false" @error="somakwanzaLoading = false; somakwanzaError = true"></video>
+                <div v-if="activeTabPanel.streamUrl && !somakwanzaError" class="p-2 bg-black">
+                  <VidstackPlayer :src="activeTabPanel.streamUrl" :title="activeTabPanel.nowPlaying || 'SomaKwanza TV'" />
+                </div>
 
                 <div v-if="activeTabPanel.streamUrl && somakwanzaLoading && !somakwanzaError"
                   class="absolute inset-0 z-10 flex items-center justify-center bg-black/40" role="status"
@@ -1343,9 +1595,12 @@ const prepareNavigation = () => {
                   <div class="h-10 w-10 animate-spin rounded-full border-4 border-white/40 border-t-white"></div>
                 </div>
 
-                <div v-if="!activeTabPanel.streamUrl || somakwanzaError" class="grid h-[420px] place-items-center text-gray-400">
+                <div
+                  v-if="!somakwanzaLoading && !somakwanzaReady && (!activeTabPanel.streamUrl || somakwanzaError)"
+                  class="grid h-[420px] place-items-center text-gray-400">
                   Stream unavailable
                 </div>
+
               </div>
 
               <!-- Info -->
@@ -1395,6 +1650,30 @@ const prepareNavigation = () => {
                   >
                     {{ filter.label }}
                   </button>
+                </div>
+              </div>
+
+              <div class="mb-4 flex flex-wrap items-center gap-3">
+                <div class="min-w-[240px] flex-1">
+                  <label class="sr-only" :for="activeTab === 'live-classes' ? 'live-search' : 'recorded-search'">
+                    Search sessions
+                  </label>
+                  <input
+                    v-if="activeTab === 'live-classes'"
+                    id="live-search"
+                    v-model="liveSearch"
+                    type="search"
+                    placeholder="Search live classes..."
+                    class="w-full rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  <input
+                    v-else
+                    id="recorded-search"
+                    v-model="recordedSearch"
+                    type="search"
+                    placeholder="Search recorded sessions..."
+                    class="w-full rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
                 </div>
               </div>
 
@@ -1474,110 +1753,33 @@ const prepareNavigation = () => {
                   </div>
                 </article>
               </div>
-              <div
-                v-if="activeTab === 'live-classes' && activeLiveFilter === 'all' && liveMoreCount > 0"
-                class="mt-4 text-center text-sm font-semibold text-gray-500"
-              >
-                +{{ liveMoreCount }} more
-              </div>
+
+              <PaginationControls
+                v-if="(activeTab === 'live-classes' && liveSearchFilteredCards.length > 0) || (activeTab === 'recorded-sessions' && recordedSearchFilteredCards.length > 0)"
+                :showing="activeTab === 'live-classes' ? livePaginatedCards.length : recordedPaginatedCards.length"
+                :total="activeTab === 'live-classes' ? liveSearchFilteredCards.length : recordedSearchFilteredCards.length"
+                :item-label="activeTab === 'live-classes' ? 'live classes' : 'recorded sessions'"
+                :page="activeTab === 'live-classes' ? livePage : recordedPage"
+                :page-count="activeTab === 'live-classes' ? livePageCount : recordedPageCount"
+                :page-size-selection="activeTab === 'live-classes' ? livePageSizeSelection : recordedPageSizeSelection"
+                :custom-page-size="activeTab === 'live-classes' ? liveCustomPageSize : recordedCustomPageSize"
+                :page-size-options="pageSizeDropdownOptions"
+                :page-size-dropdown-id="activeTab === 'live-classes' ? 'live-page-size' : 'recorded-page-size'"
+                :custom-input-placeholder="activeTab === 'live-classes' ? '6' : 'Custom'"
+                :custom-input-aria-label="activeTab === 'live-classes' ? 'Custom live classes page size' : 'Custom recorded sessions page size'"
+                @prev="handlePaginationPrev"
+                @next="handlePaginationNext"
+                @update:pageSizeSelection="handlePaginationPageSizeSelection"
+                @update:customPageSize="handlePaginationCustomPageSize"
+              />
             </div>
           </div>
         </section>
 
-        <!-- View All Modal -->
-        <div v-if="viewAllDialog" class="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4 py-10"
-          role="dialog" aria-modal="true" :aria-labelledby="'view-all-title'" @click.self="closeViewAll">
-          <div class="w-full max-w-7xl overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <header class="flex items-center justify-between border-b px-6 py-4">
-              <h2 id="view-all-title" class="text-lg font-semibold text-primary">
-                {{ viewAllSection === "live-classes" ? "All Live Classes" : "All Recorded Sessions" }}
-              </h2>
-
-              <button type="button"
-                class="rounded-full border border-red-500 px-3 py-1.5 text-base font-semibold text-red-500 hover:bg-red-500 hover:text-white hover:border-white transition duration-500 ease-in-out"
-                @click="closeViewAll">
-                x
-              </button>
-            </header>
-
-            <div class="p-6" role="region" aria-live="polite" :aria-busy="viewAllLoadingMore">
-              <div class="mb-4">
-                <label class="sr-only" for="view-all-search">Search sessions</label>
-                <input id="view-all-search" v-model="viewAllSearch" type="search" placeholder="Search sessions..."
-                  class="w-full rounded-full border border-gray-200 px-4 py-2 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              </div>
-
-              <div v-if="showViewAllEmptyState" class="space-y-3" role="status" aria-live="polite">
-                <EmptyState :title="viewAllEmptyStateMessage?.title"
-                  :description="viewAllEmptyStateMessage?.description" />
-              </div>
-
-              <div v-else class="grid gap-4 md:grid-cols-2" role="list">
-                <article v-for="card in filteredViewAllCards" :key="card.id ?? card.title"
-                  class="group flex gap-4 rounded-xl border border-slate-200 bg-slate-50 shadow-sm overflow-hidden"
-                  role="listitem" tabindex="0" @keydown.enter.prevent="openSessionModal(card)"
-                  @keydown.space.prevent="openSessionModal(card)">
-                  <div class="relative h-32 w-32 flex-shrink-0 overflow-hidden rounded-l-lg bg-slate-200">
-                    <img
-                      v-if="card.thumbnail"
-                      :src="card.thumbnail"
-                      class="block h-full w-full object-cover object-center"
-                      loading="lazy"
-                      decoding="async"
-                    />
-
-                    <div v-else class="flex h-full w-full items-center justify-center"
-                      :style="{ backgroundImage: card.subjectGradient }">
-                      <span class="pattern-icon">{{ card.subjectInitials }}</span>
-                    </div>
-
-                    <!-- Play overlay (View all) -->
-                    <button type="button"
-                      class="absolute inset-0 z-10 grid place-items-center bg-black/0 opacity-0 transition group-hover:bg-black/40 group-hover:opacity-100"
-                      aria-label="Play session" @click.stop="openSessionModal(card)">
-                      <span
-                        class="grid place-items-center rounded-full bg-white/90 p-2 shadow-lg transition group-hover:scale-110">
-                        <Icon name="mdi:play-circle" size="34" class="text-primary" />
-                      </span>
-                    </button>
-                  </div>
-
-                  <div class="p-3 min-w-0">
-                    <div v-if="card.topicLoading" class="space-y-2" aria-hidden="true">
-                      <div class="h-4 w-3/4 rounded bg-slate-200 animate-pulse"></div>
-                      <div class="h-3 w-1/2 rounded bg-slate-200 animate-pulse"></div>
-                    </div>
-                    <h3 v-else class="text-md font-semibold text-slate-900 truncate">{{ card.title }}</h3>
-                    <p class="text-sm text-slate-500 truncate">{{ card.instructor }}</p>
-                    <p class="mt-2 text-sm text-slate-600 max-w-full truncate">
-                      {{ card.description || card.details }}
-                    </p>
-
-                    <div class="mt-3 text-xs text-slate-500">
-                      <span class="font-semibold">Subject:</span> {{ card.subject || card.category }}
-                    </div>
-                  </div>
-                </article>
-              </div>
-
-              <div v-if="viewAllLoadingMore" class="mt-4 grid gap-4 md:grid-cols-2" role="status" aria-live="polite">
-                <div v-for="n in viewAllPageSize" :key="`view-all-skeleton-${n}`"
-                  class="animate-pulse rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div class="h-20 w-full rounded-lg bg-slate-200"></div>
-                  <div class="mt-3 h-4 w-3/4 rounded bg-slate-200"></div>
-                  <div class="mt-2 h-3 w-1/2 rounded bg-slate-200"></div>
-                </div>
-              </div>
-
-              <div ref="viewAllSentinel" class="h-1"></div>
-            </div>
-          </div>
-        </div>
-
         <!-- Create Live Class Modal -->
         <div v-if="createDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-10"
           role="dialog" aria-modal="true" aria-labelledby="create-class-title" @click.self="closeCreateDialog">
-          <div class="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+          <div ref="createModalRef" tabindex="-1" class="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
             <header class="flex items-center justify-between border-b px-6 py-4">
               <h2 id="create-class-title" class="text-lg font-semibold text-primary">Create Live Class</h2>
               <button type="button"
@@ -1687,7 +1889,7 @@ const prepareNavigation = () => {
         <!-- Session Player Modal -->
         <div v-if="sessionModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-10"
           role="dialog" aria-modal="true" aria-label="Session player" @click.self="closeSessionModal">
-          <div class="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+          <div ref="sessionModalRef" tabindex="-1" class="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl">
             <header class="flex items-center justify-between border-b px-6 py-4">
               <div class="min-w-0">
                 <h2 class="truncate text-lg font-semibold text-primary">
@@ -1731,13 +1933,25 @@ const prepareNavigation = () => {
 
               </div>
 
-              <div v-if="!joinRequested" class="mt-4 flex items-center gap-3">
+              <div v-if="!joinRequested && !isSelectedLiveSessionEnded" class="mt-4 flex items-center gap-3">
                 <button type="button"
                   class="w-full rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                  :disabled="!selectedSession || meetingCheckLoading" @click="startMeeting">
+                  :disabled="!selectedSession || meetingCheckLoading || (!isRecordedSelected && !isSelectedLiveSessionJoinable)" @click="startMeeting">
                   {{ meetingCheckLoading ? "Checking..." : (isRecordedSelected ? "Play" : "Join Session") }}
                 </button>
               </div>
+              <p
+                v-if="!joinRequested && !isRecordedSelected && selectedSession && isSelectedLiveSessionEnded"
+                class="mt-2 text-center text-sm font-medium text-gray-500"
+              >
+                This session has ended.
+              </p>
+              <p
+                v-if="!joinRequested && !isRecordedSelected && selectedSession && !isSelectedLiveSessionJoinable && !isSelectedLiveSessionEnded"
+                class="mt-2 text-center text-xs text-gray-500"
+              >
+                You will be able to join when this class is live.
+              </p>
 
               <div v-if="joinRequested" class="mt-5">
                 <div v-if="meetingPlayable" class="relative">
@@ -1752,6 +1966,7 @@ const prepareNavigation = () => {
 
                   <video
                     v-if="isRecordedSelected"
+                    ref="recordedPlayerRef"
                     :src="playableUrl"
                     :class="meetingReady ? 'h-[420px] w-full rounded-xl bg-black' : 'h-0 w-0 opacity-0 pointer-events-none'"
                     controls
@@ -1762,6 +1977,18 @@ const prepareNavigation = () => {
                     @canplay="handleMeetingReady"
                     @error="handlePlayerError"
                   />
+
+                  <div
+                    v-if="isRecordedSelected && meetingReady && meetingPlayable"
+                    class="mt-2 flex flex-wrap items-center justify-end gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2"
+                  >
+                    <button type="button" class="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300" @click="togglePlayerPlayback('recorded')">Play/Pause</button>
+                    <button type="button" class="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300" @click="seekPlayer('recorded', -10)">-10s</button>
+                    <button type="button" class="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300" @click="seekPlayer('recorded', 10)">+10s</button>
+                    <button type="button" class="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300" @click="togglePlayerMute('recorded')">Mute/Unmute</button>
+                    <button type="button" class="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300" @click="cyclePlaybackRate('recorded')">{{ recordedPlaybackRate }}x</button>
+                    <button type="button" class="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300" @click="togglePlayerFullscreen('recorded')">Fullscreen</button>
+                  </div>
 
                   <iframe v-else-if="playableUrl" :src="playableUrl"
                     :class="meetingReady ? 'h-[420px] w-full rounded-xl bg-black' : 'h-0 w-0 opacity-0 pointer-events-none'"
@@ -1787,7 +2014,7 @@ const prepareNavigation = () => {
         <div v-if="sessionExpiredModalOpen"
           class="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-4 py-10" role="dialog"
           aria-modal="true" aria-label="Session expired" @click.self="closeSessionExpiredModal">
-          <div class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+          <div ref="sessionExpiredModalRef" tabindex="-1" class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
             <header class="flex items-center justify-between border-b px-6 py-4">
               <h2 class="text-lg font-semibold text-primary">Session expired</h2>
               <button type="button"
