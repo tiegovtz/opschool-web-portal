@@ -33,7 +33,7 @@
         </div>
       </div>
       
-      <div class="bg-white rounded-2xl shadow-2xl p-8 border-2 border-oceanBlue/20">
+      <div class="bg-white rounded-2xl shadow-2xl p-8 border-2 border-oceanBlue/20 flex flex-col flex-1 min-h-0">
         <!-- Header with read-aloud controls -->
         <div class="flex items-center justify-between mb-3">
           <div class="text-xs text-gray-500 uppercase tracking-wider">
@@ -86,7 +86,7 @@
         </div>
         
         <!-- Teleprompter text with word highlighting - scrollable container -->
-        <div class="text-center max-h-[60vh] overflow-y-auto overflow-x-hidden" ref="textContainer">
+        <div class="text-center overflow-y-auto overflow-x-hidden flex-1 min-h-0" ref="textContainer">
           <div
             :class="[
               'font-semibold leading-relaxed text-gray-900 select-none',
@@ -124,21 +124,6 @@
               {{ word }}{{ index < scriptWords.length - 1 ? ' ' : '' }}
             </span>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Spoken transcript display (what was actually said) -->
-    <div
-      v-if="currentTranscript"
-      class="w-full max-w-5xl mt-8"
-    >
-      <div class="bg-gray-100 rounded-xl p-6 border border-gray-200">
-        <div class="text-xs text-gray-500 mb-2 text-center uppercase tracking-wider">
-          What You Said
-        </div>
-        <div class="text-2xl md:text-3xl font-medium text-gray-700 text-center leading-relaxed">
-          {{ currentTranscript }}
         </div>
       </div>
     </div>

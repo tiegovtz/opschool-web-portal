@@ -21,9 +21,9 @@
       >
         <span class="text-xl leading-none">&times;</span>
       </button>
-      <div class="flex flex-col h-[calc(100vh-200px)] max-h-[800px] overflow-hidden">
+      <div class="flex flex-col h-[calc(100vh-200px)] max-h-[800px] overflow-y-auto min-h-0">
       <!-- Header -->
-      <header class="px-6 py-4 bg-gradient-to-r from-oceanBlue to-deepBlue text-white">
+      <header class="flex flex-col px-6 py-4 bg-gradient-to-r from-oceanBlue to-deepBlue text-white flex-shrink-0">
         <div class="flex items-center justify-between">
           <div>
             <h1 id="english-practice-title" class="text-2xl font-bold">English Speaking Practice</h1>
@@ -71,7 +71,7 @@
       >
         {{ scriptError }}
       </div>
-      <div class="flex-1 flex flex-col overflow-hidden relative">
+      <div class="flex-1 flex flex-col overflow-hidden relative min-h-0">
         <!-- Teleprompter display -->
         <EnglishPracticeTeleprompter
           :current-script-line="currentScriptLine"
@@ -91,14 +91,16 @@
         />
 
         <!-- Mic control -->
-        <EnglishPracticeMicControl
-          :is-recording="speechRecognition.isListening.value"
-          :current-turn="turnManager.currentTurn.value"
-          :current-speaker-name="currentSpeakerName"
-          :can-record="canRecord"
-          :is-speech-supported="isSpeechSupported"
-          @toggle="handleMicToggle"
-        />
+        <div class="absolute inset-x-0 bottom-6 flex justify-center">
+          <EnglishPracticeMicControl
+            :is-recording="speechRecognition.isListening.value"
+            :current-turn="turnManager.currentTurn.value"
+            :current-speaker-name="currentSpeakerName"
+            :can-record="canRecord"
+            :is-speech-supported="isSpeechSupported"
+            @toggle="handleMicToggle"
+          />
+        </div>
 
         <!-- TEMP DEBUG: Manual skip for faster QA without speaking every turn -->
         <div v-if="showDebugSkipButton" class="absolute right-6 bottom-6 z-50">
