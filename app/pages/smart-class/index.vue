@@ -1610,7 +1610,7 @@ const prepareNavigation = () => {
                     School class
                   </label>
                   <CustomDropDownList id="create-school-class" v-model="createForm.schoolClass"
-                    class="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    buttonClass="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     :list="classOptions" placeholder="Select class" :disabled="createOptionsLoading" />
                 </div>
 
@@ -1619,7 +1619,7 @@ const prepareNavigation = () => {
                     Subject
                   </label>
                   <CustomDropDownList id="create-subject" v-model="createForm.subject"
-                    class="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    buttonClass="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     :list="subjectOptions" placeholder="Select subject" :disabled="createOptionsLoading" />
                 </div>
 
@@ -1628,7 +1628,7 @@ const prepareNavigation = () => {
                     Topic
                   </label>
                   <CustomDropDownList id="create-topic" v-model="createForm.topic"
-                    class="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    buttonClass="w-full rounded-lg p-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     :list="filteredTopicOptions" placeholder="Select topic" :disabled="createOptionsLoading" />
                 </div>
 
