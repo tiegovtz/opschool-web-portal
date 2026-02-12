@@ -33,7 +33,7 @@
             <span class="text-xl leading-none">&times;</span>
           </button>
         </header>
-        <div class="flex-1 overflow-y-auto px-6 py-4 min-h-0">
+        <div class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-6 py-4 min-h-0">
           <div class="conversation-layout max-w-4xl mx-auto">
         <!-- <p class="text-gray-600 text-center mb-8">
           Practice conversations with AI using speech-to-text and text-to-speech
@@ -240,6 +240,9 @@
               </button>
             </div>
           </div>
+          <div v-if="isRecording" class="relative mt-4 h-[170px]">
+            <WaveGlowBottom :active="isRecording" :audio-level="audioLevel" />
+          </div>
         </footer>
       </div>
 
@@ -271,6 +274,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import LoadingIndicator from '@/components/loading/loadingIndicator.vue'
+import WaveGlowBottom from '@/components/audio/WaveGlowBottom.vue'
 
 // Page metadata
 definePageMeta({
@@ -384,6 +388,11 @@ const isPlaying = ref(false)
 const isRecording = ref(false)
 const isProcessing = ref(false)
 const isGeneratingTTS = ref(false)
+const audioLevel = ref(0)
+let micStream = null
+let micAudioContext = null
+let micAnalyser = null
+let micRafId = null
 const userAnswer = ref('')
 const textAnswer = ref('')
 const inputMode = ref('speech')
@@ -422,16 +431,62 @@ const nextConversationPiece = computed(() => {
 
 const isConversationComplete = computed(() => !!conversationCompleteMessage.value)
 
+const stopMicLevel = () => {
+  if (micRafId != null) {
+    cancelAnimationFrame(micRafId)
+    micRafId = null
+  }
+  if (micAudioContext) {
+    micAudioContext.close().catch(() => {})
+    micAudioContext = null
+  }
+  if (micStream) {
+    micStream.getTracks().forEach((track) => track.stop())
+    micStream = null
+  }
+  micAnalyser = null
+  audioLevel.value = 0
+}
+
+const startMicLevel = async () => {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return
+  if (micStream || micAnalyser) return
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    micAudioContext = new AudioContext()
+    const source = micAudioContext.createMediaStreamSource(micStream)
+    micAnalyser = micAudioContext.createAnalyser()
+    micAnalyser.fftSize = 512
+    source.connect(micAnalyser)
+    const data = new Uint8Array(micAnalyser.fftSize)
+    const update = () => {
+      if (!micAnalyser) return
+      micAnalyser.getByteTimeDomainData(data)
+      let sum = 0
+      for (let i = 0; i < data.length; i += 1) {
+        const v = (data[i] - 128) / 128
+        sum += v * v
+      }
+      const rms = Math.sqrt(sum / data.length)
+      audioLevel.value = Math.min(1, rms * 2.5)
+      micRafId = requestAnimationFrame(update)
+    }
+    update()
+  } catch {
+    stopMicLevel()
+  }
+}
+
 // ============================================================================
 // Lifecycle Hooks
 // ============================================================================
 const isEmbedded = computed(() => String(route.query.embed || '') === '1')
+const isModalOpen = computed(() => !isEmbedded.value)
 
 onMounted(() => {
   if (typeof document !== 'undefined') {
-    if (!isEmbedded.value) {
+    if (!originalBodyOverflow.value) {
       originalBodyOverflow.value = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
     }
     returnTo.value = String(route.query.returnTo || '').trim()
   }
@@ -497,6 +552,30 @@ onMounted(() => {
 })
 
 watch(
+  () => isModalOpen.value,
+  (open) => {
+    if (typeof document === 'undefined') return
+    if (open) {
+      if (!originalBodyOverflow.value) {
+        originalBodyOverflow.value = document.body.style.overflow
+      }
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = originalBodyOverflow.value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => isRecording.value,
+  (recording) => {
+    if (recording) startMicLevel()
+    else stopMicLevel()
+  }
+)
+
+watch(
   () => conversationCompleteMessage.value,
   (message) => {
     if (!message) return
@@ -526,6 +605,7 @@ onUnmounted(() => {
   if (typeof document !== 'undefined') {
     document.body.style.overflow = originalBodyOverflow.value
   }
+  stopMicLevel()
   if (recognition) {
     recognition.stop()
   }

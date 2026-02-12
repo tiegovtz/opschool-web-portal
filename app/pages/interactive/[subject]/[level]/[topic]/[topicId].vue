@@ -429,8 +429,15 @@ watch(
 );
 
 onMounted(async () => {
-  // Trigger MathJax rendering
-  (window as any).MathJax?.typeset();
+  // Trigger MathJax rendering (guard for environments without typeset)
+  const mathJax = (window as any).MathJax;
+  if (mathJax && typeof mathJax.typeset === 'function') {
+    mathJax.typeset();
+  } else if (mathJax && typeof mathJax.typesetPromise === 'function') {
+    mathJax.typesetPromise();
+  } else if ((window as any).mathJaxLoaded && (window as any).MathJaxRender) {
+    (window as any).MathJaxRender([document.body]);
+  }
 
   // Call functin for set Pic Center
   setPicCenter();

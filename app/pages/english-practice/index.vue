@@ -13,7 +13,6 @@
       @click.stop
     >
       <div class="modal-inner relative w-full flex flex-col min-h-0 rounded-2xl bg-white">
-        <div ref="topAnchor" class="sr-only" aria-hidden="true"></div>
         <div v-if="showLoadingBar" class="loading-bar">
           <div class="loading-bar__inner"></div>
         </div>
@@ -61,7 +60,12 @@
           </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto px-6 py-4 min-h-0">
+        <div
+          ref="scrollContainer"
+          class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-6 py-4 min-h-0"
+          @scroll="handleUserScroll"
+        >
+          <div ref="topAnchor" aria-hidden="true"></div>
           <div v-if="scriptLoading" class="text-center text-sm text-gray-500 mt-2 mb-4">
             Loading conversation content…
           </div>
@@ -89,6 +93,16 @@
               :participants="participants"
             />
           </div>
+          <div class="sticky bottom-4 flex justify-end pointer-events-none">
+            <button
+              v-if="showBackToTop"
+              type="button"
+              class="pointer-events-auto rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-md hover:bg-blue-700"
+              @click="handleBackToTop"
+            >
+              Back to top
+            </button>
+          </div>
         </div>
 
         <footer class="shrink-0 px-6 py-4 border-t border-slate-200 flex flex-col items-center gap-3">
@@ -102,6 +116,7 @@
             </button>
           </div>
           <EnglishPracticeMicControl
+            v-if="!speechRecognition.isListening.value"
             :is-recording="speechRecognition.isListening.value"
             :current-turn="turnManager.currentTurn.value"
             :current-speaker-name="currentSpeakerName"
@@ -110,6 +125,9 @@
             :audio-level="audioLevel"
             @toggle="handleMicToggle"
           />
+          <div v-else class="relative w-full h-[170px]">
+            <WaveGlowBottom :active="speechRecognition.isListening.value" :audio-level="audioLevel" />
+          </div>
         </footer>
       </div>
       <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
@@ -131,7 +149,6 @@
       </div>
     </div>
   </div>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -141,6 +158,7 @@ import type { ConversationScript, ScriptLine, SpeakerType, PracticeMode, Convers
 import { useSpeechRecognition } from '~/composables/useSpeechRecognition';
 import { useTurnManager } from '~/composables/useTurnManager';
 import { inferVoiceTypeByName } from '~/utilities/inferVoiceTypeByName';
+import WaveGlowBottom from '~/components/audio/WaveGlowBottom.vue';
 
 // Page metadata - disable layout to remove header/footer
 definePageMeta({
@@ -174,6 +192,8 @@ if (String(route.query.mode || '').trim().toLowerCase() === 'single') {
 const originalBodyOverflow = ref('');
 const allowOverlayClose = ref(false);
 const returnTo = ref('');
+const openedAt = ref(0);
+let popstateReady = false;
 const scriptLoading = ref(false);
 const scriptError = ref('');
 const practiceCompleted = ref(false);
@@ -207,6 +227,7 @@ const aiAudio = typeof Audio !== 'undefined' ? new Audio() : null;
 const TTS_LOG_PREFIX = '[ENG-PRACTICE-TTS]';
 
 const isEmbedded = computed(() => String(route.query.embed || '') === '1');
+const isModalOpen = computed(() => !isEmbedded.value);
 
 // Composables
 const speechRecognition = useSpeechRecognition();
@@ -228,7 +249,11 @@ const scrollDebug = ref<{
   clientHeight: number;
 } | null>(null);
 const lastScrollTarget = ref<HTMLElement | null>(null);
+const scrollContainer = ref<HTMLElement | null>(null);
 const topAnchor = ref<HTMLElement | null>(null);
+const isUserScrolling = ref(false);
+const showBackToTop = ref(false);
+let scrollIdleTimer: number | null = null;
 const showLoadingBar = computed(() => scriptLoading.value || isAiAudioLoading.value);
 const audioLevel = ref(0);
 let micStream: MediaStream | null = null;
@@ -280,6 +305,25 @@ const startMicLevel = async () => {
   } catch {
     stopMicLevel();
   }
+};
+
+const handleUserScroll = () => {
+  isUserScrolling.value = true;
+  if (scrollIdleTimer) {
+    window.clearTimeout(scrollIdleTimer);
+    scrollIdleTimer = null;
+  }
+  const target = scrollContainer.value;
+  showBackToTop.value = !!target && target.scrollTop > 40;
+  scrollIdleTimer = window.setTimeout(() => {
+    isUserScrolling.value = false;
+  }, 800);
+};
+
+const handleBackToTop = () => {
+  const target = scrollContainer.value;
+  if (!target) return;
+  target.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 const currentLineAudioUrl = computed(() => {
@@ -1509,19 +1553,30 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopMicLevel();
+  if (scrollIdleTimer) {
+    window.clearTimeout(scrollIdleTimer);
+    scrollIdleTimer = null;
+  }
 });
 
 watch(
   () => currentScriptLine.value?.id,
   () => {
     nextTick(() => {
-      if (!topAnchor.value) return;
-      topAnchor.value.scrollIntoView({ block: 'start', behavior: 'auto' });
-      requestAnimationFrame(() => {
-        if (topAnchor.value) {
-          topAnchor.value.scrollIntoView({ block: 'start', behavior: 'auto' });
-        }
-      });
+      if (isUserScrolling.value) return;
+      const target = scrollContainer.value;
+      if (target) {
+        target.scrollTo({ top: 0, behavior: 'smooth' });
+        requestAnimationFrame(() => {
+          if (!isUserScrolling.value) {
+            target.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        });
+        return;
+      }
+      if (topAnchor.value) {
+        topAnchor.value.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
     });
   }
 );
@@ -1608,6 +1663,9 @@ const closeModal = () => {
 
 const handleOverlayClick = () => {
   if (!allowOverlayClose.value) return;
+  if (openedAt.value && typeof performance !== 'undefined') {
+    if (performance.now() - openedAt.value < 250) return;
+  }
   closeModal();
 };
 
@@ -1619,6 +1677,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 const handlePopstate = () => {
   if (isEmbedded.value) return;
+  if (!popstateReady) return;
   setTimeout(() => {
     if (route.path === '/english-practice') {
       closeModal();
@@ -1628,10 +1687,12 @@ const handlePopstate = () => {
 
 // Lifecycle
 onMounted(() => {
+  if (typeof performance !== 'undefined') {
+    openedAt.value = performance.now();
+  }
   if (typeof document !== 'undefined') {
-    if (!isEmbedded.value) {
+    if (!originalBodyOverflow.value) {
       originalBodyOverflow.value = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
     }
     returnTo.value = String(route.query.returnTo || '').trim();
   }
@@ -1644,6 +1705,9 @@ onMounted(() => {
         allowOverlayClose.value = true;
       }, 0);
     }
+    setTimeout(() => {
+      popstateReady = true;
+    }, 300);
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -1672,6 +1736,22 @@ onMounted(() => {
     };
   }
 });
+
+watch(
+  () => isModalOpen.value,
+  (open) => {
+    if (typeof document === 'undefined') return;
+    if (open) {
+      if (!originalBodyOverflow.value) {
+        originalBodyOverflow.value = document.body.style.overflow;
+      }
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = originalBodyOverflow.value;
+    }
+  },
+  { immediate: true }
+);
 
 onUnmounted(() => {
   if (typeof window !== 'undefined') {

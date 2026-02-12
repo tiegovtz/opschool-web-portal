@@ -1,7 +1,7 @@
 <template>
-  <div class="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-gray-50 to-white">
+  <div class="flex-1 flex flex-col items-center justify-center p-5 bg-slate-50">
     <!-- Avatars at top -->
-    <div class="w-full max-w-4xl flex items-center justify-between mb-8">
+    <div class="w-full max-w-4xl flex items-center justify-between mb-4">
       <EnglishPracticeAvatar
         :name="primaryAvatar.name"
         :type="primaryAvatar.type"
@@ -23,9 +23,9 @@
     <!-- Script line display (current line to practice) -->
     <div
       v-if="currentScriptLine"
-      class="w-full max-w-5xl mb-12"
+      class="w-full max-w-5xl mb-6"
     >
-      <div class="text-center mb-4">
+      <div class="text-center mb-2">
         <div class="inline-block px-4 py-2 bg-oceanBlue/10 rounded-full">
           <span class="text-sm font-medium text-oceanBlue">
             Line {{ currentLineIndex + 1 }} of {{ totalLines }}
@@ -33,7 +33,7 @@
         </div>
       </div>
       
-      <div class="bg-white rounded-2xl shadow-2xl p-8 border-2 border-oceanBlue/20 flex flex-col flex-1 min-h-0">
+      <div class="bg-transparent rounded-2xl p-4 border border-slate-200/60 flex flex-col flex-1 min-h-0">
         <!-- Header with read-aloud controls -->
         <div class="flex items-center justify-between mb-3">
           <div class="text-xs text-gray-500 uppercase tracking-wider">
