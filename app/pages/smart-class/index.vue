@@ -1494,7 +1494,7 @@ const prepareNavigation = () => {
     :name="$router.currentRoute.value.fullPath.includes('header-less') ? ('normal' as any) : ('home-layout' as any)">
     <main ref="pageRoot" id="main-container" tabindex="-1" class="min-h-screen bg-white font-sans text-gray-900">
       <p class="sr-only" aria-live="assertive" aria-atomic="true">{{ srAnnouncement }}</p>
-      <div class="container mx-auto max-w-7xl px-4 py-10">
+      <div class="mx-auto w-full max-w-none px-0 sm:px-2 lg:max-w-7xl lg:px-4 py-8 sm:py-10">
         <!-- Back -->
         <NuxtLink v-if="canGoBack" to="/"
           class="mb-6 inline-flex items-center gap-2 rounded-full border border-primary bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm hover:bg-gray-50">
@@ -1514,25 +1514,26 @@ const prepareNavigation = () => {
         </header>
 
         <!-- Main Card -->
-        <section class="rounded-3xl border border-gray-200 bg-white shadow-sm">
+        <section class="rounded-2xl border border-gray-200 bg-white shadow-sm sm:rounded-3xl">
           <!-- Tabs -->
-          <div class="flex flex-wrap items-center gap-2 border-b border-gray-200 p-4" role="tablist">
-            <button v-for="tab in tabItems" :key="tab.value" role="tab" type="button"
-              :aria-selected="activeTab === tab.value" :class="[
-                activeTab === tab.value ? 'bg-primary text-white' : 'text-primary hover:bg-gray-100',
-                'flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition',
-              ]" @click="activeTab = tab.value">
-              <Icon :name="tab.icon" size="18" />
-              {{ tab.title }}
-            </button>
-
-            <span class="ml-auto hidden text-sm text-gray-500 md:block">
+          <div class="border-b border-gray-200 p-3 sm:p-4">
+            <div class="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap" role="tablist">
+              <button v-for="tab in tabItems" :key="tab.value" role="tab" type="button"
+                :aria-selected="activeTab === tab.value" :class="[
+                  activeTab === tab.value ? 'bg-primary text-white' : 'text-primary hover:bg-gray-100',
+                  'flex w-full items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition sm:w-auto sm:justify-start',
+                ]" @click="activeTab = tab.value">
+                <Icon :name="tab.icon" size="18" />
+                {{ tab.title }}
+              </button>
+            </div>
+            <span class="mt-2 hidden text-right text-sm text-gray-500 md:block">
               {{ activeItem.availability }}
             </span>
           </div>
 
           <!-- Summary -->
-          <div class="border-b border-gray-200 p-6">
+          <div class="border-b border-gray-200 p-4 sm:p-6">
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p class="text-xs uppercase tracking-widest text-gray-400">
@@ -1548,10 +1549,11 @@ const prepareNavigation = () => {
                 </p>
               </div>
 
-              <div v-if="activeTab !== 'live-tv'" class="flex items-center gap-2">
+              <div v-if="activeTab !== 'live-tv'" class="flex w-full items-center justify-end gap-2 lg:w-auto">
                 <button v-if="activeTab === 'live-classes' && isTeacherAdmin" type="button"
-                  class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  class="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                   @click="openCreateDialog">
+                  <Icon name="mdi:plus" size="18" />
                   Create class
                 </button>
               </div>
@@ -1559,7 +1561,7 @@ const prepareNavigation = () => {
           </div>
 
           <!-- Content -->
-          <div class="p-6">
+          <div class="p-4 sm:p-6">
             <!-- Loading -->
             <div v-if="isLoadingCards && activeTab !== 'live-tv'" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <div v-for="n in 6" :key="n" class="animate-pulse rounded-2xl border border-gray-200 bg-white shadow-sm">
@@ -1586,7 +1588,11 @@ const prepareNavigation = () => {
                 </div>
 
                 <div v-if="activeTabPanel.streamUrl && !somakwanzaError" class="p-2 bg-black">
-                  <VidstackPlayer :src="activeTabPanel.streamUrl" :title="activeTabPanel.nowPlaying || 'SomaKwanza TV'" />
+                  <VidstackPlayer
+                    :src="activeTabPanel.streamUrl"
+                    :title="activeTabPanel.nowPlaying || 'SomaKwanza TV'"
+                    :auto-fullscreen-on-play-mobile="true"
+                  />
                 </div>
 
                 <div v-if="activeTabPanel.streamUrl && somakwanzaLoading && !somakwanzaError"
@@ -1621,29 +1627,25 @@ const prepareNavigation = () => {
 
             <!-- CARDS -->
             <div v-else>
-              <div v-if="activeTab === 'live-classes'" class="mb-4 flex flex-wrap items-center gap-3" role="group" aria-label="Live class filters">
-                <div class="flex flex-wrap gap-2">
+              <div v-if="activeTab === 'live-classes'" class="mb-4" role="group" aria-label="Live class filters">
+                <div class="flex gap-2 overflow-x-auto pb-2" role="list" aria-label="Live class filter chips">
                   <button
                     v-for="filter in liveFilterGroups[0]"
                     :key="filter.key"
                     type="button"
-                    class="rounded-full px-4 py-2 text-sm font-semibold transition"
+                    class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition"
                     :class="activeLiveFilter === filter.key ? 'bg-primary text-white' : 'border border-primary text-primary hover:bg-primary/10'"
                     :aria-pressed="activeLiveFilter === filter.key"
                     @click="activeLiveFilter = filter.key"
                   >
                     {{ filter.label }}
                   </button>
-                </div>
-
-                <span class="hidden h-8 w-1 bg-primary/30 md:inline-block rounded-full md:mx-3" aria-hidden="true"></span>
-
-                <div class="flex flex-wrap gap-2">
+                  <span class="mx-1 my-auto h-6 w-px shrink-0 bg-primary/30" aria-hidden="true"></span>
                   <button
                     v-for="filter in liveFilterGroups[1]"
                     :key="filter.key"
                     type="button"
-                    class="rounded-full px-4 py-2 text-sm font-semibold transition"
+                    class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition"
                     :class="activeLiveFilter === filter.key ? 'bg-primary text-white' : 'border border-primary text-primary hover:bg-primary/10'"
                     :aria-pressed="activeLiveFilter === filter.key"
                     @click="activeLiveFilter = filter.key"
@@ -1654,7 +1656,7 @@ const prepareNavigation = () => {
               </div>
 
               <div class="mb-4 flex flex-wrap items-center gap-3">
-                <div class="min-w-[240px] flex-1">
+                <div class="w-full min-w-0 flex-1">
                   <label class="sr-only" :for="activeTab === 'live-classes' ? 'live-search' : 'recorded-search'">
                     Search sessions
                   </label>
@@ -1731,12 +1733,12 @@ const prepareNavigation = () => {
                       {{ card.instructor || "SomaKwanza Teacher" }}
                     </p>
 
-                    <div class="mt-3 flex items-center justify-between text-xs text-gray-500">
-                      <span>{{ card.subject ?? card.category }}</span>
+                    <div class="mt-3 flex flex-col items-start gap-1 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+                      <span class="break-words">{{ card.subject ?? card.category }}</span>
                       <span v-if="activeTab === 'live-classes'" class="inline-flex items-center gap-1">
                         <span v-if="getTimeLeftLabel(card).isLive" class="inline-flex items-center gap-1 text-red-500">
-                          <span class="h-2 w-2 rounded-full bg-red-500"></span>
-                          Live
+                          <span class="live-dot h-2 w-2 rounded-full bg-red-500"></span>
+                          <span class="live-text">Live</span>
                         </span>
                         <span v-else>{{ getTimeLeftLabel(card).label }}</span>
                       </span>
@@ -1784,6 +1786,7 @@ const prepareNavigation = () => {
               <h2 id="create-class-title" class="text-lg font-semibold text-primary">Create Live Class</h2>
               <button type="button"
                 class="rounded-lg border border-primary px-3 py-1.5 text-sm font-semibold text-primary hover:text-primary/60"
+                aria-label="Close button"
                 @click="closeCreateDialog">
                 Close
               </button>
@@ -1870,11 +1873,12 @@ const prepareNavigation = () => {
                 </div>
 
                 <div class="md:col-span-2 flex items-center justify-end gap-3">
-                  <button type="button"
-                    class="rounded-full border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                    @click="closeCreateDialog">
-                    Cancel
-                  </button>
+                <button type="button"
+                  class="rounded-full border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  aria-label="Close button"
+                  @click="closeCreateDialog">
+                  Cancel
+                </button>
                   <button type="submit"
                     class="rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                     :disabled="createSubmitting">
@@ -1897,40 +1901,47 @@ const prepareNavigation = () => {
                 </h2>
 
                 <p class="mt-1 text-sm text-gray-600">
-                  {{ selectedSession?.instructor || "Instructor" }} • {{ selectedSession?.time || "TBD" }}
+                  <span class="block break-words md:inline">{{ selectedSession?.instructor || "Instructor" }}</span>
+                  <span class="hidden md:inline"> • </span>
+                  <span class="block md:inline">{{ selectedSession?.time || "TBD" }}</span>
                 </p>
               </div>
 
               <button type="button"
                 class="rounded-full border border-red-500 px-3 py-1.5 text-base font-semibold text-red-500 hover:bg-red-500 hover:text-white hover:border-white transition duration-500 ease-in-out"
+                aria-label="Close button"
                 @click="closeSessionModal">
                 x
               </button>
             </header>
 
             <div class="p-6">
-              <div v-if="!joinRequested" class="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <div class="h-20 w-20 rounded-md">
-                  <img
-                    :src="selectedSession?.badge === 'Recorded' ? defaultRecordingThumbnail : defaultThumbnail"
-                    alt=""
-                    class="block h-full w-full rounded-md object-cover object-center"
-                    loading="lazy"
-                    decoding="async"
-                  >
-                </div>
-                <div>
-                  <h3 class="text-base font-semibold text-gray-900">
-                    {{ selectedSession?.title || "Session summary" }}
-                  </h3>
-                  <p class="mt-1 text-sm text-gray-600">
-                    {{ selectedSession?.instructor || "Instructor" }} • {{ selectedSession?.time || "TBD" }}
-                  </p>
-                  <p v-if="selectedSession?.description" class="mt-3 text-sm text-gray-700">
-                    {{ selectedSession.description }}
-                  </p>
-                </div>
+              <div v-if="!joinRequested" class="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <div class="flex flex-col gap-3 md:gap-4 lg:flex-row lg:items-start lg:gap-4">
+                  <div class="h-40 w-full overflow-hidden rounded-lg md:h-48 lg:h-20 lg:w-20 lg:shrink-0">
+                    <img
+                      :src="selectedSession?.badge === 'Recorded' ? defaultRecordingThumbnail : defaultThumbnail"
+                      alt=""
+                      class="block h-full w-full rounded-lg object-cover object-center"
+                      loading="lazy"
+                      decoding="async"
+                    >
+                  </div>
 
+                  <div>
+                    <h3 class="text-base font-semibold text-gray-900">
+                      {{ selectedSession?.title || "Session summary" }}
+                    </h3>
+                    <p class="mt-1 text-sm text-gray-600">
+                      <span class="block break-words md:inline">{{ selectedSession?.instructor || "Instructor" }}</span>
+                      <span class="hidden md:inline"> • </span>
+                      <span class="block md:inline">{{ selectedSession?.time || "TBD" }}</span>
+                    </p>
+                    <p v-if="selectedSession?.description" class="mt-3 text-sm text-gray-700">
+                      {{ selectedSession.description }}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div v-if="!joinRequested && !isSelectedLiveSessionEnded" class="mt-4 flex items-center gap-3">
@@ -2019,6 +2030,7 @@ const prepareNavigation = () => {
               <h2 class="text-lg font-semibold text-primary">Session expired</h2>
               <button type="button"
                 class="rounded-full border border-red-500 px-3 py-1.5 text-base font-semibold text-red-500 hover:bg-red-500 hover:text-white hover:border-white transition duration-500 ease-in-out"
+                aria-label="Close button"
                 @click="closeSessionExpiredModal">
                 x
               </button>
@@ -2032,6 +2044,7 @@ const prepareNavigation = () => {
               <div class="mt-5 flex items-center justify-end gap-3">
                 <button type="button"
                   class="rounded-full border border-gray-200 bg-white px-5 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  aria-label="Close button"
                   @click="closeSessionExpiredModal">
                   Cancel
                 </button>
@@ -2076,5 +2089,35 @@ const prepareNavigation = () => {
   font-size: 1.25rem;
   font-weight: 800;
   color: rgba(15, 23, 42, 0.75);
+}
+
+.live-dot {
+  animation: live-dot-pulse 1.4s ease-in-out infinite;
+}
+
+.live-text {
+  animation: live-text-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes live-dot-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.55;
+  }
+}
+
+@keyframes live-text-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 </style>
