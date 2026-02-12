@@ -59,6 +59,12 @@
             </button>
           </div>
         </header>
+        <div
+          v-if="showRotateBanner"
+          class="mx-3 mt-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700"
+        >
+          Rotate to portrait for a better experience.
+        </div>
 
         <div
           ref="scrollContainer"
@@ -66,12 +72,6 @@
           :class="speechRecognition.isListening.value ? 'pb-[190px]' : ''"
           @scroll="handleUserScroll"
         >
-          <div
-            v-if="showRotateBanner"
-            class="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 sm:hidden"
-          >
-            Rotate to landscape for a better experience.
-          </div>
           <div ref="topAnchor" aria-hidden="true"></div>
           <div v-if="scriptLoading" class="text-center text-sm text-gray-500 mt-2 mb-4">
             Loading conversation content…
@@ -224,7 +224,7 @@ const allowOverlayClose = ref(false);
 const returnTo = ref('');
 const isPortrait = ref(false);
 const isSmallScreen = ref(false);
-const showRotateBanner = computed(() => isPortrait.value && isSmallScreen.value);
+const showRotateBanner = computed(() => !isPortrait.value && isSmallScreen.value);
 const openedAt = ref(0);
 let popstateReady = false;
 const scriptLoading = ref(false);
@@ -1720,7 +1720,8 @@ const handlePopstate = () => {
 
 const updateOrientationState = () => {
   if (typeof window === 'undefined') return;
-  isSmallScreen.value = window.innerWidth < 640;
+  const shortestSide = Math.min(window.innerWidth, window.innerHeight);
+  isSmallScreen.value = shortestSide < 640;
   isPortrait.value = window.matchMedia('(orientation: portrait)').matches;
 };
 
