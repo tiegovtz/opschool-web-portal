@@ -438,9 +438,9 @@ onMounted(async () => {
 
 const updateInteractiveVideoLinks = async () => {
   if (!import.meta.client || !notesContainer.value) return;
-  if (!signInAccessToken.value) return;
-
+  
   const container = notesContainer.value as HTMLElement;
+  if (!signInAccessToken.value || !container) return;
   const links = Array.from(
     container?.querySelectorAll<HTMLAnchorElement>(
       'a[data-interactive-video-link="true"][data-video-id]'
