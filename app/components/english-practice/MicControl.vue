@@ -1,13 +1,13 @@
 <template>
   <div class="w-full flex justify-center">
-    <div ref="micWrap" class="relative flex w-full max-w-[320px] flex-col items-center gap-3">
+    <div ref="micWrap" class="relative flex w-full max-w-[260px] sm:max-w-[320px] flex-col items-center gap-2 sm:gap-3">
       <canvas ref="waveCanvas" class="mic-wave-canvas" aria-hidden="true"></canvas>
       <!-- Mic button -->
       <button
         @click="handleClick"
         :disabled="isMicDisabled"
         :class="[
-          'w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 transform',
+          'w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 transform',
           isRecording
             ? 'bg-red-500 hover:bg-red-600 scale-110 animate-pulse'
             : !isMicDisabled
@@ -19,16 +19,16 @@
       >
         <Icon
           :name="isRecording ? 'heroicons:stop' : 'heroicons:microphone'"
-          class="w-8 h-8 text-white"
+          class="w-7 h-7 sm:w-8 sm:h-8 text-white"
         />
       </button>
 
       <!-- Turn indicator -->
       <div
         v-if="currentTurn"
-        class="px-4 py-2 bg-white rounded-full shadow-lg border-2 border-oceanBlue"
+        class="px-3 py-1.5 sm:px-4 sm:py-2 bg-white rounded-full shadow-lg border-2 border-oceanBlue"
       >
-        <span class="text-sm font-medium text-gray-800">
+        <span class="text-xs sm:text-sm font-medium text-gray-800">
           {{ turnMessage }}
         </span>
       </div>
@@ -207,11 +207,19 @@ watch(
 
 .mic-wave-canvas {
   position: absolute;
-  bottom: 40px;
-  width: 220px;
-  height: 60px;
+  inset-inline: 0;
+  bottom: -6px;
+  width: 100%;
+  height: 80px;
   opacity: 0.9;
   pointer-events: none;
+}
+
+@media (max-width: 639px) {
+  .mic-wave-canvas {
+    bottom: -4px;
+    height: 64px;
+  }
 }
 
 .mic-wave + button,

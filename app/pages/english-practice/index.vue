@@ -1,22 +1,22 @@
 <template>
   <div
     :class="isEmbedded
-      ? 'relative w-full h-full p-4'
-      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'"
+      ? 'fixed inset-0 p-2 sm:p-4 flex items-start justify-center overflow-y-auto'
+      : 'fixed inset-0 z-50 flex items-start justify-center bg-black/30 p-2 sm:p-4 overflow-y-auto'"
     @click.self="!isEmbedded && handleOverlayClick"
   >
     <div
-      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-24px))] h-auto max-h-[calc(100vh-24px)] overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent"
+      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-16px))] max-h-[calc(100vh-16px)] overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent"
       role="dialog"
       aria-modal="true"
       aria-labelledby="english-practice-title"
       @click.stop
     >
-      <div class="modal-inner relative w-full flex flex-col min-h-0 rounded-2xl bg-white">
+      <div class="modal-inner relative w-full flex flex-col min-h-0 rounded-2xl bg-white overflow-hidden">
         <div v-if="showLoadingBar" class="loading-bar">
           <div class="loading-bar__inner"></div>
         </div>
-        <header class="practice-header shrink-0 flex items-start justify-between gap-4 px-6 py-4 border-b border-slate-200">
+        <header class="practice-header shrink-0 flex items-start justify-between gap-4 px-3 py-3 sm:px-6 sm:py-4 border-b border-slate-200">
           <div>
             <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">English Speaking Practice</h1>
             <p class="text-xs text-slate-500 mt-1">
@@ -62,9 +62,16 @@
 
         <div
           ref="scrollContainer"
-          class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-6 py-4 min-h-0"
+          class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-3 py-3 sm:px-6 sm:py-4 min-h-0"
+          :class="speechRecognition.isListening.value ? 'pb-[190px]' : ''"
           @scroll="handleUserScroll"
         >
+          <div
+            v-if="showRotateBanner"
+            class="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 sm:hidden"
+          >
+            Rotate to landscape for a better experience.
+          </div>
           <div ref="topAnchor" aria-hidden="true"></div>
           <div v-if="scriptLoading" class="text-center text-sm text-gray-500 mt-2 mb-4">
             Loading conversation content…
@@ -105,8 +112,11 @@
           </div>
         </div>
 
-        <footer class="shrink-0 px-6 py-4 border-t border-slate-200 flex flex-col items-center gap-3">
-          <div v-if="showDebugSkipButton" class="w-full flex justify-end">
+        <footer
+          v-if="showDebugSkipButton"
+          class="shrink-0 px-3 py-3 sm:px-6 sm:py-4 border-t border-slate-200 flex flex-col items-center gap-2 sm:gap-3"
+        >
+          <div class="w-full flex justify-end">
             <button
               type="button"
               class="px-3 py-2 rounded-md bg-gray-900 text-white text-xs font-medium hover:bg-black transition-colors"
@@ -115,37 +125,57 @@
               Skip Turn
             </button>
           </div>
-          <EnglishPracticeMicControl
-            v-if="!speechRecognition.isListening.value"
-            :is-recording="speechRecognition.isListening.value"
-            :current-turn="turnManager.currentTurn.value"
-            :current-speaker-name="currentSpeakerName"
-            :can-record="canRecord"
-            :is-speech-supported="isSpeechSupported"
-            :audio-level="audioLevel"
-            @toggle="handleMicToggle"
-          />
-          <div v-else class="relative w-full h-[170px]">
-            <WaveGlowBottom :active="speechRecognition.isListening.value" :audio-level="audioLevel" />
-          </div>
         </footer>
-      </div>
-      <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
         <div
-          v-for="toast in toasts"
-          :key="toast.id"
-          class="toast"
-          :class="[toast.type]"
+          v-if="!speechRecognition.isListening.value"
+          class="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center"
         >
-          {{ toast.message }}
+          <div class="pointer-events-auto">
+            <EnglishPracticeMicControl
+              :is-recording="speechRecognition.isListening.value"
+              :current-turn="turnManager.currentTurn.value"
+              :current-speaker-name="currentSpeakerName"
+              :can-record="canRecord"
+              :is-speech-supported="isSpeechSupported"
+              :audio-level="audioLevel"
+              @toggle="handleMicToggle"
+            />
+          </div>
         </div>
-      </div>
-      <div
-        v-if="isDebugMode && scrollDebug"
-        class="fixed bottom-4 right-4 z-50 rounded-md bg-orange-500/90 px-3 py-2 text-xs text-white shadow"
-      >
-        {{ scrollDebug.tag }} {{ scrollDebug.className }} |
-        {{ scrollDebug.scrollTop }} / {{ scrollDebug.scrollHeight }}
+        <div
+          v-if="speechRecognition.isListening.value"
+          class="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[170px] w-full"
+        >
+          <WaveGlowBottom class="w-full h-full" :active="speechRecognition.isListening.value" :audio-level="audioLevel" />
+        </div>
+        <!-- Hidden Audio Element -->
+        <audio
+          ref="audioRef"
+          @ended="onAudioEnded"
+          @error="onAudioError"
+          @timeupdate="onAudioTimeUpdate"
+          class="absolute w-0 h-0 overflow-hidden"
+          :volume="1.0"
+        ></audio>
+
+        <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+          <div
+            v-for="toast in toasts"
+            :key="toast.id"
+            class="toast"
+            :class="[toast.type]"
+          >
+            {{ toast.message }}
+          </div>
+        </div>
+
+        <div
+          v-if="isDebugMode && scrollDebug"
+          class="fixed bottom-4 right-4 z-50 rounded-md bg-orange-500/90 px-3 py-2 text-xs text-white shadow"
+        >
+          {{ scrollDebug.tag }} {{ scrollDebug.className }} |
+          {{ scrollDebug.scrollTop }} / {{ scrollDebug.scrollHeight }}
+        </div>
       </div>
     </div>
   </div>
@@ -192,6 +222,9 @@ if (String(route.query.mode || '').trim().toLowerCase() === 'single') {
 const originalBodyOverflow = ref('');
 const allowOverlayClose = ref(false);
 const returnTo = ref('');
+const isPortrait = ref(false);
+const isSmallScreen = ref(false);
+const showRotateBanner = computed(() => isPortrait.value && isSmallScreen.value);
 const openedAt = ref(0);
 let popstateReady = false;
 const scriptLoading = ref(false);
@@ -1685,6 +1718,12 @@ const handlePopstate = () => {
   }, 0);
 };
 
+const updateOrientationState = () => {
+  if (typeof window === 'undefined') return;
+  isSmallScreen.value = window.innerWidth < 640;
+  isPortrait.value = window.matchMedia('(orientation: portrait)').matches;
+};
+
 // Lifecycle
 onMounted(() => {
   if (typeof performance !== 'undefined') {
@@ -1699,6 +1738,9 @@ onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', handleKeydown);
     window.addEventListener('popstate', handlePopstate);
+    updateOrientationState();
+    window.addEventListener('resize', updateOrientationState);
+    window.addEventListener('orientationchange', updateOrientationState);
     if (!isEmbedded.value) {
       // Avoid immediately closing the modal on the opening click
       setTimeout(() => {
@@ -1757,6 +1799,8 @@ onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', handleKeydown);
     window.removeEventListener('popstate', handlePopstate);
+    window.removeEventListener('resize', updateOrientationState);
+    window.removeEventListener('orientationchange', updateOrientationState);
   }
   if (typeof document !== 'undefined') {
     document.body.style.overflow = originalBodyOverflow.value;
@@ -1842,20 +1886,55 @@ onUnmounted(() => {
     transform: translateX(180%);
   }
 }
+
+.mic-overlay {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.mic-overlay__inner {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 320px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 639px) and (orientation: landscape) {
+  .mic-overlay {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 16px;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  .mic-overlay__inner {
+    max-width: 260px;
+    gap: 8px;
+    pointer-events: auto;
+  }
+}
 </style>
 
 <style scoped>
 .toast-container {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: absolute;
+  inset: 0;
   display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding-top: 16px;
   flex-direction: column;
   gap: 12px;
   z-index: 1200;
   width: min(92vw, 520px);
   pointer-events: none;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .toast {
@@ -1882,7 +1961,7 @@ onUnmounted(() => {
 
 @media (max-width: 640px) {
   .toast-container {
-    top: 12px;
+    padding-top: 12px;
     width: calc(100vw - 24px);
   }
 }

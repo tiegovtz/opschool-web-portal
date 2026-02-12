@@ -1,22 +1,22 @@
 <template>
   <div
     :class="isEmbedded
-      ? 'relative w-full h-full p-4'
-      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'"
+      ? 'fixed inset-0 p-2 sm:p-4 flex items-start justify-center overflow-y-auto'
+      : 'fixed inset-0 z-50 flex items-start justify-center bg-black/30 p-2 sm:p-4 overflow-y-auto'"
     @click.self="!isEmbedded && handleOverlayClick"
   >
     <div
-      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-24px))] h-auto max-h-[calc(100vh-24px)] overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent"
+      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-16px))] max-h-[calc(100vh-16px)] overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent"
       role="dialog"
       aria-modal="true"
       aria-labelledby="conversation-practice-title"
       @click.stop
     >
-      <div class="modal-inner relative w-full flex flex-col min-h-0 rounded-2xl bg-white">
+      <div class="modal-inner relative w-full flex flex-col min-h-0 rounded-2xl bg-white overflow-hidden">
         <div v-if="showLoadingBar" class="loading-bar">
           <div class="loading-bar__inner"></div>
         </div>
-        <header class="shrink-0 flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200">
+        <header class="shrink-0 flex items-center justify-between gap-4 px-3 py-3 sm:px-6 sm:py-4 border-b border-slate-200">
           <h1
             id="conversation-practice-title"
             class="text-lg font-semibold text-blue-700 tracking-tight"
@@ -33,7 +33,16 @@
             <span class="text-xl leading-none">&times;</span>
           </button>
         </header>
-        <div class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-6 py-4 min-h-0">
+        <div
+          class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-3 py-3 sm:px-6 sm:py-4 min-h-0"
+          :class="isRecording ? 'pb-[190px]' : ''"
+        >
+          <div
+            v-if="showRotateBanner"
+            class="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 sm:hidden"
+          >
+            Rotate to landscape for a better experience.
+          </div>
           <div class="conversation-layout max-w-4xl mx-auto">
         <!-- <p class="text-gray-600 text-center mb-8">
           Practice conversations with AI using speech-to-text and text-to-speech
@@ -75,7 +84,7 @@
             <p class="font-medium text-gray-800">Conversation preview</p>
             <p v-if="previewLoading" class="text-gray-500">Loading preview...</p>
             <p v-else-if="previewError" class="text-red-600">{{ previewError }}</p>
-            <div v-else-if="previewPieces.length" class="mt-2 max-h-40 overflow-y-auto">
+            <div v-else-if="previewPieces.length" class="mt-2 max-h-[40vh] overflow-y-auto sm:max-h-40">
               <ul class="list-disc pl-5 space-y-1">
                 <li v-for="(piece, idx) in previewPieces.slice(0, 5)" :key="idx">
                   {{ piece }}
@@ -212,13 +221,13 @@
         </div>
       </div>
         </div>
-        <footer class="shrink-0 px-6 py-4 border-t border-slate-200">
+        <footer class="shrink-0 px-3 py-3 sm:px-6 sm:py-4 border-t border-slate-200">
           <div class="max-w-4xl mx-auto">
-            <div v-if="!conversationStarted" class="conversation-actions flex gap-3 justify-center">
+            <div v-if="!conversationStarted" class="conversation-actions flex flex-col gap-3 justify-center sm:flex-row">
               <button
                 @click="startVoiceConversation"
                 :class="[
-                  'px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold transition-colors',
+                  'w-full sm:w-auto px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold transition-colors',
                   isSpeechSupported ? 'hover:bg-blue-700' : 'opacity-70 cursor-not-allowed'
                 ]"
               >
@@ -226,7 +235,7 @@
               </button>
               <button
                 @click="inputMode = 'text'; startConversation()"
-                class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+                class="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
               >
                 Start Conversation by Text
               </button>
@@ -234,36 +243,38 @@
             <div v-else class="flex justify-center">
               <button
                 @click="resetConversation"
-                class="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+                class="w-full sm:w-auto px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
               >
                 Restart Conversation
               </button>
             </div>
           </div>
-          <div v-if="isRecording" class="relative mt-4 h-[170px]">
-            <WaveGlowBottom :active="isRecording" :audio-level="audioLevel" />
-          </div>
         </footer>
-      </div>
-
-      <!-- Hidden Audio Element -->
-      <audio
-        ref="audioRef"
-        @ended="onAudioEnded"
-        @error="onAudioError"
-        @timeupdate="onAudioTimeUpdate"
-        class="hidden"
-        :volume="1.0"
-      ></audio>
-
-      <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
         <div
-          v-for="toast in toasts"
-          :key="toast.id"
-          class="toast"
-          :class="[toast.type]"
+          v-if="isRecording"
+          class="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[170px] w-full"
         >
-          {{ toast.message }}
+          <WaveGlowBottom class="w-full h-full" :active="isRecording" :audio-level="audioLevel" />
+        </div>
+        <!-- Hidden Audio Element -->
+        <audio
+          ref="audioRef"
+          @ended="onAudioEnded"
+          @error="onAudioError"
+          @timeupdate="onAudioTimeUpdate"
+          class="absolute w-0 h-0 overflow-hidden"
+          :volume="1.0"
+        ></audio>
+
+        <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+          <div
+            v-for="toast in toasts"
+            :key="toast.id"
+            class="toast"
+            :class="[toast.type]"
+          >
+            {{ toast.message }}
+          </div>
         </div>
       </div>
     </div>
@@ -286,6 +297,9 @@ const route = useRoute()
 const originalBodyOverflow = ref('')
 const allowOverlayClose = ref(false)
 const returnTo = ref('')
+const isPortrait = ref(false)
+const isSmallScreen = ref(false)
+const showRotateBanner = computed(() => isPortrait.value && isSmallScreen.value)
 
 const closeModal = () => {
   if (
@@ -330,6 +344,12 @@ const handlePopstate = () => {
       closeModal()
     }
   }, 0)
+}
+
+const updateOrientationState = () => {
+  if (typeof window === 'undefined') return
+  isSmallScreen.value = window.innerWidth < 640
+  isPortrait.value = window.matchMedia('(orientation: portrait)').matches
 }
 
 // ============================================================================
@@ -493,6 +513,9 @@ onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', handleKeydown)
     window.addEventListener('popstate', handlePopstate)
+    updateOrientationState()
+    window.addEventListener('resize', updateOrientationState)
+    window.addEventListener('orientationchange', updateOrientationState)
     if (!isEmbedded.value) {
       // Avoid immediately closing the modal on the opening click.
       setTimeout(() => {
@@ -601,6 +624,8 @@ onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', handleKeydown)
     window.removeEventListener('popstate', handlePopstate)
+    window.removeEventListener('resize', updateOrientationState)
+    window.removeEventListener('orientationchange', updateOrientationState)
   }
   if (typeof document !== 'undefined') {
     document.body.style.overflow = originalBodyOverflow.value
@@ -1139,16 +1164,20 @@ const showToast = (message, type = 'info', duration = 4000) => {
 
 <style scoped>
 .toast-container {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding-top: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   z-index: 1200;
   width: min(92vw, 520px);
   pointer-events: none;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .toast {
@@ -1175,7 +1204,7 @@ const showToast = (message, type = 'info', duration = 4000) => {
 
 @media (max-width: 640px) {
   .toast-container {
-    top: 12px;
+    padding-top: 12px;
     width: calc(100vw - 24px);
   }
   .toast {

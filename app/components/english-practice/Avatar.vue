@@ -1,7 +1,7 @@
 <template>
   <div
     :class="[
-      'flex items-center gap-3 transition-all duration-300',
+      'practice-avatar flex items-center gap-3 transition-all duration-300',
       position === 'left' ? 'flex-row' : 'flex-row-reverse',
       isActive && 'scale-105'
     ]"
@@ -34,7 +34,7 @@
     
     <div
       :class="[
-        'text-sm font-medium',
+        'practice-avatar__meta text-sm font-medium',
         position === 'left' ? 'text-left' : 'text-right'
       ]"
     >
@@ -72,3 +72,16 @@ withDefaults(defineProps<Props>(), {
 });
 </script>
 
+<style scoped>
+@media (max-width: 639px) and (orientation: portrait) {
+  .practice-avatar {
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .practice-avatar__meta {
+    text-align: center;
+  }
+}
+</style>
