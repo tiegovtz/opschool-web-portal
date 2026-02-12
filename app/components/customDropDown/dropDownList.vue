@@ -95,7 +95,8 @@ onBeforeUnmount(() => {
       :aria-controls="$attrs.id ? `${$attrs.id}-listbox` : 'dropdown-listbox'" :disabled="disabled"
       :aria-disabled="disabled ? 'true' : 'false'" v-bind="$attrs">
       <span :class="[
-        selected ? 'text-md text-textGray' : 'text-md text-textGray text-opacity-40'
+        selected ? 'text-md text-textGray' : 'text-md text-textGray text-opacity-40',
+        'truncate whitespace-nowrap'
       ]">{{ selected || placeholder }}</span>
       <!-- Arrow Icon -->
       <Icon name="formkit:down"
