@@ -6,35 +6,42 @@
     @click.self="!isEmbedded && handleOverlayClick"
   >
     <div
-      class="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-8"
+      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-24px))] h-auto max-h-[calc(100vh-24px)] overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent"
       role="dialog"
       aria-modal="true"
       aria-labelledby="conversation-practice-title"
       @click.stop
     >
-      <button
-        v-if="!isEmbedded"
-        type="button"
-        class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 hover:text-gray-900"
-        aria-label="Close conversation practice"
-        @click="closeModal"
-      >
-        <span class="text-xl leading-none">&times;</span>
-      </button>
-      <div class="max-w-4xl mx-auto">
-        <h1
-          id="conversation-practice-title"
-          class="text-4xl font-bold text-gray-800 mb-2 text-center"
-        >
-          Conversation Practice
-        </h1>
+      <div class="modal-inner relative w-full flex flex-col min-h-0 rounded-2xl bg-white">
+        <div v-if="showLoadingBar" class="loading-bar">
+          <div class="loading-bar__inner"></div>
+        </div>
+        <header class="shrink-0 flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200">
+          <h1
+            id="conversation-practice-title"
+            class="text-lg font-semibold text-blue-700 tracking-tight"
+          >
+            Conversation Practice
+          </h1>
+          <button
+            v-if="!isEmbedded"
+            type="button"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
+            aria-label="Close conversation practice"
+            @click="closeModal"
+          >
+            <span class="text-xl leading-none">&times;</span>
+          </button>
+        </header>
+        <div class="flex-1 overflow-y-auto px-6 py-4 min-h-0">
+          <div class="conversation-layout max-w-4xl mx-auto">
         <!-- <p class="text-gray-600 text-center mb-8">
           Practice conversations with AI using speech-to-text and text-to-speech
         </p> -->
 
-      <div class="bg-white rounded-lg p-6 space-y-6">
+      <div class="bg-transparent rounded-xl p-4 space-y-5 border border-slate-200/60">
         <!-- Voice Settings -->
-        <div class="flex flex-col gap-4 mb-4">
+        <div class="conversation-settings flex flex-col gap-4 mb-4">
           <div class="flex items-center gap-4">
             <label class="text-sm font-medium text-gray-700">Voice Type:</label>
             <select
@@ -64,33 +71,18 @@
 
         <!-- Conversation Preview -->
         <div v-if="!conversationStarted">
-          <div class="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
             <p class="font-medium text-gray-800">Conversation preview</p>
             <p v-if="previewLoading" class="text-gray-500">Loading preview...</p>
             <p v-else-if="previewError" class="text-red-600">{{ previewError }}</p>
-            <ul v-else-if="previewPieces.length" class="mt-2 list-disc pl-5 space-y-1">
-              <li v-for="(piece, idx) in previewPieces.slice(0, 5)" :key="idx">
-                {{ piece }}
-              </li>
-            </ul>
+            <div v-else-if="previewPieces.length" class="mt-2 max-h-40 overflow-y-auto">
+              <ul class="list-disc pl-5 space-y-1">
+                <li v-for="(piece, idx) in previewPieces.slice(0, 5)" :key="idx">
+                  {{ piece }}
+                </li>
+              </ul>
+            </div>
             <p v-else class="text-gray-500">Preview not available.</p>
-          </div>
-          <div class="mt-4 flex gap-4 justify-center">
-            <button
-              @click="startVoiceConversation"
-              :class="[
-                'px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold transition-colors',
-                isSpeechSupported ? 'hover:bg-blue-700' : 'opacity-70 cursor-not-allowed'
-              ]"
-            >
-              Start Interactive Conversation (Voice)
-            </button>
-            <button
-              @click="inputMode = 'text'; startConversation()"
-              class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-            >
-              Start Conversation by Text
-            </button>
           </div>
         </div>
 
@@ -217,41 +209,62 @@
             </div>
           </div>
 
-          <!-- Action Buttons -->
-          <div class="flex gap-4 mt-4">
-            <button
-              @click="resetConversation"
-              class="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
-            >
-              Restart Conversation
-            </button>
+        </div>
+      </div>
+        </div>
+        <footer class="shrink-0 px-6 py-4 border-t border-slate-200">
+          <div class="max-w-4xl mx-auto">
+            <div v-if="!conversationStarted" class="conversation-actions flex gap-3 justify-center">
+              <button
+                @click="startVoiceConversation"
+                :class="[
+                  'px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold transition-colors',
+                  isSpeechSupported ? 'hover:bg-blue-700' : 'opacity-70 cursor-not-allowed'
+                ]"
+              >
+                Start Interactive Conversation (Voice)
+              </button>
+              <button
+                @click="inputMode = 'text'; startConversation()"
+                class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Start Conversation by Text
+              </button>
+            </div>
+            <div v-else class="flex justify-center">
+              <button
+                @click="resetConversation"
+                class="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+              >
+                Restart Conversation
+              </button>
+            </div>
           </div>
+        </footer>
+      </div>
+
+      <!-- Hidden Audio Element -->
+      <audio
+        ref="audioRef"
+        @ended="onAudioEnded"
+        @error="onAudioError"
+        @timeupdate="onAudioTimeUpdate"
+        class="hidden"
+        :volume="1.0"
+      ></audio>
+
+      <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+        <div
+          v-for="toast in toasts"
+          :key="toast.id"
+          class="toast"
+          :class="[toast.type]"
+        >
+          {{ toast.message }}
         </div>
       </div>
     </div>
-
-    <!-- Hidden Audio Element -->
-    <audio
-      ref="audioRef"
-      @ended="onAudioEnded"
-      @error="onAudioError"
-      @timeupdate="onAudioTimeUpdate"
-      class="hidden"
-      :volume="1.0"
-    ></audio>
-
-    <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
-      <div
-        v-for="toast in toasts"
-        :key="toast.id"
-        class="toast"
-        :class="[toast.type]"
-      >
-        {{ toast.message }}
-      </div>
-    </div>
   </div>
-</div>
 </template>
 
 <script setup>
@@ -294,6 +307,10 @@ const handleOverlayClick = () => {
   if (!allowOverlayClose.value) return
   closeModal()
 }
+
+const showLoadingBar = computed(
+  () => previewLoading.value || isGeneratingTTS.value || isProcessing.value
+)
 
 const handleKeydown = (event) => {
   if (event.key === 'Escape') {
@@ -982,6 +999,62 @@ const showToast = (message, type = 'info', duration = 4000) => {
   }, duration)
 }
 </script>
+
+<style scoped>
+.loading-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  background: rgba(59, 130, 246, 0.15);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.loading-bar__inner {
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.9));
+  animation: loading-sweep 1.2s ease-in-out infinite;
+}
+
+@keyframes loading-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(60%);
+  }
+  100% {
+    transform: translateX(180%);
+  }
+}
+
+.practice-modal {
+  background: transparent;
+  color: #0f172a;
+  border: none;
+  box-shadow: none;
+}
+
+.modal-inner {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  background: #ffffff;
+}
+
+.conversation-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conversation-actions button {
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+</style>
 
 <style scoped>
 .toast-container {

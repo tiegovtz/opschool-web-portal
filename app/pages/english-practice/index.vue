@@ -6,42 +6,33 @@
     @click.self="!isEmbedded && handleOverlayClick"
   >
     <div
-      class="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-8"
+      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-24px))] h-auto max-h-[calc(100vh-24px)] overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent"
       role="dialog"
       aria-modal="true"
       aria-labelledby="english-practice-title"
       @click.stop
     >
-      <div ref="topAnchor" class="sr-only" aria-hidden="true"></div>
-      <button
-        v-if="!isEmbedded"
-        type="button"
-        class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 hover:text-gray-900 shadow-md z-10"
-        aria-label="Close English practice"
-        @click="closeModal"
-      >
-        <span class="text-xl leading-none">&times;</span>
-      </button>
-      <div class="flex flex-col h-[calc(100vh-200px)] max-h-[800px] min-h-0">
-      <!-- Header -->
-      <header class="flex flex-col px-6 py-4 bg-gradient-to-r from-oceanBlue to-deepBlue text-white flex-shrink-0">
-        <div class="flex items-center justify-between">
+      <div class="modal-inner relative w-full flex flex-col min-h-0 rounded-2xl bg-white">
+        <div ref="topAnchor" class="sr-only" aria-hidden="true"></div>
+        <div v-if="showLoadingBar" class="loading-bar">
+          <div class="loading-bar__inner"></div>
+        </div>
+        <header class="practice-header shrink-0 flex items-start justify-between gap-4 px-6 py-4 border-b border-slate-200">
           <div>
-            <h1 id="english-practice-title" class="text-2xl font-bold">English Speaking Practice</h1>
-            <p class="text-sm text-blue-100 mt-1">
+            <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">English Speaking Practice</h1>
+            <p class="text-xs text-slate-500 mt-1">
               Practice speaking with guided conversation
             </p>
           </div>
-          <div class="flex items-center gap-4">
-            <!-- Mode switcher -->
-            <div class="flex items-center gap-2 bg-white/10 rounded-lg p-1">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 rounded-full bg-slate-100 p-1">
               <button
                 @click="switchMode('multi-user')"
                 :class="[
-                  'px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                  'px-3 py-1 rounded-full text-xs font-semibold transition-colors',
                   mode === 'multi-user'
-                    ? 'bg-white text-oceanBlue shadow-md'
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
                 ]"
               >
                 Multi-user
@@ -49,68 +40,77 @@
               <button
                 @click="switchMode('single-user')"
                 :class="[
-                  'px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                  'px-3 py-1 rounded-full text-xs font-semibold transition-colors',
                   mode === 'single-user'
-                    ? 'bg-white text-oceanBlue shadow-md'
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
                 ]"
               >
                 Single-user
               </button>
             </div>
+            <button
+              v-if="!isEmbedded"
+              type="button"
+              class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
+              aria-label="Close English practice"
+              @click="closeModal"
+            >
+              <span class="text-xl leading-none">&times;</span>
+            </button>
+          </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-6 py-4 min-h-0">
+          <div v-if="scriptLoading" class="text-center text-sm text-gray-500 mt-2 mb-4">
+            Loading conversation content…
+          </div>
+          <div
+            v-else-if="scriptError"
+            class="text-center text-sm text-red-600 mt-2 mb-4"
+          >
+            {{ scriptError }}
+          </div>
+          <div class="practice-content flex flex-col gap-6 min-h-0">
+            <EnglishPracticeTeleprompter
+              :current-script-line="currentScriptLine"
+              :current-line-index="currentLineIndex"
+              :total-lines="script?.lines.length || 0"
+              :current-line-audio-url="currentLineAudioUrl"
+              :current-turn="turnManager.currentTurn.value"
+              :is-recording="speechRecognition.isListening.value"
+              :highlighted-word="highlightedWord"
+              :current-transcript="currentTranscript"
+              :mode="mode"
+              :is-ai-speaking="mode === 'single-user'
+                ? turnManager.currentTurn.value !== primarySpeakerId && (isAiAudioLoading || isPlayingAiAudio)
+                : turnManager.currentTurn.value === aiSpeakerId && (isAiAudioLoading || isPlayingAiAudio)"
+              :current-word-index="currentWordIndex"
+              :participants="participants"
+            />
           </div>
         </div>
-      </header>
 
-      <!-- Main content area -->
-      <div v-if="scriptLoading" class="text-center text-sm text-gray-500 mt-4 mb-2">
-        Loading conversation content…
-      </div>
-      <div
-        v-else-if="scriptError"
-        class="text-center text-sm text-red-600 mt-4 mb-2"
-      >
-        {{ scriptError }}
-      </div>
-      <div class="flex-1 flex flex-col overflow-hidden relative min-h-0">
-        <!-- Teleprompter display -->
-        <EnglishPracticeTeleprompter
-          :current-script-line="currentScriptLine"
-          :current-line-index="currentLineIndex"
-          :total-lines="script?.lines.length || 0"
-          :current-line-audio-url="currentLineAudioUrl"
-          :current-turn="turnManager.currentTurn.value"
-          :is-recording="speechRecognition.isListening.value"
-          :highlighted-word="highlightedWord"
-          :current-transcript="currentTranscript"
-          :mode="mode"
-          :is-ai-speaking="mode === 'single-user'
-            ? turnManager.currentTurn.value !== primarySpeakerId && (isAiAudioLoading || isPlayingAiAudio)
-            : turnManager.currentTurn.value === aiSpeakerId && (isAiAudioLoading || isPlayingAiAudio)"
-          :current-word-index="currentWordIndex"
-          :participants="participants"
-        />
-
-        <!-- Mic control -->
-        <EnglishPracticeMicControl
-          :is-recording="speechRecognition.isListening.value"
-          :current-turn="turnManager.currentTurn.value"
-          :current-speaker-name="currentSpeakerName"
-          :can-record="canRecord"
-          :is-speech-supported="isSpeechSupported"
-          @toggle="handleMicToggle"
-        />
-
-        <!-- TEMP DEBUG: Manual skip for faster QA without speaking every turn -->
-        <div v-if="showDebugSkipButton" class="absolute right-6 bottom-6 z-50">
-          <button
-            type="button"
-            class="px-3 py-2 rounded-md bg-gray-900 text-white text-xs font-medium hover:bg-black transition-colors"
-            @click="handleSkipTurn"
-          >
-            Skip Turn
-          </button>
-        </div>
+        <footer class="shrink-0 px-6 py-4 border-t border-slate-200 flex flex-col items-center gap-3">
+          <div v-if="showDebugSkipButton" class="w-full flex justify-end">
+            <button
+              type="button"
+              class="px-3 py-2 rounded-md bg-gray-900 text-white text-xs font-medium hover:bg-black transition-colors"
+              @click="handleSkipTurn"
+            >
+              Skip Turn
+            </button>
+          </div>
+          <EnglishPracticeMicControl
+            :is-recording="speechRecognition.isListening.value"
+            :current-turn="turnManager.currentTurn.value"
+            :current-speaker-name="currentSpeakerName"
+            :can-record="canRecord"
+            :is-speech-supported="isSpeechSupported"
+            :audio-level="audioLevel"
+            @toggle="handleMicToggle"
+          />
+        </footer>
       </div>
       <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
         <div
@@ -121,7 +121,6 @@
         >
           {{ toast.message }}
         </div>
-      </div>
       </div>
       <div
         v-if="isDebugMode && scrollDebug"
@@ -229,6 +228,58 @@ const scrollDebug = ref<{
 } | null>(null);
 const lastScrollTarget = ref<HTMLElement | null>(null);
 const topAnchor = ref<HTMLElement | null>(null);
+const showLoadingBar = computed(() => scriptLoading.value || isAiAudioLoading.value);
+const audioLevel = ref(0);
+let micStream: MediaStream | null = null;
+let micAudioContext: AudioContext | null = null;
+let micAnalyser: AnalyserNode | null = null;
+let micRafId: number | null = null;
+
+const stopMicLevel = () => {
+  if (micRafId != null) {
+    cancelAnimationFrame(micRafId);
+    micRafId = null;
+  }
+  if (micAudioContext) {
+    micAudioContext.close().catch(() => {});
+    micAudioContext = null;
+  }
+  if (micStream) {
+    micStream.getTracks().forEach((track) => track.stop());
+    micStream = null;
+  }
+  micAnalyser = null;
+  audioLevel.value = 0;
+};
+
+const startMicLevel = async () => {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return;
+  if (micStream || micAnalyser) return;
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    micAudioContext = new AudioContext();
+    const source = micAudioContext.createMediaStreamSource(micStream);
+    micAnalyser = micAudioContext.createAnalyser();
+    micAnalyser.fftSize = 512;
+    source.connect(micAnalyser);
+    const data = new Uint8Array(micAnalyser.fftSize);
+    const update = () => {
+      if (!micAnalyser) return;
+      micAnalyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i += 1) {
+        const v = (data[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / data.length);
+      audioLevel.value = Math.min(1, rms * 2.5);
+      micRafId = requestAnimationFrame(update);
+    };
+    update();
+  } catch {
+    stopMicLevel();
+  }
+};
 
 const currentLineAudioUrl = computed(() => {
   const lineId = currentScriptLine.value?.id || '';
@@ -1415,6 +1466,17 @@ watch(
   { immediate: true }
 );
 
+watch(
+  () => speechRecognition.isListening.value,
+  (isListening) => {
+    if (isListening) {
+      startMicLevel();
+    } else {
+      stopMicLevel();
+    }
+  }
+);
+
 onMounted(() => {
   if (typeof document === 'undefined') return;
   const onScroll = (event: Event) => {
@@ -1442,6 +1504,10 @@ onMounted(() => {
       lastScrollTarget.value.style.outline = '';
     }
   });
+});
+
+onUnmounted(() => {
+  stopMicLevel();
 });
 
 watch(
@@ -1634,6 +1700,68 @@ onUnmounted(() => {
   });
 });
 </script>
+
+<style scoped>
+.loading-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  background: rgba(59, 130, 246, 0.15);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.practice-modal {
+  background: transparent;
+  color: #0f172a;
+  border: none;
+  box-shadow: none;
+}
+
+.modal-inner {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  background: #ffffff;
+}
+
+.practice-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.practice-body {
+  gap: 16px;
+}
+
+.practice-content {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.loading-bar__inner {
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.9));
+  animation: loading-sweep 1.2s ease-in-out infinite;
+}
+
+@keyframes loading-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(60%);
+  }
+  100% {
+    transform: translateX(180%);
+  }
+}
+</style>
 
 <style scoped>
 .toast-container {
