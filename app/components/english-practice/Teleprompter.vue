@@ -1,39 +1,43 @@
 <template>
-  <div class="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-b from-gray-50 to-white">
+  <div class="teleprompter-root flex-1 flex flex-col items-center justify-center p-3 sm:p-5 bg-slate-50">
     <!-- Avatars at top -->
-    <div class="w-full max-w-4xl flex items-center justify-between mb-8">
-      <EnglishPracticeAvatar
-        :name="primaryAvatar.name"
-        :type="primaryAvatar.type"
-        position="left"
-        :is-active="currentTurn === primaryAvatar.id"
-        :is-speaking="currentTurn === primaryAvatar.id && (primaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
-        :is-waiting="currentTurn !== primaryAvatar.id && !(primaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
-      />
-      <EnglishPracticeAvatar
-        :name="secondaryAvatar.name"
-        :type="secondaryAvatar.type"
-        position="right"
-        :is-active="currentTurn === secondaryAvatar.id"
-        :is-speaking="currentTurn === secondaryAvatar.id && (secondaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
-        :is-waiting="currentTurn !== secondaryAvatar.id && !(secondaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
-      />
+    <div class="teleprompter-avatars w-full max-w-4xl flex items-center justify-between mb-3 sm:mb-4 gap-3 sm:gap-0">
+      <div class="teleprompter-avatar teleprompter-avatar--primary">
+        <EnglishPracticeAvatar
+          :name="primaryAvatar.name"
+          :type="primaryAvatar.type"
+          position="left"
+          :is-active="currentTurn === primaryAvatar.id"
+          :is-speaking="currentTurn === primaryAvatar.id && (primaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
+          :is-waiting="currentTurn !== primaryAvatar.id && !(primaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
+        />
+      </div>
+      <div class="teleprompter-avatar teleprompter-avatar--secondary">
+        <EnglishPracticeAvatar
+          :name="secondaryAvatar.name"
+          :type="secondaryAvatar.type"
+          position="right"
+          :is-active="currentTurn === secondaryAvatar.id"
+          :is-speaking="currentTurn === secondaryAvatar.id && (secondaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
+          :is-waiting="currentTurn !== secondaryAvatar.id && !(secondaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
+        />
+      </div>
     </div>
 
     <!-- Script line display (current line to practice) -->
     <div
       v-if="currentScriptLine"
-      class="w-full max-w-5xl mb-12"
+      class="w-full max-w-5xl mb-4 sm:mb-6"
     >
-      <div class="text-center mb-4">
-        <div class="inline-block px-4 py-2 bg-oceanBlue/10 rounded-full">
-          <span class="text-sm font-medium text-oceanBlue">
+      <div class="text-center mb-2">
+        <div class="inline-block px-3 py-1.5 sm:px-4 sm:py-2 bg-oceanBlue/10 rounded-full">
+          <span class="text-xs sm:text-sm font-medium text-oceanBlue">
             Line {{ currentLineIndex + 1 }} of {{ totalLines }}
           </span>
         </div>
       </div>
       
-      <div class="bg-white rounded-2xl shadow-2xl p-8 border-2 border-oceanBlue/20 flex flex-col flex-1 min-h-0">
+      <div class="bg-transparent rounded-2xl p-3 sm:p-4 border border-slate-200/60 flex flex-col flex-1 min-h-0">
         <!-- Header with read-aloud controls -->
         <div class="flex items-center justify-between mb-3">
           <div class="text-xs text-gray-500 uppercase tracking-wider">
@@ -388,3 +392,7 @@ watch(
   }
 );
 </script>
+
+<style scoped>
+/* Teleprompter layout hooks */
+</style>
