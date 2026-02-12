@@ -34,15 +34,15 @@
           </button>
         </header>
         <div
+          v-if="showRotateBanner"
+          class="mx-3 mt-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700"
+        >
+          Rotate to portrait for a better experience.
+        </div>
+        <div
           class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-3 py-3 sm:px-6 sm:py-4 min-h-0"
           :class="isRecording ? 'pb-[190px]' : ''"
         >
-          <div
-            v-if="showRotateBanner"
-            class="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 sm:hidden"
-          >
-            Rotate to landscape for a better experience.
-          </div>
           <div class="conversation-layout max-w-4xl mx-auto">
         <!-- <p class="text-gray-600 text-center mb-8">
           Practice conversations with AI using speech-to-text and text-to-speech
@@ -299,7 +299,7 @@ const allowOverlayClose = ref(false)
 const returnTo = ref('')
 const isPortrait = ref(false)
 const isSmallScreen = ref(false)
-const showRotateBanner = computed(() => isPortrait.value && isSmallScreen.value)
+const showRotateBanner = computed(() => !isPortrait.value && isSmallScreen.value)
 
 const closeModal = () => {
   if (
@@ -348,7 +348,8 @@ const handlePopstate = () => {
 
 const updateOrientationState = () => {
   if (typeof window === 'undefined') return
-  isSmallScreen.value = window.innerWidth < 640
+  const shortestSide = Math.min(window.innerWidth, window.innerHeight)
+  isSmallScreen.value = shortestSide < 640
   isPortrait.value = window.matchMedia('(orientation: portrait)').matches
 }
 
