@@ -70,10 +70,10 @@ const handleReset = () => {
           </div>
           <div class="flex flex-col gap-4 mt-10">
             <DropDownMenu :active-tab="activeTab" @emit-update-filter-value="handleFilterUpdate" />
-            <button v-if="hasActiveFilter" type="button" class="px-4 py-2 text-left cursor-pointer text-oceanBlue"
+            <!-- <button v-if="hasActiveFilter" type="button" class="px-4 py-2 text-left cursor-pointer text-oceanBlue"
               @click="handleReset">
               Reset filters
-            </button>
+            </button> -->
           </div>
         </div>
       </div>
@@ -83,10 +83,10 @@ const handleReset = () => {
       <div v-if="showFilters && !isSubjectsTab" aria-label="Filters" role="group"
         class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
         <DropDownMenu :active-tab="activeTab" :filter-value="[]" @emit-update-filter-value="handleFilterUpdate" />
-        <button v-if="hasActiveFilter" type="button" class="px-2 pt-2 cursor-pointer text-oceanBlue"
+        <!-- <button v-if="hasActiveFilter" type="button" class="px-2 pt-2 cursor-pointer text-oceanBlue"
           @click="handleReset">
           Reset filters
-        </button>
+        </button> -->
       </div>
 
       <div :class="['w-full', !isSubjectsTab && token ? 'xl:w-3/4' : '']" id="main-container" aria-label="content list"
