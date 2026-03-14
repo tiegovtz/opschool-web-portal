@@ -57,12 +57,9 @@ const dropDown = () => {
 </script>
 
 <template>
-  <!-- Header -->
-  <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat" role="navigation">
-    <button
-      class="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2 -z-30 focus:z-50 border border-blue-800 rounded-full px-4 py-1 bg-white"
-      aria-label="Press Enter to jump to main content" @click="moveFocus('main-container')" type="button">Skip to the
-      Content</button>
+  <!-- Header: sticky so it stays at top when scrolling -->
+  <header class="sticky top-0 z-40 shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat" role="navigation">
+   
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->
       <div class="relative flex justify-center w-full h-24 pt-1">

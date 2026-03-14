@@ -508,64 +508,59 @@ const discardChanges = () => {
     </div>
 
     <!-- Learning Statistics -->
-    <div class="w-full mx-auto my-4 overflow-hidden bg-white rounded-md shadow-md">
+    <div class="w-full mx-auto my-4 overflow-hidden bg-white rounded-xl shadow-lg border border-slate-100">
       <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
         <h3 class="text-lg font-semibold text-white">Learning Statistics</h3>
       </div>
-
-      <div class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5">
-        <!-- Topic Opened -->
-        <div class="stat-card">
-          <div class="bg-blue-100 stat-icon">
-            <Icon name="fa6-solid:book-open-reader" size="20" class="w-6 h-6 text-deepBlue" />
+      <div class="grid w-full grid-cols-2 gap-3 p-4 sm:p-5 md:grid-cols-3 xl:grid-cols-5">
+        <!-- Competences Opened -->
+        <div class="profile-stat-card">
+          <div class="profile-stat-icon bg-blue-100 text-deepBlue">
+            <Icon name="heroicons:book-open-20-solid" class="w-6 h-6" />
           </div>
-          <div class="stat-content">
-            <span class="stat-label">Compitences Opened</span>
-            <span class="stat-value">{{ profileData?.totalTopicsOpened }}</span>
-          </div>
-        </div>
-
-        <!-- Favorite Subject -->
-        <div class="stat-card">
-          <div class="bg-green-100 stat-icon">
-            <Icon name="material-symbols:favorite-rounded" size="20" class="w-6 h-6 text-normalGreener" />
-          </div>
-          <div class="stat-content">
-            <span class="stat-label">Subject Opened</span>
-            <span class="stat-value">{{ profileData.openedSubjects ?? 0 }}</span>
+          <div class="profile-stat-content">
+            <span class="profile-stat-label">Competences Opened</span>
+            <span class="profile-stat-value">{{ profileData?.totalTopicsOpened ?? 0 }}</span>
           </div>
         </div>
-
+        <!-- Subject Opened -->
+        <div class="profile-stat-card">
+          <div class="profile-stat-icon bg-emerald-100 text-emerald-700">
+            <Icon name="heroicons:academic-cap-20-solid" class="w-6 h-6" />
+          </div>
+          <div class="profile-stat-content">
+            <span class="profile-stat-label">Subject Opened</span>
+            <span class="profile-stat-value">{{ profileData?.openedSubjects ?? 0 }}</span>
+          </div>
+        </div>
         <!-- Time Spent -->
-        <div class="stat-card">
-          <div class="bg-red-100 stat-icon">
-            <Icon name="stash:clock-solid" size="20" class="w-6 h-6 text-red-600" />
+        <div class="profile-stat-card">
+          <div class="profile-stat-icon bg-amber-100 text-amber-700">
+            <Icon name="heroicons:clock-20-solid" class="w-6 h-6" />
           </div>
-          <div class="stat-content">
-            <span class="stat-label">Time Spent</span>
-            <span class="stat-value">{{ profileData.timeSpentFormatted ?? 0 }}</span>
+          <div class="profile-stat-content">
+            <span class="profile-stat-label">Time Spent</span>
+            <span class="profile-stat-value">{{ profileData?.timeSpentFormatted ?? '0h 0m' }}</span>
           </div>
         </div>
-
         <!-- Quiz Attempts -->
-        <div class="stat-card">
-          <div class="bg-purple-100 stat-icon">
-            <Icon name="solar:notebook-bold" size="20" class="w-6 h-6 text-purple-600" />
+        <div class="profile-stat-card">
+          <div class="profile-stat-icon bg-violet-100 text-violet-600">
+            <Icon name="heroicons:clipboard-document-list-20-solid" class="w-6 h-6" />
           </div>
-          <div class="stat-content">
-            <span class="stat-label">Quiz Attempts</span>
-            <span class="stat-value">{{ profileData.questionStats.totalAttempted?.toFixed(1) }}</span>
+          <div class="profile-stat-content">
+            <span class="profile-stat-label">Quiz Attempts</span>
+            <span class="profile-stat-value">{{ profileData?.questionStats?.totalAttempted != null ? Number(profileData.questionStats.totalAttempted).toFixed(0) : '0' }}</span>
           </div>
         </div>
-
-        <!-- Average Score -->
-        <div class="stat-card">
-          <div class="bg-indigo-100 stat-icon">
-            <Icon name="heroicons:chart-bar-16-solid" size="20" class="w-6 h-6 text-indigo-600" />
+        <!-- Average Quiz Score -->
+        <div class="profile-stat-card">
+          <div class="profile-stat-icon bg-indigo-100 text-indigo-600">
+            <Icon name="heroicons:chart-bar-20-solid" class="w-6 h-6" />
           </div>
-          <div class="stat-content">
-            <span class="stat-label">Average Quiz Score</span>
-            <span class="stat-value">{{ profileData.questionStats.averageScore?.toFixed(1) }}%</span>
+          <div class="profile-stat-content">
+            <span class="profile-stat-label">Average Quiz Score</span>
+            <span class="profile-stat-value">{{ profileData?.questionStats?.averageScore != null ? Number(profileData.questionStats.averageScore).toFixed(1) : '—' }}%</span>
           </div>
         </div>
       </div>
@@ -831,5 +826,25 @@ const discardChanges = () => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-8px);
+}
+
+.profile-stat-card {
+  @apply flex flex-col sm:flex-row items-center gap-2 sm:gap-3 p-3 rounded-xl bg-slate-50/80 border border-slate-100 transition-colors hover:bg-slate-100/80;
+}
+
+.profile-stat-icon {
+  @apply flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl shrink-0;
+}
+
+.profile-stat-content {
+  @apply flex flex-col items-center sm:items-start min-w-0;
+}
+
+.profile-stat-label {
+  @apply text-xs font-medium text-slate-500 leading-tight;
+}
+
+.profile-stat-value {
+  @apply text-base font-bold text-slate-800 mt-0.5 tabular-nums;
 }
 </style>
