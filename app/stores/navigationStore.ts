@@ -12,6 +12,15 @@ export const useNavigationStore = defineStore("navigation", {
   }),
 
   actions: {
+    resetRememberedRoutes() {
+      this.topicToView = null;
+      this.videoToView = null;
+      this.experimentToView = null;
+      this.liveTV = null;
+      this.smartClass = null;
+      this.audioToListen = null;
+      this.goBack = null;
+    },
     setTopic(route: string) {
       this.topicToView = { route, updatedAt: Date.now() };
     },
@@ -34,13 +43,7 @@ export const useNavigationStore = defineStore("navigation", {
       this.goBack = { route, updatedAt: Date.now() };
     },
     clearAll() {
-      this.topicToView = null;
-      this.videoToView = null;
-      this.experimentToView = null;
-      this.liveTV = null;
-      this.smartClass = null;
-      this.audioToListen = null;
-      this.goBack = null;
+      this.resetRememberedRoutes();
     },
     getLatestRoute() {
       const routes = [

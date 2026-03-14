@@ -1,11 +1,14 @@
 import { refreshToken, isTokenExpiringSoon } from "~/utilities/jwToken";
+import { useNavigationStore } from "~/stores/navigationStore";
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const user = useCookie("signInUserToken");
   const userAccessToken = useCookie("signInAccessToken");
+  const navigationStore = useNavigationStore();
   const redirectTarget = to.fullPath || to.path;
 
   if (!user.value) {
+    navigationStore.resetRememberedRoutes();
     return navigateTo({
       path: "/auth",
       query: { redirect: redirectTarget },
@@ -18,6 +21,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     if (newToken?.access_token) {
       userAccessToken.value = newToken.access_token;
     } else {
+      navigationStore.resetRememberedRoutes();
       return navigateTo({
         path: "/auth",
         query: { redirect: redirectTarget },
