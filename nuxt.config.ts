@@ -75,7 +75,17 @@ export default defineNuxtConfig({
     plugins: [vidstack()],
     optimizeDeps: {
       force: true, // Force re-optimization of dependencies
-      include: ['pinia', 'pinia-plugin-persistedstate'],
+      include: [
+        'pinia',
+        'pinia-plugin-persistedstate',
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        '@google/model-viewer',
+        '@ai-sdk/vue',
+        'bowser',
+        'axios',
+        'markdown-it',
+      ],
     },
     server: {
       fs: {
