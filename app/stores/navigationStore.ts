@@ -58,4 +58,5 @@ export const useNavigationStore = defineStore("navigation", {
       return routes.length ? routes[0]!.route : null;
     },
   },
+  persist: true,
 });
