@@ -1,11 +1,26 @@
 <script setup lang="ts">
-import { ref } from "vue";
-defineProps<{ chat: any }>();
+import { ref, watch } from "vue";
+
+const props = defineProps<{
+  chat: any;
+  draftMessage?: string;
+  draftVersion?: number;
+}>();
 
 const input = ref("");
 const emit = defineEmits<{
   sendMessage: [message: string];
 }>();
+
+watch(
+  () => [props.draftMessage, props.draftVersion],
+  ([draftMessage]) => {
+    if (typeof draftMessage === "string" && draftMessage.trim()) {
+      input.value = draftMessage;
+    }
+  },
+  { immediate: true }
+);
 
 const handleSubmit = (e: Event) => {
   e.preventDefault();

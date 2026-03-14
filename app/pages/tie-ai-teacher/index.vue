@@ -75,10 +75,21 @@ const updateViewportState = () => {
 };
 
 const shouldUseDrawerSidebar = computed(() => isSmallScreen.value);
+const { draft, version, consumeDraft } = useAiTeacherDraft();
+const draftMessage = ref("");
+const draftVersion = ref(0);
+
+const applyDraftMessage = () => {
+  const nextDraft = consumeDraft();
+  if (!nextDraft.trim()) return;
+  draftMessage.value = nextDraft;
+  draftVersion.value += 1;
+};
 
 // Initialize session on mount
 onMounted(async () => {
   updateViewportState();
+  applyDraftMessage();
   // Load saved sidebar preference
   if (typeof window !== "undefined") {
     window.addEventListener("resize", updateViewportState);
@@ -113,6 +124,15 @@ onMounted(async () => {
     isInitializing.value = false;
   }
 });
+
+watch(
+  () => version.value,
+  (nextVersion, previousVersion) => {
+    if (nextVersion === previousVersion) return;
+    if (!draft.value.trim()) return;
+    applyDraftMessage();
+  }
+);
 
 // Load existing session
 const loadSession = async (sessionId: string) => {
@@ -575,10 +595,12 @@ onBeforeUnmount(() => {
             :messages="chat.messages"
             :isTyping="isTyping"
           />
-          <AiTeacherInput
-            :chat="chat"
-            @sendMessage="handleSubmit"
-          />
+	          <AiTeacherInput
+	            :chat="chat"
+            :draft-message="draftMessage"
+            :draft-version="draftVersion"
+	            @sendMessage="handleSubmit"
+	          />
         </main>
       </div>
     </div>
