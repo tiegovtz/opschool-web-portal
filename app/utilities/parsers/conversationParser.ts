@@ -123,14 +123,14 @@ if (typeof window !== 'undefined') {
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
       overlay.style.cssText =
-        'position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.6);padding:16px;overflow-y:auto;padding-top:40px;';
+        'position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);padding:8px;overflow:hidden;';
       overlay.addEventListener('click', (event) => {
         if (event.target === overlay) closeOverlay();
       });
 
       const container = document.createElement('div');
       container.style.cssText =
-        'position:relative;width:100%;max-width:1100px;max-height:calc(100vh - 80px);background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.2);display:flex;flex-direction:column;';
+        'position:relative;width:100%;max-width:1100px;height:min(calc(100dvh - 16px), calc(100svh - 16px));max-height:min(calc(100dvh - 16px), calc(100svh - 16px));background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.2);display:flex;flex-direction:column;';
 
       const closeButton = document.createElement('button');
       closeButton.type = 'button';
@@ -146,7 +146,7 @@ if (typeof window !== 'undefined') {
       iframe.src = url;
       iframe.title = 'Conversation practice';
       iframe.style.cssText =
-        'width:100%;height:100%;min-height:520px;max-height:calc(100vh - 80px);border:none;display:block;background:#fff;';
+        'width:100%;height:100%;min-height:0;flex:1 1 auto;border:none;display:block;background:#fff;';
 
       container.appendChild(closeButton);
       container.appendChild(iframe);
