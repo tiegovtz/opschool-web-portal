@@ -1089,6 +1089,7 @@ onMounted(async () => {
                 usersignUp.controller.errors.userName,
             }
           ]">
+            <label class="font-semibold capitalize text-oceanBlue text-extraSmall -ml-2">Username:</label>
             <div class="flex items-center w-full">
               <input type="text" id="userName" v-model="usersignUp.userName" @keydown.space.prevent name="userName"
                 autocomplete="off" readonly
