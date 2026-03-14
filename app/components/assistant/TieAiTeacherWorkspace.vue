@@ -50,6 +50,16 @@ const shouldUseDrawerSidebar = computed(
 const shouldUseCompactOverlaySidebar = computed(
   () => props.compact && !isSmallScreen.value
 );
+const { draft, version, consumeDraft } = useAiTeacherDraft();
+const draftMessage = ref("");
+const draftVersion = ref(0);
+
+const applyDraftMessage = () => {
+  const nextDraft = consumeDraft();
+  if (!nextDraft.trim()) return;
+  draftMessage.value = nextDraft;
+  draftVersion.value += 1;
+};
 
 onMounted(async () => {
   updateViewportState();
@@ -57,6 +67,7 @@ onMounted(async () => {
     window.addEventListener("resize", updateViewportState);
     window.addEventListener("orientationchange", updateViewportState);
   }
+  applyDraftMessage();
   if (props.compact) {
     // Compact overlay starts with drawer closed; open via header button.
     isHistoryOpen.value = false;
@@ -86,6 +97,15 @@ onMounted(async () => {
     isInitializing.value = false;
   }
 });
+
+watch(
+  () => version.value,
+  (nextVersion, previousVersion) => {
+    if (nextVersion === previousVersion) return;
+    if (!draft.value.trim()) return;
+    applyDraftMessage();
+  }
+);
 
 const loadSession = async (sessionId: string) => {
   try {
@@ -411,6 +431,8 @@ onBeforeUnmount(() => {
         />
         <AiTeacherInput
           :chat="chat"
+          :draft-message="draftMessage"
+          :draft-version="draftVersion"
           @sendMessage="handleSubmit"
         />
       </main>
