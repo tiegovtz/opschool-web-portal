@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import apiDocs from "~/utilities/apiDocs";
 import { extractSubjectSlugs, normalizeSubjectSlug } from "~/config/aiLauncherConfig";
+import { onBeforeUnmount, onMounted } from "vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -92,6 +93,12 @@ const launcherHoverLabel = computed(() =>
   hasValidSubjectContext.value ? "Ask AI Subject Teacher" : "Ask AI Teacher"
 );
 const isLauncherHovered = ref(false);
+const isSmallScreen = ref(false);
+
+const updateViewportState = () => {
+  if (typeof window === "undefined") return;
+  isSmallScreen.value = window.innerWidth < 640;
+};
 
 const openTieOverlay = async () => {
   if (tieOverlayOpen.value || tieOverlayOpening.value) return;
@@ -122,19 +129,37 @@ const handleClick = async () => {
   }
   await openTieOverlay();
 };
+
+onMounted(() => {
+  updateViewportState();
+  if (typeof window === "undefined") return;
+  window.addEventListener("resize", updateViewportState);
+  window.addEventListener("orientationchange", updateViewportState);
+});
+
+onBeforeUnmount(() => {
+  if (typeof window === "undefined") return;
+  window.removeEventListener("resize", updateViewportState);
+  window.removeEventListener("orientationchange", updateViewportState);
+});
 </script>
 
 <template>
   <Teleport to="body">
     <client-only>
-      <div v-if="showLauncher" class="fixed z-[80] right-4 bottom-[calc(16px+env(safe-area-inset-bottom))]">
+      <div
+        v-if="showLauncher"
+        class="fixed z-[80]"
+        :class="isSmallScreen ? 'right-3 bottom-[calc(12px+env(safe-area-inset-bottom))]' : 'right-4 bottom-[calc(16px+env(safe-area-inset-bottom))]'"
+      >
         <div class="absolute inset-0 rounded-full bg-[rgba(245,245,245,0.35)] backdrop-blur-sm pointer-events-none">
         </div>
         <button type="button"
-          class="relative flex items-center justify-center gap-2 p-4 rounded-full bg-oceanBlue text-white border border-white/80 ring-2 ring-white/90 shadow-2xl transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue whitespace-nowrap"
+          class="relative flex items-center justify-center gap-2 rounded-full bg-oceanBlue text-white border border-white/80 ring-2 ring-white/90 shadow-2xl transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue whitespace-nowrap"
+          :class="isSmallScreen ? 'px-3 py-3' : 'p-4'"
           :aria-label="launcherLabel" :disabled="isBusy" @mouseenter="isLauncherHovered = true"
           @mouseleave="isLauncherHovered = false" @click="handleClick">
-          <IconsRobotAi :size="24" />
+          <IconsRobotAi :size="isSmallScreen ? 22 : 24" />
           <span class="hidden md:block">{{ launcherLabel }}</span>
         </button>
         <div v-if="isLauncherHovered"

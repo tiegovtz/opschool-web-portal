@@ -16,17 +16,17 @@ const handleSubmit = (e: Event) => {
 </script>
 
 <template>
-  <form id="main-container" tabindex="-1"  @submit.prevent="handleSubmit" class="w-full p-5 bg-transparent border-t border-gray-200" role="form"
+  <form id="main-container" tabindex="-1"  @submit.prevent="handleSubmit" class="w-full border-t border-gray-200 bg-white/95 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 backdrop-blur sm:px-5 sm:pt-5" role="form"
     aria-label="Ask a question to AI teacher">
-    <div class="flex items-end gap-3 p-2">
-      <div class="relative flex-1 h-14">
+    <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end sm:p-2">
+      <div class="relative h-12 flex-1 sm:h-14">
         <!-- Screen-reader label -->
         <label for="question-input" class="sr-only">
           Type your question
         </label>
 
         <input  id="question-input" v-model="input" type="text" placeholder="Type your question here..."
-          class="w-full h-full px-5 pr-12 text-sm transition-all border-gray-200 rounded-2xl focus:outline-none focus:border-oceanBlue focus:ring focus:ring-oceanBlue bg-gray-50"
+          class="h-full w-full rounded-2xl border-gray-200 bg-gray-50 px-4 pr-12 text-sm transition-all focus:border-oceanBlue focus:outline-none focus:ring focus:ring-oceanBlue sm:px-5"
           aria-required="true" aria-describedby="question-help" autocomplete="off" />
 
         <!-- Helper text (screen readers only) -->
@@ -36,7 +36,7 @@ const handleSubmit = (e: Event) => {
       </div>
 
       <button type="submit"
-        class="bg-oceanBlue hover:from-[#093f7a] hover:to-[#0a52a1] text-white px-6 py-3.5 rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center gap-2 group"
+        class="flex items-center justify-center gap-2 rounded-2xl bg-oceanBlue px-5 py-3 font-semibold text-white shadow-lg transition-all group hover:shadow-xl sm:px-6 sm:py-3.5"
         aria-label="Send prompt to AI teacher">
         <span>Send</span>
         <Icon name="heroicons:arrow-up-right" class="w-5 h-5 transition transform group-hover:translate-x-1"

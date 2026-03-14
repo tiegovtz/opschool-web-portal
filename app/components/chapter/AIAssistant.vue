@@ -259,6 +259,7 @@ const previousChapterId = ref(null); // will store the previous ID (old value)
 const shouldAutoScroll = ref(true); // Re-enabled for Subject AI Teacher
 const bottomOffset = ref(24); // Dynamic bottom offset in pixels (default: 24px near bottom)
 const footerObserver = ref(null); // Footer intersection observer
+const isSmallScreen = ref(false);
 
 watch(
   () => isOpen.value,
@@ -333,6 +334,45 @@ const effectiveContext = computed(() => {
 // Chat component for regular messages (using /api/chat)
 // Use computed to ensure chapterName is reactive with localStorage fallback
 const currentChapterName = computed(() => effectiveContext.value.chapterName);
+const updateViewportState = () => {
+  if (typeof window === "undefined") return;
+  isSmallScreen.value = window.innerWidth < 768;
+};
+
+const launcherClass = computed(() =>
+  isSmallScreen.value
+    ? "fixed z-50 flex items-center gap-2 rounded-full bg-oceanBlue px-3 py-3 text-white shadow-lg transition-all duration-300 hover:bg-deepBlue right-3"
+    : "fixed z-50 flex items-center gap-2 rounded-full bg-oceanBlue p-4 text-white shadow-lg transition-all duration-300 hover:bg-deepBlue right-6"
+);
+
+const launcherStyle = computed(() => ({
+  bottom: isSmallScreen.value
+    ? `max(${bottomOffset.value}px, calc(12px + env(safe-area-inset-bottom)))`
+    : `${bottomOffset.value}px`,
+  transition: "bottom 0.3s ease-in-out",
+}));
+
+const panelClass = computed(() =>
+  isSmallScreen.value
+    ? "fixed inset-x-2 top-2 z-50 flex min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
+    : "fixed right-6 z-50 flex w-full max-w-md min-h-0 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-2xl"
+);
+
+const panelStyle = computed(() =>
+  isSmallScreen.value
+    ? {
+        bottom: "max(8px, env(safe-area-inset-bottom))",
+        height: "min(calc(100dvh - 16px), calc(100svh - 16px))",
+        maxHeight: "min(calc(100dvh - 16px), calc(100svh - 16px))",
+        transition: "inset 0.3s ease-in-out, height 0.3s ease-in-out, max-height 0.3s ease-in-out",
+      }
+    : {
+        height: "min(600px, calc(100dvh - 48px), calc(100svh - 48px))",
+        bottom: `${bottomOffset.value}px`,
+        maxHeight: `min(600px, calc(100dvh - ${bottomOffset.value + 24}px), calc(100svh - ${bottomOffset.value + 24}px))`,
+        transition: "bottom 0.3s ease-in-out, max-height 0.3s ease-in-out, height 0.3s ease-in-out",
+      }
+);
 
 // Computed property to determine if typing indicator should be visible
 // This will be defined after chat is initialized
@@ -810,6 +850,7 @@ const throttledCheckFooter = () => {
 
 // Combine onMounted tasks
 onMounted(() => {
+  updateViewportState();
   // Initialize stored context from localStorage
   initializeStoredContext();
   
@@ -821,6 +862,8 @@ onMounted(() => {
   // Also check on scroll/resize as fallback - use throttled version for performance
   window.addEventListener('scroll', throttledCheckFooter, { passive: true });
   window.addEventListener('resize', checkFooterPosition, { passive: true });
+  window.addEventListener('resize', updateViewportState, { passive: true });
+  window.addEventListener('orientationchange', updateViewportState);
   
   // Initial check
   checkFooterPosition();
@@ -897,6 +940,8 @@ onMounted(() => {
     // Remove scroll/resize listeners
     window.removeEventListener('scroll', throttledCheckFooter);
     window.removeEventListener('resize', checkFooterPosition);
+    window.removeEventListener('resize', updateViewportState);
+    window.removeEventListener('orientationchange', updateViewportState);
     
     // Clear any pending scroll timeout
     if (scrollTimeout) {
@@ -1499,11 +1544,8 @@ onUnmounted(() => {
   <button
     v-if="showLocalLauncher && !isOpen"
     @click="toggleAssistant"
-    class="fixed z-50 flex items-center gap-2 p-4 text-white transition-all duration-300 rounded-full shadow-lg right-6 bg-oceanBlue hover:bg-deepBlue"
-    :style="{ 
-      bottom: `${bottomOffset}px`,
-      transition: 'bottom 0.3s ease-in-out'
-    }"
+    :class="launcherClass"
+    :style="launcherStyle"
     title="Ask AI Subject Teacher"
   >
     <Icon
@@ -1516,21 +1558,17 @@ onUnmounted(() => {
   <!-- AI Assistant Panel -->
   <div
     v-if="isOpen"
-    class="fixed z-50 flex flex-col w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-2xl right-6"
-    :style="{ 
-      height: '600px', 
-      bottom: `${bottomOffset}px`,
-      maxHeight: `calc(100vh - ${bottomOffset + 24}px)`,
-      transition: 'bottom 0.3s ease-in-out, max-height 0.3s ease-in-out'
-    }"
+    :class="panelClass"
+    :style="panelStyle"
   >
     <!-- Header -->
     <div
-      class="relative flex items-center justify-between p-4 text-white border-b rounded-t-lg bg-oceanBlue settings-container"
+      class="relative flex items-center justify-between border-b bg-oceanBlue p-4 text-white settings-container"
+      :class="isSmallScreen ? 'rounded-t-2xl' : 'rounded-t-lg'"
     >
-      <div>
+      <div class="min-w-0 pr-2">
         <h3 class="font-semibold">AI Subject Teacher</h3>
-        <p class="text-xs opacity-90">{{ chapterName }}</p>
+        <p class="truncate text-xs opacity-90">{{ chapterName }}</p>
       </div>
       <div class="relative flex items-center gap-2">
         <!-- Settings Button -->
@@ -1547,7 +1585,7 @@ onUnmounted(() => {
         <!-- Settings Dropdown -->
         <div
           v-if="showSettings"
-          class="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg p-4 z-50 min-w-[200px] settings-container"
+          class="absolute top-full right-0 z-50 mt-2 min-w-[200px] max-w-[min(18rem,calc(100vw-2rem))] rounded-lg bg-white p-4 shadow-lg settings-container"
           @click.stop
         >
           <h4 class="mb-2 font-semibold text-gray-900">Voice Settings</h4>
@@ -1602,7 +1640,7 @@ onUnmounted(() => {
       role="log"
       aria-live="polite"
       :class="[
-        'flex-1 p-4 overflow-y-auto',
+        'flex-1 min-h-0 overflow-y-auto p-4',
         messages.length === 0
           ? 'flex items-center justify-center'
           : 'flex flex-col space-y-4',
@@ -1702,24 +1740,24 @@ onUnmounted(() => {
     </div>
 
     <!-- Input Area -->
-    <div class="p-4 border-t border-gray-200">
+    <div class="border-t border-gray-200 p-4">
       <form
         @submit.prevent="handleFormSubmit"
-        class="flex gap-2"
+        class="flex flex-col gap-2 sm:flex-row"
       >
         <input
           v-model="currentQuestion"
           type="text"
           placeholder="Type your message..."
           aria-label="Type your question for AI Subject Teacher"
-          class="flex-1 p-3 rounded-lg border border-gray-300 focus:outline-none"
+          class="flex-1 rounded-lg border border-gray-300 p-3 focus:outline-none"
           :disabled="isLoading || !chapterId"
         />
 
         <button
           type="submit"
           :disabled="!currentQuestion.trim() || isLoading || !chapterId"
-          class="bg-oceanBlue text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          class="rounded-lg bg-oceanBlue px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           Send
         </button>
@@ -1727,7 +1765,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Quick Action Buttons -->
-    <div class="px-4 pt-2 pb-4 border-t border-gray-200">
+    <div class="border-t border-gray-200 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-2">
       <div class="flex flex-wrap gap-2">
         <button
           @click="handleSummarize"

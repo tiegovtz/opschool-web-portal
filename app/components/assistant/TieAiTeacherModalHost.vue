@@ -14,6 +14,7 @@ const tieOverlayPushed = useState<boolean>("tie-ai-overlay-pushed", () => false)
 
 const modalRef = ref<HTMLElement | null>(null);
 const lastFocused = ref<HTMLElement | null>(null);
+const isSmallScreen = ref(false);
 let previousBodyOverflow = "";
 
 const hasOverlayMarker = computed(() => route.query.overlay === "1");
@@ -40,6 +41,32 @@ const overlaySessionId = computed(() => {
   const sessionId = route.query.sessionId;
   return typeof sessionId === "string" ? sessionId : "";
 });
+
+const updateViewportState = () => {
+  if (typeof window === "undefined") return;
+  isSmallScreen.value = window.innerWidth < 768;
+};
+
+const modalShellClass = computed(() =>
+  isSmallScreen.value
+    ? "fixed inset-x-2 bottom-2 top-2 z-50 flex min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
+    : "fixed right-6 bottom-6 z-50 flex w-full max-w-md min-h-0 flex-col overflow-visible rounded-lg border border-gray-200 bg-white shadow-2xl"
+);
+
+const modalShellStyle = computed(() =>
+  isSmallScreen.value
+    ? {
+        height: "min(calc(100dvh - 16px), calc(100svh - 16px))",
+        maxHeight: "min(calc(100dvh - 16px), calc(100svh - 16px))",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        transition: "inset 0.3s ease-in-out, height 0.3s ease-in-out, max-height 0.3s ease-in-out",
+      }
+    : {
+        height: "min(600px, calc(100dvh - 48px), calc(100svh - 48px))",
+        maxHeight: "min(600px, calc(100dvh - 48px), calc(100svh - 48px))",
+        transition: "bottom 0.3s ease-in-out, max-height 0.3s ease-in-out, height 0.3s ease-in-out",
+      }
+);
 
 const removeOverlayMarkers = async () => {
   const nextQuery = { ...route.query } as Record<string, unknown>;
@@ -147,10 +174,13 @@ watch(
     if (typeof window === "undefined") return;
 
     if (open) {
+      updateViewportState();
       tieOverlayOpening.value = false;
       lastFocused.value = document.activeElement as HTMLElement | null;
       lockScroll();
       window.addEventListener("keydown", onKeydown);
+      window.addEventListener("resize", updateViewportState);
+      window.addEventListener("orientationchange", updateViewportState);
       await nextTick();
       modalRef.value?.focus();
       return;
@@ -158,6 +188,8 @@ watch(
 
     restoreScroll();
     window.removeEventListener("keydown", onKeydown);
+    window.removeEventListener("resize", updateViewportState);
+    window.removeEventListener("orientationchange", updateViewportState);
     lastFocused.value?.focus?.();
   },
   { immediate: true }
@@ -166,6 +198,8 @@ watch(
 onBeforeUnmount(() => {
   if (typeof window !== "undefined") {
     window.removeEventListener("keydown", onKeydown);
+    window.removeEventListener("resize", updateViewportState);
+    window.removeEventListener("orientationchange", updateViewportState);
   }
   restoreScroll();
 });
@@ -180,13 +214,8 @@ onBeforeUnmount(() => {
     >
       <div
         ref="modalRef"
-        class="fixed z-50 flex flex-col w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-2xl right-6 overflow-visible"
-        :style="{
-          height: '600px',
-          bottom: '24px',
-          maxHeight: 'calc(100vh - 48px)',
-          transition: 'bottom 0.3s ease-in-out, max-height 0.3s ease-in-out'
-        }"
+        :class="modalShellClass"
+        :style="modalShellStyle"
         role="dialog"
         aria-modal="true"
         aria-label="TIE AI Teacher"

@@ -70,10 +70,10 @@ onMounted(() => {
 
 <template>
   <section ref="messagesContainer" @scroll="handleScroll"
-    class="p-6 space-y-5 h-[calc(100vh-200px)] overflow-y-auto bg-gradient-to-b from-gray-50/30 to-white"
+    class="flex-1 min-h-0 overflow-y-auto bg-gradient-to-b from-gray-50/30 to-white px-4 py-4 sm:px-6 sm:py-6"
     role="log" aria-live="polite" aria-relevant="additions" aria-label="Chat messages" tabindex="0">
     <!-- Empty state -->
-    <div v-if="messages.length === 0" class="flex flex-col items-center justify-center h-full px-4 text-center"
+    <div v-if="messages.length === 0" class="flex h-full flex-col items-center justify-center px-4 text-center"
       role="status" aria-live="polite">
       <div
         class="flex items-center justify-center w-20 h-20 mb-4 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100"
@@ -92,7 +92,7 @@ onMounted(() => {
     </div>
 
     <!-- Messages -->
-    <ul v-else role="list" class="space-y-5">
+    <ul v-else role="list" class="space-y-4 sm:space-y-5">
       <li v-for="(m, index) in messages" :key="m.id ? m.id : index" role="listitem">
         <AiTeacherMessageUser v-if="m.role === 'user'" :message="m" />
         <AiTeacherMessageAI v-else :message="m" />
