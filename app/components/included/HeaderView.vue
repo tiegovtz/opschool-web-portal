@@ -16,9 +16,8 @@ const logout = () => {
 
   // Redirect to Home
 
-  const router = useRouter();
   layoutEffect.value = "grid";
-  router.replace("/home");
+  window.location.assign("/");
   // Dismiss Drop Down
   dropDown();
 };
