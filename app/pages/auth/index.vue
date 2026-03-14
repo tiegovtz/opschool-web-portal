@@ -9,8 +9,13 @@ import { useAuthStore } from "~/stores/auth";
 
 // // Use the State
 const navigationStore = useNavigationStore();
-const returnPath = navigationStore.getLatestRoute();
+const returnPath = computed(() => navigationStore.getLatestRoute());
 const route = useRoute();
+const authRedirectQuery = computed(() =>
+  typeof route.query.redirect === "string" && route.query.redirect.length > 0
+    ? { redirect: route.query.redirect }
+    : {}
+);
 const userRememberMe = useCookie("userRememberMe");
 const pass = userRememberMe?.value?.password?.length > 0 ? dataDecrypt(userRememberMe?.value?.password) : null
 useCookie("signInUserToken").value ? useCookie("signInUserToken").value = null : '';
@@ -161,7 +166,7 @@ const signIn = async () => {
       const redirectPath =
         typeof route.query.redirect === "string" && route.query.redirect.length > 0
           ? route.query.redirect
-          : returnPath;
+          : returnPath.value;
       router.replace(redirectPath || "/home");
     } catch (error) {
       userSignIn.controller.attemps++;
@@ -341,7 +346,7 @@ watch(
         <!-- Sign up -->
         <div class="flex flex-col items-center gap-4 my-4">
           <p class="text-sm text-textGray">Don&apos;t have an account?</p>
-          <NuxtLink to="/auth/SignUp"
+          <NuxtLink :to="{ path: '/auth/SignUp', query: authRedirectQuery }"
             class="w-full p-2 text-center text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-darkBlue hover:bg-darkBlue/80">
             Sign up
           </NuxtLink>
@@ -367,7 +372,7 @@ watch(
 
         <span>or</span>
 
-        <NuxtLink aria-label="visit registration page, if you dont have " to="/auth/SignUp"
+        <NuxtLink aria-label="visit registration page, if you dont have " :to="{ path: '/auth/SignUp', query: authRedirectQuery }"
           class="flex items-center justify-center w-full p-2 mb-3 text-white capitalize rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
           Register a new account
         </NuxtLink>

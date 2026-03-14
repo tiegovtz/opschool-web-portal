@@ -2,13 +2,33 @@
 import apiDocs from "~/utilities/apiDocs";
 import { layoutEffect } from "~/utilities/controlls";
 import { moveFocus } from "~/utilities/focus.helper";
+import { useNavigationStore } from "~/stores/navigationStore";
 
 const userToken = useCookie("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
 const refreshToken = useCookie("signInRefreshToken");
+const route = useRoute();
+const navigationStore = useNavigationStore();
+
+const PROTECTED_RETURN_PREFIXES = [
+  "/interactive/",
+  "/video/",
+  "/audio/",
+  "/experiments/",
+  "/tie-ai-teacher",
+];
+
+const shouldRememberCurrentRoute = () =>
+  PROTECTED_RETURN_PREFIXES.some(
+    (prefix) => route.path === prefix || route.path.startsWith(prefix)
+  );
 
 
 const logout = () => {
+  if (shouldRememberCurrentRoute()) {
+    navigationStore.setGoBack(route.fullPath);
+  }
+
   // Clear All Cookies
   userToken.value = null;
   accessToken.value = null;
@@ -16,9 +36,8 @@ const logout = () => {
 
   // Redirect to Home
 
-  const router = useRouter();
   layoutEffect.value = "grid";
-  router.replace("/home");
+  window.location.assign("/");
   // Dismiss Drop Down
   dropDown();
 };

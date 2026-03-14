@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Chat } from "@ai-sdk/vue";
-import { ref, watch, onMounted, computed } from "vue";
+import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
 import { useChatStore } from "~/stores/chatStore";
 import type { ChatMessage } from "~/types/chat.interface";
 
@@ -62,16 +62,27 @@ const isTyping = ref(false);
 // Sidebar open by default, persist user preference
 const sidebarStateKey = "tie-ai-teacher-sidebar-open";
 const isHistoryOpen = ref(true); // Always default to true
+const isSmallScreen = ref(false);
 
 const isInitializing = ref(true);
 const lastMessageCount = ref(0);
 const savedMessageIds = ref(new Set<string>());
 const hasTitleBeenSet = ref(false);
 
+const updateViewportState = () => {
+  if (typeof window === "undefined") return;
+  isSmallScreen.value = window.innerWidth < 768;
+};
+
+const shouldUseDrawerSidebar = computed(() => isSmallScreen.value);
+
 // Initialize session on mount
 onMounted(async () => {
+  updateViewportState();
   // Load saved sidebar preference
   if (typeof window !== "undefined") {
+    window.addEventListener("resize", updateViewportState);
+    window.addEventListener("orientationchange", updateViewportState);
     const saved = localStorage.getItem(sidebarStateKey);
     if (saved !== null) {
       isHistoryOpen.value = saved === "true";
@@ -451,15 +462,28 @@ const toggleHistory = () => {
 
 // Watch sidebar state to persist changes
 watch(isHistoryOpen, (newValue) => {
+  if (isSmallScreen.value) return;
   if (typeof window !== "undefined") {
     localStorage.setItem(sidebarStateKey, String(newValue));
   }
+});
+
+onBeforeUnmount(() => {
+  if (typeof window === "undefined") return;
+  window.removeEventListener("resize", updateViewportState);
+  window.removeEventListener("orientationchange", updateViewportState);
 });
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="relative flex h-[calc(100vh-120px)] min-h-[calc(100vh-120px)]">
+    <div
+      class="relative flex min-h-0 overflow-hidden"
+      :style="{
+        height: 'calc(100dvh - 120px)',
+        minHeight: 'calc(100dvh - 120px)',
+      }"
+    >
       <div
         v-if="canMinimize"
         class="absolute right-3 top-3 z-20 flex items-center gap-1"
@@ -481,8 +505,47 @@ watch(isHistoryOpen, (newValue) => {
           <Icon name="mdi:close" size="20" />
         </button>
       </div>
-      <!-- Chat History Sidebar -->
+      <template v-if="shouldUseDrawerSidebar">
+        <Transition
+          enter-active-class="transition-opacity duration-200 ease-out"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+          leave-active-class="transition-opacity duration-150 ease-in"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
+        >
+          <button
+            v-if="isHistoryOpen"
+            type="button"
+            class="absolute inset-0 z-10 bg-slate-900/30 md:hidden"
+            aria-label="Close chat history"
+            @click="isHistoryOpen = false"
+          />
+        </Transition>
+        <Transition
+          enter-active-class="transition-all duration-200 ease-out"
+          enter-from-class="opacity-0 -translate-x-4"
+          enter-to-class="opacity-100 translate-x-0"
+          leave-active-class="transition-all duration-150 ease-in"
+          leave-from-class="opacity-100 translate-x-0"
+          leave-to-class="opacity-0 -translate-x-4"
+        >
+          <div
+            v-if="isHistoryOpen"
+            class="absolute inset-y-0 left-0 z-20 w-[min(22rem,calc(100%-1rem))] max-w-full min-h-0"
+          >
+            <AiTeacherChatHistorySidebar
+              :is-open="true"
+              :compact="true"
+              @close="isHistoryOpen = false"
+              @new-chat="handleNewChat"
+              @session-selected="handleSessionSelected"
+            />
+          </div>
+        </Transition>
+      </template>
       <AiTeacherChatHistorySidebar
+        v-else
         :is-open="isHistoryOpen"
         @close="isHistoryOpen = false"
         @new-chat="handleNewChat"
@@ -490,19 +553,24 @@ watch(isHistoryOpen, (newValue) => {
       />
 
       <!-- Main Content -->
-      <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div class="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
         <AiTeacherHeader @toggle-sidebar="toggleHistory" />
 
         <div
           v-if="isInitializing"
-          class="flex items-center justify-center h-64"
+          class="flex min-h-0 flex-1 items-center justify-center"
         >
           <div
             class="animate-spin rounded-full h-8 w-8 border-b-2 border-oceanBlue"
           ></div>
         </div>
 
-        <template role="main" aria-label="AI Teacher conversation" v-else>
+        <main
+          role="main"
+          aria-label="AI Teacher conversation"
+          v-else
+          class="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <AiTeacherMessages
             :messages="chat.messages"
             :isTyping="isTyping"
@@ -511,7 +579,7 @@ watch(isHistoryOpen, (newValue) => {
             :chat="chat"
             @sendMessage="handleSubmit"
           />
-        </template>
+        </main>
       </div>
     </div>
   </NuxtLayout>

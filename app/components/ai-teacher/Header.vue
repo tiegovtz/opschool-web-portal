@@ -1,24 +1,27 @@
 <template>
-  <header class="py-6 px-8 border-b border-gray-100 bg-white">
+  <header class="border-b border-gray-100 bg-white px-4 py-4 sm:px-8 sm:py-6">
     <div class="flex items-center gap-3">
       <button
         @click="$emit('toggle-sidebar')"
-        class="w-12 h-12 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all hover:scale-110 active:scale-95 cursor-pointer"
+        class="flex items-center justify-center w-10 h-10 transition-all rounded-full shadow-md cursor-pointer sm:h-12 sm:w-12 hover:shadow-lg active:scale-95"
         aria-label="Toggle chat history"
       >
         <Icon
           name="heroicons:bars-3"
-          class="w-6 h-6"
+          class="w-5 h-5 sm:w-6 sm:h-6"
         />
       </button>
 
       <!-- Text content -->
       <div
         tabindex="0"
-        class="text-gray-900"
+        class="min-w-0 text-gray-900"
       >
+        <h1 class="text-sm font-semibold leading-tight text-slate-900 sm:text-base">
+          TIE AI Teacher
+        </h1>
         <p
-          class="text-sm"
+          class="text-xs text-slate-500 sm:text-sm"
           id="app-description"
         >
           Your intelligent learning companion
