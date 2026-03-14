@@ -872,7 +872,7 @@ const discardChanges = () => {
                       name="fa6-solid:book-open-reader"
                       class="w-3.5 h-3.5"
                     />
-                    Revisit topic
+                    Revisit Compitence
                   </span>
                   <span
                     class="px-2.5 py-1 text-xs font-semibold rounded-full bg-oceanBlue/10 text-oceanBlue"
@@ -965,7 +965,7 @@ const discardChanges = () => {
                   name="heroicons:play-circle"
                   class="w-5 h-5"
                 />
-                <span>Open topic</span>
+                <span>Open Compitence</span>
               </NuxtLink>
 
               <button
