@@ -3,7 +3,7 @@ import apiDocs from "~/utilities/apiDocs";
 import { layoutEffect } from "~/utilities/controlls";
 import messages from "~/utilities/messages";
 import ConfirmationModal from "~/components/ai-teacher/ConfirmationModal.vue";
-
+import { useNavigationStore } from "~/stores/navigationStore";
 const userToken = useCookie("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
 const refreshToken = useCookie("signInRefreshToken");
