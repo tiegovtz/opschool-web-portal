@@ -88,6 +88,60 @@ function getStringValue(value: unknown, fallback = ""): string {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
+function isLikelyDatabaseId(value: string): boolean {
+  return /^[a-f0-9]{24}$/i.test(value.trim());
+}
+
+function extractList(data: any): any[] {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.subjects)) return data.subjects;
+  if (Array.isArray(data?.levels)) return data.levels;
+  return [];
+}
+
+async function fetchLookupMap(
+  url: string,
+  token: string,
+  valueKeys: string[]
+): Promise<Map<string, string>> {
+  const data = await fetchJson<any>(url, token, { tolerateFailure: true });
+  const entries = extractList(data);
+  const map = new Map<string, string>();
+
+  for (const entry of entries) {
+    const id = getStringValue(entry?._id || entry?.id);
+    if (!id) continue;
+
+    let label = "";
+    for (const key of valueKeys) {
+      label = getStringValue(entry?.[key]);
+      if (label) break;
+    }
+
+    if (!label) continue;
+    map.set(id, label);
+  }
+
+  return map;
+}
+
+function resolveDisplayValue(
+  nestedValue: unknown,
+  rawValue: unknown,
+  lookupMap: Map<string, string>,
+  fallback = ""
+): string {
+  const nested = getStringValue(nestedValue);
+  if (nested) return nested;
+
+  const raw = getStringValue(rawValue);
+  if (!raw) return fallback;
+
+  return lookupMap.get(raw) || raw;
+}
+
 function parseUserCookie(rawCookie: string | undefined): Record<string, any> | null {
   if (!rawCookie) return null;
   try {
@@ -172,17 +226,26 @@ function extractAssessmentScore(remoteProgress: any): number | null {
   return normalizeNullablePercent(value);
 }
 
-function normalizeTopicCandidate(topic: any, remoteProgress: any): TopicCandidate | null {
+function normalizeTopicCandidate(
+  topic: any,
+  remoteProgress: any,
+  subjectLookup: Map<string, string>,
+  levelLookup: Map<string, string>
+): TopicCandidate | null {
   const topicId = getStringValue(topic?._id || topic?.id || topic?.topicId);
   const topicName = getStringValue(topic?.name || topic?.title);
   if (!topicId || !topicName) return null;
 
-  const subjectName = getStringValue(
-    topic?.subject?.name || topic?.subjectName || topic?.subject,
+  const subjectName = resolveDisplayValue(
+    topic?.subject?.name || topic?.subjectName,
+    topic?.subject,
+    subjectLookup,
     "General"
   );
-  const levelName = getStringValue(
-    topic?.level?.name || topic?.levelName || topic?.level,
+  const levelName = resolveDisplayValue(
+    topic?.level?.name || topic?.levelName,
+    topic?.level,
+    levelLookup,
     ""
   );
   const isViewed =
@@ -295,11 +358,20 @@ function buildFallbackSummary(recommendations: RankedRecommendation[]): string {
     return "You are keeping up well with your recent learning topics. Continue reviewing your latest lessons and keep practicing.";
   }
 
-  const topSubjects = Array.from(
-    new Set(recommendations.map((item) => item.subjectName))
-  ).join(", ");
+  const readableSubjects = Array.from(
+    new Set(
+      recommendations
+        .map((item) => item.subjectName)
+        .filter((item) => item && !isLikelyDatabaseId(item))
+    )
+  );
 
-  return `Focus next on ${topSubjects}. The recommendations below prioritize the topics where finishing the lesson or practicing a little more should improve your performance fastest.`;
+  const focusLabel =
+    readableSubjects.length > 0
+      ? readableSubjects.join(", ")
+      : recommendations.map((item) => item.topicName).join(", ");
+
+  return `Focus next on ${focusLabel}. The recommendations below prioritize the topics where finishing the lesson or practicing a little more should improve your performance fastest.`;
 }
 
 function buildFallbackExplanation(recommendation: RankedRecommendation): string {
@@ -496,6 +568,10 @@ export default defineEventHandler(async (event) => {
   const averageScore = normalizeNullablePercent(
     getFirstNumber(profile, [["questionStats", "averageScore"]])
   );
+  const [subjectLookup, levelLookup] = await Promise.all([
+    fetchLookupMap(apiDocs.subjects.getSubjects, authToken, ["name", "title"]),
+    fetchLookupMap(apiDocs.levels.getLevels, authToken, ["name", "title"]),
+  ]);
 
   const topicSnapshots = (
     await Promise.all(
@@ -512,7 +588,12 @@ export default defineEventHandler(async (event) => {
             )
           : null;
 
-        return normalizeTopicCandidate(topic, remoteProgress);
+        return normalizeTopicCandidate(
+          topic,
+          remoteProgress,
+          subjectLookup,
+          levelLookup
+        );
       })
     )
   ).filter(Boolean) as TopicCandidate[];
