@@ -3,12 +3,14 @@
   <div
     v-if="isOpen"
     :class="[
-      'flex-shrink-0 w-80 h-full bg-white shadow-lg relative flex-col',
-      compact ? 'flex' : 'hidden md:flex'
+      'relative min-h-0 flex-col overflow-hidden bg-white shadow-lg',
+      compact
+        ? 'flex h-full w-full rounded-2xl border border-gray-200'
+        : 'hidden h-full w-80 flex-shrink-0 md:flex'
     ]"
   >
     <!-- Header -->
-    <div class="p-5">
+    <div class="border-b border-gray-100 p-4 sm:p-5">
       <div class="flex items-center justify-between mb-4">
         <div class="flex w-full items-center gap-3">
           <div
@@ -37,7 +39,7 @@
         </div>
         <button
           @click="$emit('close')"
-          class="md:hidden text-oceanBlue hover:bg-white/20 p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95"
+          class="p-2 text-oceanBlue transition-all duration-200 rounded-xl hover:bg-slate-100 active:scale-95"
           aria-label="Close sidebar"
         >
           <Icon
@@ -48,7 +50,7 @@
       </div>
       <button
         @click="handleNewChat"
-        class="w-full text-oceanBlue text-sm px-4 py-3 rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-[0px_0px_50px_5px_rgba(0,0,0,0.1)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group"
+        class="flex items-center justify-center w-full gap-2 px-4 py-3 text-sm text-oceanBlue transition-all duration-200 rounded-xl hover:bg-gray-50 shadow-[0px_0px_50px_5px_rgba(0,0,0,0.1)] hover:scale-[1.02] active:scale-[0.98] group"
       >
         <Icon
           name="heroicons:plus"
@@ -279,10 +281,10 @@
   <!-- Mobile Sidebar (overlay) -->
   <div
     v-show="isOpen && !compact"
-    class="md:hidden fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-xl z-30 w-80 flex flex-col"
+    class="fixed left-0 top-0 z-30 flex h-full w-80 max-w-[calc(100%-1rem)] min-h-0 flex-col overflow-hidden border-r border-gray-200 bg-white shadow-xl md:hidden"
   >
     <!-- Header -->
-    <div class="p-5 border-b bg-oceanBlue shadow-lg">
+    <div class="border-b bg-oceanBlue p-4 shadow-lg sm:p-5">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
           <div
@@ -536,7 +538,7 @@
 
   <!-- Mobile Overlay -->
   <div
-    v-if="isOpen"
+    v-if="isOpen && !compact"
     @click="$emit('close')"
     class="md:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-20 transition-opacity duration-300"
   ></div>

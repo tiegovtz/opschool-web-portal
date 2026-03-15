@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Chat } from "@ai-sdk/vue";
-import { ref, watch, onMounted, defineAsyncComponent } from "vue";
+import { computed, ref, watch, onMounted, onBeforeUnmount, defineAsyncComponent } from "vue";
 import { useChatStore } from "~/stores/chatStore";
 import { useChatHistory } from "~/composables/useChatHistory";
 import type { ChatMessage } from "~/types/chat.interface";
@@ -32,12 +32,42 @@ const isTyping = ref(false);
 const sidebarStateKey = "tie-ai-teacher-sidebar-open";
 const isHistoryOpen = ref(true);
 const isInitializing = ref(true);
+const isSmallScreen = ref(false);
 const lastMessageCount = ref(0);
 const savedMessageIds = ref(new Set<string>());
 const hasTitleBeenSet = ref(false);
 const chatHistory = useChatHistory();
 
+const updateViewportState = () => {
+  if (typeof window === "undefined") return;
+  isSmallScreen.value = window.innerWidth < 768;
+};
+
+const shouldUseDrawerSidebar = computed(
+  () => isSmallScreen.value
+);
+
+const shouldUseCompactOverlaySidebar = computed(
+  () => props.compact && !isSmallScreen.value
+);
+const { draft, version, consumeDraft } = useAiTeacherDraft();
+const draftMessage = ref("");
+const draftVersion = ref(0);
+
+const applyDraftMessage = () => {
+  const nextDraft = consumeDraft();
+  if (!nextDraft.trim()) return;
+  draftMessage.value = nextDraft;
+  draftVersion.value += 1;
+};
+
 onMounted(async () => {
+  updateViewportState();
+  if (typeof window !== "undefined") {
+    window.addEventListener("resize", updateViewportState);
+    window.addEventListener("orientationchange", updateViewportState);
+  }
+  applyDraftMessage();
   if (props.compact) {
     // Compact overlay starts with drawer closed; open via header button.
     isHistoryOpen.value = false;
@@ -67,6 +97,15 @@ onMounted(async () => {
     isInitializing.value = false;
   }
 });
+
+watch(
+  () => version.value,
+  (nextVersion, previousVersion) => {
+    if (nextVersion === previousVersion) return;
+    if (!draft.value.trim()) return;
+    applyDraftMessage();
+  }
+);
 
 const loadSession = async (sessionId: string) => {
   try {
@@ -280,16 +319,64 @@ const toggleHistory = () => {
 };
 
 watch(isHistoryOpen, (newValue) => {
-  if (props.compact) return;
+  if (props.compact || isSmallScreen.value) return;
   if (typeof window !== "undefined") {
     localStorage.setItem(sidebarStateKey, String(newValue));
   }
 });
+
+onBeforeUnmount(() => {
+  if (typeof window === "undefined") return;
+  window.removeEventListener("resize", updateViewportState);
+  window.removeEventListener("orientationchange", updateViewportState);
+});
 </script>
 
 <template>
-  <div class="relative flex h-full min-h-0">
-    <template v-if="compact">
+  <div
+    class="relative flex h-full min-h-0"
+    :class="shouldUseCompactOverlaySidebar ? 'overflow-visible' : 'overflow-hidden'"
+  >
+    <template v-if="shouldUseDrawerSidebar">
+      <Transition
+        enter-active-class="transition-opacity duration-200 ease-out"
+        enter-from-class="opacity-0"
+        enter-to-class="opacity-100"
+        leave-active-class="transition-opacity duration-150 ease-in"
+        leave-from-class="opacity-100"
+        leave-to-class="opacity-0"
+      >
+        <button
+          v-if="isHistoryOpen"
+          type="button"
+          class="absolute inset-0 z-20 bg-slate-900/30 md:hidden"
+          aria-label="Close chat history"
+          @click="isHistoryOpen = false"
+        />
+      </Transition>
+      <Transition
+        enter-active-class="transition-all duration-200 ease-out"
+        enter-from-class="opacity-0 -translate-x-4"
+        enter-to-class="opacity-100 translate-x-0"
+        leave-active-class="transition-all duration-150 ease-in"
+        leave-from-class="opacity-100 translate-x-0"
+        leave-to-class="opacity-0 -translate-x-4"
+      >
+        <div
+          v-if="isHistoryOpen"
+          class="absolute inset-y-0 left-0 z-30 w-[min(22rem,calc(100%-1rem))] max-w-full min-h-0 pointer-events-auto"
+        >
+          <AiTeacherChatHistorySidebar
+            :is-open="true"
+            :compact="true"
+            @close="isHistoryOpen = false"
+            @new-chat="handleNewChat"
+            @session-selected="handleSessionSelected"
+          />
+        </div>
+      </Transition>
+    </template>
+    <template v-else-if="shouldUseCompactOverlaySidebar">
       <Transition
         enter-active-class="transition-all duration-200 ease-out"
         enter-from-class="opacity-0 -translate-x-2"
@@ -298,18 +385,18 @@ watch(isHistoryOpen, (newValue) => {
         leave-from-class="opacity-100 translate-x-0"
         leave-to-class="opacity-0 -translate-x-2"
       >
-      <div
-        v-if="isHistoryOpen"
-        class="absolute -left-80 top-0 bottom-0 z-30 w-80 max-w-[90%] bg-white border border-gray-200 shadow-xl rounded-l-lg pointer-events-auto"
-      >
-        <AiTeacherChatHistorySidebar
-          :is-open="true"
-          :compact="true"
-          @close="isHistoryOpen = false"
-          @new-chat="handleNewChat"
-          @session-selected="handleSessionSelected"
-        />
-      </div>
+        <div
+          v-if="isHistoryOpen"
+          class="absolute -left-80 top-0 bottom-0 z-30 w-80 max-w-[90%] rounded-l-lg border border-gray-200 bg-white shadow-xl pointer-events-auto"
+        >
+          <AiTeacherChatHistorySidebar
+            :is-open="true"
+            :compact="true"
+            @close="isHistoryOpen = false"
+            @new-chat="handleNewChat"
+            @session-selected="handleSessionSelected"
+          />
+        </div>
       </Transition>
     </template>
     <AiTeacherChatHistorySidebar
@@ -320,28 +407,35 @@ watch(isHistoryOpen, (newValue) => {
       @session-selected="handleSessionSelected"
     />
 
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <div class="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
       <AiTeacherHeader @toggle-sidebar="toggleHistory" />
 
       <div
         v-if="isInitializing"
-        class="flex items-center justify-center h-64"
+        class="flex min-h-0 flex-1 items-center justify-center"
       >
         <div
           class="animate-spin rounded-full h-8 w-8 border-b-2 border-oceanBlue"
         ></div>
       </div>
 
-      <template role="main" aria-label="AI Teacher conversation" v-else>
+      <main
+        v-else
+        role="main"
+        aria-label="AI Teacher conversation"
+        class="flex min-h-0 flex-1 flex-col overflow-hidden"
+      >
         <AiTeacherMessages
           :messages="chat.messages"
           :isTyping="isTyping"
         />
         <AiTeacherInput
           :chat="chat"
+          :draft-message="draftMessage"
+          :draft-version="draftVersion"
           @sendMessage="handleSubmit"
         />
-      </template>
+      </main>
     </div>
   </div>
 </template>

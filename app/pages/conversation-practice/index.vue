@@ -1,18 +1,18 @@
 <template>
   <div
     :class="isEmbedded
-      ? 'fixed inset-0 p-2 sm:p-4 flex items-start justify-center overflow-y-auto'
-      : 'fixed inset-0 z-50 flex items-start justify-center bg-black/30 p-2 sm:p-4 overflow-y-auto'"
+      ? 'fixed inset-0 p-2 sm:p-4 flex items-center justify-center overflow-hidden'
+      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-2 sm:p-4 overflow-hidden'"
     @click.self="!isEmbedded && handleOverlayClick"
   >
     <div
-      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-16px))] max-h-[calc(100vh-16px)] overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent mt-2 sm:mt-4"
+      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-16px))] h-[calc(100dvh-16px)] max-h-[calc(100dvh-16px)] min-h-0 overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent"
       role="dialog"
       aria-modal="true"
       aria-labelledby="conversation-practice-title"
       @click.stop
     >
-      <div class="modal-inner relative w-full flex flex-col min-h-0 rounded-2xl bg-white overflow-hidden">
+      <div class="modal-inner relative w-full flex-1 flex flex-col min-h-0 rounded-2xl bg-white overflow-hidden">
         <div v-if="showLoadingBar" class="loading-bar">
           <div class="loading-bar__inner"></div>
         </div>
@@ -33,12 +33,6 @@
             <span class="text-xl leading-none">&times;</span>
           </button>
         </header>
-        <div
-          v-if="showRotateBanner"
-          class="mx-3 mt-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700"
-        >
-          Rotate to portrait for a better experience.
-        </div>
         <div
           class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-3 py-3 sm:px-6 sm:py-4 min-h-0"
           :class="isRecording ? 'pb-[190px]' : ''"
@@ -297,9 +291,6 @@ const route = useRoute()
 const originalBodyOverflow = ref('')
 const allowOverlayClose = ref(false)
 const returnTo = ref('')
-const isPortrait = ref(false)
-const isSmallScreen = ref(false)
-const showRotateBanner = computed(() => !isPortrait.value && isSmallScreen.value)
 
 const closeModal = () => {
   if (
@@ -344,13 +335,6 @@ const handlePopstate = () => {
       closeModal()
     }
   }, 0)
-}
-
-const updateOrientationState = () => {
-  if (typeof window === 'undefined') return
-  const shortestSide = Math.min(window.innerWidth, window.innerHeight)
-  isSmallScreen.value = shortestSide < 640
-  isPortrait.value = window.matchMedia('(orientation: portrait)').matches
 }
 
 // ============================================================================
@@ -514,9 +498,6 @@ onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', handleKeydown)
     window.addEventListener('popstate', handlePopstate)
-    updateOrientationState()
-    window.addEventListener('resize', updateOrientationState)
-    window.addEventListener('orientationchange', updateOrientationState)
     if (!isEmbedded.value) {
       // Avoid immediately closing the modal on the opening click.
       setTimeout(() => {
@@ -625,8 +606,6 @@ onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', handleKeydown)
     window.removeEventListener('popstate', handlePopstate)
-    window.removeEventListener('resize', updateOrientationState)
-    window.removeEventListener('orientationchange', updateOrientationState)
   }
   if (typeof document !== 'undefined') {
     document.body.style.overflow = originalBodyOverflow.value
