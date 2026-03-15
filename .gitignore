@@ -53,3 +53,6 @@ nextjs-migration-package/
 # Testing scripts
 scripts/test-*.js
 scripts/test-*.ts
+
+#ignore refference folder
+tie-web-portal-main/

@@ -136,7 +136,8 @@ const messages = {
       auth: {
         passwordResetSent: "Password reset instructions sent to your email",
         verificationSent: "Verification email has been sent",
-        sessionExpiring: "Your session will expire soon"
+        sessionExpiring: "Your session will expire soon",
+        logoutConfirm: "Are you sure you want to log out?"
       },
       
       // Feature related info messages
