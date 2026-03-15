@@ -53,3 +53,6 @@ nextjs-migration-package/
 # Testing scripts
 scripts/test-*.js
 scripts/test-*.ts
+
+# package-lock.json (if using npm, otherwise ignore yarn.lock)
+package-lock.json
