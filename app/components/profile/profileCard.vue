@@ -512,11 +512,11 @@ const discardChanges = () => {
       <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
         <h3 class="text-lg font-semibold text-white">Learning Statistics</h3>
       </div>
-      <div class="grid w-full grid-cols-2 gap-3 p-4 sm:p-5 md:grid-cols-3 xl:grid-cols-5">
+      <div class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5">
         <!-- Competences Opened -->
         <div class="profile-stat-card">
           <div class="profile-stat-icon bg-blue-100 text-deepBlue">
-            <Icon name="heroicons:book-open-20-solid" class="w-6 h-6" />
+            <Icon name="fa6-solid:book-open-reader" size="20" class="w-6 h-6" />
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Competences Opened</span>
@@ -525,8 +525,8 @@ const discardChanges = () => {
         </div>
         <!-- Subject Opened -->
         <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-emerald-100 text-emerald-700">
-            <Icon name="heroicons:academic-cap-20-solid" class="w-6 h-6" />
+          <div class="profile-stat-icon bg-green-100 text-emerald-700">
+            <Icon name="heroicons:folder-open-20-solid" size="20" class="w-6 h-6" />
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Subject Opened</span>
@@ -535,8 +535,8 @@ const discardChanges = () => {
         </div>
         <!-- Time Spent -->
         <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-amber-100 text-amber-700">
-            <Icon name="heroicons:clock-20-solid" class="w-6 h-6" />
+          <div class="profile-stat-icon bg-red-100 text-red-600">
+            <Icon name="stash:clock-solid" size="20" class="w-6 h-6" />
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Time Spent</span>
@@ -545,8 +545,8 @@ const discardChanges = () => {
         </div>
         <!-- Quiz Attempts -->
         <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-violet-100 text-violet-600">
-            <Icon name="heroicons:clipboard-document-list-20-solid" class="w-6 h-6" />
+          <div class="profile-stat-icon bg-purple-100 text-purple-600">
+            <Icon name="solar:notebook-bold" size="20" class="w-6 h-6" />
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Quiz Attempts</span>
@@ -556,7 +556,7 @@ const discardChanges = () => {
         <!-- Average Quiz Score -->
         <div class="profile-stat-card">
           <div class="profile-stat-icon bg-indigo-100 text-indigo-600">
-            <Icon name="heroicons:chart-bar-20-solid" class="w-6 h-6" />
+            <Icon name="heroicons:chart-bar-16-solid" size="20" class="w-6 h-6" />
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Average Quiz Score</span>

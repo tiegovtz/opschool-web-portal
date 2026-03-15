@@ -68,8 +68,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- Header: sticky so it stays at top when scrolling -->
-  <header class="sticky top-0 z-40 shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat" role="navigation">
+  <!-- Header -->
+  <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat" role="navigation">
    
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->

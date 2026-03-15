@@ -9,31 +9,6 @@ import {
 } from './utilities/controlls'
 import GlobalLauncher from '@/components/assistant/GlobalLauncher.vue'
 import TieAiTeacherModalHost from '@/components/assistant/TieAiTeacherModalHost.vue'
-import TiePreloader from '@/components/included/TiePreloader.vue'
-
-const route = useRoute()
-const PRELOADER_DONE_KEY = 'tie-preloader-done'
-
-// Show preloader by default on landing so it's in the initial HTML (first paint)
-const isLandingPath = () => route.path === '/' || route.path === '/home'
-const showLandingPreloader = ref(isLandingPath())
-
-function checkShowPreloader() {
-  if (import.meta.client && isLandingPath()) {
-    const done = sessionStorage.getItem(PRELOADER_DONE_KEY)
-    showLandingPreloader.value = !done
-  }
-}
-
-function onPreloaderDone() {
-  if (import.meta.client) {
-    sessionStorage.setItem(PRELOADER_DONE_KEY, '1')
-    showLandingPreloader.value = false
-  }
-}
-
-watch(() => route.path, checkShowPreloader, { immediate: true })
-onMounted(checkShowPreloader)
 
 // Resize state
 const widthGreater1280 = computed(() => screenWidth.value >= 1280)
@@ -65,7 +40,6 @@ onBeforeUnmount(() => {
 
 <template>
   <NuxtLayout>
-    <TiePreloader v-if="showLandingPreloader" @done="onPreloaderDone" />
     <NuxtLoadingIndicator color="#56ade8" errorColor="#f00" />
     <NuxtPage @contextmenu.prevent />
     <GlobalLauncher />
