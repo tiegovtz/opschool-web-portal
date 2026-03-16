@@ -83,11 +83,6 @@ const navigationMessage = computed(() => {
   if (pendingNavigation.value) {
     return "Finishing the current answer, then switching chats.";
   }
-
-  if (isSessionNavigationLocked.value) {
-    return "This answer is still generating in the current chat.";
-  }
-
   return "";
 });
 
