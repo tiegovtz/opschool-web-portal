@@ -3,6 +3,7 @@ import { Chat } from "@ai-sdk/vue";
 import { computed, ref, watch, onMounted, onBeforeUnmount, defineAsyncComponent } from "vue";
 import { useChatStore } from "~/stores/chatStore";
 import type { ChatMessage } from "~/types/chat.interface";
+import type { PendingNavigation } from "~/types/tie-ai-teacher.interface";
 
 const route = useRoute();
 const router = useRouter();
@@ -35,9 +36,6 @@ const isSmallScreen = ref(false);
 const lastMessageCount = ref(0);
 const savedMessageIds = ref(new Set<string>());
 const hasTitleBeenSet = ref(false);
-type PendingNavigation =
-  | { type: "new-chat" }
-  | { type: "session"; sessionId: string };
 const pendingNavigation = ref<PendingNavigation | null>(null);
 const requestSessionId = ref<string | null>(null);
 const isSessionNavigationLocked = computed(
