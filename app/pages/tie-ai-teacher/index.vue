@@ -68,6 +68,23 @@ const isInitializing = ref(true);
 const lastMessageCount = ref(0);
 const savedMessageIds = ref(new Set<string>());
 const hasTitleBeenSet = ref(false);
+type PendingNavigation =
+  | { type: "new-chat" }
+  | { type: "session"; sessionId: string };
+const pendingNavigation = ref<PendingNavigation | null>(null);
+const requestSessionId = ref<string | null>(null);
+const isSessionNavigationLocked = computed(
+  () =>
+    isTyping.value ||
+    chat.status === "submitted" ||
+    chat.status === "streaming"
+);
+const navigationMessage = computed(() => {
+  if (pendingNavigation.value) {
+    return "Finishing the current answer, then switching chats.";
+  }
+  return "";
+});
 
 const updateViewportState = () => {
   if (typeof window === "undefined") return;
@@ -192,6 +209,9 @@ const clearSessionIdFromRoute = () => {
   router.replace({ query: nextQuery });
 };
 
+const getTargetSessionId = () =>
+  requestSessionId.value || chatStore.activeSessionId;
+
 const hasConversationStarted = () => {
   // Check local messages first (covers unsynced messages)
   // @ts-ignore
@@ -308,13 +328,16 @@ const generateTitleFromMessage = (message: string): string => {
 };
 
 // Update session title if not set
-const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
-  if (!chatStore.activeSessionId || hasTitleBeenSet.value) return;
+const updateSessionTitleIfNeeded = async (
+  sessionId: string,
+  firstUserMessage: string
+) => {
+  if (!sessionId || hasTitleBeenSet.value) return;
 
   try {
     const title = generateTitleFromMessage(firstUserMessage);
     if (title && title !== "New Conversation") {
-      await chatStore.updateSessionTitle(chatStore.activeSessionId, title);
+      await chatStore.updateSessionTitle(sessionId, title);
       hasTitleBeenSet.value = true;
     }
   } catch (error) {
@@ -323,7 +346,7 @@ const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
 };
 
 // Save a message to backend
-const saveMessage = async (message: any) => {
+const saveMessage = async (sessionId: string, message: any) => {
   if (!message.id || savedMessageIds.value.has(message.id)) {
     return; // Already saved
   }
@@ -337,7 +360,7 @@ const saveMessage = async (message: any) => {
       content,
       parts: message.parts,
       metadata: { messageId: message.id },
-    });
+    }, sessionId);
     savedMessageIds.value.add(message.id);
   } catch (error) {
     console.error("[TIE AI Teacher] Error saving message:", error);
@@ -348,8 +371,9 @@ const saveMessage = async (message: any) => {
 watch(
   () => chat.messages,
   async (messages) => {
+    const targetSessionId = getTargetSessionId();
     if (
-      !chatStore.activeSessionId ||
+      !targetSessionId ||
       isInitializing.value ||
       !Array.isArray(messages)
     ) {
@@ -363,13 +387,13 @@ watch(
     for (const message of newMessages) {
       // Save user messages immediately
       if (message.role === "user" && message.id) {
-        await saveMessage(message);
+        await saveMessage(targetSessionId, message);
 
         // Generate title from first user message
         if (!hasTitleBeenSet.value) {
           const content = extractMessageContent(message);
           if (content.trim()) {
-            await updateSessionTitleIfNeeded(content);
+            await updateSessionTitleIfNeeded(targetSessionId, content);
           }
         }
       }
@@ -384,11 +408,12 @@ watch(
 // Watch chat status to save assistant messages when streaming completes
 watch(
   () => chat.status,
-  async (status) => {
-    if (!chatStore.activeSessionId || isInitializing.value) return;
+  async (status, previousStatus) => {
+    const targetSessionId = getTargetSessionId();
+    if (isInitializing.value) return;
 
     // When streaming is complete, save any unsaved assistant messages
-    if (status === "ready") {
+    if (status === "ready" && targetSessionId) {
       // Small delay to ensure message is fully complete
       await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -401,7 +426,27 @@ watch(
           message.id &&
           !savedMessageIds.value.has(message.id)
         ) {
-          await saveMessage(message);
+          await saveMessage(targetSessionId, message);
+        }
+      }
+    }
+
+    const wasGenerating =
+      previousStatus === "submitted" || previousStatus === "streaming";
+    const isGenerating =
+      status === "submitted" || status === "streaming";
+
+    if (wasGenerating && !isGenerating) {
+      requestSessionId.value = null;
+
+      if (pendingNavigation.value) {
+        const pending = pendingNavigation.value;
+        pendingNavigation.value = null;
+
+        if (pending.type === "new-chat") {
+          await startNewChat();
+        } else {
+          await loadSession(pending.sessionId);
         }
       }
     }
@@ -412,9 +457,19 @@ watch(
 watch(
   () => route.query.sessionId,
   async (sessionId) => {
-    if (sessionId && sessionId !== chatStore.activeSessionId) {
-      await loadSession(sessionId as string);
+    if (!sessionId || sessionId === chatStore.activeSessionId) {
+      return;
     }
+
+    if (isSessionNavigationLocked.value) {
+      pendingNavigation.value = {
+        type: "session",
+        sessionId: sessionId as string,
+      };
+      return;
+    }
+
+    await loadSession(sessionId as string);
   }
 );
 
@@ -429,11 +484,22 @@ const handleSubmit = async (message: string) => {
     }
   }
 
+  const sessionId = chatStore.activeSessionId;
+  if (!sessionId) return;
+
   isTyping.value = true;
+  pendingNavigation.value = null;
+  requestSessionId.value = sessionId;
 
   try {
     // Send message to AI - the watch function will save user messages when they appear in chat.messages
-    await chat.sendMessage({ text: message });
+    await chat.sendMessage(
+      { text: message },
+      {
+        body: { sessionId },
+        metadata: { sessionId },
+      }
+    );
   } catch (error) {
     console.error("[TIE AI Teacher] Error sending message:", error);
   } finally {
@@ -441,8 +507,7 @@ const handleSubmit = async (message: string) => {
   }
 };
 
-// Handle new chat
-const handleNewChat = async () => {
+const startNewChat = async () => {
   if (!hasConversationStarted()) {
     if (chatStore.activeSessionId) {
       if (route.query.sessionId !== chatStore.activeSessionId) {
@@ -468,8 +533,23 @@ const handleNewChat = async () => {
   // Keep sidebar open when starting a new chat
 };
 
+// Handle new chat
+const handleNewChat = async () => {
+  if (isSessionNavigationLocked.value) {
+    pendingNavigation.value = { type: "new-chat" };
+    return;
+  }
+
+  await startNewChat();
+};
+
 // Handle session selection
 const handleSessionSelected = async (sessionId: string) => {
+  if (isSessionNavigationLocked.value) {
+    pendingNavigation.value = { type: "session", sessionId };
+    return;
+  }
+
   await loadSession(sessionId);
   // Keep sidebar open when selecting session
 };
@@ -557,6 +637,8 @@ onBeforeUnmount(() => {
             <AiTeacherChatHistorySidebar
               :is-open="true"
               :compact="true"
+              :navigation-message="navigationMessage"
+              :disable-delete="isSessionNavigationLocked"
               @close="isHistoryOpen = false"
               @new-chat="handleNewChat"
               @session-selected="handleSessionSelected"
@@ -567,6 +649,8 @@ onBeforeUnmount(() => {
       <AiTeacherChatHistorySidebar
         v-else
         :is-open="isHistoryOpen"
+        :navigation-message="navigationMessage"
+        :disable-delete="isSessionNavigationLocked"
         @close="isHistoryOpen = false"
         @new-chat="handleNewChat"
         @session-selected="handleSessionSelected"

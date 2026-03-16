@@ -2,7 +2,6 @@
 import { Chat } from "@ai-sdk/vue";
 import { computed, ref, watch, onMounted, onBeforeUnmount, defineAsyncComponent } from "vue";
 import { useChatStore } from "~/stores/chatStore";
-import { useChatHistory } from "~/composables/useChatHistory";
 import type { ChatMessage } from "~/types/chat.interface";
 
 const route = useRoute();
@@ -36,7 +35,23 @@ const isSmallScreen = ref(false);
 const lastMessageCount = ref(0);
 const savedMessageIds = ref(new Set<string>());
 const hasTitleBeenSet = ref(false);
-const chatHistory = useChatHistory();
+type PendingNavigation =
+  | { type: "new-chat" }
+  | { type: "session"; sessionId: string };
+const pendingNavigation = ref<PendingNavigation | null>(null);
+const requestSessionId = ref<string | null>(null);
+const isSessionNavigationLocked = computed(
+  () =>
+    isTyping.value ||
+    chat.status === "submitted" ||
+    chat.status === "streaming"
+);
+const navigationMessage = computed(() => {
+  if (pendingNavigation.value) {
+    return "Finishing the current answer, then switching chats.";
+  }
+  return "";
+});
 
 const updateViewportState = () => {
   if (typeof window === "undefined") return;
@@ -156,6 +171,9 @@ const convertToChatMessage = (msg: ChatMessage) => ({
   content: msg.content,
 });
 
+const getTargetSessionId = () =>
+  requestSessionId.value || chatStore.activeSessionId;
+
 const extractMessageContent = (message: any): string => {
   if (message.content) return message.content;
   const textPart = message.parts?.find((p: any) => p.type === "text");
@@ -207,13 +225,16 @@ const generateTitleFromMessage = (message: string): string => {
   return title || "New Conversation";
 };
 
-const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
-  if (!chatStore.activeSessionId || hasTitleBeenSet.value) return;
+const updateSessionTitleIfNeeded = async (
+  sessionId: string,
+  firstUserMessage: string
+) => {
+  if (!sessionId || hasTitleBeenSet.value) return;
 
   try {
     const title = generateTitleFromMessage(firstUserMessage);
     if (title && title !== "New Conversation") {
-      await chatStore.updateSessionTitle(chatStore.activeSessionId, title);
+      await chatStore.updateSessionTitle(sessionId, title);
       hasTitleBeenSet.value = true;
     }
   } catch (error) {
@@ -221,7 +242,7 @@ const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
   }
 };
 
-const saveMessage = async (message: any) => {
+const saveMessage = async (sessionId: string, message: any) => {
   if (!message.id || savedMessageIds.value.has(message.id)) return;
 
   const content = extractMessageContent(message);
@@ -233,7 +254,7 @@ const saveMessage = async (message: any) => {
       content,
       parts: message.parts,
       metadata: { messageId: message.id },
-    });
+    }, sessionId);
     savedMessageIds.value.add(message.id);
   } catch (error) {
     console.error("[TIE AI Teacher] Error saving message:", error);
@@ -243,8 +264,9 @@ const saveMessage = async (message: any) => {
 watch(
   () => chat.messages,
   async (messages) => {
+    const targetSessionId = getTargetSessionId();
     if (
-      !chatStore.activeSessionId ||
+      !targetSessionId ||
       isInitializing.value ||
       !Array.isArray(messages)
     ) {
@@ -255,11 +277,11 @@ watch(
     const newMessages = messages.slice(lastMessageCount.value);
     for (const message of newMessages) {
       if (message.role === "user" && message.id) {
-        await saveMessage(message);
+        await saveMessage(targetSessionId, message);
         if (!hasTitleBeenSet.value) {
           const content = extractMessageContent(message);
           if (content.trim()) {
-            await updateSessionTitleIfNeeded(content);
+            await updateSessionTitleIfNeeded(targetSessionId, content);
           }
         }
       }
@@ -272,9 +294,10 @@ watch(
 
 watch(
   () => chat.status,
-  async (status) => {
-    if (!chatStore.activeSessionId || isInitializing.value) return;
-    if (status === "ready") {
+  async (status, previousStatus) => {
+    const targetSessionId = getTargetSessionId();
+    if (isInitializing.value) return;
+    if (status === "ready" && targetSessionId) {
       await new Promise((resolve) => setTimeout(resolve, 100));
       // @ts-ignore
       const messages = chat.messages || [];
@@ -284,7 +307,27 @@ watch(
           message.id &&
           !savedMessageIds.value.has(message.id)
         ) {
-          await saveMessage(message);
+          await saveMessage(targetSessionId, message);
+        }
+      }
+    }
+
+    const wasGenerating =
+      previousStatus === "submitted" || previousStatus === "streaming";
+    const isGenerating =
+      status === "submitted" || status === "streaming";
+
+    if (wasGenerating && !isGenerating) {
+      requestSessionId.value = null;
+
+      if (pendingNavigation.value) {
+        const pending = pendingNavigation.value;
+        pendingNavigation.value = null;
+
+        if (pending.type === "new-chat") {
+          await createNewSession();
+        } else {
+          await loadSession(pending.sessionId);
         }
       }
     }
@@ -296,9 +339,19 @@ const handleSubmit = async (message: string) => {
   if (!chatStore.activeSessionId) {
     await createNewSession();
   }
+  const sessionId = chatStore.activeSessionId;
+  if (!sessionId) return;
   isTyping.value = true;
+  pendingNavigation.value = null;
+  requestSessionId.value = sessionId;
   try {
-    await chat.sendMessage({ text: message });
+    await chat.sendMessage(
+      { text: message },
+      {
+        body: { sessionId },
+        metadata: { sessionId },
+      }
+    );
   } catch (error) {
     console.error("[TIE AI Teacher] Error sending message:", error);
   } finally {
@@ -307,10 +360,20 @@ const handleSubmit = async (message: string) => {
 };
 
 const handleNewChat = async () => {
+  if (isSessionNavigationLocked.value) {
+    pendingNavigation.value = { type: "new-chat" };
+    return;
+  }
+
   await createNewSession();
 };
 
 const handleSessionSelected = async (sessionId: string) => {
+  if (isSessionNavigationLocked.value) {
+    pendingNavigation.value = { type: "session", sessionId };
+    return;
+  }
+
   await loadSession(sessionId);
 };
 
@@ -369,6 +432,8 @@ onBeforeUnmount(() => {
           <AiTeacherChatHistorySidebar
             :is-open="true"
             :compact="true"
+            :navigation-message="navigationMessage"
+            :disable-delete="isSessionNavigationLocked"
             @close="isHistoryOpen = false"
             @new-chat="handleNewChat"
             @session-selected="handleSessionSelected"
@@ -392,6 +457,8 @@ onBeforeUnmount(() => {
           <AiTeacherChatHistorySidebar
             :is-open="true"
             :compact="true"
+            :navigation-message="navigationMessage"
+            :disable-delete="isSessionNavigationLocked"
             @close="isHistoryOpen = false"
             @new-chat="handleNewChat"
             @session-selected="handleSessionSelected"
@@ -402,6 +469,8 @@ onBeforeUnmount(() => {
     <AiTeacherChatHistorySidebar
       v-else
       :is-open="isHistoryOpen"
+      :navigation-message="navigationMessage"
+      :disable-delete="isSessionNavigationLocked"
       @close="isHistoryOpen = false"
       @new-chat="handleNewChat"
       @session-selected="handleSessionSelected"
