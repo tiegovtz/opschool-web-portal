@@ -1,5 +1,11 @@
 <script setup lang="ts">
+import type { LanguageSupport } from '~/types/language.interface';
 import { moveFocus } from '~/utilities/focus.helper';
+
+withDefaults(
+  defineProps<{educationLevel?:string,language?:LanguageSupport}>(),{
+    language:'english',
+})
 
 </script>
 
@@ -7,10 +13,9 @@ import { moveFocus } from '~/utilities/focus.helper';
     <div class="relative shadow-sm ">
         <button
             class="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2 -z-30 focus:z-50 border border-blue-800 rounded-full px-4 py-1 bg-white"
-            aria-label="Press Enter to jump to main content" @click="moveFocus('main-container')" type="button">Skip to
+            aria-label="Press Enter to jump to main content" @click="moveFocus('main-container')" type="button">{{ language=='english' ?`Skip to
             the
-            Content</button>
-
+            Content`:`Nenda kwenye maudhui` }}</button>
         <div class="relative flex justify-center w-full h-24 pt-1 bg-white/75 ">
             <div class="flex items-center justify-between w-full h-full wrapper-container">
                 <NuxtLink to="/" aria-label="Go to homepage,link with court of arm image "
@@ -41,10 +46,10 @@ import { moveFocus } from '~/utilities/focus.helper';
                     aria-label="Presented by Ministry of education, science and technology together with Tanzania institute of education (TIE)"
                     role="region">
                     <p class="md:text-small text-extraSmall text-deepBlue text-shadow">
-                        Ministry of education, science and technology
+                        {{ language=='english' ?`Ministry of education, science and technology`:`Wizara ya elimu, Sayansi na Tekinolojia` }}
                     </p>
                     <p class="lg:text-[1.8rem] md:text-[1.4rem] text-small">
-                        Tanzania institute of education (TIE)
+                       {{ language=='english' ?`Tanzania institute of education (TIE)`:`Taasisi ya Elimu Tanzania (TET)` }}
                     </p>
                 </div>
                 <NuxtLink to="/" class="flex items-center justify-center h-full p-2 cursor-pointer">

@@ -1,10 +1,17 @@
-<script setup>
+<script setup lang="ts">
 import apiDocs from "~/utilities/apiDocs";
 import { layoutEffect } from "~/utilities/controlls";
 import messages from "~/utilities/messages";
 import ConfirmationModal from "~/components/ai-teacher/ConfirmationModal.vue";
 import { useNavigationStore } from "~/stores/navigationStore";
-const userToken = useCookie("signInUserToken");
+import type { LanguageSupport } from "~/types/language.interface";
+
+const props = withDefaults(
+  defineProps<{educationLevel?:string,language?:LanguageSupport}>(),{
+    language:'english',
+})
+
+const userToken = useCookie<any>("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
 const refreshToken = useCookie("signInRefreshToken");
 const route = useRoute();
@@ -25,8 +32,8 @@ const shouldRememberCurrentRoute = () =>
 
 const showLogoutConfirm = ref(false);
 const showLogoutToast = ref(false);
-const logoutToastTimeout = ref(null);
-const logoutAlert = ref(null);
+const logoutToastTimeout = ref<null|any>(null);
+const logoutAlert = ref<HTMLElement|null>(null);
 
 const logout = () => {
   if (shouldRememberCurrentRoute()) {
@@ -60,8 +67,8 @@ const logout = () => {
   }, 4000);
 };
 
-const openLogoutConfirm = (event) => {
-  if (event?.type === "keyup" && !["Enter", " "].includes(event.key)) return;
+const openLogoutConfirm = (event:KeyboardEvent|Event) => {
+  if (event?.type === "keyup" && !["Enter", " "].includes((event as KeyboardEvent).key)) return;
   showLogoutConfirm.value = true;
 };
 
@@ -83,6 +90,7 @@ const dropDown = () => {
 onBeforeUnmount(() => {
   if (logoutToastTimeout.value) clearTimeout(logoutToastTimeout.value);
 });
+
 </script>
 
 <template>
@@ -90,7 +98,7 @@ onBeforeUnmount(() => {
   <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat" role="navigation">
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->
-      <included-upper-header class="w-full" />
+      <included-upper-header class="w-full" :language />
       <div class="w-full ">
         <!-- Media Screen -->
         <div
@@ -100,7 +108,7 @@ onBeforeUnmount(() => {
             <div class="flex items-center justify-center">
               <IconsHome :size="20" />
             </div>
-            <p class="hidden capitalize lg:flex">Home</p>
+            <p class="hidden capitalize lg:flex">{{ language==='english' ? `Home` :`nyumbani`}}</p>
           </NuxtLink>
 
           <!-- TIE Library Books -->
@@ -110,7 +118,7 @@ onBeforeUnmount(() => {
             <div class="flex items-center justify-center">
               <IconsTieLibrary :size="20" />
             </div>
-            <p class="hidden capitalize lg:flex">TIE Library</p>
+            <p class="hidden capitalize lg:flex">{{ language==='english' ? `TIE Library` :`Maktaba`}}</p>
           </a>
 
           <!-- Smart Class Hub -->
@@ -120,14 +128,14 @@ onBeforeUnmount(() => {
             <div class="flex items-center justify-center">
               <IconsSmartClassHub :size="20" />
             </div>
-            <p class="hidden capitalize lg:flex">Smart Class</p>
+            <p class="hidden capitalize lg:flex">{{ language==='english' ? `Smart class` :`Darasa janja`}}</p>
           </NuxtLink>
 
           <!-- title (TIE online public school) -->
           <div class="flex-1" role="navigation">
             <NuxtLink aria-label="Go home" to="/">
               <p class="block text-center uppercase lg:text-large text-medium text-shadow">
-                TIE online public school
+                {{ language==='english' ? `TIE online public school` :`shule mtandao ya TET`}}
               </p>
             </NuxtLink>
           </div>
@@ -146,7 +154,7 @@ onBeforeUnmount(() => {
                     </div>
                     <IconsProfileCircle v-else :size="24" />
                     <p class="capitalize text-medium line-clamp-1 max-w-60">
-                      Hello,
+                       {{ language==='english' ? `Hello,` :`Habari,`}}
                       {{ String(userToken.name).split(" ")[0] }}
                     </p>
                   </div>
@@ -157,7 +165,9 @@ onBeforeUnmount(() => {
               <button aria-label="Log out"
                 class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
                 @click="openLogoutConfirm" @keyup="openLogoutConfirm">
-                <span class="capitalize"> Logout </span>
+                <span class="capitalize"> 
+                   {{ language==='english' ? `Logout` :`Ondoka`}} 
+                </span>
                 <IconsLogout :size="20" title="Sign out" />
               </button>
             </div>
@@ -167,14 +177,18 @@ onBeforeUnmount(() => {
               <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <IconsSignIn :size="20" />
-                <p class="hidden capitalize lg:flex">Sign in</p>
+                <p class="hidden capitalize lg:flex">
+                   {{ language==='english' ? `Sign in` :`Ingia`}}
+                  </p>
               </NuxtLink>
 
               <!-- sign up -->
               <NuxtLink aria-label="Go to sign up page" to="/auth/SignUp" title="Sign Up"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <IconsProfileCircle :size="24" />
-                <p class="hidden capitalize lg:flex">Create Account</p>
+                <p class="hidden capitalize lg:flex">
+                   {{ language==='english' ? `Create Account` :`Jisajili`}}
+                  </p>
               </NuxtLink>
             </div>
           </div>
@@ -192,7 +206,9 @@ onBeforeUnmount(() => {
                 <div class="flex items-center justify-center">
                   <IconsHome :size="20" />
                 </div>
-                <p class="hidden capitalize lg:flex">Home</p>
+                <p class="hidden capitalize lg:flex">
+                  {{ language==='english' ? `Home` :`Nyumbani`}}
+                </p>
               </NuxtLink>  
             
 
@@ -218,7 +234,7 @@ onBeforeUnmount(() => {
             <!-- Paragraph Text -->
             <NuxtLink to="/">
               <p class="block text-center uppercase lg:text-large text-[14px] text-shadow">
-                TIE online public school
+                 {{ language==='english' ? `TIE online public school` :`shule mtandao ya TIE`}}
               </p>
             </NuxtLink>
 

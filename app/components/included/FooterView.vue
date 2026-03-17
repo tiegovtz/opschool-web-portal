@@ -1,5 +1,10 @@
-<script setup>
-import { screenWidth } from '~/utilities/controlls';
+<script setup lang="ts">
+import type { LanguageSupport } from '~/types/language.interface';
+import { screenWidth } from '~/utilities/controlls';    
+withDefaults(
+  defineProps<{educationLevel?:string,language?:LanguageSupport}>(),{
+    language:'english',
+})
 </script>
 
 <template>
@@ -52,7 +57,8 @@ import { screenWidth } from '~/utilities/controlls';
    </div>
    <div class="p-2 bg-deepBlue">
     <p class="text-center">
-      All Rights Reserved &copy; <span v-if="screenWidth >= 640">Tanzania Institute of Education</span>
+      {{ language=='english' ?`All Rights Reserved`:`Haki zote zimehifadhiwa` }}
+       &copy; {{ new Date().getFullYear() }} <span v-if="screenWidth >= 640"> {{ language=='english' ?`Tanzania institute of education (TIE)`:`Taasisi ya Elimu Tanzania (TET)` }}</span>
       <span v-else>TIE</span>
     </p>
    </div>

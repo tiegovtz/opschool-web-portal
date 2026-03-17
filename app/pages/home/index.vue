@@ -589,7 +589,7 @@ const handleSubjectSelect = async (id: string, name: string) => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" language="kiswahili">
     <!-- User Has a Token -->
     <section v-if="userToken" :class="[' ', { ' animate-pulse': isLoading }]">
       <HomeSearchbar appearance="rounded" />

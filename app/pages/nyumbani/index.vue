@@ -3,7 +3,8 @@
 </script>
 
 <template>
-    <section>
-
-    </section>
+    <nuxt-layout name="home-layout" language="kiswahili">   
+        <section></section>
+        <section></section>
+    </nuxt-layout>
 </template>
