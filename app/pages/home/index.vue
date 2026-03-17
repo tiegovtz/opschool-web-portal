@@ -589,9 +589,9 @@ const handleSubjectSelect = async (id: string, name: string) => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" language="kiswahili">
+  <NuxtLayout name="home-layout">
     <!-- User Has a Token -->
-    <section v-if="userToken" :class="[' ', { ' animate-pulse': isLoading }]">
+    <section v-if="userToken">
       <HomeSearchbar appearance="rounded" />
       <TabBar :is-logged-in="true" @emit-active-tab="switchTab($event)" :active-tab="activeTab" />
 
