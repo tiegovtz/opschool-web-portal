@@ -618,7 +618,7 @@ export default defineEventHandler(async (event) => {
   if (validChapterName) {
     delete (toolsForRequest as any).getChapterFigures;
   }
-  if (decision.needsClarification) {
+  if (decision.isLowInformationInput) {
     delete (toolsForRequest as any).searchTextbooks;
     delete (toolsForRequest as any).getSyllabus;
     delete (toolsForRequest as any).getChapterFigures;

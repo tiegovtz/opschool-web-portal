@@ -3,12 +3,15 @@ import { Chat } from "@ai-sdk/vue";
 import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
 import { useChatStore } from "~/stores/chatStore";
 import type { ChatMessage } from "~/types/chat.interface";
+import type { PendingNavigation } from "~/types/tie-ai-teacher.interface";
 
 const route = useRoute();
 const router = useRouter();
 const chatStore = useChatStore();
 const canMinimize = computed(() => {
-  const stateFromRoute = route.state as Record<string, unknown> | undefined;
+  const stateFromRoute = (route as any).state as
+    | Record<string, unknown>
+    | undefined;
   const stateFromHistory =
     typeof window !== "undefined"
       ? (window.history.state as Record<string, unknown> | null)
@@ -20,7 +23,9 @@ const canMinimize = computed(() => {
   return Boolean(background);
 });
 const backgroundUrl = computed(() => {
-  const stateFromRoute = route.state as Record<string, unknown> | undefined;
+  const stateFromRoute = (route as any).state as
+    | Record<string, unknown>
+    | undefined;
   const stateFromHistory =
     typeof window !== "undefined"
       ? (window.history.state as Record<string, unknown> | null)
@@ -34,7 +39,8 @@ const backgroundUrl = computed(() => {
 
 const minimizeToOverlay = async () => {
   if (!backgroundUrl.value) return;
-  const sessionId = typeof route.query.sessionId === "string" ? route.query.sessionId : "";
+  const sessionId =
+    typeof route.query.sessionId === "string" ? route.query.sessionId : "";
   await router.push({
     path: backgroundUrl.value,
     query: {
@@ -68,20 +74,17 @@ const isInitializing = ref(true);
 const lastMessageCount = ref(0);
 const savedMessageIds = ref(new Set<string>());
 const hasTitleBeenSet = ref(false);
-type PendingNavigation =
-  | { type: "new-chat" }
-  | { type: "session"; sessionId: string };
 const pendingNavigation = ref<PendingNavigation | null>(null);
 const requestSessionId = ref<string | null>(null);
 const isSessionNavigationLocked = computed(
   () =>
     isTyping.value ||
     chat.status === "submitted" ||
-    chat.status === "streaming"
+    chat.status === "streaming",
 );
 const navigationMessage = computed(() => {
   if (pendingNavigation.value) {
-    return "Finishing the current answer, then switching chats.";
+    return "Switching chats shortly.";
   }
   return "";
 });
@@ -148,7 +151,7 @@ watch(
     if (nextVersion === previousVersion) return;
     if (!draft.value.trim()) return;
     applyDraftMessage();
-  }
+  },
 );
 
 // Load existing session
@@ -163,7 +166,7 @@ const loadSession = async (sessionId: string) => {
       lastMessageCount.value = session.messages.length;
       // Track saved message IDs
       savedMessageIds.value = new Set(
-        session.messages.map((m: ChatMessage) => m.id)
+        session.messages.map((m: ChatMessage) => m.id),
       );
       // If session has a title, mark it as set
       hasTitleBeenSet.value = !!session.title;
@@ -228,6 +231,7 @@ const getReusableEmptySessionId = () => {
   if (emptySessions.length === 0) return null;
 
   const latest = emptySessions.reduce((currentLatest, session) => {
+    if (!currentLatest) return session;
     const currentTime = new Date(
       currentLatest.updatedAt || currentLatest.createdAt,
     ).getTime();
@@ -237,7 +241,7 @@ const getReusableEmptySessionId = () => {
     return sessionTime > currentTime ? session : currentLatest;
   }, emptySessions[0]);
 
-  return latest.id;
+  return (latest as any).id;
 };
 
 const reuseEmptySessionIfAvailable = async () => {
@@ -330,7 +334,7 @@ const generateTitleFromMessage = (message: string): string => {
 // Update session title if not set
 const updateSessionTitleIfNeeded = async (
   sessionId: string,
-  firstUserMessage: string
+  firstUserMessage: string,
 ) => {
   if (!sessionId || hasTitleBeenSet.value) return;
 
@@ -355,12 +359,15 @@ const saveMessage = async (sessionId: string, message: any) => {
   if (!content.trim()) return;
 
   try {
-    await chatStore.addMessage({
-      role: message.role as "user" | "assistant" | "system",
-      content,
-      parts: message.parts,
-      metadata: { messageId: message.id },
-    }, sessionId);
+    await chatStore.addMessage(
+      {
+        role: message.role as "user" | "assistant" | "system",
+        content,
+        parts: message.parts,
+        metadata: { messageId: message.id },
+      },
+      sessionId,
+    );
     savedMessageIds.value.add(message.id);
   } catch (error) {
     console.error("[TIE AI Teacher] Error saving message:", error);
@@ -372,11 +379,7 @@ watch(
   () => chat.messages,
   async (messages) => {
     const targetSessionId = getTargetSessionId();
-    if (
-      !targetSessionId ||
-      isInitializing.value ||
-      !Array.isArray(messages)
-    ) {
+    if (!targetSessionId || isInitializing.value || !Array.isArray(messages)) {
       return;
     }
 
@@ -402,7 +405,7 @@ watch(
 
     lastMessageCount.value = currentCount;
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Watch chat status to save assistant messages when streaming completes
@@ -433,8 +436,7 @@ watch(
 
     const wasGenerating =
       previousStatus === "submitted" || previousStatus === "streaming";
-    const isGenerating =
-      status === "submitted" || status === "streaming";
+    const isGenerating = status === "submitted" || status === "streaming";
 
     if (wasGenerating && !isGenerating) {
       requestSessionId.value = null;
@@ -450,7 +452,7 @@ watch(
         }
       }
     }
-  }
+  },
 );
 
 // Watch URL for session changes
@@ -470,7 +472,7 @@ watch(
     }
 
     await loadSession(sessionId as string);
-  }
+  },
 );
 
 // Handle message submission
@@ -498,7 +500,7 @@ const handleSubmit = async (message: string) => {
       {
         body: { sessionId },
         metadata: { sessionId },
-      }
+      },
     );
   } catch (error) {
     console.error("[TIE AI Teacher] Error sending message:", error);
@@ -594,7 +596,10 @@ onBeforeUnmount(() => {
           aria-label="Minimize to overlay"
           @click="minimizeToOverlay"
         >
-          <Icon name="mdi:arrow-collapse" size="20" />
+          <Icon
+            name="mdi:arrow-collapse"
+            size="20"
+          />
         </button>
         <button
           type="button"
@@ -602,7 +607,10 @@ onBeforeUnmount(() => {
           aria-label="Close and return"
           @click="closeToBackground"
         >
-          <Icon name="mdi:close" size="20" />
+          <Icon
+            name="mdi:close"
+            size="20"
+          />
         </button>
       </div>
       <template v-if="shouldUseDrawerSidebar">
@@ -679,12 +687,12 @@ onBeforeUnmount(() => {
             :messages="chat.messages"
             :isTyping="isTyping"
           />
-	          <AiTeacherInput
-	            :chat="chat"
+          <AiTeacherInput
+            :chat="chat"
             :draft-message="draftMessage"
             :draft-version="draftVersion"
-	            @sendMessage="handleSubmit"
-	          />
+            @sendMessage="handleSubmit"
+          />
         </main>
       </div>
     </div>
