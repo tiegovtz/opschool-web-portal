@@ -84,7 +84,7 @@ const isSessionNavigationLocked = computed(
 );
 const navigationMessage = computed(() => {
   if (pendingNavigation.value) {
-    return "Finishing the current answer, then switching chats.";
+    return "Switching chats shortly.";
   }
   return "";
 });
