@@ -29,13 +29,16 @@ const logoutToastTimeout = ref(null);
 const logoutAlert = ref(null);
 
 const logout = () => {
+  if (shouldRememberCurrentRoute()) {
+    navigationStore.setGoBack(route.fullPath);
+  }
+
   userToken.value = null;
   accessToken.value = null;
   refreshToken.value = null;
 
-  const router = useRouter();
   layoutEffect.value = "grid";
-  router.replace("/home");
+  window.location.assign("/");
   dropDown();
 
   // Screen reader announcement
