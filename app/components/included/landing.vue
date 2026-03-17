@@ -41,7 +41,7 @@ const features = [
 <template>
     <div class="flex flex-col gap-4 bg-grad">
         <section class="max-w-screen-md mx-auto">
-            <h1 class="text-center text-5xl font-tahomabd font-bold text-[#0F172A]">Karibu! Welcome</h1>
+            <h1 class="text-center text-xl font-tahomabd font-bold text-[#0F172A]">Karibu! Welcome</h1>
             <p class="text-center mt-4">Pata maudhui za kujifunzia zilizobuniwa kwa ajili ya elimu ya Msingi na
                 Sekondari.
                 <b class="text-[#0F172A]">(Access learning resources designed for Primary and Secondary education)</b>
