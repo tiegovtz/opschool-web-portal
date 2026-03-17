@@ -43,21 +43,21 @@ const canGoNext = computed(() => props.page < props.pageCount);
 </script>
 
 <template>
-  <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-    <p class="text-sm text-gray-600">
+  <div class="mt-6 flex flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 xl:flex-row xl:items-center xl:justify-between">
+    <p class="text-sm text-gray-600 xl:whitespace-nowrap">
       Showing {{ showing }} of {{ total }} {{ itemLabel }}
     </p>
 
-    <div class="flex items-center gap-2">
-      <div class="mr-3 flex items-center gap-2 text-sm">
-        <label class="text-gray-600" :for="pageSizeDropdownId">Page size</label>
-        <div class="w-36">
+    <div class="flex w-full flex-col gap-3 xl:w-auto xl:flex-row xl:items-center">
+      <div class="grid w-full grid-cols-1 gap-2 text-sm md:grid-cols-[auto,minmax(0,9rem),6rem] md:items-center md:gap-2 xl:mr-3 xl:w-auto">
+        <label class="text-gray-600 md:whitespace-nowrap" :for="pageSizeDropdownId">Page size</label>
+        <div class="w-full md:w-36">
           <CustomDropDownList
             :id="pageSizeDropdownId"
             v-model="pageSizeSelectionModel"
             :list="pageSizeOptions"
             placeholder="Page size"
-            buttonClass="h-9 px-3 py-1.5 text-sm"
+            buttonClass="h-9 w-full px-3 py-1.5 text-sm whitespace-nowrap"
           />
         </div>
         <input
@@ -68,31 +68,33 @@ const canGoNext = computed(() => props.page < props.pageCount);
           inputmode="numeric"
           :aria-label="customInputAriaLabel"
           :placeholder="customInputPlaceholder || 'Custom'"
-          class="w-24 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          class="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 md:w-24"
         />
       </div>
 
-      <button
-        type="button"
-        class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-        :disabled="!canGoPrev"
-        @click="emit('prev')"
-      >
-        Previous
-      </button>
+      <div class="grid w-full grid-cols-3 items-center gap-2 md:flex md:w-auto md:gap-2">
+        <button
+          type="button"
+          class="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
+          :disabled="!canGoPrev"
+          @click="emit('prev')"
+        >
+          Previous
+        </button>
 
-      <span class="px-1 text-sm font-medium text-gray-600">
-        Page {{ page }} / {{ pageCount }}
-      </span>
+        <span class="px-1 text-center text-sm font-medium text-gray-600">
+          Page {{ page }} / {{ pageCount }}
+        </span>
 
-      <button
-        type="button"
-        class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
-        :disabled="!canGoNext"
-        @click="emit('next')"
-      >
-        Next
-      </button>
+        <button
+          type="button"
+          class="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
+          :disabled="!canGoNext"
+          @click="emit('next')"
+        >
+          Next
+        </button>
+      </div>
     </div>
   </div>
 </template>

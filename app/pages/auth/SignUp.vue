@@ -13,6 +13,13 @@ const inputTabs = ref("tabOne");
 const headingRef = ref<HTMLElement | null>(null);
 const listLevel = ref<Level[]>([]);
 const classLevel = ref<string>('');
+const route = useRoute();
+
+const authRedirectQuery = computed(() =>
+  typeof route.query.redirect === "string" && route.query.redirect.length > 0
+    ? { redirect: route.query.redirect }
+    : {}
+);
 
 type userType = 'Student' | 'Teacher' | 'EducationStakeholder';
 
@@ -230,7 +237,7 @@ const signUp = async () => {
 
         // Navigate to auth page
         const router = useRouter()
-        router.push('/auth');
+        router.push({ path: '/auth', query: authRedirectQuery.value });
 
       } else {
         usersignUp.controller.isSent = 'failed';
@@ -908,7 +915,7 @@ onMounted(async () => {
           <div class="flex items-center justify-center gap-2 my-2">
             <p class="text-sm text-textGray">
               Already have an account?
-              <NuxtLink to="/auth" class="w-full p-1 text-center cursor-pointer text-oceanBlue">
+              <NuxtLink :to="{ path: '/auth', query: authRedirectQuery }" class="w-full p-1 text-center cursor-pointer text-oceanBlue">
                 Sign In</NuxtLink>
             </p>
           </div>
@@ -1082,6 +1089,7 @@ onMounted(async () => {
                 usersignUp.controller.errors.userName,
             }
           ]">
+            <label class="font-semibold capitalize text-oceanBlue text-extraSmall -ml-2">Username:</label>
             <div class="flex items-center w-full">
               <input type="text" id="userName" v-model="usersignUp.userName" @keydown.space.prevent name="userName"
                 autocomplete="off" readonly
@@ -1178,7 +1186,7 @@ onMounted(async () => {
           <div class="flex items-center justify-center gap-2 mt-4 mb-4">
             <p class="text-sm text-textGray">
               Already have an account?
-              <NuxtLink to="/auth" class="w-full p-1 text-center cursor-pointer text-oceanBlue">
+              <NuxtLink :to="{ path: '/auth', query: authRedirectQuery }" class="w-full p-1 text-center cursor-pointer text-oceanBlue">
                 Sign In</NuxtLink>
             </p>
           </div>

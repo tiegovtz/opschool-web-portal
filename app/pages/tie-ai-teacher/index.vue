@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { Chat } from "@ai-sdk/vue";
-import { ref, watch, onMounted, computed } from "vue";
+import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
 import { useChatStore } from "~/stores/chatStore";
 import type { ChatMessage } from "~/types/chat.interface";
+import type { PendingNavigation } from "~/types/tie-ai-teacher.interface";
 
 const route = useRoute();
 const router = useRouter();
 const chatStore = useChatStore();
 const canMinimize = computed(() => {
-  const stateFromRoute = route.state as Record<string, unknown> | undefined;
+  const stateFromRoute = (route as any).state as
+    | Record<string, unknown>
+    | undefined;
   const stateFromHistory =
     typeof window !== "undefined"
       ? (window.history.state as Record<string, unknown> | null)
@@ -20,7 +23,9 @@ const canMinimize = computed(() => {
   return Boolean(background);
 });
 const backgroundUrl = computed(() => {
-  const stateFromRoute = route.state as Record<string, unknown> | undefined;
+  const stateFromRoute = (route as any).state as
+    | Record<string, unknown>
+    | undefined;
   const stateFromHistory =
     typeof window !== "undefined"
       ? (window.history.state as Record<string, unknown> | null)
@@ -34,7 +39,8 @@ const backgroundUrl = computed(() => {
 
 const minimizeToOverlay = async () => {
   if (!backgroundUrl.value) return;
-  const sessionId = typeof route.query.sessionId === "string" ? route.query.sessionId : "";
+  const sessionId =
+    typeof route.query.sessionId === "string" ? route.query.sessionId : "";
   await router.push({
     path: backgroundUrl.value,
     query: {
@@ -62,16 +68,52 @@ const isTyping = ref(false);
 // Sidebar open by default, persist user preference
 const sidebarStateKey = "tie-ai-teacher-sidebar-open";
 const isHistoryOpen = ref(true); // Always default to true
+const isSmallScreen = ref(false);
 
 const isInitializing = ref(true);
 const lastMessageCount = ref(0);
 const savedMessageIds = ref(new Set<string>());
 const hasTitleBeenSet = ref(false);
+const pendingNavigation = ref<PendingNavigation | null>(null);
+const requestSessionId = ref<string | null>(null);
+const isSessionNavigationLocked = computed(
+  () =>
+    isTyping.value ||
+    chat.status === "submitted" ||
+    chat.status === "streaming",
+);
+const navigationMessage = computed(() => {
+  if (pendingNavigation.value) {
+    return "Switching chats shortly.";
+  }
+  return "";
+});
+
+const updateViewportState = () => {
+  if (typeof window === "undefined") return;
+  isSmallScreen.value = window.innerWidth < 768;
+};
+
+const shouldUseDrawerSidebar = computed(() => isSmallScreen.value);
+const { draft, version, consumeDraft } = useAiTeacherDraft();
+const draftMessage = ref("");
+const draftVersion = ref(0);
+
+const applyDraftMessage = () => {
+  const nextDraft = consumeDraft();
+  if (!nextDraft.trim()) return;
+  draftMessage.value = nextDraft;
+  draftVersion.value += 1;
+};
 
 // Initialize session on mount
 onMounted(async () => {
+  updateViewportState();
+  applyDraftMessage();
   // Load saved sidebar preference
   if (typeof window !== "undefined") {
+    window.addEventListener("resize", updateViewportState);
+    window.addEventListener("orientationchange", updateViewportState);
     const saved = localStorage.getItem(sidebarStateKey);
     if (saved !== null) {
       isHistoryOpen.value = saved === "true";
@@ -103,6 +145,15 @@ onMounted(async () => {
   }
 });
 
+watch(
+  () => version.value,
+  (nextVersion, previousVersion) => {
+    if (nextVersion === previousVersion) return;
+    if (!draft.value.trim()) return;
+    applyDraftMessage();
+  },
+);
+
 // Load existing session
 const loadSession = async (sessionId: string) => {
   try {
@@ -115,7 +166,7 @@ const loadSession = async (sessionId: string) => {
       lastMessageCount.value = session.messages.length;
       // Track saved message IDs
       savedMessageIds.value = new Set(
-        session.messages.map((m: ChatMessage) => m.id)
+        session.messages.map((m: ChatMessage) => m.id),
       );
       // If session has a title, mark it as set
       hasTitleBeenSet.value = !!session.title;
@@ -161,6 +212,9 @@ const clearSessionIdFromRoute = () => {
   router.replace({ query: nextQuery });
 };
 
+const getTargetSessionId = () =>
+  requestSessionId.value || chatStore.activeSessionId;
+
 const hasConversationStarted = () => {
   // Check local messages first (covers unsynced messages)
   // @ts-ignore
@@ -177,6 +231,7 @@ const getReusableEmptySessionId = () => {
   if (emptySessions.length === 0) return null;
 
   const latest = emptySessions.reduce((currentLatest, session) => {
+    if (!currentLatest) return session;
     const currentTime = new Date(
       currentLatest.updatedAt || currentLatest.createdAt,
     ).getTime();
@@ -186,7 +241,7 @@ const getReusableEmptySessionId = () => {
     return sessionTime > currentTime ? session : currentLatest;
   }, emptySessions[0]);
 
-  return latest.id;
+  return (latest as any).id;
 };
 
 const reuseEmptySessionIfAvailable = async () => {
@@ -277,13 +332,16 @@ const generateTitleFromMessage = (message: string): string => {
 };
 
 // Update session title if not set
-const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
-  if (!chatStore.activeSessionId || hasTitleBeenSet.value) return;
+const updateSessionTitleIfNeeded = async (
+  sessionId: string,
+  firstUserMessage: string,
+) => {
+  if (!sessionId || hasTitleBeenSet.value) return;
 
   try {
     const title = generateTitleFromMessage(firstUserMessage);
     if (title && title !== "New Conversation") {
-      await chatStore.updateSessionTitle(chatStore.activeSessionId, title);
+      await chatStore.updateSessionTitle(sessionId, title);
       hasTitleBeenSet.value = true;
     }
   } catch (error) {
@@ -292,7 +350,7 @@ const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
 };
 
 // Save a message to backend
-const saveMessage = async (message: any) => {
+const saveMessage = async (sessionId: string, message: any) => {
   if (!message.id || savedMessageIds.value.has(message.id)) {
     return; // Already saved
   }
@@ -301,12 +359,15 @@ const saveMessage = async (message: any) => {
   if (!content.trim()) return;
 
   try {
-    await chatStore.addMessage({
-      role: message.role as "user" | "assistant" | "system",
-      content,
-      parts: message.parts,
-      metadata: { messageId: message.id },
-    });
+    await chatStore.addMessage(
+      {
+        role: message.role as "user" | "assistant" | "system",
+        content,
+        parts: message.parts,
+        metadata: { messageId: message.id },
+      },
+      sessionId,
+    );
     savedMessageIds.value.add(message.id);
   } catch (error) {
     console.error("[TIE AI Teacher] Error saving message:", error);
@@ -317,11 +378,8 @@ const saveMessage = async (message: any) => {
 watch(
   () => chat.messages,
   async (messages) => {
-    if (
-      !chatStore.activeSessionId ||
-      isInitializing.value ||
-      !Array.isArray(messages)
-    ) {
+    const targetSessionId = getTargetSessionId();
+    if (!targetSessionId || isInitializing.value || !Array.isArray(messages)) {
       return;
     }
 
@@ -332,13 +390,13 @@ watch(
     for (const message of newMessages) {
       // Save user messages immediately
       if (message.role === "user" && message.id) {
-        await saveMessage(message);
+        await saveMessage(targetSessionId, message);
 
         // Generate title from first user message
         if (!hasTitleBeenSet.value) {
           const content = extractMessageContent(message);
           if (content.trim()) {
-            await updateSessionTitleIfNeeded(content);
+            await updateSessionTitleIfNeeded(targetSessionId, content);
           }
         }
       }
@@ -347,17 +405,18 @@ watch(
 
     lastMessageCount.value = currentCount;
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Watch chat status to save assistant messages when streaming completes
 watch(
   () => chat.status,
-  async (status) => {
-    if (!chatStore.activeSessionId || isInitializing.value) return;
+  async (status, previousStatus) => {
+    const targetSessionId = getTargetSessionId();
+    if (isInitializing.value) return;
 
     // When streaming is complete, save any unsaved assistant messages
-    if (status === "ready") {
+    if (status === "ready" && targetSessionId) {
       // Small delay to ensure message is fully complete
       await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -370,21 +429,50 @@ watch(
           message.id &&
           !savedMessageIds.value.has(message.id)
         ) {
-          await saveMessage(message);
+          await saveMessage(targetSessionId, message);
         }
       }
     }
-  }
+
+    const wasGenerating =
+      previousStatus === "submitted" || previousStatus === "streaming";
+    const isGenerating = status === "submitted" || status === "streaming";
+
+    if (wasGenerating && !isGenerating) {
+      requestSessionId.value = null;
+
+      if (pendingNavigation.value) {
+        const pending = pendingNavigation.value;
+        pendingNavigation.value = null;
+
+        if (pending.type === "new-chat") {
+          await startNewChat();
+        } else {
+          await loadSession(pending.sessionId);
+        }
+      }
+    }
+  },
 );
 
 // Watch URL for session changes
 watch(
   () => route.query.sessionId,
   async (sessionId) => {
-    if (sessionId && sessionId !== chatStore.activeSessionId) {
-      await loadSession(sessionId as string);
+    if (!sessionId || sessionId === chatStore.activeSessionId) {
+      return;
     }
-  }
+
+    if (isSessionNavigationLocked.value) {
+      pendingNavigation.value = {
+        type: "session",
+        sessionId: sessionId as string,
+      };
+      return;
+    }
+
+    await loadSession(sessionId as string);
+  },
 );
 
 // Handle message submission
@@ -398,11 +486,22 @@ const handleSubmit = async (message: string) => {
     }
   }
 
+  const sessionId = chatStore.activeSessionId;
+  if (!sessionId) return;
+
   isTyping.value = true;
+  pendingNavigation.value = null;
+  requestSessionId.value = sessionId;
 
   try {
     // Send message to AI - the watch function will save user messages when they appear in chat.messages
-    await chat.sendMessage({ text: message });
+    await chat.sendMessage(
+      { text: message },
+      {
+        body: { sessionId },
+        metadata: { sessionId },
+      },
+    );
   } catch (error) {
     console.error("[TIE AI Teacher] Error sending message:", error);
   } finally {
@@ -410,8 +509,7 @@ const handleSubmit = async (message: string) => {
   }
 };
 
-// Handle new chat
-const handleNewChat = async () => {
+const startNewChat = async () => {
   if (!hasConversationStarted()) {
     if (chatStore.activeSessionId) {
       if (route.query.sessionId !== chatStore.activeSessionId) {
@@ -437,8 +535,23 @@ const handleNewChat = async () => {
   // Keep sidebar open when starting a new chat
 };
 
+// Handle new chat
+const handleNewChat = async () => {
+  if (isSessionNavigationLocked.value) {
+    pendingNavigation.value = { type: "new-chat" };
+    return;
+  }
+
+  await startNewChat();
+};
+
 // Handle session selection
 const handleSessionSelected = async (sessionId: string) => {
+  if (isSessionNavigationLocked.value) {
+    pendingNavigation.value = { type: "session", sessionId };
+    return;
+  }
+
   await loadSession(sessionId);
   // Keep sidebar open when selecting session
 };
@@ -451,15 +564,28 @@ const toggleHistory = () => {
 
 // Watch sidebar state to persist changes
 watch(isHistoryOpen, (newValue) => {
+  if (isSmallScreen.value) return;
   if (typeof window !== "undefined") {
     localStorage.setItem(sidebarStateKey, String(newValue));
   }
+});
+
+onBeforeUnmount(() => {
+  if (typeof window === "undefined") return;
+  window.removeEventListener("resize", updateViewportState);
+  window.removeEventListener("orientationchange", updateViewportState);
 });
 </script>
 
 <template>
   <NuxtLayout name="home-layout">
-    <div class="relative flex h-[calc(100vh-120px)] min-h-[calc(100vh-120px)]">
+    <div
+      class="relative flex min-h-0 overflow-hidden"
+      :style="{
+        height: 'calc(100dvh - 120px)',
+        minHeight: 'calc(100dvh - 120px)',
+      }"
+    >
       <div
         v-if="canMinimize"
         class="absolute right-3 top-3 z-20 flex items-center gap-1"
@@ -470,7 +596,10 @@ watch(isHistoryOpen, (newValue) => {
           aria-label="Minimize to overlay"
           @click="minimizeToOverlay"
         >
-          <Icon name="mdi:arrow-collapse" size="20" />
+          <Icon
+            name="mdi:arrow-collapse"
+            size="20"
+          />
         </button>
         <button
           type="button"
@@ -478,40 +607,93 @@ watch(isHistoryOpen, (newValue) => {
           aria-label="Close and return"
           @click="closeToBackground"
         >
-          <Icon name="mdi:close" size="20" />
+          <Icon
+            name="mdi:close"
+            size="20"
+          />
         </button>
       </div>
-      <!-- Chat History Sidebar -->
+      <template v-if="shouldUseDrawerSidebar">
+        <Transition
+          enter-active-class="transition-opacity duration-200 ease-out"
+          enter-from-class="opacity-0"
+          enter-to-class="opacity-100"
+          leave-active-class="transition-opacity duration-150 ease-in"
+          leave-from-class="opacity-100"
+          leave-to-class="opacity-0"
+        >
+          <button
+            v-if="isHistoryOpen"
+            type="button"
+            class="absolute inset-0 z-10 bg-slate-900/30 md:hidden"
+            aria-label="Close chat history"
+            @click="isHistoryOpen = false"
+          />
+        </Transition>
+        <Transition
+          enter-active-class="transition-all duration-200 ease-out"
+          enter-from-class="opacity-0 -translate-x-4"
+          enter-to-class="opacity-100 translate-x-0"
+          leave-active-class="transition-all duration-150 ease-in"
+          leave-from-class="opacity-100 translate-x-0"
+          leave-to-class="opacity-0 -translate-x-4"
+        >
+          <div
+            v-if="isHistoryOpen"
+            class="absolute inset-y-0 left-0 z-20 w-[min(22rem,calc(100%-1rem))] max-w-full min-h-0"
+          >
+            <AiTeacherChatHistorySidebar
+              :is-open="true"
+              :compact="true"
+              :navigation-message="navigationMessage"
+              :disable-delete="isSessionNavigationLocked"
+              @close="isHistoryOpen = false"
+              @new-chat="handleNewChat"
+              @session-selected="handleSessionSelected"
+            />
+          </div>
+        </Transition>
+      </template>
       <AiTeacherChatHistorySidebar
+        v-else
         :is-open="isHistoryOpen"
+        :navigation-message="navigationMessage"
+        :disable-delete="isSessionNavigationLocked"
         @close="isHistoryOpen = false"
         @new-chat="handleNewChat"
         @session-selected="handleSessionSelected"
       />
 
       <!-- Main Content -->
-      <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div class="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
         <AiTeacherHeader @toggle-sidebar="toggleHistory" />
 
         <div
           v-if="isInitializing"
-          class="flex items-center justify-center h-64"
+          class="flex min-h-0 flex-1 items-center justify-center"
         >
           <div
             class="animate-spin rounded-full h-8 w-8 border-b-2 border-oceanBlue"
           ></div>
         </div>
 
-        <template role="main" aria-label="AI Teacher conversation" v-else>
+        <main
+          role="main"
+          aria-label="AI Teacher conversation"
+          v-else
+          class="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <AiTeacherMessages
             :messages="chat.messages"
             :isTyping="isTyping"
           />
           <AiTeacherInput
             :chat="chat"
+            :draft-message="draftMessage"
+            :draft-version="draftVersion"
             @sendMessage="handleSubmit"
           />
-        </template>
+        </main>
       </div>
     </div>
   </NuxtLayout>

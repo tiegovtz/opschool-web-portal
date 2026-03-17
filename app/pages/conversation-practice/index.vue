@@ -1,40 +1,50 @@
 <template>
   <div
     :class="isEmbedded
-      ? 'relative w-full h-full p-4'
-      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'"
+      ? 'fixed inset-0 p-2 sm:p-4 flex items-center justify-center overflow-hidden'
+      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-2 sm:p-4 overflow-hidden'"
     @click.self="!isEmbedded && handleOverlayClick"
   >
     <div
-      class="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-8"
+      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-16px))] h-[calc(100dvh-16px)] max-h-[calc(100dvh-16px)] min-h-0 overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent"
       role="dialog"
       aria-modal="true"
       aria-labelledby="conversation-practice-title"
       @click.stop
     >
-      <button
-        v-if="!isEmbedded"
-        type="button"
-        class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 hover:text-gray-900"
-        aria-label="Close conversation practice"
-        @click="closeModal"
-      >
-        <span class="text-xl leading-none">&times;</span>
-      </button>
-      <div class="max-w-4xl mx-auto">
-        <h1
-          id="conversation-practice-title"
-          class="text-4xl font-bold text-gray-800 mb-2 text-center"
+      <div class="modal-inner relative w-full flex-1 flex flex-col min-h-0 rounded-2xl bg-white overflow-hidden">
+        <div v-if="showLoadingBar" class="loading-bar">
+          <div class="loading-bar__inner"></div>
+        </div>
+        <header class="shrink-0 flex items-center justify-between gap-4 px-3 py-3 sm:px-6 sm:py-4 border-b border-slate-200">
+          <h1
+            id="conversation-practice-title"
+            class="text-lg font-semibold text-blue-700 tracking-tight"
+          >
+            Conversation Practice
+          </h1>
+          <button
+            v-if="!isEmbedded"
+            type="button"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
+            aria-label="Close conversation practice"
+            @click="closeModal"
+          >
+            <span class="text-xl leading-none">&times;</span>
+          </button>
+        </header>
+        <div
+          class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-3 py-3 sm:px-6 sm:py-4 min-h-0"
+          :class="isRecording ? 'pb-[190px]' : ''"
         >
-          Conversation Practice
-        </h1>
+          <div class="conversation-layout max-w-4xl mx-auto">
         <!-- <p class="text-gray-600 text-center mb-8">
           Practice conversations with AI using speech-to-text and text-to-speech
         </p> -->
 
-      <div class="bg-white rounded-lg p-6 space-y-6">
+      <div class="bg-transparent rounded-xl p-4 space-y-5 border border-slate-200/60">
         <!-- Voice Settings -->
-        <div class="flex flex-col gap-4 mb-4">
+        <div class="conversation-settings flex flex-col gap-4 mb-4">
           <div class="flex items-center gap-4">
             <label class="text-sm font-medium text-gray-700">Voice Type:</label>
             <select
@@ -64,33 +74,18 @@
 
         <!-- Conversation Preview -->
         <div v-if="!conversationStarted">
-          <div class="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+          <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
             <p class="font-medium text-gray-800">Conversation preview</p>
             <p v-if="previewLoading" class="text-gray-500">Loading preview...</p>
             <p v-else-if="previewError" class="text-red-600">{{ previewError }}</p>
-            <ul v-else-if="previewPieces.length" class="mt-2 list-disc pl-5 space-y-1">
-              <li v-for="(piece, idx) in previewPieces.slice(0, 5)" :key="idx">
-                {{ piece }}
-              </li>
-            </ul>
+            <div v-else-if="previewPieces.length" class="mt-2 max-h-[40vh] overflow-y-auto sm:max-h-40">
+              <ul class="list-disc pl-5 space-y-1">
+                <li v-for="(piece, idx) in previewPieces.slice(0, 5)" :key="idx">
+                  {{ piece }}
+                </li>
+              </ul>
+            </div>
             <p v-else class="text-gray-500">Preview not available.</p>
-          </div>
-          <div class="mt-4 flex gap-4 justify-center">
-            <button
-              @click="startVoiceConversation"
-              :class="[
-                'px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold transition-colors',
-                isSpeechSupported ? 'hover:bg-blue-700' : 'opacity-70 cursor-not-allowed'
-              ]"
-            >
-              Start Interactive Conversation (Voice)
-            </button>
-            <button
-              @click="inputMode = 'text'; startConversation()"
-              class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-            >
-              Start Conversation by Text
-            </button>
           </div>
         </div>
 
@@ -217,46 +212,74 @@
             </div>
           </div>
 
-          <!-- Action Buttons -->
-          <div class="flex gap-4 mt-4">
-            <button
-              @click="resetConversation"
-              class="px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
-            >
-              Restart Conversation
-            </button>
+        </div>
+      </div>
+        </div>
+        <footer class="shrink-0 px-3 py-3 sm:px-6 sm:py-4 border-t border-slate-200">
+          <div class="max-w-4xl mx-auto">
+            <div v-if="!conversationStarted" class="conversation-actions flex flex-col gap-3 justify-center sm:flex-row">
+              <button
+                @click="startVoiceConversation"
+                :class="[
+                  'w-full sm:w-auto px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold transition-colors',
+                  isSpeechSupported ? 'hover:bg-blue-700' : 'opacity-70 cursor-not-allowed'
+                ]"
+              >
+                Start Interactive Conversation (Voice)
+              </button>
+              <button
+                @click="inputMode = 'text'; startConversation()"
+                class="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Start Conversation by Text
+              </button>
+            </div>
+            <div v-else class="flex justify-center">
+              <button
+                @click="resetConversation"
+                class="w-full sm:w-auto px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+              >
+                Restart Conversation
+              </button>
+            </div>
+          </div>
+        </footer>
+        <div
+          v-if="isRecording"
+          class="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[170px] w-full"
+        >
+          <WaveGlowBottom class="w-full h-full" :active="isRecording" :audio-level="audioLevel" />
+        </div>
+        <!-- Hidden Audio Element -->
+        <audio
+          ref="audioRef"
+          @ended="onAudioEnded"
+          @error="onAudioError"
+          @timeupdate="onAudioTimeUpdate"
+          class="absolute w-0 h-0 overflow-hidden"
+          :volume="1.0"
+        ></audio>
+
+        <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+          <div
+            v-for="toast in toasts"
+            :key="toast.id"
+            class="toast"
+            :class="[toast.type]"
+          >
+            {{ toast.message }}
           </div>
         </div>
       </div>
     </div>
-
-    <!-- Hidden Audio Element -->
-    <audio
-      ref="audioRef"
-      @ended="onAudioEnded"
-      @error="onAudioError"
-      @timeupdate="onAudioTimeUpdate"
-      class="hidden"
-      :volume="1.0"
-    ></audio>
-
-    <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
-      <div
-        v-for="toast in toasts"
-        :key="toast.id"
-        class="toast"
-        :class="[toast.type]"
-      >
-        {{ toast.message }}
-      </div>
-    </div>
   </div>
-</div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import LoadingIndicator from '@/components/loading/loadingIndicator.vue'
+import WaveGlowBottom from '@/components/audio/WaveGlowBottom.vue'
 
 // Page metadata
 definePageMeta({
@@ -294,6 +317,10 @@ const handleOverlayClick = () => {
   if (!allowOverlayClose.value) return
   closeModal()
 }
+
+const showLoadingBar = computed(
+  () => previewLoading.value || isGeneratingTTS.value || isProcessing.value
+)
 
 const handleKeydown = (event) => {
   if (event.key === 'Escape') {
@@ -366,6 +393,11 @@ const isPlaying = ref(false)
 const isRecording = ref(false)
 const isProcessing = ref(false)
 const isGeneratingTTS = ref(false)
+const audioLevel = ref(0)
+let micStream = null
+let micAudioContext = null
+let micAnalyser = null
+let micRafId = null
 const userAnswer = ref('')
 const textAnswer = ref('')
 const inputMode = ref('speech')
@@ -404,16 +436,62 @@ const nextConversationPiece = computed(() => {
 
 const isConversationComplete = computed(() => !!conversationCompleteMessage.value)
 
+const stopMicLevel = () => {
+  if (micRafId != null) {
+    cancelAnimationFrame(micRafId)
+    micRafId = null
+  }
+  if (micAudioContext) {
+    micAudioContext.close().catch(() => {})
+    micAudioContext = null
+  }
+  if (micStream) {
+    micStream.getTracks().forEach((track) => track.stop())
+    micStream = null
+  }
+  micAnalyser = null
+  audioLevel.value = 0
+}
+
+const startMicLevel = async () => {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return
+  if (micStream || micAnalyser) return
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    micAudioContext = new AudioContext()
+    const source = micAudioContext.createMediaStreamSource(micStream)
+    micAnalyser = micAudioContext.createAnalyser()
+    micAnalyser.fftSize = 512
+    source.connect(micAnalyser)
+    const data = new Uint8Array(micAnalyser.fftSize)
+    const update = () => {
+      if (!micAnalyser) return
+      micAnalyser.getByteTimeDomainData(data)
+      let sum = 0
+      for (let i = 0; i < data.length; i += 1) {
+        const v = (data[i] - 128) / 128
+        sum += v * v
+      }
+      const rms = Math.sqrt(sum / data.length)
+      audioLevel.value = Math.min(1, rms * 2.5)
+      micRafId = requestAnimationFrame(update)
+    }
+    update()
+  } catch {
+    stopMicLevel()
+  }
+}
+
 // ============================================================================
 // Lifecycle Hooks
 // ============================================================================
 const isEmbedded = computed(() => String(route.query.embed || '') === '1')
+const isModalOpen = computed(() => !isEmbedded.value)
 
 onMounted(() => {
   if (typeof document !== 'undefined') {
-    if (!isEmbedded.value) {
+    if (!originalBodyOverflow.value) {
       originalBodyOverflow.value = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
     }
     returnTo.value = String(route.query.returnTo || '').trim()
   }
@@ -479,6 +557,30 @@ onMounted(() => {
 })
 
 watch(
+  () => isModalOpen.value,
+  (open) => {
+    if (typeof document === 'undefined') return
+    if (open) {
+      if (!originalBodyOverflow.value) {
+        originalBodyOverflow.value = document.body.style.overflow
+      }
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = originalBodyOverflow.value
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => isRecording.value,
+  (recording) => {
+    if (recording) startMicLevel()
+    else stopMicLevel()
+  }
+)
+
+watch(
   () => conversationCompleteMessage.value,
   (message) => {
     if (!message) return
@@ -508,6 +610,7 @@ onUnmounted(() => {
   if (typeof document !== 'undefined') {
     document.body.style.overflow = originalBodyOverflow.value
   }
+  stopMicLevel()
   if (recognition) {
     recognition.stop()
   }
@@ -984,17 +1087,77 @@ const showToast = (message, type = 'info', duration = 4000) => {
 </script>
 
 <style scoped>
+.loading-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  background: rgba(59, 130, 246, 0.15);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.loading-bar__inner {
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.9));
+  animation: loading-sweep 1.2s ease-in-out infinite;
+}
+
+@keyframes loading-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(60%);
+  }
+  100% {
+    transform: translateX(180%);
+  }
+}
+
+.practice-modal {
+  background: transparent;
+  color: #0f172a;
+  border: none;
+  box-shadow: none;
+}
+
+.modal-inner {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  background: #ffffff;
+}
+
+.conversation-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conversation-actions button {
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+</style>
+
+<style scoped>
 .toast-container {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding-top: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   z-index: 1200;
   width: min(92vw, 520px);
   pointer-events: none;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .toast {
@@ -1021,7 +1184,7 @@ const showToast = (message, type = 'info', duration = 4000) => {
 
 @media (max-width: 640px) {
   .toast-container {
-    top: 12px;
+    padding-top: 12px;
     width: calc(100vw - 24px);
   }
   .toast {

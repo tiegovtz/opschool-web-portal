@@ -7,6 +7,7 @@ import {
 import { createOpenAI } from "@ai-sdk/openai";
 import { studentTools, setAuthTokenForTools, runWithUsedFigureShortcodes } from "./utils/tools";
 import { buildDecision } from "../utils/aiDecision";
+import { getCurriculumLexicon } from "../utils/curriculumLexicon";
 
 type CoreMessage = {
   role: "user" | "assistant" | "system";
@@ -76,6 +77,11 @@ You are a Subject AI Teacher, an intelligent teaching assistant specialized in t
 
 *** NON-NEGOTIABLE - CHAPTER SCOPE ONLY ***
 You may ONLY answer questions that are directly about this chapter: "${chapterName}". REFUSE to answer any question about a different subject (e.g. if this chapter is "Concept of Physics" and the student asks "What is biology?" → do NOT answer; politely redirect to ${chapterName}), a different chapter, or any topic outside "${chapterName}". When redirecting, be warm and encouraging: acknowledge their question, then politely invite them back. Example: "That's a great question! Right now I'm here to help you with ${chapterName}, so I'll focus on that so we can get the most out of this chapter. Is there something from ${chapterName} you'd like to go over?" Do not provide the answer to the off-topic question.
+
+*** CRITICAL - UNCLEAR FOLLOW-UPS ***
+- Always respond to the LATEST user message, not just the previous lesson.
+- If the latest message is only a name, a random word, a typo, or an unclear fragment with no clear academic meaning, do NOT continue teaching the previous topic.
+- Instead, ask a short clarification question about what they want help with in "${chapterName}".
 
 *** CRITICAL - EVERY TEACHING RESPONSE (only when the question is about this chapter) ***
 1. Include everyday life examples, ideally from Tanzania. Every explanation MUST use at least one concrete example from daily life (e.g. market/soko, school, home, daladala, farm/shamba, family, food like uji/ugali/pilau, village, M-Pesa). Prefer Tanzanian context over generic or foreign examples.
@@ -206,6 +212,7 @@ You are TIE AI, a teacher for the Tanzanian (NECTA) curriculum. You have access 
 *** CRITICAL - DIRECT QUESTIONS (DO THIS FIRST) ***
 - When the student asks a direct question (e.g. "What is photosynthesis?", "Explain Newton's laws", "How does the heart work?"): ANSWER IT IMMEDIATELY. Do NOT ask what level they are in, do NOT ask "Form 1 or Form 2?", and do NOT ask "which form are you in?". Infer the subject from the question, call getSyllabus with subject and level "Form 1" or "Form 2" (pick the one that best fits the topic), then teach. Give a straight, helpful answer every time.
 - NEVER in your reply say "Which form are you in?", "Are you Form 1 or Form 2?", or offer "(e.g. Form 1)" when asking for level. You may only ask for subject/year in neutral words when the user has NOT asked a direct content question (e.g. just said "Hi" or "I need help" with no topic).
+- Always respond to the LATEST user message. If the latest message is only a name, random word, typo, or unclear fragment, do NOT continue the previous lesson automatically. Ask a short clarification question instead.
 
 **PRIMARY GOAL:**
 - Help students **understand and acquire competences** from the provided syllabus. Every lesson should aim at one or more specific competences (main/specific competence and related learning activities). Success means the student can demonstrate that competence.
@@ -556,6 +563,21 @@ export default defineEventHandler(async (event) => {
       throw new Error("Failed to convert messages to CoreMessage format");
     }
 
+    const curriculumLexicon = await getCurriculumLexicon(authToken);
+    const lastUserMessage = [...coreMessages].reverse().find((msg) => msg.role === "user");
+    const decision = lastUserMessage
+      ? buildDecision(lastUserMessage.content, {
+          chapterName: validChapterName,
+          subject,
+          level,
+          topic,
+        }, curriculumLexicon)
+      : buildDecision("", { chapterName: validChapterName, subject, level, topic }, curriculumLexicon);
+
+    if (decision.isLowInformationInput && lastUserMessage) {
+      coreMessages = [lastUserMessage];
+    }
+
     // Add shortcode format reminder only for general TIE AI teacher (not for AI subject teacher / chapter-scoped chat, which has no getChapterFigures)
     if (!validChapterName) {
       const lastUserIdx = [...coreMessages].reverse().findIndex((m) => m.role === "user");
@@ -579,18 +601,8 @@ export default defineEventHandler(async (event) => {
 
   const openai = getOpenAIClient(apiKey);
 
-  const lastUserMessage = [...coreMessages].reverse().find((msg) => msg.role === "user");
-  const decision = lastUserMessage
-    ? buildDecision(lastUserMessage.content, {
-        chapterName: validChapterName,
-        subject,
-        level,
-        topic,
-      })
-    : buildDecision("", { chapterName: validChapterName, subject, level, topic });
-
   if (decision.needsClarification) {
-    systemPrompt += `\n\nWhen the message is vague (e.g. no specific topic): Ask which subject and year they are studying. Do NOT say "Form 1 or Form 2" or "which form are you in?"—use neutral wording like "Which subject and year are you studying?"`;
+    systemPrompt += `\n\nWhen the latest message is vague, unclear, or low-information (for example just a name, typo, or random word), ask a short clarification question and do NOT continue the previous topic automatically. Do NOT infer a new explanation from earlier turns. Use neutral wording like "What topic would you like help with?" or "Which subject and year are you studying?"`;
   }
 
   const debugFlag =
@@ -606,8 +618,10 @@ export default defineEventHandler(async (event) => {
   if (validChapterName) {
     delete (toolsForRequest as any).getChapterFigures;
   }
-  if (decision.needsClarification) {
+  if (decision.isLowInformationInput) {
     delete (toolsForRequest as any).searchTextbooks;
+    delete (toolsForRequest as any).getSyllabus;
+    delete (toolsForRequest as any).getChapterFigures;
   }
 
   const promptCacheKey = `tie:${validChapterName || "general"}:${subject || ""}:${level || ""}:${chapterNo ?? ""}`;

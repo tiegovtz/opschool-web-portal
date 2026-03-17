@@ -4,7 +4,7 @@
       {{ error }}
     </div>
     <ClientOnly v-else>
-      <media-player :title="title" :src="src">
+      <media-player ref="playerRef" :title="title" :src="src" @play="handlePlay">
         <media-provider />
         <media-video-layout />
       </media-player>
@@ -17,6 +17,7 @@
 import { onMounted, ref } from 'vue'
 
 const error = ref(null)
+const playerRef = ref(null)
 
 onMounted(async () => {
   try {
@@ -27,10 +28,26 @@ onMounted(async () => {
   }
 })
 
-defineProps({
+const props = defineProps({
   src: { type: String, required: true },
-  title: { type: String, default: '' }
+  title: { type: String, default: '' },
+  autoFullscreenOnPlayMobile: { type: Boolean, default: false },
 })
+
+const handlePlay = async () => {
+  if (!props.autoFullscreenOnPlayMobile) return
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+  if (!window.matchMedia('(max-width: 768px)').matches) return
+  if (document.fullscreenElement) return
+
+  const element = playerRef.value
+  if (!element || typeof element.requestFullscreen !== 'function') return
+  try {
+    await element.requestFullscreen()
+  } catch {
+    // Ignore fullscreen errors (browser gesture/permission policies).
+  }
+}
 </script>
 
 

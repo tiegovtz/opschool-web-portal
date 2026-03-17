@@ -1,47 +1,48 @@
 <template>
   <div
     :class="isEmbedded
-      ? 'relative w-full h-full p-4'
-      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4'"
+      ? 'fixed inset-0 p-2 sm:p-4 flex items-center justify-center overflow-hidden'
+      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-2 sm:p-4 overflow-hidden'"
     @click.self="!isEmbedded && handleOverlayClick"
   >
     <div
-      class="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-8"
+      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-16px))] h-[calc(100dvh-16px)] max-h-[calc(100dvh-16px)] min-h-0 overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent"
       role="dialog"
       aria-modal="true"
       aria-labelledby="english-practice-title"
       @click.stop
     >
-      <div ref="topAnchor" class="sr-only" aria-hidden="true"></div>
-      <button
-        v-if="!isEmbedded"
-        type="button"
-        class="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 hover:text-gray-900 shadow-md z-10"
-        aria-label="Close English practice"
-        @click="closeModal"
-      >
-        <span class="text-xl leading-none">&times;</span>
-      </button>
-      <div class="flex flex-col h-[calc(100vh-200px)] max-h-[800px] min-h-0">
-      <!-- Header -->
-      <header class="flex flex-col px-6 py-4 bg-gradient-to-r from-oceanBlue to-deepBlue text-white flex-shrink-0">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 id="english-practice-title" class="text-2xl font-bold">English Speaking Practice</h1>
-            <p class="text-sm text-blue-100 mt-1">
-              Practice speaking with guided conversation
-            </p>
+      <div class="modal-inner relative w-full flex-1 flex flex-col min-h-0 rounded-2xl bg-white overflow-hidden">
+        <div v-if="showLoadingBar" class="loading-bar">
+          <div class="loading-bar__inner"></div>
+        </div>
+        <header class="practice-header shrink-0 px-3 py-3 sm:px-6 sm:py-4 border-b border-slate-200">
+          <div class="flex items-start justify-between gap-3 sm:hidden">
+            <div class="min-w-0">
+              <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">English Speaking Practice</h1>
+              <p class="text-xs text-slate-500 mt-1">
+                Practice speaking with guided conversation
+              </p>
+            </div>
+            <button
+              v-if="!isEmbedded"
+              type="button"
+              class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
+              aria-label="Close English practice"
+              @click="closeModal"
+            >
+              <span class="text-xl leading-none">&times;</span>
+            </button>
           </div>
-          <div class="flex items-center gap-4">
-            <!-- Mode switcher -->
-            <div class="flex items-center gap-2 bg-white/10 rounded-lg p-1">
+          <div class="mt-3 flex sm:hidden">
+            <div class="flex w-full items-center gap-1 rounded-full bg-slate-100 p-1">
               <button
                 @click="switchMode('multi-user')"
                 :class="[
-                  'px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                  'min-w-0 flex-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors',
                   mode === 'multi-user'
-                    ? 'bg-white text-oceanBlue shadow-md'
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
                 ]"
               >
                 Multi-user
@@ -49,86 +50,170 @@
               <button
                 @click="switchMode('single-user')"
                 :class="[
-                  'px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                  'min-w-0 flex-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors',
                   mode === 'single-user'
-                    ? 'bg-white text-oceanBlue shadow-md'
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
                 ]"
               >
                 Single-user
               </button>
             </div>
           </div>
-        </div>
-      </header>
-
-      <!-- Main content area -->
-      <div v-if="scriptLoading" class="text-center text-sm text-gray-500 mt-4 mb-2">
-        Loading conversation content…
-      </div>
-      <div
-        v-else-if="scriptError"
-        class="text-center text-sm text-red-600 mt-4 mb-2"
-      >
-        {{ scriptError }}
-      </div>
-      <div class="flex-1 flex flex-col overflow-hidden relative min-h-0">
-        <!-- Teleprompter display -->
-        <EnglishPracticeTeleprompter
-          :current-script-line="currentScriptLine"
-          :current-line-index="currentLineIndex"
-          :total-lines="script?.lines.length || 0"
-          :current-line-audio-url="currentLineAudioUrl"
-          :current-turn="turnManager.currentTurn.value"
-          :is-recording="speechRecognition.isListening.value"
-          :highlighted-word="highlightedWord"
-          :current-transcript="currentTranscript"
-          :mode="mode"
-          :is-ai-speaking="mode === 'single-user'
-            ? turnManager.currentTurn.value !== primarySpeakerId && (isAiAudioLoading || isPlayingAiAudio)
-            : turnManager.currentTurn.value === aiSpeakerId && (isAiAudioLoading || isPlayingAiAudio)"
-          :current-word-index="currentWordIndex"
-          :participants="participants"
-        />
-
-        <!-- Mic control -->
-        <EnglishPracticeMicControl
-          :is-recording="speechRecognition.isListening.value"
-          :current-turn="turnManager.currentTurn.value"
-          :current-speaker-name="currentSpeakerName"
-          :can-record="canRecord"
-          :is-speech-supported="isSpeechSupported"
-          @toggle="handleMicToggle"
-        />
-
-        <!-- TEMP DEBUG: Manual skip for faster QA without speaking every turn -->
-        <div v-if="showDebugSkipButton" class="absolute right-6 bottom-6 z-50">
-          <button
-            type="button"
-            class="px-3 py-2 rounded-md bg-gray-900 text-white text-xs font-medium hover:bg-black transition-colors"
-            @click="handleSkipTurn"
-          >
-            Skip Turn
-          </button>
-        </div>
-      </div>
-      <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+          <div class="hidden sm:flex sm:items-start sm:justify-between sm:gap-4">
+            <div>
+              <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">English Speaking Practice</h1>
+              <p class="text-xs text-slate-500 mt-1">
+                Practice speaking with guided conversation
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2 rounded-full bg-slate-100 p-1">
+                <button
+                  @click="switchMode('multi-user')"
+                  :class="[
+                    'whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold transition-colors',
+                    mode === 'multi-user'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  ]"
+                >
+                  Multi-user
+                </button>
+                <button
+                  @click="switchMode('single-user')"
+                  :class="[
+                    'whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold transition-colors',
+                    mode === 'single-user'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  ]"
+                >
+                  Single-user
+                </button>
+              </div>
+              <button
+                v-if="!isEmbedded"
+                type="button"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
+                aria-label="Close English practice"
+                @click="closeModal"
+              >
+                <span class="text-xl leading-none">&times;</span>
+              </button>
+            </div>
+          </div>
+        </header>
         <div
-          v-for="toast in toasts"
-          :key="toast.id"
-          class="toast"
-          :class="[toast.type]"
+          ref="scrollContainer"
+          class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-3 py-3 sm:px-6 sm:py-4 min-h-0"
+          :class="speechRecognition.isListening.value ? 'pb-[190px]' : ''"
+          @scroll="handleUserScroll"
         >
-          {{ toast.message }}
+          <div ref="topAnchor" aria-hidden="true"></div>
+          <div v-if="scriptLoading" class="text-center text-sm text-gray-500 mt-2 mb-4">
+            Loading conversation content…
+          </div>
+          <div
+            v-else-if="scriptError"
+            class="text-center text-sm text-red-600 mt-2 mb-4"
+          >
+            {{ scriptError }}
+          </div>
+          <div class="practice-content flex flex-col gap-6 min-h-0">
+            <EnglishPracticeTeleprompter
+              :current-script-line="currentScriptLine"
+              :current-line-index="currentLineIndex"
+              :total-lines="script?.lines.length || 0"
+              :current-line-audio-url="currentLineAudioUrl"
+              :current-turn="turnManager.currentTurn.value"
+              :is-recording="speechRecognition.isListening.value"
+              :highlighted-word="highlightedWord"
+              :current-transcript="currentTranscript"
+              :mode="mode"
+              :is-ai-speaking="mode === 'single-user'
+                ? turnManager.currentTurn.value !== primarySpeakerId && (isAiAudioLoading || isPlayingAiAudio)
+                : turnManager.currentTurn.value === aiSpeakerId && (isAiAudioLoading || isPlayingAiAudio)"
+              :current-word-index="currentWordIndex"
+              :participants="participants"
+            />
+          </div>
+          <div class="sticky bottom-4 flex justify-end pointer-events-none">
+            <button
+              v-if="showBackToTop"
+              type="button"
+              class="pointer-events-auto rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-md hover:bg-blue-700"
+              @click="handleBackToTop"
+            >
+              Back to top
+            </button>
+          </div>
         </div>
-      </div>
-      </div>
-      <div
-        v-if="isDebugMode && scrollDebug"
-        class="fixed bottom-4 right-4 z-50 rounded-md bg-orange-500/90 px-3 py-2 text-xs text-white shadow"
-      >
-        {{ scrollDebug.tag }} {{ scrollDebug.className }} |
-        {{ scrollDebug.scrollTop }} / {{ scrollDebug.scrollHeight }}
+
+        <footer
+          v-if="showDebugSkipButton"
+          class="shrink-0 px-3 py-3 sm:px-6 sm:py-4 border-t border-slate-200 flex flex-col items-center gap-2 sm:gap-3"
+        >
+          <div class="w-full flex justify-end">
+            <button
+              type="button"
+              class="px-3 py-2 rounded-md bg-gray-900 text-white text-xs font-medium hover:bg-black transition-colors"
+              @click="handleSkipTurn"
+            >
+              Skip Turn
+            </button>
+          </div>
+        </footer>
+        <div
+          v-if="!speechRecognition.isListening.value"
+          class="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex justify-center"
+        >
+          <div class="pointer-events-auto">
+            <EnglishPracticeMicControl
+              :is-recording="speechRecognition.isListening.value"
+              :current-turn="turnManager.currentTurn.value"
+              :current-speaker-name="currentSpeakerName"
+              :can-record="canRecord"
+              :is-speech-supported="isSpeechSupported"
+              :audio-level="audioLevel"
+              @toggle="handleMicToggle"
+            />
+          </div>
+        </div>
+        <div
+          v-if="speechRecognition.isListening.value"
+          class="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-[170px] w-full"
+        >
+          <WaveGlowBottom class="w-full h-full" :active="speechRecognition.isListening.value" :audio-level="audioLevel" />
+        </div>
+        <!-- Hidden Audio Element -->
+        <audio
+          ref="audioRef"
+          @ended="onAudioEnded"
+          @error="onAudioError"
+          @timeupdate="onAudioTimeUpdate"
+          class="absolute w-0 h-0 overflow-hidden"
+          :volume="1.0"
+        ></audio>
+
+        <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
+          <div
+            v-for="toast in toasts"
+            :key="toast.id"
+            class="toast"
+            :class="[toast.type]"
+          >
+            {{ toast.message }}
+          </div>
+        </div>
+
+        <div
+          v-if="isDebugMode && scrollDebug"
+          class="fixed bottom-4 right-4 z-50 rounded-md bg-orange-500/90 px-3 py-2 text-xs text-white shadow"
+        >
+          {{ scrollDebug.tag }} {{ scrollDebug.className }} |
+          {{ scrollDebug.scrollTop }} / {{ scrollDebug.scrollHeight }}
+        </div>
       </div>
     </div>
   </div>
@@ -141,6 +226,7 @@ import type { ConversationScript, ScriptLine, SpeakerType, PracticeMode, Convers
 import { useSpeechRecognition } from '~/composables/useSpeechRecognition';
 import { useTurnManager } from '~/composables/useTurnManager';
 import { inferVoiceTypeByName } from '~/utilities/inferVoiceTypeByName';
+import WaveGlowBottom from '~/components/audio/WaveGlowBottom.vue';
 
 // Page metadata - disable layout to remove header/footer
 definePageMeta({
@@ -174,6 +260,8 @@ if (String(route.query.mode || '').trim().toLowerCase() === 'single') {
 const originalBodyOverflow = ref('');
 const allowOverlayClose = ref(false);
 const returnTo = ref('');
+const openedAt = ref(0);
+let popstateReady = false;
 const scriptLoading = ref(false);
 const scriptError = ref('');
 const practiceCompleted = ref(false);
@@ -207,6 +295,7 @@ const aiAudio = typeof Audio !== 'undefined' ? new Audio() : null;
 const TTS_LOG_PREFIX = '[ENG-PRACTICE-TTS]';
 
 const isEmbedded = computed(() => String(route.query.embed || '') === '1');
+const isModalOpen = computed(() => !isEmbedded.value);
 
 // Composables
 const speechRecognition = useSpeechRecognition();
@@ -228,7 +317,82 @@ const scrollDebug = ref<{
   clientHeight: number;
 } | null>(null);
 const lastScrollTarget = ref<HTMLElement | null>(null);
+const scrollContainer = ref<HTMLElement | null>(null);
 const topAnchor = ref<HTMLElement | null>(null);
+const isUserScrolling = ref(false);
+const showBackToTop = ref(false);
+let scrollIdleTimer: number | null = null;
+const showLoadingBar = computed(() => scriptLoading.value || isAiAudioLoading.value);
+const audioLevel = ref(0);
+let micStream: MediaStream | null = null;
+let micAudioContext: AudioContext | null = null;
+let micAnalyser: AnalyserNode | null = null;
+let micRafId: number | null = null;
+
+const stopMicLevel = () => {
+  if (micRafId != null) {
+    cancelAnimationFrame(micRafId);
+    micRafId = null;
+  }
+  if (micAudioContext) {
+    micAudioContext.close().catch(() => {});
+    micAudioContext = null;
+  }
+  if (micStream) {
+    micStream.getTracks().forEach((track) => track.stop());
+    micStream = null;
+  }
+  micAnalyser = null;
+  audioLevel.value = 0;
+};
+
+const startMicLevel = async () => {
+  if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return;
+  if (micStream || micAnalyser) return;
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    micAudioContext = new AudioContext();
+    const source = micAudioContext.createMediaStreamSource(micStream);
+    micAnalyser = micAudioContext.createAnalyser();
+    micAnalyser.fftSize = 512;
+    source.connect(micAnalyser);
+    const data = new Uint8Array(micAnalyser.fftSize);
+    const update = () => {
+      if (!micAnalyser) return;
+      micAnalyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i += 1) {
+        const v = (data[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / data.length);
+      audioLevel.value = Math.min(1, rms * 2.5);
+      micRafId = requestAnimationFrame(update);
+    };
+    update();
+  } catch {
+    stopMicLevel();
+  }
+};
+
+const handleUserScroll = () => {
+  isUserScrolling.value = true;
+  if (scrollIdleTimer) {
+    window.clearTimeout(scrollIdleTimer);
+    scrollIdleTimer = null;
+  }
+  const target = scrollContainer.value;
+  showBackToTop.value = !!target && target.scrollTop > 40;
+  scrollIdleTimer = window.setTimeout(() => {
+    isUserScrolling.value = false;
+  }, 800);
+};
+
+const handleBackToTop = () => {
+  const target = scrollContainer.value;
+  if (!target) return;
+  target.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 const currentLineAudioUrl = computed(() => {
   const lineId = currentScriptLine.value?.id || '';
@@ -1415,6 +1579,17 @@ watch(
   { immediate: true }
 );
 
+watch(
+  () => speechRecognition.isListening.value,
+  (isListening) => {
+    if (isListening) {
+      startMicLevel();
+    } else {
+      stopMicLevel();
+    }
+  }
+);
+
 onMounted(() => {
   if (typeof document === 'undefined') return;
   const onScroll = (event: Event) => {
@@ -1444,17 +1619,32 @@ onMounted(() => {
   });
 });
 
+onUnmounted(() => {
+  stopMicLevel();
+  if (scrollIdleTimer) {
+    window.clearTimeout(scrollIdleTimer);
+    scrollIdleTimer = null;
+  }
+});
+
 watch(
   () => currentScriptLine.value?.id,
   () => {
     nextTick(() => {
-      if (!topAnchor.value) return;
-      topAnchor.value.scrollIntoView({ block: 'start', behavior: 'auto' });
-      requestAnimationFrame(() => {
-        if (topAnchor.value) {
-          topAnchor.value.scrollIntoView({ block: 'start', behavior: 'auto' });
-        }
-      });
+      if (isUserScrolling.value) return;
+      const target = scrollContainer.value;
+      if (target) {
+        target.scrollTo({ top: 0, behavior: 'smooth' });
+        requestAnimationFrame(() => {
+          if (!isUserScrolling.value) {
+            target.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        });
+        return;
+      }
+      if (topAnchor.value) {
+        topAnchor.value.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
     });
   }
 );
@@ -1541,6 +1731,9 @@ const closeModal = () => {
 
 const handleOverlayClick = () => {
   if (!allowOverlayClose.value) return;
+  if (openedAt.value && typeof performance !== 'undefined') {
+    if (performance.now() - openedAt.value < 250) return;
+  }
   closeModal();
 };
 
@@ -1552,6 +1745,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 const handlePopstate = () => {
   if (isEmbedded.value) return;
+  if (!popstateReady) return;
   setTimeout(() => {
     if (route.path === '/english-practice') {
       closeModal();
@@ -1561,10 +1755,12 @@ const handlePopstate = () => {
 
 // Lifecycle
 onMounted(() => {
+  if (typeof performance !== 'undefined') {
+    openedAt.value = performance.now();
+  }
   if (typeof document !== 'undefined') {
-    if (!isEmbedded.value) {
+    if (!originalBodyOverflow.value) {
       originalBodyOverflow.value = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
     }
     returnTo.value = String(route.query.returnTo || '').trim();
   }
@@ -1577,6 +1773,9 @@ onMounted(() => {
         allowOverlayClose.value = true;
       }, 0);
     }
+    setTimeout(() => {
+      popstateReady = true;
+    }, 300);
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -1605,6 +1804,22 @@ onMounted(() => {
     };
   }
 });
+
+watch(
+  () => isModalOpen.value,
+  (open) => {
+    if (typeof document === 'undefined') return;
+    if (open) {
+      if (!originalBodyOverflow.value) {
+        originalBodyOverflow.value = document.body.style.overflow;
+      }
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = originalBodyOverflow.value;
+    }
+  },
+  { immediate: true }
+);
 
 onUnmounted(() => {
   if (typeof window !== 'undefined') {
@@ -1636,17 +1851,114 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.toast-container {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
+.loading-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  overflow: hidden;
+  background: rgba(59, 130, 246, 0.15);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.practice-modal {
+  background: transparent;
+  color: #0f172a;
+  border: none;
+  box-shadow: none;
+}
+
+.modal-inner {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+  background: #ffffff;
+}
+
+.practice-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.practice-body {
+  gap: 16px;
+}
+
+.practice-content {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.loading-bar__inner {
+  height: 100%;
+  width: 40%;
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.9));
+  animation: loading-sweep 1.2s ease-in-out infinite;
+}
+
+@keyframes loading-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(60%);
+  }
+  100% {
+    transform: translateX(180%);
+  }
+}
+
+.mic-overlay {
+  width: 100%;
   display: flex;
+  justify-content: center;
+}
+
+.mic-overlay__inner {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 320px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 639px) and (orientation: landscape) {
+  .mic-overlay {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 16px;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  .mic-overlay__inner {
+    max-width: 260px;
+    gap: 8px;
+    pointer-events: auto;
+  }
+}
+</style>
+
+<style scoped>
+.toast-container {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding-top: 16px;
   flex-direction: column;
   gap: 12px;
   z-index: 1200;
   width: min(92vw, 520px);
   pointer-events: none;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .toast {
@@ -1673,7 +1985,7 @@ onUnmounted(() => {
 
 @media (max-width: 640px) {
   .toast-container {
-    top: 12px;
+    padding-top: 12px;
     width: calc(100vw - 24px);
   }
 }

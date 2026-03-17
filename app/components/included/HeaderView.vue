@@ -1,59 +1,88 @@
 <script setup>
 import apiDocs from "~/utilities/apiDocs";
 import { layoutEffect } from "~/utilities/controlls";
-import { moveFocus } from "~/utilities/focus.helper";
-
+import messages from "~/utilities/messages";
+import ConfirmationModal from "~/components/ai-teacher/ConfirmationModal.vue";
+import { useNavigationStore } from "~/stores/navigationStore";
 const userToken = useCookie("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
 const refreshToken = useCookie("signInRefreshToken");
+const route = useRoute();
+const navigationStore = useNavigationStore();
 
+const PROTECTED_RETURN_PREFIXES = [
+  "/interactive/",
+  "/video/",
+  "/audio/",
+  "/experiments/",
+  "/tie-ai-teacher",
+];
+
+const shouldRememberCurrentRoute = () =>
+  PROTECTED_RETURN_PREFIXES.some(
+    (prefix) => route.path === prefix || route.path.startsWith(prefix)
+  );
+
+const showLogoutConfirm = ref(false);
+const showLogoutToast = ref(false);
+const logoutToastTimeout = ref(null);
+const logoutAlert = ref(null);
 
 const logout = () => {
-  // Clear All Cookies
+  if (shouldRememberCurrentRoute()) {
+    navigationStore.setGoBack(route.fullPath);
+  }
+
   userToken.value = null;
   accessToken.value = null;
   refreshToken.value = null;
 
-  // Redirect to Home
-
-  const router = useRouter();
   layoutEffect.value = "grid";
-  router.replace("/home");
-  // Dismiss Drop Down
+  window.location.assign("/");
   dropDown();
-};
 
-const logoutMessage = ref("");
-const logoutAlert = ref(null);
-
-const announceLogout = (event) => {
-
-  // Keyboard support (Enter + Space)
-  if (event.type === "keyup" && !["Enter", " "].includes(event.key)) {
-    return;
-  }
-
-  logoutMessage.value = "You have been logged out";
-
-  // Screen reader announcement only (sr-only region)
+  // Screen reader announcement
   if (logoutAlert.value) {
     logoutAlert.value.textContent = "";
     setTimeout(() => {
       if (logoutAlert.value) {
-        logoutAlert.value.textContent = logoutMessage.value;
+        logoutAlert.value.textContent = messages.success.auth.loggedOut;
       }
     }, 50);
   }
 
-  logout(); // run your logout logic
+  // Show toast feedback
+  showLogoutToast.value = true;
+  if (logoutToastTimeout.value) clearTimeout(logoutToastTimeout.value);
+  logoutToastTimeout.value = setTimeout(() => {
+    showLogoutToast.value = false;
+    logoutToastTimeout.value = null;
+  }, 4000);
 };
 
+const openLogoutConfirm = (event) => {
+  if (event?.type === "keyup" && !["Enter", " "].includes(event.key)) return;
+  showLogoutConfirm.value = true;
+};
+
+const onLogoutConfirm = () => {
+  showLogoutConfirm.value = false;
+  logout();
+};
+
+const onLogoutCancel = () => {
+  showLogoutConfirm.value = false;
+};
 
 const isPop = ref(true);
 
 const dropDown = () => {
   isPop.value = !isPop.value;
 };
+
+onBeforeUnmount(() => {
+  if (logoutToastTimeout.value) clearTimeout(logoutToastTimeout.value);
+});
 </script>
 
 <template>
@@ -125,9 +154,9 @@ const dropDown = () => {
               </NuxtLink>
 
               <!-- Logout -->
-              <button aria-label="click to logout"
+              <button aria-label="Log out"
                 class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
-                @click="announceLogout" @keyup="announceLogout">
+                @click="openLogoutConfirm" @keyup="openLogoutConfirm">
                 <span class="capitalize"> Logout </span>
                 <IconsLogout :size="20" title="Sign out" />
               </button>
@@ -157,14 +186,17 @@ const dropDown = () => {
           <div class="flex items-center justify-between w-full">
             <div class="flex">
 
-              <NuxtLink aria-label="Go to profile page" to="/profile" v-if="userToken" class="flex items-center pl-1">
-                <IconsProfileCircle :size="20" />
-              </NuxtLink>
+           
+            <NuxtLink aria-label="Go home" to="/home" class="flex gap-2 pr-2 pl-2 rounded-md"
+                active-class="text-white !bg-deepBlue">
+                <div class="flex items-center justify-center">
+                  <IconsHome :size="20" />
+                </div>
+                <p class="hidden capitalize lg:flex">Home</p>
+              </NuxtLink>  
+            
 
-              <NuxtLink to="/auth/SignUp" title="Sign Up" v-else
-                class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
-                <IconsProfileCircle :size="20" />
-              </NuxtLink>
+              
 
               <!-- TIE Library Books -->
               <a aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
@@ -185,22 +217,23 @@ const dropDown = () => {
 
             <!-- Paragraph Text -->
             <NuxtLink to="/">
-              <p class="block text-center uppercase lg:text-large text-medium text-shadow">
+              <p class="block text-center uppercase lg:text-large text-[14px] text-shadow">
                 TIE online public school
               </p>
             </NuxtLink>
 
             <!-- Logout and Sign in -->
             <div class="flex items-center">
-              <NuxtLink aria-label="Go home" to="/home" class="flex gap-2 pr-2 pl-2 rounded-md"
-                active-class="text-white !bg-deepBlue">
-                <div class="flex items-center justify-center">
-                  <IconsHome :size="20" />
-                </div>
-                <p class="hidden capitalize lg:flex">Home</p>
+                    <NuxtLink aria-label="Go to profile page" to="/profile" v-if="userToken" class="flex items-center pl-1">
+                <IconsProfileCircle :size="20" />
+              </NuxtLink> 
+              <NuxtLink to="/auth/SignUp" title="Sign Up" v-else
+                class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
+                <IconsProfileCircle :size="20" />
               </NuxtLink>
-              <div class="flex items-center h-6 gap-2 p-2 cursor-pointer md:h-8" @click="logout" v-if="userToken"
-                role="button" tabindex="0" @keyup="announceLogout">
+              <div class="flex items-center h-6 gap-2 p-2 cursor-pointer md:h-8" v-if="userToken"
+                role="button" tabindex="0" aria-label="Log out"
+                @click="openLogoutConfirm" @keyup="openLogoutConfirm">
                 <IconsLogout :size="20" class="" title="Sign out" />
               </div>
               <!-- sign in -->
@@ -214,5 +247,43 @@ const dropDown = () => {
         <div ref="logoutAlert" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
       </div>
     </nav>
+
+    <!-- Logout confirmation modal -->
+    <ConfirmationModal
+      :is-open="showLogoutConfirm"
+      title="Log out"
+      :message="messages.info.auth.logoutConfirm"
+      confirm-text="Log out"
+      cancel-text="Cancel"
+      variant="danger"
+      icon="heroicons:arrow-right-on-rectangle"
+      @confirm="onLogoutConfirm"
+      @cancel="onLogoutCancel"
+      @close="showLogoutConfirm = false"
+    />
+
+    <!-- Logout success toast -->
+    <Transition name="toast">
+      <div
+        v-if="showLogoutToast"
+        role="status"
+        aria-live="polite"
+        class="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 px-5 py-3 rounded-lg bg-deepBlue text-white text-center shadow-lg max-w-[90vw]"
+      >
+        {{ messages.success.auth.loggedOut }}
+      </div>
+    </Transition>
   </header>
 </template>
+
+<style scoped>
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 12px);
+}
+</style>
