@@ -4,7 +4,8 @@ import { IconsMdiBookOpenPageVariantOutline } from '#components';
 
 const educationLevels = [
     {
-        name: 'Elimu ya Msingi', description: `Pata masomo shirikishi, shughuli za kujifunzia, na nyenzo za elimu zilizoundwa kwa ajili ya wanafunzi wa shule ya msingi.`, path: '/primary',
+        name: 'Elimu ya Msingi', description: `Pata masomo shirikishi, shughuli za kujifunzia, na nyenzo za elimu zilizoundwa kwa ajili ya wanafunzi wa shule ya msingi.`,
+         path: '/nyumbani',
         classList: ['bg-gradient-to-br from-[#4EA3D8] to-[#89C6F2] '],
         icon: IconsMdiBookOpenPageVariantOutline,
         images: [{
@@ -16,7 +17,7 @@ const educationLevels = [
     {
         name: 'Secondary Education', description: `Access advanced lessons, instructional
 videos, and educational resources
-designed for secondary school students.`, path: '/secondary',
+designed for secondary school students.`, path: '/home',
         classList: ['bg-gradient-to-br from-[#1F6FB2] to-[#3DA0E3] '],
         icon: IconsMdiBookOpenPageVariantOutline,
         images: [{
