@@ -78,7 +78,7 @@ const features = [
         </section>
 
         <!-- Features -->
-        <!-- <section class="mt-4 md:mt-16">
+        <section class="mt-4 md:mt-16">
             <h2 class="text-3xl text-center mb-4">Explore Our Features</h2>
             <div class="flex flex-col md:flex-row justify-center gap-6">
                
@@ -88,6 +88,6 @@ const features = [
                     <p>{{ f.description }}</p>
                 </div>
             </div>
-        </section> -->
+        </section>
     </div>
 </template>
