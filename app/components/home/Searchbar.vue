@@ -389,12 +389,6 @@ const performAISearch = async () => {
           experiments: data.relatedContent.experiments || [],
           suggestions: data.relatedContent.suggestions || "",
         };
-        console.log("[AI Search Frontend] Related content received:", {
-          topics: relatedContent.value.topics.length,
-          videos: relatedContent.value.videos.length,
-          audio: relatedContent.value.audio.length,
-          experiments: relatedContent.value.experiments.length,
-        });
       }
 
       // Update results only if we don't already have traditional results
@@ -414,19 +408,11 @@ const performAISearch = async () => {
             data.resultCount || data.results.length,
             searchReactive.search as string,
           );
-          console.log(
-            "[AI Search Frontend] Results set from AI search:",
-            data.results.length,
-            "items",
-          );
         } else {
           // Traditional results already shown, just update announcement for AI answer
           announcement.value = formatAiAnswerAnnouncement(
             searchReactive.search as string,
             searchReactive.searchResult.length,
-          );
-          console.log(
-            "[AI Search Frontend] Traditional results already displayed, AI answer added",
           );
         }
       } else {
@@ -435,20 +421,12 @@ const performAISearch = async () => {
           !searchReactive.searchResult ||
           searchReactive.searchResult.length === 0
         ) {
-          // No results at all, try traditional search as fallback
-          console.log(
-            "[AI Search Frontend] No results from AI search, trying traditional search...",
-          );
-          performTraditionalSearch()
-            .then(() => {
-              console.log("[AI Search Frontend] Traditional search completed");
-            })
-            .catch((err) => {
-              console.warn(
-                "[AI Search Frontend] Traditional search failed:",
-                err,
-              );
-            });
+          performTraditionalSearch().catch((err) => {
+            console.error(
+              "[AI Search Frontend] Traditional search failed:",
+              err,
+            );
+          });
         }
         announcement.value = formatAiAnswerAnnouncement(
           searchReactive.search as string,
@@ -458,25 +436,12 @@ const performAISearch = async () => {
       // Show error message but don't block - traditional results may already be shown
       aiAnswer.value = `${localizedContent.value.aiErrorPrefix} ${data.error}.`;
       showFeedback.value = false;
-      // Don't run traditional search here - it should have already run
-      console.log(
-        "[AI Search Frontend] AI search error, but traditional results may already be displayed",
-      );
-    } else {
-      // No AI answer but traditional search should have already run
-      console.log(
-        "[AI Search Frontend] No AI answer received, but traditional results should be displayed",
-      );
     }
   } catch (error) {
     console.error("[AI Search Frontend] Error:", error);
     // Show user-friendly error but don't block - traditional results may already be shown
     aiAnswer.value = localizedContent.value.aiFailed;
     showFeedback.value = false;
-    // Don't run traditional search here - it should have already run
-    console.log(
-      "[AI Search Frontend] AI search failed, but traditional results may already be displayed",
-    );
   } finally {
     isLoadingAI.value = false;
     // Trigger MathJax rendering after AI answer is set
@@ -534,10 +499,6 @@ const performTraditionalSearch = async () => {
 const handleFeedback = (helpful: boolean) => {
   feedbackGiven.value = true;
   showFeedback.value = false;
-  // Could send feedback to analytics endpoint here
-  console.log(
-    `User feedback: ${helpful ? "helpful" : "not helpful"} for query: ${searchReactive.search}`,
-  );
 };
 
 const toggleAISearchMode = () => {

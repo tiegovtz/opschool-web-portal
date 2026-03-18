@@ -22,12 +22,6 @@ type PrimarySubject = {
   subjectName?: string;
 };
 
-const PRIMARY_GRADES_URL =
-  "http://41.59.251.164:9000/api/v1/smartbook/grade/list-by-level?levelId=2&source=Tet&section=REGULAR_ACTIVITIES";
-
-const buildPrimarySubjectsUrl = (gradeId: number | string) =>
-  `http://41.59.251.164:9000/api/v1/smartbook/subject/list-by-grade?gradeId=${gradeId}&source=Tet`;
-
 const props = withDefaults(
   defineProps<{ educationLevel?: string; language?: LanguageSupport }>(),
   {
@@ -127,6 +121,8 @@ const getEducationLevelLabel = (educationLevelName: string) => {
 const dropdownButtonClass =
   "h-10 w-full rounded-none border-b border-gray-300 px-2 py-2 text-left text-sm text-gray-700 shadow-none focus:border-oceanBlue disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500";
 
+const primaryGradesUrl = `${apiDocs.primary.getGradesByLevel}?levelId=2&source=Tet&section=REGULAR_ACTIVITIES`;
+
 const emitSelection = () => {
   emit("emitLevel", level.value);
   emit("emitStandard", standard.value);
@@ -177,13 +173,12 @@ const headers = {
   Authorization: `Bearer ${token}`,
 };
 
-const { data: educationLevels, pending: educationLevelsPending } = useFetch<educationLevel[]>(
-  apiDocs.educationLevel.getEducationLevels,
-  {
-    headers,
-    default: () => [],
-  },
-);
+const { data: educationLevels, pending: educationLevelsPending } = useFetch<
+  educationLevel[]
+>(apiDocs.educationLevel.getEducationLevels, {
+  headers,
+  default: () => [],
+});
 
 const { data: secondaryClasses, pending: secondaryClassesPending } = useFetch<
   ClassLevel[]
@@ -194,17 +189,14 @@ const { data: secondaryClasses, pending: secondaryClassesPending } = useFetch<
 
 const { data: secondarySubjects, pending: secondarySubjectsPending } = useFetch<
   Subjects[]
->(
-  apiDocs.subjects.getPublicSubjects,
-  {
-    headers,
-    default: () => [],
-  },
-);
+>(apiDocs.subjects.getPublicSubjects, {
+  headers,
+  default: () => [],
+});
 
 const { data: primaryGrades, pending: primaryGradesPending } = useFetch<
   PrimaryGrade[]
->(PRIMARY_GRADES_URL, {
+>(primaryGradesUrl, {
   headers,
   default: () => [],
   immediate: isPrimaryModule.value,
@@ -242,7 +234,7 @@ watch(
 
     try {
       primarySubjects.value = await $fetch<PrimarySubject[]>(
-        buildPrimarySubjectsUrl(gradeId),
+        apiDocs.primary.getSubjectsByGrade + `?gradeId=${gradeId}&source=Tet`,
         { headers },
       );
     } catch (error) {
@@ -305,8 +297,12 @@ const subjectOptions = computed<DropdownOption[]>(() => {
 
   if (isPrimaryModule.value) {
     return primarySubjects.value
-      .map((primarySubject) => primarySubject.subjectName ?? primarySubject.name)
-      .filter((subjectName): subjectName is string => Boolean(subjectName?.trim()))
+      .map(
+        (primarySubject) => primarySubject.subjectName ?? primarySubject.name,
+      )
+      .filter((subjectName): subjectName is string =>
+        Boolean(subjectName?.trim()),
+      )
       .map((subjectName) => ({
         id: subjectName,
         name: subjectName,
@@ -319,18 +315,16 @@ const subjectOptions = computed<DropdownOption[]>(() => {
   }));
 });
 
-const isClassesLoading = computed(
-  () =>
-    isPrimaryModule.value
-      ? primaryGradesPending.value
-      : secondaryClassesPending.value,
+const isClassesLoading = computed(() =>
+  isPrimaryModule.value
+    ? primaryGradesPending.value
+    : secondaryClassesPending.value,
 );
 
-const isSubjectsLoading = computed(
-  () =>
-    isPrimaryModule.value
-      ? primarySubjectsPending.value
-      : secondarySubjectsPending.value,
+const isSubjectsLoading = computed(() =>
+  isPrimaryModule.value
+    ? primarySubjectsPending.value
+    : secondarySubjectsPending.value,
 );
 
 const showEducationLevelDropdown = computed(() => !isPrimaryModule.value);
@@ -362,7 +356,9 @@ watch(
         id="home-education-level"
         :model-value="level"
         :list="educationLevelOptions"
-        :placeholder="educationLevelsPending ? content.loading : content.selectLevel"
+        :placeholder="
+          educationLevelsPending ? content.loading : content.selectLevel
+        "
         :disabled="isEducationLevelLocked"
         :button-class="dropdownButtonClass"
         @update-model-value="onLevelChange"
