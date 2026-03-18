@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import type { SwiperContainer } from 'swiper/element'
+import type { LanguageSupport } from '~/types/language.interface';
+
+const props = withDefaults(
+  defineProps<{ educationLevel?: string, language?: LanguageSupport }>(), {
+  language: 'english',
+})
 
 const containerRef = ref<SwiperContainer | null>(null)
-const slides = [
+const slides = props.language == 'english' ? [
   {
     image: "/images/1.TIE-Interactive.webp",
     alt: "A student demonstrates work on a desktop computer to a former prime minister Kassimu Majaliwa in a school computer lab, while other officials and students watch from rows of computers in the background.",
@@ -34,6 +40,15 @@ const slides = [
   {
     image: "/images/10.TIE-Interactive.webp",
     alt: "Minister of Education Adolf Mkenda, the Director General of the Tanzania Institute of Education Anneth Komba, a former prime minister kassim majaliwa, and other officials stand on a stage holding a large ‘Kitabu kimoja mwanafunzi mmoja campaign display during the launch event celebrating 50 years of the Tanzania Institute of Education.",
+  },
+] : [
+  {
+    image: "/images/primary-01.png",
+    alt: "",
+  },
+  {
+    image: "/images/primary-02.png",
+    alt: "",
   },
 ]
 
@@ -124,8 +139,7 @@ onMounted(async () => {
       <swiper-container ref="containerRef" :init="false" class="w-full h-full max-h-[550px] overflow-hidden"
         role="region" aria-roledescription="carousel" aria-label="Image slider">
         <swiper-slide v-for="(slide, idx) in slides" :key="idx" role="group" aria-roledescription="slide"
-          :aria-label="`Slide ${idx + 1} of ${slides.length}`" :aria-describedby="`slide-desc-${idx}`"
-          :tabindex="idx">
+          :aria-label="`Slide ${idx + 1} of ${slides.length}`" :aria-describedby="`slide-desc-${idx}`" :tabindex="idx">
           <NuxtImg :src="slide.image" :alt="slide.alt" class="object-cover w-full h-full rounded-md" />
 
           <!-- Hidden description for SR -->

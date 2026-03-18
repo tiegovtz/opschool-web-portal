@@ -60,7 +60,7 @@ const userToken = useCookie("signInUserToken");
             <TabBar :is-logged-in="true" />
         </section>
         <section v-else>
-            <HeroSection />
+            <HeroSection language="kiswahili"/>
             <InputsSelection />
             <!-- @emit-level="level = $event" @emit-standard="filters.level = $event"
         @emit-subject="filters.subject = $event"  -->
