@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { HomeTabs } from '~/types/enum/tabs.enum';
+import type { LanguageSupport } from '~/types/language.interface';
 import type { tabs, videoType } from '~/types/types.data';
 import { moveFocus } from '~/utilities/focus.helper';
 
@@ -10,12 +11,14 @@ const emit = defineEmits([
 ])
 
 // Define Props
-withDefaults(defineProps<{
-  subjectTitle?: string,
+const props = withDefaults(
+  defineProps<{ educationLevel?: string,
+     language?: LanguageSupport, 
+    subjectTitle?: string,
   topicId?: string,
   isLoggedIn?: boolean,
-  activeTab?: tabs,
-}>(), {
+  activeTab?: tabs,}>(), {
+  language: 'english',
   isLoggedIn: false,
   activeTab: 'subjects'
 })
