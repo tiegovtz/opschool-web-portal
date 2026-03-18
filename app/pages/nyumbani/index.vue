@@ -55,13 +55,13 @@ const userToken = useCookie("signInUserToken");
 <template>
     <nuxt-layout name="home-layout" language="kiswahili">
         <section v-if="userToken">
-            <HomeSearchbar appearance="rounded" />
+            <HomeSearchbar appearance="rounded" language="kiswahili" education-level="primary" />
             <!--  @emit-active-tab="switchTab($event)" :active-tab="activeTab"  -->
             <TabBar :is-logged-in="true" />
         </section>
         <section v-else>
             <HeroSection language="kiswahili"/>
-            <InputsSelection />
+            <InputsSelection language="kiswahili" education-level="primary" />
             <!-- @emit-level="level = $event" @emit-standard="filters.level = $event"
         @emit-subject="filters.subject = $event"  -->
             <TabBar />

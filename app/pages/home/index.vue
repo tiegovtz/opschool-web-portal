@@ -592,7 +592,7 @@ const handleSubjectSelect = async (id: string, name: string) => {
   <NuxtLayout name="home-layout">
     <!-- User Has a Token -->
     <section v-if="userToken">
-      <HomeSearchbar appearance="rounded" />
+      <HomeSearchbar appearance="rounded" language="english" education-level="secondary" />
       <TabBar :is-logged-in="true" @emit-active-tab="switchTab($event)" :active-tab="activeTab" />
 
       <!-- container filter Mobile -->
@@ -790,7 +790,7 @@ const handleSubjectSelect = async (id: string, name: string) => {
     <!-- User has no token -->
     <section v-else :class="[' ', { ' animate-pulse': isLoading }]">
       <HeroSection />
-      <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+      <InputsSelection language="english" education-level="secondary" @emit-level="level = $event" @emit-standard="filters.level = $event"
         @emit-subject="filters.subject = $event" />
       <TabBar />
 
