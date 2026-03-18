@@ -5,6 +5,29 @@ import type { LanguageSupport } from "~/types/language.interface";
 import type { Subjects } from "~/types/subject.interface";
 import apiDocs from "~/utilities/apiDocs";
 
+type DropdownOption = {
+  id: string;
+  name: string;
+};
+
+type PrimaryGrade = {
+  id?: number | string;
+  gradeId?: number | string;
+  gradeName: string;
+  name?: string;
+};
+
+type PrimarySubject = {
+  name?: string;
+  subjectName?: string;
+};
+
+const PRIMARY_GRADES_URL =
+  "http://41.59.251.164:9000/api/v1/smartbook/grade/list-by-level?levelId=2&source=Tet&section=REGULAR_ACTIVITIES";
+
+const buildPrimarySubjectsUrl = (gradeId: number | string) =>
+  `http://41.59.251.164:9000/api/v1/smartbook/subject/list-by-grade?gradeId=${gradeId}&source=Tet`;
+
 const props = withDefaults(
   defineProps<{ educationLevel?: string; language?: LanguageSupport }>(),
   {
@@ -12,12 +35,11 @@ const props = withDefaults(
   },
 );
 
-const level = ref<string>(props.educationLevel ?? "");
-const standard = ref<string>("");
-const subject = ref<string>("");
-  const subjects = ref<Subjects[] | any[]>([]);
-
-const emit = defineEmits(["emitLevel", "emitSubject", "emitStandard"]);
+const emit = defineEmits<{
+  (event: "emitLevel", value: string): void;
+  (event: "emitStandard", value: string): void;
+  (event: "emitSubject", value: string): void;
+}>();
 
 const normalizeValue = (value?: string | null) =>
   value?.trim().toLowerCase() ?? "";
@@ -46,6 +68,14 @@ const getEducationBucket = (value?: string | null) => {
 
   return normalizedValue || null;
 };
+
+const isPrimaryModule = computed(
+  () => getEducationBucket(props.educationLevel) === "primary",
+);
+
+const level = ref<string>(isPrimaryModule.value ? "primary" : "");
+const standard = ref<string>("");
+const subject = ref<string>("");
 
 const matchesEducationLevel = (
   candidate?: string | null,
@@ -97,10 +127,19 @@ const getEducationLevelLabel = (educationLevelName: string) => {
 const dropdownButtonClass =
   "h-10 w-full rounded-none border-b border-gray-300 px-2 py-2 text-left text-sm text-gray-700 shadow-none focus:border-oceanBlue disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500";
 
-const sendEmits = () => {
+const emitSelection = () => {
   emit("emitLevel", level.value);
   emit("emitStandard", standard.value);
   emit("emitSubject", subject.value);
+};
+
+const clearSelectedSubject = () => {
+  subject.value = "";
+};
+
+const clearDependentSelections = () => {
+  standard.value = "";
+  clearSelectedSubject();
 };
 
 const onLevelChange = (nextLevel: string | number | null) => {
@@ -109,9 +148,8 @@ const onLevelChange = (nextLevel: string | number | null) => {
   if (level.value === resolvedLevel) return;
 
   level.value = resolvedLevel;
-  standard.value = "";
-  subject.value = "";
-  sendEmits();
+  clearDependentSelections();
+  emitSelection();
 };
 
 const onStandardChange = (nextStandard: string | number | null) => {
@@ -120,8 +158,8 @@ const onStandardChange = (nextStandard: string | number | null) => {
   if (standard.value === resolvedStandard) return;
 
   standard.value = resolvedStandard;
-  subject.value = "";
-  sendEmits();
+  clearSelectedSubject();
+  emitSelection();
 };
 
 const onSubjectChange = (nextSubject: string | number | null) => {
@@ -130,61 +168,95 @@ const onSubjectChange = (nextSubject: string | number | null) => {
   if (subject.value === resolvedSubject) return;
 
   subject.value = resolvedSubject;
-  sendEmits();
+  emitSelection();
 };
 
-// Auth headers
 const token = useCookie("signInAccessToken").value;
 const headers = {
   "Content-Type": "application/json",
   Authorization: `Bearer ${token}`,
 };
 
-// Server data
-const { data: educationLevels } = useFetch<educationLevel[]>(
+const { data: educationLevels, pending: educationLevelsPending } = useFetch<educationLevel[]>(
   apiDocs.educationLevel.getEducationLevels,
-  { headers },
-);
-const { data: classes } = useFetch<ClassLevel[] | any[]>(
-  props.educationLevel == "primary"
-    ? "http://41.59.251.164:9000/api/v1/smartbook/grade/list-by-level?levelId=2&source=Tet&section=REGULAR_ACTIVITIES"
-    : apiDocs.levels.getLevels,
-  { headers },
-);
-// const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjects, { headers });
-const subjectsEndpoint = computed(() => {
-  if (props.educationLevel === "primary") {
-    let gradeId =
-      classes.value?.find(
-        (cls) => normalizeValue(cls.name) === normalizeValue(standard.value),
-      )?.id ?? 1;
-    return `http://41.59.251.164:9000/api/v1/smartbook/subject/list-by-grade?gradeId=${gradeId}&source=Tet`;
-  }
-  return apiDocs.subjects.getPublicSubjects;
-});
-
-const getSubjects = async () => {
-  try {
-    const response = await $fetch<Subjects[] | any[]>(subjectsEndpoint.value, {
-      headers,
-    });
-    subjects.value = response;
-  } catch (error) {
-    console.error("[Error fetching subjects]:", error);
-    subjects.value = [];
-  }
-};
-
-// watch for standard to pull subjects for primary level
-watch(
-  standard,
- async () => {
-   await getSubjects();
+  {
+    headers,
+    default: () => [],
   },
 );
 
+const { data: secondaryClasses, pending: secondaryClassesPending } = useFetch<
+  ClassLevel[]
+>(apiDocs.levels.getLevels, {
+  headers,
+  default: () => [],
+});
+
+const { data: secondarySubjects, pending: secondarySubjectsPending } = useFetch<
+  Subjects[]
+>(
+  apiDocs.subjects.getPublicSubjects,
+  {
+    headers,
+    default: () => [],
+  },
+);
+
+const { data: primaryGrades, pending: primaryGradesPending } = useFetch<
+  PrimaryGrade[]
+>(PRIMARY_GRADES_URL, {
+  headers,
+  default: () => [],
+  immediate: isPrimaryModule.value,
+});
+
+const selectedPrimaryGrade = computed<PrimaryGrade | null>(() => {
+  if (!isPrimaryModule.value || !standard.value.trim()) return null;
+
+  return (
+    primaryGrades.value.find(
+      (grade) =>
+        normalizeValue(grade.gradeName ?? grade.name) ===
+        normalizeValue(standard.value),
+    ) ?? null
+  );
+});
+
+const selectedPrimaryGradeId = computed<number | string | null>(() => {
+  const grade = selectedPrimaryGrade.value;
+  return grade?.gradeId ?? grade?.id ?? null;
+});
+
+const primarySubjects = ref<PrimarySubject[]>([]);
+const primarySubjectsPending = ref(false);
+
+watch(
+  selectedPrimaryGradeId,
+  async (gradeId) => {
+    if (!isPrimaryModule.value || !gradeId) {
+      primarySubjects.value = [];
+      return;
+    }
+
+    primarySubjectsPending.value = true;
+
+    try {
+      primarySubjects.value = await $fetch<PrimarySubject[]>(
+        buildPrimarySubjectsUrl(gradeId),
+        { headers },
+      );
+    } catch (error) {
+      console.error("Failed to fetch primary subjects:", error);
+      primarySubjects.value = [];
+    } finally {
+      primarySubjectsPending.value = false;
+    }
+  },
+  { immediate: true },
+);
+
 const matchedEducationLevels = computed(() => {
-  if (!props.educationLevel || !educationLevels.value?.length) return [];
+  if (!props.educationLevel || !educationLevels.value.length) return [];
 
   return educationLevels.value.filter((educationLevelOption) =>
     matchesEducationLevel(educationLevelOption.name, props.educationLevel),
@@ -194,51 +266,74 @@ const matchedEducationLevels = computed(() => {
 const filteredEducationLevels = computed(() =>
   matchedEducationLevels.value.length
     ? matchedEducationLevels.value
-    : (educationLevels.value ?? []),
+    : educationLevels.value,
 );
 
 const isEducationLevelLocked = computed(
   () => matchedEducationLevels.value.length === 1,
 );
 
-const educationLevelOptions = computed(() =>
+const educationLevelOptions = computed<DropdownOption[]>(() =>
   filteredEducationLevels.value.map((educationLevelOption) => ({
     id: normalizeValue(educationLevelOption.name),
     name: getEducationLevelLabel(educationLevelOption.name),
   })),
 );
 
-const classOptions = computed(() => {
+const classOptions = computed<DropdownOption[]>(() => {
   if (!level.value.trim()) return [];
 
-  // primary educaton handling
-  if (props.educationLevel === "primary") {
-    return (classes.value ?? []).map((cls) => ({
-      id: cls.gradeName,
-      name: cls.gradeName,
+  if (isPrimaryModule.value) {
+    return primaryGrades.value.map((grade) => ({
+      id: grade.gradeName,
+      name: grade.gradeName,
     }));
   }
-  return (classes.value ?? [])
-    .filter((cls) => normalizeValue(cls.educationLevel.name) === level.value)
-    .map((cls) => ({
-      id: cls.name,
-      name: cls.name,
+
+  return secondaryClasses.value
+    .filter((classLevel) =>
+      matchesEducationLevel(classLevel.educationLevel?.name, level.value),
+    )
+    .map((classLevel) => ({
+      id: classLevel.name,
+      name: classLevel.name,
     }));
 });
 
-const subjectOptions = computed(() => {
-  if (!level.value?.trim() || !standard.value?.trim()) return [];
-  if (props.educationLevel === "primary") {
-    return (subjects.value ?? []).map((sbj) => ({
-      name: sbj.subjectName,
-      id: sbj.subjectName,
-    }));
+const subjectOptions = computed<DropdownOption[]>(() => {
+  if (!level.value.trim() || !standard.value.trim()) return [];
+
+  if (isPrimaryModule.value) {
+    return primarySubjects.value
+      .map((primarySubject) => primarySubject.subjectName ?? primarySubject.name)
+      .filter((subjectName): subjectName is string => Boolean(subjectName?.trim()))
+      .map((subjectName) => ({
+        id: subjectName,
+        name: subjectName,
+      }));
   }
-  return (subjects.value ?? []).map((sbj) => ({
-    id: sbj.name,
-    name: sbj.name,
+
+  return secondarySubjects.value.map((secondarySubject) => ({
+    id: secondarySubject.name,
+    name: secondarySubject.name,
   }));
 });
+
+const isClassesLoading = computed(
+  () =>
+    isPrimaryModule.value
+      ? primaryGradesPending.value
+      : secondaryClassesPending.value,
+);
+
+const isSubjectsLoading = computed(
+  () =>
+    isPrimaryModule.value
+      ? primarySubjectsPending.value
+      : secondarySubjectsPending.value,
+);
+
+const showEducationLevelDropdown = computed(() => !isPrimaryModule.value);
 
 watch(
   matchedEducationLevels,
@@ -263,11 +358,11 @@ watch(
       class="flex flex-col items-center justify-center w-full gap-4 my-5 md:flex-row"
     >
       <CustomDropDownList
-        v-if="educationLevel !== 'primary'"
+        v-if="showEducationLevelDropdown"
         id="home-education-level"
-        v-model="level"
+        :model-value="level"
         :list="educationLevelOptions"
-        :placeholder="educationLevels ? content.selectLevel : content.loading"
+        :placeholder="educationLevelsPending ? content.loading : content.selectLevel"
         :disabled="isEducationLevelLocked"
         :button-class="dropdownButtonClass"
         @update-model-value="onLevelChange"
@@ -275,13 +370,13 @@ watch(
 
       <CustomDropDownList
         id="home-class-level"
-        v-model="standard"
+        :model-value="standard"
         :list="classOptions"
         :placeholder="
           level.trim()
-            ? classes
-              ? content.selectClass
-              : content.loading
+            ? isClassesLoading
+              ? content.loading
+              : content.selectClass
             : content.selectLevelFirst
         "
         :disabled="!level.trim() || !classOptions.length"
@@ -291,13 +386,13 @@ watch(
 
       <CustomDropDownList
         id="home-subject"
-        v-model="subject"
+        :model-value="subject"
         :list="subjectOptions"
         :placeholder="
           level.trim() && standard.trim()
-            ? subjects
-              ? content.selectSubject
-              : content.loading
+            ? isSubjectsLoading
+              ? content.loading
+              : content.selectSubject
             : content.selectClassFirst
         "
         :disabled="!level.trim() || !standard.trim() || !subjectOptions.length"
