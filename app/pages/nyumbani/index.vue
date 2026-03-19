@@ -1,491 +1,811 @@
 <script lang="ts" setup>
-import HeroSection from '~/components/home/HeroSection.vue';
-import InputsSelection from '~/components/home/InputsSelection.vue';
-import TabBar from '~/components/home/TabBar.vue';
-import type { Audios } from '~/types/audio.interface';
-import type { Experiment } from '~/types/experiment.interface';
-import type { GroupedData } from '~/types/grouped.data';
-import type { Subjects } from '~/types/subject.interface';
-import type { Topic } from '~/types/topic.interface';
-import type { tabs } from '~/types/types.data';
-import type { Videos } from '~/types/video.interface';
-import { isGreaterToLG, isGreaterToMD, isGreaterToXL, layoutEffect, screenWidth } from '~/utilities/controlls';
+import CustomGridOne from "~/components/home/customGridOne.vue";
+import AudioCard from "~/components/audio/audioCard.vue";
+import ExperimentsCard from "~/components/experiments/experimentsCard.vue";
+import HeroSection from "~/components/home/HeroSection.vue";
+import HomeSearchbar from "~/components/home/Searchbar.vue";
+import LoadingIndicator from "~/components/loading/loadingIndicator.vue";
+import SubjectCard from "~/components/home/SubjectCard.vue";
+import TabBar from "~/components/home/TabBar.vue";
+import TopicCard from "~/components/home/TopicCard.vue";
+import VideoCard from "~/components/video/videoCard.vue";
+import {
+  getNyumbaniLevelName,
+  getNyumbaniSubjectName,
+  groupNyumbaniItemsBySubject,
+  nyumbaniAudios,
+  nyumbaniExperiments,
+  type NyumbaniFilterableItem,
+  type NyumbaniGroupedItem,
+  nyumbaniSubjects,
+  nyumbaniTopics,
+  nyumbaniVideos,
+} from "~/data/nyumbani.mock";
+import type { Audios } from "~/types/audio.interface";
+import type { Experiment } from "~/types/experiment.interface";
+import type { GroupedData } from "~/types/grouped.data";
+import type { Subjects } from "~/types/subject.interface";
+import type { Topic } from "~/types/topic.interface";
+import type { tabs } from "~/types/types.data";
+import type { Videos } from "~/types/video.interface";
+import { layoutEffect, screenWidth } from "~/utilities/controlls";
 
-// Define meta info about page
 useHead({
-    title: "TIE - Tanzania Interactive Learning Platform",
-    meta: [
-        {
-            name: "description",
-            content:
-                "TIE is a digital learning platform providing quality educational resources for students and teachers in Tanzania.",
-        },
-        {
-            name: "keywords",
-            content:
-                "Tanzania, education, interactive learning, e-learning, students, teachers",
-        },
-        { name: "author", content: "Tanzania Institute of Education" },
-
-        // Open Graph (OG) meta tags for social sharing
-        {
-            property: "og:title",
-            content: "TIE - Tanzania Interactive Learning Platform",
-        },
-        {
-            property: "og:description",
-            content:
-                "Explore interactive educational resources for students and teachers in Tanzania.",
-        },
-        { property: "og:image", content: "https://example.com/preview-image.jpg" }, // Replace with actual image URL
-        { property: "og:url", content: "https://tie.tz" },
-        { property: "og:type", content: "website" },
-
-        // Twitter Card meta tags
-        { name: "twitter:card", content: "summary_large_image" },
-        {
-            name: "twitter:title",
-            content: "TIE - Tanzania Interactive Learning Platform",
-        },
-        {
-            name: "twitter:description",
-            content:
-                "Access quality educational content for students and teachers in Tanzania.",
-        },
-        { name: "twitter:image", content: "https://example.com/preview-image.jpg" }, // Replace with actual image URL
-    ],
+  title: "TIE - Nyumbani",
+  meta: [
+    {
+      name: "description",
+      content:
+        "Nyumbani hub ya maudhui ya kujifunzia ya TIE yenye data ya mfano kwa maendeleo ya frontend.",
+    },
+  ],
 });
 
-// Define Cookie
 const userToken = useCookie("signInUserToken");
-const route = useRoute();
-const router = useRouter();
-// current page data
-const currentPage = ref<number>(1);
-const pageSize = ref<number>(12);
 
-// Define Ref state
-const error = ref(); // Initial Error State
-const status = ref<string | null>("pending"); // Initial Status State
-const data = ref<any[] | GroupedData<Subjects>[] | GroupedData<Experiment>[] | GroupedData<Videos>[] | GroupedData<Audios>[] | GroupedData<Topic>[]>(); // Initial Topics State
-const slicedData = ref(); // Initial slice data to 9
-const hideFilter = ref(false); // Initial Hide Filters
-const activeTab = ref<tabs>("subjects"); // Initial Active Tab State
-const filterValue = ref(); // Initial Filter Value State
-const subjectId = ref<string>(""); // Initial subjectId Value State
-const subjectSlug = ref<string>(""); // Initial subject slug Value State
-const subjectName = ref<string>(""); // Initial subject name Value State
-const seeMoreDetails = ref<string | null>(null); // Initial See More
-const announcement = ref<string>();
+const currentPage = ref(1);
+const pageSize = ref(12);
+const activeTab = ref<tabs>("subjects");
+const status = ref<"pending" | "success">("pending");
+const searchTerm = ref("");
+const selectedLevel = ref("all");
+const selectedSubject = ref("all");
+const subjectId = ref("");
+const subjectName = ref("");
+const subjectSlug = ref("");
 
-const TAB_TO_ROUTE: Record<tabs, { path: string; query?: Record<string, any> }> = {
-  subjects: { path: "/home" },
-  "interactive-contents": { path: "/interactive" },
-  "learn-activities": { path: "/experiments" },
-  video: { path: "/video", query: { type: "conc" } },
-  "class-videos": { path: "/video", query: { type: "oth" } },
-  audio: { path: "/audio" },
-  "smart-class": { path: "/smart-class" },
-};    
-
-const isSubjectDetail = computed(
+const isLoggedIn = computed(() => Boolean(userToken.value));
+const hasPublicFilters = computed(
   () =>
-    activeTab.value === "subjects" &&
-    (!!subjectId.value || !!subjectSlug.value)
+    Boolean(searchTerm.value.trim()) ||
+    selectedLevel.value !== "all" ||
+    selectedSubject.value !== "all",
 );
+const isSubjectDetail = computed(() => Boolean(subjectId.value));
 
-const displayTab = computed<tabs>(() =>
-  isSubjectDetail.value ? "interactive-contents" : activeTab.value
-);
-
-// First, fix the sliceData function
-const sliceData = (start: number, end: number) => {
-  if (!data || !Array.isArray(data.value) || data.value.length === 0) {
-    slicedData.value = [];
-    return;
-  }
-
-  // If only one page of data or less, return all data
-  if (data.value?.length <= pageSize.value) {
-    slicedData.value = data.value;
-    return;
-  }
-
-  // Otherwise slice the data
-  slicedData.value = data.value?.slice(start, end);
-};
-
-// shuffle Subject
-const shuffleSubject = (subjects: Subjects[]) => {
-  return subjects
-    .map((subject: Subjects) => ({ subject, sort: Math.random() })) // Assign a random sort key
-    .sort((a: any, b: any) => a.name - b.name) // Sort by random key
-    .map(({ subject }: { subject: Subjects }) => subject); // Extract shuffled choices
-};
-
-//  assigning page size based on screen sizes
-if (isGreaterToXL) {
-  pageSize.value = 12; // 12 topic cards
-} else if (isGreaterToLG) {
-  pageSize.value = 9; // 9 topic cards
-} else if (isGreaterToMD) {
-  pageSize.value = 6; // 6 topic cards per page
-} else {
-  pageSize.value = 4; // 4 topics card per page
-}
-
-// total pages data
-const totalPages = computed(() => {
-  if (data && Array.isArray(data.value)) {
-    return Math.ceil(data.value?.length / pageSize.value);
-  }
-  return 0; // Default to 0 if no data
+const contentTab = computed<tabs>(() => {
+  if (isSubjectDetail.value) return "interactive-contents";
+  if (isLoggedIn.value) return activeTab.value;
+  return hasPublicFilters.value ? "interactive-contents" : "subjects";
 });
 
-// Watch screen width and update page size accordingly
+const sectionTitle = computed(() => {
+  if (isSubjectDetail.value) {
+    return `${subjectName.value || "Somo"}: maudhui yanayoendelea`;
+  }
+
+  switch (contentTab.value) {
+    case "interactive-contents":
+      return "Maudhui shirikishi";
+    case "learn-activities":
+      return "Shughuli za ujifunzaji";
+    case "video":
+      return "Video za dhana";
+    case "class-videos":
+      return "Video za darasani";
+    case "audio":
+      return "Masomo ya sauti";
+    default:
+      return "Masomo yaliyopangwa kwa urahisi";
+  }
+});
+
+const sectionDescription = computed(() => {
+  if (isSubjectDetail.value) {
+    return "Haya ni maudhui ya mfano kwa somo ulilochagua. Yanawezesha frontend kuendelea kabla ya endpoint halisi kukamilika.";
+  }
+
+  switch (contentTab.value) {
+    case "interactive-contents":
+      return "Chagua mada, darasa na somo ili kuhakiki cards, filters na pagination kwa kutumia mock data.";
+    case "learn-activities":
+      return "Majaribio haya ni ya mfano tu na yameandaliwa kusaidia muundo wa frontend bila utegemezi wa API.";
+    case "video":
+      return "Video hizi za dhana ni dataset ya muda kwa ukaguzi wa tab, grouping na layout.";
+    case "class-videos":
+      return "Hapa kuna class videos za mfano za kuonyesha mwendelezo wa muonekano wa ukurasa.";
+    case "audio":
+      return "Masomo ya sauti ni ya muda na yanafanya tab hii ibaki na data wakati backend haijapatikana.";
+    default:
+      return "Masomo haya ya mfano yanawezesha kukagua loader, uchaguzi wa somo na mtiririko wa ukurasa bila endpoint.";
+  }
+});
+
+const currentSourceItems = computed<NyumbaniFilterableItem[]>(() => {
+  switch (contentTab.value) {
+    case "interactive-contents":
+      return nyumbaniTopics.filter((topic) =>
+        subjectId.value
+          ? getNyumbaniSubjectName(topic) === subjectName.value
+          : true,
+      );
+    case "learn-activities":
+      return nyumbaniExperiments.filter((experiment) =>
+        subjectId.value
+          ? getNyumbaniSubjectName(experiment) === subjectName.value
+          : true,
+      );
+    case "video":
+      return nyumbaniVideos.filter(
+        (video) =>
+          video.videoType === "conceptual" &&
+          (subjectId.value
+            ? getNyumbaniSubjectName(video) === subjectName.value
+            : true),
+      );
+    case "class-videos":
+      return nyumbaniVideos.filter(
+        (video) =>
+          video.videoType === "class-video" &&
+          (subjectId.value
+            ? getNyumbaniSubjectName(video) === subjectName.value
+            : true),
+      );
+    case "audio":
+      return nyumbaniAudios.filter((audio) =>
+        subjectId.value
+          ? getNyumbaniSubjectName(audio) === subjectName.value
+          : true,
+      );
+    default:
+      return nyumbaniSubjects;
+  }
+});
+
+const matchesSearch = (item: NyumbaniFilterableItem, query: string) => {
+  if (!query) return true;
+
+  const searchBlob = [
+    item.name,
+    "description" in item ? item.description : "",
+    "descriptions" in item ? item.descriptions : "",
+    getNyumbaniLevelName(item),
+    getNyumbaniSubjectName(item),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return searchBlob.includes(query);
+};
+
+const filteredItems = computed<NyumbaniFilterableItem[]>(() => {
+  const normalizedSearch = searchTerm.value.trim().toLowerCase();
+
+  return currentSourceItems.value.filter((item) => {
+    const itemLevel = getNyumbaniLevelName(item);
+    const itemSubject = getNyumbaniSubjectName(item);
+
+    const levelMatches =
+      selectedLevel.value === "all" || itemLevel === selectedLevel.value;
+    const subjectMatches =
+      selectedSubject.value === "all" || itemSubject === selectedSubject.value;
+
+    return (
+      levelMatches && subjectMatches && matchesSearch(item, normalizedSearch)
+    );
+  });
+});
+
+const groupedItems = computed(() =>
+  groupNyumbaniItemsBySubject(filteredItems.value as NyumbaniGroupedItem[]),
+);
+const groupedTopics = computed(
+  () => groupedItems.value as GroupedData<Topic>[],
+);
+const groupedExperiments = computed(
+  () => groupedItems.value as GroupedData<Experiment>[],
+);
+const groupedVideos = computed(
+  () => groupedItems.value as GroupedData<Videos>[],
+);
+const groupedAudios = computed(
+  () => groupedItems.value as GroupedData<Audios>[],
+);
+
+const useGroupedView = computed(
+  () =>
+    isLoggedIn.value &&
+    !isSubjectDetail.value &&
+    contentTab.value !== "subjects",
+);
+
+const totalPages = computed(() => {
+  if (useGroupedView.value) return 1;
+  return filteredItems.value.length
+    ? Math.ceil(filteredItems.value.length / pageSize.value)
+    : 0;
+});
+
+const paginatedItems = computed(() => {
+  if (useGroupedView.value) return filteredItems.value;
+
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filteredItems.value.slice(start, start + pageSize.value);
+});
+
+const resultCount = computed(() => filteredItems.value.length);
+const pageNumbers = computed(() =>
+  Array.from({ length: totalPages.value }, (_, index) => index + 1),
+);
+
+const availableLevels = computed(() => {
+  const items = currentSourceItems.value.filter((item) => {
+    if (selectedSubject.value === "all") return true;
+    return getNyumbaniSubjectName(item) === selectedSubject.value;
+  });
+
+  return Array.from(
+    new Set(
+      items
+        .map((item) => getNyumbaniLevelName(item))
+        .filter((level): level is string => Boolean(level)),
+    ),
+  );
+});
+
+const availableSubjects = computed(() => {
+  if (contentTab.value === "subjects" || isSubjectDetail.value) return [];
+
+  const items = currentSourceItems.value.filter((item) => {
+    if (selectedLevel.value === "all") return true;
+    return getNyumbaniLevelName(item) === selectedLevel.value;
+  });
+
+  return Array.from(
+    new Set(
+      items
+        .map((item) => getNyumbaniSubjectName(item))
+        .filter((subject): subject is string => Boolean(subject)),
+    ),
+  );
+});
+
+const showSubjectFilter = computed(
+  () => contentTab.value !== "subjects" && !isSubjectDetail.value,
+);
+
+const updatePageSize = () => {
+  if (screenWidth.value >= 1280) {
+    pageSize.value = 12;
+  } else if (screenWidth.value >= 1024) {
+    pageSize.value = 9;
+  } else if (screenWidth.value >= 768) {
+    pageSize.value = 6;
+  } else {
+    pageSize.value = 4;
+  }
+};
+
 watch(
   () => screenWidth.value,
   () => {
-    if (screenWidth.value >= 1280) {
-      pageSize.value = 12;
-    } else if (screenWidth.value >= 1024 && screenWidth.value < 1280) {
-      pageSize.value = 9;
-    } else if (screenWidth.value >= 768 && screenWidth.value < 1024) {
-      pageSize.value = 6;
-    } else if (screenWidth.value >= 640 && screenWidth.value < 768) {
-      pageSize.value = 4;
-    } else {
-      pageSize.value = 4;
-    }
-
-    // slice data per page size
-    sliceData(
-      (currentPage.value - 1) * pageSize.value,
-      currentPage.value * pageSize.value
-    );
-  }
+    updatePageSize();
+  },
+  { immediate: true },
 );
 
-// once pages are more than 5, handle pagination
+watch(
+  [filteredItems, pageSize],
+  () => {
+    if (!totalPages.value) {
+      currentPage.value = 1;
+      return;
+    }
+
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = totalPages.value;
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  [contentTab, searchTerm, selectedLevel, selectedSubject, subjectId],
+  () => {
+    currentPage.value = 1;
+  },
+);
+
+watch(
+  () => contentTab.value,
+  () => {
+    if (contentTab.value === "subjects") {
+      selectedLevel.value = "all";
+      selectedSubject.value = "all";
+    }
+  },
+);
+
+watch(
+  () => selectedLevel.value,
+  (level) => {
+    if (level === "all") return;
+    if (!availableLevels.value.includes(level)) {
+      selectedLevel.value = "all";
+    }
+  },
+);
+
+watch(
+  () => selectedSubject.value,
+  (subject) => {
+    if (subject === "all") return;
+    if (!availableSubjects.value.includes(subject)) {
+      selectedSubject.value = "all";
+    }
+  },
+);
+
+let loaderTimeout: ReturnType<typeof setTimeout> | undefined;
+
+onMounted(() => {
+  layoutEffect.value = "grid";
+  loaderTimeout = setTimeout(() => {
+    status.value = "success";
+  }, 350);
+});
+
+onBeforeUnmount(() => {
+  if (loaderTimeout) {
+    clearTimeout(loaderTimeout);
+  }
+});
+
+const resetFilters = () => {
+  searchTerm.value = "";
+  selectedLevel.value = "all";
+  selectedSubject.value = "all";
+};
+
+const clearSubjectDetail = () => {
+  subjectId.value = "";
+  subjectName.value = "";
+  subjectSlug.value = "";
+  activeTab.value = "subjects";
+  resetFilters();
+};
+
+const switchTab = (tab: tabs) => {
+  activeTab.value = tab;
+  subjectId.value = "";
+  subjectName.value = "";
+  subjectSlug.value = "";
+  resetFilters();
+};
+
+const handleSubjectSelect = (id: string, name: string) => {
+  subjectId.value = id;
+  subjectName.value = name;
+  subjectSlug.value = name.toLowerCase().trim().replace(/\s+/g, "-");
+  selectedSubject.value = "all";
+};
+
+const goToPage = (page: number) => {
+  currentPage.value = page;
+};
+
 const nextPage = () => {
-  currentPage.value++;
-  currentPage.value =
-    currentPage.value > totalPages.value ? totalPages.value : currentPage.value;
-  sliceData(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value
-  );
+  if (currentPage.value < totalPages.value) {
+    currentPage.value += 1;
+  }
 };
 
 const prevPage = () => {
-  currentPage.value--;
-  currentPage.value = currentPage.value < 1 ? 1 : currentPage.value;
-  sliceData(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value
-  );
-};
-
-// switch tabs 
-const switchTab = async (tab: tabs) => {
-  if (!tab) return;
-
-  activeTab.value = tab;
-
-  if (tab !== "subjects") {
-    subjectId.value = "";
-    subjectSlug.value = "";
-    subjectName.value = "";
+  if (currentPage.value > 1) {
+    currentPage.value -= 1;
   }
-
-  const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
-  await router.push(target);
 };
 
-const slugifySubject = (value: string) =>
-  value ? value.toLowerCase().trim().replace(/\s+/g, "-") : "";
-
-const getSubjectRoute = (id?: string, slug?: string) => {
-  if (slug && id) return { path: `/interactive/${slug}/${id}` };
-  if (slug) return { path: `/interactive/${slug}` };
-  if (id) return { path: `/interactive/${id}` };
-  return { path: "/interactive" };
-};
-
-const handleSubjectSelect = async (id: string, name: string) => {
-  subjectId.value = id;
-  subjectName.value = name;
-  subjectSlug.value = slugifySubject(name);
-  activeTab.value = "subjects";
-  const target = getSubjectRoute(id, subjectSlug.value);
-  await router.push(target);
-};
-
-// Define Filters Reactive State
-const level = ref(); // Initial Level State
-
-const filters = reactive<{ level: number | string | null; subject: string | null }>({
-  level: null,
-  subject: null,
-});
-
+const visibleSubjects = computed(() => paginatedItems.value as Subjects[]);
+const visibleTopics = computed(() => paginatedItems.value as Topic[]);
+const visibleExperiments = computed(() => paginatedItems.value as Experiment[]);
+const visibleVideos = computed(() => paginatedItems.value as Videos[]);
+const visibleAudios = computed(() => paginatedItems.value as Audios[]);
 </script>
 
 <template>
-    <nuxt-layout name="home-layout" language="kiswahili">
-        <section v-if="userToken">
-            <HomeSearchbar appearance="rounded" language="kiswahili" education-level="primary" />
-            <!--  @emit-active-tab="switchTab($event)" :active-tab="activeTab"  -->
-            <TabBar :is-logged-in="true" />
+  <NuxtLayout
+    name="home-layout"
+    language="kiswahili"
+  >
+    <section
+      v-if="isLoggedIn"
+      class="space-y-6"
+    >
+      <HomeSearchbar
+        appearance="rounded"
+        language="kiswahili"
+        education-level="primary"
+      />
+    </section>
 
-            <div class="flex items-center justify-between py-2 xl:hidden">
-                <ClientOnly>
-                    <p class="font-medium text-small" aria-live="polite">Viewing {{ data?.length || 0 }} Results</p>
-                </ClientOnly>
-                <button class="flex items-center gap-2 cursor-pointer text-deepBlue" @click="hideFilter = !hideFilter"
-                    :aria-expanded="hideFilter" aria-label="Toggle filters">
-                    <Icon name="mage:filter-fill" size="24" class="" aria-hidden="true" />
-                    <p class="text-medium">Filters</p>
-                </button>
+    <section v-else>
+      <HeroSection language="kiswahili" />
+    </section>
 
-                <!-- Side Bar Container Filter For Mobile View Only -->
-                <div v-if="displayTab !== 'subjects'" :class="[
-                    'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
-                    hideFilter ? 'z-30' : '-z-30',
-                ]">
-                    <div class="w-full h-full bg-white md:w-80">
-                        <!-- Close Button -->
-                        <div class="flex items-center justify-end">
-                            <button
-                                class="flex items-center justify-center w-10 h-10 p-2 cursor-pointer rounded-bl-md bg-deepBlue"
-                                @click="hideFilter = !hideFilter" aria-label="Close filters">
-                                <Icon name="formkit:close" size="24" class="font-bold text-white" aria-hidden="true" />
-                            </button>
-                        </div>
+    <section class="space-y-6">
+      <TabBar
+        v-if="isLoggedIn"
+        :is-logged-in="true"
+        :active-tab="contentTab"
+        @emit-active-tab="switchTab($event)"
+      />
 
-                        <div class="flex flex-col gap-4 mt-10">
-                            <!-- Home Drop Down Menu -->
-                            <DropDownMenu :active-tab="displayTab" @emit-update-filter-value="filterValue = $event" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- LayoutEffect  -->
-            <div class="items-center justify-end hidden gap-2 md:flex" role="group" aria-label="Layout options">
-                <button @click="layoutEffect = 'grid'" :aria-pressed="layoutEffect === 'grid'" aria-label="Grid layout"
-                    :class="[
-                        'cursor-pointer transition-all duration-500 ease-in-out',
-                        layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
-                    ]">
-                    <Icon name="bxs:grid-alt" size="1.5rem" aria-hidden="true" />
-                </button>
-                <button @click="layoutEffect = 'list'" :aria-pressed="layoutEffect === 'list'" aria-label="List layout"
-                    :class="[
-                        'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
-                        layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
-                    ]">
-                    <Icon name="fa-solid:list" size="1.5rem" aria-hidden="true" />
-                </button>
-            </div>
-            <div class="flex items-center justify-center w-full gap-4 xl:items-start">
-                <!-- container filter Desktop -->
-                <div v-if="displayTab !== 'subjects'" aria-label="Filters" role="group"
-                    class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
-                    <!-- Home Drop Down Menu -->
-                    <DropDownMenu @emit-update-filter-value="filterValue = $event" :active-tab="displayTab"
-                        :filter-value="[]" />
+      <HomeInputsSelection
+        education-level="primary"
+        language="kiswahili"
+      />
 
-                    <!-- <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" /> -->
-                </div>
+      <div
+        v-if="status === 'pending'"
+        class="flex min-h-[320px] items-center justify-center"
+      >
+        <LoadingIndicator :is-loading="true" />
+      </div>
 
-                <!-- data are in Grid -->
-                <div :class="['w-full ', displayTab !== 'subjects' ? 'xl:w-3/4' : '']" id="main-container"
-                    aria-label="content list" role="region" tabindex="-1">
-                    <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
-                        <LoadingIndicator :is-loading="true" />
-                    </div>
-                    <!-- Status Error -->
-                    <div v-else-if="status === 'error'"
-                        class="md:min-h-[342px] flex flex-col justify-center items-center" role="alert">
-                        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" aria-hidden="true" />
-                        <p class="text-center">
-                            Oops! Something went wrong.<br />
-                            Try refreshing the page or check your internet connection.
-                        </p>
-
-                        <button v-if="
-                            (Array.isArray(filterValue) && filterValue.length > 0) ||
-                            (typeof filterValue == 'object' &&
-                                Object.keys(filterValue).length > 0)" @click="filterValue = []"
-                            class="cursor-pointer text-oceanBlue" aria-label="Reset filters">
-                            Reset filters
-                        </button>
-                    </div>
-
-                    <!-- Status Success -->
-                    <div v-else-if="status == 'success' && subjectId && data && data.length > 0">
-                        <ClientOnly>
-                            <customGridOne active-tab="subjects" v-if="displayTab === 'subjects'">
-                                <template #data>
-                                    <!-- Subject Cards are in Grid -->
-                                    <SubjectCard v-for="subject in shuffleSubject(slicedData)" :key="subject._id"
-                                        :subject-id="subject._id" :subject-name="subject.name"
-                                        :subject-image="subject.thumbnail" :subject-description="subject.description"
-                                        :total-views="subject.views ?? 0"
-                                        :is-logged-in="userToken != null || userToken != undefined"
-                                        @emit-subject-name="(name:any) => { subjectName = name; subjectSlug = slugifySubject(name); if (subjectId) handleSubjectSelect(subjectId, name); }"
-                                        @emit-subject-id="(id:any) => { handleSubjectSelect(id, subjectName || subjectSlug || 'subject'); }"
-                                        :alt-text="subject.alt" />
-                                </template>
-                            </customGridOne>
-
-                            <customGridOne v-else-if="displayTab === 'interactive-contents'">
-                                <template #data>
-                                    <!-- Topic Cards are in Grid -->
-                                    <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
-                                        :topic-image="topic.thumbnail" :topic-title="topic.name"
-                                        :topic-description="topic.descriptions"
-                                        :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
-                                        :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-level="level"
-                                        :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
-                                        :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress"
-                                        :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length : topic.views ? topic.views : 0"
-                                        :alt-text="topic.alt" />
-                                </template>
-                            </customGridOne>
-                        </ClientOnly>
-
-                        <!-- pagination numbers based on data length greater to 9 -->
-                        <div v-if="totalPages > 1" class="flex justify-center my-5">
-                            <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                                    :is-active="page === currentPage" :disabled="page === currentPage"
-                                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                                    @send-page-number="currentPage = $event" />
-                            </div>
-                            <div v-else class="flex items-center gap-2">
-                                <div class="flex items-center justify-center" v-if="currentPage > 5">
-                                    <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
-                                </div>
-
-                                <div
-                                    class="overflow-x-scroll scrollbar-none max-w-[250px] flex items-center justify-start gap-2">
-                                    <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                                        :is-active="page === currentPage" :disabled="page === currentPage"
-                                        @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                                        @send-page-number="currentPage = $event" />
-                                </div>
-
-                                <div class="flex items-center justify-center" v-if="currentPage > 4">
-                                    <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- data sorted if no subject -->
-                    <div v-else-if="status == 'success' && data && data.length > 0">
-                        <ClientOnly>
-                            <HomeCustomScrollView :shuffle-subject="shuffleSubject"
-                                :see-more-details="seeMoreDetails?.toString()" :data="data" :active-tab="displayTab"
-                                @emittedSubjectId="(id) => { handleSubjectSelect(id, subjectName || subjectSlug || 'subject'); }"
-                                @emittedActiveTab="switchTab($event)"
-                                @emittedSubjectName="(name) => { subjectName = name; subjectSlug = slugifySubject(name); if (subjectId) handleSubjectSelect(subjectId, name); }" />
-                        </ClientOnly>
-                    </div>
-                    <MessageTopicNotFound v-else />
-                </div>
-            </div>
-        </section>
-        <section v-else>
-            <HeroSection language="kiswahili" />
-            <InputsSelection language="kiswahili" education-level="primary" />
-            <!-- @emit-level="level = $event" @emit-standard="filters.level = $event"
-        @emit-subject="filters.subject = $event"  -->
-            <!-- <TabBar /> -->
-
-
-            <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
-                <LoadingIndicator :is-loading="true" />
-            </div>
-            <!-- Status Error -->
-            <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center">
-                <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
-                <p class="text-center">
-                    Oops! Something went wrong.<br />
-                    Try refreshing the page or check your internet connection.
-                </p>
+      <template v-else>
+        <div
+          v-if="
+            useGroupedView &&
+            contentTab === 'interactive-contents' &&
+            groupedTopics.length > 0
+          "
+          class="space-y-8"
+        >
+          <section
+            v-for="group in groupedTopics"
+            :key="group.dataOfKey"
+            class="rounded-2xl bg-white px-4 py-5 custom-box-shadow"
+          >
+            <div class="mb-4 flex items-center justify-between gap-4">
+              <h2 class="text-xl font-bold text-deepBlue">
+                {{ group.dataOfKey }}
+              </h2>
+              <p class="text-sm text-gray-500">
+                {{ group.data.length }} maudhui
+              </p>
             </div>
 
-            <!-- Status Success -->
-            <div v-else-if="status == 'success'" class="">
-                <!-- client only -->
-                <ClientOnly v-if="data && data.length > 0">
-                    <div id="main-container" tabindex="-1" class="flex flex-col w-full">
-                        <customGridTwo v-if="filters.level !== null && filters.subject !== null">
-                            <template #data>
-                                <!-- Topic Cards -->
-                                <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
-                                    :topic-image="topic.thumbnail" :topic-title="topic.name"
-                                    :topic-description="topic.descriptions" :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'
-                                        " :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.viewedBy?.length
-                        ? topic.viewedBy?.length
-                        : topic.views
-                            ? topic.views
-                            : 0
-                        " :topic-level="level" :topic-standard="topic.level?.name" :subject-name="topic.subject?.name"
-                                    :topic-viewed="topic.isViewed" :topic-progress="topic.avgProgress" />
-                            </template>
-                        </customGridTwo>
+            <div
+              :class="[
+                'gap-4 overflow-x-auto pb-2 scrollbar-none',
+                layoutEffect === 'list' ? 'flex flex-col' : 'flex',
+              ]"
+            >
+              <TopicCard
+                v-for="topic in group.data"
+                :key="topic._id"
+                :topic-id="topic._id"
+                :topic-image="topic.thumbnail"
+                :topic-title="topic.name"
+                :topic-description="topic.descriptions"
+                topic-duration="Dakika 10"
+                :topic-likes="100"
+                :topic-views="topic.viewedBy?.length || topic.views || 0"
+                :topic-level="topic.level"
+                :topic-standard="topic.level"
+                :subject-name="getNyumbaniSubjectName(topic)"
+                :topic-viewed="topic.isViewed"
+                :topic-progress="topic.avgProgress"
+                :alt-text="topic.alt"
+              />
+            </div>
+          </section>
+        </div>
 
-                        <customGridTwo v-else>
-                            <template #data>
-                                <!-- Subject Cards are in Grid -->
-                                <SubjectCard v-for="subject in shuffleSubject(slicedData)" :key="subject._id"
-                                    :subject-id="subject._id" :subject-name="subject.name"
-                                    :subject-image="subject.thumbnail" :subject-description="subject.description"
-                                    :total-views="subject.views ?? 0"
-                                    :is-logged-in="userToken != null || userToken != undefined" />
-                            </template>
-                        </customGridTwo>
-
-                        <!-- pagination numbers based on data length greater to 9 -->
-                        <div v-if="totalPages > 1" class="flex justify-center my-5">
-                            <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                                    :is-active="page === currentPage" :disabled="page === currentPage"
-                                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                                    @send-page-number="currentPage = $event" />
-                            </div>
-                            <div v-else class="flex justify-center gap-2">
-                                <!-- previous -->
-                                <div class="flex items-center justify-center" v-if="currentPage > 5">
-                                    <Icon name="iconamoon:arrow-left-2-fill" size="2rem" @click="prevPage" />
-                                </div>
-
-                                <PaginationBtn v-for="page in totalPages" :key="page" :page-number="page"
-                                    :is-active="page === currentPage" :disabled="page === currentPage"
-                                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                                    @send-page-number="currentPage = $event" />
-
-                                <!-- next button -->
-                                <div class="flex items-center justify-center" v-if="currentPage > 4">
-                                    <Icon name="iconamoon:arrow-right-2-fill" size="2rem" @click="nextPage" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </ClientOnly>
-                <MessageTopicNotFound v-else />
+        <div
+          v-else-if="
+            useGroupedView &&
+            contentTab === 'learn-activities' &&
+            groupedExperiments.length > 0
+          "
+          class="space-y-8"
+        >
+          <section
+            v-for="group in groupedExperiments"
+            :key="group.dataOfKey"
+            class="rounded-2xl bg-white px-4 py-5 custom-box-shadow"
+          >
+            <div class="mb-4 flex items-center justify-between gap-4">
+              <h2 class="text-xl font-bold text-deepBlue">
+                {{ group.dataOfKey }}
+              </h2>
+              <p class="text-sm text-gray-500">
+                {{ group.data.length }} maudhui
+              </p>
             </div>
 
-            <!-- Even Data was not success should be handle here -->
-            <div class="flex flex-col w-full" v-else>
-                <p class="text-center text-medium">
-                    Try to refresh the page, Something went Wrong
-                </p>
+            <div
+              :class="[
+                'gap-4 overflow-x-auto pb-2 scrollbar-none',
+                layoutEffect === 'list' ? 'flex flex-col' : 'flex',
+              ]"
+            >
+              <ExperimentsCard
+                v-for="experiment in group.data"
+                :key="experiment._id"
+                :experiment-id="experiment._id"
+                :experiment-name="experiment.name"
+                :experiment-thumbnail="experiment.thumbnail"
+                :experiment-file-url="experiment.stepsFileUrl"
+                :experiment-description="experiment.description"
+                :experiment-type="experiment.category"
+                :experiment-level="experiment.level"
+                :experiment-standard="experiment.level"
+                :experiment-subject="getNyumbaniSubjectName(experiment)"
+                :alt-text="experiment.alt"
+              />
             </div>
-        </section>
-    </nuxt-layout>
+          </section>
+        </div>
+
+        <div
+          v-else-if="
+            useGroupedView &&
+            (contentTab === 'video' || contentTab === 'class-videos') &&
+            groupedVideos.length > 0
+          "
+          class="space-y-8"
+        >
+          <section
+            v-for="group in groupedVideos"
+            :key="group.dataOfKey"
+            class="rounded-2xl bg-white px-4 py-5 custom-box-shadow"
+          >
+            <div class="mb-4 flex items-center justify-between gap-4">
+              <h2 class="text-xl font-bold text-deepBlue">
+                {{ group.dataOfKey }}
+              </h2>
+              <p class="text-sm text-gray-500">
+                {{ group.data.length }} maudhui
+              </p>
+            </div>
+
+            <div
+              :class="[
+                'gap-4 overflow-x-auto pb-2 scrollbar-none',
+                layoutEffect === 'list' ? 'flex flex-col' : 'flex',
+              ]"
+            >
+              <VideoCard
+                v-for="video in group.data"
+                :key="video._id"
+                :video-id="video._id"
+                :video-name="video.name"
+                :video-thumbnail="video.thumbnail"
+                :video-file-url="video.videoFileUrl"
+                :video-description="video.description"
+                :video-type="video.videoType"
+                :video-level="video.level"
+                :video-standard="video.level"
+                :video-subject="getNyumbaniSubjectName(video)"
+                :alt-text="video.alt"
+                :topic-progress="0"
+                :topic-viewed="false"
+                :is-deleted="false"
+              />
+            </div>
+          </section>
+        </div>
+
+        <div
+          v-else-if="
+            useGroupedView && contentTab === 'audio' && groupedAudios.length > 0
+          "
+          class="space-y-8"
+        >
+          <section
+            v-for="group in groupedAudios"
+            :key="group.dataOfKey"
+            class="rounded-2xl bg-white px-4 py-5 custom-box-shadow"
+          >
+            <div class="mb-4 flex items-center justify-between gap-4">
+              <h2 class="text-xl font-bold text-deepBlue">
+                {{ group.dataOfKey }}
+              </h2>
+              <p class="text-sm text-gray-500">
+                {{ group.data.length }} maudhui
+              </p>
+            </div>
+
+            <div
+              :class="[
+                'gap-4 overflow-x-auto pb-2 scrollbar-none',
+                layoutEffect === 'list' ? 'flex flex-col' : 'flex',
+              ]"
+            >
+              <AudioCard
+                v-for="audio in group.data"
+                :key="audio._id"
+                :audio-id="audio._id"
+                :audio-name="audio.name"
+                :audio-thumbnail="audio.thumbnail"
+                :audio-file-url="audio.audioFileUrl"
+                :audio-description="audio.description"
+                :audio-type="audio.audioType"
+                :audio-level="getNyumbaniLevelName(audio)"
+                :audio-standard="getNyumbaniLevelName(audio)"
+                :audio-subject="getNyumbaniSubjectName(audio)"
+                :alt-text="audio.alt"
+                :topic-progress="0"
+                :topic-viewed="false"
+                :is-deleted="false"
+              />
+            </div>
+          </section>
+        </div>
+
+        <div
+          v-else-if="contentTab === 'subjects' && visibleSubjects.length > 0"
+        >
+          <CustomGridOne active-tab="subjects">
+            <template #data>
+              <SubjectCard
+                v-for="subject in visibleSubjects"
+                :key="subject._id"
+                :subject-id="subject._id"
+                :subject-name="subject.name"
+                :subject-image="subject.thumbnail"
+                :subject-description="subject.description"
+                :total-views="subject.views ?? 0"
+                :is-logged-in="true"
+                :alt-text="subject.alt"
+                @emit-subject-id="handleSubjectSelect($event, subject.name)"
+              />
+            </template>
+          </CustomGridOne>
+        </div>
+
+        <div
+          v-else-if="
+            contentTab === 'interactive-contents' && visibleTopics.length > 0
+          "
+        >
+          <CustomGridOne active-tab="interactive-contents">
+            <template #data>
+              <TopicCard
+                v-for="topic in visibleTopics"
+                :key="topic._id"
+                :topic-id="topic._id"
+                :topic-image="topic.thumbnail"
+                :topic-title="topic.name"
+                :topic-description="topic.descriptions"
+                topic-duration="Dakika 10"
+                :topic-likes="100"
+                :topic-views="topic.viewedBy?.length || topic.views || 0"
+                :topic-level="getNyumbaniLevelName(topic)"
+                :topic-standard="getNyumbaniLevelName(topic)"
+                :subject-name="getNyumbaniSubjectName(topic)"
+                :topic-viewed="topic.isViewed"
+                :topic-progress="topic.avgProgress"
+                :alt-text="topic.alt"
+              />
+            </template>
+          </CustomGridOne>
+        </div>
+
+        <div
+          v-else-if="
+            contentTab === 'learn-activities' && visibleExperiments.length > 0
+          "
+        >
+          <CustomGridOne active-tab="learn-activities">
+            <template #data>
+              <ExperimentsCard
+                v-for="experiment in visibleExperiments"
+                :key="experiment._id"
+                :experiment-id="experiment._id"
+                :experiment-name="experiment.name"
+                :experiment-thumbnail="experiment.thumbnail"
+                :experiment-file-url="experiment.stepsFileUrl"
+                :experiment-description="experiment.description"
+                :experiment-type="experiment.category"
+                :experiment-level="experiment.level"
+                :experiment-standard="experiment.level"
+                :experiment-subject="getNyumbaniSubjectName(experiment)"
+                :alt-text="experiment.alt"
+              />
+            </template>
+          </CustomGridOne>
+        </div>
+
+        <div
+          v-else-if="
+            (contentTab === 'video' || contentTab === 'class-videos') &&
+            visibleVideos.length > 0
+          "
+        >
+          <CustomGridOne :active-tab="contentTab">
+            <template #data>
+              <VideoCard
+                v-for="video in visibleVideos"
+                :key="video._id"
+                :video-id="video._id"
+                :video-name="video.name"
+                :video-thumbnail="video.thumbnail"
+                :video-file-url="video.videoFileUrl"
+                :video-description="video.description"
+                :video-type="video.videoType"
+                :video-level="video.level"
+                :video-standard="video.level"
+                :video-subject="getNyumbaniSubjectName(video)"
+                :alt-text="video.alt"
+                :topic-progress="0"
+                :topic-viewed="false"
+                :is-deleted="false"
+              />
+            </template>
+          </CustomGridOne>
+        </div>
+
+        <div v-else-if="contentTab === 'audio' && visibleAudios.length > 0">
+          <CustomGridOne active-tab="audio">
+            <template #data>
+              <AudioCard
+                v-for="audio in visibleAudios"
+                :key="audio._id"
+                :audio-id="audio._id"
+                :audio-name="audio.name"
+                :audio-thumbnail="audio.thumbnail"
+                :audio-file-url="audio.audioFileUrl"
+                :audio-description="audio.description"
+                :audio-type="audio.audioType"
+                :audio-level="getNyumbaniLevelName(audio)"
+                :audio-standard="getNyumbaniLevelName(audio)"
+                :audio-subject="getNyumbaniSubjectName(audio)"
+                :alt-text="audio.alt"
+                :topic-progress="0"
+                :topic-viewed="false"
+                :is-deleted="false"
+              />
+            </template>
+          </CustomGridOne>
+        </div>
+
+        <EmptyState
+          v-else
+          title="Hakuna maudhui kwa sasa"
+          description="Badilisha vichujio au jaribu somo tofauti. Data hii ya mfano itaongezwa kadri endpoint halisi itakapokuwa tayari."
+        />
+
+        <div
+          v-if="!useGroupedView && totalPages > 1"
+          class="mt-6 flex flex-wrap items-center justify-center gap-2"
+        >
+          <button
+            type="button"
+            class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="currentPage === 1"
+            @click="prevPage"
+          >
+            Nyuma
+          </button>
+
+          <button
+            v-for="page in pageNumbers"
+            :key="page"
+            type="button"
+            class="flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-medium transition-colors"
+            :class="
+              page === currentPage
+                ? 'border-oceanBlue bg-oceanBlue text-white'
+                : 'border-gray-200 bg-white text-gray-700'
+            "
+            @click="goToPage(page)"
+          >
+            {{ page }}
+          </button>
+
+          <button
+            type="button"
+            class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="currentPage === totalPages"
+            @click="nextPage"
+          >
+            Mbele
+          </button>
+        </div>
+      </template>
+    </section>
+  </NuxtLayout>
 </template>
