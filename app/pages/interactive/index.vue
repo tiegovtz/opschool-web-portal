@@ -295,6 +295,7 @@ watch(filters, (filters) => {
           :active-tab="activeTab"
           @emit-active-tab="switchTab($event)"
           :tab-group="educationLevel"
+          :language
         />
       </div>
 

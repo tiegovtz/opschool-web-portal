@@ -441,6 +441,7 @@ const visibleTopics = computed(() => paginatedItems.value as Topic[]);
         :active-tab="contentTab"
         @emit-active-tab="switchTab($event)"
         tab-group="primary"
+        language="kiswahili"
       />
 
       <HomeInputsSelection

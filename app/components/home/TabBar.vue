@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { HomeTabs } from "~/types/enum/tabs.enum";
+import { homeTabsByLanguage } from "~/types/enum/tabs.enum";
 import type { LanguageSupport } from "~/types/language.interface";
 import type { tabs, videoType, tabGroup } from "~/types/types.data";
 import { moveFocus } from "~/utilities/focus.helper";
@@ -44,6 +44,51 @@ const tabCheck = (checkValue: tabs) => {
   tabState.checkedValueButton = checkValue;
   emit("emitActiveTab", tabState.checkedValueButton);
 };
+
+const localizedContent = computed(() =>
+  props.language === "kiswahili"
+    ? {
+        tabs: homeTabsByLanguage.kiswahili,
+        skipContent: "Ruka maudhui",
+        subjectIcon: "Masomo",
+        skipToSubjectList: "Bonyeza enter kwenda kwenye orodha ya masomo",
+        skipToInteractiveList:
+          "Bonyeza enter kwenda kwenye orodha ya maudhui shirikishi",
+        visitInteractivePage: "Bonyeza kutembelea ukurasa wa maudhui shirikishi",
+        visitSubjectSuffix: "kwa somo la",
+        visitActivitiesPage:
+          "Bonyeza kutembelea ukurasa wa shughuli za kujifunza",
+        skipToActivitiesList:
+          "Bonyeza enter kwenda kwenye orodha ya shughuli za mwanafunzi",
+        visitVideoPage: "Bonyeza kutembelea ukurasa wa video",
+        skipToVideosList: "Bonyeza enter kwenda kwenye orodha ya video",
+        visitClassVideoPage:
+          "Bonyeza kutembelea ukurasa wa video za darasani",
+        skipToClassVideosList:
+          "Bonyeza enter kwenda kwenye orodha ya video za darasani",
+        visitAudioPage: "Bonyeza kutembelea ukurasa wa sauti",
+        skipToAudiosList: "Bonyeza enter kwenda kwenye orodha ya sauti",
+      }
+    : {
+        tabs: homeTabsByLanguage.english,
+        skipContent: "Skip content",
+        subjectIcon: "Subjects",
+        skipToSubjectList: "Press enter to jump to subject list",
+        skipToInteractiveList:
+          "Press enter to jump to interactive contents list",
+        visitInteractivePage: "press to visit page for interactive contents",
+        visitSubjectSuffix: "for subject",
+        visitActivitiesPage:
+          "press to visit page of learning activities (experiments)",
+        skipToActivitiesList: "Press enter to jump to learner activities list",
+        visitVideoPage: "press to visit page of Video",
+        skipToVideosList: "Press enter to jump videos list",
+        visitClassVideoPage: "press to visit page of class video",
+        skipToClassVideosList: "Press enter to jump to class videos list",
+        visitAudioPage: "press to visit page of audio",
+        skipToAudiosList: "Press enter to jump to audios list",
+      },
+);
 </script>
 
 <template>
@@ -72,19 +117,19 @@ const tabCheck = (checkValue: tabs) => {
           <div class="flex items-center justify-center">
             <IconsSubjects
               :size="20"
-              aria-label="Subjects"
+              :aria-label="localizedContent.subjectIcon"
             />
           </div>
-          {{ HomeTabs.subject }}
+          {{ localizedContent.tabs.subject }}
         </button>
         <button
           v-if="activeTab === 'subjects'"
           type="button"
           class="sr-only"
           @click="moveFocus('main-container')"
-          aria-label="Press enter to jump to subject list"
+          :aria-label="localizedContent.skipToSubjectList"
         >
-          Skip content
+          {{ localizedContent.skipContent }}
         </button>
       </div>
 
@@ -112,20 +157,20 @@ const tabCheck = (checkValue: tabs) => {
               class=""
             />
           </div>
-          {{ HomeTabs.interactive }}
+          {{ localizedContent.tabs.interactive }}
         </button>
         <button
           v-if="activeTab === 'interactive-contents'"
           class="sr-only"
           @click="moveFocus('main-container')"
-          aria-label="Press enter to jump to interactive contents list"
+          :aria-label="localizedContent.skipToInteractiveList"
         >
-          Skip content
+          {{ localizedContent.skipContent }}
         </button>
       </div>
 
       <NuxtLink
-        :aria-label="`press to visit page for interactive contents ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
+        :aria-label="`${localizedContent.visitInteractivePage}${subjectTitle ? ` ${localizedContent.visitSubjectSuffix} ${subjectTitle}` : ''}`"
         v-else
         :to="
           subjectTitle
@@ -143,7 +188,7 @@ const tabCheck = (checkValue: tabs) => {
             class=""
           />
         </div>
-        {{ HomeTabs.interactive }}
+        {{ localizedContent.tabs.interactive }}
       </NuxtLink>
 
       <!-- Learning Activities -->
@@ -165,20 +210,20 @@ const tabCheck = (checkValue: tabs) => {
             <div class="flex items-center justify-center">
               <IconsActivity :size="20" />
             </div>
-            {{ HomeTabs.activity }}
+            {{ localizedContent.tabs.activity }}
           </button>
           <button
             v-if="activeTab === 'learn-activities'"
             class="sr-only"
             @click="moveFocus('main-container')"
-            aria-label="Press enter to jump to learner activities list"
+            :aria-label="localizedContent.skipToActivitiesList"
           >
-            Skip content
+            {{ localizedContent.skipContent }}
           </button>
         </div>
         <NuxtLink
           v-else
-          :aria-label="`press to visit page of learning activities (experiments) ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
+          :aria-label="`${localizedContent.visitActivitiesPage}${subjectTitle ? ` ${localizedContent.visitSubjectSuffix} ${subjectTitle}` : ''}`"
           :to="
             subjectTitle
               ? topicId
@@ -192,7 +237,7 @@ const tabCheck = (checkValue: tabs) => {
           <div class="flex items-center justify-center">
             <IconsActivity :size="20" />
           </div>
-          {{ HomeTabs.activity }}
+          {{ localizedContent.tabs.activity }}
         </NuxtLink>
 
         <!-- Conceptual Video -->
@@ -216,20 +261,20 @@ const tabCheck = (checkValue: tabs) => {
             <div class="flex items-center justify-center">
               <IconsConceptualVideo :size="20" />
             </div>
-            {{ HomeTabs.video }}
+            {{ localizedContent.tabs.video }}
           </button>
           <button
             v-if="activeTab === 'video'"
             class="sr-only"
             @click="moveFocus('main-container')"
-            aria-label="Press enter to jump videos list"
+            :aria-label="localizedContent.skipToVideosList"
           >
-            Skip content
+            {{ localizedContent.skipContent }}
           </button>
         </div>
         <NuxtLink
           v-else
-          :aria-label="`press to visit page of Video ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
+          :aria-label="`${localizedContent.visitVideoPage}${subjectTitle ? ` ${localizedContent.visitSubjectSuffix} ${subjectTitle}` : ''}`"
           :to="{
             path: subjectTitle
               ? topicId
@@ -251,7 +296,7 @@ const tabCheck = (checkValue: tabs) => {
           <div class="flex items-center justify-center">
             <IconsConceptualVideo :size="20" />
           </div>
-          {{ HomeTabs.video }}
+          {{ localizedContent.tabs.video }}
         </NuxtLink>
 
         <!-- Other Video -->
@@ -275,20 +320,20 @@ const tabCheck = (checkValue: tabs) => {
             <div class="flex items-center justify-center">
               <IconsOtherVideo :size="20" />
             </div>
-            {{ HomeTabs.classVideos }}
+            {{ localizedContent.tabs.classVideos }}
           </button>
           <button
             v-if="activeTab === 'class-videos'"
             class="sr-only"
             @click="moveFocus('main-container')"
-            aria-label="Press enter to jump to class videos list"
+            :aria-label="localizedContent.skipToClassVideosList"
           >
-            Skip content
+            {{ localizedContent.skipContent }}
           </button>
         </div>
         <NuxtLink
           v-else
-          :aria-label="`press to visit page of class video ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
+          :aria-label="`${localizedContent.visitClassVideoPage}${subjectTitle ? ` ${localizedContent.visitSubjectSuffix} ${subjectTitle}` : ''}`"
           :to="{
             path: subjectTitle
               ? topicId
@@ -310,7 +355,7 @@ const tabCheck = (checkValue: tabs) => {
           <div class="flex items-center justify-center">
             <IconsOtherVideo :size="20" />
           </div>
-          {{ HomeTabs.classVideos }}
+          {{ localizedContent.tabs.classVideos }}
         </NuxtLink>
 
         <!-- Audio -->
@@ -331,15 +376,15 @@ const tabCheck = (checkValue: tabs) => {
             <div class="flex items-center justify-center">
               <IconsAudio :size="20" />
             </div>
-            {{ HomeTabs.audio }}
+            {{ localizedContent.tabs.audio }}
           </button>
           <button
             v-if="activeTab === 'audio'"
             class="sr-only"
             @click="moveFocus('main-container')"
-            aria-label="Press enter to jump to audios list"
+            :aria-label="localizedContent.skipToAudiosList"
           >
-            Skip content
+            {{ localizedContent.skipContent }}
           </button>
         </div>
         <NuxtLink
@@ -351,14 +396,14 @@ const tabCheck = (checkValue: tabs) => {
                 : `/audio/${subjectTitle}`
               : `/audio`
           "
-          :aria-label="`press to visit page of audio ${subjectTitle ? `for subject ${subjectTitle}` : ''}`"
+          :aria-label="`${localizedContent.visitAudioPage}${subjectTitle ? ` ${localizedContent.visitSubjectSuffix} ${subjectTitle}` : ''}`"
           class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
           active-class="text-white !bg-deepBlue"
         >
           <div class="flex items-center justify-center">
             <IconsAudio :size="20" />
           </div>
-          {{ HomeTabs.audio }}
+          {{ localizedContent.tabs.audio }}
         </NuxtLink>
       </div>
     </div>
