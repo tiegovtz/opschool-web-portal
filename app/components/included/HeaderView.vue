@@ -103,7 +103,7 @@ onBeforeUnmount(() => {
         <!-- Media Screen -->
         <div
           class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container">
-          <NuxtLink aria-label="Go home" to="/home" class="flex gap-2 pl-2 pr-2 rounded-md"
+          <NuxtLink aria-label="Go home" to="/" class="flex gap-2 pl-2 pr-2 rounded-md"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
               <IconsHome :size="20" />
