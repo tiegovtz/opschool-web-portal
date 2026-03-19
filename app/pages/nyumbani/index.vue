@@ -429,6 +429,7 @@ const visibleAudios = computed(() => paginatedItems.value as Audios[]);
         :is-logged-in="true"
         :active-tab="contentTab"
         @emit-active-tab="switchTab($event)"
+        tab-group="primary"
       />
 
       <HomeInputsSelection
@@ -452,6 +453,43 @@ const visibleAudios = computed(() => paginatedItems.value as Audios[]);
           "
           class="space-y-8"
         >
+          <div
+            class="items-center justify-end hidden gap-2 md:flex"
+            role="group"
+            aria-label="Layout options"
+          >
+            <button
+              @click="layoutEffect = 'grid'"
+              :aria-pressed="layoutEffect === 'grid'"
+              aria-label="Grid layout"
+              :class="[
+                'cursor-pointer transition-all duration-500 ease-in-out',
+                layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+              ]"
+            >
+              <Icon
+                name="bxs:grid-alt"
+                size="1.5rem"
+                aria-hidden="true"
+              />
+            </button>
+            <button
+              @click="layoutEffect = 'list'"
+              :aria-pressed="layoutEffect === 'list'"
+              aria-label="List layout"
+              :class="[
+                'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
+                layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+              ]"
+            >
+              <Icon
+                name="fa-solid:list"
+                size="1.5rem"
+                aria-hidden="true"
+              />
+            </button>
+          </div>
+          
           <section
             v-for="group in groupedTopics"
             :key="group.dataOfKey"
