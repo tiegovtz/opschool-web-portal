@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MarkdownIt from "markdown-it";
 import messages from "~/utilities/messages";
 import { MessageComponent, ProfileDrawInitialLater } from "#components";
 import apiDocs from "~/utilities/apiDocs";
@@ -8,6 +9,7 @@ import type {
   PersonalizedRecommendationsResponse,
   RecommendationAction,
   SubjectLearningAnalysis,
+  TalkToDataResponse,
   TopicAssessmentStatus,
   TopicLearningAnalysis,
   TopicLearningStatus,
@@ -36,7 +38,7 @@ const tieOverlayPushed = useState<boolean>(
   () => false,
 );
 const { setDraft: setAiTeacherDraft } = useAiTeacherDraft();
-let uploadedPic;
+let uploadedPic: any;
 
 interface UserProfile {
   fname: string;
@@ -276,6 +278,22 @@ const recommendationOverview = computed(
 const subjectBreakdown = computed(
   () => personalizedRecommendations.value?.subjectBreakdown ?? [],
 );
+const talkToDataQuestion = ref("");
+const talkToDataAnswer = ref("");
+const talkToDataError = ref("");
+const talkToDataGeneratedAt = ref("");
+const talkToDataStatus = ref<Status>("idle");
+const talkToDataPrompts = [
+  "Which topics have I not covered yet?",
+  "Which subject is my weakest right now?",
+  "Show me the topics where I am failing.",
+  "What should I revise before the teacher reviews me?",
+];
+const talkToDataMarkdown = new MarkdownIt({
+  html: false,
+  breaks: true,
+  linkify: true,
+});
 
 const actionLabels: Record<RecommendationAction, string> = {
   start_topic: "Start topic",
@@ -383,6 +401,94 @@ const buildTopicAnalysisPrompt = (topic: TopicLearningAnalysis) => {
       : "";
 
   return `Help me study ${topic.topicName} in ${topic.subjectName}. My progress is ${topic.progressPercent}%.${scorePart} Show me what I have likely covered, what I have not yet covered, and give me a short plan with practice questions.`;
+};
+
+const renderTalkToDataAnswer = (value: string) => {
+  if (!value.trim()) return "";
+  return talkToDataMarkdown.render(value);
+};
+
+const formatGeneratedAt = (value: string) => {
+  if (!value) return "";
+
+  try {
+    return new Date(value).toLocaleString();
+  } catch {
+    return value;
+  }
+};
+
+const askTalkToData = async (presetQuestion?: string) => {
+  const resolvedQuestion = (presetQuestion ?? talkToDataQuestion.value).trim();
+  if (!resolvedQuestion) {
+    talkToDataStatus.value = "error";
+    talkToDataError.value = "Ask a question about your own learning data.";
+    return;
+  }
+
+  talkToDataQuestion.value = resolvedQuestion;
+  talkToDataStatus.value = "loading";
+  talkToDataError.value = "";
+
+  try {
+    const response = await $fetch<TalkToDataResponse>(
+      "/api/profile/talk-to-data",
+      {
+        method: "POST",
+        body: {
+          question: resolvedQuestion,
+        },
+      },
+    );
+
+    talkToDataAnswer.value = response.answer;
+    talkToDataGeneratedAt.value = response.generatedAt;
+    talkToDataStatus.value = "success";
+  } catch (error: any) {
+    talkToDataStatus.value = "error";
+    talkToDataError.value =
+      error?.data?.message ||
+      error?.message ||
+      "Failed to analyze your learning data right now.";
+  }
+};
+
+const getSubjectPriorityTopics = (subject: SubjectLearningAnalysis) => {
+  return [...subject.topics]
+    .sort((left, right) => {
+      const leftRisk =
+        (left.assessmentStatus === "failed" ? 40 : 0) +
+        (left.topicStatus === "not_started" ? 30 : 0) +
+        (left.topicStatus === "opened_only" ? 20 : 0) +
+        (left.topicStatus === "in_progress" ? 10 : 0) +
+        (100 - left.progressPercent);
+      const rightRisk =
+        (right.assessmentStatus === "failed" ? 40 : 0) +
+        (right.topicStatus === "not_started" ? 30 : 0) +
+        (right.topicStatus === "opened_only" ? 20 : 0) +
+        (right.topicStatus === "in_progress" ? 10 : 0) +
+        (100 - right.progressPercent);
+
+      return rightRisk - leftRisk;
+    })
+    .slice(0, 3)
+    .map((topic) => topic.topicName);
+};
+
+const getSubjectHealthLabel = (subject: SubjectLearningAnalysis) => {
+  if (subject.failedTopics > 0) return "Needs attention";
+  if (subject.notStartedTopics > 0) return "Has gaps";
+  if (subject.inProgressTopics + subject.openedTopics > 0) return "In progress";
+  return "Strong";
+};
+
+const getSubjectHealthClass = (subject: SubjectLearningAnalysis) => {
+  if (subject.failedTopics > 0) return "bg-rose-100 text-rose-800";
+  if (subject.notStartedTopics > 0) return "bg-amber-100 text-amber-800";
+  if (subject.inProgressTopics + subject.openedTopics > 0) {
+    return "bg-sky-100 text-sky-800";
+  }
+  return "bg-emerald-100 text-emerald-800";
 };
 
 const openAiTeacherWithPrompt = async (seedPrompt: string) => {
@@ -754,59 +860,99 @@ const discardChanges = () => {
     </div>
 
     <!-- Learning Statistics -->
-    <div class="w-full mx-auto my-4 overflow-hidden bg-white rounded-xl shadow-lg border border-slate-100">
+    <div
+      class="w-full mx-auto my-4 overflow-hidden bg-white rounded-xl shadow-lg border border-slate-100"
+    >
       <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
         <h3 class="text-lg font-semibold text-white">Learning Statistics</h3>
       </div>
-      <div class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5">
+      <div
+        class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5"
+      >
         <!-- Competences Opened -->
         <div class="profile-stat-card">
           <div class="profile-stat-icon bg-blue-100 text-deepBlue">
-            <Icon name="fa6-solid:book-open-reader" size="20" class="w-6 h-6" />
+            <Icon
+              name="fa6-solid:book-open-reader"
+              size="20"
+              class="w-6 h-6"
+            />
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Competences Opened</span>
-            <span class="profile-stat-value">{{ profileData?.totalTopicsOpened ?? 0 }}</span>
+            <span class="profile-stat-value">{{
+              profileData?.totalTopicsOpened ?? 0
+            }}</span>
           </div>
         </div>
         <!-- Subject Opened -->
         <div class="profile-stat-card">
           <div class="profile-stat-icon bg-green-100 text-emerald-700">
-            <Icon name="heroicons:folder-open-20-solid" size="20" class="w-6 h-6" />
+            <Icon
+              name="heroicons:folder-open-20-solid"
+              size="20"
+              class="w-6 h-6"
+            />
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Subject Opened</span>
-            <span class="profile-stat-value">{{ profileData?.openedSubjects ?? 0 }}</span>
+            <span class="profile-stat-value">{{
+              profileData?.openedSubjects ?? 0
+            }}</span>
           </div>
         </div>
         <!-- Time Spent -->
         <div class="profile-stat-card">
           <div class="profile-stat-icon bg-red-100 text-red-600">
-            <Icon name="stash:clock-solid" size="20" class="w-6 h-6" />
+            <Icon
+              name="stash:clock-solid"
+              size="20"
+              class="w-6 h-6"
+            />
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Time Spent</span>
-            <span class="profile-stat-value">{{ profileData?.timeSpentFormatted ?? '0h 0m' }}</span>
+            <span class="profile-stat-value">{{
+              profileData?.timeSpentFormatted ?? "0h 0m"
+            }}</span>
           </div>
         </div>
         <!-- Quiz Attempts -->
         <div class="profile-stat-card">
           <div class="profile-stat-icon bg-purple-100 text-purple-600">
-            <Icon name="solar:notebook-bold" size="20" class="w-6 h-6" />
+            <Icon
+              name="solar:notebook-bold"
+              size="20"
+              class="w-6 h-6"
+            />
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Quiz Attempts</span>
-            <span class="profile-stat-value">{{ profileData?.questionStats?.totalAttempted != null ? Number(profileData.questionStats.totalAttempted).toFixed(0) : '0' }}</span>
+            <span class="profile-stat-value">{{
+              profileData?.questionStats?.totalAttempted != null
+                ? Number(profileData.questionStats.totalAttempted).toFixed(0)
+                : "0"
+            }}</span>
           </div>
         </div>
         <!-- Average Quiz Score -->
         <div class="profile-stat-card">
           <div class="profile-stat-icon bg-indigo-100 text-indigo-600">
-            <Icon name="heroicons:chart-bar-16-solid" size="20" class="w-6 h-6" />
+            <Icon
+              name="heroicons:chart-bar-16-solid"
+              size="20"
+              class="w-6 h-6"
+            />
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Average Quiz Score</span>
-            <span class="profile-stat-value">{{ profileData?.questionStats?.averageScore != null ? Number(profileData.questionStats.averageScore).toFixed(1) : '—' }}%</span>
+            <span class="profile-stat-value"
+              >{{
+                profileData?.questionStats?.averageScore != null
+                  ? Number(profileData.questionStats.averageScore).toFixed(1)
+                  : "—"
+              }}%</span
+            >
           </div>
         </div>
       </div>
@@ -871,7 +1017,9 @@ const discardChanges = () => {
           class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
         >
           <div class="p-4 bg-white border rounded-3xl border-slate-200">
-            <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+            <p
+              class="text-xs font-semibold tracking-wide uppercase text-slate-500"
+            >
               Total Topics
             </p>
             <p class="mt-2 text-2xl font-semibold text-slate-900">
@@ -879,7 +1027,9 @@ const discardChanges = () => {
             </p>
           </div>
           <div class="p-4 bg-white border rounded-3xl border-emerald-200">
-            <p class="text-xs font-semibold tracking-wide uppercase text-emerald-700">
+            <p
+              class="text-xs font-semibold tracking-wide uppercase text-emerald-700"
+            >
               Covered
             </p>
             <p class="mt-2 text-2xl font-semibold text-emerald-900">
@@ -887,7 +1037,9 @@ const discardChanges = () => {
             </p>
           </div>
           <div class="p-4 bg-white border rounded-3xl border-sky-200">
-            <p class="text-xs font-semibold tracking-wide uppercase text-sky-700">
+            <p
+              class="text-xs font-semibold tracking-wide uppercase text-sky-700"
+            >
               In Progress
             </p>
             <p class="mt-2 text-2xl font-semibold text-sky-900">
@@ -898,7 +1050,9 @@ const discardChanges = () => {
             </p>
           </div>
           <div class="p-4 bg-white border rounded-3xl border-slate-200">
-            <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+            <p
+              class="text-xs font-semibold tracking-wide uppercase text-slate-500"
+            >
               Not Started
             </p>
             <p class="mt-2 text-2xl font-semibold text-slate-900">
@@ -906,15 +1060,17 @@ const discardChanges = () => {
             </p>
           </div>
           <div class="p-4 bg-white border rounded-3xl border-amber-200">
-            <p class="text-xs font-semibold tracking-wide uppercase text-amber-700">
+            <p
+              class="text-xs font-semibold tracking-wide uppercase text-amber-700"
+            >
               Quiz Status
             </p>
             <p class="mt-2 text-2xl font-semibold text-amber-900">
-              {{ recommendationOverview.passedTopics }}/{{ recommendationOverview.failedTopics }}
+              {{ recommendationOverview.passedTopics }}/{{
+                recommendationOverview.failedTopics
+              }}
             </p>
-            <p class="mt-1 text-xs text-slate-500">
-              Passed / Failed topics
-            </p>
+            <p class="mt-1 text-xs text-slate-500">Passed / Failed topics</p>
           </div>
         </div>
 
@@ -922,7 +1078,9 @@ const discardChanges = () => {
           v-if="recommendationOverview"
           class="p-5 bg-white border rounded-3xl border-slate-200 shadow-sm"
         >
-          <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div
+            class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between"
+          >
             <div>
               <h4 class="text-lg font-semibold text-slate-900">
                 Deep Learner Analysis
@@ -941,7 +1099,9 @@ const discardChanges = () => {
                 </p>
               </div>
               <div class="px-3 py-2 rounded-2xl bg-slate-50">
-                <p class="text-xs uppercase text-slate-500">Assessment average</p>
+                <p class="text-xs uppercase text-slate-500">
+                  Assessment average
+                </p>
                 <p class="text-sm font-semibold text-slate-900">
                   {{
                     recommendationOverview.averageAssessmentScore !== null
@@ -953,7 +1113,9 @@ const discardChanges = () => {
               <div class="px-3 py-2 rounded-2xl bg-slate-50">
                 <p class="text-xs uppercase text-slate-500">Subjects opened</p>
                 <p class="text-sm font-semibold text-slate-900">
-                  {{ recommendationOverview.subjectsOpened }}/{{ recommendationOverview.totalSubjects }}
+                  {{ recommendationOverview.subjectsOpened }}/{{
+                    recommendationOverview.totalSubjects
+                  }}
                 </p>
               </div>
               <div class="px-3 py-2 rounded-2xl bg-slate-50">
@@ -962,6 +1124,116 @@ const discardChanges = () => {
                   {{ recommendationOverview.totalAssessmentAttempts }}
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          class="p-5 bg-white border rounded-3xl border-slate-200 shadow-sm"
+        >
+          <div
+            class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between"
+          >
+            <div>
+              <h4 class="text-lg font-semibold text-slate-900">
+                Talk To Your Data
+              </h4>
+              <p class="mt-1 text-sm leading-6 text-slate-600">
+                Ask questions about your own learning record: covered topics,
+                weak areas, failed quizzes, unfinished work, and what to revise
+                next.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="prompt in talkToDataPrompts"
+                :key="prompt"
+                type="button"
+                class="px-3 py-2 text-xs font-medium transition-colors border rounded-full border-oceanBlue/15 bg-oceanBlue/5 text-oceanBlue hover:bg-oceanBlue/10"
+                @click="askTalkToData(prompt)"
+              >
+                {{ prompt }}
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-5 space-y-4">
+            <label
+              for="talk-to-data-input"
+              class="block text-sm font-medium text-slate-700"
+            >
+              Ask about your learning data
+            </label>
+            <textarea
+              id="talk-to-data-input"
+              v-model="talkToDataQuestion"
+              rows="4"
+              class="w-full px-4 py-3 text-sm transition-colors border rounded-2xl resize-y border-slate-200 bg-slate-50 focus:border-oceanBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/20"
+              placeholder="Example: Which topics have I not covered yet, and where am I failing?"
+            ></textarea>
+
+            <div
+              class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <p class="text-xs text-slate-500">
+                The answer is grounded in your profile progress, topic coverage,
+                and assessment data.
+              </p>
+
+              <button
+                type="button"
+                class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40 disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="talkToDataStatus === 'loading'"
+                @click="askTalkToData()"
+              >
+                <Icon
+                  name="heroicons:chart-bar-square"
+                  class="w-5 h-5"
+                />
+                <span>
+                  {{
+                    talkToDataStatus === "loading"
+                      ? "Analyzing..."
+                      : "Ask Your Data"
+                  }}
+                </span>
+              </button>
+            </div>
+
+            <div
+              v-if="talkToDataStatus === 'error'"
+              class="p-4 border rounded-2xl border-rose-200 bg-rose-50 text-rose-800"
+            >
+              <p class="text-sm font-medium">
+                {{ talkToDataError }}
+              </p>
+            </div>
+
+            <div
+              v-else-if="talkToDataStatus === 'success' && talkToDataAnswer"
+              class="p-5 border rounded-2xl border-sky-100 bg-sky-50/70"
+            >
+              <div
+                class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"
+              >
+                <p
+                  class="text-xs font-semibold tracking-wide uppercase text-oceanBlue"
+                >
+                  Answer From Your Learning Data
+                </p>
+                <p
+                  v-if="talkToDataGeneratedAt"
+                  class="text-xs text-slate-500"
+                >
+                  {{ formatGeneratedAt(talkToDataGeneratedAt) }}
+                </p>
+              </div>
+
+              <div
+                class="mt-3 prose prose-sm max-w-none text-slate-700 prose-p:my-2 prose-ul:my-2 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-2 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-strong:font-semibold prose-headings:text-slate-900"
+                v-html="renderTalkToDataAnswer(talkToDataAnswer)"
+              ></div>
             </div>
           </div>
         </section>
@@ -982,14 +1254,23 @@ const discardChanges = () => {
           <details
             v-for="subject in subjectBreakdown"
             :key="subject.subjectName"
-            open
-            class="overflow-hidden bg-white border rounded-3xl border-slate-200 shadow-sm"
+            class="overflow-hidden bg-white border rounded-3xl border-slate-200 shadow-sm group"
           >
-            <summary class="flex flex-col gap-4 p-5 cursor-pointer lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h5 class="text-base font-semibold text-slate-900">
-                  {{ subject.subjectName }}
-                </h5>
+            <summary
+              class="flex flex-col gap-4 p-5 list-none cursor-pointer lg:flex-row lg:items-start lg:justify-between"
+            >
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h5 class="text-base font-semibold text-slate-900">
+                    {{ subject.subjectName }}
+                  </h5>
+                  <span
+                    class="px-2.5 py-1 text-xs font-medium rounded-full"
+                    :class="getSubjectHealthClass(subject)"
+                  >
+                    {{ getSubjectHealthLabel(subject) }}
+                  </span>
+                </div>
                 <p class="mt-1 text-sm text-slate-500">
                   {{
                     [
@@ -1001,106 +1282,149 @@ const discardChanges = () => {
                       .join(" | ")
                   }}
                 </p>
+                <p class="mt-2 text-xs leading-5 text-slate-500">
+                  Priority topics:
+                  {{
+                    getSubjectPriorityTopics(subject).join(", ") ||
+                    "No urgent topic gaps"
+                  }}
+                </p>
               </div>
 
               <div class="w-full max-w-xl">
-                <div class="flex justify-between text-xs text-slate-500">
-                  <span>Coverage</span>
-                  <span>{{ buildSubjectCoverageWidth(subject) }}%</span>
-                </div>
-                <div class="h-2 mt-2 overflow-hidden rounded-full bg-slate-100">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex-1">
+                    <div class="flex justify-between text-xs text-slate-500">
+                      <span>Coverage</span>
+                      <span>{{ buildSubjectCoverageWidth(subject) }}%</span>
+                    </div>
+                    <div
+                      class="h-2 mt-2 overflow-hidden rounded-full bg-slate-100"
+                    >
+                      <div
+                        class="h-full transition-all duration-500 rounded-full bg-gradient-to-r from-oceanBlue to-deepBlue"
+                        :style="{
+                          width: `${buildSubjectCoverageWidth(subject)}%`,
+                        }"
+                      ></div>
+                    </div>
+                  </div>
                   <div
-                    class="h-full transition-all duration-500 rounded-full bg-gradient-to-r from-oceanBlue to-deepBlue"
-                    :style="{ width: `${buildSubjectCoverageWidth(subject)}%` }"
-                  ></div>
+                    class="flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 text-slate-500 transition-transform duration-300 group-open:rotate-180"
+                  >
+                    <Icon
+                      name="heroicons:chevron-down-20-solid"
+                      class="w-5 h-5"
+                    />
+                  </div>
                 </div>
-                <div class="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-600 sm:grid-cols-4">
-                  <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">
+                <div
+                  class="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-600 sm:grid-cols-4"
+                >
+                  <span
+                    class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700"
+                  >
                     Covered {{ subject.coveredTopics }}
                   </span>
                   <span class="px-2.5 py-1 rounded-full bg-sky-50 text-sky-700">
-                    In progress {{ subject.inProgressTopics + subject.openedTopics }}
+                    In progress
+                    {{ subject.inProgressTopics + subject.openedTopics }}
                   </span>
-                  <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+                  <span
+                    class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700"
+                  >
                     Not started {{ subject.notStartedTopics }}
                   </span>
-                  <span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">
+                  <span
+                    class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700"
+                  >
                     Quiz attempts {{ subject.assessmentAttempts }}
                   </span>
                 </div>
               </div>
             </summary>
 
-            <div class="px-5 pb-5 space-y-3 border-t border-slate-100 bg-slate-50/70">
-              <article
-                v-for="topic in subject.topics"
-                :key="topic.topicId"
-                class="flex flex-col gap-4 p-4 mt-4 bg-white border rounded-2xl border-slate-200 lg:flex-row lg:items-center lg:justify-between"
-              >
-                <div class="min-w-0">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <span
-                      class="px-2.5 py-1 text-xs font-medium rounded-full"
-                      :class="getTopicStatusClass(topic.topicStatus)"
+            <div class="px-5 pb-5 border-t border-slate-100 bg-slate-50/70">
+              <div class="py-3 text-xs text-slate-500">
+                Showing topic-level details for {{ subject.subjectName }}.
+              </div>
+              <div class="space-y-3 max-h-[32rem] overflow-y-auto pr-1">
+                <article
+                  v-for="topic in subject.topics"
+                  :key="topic.topicId"
+                  class="flex flex-col gap-4 p-4 bg-white border rounded-2xl border-slate-200 lg:flex-row lg:items-center lg:justify-between"
+                >
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span
+                        class="px-2.5 py-1 text-xs font-medium rounded-full"
+                        :class="getTopicStatusClass(topic.topicStatus)"
+                      >
+                        {{ formatTopicStatus(topic.topicStatus) }}
+                      </span>
+                      <span
+                        class="px-2.5 py-1 text-xs font-medium rounded-full"
+                        :class="
+                          getAssessmentStatusClass(topic.assessmentStatus)
+                        "
+                      >
+                        {{ formatAssessmentStatus(topic.assessmentStatus) }}
+                      </span>
+                    </div>
+
+                    <h6 class="mt-3 text-sm font-semibold text-slate-900">
+                      {{ topic.topicName }}
+                    </h6>
+
+                    <div
+                      class="flex flex-wrap gap-2 mt-3 text-xs text-slate-600"
                     >
-                      {{ formatTopicStatus(topic.topicStatus) }}
-                    </span>
-                    <span
-                      class="px-2.5 py-1 text-xs font-medium rounded-full"
-                      :class="getAssessmentStatusClass(topic.assessmentStatus)"
-                    >
-                      {{ formatAssessmentStatus(topic.assessmentStatus) }}
-                    </span>
+                      <span class="px-2.5 py-1 rounded-full bg-slate-100">
+                        Progress {{ topic.progressPercent }}%
+                      </span>
+                      <span class="px-2.5 py-1 rounded-full bg-slate-100">
+                        {{ formatTopicChapterProgress(topic) }}
+                      </span>
+                      <span class="px-2.5 py-1 rounded-full bg-slate-100">
+                        Attempts {{ topic.assessmentAttempts }}
+                      </span>
+                      <span
+                        v-if="topic.assessmentScore !== null"
+                        class="px-2.5 py-1 rounded-full bg-slate-100"
+                      >
+                        Quiz {{ topic.assessmentScore }}%
+                      </span>
+                    </div>
                   </div>
 
-                  <h6 class="mt-3 text-sm font-semibold text-slate-900">
-                    {{ topic.topicName }}
-                  </h6>
-
-                  <div class="flex flex-wrap gap-2 mt-3 text-xs text-slate-600">
-                    <span class="px-2.5 py-1 rounded-full bg-slate-100">
-                      Progress {{ topic.progressPercent }}%
-                    </span>
-                    <span class="px-2.5 py-1 rounded-full bg-slate-100">
-                      {{ formatTopicChapterProgress(topic) }}
-                    </span>
-                    <span class="px-2.5 py-1 rounded-full bg-slate-100">
-                      Attempts {{ topic.assessmentAttempts }}
-                    </span>
-                    <span
-                      v-if="topic.assessmentScore !== null"
-                      class="px-2.5 py-1 rounded-full bg-slate-100"
+                  <div class="flex flex-col gap-3 sm:flex-row">
+                    <NuxtLink
+                      :to="topic.revisitPath"
+                      class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors border rounded-xl border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5"
                     >
-                      Quiz {{ topic.assessmentScore }}%
-                    </span>
+                      <Icon
+                        name="heroicons:play-circle"
+                        class="w-5 h-5"
+                      />
+                      <span>Open Topic</span>
+                    </NuxtLink>
+
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
+                      @click="
+                        openAiTeacherWithPrompt(buildTopicAnalysisPrompt(topic))
+                      "
+                    >
+                      <Icon
+                        name="heroicons:sparkles"
+                        class="w-5 h-5"
+                      />
+                      <span>Analyze with AI</span>
+                    </button>
                   </div>
-                </div>
-
-                <div class="flex flex-col gap-3 sm:flex-row">
-                  <NuxtLink
-                    :to="topic.revisitPath"
-                    class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors border rounded-xl border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5"
-                  >
-                    <Icon
-                      name="heroicons:play-circle"
-                      class="w-5 h-5"
-                    />
-                    <span>Open Topic</span>
-                  </NuxtLink>
-
-                  <button
-                    type="button"
-                    class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
-                    @click="openAiTeacherWithPrompt(buildTopicAnalysisPrompt(topic))"
-                  >
-                    <Icon
-                      name="heroicons:sparkles"
-                      class="w-5 h-5"
-                    />
-                    <span>Analyze with AI</span>
-                  </button>
-                </div>
-              </article>
+                </article>
+              </div>
             </div>
           </details>
         </section>

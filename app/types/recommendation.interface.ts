@@ -91,3 +91,9 @@ export interface PersonalizedRecommendationsResponse {
   topicBreakdown: TopicLearningAnalysis[];
   recommendations: PersonalizedRecommendation[];
 }
+
+export interface TalkToDataResponse {
+  generatedAt: string;
+  question: string;
+  answer: string;
+}
