@@ -285,6 +285,9 @@ const inferAttachmentMediaType = (filename?: string, mediaType?: string) => {
   }
   if (lowerName.endsWith(".png")) return "image/png";
   if (lowerName.endsWith(".webp")) return "image/webp";
+  if (lowerName.endsWith(".txt")) return "text/plain";
+  if (lowerName.endsWith(".md")) return "text/markdown";
+  if (lowerName.endsWith(".json")) return "application/json";
 
   return normalizedMediaType || "application/octet-stream";
 };
@@ -407,14 +410,26 @@ const updateSessionTitleIfNeeded = async (
   }
 };
 
-const sanitizePartsForPersistence = (parts: any[] = []) =>
+const sanitizePartsForPersistence = (
+  parts: any[] = [],
+  options?: { includePreview?: boolean },
+) =>
   parts.map((part: any) => {
     if (part?.type === "file") {
+      const mediaType = inferAttachmentMediaType(part.filename, part.mediaType);
+      const previewUrl =
+        options?.includePreview &&
+        mediaType.startsWith("image/") &&
+        typeof part.url === "string"
+          ? part.url
+          : undefined;
+
       return {
         type: "data-attachment",
         data: {
           filename: part.filename || "Attachment",
-          mediaType: inferAttachmentMediaType(part.filename, part.mediaType),
+          mediaType,
+          ...(previewUrl ? { previewUrl } : {}),
         },
       };
     }
@@ -437,7 +452,7 @@ const replaceLiveAttachmentsInChat = () => {
     didChange = true;
     return {
       ...message,
-      parts: sanitizePartsForPersistence(message.parts),
+      parts: sanitizePartsForPersistence(message.parts, { includePreview: true }),
     };
   });
 

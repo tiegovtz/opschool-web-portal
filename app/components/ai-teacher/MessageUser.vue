@@ -14,11 +14,11 @@
           {{ part.text }}
         </div>
         <div
-          v-else-if="isImagePart(part) && part.url"
+          v-else-if="isImagePart(part) && imageSource(part)"
           class="mt-2"
         >
           <img
-            :src="part.url"
+            :src="imageSource(part)"
             :alt="part.filename || 'Uploaded image'"
             class="max-h-56 rounded-xl border border-white/20 object-cover"
           >
@@ -61,6 +61,9 @@ const inferMediaTypeFromFilename = (filename?: string) => {
   }
   if (lowerName.endsWith(".png")) return "image/png";
   if (lowerName.endsWith(".webp")) return "image/webp";
+  if (lowerName.endsWith(".txt")) return "text/plain";
+  if (lowerName.endsWith(".md")) return "text/markdown";
+  if (lowerName.endsWith(".json")) return "application/json";
 
   return "";
 };
@@ -73,6 +76,7 @@ const getAttachmentMeta = (part: any) => {
     return {
       filename: part.data?.filename,
       mediaType: inferredMediaType,
+      previewUrl: part.data?.previewUrl,
     };
   }
 
@@ -82,6 +86,7 @@ const getAttachmentMeta = (part: any) => {
   return {
     filename: part?.filename,
     mediaType: inferredMediaType,
+    previewUrl: part?.url,
   };
 };
 
@@ -91,6 +96,9 @@ const attachmentName = (part: any) =>
 const isImagePart = (part: any) =>
   getAttachmentMeta(part).mediaType?.startsWith("image/");
 
+const imageSource = (part: any) =>
+  getAttachmentMeta(part).previewUrl || "";
+
 const attachmentLabel = (part: any) => {
   const { mediaType } = getAttachmentMeta(part);
 
@@ -98,12 +106,19 @@ const attachmentLabel = (part: any) => {
   if (typeof mediaType === "string" && mediaType.startsWith("image/")) {
     return "Image attachment";
   }
+  if (
+    mediaType === "text/plain" ||
+    mediaType === "text/markdown" ||
+    mediaType === "application/json"
+  ) {
+    return "Text document";
+  }
 
   return "Attachment";
 };
 
 const attachmentIcon = (part: any) =>
-  getAttachmentMeta(part).mediaType === "application/pdf"
-    ? "heroicons:document-text"
-    : "heroicons:photo";
+  getAttachmentMeta(part).mediaType?.startsWith("image/")
+    ? "heroicons:photo"
+    : "heroicons:document-text";
 </script>

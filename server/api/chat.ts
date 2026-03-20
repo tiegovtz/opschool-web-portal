@@ -1,23 +1,23 @@
-import { createError, defineEventHandler, readBody, getCookie, setHeader } from "h3";
+import { defineEventHandler, readBody, getCookie, setHeader } from "h3";
 import {
   streamText,
-  convertToModelMessages,
   stepCountIs,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { studentTools, setAuthTokenForTools, runWithUsedFigureShortcodes } from "./utils/tools";
 import { buildDecision } from "../utils/aiDecision";
 import { getCurriculumLexicon } from "../utils/curriculumLexicon";
+import {
+  convertChatMessagesToModel,
+  extractAttachmentTextContent,
+  getDecisionText,
+  hasFileAttachments,
+  validateMessageAttachments,
+} from "./chat/attachments";
 
 type CoreMessage = {
   role: "user" | "assistant" | "system";
   content: string;
-};
-
-type FileValidationOptions = {
-  maxImageBytes: number;
-  maxPdfBytes: number;
-  maxFilesPerMessage: number;
 };
 
 // OpenAI client singleton
@@ -433,72 +433,6 @@ You have access to these tools. Use them APPROPRIATELY. You do NOT have access t
 - If searchTextbooks returns no results, answer from general knowledge and clearly label it as such (do not say "not available")
 `;
 
-function isUIMessageFormat(message: any): boolean {
-  return (
-    message &&
-    (Array.isArray(message.parts) ||
-      (message.id !== undefined && message.parts !== undefined))
-  );
-}
-
-function describeFilePart(part: any): string {
-  const filename =
-    typeof part?.filename === "string" && part.filename.trim()
-      ? part.filename.trim()
-      : "attachment";
-  const mediaType = getAttachmentMediaType(part);
-
-  if (mediaType === "application/pdf") {
-    return `PDF: ${filename}`;
-  }
-
-  if (mediaType.startsWith("image/")) {
-    return `Image: ${filename}`;
-  }
-
-  return `Attachment: ${filename}`;
-}
-
-function extractTextFromParts(parts: any[]): string {
-  if (!Array.isArray(parts) || parts.length === 0) {
-    return "";
-  }
-
-  const textContent = parts
-    .filter((part: any) => part?.type === "text" && typeof part?.text === "string")
-    .map((part: any) => part.text.trim())
-    .filter(Boolean)
-    .join("\n");
-
-  const attachmentLabels = parts
-    .filter((part: any) => part?.type === "file" || part?.type === "data-attachment")
-    .map((part: any) =>
-      part?.type === "data-attachment"
-        ? describeFilePart(part.data)
-        : describeFilePart(part),
-    );
-
-  if (textContent && attachmentLabels.length > 0) {
-    return `${textContent}\n\n${attachmentLabels.join("\n")}`;
-  }
-
-  if (textContent) return textContent;
-  if (attachmentLabels.length > 0) return attachmentLabels.join("\n");
-  return "";
-}
-
-function extractOnlyTextFromParts(parts: any[]): string {
-  if (!Array.isArray(parts) || parts.length === 0) {
-    return "";
-  }
-
-  return parts
-    .filter((part: any) => part?.type === "text" && typeof part?.text === "string")
-    .map((part: any) => part.text.trim())
-    .filter(Boolean)
-    .join("\n");
-}
-
 function convertMessagesToCore(messages: any[]): CoreMessage[] {
   if (!Array.isArray(messages) || messages.length === 0) {
     return [];
@@ -507,7 +441,7 @@ function convertMessagesToCore(messages: any[]): CoreMessage[] {
   return messages.map((msg: any) => {
     const role = msg.role || "user";
     const content = Array.isArray(msg.parts)
-      ? extractTextFromParts(msg.parts)
+      ? extractAttachmentTextContent(msg.parts)
       : msg.content || "";
     if (role === "user") return { role: "user", content };
     if (role === "assistant") return { role: "assistant", content };
@@ -516,232 +450,8 @@ function convertMessagesToCore(messages: any[]): CoreMessage[] {
   });
 }
 
-function inferMediaTypeFromFilename(filename?: string): string {
-  const lowerName = typeof filename === "string" ? filename.toLowerCase() : "";
-
-  if (lowerName.endsWith(".pdf")) return "application/pdf";
-  if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) {
-    return "image/jpeg";
-  }
-  if (lowerName.endsWith(".png")) return "image/png";
-  if (lowerName.endsWith(".webp")) return "image/webp";
-
-  return "";
-}
-
-function getDataUrlMetadata(value: string): { mediaType: string; isBase64: boolean } | null {
-  if (typeof value !== "string" || !value.startsWith("data:")) {
-    return null;
-  }
-
-  const commaIndex = value.indexOf(",");
-  if (commaIndex === -1) {
-    return null;
-  }
-
-  const metadataParts = value.slice(5, commaIndex).split(";");
-  return {
-    mediaType: metadataParts[0] || "application/octet-stream",
-    isBase64: metadataParts.includes("base64"),
-  };
-}
-
-function getAttachmentMediaType(part: any): string {
-  const declaredMediaType =
-    typeof part?.mediaType === "string" ? part.mediaType.trim().toLowerCase() : "";
-
-  if (declaredMediaType && declaredMediaType !== "application/octet-stream") {
-    return declaredMediaType;
-  }
-
-  const dataField = typeof part?.data === "string" ? part.data : undefined;
-  const urlField = typeof part?.url === "string" ? part.url : undefined;
-
-  for (const candidate of [dataField, urlField]) {
-    if (!candidate) continue;
-
-    const metadata = getDataUrlMetadata(candidate);
-    if (
-      metadata?.mediaType &&
-      metadata.mediaType !== "application/octet-stream"
-    ) {
-      return metadata.mediaType;
-    }
-  }
-
-  return inferMediaTypeFromFilename(part?.filename) || declaredMediaType;
-}
-
-function decodeDataUrl(dataUrl: string): {
-  mediaType: string;
-  data: Uint8Array;
-} | null {
-  const metadata = getDataUrlMetadata(dataUrl);
-  if (!metadata) {
-    return null;
-  }
-
-  const commaIndex = dataUrl.indexOf(",");
-  const payload = dataUrl.slice(commaIndex + 1);
-
-  try {
-    if (metadata.isBase64) {
-      const buffer = Buffer.from(payload, "base64");
-      return { mediaType: metadata.mediaType, data: new Uint8Array(buffer) };
-    }
-
-    const decodedText = decodeURIComponent(payload);
-    return {
-      mediaType: metadata.mediaType,
-      data: new TextEncoder().encode(decodedText),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function normalizeFilePartData(part: any) {
-  if (part?.type !== "file" || typeof part?.data !== "string") {
-    return part;
-  }
-
-  if (!part.data.startsWith("data:")) {
-    return part;
-  }
-
-  const decoded = decodeDataUrl(part.data);
-  if (!decoded) {
-    return part;
-  }
-
-  return {
-    ...part,
-    mediaType: getAttachmentMediaType(part) || decoded.mediaType,
-    data: decoded.data,
-  };
-}
-
-function normalizeModelMessages(messages: any[]): any[] {
-  return messages.map((message: any) => {
-    if (!Array.isArray(message?.content)) {
-      return message;
-    }
-
-    return {
-      ...message,
-      content: message.content.map((part: any) => normalizeFilePartData(part)),
-    };
-  });
-}
-
-async function convertMessagesToModel(messages: any[]): Promise<any[]> {
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return [];
-  }
-
-  if (messages.some(isUIMessageFormat)) {
-    try {
-      const modelMessages = await convertToModelMessages(messages as any);
-      return normalizeModelMessages(modelMessages);
-    } catch (error) {
-      console.warn("[TIE AI Teacher] Failed to convert UI messages, falling back to text-only messages:", error);
-    }
-  }
-
-  return convertMessagesToCore(messages);
-}
-
 function getLastUserMessage(messages: any[]): any | undefined {
   return [...messages].reverse().find((message: any) => message?.role === "user");
-}
-
-function messageHasFileAttachments(message: any): boolean {
-  return Array.isArray(message?.parts)
-    ? message.parts.some((part: any) => part?.type === "file")
-    : false;
-}
-
-function extractDecisionText(message: any): string {
-  if (!message) return "";
-
-  if (Array.isArray(message.parts)) {
-    const textOnly = extractOnlyTextFromParts(message.parts);
-    if (textOnly) return textOnly;
-  }
-
-  if (typeof message.content === "string") {
-    return message.content;
-  }
-
-  return "";
-}
-
-function estimateDataUrlBytes(url: string): number | null {
-  if (typeof url !== "string" || !url.startsWith("data:")) return null;
-
-  const commaIndex = url.indexOf(",");
-  if (commaIndex === -1) return null;
-
-  const metadata = url.slice(5, commaIndex);
-  const data = url.slice(commaIndex + 1);
-
-  if (metadata.includes(";base64")) {
-    const padding = data.endsWith("==") ? 2 : data.endsWith("=") ? 1 : 0;
-    return Math.max(0, Math.floor((data.length * 3) / 4) - padding);
-  }
-
-  try {
-    return decodeURIComponent(data).length;
-  } catch {
-    return null;
-  }
-}
-
-function validateMessageAttachments(
-  messages: any[],
-  options: FileValidationOptions,
-) {
-  for (const message of messages) {
-    if (!Array.isArray(message?.parts)) continue;
-
-    const fileParts = message.parts.filter((part: any) => part?.type === "file");
-    if (fileParts.length > options.maxFilesPerMessage) {
-      throw createError({
-        statusCode: 400,
-        message: `You can attach up to ${options.maxFilesPerMessage} files in a single message.`,
-      });
-    }
-
-    for (const part of fileParts) {
-      const mediaType = getAttachmentMediaType(part);
-      const isImage = mediaType.startsWith("image/");
-      const isPdf = mediaType === "application/pdf";
-
-      if (!isImage && !isPdf) {
-        throw createError({
-          statusCode: 400,
-          message: "Only PDF, JPG, PNG, and WEBP files are supported.",
-        });
-      }
-
-      const byteSize = estimateDataUrlBytes(part?.url || part?.data);
-      if (byteSize == null) continue;
-
-      if (isImage && byteSize > options.maxImageBytes) {
-        throw createError({
-          statusCode: 400,
-          message: "Each image must be 5MB or smaller.",
-        });
-      }
-
-      if (isPdf && byteSize > options.maxPdfBytes) {
-        throw createError({
-          statusCode: 400,
-          message: "Each PDF must be 10MB or smaller.",
-        });
-      }
-    }
-  }
 }
 
 function keepOnlyLastUserMessage<T extends { role?: string }>(messages: T[]): T[] {
@@ -858,6 +568,7 @@ export default defineEventHandler(async (event) => {
   validateMessageAttachments(messages, {
     maxImageBytes: 5 * 1024 * 1024,
     maxPdfBytes: 10 * 1024 * 1024,
+    maxTextDocumentBytes: 1 * 1024 * 1024,
     maxFilesPerMessage: 3,
   });
 
@@ -886,7 +597,7 @@ export default defineEventHandler(async (event) => {
   // #endregion
 
     let coreMessages = convertMessagesToCore(messages);
-    let modelMessages = await convertMessagesToModel(messages);
+    let modelMessages = await convertChatMessagesToModel(messages);
     
     if (!Array.isArray(coreMessages)) {
       throw new Error("Failed to convert messages to CoreMessage format");
@@ -895,8 +606,8 @@ export default defineEventHandler(async (event) => {
     const curriculumLexicon = await getCurriculumLexicon(authToken);
     const lastRawUserMessage = getLastUserMessage(messages);
     const lastUserMessage = [...coreMessages].reverse().find((msg) => msg.role === "user");
-    const lastUserDecisionText = extractDecisionText(lastRawUserMessage);
-    const lastUserHasAttachments = messageHasFileAttachments(lastRawUserMessage);
+    const lastUserDecisionText = getDecisionText(lastRawUserMessage);
+    const lastUserHasAttachments = hasFileAttachments(lastRawUserMessage);
 
     let decision = lastUserMessage
       ? buildDecision(lastUserDecisionText || lastUserMessage.content, {
