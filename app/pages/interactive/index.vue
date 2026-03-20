@@ -21,6 +21,7 @@ import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import type { tabs } from "~/types/types.data";
 import { layoutEffect } from "@/utilities/controlls";
 import InputsSelection from "~/components/home/InputsSelection.vue";
+import { nyumbaniTopics } from "~/data/nyumbani.mock";
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania Interactive Learning Platform",
@@ -80,10 +81,51 @@ const language = computed(() =>
   (query.lang as string) == "sw" ? "kiswahili" : "english",
 );
 
+const TOPIC_SUBJECT_ORDER = [
+  "physics",
+  "chemistry",
+  "mathematics",
+  "biology",
+  "geography",
+];
+
+const getPageSize = () => {
+  if (screenWidth.value >= 1280 || isGreaterToXL.value) return 12;
+  if (screenWidth.value >= 1024 || isGreaterToLG.value) return 9;
+  if (screenWidth.value >= 768 || isGreaterToMD.value) return 6;
+  return 4;
+};
+
+const normalizeTopicCollection = (items: any[] = []) =>
+  items.map((item) => ({
+    ...item,
+    level:
+      typeof item?.level === "string" ? { name: item.level } : item?.level,
+    subject:
+      typeof item?.subject === "string"
+        ? { name: item.subject }
+        : item?.subject,
+  }));
+
+const buildTopicGroups = (items: any[] = []) => {
+  const normalizedItems = normalizeTopicCollection(items);
+  const activeItems = removeDataFromArrayOfJson(
+    normalizedItems,
+    "isDeleted",
+    true,
+  );
+
+  return filterKeyDataFromArrayOfJson(
+    activeItems,
+    "subject.name",
+    TOPIC_SUBJECT_ORDER,
+  );
+};
+
 // Define Ref status
 const status = ref("pending"); // Initial Status State
-const topic = ref<any[]>(); // Initial Topics State
-const slicedData = ref(); // Initial slice data to 9
+const topic = ref<any[]>([]); // Initial Topics State
+const slicedData = ref<any[]>([]); // Initial slice data to 9
 
 // First, fix the sliceData function
 const sliceData = (start: number, end: number) => {
@@ -104,7 +146,7 @@ const sliceData = (start: number, end: number) => {
 
 // current page data
 const currentPage = ref(1);
-const pageSize = ref();
+const pageSize = ref(getPageSize());
 
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params?: any) => {
@@ -122,15 +164,12 @@ const fetchTopics = async (params?: any) => {
         }),
     );
 
-    // Call State Define above
-    topic.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
-    topic.value = filterKeyDataFromArrayOfJson(topic.value, "subject.name", [
-      "physics",
-      "chemistry",
-      "mathematics",
-      "biology",
-      "geography",
-    ]);
+    const resolvedTopics =
+      educationLevel.value === "primary"
+        ? nyumbaniTopics
+        : response.value ?? [];
+
+    topic.value = buildTopicGroups(resolvedTopics);
     status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
@@ -148,16 +187,6 @@ const fetchTopics = async (params?: any) => {
 fetchTopics({});
 
 //  assigning page size based on screen sizes
-if (isGreaterToXL) {
-  pageSize.value = 12; // 12 topic cards
-} else if (isGreaterToLG) {
-  pageSize.value = 9; // 9 topic cards
-} else if (isGreaterToMD) {
-  pageSize.value = 6; // 6 topic cards per page
-} else {
-  pageSize.value = 4; // 4 topics card per page
-}
-
 // total pages data
 const totalPages = computed(() => {
   if (topic.value && Array.isArray(topic.value)) {
@@ -170,17 +199,7 @@ const totalPages = computed(() => {
 watch(
   () => screenWidth.value,
   () => {
-    if (screenWidth.value >= 1280) {
-      pageSize.value = 12;
-    } else if (screenWidth.value >= 1024 && screenWidth.value < 1280) {
-      pageSize.value = 9;
-    } else if (screenWidth.value >= 768 && screenWidth.value < 1024) {
-      pageSize.value = 6;
-    } else if (screenWidth.value >= 640 && screenWidth.value < 768) {
-      pageSize.value = 4;
-    } else {
-      pageSize.value = 4;
-    }
+    pageSize.value = getPageSize();
 
     // slice data per page size
     sliceData(
@@ -384,7 +403,7 @@ watch(filters, (filters) => {
           <ClientOnly v-if="slicedData?.length > 0">
             <div class="flex flex-col w-full">
               <HomeCustomScrollView
-                :data="topic ?? []"
+                :data="slicedData"
                 active-tab="interactive-contents"
               />
 
