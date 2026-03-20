@@ -283,6 +283,7 @@ const talkToDataAnswer = ref("");
 const talkToDataError = ref("");
 const talkToDataGeneratedAt = ref("");
 const talkToDataStatus = ref<Status>("idle");
+const expandedSubjectTopics = ref<Record<string, boolean>>({});
 const talkToDataPrompts = [
   "Which topics have I not covered yet?",
   "Which subject is my weakest right now?",
@@ -453,26 +454,45 @@ const askTalkToData = async (presetQuestion?: string) => {
   }
 };
 
-const getSubjectPriorityTopics = (subject: SubjectLearningAnalysis) => {
-  return [...subject.topics]
-    .sort((left, right) => {
-      const leftRisk =
-        (left.assessmentStatus === "failed" ? 40 : 0) +
-        (left.topicStatus === "not_started" ? 30 : 0) +
-        (left.topicStatus === "opened_only" ? 20 : 0) +
-        (left.topicStatus === "in_progress" ? 10 : 0) +
-        (100 - left.progressPercent);
-      const rightRisk =
-        (right.assessmentStatus === "failed" ? 40 : 0) +
-        (right.topicStatus === "not_started" ? 30 : 0) +
-        (right.topicStatus === "opened_only" ? 20 : 0) +
-        (right.topicStatus === "in_progress" ? 10 : 0) +
-        (100 - right.progressPercent);
+const getTopicRiskScore = (topic: TopicLearningAnalysis) => {
+  return (
+    (topic.assessmentStatus === "failed" ? 40 : 0) +
+    (topic.topicStatus === "not_started" ? 30 : 0) +
+    (topic.topicStatus === "opened_only" ? 20 : 0) +
+    (topic.topicStatus === "in_progress" ? 10 : 0) +
+    (100 - topic.progressPercent)
+  );
+};
 
-      return rightRisk - leftRisk;
-    })
+const sortSubjectTopicsByRisk = (topics: TopicLearningAnalysis[]) => {
+  return [...topics].sort((left, right) => {
+    return getTopicRiskScore(right) - getTopicRiskScore(left);
+  });
+};
+
+const getSubjectPriorityTopics = (subject: SubjectLearningAnalysis) => {
+  return sortSubjectTopicsByRisk(subject.topics)
     .slice(0, 3)
     .map((topic) => topic.topicName);
+};
+
+const isSubjectTopicListExpanded = (subjectName: string) =>
+  Boolean(expandedSubjectTopics.value[subjectName]);
+
+const toggleSubjectTopicList = (subjectName: string) => {
+  expandedSubjectTopics.value = {
+    ...expandedSubjectTopics.value,
+    [subjectName]: !expandedSubjectTopics.value[subjectName],
+  };
+};
+
+const getSubjectTopicsForDisplay = (subject: SubjectLearningAnalysis) => {
+  const ordered = sortSubjectTopicsByRisk(subject.topics);
+  if (isSubjectTopicListExpanded(subject.subjectName) || ordered.length <= 5) {
+    return ordered;
+  }
+
+  return ordered.slice(0, 5);
 };
 
 const getSubjectHealthLabel = (subject: SubjectLearningAnalysis) => {
@@ -1345,15 +1365,45 @@ const discardChanges = () => {
             </summary>
 
             <div class="px-5 pb-5 border-t border-slate-100 bg-slate-50/70">
-              <div class="py-3 text-xs text-slate-500">
-                Showing topic-level details for {{ subject.subjectName }}.
+              <div class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-xs text-slate-500">
+                  Showing topic-level details for {{ subject.subjectName }}.
+                  {{
+                    subject.topics.length > 5
+                      ? `By default, only the 5 highest-risk topics are shown first.`
+                      : ""
+                  }}
+                </p>
+
+                <button
+                  v-if="subject.topics.length > 5"
+                  type="button"
+                  class="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold transition-colors border rounded-full border-slate-200 bg-white text-slate-700 hover:border-oceanBlue/20 hover:text-oceanBlue"
+                  @click.stop="toggleSubjectTopicList(subject.subjectName)"
+                >
+                  <Icon
+                    :name="
+                      isSubjectTopicListExpanded(subject.subjectName)
+                        ? 'heroicons:minus-small'
+                        : 'heroicons:plus-small'
+                    "
+                    class="w-4 h-4"
+                  />
+                  <span>
+                    {{
+                      isSubjectTopicListExpanded(subject.subjectName)
+                        ? "Show top 5 only"
+                        : `Show all ${subject.topics.length} topics`
+                    }}
+                  </span>
+                </button>
               </div>
               <div class="space-y-3 max-h-[32rem] overflow-y-auto pr-1">
-                <article
-                  v-for="topic in subject.topics"
-                  :key="topic.topicId"
-                  class="flex flex-col gap-4 p-4 bg-white border rounded-2xl border-slate-200 lg:flex-row lg:items-center lg:justify-between"
-                >
+              <article
+                v-for="topic in getSubjectTopicsForDisplay(subject)"
+                :key="topic.topicId"
+                class="flex flex-col gap-4 p-4 bg-white border rounded-2xl border-slate-200 lg:flex-row lg:items-center lg:justify-between"
+              >
                   <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2">
                       <span
