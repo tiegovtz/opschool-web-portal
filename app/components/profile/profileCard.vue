@@ -7,6 +7,10 @@ import type {
   PersonalizedRecommendation,
   PersonalizedRecommendationsResponse,
   RecommendationAction,
+  SubjectLearningAnalysis,
+  TopicAssessmentStatus,
+  TopicLearningAnalysis,
+  TopicLearningStatus,
 } from "~/types/recommendation.interface";
 import { FetchError } from "ofetch";
 
@@ -266,24 +270,46 @@ const {
 const recommendationCards = computed(
   () => personalizedRecommendations.value?.recommendations ?? [],
 );
+const recommendationOverview = computed(
+  () => personalizedRecommendations.value?.overview ?? null,
+);
+const subjectBreakdown = computed(
+  () => personalizedRecommendations.value?.subjectBreakdown ?? [],
+);
 
 const actionLabels: Record<RecommendationAction, string> = {
+  start_topic: "Start topic",
   rewatch_video: "Rewatch video",
   review_notes: "Review notes",
   practice_quiz: "Practice quiz",
 };
 
 const actionHelperLabels: Record<RecommendationAction, string> = {
+  start_topic: "Start topic",
   rewatch_video: "Revisit lesson",
   review_notes: "Open topic notes",
   practice_quiz: "Review then practice",
 };
 
 const reasonLabels: Record<string, string> = {
+  not_started: "Not started",
   low_progress: "Low progress",
   low_assessment: "Low assessment",
   started_not_finished: "Started, not finished",
   needs_practice: "Needs practice",
+};
+
+const topicStatusLabels: Record<TopicLearningStatus, string> = {
+  covered: "Covered",
+  in_progress: "In progress",
+  opened_only: "Opened only",
+  not_started: "Not started",
+};
+
+const assessmentStatusLabels: Record<TopicAssessmentStatus, string> = {
+  passed: "Passed",
+  failed: "Failed",
+  not_attempted: "Not attempted",
 };
 
 const formatRecommendationAction = (action: RecommendationAction) =>
@@ -295,6 +321,12 @@ const formatRecommendationActionHelper = (action: RecommendationAction) =>
 const formatReasonCode = (reasonCode: string) =>
   reasonLabels[reasonCode] ?? reasonCode.replaceAll("_", " ");
 
+const formatTopicStatus = (status: TopicLearningStatus) =>
+  topicStatusLabels[status] ?? status.replaceAll("_", " ");
+
+const formatAssessmentStatus = (status: TopicAssessmentStatus) =>
+  assessmentStatusLabels[status] ?? status.replaceAll("_", " ");
+
 const buildRecommendationMeta = (
   recommendation: PersonalizedRecommendation,
 ) => {
@@ -303,6 +335,54 @@ const buildRecommendationMeta = (
     meta.push(recommendation.levelName);
   }
   return meta.join(" | ");
+};
+
+const getTopicStatusClass = (status: TopicLearningStatus) => {
+  if (status === "covered") {
+    return "bg-emerald-100 text-emerald-800";
+  }
+  if (status === "in_progress") {
+    return "bg-sky-100 text-sky-800";
+  }
+  if (status === "opened_only") {
+    return "bg-amber-100 text-amber-800";
+  }
+  return "bg-slate-100 text-slate-700";
+};
+
+const getAssessmentStatusClass = (status: TopicAssessmentStatus) => {
+  if (status === "passed") {
+    return "bg-emerald-100 text-emerald-800";
+  }
+  if (status === "failed") {
+    return "bg-rose-100 text-rose-800";
+  }
+  return "bg-slate-100 text-slate-700";
+};
+
+const buildSubjectCoverageWidth = (subject: SubjectLearningAnalysis) => {
+  if (!subject.totalTopics) return 0;
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round((subject.coveredTopics / subject.totalTopics) * 100),
+    ),
+  );
+};
+
+const formatTopicChapterProgress = (topic: TopicLearningAnalysis) => {
+  if (!topic.totalChapters) return "No chapter data";
+  return `${topic.completedChapters}/${topic.totalChapters} chapters`;
+};
+
+const buildTopicAnalysisPrompt = (topic: TopicLearningAnalysis) => {
+  const scorePart =
+    topic.assessmentScore !== null
+      ? ` My latest quiz score is ${topic.assessmentScore}%.`
+      : "";
+
+  return `Help me study ${topic.topicName} in ${topic.subjectName}. My progress is ${topic.progressPercent}%.${scorePart} Show me what I have likely covered, what I have not yet covered, and give me a short plan with practice questions.`;
 };
 
 const openAiTeacherWithPrompt = async (seedPrompt: string) => {
@@ -759,7 +839,7 @@ const discardChanges = () => {
       </div>
 
       <div
-        v-else-if="recommendationCards.length === 0"
+        v-else-if="!recommendationOverview && recommendationCards.length === 0"
         class="p-6 bg-[#f8fbfd]"
       >
         <div class="p-5 border border-emerald-100 rounded-3xl bg-emerald-50/80">
@@ -783,6 +863,258 @@ const discardChanges = () => {
         <div class="p-5 border border-sky-100 rounded-3xl bg-white shadow-sm">
           <p class="text-sm leading-6 text-slate-700">
             {{ personalizedRecommendations?.summary }}
+          </p>
+        </div>
+
+        <div
+          v-if="recommendationOverview"
+          class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+        >
+          <div class="p-4 bg-white border rounded-3xl border-slate-200">
+            <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+              Total Topics
+            </p>
+            <p class="mt-2 text-2xl font-semibold text-slate-900">
+              {{ recommendationOverview.totalTopics }}
+            </p>
+          </div>
+          <div class="p-4 bg-white border rounded-3xl border-emerald-200">
+            <p class="text-xs font-semibold tracking-wide uppercase text-emerald-700">
+              Covered
+            </p>
+            <p class="mt-2 text-2xl font-semibold text-emerald-900">
+              {{ recommendationOverview.coveredTopics }}
+            </p>
+          </div>
+          <div class="p-4 bg-white border rounded-3xl border-sky-200">
+            <p class="text-xs font-semibold tracking-wide uppercase text-sky-700">
+              In Progress
+            </p>
+            <p class="mt-2 text-2xl font-semibold text-sky-900">
+              {{
+                recommendationOverview.inProgressTopics +
+                recommendationOverview.openedTopics
+              }}
+            </p>
+          </div>
+          <div class="p-4 bg-white border rounded-3xl border-slate-200">
+            <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+              Not Started
+            </p>
+            <p class="mt-2 text-2xl font-semibold text-slate-900">
+              {{ recommendationOverview.notStartedTopics }}
+            </p>
+          </div>
+          <div class="p-4 bg-white border rounded-3xl border-amber-200">
+            <p class="text-xs font-semibold tracking-wide uppercase text-amber-700">
+              Quiz Status
+            </p>
+            <p class="mt-2 text-2xl font-semibold text-amber-900">
+              {{ recommendationOverview.passedTopics }}/{{ recommendationOverview.failedTopics }}
+            </p>
+            <p class="mt-1 text-xs text-slate-500">
+              Passed / Failed topics
+            </p>
+          </div>
+        </div>
+
+        <section
+          v-if="recommendationOverview"
+          class="p-5 bg-white border rounded-3xl border-slate-200 shadow-sm"
+        >
+          <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h4 class="text-lg font-semibold text-slate-900">
+                Deep Learner Analysis
+              </h4>
+              <p class="mt-1 text-sm leading-6 text-slate-600">
+                Full syllabus view for the student level: covered topics,
+                untouched topics, started work, and assessment outcomes.
+              </p>
+            </div>
+
+            <div class="grid gap-2 sm:grid-cols-2">
+              <div class="px-3 py-2 rounded-2xl bg-slate-50">
+                <p class="text-xs uppercase text-slate-500">Average progress</p>
+                <p class="text-sm font-semibold text-slate-900">
+                  {{ recommendationOverview.averageProgress }}%
+                </p>
+              </div>
+              <div class="px-3 py-2 rounded-2xl bg-slate-50">
+                <p class="text-xs uppercase text-slate-500">Assessment average</p>
+                <p class="text-sm font-semibold text-slate-900">
+                  {{
+                    recommendationOverview.averageAssessmentScore !== null
+                      ? `${recommendationOverview.averageAssessmentScore}%`
+                      : "No quiz data"
+                  }}
+                </p>
+              </div>
+              <div class="px-3 py-2 rounded-2xl bg-slate-50">
+                <p class="text-xs uppercase text-slate-500">Subjects opened</p>
+                <p class="text-sm font-semibold text-slate-900">
+                  {{ recommendationOverview.subjectsOpened }}/{{ recommendationOverview.totalSubjects }}
+                </p>
+              </div>
+              <div class="px-3 py-2 rounded-2xl bg-slate-50">
+                <p class="text-xs uppercase text-slate-500">Quiz attempts</p>
+                <p class="text-sm font-semibold text-slate-900">
+                  {{ recommendationOverview.totalAssessmentAttempts }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          v-if="subjectBreakdown.length > 0"
+          class="space-y-4"
+        >
+          <div class="flex items-center justify-between">
+            <h4 class="text-lg font-semibold text-slate-900">
+              Subject Breakdown
+            </h4>
+            <p class="text-sm text-slate-500">
+              Coverage and performance by subject
+            </p>
+          </div>
+
+          <details
+            v-for="subject in subjectBreakdown"
+            :key="subject.subjectName"
+            open
+            class="overflow-hidden bg-white border rounded-3xl border-slate-200 shadow-sm"
+          >
+            <summary class="flex flex-col gap-4 p-5 cursor-pointer lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h5 class="text-base font-semibold text-slate-900">
+                  {{ subject.subjectName }}
+                </h5>
+                <p class="mt-1 text-sm text-slate-500">
+                  {{
+                    [
+                      subject.levelName,
+                      `${subject.coveredTopics}/${subject.totalTopics} covered`,
+                      `${subject.failedTopics} failed`,
+                    ]
+                      .filter(Boolean)
+                      .join(" | ")
+                  }}
+                </p>
+              </div>
+
+              <div class="w-full max-w-xl">
+                <div class="flex justify-between text-xs text-slate-500">
+                  <span>Coverage</span>
+                  <span>{{ buildSubjectCoverageWidth(subject) }}%</span>
+                </div>
+                <div class="h-2 mt-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    class="h-full transition-all duration-500 rounded-full bg-gradient-to-r from-oceanBlue to-deepBlue"
+                    :style="{ width: `${buildSubjectCoverageWidth(subject)}%` }"
+                  ></div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-600 sm:grid-cols-4">
+                  <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">
+                    Covered {{ subject.coveredTopics }}
+                  </span>
+                  <span class="px-2.5 py-1 rounded-full bg-sky-50 text-sky-700">
+                    In progress {{ subject.inProgressTopics + subject.openedTopics }}
+                  </span>
+                  <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
+                    Not started {{ subject.notStartedTopics }}
+                  </span>
+                  <span class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700">
+                    Quiz attempts {{ subject.assessmentAttempts }}
+                  </span>
+                </div>
+              </div>
+            </summary>
+
+            <div class="px-5 pb-5 space-y-3 border-t border-slate-100 bg-slate-50/70">
+              <article
+                v-for="topic in subject.topics"
+                :key="topic.topicId"
+                class="flex flex-col gap-4 p-4 mt-4 bg-white border rounded-2xl border-slate-200 lg:flex-row lg:items-center lg:justify-between"
+              >
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span
+                      class="px-2.5 py-1 text-xs font-medium rounded-full"
+                      :class="getTopicStatusClass(topic.topicStatus)"
+                    >
+                      {{ formatTopicStatus(topic.topicStatus) }}
+                    </span>
+                    <span
+                      class="px-2.5 py-1 text-xs font-medium rounded-full"
+                      :class="getAssessmentStatusClass(topic.assessmentStatus)"
+                    >
+                      {{ formatAssessmentStatus(topic.assessmentStatus) }}
+                    </span>
+                  </div>
+
+                  <h6 class="mt-3 text-sm font-semibold text-slate-900">
+                    {{ topic.topicName }}
+                  </h6>
+
+                  <div class="flex flex-wrap gap-2 mt-3 text-xs text-slate-600">
+                    <span class="px-2.5 py-1 rounded-full bg-slate-100">
+                      Progress {{ topic.progressPercent }}%
+                    </span>
+                    <span class="px-2.5 py-1 rounded-full bg-slate-100">
+                      {{ formatTopicChapterProgress(topic) }}
+                    </span>
+                    <span class="px-2.5 py-1 rounded-full bg-slate-100">
+                      Attempts {{ topic.assessmentAttempts }}
+                    </span>
+                    <span
+                      v-if="topic.assessmentScore !== null"
+                      class="px-2.5 py-1 rounded-full bg-slate-100"
+                    >
+                      Quiz {{ topic.assessmentScore }}%
+                    </span>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-3 sm:flex-row">
+                  <NuxtLink
+                    :to="topic.revisitPath"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors border rounded-xl border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5"
+                  >
+                    <Icon
+                      name="heroicons:play-circle"
+                      class="w-5 h-5"
+                    />
+                    <span>Open Topic</span>
+                  </NuxtLink>
+
+                  <button
+                    type="button"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
+                    @click="openAiTeacherWithPrompt(buildTopicAnalysisPrompt(topic))"
+                  >
+                    <Icon
+                      name="heroicons:sparkles"
+                      class="w-5 h-5"
+                    />
+                    <span>Analyze with AI</span>
+                  </button>
+                </div>
+              </article>
+            </div>
+          </details>
+        </section>
+
+        <div
+          v-if="recommendationCards.length === 0"
+          class="p-5 border border-emerald-100 rounded-3xl bg-emerald-50/80"
+        >
+          <p class="font-medium text-emerald-900">
+            No urgent revision topics were found right now.
+          </p>
+          <p class="mt-2 text-sm text-emerald-800">
+            Use the breakdown above to keep reviewing untouched or partially
+            completed topics before the teacher checks your progress.
           </p>
         </div>
 
