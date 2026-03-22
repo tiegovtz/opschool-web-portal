@@ -89,6 +89,7 @@ const apiDocs = {
   primary: {
     getGradesByLevel: `${primaryBaseURL}/smartbook/grade/list-by-level`,
     getSubjectsByGrade: `${primaryBaseURL}/smartbook/subject/list-by-grade`,
+     getTopicsByGradeSubject:`${primaryBaseURL}/smartbook/topic/list-by-grade-subject`,
   },
 
   // SYLLABUS API (rich syllabus by subject + level; query params: subject, level, educationLevel as IDs)

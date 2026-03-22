@@ -2,13 +2,16 @@
 import type { SwiperContainer } from 'swiper/element'
 import type { LanguageSupport } from '~/types/language.interface';
 
+type ilipo = 'nyumbani'|'home'|'landing'
 const props = withDefaults(
-  defineProps<{ educationLevel?: string, language?: LanguageSupport }>(), {
+  defineProps<{ educationLevel?: string, language?: LanguageSupport,mahalIlipo?:ilipo }>(), {
   language: 'english',
+  mahalIlipo:'home',
 })
 
 const containerRef = ref<SwiperContainer | null>(null)
-const slides = props.language == 'english' ? [
+const slides = computed(()=>{
+  if(props.mahalIlipo ==='home') return [
   {
     image: "/images/1.TIE-Interactive.webp",
     alt: "A student demonstrates work on a desktop computer to a former prime minister Kassimu Majaliwa in a school computer lab, while other officials and students watch from rows of computers in the background.",
@@ -41,7 +44,9 @@ const slides = props.language == 'english' ? [
     image: "/images/10.TIE-Interactive.webp",
     alt: "Minister of Education Adolf Mkenda, the Director General of the Tanzania Institute of Education Anneth Komba, a former prime minister kassim majaliwa, and other officials stand on a stage holding a large ‘Kitabu kimoja mwanafunzi mmoja campaign display during the launch event celebrating 50 years of the Tanzania Institute of Education.",
   },
-] : [
+]
+  
+   if(props.mahalIlipo ==='nyumbani') return [
   {
     image: "/images/primary-01.png",
     alt: "",
@@ -52,11 +57,34 @@ const slides = props.language == 'english' ? [
   },
 ]
 
+  if(props.mahalIlipo ==='landing') return [
+  {
+    image: "/images/primary-01.png",
+    alt: "",
+  },
+  {
+    image: "/images/primary-02.png",
+    alt: "",
+  },
+  {
+    image: "/images/kids.png",
+    alt: "",
+  },
+    {
+    image: "/images/science-lab.png",
+    alt: "",
+  }
+]
+
+return []
+})
+
 const swiper = useSwiper(containerRef, {
   effect: 'creative',
   loop: true,
   navigation: true,
   grabCursor: true,
+  pagination:true,
   autoplay: {
     delay: 5000,
   },

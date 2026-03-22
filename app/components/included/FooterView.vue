@@ -1,15 +1,21 @@
 <script setup lang="ts">
 import type { LanguageSupport } from '~/types/language.interface';
-import { screenWidth } from '~/utilities/controlls';    
+import { screenWidth } from '~/utilities/controlls'; 
+
+type Appearance = 'normal' | 'rounded-glass'
 withDefaults(
-  defineProps<{educationLevel?:string,language?:LanguageSupport}>(),{
+  defineProps<{educationLevel?:string,language?:LanguageSupport,
+    appearance?:Appearance
+  }>(),{
     language:'english',
+    appearance:'normal'
 })
 </script>
 
 <template>
   <!-- Footer -->
-  <footer class="text-white bg-oceanBlue transition-all duration-700 ease-in-out">
+  <footer class="text-white transition-all duration-700 ease-in-out overflow-hidden" 
+  :class="[appearance === 'rounded-glass' ? 'rounded-3xl border border-white/20 backdrop-filter bg-[linear-gradient(135deg,rgba(6,42,73,0.2)_0%,rgba(12,74,122,0.16)_42%,rgba(255,255,255,0.08)_100%)] shadow-[0px_22px_48px_rgba(7,42,74,0.2)] backdrop-blur-xl' :' bg-oceanBlue']">
    <div class="p-4">
     <div class="flex flex-col items-center justify-between gap-2 xl:flex-row wrapper-container">
       <div class="flex flex-col items-start gap-1 text-center">
@@ -37,7 +43,7 @@ withDefaults(
         </a>
       </div>
 
-      <div class="flex items-center gap-4">
+      <div v-if="appearance=='normal'" class="flex items-center gap-4">
         <!-- <ul class="items-center hidden gap-6 lg:flex">
           <li>
             <NuxtLink to="/contact" class="text-white uppercase">contact</NuxtLink>
@@ -55,7 +61,7 @@ withDefaults(
       </div>
     </div>
    </div>
-   <div class="p-2 bg-deepBlue">
+   <div v-if="appearance=='normal'" class="p-2 bg-deepBlue">
     <p class="text-center">
       {{ language=='english' ?`All Rights Reserved`:`Haki zote zimehifadhiwa` }}
        &copy; {{ new Date().getFullYear() }} <span v-if="screenWidth >= 640"> {{ language=='english' ?`Tanzania institute of education (TIE)`:`Taasisi ya Elimu Tanzania (TET)` }}</span>
