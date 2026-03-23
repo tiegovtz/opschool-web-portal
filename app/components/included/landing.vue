@@ -37,7 +37,7 @@ designed for secondary school students.`, path: '/home',
 const stats = [
     {
         value: "2,400+",
-        label: "Mada za kujifunzia",
+        label: "Mada za kujifunza",
         detail: "Msingi na sekondari",
         icon: "library",
         accent: "blue",
