@@ -34,6 +34,7 @@ const showLogoutConfirm = ref(false);
 const showLogoutToast = ref(false);
 const logoutToastTimeout = ref<null|any>(null);
 const logoutAlert = ref<HTMLElement|null>(null);
+const isAccountMenuOpen = ref(false);
 
 const logout = () => {
   if (shouldRememberCurrentRoute()) {
@@ -46,7 +47,7 @@ const logout = () => {
 
   layoutEffect.value = "grid";
   window.location.assign("/");
-  dropDown();
+  closeAccountMenu();
 
   // Screen reader announcement
   if (logoutAlert.value) {
@@ -67,11 +68,6 @@ const logout = () => {
   }, 4000);
 };
 
-const openLogoutConfirm = (event:KeyboardEvent|Event) => {
-  if (event?.type === "keyup" && !["Enter", " "].includes((event as KeyboardEvent).key)) return;
-  showLogoutConfirm.value = true;
-};
-
 const onLogoutConfirm = () => {
   showLogoutConfirm.value = false;
   logout();
@@ -81,11 +77,25 @@ const onLogoutCancel = () => {
   showLogoutConfirm.value = false;
 };
 
-const isPop = ref(true);
-
-const dropDown = () => {
-  isPop.value = !isPop.value;
+const toggleAccountMenu = () => {
+  isAccountMenuOpen.value = !isAccountMenuOpen.value;
 };
+
+const closeAccountMenu = () => {
+  isAccountMenuOpen.value = false;
+};
+
+const openLogoutConfirmFromMenu = () => {
+  closeAccountMenu();
+  showLogoutConfirm.value = true;
+};
+
+watch(
+  () => route.fullPath,
+  () => {
+    closeAccountMenu();
+  },
+);
 
 onBeforeUnmount(() => {
   if (logoutToastTimeout.value) clearTimeout(logoutToastTimeout.value);
@@ -140,39 +150,23 @@ onBeforeUnmount(() => {
             </NuxtLink>
           </div>
 
-          <!-- Profile and Sign Up -->
-          <div class="subInfo">
-            <div class="flex items-center gap-4 px-2 py-1" v-if="userToken">
-
-              <!-- Profile -->
-              <NuxtLink aria-label="Go to profile page" to="/profile">
-                <div class="flex items-center justify-center overflow-hidden">
-                  <div class="flex items-center gap-1 cursor-pointer">
-                    <div v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''" class="w-8 h-8">
-                      <img :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic" alt="User Profile"
-                        class="object-cover w-full h-full rounded-full" />
-                    </div>
-                    <IconsProfileCircle v-else :size="24" />
-                    <p class="capitalize text-medium line-clamp-1 max-w-60">
-                       {{ language==='english' ? `Hello,` :`Habari,`}}
-                      {{ String(userToken.name).split(" ")[0] }}
-                    </p>
-                  </div>
-                </div>
-              </NuxtLink>
-
-              <!-- Logout -->
-              <button aria-label="Log out"
-                class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
-                @click="openLogoutConfirm" @keyup="openLogoutConfirm">
-                <span class="capitalize"> 
-                   {{ language==='english' ? `Logout` :`Ondoka`}} 
-                </span>
-                <IconsLogout :size="20" title="Sign out" />
-              </button>
+          <NuxtLink
+            v-if="userToken"
+            aria-label="Go to learning statistics page"
+            to="/profile/learning-statistics"
+            class="flex items-center gap-2 px-3 py-2 text-center text-white transition-colors rounded-md cursor-pointer text-medium hover:bg-deepBlue"
+            active-class="text-white !bg-deepBlue"
+          >
+            <div class="flex items-center justify-center">
+              <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
             </div>
+            <p class="hidden capitalize lg:flex">
+              {{ language==='english' ? `Learning statistics` :`Takwimu za ujifunzaji`}}
+            </p>
+          </NuxtLink>
 
-            <div class="flex items-center gap-4 p-2" v-else>
+          <div class="subInfo">
+            <div class="flex items-center gap-4 p-2" v-if="!userToken">
               <!-- sign in -->
               <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
@@ -190,6 +184,62 @@ onBeforeUnmount(() => {
                    {{ language==='english' ? `Create Account` :`Jisajili`}}
                   </p>
               </NuxtLink>
+            </div>
+
+            <div v-else class="relative px-2 py-1">
+              <button
+                aria-label="Open account menu"
+                class="flex items-center gap-2 px-3 py-2 text-white transition-colors rounded-full cursor-pointer hover:bg-deepBlue/70"
+                @click="toggleAccountMenu"
+              >
+                <div
+                  v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''"
+                  class="w-8 h-8 overflow-hidden rounded-full ring-2 ring-white/30"
+                >
+                  <img
+                    :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic"
+                    alt="User Profile"
+                    class="object-cover w-full h-full rounded-full"
+                  />
+                </div>
+                <div
+                  v-else
+                  class="flex items-center justify-center w-8 h-8 rounded-full bg-white/15 ring-2 ring-white/20"
+                >
+                  <IconsProfileCircle :size="20" />
+                </div>
+                <p class="hidden capitalize lg:flex text-medium line-clamp-1 max-w-40">
+                  {{ language==='english' ? `Account` :`Akaunti`}}
+                </p>
+                <Icon
+                  name="heroicons:chevron-down-20-solid"
+                  class="hidden w-5 h-5 lg:block"
+                />
+              </button>
+
+              <div
+                v-if="isAccountMenuOpen"
+                class="absolute right-0 z-30 w-56 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
+              >
+                <NuxtLink
+                  aria-label="Go to profile page"
+                  to="/profile"
+                  class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
+                  @click="closeAccountMenu"
+                >
+                  <IconsProfileCircle :size="20" />
+                  <span>{{ language==='english' ? `Profile` :`Wasifu`}}</span>
+                </NuxtLink>
+
+                <button
+                  aria-label="Log out"
+                  class="flex items-center w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-rose-700 hover:bg-rose-50"
+                  @click="openLogoutConfirmFromMenu"
+                >
+                  <IconsLogout :size="20" title="Sign out" />
+                  <span>{{ language==='english' ? `Logout` :`Ondoka`}}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -229,6 +279,18 @@ onBeforeUnmount(() => {
                   <IconsSmartClassHub :size="20" />
                 </div>
               </NuxtLink>
+
+              <NuxtLink
+                v-if="userToken"
+                to="/profile/learning-statistics"
+                aria-label="Go to learning statistics page"
+                class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45 rounded-md"
+                active-class="text-white !bg-deepBlue"
+              >
+                <div class="flex items-center justify-center">
+                  <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
+                </div>
+              </NuxtLink>
             </div>
 
             <!-- Paragraph Text -->
@@ -238,25 +300,63 @@ onBeforeUnmount(() => {
               </p>
             </NuxtLink>
 
-            <!-- Logout and Sign in -->
-            <div class="flex items-center">
-                    <NuxtLink aria-label="Go to profile page" to="/profile" v-if="userToken" class="flex items-center pl-1">
-                <IconsProfileCircle :size="20" />
-              </NuxtLink> 
-              <NuxtLink to="/auth/SignUp" title="Sign Up" v-else
-                class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
-                <IconsProfileCircle :size="20" />
-              </NuxtLink>
-              <div class="flex items-center h-6 gap-2 p-2 cursor-pointer md:h-8" v-if="userToken"
-                role="button" tabindex="0" aria-label="Log out"
-                @click="openLogoutConfirm" @keyup="openLogoutConfirm">
-                <IconsLogout :size="20" class="" title="Sign out" />
+            <!-- Account and Sign in -->
+            <div class="relative flex items-center">
+              <div v-if="userToken">
+                <button
+                  aria-label="Open account menu"
+                  class="flex items-center justify-center p-2 rounded-full"
+                  @click="toggleAccountMenu"
+                >
+                  <div
+                    v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''"
+                    class="w-8 h-8 overflow-hidden rounded-full ring-2 ring-white/30"
+                  >
+                    <img
+                      :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic"
+                      alt="User Profile"
+                      class="object-cover w-full h-full rounded-full"
+                    />
+                  </div>
+                  <IconsProfileCircle v-else :size="22" />
+                </button>
+
+                <div
+                  v-if="isAccountMenuOpen"
+                  class="absolute right-0 z-30 w-48 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
+                >
+                  <NuxtLink
+                    aria-label="Go to profile page"
+                    to="/profile"
+                    class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
+                    @click="closeAccountMenu"
+                  >
+                    <IconsProfileCircle :size="20" />
+                    <span>{{ language==='english' ? `Profile` :`Wasifu`}}</span>
+                  </NuxtLink>
+
+                  <button
+                    aria-label="Log out"
+                    class="flex items-center w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-rose-700 hover:bg-rose-50"
+                    @click="openLogoutConfirmFromMenu"
+                  >
+                    <IconsLogout :size="20" title="Sign out" />
+                    <span>{{ language==='english' ? `Logout` :`Ondoka`}}</span>
+                  </button>
+                </div>
               </div>
-              <!-- sign in -->
-              <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in" v-else
-                class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
-                <IconsSignIn :size="20" class="" />
-              </NuxtLink>
+
+              <div v-else class="flex items-center">
+                <NuxtLink to="/auth/SignUp" title="Sign Up"
+                  class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
+                  <IconsProfileCircle :size="20" />
+                </NuxtLink>
+
+                <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
+                  class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
+                  <IconsSignIn :size="20" class="" />
+                </NuxtLink>
+              </div>
             </div>
           </div>
         </div>

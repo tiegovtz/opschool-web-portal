@@ -29,7 +29,7 @@ const apiDocs = {
 
     // PATCH or PUT
     profileEdit: `${baseURL}/auth/profile/edit`,
-    updateTimeSpent: `${baseURL}/auth/update-time-spent`, // Update time spent on the platform
+    updateTimeSpent: `${baseURL}/auth/update-time-spent`,
     profilePicture: `${baseURL}/auth/profile/update-picture`,
   },
 

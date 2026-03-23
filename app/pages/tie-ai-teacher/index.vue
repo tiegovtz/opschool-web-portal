@@ -270,11 +270,72 @@ const convertToChatMessage = (msg: ChatMessage) => ({
   content: msg.content,
 });
 
+const inferAttachmentMediaType = (filename?: string, mediaType?: string) => {
+  const normalizedMediaType =
+    typeof mediaType === "string" ? mediaType.trim().toLowerCase() : "";
+
+  if (normalizedMediaType && normalizedMediaType !== "application/octet-stream") {
+    return normalizedMediaType;
+  }
+
+  const lowerName = typeof filename === "string" ? filename.toLowerCase() : "";
+  if (lowerName.endsWith(".pdf")) return "application/pdf";
+  if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) {
+    return "image/jpeg";
+  }
+  if (lowerName.endsWith(".png")) return "image/png";
+  if (lowerName.endsWith(".webp")) return "image/webp";
+  if (lowerName.endsWith(".txt")) return "text/plain";
+  if (lowerName.endsWith(".md")) return "text/markdown";
+  if (lowerName.endsWith(".json")) return "application/json";
+
+  return normalizedMediaType || "application/octet-stream";
+};
+
+const describeAttachmentParts = (parts: any[] = []) => {
+  const attachmentParts = parts.filter(
+    (part) => part?.type === "file" || part?.type === "data-attachment",
+  );
+
+  if (attachmentParts.length === 0) return "";
+
+  const labels = attachmentParts.map((part) => {
+    const filename =
+      part?.type === "data-attachment"
+        ? part?.data?.filename
+        : part?.filename;
+    const mediaType = inferAttachmentMediaType(
+      filename,
+      part?.type === "data-attachment"
+        ? part?.data?.mediaType
+        : part?.mediaType,
+    );
+
+    if (filename) return filename;
+    if (mediaType === "application/pdf") return "PDF document";
+    if (typeof mediaType === "string" && mediaType.startsWith("image/")) {
+      return "image";
+    }
+    return "attachment";
+  });
+
+  return `Attachment${labels.length > 1 ? "s" : ""}: ${labels.join(", ")}`;
+};
+
 // Extract text content from message
 const extractMessageContent = (message: any): string => {
   if (message.content) return message.content;
-  const textPart = message.parts?.find((p: any) => p.type === "text");
-  return textPart?.text || "";
+
+  const textParts = Array.isArray(message.parts)
+    ? message.parts
+        .filter((p: any) => p?.type === "text" && typeof p?.text === "string")
+        .map((p: any) => p.text.trim())
+        .filter(Boolean)
+    : [];
+
+  if (textParts.length > 0) return textParts.join(" ");
+
+  return describeAttachmentParts(message.parts || []);
 };
 
 // Generate a title from the first user message
@@ -349,6 +410,58 @@ const updateSessionTitleIfNeeded = async (
   }
 };
 
+const sanitizePartsForPersistence = (
+  parts: any[] = [],
+  options?: { includePreview?: boolean },
+) =>
+  parts.map((part: any) => {
+    if (part?.type === "file") {
+      const mediaType = inferAttachmentMediaType(part.filename, part.mediaType);
+      const previewUrl =
+        options?.includePreview &&
+        mediaType.startsWith("image/") &&
+        typeof part.url === "string"
+          ? part.url
+          : undefined;
+
+      return {
+        type: "data-attachment",
+        data: {
+          filename: part.filename || "Attachment",
+          mediaType,
+          ...(previewUrl ? { previewUrl } : {}),
+        },
+      };
+    }
+
+    return part;
+  });
+
+const replaceLiveAttachmentsInChat = () => {
+  if (!Array.isArray(chat.messages)) return;
+
+  let didChange = false;
+  const updatedMessages = chat.messages.map((message: any) => {
+    if (message.role !== "user" || !Array.isArray(message.parts)) {
+      return message;
+    }
+
+    const hasLiveFileParts = message.parts.some((part: any) => part?.type === "file");
+    if (!hasLiveFileParts) return message;
+
+    didChange = true;
+    return {
+      ...message,
+      parts: sanitizePartsForPersistence(message.parts, { includePreview: true }),
+    };
+  });
+
+  if (didChange) {
+    // @ts-ignore
+    chat.messages.splice(0, chat.messages.length, ...updatedMessages);
+  }
+};
+
 // Save a message to backend
 const saveMessage = async (sessionId: string, message: any) => {
   if (!message.id || savedMessageIds.value.has(message.id)) {
@@ -363,7 +476,10 @@ const saveMessage = async (sessionId: string, message: any) => {
       {
         role: message.role as "user" | "assistant" | "system",
         content,
-        parts: message.parts,
+        parts:
+          message.role === "user"
+            ? sanitizePartsForPersistence(message.parts)
+            : message.parts,
         metadata: { messageId: message.id },
       },
       sessionId,
@@ -432,6 +548,8 @@ watch(
           await saveMessage(targetSessionId, message);
         }
       }
+
+      replaceLiveAttachmentsInChat();
     }
 
     const wasGenerating =
@@ -476,8 +594,14 @@ watch(
 );
 
 // Handle message submission
-const handleSubmit = async (message: string) => {
-  if (!message.trim()) return;
+const handleSubmit = async (
+  payload: string | { message: string; files?: FileList },
+) => {
+  const message = typeof payload === "string" ? payload : payload.message;
+  const files = typeof payload === "string" ? undefined : payload.files;
+  const trimmedMessage = message.trim();
+
+  if (!trimmedMessage && !files?.length) return;
 
   if (!chatStore.activeSessionId) {
     const reused = await reuseEmptySessionIfAvailable();
@@ -495,8 +619,14 @@ const handleSubmit = async (message: string) => {
 
   try {
     // Send message to AI - the watch function will save user messages when they appear in chat.messages
+    const outgoingMessage = files?.length
+      ? trimmedMessage
+        ? { text: trimmedMessage, files }
+        : { files }
+      : { text: trimmedMessage };
+
     await chat.sendMessage(
-      { text: message },
+      outgoingMessage as any,
       {
         body: { sessionId },
         metadata: { sessionId },
