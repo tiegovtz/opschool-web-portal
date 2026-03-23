@@ -22,6 +22,7 @@ const openSubjectTeacherSignal = useState<number>(
 const isLoadingAllowedSubjects = ref(false);
 
 const EXCLUDED_PREFIXES = [
+  "/",
   "/tie-ai-teacher",
   "/auth",
   "/smart-class",

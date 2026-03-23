@@ -1,6 +1,11 @@
 <script lang="ts" setup>
 import { IconsMdiBookOpenPageVariantOutline } from '#components';
+import apiDocs from '~/utilities/apiDocs';
 import type { IconType } from '../icons/stats.vue';
+import type { Audios } from '~/types/audio.interface';
+import type { Videos } from '~/types/video.interface';
+import type { Experiment } from '~/types/experiment.interface';
+import type { Topic } from '~/types/topic.interface';
 
 
 const educationLevels = [
@@ -36,6 +41,7 @@ const stats = [
         detail: "Msingi na sekondari",
         icon: "library",
         accent: "blue",
+        data: 'topics'
     },
     {
         value: "860+",
@@ -43,6 +49,7 @@ const stats = [
         detail: "Masomo ya kuona",
         icon: "play",
         accent: "cyan",
+        data: 'resources'
     },
     {
         value: "24/7",
@@ -50,6 +57,7 @@ const stats = [
         detail: "Muda wote",
         icon: "clock",
         accent: "blue",
+        data: 'time'
     },
     // {
     //   value: "860+",
@@ -101,6 +109,41 @@ function getAccentStyles(accent: string) {
         value: "text-[#1f6fb2]",
     };
 }
+
+// fetch data from server
+const allContent = ref<number>(0)
+const allTopics = ref<number>(0)
+const fetchData = async () => {
+    let reqwest: any[] = [
+        $fetch(apiDocs.audio.getPublicAudio),
+        $fetch(apiDocs.videos.getPublicVideo),
+        $fetch(apiDocs.experiments.getPublicExperiments),
+        $fetch(apiDocs.topics.filterTopics)
+    ]
+    try {
+        const [audios, videos, experiments, topics] = await Promise.allSettled(reqwest);
+        const getLength = (res: any) => {
+            console.log(res);
+
+            return res.status === "fulfilled" ? res?.value?.length || 0 : 0
+        }
+
+        // const totalChapters = (topics as any)?.value?.reduce(
+        //     (sum: number, topic: any) => sum + (topic.totalChapter || 0),
+        //     0
+        // ) || 0;
+        allContent.value = getLength(audios) + getLength(videos) + getLength(experiments);
+        allTopics.value = getLength(topics);
+    } catch (error) {
+        console.error("[Failed to process data]:", error);
+
+    }
+}
+
+
+onMounted(async () => {
+    await fetchData()
+})
 </script>
 
 <template>
@@ -109,13 +152,13 @@ function getAccentStyles(accent: string) {
         <section class="max-w-screen-md mx-auto">
             <h1 class="text-left text-xl font-tahomabd font-bold text-oceanBlue">Karibu!</h1>
             <h1 class="text-left text-3xl my-4 font-tahomabd font-bold text-[#f29253]">TIE ONLINE PUBLIC SCHOOL</h1>
-            <p class="text-justify mt-4">katika platfom hii utapata maudhui ya elimu ya msingi, sekondari na elimu ya
+            <p class="text-justify mt-4">Katika platfom hii utapata maudhui ya elimu ya msingi, sekondari na elimu ya
                 ualimu. chagua ili kuendelea.
             </p>
             <!-- buttons -->
             <div class="flex flex-wrap gap-5 pt-5">
-                <UIButtonShineParticles @click="$router.push('/nyumbani')" label="OPS Primary" />
-                <UIButtonShineParticles @click="$router.push('/home')" label="OPS Secondary" />
+                <UIButtonShineParticles @click="$router.push('/nyumbani')" label="Primary" />
+                <UIButtonShineParticles @click="$router.push('/home')" label="Secondary" />
             </div>
 
             <!-- static -->
@@ -135,7 +178,8 @@ function getAccentStyles(accent: string) {
                             </p>
                             <p :class="`mt-1 text-[24px] font-bold leading-none tracking-[-0.02em] md:text-[28px]
                             ${getAccentStyles(stat.accent).value}`">
-                                {{ stat.value }}
+                                {{ stat.data === 'topics' ? `${allTopics}+` : stat.data == 'resources' ? `${allContent}+` :
+                                stat.value }}
                             </p>
                             <p class="mt-1 text-sm leading-5 text-[#72879a]">
                                 {{ stat.detail }}
@@ -147,7 +191,7 @@ function getAccentStyles(accent: string) {
 
         </section>
         <!-- slides -->
-        <section class="hidden md:block w-full overflow-hidden rounded-md">
+        <section class="hidden md:block w-full overflow-hidden rounded-3xl">
             <SliderShow mahal-ilipo="landing" />
         </section>
     </div>

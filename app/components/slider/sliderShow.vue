@@ -168,7 +168,7 @@ onMounted(async () => {
         role="region" aria-roledescription="carousel" aria-label="Image slider">
         <swiper-slide v-for="(slide, idx) in slides" :key="idx" role="group" aria-roledescription="slide"
           :aria-label="`Slide ${idx + 1} of ${slides.length}`" :aria-describedby="`slide-desc-${idx}`" :tabindex="idx">
-          <NuxtImg :src="slide.image" :alt="slide.alt" class="object-cover w-full h-full rounded-md" />
+          <NuxtImg :src="slide.image" :alt="slide.alt" :class="['object-cover w-full h-full ',mahalIlipo =='landing' ? 'rounded-3xl':'rounded-md']"  />
 
           <!-- Hidden description for SR -->
           <p class="sr-only" :id="`slide-desc-${idx}`">
