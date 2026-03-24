@@ -1,0 +1,82 @@
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+
+import { cn } from "@/lib/utils";
+import Link, { LinkProps } from "next/link";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-gray-950 dark:focus-visible:ring-gray-300",
+  {
+    variants: {
+      variant: {
+        default:
+          "bg-picton-blue-700 text-picton-blue-50 hover:bg-picton-blue-700/90 focus-visible:ring-picton-blue-700",
+        brand:
+          "bg-picton-blue-700 text-picton-blue-50 hover:bg-picton-blue-700/90",
+        "brand-lemon": "bg-lemon-700 text-lemon-50 hover:bg-lemon-700/90",
+        destructive:
+          "bg-red-500 text-gray-50 hover:bg-red-500/90 dark:bg-red-900 dark:text-gray-50 dark:hover:bg-red-900/90",
+        "outline-brand":
+          "border border-picton-blue-500 bg-picton-blue-50 hover:bg-picton-blue-50/80 text-picton-blue-800 focus-visible:ring-picton-blue-500",
+        outline:
+          "border border-lemon-500 bg-lemon-50 hover:bg-lemon-50/80 text-lemon-800 focus-visible:ring-lemon-500",
+        secondary:
+          "bg-gray-100 text-gray-900 hover:bg-gray-100/80 dark:bg-gray-800 dark:text-gray-50 dark:hover:bg-gray-800/80",
+        ghost:
+          "hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-50",
+        link: "text-picton-blue-700 underline-offset-4 hover:underline dark:text-picton-blue-50",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+  href?: string;
+  linkProps?: LinkProps;
+  children?: React.ReactNode;
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, href, linkProps, children, ...props }, ref) => {
+    // const Comp = asChild ? Slot : "button";
+    return (
+      <>
+        {href ? (
+          <Link
+            href={href}
+            className={cn(buttonVariants({ variant, size, className }))}
+            target={href.startsWith("http") ? "_blank" : "_self"}
+            {...linkProps}
+          >
+            {children || variant}
+          </Link>
+        ) : (
+          <button
+            ref={ref}
+            {...props}
+            key={variant}
+            className={cn(buttonVariants({ variant, size, className }))}
+          >
+            {children || variant}
+          </button>
+        )}
+      </>
+    );
+  }
+);
+Button.displayName = "Button";
+
+export { Button, buttonVariants };
