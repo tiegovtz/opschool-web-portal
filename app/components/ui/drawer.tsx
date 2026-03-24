@@ -1,118 +1,159 @@
-"use client"
+// Drawer.tsx
+import {
+  defineComponent,
+  ref,
+  provide,
+  inject,
+  Teleport,
+} from "vue";
+import { cn } from "@/lib/utils";
 
-import * as React from "react"
-import { Drawer as DrawerPrimitive } from "vaul"
+/* ================= ROOT ================= */
+export const Drawer = defineComponent({
+  name: "Drawer",
+  props: {
+    modelValue: Boolean,
+  },
+  emits: ["update:modelValue"],
+  setup(props, { emit, slots }) {
+    const open = ref(props.modelValue);
 
-import { cn } from "@/lib/utils"
+    const setOpen = (val: boolean) => {
+      open.value = val;
+      emit("update:modelValue", val);
+    };
 
-const Drawer = ({
-  shouldScaleBackground = true,
-  ...props
-}: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
-  <DrawerPrimitive.Root
-    shouldScaleBackground={shouldScaleBackground}
-    {...props}
-  />
-)
-Drawer.displayName = "Drawer"
+    provide("drawer", { open, setOpen });
 
-const DrawerTrigger = DrawerPrimitive.Trigger
+    return () => <div>{slots.default?.()}</div>;
+  },
+});
 
-const DrawerPortal = DrawerPrimitive.Portal
+/* ================= TRIGGER ================= */
+export const DrawerTrigger = defineComponent({
+  name: "DrawerTrigger",
+  setup(_, { slots }) {
+    const ctx = inject<any>("drawer");
 
-const DrawerClose = DrawerPrimitive.Close
+    return () => (
+      <div onClick={() => ctx.setOpen(true)}>
+        {slots.default?.()}
+      </div>
+    );
+  },
+});
 
-const DrawerOverlay = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Overlay
-    ref={ref}
-    className={cn("fixed inset-0 z-50 bg-black/80", className)}
-    {...props}
-  />
-))
-DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
+/* ================= CLOSE ================= */
+export const DrawerClose = defineComponent({
+  name: "DrawerClose",
+  setup(_, { slots }) {
+    const ctx = inject<any>("drawer");
 
-const DrawerContent = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DrawerPortal>
-    <DrawerOverlay />
-    <DrawerPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950",
-        className
-      )}
-      {...props}
-    >
-      <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-gray-100 dark:bg-gray-800" />
-      {children}
-    </DrawerPrimitive.Content>
-  </DrawerPortal>
-))
-DrawerContent.displayName = "DrawerContent"
+    return () => (
+      <div onClick={() => ctx.setOpen(false)}>
+        {slots.default?.()}
+      </div>
+    );
+  },
+});
 
-const DrawerHeader = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn("grid gap-1.5 p-4 text-center sm:text-left", className)}
-    {...props}
-  />
-)
-DrawerHeader.displayName = "DrawerHeader"
+/* ================= OVERLAY ================= */
+export const DrawerOverlay = defineComponent({
+  name: "DrawerOverlay",
+  props: {
+    class: String,
+  },
+  setup(props) {
+    const ctx = inject<any>("drawer");
 
-const DrawerFooter = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn("mt-auto flex flex-col gap-2 p-4", className)}
-    {...props}
-  />
-)
-DrawerFooter.displayName = "DrawerFooter"
+    return () =>
+      ctx.open.value ? (
+        <div
+          class={cn("fixed inset-0 z-50 bg-black/80", props.class)}
+          onClick={() => ctx.setOpen(false)}
+        />
+      ) : null;
+  },
+});
 
-const DrawerTitle = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Title>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Title>
->(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Title
-    ref={ref}
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className
-    )}
-    {...props}
-  />
-))
-DrawerTitle.displayName = DrawerPrimitive.Title.displayName
+/* ================= CONTENT ================= */
+export const DrawerContent = defineComponent({
+  name: "DrawerContent",
+  props: {
+    class: String,
+  },
+  setup(props, { slots }) {
+    const ctx = inject<any>("drawer");
 
-const DrawerDescription = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Description>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description>
->(({ className, ...props }, ref) => (
-  <DrawerPrimitive.Description
-    ref={ref}
-    className={cn("text-sm text-gray-500 dark:text-gray-400", className)}
-    {...props}
-  />
-))
-DrawerDescription.displayName = DrawerPrimitive.Description.displayName
+    return () =>
+      ctx.open.value ? (
+        <Teleport to="body">
+          <DrawerOverlay />
 
-export {
-  Drawer,
-  DrawerPortal,
-  DrawerOverlay,
-  DrawerTrigger,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerFooter,
-  DrawerTitle,
-  DrawerDescription,
-}
+          <div
+            class={cn(
+              "fixed inset-x-0 bottom-0 z-50 mt-24 flex flex-col rounded-t-[10px] border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950",
+              props.class
+            )}
+          >
+            {/* handle bar */}
+            <div class="mx-auto mt-4 h-2 w-[100px] rounded-full bg-gray-100 dark:bg-gray-800" />
+
+            {slots.default?.()}
+          </div>
+        </Teleport>
+      ) : null;
+  },
+});
+
+/* ================= HEADER ================= */
+export const DrawerHeader = defineComponent({
+  name: "DrawerHeader",
+  props: { class: String },
+  setup(props, { slots }) {
+    return () => (
+      <div class={cn("grid gap-1.5 p-4 text-center sm:text-left", props.class)}>
+        {slots.default?.()}
+      </div>
+    );
+  },
+});
+
+/* ================= FOOTER ================= */
+export const DrawerFooter = defineComponent({
+  name: "DrawerFooter",
+  props: { class: String },
+  setup(props, { slots }) {
+    return () => (
+      <div class={cn("mt-auto flex flex-col gap-2 p-4", props.class)}>
+        {slots.default?.()}
+      </div>
+    );
+  },
+});
+
+/* ================= TITLE ================= */
+export const DrawerTitle = defineComponent({
+  name: "DrawerTitle",
+  props: { class: String },
+  setup(props, { slots }) {
+    return () => (
+      <h2 class={cn("text-lg font-semibold tracking-tight", props.class)}>
+        {slots.default?.()}
+      </h2>
+    );
+  },
+});
+
+/* ================= DESCRIPTION ================= */
+export const DrawerDescription = defineComponent({
+  name: "DrawerDescription",
+  props: { class: String },
+  setup(props, { slots }) {
+    return () => (
+      <p class={cn("text-sm text-gray-500 dark:text-gray-400", props.class)}>
+        {slots.default?.()}
+      </p>
+    );
+  },
+});

@@ -42,7 +42,7 @@ const DynamicIcon = defineComponent({
   setup(props) {
     return () => (
       <Icon
-        icon={iconMap[props.name] || iconMap.Target}
+        icon={(iconMap[props.name] || iconMap.Target) as string}
         width={props.size}
         height={props.size}
         class={cn(props.className, props.class)}

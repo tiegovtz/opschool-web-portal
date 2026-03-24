@@ -1,28 +1,55 @@
-"use client"
+// Slider.tsx
+import { defineComponent, h, computed } from "vue";
+import { cn } from "@/lib/utils";
 
-import * as React from "react"
-import * as SliderPrimitive from "@radix-ui/react-slider"
+export const Slider = defineComponent({
+  name: "Slider",
+  props: {
+    modelValue: { type: Number, default: 0 },
+    min: { type: Number, default: 0 },
+    max: { type: Number, default: 100 },
+    step: { type: Number, default: 1 },
+    disabled: { type: Boolean, default: false },
+    class: { type: String, default: "" },
+  },
+  emits: ["update:modelValue"],
+  setup(props, { emit }) {
+    const handleInput = (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      emit("update:modelValue", Number(target.value));
+    };
 
-import { cn } from "@/lib/utils"
+    const percentage = computed(() => {
+      return ((props.modelValue - props.min) / (props.max - props.min)) * 100;
+    });
 
-const Slider = React.forwardRef<
-  React.ElementRef<typeof SliderPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <SliderPrimitive.Root
-    ref={ref}
-    className={cn(
-      "relative flex w-full touch-none select-none items-center",
-      className
-    )}
-    {...props}
-  >
-    <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-      <SliderPrimitive.Range className="absolute h-full bg-gray-900 dark:bg-gray-50" />
-    </SliderPrimitive.Track>
-    <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border-2 border-gray-900 bg-white ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:border-gray-50 dark:bg-gray-950 dark:ring-offset-gray-950 dark:focus-visible:ring-gray-300" />
-  </SliderPrimitive.Root>
-))
-Slider.displayName = SliderPrimitive.Root.displayName
-
-export { Slider }
+    return () =>
+      h("div", { class: cn("relative w-full flex items-center", props.class) }, [
+        // Track
+        h("div", {
+          class: "absolute h-2 w-full rounded-full bg-gray-100 dark:bg-gray-800",
+        }),
+        // Filled range
+        h("div", {
+          class: "absolute h-2 rounded-full bg-gray-900 dark:bg-gray-50",
+          style: { width: `${percentage.value}%` },
+        }),
+        // Thumb
+        h("input", {
+          type: "range",
+          min: props.min,
+          max: props.max,
+          step: props.step,
+          value: props.modelValue,
+          disabled: props.disabled,
+          onInput: handleInput,
+          class: cn(
+            "appearance-none w-full h-5 bg-transparent cursor-pointer",
+            "thumb:rounded-full thumb:border-2 thumb:border-gray-900 thumb:bg-white",
+            "focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2",
+            "disabled:cursor-not-allowed disabled:opacity-50 dark:thumb:border-gray-50 dark:thumb:bg-gray-950"
+          ),
+        }),
+      ]);
+  },
+});

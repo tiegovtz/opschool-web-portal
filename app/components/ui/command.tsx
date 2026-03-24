@@ -1,153 +1,170 @@
-"use client"
+// Command.tsx
+import {
+  defineComponent,
+  ref,
+  computed,
+  provide,
+  inject,
+} from "vue";
+import { cn } from "@/lib/utils";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-import * as React from "react"
-import { type DialogProps } from "@radix-ui/react-dialog"
-import { Command as CommandPrimitive } from "cmdk"
-import { Search } from "lucide-react"
+/* ================= ROOT ================= */
+export const Command = defineComponent({
+  name: "Command",
+  setup(_, { slots }) {
+    const search = ref("");
 
-import { cn } from "@/lib/utils"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+    provide("command", {
+      search,
+    });
 
-const Command = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive
-    ref={ref}
-    className={cn(
-      "flex h-full w-full flex-col overflow-hidden rounded-md bg-white text-gray-950 dark:bg-gray-950 dark:text-gray-50",
-      className
-    )}
-    {...props}
-  />
-))
-Command.displayName = CommandPrimitive.displayName
+    return () => (
+      <div class="flex h-full w-full flex-col overflow-hidden rounded-md bg-white text-gray-950 dark:bg-gray-950 dark:text-gray-50">
+        {slots.default?.()}
+      </div>
+    );
+  },
+});
 
-const CommandDialog = ({ children, ...props }: DialogProps) => {
-  return (
-    <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 shadow-lg">
-        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-gray-500 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5 dark:[&_[cmdk-group-heading]]:text-gray-400">
-          {children}
-        </Command>
-      </DialogContent>
-    </Dialog>
-  )
-}
+/* ================= DIALOG ================= */
+export const CommandDialog = defineComponent({
+  name: "CommandDialog",
+  props: {
+    open: Boolean,
+  },
+  emits: ["update:open"],
+  setup(props, { slots, emit }) {
+    return () => (
+      <Dialog
+        open={props.open}
+        onOpenChange={(v: boolean) => emit("update:open", v)}
+      >
+        <DialogContent class="overflow-hidden p-0 shadow-lg">
+          <Command>{slots.default?.()}</Command>
+        </DialogContent>
+      </Dialog>
+    );
+  },
+});
 
-const CommandInput = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Input>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({ className, ...props }, ref) => (
-  <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
-    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-    <CommandPrimitive.Input
-      ref={ref}
-      className={cn(
-        "flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-picton-blue-500 disabled:cursor-not-allowed disabled:opacity-50 dark:placeholder:text-gray-400",
-        className
-      )}
-      {...props}
-    />
-  </div>
-))
+/* ================= INPUT ================= */
+export const CommandInput = defineComponent({
+  name: "CommandInput",
+  setup(_, { attrs }) {
+    const ctx = inject<any>("command");
 
-CommandInput.displayName = CommandPrimitive.Input.displayName
+    return () => (
+      <div class="flex items-center border-b px-3">
+        {/* Iconify instead of lucide */}
+        <i class="icon-[mdi--magnify] mr-2 w-4 h-4 opacity-50" />
 
-const CommandList = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.List
-    ref={ref}
-    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
-    {...props}
-  />
-))
+        <input
+          {...attrs}
+          value={ctx.search.value}
+          onInput={(e: any) => (ctx.search.value = e.target.value)}
+          class={cn(
+            "flex h-11 w-full bg-transparent py-3 text-sm outline-none placeholder:text-picton-blue-500 disabled:opacity-50"
+          )}
+        />
+      </div>
+    );
+  },
+});
 
-CommandList.displayName = CommandPrimitive.List.displayName
+/* ================= LIST ================= */
+export const CommandList = defineComponent({
+  name: "CommandList",
+  setup(_, { slots }) {
+    return () => (
+      <div class="max-h-[300px] overflow-y-auto overflow-x-hidden">
+        {slots.default?.()}
+      </div>
+    );
+  },
+});
 
-const CommandEmpty = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Empty>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
->((props, ref) => (
-  <CommandPrimitive.Empty
-    ref={ref}
-    className="py-6 text-center text-sm"
-    {...props}
-  />
-))
+/* ================= EMPTY ================= */
+export const CommandEmpty = defineComponent({
+  name: "CommandEmpty",
+  setup(_, { slots }) {
+    const ctx = inject<any>("command");
 
-CommandEmpty.displayName = CommandPrimitive.Empty.displayName
+    return () =>
+      ctx.search.value ? (
+        <div class="py-6 text-center text-sm">
+          {slots.default?.() || "No results found"}
+        </div>
+      ) : null;
+  },
+});
 
-const CommandGroup = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Group>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Group>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Group
-    ref={ref}
-    className={cn(
-      "overflow-hidden p-1 text-gray-950 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-gray-500 dark:text-gray-50 dark:[&_[cmdk-group-heading]]:text-gray-400",
-      className
-    )}
-    {...props}
-  />
-))
+/* ================= GROUP ================= */
+export const CommandGroup = defineComponent({
+  name: "CommandGroup",
+  props: {
+    heading: String,
+  },
+  setup(props, { slots }) {
+    return () => (
+      <div class="p-1">
+        {props.heading && (
+          <div class="px-2 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+            {props.heading}
+          </div>
+        )}
+        {slots.default?.()}
+      </div>
+    );
+  },
+});
 
-CommandGroup.displayName = CommandPrimitive.Group.displayName
+/* ================= ITEM ================= */
+export const CommandItem = defineComponent({
+  name: "CommandItem",
+  props: {
+    value: String,
+  },
+  emits: ["select"],
+  setup(props, { slots, emit }) {
+    const ctx = inject<any>("command");
 
-const CommandSeparator = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Separator>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Separator
-    ref={ref}
-    className={cn("-mx-1 h-px bg-gray-200 dark:bg-gray-800", className)}
-    {...props}
-  />
-))
-CommandSeparator.displayName = CommandPrimitive.Separator.displayName
+    const visible = computed(() =>
+      props.value
+        ?.toLowerCase()
+        .includes(ctx.search.value.toLowerCase())
+    );
 
-const CommandItem = React.forwardRef<
-  React.ElementRef<typeof CommandPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex cursor-default gap-2 select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-gray-100 data-[selected=true]:text-gray-900 data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 dark:data-[selected='true']:bg-gray-800 dark:data-[selected=true]:text-gray-50",
-      className
-    )}
-    {...props}
-  />
-))
+    return () =>
+      visible.value ? (
+        <div
+          class="flex cursor-pointer gap-2 items-center rounded-sm px-2 py-1.5 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+          onClick={() => emit("select", props.value)}
+        >
+          {slots.default?.()}
+        </div>
+      ) : null;
+  },
+});
 
-CommandItem.displayName = CommandPrimitive.Item.displayName
+/* ================= SEPARATOR ================= */
+export const CommandSeparator = defineComponent({
+  name: "CommandSeparator",
+  setup() {
+    return () => (
+      <div class="-mx-1 h-px bg-gray-200 dark:bg-gray-800" />
+    );
+  },
+});
 
-const CommandShortcut = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) => {
-  return (
-    <span
-      className={cn(
-        "ml-auto text-xs tracking-widest text-gray-500 dark:text-gray-400",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-CommandShortcut.displayName = "CommandShortcut"
-
-export {
-  Command,
-  CommandDialog,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandShortcut,
-  CommandSeparator,
-}
+/* ================= SHORTCUT ================= */
+export const CommandShortcut = defineComponent({
+  name: "CommandShortcut",
+  setup(_, { slots }) {
+    return () => (
+      <span class="ml-auto text-xs tracking-widest text-gray-500 dark:text-gray-400">
+        {slots.default?.()}
+      </span>
+    );
+  },
+});

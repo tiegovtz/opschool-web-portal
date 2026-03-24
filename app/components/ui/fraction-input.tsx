@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/inputs/input";
+import {Input}  from "@/components/ui/input";
 
 export interface FractionInputProps {
   value: string;
@@ -57,7 +57,7 @@ export const FractionInput = memo(
     const parseFraction = (val: string) => {
       const match = val.match(/frac\(([\d/]*)\)/);
       if (!match) return isMixed ? ["", "", ""] : ["", ""];
-      const parts = match[1].split("/");
+      const parts = match[1]?.split("/") as string[];
       return isMixed
         ? [parts[0] || "", parts[1] || "", parts[2] || ""]
         : [parts[0] || "", parts[1] || ""];
@@ -122,9 +122,8 @@ export const FractionInput = memo(
           <Input
             type="text"
             value={whole}
-            onChange={(e) => handleChange("whole", e.target.value)}
+            onChange={(e:Event) => handleChange("whole", (e?.target as HTMLInputElement).value)}
             disabled={disabled}
-            readOnly={readOnly}
             className={cn(
               "w-12 h-10 px-1 text-center bg-transparent rounded border-2",
               colors.border,
@@ -138,9 +137,8 @@ export const FractionInput = memo(
           <Input
             type="text"
             value={numerator}
-            onChange={(e) => handleChange("numerator", e.target.value)}
+            onChange={(e) => handleChange("numerator", (e?.target as HTMLInputElement).value)}
             disabled={disabled}
-            readOnly={readOnly}
             className={cn(
               "w-12 h-8 px-1 text-center border-2 focus:outline-none bg-transparent",
               colors.border,
@@ -153,9 +151,8 @@ export const FractionInput = memo(
           <Input
             type="text"
             value={denominator}
-            onChange={(e) => handleChange("denominator", e.target.value)}
+            onChange={(e) => handleChange("denominator", (e?.target as HTMLInputElement).value)}
             disabled={disabled}
-            readOnly={readOnly}
             className={cn(
               "w-12 h-8 px-1 text-center border-2 focus:outline-none bg-transparent",
               colors.border,
