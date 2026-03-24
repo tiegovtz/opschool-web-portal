@@ -113,7 +113,7 @@ onBeforeUnmount(() => {
         <!-- Media Screen -->
         <div
           class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container">
-          <NuxtLink aria-label="Go home" to="/" class="flex gap-2 pl-2 pr-2 rounded-md"
+          <NuxtLink aria-label="Go home" :to="language==='english' ? `/home` :`/nyumbani`" class="flex gap-2 pl-2 pr-2 rounded-md"
             active-class="text-white !bg-deepBlue">
             <div class="flex items-center justify-center">
               <IconsHome :size="20" />
@@ -135,7 +135,7 @@ onBeforeUnmount(() => {
           <NuxtLink to="/smart-class" aria-label="Go to Smart Class"
             class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium rounded-md"
             active-class="text-white !bg-deepBlue">
-            <div class="flex items-center justify-center">
+            <div class="flex items-center justify-center"> 
               <IconsSmartClassHub :size="20" />
             </div>
             <p class="hidden capitalize lg:flex">{{ language==='english' ? `Smart class` :`Darasa janja`}}</p>
