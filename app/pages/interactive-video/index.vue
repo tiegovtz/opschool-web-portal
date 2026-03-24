@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import InteractiveVideo from '~/components/interactive/InteractiveVideo.vue'
 import type { VideoInteraction } from '~/types/interactive-video.interface'
+import type {
+  QuizAttemptPayload,
+  QuizAttemptSessionPayload,
+} from '~/types/recommendation.interface'
 import { isTokenExpiringSoon, refreshToken } from '~/utilities/jwToken'
 import { useVideoInteractions } from '~/composables/useVideoInteractions'
+import { buildVideoQuizId } from '~/utilities/learnerProgressHistory'
 
 // Define meta info about page
 useHead({
@@ -32,6 +37,8 @@ useHead({
 
 // Video source - fetch from the interactive topic route
 const route = useRoute()
+const { snapshotId: activeRecommendationSnapshotId } =
+  useRecommendationSnapshot()
 const videoSrc = ref<string>('/videos/TestVideo.mp4')
 const isLoading = ref(true)
 const error = ref<string | null>(null)
@@ -233,6 +240,81 @@ const quizResults = ref<
   }>
 >([])
 
+const persistInteractiveAttempt = async (
+  interaction: VideoInteraction,
+  attempt: Omit<
+    QuizAttemptPayload,
+    | 'topicId'
+    | 'subjectId'
+    | 'levelId'
+    | 'chapterId'
+    | 'videoId'
+    | 'sourceType'
+    | 'sourceId'
+    | 'recommendationSnapshotId'
+    | 'quizId'
+  >,
+) => {
+  const resolvedVideoId = videoIdFromQuery.value
+
+  if (!resolvedVideoId) return
+
+  const quizId = buildVideoQuizId(resolvedVideoId, interaction._id)
+  const sessionPayload: QuizAttemptSessionPayload = {
+    topicId: null,
+    subjectId: null,
+    levelId: null,
+    chapterId: null,
+    videoId: resolvedVideoId,
+    sourceType: 'interactive_video_quiz',
+    sourceId: resolvedVideoId,
+    recommendationSnapshotId: activeRecommendationSnapshotId.value ?? null,
+    quizId,
+    totalQuestions: 1,
+    correctAnswers: attempt.isCorrect ? 1 : 0,
+    totalScore: attempt.scoreEarned,
+    maxScore: attempt.maxScore,
+    percentage: attempt.percentage,
+    startedAt: attempt.startedAt ?? null,
+    submittedAt: attempt.submittedAt,
+  }
+
+  try {
+    const sessionResponse = await $fetch<any>('/api/progress/quiz-attempt-sessions', {
+      method: 'POST',
+      body: sessionPayload,
+    })
+    const sessionId =
+      sessionResponse?.sessionId ||
+      sessionResponse?._id ||
+      sessionResponse?.id ||
+      null
+
+    await $fetch('/api/progress/quiz-attempts', {
+      method: 'POST',
+      body: {
+        sessionId,
+        attempts: [
+          {
+            ...attempt,
+            topicId: null,
+            subjectId: null,
+            levelId: null,
+            chapterId: null,
+            videoId: resolvedVideoId,
+            sourceType: 'interactive_video_quiz',
+            sourceId: resolvedVideoId,
+            recommendationSnapshotId: activeRecommendationSnapshotId.value ?? null,
+            quizId,
+          },
+        ],
+      },
+    })
+  } catch (error) {
+    console.error('Error persisting interactive video attempt:', error)
+  }
+}
+
 const handleQuizSubmit = (interaction: VideoInteraction, answer: string) => {
   const normalizeAnswer = (value: unknown) => {
     return String(value ?? '')
@@ -283,6 +365,24 @@ const handleQuizSubmit = (interaction: VideoInteraction, answer: string) => {
     isCorrect,
     timestamp: Date.now(),
   })
+
+  void persistInteractiveAttempt(interaction, {
+    questionId: buildVideoQuizId(videoIdFromQuery.value || 'unknown-video', interaction._id),
+    questionType: interaction.type === 'TrueFalse' ? 'true_false' : 'multiple_choice',
+    questionText: interaction.question ?? 'Interactive video quiz',
+    selectedAnswer: answer,
+    correctAnswer: interaction.correctAnswer ?? null,
+    isCorrect,
+    scoreEarned: isCorrect ? 1 : 0,
+    maxScore: 1,
+    percentage: isCorrect ? 100 : 0,
+    timeSpentSeconds: null,
+    startedAt: null,
+    submittedAt: new Date().toISOString(),
+    metadata: {
+      videoTimestamp: interaction.startTime ?? null,
+    },
+  })
 }
 
 const selectionResults = ref<
@@ -305,6 +405,26 @@ const handleSelectionSubmit = (interaction: VideoInteraction, answers: Record<st
     answers,
     isCorrect: allCorrect as boolean,
     timestamp: Date.now(),
+  })
+
+  void persistInteractiveAttempt(interaction, {
+    questionId: buildVideoQuizId(videoIdFromQuery.value || 'unknown-video', interaction._id),
+    questionType: 'drag_and_drop',
+    questionText: interaction.task ?? 'Interactive video selection',
+    selectedAnswer: answers,
+    correctAnswer: Object.fromEntries(
+      (interaction.items ?? []).map((item) => [item.id, item.correctLabel]),
+    ),
+    isCorrect: Boolean(allCorrect),
+    scoreEarned: allCorrect ? 1 : 0,
+    maxScore: 1,
+    percentage: allCorrect ? 100 : 0,
+    timeSpentSeconds: null,
+    startedAt: null,
+    submittedAt: new Date().toISOString(),
+    metadata: {
+      videoTimestamp: interaction.startTime ?? null,
+    },
   })
 }
 

@@ -4,6 +4,9 @@ import apiDocs from "~/utilities/apiDocs";
 import type {
   PersonalizedRecommendationsResponse,
   RecommendationAction,
+  RecommendationProgressSummaryResponse,
+  RecommendationSnapshotComparisonResponse,
+  RecommendationSnapshotCreateResponse,
   SubjectLearningAnalysis,
   TalkToDataResponse,
   TopicAssessmentStatus,
@@ -30,6 +33,12 @@ const tieOverlayPushed = useState<boolean>(
   () => false,
 );
 const { setDraft: setAiTeacherDraft } = useAiTeacherDraft();
+const {
+  snapshotId: activeRecommendationSnapshotId,
+  generatedAt: activeRecommendationSnapshotGeneratedAt,
+  setActiveSnapshot,
+  clearActiveSnapshot,
+} = useRecommendationSnapshot();
 
 const { data: profileData, status } = await useFetch<any>(
   apiDocs.auth.profile,
@@ -57,6 +66,18 @@ const recommendationOverview = computed(
 const subjectBreakdown = computed(
   () => personalizedRecommendations.value?.subjectBreakdown ?? [],
 );
+const snapshotSyncStatus = ref<Status>("idle");
+const snapshotSyncError = ref("");
+const comparisonStatus = ref<Status>("idle");
+const comparisonError = ref("");
+const progressSummaryStatus = ref<Status>("idle");
+const progressSummaryError = ref("");
+const activeSnapshotCreatedAt = ref("");
+const activeSnapshotComparison =
+  ref<RecommendationSnapshotComparisonResponse | null>(null);
+const recommendationProgressSummary =
+  ref<RecommendationProgressSummaryResponse | null>(null);
+const selectedTopicImprovementId = ref<string | null>(null);
 const talkToDataQuestion = ref("");
 const talkToDataAnswer = ref("");
 const talkToDataError = ref("");
@@ -104,6 +125,14 @@ const topicStatusLabels: Record<TopicLearningStatus, string> = {
   not_started: "Not started",
 };
 
+const recommendationOutcomeLabels = {
+  not_started: "Not started",
+  in_progress: "In progress",
+  improved: "Improved",
+  resolved: "Resolved",
+  regressed: "Regressed",
+} as const;
+
 const assessmentStatusLabels: Record<TopicAssessmentStatus, string> = {
   passed: "Passed",
   failed: "Failed",
@@ -143,6 +172,27 @@ const getAssessmentStatusClass = (status: TopicAssessmentStatus) => {
     return "bg-emerald-100 text-emerald-800";
   }
   if (status === "failed") {
+    return "bg-rose-100 text-rose-800";
+  }
+  return "bg-slate-100 text-slate-700";
+};
+
+const getRecommendationOutcomeLabel = (status: string) =>
+  recommendationOutcomeLabels[
+    status as keyof typeof recommendationOutcomeLabels
+  ] ?? status.replaceAll("_", " ");
+
+const getRecommendationOutcomeClass = (status: string) => {
+  if (status === "resolved") {
+    return "bg-emerald-100 text-emerald-800";
+  }
+  if (status === "improved") {
+    return "bg-sky-100 text-sky-800";
+  }
+  if (status === "in_progress") {
+    return "bg-amber-100 text-amber-800";
+  }
+  if (status === "regressed") {
     return "bg-rose-100 text-rose-800";
   }
   return "bg-slate-100 text-slate-700";
@@ -245,6 +295,207 @@ const getSubjectPriorityTopics = (subject: SubjectLearningAnalysis) => {
     .map((topic) => topic.topicName);
 };
 
+const comparisonTopics = computed(
+  () => activeSnapshotComparison.value?.topics ?? [],
+);
+const comparisonTopicById = computed(() => {
+  return new Map(
+    comparisonTopics.value.map((topic) => [topic.topicId, topic]),
+  );
+});
+
+const formatMetricValue = (
+  value: number | null | undefined,
+  suffix = "",
+) => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+
+  return `${value}${suffix}`;
+};
+
+const formatMetricDelta = (
+  value: number | null | undefined,
+  suffix = "",
+) => {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value}${suffix}`;
+};
+
+const getDeltaClass = (
+  value: number | null | undefined,
+  direction: "higher_is_better" | "lower_is_better" = "higher_is_better",
+) => {
+  if (value === null || value === undefined || Number.isNaN(value) || value === 0) {
+    return "text-slate-500";
+  }
+
+  const isImprovement =
+    direction === "higher_is_better" ? value > 0 : value < 0;
+
+  return isImprovement ? "text-emerald-700" : "text-rose-700";
+};
+
+const getTopicComparison = (topicId: string) =>
+  comparisonTopicById.value.get(topicId) ?? null;
+const getTopicComparisonStatus = (topicId: string) =>
+  getTopicComparison(topicId)?.status ?? "";
+const getTopicComparisonAttemptCount = (topicId: string) =>
+  getTopicComparison(topicId)?.quizSummarySinceSnapshot?.attemptCount ?? 0;
+const getTopicComparisonMetric = (
+  topicId: string,
+  phase: "before" | "after" | "delta",
+  metric: "progressPercent" | "assessmentScore" | "assessmentAttempts",
+) => {
+  const topic = getTopicComparison(topicId);
+  if (!topic) return null;
+
+  return topic[phase][metric];
+};
+const selectedTopicImprovement = computed(() => {
+  if (!selectedTopicImprovementId.value) return null;
+  return getTopicComparison(selectedTopicImprovementId.value);
+});
+const openTopicImprovement = (topicId: string) => {
+  if (!getTopicComparison(topicId)) return;
+  selectedTopicImprovementId.value = topicId;
+};
+const closeTopicImprovement = () => {
+  selectedTopicImprovementId.value = null;
+};
+const hasSnapshotAnalytics = computed(() => {
+  return (
+    snapshotSyncStatus.value !== "idle" ||
+    comparisonStatus.value !== "idle" ||
+    progressSummaryStatus.value !== "idle" ||
+    Boolean(recommendationProgressSummary.value) ||
+    Boolean(activeSnapshotComparison.value) ||
+    Boolean(snapshotSyncError.value) ||
+    Boolean(comparisonError.value) ||
+    Boolean(progressSummaryError.value)
+  );
+});
+const topicImprovementSummary = (topicId: string) => {
+  const comparison = getTopicComparison(topicId);
+  if (!comparison) return "No tracked improvement yet";
+
+  const progressDelta = comparison.delta.progressPercent ?? 0;
+  const scoreDelta = comparison.delta.assessmentScore ?? 0;
+  const attemptsDelta = comparison.delta.assessmentAttempts ?? 0;
+
+  return [
+    `Progress ${formatMetricDelta(progressDelta, "%")}`,
+    `Quiz ${formatMetricDelta(scoreDelta, "%")}`,
+    `Attempts ${formatMetricDelta(attemptsDelta)}`,
+  ].join(" | ");
+};
+
+const loadRecommendationProgressSummary = async () => {
+  progressSummaryStatus.value = "loading";
+  progressSummaryError.value = "";
+
+  try {
+    recommendationProgressSummary.value =
+      await $fetch<RecommendationProgressSummaryResponse>(
+        "/api/recommendations/progress-summary",
+        {
+          timeout: 12000,
+        },
+      );
+    progressSummaryStatus.value = "success";
+  } catch (error: any) {
+    progressSummaryStatus.value = "error";
+    progressSummaryError.value =
+      error?.data?.message ||
+      error?.message ||
+      "Failed to load recommendation progress summary.";
+  }
+};
+
+const loadSnapshotComparison = async (snapshotId: string) => {
+  comparisonStatus.value = "loading";
+  comparisonError.value = "";
+
+  try {
+    activeSnapshotComparison.value =
+      await $fetch<RecommendationSnapshotComparisonResponse>(
+        `/api/recommendations/snapshots/${snapshotId}/comparison`,
+        {
+          timeout: 12000,
+        },
+      );
+    comparisonStatus.value = "success";
+  } catch (error: any) {
+    comparisonStatus.value = "error";
+    comparisonError.value =
+      error?.data?.message ||
+      error?.message ||
+      "Failed to load progress since the latest recommendation snapshot.";
+  }
+};
+
+const syncActiveRecommendationSnapshot = async () => {
+  const payload = personalizedRecommendations.value;
+
+  if (!payload) return;
+
+  snapshotSyncStatus.value = "loading";
+  snapshotSyncError.value = "";
+
+  try {
+    let resolvedSnapshotId =
+      activeRecommendationSnapshotGeneratedAt.value === payload.generatedAt
+        ? activeRecommendationSnapshotId.value
+        : null;
+
+    if (!resolvedSnapshotId) {
+      const created =
+        await $fetch<RecommendationSnapshotCreateResponse>(
+          "/api/recommendations/snapshots",
+          {
+            method: "POST",
+            timeout: 12000,
+            body: {
+              generatedAt: payload.generatedAt,
+              summary: payload.summary,
+              overview: payload.overview,
+              subjectBreakdown: payload.subjectBreakdown,
+              topicBreakdown: payload.topicBreakdown,
+              recommendations: payload.recommendations,
+            },
+          },
+        );
+
+      resolvedSnapshotId = created.snapshotId;
+      activeSnapshotCreatedAt.value = created.generatedAt;
+      setActiveSnapshot(created.snapshotId, payload.generatedAt);
+    } else {
+      activeSnapshotCreatedAt.value = payload.generatedAt;
+    }
+
+    snapshotSyncStatus.value = "success";
+
+    void loadSnapshotComparison(resolvedSnapshotId);
+    void loadRecommendationProgressSummary();
+  } catch (error: any) {
+    clearActiveSnapshot();
+    activeSnapshotComparison.value = null;
+    recommendationProgressSummary.value = null;
+    comparisonStatus.value = "error";
+    progressSummaryStatus.value = "error";
+    snapshotSyncStatus.value = "error";
+    snapshotSyncError.value =
+      error?.data?.message ||
+      error?.message ||
+      "Failed to save the latest recommendation snapshot.";
+  }
+};
+
 const isSubjectTopicListExpanded = (subjectName: string) =>
   Boolean(expandedSubjectTopics.value[subjectName]);
 
@@ -304,6 +555,19 @@ const openAiTeacherWithPrompt = async (seedPrompt: string) => {
     tieOverlayOpening.value = false;
   }
 };
+
+onMounted(() => {
+  watch(
+    () => personalizedRecommendations.value?.generatedAt,
+    async (generatedAt) => {
+      if (!generatedAt) return;
+      await syncActiveRecommendationSnapshot();
+    },
+    {
+      immediate: true,
+    },
+  );
+});
 </script>
 
 <template>
@@ -582,6 +846,326 @@ const openAiTeacherWithPrompt = async (seedPrompt: string) => {
                 </p>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section
+          v-if="hasSnapshotAnalytics"
+          class="p-5 bg-white border rounded-3xl border-slate-200 shadow-sm"
+        >
+          <div
+            class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between"
+          >
+            <div>
+              <h4 class="text-lg font-semibold text-slate-900">
+                Progress Since Recommendation Snapshot
+              </h4>
+              <p class="mt-1 text-sm leading-6 text-slate-600">
+                Track what changed after your latest recommendation set was
+                generated.
+              </p>
+            </div>
+
+            <div class="grid gap-2 text-sm text-slate-600">
+              <p v-if="activeSnapshotCreatedAt">
+                Snapshot:
+                <span class="font-medium text-slate-900">{{
+                  formatGeneratedAt(activeSnapshotCreatedAt)
+                }}</span>
+              </p>
+              <p v-if="activeSnapshotComparison?.comparedAt">
+                Compared:
+                <span class="font-medium text-slate-900">{{
+                  formatGeneratedAt(activeSnapshotComparison.comparedAt)
+                }}</span>
+              </p>
+            </div>
+          </div>
+
+          <div
+            v-if="
+              snapshotSyncStatus === 'loading' ||
+              comparisonStatus === 'loading' ||
+              progressSummaryStatus === 'loading'
+            "
+            class="grid gap-3 mt-5 md:grid-cols-3 xl:grid-cols-5"
+          >
+            <div
+              v-for="index in 5"
+              :key="index"
+              class="h-24 rounded-3xl bg-slate-100 animate-pulse"
+            ></div>
+          </div>
+
+          <div
+            v-else-if="
+              snapshotSyncError || comparisonError || progressSummaryError
+            "
+            class="p-4 mt-5 border rounded-2xl border-amber-200 bg-amber-50 text-amber-900"
+          >
+            <p class="font-medium">
+              Snapshot analytics are temporarily unavailable.
+            </p>
+            <p class="mt-1 text-sm">
+              {{
+                snapshotSyncError ||
+                comparisonError ||
+                progressSummaryError
+              }}
+            </p>
+          </div>
+
+          <div
+            v-else
+            class="mt-5 space-y-5"
+          >
+            <div
+              v-if="recommendationProgressSummary"
+              class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+            >
+              <div class="p-4 rounded-3xl bg-slate-50">
+                <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+                  Total Recommendations
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-slate-900">
+                  {{ recommendationProgressSummary.totalRecommendations }}
+                </p>
+              </div>
+              <div class="p-4 rounded-3xl bg-emerald-50">
+                <p class="text-xs font-semibold tracking-wide uppercase text-emerald-700">
+                  Resolved
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-emerald-900">
+                  {{ recommendationProgressSummary.resolved }}
+                </p>
+              </div>
+              <div class="p-4 rounded-3xl bg-sky-50">
+                <p class="text-xs font-semibold tracking-wide uppercase text-sky-700">
+                  Improving
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-sky-900">
+                  {{ recommendationProgressSummary.improving }}
+                </p>
+              </div>
+              <div class="p-4 rounded-3xl bg-amber-50">
+                <p class="text-xs font-semibold tracking-wide uppercase text-amber-700">
+                  Not Started
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-amber-900">
+                  {{ recommendationProgressSummary.notStarted }}
+                </p>
+              </div>
+              <div class="p-4 rounded-3xl bg-rose-50">
+                <p class="text-xs font-semibold tracking-wide uppercase text-rose-700">
+                  Regressed
+                </p>
+                <p class="mt-2 text-2xl font-semibold text-rose-900">
+                  {{ recommendationProgressSummary.regressed }}
+                </p>
+              </div>
+            </div>
+
+            <div
+              v-if="activeSnapshotComparison?.overview"
+              class="grid gap-3 lg:grid-cols-2"
+            >
+              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+                <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+                  Average Progress
+                </p>
+                <div class="grid grid-cols-3 gap-2 mt-3 text-sm">
+                  <div>
+                    <p class="text-slate-500">Before</p>
+                    <p class="font-semibold text-slate-900">
+                      {{
+                        formatMetricValue(
+                          activeSnapshotComparison.overview.before
+                            .averageProgress,
+                          "%",
+                        )
+                      }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-slate-500">After</p>
+                    <p class="font-semibold text-slate-900">
+                      {{
+                        formatMetricValue(
+                          activeSnapshotComparison.overview.after
+                            .averageProgress,
+                          "%",
+                        )
+                      }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-slate-500">Delta</p>
+                    <p
+                      class="font-semibold"
+                      :class="
+                        getDeltaClass(
+                          activeSnapshotComparison.overview.delta
+                            .averageProgress,
+                        )
+                      "
+                    >
+                      {{
+                        formatMetricDelta(
+                          activeSnapshotComparison.overview.delta
+                            .averageProgress,
+                          "%",
+                        )
+                      }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+                <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+                  Assessment Average
+                </p>
+                <div class="grid grid-cols-3 gap-2 mt-3 text-sm">
+                  <div>
+                    <p class="text-slate-500">Before</p>
+                    <p class="font-semibold text-slate-900">
+                      {{
+                        formatMetricValue(
+                          activeSnapshotComparison.overview.before
+                            .averageAssessmentScore,
+                          "%",
+                        )
+                      }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-slate-500">After</p>
+                    <p class="font-semibold text-slate-900">
+                      {{
+                        formatMetricValue(
+                          activeSnapshotComparison.overview.after
+                            .averageAssessmentScore,
+                          "%",
+                        )
+                      }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-slate-500">Delta</p>
+                    <p
+                      class="font-semibold"
+                      :class="
+                        getDeltaClass(
+                          activeSnapshotComparison.overview.delta
+                            .averageAssessmentScore,
+                        )
+                      "
+                    >
+                      {{
+                        formatMetricDelta(
+                          activeSnapshotComparison.overview.delta
+                            .averageAssessmentScore,
+                          "%",
+                        )
+                      }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+                <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+                  Quiz Attempts
+                </p>
+                <div class="grid grid-cols-3 gap-2 mt-3 text-sm">
+                  <div>
+                    <p class="text-slate-500">Before</p>
+                    <p class="font-semibold text-slate-900">
+                      {{
+                        formatMetricValue(
+                          activeSnapshotComparison.overview.before
+                            .totalAssessmentAttempts,
+                        )
+                      }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-slate-500">After</p>
+                    <p class="font-semibold text-slate-900">
+                      {{
+                        formatMetricValue(
+                          activeSnapshotComparison.overview.after
+                            .totalAssessmentAttempts,
+                        )
+                      }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-slate-500">Delta</p>
+                    <p
+                      class="font-semibold"
+                      :class="
+                        getDeltaClass(
+                          activeSnapshotComparison.overview.delta
+                            .totalAssessmentAttempts,
+                        )
+                      "
+                    >
+                      {{
+                        formatMetricDelta(
+                          activeSnapshotComparison.overview.delta
+                            .totalAssessmentAttempts,
+                        )
+                      }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+                <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+                  Covered / Failed Topics
+                </p>
+                <div class="grid grid-cols-2 gap-4 mt-3 text-sm">
+                  <div>
+                    <p class="text-slate-500">Covered delta</p>
+                    <p
+                      class="font-semibold"
+                      :class="
+                        getDeltaClass(
+                          activeSnapshotComparison.overview.delta.coveredTopics,
+                        )
+                      "
+                    >
+                      {{
+                        formatMetricDelta(
+                          activeSnapshotComparison.overview.delta.coveredTopics,
+                        )
+                      }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-slate-500">Failed delta</p>
+                    <p
+                      class="font-semibold"
+                      :class="
+                        getDeltaClass(
+                          activeSnapshotComparison.overview.delta.failedTopics,
+                          'lower_is_better',
+                        )
+                      "
+                    >
+                      {{
+                        formatMetricDelta(
+                          activeSnapshotComparison.overview.delta.failedTopics,
+                        )
+                      }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </section>
 
@@ -884,6 +1468,57 @@ const openAiTeacherWithPrompt = async (seedPrompt: string) => {
                         Quiz {{ topic.assessmentScore }}%
                       </span>
                     </div>
+
+                    <div
+                      v-if="getTopicComparison(topic.topicId)"
+                      class="p-4 mt-4 border rounded-2xl border-sky-100 bg-sky-50/70"
+                    >
+                      <div
+                        class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"
+                      >
+                        <div class="flex flex-wrap items-center gap-2">
+                          <p
+                            class="text-xs font-semibold tracking-wide uppercase text-oceanBlue"
+                          >
+                            Since Recommendation Snapshot
+                          </p>
+                          <span
+                            class="px-2.5 py-1 text-xs font-medium rounded-full"
+                            :class="getRecommendationOutcomeClass(getTopicComparisonStatus(topic.topicId))"
+                          >
+                            {{
+                              getRecommendationOutcomeLabel(
+                                getTopicComparisonStatus(topic.topicId),
+                              )
+                            }}
+                          </span>
+                        </div>
+
+                        <p class="text-xs text-slate-500">
+                          Attempts since snapshot:
+                          {{ getTopicComparisonAttemptCount(topic.topicId) }}
+                        </p>
+                      </div>
+
+                      <div
+                        class="flex flex-col gap-3 mt-3 md:flex-row md:items-center md:justify-between"
+                      >
+                        <p class="text-sm text-slate-700">
+                          {{ topicImprovementSummary(topic.topicId) }}
+                        </p>
+                        <button
+                          type="button"
+                          class="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold transition-colors border rounded-full border-oceanBlue/20 bg-white text-oceanBlue hover:bg-oceanBlue/5"
+                          @click="openTopicImprovement(topic.topicId)"
+                        >
+                          <Icon
+                            name="heroicons:chart-bar-square"
+                            class="w-4 h-4"
+                          />
+                          <span>View improvement</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   <div class="flex flex-col gap-3 sm:flex-row">
@@ -1101,6 +1736,130 @@ const openAiTeacherWithPrompt = async (seedPrompt: string) => {
         />
       </div>
     </div>
+
+    <Teleport to="body">
+      <Transition name="fade">
+        <div
+          v-if="selectedTopicImprovement"
+          class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 px-4"
+          @click.self="closeTopicImprovement()"
+        >
+          <div
+            class="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl"
+          >
+            <div
+              class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-200"
+            >
+              <div>
+                <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
+                  Topic Improvement
+                </p>
+                <h4 class="mt-2 text-xl font-semibold text-slate-900">
+                  {{ selectedTopicImprovement.topicName }}
+                </h4>
+              </div>
+              <button
+                type="button"
+                class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
+                @click="closeTopicImprovement()"
+              >
+                <Icon
+                  name="heroicons:x-mark-20-solid"
+                  class="w-5 h-5"
+                />
+              </button>
+            </div>
+
+            <div class="px-6 py-5 space-y-5">
+              <div class="flex flex-wrap items-center gap-2">
+                <span
+                  class="px-2.5 py-1 text-xs font-medium rounded-full"
+                  :class="getRecommendationOutcomeClass(selectedTopicImprovement.status)"
+                >
+                  {{ getRecommendationOutcomeLabel(selectedTopicImprovement.status) }}
+                </span>
+                <span class="px-2.5 py-1 text-xs rounded-full bg-slate-100 text-slate-700">
+                  {{ formatRecommendationAction(selectedTopicImprovement.recommendedAction) }}
+                </span>
+              </div>
+
+              <div class="grid gap-3 sm:grid-cols-3">
+                <div class="p-4 rounded-2xl bg-slate-50">
+                  <p class="text-xs uppercase text-slate-500">Progress</p>
+                  <p class="mt-2 text-sm font-semibold text-slate-900">
+                    {{ selectedTopicImprovement.before.progressPercent }}% →
+                    {{ selectedTopicImprovement.after.progressPercent }}%
+                  </p>
+                  <p
+                    class="mt-1 text-xs font-medium"
+                    :class="getDeltaClass(selectedTopicImprovement.delta.progressPercent)"
+                  >
+                    {{ formatMetricDelta(selectedTopicImprovement.delta.progressPercent, "%") }}
+                  </p>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-slate-50">
+                  <p class="text-xs uppercase text-slate-500">Quiz score</p>
+                  <p class="mt-2 text-sm font-semibold text-slate-900">
+                    {{ formatMetricValue(selectedTopicImprovement.before.assessmentScore, "%") }} →
+                    {{ formatMetricValue(selectedTopicImprovement.after.assessmentScore, "%") }}
+                  </p>
+                  <p
+                    class="mt-1 text-xs font-medium"
+                    :class="getDeltaClass(selectedTopicImprovement.delta.assessmentScore)"
+                  >
+                    {{ formatMetricDelta(selectedTopicImprovement.delta.assessmentScore, "%") }}
+                  </p>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-slate-50">
+                  <p class="text-xs uppercase text-slate-500">Attempts</p>
+                  <p class="mt-2 text-sm font-semibold text-slate-900">
+                    {{ selectedTopicImprovement.before.assessmentAttempts }} →
+                    {{ selectedTopicImprovement.after.assessmentAttempts }}
+                  </p>
+                  <p
+                    class="mt-1 text-xs font-medium"
+                    :class="getDeltaClass(selectedTopicImprovement.delta.assessmentAttempts)"
+                  >
+                    {{ formatMetricDelta(selectedTopicImprovement.delta.assessmentAttempts) }}
+                  </p>
+                </div>
+              </div>
+
+              <div
+                v-if="selectedTopicImprovement.quizSummarySinceSnapshot"
+                class="p-4 rounded-2xl bg-sky-50 border border-sky-100"
+              >
+                <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
+                  Quiz Activity Since Snapshot
+                </p>
+                <div class="grid gap-3 mt-3 sm:grid-cols-3 text-sm">
+                  <p class="text-slate-700">
+                    Attempts
+                    <span class="font-semibold text-slate-900">{{
+                      selectedTopicImprovement.quizSummarySinceSnapshot.attemptCount
+                    }}</span>
+                  </p>
+                  <p class="text-slate-700">
+                    Correct
+                    <span class="font-semibold text-slate-900">{{
+                      selectedTopicImprovement.quizSummarySinceSnapshot.correctCount
+                    }}</span>
+                  </p>
+                  <p class="text-slate-700">
+                    Incorrect
+                    <span class="font-semibold text-slate-900">{{
+                      selectedTopicImprovement.quizSummarySinceSnapshot.incorrectCount
+                    }}</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 
   <div
