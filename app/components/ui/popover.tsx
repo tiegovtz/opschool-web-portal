@@ -1,31 +1,191 @@
-"use client"
+import {
+  computed,
+  defineComponent,
+  inject,
+  onBeforeUnmount,
+  onMounted,
+  provide,
+  ref,
+  type PropType,
+  type Ref,
+} from "vue";
+import { cn } from "~/utilities/utils";
 
-import * as React from "react"
-import * as PopoverPrimitive from "@radix-ui/react-popover"
+type PopoverContextValue = {
+  open: Ref<boolean>;
+  setOpen: (value: boolean) => void;
+};
 
-import { cn } from "@/lib/utils"
+const popoverContextKey = Symbol("popover-context");
 
-const Popover = PopoverPrimitive.Root
+const usePopoverContext = () => {
+  const context = inject<PopoverContextValue | null>(popoverContextKey, null);
+  if (!context) {
+    throw new Error("Popover components must be used within <Popover>.");
+  }
+  return context;
+};
 
-const PopoverTrigger = PopoverPrimitive.Trigger
+const Popover = defineComponent({
+  name: "Popover",
+  inheritAttrs: false,
+  props: {
+    open: {
+      type: Boolean,
+      default: undefined,
+    },
+    defaultOpen: Boolean,
+    onOpenChange: Function as PropType<(open: boolean) => void>,
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    const rootRef = ref<HTMLElement | null>(null);
+    const internalOpen = ref(Boolean(props.defaultOpen));
+    const isControlled = computed(() => props.open !== undefined);
+    const open = computed({
+      get: () => (isControlled.value ? Boolean(props.open) : internalOpen.value),
+      set: (value: boolean) => {
+        if (!isControlled.value) {
+          internalOpen.value = value;
+        }
+        props.onOpenChange?.(value);
+      },
+    });
 
-const PopoverContent = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
-    <PopoverPrimitive.Content
-      ref={ref}
-      align={align}
-      sideOffset={sideOffset}
-      className={cn(
-        "z-50 w-72 rounded-md border border-gray-200 bg-white p-4 text-gray-950 shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-50",
-        className
-      )}
-      {...props}
-    />
-  </PopoverPrimitive.Portal>
-))
-PopoverContent.displayName = PopoverPrimitive.Content.displayName
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!open.value || !rootRef.value) {
+        return;
+      }
 
-export { Popover, PopoverTrigger, PopoverContent }
+      if (!rootRef.value.contains(event.target as Node)) {
+        open.value = false;
+      }
+    };
+
+    onMounted(() => {
+      document.addEventListener("mousedown", handleOutsideClick);
+    });
+
+    onBeforeUnmount(() => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    });
+
+    provide<PopoverContextValue>(popoverContextKey, {
+      open,
+      setOpen: (value) => {
+        open.value = value;
+      },
+    });
+
+    return () => (
+      <div
+        {...attrs}
+        ref={rootRef}
+        class={cn(
+          "relative inline-flex",
+          props.class,
+          props.className,
+          attrs.class as string | undefined,
+          (attrs as { className?: string }).className,
+        )}
+      >
+        {slots.default?.()}
+      </div>
+    );
+  },
+});
+
+const PopoverTrigger = defineComponent({
+  name: "PopoverTrigger",
+  inheritAttrs: false,
+  props: {
+    asChild: Boolean,
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    const context = usePopoverContext();
+
+    const handleClick = (event: MouseEvent) => {
+      (attrs.onClick as ((event: MouseEvent) => void) | undefined)?.(event);
+      context.setOpen(!context.open.value);
+    };
+
+    return () =>
+      props.asChild ? (
+        <span
+          {...attrs}
+          class={cn(
+            props.class,
+            props.className,
+            attrs.class as string | undefined,
+            (attrs as { className?: string }).className,
+          )}
+          onClick={handleClick}
+        >
+          {slots.default?.()}
+        </span>
+      ) : (
+        <button
+          {...attrs}
+          type="button"
+          class={cn(
+            props.class,
+            props.className,
+            attrs.class as string | undefined,
+            (attrs as { className?: string }).className,
+          )}
+          onClick={handleClick}
+        >
+          {slots.default?.()}
+        </button>
+      );
+  },
+});
+
+const PopoverContent = defineComponent({
+  name: "PopoverContent",
+  inheritAttrs: false,
+  props: {
+    align: {
+      type: String as PropType<"start" | "center" | "end">,
+      default: "center",
+    },
+    sideOffset: {
+      type: Number,
+      default: 4,
+    },
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    const context = usePopoverContext();
+
+    const alignmentClasses: Record<"start" | "center" | "end", string> = {
+      start: "left-0",
+      center: "left-1/2 -translate-x-1/2",
+      end: "right-0",
+    };
+
+    return () =>
+      context.open.value ? (
+        <div
+          {...attrs}
+          class={cn(
+            "absolute z-50 w-72 rounded-2xl border border-oceanBlue/10 bg-white p-4 text-slate-700 shadow-lg outline-none",
+            alignmentClasses[props.align],
+            props.class,
+            props.className,
+            attrs.class as string | undefined,
+            (attrs as { className?: string }).className,
+          )}
+          style={{ top: `calc(100% + ${props.sideOffset}px)` }}
+        >
+          {slots.default?.()}
+        </div>
+      ) : null;
+  },
+});
+
+export { Popover, PopoverTrigger, PopoverContent };

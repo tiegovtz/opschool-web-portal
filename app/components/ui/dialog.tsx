@@ -1,112 +1,314 @@
-"use client"
+import {
+  Teleport,
+  computed,
+  defineComponent,
+  inject,
+  provide,
+  ref,
+  type PropType,
+  type Ref,
+} from "vue";
+import { Icon } from "@iconify/vue";
+import { cn } from "~/utilities/utils";
 
-import * as React from "react"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { X } from "lucide-react"
+type DialogContextValue = {
+  open: Ref<boolean>;
+  setOpen: (value: boolean) => void;
+};
 
-import { cn } from "@/lib/utils"
+const dialogContextKey = Symbol("dialog-context");
 
-const Dialog = DialogPrimitive.Root
+const useDialogContext = () => {
+  const context = inject<DialogContextValue | null>(dialogContextKey, null);
+  if (!context) {
+    throw new Error("Dialog components must be used within <Dialog>.");
+  }
+  return context;
+};
 
-const DialogTrigger = DialogPrimitive.Trigger
+const Dialog = defineComponent({
+  name: "Dialog",
+  props: {
+    open: Boolean,
+    defaultOpen: Boolean,
+    onOpenChange: Function as PropType<(open: boolean) => void>,
+  },
+  setup(props, { slots }) {
+    const internalOpen = ref(Boolean(props.defaultOpen));
+    const isControlled = computed(() => props.open !== undefined);
+    const open = computed({
+      get: () => (isControlled.value ? Boolean(props.open) : internalOpen.value),
+      set: (value: boolean) => {
+        if (!isControlled.value) {
+          internalOpen.value = value;
+        }
+        props.onOpenChange?.(value);
+      },
+    });
 
-const DialogPortal = DialogPrimitive.Portal
+    provide<DialogContextValue>(dialogContextKey, {
+      open,
+      setOpen: (value) => {
+        open.value = value;
+      },
+    });
 
-const DialogClose = DialogPrimitive.Close
+    return () => slots.default?.();
+  },
+});
 
-const DialogOverlay = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay
-    ref={ref}
-    className={cn(
-      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className
-    )}
-    {...props}
-  />
-))
-DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
+const DialogTrigger = defineComponent({
+  name: "DialogTrigger",
+  inheritAttrs: false,
+  props: {
+    asChild: Boolean,
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    const dialog = useDialogContext();
 
-const DialogContent = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border border-gray-200 bg-white p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg dark:border-gray-800 dark:bg-gray-950",
-        className
-      )}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-gray-100 data-[state=open]:text-gray-500 dark:ring-offset-gray-950 dark:focus:ring-gray-300 dark:data-[state=open]:bg-gray-800 dark:data-[state=open]:text-gray-400">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </DialogPortal>
-))
-DialogContent.displayName = DialogPrimitive.Content.displayName
+    const handleClick = (event: MouseEvent) => {
+      (attrs.onClick as ((event: MouseEvent) => void) | undefined)?.(event);
+      dialog.setOpen(true);
+    };
 
-const DialogHeader = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col space-y-1.5 text-center sm:text-left",
-      className
-    )}
-    {...props}
-  />
-)
-DialogHeader.displayName = "DialogHeader"
+    return () => {
+      const content = slots.default?.();
+      const className = cn(
+        props.class,
+        props.className,
+        attrs.class as string | undefined,
+        (attrs as { className?: string }).className,
+      );
 
-const DialogFooter = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
-      className
-    )}
-    {...props}
-  />
-)
-DialogFooter.displayName = "DialogFooter"
+      if (props.asChild) {
+        return (
+          <span {...attrs} class={className} onClick={handleClick}>
+            {content}
+          </span>
+        );
+      }
 
-const DialogTitle = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Title>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title
-    ref={ref}
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className
-    )}
-    {...props}
-  />
-))
-DialogTitle.displayName = DialogPrimitive.Title.displayName
+      return (
+        <button {...attrs} type="button" class={className} onClick={handleClick}>
+          {content}
+        </button>
+      );
+    };
+  },
+});
 
-const DialogDescription = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Description>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Description
-    ref={ref}
-    className={cn("text-sm text-gray-500 dark:text-gray-400", className)}
-    {...props}
-  />
-))
-DialogDescription.displayName = DialogPrimitive.Description.displayName
+const DialogPortal = defineComponent({
+  name: "DialogPortal",
+  setup(_, { slots }) {
+    return () => <Teleport to="body">{slots.default?.()}</Teleport>;
+  },
+});
+
+const DialogOverlay = defineComponent({
+  name: "DialogOverlay",
+  inheritAttrs: false,
+  props: {
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs }) {
+    const dialog = useDialogContext();
+    return () =>
+      dialog.open.value ? (
+        <div
+          {...attrs}
+          class={cn(
+            "fixed inset-0 z-50 bg-black/80",
+            props.class,
+            props.className,
+            attrs.class as string | undefined,
+            (attrs as { className?: string }).className,
+          )}
+          onClick={() => dialog.setOpen(false)}
+        />
+      ) : null;
+  },
+});
+
+const DialogClose = defineComponent({
+  name: "DialogClose",
+  inheritAttrs: false,
+  props: {
+    asChild: Boolean,
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    const dialog = useDialogContext();
+    const handleClick = (event: MouseEvent) => {
+      (attrs.onClick as ((event: MouseEvent) => void) | undefined)?.(event);
+      dialog.setOpen(false);
+    };
+
+    return () => {
+      const className = cn(
+        props.class,
+        props.className,
+        attrs.class as string | undefined,
+        (attrs as { className?: string }).className,
+      );
+
+      if (props.asChild) {
+        return (
+          <span {...attrs} class={className} onClick={handleClick}>
+            {slots.default?.()}
+          </span>
+        );
+      }
+
+      return (
+        <button {...attrs} type="button" class={className} onClick={handleClick}>
+          {slots.default?.()}
+        </button>
+      );
+    };
+  },
+});
+
+const DialogContent = defineComponent({
+  name: "DialogContent",
+  inheritAttrs: false,
+  props: {
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    const dialog = useDialogContext();
+
+    return () =>
+      dialog.open.value ? (
+        <DialogPortal>
+          <DialogOverlay />
+          <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              {...attrs}
+              class={cn(
+                "relative grid w-full max-w-lg gap-4 rounded-2xl border border-oceanBlue/10 bg-white p-6 shadow-lg",
+                props.class,
+                props.className,
+                attrs.class as string | undefined,
+                (attrs as { className?: string }).className,
+              )}
+              onClick={(event: MouseEvent) => event.stopPropagation()}
+            >
+              {slots.default?.()}
+              <DialogClose class="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100">
+                <Icon icon="lucide:x" class="h-4 w-4" />
+                <span class="sr-only">Close</span>
+              </DialogClose>
+            </div>
+          </div>
+        </DialogPortal>
+      ) : null;
+  },
+});
+
+const DialogHeader = defineComponent({
+  name: "DialogHeader",
+  inheritAttrs: false,
+  props: {
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    return () => (
+      <div
+        {...attrs}
+        class={cn(
+          "flex flex-col space-y-1.5 text-center sm:text-left",
+          props.class,
+          props.className,
+          attrs.class as string | undefined,
+          (attrs as { className?: string }).className,
+        )}
+      >
+        {slots.default?.()}
+      </div>
+    );
+  },
+});
+
+const DialogFooter = defineComponent({
+  name: "DialogFooter",
+  inheritAttrs: false,
+  props: {
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    return () => (
+      <div
+        {...attrs}
+        class={cn(
+          "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+          props.class,
+          props.className,
+          attrs.class as string | undefined,
+          (attrs as { className?: string }).className,
+        )}
+      >
+        {slots.default?.()}
+      </div>
+    );
+  },
+});
+
+const DialogTitle = defineComponent({
+  name: "DialogTitle",
+  inheritAttrs: false,
+  props: {
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    return () => (
+      <h2
+        {...attrs}
+        class={cn(
+          "text-lg font-semibold leading-none tracking-tight",
+          props.class,
+          props.className,
+          attrs.class as string | undefined,
+          (attrs as { className?: string }).className,
+        )}
+      >
+        {slots.default?.()}
+      </h2>
+    );
+  },
+});
+
+const DialogDescription = defineComponent({
+  name: "DialogDescription",
+  inheritAttrs: false,
+  props: {
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    return () => (
+      <p
+        {...attrs}
+        class={cn(
+          "text-sm text-slate-500",
+          props.class,
+          props.className,
+          attrs.class as string | undefined,
+          (attrs as { className?: string }).className,
+        )}
+      >
+        {slots.default?.()}
+      </p>
+    );
+  },
+});
 
 export {
   Dialog,
@@ -119,4 +321,5 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-}
+  useDialogContext,
+};

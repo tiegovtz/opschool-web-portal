@@ -1,72 +1,65 @@
-"use client";
-
-import * as React from "react";
+import { defineComponent } from "vue";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+} from "~/components/ui/dialog";
+import { cn } from "~/utilities/utils";
 
-/**
- * Props for the ImageModal component
- */
 interface ImageModalProps {
-  /** The source URL of the image */
   src: string;
-  /** Alternative text for the image */
   alt: string;
-  /** Additional CSS classes for the trigger image */
   className?: string;
-  /** Custom trigger element. If not provided, uses the image itself as trigger */
-  children?: React.ReactNode;
+  class?: string;
 }
 
-/**
- * ImageModal component that displays an image in an enlargeable overlay
- *
- * Features:
- * - Click image to open in full-screen overlay
- * - Dark backdrop with centered image
- * - Responsive design (95% viewport on mobile/desktop)
- * - Click outside or press ESC to close
- * - Hover effects on trigger image
- *
- * @param props - The ImageModal props
- * @returns JSX element containing the image modal
- */
-export function ImageModal({ src, alt, className, children }: ImageModalProps) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {children || (
-          <button className="cursor-pointer hover:opacity-80 transition-opacity">
+const ImageModal = defineComponent({
+  name: "ImageModal",
+  props: {
+    src: {
+      type: String,
+      required: true,
+    },
+    alt: {
+      type: String,
+      required: true,
+    },
+    class: String,
+    className: String,
+  },
+  setup(props, { slots }) {
+    return () => (
+      <Dialog>
+        <DialogTrigger asChild>
+          {slots.default?.() || (
+            <button class="cursor-pointer transition-opacity hover:opacity-80">
+              <img
+                src={props.src}
+                alt={props.alt}
+                class={cn(
+                  "h-auto w-full max-w-md rounded-2xl border border-oceanBlue/10 bg-white object-cover shadow-sm",
+                  props.class,
+                  props.className,
+                )}
+              />
+            </button>
+          )}
+        </DialogTrigger>
+        <DialogContent class="max-h-[95vh] w-auto max-w-[95vw] overflow-hidden border-0 bg-transparent p-0 shadow-none">
+          <DialogTitle class="sr-only">Image preview</DialogTitle>
+          <div class="relative flex items-center justify-center">
             <img
-              src={src}
-              alt={alt}
-              className={cn(
-                "max-w-md w-full h-auto rounded-lg border border-gray-200 shadow-sm",
-                className,
-              )}
+              src={props.src}
+              alt={props.alt}
+              class="h-auto max-h-[90vh] w-auto max-w-full cursor-pointer rounded-2xl object-contain shadow-2xl"
+              onClick={(event: MouseEvent) => event.stopPropagation()}
             />
-          </button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-auto p-0 border-0 bg-transparent shadow-none overflow-hidden">
-        <VisuallyHidden>
-          <DialogTitle>Image</DialogTitle>
-        </VisuallyHidden>
-        <div className="relative flex items-center justify-center">
-          <img
-            src={src}
-            alt={alt}
-            className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl cursor-pointer"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  },
+});
+
+export { ImageModal };
