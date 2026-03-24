@@ -5,9 +5,9 @@ import { AnimatePresence } from "motion/react";
 
 // Local imports
 import { cn, getImageUrl } from "@/lib/utils";
-import ActivityTitle from "../../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
-import { ActivityResultsAlertDialog } from "../../../../../../tie_open_school_primary_frontend/components/templates/results";
+import { ActivityResultsAlertDialog } from "@/components/templates/results";
 import { useObjects } from "@/hooks/useObjects";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { GameModeWrapper, GameStats } from "@/components/ui/game-mode";

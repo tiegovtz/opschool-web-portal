@@ -7,15 +7,15 @@ import { motion, AnimatePresence } from "motion/react";
 
 // Local imports
 import { cn, shuffle } from "@/lib/utils";
-import Draggable from "../../../../../../tie_open_school_primary_frontend/components/ui/dnd/draggable";
-import DNDContext from "../../../../../../tie_open_school_primary_frontend/components/layout/dnd-context";
-import { DroppableProps } from "../../../../../../tie_open_school_primary_frontend/components/ui/dnd/droppable";
-import ActivityTitle from "../../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import Draggable from "@/components/ui/dnd/draggable";
+import DNDContext from "@/components/layout/dnd-context";
+import { DroppableProps } from "@/components/ui/dnd/droppable";
+import ActivityTitle from "@/components/templates/activity-title";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import { GameModeWrapper, GameStats } from "@/components/ui/game-mode";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 import { FeedbackType } from "@/lib/types/activity-types";
 
 type Question = {

@@ -1,7 +1,6 @@
-import * as React from "react";
+import { defineComponent, type PropType } from "vue";
 import { cva, type VariantProps } from "class-variance-authority";
-
-import { cn } from "@/lib/utils";
+import { cn } from "~/utilities/utils";
 
 const badgeVariants = cva(
   "inline-flex items-center rounded-full border border-gray-200 px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2 dark:border-gray-800 dark:focus:ring-gray-300",
@@ -29,13 +28,38 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
-
-function Badge({ className, variant, ...props }: BadgeProps) {
-  return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+  extends VariantProps<typeof badgeVariants> {
+  class?: string;
+  className?: string;
 }
+
+const Badge = defineComponent({
+  name: "Badge",
+  inheritAttrs: false,
+  props: {
+    variant: {
+      type: String as PropType<BadgeProps["variant"]>,
+      default: "default",
+    },
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    return () => (
+      <div
+        {...attrs}
+        class={cn(
+          badgeVariants({ variant: props.variant }),
+          props.class,
+          props.className,
+          attrs.class as string | undefined,
+          (attrs as { className?: string }).className,
+        )}
+      >
+        {slots.default?.()}
+      </div>
+    );
+  },
+});
 
 export { Badge, badgeVariants };

@@ -6,14 +6,14 @@ import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 
 // Local imports
 import { cn } from "@/lib/utils";
-import DNDContext from "../../../../../tie_open_school_primary_frontend/components/layout/dnd-context";
-import Draggable from "../../../../../tie_open_school_primary_frontend/components/ui/dnd/draggable";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import DNDContext from "@/components/layout/dnd-context";
+import Draggable from "@/components/ui/dnd/draggable";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 
 type DroppableArea = (
   props: React.HTMLAttributes<HTMLDivElement> & { id: string }

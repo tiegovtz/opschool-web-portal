@@ -1,18 +1,18 @@
 import { useState } from "react";
 import { Check, X, AlertTriangle } from "lucide-react";
-import { Checkbox } from "../../../../../tie_open_school_primary_frontend/components/ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Local imports
 import { cn } from "@/lib/utils";
-import { Input } from "../../../../../tie_open_school_primary_frontend/components/ui/input";
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 
 type TLabelTheDiagramProps = {
   notes: string;

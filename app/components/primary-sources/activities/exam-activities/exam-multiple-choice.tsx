@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 // Local imports
 import { cn, toRoman } from "@/lib/utils";
-import { Button } from "../../../../../../tie_open_school_primary_frontend/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useExamContext } from "@/shared/context/exam-context";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import { QuestionAnswer } from "@/shared/context/exam-context";

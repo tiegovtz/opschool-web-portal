@@ -6,7 +6,7 @@ import { DragEndEvent, DragOverlay, DragStartEvent } from "@dnd-kit/core";
 
 // Local imports
 import { cn, getImageUrl } from "@/lib/utils";
-import DNDContext from "../../../../../tie_open_school_primary_frontend/components/layout/dnd-context";
+import DNDContext from "@/components/layout/dnd-context";
 import Droppable from "@/components/ui/dnd/droppable";
 import Draggable from "@/components/ui/dnd/draggable";
 import ActivityResults from "@/components/templates/results";

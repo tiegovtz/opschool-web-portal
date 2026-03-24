@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 
 // local imports
 import { cn, toRoman } from "@/lib/utils";
-import { Textarea } from "../../../../../../tie_open_school_primary_frontend/components/ui/textarea";
+import { Textarea } from "@/components/ui/textarea";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
 import { useExamContext } from "@/shared/context/exam-context";
 

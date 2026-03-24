@@ -6,7 +6,7 @@ import clsx from "clsx";
 // Local imports
 import { cn } from "~/utilities/utils";
 import Input from "./input";
-import Button from "../button";
+import { Button } from "../button";
 
 export default defineComponent({
   name: "SearchInput",
@@ -39,7 +39,7 @@ export default defineComponent({
           {...props} 
           class={clsx(
             "border border-neutral-200 pl-2 pr-8 text-sm",
-            attrs.class 
+            attrs.class as string | undefined,
           )}
         />
       </div>

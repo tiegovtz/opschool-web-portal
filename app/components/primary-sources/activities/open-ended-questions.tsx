@@ -8,13 +8,13 @@ import { motion } from "motion/react";
 import { cn, extractKatexSegments } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 import { ImageModal } from "@/components/ui/image-modal";
 import { BlockMath, InlineMath } from "react-katex";
 

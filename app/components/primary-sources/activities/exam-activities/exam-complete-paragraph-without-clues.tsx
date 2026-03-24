@@ -4,7 +4,7 @@ import { Fragment, useState, useEffect } from "react";
 
 // local imports
 import { cn } from "@/lib/utils";
-import { Input } from "../../../../../../tie_open_school_primary_frontend/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
 import { useExamContext } from "@/shared/context/exam-context";
 import { QuestionAnswer } from "@/shared/context/exam-context";

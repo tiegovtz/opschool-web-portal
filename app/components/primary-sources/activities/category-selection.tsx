@@ -10,7 +10,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import CurriculumIndicator from "@/app/(learning-activities)/curriculum-indicator";
 

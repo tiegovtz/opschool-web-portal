@@ -3,14 +3,14 @@ import * as motion from "motion/react-client";
 
 // Local imports
 import { shuffle } from "@/lib/utils";
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
-import CustomInput from "../../../../../tie_open_school_primary_frontend/components/ui/inputs/custom-input";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import { Button } from "@/components/ui/button";
+import CustomInput from "@/components/ui/inputs/custom-input";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
-import { Input } from "../../../../../tie_open_school_primary_frontend/components/ui/input";
+} from "@/components/templates/results";
+import { Input } from "@/components/ui/input";
 
 interface SequenceQuestion {
   title: string;

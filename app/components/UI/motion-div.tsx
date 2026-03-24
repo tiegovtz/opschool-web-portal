@@ -1,10 +1,8 @@
-import { ReactNode } from "react";
-import { Variants } from "motion/react";
-import * as motion from "motion/react-client";
+import { defineComponent, type PropType } from "vue";
+import { cn } from "~/utilities/utils";
 
 interface MotionDivProps {
-  children: ReactNode;
-  variants?: Variants;
+  variants?: Record<string, unknown>;
   className?: string;
   initial?: boolean;
   animate?: boolean;
@@ -15,21 +13,28 @@ const defaultVariants = {
   visible: { y: 0, opacity: 1 },
 };
 
-export const MotionDiv = ({
-  children,
-  variants = defaultVariants,
-  className = "",
-  initial = false,
-  animate = true,
-}: MotionDivProps) => {
-  return (
-    <motion.div
-      variants={variants}
-      initial={initial}
-      animate={animate}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  );
-};
+export const MotionDiv = defineComponent({
+  name: "MotionDiv",
+  props: {
+    variants: Object as PropType<MotionDivProps["variants"]>,
+    className: String,
+    initial: Boolean,
+    animate: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  setup(props, { slots }) {
+    return () => (
+      <div
+        class={cn(
+          "transition-transform duration-300 ease-out",
+          props.animate ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0",
+          props.className,
+        )}
+      >
+        {slots.default?.()}
+      </div>
+    );
+  },
+});

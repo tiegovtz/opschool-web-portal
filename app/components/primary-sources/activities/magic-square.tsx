@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 
 // Local imports
 import { cn } from "@/lib/utils";
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
-import { Input } from "../../../../../tie_open_school_primary_frontend/components/ui/inputs/input";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/inputs/input";
+import ActivityTitle from "@/components/templates/activity-title";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import { ActivityType, FeedbackType } from "@/lib/types/activity-types";
 import ActivityResults, {

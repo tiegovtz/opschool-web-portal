@@ -4,10 +4,10 @@ import React, { useState, useEffect } from "react";
 
 // Local imports
 import { cn, shuffle } from "@/lib/utils";
-import Droppable from "../../../../../tie_open_school_primary_frontend/components/ui/dnd/droppable";
-import Draggable from "../../../../../tie_open_school_primary_frontend/components/ui/dnd/draggable";
-import DNDContext from "../../../../../tie_open_school_primary_frontend/components/layout/dnd-context";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import Droppable from "@/components/ui/dnd/droppable";
+import Draggable from "@/components/ui/dnd/draggable";
+import DNDContext from "@/components/layout/dnd-context";
+import ActivityTitle from "@/components/templates/activity-title";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,

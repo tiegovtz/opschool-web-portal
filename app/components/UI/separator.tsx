@@ -1,31 +1,37 @@
-"use client"
+import { defineComponent, type PropType } from "vue";
+import { cn } from "~/utilities/utils";
 
-import * as React from "react"
-import * as SeparatorPrimitive from "@radix-ui/react-separator"
+const Separator = defineComponent({
+  name: "Separator",
+  inheritAttrs: false,
+  props: {
+    orientation: {
+      type: String as PropType<"horizontal" | "vertical">,
+      default: "horizontal",
+    },
+    decorative: {
+      type: Boolean,
+      default: true,
+    },
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs }) {
+    return () => (
+      <div
+        {...attrs}
+        aria-hidden={props.decorative}
+        class={cn(
+          "shrink-0 bg-oceanBlue/12",
+          props.orientation === "horizontal" ? "h-px w-full" : "h-full w-px",
+          props.class,
+          props.className,
+          attrs.class as string | undefined,
+          (attrs as { className?: string }).className,
+        )}
+      />
+    );
+  },
+});
 
-import { cn } from "@/lib/utils"
-
-const Separator = React.forwardRef<
-  React.ElementRef<typeof SeparatorPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>
->(
-  (
-    { className, orientation = "horizontal", decorative = true, ...props },
-    ref
-  ) => (
-    <SeparatorPrimitive.Root
-      ref={ref}
-      decorative={decorative}
-      orientation={orientation}
-      className={cn(
-        "shrink-0 bg-gray-200 dark:bg-gray-800",
-        orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
-        className
-      )}
-      {...props}
-    />
-  )
-)
-Separator.displayName = SeparatorPrimitive.Root.displayName
-
-export { Separator }
+export { Separator };

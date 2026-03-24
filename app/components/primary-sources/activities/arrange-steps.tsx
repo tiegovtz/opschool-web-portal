@@ -7,16 +7,16 @@ import { Check, X, ArrowDown } from "lucide-react";
 
 // Local imports
 import { cn, shuffle } from "@/lib/utils";
-import Draggable from "../../../../../tie_open_school_primary_frontend/components/ui/dnd/draggable";
-import Droppable from "../../../../../tie_open_school_primary_frontend/components/ui/dnd/droppable";
-import DNDContext from "../../../../../tie_open_school_primary_frontend/components/layout/dnd-context";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import Draggable from "@/components/ui/dnd/draggable";
+import Droppable from "@/components/ui/dnd/droppable";
+import DNDContext from "@/components/layout/dnd-context";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
-import LeftNotesWithImages from "../../../../../tie_open_school_primary_frontend/components/templates/left-notes-with-images";
+} from "@/components/templates/results";
+import LeftNotesWithImages from "@/components/templates/left-notes-with-images";
 
 type TStep = {
   id: string;

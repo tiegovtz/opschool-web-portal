@@ -5,17 +5,17 @@ import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
 // Local imports
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { cn, shuffle } from "@/lib/utils";
-import { Input } from "../../../../../tie_open_school_primary_frontend/components/ui/inputs/input";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import { Input } from "@/components/ui/inputs/input";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
-import LeftNotesWithImages from "../../../../../tie_open_school_primary_frontend/components/templates/left-notes-with-images";
+import LeftNotesWithImages from "@/components/templates/left-notes-with-images";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 
 type TComprehensionJuniorQuestion = {
   notes: string;

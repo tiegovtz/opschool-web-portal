@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 // Local imports
 import { cn } from "@/lib/utils";
-import { Input } from "../../../../../../tie_open_school_primary_frontend/components/ui/inputs/input";
+import { Input } from "@/components/ui/inputs/input";
 import { useExamContext } from "@/shared/context/exam-context";
 import { QuestionAnswer } from "@/shared/context/exam-context";
 

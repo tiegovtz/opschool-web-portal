@@ -5,13 +5,13 @@ import { useState, Fragment, useCallback, memo, useEffect } from "react";
 
 // Local imports
 import { cn, getImageUrl, shuffle } from "@/lib/utils";
-import DNDContext from "../../../../../tie_open_school_primary_frontend/components/layout/dnd-context";
+import DNDContext from "@/components/layout/dnd-context";
 import Droppable from "@/components/ui/dnd/droppable";
 import Draggable from "@/components/ui/dnd/draggable";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import { useObjects } from "@/hooks/useObjects";
 import { GameModeWrapper, GameStats } from "@/components/ui/game-mode";

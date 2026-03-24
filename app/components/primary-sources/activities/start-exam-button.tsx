@@ -1,34 +1,47 @@
 "use client";
 
-import { Button, ButtonProps } from "@/components/ui/button";
+import { defineComponent, computed } from "vue";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { useBackendAuth } from "@/providers/BackendAuthProvider";
 
 interface StartExamButtonProps extends ButtonProps {
   examId: string;
-  children: React.ReactNode;
   queryParams?: string;
 }
 
-export default function StartExamButton({
-  examId,
-  children,
-  queryParams,
-  ...props
-}: StartExamButtonProps) {
-  const { isAuthenticated } = useBackendAuth();
+export default defineComponent({
+  name: "StartExamButton",
+  props: {
+    examId: {
+      type: String,
+      required: true,
+    },
+    queryParams: String,
+    href: String,
+    variant: String,
+    size: String,
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs, slots }) {
+    const { isAuthenticated } = useBackendAuth();
+    const href = computed(() =>
+      isAuthenticated.value
+        ? `/exams/${props.examId}${props.queryParams ? `?${props.queryParams}` : ""}`
+        : `/login?redirectTo=/exams/${props.examId}${props.queryParams ? `?${props.queryParams}` : ""}`,
+    );
 
-  return (
-    <Button
-      href={
-        isAuthenticated
-          ? `/exams/${examId}${queryParams ? `?${queryParams}` : ""}`
-          : `/login?redirectTo=/exams/${examId}${
-              queryParams ? `?${queryParams}` : ""
-            }`
-      }
-      {...props}
-    >
-      {children}
-    </Button>
-  );
-}
+    return () => (
+      <Button
+        {...attrs}
+        href={href.value}
+        variant={props.variant as ButtonProps["variant"]}
+        size={props.size as ButtonProps["size"]}
+        class={props.class}
+        className={props.className}
+      >
+        {slots.default?.()}
+      </Button>
+    );
+  },
+});

@@ -5,15 +5,15 @@ import { DragEndEvent, useDraggable } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 
 import { cn } from "@/lib/utils";
-import { Input } from "../../../../../tie_open_school_primary_frontend/components/ui/input";
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
-import DNDContext from "../../../../../tie_open_school_primary_frontend/components/layout/dnd-context";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import DNDContext from "@/components/layout/dnd-context";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 
 interface AbacusQuestion {
   id: number;

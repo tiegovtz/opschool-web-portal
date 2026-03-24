@@ -1,5 +1,23 @@
-import React from "react";
+import { defineComponent } from "vue";
+import { cn } from "~/utilities/utils";
 
-export default function Heading({ children }: { children: React.ReactNode }) {
-  return <h1 className="text-3xl font-bold text-picton-blue-700">{children}</h1>;
-}
+export default defineComponent({
+  name: "Heading",
+  props: {
+    class: String,
+    className: String,
+  },
+  setup(props, { slots }) {
+    return () => (
+      <h1
+        class={cn(
+          "text-3xl font-bold text-oceanBlue",
+          props.class,
+          props.className,
+        )}
+      >
+        {slots.default?.()}
+      </h1>
+    );
+  },
+});

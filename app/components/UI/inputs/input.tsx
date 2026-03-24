@@ -1,5 +1,5 @@
 // components/Input.tsx
-import { defineComponent} from "vue";
+import { defineComponent, type PropType } from "vue";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "~/utilities/utils";
 
@@ -60,7 +60,7 @@ export default defineComponent({
 
     return () => (
       <input
-        {...props}
+        {...attrs}
         type={props.type}
         value={props.modelValue}
         placeholder={props.placeholder}
@@ -76,9 +76,6 @@ export default defineComponent({
         autocapitalize="off"
         autocorrect="off"
         spellcheck={false}
-        data-gramm="false"
-        data-gramm_editor="false"
-        data-enable-grammarly="false"
       />
     );
   },

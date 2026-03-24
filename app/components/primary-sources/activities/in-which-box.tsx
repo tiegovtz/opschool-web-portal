@@ -11,16 +11,16 @@ import {
 
 // Local imports
 import { cn, shuffle } from "@/lib/utils";
-import DNDContext from "../../../../../tie_open_school_primary_frontend/components/layout/dnd-context";
+import DNDContext from "@/components/layout/dnd-context";
 import Droppable from "@/components/ui/dnd/droppable";
 import OutDraggable from "@/components/ui/dnd/draggable";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { DraggableProps } from "@/components/ui/dnd/draggable";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 import { useWindowSize } from "@/shared/hooks/use-window-size";
 
 interface Option {

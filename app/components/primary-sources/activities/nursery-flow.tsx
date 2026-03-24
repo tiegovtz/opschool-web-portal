@@ -19,7 +19,7 @@ import {
   useSubjects,
   useTopics,
 } from "@/shared/services/activities-search-filters";
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { useWindowSize } from "@/shared/hooks/use-window-size";
 
 interface NurseryFlowProps {

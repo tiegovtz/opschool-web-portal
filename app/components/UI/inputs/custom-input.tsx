@@ -1,5 +1,5 @@
 // components/CustomInput.tsx
-import { defineComponent } from "vue";
+import { defineComponent, type PropType } from "vue";
 import { Icon } from "@iconify/vue"; // using Iconify
 import Input from "./input";
 import { cn } from "~/utilities/utils";
@@ -26,11 +26,6 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const handleInput = (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      props.onChange(target.value);
-    };
-
     return () => (
       <div class={cn("max-w-56 relative", props.className)}>
         <div class="relative">

@@ -1,30 +1,52 @@
-"use client";
+import { defineComponent, type PropType } from "vue";
+import { Icon } from "@iconify/vue";
+import { cn } from "~/utilities/utils";
 
-import * as React from "react";
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import { Check } from "lucide-react";
+export const Checkbox = defineComponent({
+  name: "Checkbox",
+  inheritAttrs: false,
+  props: {
+    checked: Boolean,
+    modelValue: Boolean,
+    disabled: Boolean,
+    class: String,
+    className: String,
+    onCheckedChange: Function as PropType<(checked: boolean) => void>,
+  },
+  emits: ["update:modelValue"],
+  setup(props, { attrs, emit }) {
+    const handleChange = (event: Event) => {
+      const value = (event.target as HTMLInputElement).checked;
+      emit("update:modelValue", value);
+      props.onCheckedChange?.(value);
+    };
 
-import { cn } from "@/lib/utils";
+    return () => {
+      const checked = props.modelValue ?? props.checked ?? false;
 
-const Checkbox = React.forwardRef<
-  React.ElementRef<typeof CheckboxPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <CheckboxPrimitive.Root
-    ref={ref}
-    className={cn(
-      "peer h-4 w-4 shrink-0 rounded-sm border border-picton-blue-500 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-picton-blue-600 data-[state=checked]:text-gray-50 dark:border-gray-50 dark:ring-offset-gray-950 dark:focus-visible:ring-gray-300 dark:data-[state=checked]:bg-gray-50 dark:data-[state=checked]:text-picton-blue-900",
-      className
-    )}
-    {...props}
-  >
-    <CheckboxPrimitive.Indicator
-      className={cn("flex items-center justify-center text-current")}
-    >
-      <Check className="h-4 w-4" />
-    </CheckboxPrimitive.Indicator>
-  </CheckboxPrimitive.Root>
-));
-Checkbox.displayName = CheckboxPrimitive.Root.displayName;
-
-export { Checkbox };
+      return (
+        <label
+          class={cn(
+            "relative inline-flex h-4 w-4 cursor-pointer items-center justify-center overflow-hidden rounded border border-oceanBlue/40 bg-white shadow-sm transition",
+            checked ? "bg-oceanBlue text-white" : "text-transparent",
+            props.disabled ? "cursor-not-allowed opacity-50" : "",
+            props.class,
+            props.className,
+            attrs.class as string | undefined,
+            (attrs as { className?: string }).className,
+          )}
+        >
+          <input
+            {...attrs}
+            checked={checked}
+            disabled={props.disabled}
+            type="checkbox"
+            class="sr-only"
+            onChange={handleChange}
+          />
+          <Icon icon="lucide:check" class="h-3.5 w-3.5" />
+        </label>
+      );
+    };
+  },
+});

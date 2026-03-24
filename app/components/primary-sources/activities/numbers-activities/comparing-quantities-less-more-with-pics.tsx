@@ -9,13 +9,13 @@ import { DragEndEvent, DragStartEvent, DragMoveEvent } from "@dnd-kit/core";
 import { QuantityRenderer } from "./shared";
 import AnswerDropZone from "./shared/answer-drop-zone";
 import { FeedbackType } from "@/lib/types/activity-types";
-import ActivityTitle from "../../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 import { Button } from "@/components/ui/button";
-import DNDContext from "../../../../../../tie_open_school_primary_frontend/components/layout/dnd-context";
+import DNDContext from "@/components/layout/dnd-context";
 import Droppable from "@/components/ui/dnd/droppable";
 import Draggable from "@/components/ui/dnd/draggable";
 import { cn } from "@/lib/utils";

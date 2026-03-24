@@ -1,72 +1,55 @@
-"use client";
+import { defineComponent } from "vue";
+import { Icon } from "@iconify/vue";
+import { cn } from "~/utilities/utils";
 
-import {
-  ArrowUpDown,
-  BookOpen,
-  Brain,
-  Calculator,
-  CheckSquare,
-  Eye,
-  FileText,
-  Gamepad2,
-  Grid3X3,
-  Hash,
-  Image,
-  Layers,
-  Link,
-  MessageCircle,
-  Puzzle,
-  Search,
-  Target,
-  Users,
-  LucideIcon,
-  Network,
-  ListOrdered,
-} from "lucide-react";
-
-// Icon mapping
-const iconMap: Record<string, LucideIcon> = {
-  ArrowUpDown,
-  BookOpen,
-  Brain,
-  Calculator,
-  CheckSquare,
-  Eye,
-  FileText,
-  Gamepad2,
-  Grid3X3,
-  Hash,
-  Image,
-  Layers,
-  Link,
-  MessageCircle,
-  Puzzle,
-  Search,
-  Target,
-  Users,
-  Network,
-  ListOrdered,
+const iconMap: Record<string, string> = {
+  ArrowUpDown: "lucide:arrow-up-down",
+  BookOpen: "lucide:book-open",
+  Brain: "lucide:brain",
+  Calculator: "lucide:calculator",
+  CheckSquare: "lucide:check-square",
+  Eye: "lucide:eye",
+  FileText: "lucide:file-text",
+  Gamepad2: "lucide:gamepad-2",
+  Grid3X3: "lucide:grid-3x3",
+  Hash: "lucide:hash",
+  Image: "lucide:image",
+  Layers: "lucide:layers",
+  Link: "lucide:link",
+  ListOrdered: "lucide:list-ordered",
+  MessageCircle: "lucide:message-circle",
+  Network: "lucide:network",
+  Puzzle: "lucide:puzzle",
+  Search: "lucide:search",
+  Target: "lucide:target",
+  Users: "lucide:users",
 };
 
-interface DynamicIconProps {
-  name: string;
-  className?: string;
-  size?: number;
-}
+const DynamicIcon = defineComponent({
+  name: "DynamicIcon",
+  props: {
+    name: {
+      type: String,
+      required: true,
+    },
+    class: String,
+    className: {
+      type: String,
+      default: "h-4 w-4",
+    },
+    size: Number,
+  },
+  setup(props) {
+    return () => (
+      <Icon
+        icon={iconMap[props.name] || iconMap.Target}
+        width={props.size}
+        height={props.size}
+        class={cn(props.className, props.class)}
+      />
+    );
+  },
+});
 
-export const DynamicIcon: React.FC<DynamicIconProps> = ({
-  name,
-  className = "h-4 w-4",
-  size,
-}) => {
-  const IconComponent = iconMap[name];
-
-  if (!IconComponent) {
-    // Fallback to a default icon if the specified icon is not found
-    return <Target className={className} size={size} />;
-  }
-
-  return <IconComponent className={className} size={size} />;
-};
-
+export { DynamicIcon };
 export default DynamicIcon;

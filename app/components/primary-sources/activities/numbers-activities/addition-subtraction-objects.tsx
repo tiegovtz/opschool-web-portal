@@ -10,11 +10,11 @@ import { QuantityRenderer } from "./shared";
 import { Button } from "@/components/ui/button";
 import AnswerDropZone from "./shared/answer-drop-zone";
 import { FeedbackType } from "@/lib/types/activity-types";
-import ActivityTitle from "../../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 
 type AdditionSubtractionObjectsProps = {
   questions: {

@@ -10,14 +10,14 @@ import { DragEndEvent, useDraggable, useDroppable } from "@dnd-kit/core";
 
 // Local imports
 import { cn, getImageUrl } from "@/lib/utils";
-import ActivityResults from "../../../../../tie_open_school_primary_frontend/components/templates/results";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityResults from "@/components/templates/results";
+import ActivityTitle from "@/components/templates/activity-title";
 import DNDContext from "@/components/layout/dnd-context";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
 import { DraggableProps } from "@/components/ui/dnd/draggable";
 import { DroppableProps } from "@/components/ui/dnd/droppable";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
-import { ActivityResultsAlertDialog } from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+import { ActivityResultsAlertDialog } from "@/components/templates/results";
 import { useObjects } from "@/hooks/useObjects";
 import { GameModeWrapper, GameStats } from "@/components/ui/game-mode";
 import { useWindowSize } from "@/shared/hooks/use-window-size";

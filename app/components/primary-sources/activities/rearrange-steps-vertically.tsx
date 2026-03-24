@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 
 // Local imports
 import { shuffle } from "@/lib/utils";
-import { Input } from "../../../../../tie_open_school_primary_frontend/components/ui/inputs/input";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import { Input } from "@/components/ui/inputs/input";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 
 // Define the type for the component props
 type RearrangeStepsVerticallyActivityProps = {

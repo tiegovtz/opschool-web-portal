@@ -6,14 +6,14 @@ import { motion, AnimatePresence } from "motion/react";
 
 // Local imports
 import { cn, shuffle } from "@/lib/utils";
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import { Button } from "@/components/ui/button";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
-import LeftNotesWithImages from "../../../../../tie_open_school_primary_frontend/components/templates/left-notes-with-images";
+import LeftNotesWithImages from "@/components/templates/left-notes-with-images";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 
 type TPictureOrStoryFollowedByQuestionsQuestion = {
   notes: string;

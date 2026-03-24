@@ -8,11 +8,11 @@ import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/inputs/input";
 import { Button } from "@/components/ui/button";
-import ActivityResults from "../../../../../tie_open_school_primary_frontend/components/templates/results";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityResults from "@/components/templates/results";
+import ActivityTitle from "@/components/templates/activity-title";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
-import { ActivityResultsAlertDialog } from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+import { ActivityResultsAlertDialog } from "@/components/templates/results";
 import { FeedbackType } from "@/lib/types/activity-types";
 
 type MissingLettersWordsProps = {

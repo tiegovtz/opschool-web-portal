@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 import { DragEndEvent } from "@dnd-kit/core";
 
 // Local imports
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
-import { Input } from "../../../../../tie_open_school_primary_frontend/components/ui/inputs/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/inputs/input";
 import Draggable from "@/components/ui/dnd/draggable";
 import Droppable from "@/components/ui/dnd/droppable";
 import { cn, shuffle, getImageUrl } from "@/lib/utils";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import DNDContext from "@/components/layout/dnd-context";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";

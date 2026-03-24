@@ -1,27 +1,51 @@
-import * as React from "react";
+import { defineComponent, type PropType } from "vue";
+import { cn } from "~/utilities/utils";
 
-import { cn } from "@/lib/utils";
+const Input = defineComponent({
+  name: "Input",
+  inheritAttrs: false,
+  props: {
+    type: {
+      type: String,
+      default: "text",
+    },
+    modelValue: [String, Number],
+    value: [String, Number],
+    disabled: Boolean,
+    placeholder: String,
+    class: String,
+    className: String,
+    onChange: Function as PropType<(event: Event) => void>,
+    onInput: Function as PropType<(event: Event) => void>,
+  },
+  emits: ["update:modelValue"],
+  setup(props, { attrs, emit }) {
+    const handleInput = (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      emit("update:modelValue", target.value);
+      props.onInput?.(event);
+      props.onChange?.(event);
+    };
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
-    return (
+    return () => (
       <input
-        type={type}
-        className={cn(
-          "flex h-10 w-full rounded-md border px-3 py-2 text-base ring-offset-picton-blue-50 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:border-gray-800 dark:bg-picton-blue-950 dark:ring-offset-gray-950 dark:file:text-gray-50 dark:placeholder:text-gray-400 dark:focus-visible:ring-gray-300 text-picton-blue-500 border-picton-blue-300 bg-picton-blue-50 file:text-picton-blue-600 placeholder:text-picton-blue-400 focus-visible:ring-picton-blue-800 focus-visible:ring-0",
-          className
+        {...attrs}
+        type={props.type}
+        disabled={props.disabled}
+        placeholder={props.placeholder}
+        value={props.modelValue ?? props.value ?? ""}
+        onInput={handleInput}
+        class={cn(
+          "flex h-10 w-full rounded-xl border border-oceanBlue/20 bg-white px-3 py-2 text-base text-oceanBlue ring-offset-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/30 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm placeholder:text-slate-400",
+          props.class,
+          props.className,
+          attrs.class as string | undefined,
+          (attrs as { className?: string }).className,
         )}
-        ref={ref}
-        {...props}
-        spellCheck="false"
-        // Grammarly disable spell checking
-        data-gramm="false"
-        data-gramm_editor="false"
-        data-enable-grammarly="false"
+        spellcheck={false}
       />
     );
-  }
-);
-Input.displayName = "Input";
+  },
+});
 
 export { Input };

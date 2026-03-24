@@ -1,10 +1,9 @@
-import React from "react";
+import { defineComponent, type PropType } from "vue";
 import { Button } from "@/components/ui/button";
-import { MutationStatus } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Icon } from "@iconify/vue";
 
 interface ActionButtonProps {
-  status?: MutationStatus;
+  status?: "idle" | "pending" | "success" | "error";
   backHref?: string;
   label: string;
   isLoading?: boolean;
@@ -21,20 +20,37 @@ interface ActionButtonProps {
     | null
     | undefined;
 }
-const ActionButton = ({ status, label, variant, disabled }: ActionButtonProps) => {
-  return (
-    <Button
-      disabled={status === "pending" || disabled}
-      type="submit"
-      className="w-full"
-      variant={variant || "default"}
-    >
-      {status === "pending" ? (
-        <Loader2 className="inline-block mr-2 h-5 w-5 animate-spin cursor-not-allowed" />
-      ) : null}
-      {status === "pending" ? "Please wait" : label}
-    </Button>
-  );
-};
+
+const ActionButton = defineComponent({
+  name: "ActionButton",
+  props: {
+    status: String as PropType<ActionButtonProps["status"]>,
+    label: {
+      type: String,
+      required: true,
+    },
+    isLoading: Boolean,
+    disabled: Boolean,
+    variant: String as PropType<ActionButtonProps["variant"]>,
+  },
+  setup(props) {
+    return () => (
+      <Button
+        disabled={props.status === "pending" || props.isLoading || props.disabled}
+        type="submit"
+        class="w-full"
+        variant={props.variant || "default"}
+      >
+        {props.status === "pending" || props.isLoading ? (
+          <Icon
+            icon="svg-spinners:90-ring-with-bg"
+            class="mr-2 inline-block h-5 w-5"
+          />
+        ) : null}
+        {props.status === "pending" || props.isLoading ? "Please wait" : props.label}
+      </Button>
+    );
+  },
+});
 
 export default ActionButton;

@@ -1,15 +1,27 @@
-import { cn } from "@/lib/utils"
+import { defineComponent } from "vue";
+import { cn } from "~/utilities/utils";
 
-function Skeleton({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn("animate-pulse rounded-md bg-gray-100 dark:bg-gray-800", className)}
-      {...props}
-    />
-  )
-}
+const Skeleton = defineComponent({
+  name: "Skeleton",
+  inheritAttrs: false,
+  props: {
+    class: String,
+    className: String,
+  },
+  setup(props, { attrs }) {
+    return () => (
+      <div
+        {...attrs}
+        class={cn(
+          "animate-pulse rounded-xl bg-sky-100",
+          props.class,
+          props.className,
+          attrs.class as string | undefined,
+          (attrs as { className?: string }).className,
+        )}
+      />
+    );
+  },
+});
 
-export { Skeleton }
+export { Skeleton };

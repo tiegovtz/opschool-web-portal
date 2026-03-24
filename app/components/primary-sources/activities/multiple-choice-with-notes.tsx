@@ -7,14 +7,14 @@ import { motion, AnimatePresence } from "motion/react";
 // Local imports
 import { cn, shuffle } from "@/lib/utils";
 import { Input } from "@/components/ui/inputs/input";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
-import LeftNotesWithImages from "../../../../../tie_open_school_primary_frontend/components/templates/left-notes-with-images";
+import LeftNotesWithImages from "@/components/templates/left-notes-with-images";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
+} from "@/components/templates/results";
+import { Button } from "@/components/ui/button";
 
 type TMultipleChoiceWithNotesQuestion = {
   question: string;

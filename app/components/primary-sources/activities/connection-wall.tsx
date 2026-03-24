@@ -6,11 +6,11 @@ import React, { Fragment, useEffect, useState } from "react";
 // Local imports
 import { cn, getImageUrl, shuffle } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import { ActivityType } from "@/lib/types/activity-types";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
-import { ActivityResultsAlertDialog } from "../../../../../tie_open_school_primary_frontend/components/templates/results";
-import ActivityResults from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+import { ActivityResultsAlertDialog } from "@/components/templates/results";
+import ActivityResults from "@/components/templates/results";
 import { useObjects } from "@/hooks/useObjects";
 import { GameModeWrapper, GameStats } from "@/components/ui/game-mode";
 

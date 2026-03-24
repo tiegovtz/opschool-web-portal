@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 
 // Local imports
 import { shuffle, toRoman } from "@/lib/utils";
-import Droppable from "../../../../../../tie_open_school_primary_frontend/components/ui/dnd/droppable";
-import Draggable from "../../../../../../tie_open_school_primary_frontend/components/ui/dnd/draggable";
-import DNDContext from "../../../../../../tie_open_school_primary_frontend/components/layout/dnd-context";
+import Droppable from "@/components/ui/dnd/droppable";
+import Draggable from "@/components/ui/dnd/draggable";
+import DNDContext from "@/components/layout/dnd-context";
 import { useExamContext } from "@/shared/context/exam-context";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import { QuestionAnswer } from "@/shared/context/exam-context";

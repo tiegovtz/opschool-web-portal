@@ -1,30 +1,28 @@
-import * as React from "react";
+import { defineComponent, resolveComponent, type PropType } from "vue";
 import { cva, type VariantProps } from "class-variance-authority";
-
-import { cn } from "@/lib/utils";
-import Link, { LinkProps } from "next/link";
+import { cn } from "~/utilities/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:ring-offset-gray-950 dark:focus-visible:ring-gray-300",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
         default:
-          "bg-picton-blue-700 text-picton-blue-50 hover:bg-picton-blue-700/90 focus-visible:ring-picton-blue-700",
+          "bg-oceanBlue text-white hover:bg-oceanBlue/90 focus-visible:ring-oceanBlue",
         brand:
-          "bg-picton-blue-700 text-picton-blue-50 hover:bg-picton-blue-700/90",
-        "brand-lemon": "bg-lemon-700 text-lemon-50 hover:bg-lemon-700/90",
+          "bg-oceanBlue text-white hover:bg-oceanBlue/90",
+        "brand-lemon": "bg-white text-oceanBlue ring-1 ring-oceanBlue/15 hover:bg-sky-50",
         destructive:
-          "bg-red-500 text-gray-50 hover:bg-red-500/90 dark:bg-red-900 dark:text-gray-50 dark:hover:bg-red-900/90",
+          "bg-red-500 text-white hover:bg-red-500/90",
         "outline-brand":
-          "border border-picton-blue-500 bg-picton-blue-50 hover:bg-picton-blue-50/80 text-picton-blue-800 focus-visible:ring-picton-blue-500",
+          "border border-oceanBlue/25 bg-white text-oceanBlue hover:bg-sky-50 focus-visible:ring-oceanBlue",
         outline:
-          "border border-lemon-500 bg-lemon-50 hover:bg-lemon-50/80 text-lemon-800 focus-visible:ring-lemon-500",
+          "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus-visible:ring-oceanBlue",
         secondary:
-          "bg-gray-100 text-gray-900 hover:bg-gray-100/80 dark:bg-gray-800 dark:text-gray-50 dark:hover:bg-gray-800/80",
+          "bg-sky-100 text-oceanBlue hover:bg-sky-200",
         ghost:
-          "hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-50",
-        link: "text-picton-blue-700 underline-offset-4 hover:underline dark:text-picton-blue-50",
+          "hover:bg-sky-50 hover:text-oceanBlue",
+        link: "text-oceanBlue underline-offset-4 hover:underline",
       },
       size: {
         default: "h-10 px-4 py-2",
@@ -40,43 +38,85 @@ const buttonVariants = cva(
   }
 );
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+export interface ButtonProps extends VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   href?: string;
-  linkProps?: LinkProps;
-  children?: React.ReactNode;
+  to?: string;
+  target?: string;
+  rel?: string;
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
+  class?: string;
+  className?: string;
+  onClick?: (event: MouseEvent) => void;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, href, linkProps, children, ...props }, ref) => {
-    // const Comp = asChild ? Slot : "button";
-    return (
-      <>
-        {href ? (
-          <Link
-            href={href}
-            className={cn(buttonVariants({ variant, size, className }))}
-            target={href.startsWith("http") ? "_blank" : "_self"}
-            {...linkProps}
-          >
-            {children || variant}
-          </Link>
-        ) : (
-          <button
-            ref={ref}
-            {...props}
-            key={variant}
-            className={cn(buttonVariants({ variant, size, className }))}
-          >
-            {children || variant}
-          </button>
-        )}
-      </>
-    );
-  }
-);
-Button.displayName = "Button";
+const Button = defineComponent({
+  name: "Button",
+  inheritAttrs: false,
+  props: {
+    asChild: Boolean,
+    href: String,
+    to: String,
+    target: String,
+    rel: String,
+    disabled: Boolean,
+    type: {
+      type: String as PropType<ButtonProps["type"]>,
+      default: "button",
+    },
+    variant: {
+      type: String as PropType<ButtonProps["variant"]>,
+      default: "default",
+    },
+    size: {
+      type: String as PropType<ButtonProps["size"]>,
+      default: "default",
+    },
+    class: String,
+    className: String,
+    onClick: Function as PropType<ButtonProps["onClick"]>,
+  },
+  setup(props, { attrs, slots }) {
+    return () => {
+      const className = cn(
+        buttonVariants({
+          variant: props.variant,
+          size: props.size,
+        }),
+        props.class,
+        props.className,
+        attrs.class as string | undefined,
+        (attrs as { className?: string }).className,
+      );
+
+      const sharedProps = {
+        ...attrs,
+        class: className,
+        target:
+          props.target ??
+          ((props.href || props.to)?.startsWith("http") ? "_blank" : undefined),
+        rel: props.rel,
+        onClick: props.onClick,
+      };
+
+      if (props.href || props.to) {
+        const NuxtLink = resolveComponent("NuxtLink") as any;
+
+        return (
+          <NuxtLink to={props.href || props.to || "#"} {...sharedProps}>
+            {slots.default?.() || props.variant}
+          </NuxtLink>
+        );
+      }
+
+      return (
+        <button {...sharedProps} disabled={props.disabled} type={props.type}>
+          {slots.default?.() || props.variant}
+        </button>
+      );
+    };
+  },
+});
 
 export { Button, buttonVariants };

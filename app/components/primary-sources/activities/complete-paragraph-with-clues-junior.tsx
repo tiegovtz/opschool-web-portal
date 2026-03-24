@@ -6,15 +6,15 @@ import { Fragment, useEffect, useState } from "react";
 
 // local imports
 import { shuffle } from "@/lib/utils";
-import Draggable from "../../../../../tie_open_school_primary_frontend/components/ui/dnd/draggable";
-import Droppable from "../../../../../tie_open_school_primary_frontend/components/ui/dnd/droppable";
-import DNDContext from "../../../../../tie_open_school_primary_frontend/components/layout/dnd-context";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import Draggable from "@/components/ui/dnd/draggable";
+import Droppable from "@/components/ui/dnd/droppable";
+import DNDContext from "@/components/layout/dnd-context";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 
 type TCompleteParagraphWithCluesJ2Props = {
   feedback?: FeedbackType;

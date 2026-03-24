@@ -1,55 +1,34 @@
-import * as motion from "motion/react-client";
-import { Rocket } from "lucide-react";
-import { Button } from "./ui/button";
+import { defineComponent } from "vue";
+import { Icon } from "@iconify/vue";
+import { Button } from "~/components/ui/button";
 
-export default function ComingSoon() {
-  return (
-    <div className="p-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="flex flex-col items-center justify-center min-h-[300px] bg-gradient-to-r from-lemon-600 to-blue-400 rounded-lg p-8 text-white text-center"
-      >
-        <motion.div
-          animate={{ y: [-5, 5, -5] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <Rocket className="h-16 w-16 mb-4 text-lemon-100" />
-        </motion.div>
-        <motion.h1
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="text-4xl font-bold mb-2 text-lemon-50"
-        >
-          Coming Soon!
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="text-lg mb-6 text-lemon-100"
-        >
-          We&apos;re working on something amazing. Stay tuned!
-        </motion.p>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-          className="flex space-x-4"
-        >
-          <Button className="bg-lemon-100 text-blue-600 rounded-full font-semibold hover:bg-lemon-200 transition-all">
-            Notify Me
-          </Button>
-          <Button
-            variant="brand"
-            className=" border-lemon-100 text-lemon-100 rounded-full font-semibold transition-all"
-          >
-            Learn More
-          </Button>
-        </motion.div>
-      </motion.div>
-    </div>
-  );
-}
+export default defineComponent({
+  name: "ComingSoon",
+  setup() {
+    return () => (
+      <div class="p-8">
+        <div class="flex min-h-[300px] flex-col items-center justify-center rounded-[28px] bg-[linear-gradient(135deg,_#0f4c81,_#2b8dd8,_#ffffff)] p-8 text-center text-white shadow-xl">
+          <div class="mb-4 rounded-full bg-white/15 p-5">
+            <Icon icon="lucide:rocket" class="h-16 w-16 text-white" />
+          </div>
+          <h1 class="mb-2 text-4xl font-bold text-white">Coming Soon</h1>
+          <p class="mb-6 max-w-lg text-lg text-sky-50">
+            This section is being rebuilt for the Nuxt migration and the updated
+            oceans blue theme.
+          </p>
+          <div class="flex flex-wrap justify-center gap-4">
+            <Button class="rounded-full bg-white text-oceanBlue hover:bg-sky-50">
+              Notify Me
+            </Button>
+            <Button
+              variant="outline-brand"
+              class="rounded-full border-white/50 bg-oceanBlue/10 text-white hover:bg-oceanBlue/20"
+            >
+              Learn More
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  },
+});

@@ -6,14 +6,14 @@ import React, { useEffect, useState, useCallback } from "react";
 
 // Local imports
 import { cn } from "@/lib/utils";
-import { Button } from "../../../../../../tie_open_school_primary_frontend/components/ui/button";
-import { CircularTimer } from "../../../../../../tie_open_school_primary_frontend/components/ui/circular-timer";
-import ActivityTitle from "../../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import { Button } from "@/components/ui/button";
+import { CircularTimer } from "@/components/ui/circular-timer";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 
 type MultipleChoiceGameProps = {
   questions: {

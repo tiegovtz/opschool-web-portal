@@ -4,14 +4,14 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 // Local imports
 import { cn, getImageUrl } from "@/lib/utils";
 import { useObjects } from "@/hooks/useObjects";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { useWindowSize } from "@/shared/hooks/use-window-size";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import { GameModeWrapper, GameStats } from "@/components/ui/game-mode";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 
 // Types
 type Direction = "across" | "down";

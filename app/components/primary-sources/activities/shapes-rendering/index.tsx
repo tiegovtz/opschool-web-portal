@@ -5,14 +5,14 @@ import { motion, AnimatePresence } from "motion/react";
 import { Check, X } from "lucide-react";
 
 // Local imports
-import { Input } from "../../../../../../tie_open_school_primary_frontend/components/ui/input";
-import { Button } from "../../../../../../tie_open_school_primary_frontend/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn, shuffle } from "@/lib/utils";
-import ActivityTitle from "../../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 import { processGeometryData } from "@/lib/utils/shapes-utils";
 import {
   draw2DShape,

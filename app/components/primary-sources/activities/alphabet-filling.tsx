@@ -5,9 +5,9 @@ import { AnimatePresence } from "motion/react";
 
 // Local imports
 import { cn } from "@/lib/utils";
-import ActivityTitle from "../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
-import { ActivityResultsAlertDialog } from "../../../../../tie_open_school_primary_frontend/components/templates/results";
+import { ActivityResultsAlertDialog } from "@/components/templates/results";
 
 interface AlphabetActivityProps {
   questions: {

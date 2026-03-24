@@ -1,83 +1,56 @@
-import * as React from "react";
+import { defineComponent, h } from "vue";
+import { cn } from "~/utilities/utils";
 
-import { cn } from "@/lib/utils";
+const withBase = (name: string, tag: string, baseClass: string) =>
+  defineComponent({
+    name,
+    inheritAttrs: false,
+    props: {
+      class: String,
+      className: String,
+    },
+    setup(props, { attrs, slots }) {
+      return () =>
+        h(
+          tag,
+          {
+            ...attrs,
+            class: cn(
+              baseClass,
+              props.class,
+              props.className,
+              attrs.class as string | undefined,
+              (attrs as { className?: string }).className,
+            ),
+          },
+          slots.default?.(),
+        );
+    },
+  });
 
-const Card = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "rounded-lg border border-picton-blue-200 bg-picton-blue-50 text-picton-blue-950 shadow-sm dark:border-picton-blue-800 dark:bg-picton-blue-950 dark:text-picton-blue-50",
-      className
-    )}
-    {...props}
-  />
-));
-Card.displayName = "Card";
+const Card: any = withBase(
+  "Card",
+  "div",
+  "rounded-2xl border border-oceanBlue/15 bg-white text-slate-900 shadow-sm",
+);
 
-const CardHeader = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6", className)}
-    {...props}
-  />
-));
-CardHeader.displayName = "CardHeader";
+const CardHeader: any = withBase("CardHeader", "div", "flex flex-col space-y-1.5 p-6");
 
-const CardTitle = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h3
-    ref={ref}
-    className={cn(
-      "text-2xl font-semibold leading-none tracking-tight text-picton-blue-900",
-      className
-    )}
-    {...props}
-  />
-));
-CardTitle.displayName = "CardTitle";
+const CardTitle: any = withBase(
+  "CardTitle",
+  "h3",
+  "text-2xl font-semibold leading-none tracking-tight text-oceanBlue",
+);
 
-const CardDescription = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => (
-  <p
-    ref={ref}
-    className={cn(
-      "text-sm text-picton-blue-600 dark:text-picton-blue-400",
-      className
-    )}
-    {...props}
-  />
-));
-CardDescription.displayName = "CardDescription";
+const CardDescription: any = withBase(
+  "CardDescription",
+  "p",
+  "text-sm text-slate-500",
+);
 
-const CardContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
-));
-CardContent.displayName = "CardContent";
+const CardContent: any = withBase("CardContent", "div", "p-6 pt-0");
 
-const CardFooter = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex items-center p-6 pt-0", className)}
-    {...props}
-  />
-));
-CardFooter.displayName = "CardFooter";
+const CardFooter: any = withBase("CardFooter", "div", "flex items-center p-6 pt-0");
 
 export {
   Card,

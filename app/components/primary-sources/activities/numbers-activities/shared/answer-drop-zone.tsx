@@ -1,8 +1,8 @@
 "use client";
 
 import { ReactNode } from "react";
-import Droppable from "../../../../../../../tie_open_school_primary_frontend/components/ui/dnd/droppable";
-import Draggable from "../../../../../../../tie_open_school_primary_frontend/components/ui/dnd/draggable";
+import Droppable from "@/components/ui/dnd/droppable";
+import Draggable from "@/components/ui/dnd/draggable";
 import { Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";

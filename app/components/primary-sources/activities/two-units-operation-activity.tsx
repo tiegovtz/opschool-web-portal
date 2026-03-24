@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
-import { Input } from "../../../../../tie_open_school_primary_frontend/components/ui/inputs/input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/inputs/input";
 import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "@/components/templates/results";

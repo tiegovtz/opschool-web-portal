@@ -7,14 +7,14 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 // Local imports
 import { cn, shuffle } from "@/lib/utils";
 import { useObjects } from "@/hooks/useObjects";
-import ActivityTitle from "../../../../../../tie_open_school_primary_frontend/components/templates/activity-title";
+import ActivityTitle from "@/components/templates/activity-title";
 import { FeedbackType } from "@/lib/types/activity-types";
 import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import { GameModeWrapper, GameStats } from "@/components/ui/game-mode";
 import { missingDefinitionsGameTranspiler } from "@/shared/transpilerMapper/games-transpiler/missing-definitions";
 import ActivityResults, {
   ActivityResultsAlertDialog,
-} from "../../../../../../tie_open_school_primary_frontend/components/templates/results";
+} from "@/components/templates/results";
 
 type MissingDefinitionsProps = {
   questions: {

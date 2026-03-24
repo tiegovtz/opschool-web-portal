@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { BookOpen, PenLine, GraduationCap, ArrowLeft } from "lucide-react";
 
 // Local imports
-import { Button } from "../../../../../tie_open_school_primary_frontend/components/ui/button";
+import { Button } from "@/components/ui/button";
 import CurriculumIndicator from "@/app/(learning-activities)/curriculum-indicator";
 import { cn } from "@/lib/utils";
 
