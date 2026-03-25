@@ -1,18 +1,18 @@
-import dynamic from "next/dynamic";
+import { defineAsyncComponent } from "vue";
 
-export const MultipleChoiceGameActivity = dynamic(
-  () => import("@/components/activities/game-activities/multiple-choice"),
+export const MultipleChoiceGameActivity = defineAsyncComponent(
+  () => import("@/components/primary-sources/activities/game-activities/multiple-choice"),
 );
-export const MissingDefinitionsGameActivity = dynamic(
-  () => import("@/components/activities/game-activities/missing-definitions"),
+export const MissingDefinitionsGameActivity = defineAsyncComponent(
+  () => import("@/components/primary-sources/activities/game-activities/missing-definitions"),
 );
-export const ShortAnswerQuestionsGame = dynamic(
+export const ShortAnswerQuestionsGame = defineAsyncComponent(
   () =>
-    import("@/components/activities/game-activities/short-answer-questions"),
+    import("@/components/primary-sources/activities/game-activities/short-answer-questions"),
 );
-export const ArrangeAlphabetGameActivity = dynamic(
-  () => import("@/components/activities/game-activities/arrange-alphabet"),
+export const ArrangeAlphabetGameActivity = defineAsyncComponent(
+  () => import("@/components/primary-sources/activities/game-activities/arrange-alphabet"),
 );
-export const AscendingOrderGameActivity = dynamic(
-  () => import("@/components/activities/game-activities/ascending-order-game"),
+export const AscendingOrderGameActivity = defineAsyncComponent(
+  () => import("@/components/primary-sources/activities/game-activities/ascending-order-game"),
 );

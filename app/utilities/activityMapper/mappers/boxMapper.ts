@@ -1,4 +1,4 @@
-import { ActivityType } from "@/lib/types/activity-types";
+import { ActivityType } from "@/types/activity-types";
 import { InWhichBoxActivity } from "../imports";
 
 export const boxMapper = {

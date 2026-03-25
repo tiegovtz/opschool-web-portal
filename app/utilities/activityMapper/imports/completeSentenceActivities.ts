@@ -1,70 +1,70 @@
-import dynamic from "next/dynamic";
+import { defineAsyncComponent } from "vue";
 
-export const CompleteSentenceByRephrasingWithChoices = dynamic(
+export const CompleteSentenceByRephrasingWithChoices = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/complete-sentences/complete-sentences-by-rephrasing-with-choices"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-rephrasing-with-choices"
     )
 );
-export const CompleteSentenceByRephrasing = dynamic(
+export const CompleteSentenceByRephrasing = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/complete-sentences/complete-sentences-by-rephrasing"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-rephrasing"
     )
 );
-export const CompleteSentencesBySelectingCorrectOnes = dynamic(
+export const CompleteSentencesBySelectingCorrectOnes = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/complete-sentences/complete-sentences-by-selecting-correct-ones"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-selecting-correct-ones"
     )
 );
-export const CompleteSentencesByDraggingCluesActivity = dynamic(
+export const CompleteSentencesByDraggingCluesActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/complete-sentences/complete-sentences-by-dragging-clues"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-dragging-clues"
     )
 );
-export const CompleteSentencesWithTwoClausesActivity = dynamic(
+export const CompleteSentencesWithTwoClausesActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/complete-sentences/complete-sentences-with-two-clauses"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-with-two-clauses"
     )
 );
-export const CompleteSentencesByClickingSpecifics = dynamic(
+export const CompleteSentencesByClickingSpecifics = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/complete-sentences/complete-sentences-by-clicking-specifics"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-clicking-specifics"
     )
 );
-export const CompleteSentencesByClicking = dynamic(
+export const CompleteSentencesByClicking = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/complete-sentences/complete-sentences-by-clicking"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-clicking"
     )
 );
-export const CompleteSentencesWithThreeClauses = dynamic(
+export const CompleteSentencesWithThreeClauses = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/complete-sentences/complete-sentences-with-three-clauses"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-with-three-clauses"
     )
 );
-export const CompleteSentencesBySelectingClues = dynamic(
+export const CompleteSentencesBySelectingClues = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/complete-sentences/complete-sentences-by-selecting-clues"
-    )
-);
-
-export const CompleteSentenceRearrangeDraggingActivity = dynamic(
-  () =>
-    import(
-      "@/components/activities/complete-sentences/complete-sentence-rearrange-dragging"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-selecting-clues"
     )
 );
 
-export const CompleteSentenceByRearrangingActivity = dynamic(
+export const CompleteSentenceRearrangeDraggingActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/complete-sentences/complete-sentence-rearrange"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentence-rearrange-dragging"
+    )
+);
+
+export const CompleteSentenceByRearrangingActivity = defineAsyncComponent(
+  () =>
+    import(
+      "@/components/primary-sources/activities/complete-sentences/complete-sentence-rearrange"
     )
 );

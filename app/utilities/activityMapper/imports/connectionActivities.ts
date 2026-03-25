@@ -1,5 +1,5 @@
-import dynamic from "next/dynamic";
+import { defineAsyncComponent } from "vue";
 
-export const ConnectionWall = dynamic(
-  () => import("@/components/activities/connection-wall")
+export const ConnectionWall = defineAsyncComponent(
+  () => import("@/components/primary-sources/activities/connection-wall")
 );

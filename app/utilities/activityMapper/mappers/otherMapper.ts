@@ -1,4 +1,4 @@
-import { ActivityType } from "@/lib/types/activity-types";
+import { ActivityType } from "@/types/activity-types";
 import {
   HiddenWords,
   CompleteMatrix,
@@ -38,9 +38,9 @@ import {
   PatternMatchingActivity,
   AdditionSubtractionObjectsActivity,
 } from "../imports";
-import FractionOperationActivity from "@/components/activities/fraction-operation-activity";
-import TwoUnitsOperationActivity from "@/components/activities/two-units-operation-activity";
-import MagicSquare from "@/components/activities/magic-square";
+import FractionOperationActivity from "~/components/primary-sources/activities/fraction-operation-activity";
+import TwoUnitsOperationActivity from "~/components/primary-sources/activities/two-units-operation-activity";
+import MagicSquare from "~/components/primary-sources/activities/magic-square";
 
 export const otherMapper = {
   // Rearranging Steps Activities

@@ -1,5 +1,5 @@
-import dynamic from "next/dynamic";
+import { defineAsyncComponent } from "vue";
 
-export const InWhichBoxActivity = dynamic(
-  () => import("@/components/activities/in-which-box")
+export const InWhichBoxActivity = defineAsyncComponent(
+  () => import("@/components/primary-sources/activities/in-which-box")
 );

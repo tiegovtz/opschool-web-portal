@@ -55,7 +55,7 @@ export type ActivityQuestion = Pick<
 
 
 export type ActivityMapper = {
-  [key in ActivityType]?: Component<ActivityComponentProps>;
+  [key in ActivityType]?: Component<ActivityComponentProps|any>;
 };
 
 export enum ActivityType {

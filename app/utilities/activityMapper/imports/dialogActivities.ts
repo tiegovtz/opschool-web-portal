@@ -1,5 +1,5 @@
-import dynamic from "next/dynamic";
+import { defineAsyncComponent } from "vue";
 
-export const DialogDifferences = dynamic(
-  () => import("@/components/activities/dialog-differences")
+export const DialogDifferences = defineAsyncComponent(
+  () => import("@/components/primary-sources/activities/dialog-differences")
 );
