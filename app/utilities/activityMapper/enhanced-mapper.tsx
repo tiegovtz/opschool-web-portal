@@ -1,11 +1,10 @@
-import React from "react";
-import {
-  ActivityComponentProps,
-  ActivityType,
-} from "@/lib/types/activity-types";
+// enhancedActivityMapper.tsx
+import { defineComponent, h, type DefineComponent } from "vue";
 
-// Import the original activity mapper
+
+
 import activityComponents from "./index";
+import type { ActivityComponentProps, ActivityType } from "~/types/activity-types";
 
 interface WithAnswerCollectionProps {
   activityId?: number;
@@ -30,60 +29,68 @@ interface WithAnswerCollectionProps {
 }
 
 /**
- * Enhanced activity wrapper that adds answer collection to any activity
+ * Vue HOC Wrapper
  */
-const withAnswerCollection = (ActivityComponent: React.ComponentType<any>) => {
-  return (props: WithAnswerCollectionProps) => {
-    const {
-      activityId,
-      studentProfileId,
-      parentAccountId,
-      sessionId,
-      autoSaveAnswers = false,
-      onActivityComplete,
-      onAnswerRecorded,
-      ...restProps
-    } = props;
+const withAnswerCollection = (ActivityComponent: any) => {
+  return defineComponent<
+    ActivityComponentProps & WithAnswerCollectionProps
+  >({
+    name: "WithAnswerCollection",
 
-    return (
-      <ActivityComponent
-        {...restProps}
-        activityId={activityId}
-        studentProfileId={studentProfileId}
-        parentAccountId={parentAccountId}
-        sessionId={sessionId}
-        autoSaveAnswers={autoSaveAnswers}
-      />
-    );
-  };
+    props: {
+      activityId: Number,
+      studentProfileId: Number,
+      parentAccountId: Number,
+      sessionId: Number,
+      questions: { type: null, required: true },
+      feedback: String,
+      isExamMode: Boolean,
+      autoSaveAnswers: Boolean,
+      onActivityComplete: Function,
+      onAnswerRecorded: Function,
+    },
+
+    setup(props, { attrs }) {
+      const handleAnswerRecorded = (
+        questionIndex: number,
+        answer: any,
+        isCorrect?: boolean
+      ) => {
+        props.onAnswerRecorded?.(questionIndex, answer, isCorrect);
+      };
+
+      return () => h(
+          ActivityComponent,{
+          ...props,
+          ...attrs,
+          handleAnswerRecorded}
+      );
+    },
+  });
 };
 
 /**
- * Enhanced activity mapper with answer collection capabilities
- * This wraps all existing activities with the answer collection functionality
+ * Enhanced mapper
  */
 const createEnhancedActivityMapper = () => {
   const enhancedMapper: {
-    [key in ActivityType]?: React.ComponentType<
+    [key in ActivityType]?: Component<
       ActivityComponentProps & WithAnswerCollectionProps
     >;
   } = {};
 
-  // Iterate through all activity types and create enhanced versions
   Object.entries(activityComponents).forEach(
     ([activityTypeKey, ActivityComponent]) => {
       const activityType = activityTypeKey as ActivityType;
 
       if (ActivityComponent) {
-        enhancedMapper[activityType] = withAnswerCollection(ActivityComponent);
+        enhancedMapper[activityType] =
+          withAnswerCollection(ActivityComponent);
       }
-    },
+    }
   );
 
   return enhancedMapper;
 };
 
-// Create the enhanced activity mapper
-const enhancedActivityComponents = createEnhancedActivityMapper();
-
-export default enhancedActivityComponents;
+export const enhancedActivityComponents = createEnhancedActivityMapper();

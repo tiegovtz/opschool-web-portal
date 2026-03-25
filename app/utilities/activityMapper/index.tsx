@@ -2,7 +2,7 @@ import { boxMapper } from "./mappers/boxMapper";
 import { gameMapper } from "./mappers/gameMapper";
 import { otherMapper } from "./mappers/otherMapper";
 import { dialogMapper } from "./mappers/dialogMapper";
-import { ActivityMapper } from "@/lib/types/activity-types";
+import { type ActivityMapper } from "@/types/activity-types";
 import { connectionMapper } from "./mappers/connectionMapper";
 import { completeSentenceMapper } from "./mappers/completeSentenceMapper";
 

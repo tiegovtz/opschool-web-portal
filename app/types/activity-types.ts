@@ -1,4 +1,5 @@
 import type { DefineComponent } from "vue";
+import type { ServerQuestionType } from "./activity-props";
 
 export type FeedbackType = "wrong-correct" | "wrong-correct-answers" | "none";
 
@@ -22,8 +23,39 @@ export type ActivityComponentProps = {
   ) => void;
 };
 
+export type Activity = {
+  uuid: string;
+  id: number;
+  activityId: string;
+  activityName: string;
+  description: ActivityType;
+  activityDescription: string;
+  topicId: string;
+  played: boolean;
+  subTopic: string;
+  verified: string;
+  topicUuid: string;
+  questions: ServerQuestionType[];
+  summary: string | null;
+  summaryPath: string | null;
+};
+
+export type ActivityQuestion = Pick<
+  Activity,
+  | "id"
+  | "activityName"
+  | "activityDescription"
+  | "description"
+  | "subTopic"
+  | "verified"
+  | "played"
+> & {
+  questions: ServerQuestionType[];
+};
+
+
 export type ActivityMapper = {
-  [key in ActivityType]?: DefineComponent<ActivityComponentProps>;
+  [key in ActivityType]?: Component<ActivityComponentProps>;
 };
 
 export enum ActivityType {

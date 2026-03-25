@@ -64,18 +64,7 @@ export default defineNuxtConfig({
   build: {
     transpile: ["vuetify"],
   },
-
-  alias: {
-    "next/link": fileURLToPath(new URL("./app/shims/next-link.tsx", import.meta.url)),
-    "next/image": fileURLToPath(new URL("./app/shims/next-image.tsx", import.meta.url)),
-    "next/navigation": fileURLToPath(new URL("./app/shims/next-navigation.ts", import.meta.url)),
-    "next/dynamic": fileURLToPath(new URL("./app/shims/next-dynamic.ts", import.meta.url)),
-    "motion/react": fileURLToPath(new URL("./app/shims/motion.tsx", import.meta.url)),
-    "motion/react-client": fileURLToPath(new URL("./app/shims/motion.tsx", import.meta.url)),
-    "framer-motion": fileURLToPath(new URL("./app/shims/motion.tsx", import.meta.url)),
-    "lucide-react": fileURLToPath(new URL("./app/shims/lucide-react.tsx", import.meta.url)),
-  },
-
+  
   vite: {
     css: {
       preprocessorOptions: {
