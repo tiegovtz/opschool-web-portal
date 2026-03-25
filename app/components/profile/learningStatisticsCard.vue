@@ -63,6 +63,9 @@ const recommendationCards = computed(
 const recommendationOverview = computed(
   () => personalizedRecommendations.value?.overview ?? null,
 );
+const topicBreakdown = computed(
+  () => personalizedRecommendations.value?.topicBreakdown ?? [],
+);
 const subjectBreakdown = computed(
   () => personalizedRecommendations.value?.subjectBreakdown ?? [],
 );
@@ -209,9 +212,55 @@ const buildSubjectCoverageWidth = (subject: SubjectLearningAnalysis) => {
   );
 };
 
+const buildProgressWidth = (value: number | null | undefined) => {
+  if (typeof value !== "number" || Number.isNaN(value)) return 0;
+  return Math.max(0, Math.min(100, Math.round(value)));
+};
+
+const buildSubjectProgressWidth = (subject: SubjectLearningAnalysis) =>
+  buildProgressWidth(subject.averageProgress);
+
+const buildTopicProgressWidth = (topic: TopicLearningAnalysis) =>
+  buildProgressWidth(topic.progressPercent);
+
+const buildStudentProgressWidth = computed(() =>
+  buildProgressWidth(recommendationOverview.value?.averageProgress),
+);
+
+const getProgressBarClass = (
+  status: TopicLearningStatus | "subject" | "overall",
+) => {
+  if (status === "covered") {
+    return "bg-gradient-to-r from-emerald-500 to-emerald-600";
+  }
+  if (status === "in_progress") {
+    return "bg-gradient-to-r from-sky-500 to-oceanBlue";
+  }
+  if (status === "opened_only") {
+    return "bg-gradient-to-r from-amber-400 to-amber-500";
+  }
+  if (status === "not_started") {
+    return "bg-gradient-to-r from-slate-400 to-slate-500";
+  }
+  if (status === "subject") {
+    return "bg-gradient-to-r from-oceanBlue to-deepBlue";
+  }
+  return "bg-gradient-to-r from-cyan-500 to-deepBlue";
+};
+
 const formatTopicChapterProgress = (topic: TopicLearningAnalysis) => {
   if (!topic.totalChapters) return "No chapter data";
   return `${topic.completedChapters}/${topic.totalChapters} chapters`;
+};
+
+const formatTopicProgressSummary = (topic: TopicLearningAnalysis) => {
+  if (topic.totalChapters > 0) {
+    return `${topic.completedChapters} of ${topic.totalChapters} chapters completed`;
+  }
+
+  if (topic.progressPercent >= 85) return "Topic coverage is nearly complete";
+  if (topic.progressPercent > 0) return "Topic activity has started";
+  return "Topic not started yet";
 };
 
 const buildTopicAnalysisPrompt = (topic: TopicLearningAnalysis) => {
@@ -732,6 +781,96 @@ onMounted(() => {
             {{ personalizedRecommendations?.summary }}
           </p>
         </div>
+
+        <section
+          v-if="recommendationOverview"
+          class="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"
+        >
+          <div class="p-5 bg-white border rounded-3xl border-slate-200 shadow-sm">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h4 class="text-lg font-semibold text-slate-900">
+                  Overall Student Progress
+                </h4>
+                <p class="mt-1 text-sm text-slate-500">
+                  Progress is now shown first at topic level, with subject and
+                  student summaries above it.
+                </p>
+              </div>
+              <div class="px-3 py-2 rounded-2xl bg-slate-50">
+                <p class="text-xs uppercase text-slate-500">Tracked topics</p>
+                <p class="text-sm font-semibold text-slate-900">
+                  {{ topicBreakdown.length }}
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-5">
+              <div class="flex items-end justify-between gap-3">
+                <div>
+                  <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+                    Overall progress
+                  </p>
+                  <p class="mt-2 text-3xl font-semibold text-slate-900">
+                    {{ recommendationOverview.averageProgress }}%
+                  </p>
+                </div>
+                <p class="text-sm text-slate-500">
+                  {{ recommendationOverview.coveredTopics }}/{{ recommendationOverview.totalTopics }}
+                  topics covered
+                </p>
+              </div>
+              <div class="h-3 mt-4 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  class="h-full transition-all duration-500 rounded-full"
+                  :class="getProgressBarClass('overall')"
+                  :style="{ width: `${buildStudentProgressWidth}%` }"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <div class="p-4 bg-white border rounded-3xl border-slate-200 shadow-sm">
+              <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+                Subjects
+              </p>
+              <p class="mt-2 text-2xl font-semibold text-slate-900">
+                {{ recommendationOverview.subjectsOpened }}/{{ recommendationOverview.totalSubjects }}
+              </p>
+              <p class="mt-1 text-xs text-slate-500">Opened / total subjects</p>
+            </div>
+            <div class="p-4 bg-white border rounded-3xl border-slate-200 shadow-sm">
+              <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+                Topics In Motion
+              </p>
+              <p class="mt-2 text-2xl font-semibold text-slate-900">
+                {{
+                  recommendationOverview.inProgressTopics +
+                  recommendationOverview.openedTopics
+                }}
+              </p>
+              <p class="mt-1 text-xs text-slate-500">
+                Topics currently being worked on
+              </p>
+            </div>
+            <div class="p-4 bg-white border rounded-3xl border-slate-200 shadow-sm">
+              <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
+                Assessment Average
+              </p>
+              <p class="mt-2 text-2xl font-semibold text-slate-900">
+                {{
+                  recommendationOverview.averageAssessmentScore !== null
+                    ? `${recommendationOverview.averageAssessmentScore}%`
+                    : "No quiz data"
+                }}
+              </p>
+              <p class="mt-1 text-xs text-slate-500">
+                Average score across available topic quizzes
+              </p>
+            </div>
+          </div>
+        </section>
 
         <div
           v-if="recommendationOverview"
@@ -1285,10 +1424,10 @@ onMounted(() => {
         >
           <div class="flex items-center justify-between">
             <h4 class="text-lg font-semibold text-slate-900">
-              Subject Breakdown
+              Subject And Topic Progress
             </h4>
             <p class="text-sm text-slate-500">
-              Coverage and performance by subject
+              Topic progress inside each subject, with subject summaries above
             </p>
           </div>
 
@@ -1336,18 +1475,25 @@ onMounted(() => {
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex-1">
                     <div class="flex justify-between text-xs text-slate-500">
-                      <span>Coverage</span>
-                      <span>{{ buildSubjectCoverageWidth(subject) }}%</span>
+                      <span>Subject progress</span>
+                      <span>{{ subject.averageProgress }}%</span>
                     </div>
                     <div
                       class="h-2 mt-2 overflow-hidden rounded-full bg-slate-100"
                     >
                       <div
-                        class="h-full transition-all duration-500 rounded-full bg-gradient-to-r from-oceanBlue to-deepBlue"
+                        class="h-full transition-all duration-500 rounded-full"
+                        :class="getProgressBarClass('subject')"
                         :style="{
-                          width: `${buildSubjectCoverageWidth(subject)}%`,
+                          width: `${buildSubjectProgressWidth(subject)}%`,
                         }"
                       ></div>
+                    </div>
+                    <div class="flex justify-between mt-2 text-[11px] text-slate-500">
+                      <span>
+                        Coverage {{ subject.coveredTopics }}/{{ subject.totalTopics }}
+                      </span>
+                      <span>{{ buildSubjectCoverageWidth(subject) }}% completed</span>
                     </div>
                   </div>
                   <div
@@ -1467,6 +1613,28 @@ onMounted(() => {
                       >
                         Quiz {{ topic.assessmentScore }}%
                       </span>
+                    </div>
+
+                    <div class="mt-4">
+                      <div class="flex items-center justify-between gap-3 text-xs text-slate-500">
+                        <span class="font-semibold tracking-wide uppercase">
+                          Topic progress
+                        </span>
+                        <span>{{ buildTopicProgressWidth(topic) }}%</span>
+                      </div>
+                      <div class="h-2.5 mt-2 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          class="h-full transition-all duration-500 rounded-full"
+                          :class="getProgressBarClass(topic.topicStatus)"
+                          :style="{
+                            width: `${buildTopicProgressWidth(topic)}%`,
+                          }"
+                        ></div>
+                      </div>
+                      <div class="flex flex-wrap items-center justify-between gap-2 mt-2 text-xs text-slate-500">
+                        <span>{{ formatTopicProgressSummary(topic) }}</span>
+                        <span>{{ formatTopicChapterProgress(topic) }}</span>
+                      </div>
                     </div>
 
                     <div
