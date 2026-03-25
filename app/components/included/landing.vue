@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { IconsMdiBookOpenPageVariantOutline } from '#components';
+import { IconsMdiBookOpenPageVariantOutline, UiBackButton } from '#components';
 import apiDocs from '~/utilities/apiDocs';
 import type { IconType } from '../icons/stats.vue';
 import type { Audios } from '~/types/audio.interface';
@@ -157,8 +157,8 @@ onMounted(async () => {
             </p>
             <!-- buttons -->
             <div class="flex flex-wrap gap-5 pt-5">
-                <UIButtonShineParticles @click="$router.push('/nyumbani')" label="Primary" />
-                <UIButtonShineParticles @click="$router.push('/home')" label="Secondary" />
+                <UiButtonShineParticles @click="$router.push('/nyumbani')" label="Primary" />
+                <UiButtonShineParticles @click="$router.push('/home')" label="Secondary" />
             </div>
 
             <!-- static -->
