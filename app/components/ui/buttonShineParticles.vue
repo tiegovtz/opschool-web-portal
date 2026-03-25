@@ -6,12 +6,12 @@ withDefaults(defineProps<{label?:string}>(),{
 </script>
 
 <template>
-    <button class="tie-cta-button cursor-pointer relative inline-flex items-center overflow-hidden border-none outline-none rounded-full py-4 px-9">
-        <span className="tie-cta-fold " aria-hidden="true" />
-        <span className="tie-cta-points" aria-hidden="true">
-             <span v-for="(_,index) in Array.from({ length: 10 })" :key="`${index}-${label.toLowerCase().split('').join('-')}`" className="tie-cta-point" />
+    <button type="button" class="tie-cta-button cursor-pointer relative inline-flex items-center overflow-hidden border-none outline-none rounded-full py-4 px-9">
+        <span class="tie-cta-fold" aria-hidden="true" />
+        <span class="tie-cta-points" aria-hidden="true">
+             <span v-for="(_,index) in Array.from({ length: 10 })" :key="`${index}-${label.toLowerCase().split('').join('-')}`" class="tie-cta-point" />
         </span>
-        <span className="tie-cta-inner">{{ label }}</span>
+        <span class="tie-cta-inner">{{ label }}</span>
     </button>
 </template>
 
