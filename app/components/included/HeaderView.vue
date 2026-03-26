@@ -166,7 +166,7 @@ onBeforeUnmount(() => {
           <div class="flex-1" role="navigation">
             <NuxtLink aria-label="Go home" to="/">
               <p class="block text-center uppercase lg:text-large text-medium text-shadow">
-                TIE online public school
+                TIE online school
               </p>
             </NuxtLink>
           </div>
@@ -257,7 +257,7 @@ onBeforeUnmount(() => {
             <!-- Paragraph Text -->
             <NuxtLink to="/">
               <p class="block text-center uppercase lg:text-large text-[14px] text-shadow">
-                TIE online public school
+                TIE online school
               </p>
             </NuxtLink>
 
