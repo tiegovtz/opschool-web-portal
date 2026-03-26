@@ -17,6 +17,7 @@
 
         <!-- Modal Content -->
         <div
+          ref="modalContent"
           class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden transition-all pointer-events-auto"
           @click.stop
         >
@@ -63,6 +64,7 @@
           <!-- Footer -->
           <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
             <button
+              ref="cancelButton"
               type="button"
               @click="handleCancel"
               class="flex-1 px-4 py-2.5 rounded-xl font-semibold text-gray-700 bg-white border-2 border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400/50 active:scale-95 cursor-pointer"
@@ -70,6 +72,7 @@
               {{ cancelText }}
             </button>
             <button
+              ref="confirmButton"
               type="button"
               @click="handleConfirm"
               class="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white bg-gradient-to-r from-oceanBlue to-deepBlue hover:from-deepBlue hover:to-oceanBlue transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-oceanBlue/50 active:scale-95 cursor-pointer"
@@ -87,6 +90,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
+
 interface Props {
   isOpen: boolean;
   title?: string;
@@ -113,6 +118,10 @@ const emit = defineEmits<{
   close: [];
 }>();
 
+const modalContent = ref<HTMLElement>();
+const cancelButton = ref<HTMLButtonElement>();
+const confirmButton = ref<HTMLButtonElement>();
+
 const handleConfirm = () => {
   emit('confirm');
   emit('close');
@@ -125,16 +134,61 @@ const handleCancel = () => {
   }
 };
 
-// Keyboard support
+// Focus management and keyboard support
 const handleKeyDown = (event: KeyboardEvent) => {
   if (!props.isOpen) return;
 
   if (event.key === 'Escape' && !props.required) {
+    event.preventDefault();
     handleCancel();
-  } else if (event.key === 'Enter' && event.ctrlKey) {
-    handleConfirm();
+  } else if (event.key === 'Tab') {
+    // Trap focus inside the confirmation modal between Cancel and Confirm
+    event.preventDefault();
+
+    const focusOrder = [cancelButton.value, confirmButton.value].filter(
+      (el): el is HTMLButtonElement => !!el,
+    );
+
+    if (!focusOrder.length) return;
+
+    const activeElement = document.activeElement as HTMLElement | null;
+    const currentIndex = focusOrder.findIndex((el) => el === activeElement);
+
+    let nextIndex = 0;
+
+    if (currentIndex === -1) {
+      // If focus is outside our buttons, start with the first one (Cancel)
+      nextIndex = 0;
+    } else if (event.shiftKey) {
+      // Shift+Tab: move backwards
+      nextIndex = (currentIndex - 1 + focusOrder.length) % focusOrder.length;
+    } else {
+      // Tab: move forwards
+      nextIndex = (currentIndex + 1) % focusOrder.length;
+    }
+
+    focusOrder[nextIndex]?.focus();
+  } else if (event.key === 'Enter') {
+    event.preventDefault();
+    const activeElement = document.activeElement;
+
+    // Execute the action that currently has focus
+    if (activeElement === confirmButton.value) {
+      handleConfirm();
+    } else if (activeElement === cancelButton.value && !props.required) {
+      handleCancel();
+    }
   }
 };
+
+// Focus the cancel button when modal opens
+watch(() => props.isOpen, (isOpen) => {
+  if (isOpen) {
+    nextTick(() => {
+      cancelButton.value?.focus();
+    });
+  }
+});
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeyDown);
