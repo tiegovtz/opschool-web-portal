@@ -3,11 +3,12 @@ import {
   apiDocs,
   proxyLearnerProgressJson,
 } from "../../utils/learnerProgressHistoryProxy";
+import { clearRecommendationCache } from "../../utils/recommendationCache";
 
 export default defineEventHandler(async (event) => {
   const body = (await readBody(event)) as QuizAttemptSessionPayload;
 
-  return proxyLearnerProgressJson<any>(
+  const response = await proxyLearnerProgressJson<any>(
     event,
     apiDocs.progressTracking.postQuizAttemptSessions,
     {
@@ -15,4 +16,8 @@ export default defineEventHandler(async (event) => {
       body,
     },
   );
+
+  clearRecommendationCache();
+
+  return response;
 });

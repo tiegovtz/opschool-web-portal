@@ -63,6 +63,45 @@ const recommendationCards = computed(
 const recommendationOverview = computed(
   () => personalizedRecommendations.value?.overview ?? null,
 );
+const toFiniteNumber = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+const displayQuizAttempts = computed(() => {
+  const recommendationAttempts = toFiniteNumber(
+    recommendationOverview.value?.totalAssessmentAttempts,
+  );
+  const profileAttempts = toFiniteNumber(
+    profileData.value?.questionStats?.totalAttempted,
+  );
+  const resolvedAttempts = Math.max(
+    recommendationAttempts ?? 0,
+    profileAttempts ?? 0,
+  );
+
+  return resolvedAttempts.toFixed(0);
+});
+const displayAverageQuizScore = computed(() => {
+  const recommendationScore = toFiniteNumber(
+    recommendationOverview.value?.averageAssessmentScore,
+  );
+  if (recommendationScore !== null) {
+    return recommendationScore.toFixed(1);
+  }
+
+  const profileScore = toFiniteNumber(profileData.value?.questionStats?.averageScore);
+  return profileScore !== null ? profileScore.toFixed(1) : "—";
+});
 const topicBreakdown = computed(
   () => personalizedRecommendations.value?.topicBreakdown ?? [],
 );
@@ -698,11 +737,7 @@ onMounted(() => {
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Quiz Attempts</span>
-            <span class="profile-stat-value">{{
-              profileData?.questionStats?.totalAttempted != null
-                ? Number(profileData.questionStats.totalAttempted).toFixed(0)
-                : "0"
-            }}</span>
+            <span class="profile-stat-value">{{ displayQuizAttempts }}</span>
           </div>
         </div>
 
@@ -716,13 +751,11 @@ onMounted(() => {
           </div>
           <div class="profile-stat-content">
             <span class="profile-stat-label">Average Quiz Score</span>
-            <span class="profile-stat-value"
-              >{{
-                profileData?.questionStats?.averageScore != null
-                  ? Number(profileData.questionStats.averageScore).toFixed(1)
-                  : "—"
-              }}%</span
-            >
+            <span class="profile-stat-value">{{
+              displayAverageQuizScore === "—"
+                ? displayAverageQuizScore
+                : `${displayAverageQuizScore}%`
+            }}</span>
           </div>
         </div>
       </div>
