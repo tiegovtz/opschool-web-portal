@@ -6,6 +6,7 @@ import {
   computed,
   type PropType,
   type Slots,
+  type CSSProperties,
 } from "vue";
 import { cn } from "~/utilities/utils";
 import { dndContextKey, type DndContextValue } from "~/components/layout/dnd-context";
@@ -73,7 +74,7 @@ export default defineComponent({
         onDragover={onDragOver}
         onDragleave={onDragLeave}
         onDrop={onDrop}
-        style={attrs.style as object | undefined}
+        style={attrs.style as CSSProperties}
       >
         {slots.default?.()}
       </div>

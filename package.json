@@ -65,6 +65,8 @@
     "platform": "^0.3.0",
     "postgres": "^3.4.7",
     "primevue": "^4.3.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dnd-touch-backend": "^16.0.1",
     "react-icons": "^5.5.0",
     "redis": "^5.10.0",
     "tailwind-merge": "^3.5.0",
@@ -73,6 +75,7 @@
     "vue": "latest",
     "vue-pdf-embed": "^2.1.2",
     "vue-router": "latest",
+    "vue3-dnd": "^2.1.0",
     "vuedraggable": "^2.24.3",
     "zod": "^3.25.76"
   },

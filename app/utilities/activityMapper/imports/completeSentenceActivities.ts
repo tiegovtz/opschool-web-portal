@@ -3,7 +3,7 @@ import { defineAsyncComponent } from "vue";
 export const CompleteSentenceByRephrasingWithChoices = defineAsyncComponent(
   () =>
     import(
-      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-rephrasing-with-choices"
+      "~/components/primary-sources/activities/complete-sentences/complete-sentences-by-rephrasing-with-choices.vue"
     )
 );
 export const CompleteSentenceByRephrasing = defineAsyncComponent(
@@ -21,7 +21,7 @@ export const CompleteSentencesBySelectingCorrectOnes = defineAsyncComponent(
 export const CompleteSentencesByDraggingCluesActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-dragging-clues"
+      "~/components/primary-sources/activities/complete-sentences/complete-sentences-by-dragging-clues.vue"
     )
 );
 export const CompleteSentencesWithTwoClausesActivity = defineAsyncComponent(
@@ -33,13 +33,13 @@ export const CompleteSentencesWithTwoClausesActivity = defineAsyncComponent(
 export const CompleteSentencesByClickingSpecifics = defineAsyncComponent(
   () =>
     import(
-      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-clicking-specifics"
+      "~/components/primary-sources/activities/complete-sentences/complete-sentences-by-clicking-specifics.vue"
     )
 );
 export const CompleteSentencesByClicking = defineAsyncComponent(
   () =>
     import(
-      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-clicking"
+      "~/components/primary-sources/activities/complete-sentences/complete-sentences-by-clicking.vue"
     )
 );
 export const CompleteSentencesWithThreeClauses = defineAsyncComponent(
@@ -58,13 +58,13 @@ export const CompleteSentencesBySelectingClues = defineAsyncComponent(
 export const CompleteSentenceRearrangeDraggingActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/primary-sources/activities/complete-sentences/complete-sentence-rearrange-dragging"
+      "~/components/primary-sources/activities/complete-sentences/complete-sentence-rearrange-dragging.vue"
     )
 );
 
 export const CompleteSentenceByRearrangingActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/primary-sources/activities/complete-sentences/complete-sentence-rearrange"
+      "~/components/primary-sources/activities/complete-sentences/complete-sentence-rearrange.vue"
     )
 );
