@@ -17,6 +17,28 @@ const refreshToken = useCookie("signInRefreshToken");
 const route = useRoute();
 const navigationStore = useNavigationStore();
 
+const matchesPath = (path: string) =>
+  route.path === path || route.path.startsWith(`${path}/`);
+
+const isHomeRoute = computed(() =>
+  route.path === "/" || matchesPath("/home")
+);
+const isSmartClassRoute = computed(() => matchesPath("/smart-class"));
+const isLearningStatisticsRoute = computed(() =>
+  matchesPath("/profile/learning-statistics")
+);
+const isAccountRoute = computed(() =>
+  route.path === "/profile" ||
+  (matchesPath("/profile") && !isLearningStatisticsRoute.value)
+);
+
+const desktopNavItemClass =
+  "flex items-center gap-2 rounded-xl px-3 py-2 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue min-h-11";
+const mobileNavItemClass =
+  "flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
+const activeNavItemClass = "bg-deepBlue text-white shadow-sm";
+const inactiveNavItemClass = "hover:bg-deepBlue/85 hover:shadow-sm";
+
 const PROTECTED_RETURN_PREFIXES = [
   "/interactive/",
   "/video/",
@@ -113,8 +135,12 @@ onBeforeUnmount(() => {
         <!-- Media Screen -->
         <div
           class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container">
-          <NuxtLink aria-label="Go home" to="/" class="flex gap-2 pl-2 pr-2 rounded-md"
-            active-class="text-white !bg-deepBlue">
+          <NuxtLink
+            aria-label="Go home"
+            to="/"
+            :aria-current="isHomeRoute ? 'page' : undefined"
+            :class="[desktopNavItemClass, isHomeRoute ? activeNavItemClass : inactiveNavItemClass]"
+          >
             <div class="flex items-center justify-center">
               <IconsHome :size="20" />
             </div>
@@ -122,9 +148,13 @@ onBeforeUnmount(() => {
           </NuxtLink>
 
           <!-- TIE Library Books -->
-          <a aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
-            class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium"
-            active-class="text-white !bg-deepBlue">
+          <a
+            aria-label="Visit TIE online library"
+            href="https://ol.tie.go.tz/index.php"
+            target="_blank"
+            rel="noopener noreferrer"
+            :class="[desktopNavItemClass, inactiveNavItemClass]"
+          >
             <div class="flex items-center justify-center">
               <IconsTieLibrary :size="20" />
             </div>
@@ -132,9 +162,12 @@ onBeforeUnmount(() => {
           </a>
 
           <!-- Smart Class Hub -->
-          <NuxtLink to="/smart-class" aria-label="Go to Smart Class"
-            class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium rounded-md"
-            active-class="text-white !bg-deepBlue">
+          <NuxtLink
+            to="/smart-class"
+            aria-label="Go to Smart Class"
+            :aria-current="isSmartClassRoute ? 'page' : undefined"
+            :class="[desktopNavItemClass, isSmartClassRoute ? activeNavItemClass : inactiveNavItemClass]"
+          >
             <div class="flex items-center justify-center">
               <IconsSmartClassHub :size="20" />
             </div>
@@ -154,8 +187,8 @@ onBeforeUnmount(() => {
             v-if="userToken"
             aria-label="Go to learning statistics page"
             to="/profile/learning-statistics"
-            class="flex items-center gap-2 px-3 py-2 text-center text-white transition-colors rounded-md cursor-pointer text-medium hover:bg-deepBlue"
-            active-class="text-white !bg-deepBlue"
+            :aria-current="isLearningStatisticsRoute ? 'page' : undefined"
+            :class="[desktopNavItemClass, isLearningStatisticsRoute ? activeNavItemClass : inactiveNavItemClass]"
           >
             <div class="flex items-center justify-center">
               <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
@@ -189,7 +222,11 @@ onBeforeUnmount(() => {
             <div v-else class="relative px-2 py-1">
               <button
                 aria-label="Open account menu"
-                class="flex items-center gap-2 px-3 py-2 text-white transition-colors rounded-full cursor-pointer hover:bg-deepBlue/70"
+                :aria-current="isAccountRoute ? 'page' : undefined"
+                :class="[
+                  desktopNavItemClass,
+                  isAccountRoute || isAccountMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+                ]"
                 @click="toggleAccountMenu"
               >
                 <div
@@ -249,32 +286,38 @@ onBeforeUnmount(() => {
           <!-- Profile and Sign Up and Home -->
           <div class="flex items-center justify-between w-full">
             <div class="flex">
-
-           
-            <NuxtLink aria-label="Go home" to="/home" class="flex gap-2 pr-2 pl-2 rounded-md"
-                active-class="text-white !bg-deepBlue">
+              <NuxtLink
+                aria-label="Go home"
+                to="/home"
+                :aria-current="isHomeRoute ? 'page' : undefined"
+                :class="[mobileNavItemClass, isHomeRoute ? activeNavItemClass : inactiveNavItemClass]"
+              >
                 <div class="flex items-center justify-center">
                   <IconsHome :size="20" />
                 </div>
                 <p class="hidden capitalize lg:flex">
                   {{ language==='english' ? `Home` :`Nyumbani`}}
                 </p>
-              </NuxtLink>  
-            
-
-              
+              </NuxtLink>
 
               <!-- TIE Library Books -->
-              <a aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
-                class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45"
-                active-class="text-white !bg-deepBlue">
+              <a
+                aria-label="Visit TIE online library"
+                href="https://ol.tie.go.tz/index.php"
+                target="_blank"
+                rel="noopener noreferrer"
+                :class="[mobileNavItemClass, inactiveNavItemClass]"
+              >
                 <div class="flex items-center justify-center">
-                  <IconsSubjects :size="20" />
+                  <IconsTieLibrary :size="20" />
                 </div>
               </a>
-              <NuxtLink to="/smart-class" aria-label="Go to Smart Class"
-                class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45 rounded-md"
-                active-class="text-white !bg-deepBlue">
+              <NuxtLink
+                to="/smart-class"
+                aria-label="Go to Smart Class"
+                :aria-current="isSmartClassRoute ? 'page' : undefined"
+                :class="[mobileNavItemClass, isSmartClassRoute ? activeNavItemClass : inactiveNavItemClass]"
+              >
                 <div class="flex items-center justify-center">
                   <IconsSmartClassHub :size="20" />
                 </div>
@@ -284,8 +327,8 @@ onBeforeUnmount(() => {
                 v-if="userToken"
                 to="/profile/learning-statistics"
                 aria-label="Go to learning statistics page"
-                class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45 rounded-md"
-                active-class="text-white !bg-deepBlue"
+                :aria-current="isLearningStatisticsRoute ? 'page' : undefined"
+                :class="[mobileNavItemClass, isLearningStatisticsRoute ? activeNavItemClass : inactiveNavItemClass]"
               >
                 <div class="flex items-center justify-center">
                   <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
@@ -305,7 +348,11 @@ onBeforeUnmount(() => {
               <div v-if="userToken">
                 <button
                   aria-label="Open account menu"
-                  class="flex items-center justify-center p-2 rounded-full"
+                  :aria-current="isAccountRoute ? 'page' : undefined"
+                  :class="[
+                    mobileNavItemClass,
+                    isAccountRoute || isAccountMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+                  ]"
                   @click="toggleAccountMenu"
                 >
                   <div
