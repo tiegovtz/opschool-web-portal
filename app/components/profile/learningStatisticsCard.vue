@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import MarkdownIt from "markdown-it";
+import LearningMetricCard from "@/components/profile/learning-statistics/LearningMetricCard.vue";
+import LearningOverviewHero from "@/components/profile/learning-statistics/LearningOverviewHero.vue";
+import LearningSubjectBreakdown from "@/components/profile/learning-statistics/LearningSubjectBreakdown.vue";
 import apiDocs from "~/utilities/apiDocs";
 import type {
   PersonalizedRecommendationsResponse,
@@ -7,11 +10,7 @@ import type {
   RecommendationProgressSummaryResponse,
   RecommendationSnapshotComparisonResponse,
   RecommendationSnapshotCreateResponse,
-  SubjectLearningAnalysis,
   TalkToDataResponse,
-  TopicAssessmentStatus,
-  TopicLearningAnalysis,
-  TopicLearningStatus,
 } from "~/types/recommendation.interface";
 
 type Status = "idle" | "pending" | "loading" | "success" | "error";
@@ -125,7 +124,6 @@ const talkToDataAnswer = ref("");
 const talkToDataError = ref("");
 const talkToDataGeneratedAt = ref("");
 const talkToDataStatus = ref<Status>("idle");
-const expandedSubjectTopics = ref<Record<string, boolean>>({});
 const talkToDataPrompts = [
   "Which topics have I not covered yet?",
   "Which subject is my weakest right now?",
@@ -160,13 +158,6 @@ const reasonLabels: Record<string, string> = {
   needs_practice: "Needs practice",
 };
 
-const topicStatusLabels: Record<TopicLearningStatus, string> = {
-  covered: "Covered",
-  in_progress: "In progress",
-  opened_only: "Opened only",
-  not_started: "Not started",
-};
-
 const recommendationOutcomeLabels = {
   not_started: "Not started",
   in_progress: "In progress",
@@ -174,12 +165,6 @@ const recommendationOutcomeLabels = {
   resolved: "Resolved",
   regressed: "Regressed",
 } as const;
-
-const assessmentStatusLabels: Record<TopicAssessmentStatus, string> = {
-  passed: "Passed",
-  failed: "Failed",
-  not_attempted: "Not attempted",
-};
 
 const formatRecommendationAction = (action: RecommendationAction) =>
   actionLabels[action] ?? action.replaceAll("_", " ");
@@ -189,35 +174,6 @@ const formatRecommendationActionHelper = (action: RecommendationAction) =>
 
 const formatReasonCode = (reasonCode: string) =>
   reasonLabels[reasonCode] ?? reasonCode.replaceAll("_", " ");
-
-const formatTopicStatus = (status: TopicLearningStatus) =>
-  topicStatusLabels[status] ?? status.replaceAll("_", " ");
-
-const formatAssessmentStatus = (status: TopicAssessmentStatus) =>
-  assessmentStatusLabels[status] ?? status.replaceAll("_", " ");
-
-const getTopicStatusClass = (status: TopicLearningStatus) => {
-  if (status === "covered") {
-    return "bg-emerald-100 text-emerald-800";
-  }
-  if (status === "in_progress") {
-    return "bg-sky-100 text-sky-800";
-  }
-  if (status === "opened_only") {
-    return "bg-amber-100 text-amber-800";
-  }
-  return "bg-slate-100 text-slate-700";
-};
-
-const getAssessmentStatusClass = (status: TopicAssessmentStatus) => {
-  if (status === "passed") {
-    return "bg-emerald-100 text-emerald-800";
-  }
-  if (status === "failed") {
-    return "bg-rose-100 text-rose-800";
-  }
-  return "bg-slate-100 text-slate-700";
-};
 
 const getRecommendationOutcomeLabel = (status: string) =>
   recommendationOutcomeLabels[
@@ -238,77 +194,6 @@ const getRecommendationOutcomeClass = (status: string) => {
     return "bg-rose-100 text-rose-800";
   }
   return "bg-slate-100 text-slate-700";
-};
-
-const buildSubjectCoverageWidth = (subject: SubjectLearningAnalysis) => {
-  if (!subject.totalTopics) return 0;
-  return Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round((subject.coveredTopics / subject.totalTopics) * 100),
-    ),
-  );
-};
-
-const buildProgressWidth = (value: number | null | undefined) => {
-  if (typeof value !== "number" || Number.isNaN(value)) return 0;
-  return Math.max(0, Math.min(100, Math.round(value)));
-};
-
-const buildSubjectProgressWidth = (subject: SubjectLearningAnalysis) =>
-  buildProgressWidth(subject.averageProgress);
-
-const buildTopicProgressWidth = (topic: TopicLearningAnalysis) =>
-  buildProgressWidth(topic.progressPercent);
-
-const buildStudentProgressWidth = computed(() =>
-  buildProgressWidth(recommendationOverview.value?.averageProgress),
-);
-
-const getProgressBarClass = (
-  status: TopicLearningStatus | "subject" | "overall",
-) => {
-  if (status === "covered") {
-    return "bg-gradient-to-r from-emerald-500 to-emerald-600";
-  }
-  if (status === "in_progress") {
-    return "bg-gradient-to-r from-sky-500 to-oceanBlue";
-  }
-  if (status === "opened_only") {
-    return "bg-gradient-to-r from-amber-400 to-amber-500";
-  }
-  if (status === "not_started") {
-    return "bg-gradient-to-r from-slate-400 to-slate-500";
-  }
-  if (status === "subject") {
-    return "bg-gradient-to-r from-oceanBlue to-deepBlue";
-  }
-  return "bg-gradient-to-r from-cyan-500 to-deepBlue";
-};
-
-const formatTopicChapterProgress = (topic: TopicLearningAnalysis) => {
-  if (!topic.totalChapters) return "No chapter data";
-  return `${topic.completedChapters}/${topic.totalChapters} chapters`;
-};
-
-const formatTopicProgressSummary = (topic: TopicLearningAnalysis) => {
-  if (topic.totalChapters > 0) {
-    return `${topic.completedChapters} of ${topic.totalChapters} chapters completed`;
-  }
-
-  if (topic.progressPercent >= 85) return "Topic coverage is nearly complete";
-  if (topic.progressPercent > 0) return "Topic activity has started";
-  return "Topic not started yet";
-};
-
-const buildTopicAnalysisPrompt = (topic: TopicLearningAnalysis) => {
-  const scorePart =
-    topic.assessmentScore !== null
-      ? ` My latest quiz score is ${topic.assessmentScore}%.`
-      : "";
-
-  return `Help me study ${topic.topicName} in ${topic.subjectName}. My progress is ${topic.progressPercent}%.${scorePart} Show me what I have likely covered, what I have not yet covered, and give me a short plan with practice questions.`;
 };
 
 const renderTalkToDataAnswer = (value: string) => {
@@ -361,28 +246,6 @@ const askTalkToData = async (presetQuestion?: string) => {
   }
 };
 
-const getTopicRiskScore = (topic: TopicLearningAnalysis) => {
-  return (
-    (topic.assessmentStatus === "failed" ? 40 : 0) +
-    (topic.topicStatus === "not_started" ? 30 : 0) +
-    (topic.topicStatus === "opened_only" ? 20 : 0) +
-    (topic.topicStatus === "in_progress" ? 10 : 0) +
-    (100 - topic.progressPercent)
-  );
-};
-
-const sortSubjectTopicsByRisk = (topics: TopicLearningAnalysis[]) => {
-  return [...topics].sort((left, right) => {
-    return getTopicRiskScore(right) - getTopicRiskScore(left);
-  });
-};
-
-const getSubjectPriorityTopics = (subject: SubjectLearningAnalysis) => {
-  return sortSubjectTopicsByRisk(subject.topics)
-    .slice(0, 3)
-    .map((topic) => topic.topicName);
-};
-
 const comparisonTopics = computed(
   () => activeSnapshotComparison.value?.topics ?? [],
 );
@@ -431,10 +294,6 @@ const getDeltaClass = (
 
 const getTopicComparison = (topicId: string) =>
   comparisonTopicById.value.get(topicId) ?? null;
-const getTopicComparisonStatus = (topicId: string) =>
-  getTopicComparison(topicId)?.status ?? "";
-const getTopicComparisonAttemptCount = (topicId: string) =>
-  getTopicComparison(topicId)?.quizSummarySinceSnapshot?.attemptCount ?? 0;
 const getTopicComparisonMetric = (
   topicId: string,
   phase: "before" | "after" | "delta",
@@ -468,21 +327,6 @@ const hasSnapshotAnalytics = computed(() => {
     Boolean(progressSummaryError.value)
   );
 });
-const topicImprovementSummary = (topicId: string) => {
-  const comparison = getTopicComparison(topicId);
-  if (!comparison) return "No tracked improvement yet";
-
-  const progressDelta = comparison.delta.progressPercent ?? 0;
-  const scoreDelta = comparison.delta.assessmentScore ?? 0;
-  const attemptsDelta = comparison.delta.assessmentAttempts ?? 0;
-
-  return [
-    `Progress ${formatMetricDelta(progressDelta, "%")}`,
-    `Quiz ${formatMetricDelta(scoreDelta, "%")}`,
-    `Attempts ${formatMetricDelta(attemptsDelta)}`,
-  ].join(" | ");
-};
-
 const loadRecommendationProgressSummary = async () => {
   progressSummaryStatus.value = "loading";
   progressSummaryError.value = "";
@@ -584,41 +428,6 @@ const syncActiveRecommendationSnapshot = async () => {
   }
 };
 
-const isSubjectTopicListExpanded = (subjectName: string) =>
-  Boolean(expandedSubjectTopics.value[subjectName]);
-
-const toggleSubjectTopicList = (subjectName: string) => {
-  expandedSubjectTopics.value = {
-    ...expandedSubjectTopics.value,
-    [subjectName]: !expandedSubjectTopics.value[subjectName],
-  };
-};
-
-const getSubjectTopicsForDisplay = (subject: SubjectLearningAnalysis) => {
-  const ordered = sortSubjectTopicsByRisk(subject.topics);
-  if (isSubjectTopicListExpanded(subject.subjectName) || ordered.length <= 5) {
-    return ordered;
-  }
-
-  return ordered.slice(0, 5);
-};
-
-const getSubjectHealthLabel = (subject: SubjectLearningAnalysis) => {
-  if (subject.failedTopics > 0) return "Needs attention";
-  if (subject.notStartedTopics > 0) return "Has gaps";
-  if (subject.inProgressTopics + subject.openedTopics > 0) return "In progress";
-  return "Strong";
-};
-
-const getSubjectHealthClass = (subject: SubjectLearningAnalysis) => {
-  if (subject.failedTopics > 0) return "bg-rose-100 text-rose-800";
-  if (subject.notStartedTopics > 0) return "bg-amber-100 text-amber-800";
-  if (subject.inProgressTopics + subject.openedTopics > 0) {
-    return "bg-sky-100 text-sky-800";
-  }
-  return "bg-emerald-100 text-emerald-800";
-};
-
 const openAiTeacherWithPrompt = async (seedPrompt: string) => {
   if (!seedPrompt.trim()) return;
 
@@ -677,87 +486,47 @@ onMounted(() => {
         <h3 class="text-lg font-semibold text-white">Learning Statistics</h3>
       </div>
       <div
-        class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5"
+        class="grid w-full grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5"
       >
-        <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-blue-100 text-deepBlue">
-            <Icon
-              name="fa6-solid:book-open-reader"
-              size="20"
-              class="w-6 h-6"
-            />
-          </div>
-          <div class="profile-stat-content">
-            <span class="profile-stat-label">Competences Opened</span>
-            <span class="profile-stat-value">{{
-              profileData?.totalTopicsOpened ?? 0
-            }}</span>
-          </div>
-        </div>
-
-        <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-green-100 text-emerald-700">
-            <Icon
-              name="heroicons:folder-open-20-solid"
-              size="20"
-              class="w-6 h-6"
-            />
-          </div>
-          <div class="profile-stat-content">
-            <span class="profile-stat-label">Subject Opened</span>
-            <span class="profile-stat-value">{{
-              profileData?.openedSubjects ?? 0
-            }}</span>
-          </div>
-        </div>
-
-        <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-red-100 text-red-600">
-            <Icon
-              name="stash:clock-solid"
-              size="20"
-              class="w-6 h-6"
-            />
-          </div>
-          <div class="profile-stat-content">
-            <span class="profile-stat-label">Time Spent</span>
-            <span class="profile-stat-value">{{
-              profileData?.timeSpentFormatted ?? "0h 0m"
-            }}</span>
-          </div>
-        </div>
-
-        <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-purple-100 text-purple-600">
-            <Icon
-              name="solar:notebook-bold"
-              size="20"
-              class="w-6 h-6"
-            />
-          </div>
-          <div class="profile-stat-content">
-            <span class="profile-stat-label">Quiz Attempts</span>
-            <span class="profile-stat-value">{{ displayQuizAttempts }}</span>
-          </div>
-        </div>
-
-        <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-indigo-100 text-indigo-600">
-            <Icon
-              name="heroicons:chart-bar-16-solid"
-              size="20"
-              class="w-6 h-6"
-            />
-          </div>
-          <div class="profile-stat-content">
-            <span class="profile-stat-label">Average Quiz Score</span>
-            <span class="profile-stat-value">{{
-              displayAverageQuizScore === "—"
-                ? displayAverageQuizScore
-                : `${displayAverageQuizScore}%`
-            }}</span>
-          </div>
-        </div>
+        <LearningMetricCard
+          label="Competences Opened"
+          :value="profileData?.totalTopicsOpened ?? 0"
+          helper="Topics the learner has opened."
+          icon="fa6-solid:book-open-reader"
+          icon-wrapper-class="bg-blue-100 text-deepBlue"
+        />
+        <LearningMetricCard
+          label="Subjects Opened"
+          :value="profileData?.openedSubjects ?? 0"
+          helper="Subjects reached at least once."
+          icon="heroicons:folder-open-20-solid"
+          icon-wrapper-class="bg-green-100 text-emerald-700"
+        />
+        <LearningMetricCard
+          label="Time Spent"
+          :value="profileData?.timeSpentFormatted ?? '0h 0m'"
+          helper="Total tracked study time."
+          icon="stash:clock-solid"
+          icon-wrapper-class="bg-red-100 text-red-600"
+        />
+        <LearningMetricCard
+          label="Quiz Attempts"
+          :value="displayQuizAttempts"
+          helper="Recorded chapter and video quiz tries."
+          icon="solar:notebook-bold"
+          icon-wrapper-class="bg-purple-100 text-purple-600"
+        />
+        <LearningMetricCard
+          label="Average Quiz Score"
+          :value="
+            displayAverageQuizScore === '—'
+              ? displayAverageQuizScore
+              : `${displayAverageQuizScore}%`
+          "
+          helper="Average score from tracked quizzes."
+          icon="heroicons:chart-bar-16-solid"
+          icon-wrapper-class="bg-indigo-100 text-indigo-600"
+        />
       </div>
 
       <div
@@ -815,211 +584,11 @@ onMounted(() => {
           </p>
         </div>
 
-        <section
+        <LearningOverviewHero
           v-if="recommendationOverview"
-          class="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"
-        >
-          <div class="p-5 bg-white border rounded-3xl border-slate-200 shadow-sm">
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h4 class="text-lg font-semibold text-slate-900">
-                  Overall Student Progress
-                </h4>
-                <p class="mt-1 text-sm text-slate-500">
-                  Progress is now shown first at topic level, with subject and
-                  student summaries above it.
-                </p>
-              </div>
-              <div class="px-3 py-2 rounded-2xl bg-slate-50">
-                <p class="text-xs uppercase text-slate-500">Tracked topics</p>
-                <p class="text-sm font-semibold text-slate-900">
-                  {{ topicBreakdown.length }}
-                </p>
-              </div>
-            </div>
-
-            <div class="mt-5">
-              <div class="flex items-end justify-between gap-3">
-                <div>
-                  <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                    Overall progress
-                  </p>
-                  <p class="mt-2 text-3xl font-semibold text-slate-900">
-                    {{ recommendationOverview.averageProgress }}%
-                  </p>
-                </div>
-                <p class="text-sm text-slate-500">
-                  {{ recommendationOverview.coveredTopics }}/{{ recommendationOverview.totalTopics }}
-                  topics covered
-                </p>
-              </div>
-              <div class="h-3 mt-4 overflow-hidden rounded-full bg-slate-100">
-                <div
-                  class="h-full transition-all duration-500 rounded-full"
-                  :class="getProgressBarClass('overall')"
-                  :style="{ width: `${buildStudentProgressWidth}%` }"
-                ></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <div class="p-4 bg-white border rounded-3xl border-slate-200 shadow-sm">
-              <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                Subjects
-              </p>
-              <p class="mt-2 text-2xl font-semibold text-slate-900">
-                {{ recommendationOverview.subjectsOpened }}/{{ recommendationOverview.totalSubjects }}
-              </p>
-              <p class="mt-1 text-xs text-slate-500">Opened / total subjects</p>
-            </div>
-            <div class="p-4 bg-white border rounded-3xl border-slate-200 shadow-sm">
-              <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                Topics In Motion
-              </p>
-              <p class="mt-2 text-2xl font-semibold text-slate-900">
-                {{
-                  recommendationOverview.inProgressTopics +
-                  recommendationOverview.openedTopics
-                }}
-              </p>
-              <p class="mt-1 text-xs text-slate-500">
-                Topics currently being worked on
-              </p>
-            </div>
-            <div class="p-4 bg-white border rounded-3xl border-slate-200 shadow-sm">
-              <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                Assessment Average
-              </p>
-              <p class="mt-2 text-2xl font-semibold text-slate-900">
-                {{
-                  recommendationOverview.averageAssessmentScore !== null
-                    ? `${recommendationOverview.averageAssessmentScore}%`
-                    : "No quiz data"
-                }}
-              </p>
-              <p class="mt-1 text-xs text-slate-500">
-                Average score across available topic quizzes
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <div
-          v-if="recommendationOverview"
-          class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
-        >
-          <div class="p-4 bg-white border rounded-3xl border-slate-200">
-            <p
-              class="text-xs font-semibold tracking-wide uppercase text-slate-500"
-            >
-              Total Topics
-            </p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900">
-              {{ recommendationOverview.totalTopics }}
-            </p>
-          </div>
-          <div class="p-4 bg-white border rounded-3xl border-emerald-200">
-            <p
-              class="text-xs font-semibold tracking-wide uppercase text-emerald-700"
-            >
-              Covered
-            </p>
-            <p class="mt-2 text-2xl font-semibold text-emerald-900">
-              {{ recommendationOverview.coveredTopics }}
-            </p>
-          </div>
-          <div class="p-4 bg-white border rounded-3xl border-sky-200">
-            <p
-              class="text-xs font-semibold tracking-wide uppercase text-sky-700"
-            >
-              In Progress
-            </p>
-            <p class="mt-2 text-2xl font-semibold text-sky-900">
-              {{
-                recommendationOverview.inProgressTopics +
-                recommendationOverview.openedTopics
-              }}
-            </p>
-          </div>
-          <div class="p-4 bg-white border rounded-3xl border-slate-200">
-            <p
-              class="text-xs font-semibold tracking-wide uppercase text-slate-500"
-            >
-              Not Started
-            </p>
-            <p class="mt-2 text-2xl font-semibold text-slate-900">
-              {{ recommendationOverview.notStartedTopics }}
-            </p>
-          </div>
-          <div class="p-4 bg-white border rounded-3xl border-amber-200">
-            <p
-              class="text-xs font-semibold tracking-wide uppercase text-amber-700"
-            >
-              Quiz Status
-            </p>
-            <p class="mt-2 text-2xl font-semibold text-amber-900">
-              {{ recommendationOverview.passedTopics }}/{{
-                recommendationOverview.failedTopics
-              }}
-            </p>
-            <p class="mt-1 text-xs text-slate-500">Passed / Failed topics</p>
-          </div>
-        </div>
-
-        <section
-          v-if="recommendationOverview"
-          class="p-5 bg-white border rounded-3xl border-slate-200 shadow-sm"
-        >
-          <div
-            class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between"
-          >
-            <div>
-              <h4 class="text-lg font-semibold text-slate-900">
-                Deep Learner Analysis
-              </h4>
-              <p class="mt-1 text-sm leading-6 text-slate-600">
-                Full syllabus view for the student level: covered topics,
-                untouched topics, started work, and assessment outcomes.
-              </p>
-            </div>
-
-            <div class="grid gap-2 sm:grid-cols-2">
-              <div class="px-3 py-2 rounded-2xl bg-slate-50">
-                <p class="text-xs uppercase text-slate-500">Average progress</p>
-                <p class="text-sm font-semibold text-slate-900">
-                  {{ recommendationOverview.averageProgress }}%
-                </p>
-              </div>
-              <div class="px-3 py-2 rounded-2xl bg-slate-50">
-                <p class="text-xs uppercase text-slate-500">
-                  Assessment average
-                </p>
-                <p class="text-sm font-semibold text-slate-900">
-                  {{
-                    recommendationOverview.averageAssessmentScore !== null
-                      ? `${recommendationOverview.averageAssessmentScore}%`
-                      : "No quiz data"
-                  }}
-                </p>
-              </div>
-              <div class="px-3 py-2 rounded-2xl bg-slate-50">
-                <p class="text-xs uppercase text-slate-500">Subjects opened</p>
-                <p class="text-sm font-semibold text-slate-900">
-                  {{ recommendationOverview.subjectsOpened }}/{{
-                    recommendationOverview.totalSubjects
-                  }}
-                </p>
-              </div>
-              <div class="px-3 py-2 rounded-2xl bg-slate-50">
-                <p class="text-xs uppercase text-slate-500">Quiz attempts</p>
-                <p class="text-sm font-semibold text-slate-900">
-                  {{ recommendationOverview.totalAssessmentAttempts }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+          :overview="recommendationOverview"
+          :topic-count="topicBreakdown.length"
+        />
 
         <section
           v-if="hasSnapshotAnalytics"
@@ -1451,308 +1020,12 @@ onMounted(() => {
           </div>
         </section>
 
-        <section
-          v-if="subjectBreakdown.length > 0"
-          class="space-y-4"
-        >
-          <div class="flex items-center justify-between">
-            <h4 class="text-lg font-semibold text-slate-900">
-              Subject And Topic Progress
-            </h4>
-            <p class="text-sm text-slate-500">
-              Topic progress inside each subject, with subject summaries above
-            </p>
-          </div>
-
-          <details
-            v-for="subject in subjectBreakdown"
-            :key="subject.subjectName"
-            class="overflow-hidden bg-white border rounded-3xl border-slate-200 shadow-sm group"
-          >
-            <summary
-              class="flex flex-col gap-4 p-5 list-none cursor-pointer lg:flex-row lg:items-start lg:justify-between"
-            >
-              <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2">
-                  <h5 class="text-base font-semibold text-slate-900">
-                    {{ subject.subjectName }}
-                  </h5>
-                  <span
-                    class="px-2.5 py-1 text-xs font-medium rounded-full"
-                    :class="getSubjectHealthClass(subject)"
-                  >
-                    {{ getSubjectHealthLabel(subject) }}
-                  </span>
-                </div>
-                <p class="mt-1 text-sm text-slate-500">
-                  {{
-                    [
-                      subject.levelName,
-                      `${subject.coveredTopics}/${subject.totalTopics} covered`,
-                      `${subject.failedTopics} failed`,
-                    ]
-                      .filter(Boolean)
-                      .join(" | ")
-                  }}
-                </p>
-                <p class="mt-2 text-xs leading-5 text-slate-500">
-                  Priority topics:
-                  {{
-                    getSubjectPriorityTopics(subject).join(", ") ||
-                    "No urgent topic gaps"
-                  }}
-                </p>
-              </div>
-
-              <div class="w-full max-w-xl">
-                <div class="flex items-center justify-between gap-3">
-                  <div class="flex-1">
-                    <div class="flex justify-between text-xs text-slate-500">
-                      <span>Subject progress</span>
-                      <span>{{ subject.averageProgress }}%</span>
-                    </div>
-                    <div
-                      class="h-2 mt-2 overflow-hidden rounded-full bg-slate-100"
-                    >
-                      <div
-                        class="h-full transition-all duration-500 rounded-full"
-                        :class="getProgressBarClass('subject')"
-                        :style="{
-                          width: `${buildSubjectProgressWidth(subject)}%`,
-                        }"
-                      ></div>
-                    </div>
-                    <div class="flex justify-between mt-2 text-[11px] text-slate-500">
-                      <span>
-                        Coverage {{ subject.coveredTopics }}/{{ subject.totalTopics }}
-                      </span>
-                      <span>{{ buildSubjectCoverageWidth(subject) }}% completed</span>
-                    </div>
-                  </div>
-                  <div
-                    class="flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 text-slate-500 transition-transform duration-300 group-open:rotate-180"
-                  >
-                    <Icon
-                      name="heroicons:chevron-down-20-solid"
-                      class="w-5 h-5"
-                    />
-                  </div>
-                </div>
-                <div
-                  class="grid grid-cols-2 gap-2 mt-3 text-xs text-slate-600 sm:grid-cols-4"
-                >
-                  <span
-                    class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700"
-                  >
-                    Covered {{ subject.coveredTopics }}
-                  </span>
-                  <span class="px-2.5 py-1 rounded-full bg-sky-50 text-sky-700">
-                    In progress
-                    {{ subject.inProgressTopics + subject.openedTopics }}
-                  </span>
-                  <span
-                    class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700"
-                  >
-                    Not started {{ subject.notStartedTopics }}
-                  </span>
-                  <span
-                    class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700"
-                  >
-                    Quiz attempts {{ subject.assessmentAttempts }}
-                  </span>
-                </div>
-              </div>
-            </summary>
-
-            <div class="px-5 pb-5 border-t border-slate-100 bg-slate-50/70">
-              <div
-                class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <p class="text-xs text-slate-500">
-                  Showing topic-level details for {{ subject.subjectName }}.
-                  {{
-                    subject.topics.length > 5
-                      ? `By default, only the 5 highest-risk topics are shown first.`
-                      : ""
-                  }}
-                </p>
-
-                <button
-                  v-if="subject.topics.length > 5"
-                  type="button"
-                  class="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold transition-colors border rounded-full border-slate-200 bg-white text-slate-700 hover:border-oceanBlue/20 hover:text-oceanBlue"
-                  @click.stop="toggleSubjectTopicList(subject.subjectName)"
-                >
-                  <Icon
-                    :name="
-                      isSubjectTopicListExpanded(subject.subjectName)
-                        ? 'heroicons:minus-small'
-                        : 'heroicons:plus-small'
-                    "
-                    class="w-4 h-4"
-                  />
-                  <span>
-                    {{
-                      isSubjectTopicListExpanded(subject.subjectName)
-                        ? "Show top 5 only"
-                        : `Show all ${subject.topics.length} topics`
-                    }}
-                  </span>
-                </button>
-              </div>
-              <div class="space-y-3 max-h-[32rem] overflow-y-auto pr-1">
-                <article
-                  v-for="topic in getSubjectTopicsForDisplay(subject)"
-                  :key="topic.topicId"
-                  class="flex flex-col gap-4 p-4 bg-white border rounded-2xl border-slate-200 lg:flex-row lg:items-center lg:justify-between"
-                >
-                  <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2">
-                      <span
-                        class="px-2.5 py-1 text-xs font-medium rounded-full"
-                        :class="getTopicStatusClass(topic.topicStatus)"
-                      >
-                        {{ formatTopicStatus(topic.topicStatus) }}
-                      </span>
-                      <span
-                        class="px-2.5 py-1 text-xs font-medium rounded-full"
-                        :class="
-                          getAssessmentStatusClass(topic.assessmentStatus)
-                        "
-                      >
-                        {{ formatAssessmentStatus(topic.assessmentStatus) }}
-                      </span>
-                    </div>
-
-                    <h6 class="mt-3 text-sm font-semibold text-slate-900">
-                      {{ topic.topicName }}
-                    </h6>
-
-                    <div
-                      class="flex flex-wrap gap-2 mt-3 text-xs text-slate-600"
-                    >
-                      <span class="px-2.5 py-1 rounded-full bg-slate-100">
-                        Progress {{ topic.progressPercent }}%
-                      </span>
-                      <span class="px-2.5 py-1 rounded-full bg-slate-100">
-                        {{ formatTopicChapterProgress(topic) }}
-                      </span>
-                      <span class="px-2.5 py-1 rounded-full bg-slate-100">
-                        Attempts {{ topic.assessmentAttempts }}
-                      </span>
-                      <span
-                        v-if="topic.assessmentScore !== null"
-                        class="px-2.5 py-1 rounded-full bg-slate-100"
-                      >
-                        Quiz {{ topic.assessmentScore }}%
-                      </span>
-                    </div>
-
-                    <div class="mt-4">
-                      <div class="flex items-center justify-between gap-3 text-xs text-slate-500">
-                        <span class="font-semibold tracking-wide uppercase">
-                          Topic progress
-                        </span>
-                        <span>{{ buildTopicProgressWidth(topic) }}%</span>
-                      </div>
-                      <div class="h-2.5 mt-2 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          class="h-full transition-all duration-500 rounded-full"
-                          :class="getProgressBarClass(topic.topicStatus)"
-                          :style="{
-                            width: `${buildTopicProgressWidth(topic)}%`,
-                          }"
-                        ></div>
-                      </div>
-                      <div class="flex flex-wrap items-center justify-between gap-2 mt-2 text-xs text-slate-500">
-                        <span>{{ formatTopicProgressSummary(topic) }}</span>
-                        <span>{{ formatTopicChapterProgress(topic) }}</span>
-                      </div>
-                    </div>
-
-                    <div
-                      v-if="getTopicComparison(topic.topicId)"
-                      class="p-4 mt-4 border rounded-2xl border-sky-100 bg-sky-50/70"
-                    >
-                      <div
-                        class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"
-                      >
-                        <div class="flex flex-wrap items-center gap-2">
-                          <p
-                            class="text-xs font-semibold tracking-wide uppercase text-oceanBlue"
-                          >
-                            Since Recommendation Snapshot
-                          </p>
-                          <span
-                            class="px-2.5 py-1 text-xs font-medium rounded-full"
-                            :class="getRecommendationOutcomeClass(getTopicComparisonStatus(topic.topicId))"
-                          >
-                            {{
-                              getRecommendationOutcomeLabel(
-                                getTopicComparisonStatus(topic.topicId),
-                              )
-                            }}
-                          </span>
-                        </div>
-
-                        <p class="text-xs text-slate-500">
-                          Attempts since snapshot:
-                          {{ getTopicComparisonAttemptCount(topic.topicId) }}
-                        </p>
-                      </div>
-
-                      <div
-                        class="flex flex-col gap-3 mt-3 md:flex-row md:items-center md:justify-between"
-                      >
-                        <p class="text-sm text-slate-700">
-                          {{ topicImprovementSummary(topic.topicId) }}
-                        </p>
-                        <button
-                          type="button"
-                          class="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold transition-colors border rounded-full border-oceanBlue/20 bg-white text-oceanBlue hover:bg-oceanBlue/5"
-                          @click="openTopicImprovement(topic.topicId)"
-                        >
-                          <Icon
-                            name="heroicons:chart-bar-square"
-                            class="w-4 h-4"
-                          />
-                          <span>View improvement</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="flex flex-col gap-3 sm:flex-row">
-                    <NuxtLink
-                      :to="topic.revisitPath"
-                      class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors border rounded-xl border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5"
-                    >
-                      <Icon
-                        name="heroicons:play-circle"
-                        class="w-5 h-5"
-                      />
-                      <span>Open Topic</span>
-                    </NuxtLink>
-
-                    <button
-                      type="button"
-                      class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
-                      @click="
-                        openAiTeacherWithPrompt(buildTopicAnalysisPrompt(topic))
-                      "
-                    >
-                      <Icon
-                        name="heroicons:sparkles"
-                        class="w-5 h-5"
-                      />
-                      <span>Analyze with AI</span>
-                    </button>
-                  </div>
-                </article>
-              </div>
-            </div>
-          </details>
-        </section>
+        <LearningSubjectBreakdown
+          :subjects="subjectBreakdown"
+          :comparison-topics="comparisonTopics"
+          @open-improvement="openTopicImprovement"
+          @open-ai="openAiTeacherWithPrompt"
+        />
 
         <div
           v-if="recommendationCards.length === 0"
@@ -2079,25 +1352,3 @@ onMounted(() => {
     </p>
   </div>
 </template>
-
-<style scoped>
-.profile-stat-card {
-  @apply flex flex-col sm:flex-row items-center gap-2 sm:gap-3 p-3 rounded-xl bg-slate-50/80 border border-slate-100 transition-colors hover:bg-slate-100/80;
-}
-
-.profile-stat-icon {
-  @apply flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl shrink-0;
-}
-
-.profile-stat-content {
-  @apply flex flex-col items-center sm:items-start min-w-0;
-}
-
-.profile-stat-label {
-  @apply text-xs font-medium text-slate-500 leading-tight;
-}
-
-.profile-stat-value {
-  @apply text-base font-bold text-slate-800 mt-0.5 tabular-nums;
-}
-</style>
