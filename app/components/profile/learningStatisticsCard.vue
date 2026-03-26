@@ -607,7 +607,7 @@ onMounted(() => {
               </p>
             </div>
 
-            <div class="grid gap-2 text-sm text-slate-600">
+            <!-- <div class="grid gap-2 text-sm text-slate-600">
               <p v-if="activeSnapshotCreatedAt">
                 Snapshot:
                 <span class="font-medium text-slate-900">{{
@@ -620,7 +620,7 @@ onMounted(() => {
                   formatGeneratedAt(activeSnapshotComparison.comparedAt)
                 }}</span>
               </p>
-            </div>
+            </div> -->
           </div>
 
           <div
