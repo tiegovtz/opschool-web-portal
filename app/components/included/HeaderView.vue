@@ -254,7 +254,7 @@ onBeforeUnmount(() => {
             <!-- Paragraph Text -->
             <NuxtLink to="/">
               <p class="block text-center uppercase lg:text-large text-[14px] text-shadow">
-                TIE online public school
+                TIE online school
               </p>
             </NuxtLink>
 
