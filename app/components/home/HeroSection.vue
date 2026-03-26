@@ -4,7 +4,7 @@ import SliderShow from "../slider/sliderShow.vue";
 
 // Define the full text
 const fullText = `
-Welcome to <b>TIE ONLINE PUBLIC SCHOOL</b>, an innovative platform developed by the
+Welcome to <b>TIE ONLINE SCHOOL</b>, an innovative platform developed by the
 Tanzania Institute of Education (TIE) to assist you in reaching your educational goals
 through engaging methods. Here, you will access high-quality learning resources for
 secondary education, thoughtfully made to give you the best experience. <br/><br/>
