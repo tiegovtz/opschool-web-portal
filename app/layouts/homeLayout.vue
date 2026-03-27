@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white" @contextmenu.prevent >
     <!-- Header -->
-    <HeaderView />
+    <HeaderView :language/>
 
     <!-- Main content -->
     <main class="wrapper-container" tabindex="-1" role="main">
@@ -26,12 +26,18 @@
     </div>  -->
     
     <!-- Footer -->
-    <FooterView />
+    <FooterView  :language/>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import FooterView from '@/components/included/FooterView.vue'
 import HeaderView from '~/components/included/HeaderView.vue'
+import type { LanguageSupport } from '~/types/language.interface';
 const route = useRoute()
+
+withDefaults(
+  defineProps<{educationLevel?:string,language?:LanguageSupport}>(),{
+    language:'english',
+})
 </script>

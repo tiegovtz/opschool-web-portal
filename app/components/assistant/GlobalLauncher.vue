@@ -2,6 +2,7 @@
 import apiDocs from "~/utilities/apiDocs";
 import { extractSubjectSlugs, normalizeSubjectSlug } from "~/config/aiLauncherConfig";
 import { onBeforeUnmount, onMounted } from "vue";
+import type { LocationQueryRaw } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
@@ -22,6 +23,7 @@ const openSubjectTeacherSignal = useState<number>(
 const isLoadingAllowedSubjects = ref(false);
 
 const EXCLUDED_PREFIXES = [
+  "/",
   "/tie-ai-teacher",
   "/auth",
   "/smart-class",
@@ -106,10 +108,10 @@ const openTieOverlay = async () => {
   try {
     tieOverlayBackground.value = route.fullPath;
     tieOverlayPushed.value = true;
-    const query = {
+    const query: LocationQueryRaw = {
       ...route.query,
       overlay: "1",
-    } as Record<string, unknown>;
+    };
     const state = {
       aiOverlay: true,
       aiOverlayBackground: route.fullPath,

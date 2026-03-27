@@ -134,11 +134,14 @@ export const getImageFromShortcode = (shortcodeName: string): ImageMetadata | nu
     });
     
     if (paths.length > 0) {
+      const firstChild = childShortcodes[0];
       return {
         paths,
         alts,
         alt: `Figure ${trimmed}`,
-        category: dynamicShortcodesCache[childShortcodes[0]]?.category || 'general'
+        category:
+          (firstChild ? dynamicShortcodesCache[firstChild]?.category : undefined) ||
+          'general'
       };
     }
   }
@@ -297,4 +300,3 @@ export const replaceImageShortcodes = (text: string): string => {
     </div>`;
   });
 };
-

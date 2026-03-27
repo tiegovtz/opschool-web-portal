@@ -1,8 +1,12 @@
 const baseURL =
   import.meta.env?.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
+const primaryBaseURL =
+  import.meta.env?.VITE_PRIMARY_API_BASE_URL ||
+  "http://41.59.251.164:9000/api/v1";
 
 const apiDocs = {
   baseURL: baseURL, // You can include it here for reference
+  primaryBaseURL,
 
   // AUTH API
   auth: {
@@ -25,7 +29,7 @@ const apiDocs = {
 
     // PATCH or PUT
     profileEdit: `${baseURL}/auth/profile/edit`,
-    updateTimeSpent: `${baseURL}/auth/update-time-spent`, // Update time spent on the platform
+    updateTimeSpent: `${baseURL}/auth/update-time-spent`,
     profilePicture: `${baseURL}/auth/profile/update-picture`,
   },
 
@@ -81,6 +85,13 @@ const apiDocs = {
     getPublicSubjects: `${baseURL}/public-subjects`,
   },
 
+  // PRIMARY MODULE API
+  primary: {
+    getGradesByLevel: `${primaryBaseURL}/smartbook/grade/list-by-level`,
+    getSubjectsByGrade: `${primaryBaseURL}/smartbook/subject/list-by-grade`,
+     getTopicsByGradeSubject:`${primaryBaseURL}/smartbook/topic/list-by-grade-subject`,
+  },
+
   // SYLLABUS API (rich syllabus by subject + level; query params: subject, level, educationLevel as IDs)
   syllabus: {
     getSyllabus: `${baseURL}/syllabus`,
@@ -121,8 +132,23 @@ const apiDocs = {
     putProgresschapterIdNotesProgress: `${baseURL}/progress/chapters/{chapterId}/notes-progress`,
     postProgresschapterIdExperimentAttempts: `${baseURL}/progress/chapters/{chapterId}/experiment-attempts`,
     postQuizAssessment: `${baseURL}/progress/chapters/{chapterId}/assessment-attempts`,
+    postQuizAttemptSessions: `${baseURL}/progress/quiz-attempt-sessions`,
+    postQuizAttempts: `${baseURL}/progress/quiz-attempts`,
     getProgressSubjectsSubjectId: `${baseURL}/progress/subjects/{subjectId}`,
     getProgressTopicsTopicId: `${baseURL}/progress/topics/{topicId}`,
+    getTopicQuizHistory: `${baseURL}/progress/topics/{topicId}/quiz-history`,
+    getTopicQuizHistoryDetailed: `${baseURL}/progress/topics/{topicId}/quiz-history/detailed`,
+  },
+
+  recommendations: {
+    personalized: `${baseURL}/recommendations/personalized`,
+    snapshots: `${baseURL}/recommendations/snapshots`,
+    snapshotLatest: `${baseURL}/recommendations/snapshots/latest`,
+    snapshotById: `${baseURL}/recommendations/snapshots/{snapshotId}`,
+    snapshotComparison: `${baseURL}/recommendations/snapshots/{snapshotId}/comparison`,
+    progressSummary: `${baseURL}/recommendations/progress-summary`,
+    outcomes: `${baseURL}/recommendations/outcomes`,
+    topicOutcome: `${baseURL}/recommendations/topics/{topicId}/outcome`,
   },
 
   // audio API

@@ -3,36 +3,13 @@ import messages from "~/utilities/messages";
 import { MessageComponent, ProfileDrawInitialLater } from "#components";
 import apiDocs from "~/utilities/apiDocs";
 import type { Level } from "~/types/level.interface";
-import type {
-  PersonalizedRecommendation,
-  PersonalizedRecommendationsResponse,
-  RecommendationAction,
-} from "~/types/recommendation.interface";
 import { FetchError } from "ofetch";
 
-// Defien Status
 type Status = "idle" | "pending" | "loading" | "success" | "error";
 
-// Define Cookie
 const signInAccessToken = useCookie<string>("signInAccessToken");
 const userToken = useCookie<any>("signInUserToken");
-const route = useRoute();
-const router = useRouter();
-const tieOverlayOpen = useState<boolean>("tie-ai-overlay-open", () => false);
-const tieOverlayOpening = useState<boolean>(
-  "tie-ai-overlay-opening",
-  () => false,
-);
-const tieOverlayBackground = useState<string>(
-  "tie-ai-overlay-background",
-  () => "",
-);
-const tieOverlayPushed = useState<boolean>(
-  "tie-ai-overlay-pushed",
-  () => false,
-);
-const { setDraft: setAiTeacherDraft } = useAiTeacherDraft();
-let uploadedPic;
+let uploadedPic: File | null = null;
 
 interface UserProfile {
   fname: string;
@@ -73,56 +50,67 @@ interface UserProfile {
   };
 }
 
-// Define State
+const getNameParts = () => {
+  const [fname = "", lname = ""] = String(userToken.value?.name ?? "")
+    .trim()
+    .split(/\s+/, 2);
+
+  return { fname, lname };
+};
+
+const createProfileState = (): UserProfile => {
+  const { fname, lname } = getNameParts();
+
+  return {
+    fname,
+    lname,
+    email: userToken.value?.email ?? "",
+    phone: userToken.value?.phoneNumber ?? "",
+    organization: userToken.value?.organization ?? "",
+    region: userToken.value?.region?.toLowerCase?.() ?? "",
+    district:
+      userToken.value?.district == null
+        ? ""
+        : String(userToken.value.district).toLowerCase(),
+    school:
+      userToken.value?.school == null
+        ? ""
+        : String(userToken.value.school).toLowerCase(),
+    level: userToken.value?.level?._id ?? userToken.value?.level ?? "",
+    type: userToken.value?.type ?? "",
+    profilePic: userToken.value?.profilePic ?? "",
+    controller: {
+      status: "idle",
+      feedback: "",
+      errors: {
+        all: null,
+        type: "",
+        fname: null,
+        lname: null,
+        userName: null,
+        email: null,
+        phone: null,
+        gender: null,
+        age: null,
+        region: null,
+        password: null,
+        confirm_password: null,
+        school: null,
+        district: null,
+        organization: null,
+        userOrgRole: null,
+        otherRole: null,
+        profilePic: null,
+        level: null,
+      },
+    },
+  };
+};
+
 const listLevel = ref<Level[]>([]);
 const isModified = ref<Boolean>(false);
+const profile = reactive<UserProfile>(createProfileState());
 
-const profile = reactive<UserProfile>({
-  fname: userToken.value.name.split(" ")[0],
-  lname: userToken.value.name.split(" ")[1],
-  email: userToken.value.email,
-  phone: userToken.value.phoneNumber,
-  organization: userToken.value.organization,
-  region: userToken.value.region?.toLowerCase(),
-  district:
-    userToken.value.district == null || userToken.value.district == undefined
-      ? ""
-      : userToken.value.district.toString().toLowerCase(),
-  school:
-    userToken.value.school == null || userToken.value.school == undefined
-      ? ""
-      : userToken.value.school.toString().toLowerCase(),
-  level: userToken.value.level?._id || "",
-  type: userToken.value.type,
-  profilePic: userToken.value.profilePic,
-  controller: {
-    status: "idle",
-    feedback: "",
-    errors: {
-      all: null,
-      type: "",
-      fname: null,
-      lname: null,
-      userName: null,
-      email: null,
-      phone: null,
-      gender: null,
-      age: null,
-      region: null,
-      password: null,
-      confirm_password: null,
-      school: null,
-      district: null,
-      organization: null,
-      userOrgRole: null,
-      otherRole: null,
-      profilePic: null,
-      level: null,
-    },
-  },
-});
-
-// Define Two State
 const data = reactive<{
   regions: any[];
   district: any[];
@@ -137,7 +125,6 @@ const data = reactive<{
   error: null,
 });
 
-// List
 const levelsLists = computed(() =>
   (listLevel.value ?? []).map((level) => ({ id: level._id, name: level.name })),
 );
@@ -160,7 +147,6 @@ const regionOptions = computed(() =>
   })),
 );
 
-// Region, District and School Placeholders
 const regionPlaceholder = computed(() => {
   if (data.status === "idle") return "Select Region";
   if (data.status === "pending") return "Loading...";
@@ -186,15 +172,15 @@ const districtPlaceholder = computed(() => {
   return "Select District";
 });
 
-// Define Update Function
 const updatedProfile = async () => {
   profile.controller.status = "loading";
   isModified.value = true;
+
   try {
     const response = await $fetch(apiDocs.auth.profileEdit, {
       method: "PATCH",
       body: {
-        name: profile.fname + " " + profile.lname,
+        name: `${profile.fname} ${profile.lname}`.trim(),
         email: profile.email,
         phoneNumber: profile.phone,
         organization: profile.organization,
@@ -204,14 +190,12 @@ const updatedProfile = async () => {
         level: profile.level,
         type: profile.type,
       },
-
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
     });
 
     if (response) {
-      // Only update values if remote is valid (non-empty)
       for (const key in response) {
         if (Object.prototype.hasOwnProperty.call(response, key)) {
           const remoteValue = (response as any)[key];
@@ -240,93 +224,7 @@ const updatedProfile = async () => {
       fetchError?.data?.message ||
       fetchError?.message ||
       "An error occurred while updating the profile.";
-    console.error(error, { status: status, message: message });
-  }
-};
-
-// Fetch Profile Data
-const {
-  data: profileData,
-  status,
-  error,
-} = await useFetch<any>(apiDocs.auth.profile, {
-  headers: {
-    Authorization: `Bearer ${signInAccessToken.value}`,
-  },
-});
-
-const {
-  data: personalizedRecommendations,
-  status: recommendationStatus,
-  error: recommendationError,
-} = await useFetch<PersonalizedRecommendationsResponse>(
-  "/api/recommendations/personalized",
-);
-
-const recommendationCards = computed(
-  () => personalizedRecommendations.value?.recommendations ?? [],
-);
-
-const actionLabels: Record<RecommendationAction, string> = {
-  rewatch_video: "Rewatch video",
-  review_notes: "Review notes",
-  practice_quiz: "Practice quiz",
-};
-
-const actionHelperLabels: Record<RecommendationAction, string> = {
-  rewatch_video: "Revisit lesson",
-  review_notes: "Open topic notes",
-  practice_quiz: "Review then practice",
-};
-
-const reasonLabels: Record<string, string> = {
-  low_progress: "Low progress",
-  low_assessment: "Low assessment",
-  started_not_finished: "Started, not finished",
-  needs_practice: "Needs practice",
-};
-
-const formatRecommendationAction = (action: RecommendationAction) =>
-  actionLabels[action] ?? action.replaceAll("_", " ");
-
-const formatRecommendationActionHelper = (action: RecommendationAction) =>
-  actionHelperLabels[action] ?? "Open topic";
-
-const formatReasonCode = (reasonCode: string) =>
-  reasonLabels[reasonCode] ?? reasonCode.replaceAll("_", " ");
-
-const buildRecommendationMeta = (
-  recommendation: PersonalizedRecommendation,
-) => {
-  const meta = [recommendation.subjectName];
-  if (recommendation.levelName) {
-    meta.push(recommendation.levelName);
-  }
-  return meta.join(" | ");
-};
-
-const openAiTeacherWithPrompt = async (seedPrompt: string) => {
-  if (!seedPrompt.trim()) return;
-
-  setAiTeacherDraft(seedPrompt);
-  tieOverlayOpening.value = true;
-
-  try {
-    tieOverlayBackground.value = route.fullPath;
-    tieOverlayPushed.value = true;
-    await router.push({
-      query: {
-        ...route.query,
-        overlay: "1",
-      },
-      state: {
-        aiOverlay: true,
-        aiOverlayBackground: route.fullPath,
-      },
-    });
-    tieOverlayOpen.value = true;
-  } finally {
-    tieOverlayOpening.value = false;
+    console.error(error, { status, message });
   }
 };
 
@@ -341,13 +239,11 @@ const getLevel = async () => {
   }
 };
 
-// Fetch Region function
 const fetchRegion = async () => {
   data.error = null;
 
   try {
     const response = await $fetch<any[]>(apiDocs.school.getSchoolRegions);
-
     data.status = "success";
     data.regions = response;
   } catch (err) {
@@ -356,7 +252,6 @@ const fetchRegion = async () => {
   }
 };
 
-// Fetch district function
 const fetchDistricts = async (region: string) => {
   data.status = "pending";
   data.error = null;
@@ -365,7 +260,6 @@ const fetchDistricts = async (region: string) => {
     const response = await $fetch<any[]>(
       apiDocs.school.getSchoolDistricts(region.toUpperCase()),
     );
-
     data.status = "success";
     data.district = response;
   } catch (err) {
@@ -374,11 +268,11 @@ const fetchDistricts = async (region: string) => {
   }
 };
 
-// Fetch schools function
 const fetchSchools = async (region: string, district: string) => {
   data.status = "pending";
   data.error = null;
-  if (!region || !district || region === "" || district === "") {
+
+  if (!region || !district) {
     data.status = "idle";
     return;
   }
@@ -390,7 +284,6 @@ const fetchSchools = async (region: string, district: string) => {
         district: district.toUpperCase(),
       },
     });
-
     data.status = "success";
     data.schools = response;
   } catch (err) {
@@ -399,15 +292,17 @@ const fetchSchools = async (region: string, district: string) => {
   }
 };
 
-// On Mounted
 onMounted(async () => {
   await getLevel();
   await fetchRegion();
-  await fetchDistricts(profile.region);
-  await fetchSchools(profile.region, profile.district);
+  if (profile.region) {
+    await fetchDistricts(profile.region);
+  }
+  if (profile.region && profile.district) {
+    await fetchSchools(profile.region, profile.district);
+  }
 });
 
-// Watch for changes in region or district (School)
 watch(
   () => profile.district,
   (district) => {
@@ -422,88 +317,78 @@ watch(
   (region) => {
     if (region) {
       fetchSchools(region, profile.district);
-      // Watch for changes in region or district (School)
       fetchDistricts(region);
     }
   },
 );
 
-// Watch Profile
-watch(
-  () => profile,
-  (newChanges) => {
-    if (newChanges) {
-      isModified.value = !isModified.value;
-    } else {
-      isModified.value = !isModified.value;
-    }
-  },
-);
-
 const onValueChanged = (inputName: string) => {
+  const { fname, lname } = getNameParts();
+  const currentLevel = userToken.value?.level?._id ?? userToken.value?.level;
+
   if (
     inputName == "fname" &&
-    profile.fname != userToken.value.name.split(" ")[0] &&
+    profile.fname != fname &&
     profile.fname.trim() !== ""
   ) {
     isModified.value = true;
     profile.controller.errors.fname = messages.error.form.firstName;
   } else if (
     inputName == "lname" &&
-    profile.lname != userToken.value.name.split(" ")[1] &&
+    profile.lname != lname &&
     profile.lname.trim() !== ""
   ) {
     isModified.value = true;
     profile.controller.errors.lname = messages.error.form.lastName;
   } else if (
     inputName == "email" &&
-    profile.email != userToken.value.email &&
+    profile.email != userToken.value?.email &&
     profile.email.trim() !== ""
   ) {
     isModified.value = true;
     profile.controller.errors.email = messages.error.form.emailRequired;
   } else if (
     inputName == "phone" &&
-    profile.phone != userToken.value.phoneNumber &&
+    profile.phone != userToken.value?.phoneNumber &&
     profile.phone.trim() !== ""
   ) {
     isModified.value = true;
     profile.controller.errors.phone = messages.error.validation.invalidPhone;
   } else if (
     inputName == "organization" &&
-    profile.organization != userToken.value.organization &&
+    profile.organization != userToken.value?.organization &&
     profile.organization.trim() !== ""
   ) {
     isModified.value = true;
     profile.controller.errors.organization = "Please enter your organization";
   } else if (
     inputName == "level" &&
-    profile.level != userToken.value.level &&
+    profile.level != currentLevel &&
     profile.level.trim() !== ""
   ) {
     isModified.value = true;
     profile.controller.errors.level = "Please enter your level";
   } else if (
     inputName == "profilePic" &&
-    profile.profilePic != userToken.value.profilePic &&
+    profile.profilePic != userToken.value?.profilePic &&
     profile.profilePic.trim() !== ""
   ) {
     isModified.value = true;
   } else if (
     inputName == "region" &&
-    profile.region != userToken.value.region &&
+    profile.region != userToken.value?.region &&
     profile.region.trim() !== ""
   ) {
     isModified.value = true;
   } else if (
     inputName == "district" &&
-    profile.district != userToken.value.district &&
+    profile.district != userToken.value?.district &&
     profile.district.trim() !== ""
   ) {
     isModified.value = true;
   } else if (
     inputName == "school" &&
-    profile.school != userToken.value.school &&
+    profile.school != userToken.value?.school &&
     profile.school.trim() !== ""
   ) {
     isModified.value = true;
@@ -515,9 +400,8 @@ const onValueChanged = (inputName: string) => {
 const choosePict = async (event: Event) => {
   if (!event.target) return;
   const file = (event.target as HTMLInputElement).files?.[0];
-
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-  const maxSize = 2 * 1024 * 1024; // 2MB
+  const maxSize = 2 * 1024 * 1024;
 
   if (!file) return;
 
@@ -542,7 +426,6 @@ const choosePict = async (event: Event) => {
   uploadedPic = file;
   profile.profilePic = URL.createObjectURL(file);
 
-  // Update profile picture in server
   const formData = new FormData();
   formData.append("profilePic", file);
 
@@ -555,7 +438,6 @@ const choosePict = async (event: Event) => {
   })
     .then((response) => {
       if (response) {
-        // profile.profilePic = response;
         profile.controller.status = "success";
         profile.controller.feedback = "profile picture updated successfully";
       }
@@ -566,61 +448,44 @@ const choosePict = async (event: Event) => {
     });
 };
 
-// Define  Discard Changes Button
 const discardChanges = () => {
-  profile.fname = userToken.value.name.split(" ")[0];
-  profile.lname = userToken.value.name.split(" ")[1];
-  profile.email = userToken.value.email;
-  profile.phone = userToken.value.phoneNumber;
-  profile.organization = userToken.value.organization;
-  profile.region = userToken.value.region?.toLowerCase();
-  profile.district =
-    userToken.value.district == null || userToken.value.district == undefined
-      ? ""
-      : userToken.value.district.toString().toLowerCase();
-  profile.school =
-    userToken.value.school == null || userToken.value.school == undefined
-      ? ""
-      : userToken.value.school.toString().toLowerCase();
-  profile.level = userToken.value.level;
-  profile.type = userToken.value.type;
-  profile.profilePic = userToken.value.profilePic;
+  const resetProfile = createProfileState();
+
+  profile.fname = resetProfile.fname;
+  profile.lname = resetProfile.lname;
+  profile.email = resetProfile.email;
+  profile.phone = resetProfile.phone;
+  profile.organization = resetProfile.organization;
+  profile.region = resetProfile.region;
+  profile.district = resetProfile.district;
+  profile.school = resetProfile.school;
+  profile.level = resetProfile.level;
+  profile.type = resetProfile.type;
+  profile.profilePic = resetProfile.profilePic;
   isModified.value = false;
 };
 </script>
 
 <template>
-  <div
-    v-if="status == 'pending'"
-    class="flex items-center justify-center w-full max-w-7xl'"
-  >
-    <LoadingIndicator :is-loading="true" />
-  </div>
-
-  <div
-    v-else-if="status == 'success'"
-    class="flex flex-col items-center justify-center w-full max-w-7xl"
-  >
-    <!-- Message Component -->
+  <div class="flex flex-col items-center justify-center w-full">
     <MessageComponent
       :message="profile.controller.errors.profilePic as string"
       :position="profile.controller.errors.profilePic ? true : false"
-      :event-type="profile.controller.status ? 'success' : 'error'"
+      :event-type="
+        profile.controller.status === 'success' ? 'success' : 'error'
+      "
       :icon="
-        profile.controller.status
+        profile.controller.status === 'success'
           ? 'icons8:checked'
           : 'oui:cross-in-circle-empty'
       "
     />
 
-    <!-- Profile Card -->
     <div class="flex flex-col items-center justify-center w-full">
       <div class="relative inline-flex items-center justify-center">
-        <!-- Profile Image Container -->
         <div
           class="relative overflow-hidden transition-all duration-500 ease-in-out rounded-full cursor-pointer w-36 h-36 group"
         >
-          <!-- Profile Image -->
           <NuxtImg
             :src="
               profile.profilePic && profile.profilePic.trim() !== ''
@@ -633,13 +498,11 @@ const discardChanges = () => {
             class="object-cover w-full h-full transition-all duration-500 ease-in-out transform group-hover:scale-110 group-hover:opacity-10"
           />
 
-          <!-- Overlay with Initials -->
           <ProfileDrawInitialLater
             class="absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out opacity-0 group-hover:opacity-100"
           />
         </div>
 
-        <!-- Camera Button -->
         <label
           for="picture_input"
           class="absolute rounded-full bottom-2 right-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-oceanBlue"
@@ -655,326 +518,60 @@ const discardChanges = () => {
           </div>
         </label>
         <input
-          type="file"
           id="picture_input"
-          @change="choosePict"
-          class="hidden"
+          type="file"
           accept="image/*"
+          class="hidden"
           style="display: none"
           hidden
+          @change="choosePict"
         />
       </div>
-      <!-- Profile Name and Type -->
+
       <div class="flex flex-col items-center justify-center mt-4">
-        <!-- Full Name -->
         <h1 class="font-bold text-large">{{ userToken?.name }}</h1>
-        <!-- Type -->
         <h3 class="my-1 text-textGray text-medium">{{ userToken?.type }}</h3>
       </div>
     </div>
-
-    <!-- Learning Statistics -->
-    <div class="w-full mx-auto my-4 overflow-hidden bg-white rounded-xl shadow-lg border border-slate-100">
-      <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
-        <h3 class="text-lg font-semibold text-white">Learning Statistics</h3>
-      </div>
-      <div class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5">
-        <!-- Competences Opened -->
-        <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-blue-100 text-deepBlue">
-            <Icon name="fa6-solid:book-open-reader" size="20" class="w-6 h-6" />
-          </div>
-          <div class="profile-stat-content">
-            <span class="profile-stat-label">Competences Opened</span>
-            <span class="profile-stat-value">{{ profileData?.totalTopicsOpened ?? 0 }}</span>
-          </div>
-        </div>
-        <!-- Subject Opened -->
-        <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-green-100 text-emerald-700">
-            <Icon name="heroicons:folder-open-20-solid" size="20" class="w-6 h-6" />
-          </div>
-          <div class="profile-stat-content">
-            <span class="profile-stat-label">Subject Opened</span>
-            <span class="profile-stat-value">{{ profileData?.openedSubjects ?? 0 }}</span>
-          </div>
-        </div>
-        <!-- Time Spent -->
-        <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-red-100 text-red-600">
-            <Icon name="stash:clock-solid" size="20" class="w-6 h-6" />
-          </div>
-          <div class="profile-stat-content">
-            <span class="profile-stat-label">Time Spent</span>
-            <span class="profile-stat-value">{{ profileData?.timeSpentFormatted ?? '0h 0m' }}</span>
-          </div>
-        </div>
-        <!-- Quiz Attempts -->
-        <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-purple-100 text-purple-600">
-            <Icon name="solar:notebook-bold" size="20" class="w-6 h-6" />
-          </div>
-          <div class="profile-stat-content">
-            <span class="profile-stat-label">Quiz Attempts</span>
-            <span class="profile-stat-value">{{ profileData?.questionStats?.totalAttempted != null ? Number(profileData.questionStats.totalAttempted).toFixed(0) : '0' }}</span>
-          </div>
-        </div>
-        <!-- Average Quiz Score -->
-        <div class="profile-stat-card">
-          <div class="profile-stat-icon bg-indigo-100 text-indigo-600">
-            <Icon name="heroicons:chart-bar-16-solid" size="20" class="w-6 h-6" />
-          </div>
-          <div class="profile-stat-content">
-            <span class="profile-stat-label">Average Quiz Score</span>
-            <span class="profile-stat-value">{{ profileData?.questionStats?.averageScore != null ? Number(profileData.questionStats.averageScore).toFixed(1) : '—' }}%</span>
-          </div>
-        </div>
-      </div>
-
-      <div
-        v-if="recommendationStatus === 'pending'"
-        class="p-6 space-y-4 bg-[#f8fbfd]"
-      >
-        <div class="w-2/3 h-4 rounded bg-slate-200 animate-pulse"></div>
-        <div class="w-full h-40 rounded-3xl bg-slate-100 animate-pulse"></div>
-        <div class="w-full h-40 rounded-3xl bg-slate-100 animate-pulse"></div>
-        <div class="w-full h-40 rounded-3xl bg-slate-100 animate-pulse"></div>
-      </div>
-
-      <div
-        v-else-if="recommendationError"
-        class="p-6 bg-[#f8fbfd]"
-      >
-        <div
-          class="p-4 border border-amber-200 rounded-2xl bg-amber-50 text-amber-900"
-        >
-          <p class="font-medium">
-            Personalized recommendations are temporarily unavailable.
-          </p>
-          <p class="mt-1 text-sm">
-            Your profile data is still available. Try refreshing the page in a
-            moment.
-          </p>
-        </div>
-      </div>
-
-      <div
-        v-else-if="recommendationCards.length === 0"
-        class="p-6 bg-[#f8fbfd]"
-      >
-        <div class="p-5 border border-emerald-100 rounded-3xl bg-emerald-50/80">
-          <p class="font-medium text-emerald-900">
-            {{
-              personalizedRecommendations?.summary ||
-              "You are keeping up well with your recent topics."
-            }}
-          </p>
-          <p class="mt-2 text-sm text-emerald-800">
-            Keep reviewing your latest lessons and continue with the next topic
-            in your current subject.
-          </p>
-        </div>
-      </div>
-
-      <div
-        v-else
-        class="p-6 space-y-5 bg-[#f8fbfd]"
-      >
-        <div class="p-5 border border-sky-100 rounded-3xl bg-white shadow-sm">
-          <p class="text-sm leading-6 text-slate-700">
-            {{ personalizedRecommendations?.summary }}
-          </p>
-        </div>
-
-        <article
-          v-for="recommendation in recommendationCards"
-          :key="recommendation.topicId"
-          class="overflow-hidden bg-white border border-slate-200 shadow-sm rounded-3xl"
-        >
-          <NuxtLink
-            :to="recommendation.revisitPath"
-            class="block p-5 transition-all duration-300 group hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
-          >
-            <div
-              class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
-            >
-              <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2">
-                  <span
-                    class="inline-flex items-center gap-2 px-2.5 py-1 text-xs font-semibold tracking-wide uppercase rounded-full bg-slate-100 text-slate-600"
-                  >
-                    <Icon
-                      name="fa6-solid:book-open-reader"
-                      class="w-3.5 h-3.5"
-                    />
-                    Revisit Compitence
-                  </span>
-                  <span
-                    class="px-2.5 py-1 text-xs font-semibold rounded-full bg-oceanBlue/10 text-oceanBlue"
-                  >
-                    {{
-                      formatRecommendationAction(
-                        recommendation.recommendedAction,
-                      )
-                    }}
-                  </span>
-                </div>
-
-                <h4
-                  class="mt-3 text-lg font-semibold text-slate-900 group-hover:text-deepBlue"
-                >
-                  {{ recommendation.topicName }}
-                </h4>
-                <!-- <p class="mt-1 text-sm text-slate-500">
-                  {{ buildRecommendationMeta(recommendation) }}
-                </p> -->
-
-                <p class="mt-4 text-sm leading-6 text-slate-700">
-                  {{ recommendation.explanation }}
-                </p>
-
-                <div
-                  class="p-4 mt-4 border rounded-2xl border-sky-100 bg-sky-50/80"
-                >
-                  <p
-                    class="text-xs font-semibold tracking-wide uppercase text-oceanBlue"
-                  >
-                    Focus when revisiting
-                  </p>
-                  <p class="mt-2 text-sm leading-6 text-slate-700">
-                    {{ recommendation.attainmentFocus }}
-                  </p>
-                </div>
-
-                <div class="flex flex-wrap gap-2 mt-4">
-                  <span
-                    class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700"
-                  >
-                    Progress {{ recommendation.progressPercent }}%
-                  </span>
-                  <span
-                    v-if="recommendation.assessmentScore !== null"
-                    class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700"
-                  >
-                    Quiz {{ recommendation.assessmentScore }}%
-                  </span>
-                  <span
-                    v-for="reasonCode in recommendation.reasonCodes"
-                    :key="reasonCode"
-                    class="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800"
-                  >
-                    {{ formatReasonCode(reasonCode) }}
-                  </span>
-                </div>
-              </div>
-
-              <div
-                class="flex items-center gap-2 text-sm font-semibold text-oceanBlue group-hover:text-deepBlue"
-              >
-                <span>{{
-                  formatRecommendationActionHelper(
-                    recommendation.recommendedAction,
-                  )
-                }}</span>
-                <Icon
-                  name="heroicons:arrow-right-20-solid"
-                  class="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
-                />
-              </div>
-            </div>
-          </NuxtLink>
-
-          <div
-            class="flex flex-col gap-3 px-5 py-4 border-t border-slate-200 bg-white sm:flex-row sm:items-center sm:justify-between"
-          >
-            <p class="text-sm text-slate-500">
-              Open the topic directly or ask AI Teacher to guide your revision.
-            </p>
-
-            <div class="flex flex-col gap-3 sm:flex-row">
-              <NuxtLink
-                :to="recommendation.revisitPath"
-                class="inline-flex items-center justify-center gap-2 px-4 py-3 font-semibold transition-colors border rounded-xl border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5"
-              >
-                <Icon
-                  name="heroicons:play-circle"
-                  class="w-5 h-5"
-                />
-                <span>Open Compitence</span>
-              </NuxtLink>
-
-              <button
-                type="button"
-                class="inline-flex items-center justify-center gap-2 px-4 py-3 font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
-                @click="openAiTeacherWithPrompt(recommendation.seedPrompt)"
-              >
-                <Icon
-                  name="heroicons:sparkles"
-                  class="w-5 h-5"
-                />
-                <span>Study with AI Teacher</span>
-              </button>
-            </div>
-          </div>
-        </article>
-      </div>
-    </div>
-
-    <!-- Learning Subject Statistics -->
     <div
-      class="w-full mx-auto my-4 overflow-hidden bg-white rounded-md shadow-md"
-      v-if="profileData?.recentTopics?.length > 0"
+      class="flex flex-col w-full mt-5 gap-3 p-5 bg-white border shadow-sm rounded-3xl border-slate-200 md:flex-row md:items-center md:justify-between"
     >
-      <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
-        <h3 class="text-lg font-semibold text-white">
-          Learning Topics Statistics
-        </h3>
+      <div>
+        <p
+          class="text-sm font-medium uppercase tracking-[0.2em] text-oceanBlue"
+        >
+          Profile
+        </p>
+        <h1 class="mt-2 text-2xl font-semibold text-slate-900">
+          Personal Details
+        </h1>
+        <p class="mt-2 text-sm leading-6 text-slate-600">
+          Manage your account information here. Learning statistics now has its
+          own page.
+        </p>
       </div>
-      <div
-        class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5"
-      >
-        <HomeTopicCard
-          v-for="topic in profileData.recentTopics"
-          :key="topic?._id"
-          :topic-id="topic?._id"
-          :topic-image="topic?.thumbnail"
-          :topic-title="topic?.name"
-          :topic-description="topic?.descriptions"
-          :topic-duration="
-            topic?.topic_duration ? topic?.topic_duration : '10 min'
-          "
-          :topic-likes="topic?.topic_likes ? topic?.topic_likes : 100"
-          :topic-views="
-            topic?.viewedBy?.length
-              ? topic?.viewedBy?.length
-              : topic?.views
-                ? topic?.views
-                : 0
-          "
-          topic-level="lower secondary"
-          :topic-standard="topic?.level?.name"
-          :subject-name="topic?.subject?.name"
-          :topic-viewed="topic?.isViewed"
-          :topic-progress="topic?.progress?.avgProgress"
-          model-type="profile"
-        />
-      </div>
-    </div>
 
-    <!-- Personal Information -->
+      <NuxtLink
+        to="/profile/learning-statistics"
+        class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue"
+      >
+        <Icon
+          name="heroicons:chart-bar-square-20-solid"
+          class="w-5 h-5"
+        />
+        <span>Open Learning Statistics</span>
+      </NuxtLink>
+    </div>
     <div class="w-full mx-auto my-6">
       <div class="bg-white border border-gray-100 rounded-md shadow-md">
-        <!-- Header -->
         <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
           <h3 class="text-lg font-semibold text-white">Personal Information</h3>
         </div>
 
-        <!-- Form Fields - Modified for full width -->
         <div class="p-6">
           <div
-            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-5"
+            class="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-2 xl:grid-cols-3"
           >
-            <!-- First Name -->
             <div class="relative group">
               <label
                 for="fname"
@@ -992,20 +589,19 @@ const discardChanges = () => {
                   />
                 </span>
                 <input
-                  type="text"
                   id="fname"
+                  v-model="profile.fname"
+                  type="text"
                   name="fname"
                   autocomplete="off-name"
-                  @input="onValueChanged('fname')"
-                  v-model="profile.fname"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                   placeholder="Enter your first name"
+                  @input="onValueChanged('fname')"
                   @keydown.space.prevent
                 />
               </div>
             </div>
 
-            <!-- Last Name -->
             <div class="relative group">
               <label
                 for="lname"
@@ -1023,23 +619,22 @@ const discardChanges = () => {
                   />
                 </span>
                 <input
-                  type="text"
                   id="lname"
+                  v-model="profile.lname"
+                  type="text"
                   name="lname"
                   autocomplete="off-name"
-                  @input="onValueChanged('lname')"
-                  v-model="profile.lname"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                   placeholder="Enter your last name"
+                  @input="onValueChanged('lname')"
                   @keydown.space.prevent
                 />
               </div>
             </div>
 
-            <!-- Email Address -->
             <div
-              class="relative group"
               v-if="profile.type.toLowerCase() !== 'student'"
+              class="relative group"
             >
               <label
                 for="email"
@@ -1057,22 +652,21 @@ const discardChanges = () => {
                   />
                 </span>
                 <input
-                  type="email"
                   id="email"
+                  v-model="profile.email"
+                  type="email"
                   name="username"
                   autocomplete="off"
-                  @input="onValueChanged('email')"
-                  v-model="profile.email"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                   placeholder="Enter your email address"
+                  @input="onValueChanged('email')"
                 />
               </div>
             </div>
 
-            <!-- Phone Number -->
             <div
-              class="relative group"
               v-if="profile.type.toLowerCase() !== 'student'"
+              class="relative group"
             >
               <label
                 for="phone"
@@ -1089,24 +683,22 @@ const discardChanges = () => {
                     class="w-5 h-5 transition-colors duration-500 text-textGray group-focus-within:text-deepBlue"
                   />
                 </span>
-
                 <input
-                  type="tel"
                   id="phone"
+                  v-model="profile.phone"
+                  type="tel"
                   name="phone"
                   autocomplete="off"
-                  v-model="profile.phone"
-                  @input="onValueChanged('phone')"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                   placeholder="Enter your phone number"
+                  @input="onValueChanged('phone')"
                 />
               </div>
             </div>
 
-            <!-- Organization -->
             <div
-              class="relative group"
               v-if="profile.type.toLowerCase() !== 'student'"
+              class="relative group"
             >
               <label
                 for="organization"
@@ -1124,20 +716,19 @@ const discardChanges = () => {
                   />
                 </span>
                 <input
-                  type="text"
                   id="organization"
+                  v-model="profile.organization"
+                  type="text"
                   name="organization"
                   autocomplete="off"
-                  @input="onValueChanged('organization')"
-                  v-model="profile.organization"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                   placeholder="Organization (eg: Ekima interctive company)"
+                  @input="onValueChanged('organization')"
                   @keydown.space.prevent
                 />
               </div>
             </div>
 
-            <!-- Region -->
             <div class="relative group">
               <label
                 for="region"
@@ -1147,7 +738,6 @@ const discardChanges = () => {
               </label>
 
               <div class="relative flex items-center">
-                <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
                   <Icon
                     name="heroicons:map"
@@ -1155,26 +745,23 @@ const discardChanges = () => {
                   />
                 </span>
 
-                <!-- Select input with space for the icon -->
-
                 <CustomDropDownList
                   id="region"
-                  name="region"
                   v-model="profile.region"
+                  name="region"
                   :list="regionOptions"
                   :placeholder="regionPlaceholder"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                   @update-model-value="
                     (value: string) => {
                       profile.region = value;
                       onValueChanged('region');
                     }
                   "
-                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                 />
               </div>
             </div>
 
-            <!-- District -->
             <div class="relative group">
               <label
                 for="district"
@@ -1184,7 +771,6 @@ const discardChanges = () => {
               </label>
 
               <div class="relative flex items-center">
-                <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
                   <Icon
                     name="heroicons:map"
@@ -1192,29 +778,26 @@ const discardChanges = () => {
                   />
                 </span>
 
-                <!-- Select input with space for the icon -->
-
                 <CustomDropDownList
                   id="district"
-                  name="district"
                   v-model="profile.district"
+                  name="district"
                   :list="districtOptions"
                   :placeholder="districtPlaceholder"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                   @update-model-value="
                     (value: string) => {
                       profile.district = value;
                       onValueChanged('district');
                     }
                   "
-                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                 />
               </div>
             </div>
 
-            <!-- School -->
             <div
-              class="relative group"
               v-if="profile.type.toLowerCase() !== 'educationstakeholder'"
+              class="relative group"
             >
               <label
                 for="school"
@@ -1224,7 +807,6 @@ const discardChanges = () => {
               </label>
 
               <div class="relative flex items-center">
-                <!-- Icon first -->
                 <span class="absolute flex items-center left-3">
                   <Icon
                     name="tdesign:institution"
@@ -1234,28 +816,28 @@ const discardChanges = () => {
 
                 <CustomDropDownList
                   id="school"
-                  name="school"
                   v-model="profile.school"
+                  name="school"
                   :list="schoolOptions"
                   :placeholder="schoolPlaceholder"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                   @update-model-value="
                     (value: string) => {
                       profile.school = value;
                       onValueChanged('school');
                     }
                   "
-                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                 />
               </div>
             </div>
 
             <div
-              class="relative group"
               v-if="
                 !['teacher', 'educationstakeholder'].includes(
                   profile.type.toLowerCase(),
                 )
               "
+              class="relative group"
             >
               <label
                 for="level"
@@ -1265,18 +847,17 @@ const discardChanges = () => {
               </label>
 
               <div class="relative flex items-center">
-                <!-- Use the Custom Dropdown instead of <select> -->
                 <CustomDropDownList
                   v-model="profile.level"
                   :list="levelsLists"
                   placeholder="(eg: Form 1, Form 2 ...)"
+                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                   @update-model-value="
                     (value: string) => {
                       profile.level = value;
                       onValueChanged('level');
                     }
                   "
-                  button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                 />
               </div>
             </div>
@@ -1285,17 +866,15 @@ const discardChanges = () => {
       </div>
     </div>
 
-    <!-- Submit Button -->
     <Transition name="fade">
       <div
-        class="flex items-center justify-between w-full gap-4 mt-8"
         v-if="isModified"
+        class="flex items-center justify-between w-full gap-4 mt-8"
       >
-        <!-- Discard Changes -->
         <button
           type="reset"
-          @click="discardChanges"
           class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium transition-colors duration-500 ease-in-out border-2 rounded-md hover:text-white text-deepBlue border-oceanBlue hover:bg-gradient-to-r from-deepBlue to-oceanBlue hover:shadow-md"
+          @click="discardChanges"
         >
           Discard Changes
           <Icon
@@ -1304,10 +883,8 @@ const discardChanges = () => {
           />
         </button>
 
-        <!-- save Changes -->
         <button
           type="submit"
-          @click="updatedProfile()"
           :disabled="
             profile.controller.status === 'loading' || isModified == false
           "
@@ -1326,10 +903,11 @@ const discardChanges = () => {
               ? 'bg-red-500 cursor-not-allowed'
               : 'cursor-pointer',
           ]"
+          @click="updatedProfile()"
         >
           <div
-            class="flex items-center justify-center gap-4"
             v-if="profile.controller.status === 'loading'"
+            class="flex items-center justify-center gap-4"
           >
             <span>Please Wait...</span>
             <IconsLoading
@@ -1339,8 +917,8 @@ const discardChanges = () => {
           </div>
 
           <div
-            class="flex items-center justify-center gap-4"
             v-else-if="profile.controller.status === 'success'"
+            class="flex items-center justify-center gap-4"
           >
             <span>Changes Saved Successfully!</span>
             <IconsChecked
@@ -1350,8 +928,8 @@ const discardChanges = () => {
           </div>
 
           <div
-            class="flex items-center justify-center gap-4"
             v-else-if="profile.controller.feedback === 'error'"
+            class="flex items-center justify-center gap-4"
           >
             <span>Changes Failed to Save!</span>
             <IconsCrossCircle
@@ -1361,8 +939,8 @@ const discardChanges = () => {
           </div>
 
           <div
-            class="flex items-center justify-center gap-4"
             v-else
+            class="flex items-center justify-center gap-4"
           >
             Save Changes
             <Icon
@@ -1373,20 +951,6 @@ const discardChanges = () => {
         </button>
       </div>
     </Transition>
-  </div>
-  <div
-    v-else-if="status == 'error'"
-    class="flex items-center justify-center w-full max-w-7xl'"
-  >
-    <MessagePageNotFound />
-  </div>
-  <div
-    v-else
-    class="flex items-center justify-center w-full max-w-7xl'"
-  >
-    <p class="text-center text-medium">
-      Try to refresh the page, Something went Wrong
-    </p>
   </div>
 </template>
 
@@ -1403,25 +967,5 @@ const discardChanges = () => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(-8px);
-}
-
-.profile-stat-card {
-  @apply flex flex-col sm:flex-row items-center gap-2 sm:gap-3 p-3 rounded-xl bg-slate-50/80 border border-slate-100 transition-colors hover:bg-slate-100/80;
-}
-
-.profile-stat-icon {
-  @apply flex items-center justify-center w-10 h-10 sm:w-11 sm:h-11 rounded-xl shrink-0;
-}
-
-.profile-stat-content {
-  @apply flex flex-col items-center sm:items-start min-w-0;
-}
-
-.profile-stat-label {
-  @apply text-xs font-medium text-slate-500 leading-tight;
-}
-
-.profile-stat-value {
-  @apply text-base font-bold text-slate-800 mt-0.5 tabular-nums;
 }
 </style>
