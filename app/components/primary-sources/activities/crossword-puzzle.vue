@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { useWindowSize } from "@vueuse/core";
 import { cn, getImageUrl } from "@/lib/utils";

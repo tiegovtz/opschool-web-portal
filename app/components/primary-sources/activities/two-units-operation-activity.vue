@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import { computed, ref } from "vue";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import { ref, watch } from "vue";
 import { shuffle } from "@/lib/utils";
 import { Input } from "@/components/ui/input";

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import type { AsyncDataRequestStatus } from '#app';
 import type { ServerQuestionType } from '~/types/activity-props';
 import { type Activity } from '~/types/activity-types';

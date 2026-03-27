@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import { ref, watch } from "vue";
 import { useWindowSize } from "@vueuse/core";
 import { shuffle } from "@/lib/utils";

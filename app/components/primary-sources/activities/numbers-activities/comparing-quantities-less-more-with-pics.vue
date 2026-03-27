@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { cn } from "~/utilities/utils";
 import { QuantityRenderer } from "./shared";

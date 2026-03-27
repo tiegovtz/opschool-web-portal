@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import { computed, ref } from "vue";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";

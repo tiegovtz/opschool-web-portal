@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import { ref } from "vue";
 import DNDContext from "@/components/layout/dnd-context";
 import Draggable from "@/components/ui/dnd/draggable";

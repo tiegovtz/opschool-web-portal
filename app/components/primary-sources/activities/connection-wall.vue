@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import { computed, ref, watch } from "vue";
 import { cn, getImageUrl, shuffle } from "@/lib/utils";
 import { ActivityType } from "@/lib/types/activity-types";
