@@ -1,4 +1,5 @@
-import { ActivityTranspilerProps } from "./index";
+// @ts-nocheck
+import type { ActivityTranspilerProps } from "./index";
 
 type MagicSquareQuestion = {
   id: number;

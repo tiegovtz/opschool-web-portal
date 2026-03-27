@@ -1,4 +1,4 @@
-import {
+import type {
   CustomPolygon,
   Coordinate,
   Shape2D,
@@ -126,16 +126,20 @@ export const drawPolygon = (
   const { coordinates, color } = shape;
 
   if (!coordinates.length) return;
+  const [firstPoint] = coordinates;
+  if (!firstPoint) return;
 
   ctx.fillStyle = color;
   ctx.beginPath();
 
   // Start from the first point
-  ctx.moveTo(coordinates[0].x * width, coordinates[0].y * height);
+  ctx.moveTo(firstPoint.x * width, firstPoint.y * height);
 
   // Draw lines to all other points
   for (let i = 1; i < coordinates.length; i++) {
-    ctx.lineTo(coordinates[i].x * width, coordinates[i].y * height);
+    const point = coordinates[i];
+    if (!point) continue;
+    ctx.lineTo(point.x * width, point.y * height);
   }
 
   // Close the path back to the first point
@@ -691,13 +695,17 @@ export const drawPolygonPath = (
   multiplier: number
 ) => {
   if (!coordinates.length) return;
+  const [firstPoint] = coordinates;
+  if (!firstPoint) return;
 
   // Start from the first point
-  ctx.moveTo(coordinates[0].x * multiplier, coordinates[0].y * multiplier);
+  ctx.moveTo(firstPoint.x * multiplier, firstPoint.y * multiplier);
 
   // Draw lines to all other points
   for (let i = 1; i < coordinates.length; i++) {
-    ctx.lineTo(coordinates[i].x * multiplier, coordinates[i].y * multiplier);
+    const point = coordinates[i];
+    if (!point) continue;
+    ctx.lineTo(point.x * multiplier, point.y * multiplier);
   }
 
   // Close the path

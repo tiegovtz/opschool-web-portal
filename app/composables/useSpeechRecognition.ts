@@ -86,7 +86,7 @@ export const useSpeechRecognition = () => {
       if (interim) {
         const words = interim.trim().split(/\s+/);
         if (words.length > 0 && onWord.value) {
-          const lastWord = words[words.length - 1];
+          const lastWord = words[words.length - 1] ?? '';
           onWord.value(lastWord);
         }
       }
@@ -151,7 +151,7 @@ export const useSpeechRecognition = () => {
     } catch (err: any) {
       error.value = err.message || 'Failed to start speech recognition';
       if (onError.value) {
-        onError.value(error.value);
+        onError.value(error.value ?? 'Failed to start speech recognition');
       }
     }
   };

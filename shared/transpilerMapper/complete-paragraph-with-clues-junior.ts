@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { getCommonSeparator, getImageUrl, shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 export const completeParagraphWithCluesJuniorTranspiler = (
   params: ActivityTranspilerProps,

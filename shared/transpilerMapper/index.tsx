@@ -1,5 +1,5 @@
 import { ActivityType } from "@/lib/types/activity-types";
-import { ServerQuestionType } from "@/lib/types/activity-props";
+import type { ServerQuestionType } from "@/lib/types/activity-props";
 
 // Transpilers
 ///////////////////////////////////////////////////

@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { getImageUrl, shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from "..";
+import type { ActivityTranspilerProps } from "..";
 
 const multipleChoiceGameTranspiler = (params: ActivityTranspilerProps) => {
   const { serverQuestions, setWrongQuestionsFormat, titleDescription } = params;

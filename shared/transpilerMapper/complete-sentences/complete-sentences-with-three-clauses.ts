@@ -1,5 +1,5 @@
 import { ActivityType } from "@/lib/types/activity-types";
-import { ActivityTranspilerProps } from "..";
+import type { ActivityTranspilerProps } from "..";
 
 const completeSentencesWithThreeClausesTranspiler = (
   params: ActivityTranspilerProps,

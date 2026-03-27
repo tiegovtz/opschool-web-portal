@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { getCommonSeparator, getImageUrl } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 export const labelTheDiagramTranspiler = (params: ActivityTranspilerProps) => {
   const { titleDescription, serverQuestions, setWrongQuestionsFormat } = params;

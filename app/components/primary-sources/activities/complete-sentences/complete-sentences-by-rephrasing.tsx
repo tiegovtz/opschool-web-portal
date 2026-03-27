@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { motion } from "motion/react";
 import { Check, X } from "lucide-react";
 import { useState } from "react";

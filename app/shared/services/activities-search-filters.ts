@@ -26,7 +26,9 @@ type CurriculumRecord = {
 
 const authHeaders = () => {
   const token = useCookie("signInAccessToken").value;
-  return token ? { Authorization: `Bearer ${token}` } : undefined;
+  return token
+    ? ({ Authorization: `Bearer ${token}` } as Record<string, string>)
+    : undefined;
 };
 
 export const useSubjects = (_curriculum = "TET", _gradeId?: number) => {
@@ -53,20 +55,20 @@ export const useTopics = (
   subjectId?: number,
   _gradeId?: number,
 ) => {
-  const url = computed(() =>
+  const url = computed<string | null>(() =>
     subjectId
       ? apiDocs.topics.getSubjectId.replace("{subjectId}", String(subjectId))
       : null,
   );
 
-  const { data, pending } = useFetch<TopicRecord[]>(url, {
+  const { data, pending } = useFetch<TopicRecord[]>(() => url.value ?? "", {
     headers: authHeaders(),
-    default: () => [],
-    immediate: computed(() => !!url.value),
+    default: () => [] as TopicRecord[],
+    immediate: !!url.value,
   });
 
   const topics = computed(() =>
-    (data.value || []).map((topic) => ({
+    ((data.value ?? []) as TopicRecord[]).map((topic: TopicRecord) => ({
       ...topic,
       topicName: topic.topicName || topic.title || topic.name || "",
     })),
@@ -89,4 +91,3 @@ export const useCurriculums = () => {
   const curriculumsLoading = computed(() => false);
   return { curriculums, curriculumsLoading };
 };
-

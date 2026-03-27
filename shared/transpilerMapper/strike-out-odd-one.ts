@@ -1,5 +1,5 @@
 import { getCommonSeparator, shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from "./index";
+import type { ActivityTranspilerProps } from "./index";
 
 const strikeOutOddOneTranspiler = (params: ActivityTranspilerProps) => {
   const { serverQuestions, titleDescription, setWrongQuestionsFormat } = params;

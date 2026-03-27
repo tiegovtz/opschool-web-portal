@@ -99,7 +99,7 @@ export interface QuizResult {
 }
 
 // Extended video interface
-import type { Videos } from './video.iunterface';
+import type { Videos } from './video.interface';
 
 export interface InteractiveVideo extends Videos {
   quizzes?: VideoQuiz[];
@@ -112,4 +112,3 @@ export interface InteractiveVideo extends Videos {
     difficulty: 'beginner' | 'intermediate' | 'advanced';
   };
 }
-

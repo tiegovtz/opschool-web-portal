@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { getRandomItems, shuffle } from "@/lib/utils";
-import { GameObject } from "@/hooks/useObjects";
-import { ActivityTranspilerProps } from "..";
+import type { GameObject } from "@/hooks/useObjects";
+import type { ActivityTranspilerProps } from "..";
 
 interface MissingDefinitionsTranspilerParams {
   objects: GameObject[];

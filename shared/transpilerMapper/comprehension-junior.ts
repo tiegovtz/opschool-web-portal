@@ -1,4 +1,4 @@
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 import { getCommonSeparator, getImageUrl, shuffle } from "@/lib/utils";
 
 export const comprehensionJuniorPropsTranspiler = (
@@ -27,9 +27,10 @@ export const comprehensionJuniorPropsTranspiler = (
   }
 
   const activityNotes = titleDescription.split("//");
+  const firstQuestion = serverQuestions[0];
   const optionsTitle =
     activityNotes.length > 2
-      ? activityNotes[activityNotes.length - 1].trim()
+      ? (activityNotes[activityNotes.length - 1] ?? "").trim()
       : "Answer options";
 
   const theQuestions = serverQuestions.map((question) => {
@@ -38,36 +39,36 @@ export const comprehensionJuniorPropsTranspiler = (
       image: question.path
         ? getImageUrl(question.path)
         : algorithm === "Comprehension junior one"
-        ? getImageUrl(serverQuestions[0].path || "")
+        ? getImageUrl(firstQuestion?.path || "")
         : "",
       answers:
         algorithm === "Comprehension junior one"
           ? [
               ...(question.textTwo?.split(
-                getCommonSeparator(question.textTwo)
+                getCommonSeparator(question.textTwo ?? "")
               ) ?? []),
             ]
           : question.textTwo
-              ?.split(getCommonSeparator(question.textTwo))
+              ?.split(getCommonSeparator(question.textTwo ?? ""))
               .slice(0, (question.textOne?.split("___").length || 1) - 1)
               .map((option) => option),
       options: shuffle(
         Array.from(
           new Set(
             algorithm === "Comprehension junior one"
-              ? [
+                ? [
                   ...(question.textThree?.split(
-                    getCommonSeparator(question.textThree)
+                    getCommonSeparator(question.textThree ?? "")
                   ) ?? []),
                 ].map((opt) => opt.toLowerCase())
               : question.textTwo
-                  ?.split(getCommonSeparator(question.textTwo))
+                  ?.split(getCommonSeparator(question.textTwo ?? ""))
                   .map((opt) => opt.toLowerCase())
           )
         ).map((lowerOption) => {
           const originalOption =
             question.textTwo
-              ?.split(getCommonSeparator(question.textTwo))
+              ?.split(getCommonSeparator(question.textTwo ?? ""))
               .find((opt) => opt.toLowerCase() === lowerOption) || "";
           return {
             id: lowerOption,
@@ -93,11 +94,11 @@ export const comprehensionJuniorPropsTranspiler = (
           ${activityNotes[activityNotes.length - 1]}`,
     image:
       algorithm === "Comprehension junior two" &&
-      serverQuestions[0].path &&
-      serverQuestions[0].pathTwo &&
-      getImageUrl(serverQuestions[0].pathTwo || ""),
+      firstQuestion?.path &&
+      firstQuestion.pathTwo &&
+      getImageUrl(firstQuestion.pathTwo || ""),
     optionsTitle,
-    useAI: activityNotes[activityNotes.length - 2].trim() === "AI",
+    useAI: (activityNotes[activityNotes.length - 2] ?? "").trim() === "AI",
     questions: examMode ? shuffle(theQuestions) : theQuestions,
   };
 };

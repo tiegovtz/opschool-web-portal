@@ -1,5 +1,5 @@
 import { getImageUrl } from "@/lib/utils";
-import { ActivityTranspilerProps } from "..";
+import type { ActivityTranspilerProps } from "..";
 
 const additionSubtractionObjectsTranspiler = (
   params: ActivityTranspilerProps,

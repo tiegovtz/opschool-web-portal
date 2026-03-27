@@ -1,3 +1,9 @@
+type TtsInlineResponse = {
+  success?: boolean
+  audioBase64?: string
+  contentType?: string
+}
+
 export default defineEventHandler(async (event) => {
   if (event.method !== 'POST') {
     throw createError({ statusCode: 405, message: 'Method Not Allowed' })
@@ -20,7 +26,7 @@ export default defineEventHandler(async (event) => {
         return { id, success: false }
       }
       try {
-        const response = await $fetch('/api/conversation/tts', {
+        const response = await $fetch<TtsInlineResponse>('/api/conversation/tts', {
           method: 'POST',
           body: {
             text,
@@ -30,9 +36,9 @@ export default defineEventHandler(async (event) => {
         })
         return {
           id,
-          success: Boolean(response?.success && response?.audioBase64),
-          audioBase64: response?.audioBase64,
-          contentType: response?.contentType || 'audio/wav',
+          success: Boolean(response.success && response.audioBase64),
+          audioBase64: response.audioBase64,
+          contentType: response.contentType || 'audio/wav',
         }
       } catch {
         return { id, success: false }

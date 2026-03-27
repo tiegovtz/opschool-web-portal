@@ -4,8 +4,7 @@ import Droppable from "~/components/ui/dnd/droppable";
 import Draggable from "~/components/ui/dnd/draggable";
 import Input from "~/components/ui/inputs/input";
 import { cn } from "~/utilities/utils";
-
-export type AnswerType = "drag-drop" | "input" | "click";
+import type { AnswerType } from "./answer-drop-zone.types";
 
 type AnswerDropZoneProps = {
   id: string;

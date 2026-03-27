@@ -50,7 +50,7 @@ const paragraphParts = computed(() => props.questions.paragraph.split("___"));
 const checkAnswers = () => {
   const correctness = userAnswers.value.map((answer, index) =>
     answerChecker.checkAnswer(answer.trim().toLowerCase(), {
-      acceptedAnswers: [props.questions.answers[index].trim().toLowerCase()],
+      acceptedAnswers: [props.questions.answers[index]?.trim().toLowerCase() ?? ""],
     }).isCorrect,
   );
 

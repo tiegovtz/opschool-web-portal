@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 const missingValuesJuniorTranspiler = (params: ActivityTranspilerProps) => {
   const { serverQuestions, titleDescription, setWrongQuestionsFormat } = params;

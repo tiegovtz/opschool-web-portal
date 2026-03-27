@@ -10,15 +10,15 @@ import { examStrikeOutOddOneTranspiler } from "~~/shared/transpilerMapper/exam-t
 import { completeParagraphWithCluesJuniorTranspiler } from "~~/shared/transpilerMapper/complete-paragraph-with-clues-junior";
 import openEndedQuestionsTranspiler from "~~/shared/transpilerMapper/open-ended-questions/open-ended-questions";
 import { matchingWithLettersTranspiler as examMatchingWithLettersTranspiler } from "~~/shared/transpilerMapper/matching-with-letters";
-import ExamStrikeOutOddOne from "~/components/primary-sources/activities/exam-activities/exam-strike-out-odd-one";
-import ExamTableCheckBoxes from "~/components/primary-sources/activities/exam-activities/exam-table-check-boxes";
-import ExamRearrangeStepsVertically from "~/components/primary-sources/activities/exam-activities/exam-rearrange-steps-vertically";
-import ExamComprehensionJuniorOne from "~/components/primary-sources/activities/exam-activities/exam-comprehension-junior-one";
-import ExamCompleteParagraphWithoutClues from "~/components/primary-sources/activities/exam-activities/exam-complete-paragraph-without-clues";
-import ExamOpenEndedQuestions from "~/components/primary-sources/activities/exam-activities/exam-open-ended-questions";
-import ExamCompleteSentencesByRephrasing from "~/components/primary-sources/activities/exam-activities/exam-complete-sentences-by-rephrasing";
-import ExamMatchingWithLetters from "~/components/primary-sources/activities/exam-activities/exam-matching-with-letters";
-import ExamMultipleChoice from "~/components/primary-sources/activities/exam-activities/exam-multiple-choice";
+import ExamStrikeOutOddOne from "~/components/primary-sources/activities/exam-activities/exam-strike-out-odd-one.vue";
+import ExamTableCheckBoxes from "~/components/primary-sources/activities/exam-activities/exam-table-check-boxes.vue";
+import ExamRearrangeStepsVertically from "~/components/primary-sources/activities/exam-activities/exam-rearrange-steps-vertically.vue";
+import ExamComprehensionJuniorOne from "~/components/primary-sources/activities/exam-activities/exam-comprehension-junior-one.vue";
+import ExamCompleteParagraphWithoutClues from "~/components/primary-sources/activities/exam-activities/exam-complete-paragraph-without-clues.vue";
+import ExamOpenEndedQuestions from "~/components/primary-sources/activities/exam-activities/exam-open-ended-questions.vue";
+import ExamCompleteSentencesByRephrasing from "~/components/primary-sources/activities/exam-activities/exam-complete-sentences-by-rephrasing.vue";
+import ExamMatchingWithLetters from "~/components/primary-sources/activities/exam-activities/exam-matching-with-letters.vue";
+import ExamMultipleChoice from "~/components/primary-sources/activities/exam-activities/exam-multiple-choice.vue";
 
 export const examActivityComponents = {
   "Multiple choice game": ExamMultipleChoice,

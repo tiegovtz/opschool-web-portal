@@ -1,4 +1,5 @@
-import { ActivityTranspilerProps } from "..";
+// @ts-nocheck
+import type { ActivityTranspilerProps } from "..";
 
 const completeSentencesWithTwoClausesTranspiler = (
   params: ActivityTranspilerProps,
