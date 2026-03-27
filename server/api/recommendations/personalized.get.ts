@@ -9,10 +9,15 @@ import type {
   RecommendationAction,
   RecommendationReasonCode,
   SubjectLearningAnalysis,
+  TopicQuizHistoryResponse,
   TopicAssessmentStatus,
   TopicLearningAnalysis,
   TopicLearningStatus,
 } from "~/types/recommendation.interface";
+import {
+  getCachedRecommendations,
+  setCachedRecommendations,
+} from "../../utils/recommendationCache";
 
 type TopicCandidate = TopicLearningAnalysis;
 
@@ -38,12 +43,6 @@ type UserLevelContext = {
   keys: Set<string>;
   name: string | null;
 };
-
-const CACHE_TTL_MS = 10 * 60 * 1000;
-const recommendationCache = new Map<
-  string,
-  { timestamp: number; value: PersonalizedRecommendationsResponse }
->();
 
 function createUnauthorizedError(): never {
   throw createError({
@@ -285,6 +284,16 @@ function extractAttemptScore(item: any): number | null {
   );
 }
 
+function extractQuizHistoryScore(
+  quizHistory: TopicQuizHistoryResponse | null | undefined
+): number | null {
+  if (!quizHistory) return null;
+
+  return normalizeNullablePercent(
+    getFirstNumber(quizHistory, [["latestScore"], ["bestScore"], ["accuracy"]])
+  );
+}
+
 function inferAssessmentOutcome(item: any): boolean | null {
   const explicit = getFirstBoolean(item, [
     ["passed"],
@@ -306,8 +315,12 @@ function inferAssessmentOutcome(item: any): boolean | null {
   return null;
 }
 
-function extractAssessmentMetrics(remoteProgress: any): TopicAssessmentMetrics {
-  const assessmentScore = extractAssessmentScore(remoteProgress);
+function extractAssessmentMetrics(
+  remoteProgress: any,
+  quizHistory?: TopicQuizHistoryResponse | null
+): TopicAssessmentMetrics {
+  const assessmentScore =
+    extractAssessmentScore(remoteProgress) ?? extractQuizHistoryScore(quizHistory);
   const attemptItems = getFirstArray(remoteProgress, [
     ["assessmentAttempts"],
     ["assessments"],
@@ -341,6 +354,13 @@ function extractAssessmentMetrics(remoteProgress: any): TopicAssessmentMetrics {
     assessmentAttempts = Math.max(0, Math.round(numericAttempts ?? 0));
   }
 
+  if (!assessmentAttempts) {
+    assessmentAttempts = Math.max(
+      0,
+      Math.round(quizHistory?.totalAttempts ?? 0)
+    );
+  }
+
   if (!passedAssessments) {
     const numericPassed = getFirstNumber(remoteProgress, [
       ["passedAssessments"],
@@ -364,6 +384,19 @@ function extractAssessmentMetrics(remoteProgress: any): TopicAssessmentMetrics {
     ]);
     if (numericFailed !== null) {
       failedAssessments = Math.max(0, Math.round(numericFailed));
+    }
+  }
+
+  if (
+    assessmentAttempts > 0 &&
+    passedAssessments === 0 &&
+    failedAssessments === 0 &&
+    assessmentScore !== null
+  ) {
+    if (assessmentScore >= 50) {
+      passedAssessments = 1;
+    } else {
+      failedAssessments = 1;
     }
   }
 
@@ -655,7 +688,8 @@ function normalizeTopicCandidate(
   remoteProgress: any,
   subjectLookup: Map<string, string>,
   levelLookup: Map<string, string>,
-  chapterCount: number
+  chapterCount: number,
+  quizHistory?: TopicQuizHistoryResponse | null
 ): TopicCandidate | null {
   const topicId = getStringValue(topic?._id || topic?.id || topic?.topicId);
   const topicName = getStringValue(topic?.name || topic?.title);
@@ -677,7 +711,7 @@ function normalizeTopicCandidate(
   const isViewed =
     getFirstBoolean(remoteProgress, [["isViewed"], ["progress", "isViewed"]]) ??
     Boolean(topic?.isViewed);
-  const assessmentMetrics = extractAssessmentMetrics(remoteProgress);
+  const assessmentMetrics = extractAssessmentMetrics(remoteProgress, quizHistory);
   const chapterMetrics = extractTopicChapterMetrics(
     topic,
     remoteProgress,
@@ -889,7 +923,8 @@ function buildSubjectBreakdown(topics: TopicCandidate[]): SubjectLearningAnalysi
 function buildOverview(
   topics: TopicCandidate[],
   subjects: SubjectLearningAnalysis[],
-  profileAverageScore: number | null
+  profileAverageScore: number | null,
+  profileAssessmentAttempts: number | null
 ): LearnerAnalysisOverview {
   const coveredTopics = topics.filter((topic) => topic.topicStatus === "covered").length;
   const inProgressTopics = topics.filter(
@@ -918,6 +953,14 @@ function buildOverview(
           scoredTopics.reduce((sum, score) => sum + score, 0) / scoredTopics.length
         )
       : null);
+  const topicAssessmentAttempts = topics.reduce(
+    (sum, topic) => sum + topic.assessmentAttempts,
+    0
+  );
+  const totalAssessmentAttempts = Math.max(
+    topicAssessmentAttempts,
+    Math.max(0, Math.round(profileAssessmentAttempts ?? 0))
+  );
 
   return {
     totalSubjects: subjects.length,
@@ -934,10 +977,7 @@ function buildOverview(
     notStartedTopics,
     averageProgress,
     averageAssessmentScore,
-    totalAssessmentAttempts: topics.reduce(
-      (sum, topic) => sum + topic.assessmentAttempts,
-      0
-    ),
+    totalAssessmentAttempts,
     passedTopics: topics.filter((topic) => topic.assessmentStatus === "passed").length,
     failedTopics: topics.filter((topic) => topic.assessmentStatus === "failed").length,
   };
@@ -1147,10 +1187,8 @@ export default defineEventHandler(async (event) => {
   const userCookie = parseUserCookie(getCookie(event, "signInUserToken"));
   const cachedUserId = getStringValue(userCookie?._id || userCookie?.id);
   if (cachedUserId) {
-    const cached = recommendationCache.get(cachedUserId);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      return cached.value;
-    }
+    const cached = getCachedRecommendations(cachedUserId);
+    if (cached) return cached;
   }
 
   const profile = await fetchJson<Record<string, any>>(
@@ -1169,15 +1207,19 @@ export default defineEventHandler(async (event) => {
   );
 
   if (userId) {
-    const cached = recommendationCache.get(userId);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-      return cached.value;
-    }
+    const cached = getCachedRecommendations(userId);
+    if (cached) return cached;
   }
 
   const averageScore = normalizeNullablePercent(
     getFirstNumber(profile, [["questionStats", "averageScore"]])
   );
+  const profileAssessmentAttempts = getFirstNumber(profile, [
+    ["questionStats", "totalAttempted"],
+    ["questionStats", "attempts"],
+    ["assessmentAttempts"],
+    ["assessmentsAttempted"],
+  ]);
   const recentTopics = Array.isArray(profile.recentTopics) ? profile.recentTopics : [];
   const [subjectLookup, levelLookup] = await Promise.all([
     fetchLookupMap(apiDocs.subjects.getSubjects, authToken, ["name", "title"]),
@@ -1210,20 +1252,38 @@ export default defineEventHandler(async (event) => {
           ),
           fetchTopicChapterCount(topicId, authToken),
         ]);
+        const shouldFetchQuizHistory =
+          extractAssessmentMetrics(remoteProgress).assessmentAttempts === 0;
+        const quizHistory = shouldFetchQuizHistory
+          ? await fetchJson<TopicQuizHistoryResponse>(
+              apiDocs.progressTracking.getTopicQuizHistory.replace(
+                "{topicId}",
+                topicId
+              ),
+              authToken,
+              { tolerateFailure: true }
+            )
+          : null;
 
         return normalizeTopicCandidate(
           topic,
           remoteProgress,
           subjectLookup,
           levelLookup,
-          chapterCount
+          chapterCount,
+          quizHistory
         );
       })
     )
   ).filter(Boolean) as TopicCandidate[];
 
   const subjectBreakdown = buildSubjectBreakdown(topicSnapshots);
-  const overview = buildOverview(topicSnapshots, subjectBreakdown, averageScore);
+  const overview = buildOverview(
+    topicSnapshots,
+    subjectBreakdown,
+    averageScore,
+    profileAssessmentAttempts
+  );
   const rankedRecommendations = rankRecommendations(topicSnapshots);
   const explained = await explainRecommendations(
     overview,
@@ -1241,15 +1301,7 @@ export default defineEventHandler(async (event) => {
   };
 
   if (userId) {
-    recommendationCache.set(userId, {
-      timestamp: Date.now(),
-      value: response,
-    });
-
-    if (recommendationCache.size > 100) {
-      const firstKey = recommendationCache.keys().next().value;
-      if (firstKey) recommendationCache.delete(firstKey);
-    }
+    setCachedRecommendations(userId, response);
   }
 
   return response;

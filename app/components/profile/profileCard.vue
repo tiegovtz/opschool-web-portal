@@ -471,7 +471,9 @@ const discardChanges = () => {
     <MessageComponent
       :message="profile.controller.errors.profilePic as string"
       :position="profile.controller.errors.profilePic ? true : false"
-      :event-type="profile.controller.status === 'success' ? 'success' : 'error'"
+      :event-type="
+        profile.controller.status === 'success' ? 'success' : 'error'
+      "
       :icon="
         profile.controller.status === 'success'
           ? 'icons8:checked'
@@ -531,7 +533,35 @@ const discardChanges = () => {
         <h3 class="my-1 text-textGray text-medium">{{ userToken?.type }}</h3>
       </div>
     </div>
+    <div
+      class="flex flex-col w-full mt-5 gap-3 p-5 bg-white border shadow-sm rounded-3xl border-slate-200 md:flex-row md:items-center md:justify-between"
+    >
+      <div>
+        <p
+          class="text-sm font-medium uppercase tracking-[0.2em] text-oceanBlue"
+        >
+          Profile
+        </p>
+        <h1 class="mt-2 text-2xl font-semibold text-slate-900">
+          Personal Details
+        </h1>
+        <p class="mt-2 text-sm leading-6 text-slate-600">
+          Manage your account information here. Learning statistics now has its
+          own page.
+        </p>
+      </div>
 
+      <NuxtLink
+        to="/profile/learning-statistics"
+        class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue"
+      >
+        <Icon
+          name="heroicons:chart-bar-square-20-solid"
+          class="w-5 h-5"
+        />
+        <span>Open Learning Statistics</span>
+      </NuxtLink>
+    </div>
     <div class="w-full mx-auto my-6">
       <div class="bg-white border border-gray-100 rounded-md shadow-md">
         <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">

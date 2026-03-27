@@ -132,8 +132,23 @@ const apiDocs = {
     putProgresschapterIdNotesProgress: `${baseURL}/progress/chapters/{chapterId}/notes-progress`,
     postProgresschapterIdExperimentAttempts: `${baseURL}/progress/chapters/{chapterId}/experiment-attempts`,
     postQuizAssessment: `${baseURL}/progress/chapters/{chapterId}/assessment-attempts`,
+    postQuizAttemptSessions: `${baseURL}/progress/quiz-attempt-sessions`,
+    postQuizAttempts: `${baseURL}/progress/quiz-attempts`,
     getProgressSubjectsSubjectId: `${baseURL}/progress/subjects/{subjectId}`,
     getProgressTopicsTopicId: `${baseURL}/progress/topics/{topicId}`,
+    getTopicQuizHistory: `${baseURL}/progress/topics/{topicId}/quiz-history`,
+    getTopicQuizHistoryDetailed: `${baseURL}/progress/topics/{topicId}/quiz-history/detailed`,
+  },
+
+  recommendations: {
+    personalized: `${baseURL}/recommendations/personalized`,
+    snapshots: `${baseURL}/recommendations/snapshots`,
+    snapshotLatest: `${baseURL}/recommendations/snapshots/latest`,
+    snapshotById: `${baseURL}/recommendations/snapshots/{snapshotId}`,
+    snapshotComparison: `${baseURL}/recommendations/snapshots/{snapshotId}/comparison`,
+    progressSummary: `${baseURL}/recommendations/progress-summary`,
+    outcomes: `${baseURL}/recommendations/outcomes`,
+    topicOutcome: `${baseURL}/recommendations/topics/{topicId}/outcome`,
   },
 
   // audio API

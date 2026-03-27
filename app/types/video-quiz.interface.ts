@@ -96,6 +96,13 @@ export interface QuizResult {
   score: number;
   response: any;
   timeSpent: number;
+  maxScore?: number;
+  percentage?: number;
+  startedAt?: string | null;
+  submittedAt?: string;
+  questionText?: string;
+  correctAnswer?: string | number | boolean;
+  questionType?: VideoQuizType;
 }
 
 // Extended video interface
