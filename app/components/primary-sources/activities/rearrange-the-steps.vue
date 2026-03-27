@@ -274,12 +274,12 @@ const shouldShowDetailedResults = props.feedback === "wrong-correct-answers";
                 <p class="mb-1 text-sm font-medium text-green-600">Correct Step:</p>
                 <div class="flex flex-col items-center text-center">
                   <p v-if="!props.questions.hideWords" class="text-gray-700">
-                    {{ props.questions.questions[index].question }}
+                    {{ props.questions.questions[index]?.question }}
                   </p>
                   <img
-                    v-if="props.questions.questions[index].image"
-                    :src="props.questions.questions[index].image"
-                    :alt="props.questions.questions[index].question"
+                    v-if="props.questions.questions[index]?.image"
+                    :src="props.questions.questions[index]?.image"
+                    :alt="props.questions.questions[index]?.question"
                     class="mt-1 h-20 w-20 object-contain"
                   >
                 </div>

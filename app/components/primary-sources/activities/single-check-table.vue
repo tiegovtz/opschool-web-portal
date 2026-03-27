@@ -93,7 +93,7 @@ const checkAnswers = () => {
     if (!question) return answer;
 
     const option = question.options[answer.columnIndex];
-    const correct = answer.isChecked && option.isCorrect;
+    const correct = answer.isChecked && option?.isCorrect;
     if (correct) correctCount += 1;
 
     return { ...answer, isCorrect: correct };

@@ -62,7 +62,7 @@ watch(arrangedSteps, (value) => {
   }
 
   score.value = value.reduce(
-    (total, step, index) => total + (step !== "" && step.id === props.questions.steps[index].id ? 1 : 0),
+    (total, step, index) => total + (step !== null && step.id === props.questions.steps[index]?.id ? 1 : 0),
     0,
   );
   playSound("success");
@@ -96,7 +96,7 @@ const resetActivity = () => {
 };
 
 const isCorrect = (step: Step, index: number) =>
-  showResults.value && step.id === props.questions.steps[index].id;
+  showResults.value && step.id === props.questions.steps[index]?.id;
 </script>
 
 <template>

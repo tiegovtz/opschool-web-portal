@@ -96,7 +96,7 @@ const handleDragEnd = (event: DragEndEvent) => {
   if (sourceDroppableId) {
     droppedItems.value = {
       ...droppedItems.value,
-      [sourceDroppableId]: droppedItems.value[sourceDroppableId].filter((item) => item !== activeId),
+      [sourceDroppableId]: droppedItems.value[sourceDroppableId]?.filter((item) => item !== activeId),
     };
   } else {
     availableOptions.value = availableOptions.value.filter((item) => item !== activeId);

@@ -55,7 +55,7 @@ const handleDragEnd = (event: DragEndEvent) => {
 
   if (nextQuestions.every((question) => question.answer !== "")) {
     score.value = nextQuestions.filter(
-      (question, index) => question.answer === serverQuestions[index].answer,
+      (question, index) => question.answer === serverQuestions[index]?.answer,
     ).length;
     allAnswered.value = true;
     playSound("success");
@@ -130,19 +130,19 @@ const resetActivity = () => {
             v-for="(question, index) in questions"
             :key="index"
             :class="
-              question.answer === serverQuestions[index].answer
+              question.answer === serverQuestions[index]?.answer
                 ? 'flex items-center gap-3 rounded-md border border-green-300 bg-green-50 p-3'
                 : 'flex items-center gap-3 rounded-md border border-red-300 bg-red-50 p-3'
             "
           >
             <div
               :class="
-                question.answer === serverQuestions[index].answer
+                question.answer === serverQuestions[index]?.answer
                   ? 'flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-700'
                   : 'flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-700'
               "
             >
-              {{ question.answer === serverQuestions[index].answer ? "✓" : "✕" }}
+              {{ question.answer === serverQuestions[index]?.answer ? "✓" : "✕" }}
             </div>
 
             <div class="flex-1">
@@ -151,7 +151,7 @@ const resetActivity = () => {
                 <span>{{ question.firstNumber }} </span>
                 <span
                   :class="
-                    question.answer === serverQuestions[index].answer
+                    question.answer === serverQuestions[index]?.answer
                       ? 'font-medium text-green-700'
                       : 'font-medium text-red-600'
                   "
@@ -168,10 +168,10 @@ const resetActivity = () => {
                   }}
                 </span>
                 <div
-                  v-if="question.answer !== serverQuestions[index].answer"
+                  v-if="question.answer !== serverQuestions[index]?.answer"
                   class="mt-1 text-green-700"
                 >
-                  Correct answer: {{ serverQuestions[index].answer }}
+                  Correct answer: {{ serverQuestions[index]?.answer }}
                 </div>
               </div>
             </div>

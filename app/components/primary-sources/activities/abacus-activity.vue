@@ -84,7 +84,7 @@ const getExtendedPlaceValueNames = (numDigits: number) => {
         "Quintillion",
       ];
       const suffix = suffixIndex < suffixes.length ? suffixes[suffixIndex] : `10^${powerOfTen}`;
-      result.push(suffix);
+      result.push(suffix as string);
     } else if (powerOfTen % 3 === 1) {
       result.push(`Ten ${result[index - 1]}`);
     } else {
@@ -167,12 +167,12 @@ const checkAnswers = () => {
     return;
   }
 
-  const isCorrect = wholeNumberAnswer.value === currentQuestion.value.number;
+  const isCorrect = wholeNumberAnswer.value === currentQuestion.value?.number;
   answerRecords.value = [
     ...answerRecords.value,
     {
       questionIndex: currentQuestionIndex.value,
-      question: currentQuestion.value.number,
+      question: currentQuestion.value?.number as string,
       userAnswer: wholeNumberAnswer.value,
       isCorrect,
     },
@@ -328,9 +328,9 @@ const resetActivity = () => {
               :class="
                 cn('mx-auto min-w-32 text-center !text-xl', {
                   'border-green-500 bg-green-100 text-green-700':
-                    wholeNumberAnswer === currentQuestion.number && showFeedback,
+                    wholeNumberAnswer === currentQuestion?.number && showFeedback,
                   'border-red-500 bg-red-100 text-red-700':
-                    wholeNumberAnswer !== currentQuestion.number && showFeedback,
+                    wholeNumberAnswer !== currentQuestion?.number && showFeedback,
                 })
               "
               @update:model-value="
