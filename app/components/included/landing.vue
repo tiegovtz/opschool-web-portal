@@ -151,7 +151,7 @@ onMounted(async () => {
         class="mt-8 grid grid-cols-1 items-center gap-10 lg:mt-10 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-12">
         <section class="max-w-screen-md mx-auto">
             <h1 class="text-left text-xl font-tahomabd font-bold text-oceanBlue">Karibu!</h1>
-            <h1 class="text-left text-3xl my-4 font-tahomabd font-bold text-[#f29253]">TIE ONLINE PUBLIC SCHOOL</h1>
+            <h1 class="text-left text-3xl my-4 font-tahomabd font-bold text-[#f29253]">TIE ONLINE SCHOOL</h1>
             <p class="text-justify mt-4">Katika platfom hii utapata maudhui ya elimu ya msingi, sekondari na elimu ya
                 ualimu. chagua ili kuendelea.
             </p>
