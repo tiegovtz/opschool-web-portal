@@ -8,6 +8,7 @@ const CrosswordsTranspiler = (params: ActivityTranspilerProps) => {
     setWrongQuestionsFormat,
     algorithm,
   } = params;
+
   let isWrongFormat = false;
 
   // Handle "Crossword words Game" mode
