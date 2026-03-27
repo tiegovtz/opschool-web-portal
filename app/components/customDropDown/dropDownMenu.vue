@@ -42,6 +42,8 @@ const selected = reactive({
 });
 
 const liveMessage = ref("");
+const isClassDisabled = computed(() => selected.level?.trim() === "");
+const isSubjectDisabled = computed(() => selected.class?.trim() === "");
 
 // Emits
 const emit = defineEmits(["emitUpdateFilterValue"]);
@@ -134,28 +136,36 @@ const filterGroups = computed(() => {
     name: "level",
     inputType: "radio",
     items: sortedEducationLevelNames.value,
+    disabled: false,
   });
 
   // Class
-  if (classes.value?.length && selected.level?.trim() !== '') {
+  if (classes.value?.length) {
+    const classItems =
+      selected.level?.trim() !== ""
+        ? classes.value
+            .filter((cls) => {
+              const lvl = (cls as any).educationLevel?.name;
+              return lvl?.toLowerCase() === selected.level?.toLowerCase();
+            })
+            .map((cls) => cls.name)
+        : [];
+
     groups.push({
       name: "class",
       inputType: "radio",
-      items: classes.value
-        .filter((cls) => {
-          const lvl = (cls as any).educationLevel?.name;
-          return lvl?.toLowerCase() === selected.level?.toLowerCase();
-        })
-        .map((cls) => cls.name),
+      items: classItems,
+      disabled: isClassDisabled.value,
     });
   }
 
   // Subject
-  if (subjects.value && props.activeTab?.toLowerCase() !== "home" && selected.class?.trim() !== "") {
+  if (subjects.value && props.activeTab?.toLowerCase() !== "home") {
     groups.push({
       name: "subject",
       inputType: "radio",
       items: subjects.value.map((s: Subjects) => s.name),
+      disabled: isSubjectDisabled.value,
     });
   }
 
@@ -220,8 +230,16 @@ watch(
       <transition name="fade">
         <div v-if="openMenus.includes(i)" :id="`filter-panel-${i}`" class="mt-3 ml-2 space-y-2" role="group"
           :aria-labelledby="`filter-group-${i}`">
-          <label v-for="item in group.items" :key="item" class="flex items-center gap-2">
+          <p v-if="group.name === 'class' && group.disabled" class="text-sm text-gray-500">
+            Select level first to choose a class.
+          </p>
+          <p v-if="group.name === 'subject' && group.disabled" class="text-sm text-gray-500">
+            Select class first to choose a subject.
+          </p>
+          <label v-for="item in group.items" :key="item" class="flex items-center gap-2"
+            :class="group.disabled ? 'opacity-60 cursor-not-allowed' : ''">
             <input :type="group.inputType" :name="group.name" :value="item"
+              :disabled="group.disabled"
               :checked="selected[group.name as keyof typeof selected] === item" @change="
                 group.name === 'level'
                   ? selectLevel(item)
