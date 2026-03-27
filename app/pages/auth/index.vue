@@ -192,6 +192,17 @@ const togglePassword = () => {
 onMounted(() => {
   // Move focus to the heading when the sign-in page mounts
   headingRef.value?.focus();
+
+  // Show "account created successfully" after redirect from SignUp
+  if (route.query.registered === "1") {
+    userSignIn.controller.feedback = messages.success.auth.registered;
+    userSignIn.controller.isSucces = true;
+
+    const router = useRouter();
+    const nextQuery = { ...(route.query || {}) };
+    delete nextQuery.registered;
+    router.replace({ path: route.path, query: nextQuery });
+  }
 });
 
 // Clear validation errors when user types

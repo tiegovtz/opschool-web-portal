@@ -5,6 +5,14 @@ import type { educationLevel } from "~/types/educationlevel.interface";
 import type { ClassLevel } from "~/types/classlevel.interface";
 import type { Subjects } from "~/types/subject.interface";
 
+const EDUCATION_LEVEL_RENDER_ORDER: Record<string, number> = {
+  "Pre-Primary": 0,
+  Primary: 1,
+  "Lower Secondary": 2,
+  "Upper Secondary": 3,
+  "Teacher Education": 4,
+};
+
 // Auth headers
 const token = useCookie("signInAccessToken").value;
 const headers = {
@@ -100,6 +108,21 @@ const emitUpdate = createDebounce(() => {
   emit("emitUpdateFilterValue", q);
 }, 100);
 
+const sortedEducationLevelNames = computed(() => {
+  const names = (educationLevels.value || [])
+    .map((level) => level?.name)
+    .filter((name): name is string => !!name?.trim());
+
+  return [...names].sort((a, b) => {
+    const aOrder = EDUCATION_LEVEL_RENDER_ORDER[a] ?? Number.MAX_SAFE_INTEGER;
+    const bOrder = EDUCATION_LEVEL_RENDER_ORDER[b] ?? Number.MAX_SAFE_INTEGER;
+
+    // Keep known desired order first; unknown names fall back to alphabetical
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.localeCompare(b);
+  });
+});
+
 // Build available filters
 const filterGroups = computed(() => {
   if (isLoading.value) return [];
@@ -107,13 +130,11 @@ const filterGroups = computed(() => {
   const groups: any[] = [];
 
   // Level
-  if (educationLevels.value?.length) {
-    groups.push({
-      name: "level",
-      inputType: "radio",
-      items: educationLevels.value.map((lvl) => lvl.name),
-    });
-  }
+  groups.push({
+    name: "level",
+    inputType: "radio",
+    items: sortedEducationLevelNames.value,
+  });
 
   // Class
   if (classes.value?.length && selected.level?.trim() !== '') {
