@@ -9,13 +9,13 @@ export const CompleteSentenceByRephrasingWithChoices = defineAsyncComponent(
 export const CompleteSentenceByRephrasing = defineAsyncComponent(
   () =>
     import(
-      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-rephrasing"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-rephrasing.vue"
     )
 );
 export const CompleteSentencesBySelectingCorrectOnes = defineAsyncComponent(
   () =>
     import(
-      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-selecting-correct-ones"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-selecting-correct-ones.vue"
     )
 );
 export const CompleteSentencesByDraggingCluesActivity = defineAsyncComponent(
@@ -27,7 +27,7 @@ export const CompleteSentencesByDraggingCluesActivity = defineAsyncComponent(
 export const CompleteSentencesWithTwoClausesActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/primary-sources/activities/complete-sentences/complete-sentences-with-two-clauses"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-with-two-clauses.vue"
     )
 );
 export const CompleteSentencesByClickingSpecifics = defineAsyncComponent(
@@ -45,13 +45,13 @@ export const CompleteSentencesByClicking = defineAsyncComponent(
 export const CompleteSentencesWithThreeClauses = defineAsyncComponent(
   () =>
     import(
-      "@/components/primary-sources/activities/complete-sentences/complete-sentences-with-three-clauses"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-with-three-clauses.vue"
     )
 );
 export const CompleteSentencesBySelectingClues = defineAsyncComponent(
   () =>
     import(
-      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-selecting-clues"
+      "@/components/primary-sources/activities/complete-sentences/complete-sentences-by-selecting-clues.vue"
     )
 );
 

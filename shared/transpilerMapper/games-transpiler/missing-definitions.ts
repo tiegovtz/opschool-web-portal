@@ -1,4 +1,5 @@
 import { getRandomItems, shuffle } from "@/lib/utils";
+import type { GameObject } from "@/hooks/useObjects";
 import type { ActivityTranspilerProps } from "..";
 
 interface MissingDefinitionsTranspilerParams {
@@ -74,9 +75,11 @@ const missingDefinitionsGameTranspilerWrapper = (
   // If this is called from the old system, return a placeholder
   // The component now handles data fetching internally
   const { titleDescription, serverQuestions } = params;
+  const firstQuestion = serverQuestions[0];
+  const fallbackType = firstQuestion?.textOne || "";
   return {
     title: titleDescription.split("||")[0],
-    type: serverQuestions?.[0]?.textOne,
+    type: fallbackType,
     isGameMode: true,
     gameTimeLimit: 300, // || serverQuestions[0].textTwo || 120,
     fontSize: titleDescription.split("||")[1] || 20,

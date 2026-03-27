@@ -55,7 +55,7 @@ export function parseQuestionSegments(question: string): QuestionSegment[] {
     highlights.push({
       start: match.index,
       end: match.index + match[0].length,
-      content: match[1],
+      content: match[1] ?? "",
       fullMatch: match[0],
     });
   }
