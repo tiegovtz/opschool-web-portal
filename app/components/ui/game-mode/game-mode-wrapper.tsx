@@ -1,6 +1,15 @@
 // components/GameModeWrapper.tsx
-import { defineComponent, ref, watch, onUnmounted, computed, type Slots} from "vue";
+import {
+  defineComponent,
+  ref,
+  watch,
+  onUnmounted,
+  computed,
+  type PropType,
+  type Slots,
+} from "vue";
 import { GameTimer } from ".";
+import { useSoundEffects } from "~/composables/use-sound-effects";
 
 export interface GameStats {
   totalQuestions: number;
@@ -25,7 +34,7 @@ export interface GameModeWrapperProps {
   className?: string;
 }
 
-export default defineComponent({
+export const GameModeWrapper = defineComponent({
   name: "GameModeWrapper",
   props: {
     isGameMode: { type: Boolean, required: true },
@@ -161,3 +170,5 @@ export default defineComponent({
     };
   },
 });
+
+export default GameModeWrapper;

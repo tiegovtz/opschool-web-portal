@@ -1,5 +1,5 @@
 // components/GameTimer.tsx
-import { defineComponent } from "vue";
+import { defineComponent, type PropType } from "vue";
 import CircularTimer, { type TimerState } from "../circular-timer";
 
 export interface GameTimerProps {
@@ -16,7 +16,7 @@ export interface GameTimerProps {
   className?: string;
 }
 
-export default defineComponent({
+export const GameTimer = defineComponent({
   name: "GameTimer",
   props: {
     timeLeft: { type: Number, required: true },
@@ -76,3 +76,5 @@ export default defineComponent({
     );
   },
 });
+
+export default GameTimer;
