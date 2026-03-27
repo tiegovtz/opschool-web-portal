@@ -21,20 +21,16 @@ const hasOverlayMarker = computed(() => route.query.overlay === "1");
 const isLoggedIn = computed(() => !!(accessToken.value || userToken.value));
 
 const hasOverlayState = computed(() => {
-  const stateFromRoute = route.state as Record<string, unknown> | undefined;
   const stateFromHistory =
     typeof window !== "undefined"
       ? (window.history.state as Record<string, unknown> | null)
       : null;
 
-  const routeStateValid =
-    stateFromRoute?.aiOverlay === true &&
-    typeof stateFromRoute?.aiOverlayBackground === "string";
   const historyStateValid =
     stateFromHistory?.aiOverlay === true &&
     typeof stateFromHistory?.aiOverlayBackground === "string";
   const pushedStateValid = tieOverlayPushed.value && !!tieOverlayBackground.value;
-  return routeStateValid || historyStateValid || pushedStateValid;
+  return historyStateValid || pushedStateValid;
 });
 
 const overlaySessionId = computed(() => {
@@ -69,9 +65,8 @@ const modalShellStyle = computed(() =>
 );
 
 const removeOverlayMarkers = async () => {
-  const nextQuery = { ...route.query } as Record<string, unknown>;
-  delete nextQuery.overlay;
-  await router.replace({ query: nextQuery });
+  const { overlay, ...rest } = route.query;
+  await router.replace({ query: rest });
 };
 
 const clearOverlayState = () => {
@@ -129,8 +124,9 @@ const onKeydown = async (event: KeyboardEvent) => {
   );
   if (!focusable.length) return;
 
-  const first = focusable[0];
-  const last = focusable[focusable.length - 1];
+  const first = focusable.item(0);
+  const last = focusable.item(focusable.length - 1);
+  if (!first || !last) return;
   const active = document.activeElement as HTMLElement | null;
 
   if (event.shiftKey && (active === first || !active)) {

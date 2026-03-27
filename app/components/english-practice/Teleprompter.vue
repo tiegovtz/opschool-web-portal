@@ -155,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, ref, nextTick } from 'vue';
+import { computed, watch, ref, nextTick, type ComponentPublicInstance } from 'vue';
 import type { SpeakerType, PracticeMode, ConversationParticipant } from '~/types/script.interface';
 import type { ScriptLine } from '~/types/script.interface';
 import { useReadAloud } from '~/composables/useReadAloud';
@@ -189,8 +189,14 @@ const scriptWords = computed(() => {
   return props.currentScriptLine.text.trim().split(/\s+/);
 });
 
-const setWordRef = (index: number, el: Element | null) => {
-  wordRefs.value[index] = el as HTMLElement | null;
+const setWordRef = (index: number, el: Element | ComponentPublicInstance | null) => {
+  if (!el) {
+    wordRefs.value[index] = null;
+    return;
+  }
+  const maybeVm = el as ComponentPublicInstance & { $el?: unknown };
+  const resolved = (maybeVm.$el as Element | undefined) ?? (el as Element);
+  wordRefs.value[index] = (resolved as HTMLElement) || null;
 };
 
 // Get word state based on sequential position
@@ -318,7 +324,6 @@ const handleReadAloudToggle = () => {
       pitch: 1.1,
       volume: 1,
       voiceType: inferVoiceTypeByName(currentSpeakerLabel.value),
-      audioUrl: constantAudioUrl,
       disableHighlighting: Boolean(constantAudioUrl),
     }
   );
@@ -346,7 +351,6 @@ const handleRepeat = () => {
       pitch: 1.1,
       volume: 1,
       voiceType: inferVoiceTypeByName(currentSpeakerLabel.value),
-      audioUrl: constantAudioUrl,
       disableHighlighting: Boolean(constantAudioUrl),
     }
   );
@@ -385,7 +389,7 @@ watch(
   () => [props.currentWordIndex, props.isRecording],
   ([index, isRecording]) => {
     if (!isRecording) return;
-    if (!textContainer.value || index == null || index < 0) return;
+    if (!textContainer.value || typeof index !== 'number' || index < 0) return;
     const el = wordRefs.value[index];
     if (!el) return;
     el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });

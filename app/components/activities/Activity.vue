@@ -4,6 +4,7 @@ import type { ServerQuestionType } from '~/types/activity-props';
 import { type Activity } from '~/types/activity-types';
 import { enhancedActivityComponents } from '~/utilities/activityMapper/enhanced-mapper';
 import activityPropsTranspiler from '~~/shared/transpilerMapper';
+import type { ActivityType } from "~/types/activity-types";
 
 
 // prpops
@@ -51,15 +52,20 @@ const transpiler = computed(() => activity.value && activityPropsTranspiler[acti
             <div v-if="!activity || !transpiler" class="">
                  This activity is not available
             </div>
-            <component :is="activityComponent" v-bind="props" feedback="wrong-correct" :questions="(transpiler?.({
+            <component
+              :is="activityComponent"
+              v-bind="props"
+              feedback="wrong-correct"
+              :questions="(transpiler?.({
                 setWrongQuestionsFormat,
                 summary: (activity?.summary as string),
-                algorithm: activity?.description,
+                algorithm: (activity?.description as ActivityType),
                 summaryPath: (activity?.summaryPath as string),
                 serverQuestions: (activity?.questions as ServerQuestionType[]),
                 titleDescription: (activity?.activityDescription as string),
                 isMobile,
-            }) ?? {})" />
+              }) ?? {})"
+            />
         </div>
         <div v-else-if="status == 'error'">{{ error }}</div>
         <div v-else> unknown issue occurred </div>
