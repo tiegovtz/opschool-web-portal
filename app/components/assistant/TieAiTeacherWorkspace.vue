@@ -223,6 +223,11 @@ const generateTitleFromMessage = (message: string): string => {
   return title || "New Conversation";
 };
 
+type AiTeacherSendPayload = {
+  message: string;
+  files?: FileList;
+};
+
 const updateSessionTitleIfNeeded = async (
   sessionId: string,
   firstUserMessage: string
@@ -332,7 +337,8 @@ watch(
   }
 );
 
-const handleSubmit = async (message: string) => {
+const handleSubmit = async (payload: AiTeacherSendPayload) => {
+  const message = payload.message;
   if (!message.trim()) return;
   if (!chatStore.activeSessionId) {
     await createNewSession();

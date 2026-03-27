@@ -172,6 +172,8 @@ export const useReadAloud = () => {
       rate?: number;
       volume?: number;
       voiceType?: 'male' | 'female';
+      audioUrl?: string;
+      disableHighlighting?: boolean;
     }
   ) => {
     stop();
@@ -192,6 +194,8 @@ export const useReadAloud = () => {
       rate?: number;
       volume?: number;
       voiceType?: 'male' | 'female';
+      audioUrl?: string;
+      disableHighlighting?: boolean;
     }
   ) => {
     if (isPlaying.value) {
