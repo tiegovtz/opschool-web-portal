@@ -89,8 +89,8 @@ watch(
     if (!currentQuestion.value || value.some((item) => !item)) return;
 
     const isCorrect =
-      value.length === currentQuestion.value.correctOrder.length &&
-      value.every((item, index) => item === currentQuestion.value.correctOrder[index]);
+      value.length === currentQuestion.value!.correctOrder.length &&
+      value.every((item, index) => item === currentQuestion.value!.correctOrder[index]);
 
     const nextCompletedQuestions = new Set(completedQuestions.value);
     nextCompletedQuestions.add(currentQuestionIndex.value);
@@ -283,7 +283,8 @@ const handleResultsDialogChange = (open: boolean) => {
                 showResults &&
                 allAnswered &&
                 props.feedback === 'wrong-correct-answers' &&
-                !questionState.answer.every((item, index) => item === currentQuestion.correctOrder[index])
+                currentQuestion &&
+                !questionState.answer.every((item, index) => item === currentQuestion!.correctOrder[index])
               "
               class="mt-3 rounded-lg border border-green-200 bg-green-50 p-3"
             >

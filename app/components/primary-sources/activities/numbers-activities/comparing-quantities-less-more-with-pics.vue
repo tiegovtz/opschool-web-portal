@@ -43,6 +43,8 @@ const correctAnswers = ref<string[]>([]);
 const { playSound } = useSoundEffects();
 
 const totalQuestions = computed(() => props.questions.questions.length);
+const getQuestionAnswer = (questionIndex: number) =>
+  questionAnswers[questionIndex] ?? { left: "", right: "", operator: "" };
 
 const initAnswers = () => {
   props.questions.questions.forEach((_, index) => {
@@ -58,7 +60,7 @@ watch(
   () => {
     const answered = Object.keys(questionAnswers).filter((k) => {
       const a = questionAnswers[Number(k)];
-      return a.left && a.right && a.operator;
+      return a && a.left && a.right && a.operator;
     }).length;
     canSubmit.value = answered === totalQuestions.value;
   },
@@ -71,6 +73,7 @@ const handleSubmit = () => {
 
   props.questions.questions.forEach((question, index) => {
     const user = questionAnswers[index];
+    if (!user) return;
     const isLeftCorrect = Number.parseInt(user.left, 10) === question.leftNumber;
     const isRightCorrect = Number.parseInt(user.right, 10) === question.rightNumber;
     const isOperatorCorrect = user.operator === question.answer;
@@ -91,8 +94,9 @@ const handleSubmit = () => {
 };
 
 const handleInputChange = (questionIndex: number, field: "left" | "right", value: string) => {
+  const current = getQuestionAnswer(questionIndex);
   questionAnswers[questionIndex] = {
-    ...questionAnswers[questionIndex],
+    ...current,
     [field]: value,
   };
 };
@@ -105,9 +109,11 @@ const handleDragEnd = (event: DndDragEndEvent) => {
   const targetId = String(over.id);
   if (!targetId.includes("operator-drop-")) return;
 
-  const questionIndex = Number.parseInt(targetId.split("-")[2], 10);
+  const questionIndex = Number.parseInt(targetId.split("-")[2] || "0", 10);
+  const currentAnswer = getQuestionAnswer(questionIndex);
   questionAnswers[questionIndex] = {
-    ...questionAnswers[questionIndex],
+    left: currentAnswer.left || "",
+    right: currentAnswer.right || "",
     operator: operatorValue,
   };
   playSound("click");

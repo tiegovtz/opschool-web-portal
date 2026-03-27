@@ -1,163 +1,166 @@
 import dynamic from "next/dynamic";
 
-export const MultipleChoiceWithNotes = dynamic(
-  () => import("@/components/activities/multiple-choice-with-notes"),
+const loadActivity = (fn: () => Promise<any>) =>
+  dynamic(fn, { ssr: false });
+
+export const MultipleChoiceWithNotes = loadActivity(
+  () => import("@/components/activities/multiple-choice-with-notes.vue")
 );
 
-export const ComprehensionJunior = dynamic(
-  () => import("@/components/activities/comprehension-junior"),
+export const ComprehensionJunior = loadActivity(
+  () => import("@/components/activities/comprehension-junior.vue")
 );
 
-export const PictureOrStoryFollowedByQuestionsTrueFalseActivity = dynamic(
+export const PictureOrStoryFollowedByQuestionsTrueFalseActivity = loadActivity(
   () =>
     import(
-      "@/components/activities/picture-or-story-followed-by-questions-true-false"
-    ),
+      "@/components/activities/picture-or-story-followed-by-questions-true-false.vue"
+    )
 );
 
-export const PictureOrStoryFollowedByQuestionsActivity = dynamic(
+export const PictureOrStoryFollowedByQuestionsActivity = loadActivity(
   () =>
-    import("@/components/activities/picture-or-story-followed-by-questions"),
+    import("@/components/activities/picture-or-story-followed-by-questions.vue")
 );
 
-export const MatchingWithLettersActivity = dynamic(
-  () => import("@/components/activities/matching-with-letters"),
+export const MatchingWithLettersActivity = loadActivity(
+  () => import("@/components/activities/matching-with-letters.vue")
 );
 
-export const CompleteParagraphWithCluesJunior = dynamic(
-  () => import("@/components/activities/complete-paragraph-with-clues-junior"),
+export const CompleteParagraphWithCluesJunior = loadActivity(
+  () => import("@/components/activities/complete-paragraph-with-clues-junior.vue")
 );
 
-export const CompleteParagraphWithoutClues = dynamic(
-  () => import("@/components/activities/complete-paragraph-without-clues"),
+export const CompleteParagraphWithoutClues = loadActivity(
+  () => import("@/components/activities/complete-paragraph-without-clues.vue")
 );
 
-export const RearrangeStepsVerticallyActivity = dynamic(
-  () => import("@/components/activities/rearrange-steps-vertically"),
+export const RearrangeStepsVerticallyActivity = loadActivity(
+  () => import("@/components/activities/rearrange-steps-vertically.vue")
 );
 
-export const RearrangeTheSteps = dynamic(
-  () => import("@/components/activities/rearrange-the-steps"),
+export const RearrangeTheSteps = loadActivity(
+  () => import("@/components/activities/rearrange-the-steps.vue")
 );
 
-export const ArrangeStepsActivity = dynamic(
-  () => import("@/components/activities/arrange-steps"),
+export const ArrangeStepsActivity = loadActivity(
+  () => import("@/components/activities/arrange-steps.vue")
 );
 
-export const CompleteMatrix = dynamic(
-  () => import("@/components/activities/complete-matrix"),
+export const CompleteMatrix = loadActivity(
+  () => import("@/components/activities/complete-matrix.vue")
 );
 
-export const TableCheckBoxes = dynamic(
-  () => import("@/components/activities/table-check-boxes"),
+export const TableCheckBoxes = loadActivity(
+  () => import("@/components/activities/table-check-boxes.vue")
 );
 
-export const TableCheckBoxesFilling = dynamic(
-  () => import("@/components/activities/table-checkbox-filling"),
+export const TableCheckBoxesFilling = loadActivity(
+  () => import("@/components/activities/table-checkbox-filling.vue")
 );
 
-export const ItemsLabellingActivity = dynamic(
-  () => import("@/components/activities/items-labelling"),
+export const ItemsLabellingActivity = loadActivity(
+  () => import("@/components/activities/items-labelling.vue")
 );
 
-export const LabelTheDiagram = dynamic(
-  () => import("@/components/activities/label-the-diagram"),
+export const LabelTheDiagram = loadActivity(
+  () => import("@/components/activities/label-the-diagram.vue")
 );
 
-export const MatchingItemsPictureTextActivity = dynamic(
-  () => import("@/components/activities/matching-items-picture-text"),
+export const MatchingItemsPictureTextActivity = loadActivity(
+  () => import("@/components/activities/matching-items-picture-text.vue")
 );
 
-export const HiddenWords = dynamic(
-  () => import("@/components/activities/hidden-words"),
+export const HiddenWords = loadActivity(
+  () => import("@/components/activities/hidden-words.vue")
 );
 
-export const CountingObjectsActivity = dynamic(
-  () => import("@/components/activities/numbers-activities/counting-objects"),
+export const CountingObjectsActivity = loadActivity(
+  () => import("@/components/activities/numbers-activities/counting-objects.vue")
 );
 
-export const AdditionSubtractionObjectsActivity = dynamic(
-  () =>
-    import(
-      "@/components/activities/numbers-activities/addition-subtraction-objects"
-    ),
-);
-
-export const CountingMixedObjectsActivity = dynamic(
-  () => import("@/components/activities/counting-mixed-objects"),
-);
-
-export const MissingValuesActivity = dynamic(
-  () => import("@/components/activities/missing-values"),
-);
-
-export const MissingValuesJuniorActivity = dynamic(
-  () => import("@/components/activities/missing-values-junior"),
-);
-
-export const NumberMatrixActivity = dynamic(
-  () => import("@/components/activities/number-matrix"),
-);
-
-export const AbacusActivity = dynamic(
-  () => import("@/components/activities/abacus-activity"),
-);
-
-export const AbacusReverseActivity = dynamic(
-  () => import("@/components/activities/reverse-abacus-activity"),
-);
-
-export const PlaceValuesMatrixActivity = dynamic(
-  () => import("@/components/activities/place-values-matrix"),
-);
-
-export const ShapesRenderingActivity = dynamic(
-  () => import("@/components/activities/shapes-rendering"),
-);
-
-export const CrosswordActivity = dynamic(
-  () => import("@/components/activities/crossword-puzzle"),
-);
-
-export const SingleCheckTable = dynamic(
-  () => import("@/components/activities/single-check-table"),
-);
-
-export const ComparingQuantitiesDraggingActivity = dynamic(
+export const AdditionSubtractionObjectsActivity = loadActivity(
   () =>
     import(
-      "@/components/activities/numbers-activities/comparingQuantitiesDragging"
-    ),
+      "@/components/activities/numbers-activities/addition-subtraction-objects.vue"
+    )
 );
 
-export const ComparingQuantities = dynamic(
-  () =>
-    import("@/components/activities/numbers-activities/comparing-quantities"),
+export const CountingMixedObjectsActivity = loadActivity(
+  () => import("@/components/activities/counting-mixed-objects.vue")
 );
 
-export const ComparingQuantitiesLessMoreWithPics = dynamic(
+export const MissingValuesActivity = loadActivity(
+  () => import("@/components/activities/missing-values.vue")
+);
+
+export const MissingValuesJuniorActivity = loadActivity(
+  () => import("@/components/activities/missing-values-junior.vue")
+);
+
+export const NumberMatrixActivity = loadActivity(
+  () => import("@/components/activities/number-matrix.vue")
+);
+
+export const AbacusActivity = loadActivity(
+  () => import("@/components/activities/abacus-activity.vue")
+);
+
+export const AbacusReverseActivity = loadActivity(
+  () => import("@/components/activities/reverse-abacus-activity.vue")
+);
+
+export const PlaceValuesMatrixActivity = loadActivity(
+  () => import("@/components/activities/place-values-matrix.vue")
+);
+
+export const ShapesRenderingActivity = loadActivity(
+  () => import("@/components/activities/shapes-rendering.vue")
+);
+
+export const CrosswordActivity = loadActivity(
+  () => import("@/components/activities/crossword-puzzle.vue")
+);
+
+export const SingleCheckTable = loadActivity(
+  () => import("@/components/activities/single-check-table.vue")
+);
+
+export const ComparingQuantitiesDraggingActivity = loadActivity(
   () =>
     import(
-      "@/components/activities/numbers-activities/comparing-quantities-less-more-with-pics"
-    ),
+      "@/components/activities/numbers-activities/comparingQuantitiesDragging.vue"
+    )
 );
 
-export const RearrangeLettersInWords = dynamic(
-  () => import("@/components/activities/rearrange-letters-in-words"),
+export const ComparingQuantities = loadActivity(
+  () =>
+    import("@/components/activities/numbers-activities/comparing-quantities.vue")
 );
 
-export const MissingLettersWords = dynamic(
-  () => import("@/components/activities/missing-letters-words"),
+export const ComparingQuantitiesLessMoreWithPics = loadActivity(
+  () =>
+    import(
+      "@/components/activities/numbers-activities/comparing-quantities-less-more-with-pics.vue"
+    )
 );
 
-export const StrikeOutOddOneActivity = dynamic(
-  () => import("@/components/activities/strike-out-odd-one"),
+export const RearrangeLettersInWords = loadActivity(
+  () => import("@/components/activities/rearrange-letters-in-words.vue")
 );
 
-export const OpenEndedQuestions = dynamic(
-  () => import("@/components/activities/open-ended-questions"),
+export const MissingLettersWords = loadActivity(
+  () => import("@/components/activities/missing-letters-words.vue")
 );
 
-export const PatternMatchingActivity = dynamic(
-  () => import("@/components/activities/pattern-matching"),
+export const StrikeOutOddOneActivity = loadActivity(
+  () => import("@/components/activities/strike-out-odd-one.vue")
+);
+
+export const OpenEndedQuestions = loadActivity(
+  () => import("@/components/activities/open-ended-questions.vue")
+);
+
+export const PatternMatchingActivity = loadActivity(
+  () => import("@/components/activities/pattern-matching.vue")
 );
