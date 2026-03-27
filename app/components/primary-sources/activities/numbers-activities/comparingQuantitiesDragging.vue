@@ -41,6 +41,8 @@ const correctAnswers = ref<string[]>([]);
 const { playSound } = useSoundEffects();
 
 const totalQuestions = computed(() => props.questions.questions.length);
+const getQuestionAnswers = (questionIndex: number) =>
+  questionAnswers[questionIndex] ?? { left: "", right: "" };
 
 const init = () => {
   props.questions.questions.forEach((question, index) => {
@@ -67,7 +69,7 @@ watch(
     const correct: string[] = [];
 
     props.questions.questions.forEach((question, index) => {
-      const answers = questionAnswers[index];
+      const answers = getQuestionAnswers(index);
       const isLeftCorrect = answers.left === question.leftAnswer;
       const isRightCorrect = answers.right === question.rightAnswer;
       if (isLeftCorrect && isRightCorrect) totalScore += 1;
@@ -103,12 +105,18 @@ const handleDragEnd = (event: DndDragEndEvent) => {
 
   if (activeIdParts[0] === "answer") {
     sourceType = "available";
-    sourceQuestionIndex = Number.parseInt(activeIdParts[1], 10);
+    const sourceIndexPart = activeIdParts[1];
+    if (!sourceIndexPart) return;
+    sourceQuestionIndex = Number.parseInt(sourceIndexPart, 10);
     answer = activeIdParts.slice(2).join("-"); // tolerate dashes in answer
   } else if (activeIdParts[0] === "dropped") {
     sourceType = "dropped";
-    sourceQuestionIndex = Number.parseInt(activeIdParts[1], 10);
-    sourceSide = activeIdParts[2] as any;
+    const sourceIndexPart = activeIdParts[1];
+    if (!sourceIndexPart) return;
+    sourceQuestionIndex = Number.parseInt(sourceIndexPart, 10);
+    const parsedSide = activeIdParts[2];
+    if (parsedSide !== "left" && parsedSide !== "right") return;
+    sourceSide = parsedSide;
     answer = activeIdParts.slice(3).join("-");
   } else {
     return;
@@ -117,15 +125,19 @@ const handleDragEnd = (event: DndDragEndEvent) => {
   const overIdParts = overId.split("-");
   if (overIdParts.length !== 2) return;
 
-  const targetQuestionIndex = Number.parseInt(overIdParts[0], 10);
-  const side = overIdParts[1] as "left" | "right";
+  const targetIndexPart = overIdParts[0];
+  const sidePart = overIdParts[1];
+  if (!targetIndexPart || (sidePart !== "left" && sidePart !== "right")) return;
+  const targetQuestionIndex = Number.parseInt(targetIndexPart, 10);
+  const side: "left" | "right" = sidePart;
 
   if (sourceQuestionIndex !== targetQuestionIndex) return;
 
   // if moving from dropped zone, clear source side first
   if (sourceType === "dropped" && sourceSide) {
+    const sourceAnswers = getQuestionAnswers(sourceQuestionIndex);
     questionAnswers[sourceQuestionIndex] = {
-      ...questionAnswers[sourceQuestionIndex],
+      ...sourceAnswers,
       [sourceSide]: "",
     };
 
@@ -154,7 +166,7 @@ const handleDragEnd = (event: DndDragEndEvent) => {
   }
 
   questionAnswers[targetQuestionIndex] = {
-    ...questionAnswers[targetQuestionIndex],
+    ...getQuestionAnswers(targetQuestionIndex),
     [side]: answer,
   };
 
