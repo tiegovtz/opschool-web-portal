@@ -105,9 +105,9 @@ const placeValueBreakdown = computed(() => {
     .map((digit, index) => ({
       digit: Number.parseInt(digit, 10),
       placeValue: Math.pow(10, index),
-      label: PLACE_VALUE_LABELS[index],
-      color: PLACE_VALUE_COLORS[index % PLACE_VALUE_COLORS.length],
-      size: PLACE_VALUE_SIZES[index % PLACE_VALUE_SIZES.length],
+      label: PLACE_VALUE_LABELS[index] ?? `10^${index}`,
+      color: PLACE_VALUE_COLORS[index % PLACE_VALUE_COLORS.length] ?? "#3b82f6",
+      size: PLACE_VALUE_SIZES[index % PLACE_VALUE_SIZES.length] ?? 20,
       position: index,
     }))
     .reverse();

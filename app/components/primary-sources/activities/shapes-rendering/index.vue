@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // @ts-nocheck
 import { computed, onMounted, reactive, ref, watch } from "vue";
-import { Check, X } from "lucide-react";
+import { Icon } from "@iconify/vue";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { cn, shuffle } from "~/utilities/utils";
@@ -10,7 +10,6 @@ import type { FeedbackType } from "~/types/activity-types";
 import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "~/components/templates/results";
-import { processGeometryData } from "~/utilities/utils/shapes-utils";
 import ShapeCanvas from "./ShapeCanvas.vue";
 import type { ShapeQuestion, ShapesData } from "./types";
 import { useIsMobile } from "~/composables/useIsMobile";
@@ -23,8 +22,13 @@ type ShapesRenderingActivityProps = {
 const props = defineProps<ShapesRenderingActivityProps>();
 const isMobile = useIsMobile();
 
+const buildDefaultShapesData = (): ShapesData => ({
+  title: "Shapes Rendering",
+  questions: [],
+});
+
 const processedData = computed(() =>
-  !props.questions ? processGeometryData() : props.questions,
+  props.questions ?? buildDefaultShapesData(),
 );
 
 const shuffledOptions = reactive<Record<number, string[]>>({});
@@ -83,7 +87,7 @@ const handleCheckAllAnswers = () => {
   const newFeedbacks: boolean[] = [];
   let correctCount = 0;
 
-  processedData.value.questions.forEach((question, index) => {
+  processedData.value.questions.forEach((question: ShapeQuestion, index: number) => {
     const userAnswer = answers.value[index] || "";
     const isCorrect =
       userAnswer.trim().toLowerCase() === question.answer.toLowerCase();
@@ -130,11 +134,12 @@ const handleCheckAllAnswers = () => {
           </div>
 
           <div v-if="checkedAnswers" class="absolute top-4 right-4">
-            <Check
+            <Icon
               v-if="feedbacks[questionIndex]"
+              icon="mdi:check"
               class="h-6 w-6 text-green-500"
             />
-            <X v-else class="h-6 w-6 text-red-500" />
+            <Icon v-else icon="mdi:close" class="h-6 w-6 text-red-500" />
           </div>
 
           <div class="w-full">

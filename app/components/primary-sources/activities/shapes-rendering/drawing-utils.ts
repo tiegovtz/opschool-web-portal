@@ -125,21 +125,22 @@ export const drawPolygon = (
 ) => {
   const { coordinates, color } = shape;
 
-  if (!coordinates.length) return;
-  const [firstPoint] = coordinates;
-  if (!firstPoint) return;
+  if (!coordinates || !coordinates.length) return;
 
   ctx.fillStyle = color;
   ctx.beginPath();
 
   // Start from the first point
-  ctx.moveTo(firstPoint.x * width, firstPoint.y * height);
+  if (coordinates[0]) {
+    ctx.moveTo(coordinates[0].x * width, coordinates[0].y * height);
+  }
 
   // Draw lines to all other points
   for (let i = 1; i < coordinates.length; i++) {
-    const point = coordinates[i];
-    if (!point) continue;
-    ctx.lineTo(point.x * width, point.y * height);
+    const coord = coordinates[i];
+    if (coord) {
+      ctx.lineTo(coord.x * width, coord.y * height);
+    }
   }
 
   // Close the path back to the first point
@@ -699,13 +700,16 @@ export const drawPolygonPath = (
   if (!firstPoint) return;
 
   // Start from the first point
-  ctx.moveTo(firstPoint.x * multiplier, firstPoint.y * multiplier);
+  if (coordinates[0]) {
+    ctx.moveTo(coordinates[0].x * multiplier, coordinates[0].y * multiplier);
+  }
 
   // Draw lines to all other points
   for (let i = 1; i < coordinates.length; i++) {
-    const point = coordinates[i];
-    if (!point) continue;
-    ctx.lineTo(point.x * multiplier, point.y * multiplier);
+    const coord = coordinates[i];
+    if (coord) {
+      ctx.lineTo(coord.x * multiplier, coord.y * multiplier);
+    }
   }
 
   // Close the path
