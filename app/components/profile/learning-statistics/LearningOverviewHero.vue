@@ -92,7 +92,7 @@ const assessmentTotal = computed(
           </div>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
+        <div class="flex flex-col gap-4">
           <LearningProgressRing
             label="Overall progress"
             :value="overview.averageProgress"
@@ -175,7 +175,7 @@ const assessmentTotal = computed(
                 :total="assessmentTotal"
               />
 
-              <div class="grid gap-4 sm:grid-cols-2">
+              <div class="flex gap-4 flex-col">
                 <LearningMetricCard
                   label="Coverage depth"
                   :value="coveredRatioLabel"
