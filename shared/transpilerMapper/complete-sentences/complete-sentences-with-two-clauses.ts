@@ -1,6 +1,4 @@
-// @ts-nocheck
 import type { ActivityTranspilerProps } from "..";
-
 const completeSentencesWithTwoClausesTranspiler = (
   params: ActivityTranspilerProps,
 ) => {
@@ -26,7 +24,7 @@ const completeSentencesWithTwoClausesTranspiler = (
   const titleDescription = title.split("||")[0];
 
   return {
-    title: titleDescription.split("//")[0],
+    title: titleDescription?.split("//")[0],
     fontSize: title.split("||")[1],
     questions: serverQuestions.map((q) => {
       return {

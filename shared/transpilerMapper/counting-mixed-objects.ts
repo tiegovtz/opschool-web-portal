@@ -1,4 +1,4 @@
-import type { ActivityTranspilerProps } from ".";
+import { type ActivityTranspilerProps } from ".";
 import { getImageUrl, shuffle } from "@/lib/utils";
 
 const CountingMixedObjectsTranspiler = (params: ActivityTranspilerProps) => {

@@ -24,9 +24,9 @@ const rearrangeTheStepsTranspiler = (params: ActivityTranspilerProps) => {
   const titleDescription = title.split("||")[0];
 
   return {
-    title: titleDescription.split("/")[0],
-    type: titleDescription.split("/")[1],
-    hideWords: title.split("||")[1] === "0",
+    title: titleDescription?.split("/")[0],
+    type: titleDescription?.split("/")[1],
+    hideWords: title?.split("||")[1] === "0",
     questions: serverQuestions.map((question) => ({
       image: getImageUrl(question.path || ""),
       question: question.textOne,

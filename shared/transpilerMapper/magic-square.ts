@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { ActivityTranspilerProps } from "./index";
 
 type MagicSquareQuestion = {
@@ -57,16 +56,22 @@ const magicSquareTranspiler = ({
 
       // Validate that non-empty cells contain valid numbers
       for (let i = 0; i < gridSize; i++) {
+        const row = grid[i];
+        if (!row) {
+          setWrongQuestionsFormat(true);
+          throw new Error(`Missing row ${i + 1} in grid`);
+        }
+
         for (let j = 0; j < gridSize; j++) {
-          const cell = grid[i][j];
-          if (cell !== "_" && cell !== "") {
-            const num = parseFloat(cell);
-            if (isNaN(num)) {
-              setWrongQuestionsFormat(true);
-              throw new Error(
-                `Invalid number "${cell}" at position (${i + 1}, ${j + 1})`,
-              );
-            }
+          const cell = row[j];
+          if (!cell || cell === "_" || cell === "") continue;
+
+          const num = parseFloat(cell);
+          if (isNaN(num)) {
+            setWrongQuestionsFormat(true);
+            throw new Error(
+              `Invalid number "${cell}" at position (${i + 1}, ${j + 1})`,
+            );
           }
         }
       }

@@ -1,6 +1,5 @@
-import { ActivityType } from "@/lib/types/activity-types";
-import type { ServerQuestionType } from "@/lib/types/activity-props";
-
+import { ActivityType } from "../../app/types/activity-types";
+import { type ServerQuestionType } from "../../app/types/activity-props";
 // Transpilers
 ///////////////////////////////////////////////////
 import completeMatrixTranspiler from "./complex-matrix";
@@ -130,6 +129,8 @@ const activityPropsTranspiler: ActivityTranspilerMapper = {
   [ActivityType.CompleteSentencesByDraggingCluesPics2]:
     completesentencesbydraggingcluesTranspiler,
   [ActivityType.CompleteSentencesByDraggingCluesPics]:
+    completesentencesbydraggingcluesTranspiler,
+  [ActivityType.CompleteSentenceByDraggingCluesWithNotes]:
     completesentencesbydraggingcluesTranspiler,
   [ActivityType.CompleteSentencesWithTwoClauses]:
     completeSentencesWithTwoClausesTranspiler,

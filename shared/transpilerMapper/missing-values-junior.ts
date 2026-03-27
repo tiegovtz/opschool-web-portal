@@ -23,7 +23,7 @@ const missingValuesJuniorTranspiler = (params: ActivityTranspilerProps) => {
 
   return {
     title: titleDescription,
-    numberRange: serverQuestions[0].textThree,
+    numberRange: serverQuestions[0]?.textThree,
     sequences: shuffle(
       serverQuestions.map((item) => {
         const sequence = item.textOne

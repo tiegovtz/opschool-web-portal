@@ -1,4 +1,5 @@
-import type { ActivityTranspilerProps } from ".";
+// import { ActivityTranspilerProps } from ".";
+import { type ActivityTranspilerProps } from ".";
 
 const arrangeStepsTranspiler = (params: ActivityTranspilerProps) => {
   const { serverQuestions, titleDescription } = params;

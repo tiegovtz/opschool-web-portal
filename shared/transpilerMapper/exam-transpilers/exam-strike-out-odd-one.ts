@@ -11,7 +11,7 @@ export const examStrikeOutOddOneTranspiler = (
   serverQuestions.forEach((q) => {
     if (
       !q.textOne ||
-      q.textOne.split(getCommonSeparator(q.textOne)).length < 2
+      q.textOne.split(getCommonSeparator(q.textOne) as string).length < 2
     ) {
       isWrongFormat = true;
     }
@@ -27,7 +27,7 @@ export const examStrikeOutOddOneTranspiler = (
       // Split words by "/" - first word is the correct answer (odd one out)
       const wordsArray = serverQuestion?.textOne
         ? serverQuestion.textOne
-            .split(getCommonSeparator(serverQuestion.textOne))
+            .split(getCommonSeparator(serverQuestion.textOne) as string)
             .filter((word) => word.trim())
         : [];
 

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { getImageUrl, shuffle } from "@/lib/utils";
-import type { ActivityTranspilerProps } from "..";
+import {type ActivityTranspilerProps } from "..";
 
 const completesentencesbydraggingcluesTranspiler = (
   params: ActivityTranspilerProps,
@@ -27,7 +27,7 @@ const completesentencesbydraggingcluesTranspiler = (
   const titleDescription = title.split("||")[0];
 
   return {
-    title: titleDescription.split("/")[0],
+    title: titleDescription?.split("/")[0],
     fontSize: title.split("||")[1] || 30,
     algorithm: params.algorithm,
     questions: shuffle(

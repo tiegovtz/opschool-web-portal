@@ -1,5 +1,5 @@
-import { shuffle } from "@/lib/utils";
-import type { ActivityTranspilerProps } from "..";
+import { shuffle } from "~/utilities/utils";
+import {type ActivityTranspilerProps } from "..";
 
 const completeSentencesByClickingTranspiler = (
   params: ActivityTranspilerProps,

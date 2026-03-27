@@ -36,10 +36,11 @@ export const getGradeName = (
   return grade ? grade.description : "";
 };
 
-export const getCommonSeparator = (text: string) => {
+export const getCommonSeparator = (text: string | undefined): string => {
+  if (!text) return ",";
   const separators = [",", ";", "/", "|", ":", " "];
   const foundSeparators = separators.filter((sep) => text.includes(sep));
-  return foundSeparators[0] ?? ",";
+  return foundSeparators.length > 0 ? foundSeparators[0] ?? "," : ",";
 };
 
 export const toRoman = (num: number): string => {

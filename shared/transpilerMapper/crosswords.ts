@@ -1,5 +1,4 @@
-// @ts-nocheck
-import type { ActivityTranspilerProps } from ".";
+import { type ActivityTranspilerProps } from ".";
 import { ActivityType } from "@/lib/types/activity-types";
 
 const CrosswordsTranspiler = (params: ActivityTranspilerProps) => {
@@ -14,7 +13,7 @@ const CrosswordsTranspiler = (params: ActivityTranspilerProps) => {
   // Handle "Crossword words Game" mode
   if (algorithm === ActivityType.CrosswordWordsGame) {
     // For game mode, we expect the first question to have type in textOne
-    if (!serverQuestions.length || !serverQuestions[0].textOne) {
+    if (!serverQuestions.length || !serverQuestions[0]?.textOne) {
       setWrongQuestionsFormat(true);
       return;
     }
@@ -23,16 +22,16 @@ const CrosswordsTranspiler = (params: ActivityTranspilerProps) => {
     return {
       title: titleDescription,
       isGameMode: true,
-      type: serverQuestions[0].textOne,
+      type: serverQuestions[0]?.textOne,
       gameTimeLimit: serverQuestions[0]?.textThree ?? 600, // Default 10 minutes for crosswords
-      numberOfWords: serverQuestions[0].textTwo ?? 1, // Will be populated by the component using the hook
+      numberOfWords: serverQuestions[0]?.textTwo ?? 1, // Will be populated by the component using the hook
     };
   }
 
   // Handle "Crosswords With Pics" mode
   if (algorithm === ActivityType.CrosswordsWithPics) {
     // For image-based crosswords game mode, we expect the first question to have type in textOne
-    if (!serverQuestions.length || !serverQuestions[0].textOne) {
+    if (!serverQuestions.length || !serverQuestions[0]?.textOne) {
       setWrongQuestionsFormat(true);
       return;
     }
@@ -42,7 +41,7 @@ const CrosswordsTranspiler = (params: ActivityTranspilerProps) => {
       title: titleDescription,
       isGameMode: true,
       isImageMode: true, // New flag to indicate image-based clues
-      type: serverQuestions[0].textTwo,
+      type: serverQuestions[0]?.textTwo,
       gameTimeLimit: serverQuestions[0]?.textThree || 300, // Default 10 minutes for crosswords
       numberOfWords: 1,
     };
@@ -59,8 +58,8 @@ const CrosswordsTranspiler = (params: ActivityTranspilerProps) => {
   // Ensure serverQuestions[0] exists before processing clues from it.
   if (serverQuestions && serverQuestions.length > 0) {
     const firstQuestion = serverQuestions[0];
-    const textThree = `${firstQuestion.textThree}./` || "";
-    const textFour = firstQuestion.textFour || "";
+    const textThree = `${firstQuestion?.textThree}./` || "";
+    const textFour = firstQuestion?.textFour || "";
 
     const cluesCombinedText = textThree + textFour;
 

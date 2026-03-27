@@ -19,15 +19,15 @@ const singleCheckTableTranspiler = ({
       throw new Error("Missing header question");
     }
     const columnHeaders = [
-      headerQuestion.textTwo,
-      headerQuestion.textThree,
-      headerQuestion.textFour,
-      headerQuestion.textFive,
-      headerQuestion.textSix,
-      headerQuestion.textSeven,
-      headerQuestion.textEight,
-      headerQuestion.textNine,
-      headerQuestion.textTen,
+      headerQuestion?.textTwo,
+      headerQuestion?.textThree,
+      headerQuestion?.textFour,
+      headerQuestion?.textFive,
+      headerQuestion?.textSix,
+      headerQuestion?.textSeven,
+      headerQuestion?.textEight,
+      headerQuestion?.textNine,
+      headerQuestion?.textTen,
     ].filter(
       (text): text is string => typeof text === "string" && text.trim() !== "",
     );
@@ -105,7 +105,7 @@ const singleCheckTableTranspiler = ({
     return {
       title: titleDescription.split("||")[0],
       fontSize: titleDescription.split("||")[1],
-      questionHeader: headerQuestion.textOne || "",
+      questionHeader: serverQuestions[0]?.textOne || "",
       columnHeaders: columnHeaders.length > 0 ? columnHeaders : undefined,
       questions: processedQuestions,
     };

@@ -64,7 +64,7 @@ const dialogDifferencesPropsTranspiler = (params: {
     rightLabel: titleDescription.split("/")[2],
     lockSide: algorithm === ActivityType.DialogOneSideFixed ? "left" : null,
     fontSize: titleDescription.includes("||")
-      ? parseInt(titleDescription.split("||")[1], 10) || 20
+      ? parseInt(titleDescription.split("||")[1] ?? "20", 10) || 20
       : 20,
 
     items,

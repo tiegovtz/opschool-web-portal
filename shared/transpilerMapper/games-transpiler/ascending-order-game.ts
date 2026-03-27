@@ -51,15 +51,15 @@ const ascendingOrderGameTranspiler = (
 
   // Extract title from titleDescription
   const title =
-    titleDescription.split("||")[0].split("//")[0] || "Ascending Order Game";
+    titleDescription?.split("||")[0]?.split("//")[0] || "Ascending Order Game";
 
   // Generate 10 questions from the single server question
   const questions: AscendingOrderGameQuestion[] = [];
 
   if (serverQuestions && serverQuestions.length > 0) {
     const serverQuestion = serverQuestions[0];
-    const min = parseInt(serverQuestion.textOne || "1") || 1;
-    const max = parseInt(serverQuestion.textTwo || "20") || 20;
+    const min = parseInt(serverQuestion?.textOne || "1") || 1;
+    const max = parseInt(serverQuestion?.textTwo || "20") || 20;
 
     // Generate 10 questions with random numbers from the range
     for (let i = 0; i < 10; i++) {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { ActivityTranspilerProps } from ".";
 import { getImageUrl, shuffle } from "@/lib/utils";
 
@@ -26,7 +25,7 @@ const pictureOrStoryFollowedByQuestionsTrueFalseActivityTranspiler = (
   return {
     title: activityNotes[0],
     notes: `${activityNotes[activityNotes.length - 1]}`,
-    image: getImageUrl(serverQuestions[0].path || ""),
+    image: getImageUrl(serverQuestions[0]?.path || ""),
     questions: shuffle(
       serverQuestions.map((question) => {
         return {

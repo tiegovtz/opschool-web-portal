@@ -1,6 +1,6 @@
-// @ts-nocheck
-import { shuffle } from "@/lib/utils";
-import type { ActivityTranspilerProps } from "..";
+
+import { shuffle } from "~/utilities/utils";
+import {type ActivityTranspilerProps } from "..";
 
 const completeSentencesByClickingSpecificsTranspiler = (
   params: ActivityTranspilerProps,
@@ -27,7 +27,7 @@ const completeSentencesByClickingSpecificsTranspiler = (
   const titleDescription = title.split("||")[0];
 
   return {
-    title: titleDescription.split("//")[0],
+    title: titleDescription?.split("//")[0],
     fontSize: title.split("||")[1],
     questions: shuffle(
       serverQuestions.map((q) => {

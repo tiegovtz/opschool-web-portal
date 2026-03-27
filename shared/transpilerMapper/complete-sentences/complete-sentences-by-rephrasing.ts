@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { getImageUrl, isFractionorMixedFraction, shuffle } from "@/lib/utils";
-import type { ActivityTranspilerProps } from "..";
 import { ActivityType } from "@/lib/types/activity-types";
+import type { ActivityTranspilerProps } from "..";
 
 export const completeSentencesByRephrasingPropsTranspiler = (
   params: ActivityTranspilerProps,
@@ -30,7 +30,7 @@ export const completeSentencesByRephrasingPropsTranspiler = (
   const titleDescription = title.split("||")[0];
 
   return {
-    title: titleDescription.split("//")[0],
+    title: titleDescription?.split("//")[0],
     fontSize: title.split("||")[1],
     algorithm,
     questions: serverQuestions.map((q) => ({
@@ -54,14 +54,14 @@ export const completeSentencesByRephrasingPropsTranspiler = (
             algorithm === ActivityType.CompleteSentenceByRephrasingWithChoices
               ? examMode
                 ? shuffle(
-                    serverQuestions[0].textThree
+                     (serverQuestions as any[])[0].textThree
                       ?.split("/")
-                      .map((q) => q.toLowerCase().trim()) || [],
+                      .map((q: any) => q.toLowerCase().trim()) || [],
                   )
-                : serverQuestions[0].textThree
-                  ? shuffle(serverQuestions[0].textThree?.split("/") || [])
+                : (serverQuestions as any[])[0].textThree
+                  ? shuffle((serverQuestions as any[])[0].textThree?.split("/") || [])
                   : []
-              : shuffle(serverQuestions.map((q) => q.textTwo || [])),
+              : shuffle((serverQuestions as any[]).map((q) => q.textTwo || [])),
         }
       : {}),
   };

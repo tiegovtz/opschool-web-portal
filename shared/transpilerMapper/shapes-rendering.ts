@@ -7,7 +7,7 @@ import type {
   ShapeQuestion,
   SegmentedShape,
   Shape2DVariant,
-} from "~/components/primary-sources/activities/shapes-rendering/types";
+} from "@/components/primary-sources/activities/shapes-rendering/types";
 
 const shapesRenderingTranspiler = (params: ActivityTranspilerProps) => {
   const {
@@ -297,12 +297,14 @@ const processPolygon = (params: string): CustomPolygon => {
   // Extract coordinates pairs (x,y)
   for (let i = 0; i < values.length; i += 2) {
     if (i + 1 < values.length) {
-      const x = values[i] ?? 0;
-      const y = values[i + 1] ?? 0;
-      coordinates.push({
-        x: x * 200 - 100, // Scale and center
-        y: y * 200 - 100,
-      });
+      const x = values[i];
+      const y = values[i + 1];
+      if (x !== undefined && y !== undefined) {
+        coordinates.push({
+          x: x * 200 - 100, // Scale and center
+          y: y * 200 - 100,
+        });
+      }
     }
   }
 

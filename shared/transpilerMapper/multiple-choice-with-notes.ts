@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type { ActivityTranspilerProps } from ".";
 import { getImageUrl } from "@/lib/utils";
 
@@ -25,7 +24,7 @@ export const multipleChoiceWithNotesTranspiler = (
   return {
     title: titleDescription.split("//")[0],
     notes: titleDescription.split("//")[1],
-    image: getImageUrl(serverQuestions[0].path || ""),
+    image: getImageUrl(serverQuestions[0]?.path || ""),
     questions: serverQuestions.map((question) => {
       return {
         question: question.textOne?.split("\n")[0],
@@ -38,10 +37,10 @@ export const multipleChoiceWithNotesTranspiler = (
               : option.split(")");
 
             return {
-              id: id.trim(),
+              id: id?.trim(),
               text: text?.trim(),
               correct:
-                question.textTwo?.toLowerCase() === id.trim().toLowerCase(),
+                question.textTwo?.toLowerCase() === id?.trim().toLowerCase(),
             };
           }),
       };

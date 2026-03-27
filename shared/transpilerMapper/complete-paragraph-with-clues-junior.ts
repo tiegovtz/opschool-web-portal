@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { getCommonSeparator, getImageUrl, shuffle } from "@/lib/utils";
-import type { ActivityTranspilerProps } from ".";
+// import { ActivityTranspilerProps } from ".";
+import { type ActivityTranspilerProps } from ".";
 
 export const completeParagraphWithCluesJuniorTranspiler = (
   params: ActivityTranspilerProps,
@@ -16,15 +17,15 @@ export const completeParagraphWithCluesJuniorTranspiler = (
   });
 
   // Extract paragraph and answers from the first question
-  const paragraph = serverQuestions[0].textOne || "";
-  const answersString = serverQuestions[0].textTwo;
+  const paragraph = serverQuestions[0]?.textOne || "";
+  const answersString = serverQuestions[0]?.textTwo || "";
+  const separator = getCommonSeparator(answersString) || " ";
 
   // Count the number of blanks (___) in the paragraph
   const blankCount = (paragraph.match(/___/g) || []).length;
 
-  // Split the answers by space to get individual answers
-  const answers =
-    answersString?.split(getCommonSeparator(answersString || "")) || [];
+  // Split the answers by computed separator to get individual answers
+  const answers = answersString.split(separator);
 
   // Validate that the number of blanks matches the number of answers
   if (blankCount !== answers.length) {
@@ -38,16 +39,11 @@ export const completeParagraphWithCluesJuniorTranspiler = (
 
   return {
     title: titleDescription,
-    image: getImageUrl(serverQuestions[0].path || ""),
+    image: getImageUrl(serverQuestions[0]?.path || ""),
     paragraph,
     fontSize: titleDescription.split("||")[1]?.slice(0, 2) || "",
     answers,
-    options:
-      (answersString &&
-        shuffle(
-          answersString.split(getCommonSeparator(answersString || "")),
-        )) ||
-      [],
-    withClues: serverQuestions[0].textThree || false,
+    options: (answersString && shuffle(answersString.split(separator))) || [],
+    withClues: serverQuestions[0]?.textThree || false,
   };
 };

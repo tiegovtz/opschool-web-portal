@@ -14,7 +14,7 @@ const tableCheckBoxesTranspiler = (params: ActivityTranspilerProps) => {
   }
 
   const rowQuestions = serverQuestions.slice(1).map((question) => {
-    const text = question.textOne?.split("/")[0].trim() || "";
+    const text = question.textOne?.split("/")[0]?.trim() || "";
     return {
       id: text.toLowerCase().replace(/\s+/g, "_"),
       text,
@@ -22,7 +22,7 @@ const tableCheckBoxesTranspiler = (params: ActivityTranspilerProps) => {
     };
   });
 
-  const columnQuestions = serverQuestions[0].textOne
+  const columnQuestions = serverQuestions[0]?.textOne
     ?.split("/")
     .slice(1)
     .map((text) => ({
@@ -34,7 +34,7 @@ const tableCheckBoxesTranspiler = (params: ActivityTranspilerProps) => {
     Record<string, Record<string, boolean>>
   >((acc, row) => {
     const question = serverQuestions.find(
-      (q) => q.textOne?.split("/")[0].trim() === row.text,
+      (q) => q.textOne?.split("/")[0]?.trim() === row.text,
     );
 
     if (!question || !question.textOne) return acc;

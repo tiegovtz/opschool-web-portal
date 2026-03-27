@@ -1,6 +1,4 @@
-// @ts-nocheck
-import React from "react";
-import type { ActivityTranspilerProps } from ".";
+import { type ActivityTranspilerProps } from ".";
 import { shuffle } from "@/lib/utils";
 
 const completeSentencesBySelectingCorrectOnesTranspiler = (
@@ -18,7 +16,7 @@ const completeSentencesBySelectingCorrectOnesTranspiler = (
 
   if (isWrongFormat) {
     setWrongQuestionsFormat(true);
-    return;
+    return null;
   }
 
   return {

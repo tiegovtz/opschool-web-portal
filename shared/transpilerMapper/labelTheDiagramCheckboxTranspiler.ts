@@ -29,13 +29,13 @@ export const labelTheDiagramCheckboxTranspiler = (
     }
     ${activityNotes[activityNotes.length - 1] || ""}`,
     image: getImageUrl(
-      serverQuestions[0].path || serverQuestions[0].pathTwo || "",
+      serverQuestions[0]?.path || serverQuestions[0]?.pathTwo || "",
     ),
     variant: "checkbox" as const,
     questions: serverQuestions.map((question) => ({
-      question: question.textOne,
-      title: question.textThree || "",
-      answers: [question.textTwo?.trim() || ""], // "T" or "F"
+      question: question?.textOne,
+      title: question?.textThree || "",
+      answers: [question?.textTwo?.trim() || ""], // "T" or "F"
     })),
   };
 };
