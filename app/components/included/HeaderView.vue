@@ -145,7 +145,7 @@ onBeforeUnmount(() => {
           <div class="flex-1" role="navigation">
             <NuxtLink aria-label="Go home" to="/">
               <p class="block text-center uppercase lg:text-large text-medium text-shadow">
-                {{ language==='english' ? `TIE online public school` :`shule mtandao ya TET`}}
+                {{ language==='english' ? `TIE online school` :`shule mtandao ya TIE`}}
               </p>
             </NuxtLink>
           </div>
@@ -296,7 +296,7 @@ onBeforeUnmount(() => {
             <!-- Paragraph Text -->
             <NuxtLink to="/">
               <p class="block text-center uppercase lg:text-large text-[14px] text-shadow">
-                 {{ language==='english' ? `TIE online public school` :`shule mtandao ya TIE`}}
+                {{ language==='english' ? `TIE online school` :`shule mtandao ya TIE`}}
               </p>
             </NuxtLink>
 

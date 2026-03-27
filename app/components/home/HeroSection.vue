@@ -8,8 +8,8 @@ const props = withDefaults(
   language: 'english',
 })
 // Define the full text
-const fullText = props.language == 'english' ? `
-Welcome to <b>TIE ONLINE PUBLIC SCHOOL</b>, an innovative platform developed by the
+const fullText = `
+Welcome to <b>TIE ONLINE SCHOOL</b>, an innovative platform developed by the
 Tanzania Institute of Education (TIE) to assist you in reaching your educational goals
 through engaging methods. Here, you will access high-quality learning resources for
 secondary education, thoughtfully made to give you the best experience. <br/><br/>
@@ -30,8 +30,8 @@ Jukwaa hili limeandaliwa kwa ajili ya wanafunzi wa rika zote kwa kuwawezesha kuf
 Jukwaa hii linafanya ujifunzaji uwe rahisi, wa kufurahisha na kumfanya mwanafunzi asisahau kile alichojifunza.`;
 
 // Define the short preview text
-const shortText = props.language == 'english' ? `
-Welcome to <b>TIE ONLINE PUBLIC SCHOOL</b>, an innovative platform developed by the
+const shortText = `
+Welcome to <b>TIE ONLINE SCHOOL</b>, an innovative platform developed by the
 Tanzania Institute of Education (TIE) to assist you in reaching your educational goals
 through engaging methods. Here, you will access high-quality learning resources for
 secondary education, thoughtfully made to give you the best experience. <br /><br />
