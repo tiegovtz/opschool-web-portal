@@ -1,5 +1,5 @@
 import { getImageUrl } from "@/lib/utils";
-import { ActivityTranspilerProps } from "..";
+import type { ActivityTranspilerProps } from "..";
 import { ActivityType } from "@/lib/types/activity-types";
 
 const comparingQuantitiesDraggingTranspiler = (

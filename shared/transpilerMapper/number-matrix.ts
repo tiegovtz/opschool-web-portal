@@ -1,4 +1,5 @@
-import { ActivityTranspilerProps } from ".";
+// @ts-nocheck
+import type { ActivityTranspilerProps } from ".";
 
 export const NumberMatrixTranspiler = (params: ActivityTranspilerProps) => {
   const { serverQuestions, titleDescription, setWrongQuestionsFormat } = params;

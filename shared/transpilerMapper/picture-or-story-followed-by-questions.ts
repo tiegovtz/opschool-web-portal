@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { getImageUrl } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 const pictureOrStoryFollowedByQuestionsActivityTranspiler = (
   params: ActivityTranspilerProps

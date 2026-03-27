@@ -696,6 +696,8 @@ export const drawPolygonPath = (
   multiplier: number
 ) => {
   if (!coordinates.length) return;
+  const [firstPoint] = coordinates;
+  if (!firstPoint) return;
 
   // Start from the first point
   if (coordinates[0]) {

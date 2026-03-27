@@ -38,9 +38,9 @@ import {
   PatternMatchingActivity,
   AdditionSubtractionObjectsActivity,
 } from "../imports";
-import FractionOperationActivity from "~/components/primary-sources/activities/fraction-operation-activity";
-import TwoUnitsOperationActivity from "~/components/primary-sources/activities/two-units-operation-activity";
-import MagicSquare from "~/components/primary-sources/activities/magic-square";
+import FractionOperationActivity from "~/components/primary-sources/activities/fraction-operation-activity.vue";
+import TwoUnitsOperationActivity from "~/components/primary-sources/activities/two-units-operation-activity.vue";
+import MagicSquare from "~/components/primary-sources/activities/magic-square.vue";
 
 export const otherMapper = {
   // Rearranging Steps Activities

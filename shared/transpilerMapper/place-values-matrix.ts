@@ -1,4 +1,4 @@
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 export const QUESTIONS_COUNT = 10;
 

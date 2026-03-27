@@ -39,7 +39,7 @@ export const getGradeName = (
 export const getCommonSeparator = (text: string) => {
   const separators = [",", ";", "/", "|", ":", " "];
   const foundSeparators = separators.filter((sep) => text.includes(sep));
-  return foundSeparators.length > 0 ? foundSeparators[0] : ",";
+  return foundSeparators[0] ?? ",";
 };
 
 export const toRoman = (num: number): string => {

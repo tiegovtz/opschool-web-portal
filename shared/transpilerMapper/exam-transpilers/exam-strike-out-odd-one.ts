@@ -1,5 +1,5 @@
 import { getCommonSeparator } from "@/lib/utils";
-import { ActivityTranspilerProps } from "..";
+import type { ActivityTranspilerProps } from "..";
 
 export const examStrikeOutOddOneTranspiler = (
   params: ActivityTranspilerProps,

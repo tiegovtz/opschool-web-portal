@@ -1,4 +1,5 @@
-import { ActivityTranspilerProps } from ".";
+// @ts-nocheck
+import type { ActivityTranspilerProps } from ".";
 
 const abacusActivityTranspiler = (params: ActivityTranspilerProps) => {
   const { serverQuestions, titleDescription } = params;

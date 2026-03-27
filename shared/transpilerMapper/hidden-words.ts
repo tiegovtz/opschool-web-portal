@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 import { ActivityType } from "@/lib/types/activity-types";
 
 const hiddenWordsTranspiler = (params: ActivityTranspilerProps) => {

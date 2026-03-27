@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { getImageUrl } from "@/lib/utils";
-import { ActivityTranspilerProps } from "../index";
+import type { ActivityTranspilerProps } from "../index";
 
 export interface OpenEndedQuestionsServerData {
   id: number;

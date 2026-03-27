@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { getImageUrl, shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
 

@@ -1,61 +1,70 @@
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 import { getImageUrl, shuffle } from "@/lib/utils";
 import { ActivityType } from "@/lib/types/activity-types";
-import { ServerQuestionType } from "@/lib/types/activity-props";
+import type { ServerQuestionType } from "@/lib/types/activity-props";
+
+const getQuestionAt = (
+  serverQuestions: ServerQuestionType[],
+  index: number,
+) => (serverQuestions[index] ?? ({} as ServerQuestionType));
 
 const imagePathBasedOnQuestion = (
   index: number,
   side: "1" | "2" | "3",
   serverQuestions: ServerQuestionType[]
 ) => {
+  const firstQuestion = getQuestionAt(serverQuestions, 0);
+  const secondQuestion = getQuestionAt(serverQuestions, 1);
+  const thirdQuestion = getQuestionAt(serverQuestions, 2);
+
   if (side === "1") {
     switch (index) {
       case 0:
-        return serverQuestions[0].path;
+        return firstQuestion.path;
       case 1:
-        return serverQuestions[0].pathTwo;
+        return firstQuestion.pathTwo;
       case 2:
-        return serverQuestions[0].pathThree;
+        return firstQuestion.pathThree;
       case 3:
-        return serverQuestions[0].pathFour;
+        return firstQuestion.pathFour;
       case 4:
-        return serverQuestions[2].path;
+        return thirdQuestion.path;
       case 5:
-        return serverQuestions[2].pathTwo;
+        return thirdQuestion.pathTwo;
       default:
         return "";
     }
   } else if (side === "2") {
     switch (index) {
       case 0:
-        return serverQuestions[1].path;
+        return secondQuestion.path;
       case 1:
-        return serverQuestions[1].pathTwo;
+        return secondQuestion.pathTwo;
       case 2:
-        return serverQuestions[1].pathThree;
+        return secondQuestion.pathThree;
       case 3:
-        return serverQuestions[1].pathFour;
+        return secondQuestion.pathFour;
       case 4:
-        return serverQuestions[2].pathThree;
+        return thirdQuestion.pathThree;
       case 5:
-        return serverQuestions[2].pathFour;
+        return thirdQuestion.pathFour;
       default:
         return "";
     }
   } else {
     switch (index) {
       case 0:
-        return serverQuestions[2].path;
+        return thirdQuestion.path;
       case 1:
-        return serverQuestions[2].pathTwo;
+        return thirdQuestion.pathTwo;
       case 2:
-        return serverQuestions[2].pathThree;
+        return thirdQuestion.pathThree;
       case 3:
-        return serverQuestions[2].pathFour;
+        return thirdQuestion.pathFour;
       case 4:
-        return serverQuestions[2].path;
+        return thirdQuestion.path;
       case 5:
-        return serverQuestions[2].pathTwo;
+        return thirdQuestion.pathTwo;
       default:
         return "";
     }
@@ -65,10 +74,11 @@ const imagePathBasedOnQuestion = (
 export const inWhichBoxPropsTranspiler = (params: ActivityTranspilerProps) => {
   const { titleDescription, algorithm, serverQuestions } = params;
   let isWrongFormat = false;
+  const question = getQuestionAt(serverQuestions, 0);
+  const secondQuestion = getQuestionAt(serverQuestions, 1);
 
   //   Check if all questions have the correct format
   //   Take the first question and check if textOne and textTwo are not null
-  const question = serverQuestions[0];
   if (
     algorithm.includes("Six Items") &&
     (question.textOne?.split(",").length !== 8 ||
@@ -113,7 +123,7 @@ export const inWhichBoxPropsTranspiler = (params: ActivityTranspilerProps) => {
   const textTwoQuestions = shuffle(
     (
       (algorithm === "In Which Box Two Boxes"
-        ? serverQuestions[1].textTwo
+        ? secondQuestion.textTwo
         : question.textTwo
       )?.split(algorithm === "In Which Box Two Boxes" ? "/" : ",") || []
     )
@@ -164,7 +174,7 @@ export const inWhichBoxPropsTranspiler = (params: ActivityTranspilerProps) => {
       id: "2",
       title:
         algorithm === "In Which Box Two Boxes"
-          ? serverQuestions[1].textOne
+          ? secondQuestion.textOne
           : question.textTwo?.split(",")[
               algorithm.includes("Six Items") ? 6 : 4
             ] || "",
@@ -185,7 +195,9 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     textTwoQuestions,
     textThreeQuestions = [];
   let isWrongFormat = false;
-  const question = serverQuestions[0];
+  const question = getQuestionAt(serverQuestions, 0);
+  const secondQuestion = getQuestionAt(serverQuestions, 1);
+  const thirdQuestion = getQuestionAt(serverQuestions, 2);
 
   if (
     algorithm.toLowerCase().includes("mixed") ||
@@ -253,7 +265,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     }
 
     textOneQuestions = shuffle(
-      (serverQuestions[0].textTwo?.split("/") || [])
+      (question.textTwo?.split("/") || [])
         .slice(0, 6)
         .map((content, i) => ({
           id: content.toLowerCase(),
@@ -263,7 +275,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     );
 
     textTwoQuestions = shuffle(
-      (serverQuestions[1].textTwo?.split("/") || [])
+      (secondQuestion.textTwo?.split("/") || [])
         .slice(0, 6)
         .map((content, i) => ({
           id: content.toLowerCase(),
@@ -273,7 +285,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     );
 
     textThreeQuestions = shuffle(
-      (serverQuestions[2].textTwo?.split("/") || [])
+      (thirdQuestion.textTwo?.split("/") || [])
         .slice(0, 6)
         .map((content, i) => ({
           id: content.toLowerCase(),
@@ -301,7 +313,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
       id: "1",
       title:
         algorithm.toLowerCase() === "in which box"
-          ? serverQuestions[0].textOne
+          ? question.textOne
           : question.textOne?.split(",")[4] || "",
       noOfAnswers: textOneQuestions.length,
     },
@@ -309,7 +321,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
       id: "2",
       title:
         algorithm.toLowerCase() === "in which box"
-          ? serverQuestions[1].textOne
+          ? secondQuestion.textOne
           : question.textTwo?.split(",")[4] || "",
       noOfAnswers: textTwoQuestions.length,
     },
@@ -317,7 +329,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
       id: "3",
       title:
         algorithm.toLowerCase() === "in which box"
-          ? serverQuestions[2].textOne
+          ? thirdQuestion.textOne
           : question.textThree?.split(",")[4] || "",
       noOfAnswers: textThreeQuestions.length,
     },

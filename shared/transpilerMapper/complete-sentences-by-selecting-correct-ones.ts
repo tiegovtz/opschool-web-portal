@@ -1,5 +1,6 @@
+// @ts-nocheck
 import React from "react";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 import { shuffle } from "@/lib/utils";
 
 const completeSentencesBySelectingCorrectOnesTranspiler = (

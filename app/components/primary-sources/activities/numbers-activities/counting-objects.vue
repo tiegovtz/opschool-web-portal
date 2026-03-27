@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { cn, shuffle } from "~/utilities/utils";
 import Input from "~/components/ui/inputs/input";

@@ -12,6 +12,7 @@ import type { FeedbackType } from "@/lib/types/activity-types";
 import { missingDefinitionsGameTranspiler } from "~~/shared/transpilerMapper/games-transpiler/missing-definitions";
 import { useObjects } from "~/composables/useObjects";
 import { useSoundEffects } from "~/composables/use-sound-effects";
+import { missingDefinitionsGameTranspiler } from "~~/shared/transpilerMapper/games-transpiler/missing-definitions";
 
 type Props = {
   questions: {

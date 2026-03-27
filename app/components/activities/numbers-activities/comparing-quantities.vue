@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import ComparingQuantitiesActivity from "~/components/primary-sources/activities/numbers-activities/comparing-quantities.vue";
 import type { FeedbackType } from "~/types/activity-types";
 

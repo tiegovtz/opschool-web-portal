@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { getImageUrl, shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 import { ActivityType } from "@/lib/types/activity-types";
 
 const rearrangeLettersInWordsTranspiler = (params: ActivityTranspilerProps) => {

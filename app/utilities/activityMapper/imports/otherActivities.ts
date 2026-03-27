@@ -1,166 +1,163 @@
-import dynamic from "next/dynamic";
+import { defineAsyncComponent } from "vue";
 
-const loadActivity = (fn: () => Promise<any>) =>
-  dynamic(fn, { ssr: false });
-
-export const MultipleChoiceWithNotes = loadActivity(
-  () => import("@/components/activities/multiple-choice-with-notes.vue")
+export const MultipleChoiceWithNotes = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/multiple-choice-with-notes.vue"),
 );
 
-export const ComprehensionJunior = loadActivity(
-  () => import("@/components/activities/comprehension-junior.vue")
+export const ComprehensionJunior = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/comprehension-junior.vue"),
 );
 
-export const PictureOrStoryFollowedByQuestionsTrueFalseActivity = loadActivity(
+export const PictureOrStoryFollowedByQuestionsTrueFalseActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/picture-or-story-followed-by-questions-true-false.vue"
-    )
+      "~/components/primary-sources/activities/picture-or-story-followed-by-questions-true-false.vue"
+    ),
 );
 
-export const PictureOrStoryFollowedByQuestionsActivity = loadActivity(
+export const PictureOrStoryFollowedByQuestionsActivity = defineAsyncComponent(
   () =>
-    import("@/components/activities/picture-or-story-followed-by-questions.vue")
+    import("~/components/primary-sources/activities/picture-or-story-followed-by-questions.vue"),
 );
 
-export const MatchingWithLettersActivity = loadActivity(
-  () => import("@/components/activities/matching-with-letters.vue")
+export const MatchingWithLettersActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/matching-with-letters.vue"),
 );
 
-export const CompleteParagraphWithCluesJunior = loadActivity(
-  () => import("@/components/activities/complete-paragraph-with-clues-junior.vue")
+export const CompleteParagraphWithCluesJunior = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/complete-paragraph-with-clues-junior.vue"),
 );
 
-export const CompleteParagraphWithoutClues = loadActivity(
-  () => import("@/components/activities/complete-paragraph-without-clues.vue")
+export const CompleteParagraphWithoutClues = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/complete-paragraph-without-clues.vue"),
 );
 
-export const RearrangeStepsVerticallyActivity = loadActivity(
-  () => import("@/components/activities/rearrange-steps-vertically.vue")
+export const RearrangeStepsVerticallyActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/rearrange-steps-vertically.vue"),
 );
 
-export const RearrangeTheSteps = loadActivity(
-  () => import("@/components/activities/rearrange-the-steps.vue")
+export const RearrangeTheSteps = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/rearrange-the-steps.vue"),
 );
 
-export const ArrangeStepsActivity = loadActivity(
-  () => import("@/components/activities/arrange-steps.vue")
+export const ArrangeStepsActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/arrange-steps.vue"),
 );
 
-export const CompleteMatrix = loadActivity(
-  () => import("@/components/activities/complete-matrix.vue")
+export const CompleteMatrix = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/complete-matrix.vue"),
 );
 
-export const TableCheckBoxes = loadActivity(
-  () => import("@/components/activities/table-check-boxes.vue")
+export const TableCheckBoxes = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/table-check-boxes.vue"),
 );
 
-export const TableCheckBoxesFilling = loadActivity(
-  () => import("@/components/activities/table-checkbox-filling.vue")
+export const TableCheckBoxesFilling = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/table-checkbox-filling.vue"),
 );
 
-export const ItemsLabellingActivity = loadActivity(
-  () => import("@/components/activities/items-labelling.vue")
+export const ItemsLabellingActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/items-labelling.vue"),
 );
 
-export const LabelTheDiagram = loadActivity(
-  () => import("@/components/activities/label-the-diagram.vue")
+export const LabelTheDiagram = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/label-the-diagram.vue"),
 );
 
-export const MatchingItemsPictureTextActivity = loadActivity(
-  () => import("@/components/activities/matching-items-picture-text.vue")
+export const MatchingItemsPictureTextActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/matching-items-picture-text.vue"),
 );
 
-export const HiddenWords = loadActivity(
-  () => import("@/components/activities/hidden-words.vue")
+export const HiddenWords = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/hidden-words.vue"),
 );
 
-export const CountingObjectsActivity = loadActivity(
-  () => import("@/components/activities/numbers-activities/counting-objects.vue")
+export const CountingObjectsActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/numbers-activities/counting-objects.vue"),
 );
 
-export const AdditionSubtractionObjectsActivity = loadActivity(
-  () =>
-    import(
-      "@/components/activities/numbers-activities/addition-subtraction-objects.vue"
-    )
-);
-
-export const CountingMixedObjectsActivity = loadActivity(
-  () => import("@/components/activities/counting-mixed-objects.vue")
-);
-
-export const MissingValuesActivity = loadActivity(
-  () => import("@/components/activities/missing-values.vue")
-);
-
-export const MissingValuesJuniorActivity = loadActivity(
-  () => import("@/components/activities/missing-values-junior.vue")
-);
-
-export const NumberMatrixActivity = loadActivity(
-  () => import("@/components/activities/number-matrix.vue")
-);
-
-export const AbacusActivity = loadActivity(
-  () => import("@/components/activities/abacus-activity.vue")
-);
-
-export const AbacusReverseActivity = loadActivity(
-  () => import("@/components/activities/reverse-abacus-activity.vue")
-);
-
-export const PlaceValuesMatrixActivity = loadActivity(
-  () => import("@/components/activities/place-values-matrix.vue")
-);
-
-export const ShapesRenderingActivity = loadActivity(
-  () => import("@/components/activities/shapes-rendering.vue")
-);
-
-export const CrosswordActivity = loadActivity(
-  () => import("@/components/activities/crossword-puzzle.vue")
-);
-
-export const SingleCheckTable = loadActivity(
-  () => import("@/components/activities/single-check-table.vue")
-);
-
-export const ComparingQuantitiesDraggingActivity = loadActivity(
+export const AdditionSubtractionObjectsActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/numbers-activities/comparingQuantitiesDragging.vue"
-    )
+      "~/components/primary-sources/activities/numbers-activities/addition-subtraction-objects.vue"
+    ),
 );
 
-export const ComparingQuantities = loadActivity(
-  () =>
-    import("@/components/activities/numbers-activities/comparing-quantities.vue")
+export const CountingMixedObjectsActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/counting-mixed-objects.vue"),
 );
 
-export const ComparingQuantitiesLessMoreWithPics = loadActivity(
+export const MissingValuesActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/missing-values.vue"),
+);
+
+export const MissingValuesJuniorActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/missing-values-junior.vue"),
+);
+
+export const NumberMatrixActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/number-matrix.vue"),
+);
+
+export const AbacusActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/abacus-activity.vue"),
+);
+
+export const AbacusReverseActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/reverse-abacus-activity.vue"),
+);
+
+export const PlaceValuesMatrixActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/place-values-matrix.vue"),
+);
+
+export const ShapesRenderingActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/shapes-rendering/index.vue"),
+);
+
+export const CrosswordActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/crossword-puzzle.vue"),
+);
+
+export const SingleCheckTable = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/single-check-table.vue"),
+);
+
+export const ComparingQuantitiesDraggingActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/numbers-activities/comparing-quantities-less-more-with-pics.vue"
-    )
+      "~/components/primary-sources/activities/numbers-activities/comparingQuantitiesDragging.vue"
+    ),
 );
 
-export const RearrangeLettersInWords = loadActivity(
-  () => import("@/components/activities/rearrange-letters-in-words.vue")
+export const ComparingQuantities = defineAsyncComponent(
+  () =>
+    import("~/components/primary-sources/activities/numbers-activities/comparing-quantities.vue"),
 );
 
-export const MissingLettersWords = loadActivity(
-  () => import("@/components/activities/missing-letters-words.vue")
+export const ComparingQuantitiesLessMoreWithPics = defineAsyncComponent(
+  () =>
+    import(
+      "~/components/primary-sources/activities/numbers-activities/comparing-quantities-less-more-with-pics.vue"
+    ),
 );
 
-export const StrikeOutOddOneActivity = loadActivity(
-  () => import("@/components/activities/strike-out-odd-one.vue")
+export const RearrangeLettersInWords = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/rearrange-letters-in-words.vue"),
 );
 
-export const OpenEndedQuestions = loadActivity(
-  () => import("@/components/activities/open-ended-questions.vue")
+export const MissingLettersWords = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/missing-letters-words.vue"),
 );
 
-export const PatternMatchingActivity = loadActivity(
-  () => import("@/components/activities/pattern-matching.vue")
+export const StrikeOutOddOneActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/strike-out-odd-one.vue"),
+);
+
+export const OpenEndedQuestions = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/open-ended-questions.vue"),
+);
+
+export const PatternMatchingActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/pattern-matching.vue"),
 );

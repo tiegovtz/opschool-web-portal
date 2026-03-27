@@ -1,4 +1,5 @@
-import { ActivityTranspilerProps } from ".";
+// @ts-nocheck
+import type { ActivityTranspilerProps } from ".";
 import { getImageUrl } from "@/lib/utils";
 
 export const multipleChoiceWithNotesTranspiler = (

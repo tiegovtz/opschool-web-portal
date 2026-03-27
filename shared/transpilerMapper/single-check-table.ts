@@ -1,6 +1,6 @@
 import { getImageUrl } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
-import { ServerQuestionType } from "@/lib/types/activity-props";
+import type { ActivityTranspilerProps } from ".";
+import type { ServerQuestionType } from "@/lib/types/activity-props";
 
 type ColumnOption = {
   text: string;
@@ -15,6 +15,9 @@ const singleCheckTableTranspiler = ({
   try {
     // Extract column headers from the first question
     const headerQuestion = serverQuestions[0];
+    if (!headerQuestion) {
+      throw new Error("Missing header question");
+    }
     const columnHeaders = [
       headerQuestion.textTwo,
       headerQuestion.textThree,
@@ -102,7 +105,7 @@ const singleCheckTableTranspiler = ({
     return {
       title: titleDescription.split("||")[0],
       fontSize: titleDescription.split("||")[1],
-      questionHeader: serverQuestions[0].textOne || "",
+      questionHeader: headerQuestion.textOne || "",
       columnHeaders: columnHeaders.length > 0 ? columnHeaders : undefined,
       questions: processedQuestions,
     };

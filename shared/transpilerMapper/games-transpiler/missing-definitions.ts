@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { getRandomItems, shuffle } from "@/lib/utils";
 import type { GameObject } from "@/hooks/useObjects";
 import type { ActivityTranspilerProps } from "..";

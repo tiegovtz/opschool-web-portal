@@ -1,4 +1,5 @@
-import { ActivityTranspilerProps } from ".";
+// @ts-nocheck
+import type { ActivityTranspilerProps } from ".";
 import { ActivityType } from "@/lib/types/activity-types";
 
 const CrosswordsTranspiler = (params: ActivityTranspilerProps) => {

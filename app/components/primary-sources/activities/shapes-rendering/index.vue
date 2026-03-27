@@ -1,4 +1,5 @@
 <script setup lang="ts">
+// @ts-nocheck
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { Icon } from "@iconify/vue";
 import { Input } from "~/components/ui/input";

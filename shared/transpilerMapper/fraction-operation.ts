@@ -1,4 +1,4 @@
-import { ActivityTranspilerProps } from "./index";
+import type { ActivityTranspilerProps } from "./index";
 
 // Transpiler for 'Fraction operation' activity
 export default function fractionOperationTranspiler({

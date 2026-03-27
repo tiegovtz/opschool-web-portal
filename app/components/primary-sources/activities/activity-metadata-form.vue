@@ -1,0 +1,102 @@
+<script setup lang="ts">
+import { reactive, watch } from "vue";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Input from "@/components/ui/inputs/input";
+import { Textarea } from "@/components/ui/textarea";
+import type { ActivityMetadata } from "./forms";
+import { defaultActivityMetadata } from "./forms";
+
+type Props = {
+  onSubmit?: (metadata: ActivityMetadata) => void;
+  onCancel?: () => void;
+  defaultValues?: Partial<ActivityMetadata>;
+  isSubmitting?: boolean;
+  isEditMode?: boolean;
+  hideActions?: boolean;
+};
+
+const props = withDefaults(defineProps<Props>(), {
+  isSubmitting: false,
+  isEditMode: false,
+  hideActions: false,
+});
+
+const metadata = reactive<ActivityMetadata>(defaultActivityMetadata(props.defaultValues));
+
+watch(
+  () => props.defaultValues,
+  (value) => {
+    Object.assign(metadata, defaultActivityMetadata(value));
+  },
+  { deep: true },
+);
+
+const handleSubmit = () => {
+  props.onSubmit?.({
+    ...metadata,
+    summary: metadata.summary?.trim() || "",
+  });
+};
+</script>
+
+<template>
+  <Card>
+    <CardHeader>
+      <CardTitle>Activity Metadata</CardTitle>
+    </CardHeader>
+
+    <CardContent class="space-y-4">
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-oceanBlue">Activity Name</label>
+          <Input v-model="metadata.activityName" placeholder="Activity name" />
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-oceanBlue">Sub Topic</label>
+          <Input v-model="metadata.subTopic" placeholder="Sub topic" />
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-oceanBlue">Grade ID</label>
+          <Input v-model="metadata.gradeId" placeholder="e.g. 4" />
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-oceanBlue">Subject ID</label>
+          <Input v-model="metadata.subjectId" placeholder="e.g. 12" />
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-oceanBlue">Topic ID</label>
+          <Input v-model="metadata.topicId" placeholder="e.g. 38" />
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-oceanBlue">Summary Image Path</label>
+          <Input v-model="metadata.summaryPath" placeholder="/uploads/activity-image.png" />
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <label class="text-sm font-medium text-oceanBlue">Summary</label>
+        <Textarea v-model="metadata.summary" class="min-h-[96px]" placeholder="Optional summary shown in Learn More" />
+      </div>
+
+      <label class="flex items-center gap-3 rounded-xl border border-oceanBlue/10 bg-sky-50 px-4 py-3 text-sm text-oceanBlue">
+        <input v-model="metadata.isPremium" type="checkbox" class="h-4 w-4">
+        Premium activity
+      </label>
+
+      <div v-if="!props.hideActions" class="flex justify-end gap-3">
+        <Button v-if="props.onCancel" variant="outline-brand" @click="props.onCancel">
+          Cancel
+        </Button>
+        <Button :disabled="props.isSubmitting" @click="handleSubmit">
+          {{ props.isEditMode ? "Save Metadata" : "Continue" }}
+        </Button>
+      </div>
+    </CardContent>
+  </Card>
+</template>

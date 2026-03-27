@@ -26,3 +26,27 @@ export interface VideoInteraction {
     incorrect: string;
   };
 }
+
+export interface QuizOption {
+  id: string;
+  label: string;
+}
+
+export interface Interaction {
+  id: string;
+  type: string;
+  startTime: number;
+  endTime: number;
+  question?: string;
+  options?: QuizOption[];
+  correctAnswer?: string;
+  feedback?: {
+    correct: string;
+    incorrect: string;
+  };
+}
+
+export interface QuizInteraction extends Interaction {
+  type: "quiz";
+  options: QuizOption[];
+}

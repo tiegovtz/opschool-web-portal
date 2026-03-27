@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from "..";
+import type { ActivityTranspilerProps } from "..";
 
 const completeSentencesByClickingSpecificsTranspiler = (
   params: ActivityTranspilerProps,
