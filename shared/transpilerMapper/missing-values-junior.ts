@@ -1,5 +1,5 @@
 import { shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 const missingValuesJuniorTranspiler = (params: ActivityTranspilerProps) => {
   const { serverQuestions, titleDescription, setWrongQuestionsFormat } = params;
@@ -22,7 +22,7 @@ const missingValuesJuniorTranspiler = (params: ActivityTranspilerProps) => {
 
   return {
     title: titleDescription,
-    numberRange: serverQuestions[0].textThree,
+    numberRange: serverQuestions[0]?.textThree,
     sequences: shuffle(
       serverQuestions.map((item) => {
         const sequence = item.textOne

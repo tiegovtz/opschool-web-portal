@@ -1,4 +1,4 @@
-import { ActivityTranspilerProps } from ".";
+import { type ActivityTranspilerProps } from ".";
 import { getImageUrl, shuffle } from "@/lib/utils";
 
 const completeMatrixTranspiler = (params: ActivityTranspilerProps) => {
@@ -20,9 +20,9 @@ const completeMatrixTranspiler = (params: ActivityTranspilerProps) => {
   return {
     title: titleDescription,
     titles: [
-      serverQuestions[0].textOne,
-      serverQuestions[0].textTwo,
-      serverQuestions[0].textThree,
+      serverQuestions[0]?.textOne,
+      serverQuestions[0]?.textTwo,
+      serverQuestions[0]?.textThree,
     ],
     options: shuffle(
       serverQuestions

@@ -1,5 +1,5 @@
 import { getImageUrl } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 import { ActivityType } from "@/lib/types/activity-types";
 
 const itemsLabellingTranspiler = (params: ActivityTranspilerProps) => {
@@ -18,7 +18,7 @@ const itemsLabellingTranspiler = (params: ActivityTranspilerProps) => {
   // Handle "Items labeling without clues Game" mode
   if (algorithm === ActivityType.ItemsLabelingWithoutCluesGame) {
     // For game mode, we expect the first question to have type in textOne
-    if (!serverQuestions.length || !serverQuestions[0].textOne) {
+    if (!serverQuestions.length || !serverQuestions[0]?.textOne) {
       setWrongQuestionsFormat(true);
       return;
     }
@@ -28,7 +28,7 @@ const itemsLabellingTranspiler = (params: ActivityTranspilerProps) => {
       title: activityNotes[0],
       isGameMode: true,
       gameTimeLimit: serverQuestions[0]?.textTwo || 100,
-      type: serverQuestions[0].textOne,
+      type: serverQuestions[0]?.textOne,
       algorithm,
       questions: [], // Will be populated by the component using the hook
     };

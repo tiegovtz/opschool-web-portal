@@ -1,6 +1,6 @@
 import { ActivityType } from "@/types/activity-types";
 import {
-  // CompleteSentenceByRephrasingWithChoices,
+  CompleteSentenceByRephrasingWithChoices,
   CompleteSentenceByRephrasing,
   CompleteSentencesBySelectingCorrectOnes,
   CompleteSentencesByDraggingCluesActivity,
@@ -15,7 +15,7 @@ import {
 
 export const completeSentenceMapper = {
   [ActivityType.CompleteSentenceByRephrasingWithChoices]:
-    CompleteSentenceByRephrasing,
+    CompleteSentenceByRephrasingWithChoices,
   [ActivityType.CompleteSentencesByRephrasing]: CompleteSentenceByRephrasing,
   [ActivityType.CompleteSentencesTwoFieldsNoClues]:
     CompleteSentenceByRephrasing,
@@ -28,6 +28,8 @@ export const completeSentenceMapper = {
   [ActivityType.CompleteSentencesByDraggingCluesPics2]:
     CompleteSentencesByDraggingCluesActivity,
   [ActivityType.CompleteSentencesByDraggingCluesPics]:
+    CompleteSentencesByDraggingCluesActivity,
+  [ActivityType.CompleteSentenceByDraggingCluesWithNotes]:
     CompleteSentencesByDraggingCluesActivity,
   [ActivityType.CompleteSentencesWithTwoClauses]:
     CompleteSentencesWithTwoClausesActivity,

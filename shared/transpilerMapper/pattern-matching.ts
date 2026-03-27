@@ -1,5 +1,5 @@
 import { shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from "./index";
+import type { ActivityTranspilerProps } from "./index";
 
 export const patternMatchingTranspiler = ({
   serverQuestions,

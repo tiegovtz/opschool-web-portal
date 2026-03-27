@@ -1,4 +1,4 @@
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 import { getImageUrl } from "@/lib/utils";
 
 const tableCheckboxFillingTranspiler = (params: ActivityTranspilerProps) => {
@@ -22,7 +22,7 @@ const tableCheckboxFillingTranspiler = (params: ActivityTranspilerProps) => {
 
   return {
     title: titleDescription.split("||")[0],
-    tableTitles: serverQuestions[0].textOne?.split("/") || [],
+    tableTitles: serverQuestions[0]?.textOne?.split("/") || [],
     fontSize: titleDescription.split("||")[1],
     questions: serverQuestions.slice(1).map((question) => ({
       title: {

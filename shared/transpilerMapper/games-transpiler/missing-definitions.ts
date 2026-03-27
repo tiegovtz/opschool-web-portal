@@ -1,6 +1,5 @@
 import { getRandomItems, shuffle } from "@/lib/utils";
-import { GameObject } from "@/hooks/useObjects";
-import { ActivityTranspilerProps } from "..";
+import type { ActivityTranspilerProps } from "..";
 
 interface MissingDefinitionsTranspilerParams {
   objects: GameObject[];
@@ -77,7 +76,7 @@ const missingDefinitionsGameTranspilerWrapper = (
   const { titleDescription, serverQuestions } = params;
   return {
     title: titleDescription.split("||")[0],
-    type: serverQuestions[0].textOne,
+    type: serverQuestions?.[0]?.textOne,
     isGameMode: true,
     gameTimeLimit: 300, // || serverQuestions[0].textTwo || 120,
     fontSize: titleDescription.split("||")[1] || 20,

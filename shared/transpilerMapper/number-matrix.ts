@@ -1,4 +1,4 @@
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 export const NumberMatrixTranspiler = (params: ActivityTranspilerProps) => {
   const { serverQuestions, titleDescription, setWrongQuestionsFormat } = params;
@@ -35,7 +35,7 @@ export const NumberMatrixTranspiler = (params: ActivityTranspilerProps) => {
           patternIndices.push(index);
 
           // Extract the correct answer (the number itself)
-          const numberPart = seqItem.split("/")[0];
+          const numberPart = seqItem.split("/")[0] || "0";
           correctAnswers.push(parseInt(numberPart, 10));
         } else {
           // Regular number

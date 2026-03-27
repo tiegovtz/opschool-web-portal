@@ -1,6 +1,6 @@
 import { getImageUrl } from "@/lib/utils";
 import { ActivityType } from "@/lib/types/activity-types";
-import { ServerQuestionType } from "@/lib/types/activity-props";
+import type { ServerQuestionType } from "@/lib/types/activity-props";
 
 const dialogDifferencesPropsTranspiler = (params: {
   titleDescription: string;
@@ -63,7 +63,7 @@ const dialogDifferencesPropsTranspiler = (params: {
     rightLabel: titleDescription.split("/")[2],
     lockSide: algorithm === ActivityType.DialogOneSideFixed ? "left" : null,
     fontSize: titleDescription.includes("||")
-      ? parseInt(titleDescription.split("||")[1], 10) || 20
+      ? parseInt(titleDescription.split("||")[1] ?? "20", 10) || 20
       : 20,
 
     items,

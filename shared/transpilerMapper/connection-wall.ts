@@ -1,4 +1,4 @@
-import { ActivityTranspilerProps } from ".";
+import { type ActivityTranspilerProps } from ".";
 import { getImageUrl, shuffle } from "@/lib/utils";
 import { ActivityType } from "@/lib/types/activity-types";
 
@@ -60,66 +60,66 @@ export const connectionWallTranspiler = (params: ActivityTranspilerProps) => {
   const numItemsPerGroup =
     algorithm === ActivityType.ConnectionWallThreeRows ? 3 : 4;
 
-  const categoryOneItems = serverQuestions[0].textOne
+  const categoryOneItems = serverQuestions[0]?.textOne
     ?.split(",")
     .slice(0, numItemsPerGroup)
     .map((item, index) => {
       return {
         id: item,
         name: algorithm !== ActivityType.ConnectionWallPic ? item : undefined,
-        category: serverQuestions[0].textOne?.split(",")[numItemsPerGroup],
+        category: serverQuestions[0]?.textOne?.split(",")[numItemsPerGroup],
         imgSrc:
           algorithm === ActivityType.ConnectionWallPic ||
           algorithm === ActivityType.ConnectionWallPicText
-            ? getImageUrl(serverQuestions[index].path || "")
+            ? getImageUrl(serverQuestions[index]?.path || "")
             : undefined,
       };
     });
 
-  const categoryTwoItems = serverQuestions[0].textTwo
+  const categoryTwoItems = serverQuestions[0]?.textTwo
     ?.split(",")
     .slice(0, numItemsPerGroup)
     .map((item, index) => {
       return {
         id: item,
         name: algorithm !== ActivityType.ConnectionWallPic ? item : undefined,
-        category: serverQuestions[0].textTwo?.split(",")[numItemsPerGroup],
+        category: serverQuestions[0]?.textTwo?.split(",")[numItemsPerGroup],
         imgSrc:
           algorithm === ActivityType.ConnectionWallPic ||
           algorithm === ActivityType.ConnectionWallPicText
-            ? getImageUrl(serverQuestions[index].pathTwo || "")
+            ? getImageUrl(serverQuestions[index]?.pathTwo || "")
             : undefined,
       };
     });
 
-  const categoryThreeItems = serverQuestions[0].textThree
+  const categoryThreeItems = serverQuestions[0]?.textThree
     ?.split(",")
     .slice(0, numItemsPerGroup)
     .map((item, index) => {
       return {
         id: item,
         name: algorithm !== ActivityType.ConnectionWallPic ? item : undefined,
-        category: serverQuestions[0].textThree?.split(",")[numItemsPerGroup],
+        category: serverQuestions[0]?.textThree?.split(",")[numItemsPerGroup],
         imgSrc:
           algorithm === ActivityType.ConnectionWallPic ||
           algorithm === ActivityType.ConnectionWallPicText
-            ? getImageUrl(serverQuestions[index].pathThree || "")
+            ? getImageUrl(serverQuestions[index]?.pathThree || "")
             : undefined,
       };
     });
 
-  const categoryFourItems = serverQuestions[0].textFour
+  const categoryFourItems = serverQuestions[0]?.textFour
     ?.split(",")
     .slice(0, numItemsPerGroup)
     .map((item, index) => {
       return {
         id: item,
         name: algorithm !== ActivityType.ConnectionWallPic ? item : undefined,
-        category: serverQuestions[0].textFour?.split(",")[numItemsPerGroup],
+        category: serverQuestions[0]?.textFour?.split(",")[numItemsPerGroup],
         imgSrc:
           algorithm === ActivityType.ConnectionWallPic ||
           algorithm === ActivityType.ConnectionWallPicText
-            ? getImageUrl(serverQuestions[index].pathFour || "")
+            ? getImageUrl(serverQuestions[index]?.pathFour || "")
             : undefined,
       };
     });

@@ -1,5 +1,6 @@
-import { shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from "..";
+
+import { shuffle } from "~/utilities/utils";
+import { type ActivityTranspilerProps } from "..";
 import { ActivityType } from "@/lib/types/activity-types";
 
 const completeSentenceRearrangeDraggingTranspiler = (

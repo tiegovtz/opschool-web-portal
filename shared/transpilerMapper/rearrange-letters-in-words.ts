@@ -1,5 +1,5 @@
 import { getImageUrl, shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 import { ActivityType } from "@/lib/types/activity-types";
 
 const rearrangeLettersInWordsTranspiler = (params: ActivityTranspilerProps) => {
@@ -16,8 +16,8 @@ const rearrangeLettersInWordsTranspiler = (params: ActivityTranspilerProps) => {
     // For game mode, we expect the first question to have type in textOne and words count in textTwo
     if (
       !serverQuestions.length ||
-      !serverQuestions[0].textOne ||
-      !serverQuestions[0].textTwo
+      !serverQuestions[0]?.textOne ||
+      !serverQuestions[0]?.textTwo
     ) {
       setWrongQuestionsFormat(true);
       return;
@@ -27,8 +27,8 @@ const rearrangeLettersInWordsTranspiler = (params: ActivityTranspilerProps) => {
     return {
       title: titleDescription,
       isGameMode: true,
-      type: serverQuestions[0].textOne,
-      words: serverQuestions[0].textTwo,
+      type: serverQuestions[0]?.textOne,
+      words: serverQuestions[0]?.textTwo,
       questions: [], // Will be populated by the component using the hook
     };
   }

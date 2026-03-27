@@ -1,5 +1,5 @@
 import { getImageUrl, shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 const missingLettersWordsTranspiler = (params: ActivityTranspilerProps) => {
   const { serverQuestions, setWrongQuestionsFormat, titleDescription } = params;

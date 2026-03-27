@@ -1,5 +1,4 @@
-import React from "react";
-import { ActivityTranspilerProps } from ".";
+import { type ActivityTranspilerProps } from ".";
 import { shuffle } from "@/lib/utils";
 
 const completeSentencesBySelectingCorrectOnesTranspiler = (
@@ -17,7 +16,7 @@ const completeSentencesBySelectingCorrectOnesTranspiler = (
 
   if (isWrongFormat) {
     setWrongQuestionsFormat(true);
-    return;
+    return null;
   }
 
   return {

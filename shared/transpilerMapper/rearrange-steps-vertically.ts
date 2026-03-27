@@ -1,5 +1,5 @@
 import { shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 export const rearrangeStepsVerticallyTranspiler = (
   params: ActivityTranspilerProps,

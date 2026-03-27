@@ -1,5 +1,5 @@
 import { shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 // Helper function to clean strings by removing extra spaces while preserving content
 const cleanString = (str: string): string => {

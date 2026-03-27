@@ -1,4 +1,5 @@
-import { ActivityTranspilerProps } from "../index";
+// import { ActivityTranspilerProps } from "../index";
+import type { ActivityTranspilerProps } from "..";
 
 const shortAnswerQuestionsGameTranspiler = ({
   titleDescription,
@@ -24,7 +25,7 @@ const shortAnswerQuestionsGameTranspiler = ({
 
     // Extract fontSize from textThree (default 20)
     const fontSize = titleDescription.split("||")[1]
-      ? parseInt(titleDescription.split("||")[1])
+      ? parseInt(titleDescription.split("||")[1] as string)
       : 20;
 
     if (!type) {

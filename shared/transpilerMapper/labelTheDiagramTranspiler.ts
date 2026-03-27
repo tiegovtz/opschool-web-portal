@@ -1,5 +1,5 @@
 import { getCommonSeparator, getImageUrl } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 export const labelTheDiagramTranspiler = (params: ActivityTranspilerProps) => {
   const { titleDescription, serverQuestions, setWrongQuestionsFormat } = params;
@@ -26,15 +26,15 @@ export const labelTheDiagramTranspiler = (params: ActivityTranspilerProps) => {
     }
     ${activityNotes[activityNotes.length - 1]}`,
     image: getImageUrl(
-      serverQuestions[0].path || serverQuestions[0].pathTwo || ""
+      serverQuestions[0]?.path || serverQuestions[0]?.pathTwo || ""
     ),
     questions: serverQuestions.map((question) => ({
-      question: question.textOne,
-      title: question.textThree || "",
+      question: question?.textOne,
+      title: question?.textThree || "",
       answers: Array.from(
         new Set(
-          question.textTwo
-            ?.split(getCommonSeparator(question.textTwo))
+          question?.textTwo
+            ?.split(getCommonSeparator(question?.textTwo))
             .map((option) => option.trim())
         )
       ),

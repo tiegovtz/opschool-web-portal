@@ -1,4 +1,4 @@
-import { ActivityTranspilerProps } from "./index";
+import type { ActivityTranspilerProps } from "./index";
 
 // Transpiler for 'Two units operation' activity
 export default function twoUnitsOperationTranspiler({

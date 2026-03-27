@@ -1,5 +1,5 @@
 import { getImageUrl, shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from "..";
+import type { ActivityTranspilerProps } from "..";
 
 const multipleChoiceGameTranspiler = (params: ActivityTranspilerProps) => {
   const { serverQuestions, setWrongQuestionsFormat, titleDescription } = params;
@@ -9,7 +9,7 @@ const multipleChoiceGameTranspiler = (params: ActivityTranspilerProps) => {
     if (
       !question.textOne ||
       !question.textTwo ||
-      !(question.textTwo.split("//")[0].split("/").length > 2)
+      !((question?.textTwo?.split("//")[0]?.split("/") as any[])?.length > 2)
     )
       isWrongFormat = true;
   });
@@ -26,14 +26,14 @@ const multipleChoiceGameTranspiler = (params: ActivityTranspilerProps) => {
       question: question.textOne?.toString().trim(),
       questionImage: question.path ? getImageUrl(question.path) : undefined,
       options: question.textTwo
-        ? shuffle(question.textTwo.split("//")[0].split("/"))
+        ? shuffle(question.textTwo.split("//")[0]?.split("/") as any[])
         : [],
       correctAnswer: question.textTwo
-        ? question.textTwo.split("//")[0].split("/")[0]
+        ? question.textTwo.split("//")[0]?.split("/")[0]
         : "",
       ...(question.textTwo && question.textTwo?.split("//").length > 1
         ? {
-            time: parseInt(question.textTwo?.split("//")[1]),
+            time: parseInt(question.textTwo?.split("//")[1] as string),
           }
         : {}),
     })),

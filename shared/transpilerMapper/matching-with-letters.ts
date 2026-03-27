@@ -1,5 +1,5 @@
 import { getImageUrl, shuffle } from "@/lib/utils";
-import { ActivityTranspilerProps } from ".";
+import type { ActivityTranspilerProps } from ".";
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
 
@@ -23,7 +23,7 @@ export const matchingWithLettersTranspiler = (
 
   const answers = shuffle(titleDescription?.split("/").slice(1)).map(
     (answer, i) => {
-      return `${alphabet[i].toUpperCase()}| ${answer}`;
+      return `${alphabet[i]?.toUpperCase()}| ${answer}`;
     },
   );
 
@@ -37,8 +37,8 @@ export const matchingWithLettersTranspiler = (
         correctAnswer: answers
           .find(
             (answer) =>
-              answer.split("|")[1].trim().toLowerCase() ===
-              (question.textTwo?.split("/")[i].trim().toLowerCase() || ""),
+              answer.split("|")[1]?.trim().toLowerCase() ===
+              (question.textTwo?.split("/")[i]?.trim().toLowerCase() || ""),
           )
           ?.split("|")[0],
       };

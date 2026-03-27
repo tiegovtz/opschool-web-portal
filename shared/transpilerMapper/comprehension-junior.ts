@@ -1,4 +1,4 @@
-import { ActivityTranspilerProps } from ".";
+import { type ActivityTranspilerProps } from ".";
 import { getCommonSeparator, getImageUrl, shuffle } from "@/lib/utils";
 
 export const comprehensionJuniorPropsTranspiler = (
@@ -29,7 +29,7 @@ export const comprehensionJuniorPropsTranspiler = (
   const activityNotes = titleDescription.split("//");
   const optionsTitle =
     activityNotes.length > 2
-      ? activityNotes[activityNotes.length - 1].trim()
+      ? activityNotes[activityNotes.length - 1]?.trim()
       : "Answer options";
 
   const theQuestions = serverQuestions.map((question) => {
@@ -38,7 +38,7 @@ export const comprehensionJuniorPropsTranspiler = (
       image: question.path
         ? getImageUrl(question.path)
         : algorithm === "Comprehension junior one"
-        ? getImageUrl(serverQuestions[0].path || "")
+        ? getImageUrl(serverQuestions[0]?.path || "")
         : "",
       answers:
         algorithm === "Comprehension junior one"
@@ -93,11 +93,11 @@ export const comprehensionJuniorPropsTranspiler = (
           ${activityNotes[activityNotes.length - 1]}`,
     image:
       algorithm === "Comprehension junior two" &&
-      serverQuestions[0].path &&
-      serverQuestions[0].pathTwo &&
-      getImageUrl(serverQuestions[0].pathTwo || ""),
+      serverQuestions[0]?.path &&
+      serverQuestions[0]?.pathTwo &&
+      getImageUrl(serverQuestions[0]?.pathTwo || ""),
     optionsTitle,
-    useAI: activityNotes[activityNotes.length - 2].trim() === "AI",
+    useAI: activityNotes[activityNotes.length - 2]?.trim() === "AI",
     questions: examMode ? shuffle(theQuestions) : theQuestions,
   };
 };

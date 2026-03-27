@@ -1,5 +1,5 @@
 import { getImageUrl } from "@/lib/utils";
-import { ActivityTranspilerProps } from "../index";
+import type { ActivityTranspilerProps } from "..";
 
 export interface OpenEndedQuestionsServerData {
   id: number;
@@ -348,8 +348,8 @@ function parseLegacyFormat(
     const marksMatch = text.match(/^(.*?)\s*\((\d+)\)\s*$/);
     if (marksMatch) {
       return {
-        cleanText: marksMatch[1].replace(/_+/g, "").trim(),
-        marks: parseInt(marksMatch[2]),
+        cleanText: (marksMatch[1]as string).replace(/_+/g, "").trim(),
+        marks: parseInt(marksMatch[2] as string),
       };
     }
     return {
@@ -393,7 +393,7 @@ function parseLegacyFormat(
   // Process each line
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const trimmedLine = line.trim();
+    const trimmedLine = line?.trim();
 
     if (!trimmedLine) {
       // Empty line - preserve for formatting but only if we're already collecting content
@@ -422,7 +422,7 @@ function parseLegacyFormat(
           };
           result.parts.push(currentPart);
 
-          const { cleanText, marks } = extractMarks(partMatch[2]);
+          const { cleanText, marks } = extractMarks(partMatch[2] as string);
           if (marks !== null) {
             // Part has marks, so it has its own answer input
             currentPart.questionText = cleanText;
@@ -469,7 +469,7 @@ function parseLegacyFormat(
       result.parts.push(currentPart);
       currentState = "part";
 
-      const { cleanText, marks } = extractMarks(partMatch[2]);
+      const { cleanText, marks } = extractMarks(partMatch[2] as string);
       if (marks !== null) {
         // Part has marks, so it has its own answer input
         currentPart.questionText = cleanText;
@@ -497,7 +497,7 @@ function parseLegacyFormat(
       ensureCurrentPart();
 
       // Check if this sub-question has marks immediately
-      const { cleanText, marks } = extractMarks(subMatch[2]);
+      const { cleanText, marks } = extractMarks(subMatch[2] as string);
       if (marks !== null) {
         // Complete sub-question on one line
         currentPart.subQuestions.push(
@@ -538,8 +538,8 @@ function parseLegacyFormat(
         if (currentState === "collecting") {
           // Look backwards to find the most recent sub-question marker
           for (let j = i - 1; j >= 0; j--) {
-            const prevLine = lines[j].trim();
-            const prevSubMatch = prevLine.match(/^([ivxlc]+)\.\s*/);
+            const prevLine = lines[j]?.trim();
+            const prevSubMatch = prevLine?.match(/^([ivxlc]+)\.\s*/);
             if (prevSubMatch) {
               subLabel = `${prevSubMatch[1]}.`;
               break;
@@ -557,7 +557,7 @@ function parseLegacyFormat(
     }
 
     // Regular content line - preserve original spacing for better formatting
-    currentLines.push(line);
+    currentLines.push(line as string);
   }
 
   // Handle any remaining collected content
@@ -654,7 +654,7 @@ export function openEndedQuestionsTranspiler(
       // Extract numeric part from question numbers (e.g., "1." -> 1, "2." -> 2)
       const getQuestionNumber = (questionNumber: string): number => {
         const match = questionNumber.match(/(\d+)/);
-        return match ? parseInt(match[1], 10) : 0;
+        return match ? parseInt(match[1] as string, 10) : 0;
       };
 
       const aNum = getQuestionNumber(a.questionNumber);
