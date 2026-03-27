@@ -8,6 +8,38 @@ const level = ref<string>('')
 const standard = ref<string>('')
 const subject = ref<string>('')
 
+const EDUCATION_LEVEL_RENDER_ORDER: Record<string, number> = {
+  "Pre-Primary": 0,
+  Primary: 1,
+  "Lower Secondary": 2,
+  "Upper Secondary": 3,
+  "Teacher Education": 4,
+}
+
+const sortedEducationLevels = computed(() => {
+  const list = educationLevels.value || []
+  return [...list].sort((a, b) => {
+    const aOrder = EDUCATION_LEVEL_RENDER_ORDER[a?.name ?? ""] ?? Number.MAX_SAFE_INTEGER
+    const bOrder = EDUCATION_LEVEL_RENDER_ORDER[b?.name ?? ""] ?? Number.MAX_SAFE_INTEGER
+    if (aOrder !== bOrder) return aOrder - bOrder
+    return (a?.name ?? "").localeCompare(b?.name ?? "")
+  })
+})
+
+watch(level, (newLevel, oldLevel) => {
+  if (newLevel !== oldLevel) {
+    standard.value = ''
+    subject.value = ''
+    sendEmits()
+  }
+})
+
+watch(standard, (newStandard, oldStandard) => {
+  if (newStandard !== oldStandard) {
+    subject.value = ''
+    sendEmits()
+  }
+})
 
 
 const emit = defineEmits([
@@ -45,40 +77,28 @@ const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjec
         class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
         <option v-if="educationLevels" value="">Select level</option>
         <option v-else value="">loading .. </option>
-        <option v-for="(level, i) in educationLevels" :value="level.name.toLowerCase()"
-          :key="`education-level-option-${level._id}-${i}`">{{ level.name }}</option>
+        <option v-for="(lvl, i) in sortedEducationLevels" :value="lvl.name.toLowerCase()"
+          :key="`education-level-option-${lvl._id}-${i}`">{{ lvl.name }}</option>
       </select>
 
       <!-- Secondary School Level Selection -->
-      <select v-model="standard" v-if="level.trim()" name="classLevel" id="" @change="sendEmits"
-        class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
+      <select v-model="standard" name="classLevel" id="" @change="sendEmits" :disabled="!level.trim()"
+        class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue disabled:opacity-60 disabled:cursor-not-allowed">
         <option v-if="classes" value="">Select class</option>
         <option v-else value="">loading .. </option>
         <option v-for="(cls, i) in classes?.filter(c => c.educationLevel.name.toLowerCase() === level)" :value="cls.name"
-          :key="`class-level-option-${cls._id}-${i}`">{{ cls.name
-          }}</option>
-      </select>
-      <!-- Level Selection -->
-      <select v-model="standard" v-else name="classLevel" id="" @change="sendEmits"
-        class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
-        <option value="">Select level first</option>
+          :key="`class-level-option-${cls._id}-${i}`">{{ cls.name }}</option>
       </select>
 
       <!-- Subject -->
-      <select name="" v-if="level.trim() && standard.trim()" v-model="subject" id="" @change="sendEmits"
-        class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
+      <select name="" v-model="subject" id="" @change="sendEmits" :disabled="!(level.trim() && standard.trim())"
+        class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue disabled:opacity-60 disabled:cursor-not-allowed">
         <option v-if="subjects" value="">Select subject</option>
         <option v-else value="">loading .. </option>
-        <option v-for="(sbj, i) in subjects" :value="sbj.name"
-          :key="`subjects-option-${sbj._id}-${i}`">{{ sbj.name
-          }}</option>
+        <option v-for="(sbj, i) in subjects" :value="sbj.name" :key="`subjects-option-${sbj._id}-${i}`">
+          {{ sbj.name }}
+        </option>
       </select>
-
-      <!-- Subject -->
-      <select name="" v-else v-model="subject" id="" @change="sendEmits"
-      class="w-full h-10 px-2 border-b border-gray-300 focus:outline-none focus:ring-0 focus:border-oceanBlue">
-      <option value="">Select class first</option>
-    </select>
     </form>
 
     <HomeSearchbar />
