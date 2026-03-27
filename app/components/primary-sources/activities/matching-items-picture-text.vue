@@ -5,7 +5,7 @@ import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "@/components/templates/results";
-import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
+// import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import { useObjects } from "@/hooks/useObjects";
 import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper";
 
