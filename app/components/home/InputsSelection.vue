@@ -104,17 +104,17 @@ const content = computed(() =>
     ? {
         selectLevel: "Chagua ngazi ya elimu",
         selectClass: "Chagua darasa",
-        selectLevelFirst: "Chagua ngazi kwanza",
+        selectLevelFirst: "Chagua ngazi",
         selectSubject: "Chagua somo",
-        selectClassFirst: "Chagua darasa kwanza",
+        selectClassFirst: "Chagua somo",
         loading: "Inapakia...",
       }
     : {
         selectLevel: "Select education level",
         selectClass: "Select class",
-        selectLevelFirst: "Select level first",
+        selectLevelFirst: "Select class",
         selectSubject: "Select subject",
-        selectClassFirst: "Select class first",
+        selectClassFirst: "Select subject",
         loading: "Loading...",
       },
 );
