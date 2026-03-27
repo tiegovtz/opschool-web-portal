@@ -1,163 +1,163 @@
-import dynamic from "next/dynamic";
+import { defineAsyncComponent } from "vue";
 
-export const MultipleChoiceWithNotes = dynamic(
-  () => import("@/components/activities/multiple-choice-with-notes"),
+export const MultipleChoiceWithNotes = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/multiple-choice-with-notes"),
 );
 
-export const ComprehensionJunior = dynamic(
-  () => import("@/components/activities/comprehension-junior"),
+export const ComprehensionJunior = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/comprehension-junior"),
 );
 
-export const PictureOrStoryFollowedByQuestionsTrueFalseActivity = dynamic(
+export const PictureOrStoryFollowedByQuestionsTrueFalseActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/picture-or-story-followed-by-questions-true-false"
+      "~/components/primary-sources/activities/picture-or-story-followed-by-questions-true-false"
     ),
 );
 
-export const PictureOrStoryFollowedByQuestionsActivity = dynamic(
+export const PictureOrStoryFollowedByQuestionsActivity = defineAsyncComponent(
   () =>
-    import("@/components/activities/picture-or-story-followed-by-questions"),
+    import("~/components/primary-sources/activities/picture-or-story-followed-by-questions"),
 );
 
-export const MatchingWithLettersActivity = dynamic(
-  () => import("@/components/activities/matching-with-letters"),
+export const MatchingWithLettersActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/matching-with-letters"),
 );
 
-export const CompleteParagraphWithCluesJunior = dynamic(
-  () => import("@/components/activities/complete-paragraph-with-clues-junior"),
+export const CompleteParagraphWithCluesJunior = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/complete-paragraph-with-clues-junior"),
 );
 
-export const CompleteParagraphWithoutClues = dynamic(
-  () => import("@/components/activities/complete-paragraph-without-clues"),
+export const CompleteParagraphWithoutClues = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/complete-paragraph-without-clues"),
 );
 
-export const RearrangeStepsVerticallyActivity = dynamic(
-  () => import("@/components/activities/rearrange-steps-vertically"),
+export const RearrangeStepsVerticallyActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/rearrange-steps-vertically.vue"),
 );
 
-export const RearrangeTheSteps = dynamic(
-  () => import("@/components/activities/rearrange-the-steps"),
+export const RearrangeTheSteps = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/rearrange-the-steps"),
 );
 
-export const ArrangeStepsActivity = dynamic(
-  () => import("@/components/activities/arrange-steps"),
+export const ArrangeStepsActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/arrange-steps"),
 );
 
-export const CompleteMatrix = dynamic(
-  () => import("@/components/activities/complete-matrix"),
+export const CompleteMatrix = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/complete-matrix"),
 );
 
-export const TableCheckBoxes = dynamic(
-  () => import("@/components/activities/table-check-boxes"),
+export const TableCheckBoxes = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/table-check-boxes"),
 );
 
-export const TableCheckBoxesFilling = dynamic(
-  () => import("@/components/activities/table-checkbox-filling"),
+export const TableCheckBoxesFilling = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/table-checkbox-filling"),
 );
 
-export const ItemsLabellingActivity = dynamic(
-  () => import("@/components/activities/items-labelling"),
+export const ItemsLabellingActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/items-labelling"),
 );
 
-export const LabelTheDiagram = dynamic(
-  () => import("@/components/activities/label-the-diagram"),
+export const LabelTheDiagram = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/label-the-diagram"),
 );
 
-export const MatchingItemsPictureTextActivity = dynamic(
-  () => import("@/components/activities/matching-items-picture-text"),
+export const MatchingItemsPictureTextActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/matching-items-picture-text"),
 );
 
-export const HiddenWords = dynamic(
-  () => import("@/components/activities/hidden-words"),
+export const HiddenWords = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/hidden-words"),
 );
 
-export const CountingObjectsActivity = dynamic(
-  () => import("@/components/activities/numbers-activities/counting-objects"),
+export const CountingObjectsActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/numbers-activities/counting-objects"),
 );
 
-export const AdditionSubtractionObjectsActivity = dynamic(
+export const AdditionSubtractionObjectsActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/numbers-activities/addition-subtraction-objects"
+      "~/components/primary-sources/activities/numbers-activities/addition-subtraction-objects"
     ),
 );
 
-export const CountingMixedObjectsActivity = dynamic(
-  () => import("@/components/activities/counting-mixed-objects"),
+export const CountingMixedObjectsActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/counting-mixed-objects"),
 );
 
-export const MissingValuesActivity = dynamic(
-  () => import("@/components/activities/missing-values"),
+export const MissingValuesActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/missing-values"),
 );
 
-export const MissingValuesJuniorActivity = dynamic(
-  () => import("@/components/activities/missing-values-junior"),
+export const MissingValuesJuniorActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/missing-values-junior"),
 );
 
-export const NumberMatrixActivity = dynamic(
-  () => import("@/components/activities/number-matrix"),
+export const NumberMatrixActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/number-matrix"),
 );
 
-export const AbacusActivity = dynamic(
-  () => import("@/components/activities/abacus-activity"),
+export const AbacusActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/abacus-activity"),
 );
 
-export const AbacusReverseActivity = dynamic(
-  () => import("@/components/activities/reverse-abacus-activity"),
+export const AbacusReverseActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/reverse-abacus-activity"),
 );
 
-export const PlaceValuesMatrixActivity = dynamic(
-  () => import("@/components/activities/place-values-matrix"),
+export const PlaceValuesMatrixActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/place-values-matrix"),
 );
 
-export const ShapesRenderingActivity = dynamic(
-  () => import("@/components/activities/shapes-rendering"),
+export const ShapesRenderingActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/shapes-rendering"),
 );
 
-export const CrosswordActivity = dynamic(
-  () => import("@/components/activities/crossword-puzzle"),
+export const CrosswordActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/crossword-puzzle"),
 );
 
-export const SingleCheckTable = dynamic(
-  () => import("@/components/activities/single-check-table"),
+export const SingleCheckTable = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/single-check-table"),
 );
 
-export const ComparingQuantitiesDraggingActivity = dynamic(
+export const ComparingQuantitiesDraggingActivity = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/numbers-activities/comparingQuantitiesDragging"
+      "~/components/primary-sources/activities/numbers-activities/comparingQuantitiesDragging"
     ),
 );
 
-export const ComparingQuantities = dynamic(
+export const ComparingQuantities = defineAsyncComponent(
   () =>
-    import("@/components/activities/numbers-activities/comparing-quantities"),
+    import("~/components/primary-sources/activities/numbers-activities/comparing-quantities"),
 );
 
-export const ComparingQuantitiesLessMoreWithPics = dynamic(
+export const ComparingQuantitiesLessMoreWithPics = defineAsyncComponent(
   () =>
     import(
-      "@/components/activities/numbers-activities/comparing-quantities-less-more-with-pics"
+      "~/components/primary-sources/activities/numbers-activities/comparing-quantities-less-more-with-pics"
     ),
 );
 
-export const RearrangeLettersInWords = dynamic(
-  () => import("@/components/activities/rearrange-letters-in-words"),
+export const RearrangeLettersInWords = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/rearrange-letters-in-words"),
 );
 
-export const MissingLettersWords = dynamic(
-  () => import("@/components/activities/missing-letters-words"),
+export const MissingLettersWords = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/missing-letters-words"),
 );
 
-export const StrikeOutOddOneActivity = dynamic(
-  () => import("@/components/activities/strike-out-odd-one"),
+export const StrikeOutOddOneActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/strike-out-odd-one"),
 );
 
-export const OpenEndedQuestions = dynamic(
-  () => import("@/components/activities/open-ended-questions"),
+export const OpenEndedQuestions = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/open-ended-questions"),
 );
 
-export const PatternMatchingActivity = dynamic(
-  () => import("@/components/activities/pattern-matching"),
+export const PatternMatchingActivity = defineAsyncComponent(
+  () => import("~/components/primary-sources/activities/pattern-matching"),
 );
