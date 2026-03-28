@@ -119,9 +119,9 @@ const sortedEducationLevelNames = computed(() => {
     const aOrder = EDUCATION_LEVEL_RENDER_ORDER[a] ?? Number.MAX_SAFE_INTEGER;
     const bOrder = EDUCATION_LEVEL_RENDER_ORDER[b] ?? Number.MAX_SAFE_INTEGER;
 
-    // Keep known desired order first; unknown names fall back to alphabetical
+    // Keep known desired order first; unknown names fall back to ascending A–Z
     if (aOrder !== bOrder) return aOrder - bOrder;
-    return a.localeCompare(b);
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
   });
 });
 
@@ -164,7 +164,9 @@ const filterGroups = computed(() => {
     groups.push({
       name: "subject",
       inputType: "radio",
-      items: subjects.value.map((s: Subjects) => s.name),
+      items: [...subjects.value.map((s: Subjects) => s.name)].sort((a, b) =>
+        a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }),
+      ),
       disabled: isSubjectDisabled.value,
     });
   }
@@ -218,7 +220,7 @@ watch(
           pos > -1 ? openMenus.splice(pos, 1) : openMenus.push(i);
         }">
         <h3 class="capitalize font-semibold">
-          {{ group.name }}
+          {{ group.name === "level" ? "Education level" : group.name }}
         </h3>
 
         <Icon :name="openMenus.includes(i)
