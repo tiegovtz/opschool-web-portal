@@ -2,7 +2,7 @@
 // @ts-nocheck
 import { computed, ref, watch } from "vue";
 import { cn, shuffle } from "@/lib/utils";
-import { Input } from "@/components/ui/inputs/input";
+import  Input  from "@/components/ui/inputs/input.vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import LeftNotesWithImages from "@/components/templates/left-notes-with-images";
 import ActivityResults, {

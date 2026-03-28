@@ -7,8 +7,8 @@ export type ActivityComponentProps = {
   feedback?: FeedbackType;
   questions: any;
   isExamMode?: boolean;
-  activityId?: number;
-  userId?: number;
+  activityId?: string;
+  userId?: string;
   autoSaveAnswers?: boolean;
   onActivityComplete?: (
     score: number,

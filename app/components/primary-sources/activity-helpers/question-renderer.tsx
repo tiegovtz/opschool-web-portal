@@ -4,7 +4,7 @@
 import { memo, useMemo, Fragment } from "react";
 import { InlineMath } from "react-katex";
 import { cn, extractKatexSegments } from "@/lib/utils";
-import { Input } from "@/components/ui/inputs/input";
+import  Input  from "@/components/ui/inputs/input";
 import {
   FractionInput,
   detectFractionPattern,

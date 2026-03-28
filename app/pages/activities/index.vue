@@ -169,8 +169,7 @@ const handleDialogChange = (open: boolean) => {
             <h2 class="text-xl font-black leading-tight text-oceanBlue">
               {{ item.activity.activityName }}
             </h2>
-            <p class="line-clamp-3 text-sm leading-6 text-slate-600">
-              {{ item.activity.activityDescription || "No activity description available." }}
+            <p class="line-clamp-3 text-sm leading-6 text-slate-600" v-html="item.activity.activityDescription || `No activity description available.` ">
             </p>
           </div>
 

@@ -3,7 +3,7 @@
 import { computed, ref, watch } from "vue";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/inputs/input";
+import  Input  from "@/components/ui/inputs/input.vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, {
   ActivityResultsAlertDialog,
