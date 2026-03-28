@@ -25,18 +25,21 @@ export const useChatStore = defineStore('chat', {
   },
 
   actions: {
+    sortSessionsByRecent() {
+      this.sessions.sort((a, b) => {
+        const aTime = new Date(a.lastMessageAt || a.updatedAt || a.createdAt).getTime();
+        const bTime = new Date(b.lastMessageAt || b.updatedAt || b.createdAt).getTime();
+        return bTime - aTime;
+      });
+    },
+
     async loadSessions() {
       this.loading = true;
       this.error = null;
       try {
         const chatHistory = useChatHistory();
         this.sessions = await chatHistory.getSessions();
-        // Sort by lastMessageAt descending (most recent first)
-        this.sessions.sort((a, b) => {
-          const aTime = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
-          const bTime = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
-          return bTime - aTime;
-        });
+        this.sortSessionsByRecent();
       } catch (error: any) {
         this.error = error.message || 'Failed to load sessions';
         console.error('[ChatStore] Error loading sessions:', error);
@@ -105,6 +108,7 @@ export const useChatStore = defineStore('chat', {
         } else {
           this.sessions.unshift(session);
         }
+        this.sortSessionsByRecent();
         
         return session;
       } catch (error: any) {
@@ -131,6 +135,7 @@ export const useChatStore = defineStore('chat', {
         if (this.currentSession?.id === sessionId) {
           this.currentSession.title = updated.title;
         }
+        this.sortSessionsByRecent();
         
         return updated;
       } catch (error: any) {
@@ -160,17 +165,18 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
-    async addMessage(message: AddMessageRequest) {
-      if (!this.activeSessionId) {
+    async addMessage(message: AddMessageRequest, sessionId?: string) {
+      const targetSessionId = sessionId || this.activeSessionId;
+
+      if (!targetSessionId) {
         throw new Error('No active session');
       }
       
       try {
         const chatHistory = useChatHistory();
-        const savedMessage = await chatHistory.addMessage(this.activeSessionId, message);
-        
-        // Add to current session messages
-        if (this.currentSession) {
+        const savedMessage = await chatHistory.addMessage(targetSessionId, message);
+
+        if (this.currentSession?.id === targetSessionId) {
           if (!this.currentSession.messages) {
             this.currentSession.messages = [];
           }
@@ -180,12 +186,23 @@ export const useChatStore = defineStore('chat', {
           this.currentSession.messageCount = this.currentSession.messages.length;
           this.currentSession.lastMessageAt = savedMessage.createdAt;
         }
-        
-        // Update session in sessions list
-        const index = this.sessions.findIndex(s => s.id === this.activeSessionId);
-        if (index !== -1 && this.currentSession) {
-          this.sessions[index] = { ...this.currentSession };
+
+        const index = this.sessions.findIndex(s => s.id === targetSessionId);
+        const existingSession = index !== -1 ? this.sessions[index] : undefined;
+        if (index !== -1 && existingSession) {
+          if (this.currentSession?.id === targetSessionId) {
+            this.sessions[index] = { ...this.currentSession };
+          } else {
+            this.sessions[index] = {
+              ...existingSession,
+              messageCount: existingSession.messageCount + 1,
+              lastMessageAt: savedMessage.createdAt,
+              updatedAt: savedMessage.createdAt,
+            };
+          }
         }
+
+        this.sortSessionsByRecent();
         
         return savedMessage;
       } catch (error: any) {

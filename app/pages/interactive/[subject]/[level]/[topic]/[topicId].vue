@@ -913,6 +913,9 @@ definePageMeta({
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :chapter-id="chapters.notes?._id ?? chapters.currentChapterId" :change-chapter="changeChapter"
+        :topic-id="chapters.notes?.topic?._id ?? topicId"
+        :subject-id="chapters.notes?.subject?._id ?? null"
+        :level-id="chapters.notes?.level?._id ?? ((userToken as any)?.value?.level?._id ?? null)"
         :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
         @emit-quiz-score="updateChapterProgress" />
     </div>

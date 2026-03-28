@@ -1,12 +1,19 @@
 import { defineEventHandler, readBody, getCookie, setHeader } from "h3";
 import {
   streamText,
-  convertToModelMessages,
   stepCountIs,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { studentTools, setAuthTokenForTools, runWithUsedFigureShortcodes } from "./utils/tools";
 import { buildDecision } from "../utils/aiDecision";
+import { getCurriculumLexicon } from "../utils/curriculumLexicon";
+import {
+  convertChatMessagesToModel,
+  extractAttachmentTextContent,
+  getDecisionText,
+  hasFileAttachments,
+  validateMessageAttachments,
+} from "./chat/attachments";
 
 type CoreMessage = {
   role: "user" | "assistant" | "system";
@@ -76,6 +83,11 @@ You are a Subject AI Teacher, an intelligent teaching assistant specialized in t
 
 *** NON-NEGOTIABLE - CHAPTER SCOPE ONLY ***
 You may ONLY answer questions that are directly about this chapter: "${chapterName}". REFUSE to answer any question about a different subject (e.g. if this chapter is "Concept of Physics" and the student asks "What is biology?" → do NOT answer; politely redirect to ${chapterName}), a different chapter, or any topic outside "${chapterName}". When redirecting, be warm and encouraging: acknowledge their question, then politely invite them back. Example: "That's a great question! Right now I'm here to help you with ${chapterName}, so I'll focus on that so we can get the most out of this chapter. Is there something from ${chapterName} you'd like to go over?" Do not provide the answer to the off-topic question.
+
+*** CRITICAL - UNCLEAR FOLLOW-UPS ***
+- Always respond to the LATEST user message, not just the previous lesson.
+- If the latest message is only a name, a random word, a typo, or an unclear fragment with no clear academic meaning, do NOT continue teaching the previous topic.
+- Instead, ask a short clarification question about what they want help with in "${chapterName}".
 
 *** CRITICAL - EVERY TEACHING RESPONSE (only when the question is about this chapter) ***
 1. Include everyday life examples, ideally from Tanzania. Every explanation MUST use at least one concrete example from daily life (e.g. market/soko, school, home, daladala, farm/shamba, family, food like uji/ugali/pilau, village, M-Pesa). Prefer Tanzanian context over generic or foreign examples.
@@ -206,6 +218,7 @@ You are TIE AI, a teacher for the Tanzanian (NECTA) curriculum. You have access 
 *** CRITICAL - DIRECT QUESTIONS (DO THIS FIRST) ***
 - When the student asks a direct question (e.g. "What is photosynthesis?", "Explain Newton's laws", "How does the heart work?"): ANSWER IT IMMEDIATELY. Do NOT ask what level they are in, do NOT ask "Form 1 or Form 2?", and do NOT ask "which form are you in?". Infer the subject from the question, call getSyllabus with subject and level "Form 1" or "Form 2" (pick the one that best fits the topic), then teach. Give a straight, helpful answer every time.
 - NEVER in your reply say "Which form are you in?", "Are you Form 1 or Form 2?", or offer "(e.g. Form 1)" when asking for level. You may only ask for subject/year in neutral words when the user has NOT asked a direct content question (e.g. just said "Hi" or "I need help" with no topic).
+- Always respond to the LATEST user message. If the latest message is only a name, random word, typo, or unclear fragment, do NOT continue the previous lesson automatically. Ask a short clarification question instead.
 
 **PRIMARY GOAL:**
 - Help students **understand and acquire competences** from the provided syllabus. Every lesson should aim at one or more specific competences (main/specific competence and related learning activities). Success means the student can demonstrate that competence.
@@ -420,57 +433,76 @@ You have access to these tools. Use them APPROPRIATELY. You do NOT have access t
 - If searchTextbooks returns no results, answer from general knowledge and clearly label it as such (do not say "not available")
 `;
 
-function isUIMessageFormat(message: any): boolean {
-  return (
-    message &&
-    (Array.isArray(message.parts) ||
-      (message.id !== undefined && message.parts !== undefined))
-  );
-}
-
 function convertMessagesToCore(messages: any[]): CoreMessage[] {
   if (!Array.isArray(messages) || messages.length === 0) {
     return [];
   }
 
-  const hasUIMessageFormat = messages.some(isUIMessageFormat);
-
-  if (hasUIMessageFormat) {
-    try {
-      const converted = convertToModelMessages(messages);
-      if (Array.isArray(converted)) {
-        return converted;
-      }
-    } catch {
-      // Fallback below
-    }
-    return messages.map((msg: any) => {
-      let content = "";
-      if (Array.isArray(msg.parts)) {
-        content = msg.parts
-          .filter((p: any) => p?.type === "text" && p?.text)
-          .map((p: any) => String(p.text))
-          .join("");
-      } else if (msg.content) {
-        content = String(msg.content);
-      }
-
-      const role = msg.role || "user";
-      if (role === "user") return { role: "user", content };
-      if (role === "assistant") return { role: "assistant", content };
-      if (role === "system") return { role: "system", content };
-      return { role: "user", content };
-    });
-  }
-
   return messages.map((msg: any) => {
     const role = msg.role || "user";
-    const content = msg.content || "";
+    const content = Array.isArray(msg.parts)
+      ? extractAttachmentTextContent(msg.parts)
+      : msg.content || "";
     if (role === "user") return { role: "user", content };
     if (role === "assistant") return { role: "assistant", content };
     if (role === "system") return { role: "system", content };
     return { role: "user", content };
   });
+}
+
+function getLastUserMessage(messages: any[]): any | undefined {
+  return [...messages].reverse().find((message: any) => message?.role === "user");
+}
+
+function keepOnlyLastUserMessage<T extends { role?: string }>(messages: T[]): T[] {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === "user") {
+      return [message];
+    }
+  }
+
+  return [];
+}
+
+function appendTextToLastUserCoreMessage(messages: CoreMessage[], text: string) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (!message || message.role !== "user") continue;
+
+    const content = message.content.trim();
+    messages[index] = {
+      ...message,
+      role: "user",
+      content: content ? `${content}\n\n${text}` : text,
+    };
+    return;
+  }
+}
+
+function appendTextToLastUserModelMessage(messages: any[], text: string) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (messages[index]?.role !== "user") continue;
+
+    const currentContent = messages[index].content;
+    if (typeof currentContent === "string") {
+      messages[index] = {
+        ...messages[index],
+        content: currentContent.trim()
+          ? `${currentContent.trim()}\n\n${text}`
+          : text,
+      };
+      return;
+    }
+
+    if (Array.isArray(currentContent)) {
+      messages[index] = {
+        ...messages[index],
+        content: [...currentContent, { type: "text", text: `\n\n${text}` }],
+      };
+      return;
+    }
+  }
 }
 
 function extractRequestContext(event: any, body: any) {
@@ -505,6 +537,13 @@ function extractRequestContext(event: any, body: any) {
 
 function buildFinalPrompt(basePrompt: string, chapterName: string | undefined): string {
   let prompt = basePrompt;
+
+  prompt += `\n\nUPLOADS:
+- The student may upload a PDF document or image with their message.
+- Read uploaded files as additional context for the current reply when they are present.
+- Uploaded files are additional context only. They do NOT replace textbook, syllabus, or figure tools.
+- If getChapterFigures is available for this chat and you are teaching a concept, you should still call it and include [image:shortcode] when figures are returned, even when the student uploaded files.
+- Respond in normal teaching text. Do not mention technical processing steps unless the student asks.`;
   
   if (chapterName && chapterName.trim() && chapterName !== "this competence") {
     prompt += `\n\nREMINDER: You are currently helping with the chapter/competence: "${chapterName}". You MUST ONLY answer questions related to this specific chapter.`;
@@ -525,6 +564,13 @@ export default defineEventHandler(async (event) => {
   } else if (messages.length === 0 && typeof body?.question === "string") {
     messages.push({ role: "user", content: body.question });
   }
+
+  validateMessageAttachments(messages, {
+    maxImageBytes: 5 * 1024 * 1024,
+    maxPdfBytes: 10 * 1024 * 1024,
+    maxTextDocumentBytes: 1 * 1024 * 1024,
+    maxFilesPerMessage: 3,
+  });
 
   const apiKey = useRuntimeConfig().openaiApiKey;
   if (!apiKey) {
@@ -551,25 +597,46 @@ export default defineEventHandler(async (event) => {
   // #endregion
 
     let coreMessages = convertMessagesToCore(messages);
+    let modelMessages = await convertChatMessagesToModel(messages);
     
     if (!Array.isArray(coreMessages)) {
       throw new Error("Failed to convert messages to CoreMessage format");
     }
 
+    const curriculumLexicon = await getCurriculumLexicon(authToken);
+    const lastRawUserMessage = getLastUserMessage(messages);
+    const lastUserMessage = [...coreMessages].reverse().find((msg) => msg.role === "user");
+    const lastUserDecisionText = getDecisionText(lastRawUserMessage);
+    const lastUserHasAttachments = hasFileAttachments(lastRawUserMessage);
+
+    let decision = lastUserMessage
+      ? buildDecision(lastUserDecisionText || lastUserMessage.content, {
+          chapterName: validChapterName,
+          subject,
+          level,
+          topic,
+        }, curriculumLexicon)
+      : buildDecision("", { chapterName: validChapterName, subject, level, topic }, curriculumLexicon);
+
+    if (lastUserHasAttachments && decision.isLowInformationInput) {
+      decision = {
+        ...decision,
+        isLowInformationInput: false,
+        needsClarification: false,
+        reason: "attachment-context",
+      };
+    }
+
+    if (decision.isLowInformationInput && lastUserMessage) {
+      coreMessages = [lastUserMessage];
+      modelMessages = keepOnlyLastUserMessage(modelMessages);
+    }
+
     // Add shortcode format reminder only for general TIE AI teacher (not for AI subject teacher / chapter-scoped chat, which has no getChapterFigures)
     if (!validChapterName) {
-      const lastUserIdx = [...coreMessages].reverse().findIndex((m) => m.role === "user");
-      if (lastUserIdx >= 0 && coreMessages.length > 0) {
-        const idx = coreMessages.length - 1 - lastUserIdx;
-        const lastUser = coreMessages[idx];
-        if (lastUser?.role === "user" && typeof lastUser.content === "string") {
-          coreMessages = [...coreMessages];
-          coreMessages[idx] = {
-            ...lastUser,
-            content: `${lastUser.content.trim()}\n\n(Please include visual aids when getChapterFigures returns figures. Use only shortcodes from the "figures" array in that tool result—format [image:<exact shortcode>]. Do not invent or reuse shortcodes. Do not use markdown image syntax ![](shortcode).)`,
-          };
-        }
-      }
+      const imageReminder = `(Please include visual aids when getChapterFigures returns figures. Use only shortcodes from the "figures" array in that tool result—format [image:<exact shortcode>]. Do not invent or reuse shortcodes. Do not use markdown image syntax ![](shortcode).)`;
+      appendTextToLastUserCoreMessage(coreMessages, imageReminder);
+      appendTextToLastUserModelMessage(modelMessages, imageReminder);
     }
     
     const basePrompt = getCachedSystemPrompt(validChapterName, context);
@@ -579,18 +646,8 @@ export default defineEventHandler(async (event) => {
 
   const openai = getOpenAIClient(apiKey);
 
-  const lastUserMessage = [...coreMessages].reverse().find((msg) => msg.role === "user");
-  const decision = lastUserMessage
-    ? buildDecision(lastUserMessage.content, {
-        chapterName: validChapterName,
-        subject,
-        level,
-        topic,
-      })
-    : buildDecision("", { chapterName: validChapterName, subject, level, topic });
-
   if (decision.needsClarification) {
-    systemPrompt += `\n\nWhen the message is vague (e.g. no specific topic): Ask which subject and year they are studying. Do NOT say "Form 1 or Form 2" or "which form are you in?"—use neutral wording like "Which subject and year are you studying?"`;
+    systemPrompt += `\n\nWhen the latest message is vague, unclear, or low-information (for example just a name, typo, or random word), ask a short clarification question and do NOT continue the previous topic automatically. Do NOT infer a new explanation from earlier turns. Use neutral wording like "What topic would you like help with?" or "Which subject and year are you studying?"`;
   }
 
   const debugFlag =
@@ -606,8 +663,10 @@ export default defineEventHandler(async (event) => {
   if (validChapterName) {
     delete (toolsForRequest as any).getChapterFigures;
   }
-  if (decision.needsClarification) {
+  if (decision.isLowInformationInput) {
     delete (toolsForRequest as any).searchTextbooks;
+    delete (toolsForRequest as any).getSyllabus;
+    delete (toolsForRequest as any).getChapterFigures;
   }
 
   const promptCacheKey = `tie:${validChapterName || "general"}:${subject || ""}:${level || ""}:${chapterNo ?? ""}`;
@@ -627,7 +686,7 @@ export default defineEventHandler(async (event) => {
     model: openai("gpt-4o-mini"),
     messages: [
       { role: "system", content: systemPrompt },
-      ...coreMessages,
+      ...modelMessages,
     ] as any,
     stopWhen: stepCountIs(10),
     tools: toolsForRequest,

@@ -92,6 +92,9 @@ if (typeof window !== 'undefined') {
       messageHandler = null;
     }
   };
+  const handleCloseOverlayClick = (_event: MouseEvent) => {
+    closeOverlay();
+  };
 
   window.closeConversationPractice = closeOverlay;
   window.closeEnglishPractice = closeOverlay;
@@ -138,7 +141,7 @@ if (typeof window !== 'undefined') {
       closeButton.textContent = '×';
       closeButton.style.cssText =
         'position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:9999px;border:none;background:#fff;color:#374151;font-size:24px;cursor:pointer;z-index:2;';
-      closeButton.addEventListener('click', closeOverlay);
+      closeButton.addEventListener('click', handleCloseOverlayClick);
 
       iframe = document.createElement('iframe');
       iframeRef = iframe;

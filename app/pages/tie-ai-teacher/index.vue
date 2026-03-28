@@ -3,12 +3,15 @@ import { Chat } from "@ai-sdk/vue";
 import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
 import { useChatStore } from "~/stores/chatStore";
 import type { ChatMessage } from "~/types/chat.interface";
+import type { PendingNavigation } from "~/types/tie-ai-teacher.interface";
 
 const route = useRoute();
 const router = useRouter();
 const chatStore = useChatStore();
 const canMinimize = computed(() => {
-  const stateFromRoute = route.state as Record<string, unknown> | undefined;
+  const stateFromRoute = (route as any).state as
+    | Record<string, unknown>
+    | undefined;
   const stateFromHistory =
     typeof window !== "undefined"
       ? (window.history.state as Record<string, unknown> | null)
@@ -20,7 +23,9 @@ const canMinimize = computed(() => {
   return Boolean(background);
 });
 const backgroundUrl = computed(() => {
-  const stateFromRoute = route.state as Record<string, unknown> | undefined;
+  const stateFromRoute = (route as any).state as
+    | Record<string, unknown>
+    | undefined;
   const stateFromHistory =
     typeof window !== "undefined"
       ? (window.history.state as Record<string, unknown> | null)
@@ -34,7 +39,8 @@ const backgroundUrl = computed(() => {
 
 const minimizeToOverlay = async () => {
   if (!backgroundUrl.value) return;
-  const sessionId = typeof route.query.sessionId === "string" ? route.query.sessionId : "";
+  const sessionId =
+    typeof route.query.sessionId === "string" ? route.query.sessionId : "";
   await router.push({
     path: backgroundUrl.value,
     query: {
@@ -68,6 +74,20 @@ const isInitializing = ref(true);
 const lastMessageCount = ref(0);
 const savedMessageIds = ref(new Set<string>());
 const hasTitleBeenSet = ref(false);
+const pendingNavigation = ref<PendingNavigation | null>(null);
+const requestSessionId = ref<string | null>(null);
+const isSessionNavigationLocked = computed(
+  () =>
+    isTyping.value ||
+    chat.status === "submitted" ||
+    chat.status === "streaming",
+);
+const navigationMessage = computed(() => {
+  if (pendingNavigation.value) {
+    return "Switching chats shortly.";
+  }
+  return "";
+});
 
 const updateViewportState = () => {
   if (typeof window === "undefined") return;
@@ -131,7 +151,7 @@ watch(
     if (nextVersion === previousVersion) return;
     if (!draft.value.trim()) return;
     applyDraftMessage();
-  }
+  },
 );
 
 // Load existing session
@@ -146,7 +166,7 @@ const loadSession = async (sessionId: string) => {
       lastMessageCount.value = session.messages.length;
       // Track saved message IDs
       savedMessageIds.value = new Set(
-        session.messages.map((m: ChatMessage) => m.id)
+        session.messages.map((m: ChatMessage) => m.id),
       );
       // If session has a title, mark it as set
       hasTitleBeenSet.value = !!session.title;
@@ -192,6 +212,9 @@ const clearSessionIdFromRoute = () => {
   router.replace({ query: nextQuery });
 };
 
+const getTargetSessionId = () =>
+  requestSessionId.value || chatStore.activeSessionId;
+
 const hasConversationStarted = () => {
   // Check local messages first (covers unsynced messages)
   // @ts-ignore
@@ -208,6 +231,7 @@ const getReusableEmptySessionId = () => {
   if (emptySessions.length === 0) return null;
 
   const latest = emptySessions.reduce((currentLatest, session) => {
+    if (!currentLatest) return session;
     const currentTime = new Date(
       currentLatest.updatedAt || currentLatest.createdAt,
     ).getTime();
@@ -217,7 +241,7 @@ const getReusableEmptySessionId = () => {
     return sessionTime > currentTime ? session : currentLatest;
   }, emptySessions[0]);
 
-  return latest.id;
+  return (latest as any).id;
 };
 
 const reuseEmptySessionIfAvailable = async () => {
@@ -246,11 +270,72 @@ const convertToChatMessage = (msg: ChatMessage) => ({
   content: msg.content,
 });
 
+const inferAttachmentMediaType = (filename?: string, mediaType?: string) => {
+  const normalizedMediaType =
+    typeof mediaType === "string" ? mediaType.trim().toLowerCase() : "";
+
+  if (normalizedMediaType && normalizedMediaType !== "application/octet-stream") {
+    return normalizedMediaType;
+  }
+
+  const lowerName = typeof filename === "string" ? filename.toLowerCase() : "";
+  if (lowerName.endsWith(".pdf")) return "application/pdf";
+  if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) {
+    return "image/jpeg";
+  }
+  if (lowerName.endsWith(".png")) return "image/png";
+  if (lowerName.endsWith(".webp")) return "image/webp";
+  if (lowerName.endsWith(".txt")) return "text/plain";
+  if (lowerName.endsWith(".md")) return "text/markdown";
+  if (lowerName.endsWith(".json")) return "application/json";
+
+  return normalizedMediaType || "application/octet-stream";
+};
+
+const describeAttachmentParts = (parts: any[] = []) => {
+  const attachmentParts = parts.filter(
+    (part) => part?.type === "file" || part?.type === "data-attachment",
+  );
+
+  if (attachmentParts.length === 0) return "";
+
+  const labels = attachmentParts.map((part) => {
+    const filename =
+      part?.type === "data-attachment"
+        ? part?.data?.filename
+        : part?.filename;
+    const mediaType = inferAttachmentMediaType(
+      filename,
+      part?.type === "data-attachment"
+        ? part?.data?.mediaType
+        : part?.mediaType,
+    );
+
+    if (filename) return filename;
+    if (mediaType === "application/pdf") return "PDF document";
+    if (typeof mediaType === "string" && mediaType.startsWith("image/")) {
+      return "image";
+    }
+    return "attachment";
+  });
+
+  return `Attachment${labels.length > 1 ? "s" : ""}: ${labels.join(", ")}`;
+};
+
 // Extract text content from message
 const extractMessageContent = (message: any): string => {
   if (message.content) return message.content;
-  const textPart = message.parts?.find((p: any) => p.type === "text");
-  return textPart?.text || "";
+
+  const textParts = Array.isArray(message.parts)
+    ? message.parts
+        .filter((p: any) => p?.type === "text" && typeof p?.text === "string")
+        .map((p: any) => p.text.trim())
+        .filter(Boolean)
+    : [];
+
+  if (textParts.length > 0) return textParts.join(" ");
+
+  return describeAttachmentParts(message.parts || []);
 };
 
 // Generate a title from the first user message
@@ -308,13 +393,16 @@ const generateTitleFromMessage = (message: string): string => {
 };
 
 // Update session title if not set
-const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
-  if (!chatStore.activeSessionId || hasTitleBeenSet.value) return;
+const updateSessionTitleIfNeeded = async (
+  sessionId: string,
+  firstUserMessage: string,
+) => {
+  if (!sessionId || hasTitleBeenSet.value) return;
 
   try {
     const title = generateTitleFromMessage(firstUserMessage);
     if (title && title !== "New Conversation") {
-      await chatStore.updateSessionTitle(chatStore.activeSessionId, title);
+      await chatStore.updateSessionTitle(sessionId, title);
       hasTitleBeenSet.value = true;
     }
   } catch (error) {
@@ -322,8 +410,60 @@ const updateSessionTitleIfNeeded = async (firstUserMessage: string) => {
   }
 };
 
+const sanitizePartsForPersistence = (
+  parts: any[] = [],
+  options?: { includePreview?: boolean },
+) =>
+  parts.map((part: any) => {
+    if (part?.type === "file") {
+      const mediaType = inferAttachmentMediaType(part.filename, part.mediaType);
+      const previewUrl =
+        options?.includePreview &&
+        mediaType.startsWith("image/") &&
+        typeof part.url === "string"
+          ? part.url
+          : undefined;
+
+      return {
+        type: "data-attachment",
+        data: {
+          filename: part.filename || "Attachment",
+          mediaType,
+          ...(previewUrl ? { previewUrl } : {}),
+        },
+      };
+    }
+
+    return part;
+  });
+
+const replaceLiveAttachmentsInChat = () => {
+  if (!Array.isArray(chat.messages)) return;
+
+  let didChange = false;
+  const updatedMessages = chat.messages.map((message: any) => {
+    if (message.role !== "user" || !Array.isArray(message.parts)) {
+      return message;
+    }
+
+    const hasLiveFileParts = message.parts.some((part: any) => part?.type === "file");
+    if (!hasLiveFileParts) return message;
+
+    didChange = true;
+    return {
+      ...message,
+      parts: sanitizePartsForPersistence(message.parts, { includePreview: true }),
+    };
+  });
+
+  if (didChange) {
+    // @ts-ignore
+    chat.messages.splice(0, chat.messages.length, ...updatedMessages);
+  }
+};
+
 // Save a message to backend
-const saveMessage = async (message: any) => {
+const saveMessage = async (sessionId: string, message: any) => {
   if (!message.id || savedMessageIds.value.has(message.id)) {
     return; // Already saved
   }
@@ -332,12 +472,18 @@ const saveMessage = async (message: any) => {
   if (!content.trim()) return;
 
   try {
-    await chatStore.addMessage({
-      role: message.role as "user" | "assistant" | "system",
-      content,
-      parts: message.parts,
-      metadata: { messageId: message.id },
-    });
+    await chatStore.addMessage(
+      {
+        role: message.role as "user" | "assistant" | "system",
+        content,
+        parts:
+          message.role === "user"
+            ? sanitizePartsForPersistence(message.parts)
+            : message.parts,
+        metadata: { messageId: message.id },
+      },
+      sessionId,
+    );
     savedMessageIds.value.add(message.id);
   } catch (error) {
     console.error("[TIE AI Teacher] Error saving message:", error);
@@ -348,11 +494,8 @@ const saveMessage = async (message: any) => {
 watch(
   () => chat.messages,
   async (messages) => {
-    if (
-      !chatStore.activeSessionId ||
-      isInitializing.value ||
-      !Array.isArray(messages)
-    ) {
+    const targetSessionId = getTargetSessionId();
+    if (!targetSessionId || isInitializing.value || !Array.isArray(messages)) {
       return;
     }
 
@@ -363,13 +506,13 @@ watch(
     for (const message of newMessages) {
       // Save user messages immediately
       if (message.role === "user" && message.id) {
-        await saveMessage(message);
+        await saveMessage(targetSessionId, message);
 
         // Generate title from first user message
         if (!hasTitleBeenSet.value) {
           const content = extractMessageContent(message);
           if (content.trim()) {
-            await updateSessionTitleIfNeeded(content);
+            await updateSessionTitleIfNeeded(targetSessionId, content);
           }
         }
       }
@@ -378,17 +521,18 @@ watch(
 
     lastMessageCount.value = currentCount;
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Watch chat status to save assistant messages when streaming completes
 watch(
   () => chat.status,
-  async (status) => {
-    if (!chatStore.activeSessionId || isInitializing.value) return;
+  async (status, previousStatus) => {
+    const targetSessionId = getTargetSessionId();
+    if (isInitializing.value) return;
 
     // When streaming is complete, save any unsaved assistant messages
-    if (status === "ready") {
+    if (status === "ready" && targetSessionId) {
       // Small delay to ensure message is fully complete
       await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -401,26 +545,63 @@ watch(
           message.id &&
           !savedMessageIds.value.has(message.id)
         ) {
-          await saveMessage(message);
+          await saveMessage(targetSessionId, message);
+        }
+      }
+
+      replaceLiveAttachmentsInChat();
+    }
+
+    const wasGenerating =
+      previousStatus === "submitted" || previousStatus === "streaming";
+    const isGenerating = status === "submitted" || status === "streaming";
+
+    if (wasGenerating && !isGenerating) {
+      requestSessionId.value = null;
+
+      if (pendingNavigation.value) {
+        const pending = pendingNavigation.value;
+        pendingNavigation.value = null;
+
+        if (pending.type === "new-chat") {
+          await startNewChat();
+        } else {
+          await loadSession(pending.sessionId);
         }
       }
     }
-  }
+  },
 );
 
 // Watch URL for session changes
 watch(
   () => route.query.sessionId,
   async (sessionId) => {
-    if (sessionId && sessionId !== chatStore.activeSessionId) {
-      await loadSession(sessionId as string);
+    if (!sessionId || sessionId === chatStore.activeSessionId) {
+      return;
     }
-  }
+
+    if (isSessionNavigationLocked.value) {
+      pendingNavigation.value = {
+        type: "session",
+        sessionId: sessionId as string,
+      };
+      return;
+    }
+
+    await loadSession(sessionId as string);
+  },
 );
 
 // Handle message submission
-const handleSubmit = async (message: string) => {
-  if (!message.trim()) return;
+const handleSubmit = async (
+  payload: string | { message: string; files?: FileList },
+) => {
+  const message = typeof payload === "string" ? payload : payload.message;
+  const files = typeof payload === "string" ? undefined : payload.files;
+  const trimmedMessage = message.trim();
+
+  if (!trimmedMessage && !files?.length) return;
 
   if (!chatStore.activeSessionId) {
     const reused = await reuseEmptySessionIfAvailable();
@@ -429,11 +610,28 @@ const handleSubmit = async (message: string) => {
     }
   }
 
+  const sessionId = chatStore.activeSessionId;
+  if (!sessionId) return;
+
   isTyping.value = true;
+  pendingNavigation.value = null;
+  requestSessionId.value = sessionId;
 
   try {
     // Send message to AI - the watch function will save user messages when they appear in chat.messages
-    await chat.sendMessage({ text: message });
+    const outgoingMessage = files?.length
+      ? trimmedMessage
+        ? { text: trimmedMessage, files }
+        : { files }
+      : { text: trimmedMessage };
+
+    await chat.sendMessage(
+      outgoingMessage as any,
+      {
+        body: { sessionId },
+        metadata: { sessionId },
+      },
+    );
   } catch (error) {
     console.error("[TIE AI Teacher] Error sending message:", error);
   } finally {
@@ -441,8 +639,7 @@ const handleSubmit = async (message: string) => {
   }
 };
 
-// Handle new chat
-const handleNewChat = async () => {
+const startNewChat = async () => {
   if (!hasConversationStarted()) {
     if (chatStore.activeSessionId) {
       if (route.query.sessionId !== chatStore.activeSessionId) {
@@ -468,8 +665,23 @@ const handleNewChat = async () => {
   // Keep sidebar open when starting a new chat
 };
 
+// Handle new chat
+const handleNewChat = async () => {
+  if (isSessionNavigationLocked.value) {
+    pendingNavigation.value = { type: "new-chat" };
+    return;
+  }
+
+  await startNewChat();
+};
+
 // Handle session selection
 const handleSessionSelected = async (sessionId: string) => {
+  if (isSessionNavigationLocked.value) {
+    pendingNavigation.value = { type: "session", sessionId };
+    return;
+  }
+
   await loadSession(sessionId);
   // Keep sidebar open when selecting session
 };
@@ -514,7 +726,10 @@ onBeforeUnmount(() => {
           aria-label="Minimize to overlay"
           @click="minimizeToOverlay"
         >
-          <Icon name="mdi:arrow-collapse" size="20" />
+          <Icon
+            name="mdi:arrow-collapse"
+            size="20"
+          />
         </button>
         <button
           type="button"
@@ -522,7 +737,10 @@ onBeforeUnmount(() => {
           aria-label="Close and return"
           @click="closeToBackground"
         >
-          <Icon name="mdi:close" size="20" />
+          <Icon
+            name="mdi:close"
+            size="20"
+          />
         </button>
       </div>
       <template v-if="shouldUseDrawerSidebar">
@@ -557,6 +775,8 @@ onBeforeUnmount(() => {
             <AiTeacherChatHistorySidebar
               :is-open="true"
               :compact="true"
+              :navigation-message="navigationMessage"
+              :disable-delete="isSessionNavigationLocked"
               @close="isHistoryOpen = false"
               @new-chat="handleNewChat"
               @session-selected="handleSessionSelected"
@@ -567,6 +787,8 @@ onBeforeUnmount(() => {
       <AiTeacherChatHistorySidebar
         v-else
         :is-open="isHistoryOpen"
+        :navigation-message="navigationMessage"
+        :disable-delete="isSessionNavigationLocked"
         @close="isHistoryOpen = false"
         @new-chat="handleNewChat"
         @session-selected="handleSessionSelected"
@@ -595,12 +817,12 @@ onBeforeUnmount(() => {
             :messages="chat.messages"
             :isTyping="isTyping"
           />
-	          <AiTeacherInput
-	            :chat="chat"
+          <AiTeacherInput
+            :chat="chat"
             :draft-message="draftMessage"
             :draft-version="draftVersion"
-	            @sendMessage="handleSubmit"
-	          />
+            @sendMessage="handleSubmit"
+          />
         </main>
       </div>
     </div>

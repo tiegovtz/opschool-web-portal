@@ -58,6 +58,12 @@
         />
         <span>New Chat</span>
       </button>
+      <p
+        v-if="navigationMessage"
+        class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700"
+      >
+        {{ navigationMessage }}
+      </p>
     </div>
 
     <!-- Search Bar (optional enhancement) -->
@@ -243,7 +249,9 @@
             <!-- Delete Button -->
             <button
               @click.stop="handleDeleteSession(session.id)"
+              :disabled="disableDelete"
               class="opacity-0 group-hover:opacity-100 flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
+              :class="disableDelete ? 'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-gray-400 hover:scale-100' : ''"
               aria-label="Delete conversation"
             >
               <Icon
@@ -323,6 +331,12 @@
         />
         <span>New Chat</span>
       </button>
+      <p
+        v-if="navigationMessage"
+        class="mt-3 rounded-xl bg-white/90 px-3 py-2 text-xs font-medium text-oceanBlue"
+      >
+        {{ navigationMessage }}
+      </p>
     </div>
 
     <!-- Search Bar -->
@@ -501,7 +515,9 @@
             <!-- Delete Button -->
             <button
               @click.stop="handleDeleteSession(session.id)"
+              :disabled="disableDelete"
               class="opacity-0 group-hover:opacity-100 flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
+              :class="disableDelete ? 'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-gray-400 hover:scale-100' : ''"
               aria-label="Delete conversation"
             >
               <Icon
@@ -567,6 +583,8 @@ import ConfirmationModal from "./ConfirmationModal.vue";
 const props = defineProps<{
   isOpen: boolean;
   compact?: boolean;
+  navigationMessage?: string;
+  disableDelete?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -740,6 +758,8 @@ const handleSelectSession = async (sessionId: string) => {
 
 // Handle delete session - show confirmation modal
 const handleDeleteSession = (sessionId: string) => {
+  if (props.disableDelete) return;
+
   const session = sessions.value.find((s) => s.id === sessionId);
   const sessionTitle = session ? getSessionTitle(session) : "this conversation";
 

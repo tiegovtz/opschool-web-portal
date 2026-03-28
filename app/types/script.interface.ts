@@ -18,5 +18,5 @@ export interface ConversationScript {
   participants?: ConversationParticipant[];
 }
 
-export type SpeakerType = string;
+export type SpeakerType = 'ai' | 'student1' | 'student2';
 export type PracticeMode = 'multi-user' | 'single-user';

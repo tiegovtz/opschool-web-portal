@@ -8,7 +8,9 @@
 import type { ApiFigure, MappedFigure, GetFiguresOptions } from '~/types/figures.interface';
 import { Config } from '~/constants/config';
 
-const API_BASE_URL = Config.FIGURES_API_BASE_URL;
+const API_BASE_URL =
+  (Config as typeof Config & { FIGURES_API_BASE_URL?: string })
+    .FIGURES_API_BASE_URL || "https://apitie.ekima.africa/v1";
 
 // Cache for API responses
 const figureCache: Map<string, { data: MappedFigure | MappedFigure[]; timestamp: number }> = new Map();
@@ -116,13 +118,13 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   try {
     const token = await getAuthToken();
     
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...((options.headers as Record<string, string> | undefined) ?? {}),
     };
 
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
     }
 
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -170,7 +172,7 @@ export async function getFigureByShortcode(shortcode: string): Promise<MappedFig
   const cached = figureCache.get(cacheKey);
   
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return Array.isArray(cached.data) ? cached.data[0] : cached.data;
+    return Array.isArray(cached.data) ? (cached.data[0] ?? null) : cached.data;
   }
 
   // Fetch all figures and find by shortcode (workaround for API returning limited fields)
@@ -186,7 +188,7 @@ export async function getFigureByShortcode(shortcode: string): Promise<MappedFig
     figureCache.set(cacheKey, { data: figure, timestamp: Date.now() });
   }
   
-  return figure || null;
+  return figure ?? null;
 }
 
 /**
@@ -267,4 +269,3 @@ export async function getFiguresByChapter(chapter: string, subject?: string, lim
 export function clearFiguresCache(): void {
   figureCache.clear();
 }
-

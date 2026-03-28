@@ -1,14 +1,43 @@
-<script setup>
+<script setup lang="ts">
 import apiDocs from "~/utilities/apiDocs";
 import { layoutEffect } from "~/utilities/controlls";
 import messages from "~/utilities/messages";
 import ConfirmationModal from "~/components/ai-teacher/ConfirmationModal.vue";
 import { useNavigationStore } from "~/stores/navigationStore";
-const userToken = useCookie("signInUserToken");
+import type { LanguageSupport } from "~/types/language.interface";
+
+const props = withDefaults(
+  defineProps<{educationLevel?:string,language?:LanguageSupport}>(),{
+    language:'english',
+})
+
+const userToken = useCookie<any>("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
 const refreshToken = useCookie("signInRefreshToken");
 const route = useRoute();
 const navigationStore = useNavigationStore();
+
+const matchesPath = (path: string) =>
+  route.path === path || route.path.startsWith(`${path}/`);
+
+const isHomeRoute = computed(() =>
+  route.path === "/" || matchesPath("/home")
+);
+const isSmartClassRoute = computed(() => matchesPath("/smart-class"));
+const isLearningStatisticsRoute = computed(() =>
+  matchesPath("/profile/learning-statistics")
+);
+const isAccountRoute = computed(() =>
+  route.path === "/profile" ||
+  (matchesPath("/profile") && !isLearningStatisticsRoute.value)
+);
+
+const desktopNavItemClass =
+  "flex items-center gap-2 rounded-xl px-3 py-2 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue min-h-11";
+const mobileNavItemClass =
+  "flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
+const activeNavItemClass = "bg-deepBlue text-white shadow-sm";
+const inactiveNavItemClass = "hover:bg-deepBlue/85 hover:shadow-sm";
 
 const PROTECTED_RETURN_PREFIXES = [
   "/interactive/",
@@ -25,18 +54,22 @@ const shouldRememberCurrentRoute = () =>
 
 const showLogoutConfirm = ref(false);
 const showLogoutToast = ref(false);
-const logoutToastTimeout = ref(null);
-const logoutAlert = ref(null);
+const logoutToastTimeout = ref<null|any>(null);
+const logoutAlert = ref<HTMLElement|null>(null);
+const isAccountMenuOpen = ref(false);
 
 const logout = () => {
+  if (shouldRememberCurrentRoute()) {
+    navigationStore.setGoBack(route.fullPath);
+  }
+
   userToken.value = null;
   accessToken.value = null;
   refreshToken.value = null;
 
-  const router = useRouter();
   layoutEffect.value = "grid";
-  router.replace("/home");
-  dropDown();
+  window.location.assign("/");
+  closeAccountMenu();
 
   // Screen reader announcement
   if (logoutAlert.value) {
@@ -57,11 +90,6 @@ const logout = () => {
   }, 4000);
 };
 
-const openLogoutConfirm = (event) => {
-  if (event?.type === "keyup" && !["Enter", " "].includes(event.key)) return;
-  showLogoutConfirm.value = true;
-};
-
 const onLogoutConfirm = () => {
   showLogoutConfirm.value = false;
   logout();
@@ -71,147 +99,184 @@ const onLogoutCancel = () => {
   showLogoutConfirm.value = false;
 };
 
-const isPop = ref(true);
-
-const dropDown = () => {
-  isPop.value = !isPop.value;
+const toggleAccountMenu = () => {
+  isAccountMenuOpen.value = !isAccountMenuOpen.value;
 };
+
+const closeAccountMenu = () => {
+  isAccountMenuOpen.value = false;
+};
+
+const openLogoutConfirmFromMenu = () => {
+  closeAccountMenu();
+  showLogoutConfirm.value = true;
+};
+
+watch(
+  () => route.fullPath,
+  () => {
+    closeAccountMenu();
+  },
+);
 
 onBeforeUnmount(() => {
   if (logoutToastTimeout.value) clearTimeout(logoutToastTimeout.value);
 });
+
 </script>
 
 <template>
   <!-- Header -->
   <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat" role="navigation">
-   
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->
-      <div class="relative flex justify-center w-full h-24 pt-1">
-        <div class="flex items-center justify-between w-full h-full wrapper-container">
-          <NuxtLink to="/" aria-label="Go to homepage,link with court of arm image "
-            aria-describedby="tanzania-emblem-longdesc"
-            class="flex items-center justify-center h-full cursor-pointer max-w-[50px]">
-            <figure>
-              <img src="/logo/emblem.webp"
-                alt="Tanzania coat of arms: man and woman supporting a central shield with Mount Kilimanjaro, flag colors, water waves, a torch, and crossed tools"
-                role="img" aria-describedby="tanzania-emblem-longdesc" class="object-contain w-full h-full" />
-
-              <figcaption id="tanzania-emblem-longdesc" class="sr-only">
-                Tanzania’s coat of arms with a central shield supported by a man on the viewer’s left and a woman on the
-                viewer’s
-                right. The shield shows Mount Kilimanjaro at the top, Tanzania’s flag colors across the middle, and blue
-                and white
-                waves at the bottom. A gold torch with a red-orange flame stands in front. Behind the shield are crossed
-                traditional
-                tools: a spear and a hoe.
-              </figcaption>
-            </figure>
-          </NuxtLink>
-
-          <div class="flex flex-col items-center h-full gap-1 text-center uppercase font-tahomabd" tabindex="0"
-            aria-label="Presented by Ministry of education, science and technology together with Tanzania institute of education (TIE)"
-            role="region">
-            <p class="md:text-small text-[10px] text-deepBlue text-shadow">
-              Ministry of education, science and technology
-            </p>
-            <p class="lg:text-[1.8rem] md:text-[1.4rem] text-[15px]">
-              Tanzania institute of education (TIE)
-            </p>
-          </div>
-          <NuxtLink to="/" class="flex items-center justify-center h-full p-2 cursor-pointer">
-            <img src="/logo/logo_tie.gif" class="w-16 h-13"
-              alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
-          </NuxtLink>
-        </div>
-      </div>
-
+      <included-upper-header class="w-full" :language />
       <div class="w-full ">
         <!-- Media Screen -->
         <div
           class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container">
-          <NuxtLink aria-label="Go home" to="/home" class="flex gap-2 pl-2 pr-2 rounded-md"
-            active-class="text-white !bg-deepBlue">
+          <NuxtLink
+            aria-label="Go home"
+            :to="language==='english' ? `/home` :`/nyumbani`"
+            :aria-current="isHomeRoute ? 'page' : undefined"
+            :class="[desktopNavItemClass, isHomeRoute ? activeNavItemClass : inactiveNavItemClass]"
+          >
             <div class="flex items-center justify-center">
               <IconsHome :size="20" />
             </div>
-            <p class="hidden capitalize lg:flex">Home</p>
+            <p class="hidden capitalize lg:flex">{{ language==='english' ? `Home` :`nyumbani`}}</p>
           </NuxtLink>
 
           <!-- TIE Library Books -->
-          <a aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
-            class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium"
-            active-class="text-white !bg-deepBlue">
+          <a
+            aria-label="Visit TIE online library"
+            href="https://ol.tie.go.tz/index.php"
+            target="_blank"
+            rel="noopener noreferrer"
+            :class="[desktopNavItemClass, inactiveNavItemClass]"
+          >
             <div class="flex items-center justify-center">
               <IconsTieLibrary :size="20" />
             </div>
-            <p class="hidden capitalize lg:flex">TIE Library</p>
+            <p class="hidden capitalize lg:flex">{{ language==='english' ? `TIE Library` :`Maktaba`}}</p>
           </a>
 
           <!-- Smart Class Hub -->
-          <NuxtLink to="/smart-class" aria-label="Go to Smart Class"
-            class="flex items-center gap-2 px-2 text-center text-white cursor-pointer text-medium rounded-md"
-            active-class="text-white !bg-deepBlue">
+          <NuxtLink
+            to="/smart-class"
+            aria-label="Go to Smart Class"
+            :aria-current="isSmartClassRoute ? 'page' : undefined"
+            :class="[desktopNavItemClass, isSmartClassRoute ? activeNavItemClass : inactiveNavItemClass]"
+          >
             <div class="flex items-center justify-center">
               <IconsSmartClassHub :size="20" />
             </div>
-            <p class="hidden capitalize lg:flex">Smart Class</p>
+            <p class="hidden capitalize lg:flex">{{ language==='english' ? `Smart class` :`Darasa janja`}}</p>
           </NuxtLink>
 
           <!-- title (TIE online public school) -->
           <div class="flex-1" role="navigation">
             <NuxtLink aria-label="Go home" to="/">
               <p class="block text-center uppercase lg:text-large text-medium text-shadow">
-                TIE online school
+                {{ language==='english' ? `TIE online school` :`shule mtandao ya TET`}}
               </p>
             </NuxtLink>
           </div>
 
-          <!-- Profile and Sign Up -->
-          <div class="subInfo">
-            <div class="flex items-center gap-4 px-2 py-1" v-if="userToken">
-
-              <!-- Profile -->
-              <NuxtLink aria-label="Go to profile page" to="/profile">
-                <div class="flex items-center justify-center overflow-hidden">
-                  <div class="flex items-center gap-1 cursor-pointer">
-                    <div v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''" class="w-8 h-8">
-                      <img :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic" alt="User Profile"
-                        class="object-cover w-full h-full rounded-full" />
-                    </div>
-                    <IconsProfileCircle v-else :size="24" />
-                    <p class="capitalize text-medium line-clamp-1 max-w-60">
-                      Hello,
-                      {{ String(userToken.name).split(" ")[0] }}
-                    </p>
-                  </div>
-                </div>
-              </NuxtLink>
-
-              <!-- Logout -->
-              <button aria-label="Log out"
-                class="flex items-center h-6 gap-2 p-2 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
-                @click="openLogoutConfirm" @keyup="openLogoutConfirm">
-                <span class="capitalize"> Logout </span>
-                <IconsLogout :size="20" title="Sign out" />
-              </button>
+          <NuxtLink
+            v-if="userToken"
+            aria-label="Go to learning statistics page"
+            to="/profile/learning-statistics"
+            :aria-current="isLearningStatisticsRoute ? 'page' : undefined"
+            :class="[desktopNavItemClass, isLearningStatisticsRoute ? activeNavItemClass : inactiveNavItemClass]"
+          >
+            <div class="flex items-center justify-center">
+              <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
             </div>
+            <p class="hidden capitalize lg:flex">
+              {{ language==='english' ? `Learning statistics` :`Takwimu za ujifunzaji`}}
+            </p>
+          </NuxtLink>
 
-            <div class="flex items-center gap-4 p-2" v-else>
+          <div class="subInfo">
+            <div class="flex items-center gap-4 p-2" v-if="!userToken">
               <!-- sign in -->
               <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <IconsSignIn :size="20" />
-                <p class="hidden capitalize lg:flex">Sign in</p>
+                <p class="hidden capitalize lg:flex">
+                   {{ language==='english' ? `Sign in` :`Ingia`}}
+                  </p>
               </NuxtLink>
 
               <!-- sign up -->
               <NuxtLink aria-label="Go to sign up page" to="/auth/SignUp" title="Sign Up"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <IconsProfileCircle :size="24" />
-                <p class="hidden capitalize lg:flex">Create Account</p>
+                <p class="hidden capitalize lg:flex">
+                   {{ language==='english' ? `Create Account` :`Jisajili`}}
+                  </p>
               </NuxtLink>
+            </div>
+
+            <div v-else class="relative px-2 py-1">
+              <button
+                aria-label="Open account menu"
+                :aria-current="isAccountRoute ? 'page' : undefined"
+                :class="[
+                  desktopNavItemClass,
+                  isAccountRoute || isAccountMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+                ]"
+                @click="toggleAccountMenu"
+              >
+                <div
+                  v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''"
+                  class="w-8 h-8 overflow-hidden rounded-full ring-2 ring-white/30"
+                >
+                  <img
+                    :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic"
+                    alt="User Profile"
+                    class="object-cover w-full h-full rounded-full"
+                  />
+                </div>
+                <div
+                  v-else
+                  class="flex items-center justify-center w-8 h-8 rounded-full bg-white/15 ring-2 ring-white/20"
+                >
+                  <IconsProfileCircle :size="20" />
+                </div>
+                <p class="hidden capitalize lg:flex text-medium line-clamp-1 max-w-40">
+                  {{ language==='english' ? `Account` :`Akaunti`}}
+                </p>
+                <Icon
+                  name="heroicons:chevron-down-20-solid"
+                  class="hidden w-5 h-5 lg:block"
+                />
+              </button>
+
+              <div
+                v-if="isAccountMenuOpen"
+                class="absolute right-0 z-30 w-56 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
+              >
+                <NuxtLink
+                  aria-label="Go to profile page"
+                  to="/profile"
+                  class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
+                  @click="closeAccountMenu"
+                >
+                  <IconsProfileCircle :size="20" />
+                  <span>{{ language==='english' ? `Profile` :`Wasifu`}}</span>
+                </NuxtLink>
+
+                <button
+                  aria-label="Log out"
+                  class="flex items-center w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-rose-700 hover:bg-rose-50"
+                  @click="openLogoutConfirmFromMenu"
+                >
+                  <IconsLogout :size="20" title="Sign out" />
+                  <span>{{ language==='english' ? `Logout` :`Ondoka`}}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -221,32 +286,52 @@ onBeforeUnmount(() => {
           <!-- Profile and Sign Up and Home -->
           <div class="flex items-center justify-between w-full">
             <div class="flex">
-
-           
-            <NuxtLink aria-label="Go home" to="/home" class="flex gap-2 pr-2 pl-2 rounded-md"
-                active-class="text-white !bg-deepBlue">
+              <NuxtLink
+                aria-label="Go home"
+                to="/home"
+                :aria-current="isHomeRoute ? 'page' : undefined"
+                :class="[mobileNavItemClass, isHomeRoute ? activeNavItemClass : inactiveNavItemClass]"
+              >
                 <div class="flex items-center justify-center">
                   <IconsHome :size="20" />
                 </div>
-                <p class="hidden capitalize lg:flex">Home</p>
-              </NuxtLink>  
-            
-
-              
+                <p class="hidden capitalize lg:flex">
+                  {{ language==='english' ? `Home` :`Nyumbani`}}
+                </p>
+              </NuxtLink>
 
               <!-- TIE Library Books -->
-              <a aria-label="Visit TIE online library" href="https://ol.tie.go.tz/index.php" target="_blank"
-                class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45"
-                active-class="text-white !bg-deepBlue">
+              <a
+                aria-label="Visit TIE online library"
+                href="https://ol.tie.go.tz/index.php"
+                target="_blank"
+                rel="noopener noreferrer"
+                :class="[mobileNavItemClass, inactiveNavItemClass]"
+              >
                 <div class="flex items-center justify-center">
-                  <IconsSubjects :size="20" />
+                  <IconsTieLibrary :size="20" />
                 </div>
               </a>
-              <NuxtLink to="/smart-class" aria-label="Go to Smart Class"
-                class="flex items-center justify-center gap-2 px-2 text-center text-white cursor-pointer text-medium lg:w-45 rounded-md"
-                active-class="text-white !bg-deepBlue">
+              <NuxtLink
+                to="/smart-class"
+                aria-label="Go to Smart Class"
+                :aria-current="isSmartClassRoute ? 'page' : undefined"
+                :class="[mobileNavItemClass, isSmartClassRoute ? activeNavItemClass : inactiveNavItemClass]"
+              >
                 <div class="flex items-center justify-center">
                   <IconsSmartClassHub :size="20" />
+                </div>
+              </NuxtLink>
+
+              <NuxtLink
+                v-if="userToken"
+                to="/profile/learning-statistics"
+                aria-label="Go to learning statistics page"
+                :aria-current="isLearningStatisticsRoute ? 'page' : undefined"
+                :class="[mobileNavItemClass, isLearningStatisticsRoute ? activeNavItemClass : inactiveNavItemClass]"
+              >
+                <div class="flex items-center justify-center">
+                  <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
                 </div>
               </NuxtLink>
             </div>
@@ -254,29 +339,71 @@ onBeforeUnmount(() => {
             <!-- Paragraph Text -->
             <NuxtLink to="/">
               <p class="block text-center uppercase lg:text-large text-[14px] text-shadow">
-                TIE online school
+                 {{ language==='english' ? `TIE online school` :`shule mtandao ya TIE`}}
               </p>
             </NuxtLink>
 
-            <!-- Logout and Sign in -->
-            <div class="flex items-center">
-                    <NuxtLink aria-label="Go to profile page" to="/profile" v-if="userToken" class="flex items-center pl-1">
-                <IconsProfileCircle :size="20" />
-              </NuxtLink> 
-              <NuxtLink to="/auth/SignUp" title="Sign Up" v-else
-                class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
-                <IconsProfileCircle :size="20" />
-              </NuxtLink>
-              <div class="flex items-center h-6 gap-2 p-2 cursor-pointer md:h-8" v-if="userToken"
-                role="button" tabindex="0" aria-label="Log out"
-                @click="openLogoutConfirm" @keyup="openLogoutConfirm">
-                <IconsLogout :size="20" class="" title="Sign out" />
+            <!-- Account and Sign in -->
+            <div class="relative flex items-center">
+              <div v-if="userToken">
+                <button
+                  aria-label="Open account menu"
+                  :aria-current="isAccountRoute ? 'page' : undefined"
+                  :class="[
+                    mobileNavItemClass,
+                    isAccountRoute || isAccountMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+                  ]"
+                  @click="toggleAccountMenu"
+                >
+                  <div
+                    v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''"
+                    class="w-8 h-8 overflow-hidden rounded-full ring-2 ring-white/30"
+                  >
+                    <img
+                      :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic"
+                      alt="User Profile"
+                      class="object-cover w-full h-full rounded-full"
+                    />
+                  </div>
+                  <IconsProfileCircle v-else :size="22" />
+                </button>
+
+                <div
+                  v-if="isAccountMenuOpen"
+                  class="absolute right-0 z-30 w-48 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
+                >
+                  <NuxtLink
+                    aria-label="Go to profile page"
+                    to="/profile"
+                    class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
+                    @click="closeAccountMenu"
+                  >
+                    <IconsProfileCircle :size="20" />
+                    <span>{{ language==='english' ? `Profile` :`Wasifu`}}</span>
+                  </NuxtLink>
+
+                  <button
+                    aria-label="Log out"
+                    class="flex items-center w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-rose-700 hover:bg-rose-50"
+                    @click="openLogoutConfirmFromMenu"
+                  >
+                    <IconsLogout :size="20" title="Sign out" />
+                    <span>{{ language==='english' ? `Logout` :`Ondoka`}}</span>
+                  </button>
+                </div>
               </div>
-              <!-- sign in -->
-              <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in" v-else
-                class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
-                <IconsSignIn :size="20" class="" />
-              </NuxtLink>
+
+              <div v-else class="flex items-center">
+                <NuxtLink to="/auth/SignUp" title="Sign Up"
+                  class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
+                  <IconsProfileCircle :size="20" />
+                </NuxtLink>
+
+                <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
+                  class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
+                  <IconsSignIn :size="20" class="" />
+                </NuxtLink>
+              </div>
             </div>
           </div>
         </div>

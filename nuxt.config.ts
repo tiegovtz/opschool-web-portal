@@ -1,4 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { fileURLToPath } from "node:url";
 import { vite as vidstack } from "vidstack/plugins";
 
 export default defineNuxtConfig({
@@ -63,7 +64,7 @@ export default defineNuxtConfig({
   build: {
     transpile: ["vuetify"],
   },
-
+  
   vite: {
     css: {
       preprocessorOptions: {
@@ -100,4 +101,3 @@ export default defineNuxtConfig({
     },
   }
 });
-
