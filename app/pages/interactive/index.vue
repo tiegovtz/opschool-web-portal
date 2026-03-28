@@ -251,11 +251,11 @@ watch(
   { deep: true },
 );
 
+/** Tab targets except `subjects` (Masomo vs Subjects is handled in switchTab). */
 const TAB_TO_ROUTE: Record<
   string,
   { path: string; query?: Record<string, any> }
 > = {
-  subjects: { path: "/home" },
   "interactive-contents": { path: "/interactive" },
   "learn-activities": { path: "/experiments" },
   video: { path: "/video", query: { type: "conc" } },
@@ -267,6 +267,12 @@ const TAB_TO_ROUTE: Record<
 const switchTab = async (tab: any) => {
   if (!tab) return;
   activeTab.value = tab;
+  if (tab === "subjects") {
+    await useRouter().push({
+      path: educationLevel.value === "primary" ? "/nyumbani" : "/home",
+    });
+    return;
+  }
   const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
   await useRouter().push(target);
 };

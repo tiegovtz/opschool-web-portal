@@ -75,7 +75,7 @@ const TAB_TO_ROUTE: Record<
   tabs,
   { path: string; query?: Record<string, any> }
 > = {
-  subjects: { path: "/home" },
+  subjects: { path: "/nyumbani" },
   "interactive-contents": { path: "/interactive", query: { edl: "primary" , lang: 'sw'}  },
   "learn-activities": { path: "/experiments" },
   video: { path: "/video", query: { type: "conc" } },
