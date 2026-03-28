@@ -456,14 +456,21 @@ const prevPage = () => {
 const level = ref(); // Initial Level State
 
 // watch emits changes
-watch(filters, (newFilters) => {
-  if (newFilters.level !== null && newFilters.subject !== null) {
+watch(
+  () => [filters.level, filters.subject, level.value] as const,
+  ([classLevel, subjectName]) => {
+    if (!classLevel || !subjectName) return;
+    const educationLevelParam =
+      typeof level.value === "string" && level.value.trim()
+        ? level.value.trim().toLowerCase()
+        : undefined;
     fetchData({
-      level: newFilters.level?.toString(),
-      subject: newFilters.subject.toString(),
+      ...(educationLevelParam ? { educationLevel: educationLevelParam } : {}),
+      level: String(classLevel),
+      subject: String(subjectName),
     });
-  }
-});
+  },
+);
 
 // Call sliceData after data is loaded
 sliceData(

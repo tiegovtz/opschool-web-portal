@@ -86,9 +86,16 @@ const sortedEducationLevels = computed(() => {
     const aOrder = EDUCATION_LEVEL_RENDER_ORDER[a?.name ?? ""] ?? Number.MAX_SAFE_INTEGER
     const bOrder = EDUCATION_LEVEL_RENDER_ORDER[b?.name ?? ""] ?? Number.MAX_SAFE_INTEGER
     if (aOrder !== bOrder) return aOrder - bOrder
-    return (a?.name ?? "").localeCompare(b?.name ?? "")
+    return (a?.name ?? "").localeCompare(b?.name ?? "", undefined, { numeric: true, sensitivity: "base" })
   })
 })
+
+/** Ascending order for class / subject labels (Form 1 … Form 10, A–Z). */
+function sortOptionsByNameAsc(options: DropdownOption[]): DropdownOption[] {
+  return [...options].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }),
+  )
+}
 
 const matchesEducationLevel = (
   candidate?: string | null,
@@ -284,54 +291,67 @@ const isEducationLevelLocked = computed(
   () => matchedEducationLevels.value.length === 1,
 );
 
-const educationLevelOptions = computed<DropdownOption[]>(() =>
-  filteredEducationLevels.value.map((educationLevelOption) => ({
-    id: normalizeValue(educationLevelOption.name),
-    name: getEducationLevelLabel(educationLevelOption.name),
-  })),
-);
+const educationLevelOptions = computed<DropdownOption[]>(() => {
+  const allowed = new Set(
+    filteredEducationLevels.value.map((e) => normalizeValue(e.name)),
+  )
+  return sortedEducationLevels.value
+    .filter((e) => allowed.has(normalizeValue(e.name)))
+    .map((educationLevelOption) => ({
+      id: normalizeValue(educationLevelOption.name),
+      name: getEducationLevelLabel(educationLevelOption.name),
+    }))
+})
 
 const classOptions = computed<DropdownOption[]>(() => {
   if (!level.value.trim()) return [];
 
   if (isPrimaryModule.value) {
-    return primaryGrades.value.map((grade) => ({
-      id: grade.gradeName,
-      name: grade.gradeName,
-    }));
+    return sortOptionsByNameAsc(
+      primaryGrades.value.map((grade) => ({
+        id: grade.gradeName,
+        name: grade.gradeName,
+      })),
+    );
   }
 
-  return secondaryClasses.value
-    .filter((classLevel) =>
-      matchesEducationLevel(classLevel.educationLevel?.name, level.value),
-    )
-    .map((classLevel) => ({
-      id: classLevel.name,
-      name: classLevel.name,
-    }));
+  return sortOptionsByNameAsc(
+    secondaryClasses.value
+      .filter((classLevel) =>
+        matchesEducationLevel(classLevel.educationLevel?.name, level.value),
+      )
+      .map((classLevel) => ({
+        id: classLevel.name,
+        name: classLevel.name,
+      })),
+  );
 });
 
 const subjectOptions = computed<DropdownOption[]>(() => {
   if (!level.value.trim() || !standard.value.trim()) return [];
 
   if (isPrimaryModule.value) {
-    return primarySubjects.value
-      .map(
-        (primarySubject) => primarySubject.subjectName ?? primarySubject.name,
-      )
-      .filter((subjectName): subjectName is string =>
-        Boolean(subjectName?.trim()),
-      )
-      .map((subjectName) => ({
-        id: subjectName,
-        name: subjectName,
-      }));
+    return sortOptionsByNameAsc(
+      primarySubjects.value
+        .map(
+          (primarySubject) => primarySubject.subjectName ?? primarySubject.name,
+        )
+        .filter((subjectName): subjectName is string =>
+          Boolean(subjectName?.trim()),
+        )
+        .map((subjectName) => ({
+          id: subjectName,
+          name: subjectName,
+        })),
+    );
   }
 
-  return secondarySubjects.value.map((secondarySubject) => ({
-    id: secondarySubject.name,
-    name: secondarySubject.name,
-  }));
+  return sortOptionsByNameAsc(
+    secondarySubjects.value.map((secondarySubject) => ({
+      id: secondarySubject.name,
+      name: secondarySubject.name,
+    })),
+  );
 });
 
 const isClassesLoading = computed(() =>
@@ -374,7 +394,7 @@ watch(
         v-if="showEducationLevelDropdown"
         id="home-education-level"
         :model-value="level"
-        :list="sortedEducationLevels"
+        :list="educationLevelOptions"
         :placeholder="
           educationLevelsPending ? content.loading : content.selectLevel
         "
