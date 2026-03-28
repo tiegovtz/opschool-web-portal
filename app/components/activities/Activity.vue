@@ -22,12 +22,14 @@ const setWrongQuestionsFormat = (state:boolean)=>wrongQuestionsFormat.value = st
 // load activity data
 const fetchData = async () => {
     status.value = 'pending'
+    error.value = undefined;
     try {
-        const data = await $fetch<Activity>(';;')
-        activity.value = data;
+        const data = await $fetch<{ success: boolean; activity: Activity }>(`/api/primary/activities/${props.activityId}`);
+        activity.value = data.activity;
         status.value = 'success';
     } catch (e) {
         error.value = e as any;
+        activity.value = undefined;
         status.value = 'error';
         console.error(`[error while fetching activity info]:${error}`);
     }
@@ -35,9 +37,19 @@ const fetchData = async () => {
 
 
 // computed component to map
-onMounted(async () => {
-    await fetchData();
-})
+watch(
+    () => props.activityId,
+    async (value) => {
+        if (!value) {
+            activity.value = undefined;
+            status.value = 'idle';
+            return;
+        }
+
+        await fetchData();
+    },
+    { immediate: true }
+)
 
 // preparing component
 const activityComponent = computed(() => activity.value && enhancedActivityComponents[activity.value?.description])
