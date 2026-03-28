@@ -95,9 +95,9 @@ const getActivityTypes = async (): Promise<string[]> => {
   const filePath = join(process.cwd(), "app", "types", "activity-types.ts");
   const raw = await readFile(filePath, "utf-8");
   const enumBlock = raw.match(/export enum ActivityType\s*{([\s\S]*?)^}/m)?.[1] ?? "";
-  const activityTypes = [...enumBlock.matchAll(/=\s*"([^"]+)"/g)].map((match) => match[1].trim());
+  const activityTypes = [...enumBlock.matchAll(/=\s*"([^"]+)"/g)].map((match) => match[1]?.trim());
 
-  activityTypesCache = activityTypes;
+  activityTypesCache = activityTypes as string[];
   return activityTypesCache;
 };
 
@@ -126,30 +126,30 @@ const normalizeTopic = (item: TopicJsonRecord): PrimaryTopic => ({
   displayOrder: item.display_order ?? null,
 });
 
-const normalizeQuestion = (item: QuestionJsonRecord): QuestionJsonRecord => ({
+const normalizeQuestion = (item: QuestionJsonRecord): any => ({
   id: Number(item.id),
   description: item.description ?? null,
-  text_one: item.text_one ?? null,
-  text_two: item.text_two ?? null,
-  text_three: item.text_three ?? null,
-  text_four: item.text_four ?? null,
-  text_five: item.text_five ?? null,
-  text_six: item.text_six ?? null,
-  text_seven: item.text_seven ?? null,
-  text_eight: item.text_eight ?? null,
-  text_nine: item.text_nine ?? null,
-  text_ten: item.text_ten ?? null,
-  audio_path: item.audio_path ?? null,
-  video_path: item.video_path ?? null,
+  textOne: item.text_one ?? null,
+  textTwo: item.text_two ?? null,
+  textThree: item.text_three ?? null,
+  textFour: item.text_four ?? null,
+  textFive: item.text_five ?? null,
+  textSix: item.text_six ?? null,
+  textSeven: item.text_seven ?? null,
+  textEight: item.text_eight ?? null,
+  textNine: item.text_nine ?? null,
+  textTen: item.text_ten ?? null,
+  audioPath: item.audio_path ?? null,
+  videoPath: item.video_path ?? null,
   image: item.image ?? null,
-  image_two: item.image_two ?? null,
-  image_three: item.image_three ?? null,
-  image_four: item.image_four ?? null,
+  imageTwo: item.image_two ?? null,
+  imageThree: item.image_three ?? null,
+  imageFour: item.image_four ?? null,
   path: item.path ?? null,
-  path_two: item.path_two ?? null,
-  path_three: item.path_three ?? null,
-  path_four: item.path_four ?? null,
-  activity_id: item.activity_id ?? null,
+  pathTwo: item.path_two ?? null,
+  pathThree: item.path_three ?? null,
+  pathFour: item.path_four ?? null,
+  activityId: item.activity_id ?? null,
 });
 
 const getQuestionsByActivity = async (): Promise<Map<string, QuestionJsonRecord[]>> => {
