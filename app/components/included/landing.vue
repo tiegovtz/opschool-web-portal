@@ -6,7 +6,22 @@ import type { Audios } from '~/types/audio.interface';
 import type { Videos } from '~/types/video.interface';
 import type { Experiment } from '~/types/experiment.interface';
 import type { Topic } from '~/types/topic.interface';
+import { setPostLoginHome } from '~/utilities/postLoginHome';
 
+const router = useRouter();
+const hubHeaderLang = useHubHeaderLanguage();
+
+function goToPrimary() {
+    setPostLoginHome('/nyumbani');
+    hubHeaderLang.value = 'kiswahili';
+    router.push('/nyumbani');
+}
+
+function goToSecondary() {
+    setPostLoginHome('/home');
+    hubHeaderLang.value = 'english';
+    router.push('/home');
+}
 
 const educationLevels = [
     {
@@ -157,8 +172,8 @@ onMounted(async () => {
             </p>
             <!-- buttons -->
             <div class="flex flex-wrap gap-5 pt-5">
-                <UiButtonShineParticles @click="$router.push('/nyumbani')" label="Primary" />
-                <UiButtonShineParticles @click="$router.push('/home')" label="Secondary" />
+                <UiButtonShineParticles @click="goToPrimary" label="Primary" />
+                <UiButtonShineParticles @click="goToSecondary" label="Secondary" />
             </div>
 
             <!-- static -->

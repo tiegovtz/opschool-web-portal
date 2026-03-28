@@ -11,6 +11,7 @@ import CustomDate from "~/components/common/CustomDate.vue";
 
 const canGoBack = ref(false);
 const route = useRoute();
+const hubHeaderLang = useHubHeaderLanguage();
 const navigationStore = useNavigationStore();
 const router = useRouter();
 
@@ -1491,7 +1492,9 @@ const prepareNavigation = () => {
 
 <template>
   <NuxtLayout
-    :name="$router.currentRoute.value.fullPath.includes('header-less') ? ('normal' as any) : ('home-layout' as any)">
+    :name="$router.currentRoute.value.fullPath.includes('header-less') ? ('normal' as any) : ('home-layout' as any)"
+    :language="$router.currentRoute.value.fullPath.includes('header-less') ? undefined : hubHeaderLang"
+  >
     <main ref="pageRoot" id="main-container" tabindex="-1" class="min-h-screen bg-white font-sans text-gray-900">
       <p class="sr-only" aria-live="assertive" aria-atomic="true">{{ srAnnouncement }}</p>
       <div class="mx-auto w-full max-w-none px-0 sm:px-2 lg:max-w-7xl lg:px-4 py-8 sm:py-10">

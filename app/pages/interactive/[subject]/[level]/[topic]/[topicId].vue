@@ -17,6 +17,7 @@ import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer
 
 const route = useRoute();
 const router = useRouter();
+const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
 const safeDecode = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
   try {
@@ -887,7 +888,7 @@ definePageMeta({
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <section v-if="experimrntUrl" class="relative w-full center-height" id="experiment-container">
       <div
         class="absolute top-0 right-0 flex items-center justify-center w-10 h-10 p-2 bg-red-500 rounded-full cursor-pointer"

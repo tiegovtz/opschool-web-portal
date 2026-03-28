@@ -112,6 +112,26 @@ const openLogoutConfirmFromMenu = () => {
   showLogoutConfirm.value = true;
 };
 
+const authReturnQuery = computed(() => {
+  const p = route.path;
+  if (p === "/nyumbani" || p.startsWith("/nyumbani/")) {
+    return { redirect: route.fullPath };
+  }
+  return {};
+});
+
+const authSignInTo = computed(() =>
+  Object.keys(authReturnQuery.value).length
+    ? { path: "/auth", query: authReturnQuery.value }
+    : "/auth",
+);
+
+const authSignUpTo = computed(() =>
+  Object.keys(authReturnQuery.value).length
+    ? { path: "/auth/SignUp", query: authReturnQuery.value }
+    : "/auth/SignUp",
+);
+
 watch(
   () => route.fullPath,
   () => {
@@ -201,7 +221,7 @@ onBeforeUnmount(() => {
           <div class="subInfo">
             <div class="flex items-center gap-4 p-2" v-if="!userToken">
               <!-- sign in -->
-              <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
+              <NuxtLink aria-label="go to sign in page" :to="authSignInTo" title="Sign in"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <IconsSignIn :size="20" />
                 <p class="hidden capitalize lg:flex">
@@ -210,7 +230,7 @@ onBeforeUnmount(() => {
               </NuxtLink>
 
               <!-- sign up -->
-              <NuxtLink aria-label="Go to sign up page" to="/auth/SignUp" title="Sign Up"
+              <NuxtLink aria-label="Go to sign up page" :to="authSignUpTo" title="Sign Up"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <IconsProfileCircle :size="24" />
                 <p class="hidden capitalize lg:flex">
@@ -394,12 +414,12 @@ onBeforeUnmount(() => {
               </div>
 
               <div v-else class="flex items-center">
-                <NuxtLink to="/auth/SignUp" title="Sign Up"
+                <NuxtLink :to="authSignUpTo" title="Sign Up"
                   class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                   <IconsProfileCircle :size="20" />
                 </NuxtLink>
 
-                <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
+                <NuxtLink aria-label="go to sign in page" :to="authSignInTo" title="Sign in"
                   class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                   <IconsSignIn :size="20" class="" />
                 </NuxtLink>

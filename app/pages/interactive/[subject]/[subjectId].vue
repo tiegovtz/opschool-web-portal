@@ -248,6 +248,8 @@ const prevPage = () => {
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
 
+const contentLayoutLanguage = useContentLayoutLanguage();
+
 // Define Filters Reactive State
 const filters = reactive({
   level: null,
@@ -265,7 +267,7 @@ watch(filters, (filters) => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <div class="" :class="{ ' animate-pulse': isLoading }">
       <div class="flex flex-col gap-4">
         <!-- Keep hero-style search visible for both logged-in and logged-out -->

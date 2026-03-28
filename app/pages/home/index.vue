@@ -86,6 +86,8 @@ useHead({
 
 // Define Cookie
 const userToken = useCookie("signInUserToken");
+const hubHeaderLangCookie = useHubHeaderLanguage();
+hubHeaderLangCookie.value = "english";
 const route = useRoute();
 const router = useRouter();
 // current page data

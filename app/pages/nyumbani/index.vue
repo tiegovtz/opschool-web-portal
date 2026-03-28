@@ -42,6 +42,8 @@ useHead({
 });
 
 const userToken = useCookie("signInUserToken");
+const hubHeaderLangCookie = useHubHeaderLanguage();
+hubHeaderLangCookie.value = "kiswahili";
 const { $router } = useNuxtApp();
 const currentPage = ref(1);
 const pageSize = ref(12);

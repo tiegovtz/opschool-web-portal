@@ -81,6 +81,8 @@ const language = computed(() =>
   (query.lang as string) == "sw" ? "kiswahili" : "english",
 );
 
+const contentLayoutLanguage = useContentLayoutLanguage();
+
 const TOPIC_SUBJECT_ORDER = [
   "physics",
   "chemistry",
@@ -300,7 +302,7 @@ watch(filters, (filters) => {
 <template>
   <NuxtLayout
     name="home-layout"
-    :language
+    :language="contentLayoutLanguage"
   >
     <div :class="[' ', { ' animate-pulse': isLoading }]">
       <!-- User Token Available -->
