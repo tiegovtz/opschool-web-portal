@@ -57,3 +57,8 @@ scripts/test-*.ts
 
 #ignore refference folder
 tie-web-portal-main/
+
+#ignore data files
+/public/data/activity.json
+/public/data/question.json
+/public/data/topic.json

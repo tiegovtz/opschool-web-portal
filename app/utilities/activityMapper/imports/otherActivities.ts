@@ -126,7 +126,7 @@ export const SingleCheckTable = defineAsyncComponent(
 export const ComparingQuantitiesDraggingActivity = defineAsyncComponent(
   () =>
     import(
-      "~/components/primary-sources/activities/numbers-activities/comparingQuantitiesDragging.vue"
+      "~/components/primary-sources/activities/numbers-activities/comparing-quantities-dragging.vue"
     ),
 );
 
