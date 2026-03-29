@@ -76,6 +76,12 @@ const isPicsTwoBoxes = computed(
     currentQuestion.value.category === "image" && !currentQuestion.value.thirdOption,
 );
 
+/** Text / text+image: greyish drop slots; image-only keeps picton/lemon */
+const useGreyDropSlots = computed(
+  () =>
+    currentQuestion.value.category === "text" || currentQuestion.value.category === "text-image",
+);
+
 const initializeAnswers = () => {
   answers.value = {
     first: Array.from({ length: currentQuestion.value.firstOption.noOfAnswers }, () => null),
@@ -191,7 +197,7 @@ const resetActivity = () => {
 
     <div
       v-if="!showResults"
-      class="mb-3 overflow-x-auto border-t border-sky-200 bg-sky-50/60 py-2"
+      class="mb-3 overflow-x-auto border-t border-gray-200 bg-slate-50 py-2"
     >
       <div
         :class="
@@ -209,38 +215,36 @@ const resetActivity = () => {
           type="button"
           :class="
             cn(
-              'flex flex-col items-stretch justify-center rounded-md border text-center text-gray-900 shadow-sm transition select-none',
+              'flex flex-col items-center justify-center rounded-md border text-center text-gray-900 shadow-sm transition select-none',
               'touch-manipulation',
               isPicsTwoBoxes
                 ? [
-                    'min-h-0 min-w-0 w-full px-0.5 py-0.5 sm:px-1 sm:py-1',
+                    /* Same frame size as drop slots below (h-32, p-3, rounded-xl) */
+                    'box-border h-32 min-h-32 max-h-32 min-w-0 w-full flex-col items-center justify-center rounded-xl p-3',
                     selectedOptionId === option.id
-                      ? 'border-2 border-sky-400 bg-sky-100 ring-1 ring-sky-300/90 hover:bg-sky-200'
-                      : 'border border-gray-200 bg-white hover:bg-sky-50/90',
-                    selectedOptionId === option.id
-                      ? 'ring-2 ring-sky-600 ring-offset-2 ring-offset-white'
-                      : '',
+                      ? 'border-2 border-sky-400 bg-sky-100 hover:bg-sky-200 ring-2 ring-sky-600 ring-offset-2 ring-offset-white'
+                      : 'border-2 border-emerald-950/30 bg-white hover:bg-slate-50',
                   ]
                 : [
-                    'border border-sky-300 bg-sky-100 hover:bg-sky-200',
                     'min-h-[120px] h-[135px] min-w-[140px] px-3 py-2 sm:min-w-[180px]',
                     selectedOptionId === option.id
-                      ? 'ring-2 ring-sky-600 ring-offset-2 ring-offset-sky-50'
-                      : '',
+                      ? 'border-2 border-sky-400 bg-sky-100 hover:bg-sky-200 ring-2 ring-sky-600 ring-offset-2 ring-offset-white'
+                      : 'border-2 border-emerald-950/30 bg-sky-50 hover:bg-sky-100/80',
                   ],
             )
           "
           @click="selectedOptionId = selectedOptionId === option.id ? null : option.id"
         >
-          <span v-if="typeof option.content === 'string'" class="text-lg leading-snug text-gray-900">{{
-            option.content
-          }}</span>
+          <span
+            v-if="typeof option.content === 'string'"
+            class="flex w-full flex-1 items-center justify-center text-center text-lg leading-snug text-gray-900"
+          >{{ option.content }}</span>
           <div
             v-else
             :class="
               cn(
                 'flex min-h-0 w-full flex-col items-center justify-center text-gray-900',
-                isPicsTwoBoxes ? 'gap-0' : 'gap-2',
+                'gap-2',
               )
             "
           >
@@ -250,17 +254,14 @@ const resetActivity = () => {
               draggable="false"
               :class="
                 cn(
-                  'pointer-events-none w-full object-contain select-none',
+                  'pointer-events-none object-contain select-none',
                   isPicsTwoBoxes
-                    ? 'max-h-[52px] max-w-full sm:max-h-14'
-                    : 'max-w-[7.5rem] h-20 max-h-[100px] w-32',
+                    ? 'h-20 w-32 shrink-0'
+                    : 'h-20 max-h-[100px] w-full max-w-[7.5rem]',
                 )
               "
             >
-            <p
-              v-if="option.content.title"
-              :class="isPicsTwoBoxes ? 'mt-0.5 text-[10px] leading-tight text-gray-900 sm:text-xs' : 'text-sm text-gray-900'"
-            >
+            <p v-if="option.content.title" class="text-sm text-gray-900">
               {{ option.content.title }}
             </p>
           </div>
@@ -288,15 +289,19 @@ const resetActivity = () => {
                     ? isCorrectInBox(answer, 'first')
                       ? 'border-green-400 bg-green-100 text-green-700'
                       : 'border-red-400 bg-red-100 text-red-700'
-                    : 'border-lemon-300 bg-lemon-100 text-lemon-800'
-                  : 'border-picton-blue-300 bg-picton-blue-100 hover:bg-picton-blue-200',
+                    : useGreyDropSlots
+                      ? 'border-gray-300 bg-gray-200 text-gray-800 hover:bg-gray-300'
+                      : 'border-lemon-300 bg-lemon-100 text-lemon-800'
+                  : useGreyDropSlots
+                    ? 'border-gray-300 bg-white hover:bg-slate-50'
+                    : 'border-picton-blue-300 bg-picton-blue-100 hover:bg-picton-blue-200',
               )
             "
             @click="answer ? returnOption('first', index) : placeSelectedOption('first', index)"
           >
             <template v-if="answer">
-              <span v-if="typeof answer.content === 'string'" class="text-lg">{{ answer.content }}</span>
-              <div v-else class="flex flex-col items-center justify-center gap-2">
+              <span v-if="typeof answer.content === 'string'" class="w-full flex-1 px-1 text-center text-lg leading-snug">{{ answer.content }}</span>
+              <div v-else class="flex flex-col items-center justify-center gap-2 text-center">
                 <img :src="answer.content.imageSrc" :alt="answer.id" class="h-20 w-32 object-contain">
                 <p v-if="answer.content.title" class="text-sm">{{ answer.content.title }}</p>
               </div>
@@ -327,15 +332,19 @@ const resetActivity = () => {
                     ? isCorrectInBox(answer, 'second')
                       ? 'border-green-400 bg-green-100 text-green-700'
                       : 'border-red-400 bg-red-100 text-red-700'
-                    : 'border-lemon-300 bg-lemon-100 text-lemon-800'
-                  : 'border-picton-blue-300 bg-picton-blue-100 hover:bg-picton-blue-200',
+                    : useGreyDropSlots
+                      ? 'border-gray-300 bg-gray-200 text-gray-800 hover:bg-gray-300'
+                      : 'border-lemon-300 bg-lemon-100 text-lemon-800'
+                  : useGreyDropSlots
+                    ? 'border-gray-300 bg-white hover:bg-slate-50'
+                    : 'border-picton-blue-300 bg-picton-blue-100 hover:bg-picton-blue-200',
               )
             "
             @click="answer ? returnOption('second', index) : placeSelectedOption('second', index)"
           >
             <template v-if="answer">
-              <span v-if="typeof answer.content === 'string'" class="text-lg">{{ answer.content }}</span>
-              <div v-else class="flex flex-col items-center justify-center gap-2">
+              <span v-if="typeof answer.content === 'string'" class="w-full flex-1 px-1 text-center text-lg leading-snug">{{ answer.content }}</span>
+              <div v-else class="flex flex-col items-center justify-center gap-2 text-center">
                 <img :src="answer.content.imageSrc" :alt="answer.id" class="h-20 w-32 object-contain">
                 <p v-if="answer.content.title" class="text-sm">{{ answer.content.title }}</p>
               </div>
@@ -366,15 +375,19 @@ const resetActivity = () => {
                     ? isCorrectInBox(answer, 'third')
                       ? 'border-green-400 bg-green-100 text-green-700'
                       : 'border-red-400 bg-red-100 text-red-700'
-                    : 'border-lemon-300 bg-lemon-100 text-lemon-800'
-                  : 'border-picton-blue-300 bg-picton-blue-100 hover:bg-picton-blue-200',
+                    : useGreyDropSlots
+                      ? 'border-gray-300 bg-gray-200 text-gray-800 hover:bg-gray-300'
+                      : 'border-lemon-300 bg-lemon-100 text-lemon-800'
+                  : useGreyDropSlots
+                    ? 'border-gray-300 bg-white hover:bg-slate-50'
+                    : 'border-picton-blue-300 bg-picton-blue-100 hover:bg-picton-blue-200',
               )
             "
             @click="answer ? returnOption('third', index) : placeSelectedOption('third', index)"
           >
             <template v-if="answer">
-              <span v-if="typeof answer.content === 'string'" class="text-lg">{{ answer.content }}</span>
-              <div v-else class="flex flex-col items-center justify-center gap-2">
+              <span v-if="typeof answer.content === 'string'" class="w-full flex-1 px-1 text-center text-lg leading-snug">{{ answer.content }}</span>
+              <div v-else class="flex flex-col items-center justify-center gap-2 text-center">
                 <img :src="answer.content.imageSrc" :alt="answer.id" class="h-20 w-32 object-contain">
                 <p v-if="answer.content.title" class="text-sm">{{ answer.content.title }}</p>
               </div>
