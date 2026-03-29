@@ -7,6 +7,7 @@ import type { PendingNavigation } from "~/types/tie-ai-teacher.interface";
 
 const route = useRoute();
 const router = useRouter();
+const contentLayoutLanguage = useContentLayoutLanguage();
 const chatStore = useChatStore();
 const canMinimize = computed(() => {
   const stateFromRoute = (route as any).state as
@@ -708,7 +709,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <div
       class="relative flex min-h-0 overflow-hidden"
       :style="{

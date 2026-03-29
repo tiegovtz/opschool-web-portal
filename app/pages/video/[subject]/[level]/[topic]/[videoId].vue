@@ -122,10 +122,12 @@ const toggleSidebar = () => {
 definePageMeta({
     middleware: 'auth'
 })
+
+const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
 </script>
 
 <template>
-    <NuxtLayout name="home-layout">
+    <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
         <section class="relative w-full overflow-hidden center-height">
             <div
                 class="w-full py-5 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">

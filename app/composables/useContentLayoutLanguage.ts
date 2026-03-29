@@ -1,0 +1,34 @@
+import { computed, watch, toValue, type MaybeRefOrGetter } from "vue";
+import type { LanguageSupport } from "~/types/language.interface";
+import { inferHubLanguageFromContentRoute } from "~/utilities/contentHubLanguage";
+
+/**
+ * Header/footer language for `home-layout` on content routes: Primary → kiswahili, Secondary → english.
+ * Syncs `useHubHeaderLanguage` when the route implies a hub; otherwise keeps the existing cookie.
+ */
+export function useContentLayoutLanguage(levelSource?: MaybeRefOrGetter<unknown>) {
+  const route = useRoute();
+  const hub = useHubHeaderLanguage();
+
+  const resolveLevel = () => {
+    if (levelSource !== undefined) return toValue(levelSource);
+    return route.params.level;
+  };
+
+  const layoutLanguage = computed<LanguageSupport>(() => {
+    const inferred = inferHubLanguageFromContentRoute(route, resolveLevel());
+    if (inferred !== null) return inferred;
+    return hub.value ?? "english";
+  });
+
+  watch(
+    () => [route.fullPath, levelSource !== undefined ? toValue(levelSource) : null] as const,
+    () => {
+      const inferred = inferHubLanguageFromContentRoute(route, resolveLevel());
+      if (inferred !== null) hub.value = inferred;
+    },
+    { immediate: true },
+  );
+
+  return layoutLanguage;
+}

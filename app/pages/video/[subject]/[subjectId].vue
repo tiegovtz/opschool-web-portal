@@ -269,10 +269,12 @@ watch (()=>route.query?.type,()=>{
     videoType: route.query?.type == 'conc'? 'Conceptual' : 'others'
   })
 })
+
+const contentLayoutLanguage = useContentLayoutLanguage();
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <div :class="[
       ' ',
       { ' animate-pulse': isLoading }

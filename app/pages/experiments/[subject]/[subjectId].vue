@@ -233,10 +233,12 @@ const prevPage = () => {
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
 
+const contentLayoutLanguage = useContentLayoutLanguage();
+
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <main class="" :class="{ ' animate-pulse': isLoading }"  aria-busy="isLoading ? 'true' : 'false'">
       <HomeSearchbar v-if="userToken" appearance="rounded" />
       <HeroSection v-else />
