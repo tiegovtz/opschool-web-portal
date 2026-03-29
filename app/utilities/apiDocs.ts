@@ -49,6 +49,15 @@ const apiDocs = {
     getPublicExperimentsBySubjectId: `${baseURL}/public-experiments/by-subject/{subjectId}`,
   },
 
+  // ACTIVITIES API
+  activities: {
+    getActivities: `${baseURL}/activities`,
+    getActivityId: `${baseURL}/activities/{id}`,
+    createActivity: `${baseURL}/activities`,
+    updateActivity: `${baseURL}/activities/{id}`,
+    deleteActivity: `${baseURL}/activities/{id}`,
+  },
+
   // NOTES API
   notes: {
     getNotes: `${baseURL}/notes`,

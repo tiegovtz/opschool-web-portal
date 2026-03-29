@@ -6,6 +6,12 @@ import { type Activity } from '~/types/activity-types';
 import { enhancedActivityComponents } from '~/utilities/activityMapper/enhanced-mapper';
 import activityPropsTranspiler from '~~/shared/transpilerMapper';
 import type { ActivityType } from "~/types/activity-types";
+import apiDocs from "~/utilities/apiDocs";
+import {
+  activityAuthHeaders,
+  extractActivityFromPayload,
+  normalizeActivity,
+} from "~/utilities/activitiesApi";
 
 
 // prpops
@@ -24,8 +30,22 @@ const fetchData = async () => {
     status.value = 'pending'
     error.value = undefined;
     try {
-        const data = await $fetch<{ success: boolean; activity: Activity }>(`/api/primary/activities/${props.activityId}`);
-        activity.value = data.activity;
+        const response = await $fetch(
+          apiDocs.activities.getActivityId.replace("{id}", props.activityId),
+          {
+            headers: activityAuthHeaders(),
+          }
+        );
+
+        const normalizedActivity = normalizeActivity(
+          extractActivityFromPayload(response)
+        );
+
+        if (!normalizedActivity) {
+          throw new Error("Activity payload is invalid.");
+        }
+
+        activity.value = normalizedActivity as Activity;
         status.value = 'success';
     } catch (e) {
         error.value = e as any;
