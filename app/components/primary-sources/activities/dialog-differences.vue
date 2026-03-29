@@ -197,17 +197,17 @@ const resetActivity = () => {
               <template v-for="(item, index) in listA" :key="index">
                 <div
                   v-if="props.questions.lockSide === 'left'"
-                  class="flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-white px-4 py-3"
+                  class="flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-white px-4 py-3"
                 >
-                  <div v-if="item !== ''" class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
+                  <div v-if="item !== ''" class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
                     <img
                       v-if="renderItemContent(item).image"
                       :src="renderItemContent(item).image"
                       :alt="renderItemContent(item).text || ''"
                       draggable="false"
-                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
+                      class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
                     >
-                    <p class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</p>
+                    <p class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</p>
                   </div>
                 </div>
 
@@ -215,7 +215,7 @@ const resetActivity = () => {
                   v-else-if="item === ''"
                   type="button"
                   aria-label="Place selected answer"
-                  class="min-h-[135px] w-full rounded border border-picton-blue-200 bg-white transition hover:bg-lemon-100 cursor-pointer touch-manipulation"
+                  class="min-h-[135px] w-full rounded border-2 border-dashed border-gray-300 bg-white transition hover:bg-slate-50 cursor-pointer touch-manipulation"
                   @click="placeInSlot('left', index)"
                 />
 
@@ -223,19 +223,19 @@ const resetActivity = () => {
                   v-else-if="showResults"
                   :class="
                     isCorrect(item)
-                      ? 'relative flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-green-200 px-2 pr-10 pt-2 text-green-700 md:px-4 md:py-3'
-                      : 'relative flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-red-200 px-2 pr-10 pt-2 text-red-700 md:px-4 md:py-3'
+                      ? 'relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-green-200 px-2 pr-10 text-center text-green-700 md:px-4 md:py-3'
+                      : 'relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-red-200 px-2 pr-10 text-center text-red-700 md:px-4 md:py-3'
                   "
                 >
-                  <div class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
+                  <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
                     <img
                       v-if="renderItemContent(item).image"
                       :src="renderItemContent(item).image"
                       :alt="renderItemContent(item).text || ''"
                       draggable="false"
-                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
+                      class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
                     >
-                    <span class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</span>
+                    <span class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</span>
                   </div>
                   <span class="absolute right-2 top-2 text-2xl" :class="isCorrect(item) ? 'text-green-600' : 'text-red-600'">
                     {{ isCorrect(item) ? "✓" : "✕" }}
@@ -245,18 +245,18 @@ const resetActivity = () => {
                 <button
                   v-else
                   type="button"
-                  class="relative flex min-h-[135px] w-full cursor-pointer items-start rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-left text-base text-lemon-700 transition hover:bg-lemon-300/80 md:px-4 md:py-3 md:text-[length:inherit] touch-manipulation"
+                  class="relative flex min-h-[135px] w-full cursor-pointer items-center justify-center rounded border border-gray-300 bg-gray-200 px-2 py-2 text-center text-base text-gray-800 transition hover:bg-gray-300/90 md:px-4 md:py-3 md:text-[length:inherit] touch-manipulation"
                   @click="returnFromSlot('left', index)"
                 >
-                  <div class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
+                  <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
                     <img
                       v-if="item.image"
                       :src="item.image"
                       :alt="item.text || ''"
                       draggable="false"
-                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
+                      class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
                     >
-                    <span class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ item.text }}</span>
+                    <span class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ item.text }}</span>
                   </div>
                 </button>
               </template>
@@ -268,17 +268,17 @@ const resetActivity = () => {
               <template v-for="(item, index) in listB" :key="index">
                 <div
                   v-if="props.questions.lockSide === 'right'"
-                  class="flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-white px-4 py-3"
+                  class="flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-white px-4 py-3"
                 >
-                  <div v-if="item !== ''" class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
+                  <div v-if="item !== ''" class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
                     <img
                       v-if="renderItemContent(item).image"
                       :src="renderItemContent(item).image"
                       :alt="renderItemContent(item).text || ''"
                       draggable="false"
-                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
+                      class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
                     >
-                    <p class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</p>
+                    <p class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</p>
                   </div>
                 </div>
 
@@ -286,7 +286,7 @@ const resetActivity = () => {
                   v-else-if="item === ''"
                   type="button"
                   aria-label="Place selected answer"
-                  class="min-h-[135px] w-full rounded border border-picton-blue-200 bg-white transition hover:bg-lemon-100 cursor-pointer touch-manipulation"
+                  class="min-h-[135px] w-full rounded border-2 border-dashed border-gray-300 bg-white transition hover:bg-slate-50 cursor-pointer touch-manipulation"
                   @click="placeInSlot('right', index)"
                 />
 
@@ -294,19 +294,19 @@ const resetActivity = () => {
                   v-else-if="showResults"
                   :class="
                     isCorrect(item)
-                      ? 'relative flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-green-200 px-2 pr-10 pt-2 text-green-700 md:px-4 md:py-3'
-                      : 'relative flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-red-200 px-2 pr-10 pt-2 text-red-700 md:px-4 md:py-3'
+                      ? 'relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-green-200 px-2 pr-10 text-center text-green-700 md:px-4 md:py-3'
+                      : 'relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-red-200 px-2 pr-10 text-center text-red-700 md:px-4 md:py-3'
                   "
                 >
-                  <div class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
+                  <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
                     <img
                       v-if="renderItemContent(item).image"
                       :src="renderItemContent(item).image"
                       :alt="renderItemContent(item).text || ''"
                       draggable="false"
-                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
+                      class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
                     >
-                    <span class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</span>
+                    <span class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</span>
                   </div>
                   <span class="absolute right-2 top-2 text-2xl" :class="isCorrect(item) ? 'text-green-600' : 'text-red-600'">
                     {{ isCorrect(item) ? "✓" : "✕" }}
@@ -316,18 +316,18 @@ const resetActivity = () => {
                 <button
                   v-else
                   type="button"
-                  class="relative flex min-h-[135px] w-full cursor-pointer items-start rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-left text-base text-lemon-700 transition hover:bg-lemon-300/80 md:px-4 md:py-3 md:text-[length:inherit] touch-manipulation"
+                  class="relative flex min-h-[135px] w-full cursor-pointer items-center justify-center rounded border border-gray-300 bg-gray-200 px-2 py-2 text-center text-base text-gray-800 transition hover:bg-gray-300/90 md:px-4 md:py-3 md:text-[length:inherit] touch-manipulation"
                   @click="returnFromSlot('right', index)"
                 >
-                  <div class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
+                  <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
                     <img
                       v-if="item.image"
                       :src="item.image"
                       :alt="item.text || ''"
                       draggable="false"
-                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
+                      class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
                     >
-                    <span class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ item.text }}</span>
+                    <span class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ item.text }}</span>
                   </div>
                 </button>
               </template>
@@ -345,31 +345,31 @@ const resetActivity = () => {
 
         <div
           v-if="!showResults"
-          class="flex min-h-[135px] w-full flex-wrap gap-2 border-t border-sky-200 bg-sky-50/60 py-3"
+          class="flex min-h-[135px] w-full flex-wrap gap-2 border-t border-gray-200 bg-slate-50 py-3"
         >
           <button
             v-for="item in movableItems"
             :key="item.id"
             type="button"
             :class="[
-              'flex min-h-[135px] min-w-[140px] max-w-full flex-1 cursor-pointer flex-col items-stretch justify-start rounded-md border border-sky-300 bg-sky-100 px-3 py-3 text-gray-900 shadow-sm transition hover:bg-sky-200 sm:min-w-[180px] sm:max-w-[calc(50%-4px)] md:px-4 md:text-[length:inherit] touch-manipulation select-none',
+              'flex min-h-[135px] min-w-[140px] max-w-full flex-1 cursor-pointer flex-col items-center justify-center rounded-md px-3 py-3 text-center text-gray-900 shadow-sm transition sm:min-w-[180px] sm:max-w-[calc(50%-4px)] md:px-4 md:text-[length:inherit] touch-manipulation select-none',
               selectedItemId != null && String(selectedItemId) === String(item.id)
-                ? 'ring-2 ring-sky-600 ring-offset-2 ring-offset-sky-50'
-                : '',
+                ? 'border-2 border-sky-400 bg-sky-100 hover:bg-sky-200 ring-2 ring-sky-600 ring-offset-2 ring-offset-white'
+                : 'border-2 border-emerald-950/30 bg-sky-50 hover:bg-sky-100/80',
             ]"
             @click="togglePoolSelection(String(item.id))"
           >
             <div
-              class="flex w-full min-w-0 flex-col gap-2 text-gray-900 md:flex-row md:items-start md:gap-3"
+              class="flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-2 text-gray-900 md:flex-row md:items-center md:justify-center md:gap-3"
             >
               <img
                 v-if="item.image"
                 :src="item.image"
                 :alt="item.text || ''"
                 draggable="false"
-                class="pointer-events-none max-h-[120px] max-w-48 w-full shrink-0 self-center object-contain select-none md:self-start"
+                class="pointer-events-none max-h-[120px] max-w-48 w-full shrink-0 object-contain select-none"
               >
-              <span class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ item.text }}</span>
+              <span class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ item.text }}</span>
             </div>
           </button>
         </div>
