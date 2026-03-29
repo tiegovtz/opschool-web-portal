@@ -1,5 +1,6 @@
 import type { Activity } from "~/types/activity-types";
 import type { ServerQuestionType } from "~/types/activity-props";
+import apiDocs from "~/utilities/apiDocs";
 
 type NullableString = string | null;
 
@@ -104,6 +105,27 @@ const toNullableString = (value: unknown): NullableString => {
     return String(value);
   }
   return null;
+};
+
+const toExternalAssetUrl = (value: unknown): NullableString => {
+  const normalizedValue = toNullableString(value);
+  if (!normalizedValue) return null;
+
+  if (
+    normalizedValue.startsWith("http://") ||
+    normalizedValue.startsWith("https://") ||
+    normalizedValue.startsWith("//") ||
+    normalizedValue.startsWith("data:") ||
+    normalizedValue.startsWith("blob:")
+  ) {
+    return normalizedValue;
+  }
+
+  try {
+    return new URL(normalizedValue, apiDocs.baseURL).toString();
+  } catch {
+    return normalizedValue;
+  }
 };
 
 const normalizeDescription = (
@@ -251,7 +273,7 @@ const normalizeExternalQuestion = (
       : null;
   const images = Array.isArray(question.images)
     ? question.images
-        .map((item) => toNullableString(item))
+        .map((item) => toExternalAssetUrl(item))
         .filter((item): item is string => item !== null)
     : [];
 
@@ -274,14 +296,14 @@ const normalizeExternalQuestion = (
     textTen: null,
     audioPath: toNullableString(question.audioPath ?? optionRecord?.audioPath),
     videoPath: toNullableString(question.videoPath ?? optionRecord?.videoPath),
-    image: images[0] ?? toNullableString(optionRecord?.image),
-    imageTwo: images[1] ?? toNullableString(optionRecord?.imageTwo),
-    imageThree: images[2] ?? toNullableString(optionRecord?.imageThree),
-    imageFour: images[3] ?? toNullableString(optionRecord?.imageFour),
-    path: images[0] ?? toNullableString(optionRecord?.path),
-    pathTwo: images[1] ?? toNullableString(optionRecord?.pathTwo),
-    pathThree: images[2] ?? toNullableString(optionRecord?.pathThree),
-    pathFour: images[3] ?? toNullableString(optionRecord?.pathFour),
+    image: images[0] ?? toExternalAssetUrl(optionRecord?.image),
+    imageTwo: images[1] ?? toExternalAssetUrl(optionRecord?.imageTwo),
+    imageThree: images[2] ?? toExternalAssetUrl(optionRecord?.imageThree),
+    imageFour: images[3] ?? toExternalAssetUrl(optionRecord?.imageFour),
+    path: images[0] ?? toExternalAssetUrl(optionRecord?.path),
+    pathTwo: images[1] ?? toExternalAssetUrl(optionRecord?.pathTwo),
+    pathThree: images[2] ?? toExternalAssetUrl(optionRecord?.pathThree),
+    pathFour: images[3] ?? toExternalAssetUrl(optionRecord?.pathFour),
   };
 
   QUESTION_TEXT_FIELD_KEYS.forEach((key, keyIndex) => {
@@ -293,7 +315,7 @@ const normalizeExternalQuestion = (
   QUESTION_IMAGE_FIELD_KEYS.forEach((key, keyIndex) => {
     normalized[key] =
       normalized[key] ??
-      toNullableString(optionRecord?.[key]) ??
+      toExternalAssetUrl(optionRecord?.[key]) ??
       images[keyIndex] ??
       null;
   });
@@ -301,7 +323,7 @@ const normalizeExternalQuestion = (
   QUESTION_PATH_FIELD_KEYS.forEach((key, keyIndex) => {
     normalized[key] =
       normalized[key] ??
-      toNullableString(optionRecord?.[key]) ??
+      toExternalAssetUrl(optionRecord?.[key]) ??
       images[keyIndex] ??
       null;
   });
@@ -401,8 +423,8 @@ export const normalizeActivity = (value: unknown): Activity | null => {
     questions,
     summary: toNullableString(raw.summary),
     summaryPath:
-      toNullableString(raw.summaryPath) ??
-      toNullableString(raw.thumbnail),
-    thumbnail: toNullableString(raw.thumbnail),
+      toExternalAssetUrl(raw.summaryPath) ??
+      toExternalAssetUrl(raw.thumbnail),
+    thumbnail: toExternalAssetUrl(raw.thumbnail),
   };
 };
