@@ -40,6 +40,12 @@ export default defineComponent({
       event.dataTransfer?.setData("text/plain", props.id);
       event.dataTransfer!.effectAllowed = "move";
       dndContext?.beginDrag(props.id);
+      dndContext?.notifyDragStart(event, props.id);
+    };
+
+    const handleDrag = (event: DragEvent) => {
+      if (props.disabled) return;
+      dndContext?.notifyDragMove(event, props.id);
     };
 
     const handleDragEnd = () => {
@@ -51,6 +57,7 @@ export default defineComponent({
         {...attrs}
         draggable={!props.disabled}
         onDragstart={handleDragStart}
+        onDrag={handleDrag}
         onDragend={handleDragEnd}
         style={{
           touchAction: props.disabled ? "auto" : "none",
