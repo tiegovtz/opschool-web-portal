@@ -93,6 +93,23 @@ const fetchVideoById = async () => {
 // Call FetchVideos Function
 fetchVideoById();
 
+/** Back to video list for this class + subject (same pattern as interactive topic page). */
+const backToVideoListPath = computed(() => {
+    const sub = String(route.params.subject ?? "").trim();
+    const lev = String(route.params.level ?? "").trim();
+    const type =
+        videoInfo.value?.videoType === "Conceptual"
+            ? "conc"
+            : videoInfo.value?.videoType
+              ? "oth"
+              : "conc";
+    if (!sub || !lev) return { path: "/video" };
+    return {
+        path: `/video/${encodeURIComponent(sub)}/${encodeURIComponent(lev)}`,
+        query: { type },
+    };
+});
+
 // Toggle Sidebar
 const toggleSidebar = () => {
     if (import.meta.client) {
@@ -105,44 +122,27 @@ const toggleSidebar = () => {
 definePageMeta({
     middleware: 'auth'
 })
+
+const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
 </script>
 
 <template>
-    <NuxtLayout name="home-layout">
+    <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
         <section class="relative w-full overflow-hidden center-height">
             <div
                 class="w-full py-5 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
                 <!-- Videovideo Level Standard and Subject Indicator -->
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
+                <div class="flex w-full min-w-0 items-center justify-between gap-2">
+                    <div class="flex min-w-0 flex-1 items-center gap-2">
                         <NuxtLink
-                            :to="{ path: '/', query: { tab: `${videoInfo?.videoType === 'Conceptual' ? 'video' : 'class-videos'}`, subject: videoSubject, class: videoStandard } }"
-                            class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
-                            <!-- {{
-                            videoSubject != null &&
-                                videoSubject != undefined &&
-                                videoSubject != "null"
-                                ? videoSubject
-                                : `Secondary`
-                        }}
-                            <Icon name="weui:arrow-outlined" size="18" class="text-black" /> -->
-
-                            <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
+                            :to="backToVideoListPath"
+                            class="inline-flex shrink-0 items-center justify-center rounded-full border-2 border-oceanBlue p-2 text-oceanBlue transition-colors hover:bg-oceanBlue/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/50"
+                            aria-label="Back to videos for this subject"
+                        >
+                            <Icon name="vaadin:arrow-backward" size="22" class="text-oceanBlue" aria-hidden="true" />
                         </NuxtLink>
 
-                        <!-- <NuxtLink :to="{ path: '/', query: { tab: 'video', subject: videoSubject, class: videoStandard } }"
-                            class="items-center hidden gap-2 capitalize text-oceanBlue text-small md:flex">
-                            {{
-                            videoStandard != null &&
-                                videoStandard != undefined &&
-                                videoStandard != "null"
-                                ? videoStandard
-                                : `Form One`
-                        }}
-                            <Icon name="weui:arrow-outlined" size="18" class="text-black" />
-                        </NuxtLink> -->
-
-                        <p class="font-medium text-medium">
+                        <p class="min-w-0 flex-1 truncate font-medium text-medium">
                             {{
                                 videoTitle != null &&
                                     videoTitle != undefined &&

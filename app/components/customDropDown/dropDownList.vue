@@ -31,10 +31,30 @@ const selected = ref('');
 const dropdownRef = ref(null);
 const selectedLabel = ref('');
 
+/** Match API rows (`_id`) and option shapes (`id`) plus plain `name` (case-insensitive). */
+function findListItem(list, rawVal) {
+  if (rawVal === null || rawVal === undefined || rawVal === '') return undefined;
+  const sv = String(rawVal).trim().toLowerCase();
+  return list.find((i) => {
+    const key = i.id ?? i._id;
+    if (key !== undefined && key !== null && String(key).trim().toLowerCase() === sv) {
+      return true;
+    }
+    if (i.name != null && String(i.name).trim().toLowerCase() === sv) {
+      return true;
+    }
+    return false;
+  });
+}
+
+function itemOptionValue(item) {
+  return item.id ?? item._id ?? item.name;
+}
+
 // Watch for modelValue changes to update selected display text
 watch(() => props.modelValue, (newVal) => {
-  if (newVal !== null && newVal !== undefined) {
-    const item = props.list.find(i => i.id === newVal);
+  if (newVal !== null && newVal !== undefined && newVal !== '') {
+    const item = findListItem(props.list, newVal);
     selected.value = item ? item.name : '';
   } else {
     selected.value = '';
@@ -42,8 +62,8 @@ watch(() => props.modelValue, (newVal) => {
 }, { immediate: true });
 
 watch(() => props.list, (newVal) => {
-  if (props.list !== null && props.list !== undefined) {
-    const item = newVal.find(i => i.id === props.modelValue);
+  if (newVal !== null && newVal !== undefined) {
+    const item = findListItem(newVal, props.modelValue);
     selected.value = item ? item.name : '';
   } else {
     selected.value = '';
@@ -63,8 +83,9 @@ const selectItem = (item) => {
   selectedLabel.value = item.name;
   selected.value = item.name;
 
-  emit('updateModelValue', item.id ?? item.name);
-  emit('update:modelValue', item.id ?? item.name);
+  const out = itemOptionValue(item);
+  emit('updateModelValue', out);
+  emit('update:modelValue', out);
 
   isOpen.value = false;
 };

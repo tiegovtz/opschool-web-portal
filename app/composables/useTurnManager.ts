@@ -20,7 +20,8 @@ export const useTurnManager = (mode: () => PracticeMode) => {
     const nextIndex =
       (speakerOrder.value.findIndex((speaker) => speaker === currentTurn.value) + 1) %
       speakerOrder.value.length;
-    currentTurn.value = speakerOrder.value[nextIndex] || speakerOrder.value[0];
+    currentTurn.value =
+      speakerOrder.value[nextIndex] ?? speakerOrder.value[0] ?? currentTurn.value;
   };
 
   const setTurn = (speaker: SpeakerType) => {
@@ -50,7 +51,7 @@ export const useTurnManager = (mode: () => PracticeMode) => {
     const nextIndex =
       (speakerOrder.value.findIndex((speaker) => speaker === currentTurn.value) + 1) %
       speakerOrder.value.length;
-    return speakerOrder.value[nextIndex] || speakerOrder.value[0];
+    return speakerOrder.value[nextIndex] ?? speakerOrder.value[0] ?? currentTurn.value;
   };
 
   return {

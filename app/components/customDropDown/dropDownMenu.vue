@@ -5,6 +5,14 @@ import type { educationLevel } from "~/types/educationlevel.interface";
 import type { ClassLevel } from "~/types/classlevel.interface";
 import type { Subjects } from "~/types/subject.interface";
 
+const EDUCATION_LEVEL_RENDER_ORDER: Record<string, number> = {
+  "Pre-Primary": 0,
+  Primary: 1,
+  "Lower Secondary": 2,
+  "Upper Secondary": 3,
+  "Teacher Education": 4,
+};
+
 // Auth headers
 const token = useCookie("signInAccessToken").value;
 const headers = {
@@ -34,6 +42,8 @@ const selected = reactive({
 });
 
 const liveMessage = ref("");
+const isClassDisabled = computed(() => selected.level?.trim() === "");
+const isSubjectDisabled = computed(() => selected.class?.trim() === "");
 
 // Emits
 const emit = defineEmits(["emitUpdateFilterValue"]);
@@ -100,6 +110,21 @@ const emitUpdate = createDebounce(() => {
   emit("emitUpdateFilterValue", q);
 }, 100);
 
+const sortedEducationLevelNames = computed(() => {
+  const names = (educationLevels.value || [])
+    .map((level) => level?.name)
+    .filter((name): name is string => !!name?.trim());
+
+  return [...names].sort((a, b) => {
+    const aOrder = EDUCATION_LEVEL_RENDER_ORDER[a] ?? Number.MAX_SAFE_INTEGER;
+    const bOrder = EDUCATION_LEVEL_RENDER_ORDER[b] ?? Number.MAX_SAFE_INTEGER;
+
+    // Keep known desired order first; unknown names fall back to ascending A–Z
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+  });
+});
+
 // Build available filters
 const filterGroups = computed(() => {
   if (isLoading.value) return [];
@@ -107,34 +132,42 @@ const filterGroups = computed(() => {
   const groups: any[] = [];
 
   // Level
-  if (educationLevels.value?.length) {
-    groups.push({
-      name: "level",
-      inputType: "radio",
-      items: educationLevels.value.map((lvl) => lvl.name),
-    });
-  }
+  groups.push({
+    name: "level",
+    inputType: "radio",
+    items: sortedEducationLevelNames.value,
+    disabled: false,
+  });
 
   // Class
-  if (classes.value?.length && selected.level?.trim() !== '') {
+  if (classes.value?.length) {
+    const classItems =
+      selected.level?.trim() !== ""
+        ? classes.value
+            .filter((cls) => {
+              const lvl = (cls as any).educationLevel?.name;
+              return lvl?.toLowerCase() === selected.level?.toLowerCase();
+            })
+            .map((cls) => cls.name)
+        : [];
+
     groups.push({
       name: "class",
       inputType: "radio",
-      items: classes.value
-        .filter((cls) => {
-          const lvl = (cls as any).educationLevel?.name;
-          return lvl?.toLowerCase() === selected.level?.toLowerCase();
-        })
-        .map((cls) => cls.name),
+      items: classItems,
+      disabled: isClassDisabled.value,
     });
   }
 
   // Subject
-  if (subjects.value && props.activeTab?.toLowerCase() !== "home" && selected.class?.trim() !== "") {
+  if (subjects.value && props.activeTab?.toLowerCase() !== "home") {
     groups.push({
       name: "subject",
       inputType: "radio",
-      items: subjects.value.map((s: Subjects) => s.name),
+      items: [...subjects.value.map((s: Subjects) => s.name)].sort((a, b) =>
+        a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }),
+      ),
+      disabled: isSubjectDisabled.value,
     });
   }
 
@@ -187,7 +220,7 @@ watch(
           pos > -1 ? openMenus.splice(pos, 1) : openMenus.push(i);
         }">
         <h3 class="capitalize font-semibold">
-          {{ group.name }}
+          {{ group.name === "level" ? "Education level" : group.name }}
         </h3>
 
         <Icon :name="openMenus.includes(i)
@@ -199,8 +232,16 @@ watch(
       <transition name="fade">
         <div v-if="openMenus.includes(i)" :id="`filter-panel-${i}`" class="mt-3 ml-2 space-y-2" role="group"
           :aria-labelledby="`filter-group-${i}`">
-          <label v-for="item in group.items" :key="item" class="flex items-center gap-2">
+          <p v-if="group.name === 'class' && group.disabled" class="text-sm text-gray-500">
+            Select level first to choose a class.
+          </p>
+          <p v-if="group.name === 'subject' && group.disabled" class="text-sm text-gray-500">
+            Select class first to choose a subject.
+          </p>
+          <label v-for="item in group.items" :key="item" class="flex items-center gap-2"
+            :class="group.disabled ? 'opacity-60 cursor-not-allowed' : ''">
             <input :type="group.inputType" :name="group.name" :value="item"
+              :disabled="group.disabled"
               :checked="selected[group.name as keyof typeof selected] === item" @change="
                 group.name === 'level'
                   ? selectLevel(item)

@@ -5,6 +5,8 @@ import { useSessionsSetup } from "../../../../composables/usesSessions.js";
 import apiDocs from "../../../../utilities/apiDocs.js";
 
 const router = useRouter();
+const route = useRoute();
+const hubHeaderLang = useHubHeaderLanguage();
 
 const authAccessToken = useCookie('signInAccessToken');
 const authUserToken = useCookie('signInUserToken');
@@ -463,7 +465,10 @@ const { data: schoolClasses, status: clStatus } = await useAsyncData('class-leve
 </script>
 
 <template>
-  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ? 'normal' : 'home-layout'">
+  <NuxtLayout
+    :name="route.fullPath.includes('header-less') ? 'normal' : 'home-layout'"
+    :language="route.fullPath.includes('header-less') ? undefined : hubHeaderLang"
+  >
     <div v-if="dialog" class="fixed inset-0 flex items-center justify-center z-[100] bg-black bg-opacity-50"
       role="presentation" @keydown.escape="dialog = false">
       <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl overflow-y-auto max-h-[90vh]" role="dialog"

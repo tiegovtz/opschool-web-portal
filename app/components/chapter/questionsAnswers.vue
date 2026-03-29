@@ -21,10 +21,28 @@ const questionAnswer = reactive({
   isCorrectAnswer: false,
   clickedChoice: "" as string | null,
 });
+const questionPresentedAt = ref<number>(Date.now());
 
 const questionProps = defineProps<Question>();
 
 const emit = defineEmits(["questionAnswered", "clickedChoice"]);
+
+const buildAnswerPayload = (selectedChoice: string, isCorrect: boolean) => {
+  const submittedAt = new Date().toISOString();
+  const startedAt = new Date(questionPresentedAt.value).toISOString();
+  const timeSpentSeconds = Math.max(
+    0,
+    Math.round((Date.now() - questionPresentedAt.value) / 1000),
+  );
+
+  return {
+    isCorrect,
+    selectedChoice,
+    startedAt,
+    submittedAt,
+    timeSpentSeconds,
+  };
+};
 
 const markQuestion = (choice: string) => {
   if (questionAnswer.disableAnswer) return;
@@ -35,7 +53,10 @@ const markQuestion = (choice: string) => {
   questionAnswer.disableAnswer = true;
   questionAnswer.clickedChoice = choice;
 
-  emit("questionAnswered", questionAnswer.isCorrectAnswer);
+  emit(
+    "questionAnswered",
+    buildAnswerPayload(choice, questionAnswer.isCorrectAnswer),
+  );
   emit("clickedChoice", questionAnswer.clickedChoice);
 
   setTimeout(() => {
@@ -66,6 +87,8 @@ const isDropped = ref(false);
 watch(
   () => questionProps.question,
   () => {
+    questionPresentedAt.value = Date.now();
+    isDropped.value = false;
     const blanks =
       questionProps.blanks ||
       (questionProps.question.match(/(_\$blank)/g) || []).length;
@@ -75,6 +98,7 @@ watch(
 );
 
 const handleDrop = (index: number, event: { dataTransfer: { getData: (arg0: string) => any; }; }) => {
+  if (isDropped.value) return;
   if (dropZoneAnswers.value[index]) return;
 
   const data = event.dataTransfer.getData("text");
@@ -88,7 +112,8 @@ const handleDrop = (index: number, event: { dataTransfer: { getData: (arg0: stri
 
   if (filled && dropZoneAnswers.value.length === expected) {
     const isCorrect = currentConcat === questionProps.trueAnswer;
-    emit("questionAnswered", isCorrect);
+    isDropped.value = true;
+    emit("questionAnswered", buildAnswerPayload(currentConcat, isCorrect));
     emit("clickedChoice", currentConcat);
   }
 };

@@ -14,8 +14,9 @@ export default defineNuxtPlugin({
     nuxtApp.vueApp.use(pinia);
     setActivePinia(pinia);
 
-    if (nuxtApp.payload?.pinia) {
-      pinia.state.value = nuxtApp.payload.pinia;
+    const payload = nuxtApp.payload as { pinia?: Record<string, any> } | undefined;
+    if (payload?.pinia) {
+      pinia.state.value = payload.pinia;
     }
 
     return {
@@ -26,7 +27,10 @@ export default defineNuxtPlugin({
   },
   hooks: {
     "app:rendered"(nuxtApp) {
-      const app = nuxtApp ?? useNuxtApp();
+      const app = (nuxtApp ?? useNuxtApp()) as typeof nuxtApp & {
+        payload?: { pinia?: Record<string, any> };
+        $pinia?: ReturnType<typeof createPinia>;
+      };
 
       if (app?.payload && app.$pinia) {
         app.payload.pinia = toRaw(app.$pinia).state.value;

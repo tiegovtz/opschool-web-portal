@@ -19,6 +19,7 @@ logs
 .DS_Store
 .fleet
 .idea
+.nvmrc
 
 # Local env files
 .env
@@ -56,3 +57,8 @@ scripts/test-*.ts
 
 #ignore refference folder
 tie-web-portal-main/
+
+#ignore data files
+/public/data/activity.json
+/public/data/question.json
+/public/data/topic.json

@@ -6,6 +6,7 @@ import apiDocs from "~/utilities/apiDocs";
 import { dataEncrypt, dataDecrypt } from "~/utilities/encryption";
 import { useNavigationStore } from "~/stores/navigationStore";
 import { useAuthStore } from "~/stores/auth";
+import { consumePostLoginHome } from "~/utilities/postLoginHome";
 
 // // Use the State
 const navigationStore = useNavigationStore();
@@ -167,7 +168,8 @@ const signIn = async () => {
         typeof route.query.redirect === "string" && route.query.redirect.length > 0
           ? route.query.redirect
           : returnPath.value;
-      router.replace(redirectPath || "/home");
+      const landingChoiceHome = consumePostLoginHome();
+      router.replace(redirectPath || landingChoiceHome || "/home");
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
@@ -192,6 +194,17 @@ const togglePassword = () => {
 onMounted(() => {
   // Move focus to the heading when the sign-in page mounts
   headingRef.value?.focus();
+
+  // Show "account created successfully" after redirect from SignUp
+  if (route.query.registered === "1") {
+    userSignIn.controller.feedback = messages.success.auth.registered;
+    userSignIn.controller.isSucces = true;
+
+    const router = useRouter();
+    const nextQuery = { ...(route.query || {}) };
+    delete nextQuery.registered;
+    router.replace({ path: route.path, query: nextQuery });
+  }
 });
 
 // Clear validation errors when user types

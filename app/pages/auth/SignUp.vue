@@ -237,7 +237,7 @@ const signUp = async () => {
 
         // Navigate to auth page
         const router = useRouter()
-        router.push({ path: '/auth', query: authRedirectQuery.value });
+        router.push({ path: '/auth', query: { ...authRedirectQuery.value, registered: '1' } });
 
       } else {
         usersignUp.controller.isSent = 'failed';
@@ -298,8 +298,11 @@ const signUp = async () => {
       }
     }
 
-    usersignUp.controller.isSent = null;
-    usersignUp.controller.feedback = null;
+    // Keep success feedback while we redirect to /auth; clear only for non-success flows
+    if (usersignUp.controller.isSent !== 'success') {
+      usersignUp.controller.isSent = null;
+      usersignUp.controller.feedback = null;
+    }
 
   } else {
     usersignUp.controller.isSubmitted = false;

@@ -5,8 +5,8 @@ import apiDocs from "~/utilities/apiDocs";
 
 export default defineEventHandler(async (event) => {
   try {
-    const query = getQuery(event);
-    let body = {};
+    const query = getQuery(event) as { q?: string; query?: string };
+    let body: { q?: string; query?: string } = {};
     try {
       body = await readBody(event);
     } catch (e) {
@@ -15,11 +15,11 @@ export default defineEventHandler(async (event) => {
     }
     
     // Get search query from query params or body
-    const searchQuery = (query?.q as string) || (query?.query as string) || body?.query || body?.q;
+    const searchQuery = query.q || query.query || body.query || body.q;
     
     console.log("[AI Search] Request received:", { 
-      hasQuery: !!query?.q || !!query?.query, 
-      hasBody: !!body?.query || !!body?.q,
+      hasQuery: !!query.q || !!query.query, 
+      hasBody: !!body.query || !!body.q,
       searchQuery: searchQuery?.substring(0, 50) 
     });
     
@@ -115,7 +115,7 @@ User Question: "${searchQuery}"`;
         system: systemPrompt,
         prompt: `Answer the following question: "${searchQuery}"`,
         temperature: 0.7,
-        maxTokens: 200,
+        maxOutputTokens: 200,
       });
 
       aiAnswer = response.text.trim();
@@ -148,7 +148,7 @@ Only include curriculum-related terms. Example for "how does something float":
         system: "You are a helpful assistant that extracts educational keywords from student questions. Return only valid JSON.",
         prompt: keywordPrompt,
         temperature: 0.3,
-        maxTokens: 150,
+        maxOutputTokens: 150,
       });
 
       try {
@@ -454,7 +454,7 @@ Provide a brief, encouraging list of suggestions that align with the Tanzanian (
           system: "You are a helpful educational assistant for Tanzanian students. Suggest related educational content that helps students learn more.",
           prompt: relatedPrompt,
           temperature: 0.7,
-          maxTokens: 150,
+          maxOutputTokens: 150,
         });
 
         relatedContent.suggestions = relatedResponse.text.trim();
@@ -506,4 +506,3 @@ Provide a brief, encouraging list of suggestions that align with the Tanzanian (
     };
   }
 });
-

@@ -249,10 +249,12 @@ watch(filters, (filters) => {
   fetchVideos(payload);
 });
 
+const contentLayoutLanguage = useContentLayoutLanguage();
+
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <section :class="[
       ' ',
       { ' animate-pulse': isLoading }
