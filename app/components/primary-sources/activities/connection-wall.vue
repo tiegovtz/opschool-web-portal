@@ -4,7 +4,7 @@ import { computed, ref, watch } from "vue";
 import { cn, getImageUrl, shuffle } from "@/lib/utils";
 import { ActivityType } from "@/lib/types/activity-types";
 import ActivityTitle from "@/components/templates/activity-title";
-import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
+import { useSoundEffects } from "~/composables/use-sound-effects";
 import { ActivityResultsAlertDialog } from "@/components/templates/results";
 import ActivityResults from "@/components/templates/results";
 import { useObjects } from "@/hooks/useObjects";

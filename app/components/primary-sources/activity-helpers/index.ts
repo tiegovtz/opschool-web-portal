@@ -5,8 +5,8 @@
  * for rendering questions with KaTeX support, blanks, and highlighted text.
  */
 
-export { QuestionRenderer } from "./question-renderer";
-export type { QuestionRendererProps, QuestionRendererMode } from "./question-renderer";
+export { default as QuestionRenderer } from "./question-renderer.vue";
+export type { QuestionRendererProps, QuestionRendererMode } from "./question-renderer.vue";
 
 export { parseQuestionSegments, calculateBlankWidth } from "./question-renderer-utils";
 export type { QuestionSegment } from "./question-renderer-utils";
