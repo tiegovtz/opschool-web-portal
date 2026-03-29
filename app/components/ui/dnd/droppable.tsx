@@ -81,6 +81,7 @@ export default defineComponent({
     return () => (
       <div
         ref={element}
+        id={props.id}
         class={classList.value}
         onDragenter={onDragEnter}
         onDragover={onDragOver}
