@@ -1,9 +1,8 @@
 <script setup lang="ts">
-// @ts-nocheck
 import { computed, ref } from "vue";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/inputs/input";
+import Input  from "@/components/ui/inputs/input.vue";
 import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "@/components/templates/results";

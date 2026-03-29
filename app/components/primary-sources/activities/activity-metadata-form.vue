@@ -2,7 +2,7 @@
 import { reactive, watch } from "vue";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Input from "@/components/ui/inputs/input";
+import Input from "@/components/ui/inputs/input.vue";
 import { Textarea } from "@/components/ui/textarea";
 import type { ActivityMetadata } from "./forms";
 import { defaultActivityMetadata } from "./forms";

@@ -2,7 +2,7 @@
 // @ts-nocheck
 import { computed, ref } from "vue";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/inputs/input";
+import Input from "@/components/ui/inputs/input.vue";
 import { Button } from "@/components/ui/button";
 import ActivityTitle from "@/components/templates/activity-title";
 import { ActivityResultsAlertDialog } from "@/components/templates/results";

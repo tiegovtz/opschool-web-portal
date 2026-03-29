@@ -4,7 +4,6 @@ import { computed, ref, watch } from "vue";
 import { cn, shuffle } from "@/lib/utils";
 import ActivityTitle from "@/components/templates/activity-title";
 import type { FeedbackType } from "@/lib/types/activity-types";
-import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "@/components/templates/results";

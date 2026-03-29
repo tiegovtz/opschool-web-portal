@@ -2,7 +2,7 @@
 // @ts-nocheck
 import { computed, ref, watch } from "vue";
 import { Button } from "@/components/ui/button";
-import Input from "@/components/ui/inputs/input";
+import Input from "@/components/ui/inputs/input.vue";
 import { cn, shuffle, getImageUrl } from "@/lib/utils";
 import ActivityTitle from "@/components/templates/activity-title";
 import { AnswerChecker } from "@/lib/utils/answer-checker";

@@ -2,7 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { Button } from "@/components/ui/button";
 import { cn, shuffle, toRoman } from "@/lib/utils";
-import Input from "@/components/ui/inputs/input";
+import Input from "@/components/ui/inputs/input.vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import type { FeedbackType } from "@/lib/types/activity-types";
 import { AnswerChecker } from "@/lib/utils/answer-checker";

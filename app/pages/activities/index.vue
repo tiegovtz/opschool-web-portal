@@ -92,7 +92,8 @@ const handleDialogChange = (open: boolean) => {
 <template>
   <div class="min-h-screen bg-gradient-to-br from-sky-50 via-white to-amber-50">
     <div class="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 md:px-6">
-      <section class="rounded-[2rem] border border-oceanBlue/10 bg-white/90 p-6 shadow-[0_24px_80px_-48px_rgba(1,61,96,0.55)] backdrop-blur md:p-8">
+      <section
+        class="rounded-[2rem] border border-oceanBlue/10 bg-white/90 p-6 shadow-[0_24px_80px_-48px_rgba(1,61,96,0.55)] backdrop-blur md:p-8">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div class="max-w-3xl space-y-3">
             <p class="text-sm font-semibold uppercase tracking-[0.28em] text-sky-600">
@@ -102,17 +103,14 @@ const handleDialogChange = (open: boolean) => {
               Preview One Activity Per Type
             </h1>
             <p class="max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
-              This page pulls activity samples from the ordered endpoint, then opens the selected activity in a popup and binds its id into the renderer component.
+              This page pulls activity samples from the ordered endpoint, then opens the selected activity in a popup
+              and binds its id into the renderer component.
             </p>
           </div>
 
           <div class="flex flex-col gap-3 sm:flex-row">
-            <input
-              v-model="searchTerm"
-              type="search"
-              placeholder="Search by type, activity name, or id"
-              class="h-11 min-w-[260px] rounded-2xl border border-oceanBlue/15 bg-sky-50 px-4 text-sm text-slate-700 outline-none ring-0 transition focus:border-oceanBlue/35"
-            >
+            <input v-model="searchTerm" type="search" placeholder="Search by type, activity name, or id"
+              class="h-11 min-w-[260px] rounded-2xl border border-oceanBlue/15 bg-sky-50 px-4 text-sm text-slate-700 outline-none ring-0 transition focus:border-oceanBlue/35">
             <Button variant="outline-brand" @click="refresh()">
               Refresh
             </Button>
@@ -136,11 +134,8 @@ const handleDialogChange = (open: boolean) => {
       </section>
 
       <section v-if="pending" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <div
-          v-for="index in 6"
-          :key="index"
-          class="h-48 animate-pulse rounded-[1.75rem] border border-oceanBlue/10 bg-white"
-        />
+        <div v-for="index in 6" :key="index"
+          class="h-48 animate-pulse rounded-[1.75rem] border border-oceanBlue/10 bg-white" />
       </section>
 
       <section v-else-if="error" class="rounded-[1.75rem] border border-red-200 bg-red-50 p-6 text-red-700">
@@ -149,15 +144,12 @@ const handleDialogChange = (open: boolean) => {
       </section>
 
       <section v-else class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <button
-          v-for="item in filteredItems"
-          :key="`${item.type}-${item.activity.id}`"
-          type="button"
+        <button v-for="item in filteredItems" :key="`${item.type}-${item.activity.id}`" type="button"
           class="group flex h-full flex-col rounded-[1.75rem] border border-oceanBlue/10 bg-white p-5 text-left shadow-[0_20px_70px_-52px_rgba(1,61,96,0.7)] transition duration-200 hover:-translate-y-1 hover:border-oceanBlue/25 hover:shadow-[0_28px_80px_-46px_rgba(1,61,96,0.55)]"
-          @click="openPreview(item)"
-        >
+          @click="openPreview(item)">
           <div class="flex items-start justify-between gap-4">
-            <span class="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
+            <span
+              class="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">
               {{ item.type }}
             </span>
             <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
@@ -169,8 +161,8 @@ const handleDialogChange = (open: boolean) => {
             <h2 class="text-xl font-black leading-tight text-oceanBlue">
               {{ item.activity.activityName }}
             </h2>
-            <p class="line-clamp-3 text-sm leading-6 text-slate-600">
-              {{ item.activity.activityDescription || "No activity description available." }}
+            <p class="line-clamp-3 text-sm leading-6 text-slate-600"
+              v-html="item.activity.activityDescription || `No activity description available.`">
             </p>
           </div>
 
@@ -200,11 +192,8 @@ const handleDialogChange = (open: boolean) => {
         </DialogHeader>
 
         <div class="max-h-[calc(90vh-96px)] overflow-y-auto bg-white p-6">
-          <Activity
-            v-if="selectedActivityId"
-            :key="selectedActivityId"
-            :activity-id="selectedActivityId"
-          />
+          <Activity v-if="selectedActivityId" :key="selectedActivityId"
+            :activity-id="selectedActivityId" />
         </div>
       </DialogContent>
     </Dialog>
