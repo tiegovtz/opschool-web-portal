@@ -8,7 +8,7 @@ import ActivityResults, {
 } from "@/components/templates/results";
 // import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import { useObjects } from "@/hooks/useObjects";
-import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper";
+import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper.vue";
 
 interface MatchingItem {
   id: string;
