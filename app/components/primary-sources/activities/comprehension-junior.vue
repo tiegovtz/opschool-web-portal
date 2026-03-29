@@ -16,6 +16,7 @@ type ComprehensionQuestion = {
   question: string;
   image?: string;
   answers: string[];
+  acceptedAnswers?: string[];
   options: {
     id: string;
     text: string;
@@ -146,10 +147,13 @@ const isQuestionCorrect = async (
   }
 
   if (props.questions.algorithm === "Comprehension junior one") {
+    const acceptedAnswers =
+      question.acceptedAnswers?.length ? question.acceptedAnswers : question.answers;
+
     return userAnswers.every(
       (answer) =>
         answerChecker.checkAnswer(answer, {
-          acceptedAnswers: question.answers,
+          acceptedAnswers,
         }).isCorrect,
     );
   }
@@ -286,7 +290,11 @@ const questionIsAnswered = (index: number) =>
               >
                 Correct answer:
                 {{
-                  props.questions.questions[originalIndex]?.answers.join(", ")
+                  (
+                    props.questions.questions[originalIndex]?.acceptedAnswers ||
+                    props.questions.questions[originalIndex]?.answers ||
+                    []
+                  ).join(", ")
                 }}
               </p>
             </div>
