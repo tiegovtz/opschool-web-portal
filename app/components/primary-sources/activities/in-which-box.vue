@@ -70,6 +70,12 @@ const answers = ref<{
 
 const currentQuestion = computed(() => props.questions);
 
+/** Image + two boxes only: extra separation between draggable option cards */
+const isPicsTwoBoxes = computed(
+  () =>
+    currentQuestion.value.category === "image" && !currentQuestion.value.thirdOption,
+);
+
 const initializeAnswers = () => {
   answers.value = {
     first: Array.from({ length: currentQuestion.value.firstOption.noOfAnswers }, () => null),
@@ -183,23 +189,80 @@ const resetActivity = () => {
   <div class="flex h-full flex-col">
     <ActivityTitle :title="currentQuestion.title" />
 
-    <div v-if="!showResults" class="mb-4 overflow-x-auto">
-      <div class="grid min-w-fit gap-2 md:grid-cols-4">
+    <div
+      v-if="!showResults"
+      class="mb-3 overflow-x-auto border-t border-sky-200 bg-sky-50/60 py-2"
+    >
+      <div
+        :class="
+          cn(
+            'grid',
+            isPicsTwoBoxes
+              ? 'w-full min-w-0 grid-cols-2 gap-1 sm:grid-cols-4 sm:gap-1.5'
+              : 'min-w-fit gap-2 md:grid-cols-4',
+          )
+        "
+      >
         <button
           v-for="option in remainingOptions"
           :key="option.id"
+          type="button"
           :class="
             cn(
-              'flex h-32 flex-col items-center justify-center rounded-xl bg-picton-blue-200 p-3 text-center transition',
-              selectedOptionId === option.id ? 'ring-2 ring-picton-blue-600' : 'hover:bg-picton-blue-300',
+              'flex flex-col items-stretch justify-center rounded-md border text-center text-gray-900 shadow-sm transition select-none',
+              'touch-manipulation',
+              isPicsTwoBoxes
+                ? [
+                    'min-h-0 min-w-0 w-full px-0.5 py-0.5 sm:px-1 sm:py-1',
+                    selectedOptionId === option.id
+                      ? 'border-2 border-sky-400 bg-sky-100 ring-1 ring-sky-300/90 hover:bg-sky-200'
+                      : 'border border-gray-200 bg-white hover:bg-sky-50/90',
+                    selectedOptionId === option.id
+                      ? 'ring-2 ring-sky-600 ring-offset-2 ring-offset-white'
+                      : '',
+                  ]
+                : [
+                    'border border-sky-300 bg-sky-100 hover:bg-sky-200',
+                    'min-h-[120px] h-[135px] min-w-[140px] px-3 py-2 sm:min-w-[180px]',
+                    selectedOptionId === option.id
+                      ? 'ring-2 ring-sky-600 ring-offset-2 ring-offset-sky-50'
+                      : '',
+                  ],
             )
           "
           @click="selectedOptionId = selectedOptionId === option.id ? null : option.id"
         >
-          <span v-if="typeof option.content === 'string'" class="text-lg">{{ option.content }}</span>
-          <div v-else class="flex flex-col items-center justify-center gap-2">
-            <img :src="option.content.imageSrc" :alt="option.id" class="h-20 w-32 object-contain">
-            <p v-if="option.content.title" class="text-sm">{{ option.content.title }}</p>
+          <span v-if="typeof option.content === 'string'" class="text-lg leading-snug text-gray-900">{{
+            option.content
+          }}</span>
+          <div
+            v-else
+            :class="
+              cn(
+                'flex min-h-0 w-full flex-col items-center justify-center text-gray-900',
+                isPicsTwoBoxes ? 'gap-0' : 'gap-2',
+              )
+            "
+          >
+            <img
+              :src="option.content.imageSrc"
+              :alt="option.id"
+              draggable="false"
+              :class="
+                cn(
+                  'pointer-events-none w-full object-contain select-none',
+                  isPicsTwoBoxes
+                    ? 'max-h-[52px] max-w-full sm:max-h-14'
+                    : 'max-w-[7.5rem] h-20 max-h-[100px] w-32',
+                )
+              "
+            >
+            <p
+              v-if="option.content.title"
+              :class="isPicsTwoBoxes ? 'mt-0.5 text-[10px] leading-tight text-gray-900 sm:text-xs' : 'text-sm text-gray-900'"
+            >
+              {{ option.content.title }}
+            </p>
           </div>
         </button>
       </div>
