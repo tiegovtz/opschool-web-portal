@@ -5,7 +5,7 @@ import { useWindowSize } from "@vueuse/core";
 import { cn, getImageUrl } from "@/lib/utils";
 import ActivityTitle from "@/components/templates/activity-title";
 import { ActivityResultsAlertDialog } from "@/components/templates/results";
-import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper";
+import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper.vue";
 import type { GameStats } from "@/components/ui/game-mode";
 import type { FeedbackType } from "@/lib/types/activity-types";
 import { useObjects } from "~/composables/useObjects";

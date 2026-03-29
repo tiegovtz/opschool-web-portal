@@ -8,7 +8,7 @@ import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
 import { ActivityResultsAlertDialog } from "@/components/templates/results";
 import ActivityResults from "@/components/templates/results";
 import { useObjects } from "@/hooks/useObjects";
-import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper";
+import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper.vue";
 
 type TItem = {
   id: number;

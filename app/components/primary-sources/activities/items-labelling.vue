@@ -7,7 +7,7 @@ import { cn, shuffle, getImageUrl } from "@/lib/utils";
 import ActivityTitle from "@/components/templates/activity-title";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
 import { ActivityType, type FeedbackType } from "@/lib/types/activity-types";
-import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper";
+import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper.vue";
 import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "@/components/templates/results";
