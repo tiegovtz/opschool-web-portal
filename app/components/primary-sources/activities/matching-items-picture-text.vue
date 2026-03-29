@@ -1,11 +1,8 @@
 <script setup lang="ts">
 // @ts-nocheck
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { useWindowSize } from "@vueuse/core";
 import { cn, getImageUrl, shuffle } from "@/lib/utils";
-import DNDContext from "@/components/layout/dnd-context";
-import Droppable from "@/components/ui/dnd/droppable";
-import Draggable from "@/components/ui/dnd/draggable";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, {
   ActivityResultsAlertDialog,
@@ -47,21 +44,25 @@ type Props = {
   };
 };
 
-type DragEndEvent = {
-  active: { id: string };
-  over?: { id: string };
-};
-
 const props = defineProps<Props>();
 const { playSound } = useSoundEffects();
 const { width } = useWindowSize();
 
 const boardRef = ref<HTMLElement | null>(null);
+const SCROLL_EDGE_THRESHOLD = 72;
+const SCROLL_STEP = 28;
+const DRAG_START_THRESHOLD = 6;
 const completedObjectIds = ref<number[]>([]);
 const connections = ref<Connection[]>([]);
 const recalculatedConnections = ref<Connection[]>([]);
 const dragStart = ref<Point | null>(null);
 const dragEnd = ref<Point | null>(null);
+const selectedLeftId = ref<string | null>(null);
+const activeDragLeftId = ref<string | null>(null);
+const hoverDropId = ref<string | null>(null);
+const dragStartClient = ref<Point | null>(null);
+const lastPointerClient = ref<Point | null>(null);
+const hasDragMoved = ref(false);
 const score = ref(0);
 const allAnswered = ref(false);
 const showResults = ref(false);
@@ -119,6 +120,12 @@ const resetRoundState = () => {
   recalculatedConnections.value = [];
   dragStart.value = null;
   dragEnd.value = null;
+  selectedLeftId.value = null;
+  activeDragLeftId.value = null;
+  hoverDropId.value = null;
+  dragStartClient.value = null;
+  lastPointerClient.value = null;
+  hasDragMoved.value = false;
   score.value = 0;
   allAnswered.value = false;
   showResults.value = false;
@@ -187,8 +194,8 @@ const getRelativePoint = (clientX: number, clientY: number): Point | null => {
 
   const boardRect = boardRef.value.getBoundingClientRect();
   return {
-    x: clientX - boardRect.left,
-    y: clientY - boardRect.top,
+    x: clientX - boardRect.left + boardRef.value.scrollLeft,
+    y: clientY - boardRect.top + boardRef.value.scrollTop,
   };
 };
 
@@ -199,8 +206,10 @@ const getElementPoint = (element: HTMLElement, side: "start" | "end"): Point | n
   const rect = element.getBoundingClientRect();
 
   return {
-    x: side === "start" ? rect.right - boardRect.left : rect.left - boardRect.left,
-    y: rect.top + rect.height / 2 - boardRect.top,
+    x:
+      (side === "start" ? rect.right - boardRect.left : rect.left - boardRect.left)
+      + boardRef.value.scrollLeft,
+    y: rect.top + rect.height / 2 - boardRect.top + boardRef.value.scrollTop,
   };
 };
 
@@ -228,53 +237,37 @@ const refreshConnectionPositions = () => {
   });
 };
 
-const handleDragStartCapture = (event: DragEvent) => {
-  if (showResults.value || timeUp.value) return;
+const findHoveredRightTarget = (clientX: number, clientY: number) => {
+  for (const item of shuffledRightItems.value) {
+    const element = document.getElementById(`right-${item.id}`);
+    if (!(element instanceof HTMLElement)) continue;
 
-  const target = event.target instanceof HTMLElement
-    ? event.target.closest('[id^="left-"]')
-    : null;
+    const rect = element.getBoundingClientRect();
+    if (
+      clientX >= rect.left &&
+      clientX <= rect.right &&
+      clientY >= rect.top &&
+      clientY <= rect.bottom
+    ) {
+      return `right-${item.id}`;
+    }
+  }
 
-  if (!(target instanceof HTMLElement)) return;
-
-  const startPoint = getElementPoint(target, "start");
-  if (!startPoint) return;
-
-  dragStart.value = startPoint;
-  dragEnd.value = startPoint;
-};
-
-const handleDragOverBoard = (event: DragEvent) => {
-  if (!dragStart.value) return;
-
-  event.preventDefault();
-
-  const nextPoint = getRelativePoint(event.clientX, event.clientY);
-  if (!nextPoint) return;
-
-  dragEnd.value = nextPoint;
+  return null;
 };
 
 const clearDragPreview = () => {
   dragStart.value = null;
   dragEnd.value = null;
+  hoverDropId.value = null;
 };
 
-const handleDragEnd = (event: DragEndEvent) => {
-  const activeId = String(event.active?.id || "");
-  const overId = String(event.over?.id || "");
-
-  if (!activeId || !overId.startsWith("right-")) {
-    clearDragPreview();
-    return;
-  }
-
-  const fromItem = activeId.split("-")[1];
-  const toItem = overId.split("-")[1];
+const connectItems = (leftId: string, rightId: string) => {
+  const activeId = `left-${leftId}`;
+  const overId = `right-${rightId}`;
   const activeEl = document.getElementById(activeId);
   const overEl = document.getElementById(overId);
 
-  clearDragPreview();
   playSound("click");
 
   if (!(activeEl instanceof HTMLElement) || !(overEl instanceof HTMLElement)) {
@@ -286,8 +279,8 @@ const handleDragEnd = (event: DragEndEvent) => {
 
   if (!startPosition || !endPosition) return;
 
-  const leftItem = leftItems.value.find((item) => String(item.id) === fromItem);
-  const rightItem = rightItems.value.find((item) => String(item.id) === toItem);
+  const leftItem = leftItems.value.find((item) => String(item.id) === leftId);
+  const rightItem = rightItems.value.find((item) => String(item.id) === rightId);
   const isCorrect = leftItem?.id === rightItem?.id;
 
   connections.value = [
@@ -312,6 +305,159 @@ const handleDragEnd = (event: DragEndEvent) => {
     ]);
   }
 };
+
+let autoScrollFrame: number | null = null;
+
+const stopAutoScroll = () => {
+  if (autoScrollFrame !== null) {
+    window.cancelAnimationFrame(autoScrollFrame);
+    autoScrollFrame = null;
+  }
+};
+
+const updateDragFromClientPoint = (clientX: number, clientY: number) => {
+  lastPointerClient.value = { x: clientX, y: clientY };
+  hoverDropId.value = findHoveredRightTarget(clientX, clientY);
+
+  const nextPoint = getRelativePoint(clientX, clientY);
+  if (nextPoint) {
+    dragEnd.value = nextPoint;
+  }
+};
+
+const runAutoScroll = () => {
+  if (!activeDragLeftId.value || !boardRef.value || !lastPointerClient.value) {
+    stopAutoScroll();
+    return;
+  }
+
+  const container = boardRef.value;
+  const rect = container.getBoundingClientRect();
+  const { x, y } = lastPointerClient.value;
+
+  const nextScrollLeft = (() => {
+    if (x < rect.left + SCROLL_EDGE_THRESHOLD) return -SCROLL_STEP;
+    if (x > rect.right - SCROLL_EDGE_THRESHOLD) return SCROLL_STEP;
+    return 0;
+  })();
+
+  const nextScrollTop = (() => {
+    if (y < rect.top + SCROLL_EDGE_THRESHOLD) return -SCROLL_STEP;
+    if (y > rect.bottom - SCROLL_EDGE_THRESHOLD) return SCROLL_STEP;
+    return 0;
+  })();
+
+  if (nextScrollLeft || nextScrollTop) {
+    container.scrollBy({
+      left: nextScrollLeft,
+      top: nextScrollTop,
+      behavior: "auto",
+    });
+    updateDragFromClientPoint(x, y);
+  }
+
+  autoScrollFrame = window.requestAnimationFrame(runAutoScroll);
+};
+
+const startAutoScroll = () => {
+  if (autoScrollFrame !== null) return;
+  autoScrollFrame = window.requestAnimationFrame(runAutoScroll);
+};
+
+const removePointerListeners = () => {
+  window.removeEventListener("pointermove", handleWindowPointerMove);
+  window.removeEventListener("pointerup", handleWindowPointerUp);
+  window.removeEventListener("pointercancel", handleWindowPointerCancel);
+};
+
+const finishPointerInteraction = () => {
+  removePointerListeners();
+  stopAutoScroll();
+  activeDragLeftId.value = null;
+  dragStartClient.value = null;
+  lastPointerClient.value = null;
+  hasDragMoved.value = false;
+  clearDragPreview();
+};
+
+const handleWindowPointerMove = (event: PointerEvent) => {
+  if (!activeDragLeftId.value) return;
+  if (event.cancelable) {
+    event.preventDefault();
+  }
+
+  if (dragStartClient.value && !hasDragMoved.value) {
+    const distance = Math.hypot(
+      event.clientX - dragStartClient.value.x,
+      event.clientY - dragStartClient.value.y,
+    );
+    if (distance >= DRAG_START_THRESHOLD) {
+      hasDragMoved.value = true;
+    }
+  }
+
+  updateDragFromClientPoint(event.clientX, event.clientY);
+  startAutoScroll();
+};
+
+const handleWindowPointerUp = () => {
+  if (!activeDragLeftId.value) return;
+
+  const leftId = activeDragLeftId.value;
+  const rightId = hoverDropId.value?.replace(/^right-/, "") || null;
+  const moved = hasDragMoved.value;
+
+  if (rightId) {
+    connectItems(leftId, rightId);
+    selectedLeftId.value = null;
+  } else if (!moved) {
+    selectedLeftId.value = selectedLeftId.value === leftId ? null : leftId;
+  }
+
+  finishPointerInteraction();
+};
+
+const handleWindowPointerCancel = () => {
+  finishPointerInteraction();
+};
+
+const handleLeftItemPointerDown = (event: PointerEvent, leftId: string) => {
+  if (showResults.value || timeUp.value) return;
+  if (event.pointerType !== "touch" && event.button !== 0) return;
+
+  event.preventDefault();
+
+  removePointerListeners();
+  stopAutoScroll();
+
+  activeDragLeftId.value = leftId;
+  dragStartClient.value = { x: event.clientX, y: event.clientY };
+  lastPointerClient.value = { x: event.clientX, y: event.clientY };
+  hasDragMoved.value = false;
+
+  const startEl = document.getElementById(`left-${leftId}`);
+  if (startEl instanceof HTMLElement) {
+    dragStart.value = getElementPoint(startEl, "start");
+  }
+  dragEnd.value = getRelativePoint(event.clientX, event.clientY) || dragStart.value;
+  hoverDropId.value = findHoveredRightTarget(event.clientX, event.clientY);
+
+  window.addEventListener("pointermove", handleWindowPointerMove, { passive: false });
+  window.addEventListener("pointerup", handleWindowPointerUp);
+  window.addEventListener("pointercancel", handleWindowPointerCancel);
+  startAutoScroll();
+};
+
+const handleRightItemSelect = (rightId: string) => {
+  if (showResults.value || timeUp.value || !selectedLeftId.value) return;
+
+  connectItems(selectedLeftId.value, rightId);
+  selectedLeftId.value = null;
+};
+
+onBeforeUnmount(() => {
+  finishPointerInteraction();
+});
 
 const endKeyHasConnection = (id: string) =>
   connections.value.some((connection) => connection["end-key"] === id);
@@ -473,86 +619,44 @@ const liveDragLine = computed(() => {
     <div class="flex h-full flex-col text-lg">
       <ActivityTitle :title="props.questions.title" />
 
-      <DNDContext :onDragEnd="handleDragEnd">
+      <div class="mb-3 text-sm text-slate-600">
+        Drag from the left to a match, or tap a left item then tap the answer on the right.
+      </div>
+
+      <div
+        ref="boardRef"
+        class="relative flex h-full justify-between overflow-auto md:p-4"
+        :style="{ fontSize: boardFontSize }"
+      >
         <div
-          ref="boardRef"
-          class="relative flex h-full justify-between overflow-hidden md:p-4"
-          :style="{ fontSize: boardFontSize }"
-          @dragstart.capture="handleDragStartCapture"
-          @dragover="handleDragOverBoard"
-          @dragend.capture="clearDragPreview"
+          :class="
+            cn('flex flex-col justify-evenly space-y-4', {
+              'w-[30%]': props.questions.category === 'text-to-text',
+              'md:w-[15%]':
+                props.questions.category === 'image-to-image'
+                || props.questions.category === 'image-to-text',
+            })
+          "
         >
           <div
+            v-for="item in leftItems"
+            :id="`left-${item.id}`"
+            :key="item.id"
             :class="
-              cn('flex flex-col justify-evenly space-y-4', {
-                'w-[30%]': props.questions.category === 'text-to-text',
-                'md:w-[15%]':
-                  props.questions.category === 'image-to-image'
-                  || props.questions.category === 'image-to-text',
-              })
+              cn(
+                'relative flex w-full select-none items-center justify-center rounded-lg bg-picton-blue-200 p-1 md:p-4',
+                props.questions.category === 'text-to-text' && 'min-h-20',
+                !showResults && !timeUp && 'cursor-grab active:cursor-grabbing',
+                !showResults && selectedLeftId === item.id && 'ring-2 ring-picton-blue-500 ring-offset-2',
+                !showResults && activeDragLeftId === item.id && 'scale-[1.01] shadow-lg',
+                showResults && 'cursor-default',
+                showResults && connectionByStartKey(`left-${item.id}`)?.isCorrect && 'border-2 border-green-300 bg-green-100',
+                showResults && connectionByStartKey(`left-${item.id}`) && !connectionByStartKey(`left-${item.id}`)?.isCorrect && 'border-2 border-red-300 bg-red-100',
+              )
             "
+            @pointerdown="handleLeftItemPointerDown($event, item.id)"
           >
-            <Draggable
-              v-for="item in leftItems"
-              :id="`left-${item.id}`"
-              :key="item.id"
-              :resize="false"
-              :disabled="showResults"
-              :class="
-                cn(
-                  'relative flex w-full items-center justify-center rounded-lg bg-picton-blue-200 p-1 md:p-4',
-                  props.questions.category === 'text-to-text' && 'min-h-20',
-                  showResults && 'cursor-default',
-                  showResults && connectionByStartKey(`left-${item.id}`)?.isCorrect && 'border-2 border-green-300 bg-green-100',
-                  showResults && connectionByStartKey(`left-${item.id}`) && !connectionByStartKey(`left-${item.id}`)?.isCorrect && 'border-2 border-red-300 bg-red-100',
-                )
-              "
-            >
-              <span class="pointer-events-none">
-                <div v-if="isImageItem(item)" class="max-h-[400px] w-20 md:w-36">
-                  <img
-                    :src="getItemValue(item)"
-                    :alt="item.id"
-                    class="pointer-events-none h-full w-full select-none object-contain"
-                    draggable="false"
-                  >
-                </div>
-                <span v-else>{{ getItemValue(item) }}</span>
-              </span>
-            </Draggable>
-          </div>
-
-          <div
-            :class="
-              cn('flex flex-col justify-evenly space-y-4', {
-                'md:w-[15%]': props.questions.category === 'image-to-image',
-                'w-[30%] md:w-auto md:max-w-xl':
-                  props.questions.category === 'text-to-text'
-                  || props.questions.category === 'image-to-text',
-              })
-            "
-          >
-            <Droppable
-              v-for="item in shuffledRightItems"
-              :id="`right-${item.id}`"
-              :key="item.id"
-              :disabled="showResults"
-              isOverClassName="bg-lemon-50"
-              :class="
-                cn(
-                  'relative flex w-full items-center justify-start rounded-lg p-1 md:p-4',
-                  (props.questions.category === 'text-to-text'
-                    || props.questions.category === 'image-to-text') && 'min-h-20 p-2 leading-5 md:p-4',
-                  props.questions.category === 'image-to-image' && '!justify-center',
-                  showResults && 'cursor-default',
-                  showResults && connectionByEndKey(`right-${item.id}`)?.isCorrect && 'border-2 border-green-300 bg-green-100',
-                  showResults && connectionByEndKey(`right-${item.id}`) && !connectionByEndKey(`right-${item.id}`)?.isCorrect && 'border-2 border-red-300 bg-red-100',
-                  showResults && !connectionByEndKey(`right-${item.id}`) && 'bg-picton-blue-50',
-                  !showResults && endKeyHasConnection(`right-${item.id}`) && 'bg-lemon-100 text-lemon-700',
-                  !showResults && !endKeyHasConnection(`right-${item.id}`) && 'bg-picton-blue-50',
-                )
-              "
-            >
+            <span class="pointer-events-none">
               <div v-if="isImageItem(item)" class="max-h-[400px] w-20 md:w-36">
                 <img
                   :src="getItemValue(item)"
@@ -562,107 +666,153 @@ const liveDragLine = computed(() => {
                 >
               </div>
               <span v-else>{{ getItemValue(item) }}</span>
-            </Droppable>
+            </span>
           </div>
+        </div>
 
-          <div class="pointer-events-none absolute inset-0 overflow-visible">
-            <template v-for="line in renderedConnections" :key="line.key">
-              <div
-                :class="line.startCircleClass"
-                class="absolute z-[1] rounded-full"
-                :style="line.startCircleStyle"
-              />
-              <div
-                class="absolute z-0 origin-top-left bg-repeat-x"
-                :style="line.lineStyle"
-              />
-              <div
-                :class="line.endCircleClass"
-                class="absolute z-[1] rounded-full"
-                :style="line.endCircleStyle"
-              />
-            </template>
+        <div
+          :class="
+            cn('flex flex-col justify-evenly space-y-4', {
+              'md:w-[15%]': props.questions.category === 'image-to-image',
+              'w-[30%] md:w-auto md:max-w-xl':
+                props.questions.category === 'text-to-text'
+                || props.questions.category === 'image-to-text',
+            })
+          "
+        >
+          <button
+            v-for="item in shuffledRightItems"
+            :id="`right-${item.id}`"
+            :key="item.id"
+            type="button"
+            :class="
+              cn(
+                'relative flex w-full items-center justify-start rounded-lg p-1 text-left md:p-4',
+                (props.questions.category === 'text-to-text'
+                  || props.questions.category === 'image-to-text') && 'min-h-20 p-2 leading-5 md:p-4',
+                props.questions.category === 'image-to-image' && '!justify-center',
+                !showResults && selectedLeftId && 'cursor-pointer',
+                showResults && 'cursor-default',
+                showResults && connectionByEndKey(`right-${item.id}`)?.isCorrect && 'border-2 border-green-300 bg-green-100',
+                showResults && connectionByEndKey(`right-${item.id}`) && !connectionByEndKey(`right-${item.id}`)?.isCorrect && 'border-2 border-red-300 bg-red-100',
+                showResults && !connectionByEndKey(`right-${item.id}`) && 'bg-picton-blue-50',
+                !showResults && hoverDropId === `right-${item.id}` && 'bg-lemon-50 ring-2 ring-lemon-300',
+                !showResults && hoverDropId !== `right-${item.id}` && endKeyHasConnection(`right-${item.id}`) && 'bg-lemon-100 text-lemon-700',
+                !showResults && hoverDropId !== `right-${item.id}` && !endKeyHasConnection(`right-${item.id}`) && 'bg-picton-blue-50',
+              )
+            "
+            :disabled="showResults"
+            @click="handleRightItemSelect(item.id)"
+          >
+            <div v-if="isImageItem(item)" class="max-h-[400px] w-20 md:w-36">
+              <img
+                :src="getItemValue(item)"
+                :alt="item.id"
+                class="pointer-events-none h-full w-full select-none object-contain"
+                draggable="false"
+              >
+            </div>
+            <span v-else>{{ getItemValue(item) }}</span>
+          </button>
+        </div>
 
-            <template v-if="liveDragLine">
-              <div
-                :class="liveDragLine.startCircleClass"
-                class="absolute z-[1] rounded-full"
-                :style="liveDragLine.startCircleStyle"
-              />
-              <div
-                class="absolute z-0 origin-top-left bg-repeat-x"
-                :style="liveDragLine.lineStyle"
-              />
-              <div
-                :class="liveDragLine.endCircleClass"
-                class="absolute z-[1] rounded-full"
-                :style="liveDragLine.endCircleStyle"
-              />
-            </template>
-          </div>
-
-          <div v-if="showResults" class="pointer-events-none absolute inset-0">
+        <div class="pointer-events-none absolute inset-0 overflow-visible">
+          <template v-for="line in renderedConnections" :key="line.key">
             <div
-              :class="
-                cn('absolute flex flex-col justify-evenly space-y-4', {
-                  'w-[30%]': props.questions.category === 'text-to-text',
-                  'w-[15%]':
-                    props.questions.category === 'image-to-image'
-                    || props.questions.category === 'image-to-text',
-                })
-              "
-              style="top: 1rem; left: 1rem; height: calc(100% - 2rem);"
+              :class="line.startCircleClass"
+              class="absolute z-[1] rounded-full"
+              :style="line.startCircleStyle"
+            />
+            <div
+              class="absolute z-0 origin-top-left bg-repeat-x"
+              :style="line.lineStyle"
+            />
+            <div
+              :class="line.endCircleClass"
+              class="absolute z-[1] rounded-full"
+              :style="line.endCircleStyle"
+            />
+          </template>
+
+          <template v-if="liveDragLine">
+            <div
+              :class="liveDragLine.startCircleClass"
+              class="absolute z-[1] rounded-full"
+              :style="liveDragLine.startCircleStyle"
+            />
+            <div
+              class="absolute z-0 origin-top-left bg-repeat-x"
+              :style="liveDragLine.lineStyle"
+            />
+            <div
+              :class="liveDragLine.endCircleClass"
+              class="absolute z-[1] rounded-full"
+              :style="liveDragLine.endCircleStyle"
+            />
+          </template>
+        </div>
+
+        <div v-if="showResults" class="pointer-events-none absolute inset-0">
+          <div
+            :class="
+              cn('absolute flex flex-col justify-evenly space-y-4', {
+                'w-[30%]': props.questions.category === 'text-to-text',
+                'w-[15%]':
+                  props.questions.category === 'image-to-image'
+                  || props.questions.category === 'image-to-text',
+              })
+            "
+            style="top: 1rem; left: 1rem; height: calc(100% - 2rem);"
+          >
+            <div
+              v-for="item in leftItems"
+              :key="`${item.id}-indicator`"
+              class="relative flex h-full w-full items-center justify-center"
             >
               <div
-                v-for="item in leftItems"
-                :key="`${item.id}-indicator`"
-                class="relative flex h-full w-full items-center justify-center"
+                v-if="connectionByStartKey(`left-${item.id}`)"
+                :class="
+                  cn(
+                    'absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg',
+                    connectionByStartKey(`left-${item.id}`)?.isCorrect ? 'bg-green-500' : 'bg-red-500',
+                  )
+                "
               >
-                <div
-                  v-if="connectionByStartKey(`left-${item.id}`)"
-                  :class="
-                    cn(
-                      'absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg',
-                      connectionByStartKey(`left-${item.id}`)?.isCorrect ? 'bg-green-500' : 'bg-red-500',
-                    )
-                  "
-                >
-                  {{ connectionByStartKey(`left-${item.id}`)?.isCorrect ? "✓" : "✗" }}
-                </div>
+                {{ connectionByStartKey(`left-${item.id}`)?.isCorrect ? "✓" : "✗" }}
               </div>
             </div>
+          </div>
 
+          <div
+            :class="
+              cn('absolute flex flex-col justify-evenly space-y-4', {
+                'w-[15%]': props.questions.category === 'image-to-image',
+                'w-[30%]': props.questions.category === 'text-to-text',
+                'max-w-xl': props.questions.category === 'image-to-text',
+              })
+            "
+            style="top: 1rem; right: 1rem; left: auto; height: calc(100% - 2rem);"
+          >
             <div
-              :class="
-                cn('absolute flex flex-col justify-evenly space-y-4', {
-                  'w-[15%]': props.questions.category === 'image-to-image',
-                  'w-[30%]': props.questions.category === 'text-to-text',
-                  'max-w-xl': props.questions.category === 'image-to-text',
-                })
-              "
-              style="top: 1rem; right: 1rem; left: auto; height: calc(100% - 2rem);"
+              v-for="item in shuffledRightItems"
+              :key="`${item.id}-indicator`"
+              class="relative flex h-full w-full items-center justify-start"
             >
               <div
-                v-for="item in shuffledRightItems"
-                :key="`${item.id}-indicator`"
-                class="relative flex h-full w-full items-center justify-start"
+                v-if="connectionByEndKey(`right-${item.id}`)"
+                :class="
+                  cn(
+                    'absolute -left-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg',
+                    connectionByEndKey(`right-${item.id}`)?.isCorrect ? 'bg-green-500' : 'bg-red-500',
+                  )
+                "
               >
-                <div
-                  v-if="connectionByEndKey(`right-${item.id}`)"
-                  :class="
-                    cn(
-                      'absolute -left-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg',
-                      connectionByEndKey(`right-${item.id}`)?.isCorrect ? 'bg-green-500' : 'bg-red-500',
-                    )
-                  "
-                >
-                  {{ connectionByEndKey(`right-${item.id}`)?.isCorrect ? "✓" : "✗" }}
-                </div>
+                {{ connectionByEndKey(`right-${item.id}`)?.isCorrect ? "✓" : "✗" }}
               </div>
             </div>
           </div>
         </div>
-      </DNDContext>
+      </div>
 
       <ActivityResults
         v-if="showResults"
