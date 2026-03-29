@@ -245,7 +245,7 @@ const resetActivity = () => {
                 <button
                   v-else
                   type="button"
-                  class="relative flex min-h-[135px] w-full cursor-pointer items-center justify-center rounded border border-gray-300 bg-gray-200 px-2 py-2 text-center text-base text-gray-800 transition hover:bg-gray-300/90 md:px-4 md:py-3 md:text-[length:inherit] touch-manipulation"
+                  class="relative flex min-h-[135px] w-full cursor-pointer items-center justify-center rounded border border-sky-200 bg-sky-50 px-2 py-2 text-center text-base text-gray-800 transition hover:bg-sky-100 md:px-4 md:py-3 md:text-[length:inherit] touch-manipulation"
                   @click="returnFromSlot('left', index)"
                 >
                   <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
@@ -316,7 +316,7 @@ const resetActivity = () => {
                 <button
                   v-else
                   type="button"
-                  class="relative flex min-h-[135px] w-full cursor-pointer items-center justify-center rounded border border-gray-300 bg-gray-200 px-2 py-2 text-center text-base text-gray-800 transition hover:bg-gray-300/90 md:px-4 md:py-3 md:text-[length:inherit] touch-manipulation"
+                  class="relative flex min-h-[135px] w-full cursor-pointer items-center justify-center rounded border border-sky-200 bg-sky-50 px-2 py-2 text-center text-base text-gray-800 transition hover:bg-sky-100 md:px-4 md:py-3 md:text-[length:inherit] touch-manipulation"
                   @click="returnFromSlot('right', index)"
                 >
                   <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
