@@ -11,7 +11,8 @@ export interface DndContextValue {
   activeId: ReturnType<typeof ref<string | null>>;
   beginDrag: (id: string) => void;
   endDrag: () => void;
-  completeDrop: (overId?: string) => void;
+  /** Pass draggedId from dataTransfer when drop fires so a late dragend cannot clear activeId first. */
+  completeDrop: (overId: string, draggedId?: string) => void;
 }
 
 export default defineComponent({
@@ -30,12 +31,13 @@ export default defineComponent({
       activeId.value = null;
     };
 
-    const completeDrop = (overId?: string) => {
-      if (!activeId.value) return;
+    const completeDrop = (overId: string, draggedId?: string) => {
+      const id = draggedId || activeId.value;
+      if (!id) return;
 
       props.onDragEnd?.({
-        active: { id: activeId.value },
-        over: overId ? { id: overId } : undefined,
+        active: { id },
+        over: { id: overId },
       } satisfies DndDragEndEvent);
       activeId.value = null;
     };

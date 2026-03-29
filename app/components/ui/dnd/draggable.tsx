@@ -1,5 +1,6 @@
 // components/Draggable.tsx
 import {
+  computed,
   defineComponent,
   inject,
   type CSSProperties,
@@ -35,6 +36,10 @@ export default defineComponent({
   setup(props, { attrs, slots }) {
     const dndContext = inject<DndContextValue | null>(dndContextKey, null);
 
+    const isDragging = computed(
+      () => !props.disabled && dndContext?.activeId.value === props.id,
+    );
+
     const handleDragStart = (event: DragEvent) => {
       if (props.disabled) return;
       event.dataTransfer?.setData("text/plain", props.id);
@@ -49,7 +54,10 @@ export default defineComponent({
     };
 
     const handleDragEnd = () => {
-      dndContext?.endDrag();
+      // Defer so the droppable's drop (same gesture) runs first and can read activeId / dataTransfer.
+      queueMicrotask(() => {
+        dndContext?.endDrag();
+      });
     };
 
     return () => (
@@ -61,9 +69,22 @@ export default defineComponent({
         onDragend={handleDragEnd}
         style={{
           touchAction: props.disabled ? "auto" : "none",
+          ...(props.disabled
+            ? {}
+            : {
+                userSelect: "none",
+                WebkitUserSelect: "none",
+              }),
+          ...(isDragging.value
+            ? {
+                zIndex: 9999,
+                position: "relative" as const,
+              }
+            : {}),
           ...props.style,
         }}
         class={cn(
+          !props.disabled && "select-none [&_*]:select-none",
           props.class,
           props.className,
           attrs.class as string | undefined,
