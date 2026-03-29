@@ -1,11 +1,7 @@
 <script setup lang="ts">
 // @ts-nocheck
 import { ref, watch } from "vue";
-import { useWindowSize } from "@vueuse/core";
 import { shuffle } from "@/lib/utils";
-import Draggable from "@/components/ui/dnd/draggable";
-import Droppable from "@/components/ui/dnd/droppable";
-import DNDContext from "@/components/layout/dnd-context";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, {
   ActivityResultsAlertDialog,
@@ -34,19 +30,15 @@ type Props = {
   feedback?: FeedbackType;
 };
 
-type DragEndEvent = {
-  active: { id: string };
-  over?: { id: string };
-};
-
 const props = withDefaults(defineProps<Props>(), {
   feedback: "wrong-correct-answers",
 });
 
-const { width } = useWindowSize();
 const { playSound } = useSoundEffects();
 
 const movableItems = ref<ListItem[]>([]);
+/** Pool selection — click option then click an empty slot (same flow as In Which Box). */
+const selectedItemId = ref<string | null>(null);
 const listA = ref<Array<ListItem | "">>([]);
 const listB = ref<Array<ListItem | "">>([]);
 const score = ref(0);
@@ -66,6 +58,7 @@ const fillList = (side: "left" | "right", questions: Questions) => {
 };
 
 const initialize = () => {
+  selectedItemId.value = null;
   movableItems.value = shuffle(
     props.questions.items.filter((item) => item.side !== props.questions.lockSide),
   );
@@ -121,43 +114,55 @@ watch([listA, listB], () => {
   allAnswered.value = true;
 }, { deep: true });
 
-const handleDragEnd = (event: DragEndEvent) => {
-  const activeValue = String(event.active?.id || "");
-  const overValue = String(event.over?.id || "");
-  if (!activeValue || !overValue) return;
+const togglePoolSelection = (id: string) => {
+  if (showResults.value) return;
+  const sid = String(id);
+  selectedItemId.value = selectedItemId.value != null && String(selectedItemId.value) === sid ? null : sid;
+};
 
-  const [activeId, activeIndex = "", activeSide = ""] = activeValue.split("%");
-  const [overSide, overIndexValue] = overValue.split("%");
-  const overIndex = Number(overIndexValue);
+const placeInSlot = (side: "left" | "right", index: number) => {
+  if (showResults.value) return;
+  const selected = movableItems.value.find((i) => String(i.id) === String(selectedItemId.value));
+  if (!selected) return;
 
-  const activeItem = props.questions.items.find((item) => Number(item.id) === Number(activeId));
-  if (!activeItem) return;
-
-  if (overSide === "left") {
-    const nextList = [...listA.value];
-    nextList[overIndex] = activeItem;
-    listA.value = nextList;
+  if (side === "left") {
+    const next = [...listA.value];
+    next[index] = selected;
+    listA.value = next;
   } else {
-    const nextList = [...listB.value];
-    nextList[overIndex] = activeItem;
-    listB.value = nextList;
+    const next = [...listB.value];
+    next[index] = selected;
+    listB.value = next;
   }
 
+  movableItems.value = movableItems.value.filter((i) => String(i.id) !== String(selected.id));
+  selectedItemId.value = null;
   playSound("click");
+};
 
-  if (activeIndex) {
-    if (activeSide === "left") {
-      const nextList = [...listA.value];
-      nextList[Number(activeIndex)] = "";
-      listA.value = nextList;
-    } else if (activeSide === "right") {
-      const nextList = [...listB.value];
-      nextList[Number(activeIndex)] = "";
-      listB.value = nextList;
+const returnFromSlot = (side: "left" | "right", index: number) => {
+  if (showResults.value) return;
+  const listRef = side === "left" ? listA : listB;
+  const item = listRef.value[index];
+  if (!item || item === "") return;
+
+  movableItems.value = shuffle([...movableItems.value, item]);
+  const next = [...listRef.value];
+  next[index] = "";
+  listRef.value = next;
+  selectedItemId.value = null;
+  playSound("click");
+};
+
+const onResultsOpenChange = (open: boolean) => {
+  if (!open) {
+    if (props.feedback === "none") {
+      resetActivity();
+    } else {
+      showResults.value = true;
     }
+    allAnswered.value = false;
   }
-
-  movableItems.value = movableItems.value.filter((item) => Number(item.id) !== Number(activeId));
 };
 
 const renderItemContent = (item: ListItem) => item;
@@ -177,74 +182,83 @@ const resetActivity = () => {
       class="flex flex-col gap-4"
       :style="{ fontSize: props.questions.fontSize ? `${props.questions.fontSize}px` : '20px' }"
     >
-      <DNDContext :onDragEnd="handleDragEnd">
+      <div>
         <div class="flex gap-1 md:gap-4">
           <div class="flex w-full flex-col gap-4 md:flex-row">
-            <div class="flex max-h-[707px] items-center justify-center overflow-hidden bg-picton-blue-200 md:rotate-180 md:p-6 md:[writing-mode:vertical-rl]">
-              <span class="line-clamp-2 text-center">{{ props.questions.leftLabel }}</span>
+            <div
+              class="flex max-h-[707px] items-center justify-center overflow-hidden bg-picton-blue-200 md:rotate-180 md:p-6 md:[writing-mode:vertical-rl]"
+            >
+              <span class="line-clamp-2 text-center text-ellipsis">{{
+                props.questions.leftLabel
+              }}</span>
             </div>
 
             <div class="flex w-full flex-col justify-between md:gap-2">
               <template v-for="(item, index) in listA" :key="index">
                 <div
                   v-if="props.questions.lockSide === 'left'"
-                  class="flex h-[135px] items-center rounded border border-picton-blue-200 bg-white px-4 py-2"
+                  class="flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-white px-4 py-3"
                 >
-                  <div v-if="item !== ''" class="flex h-full w-fit flex-col gap-1 md:flex-row md:items-center md:gap-4">
+                  <div v-if="item !== ''" class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
                     <img
                       v-if="renderItemContent(item).image"
                       :src="renderItemContent(item).image"
                       :alt="renderItemContent(item).text || ''"
-                      class="h-full max-w-48 w-full object-contain"
+                      draggable="false"
+                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
                     >
-                    <p class="text-sm sm:text-base">{{ renderItemContent(item).text }}</p>
+                    <p class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</p>
                   </div>
                 </div>
 
-                <Droppable
+                <button
                   v-else-if="item === ''"
-                  :id="`left%${index}`"
-                  class="h-[135px] rounded border border-picton-blue-200 bg-white"
-                  isOverClassName="bg-lemon-100"
+                  type="button"
+                  aria-label="Place selected answer"
+                  class="min-h-[135px] w-full rounded border border-picton-blue-200 bg-white transition hover:bg-lemon-100 cursor-pointer touch-manipulation"
+                  @click="placeInSlot('left', index)"
                 />
 
                 <div
                   v-else-if="showResults"
                   :class="
                     isCorrect(item)
-                      ? 'relative flex h-[135px] items-center rounded border border-picton-blue-200 bg-green-200 px-2 text-green-700 md:px-4 md:py-2'
-                      : 'relative flex h-[135px] items-center rounded border border-picton-blue-200 bg-red-200 px-2 text-red-700 md:px-4 md:py-2'
+                      ? 'relative flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-green-200 px-2 pr-10 pt-2 text-green-700 md:px-4 md:py-3'
+                      : 'relative flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-red-200 px-2 pr-10 pt-2 text-red-700 md:px-4 md:py-3'
                   "
                 >
-                  <div class="flex h-full w-fit flex-col gap-1 md:flex-row md:items-center md:gap-4">
+                  <div class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
                     <img
                       v-if="renderItemContent(item).image"
                       :src="renderItemContent(item).image"
                       :alt="renderItemContent(item).text || ''"
-                      class="h-full max-w-48 w-full object-contain"
+                      draggable="false"
+                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
                     >
-                    <span class="text-sm sm:text-base">{{ renderItemContent(item).text }}</span>
+                    <span class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</span>
                   </div>
                   <span class="absolute right-2 top-2 text-2xl" :class="isCorrect(item) ? 'text-green-600' : 'text-red-600'">
                     {{ isCorrect(item) ? "✓" : "✕" }}
                   </span>
                 </div>
 
-                <Draggable
+                <button
                   v-else
-                  :id="`${item.id}%${index}%left`"
-                  class="relative flex h-[135px] items-center rounded border border-picton-blue-200 bg-lemon-200 px-2 text-base text-lemon-700 md:px-4 md:py-2 md:text-[length:inherit]"
+                  type="button"
+                  class="relative flex min-h-[135px] w-full cursor-pointer items-start rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-left text-base text-lemon-700 transition hover:bg-lemon-300/80 md:px-4 md:py-3 md:text-[length:inherit] touch-manipulation"
+                  @click="returnFromSlot('left', index)"
                 >
-                  <div class="flex h-full w-fit flex-col gap-1 md:flex-row md:items-center md:gap-4">
+                  <div class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
                     <img
                       v-if="item.image"
                       :src="item.image"
                       :alt="item.text || ''"
-                      class="h-full max-w-48 w-full object-contain"
+                      draggable="false"
+                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
                     >
-                    <span class="text-sm sm:text-base">{{ item.text }}</span>
+                    <span class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ item.text }}</span>
                   </div>
-                </Draggable>
+                </button>
               </template>
             </div>
           </div>
@@ -254,92 +268,112 @@ const resetActivity = () => {
               <template v-for="(item, index) in listB" :key="index">
                 <div
                   v-if="props.questions.lockSide === 'right'"
-                  class="flex h-[135px] items-center rounded border border-picton-blue-200 bg-white px-4 py-2"
+                  class="flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-white px-4 py-3"
                 >
-                  <div v-if="item !== ''" class="flex h-full w-fit flex-col gap-1 md:flex-row md:items-center md:gap-4">
+                  <div v-if="item !== ''" class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
                     <img
                       v-if="renderItemContent(item).image"
                       :src="renderItemContent(item).image"
                       :alt="renderItemContent(item).text || ''"
-                      class="h-full max-w-48 w-full object-contain"
+                      draggable="false"
+                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
                     >
-                    <p class="text-sm sm:text-base">{{ renderItemContent(item).text }}</p>
+                    <p class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</p>
                   </div>
                 </div>
 
-                <Droppable
+                <button
                   v-else-if="item === ''"
-                  :id="`right%${index}`"
-                  class="h-[135px] rounded border border-picton-blue-200 bg-white"
-                  isOverClassName="bg-lemon-100"
+                  type="button"
+                  aria-label="Place selected answer"
+                  class="min-h-[135px] w-full rounded border border-picton-blue-200 bg-white transition hover:bg-lemon-100 cursor-pointer touch-manipulation"
+                  @click="placeInSlot('right', index)"
                 />
 
                 <div
                   v-else-if="showResults"
                   :class="
                     isCorrect(item)
-                      ? 'relative flex h-[135px] items-center rounded border border-picton-blue-200 bg-green-200 px-2 text-green-700 md:px-4 md:py-2'
-                      : 'relative flex h-[135px] items-center rounded border border-picton-blue-200 bg-red-200 px-2 text-red-700 md:px-4 md:py-2'
+                      ? 'relative flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-green-200 px-2 pr-10 pt-2 text-green-700 md:px-4 md:py-3'
+                      : 'relative flex min-h-[135px] items-start rounded border border-picton-blue-200 bg-red-200 px-2 pr-10 pt-2 text-red-700 md:px-4 md:py-3'
                   "
                 >
-                  <div class="flex h-full w-fit flex-col gap-1 md:flex-row md:items-center md:gap-4">
+                  <div class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
                     <img
                       v-if="renderItemContent(item).image"
                       :src="renderItemContent(item).image"
                       :alt="renderItemContent(item).text || ''"
-                      class="h-full max-w-48 w-full object-contain"
+                      draggable="false"
+                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
                     >
-                    <span class="text-sm sm:text-base">{{ renderItemContent(item).text }}</span>
+                    <span class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</span>
                   </div>
                   <span class="absolute right-2 top-2 text-2xl" :class="isCorrect(item) ? 'text-green-600' : 'text-red-600'">
                     {{ isCorrect(item) ? "✓" : "✕" }}
                   </span>
                 </div>
 
-                <Draggable
+                <button
                   v-else
-                  :id="`${item.id}%${index}%right`"
-                  class="relative flex h-[135px] items-center rounded border border-picton-blue-200 bg-lemon-200 px-2 text-base text-lemon-700 md:px-4 md:py-2 md:text-[length:inherit]"
+                  type="button"
+                  class="relative flex min-h-[135px] w-full cursor-pointer items-start rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-left text-base text-lemon-700 transition hover:bg-lemon-300/80 md:px-4 md:py-3 md:text-[length:inherit] touch-manipulation"
+                  @click="returnFromSlot('right', index)"
                 >
-                  <div class="flex h-full w-fit flex-col gap-1 md:flex-row md:items-center md:gap-4">
+                  <div class="flex w-full min-w-0 flex-col gap-2 md:flex-row md:items-start md:gap-4">
                     <img
                       v-if="item.image"
                       :src="item.image"
                       :alt="item.text || ''"
-                      class="h-full max-w-48 w-full object-contain"
+                      draggable="false"
+                      class="max-h-32 w-full max-w-48 shrink-0 self-center object-contain select-none md:self-start"
                     >
-                    <span class="text-sm sm:text-base">{{ item.text }}</span>
+                    <span class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ item.text }}</span>
                   </div>
-                </Draggable>
+                </button>
               </template>
             </div>
 
-            <div class="flex max-h-[707px] items-center justify-center overflow-hidden bg-picton-blue-200 md:rotate-180 md:p-6 md:[writing-mode:vertical-rl]">
-              <span class="line-clamp-2 text-center">{{ props.questions.rightLabel }}</span>
+            <div
+              class="flex max-h-[707px] items-center justify-center overflow-hidden bg-picton-blue-200 md:rotate-180 md:p-6 md:[writing-mode:vertical-rl]"
+            >
+              <span class="line-clamp-2 text-center text-ellipsis">{{
+                props.questions.rightLabel
+              }}</span>
             </div>
           </div>
         </div>
 
-        <div v-if="!showResults" class="relative h-[130px]">
-          <Draggable
-            v-for="(item, index) in movableItems"
+        <div
+          v-if="!showResults"
+          class="flex min-h-[135px] w-full flex-wrap gap-2 border-t border-sky-200 bg-sky-50/60 py-3"
+        >
+          <button
+            v-for="item in movableItems"
             :key="item.id"
-            :id="item.id"
-            class="absolute flex h-[135px] w-1/2 items-center rounded border border-picton-blue-300 bg-picton-blue-200 px-4 py-2 text-base text-picton-blue-700 md:text-[length:inherit]"
-            :style="{ left: `${index * (width > 768 ? 50 : 30)}px` }"
+            type="button"
+            :class="[
+              'flex min-h-[135px] min-w-[140px] max-w-full flex-1 cursor-pointer flex-col items-stretch justify-start rounded-md border border-sky-300 bg-sky-100 px-3 py-3 text-gray-900 shadow-sm transition hover:bg-sky-200 sm:min-w-[180px] sm:max-w-[calc(50%-4px)] md:px-4 md:text-[length:inherit] touch-manipulation select-none',
+              selectedItemId != null && String(selectedItemId) === String(item.id)
+                ? 'ring-2 ring-sky-600 ring-offset-2 ring-offset-sky-50'
+                : '',
+            ]"
+            @click="togglePoolSelection(String(item.id))"
           >
-            <div class="flex h-full w-fit flex-col gap-1 md:flex-row md:items-center md:gap-4">
+            <div
+              class="flex w-full min-w-0 flex-col gap-2 text-gray-900 md:flex-row md:items-start md:gap-3"
+            >
               <img
                 v-if="item.image"
                 :src="item.image"
                 :alt="item.text || ''"
-                class="h-full max-w-48 w-full object-contain"
+                draggable="false"
+                class="pointer-events-none max-h-[120px] max-w-48 w-full shrink-0 self-center object-contain select-none md:self-start"
               >
-              <span class="text-sm sm:text-base">{{ item.text }}</span>
+              <span class="min-w-0 flex-1 break-words text-sm leading-snug sm:text-base">{{ item.text }}</span>
             </div>
-          </Draggable>
+          </button>
         </div>
-      </DNDContext>
+      </div>
 
       <div v-if="showResults" class="mt-4">
         <ActivityResults
@@ -353,18 +387,7 @@ const resetActivity = () => {
         :score="score"
         :total="props.questions.items.filter((item) => item.side !== props.questions.lockSide).length"
         :open="allAnswered"
-        :onOpenChange="
-          (open: boolean) => {
-            if (!open) {
-              if (props.feedback === 'none') {
-                resetActivity();
-              } else {
-                showResults = true;
-              }
-              allAnswered = false;
-            }
-          }
-        "
+        :onOpenChange="onResultsOpenChange"
       />
     </div>
   </div>
