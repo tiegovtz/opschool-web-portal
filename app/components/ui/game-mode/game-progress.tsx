@@ -1,8 +1,6 @@
 // @ts-nocheck
-"use client";
-
-import React from "react";
-import { Check, X, Clock } from "lucide-react";
+import { defineComponent, PropType } from "vue";
+import { Icon } from "@iconify/vue";
 import { cn } from "@/lib/utils";
 
 export interface GameProgressItem {
@@ -14,90 +12,112 @@ export interface GameProgressItem {
   timeSpent?: number;
 }
 
-interface GameProgressProps {
-  items: GameProgressItem[];
-  showLabels?: boolean;
-  showTimeSpent?: boolean;
-  className?: string;
-  itemClassName?: string;
-}
+export default defineComponent({
+  name: "GameProgress",
 
-export const GameProgress: React.FC<GameProgressProps> = ({
-  items,
-  showLabels = false,
-  showTimeSpent = false,
-  className,
-  itemClassName,
-}) => {
-  return (
-    <div className={cn("flex items-center justify-center gap-4", className)}>
-      {items.map((item, index) => {
-        const { id, isCompleted, isCorrect, isCurrent, label, timeSpent } =
-          item;
+  props: {
+    items: {
+      type: Array as PropType<GameProgressItem[]>,
+      required: true,
+    },
+    showLabels: {
+      type: Boolean,
+      default: false,
+    },
+    showTimeSpent: {
+      type: Boolean,
+      default: false,
+    },
+    className: {
+      type: String,
+      default: "",
+    },
+    itemClassName: {
+      type: String,
+      default: "",
+    },
+  },
 
-        return (
-          <div key={id} className="flex flex-col items-center gap-1">
-            {/* Progress Item */}
-            <div
-              className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
-                {
-                  "bg-green-100 border-2 border-green-300":
-                    isCompleted && isCorrect,
-                  "bg-red-100 border-2 border-red-300":
-                    isCompleted && !isCorrect,
-                  "bg-picton-blue-200": !isCompleted && !isCurrent,
-                  "bg-picton-blue-100 border-2 border-picton-blue-500 shadow-md":
-                    isCurrent && !isCompleted,
-                },
-                itemClassName,
-              )}
-            >
-              {isCompleted ? (
-                isCorrect ? (
-                  <Check className="text-green-600" size={20} />
+  setup(props) {
+    return () => (
+      <div class={cn("flex items-center justify-center gap-4", props.className)}>
+        {props.items.map((item, index) => {
+          const {
+            id,
+            isCompleted,
+            isCorrect,
+            isCurrent,
+            label,
+            timeSpent,
+          } = item;
+
+          return (
+            <div key={id} class="flex flex-col items-center gap-1">
+              {/* Progress Item */}
+              <div
+                class={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
+                  {
+                    "bg-green-100 border-2 border-green-300":
+                      isCompleted && isCorrect,
+                    "bg-red-100 border-2 border-red-300":
+                      isCompleted && !isCorrect,
+                    "bg-picton-blue-200": !isCompleted && !isCurrent,
+                    "bg-picton-blue-100 border-2 border-picton-blue-500 shadow-md":
+                      isCurrent && !isCompleted,
+                  },
+                  props.itemClassName,
+                )}
+              >
+                {isCompleted ? (
+                  isCorrect ? (
+                    <Icon icon="mdi:check" class="text-green-600" width="20" />
+                  ) : (
+                    <Icon icon="mdi:close" class="text-red-600" width="20" />
+                  )
                 ) : (
-                  <X className="text-red-600" size={20} />
-                )
-              ) : (
-                <span
-                  className={cn("text-sm font-medium", {
-                    "text-picton-blue-700": isCurrent,
-                    "text-gray-500": !isCurrent,
-                  })}
-                >
-                  {index + 1}
-                </span>
-              )}
-            </div>
-
-            {/* Label */}
-            {showLabels && label && (
-              <div className="text-xs text-gray-600 text-center">{label}</div>
-            )}
-
-            {/* Time Spent */}
-            {showTimeSpent && timeSpent !== undefined && isCompleted && (
-              <div className="flex items-center gap-1 text-xs text-gray-500">
-                <Clock size={10} />
-                <span>{Math.round(timeSpent / 1000)}s</span>
+                  <span
+                    class={cn("text-sm font-medium", {
+                      "text-picton-blue-700": isCurrent,
+                      "text-gray-500": !isCurrent,
+                    })}
+                  >
+                    {index + 1}
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
 
-// Helper function to create progress items from simple completion data
+              {/* Label */}
+              {props.showLabels && label && (
+                <div class="text-xs text-gray-600 text-center">
+                  {label}
+                </div>
+              )}
+
+              {/* Time Spent */}
+              {props.showTimeSpent &&
+                timeSpent !== undefined &&
+                isCompleted && (
+                  <div class="flex items-center gap-1 text-xs text-gray-500">
+                    <Icon icon="mdi:clock-outline" width="12" />
+                    <span>{Math.round(timeSpent / 1000)}s</span>
+                  </div>
+                )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  },
+});
+
 export const createProgressItems = (
   completedItems: Set<number>,
   incorrectItems: Set<number>,
   currentIndex: number,
   totalItems: number,
   itemTimes?: Record<number, number>,
-): GameProgressItem[] => {
+) => {
   return Array.from({ length: totalItems }, (_, index) => ({
     id: index,
     isCompleted: completedItems.has(index),
