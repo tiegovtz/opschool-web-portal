@@ -55,6 +55,10 @@ const {
   default: () => [],
 });
 
+definePageMeta({
+  middleware: "auth",
+})
+
 function buildActivitiesByTypeResponse(
   activities: Array<NonNullable<ReturnType<typeof normalizeActivity>>>,
 ): ActivitiesByTypeResponse {
