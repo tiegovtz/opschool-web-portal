@@ -197,13 +197,6 @@ const config: Config = {
           to: { height: "0" },
         },
       },
-
-      // 🔲 radius
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
-      },
     },
 
     // 📱 breakpoints (kept yours)
