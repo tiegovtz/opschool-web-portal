@@ -1,5 +1,7 @@
 export * from "~/utilities/utils";
 
+const SMARTBOOK_BASE_URL = "http://41.59.251.164:9000/smartbook";
+
 export function getImageUrl(
   path?: string | null,
   _preferAbsolute?: boolean,
@@ -23,5 +25,5 @@ export function getImageUrl(
     return normalizedPath;
   }
 
-  return `/${normalizedPath.replace(/^\.?\//, "")}`;
+  return `${SMARTBOOK_BASE_URL}/${normalizedPath.replace(/^\.?\//, "")}`;
 }
