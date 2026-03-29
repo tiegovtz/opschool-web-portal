@@ -52,6 +52,32 @@ type QuestionJsonRecord = {
   activity_id?: number | string | null;
 };
 
+type PrimaryQuestion = {
+  id: number;
+  description: Array<{ id: number; details: string }> | null;
+  textOne: string | null;
+  textTwo: string | null;
+  textThree: string | null;
+  textFour: string | null;
+  textFive: string | null;
+  textSix: string | null;
+  textSeven: string | null;
+  textEight: string | null;
+  textNine: string | null;
+  textTen: string | null;
+  audioPath: string | null;
+  videoPath: string | null;
+  image: string | null;
+  imageTwo: string | null;
+  imageThree: string | null;
+  imageFour: string | null;
+  path: string | null;
+  pathTwo: string | null;
+  pathThree: string | null;
+  pathFour: string | null;
+  activityId: number | string | null;
+};
+
 export type PrimaryActivity = {
   id: number;
   activityName: string;
@@ -67,7 +93,7 @@ export type PrimaryActivity = {
   approvalStatus: string | null;
   isPublic: boolean | null;
   isPremium: boolean | null;
-  questions?: QuestionJsonRecord[];
+  questions?: PrimaryQuestion[];
 };
 
 export type PrimaryTopic = {
@@ -81,7 +107,7 @@ export type PrimaryTopic = {
 let activitiesCache: PrimaryActivity[] | null = null;
 let topicsCache: PrimaryTopic[] | null = null;
 let activityTypesCache: string[] | null = null;
-let questionsByActivityCache: Map<string, QuestionJsonRecord[]> | null = null;
+let questionsByActivityCache: Map<string, PrimaryQuestion[]> | null = null;
 
 const readJsonFile = async <T>(fileName: string): Promise<T> => {
   const filePath = join(process.cwd(), "public", "data", fileName);
@@ -126,7 +152,7 @@ const normalizeTopic = (item: TopicJsonRecord): PrimaryTopic => ({
   displayOrder: item.display_order ?? null,
 });
 
-const normalizeQuestion = (item: QuestionJsonRecord): any => ({
+const normalizeQuestion = (item: QuestionJsonRecord): PrimaryQuestion => ({
   id: Number(item.id),
   description: item.description ?? null,
   textOne: item.text_one ?? null,
@@ -152,15 +178,15 @@ const normalizeQuestion = (item: QuestionJsonRecord): any => ({
   activityId: item.activity_id ?? null,
 });
 
-const getQuestionsByActivity = async (): Promise<Map<string, QuestionJsonRecord[]>> => {
+const getQuestionsByActivity = async (): Promise<Map<string, PrimaryQuestion[]>> => {
   if (questionsByActivityCache) return questionsByActivityCache;
 
   const data = await readJsonFile<{ question?: QuestionJsonRecord[] }>("question.json");
   const questions = Array.isArray(data.question) ? data.question.map(normalizeQuestion) : [];
-  const byActivity = new Map<string, QuestionJsonRecord[]>();
+  const byActivity = new Map<string, PrimaryQuestion[]>();
 
   for (const question of questions) {
-    const key = String(question.activity_id ?? "").trim();
+    const key = String(question.activityId ?? "").trim();
     if (!key) continue;
     const existing = byActivity.get(key) ?? [];
     existing.push(question);
