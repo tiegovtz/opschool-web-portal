@@ -289,9 +289,7 @@ const resetActivity = () => {
                     ? isCorrectInBox(answer, 'first')
                       ? 'border-green-400 bg-green-100 text-green-700'
                       : 'border-red-400 bg-red-100 text-red-700'
-                    : useGreyDropSlots
-                      ? 'border-gray-300 bg-gray-200 text-gray-800 hover:bg-gray-300'
-                      : 'border-lemon-300 bg-lemon-100 text-lemon-800'
+                    : 'border-sky-200 bg-sky-50 text-gray-800 hover:bg-sky-100'
                   : useGreyDropSlots
                     ? 'border-gray-300 bg-white hover:bg-slate-50'
                     : 'border-picton-blue-300 bg-picton-blue-100 hover:bg-picton-blue-200',
@@ -332,9 +330,7 @@ const resetActivity = () => {
                     ? isCorrectInBox(answer, 'second')
                       ? 'border-green-400 bg-green-100 text-green-700'
                       : 'border-red-400 bg-red-100 text-red-700'
-                    : useGreyDropSlots
-                      ? 'border-gray-300 bg-gray-200 text-gray-800 hover:bg-gray-300'
-                      : 'border-lemon-300 bg-lemon-100 text-lemon-800'
+                    : 'border-sky-200 bg-sky-50 text-gray-800 hover:bg-sky-100'
                   : useGreyDropSlots
                     ? 'border-gray-300 bg-white hover:bg-slate-50'
                     : 'border-picton-blue-300 bg-picton-blue-100 hover:bg-picton-blue-200',
@@ -375,9 +371,7 @@ const resetActivity = () => {
                     ? isCorrectInBox(answer, 'third')
                       ? 'border-green-400 bg-green-100 text-green-700'
                       : 'border-red-400 bg-red-100 text-red-700'
-                    : useGreyDropSlots
-                      ? 'border-gray-300 bg-gray-200 text-gray-800 hover:bg-gray-300'
-                      : 'border-lemon-300 bg-lemon-100 text-lemon-800'
+                    : 'border-sky-200 bg-sky-50 text-gray-800 hover:bg-sky-100'
                   : useGreyDropSlots
                     ? 'border-gray-300 bg-white hover:bg-slate-50'
                     : 'border-picton-blue-300 bg-picton-blue-100 hover:bg-picton-blue-200',
