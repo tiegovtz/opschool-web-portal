@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { Icon } from "@iconify/vue";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import Input  from "@/components/ui/inputs/input.vue";
@@ -191,7 +192,17 @@ const handleSubmit = () => {
           </div>
         </div>
 
-        <Button v-if="!submitted && allAnswered" class="ml-auto w-fit" @click="handleSubmit">
+        <Button
+          v-if="!submitted && allAnswered"
+          class="ml-auto w-fit group gap-2"
+          @click="handleSubmit"
+        >
+          <Icon
+            icon="heroicons:sparkles"
+            width="18"
+            height="18"
+            class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
+          />
           Check Answers
         </Button>
 

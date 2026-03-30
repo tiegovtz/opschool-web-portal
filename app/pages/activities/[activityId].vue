@@ -20,12 +20,12 @@ definePageMeta({
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-sky-50 via-white to-amber-50">
+  <div class="min-h-screen bg-sky-100">
     <div class="mx-auto w-full max-w-7xl px-4 py-6 md:px-6">
       <div class="mb-5 flex items-start justify-start">
         <Button
           :href="backHref"
-          variant="outline-brand"
+          variant="brand"
           size="sm"
           class="w-fit rounded-xl"
         >

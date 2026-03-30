@@ -136,10 +136,12 @@ const openActivityPage = (item: ActivityByTypeItem) => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-sky-50 via-white to-amber-50">
-    <div class="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 md:px-6">
+  <div class="min-h-screen bg-sky-100">
+    <div
+      class="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:gap-8 md:px-6 md:py-10"
+    >
       <section
-        class="rounded-[2rem] border border-oceanBlue/10 bg-white/90 p-6 shadow-[0_24px_80px_-48px_rgba(1,61,96,0.55)] backdrop-blur md:p-8"
+        class="rounded-[1.5rem] border border-oceanBlue/10 bg-white/90 p-5 shadow-[0_24px_80px_-48px_rgba(1,61,96,0.55)] backdrop-blur sm:rounded-[2rem] sm:p-6 md:p-8"
       >
         <div
           class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"
@@ -162,12 +164,12 @@ const openActivityPage = (item: ActivityByTypeItem) => {
             </p>
           </div>
 
-          <div class="flex flex-col gap-3 sm:flex-row">
+          <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <input
               v-model="searchTerm"
               type="search"
               placeholder="Search by type, activity name, or id"
-              class="h-11 min-w-[260px] rounded-2xl border border-oceanBlue/15 bg-sky-50 px-4 text-sm text-slate-700 outline-none ring-0 transition focus:border-oceanBlue/35"
+              class="h-11 min-w-0 flex-1 rounded-2xl border border-oceanBlue/15 bg-sky-50 px-4 text-sm text-slate-700 outline-none ring-0 transition focus:border-oceanBlue/35 sm:w-[320px]"
             />
             <Button
               variant="outline-brand"
@@ -178,7 +180,7 @@ const openActivityPage = (item: ActivityByTypeItem) => {
           </div>
         </div>
 
-        <div class="mt-6 grid gap-3 md:grid-cols-3">
+        <div class="mt-7 grid gap-3 sm:grid-cols-3">
           <div class="rounded-2xl bg-sky-50 p-4">
             <p
               class="text-xs font-semibold uppercase tracking-[0.22em] text-sky-700"
@@ -214,12 +216,12 @@ const openActivityPage = (item: ActivityByTypeItem) => {
 
       <section
         v-if="pending"
-        class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+        class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
       >
         <div
           v-for="index in 6"
           :key="index"
-          class="h-48 animate-pulse rounded-[1.75rem] border border-oceanBlue/10 bg-white"
+          class="min-h-[210px] animate-pulse rounded-[1.5rem] border border-oceanBlue/10 bg-white"
         />
       </section>
 
@@ -233,13 +235,13 @@ const openActivityPage = (item: ActivityByTypeItem) => {
 
       <section
         v-else
-        class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+        class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
       >
         <button
           v-for="item in filteredItems"
           :key="`${item.type}-${item.activity.id}`"
           type="button"
-          class="group flex h-full flex-col rounded-[1.75rem] border border-oceanBlue/10 bg-white p-5 text-left shadow-[0_20px_70px_-52px_rgba(1,61,96,0.7)] transition duration-200 hover:-translate-y-1 hover:border-oceanBlue/25 hover:shadow-[0_28px_80px_-46px_rgba(1,61,96,0.55)]"
+          class="group flex min-h-[220px] h-full flex-col rounded-[1.5rem] border border-oceanBlue/10 bg-white p-5 text-left shadow-[0_20px_70px_-52px_rgba(1,61,96,0.7)] transition duration-200 hover:-translate-y-1 hover:border-oceanBlue/25 hover:shadow-[0_28px_80px_-46px_rgba(1,61,96,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/35"
           @click="openActivityPage(item)"
         >
           <div class="flex items-start justify-between gap-4">
@@ -269,7 +271,7 @@ const openActivityPage = (item: ActivityByTypeItem) => {
           </div>
 
           <div
-            class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"
+            class="mt-auto flex items-center justify-between border-t border-slate-100 pt-4"
           >
             <p class="max-w-[70%] truncate text-sm font-medium text-slate-500">
               {{ item.activity.subTopic || "No sub-topic" }}

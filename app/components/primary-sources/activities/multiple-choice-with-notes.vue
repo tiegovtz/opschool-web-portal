@@ -11,6 +11,7 @@ import ActivityResults, {
 import { Button } from "@/components/ui/button";
 import type { FeedbackType } from "@/lib/types/activity-types";
 import { useSoundEffects } from "~/composables/use-sound-effects";
+import { Icon } from "@iconify/vue";
 
 type QuestionOption = {
   id: "A" | "B" | "C" | "D";
@@ -383,10 +384,16 @@ const resultRows = computed(() =>
 
       <Button
         v-if="!answersChecked"
-        class="ml-auto w-fit"
+        class="ml-auto w-fit group gap-2"
         :disabled="!allQuestionsAnswered"
         @click="checkAllAnswers"
       >
+        <Icon
+          icon="heroicons:sparkles"
+          width="18"
+          height="18"
+          class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
+        />
         Check Answers
       </Button>
     </div>

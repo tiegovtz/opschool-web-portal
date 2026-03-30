@@ -4,6 +4,7 @@ import { computed, ref, watch } from "vue";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import type { FeedbackType } from "@/lib/types/activity-types";
 import ActivityResults, {
@@ -339,7 +340,19 @@ const getRowClassName = (questionIndex: number) => {
     </div>
 
     <div v-else-if="!showFeedback" class="mb-4 flex justify-center">
-      <Button variant="brand-lemon" @click="checkAnswers">Check Answers</Button>
+      <Button
+        variant="brand-lemon"
+        @click="checkAnswers"
+        class="group gap-2"
+      >
+        <Icon
+          icon="heroicons:sparkles"
+          width="18"
+          height="18"
+          class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
+        />
+        Check Answers
+      </Button>
     </div>
 
     <ActivityResultsAlertDialog

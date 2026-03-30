@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // @ts-nocheck
 import { computed, ref, watch } from "vue";
+import { Icon } from "@iconify/vue";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import  Input  from "@/components/ui/inputs/input";
@@ -257,8 +258,15 @@ const resetActivity = () => {
         <Button
           :disabled="!allAnswered"
           :style="{ opacity: allAnswered ? 1 : 0, transition: 'opacity 0.3s ease' }"
+          class="group gap-2"
           @click="checkAnswers"
         >
+          <Icon
+            icon="heroicons:sparkles"
+            width="18"
+            height="18"
+            class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
+          />
           Check Answers
         </Button>
       </div>
