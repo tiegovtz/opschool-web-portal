@@ -29,19 +29,25 @@ export default defineComponent({
       disabled: props.disabled,
     });
 
-    const style = computed(() => {
-      const transform = draggable.value?.transform;
+    const handleDragStart = (event: DragEvent) => {
+      if (props.disabled) return;
+      event.dataTransfer?.setData("text/plain", props.id);
+      event.dataTransfer!.effectAllowed = "move";
+      dndContext?.beginDrag(props.id);
+      dndContext?.notifyDragStart(event, props.id);
+    };
 
-      const baseTransform = props.resize
-        ? CSS.Transform.toString(transform)
-        : `translate(${transform?.x || 0}px, ${transform?.y || 0}px)`;
+    const handleDrag = (event: DragEvent) => {
+      if (props.disabled) return;
+      dndContext?.notifyDragMove(event, props.id);
+    };
 
-      return {
-        touchAction: props.disabled ? "auto" : "none",
-        transform: baseTransform,
-        ...(attrs.style as object),
-      };
-    });
+    const handleDragEnd = () => {
+      // Defer so the droppable's drop (same gesture) runs first and can read activeId / dataTransfer.
+      queueMicrotask(() => {
+        dndContext?.endDrag();
+      });
+    };
 
     return () => (
       <div
@@ -49,6 +55,34 @@ export default defineComponent({
         id={String(props.id)}
         style={style.value}
         {...attrs}
+        draggable={!props.disabled}
+        onDragstart={handleDragStart}
+        onDrag={handleDrag}
+        onDragend={handleDragEnd}
+        style={{
+          touchAction: props.disabled ? "auto" : "none",
+          ...(props.disabled
+            ? {}
+            : {
+                userSelect: "none",
+                WebkitUserSelect: "none",
+              }),
+          ...(isDragging.value
+            ? {
+                zIndex: 9999,
+                position: "relative" as const,
+              }
+            : {}),
+          ...props.style,
+        }}
+        class={cn(
+          !props.disabled && "select-none [&_*]:select-none",
+          props.class,
+          props.className,
+          attrs.class as string | undefined,
+          (attrs as { className?: string }).className,
+        )}
+        id={props.id}
       >
         {slots.default?.()}
       </div>
