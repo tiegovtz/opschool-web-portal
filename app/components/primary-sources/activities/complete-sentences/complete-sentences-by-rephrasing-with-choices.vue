@@ -12,7 +12,7 @@ import { Button } from "~/components/ui/button";
 // Types
 interface QuestionItem {
   question: string;
-  answer: string;
+  answer: string | string[];
 }
 
 interface QuestionsProps {
@@ -55,8 +55,9 @@ const handleInputChange = (index: number, value: string) => {
 };
 
 const checkAnswer = (userAnswer: string, questionIndex: number) => {
-  const correctAnswer = (shuffledQuestions.value as any[])[questionIndex].answer.toLowerCase();
-  return userAnswer.toLowerCase().trim() === correctAnswer;
+  const rawAnswer = (shuffledQuestions.value as any[])[questionIndex].answer;
+  const correctAnswer = Array.isArray(rawAnswer) ? String(rawAnswer[0] ?? "") : String(rawAnswer ?? "");
+  return userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
 };
 
 const handleCheckAllAnswers = () => {
@@ -185,7 +186,7 @@ const renderQuestionWords = (q: string, questionIndex: number) => {
           </div>
         </div>
 
-        <ActivityResults :score="score" :total="shuffledQuestions.length" @restart="handleReset" />
+        <ActivityResults :score="score" :total="shuffledQuestions.length" :onRestart="handleReset" />
       </div>
     </div>
 
@@ -193,7 +194,10 @@ const renderQuestionWords = (q: string, questionIndex: number) => {
       :score="score"
       :total="shuffledQuestions.length"
       :open="allAnswered && !showResults"
-      @update:open="(open:any) => { if (!open) showResults = true }"
+      :onRestart="handleReset"
+      :onOpenChange="(open:any) => {
+        if (!open) showResults = true;
+      }"
     />
   </div>
 </template>

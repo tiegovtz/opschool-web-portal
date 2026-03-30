@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
+import Activity from "~/components/activities/Activity.vue";
+import activityParser from "~/utilities/parsers/activityParser";
 import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from "~/utilities/parsers/modelParser";
 import { mediaParser } from "~/utilities/parsers/mediaParser";
 import conversationParser from "~/utilities/parsers/conversationParser";
-import { currentTopic, experimrntUrl } from "~/utilities/controlls";
+import { activityPopupId, currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import AIAssistant from "~/components/chapter/AIAssistant.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
@@ -120,6 +122,7 @@ let previousScrollTop = 0;
 
 // flag for toggling experiment fullscreeen
 const isFullscreen = ref(false);
+const activePopupActivityId = computed(() => String(activityPopupId.value ?? ""));
 
 // Changer Chapter
 const changeChapter = (action: string) => {
@@ -159,6 +162,17 @@ const fullScreen = () => {
     // set flag to opposite
     isFullscreen.value = !isFullscreen.value;
   }
+};
+
+const closeInteractivePopup = async () => {
+  experimrntUrl.value = null;
+  activityPopupId.value = "";
+
+  if (import.meta.client && document.fullscreenElement) {
+    await document.exitFullscreen().catch(() => null);
+  }
+
+  isFullscreen.value = false;
 };
 
 // const istoggleSidebar = ref(false)
@@ -300,6 +314,9 @@ const getChapter = async (chapterId: string) => {
   chapters.questions = null;
   chapters.isAttemptingQuizes = false; //close quiz
   chapters.currentChapterId = chapterId;
+  activityPopupId.value = "";
+  experimrntUrl.value = null;
+  isFullscreen.value = false;
   handleAudio(); // Pause any playing audio when chapter changes
   await ensureAccessTokenValid();
   announcement.value = `Loading activity of ${chapters.list?.find(c => c._id === chapterId)?.name} content please wait`;
@@ -871,9 +888,9 @@ watch(() => chapters.isAttemptingQuizes, async (newAttemptingQuizes) => {
   }
 })
 
-// Watch Exit experiment
-watch(() => experimrntUrl.value, async (newExperimentUrl) => {
-  if (!newExperimentUrl) {
+// Watch Exit interactive popup
+watch(() => [experimrntUrl.value, activityPopupId.value], async ([newExperimentUrl, newActivityId]) => {
+  if (!newExperimentUrl && !newActivityId) {
     await nextTick();
 
     // Call Function
@@ -889,16 +906,28 @@ definePageMeta({
 
 <template>
   <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
-    <section v-if="experimrntUrl" class="relative w-full center-height" id="experiment-container">
+    <section v-if="experimrntUrl || activityPopupId" class="relative w-full center-height" id="experiment-container">
       <div
         class="absolute top-0 right-0 flex items-center justify-center w-10 h-10 p-2 bg-red-500 rounded-full cursor-pointer"
-        @click="experimrntUrl = null">
+        @click="closeInteractivePopup">
         <Icon name="formkit:close" size="24" class="font-bold text-white" />
       </div>
-      <iframe :src="experimrntUrl" frameborder="0" :class="[
+      <iframe v-if="experimrntUrl" :src="experimrntUrl" frameborder="0" :class="[
         ' w-full  rounded-md !bg-white',
         isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
       ]"></iframe>
+      <div v-else :class="[
+        'w-full rounded-md !bg-white overflow-y-auto',
+        isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
+      ]">
+        <div class="mx-auto w-full max-w-7xl p-3 md:p-6">
+          <Activity
+            v-if="activePopupActivityId"
+            :key="activePopupActivityId"
+            :activity-id="activePopupActivityId"
+          />
+        </div>
+      </div>
       <!-- full screen controls -->
       <div
         class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"
@@ -979,7 +1008,7 @@ definePageMeta({
             <!-- Chapter Notes -->
             <div v-mathjax class="mx-auto notes md:px-4 w-full max-w-7xl" aria-label="Compitencies notes"
               aria-details="notes-extra-details" role="region"
-              v-html="enhanceAccessibility(conversationParser(experimentParser(modelParser(mediaParser(chapters.notes?.content)))))">
+              v-html="enhanceAccessibility(conversationParser(activityParser(experimentParser(modelParser(mediaParser(chapters.notes?.content))))))">
             </div>
 
             <p id="notes-extra-details" class="sr-only">

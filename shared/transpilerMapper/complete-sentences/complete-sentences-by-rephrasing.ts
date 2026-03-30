@@ -39,7 +39,7 @@ export const completeSentencesByRephrasingPropsTranspiler = (
       image: q.path ? getImageUrl(q.path) : null,
       answer:
         algorithm === ActivityType.CompleteSentenceByRephrasingWithChoices
-          ? [q.textTwo]
+          ? q.textTwo || ""
           : algorithm === ActivityType.CompleteSentencesByRephrasing
             ? isFractionorMixedFraction(q.textTwo || "")
                 .isFractionOrMixedFraction

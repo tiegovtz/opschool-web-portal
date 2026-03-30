@@ -1,4 +1,4 @@
-import { experimrntUrl } from "../controlls";
+import { activityPopupId, experimrntUrl } from "../controlls";
 
 const experimentParser = (query: string): string => {
     // Regular expression to match expPackage and associated <img>
@@ -28,6 +28,7 @@ declare global {
 if (typeof window !== "undefined") {
     window.openActivity = (expSrc: string) => {
         // You can add custom logic here (e.g., open modal, navigate, etc.)
+        activityPopupId.value = null;
         experimrntUrl.value = expSrc;
     };
 }
