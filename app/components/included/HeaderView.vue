@@ -5,6 +5,7 @@ import messages from "~/utilities/messages";
 import ConfirmationModal from "~/components/ai-teacher/ConfirmationModal.vue";
 import { useNavigationStore } from "~/stores/navigationStore";
 import type { LanguageSupport } from "~/types/language.interface";
+import { getHubPath, normalizeEducationLevel } from "~/utilities/educationRoute";
 
 const props = withDefaults(
   defineProps<{educationLevel?:string,language?:LanguageSupport}>(),{
@@ -21,7 +22,11 @@ const matchesPath = (path: string) =>
   route.path === path || route.path.startsWith(`${path}/`);
 
 const isHomeRoute = computed(() =>
-  route.path === "/" || matchesPath("/home")
+  route.path === "/" ||
+  matchesPath("/home") ||
+  matchesPath("/nyumbani") ||
+  matchesPath("/secondary") ||
+  matchesPath("/primary")
 );
 const isSmartClassRoute = computed(() => matchesPath("/smart-class"));
 const isLearningStatisticsRoute = computed(() =>
@@ -112,9 +117,28 @@ const openLogoutConfirmFromMenu = () => {
   showLogoutConfirm.value = true;
 };
 
+const currentEducationLevel = computed(() =>
+  props.educationLevel
+    ? normalizeEducationLevel(props.educationLevel)
+    : props.language === "kiswahili"
+      ? "primary"
+      : "secondary",
+);
+
+const homeTarget = computed(() => getHubPath(currentEducationLevel.value));
+
 const authReturnQuery = computed(() => {
   const p = route.path;
-  if (p === "/nyumbani" || p.startsWith("/nyumbani/")) {
+  if (
+    p === "/primary" ||
+    p.startsWith("/primary/") ||
+    p === "/nyumbani" ||
+    p.startsWith("/nyumbani/") ||
+    p === "/secondary" ||
+    p.startsWith("/secondary/") ||
+    p === "/home" ||
+    p.startsWith("/home/")
+  ) {
     return { redirect: route.fullPath };
   }
   return {};
@@ -157,14 +181,14 @@ onBeforeUnmount(() => {
           class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container">
           <NuxtLink
             aria-label="Go home"
-            :to="language==='english' ? `/home` :`/nyumbani`"
+            :to="homeTarget"
             :aria-current="isHomeRoute ? 'page' : undefined"
             :class="[desktopNavItemClass, isHomeRoute ? activeNavItemClass : inactiveNavItemClass]"
           >
             <div class="flex items-center justify-center">
               <IconsHome :size="20" />
             </div>
-            <p class="hidden capitalize lg:flex">{{ language==='english' ? `Home` :`nyumbani`}}</p>
+            <p class="hidden capitalize lg:flex">{{ language==='english' ? `Secondary` :`Primary`}}</p>
           </NuxtLink>
 
           <!-- TIE Library Books -->
@@ -308,7 +332,7 @@ onBeforeUnmount(() => {
             <div class="flex">
               <NuxtLink
                 aria-label="Go home"
-                to="/home"
+                :to="homeTarget"
                 :aria-current="isHomeRoute ? 'page' : undefined"
                 :class="[mobileNavItemClass, isHomeRoute ? activeNavItemClass : inactiveNavItemClass]"
               >
@@ -316,7 +340,7 @@ onBeforeUnmount(() => {
                   <IconsHome :size="20" />
                 </div>
                 <p class="hidden capitalize lg:flex">
-                  {{ language==='english' ? `Home` :`Nyumbani`}}
+                  {{ language==='english' ? `Secondary` :`Primary`}}
                 </p>
               </NuxtLink>
 

@@ -14,6 +14,12 @@ import apiDocs from "~/utilities/apiDocs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
+import {
+  getEducationRouteQuery,
+  getHubLanguage,
+  getHubPath,
+  resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 
 // Defin Route
 const route = useRoute();
@@ -29,11 +35,10 @@ const decodeParam = (value: unknown) => {
 const subjectId = String(route.params.subjectId ?? "");
 const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
 
-const educationLevel = computed(() =>
-  (route.query.edl as string) === "primary" ? "primary" : "secondary",
-);
-const tabLanguage = computed(() =>
-  (route.query.lang as string) === "sw" ? "kiswahili" : "english",
+const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const tabLanguage = computed(() => getHubLanguage(educationLevel.value));
+const educationRouteQuery = computed(() =>
+  getEducationRouteQuery(educationLevel.value),
 );
 
 // Define meta info about page
@@ -112,11 +117,11 @@ const sliceData = (start, end) => {
 const currentPage = ref(1);
 const pageSize = ref();
 const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
-  "interactive-contents": { path: "/interactive" },
-  "learn-activities": { path: "/experiments" },
-  video: { path: "/video", query: { type: "conc" } },
-  "class-videos": { path: "/video", query: { type: "oth" } },
-  audio: { path: "/audio" },
+  "interactive-contents": { path: "/interactive", query: educationRouteQuery.value },
+  "learn-activities": { path: "/experiments", query: educationRouteQuery.value },
+  video: { path: "/video", query: { ...educationRouteQuery.value, type: "conc" } },
+  "class-videos": { path: "/video", query: { ...educationRouteQuery.value, type: "oth" } },
+  audio: { path: "/audio", query: educationRouteQuery.value },
   "smart-class": { path: "/smart-class" },
 };
 
@@ -125,31 +130,39 @@ const subjectSlug = computed(() => subjectTitle.toLowerCase().trim().replace(/\s
 const buildTabTarget = (tab: string) => {
   if (tab === "subjects") {
     return {
-      path: educationLevel.value === "primary" ? "/nyumbani" : "/home",
+      path: getHubPath(educationLevel.value),
     };
   }
   if (tab === "smart-class") return TAB_TO_ROUTE["smart-class"];
 
   const hasSubjectContext = !!subjectId && !!subjectSlug.value;
-  if (!hasSubjectContext) return TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  if (!hasSubjectContext) {
+    return TAB_TO_ROUTE[tab] ?? { path: getHubPath(educationLevel.value) };
+  }
 
   if (tab === "interactive-contents") {
-    return { path: `/interactive/${subjectSlug.value}/${subjectId}` };
+    return { path: `/interactive/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
   }
   if (tab === "learn-activities") {
-    return { path: `/experiments/${subjectSlug.value}/${subjectId}` };
+    return { path: `/experiments/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
   }
   if (tab === "video") {
-    return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "conc" } };
+    return {
+      path: `/video/${subjectSlug.value}/${subjectId}`,
+      query: { ...educationRouteQuery.value, type: "conc" },
+    };
   }
   if (tab === "class-videos") {
-    return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "oth" } };
+    return {
+      path: `/video/${subjectSlug.value}/${subjectId}`,
+      query: { ...educationRouteQuery.value, type: "oth" },
+    };
   }
   if (tab === "audio") {
-    return { path: `/audio/${subjectSlug.value}/${subjectId}` };
+    return { path: `/audio/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
   }
 
-  return TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  return TAB_TO_ROUTE[tab] ?? { path: getHubPath(educationLevel.value) };
 };
 
 const switchTab = async (tab: string) => {
@@ -163,11 +176,14 @@ const switchTab = async (tab: string) => {
 const fetchTopics = async (params) => {
   try {
     status.value = "pending";
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`interactive-${subjectId}`,()=>$fetch(apiDocs.topics.getSubjectId.replace(
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`interactive-${educationLevel.value}-${subjectId}`,()=>$fetch(apiDocs.topics.getSubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
-      params: params,
+      params: {
+        educationLevel: educationLevel.value,
+        ...params,
+      },
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },

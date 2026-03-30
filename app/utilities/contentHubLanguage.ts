@@ -1,5 +1,6 @@
 import type { RouteLocationNormalizedLoaded } from "vue-router";
 import type { LanguageSupport } from "~/types/language.interface";
+import { normalizeEducationLevel } from "~/utilities/educationRoute";
 
 export function decodeRouteSegment(value: unknown): string {
   const raw = typeof value === "string" ? value : "";
@@ -13,15 +14,18 @@ export function decodeRouteSegment(value: unknown): string {
 
 /**
  * Primary hub → Swahili header; Secondary → English.
- * Returns null when unknown so callers can fall back to the hub cookie (e.g. last /nyumbani vs /home).
+ * Returns null when unknown so callers can fall back to the hub cookie (e.g. last /primary vs /secondary).
  */
 export function inferHubLanguageFromContentRoute(
   route: RouteLocationNormalizedLoaded,
   levelParam?: unknown,
 ): LanguageSupport | null {
-  const edl = route.query.edl;
-  if (edl === "primary") return "kiswahili";
-  if (edl === "secondary") return "english";
+  const routeEducationLevel = route.query.educationLevel ?? route.query.edl;
+  if (routeEducationLevel) {
+    return normalizeEducationLevel(routeEducationLevel) === "primary"
+      ? "kiswahili"
+      : "english";
+  }
 
   const levelRaw =
     levelParam !== undefined && levelParam !== null && String(levelParam).length > 0

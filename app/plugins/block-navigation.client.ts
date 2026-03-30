@@ -52,6 +52,9 @@ export default defineNuxtPlugin({
       "/list-videos",
       "/image-list",
       "/home#content-container-after-login",
+      "/nyumbani#content-container-after-login",
+      "/secondary#content-container-after-login",
+      "/primary#content-container-after-login",
       "/interactive",
       "/experiments",
       "/video",
@@ -97,13 +100,17 @@ export default defineNuxtPlugin({
     
     const isAllowedRoute = allowList.includes(basePath) || allowList.includes(to.fullPath);
     
-    // On hard refresh/direct entry, do not force-redirect to /home.
+    // On hard refresh/direct entry, do not force-redirect to the secondary hub.
     // This preserves deep links like /interactive/... across reloads.
     if (!routesStates && from.matched.length === 0) {
       return true;
     }
 
-    if (!routesStates && to.fullPath !== "/home" && !isAllowedRoute) {
+    if (
+      !routesStates &&
+      to.fullPath !== "/secondary" &&
+      !isAllowedRoute
+    ) {
       return true;
     }
 

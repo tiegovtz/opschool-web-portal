@@ -3,6 +3,10 @@ import { homeTabsByLanguage } from "~/types/enum/tabs.enum";
 import type { LanguageSupport } from "~/types/language.interface";
 import type { tabs, videoType, tabGroup } from "~/types/types.data";
 import { moveFocus } from "~/utilities/focus.helper";
+import {
+  getEducationRouteQuery,
+  normalizeEducationLevel,
+} from "~/utilities/educationRoute";
 
 // Define Emit
 const emit = defineEmits(["emitActiveTab"]);
@@ -89,6 +93,21 @@ const localizedContent = computed(() =>
         skipToAudiosList: "Press enter to jump to audios list",
       },
 );
+
+const anonymousEducationLevel = computed(() =>
+  normalizeEducationLevel(props.educationLevel ?? props.tabGroup),
+);
+
+const buildAnonymousTarget = (
+  path: string,
+  extraQuery: Record<string, any> = {},
+) => ({
+  path,
+  query: {
+    ...getEducationRouteQuery(anonymousEducationLevel.value),
+    ...extraQuery,
+  },
+});
 </script>
 
 <template>
@@ -172,13 +191,13 @@ const localizedContent = computed(() =>
       <NuxtLink
         :aria-label="`${localizedContent.visitInteractivePage}${subjectTitle ? ` ${localizedContent.visitSubjectSuffix} ${subjectTitle}` : ''}`"
         v-else
-        :to="
+        :to="buildAnonymousTarget(
           subjectTitle
             ? topicId
               ? `/interactive/${subjectTitle}/${topicId}`
               : `/interactive/${subjectTitle}`
-            : `/interactive`
-        "
+            : `/interactive`,
+        )"
         class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-[6px] cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
         active-class="text-white !bg-deepBlue "
       >
@@ -224,13 +243,13 @@ const localizedContent = computed(() =>
         <NuxtLink
           v-else
           :aria-label="`${localizedContent.visitActivitiesPage}${subjectTitle ? ` ${localizedContent.visitSubjectSuffix} ${subjectTitle}` : ''}`"
-          :to="
+          :to="buildAnonymousTarget(
             subjectTitle
               ? topicId
                 ? `/experiments/${subjectTitle}/${topicId}`
                 : `/experiments/${subjectTitle}`
-              : `/experiments`
-          "
+              : `/experiments`,
+          )"
           class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-[6px] cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
           active-class="text-white !bg-deepBlue"
         >
@@ -275,16 +294,14 @@ const localizedContent = computed(() =>
         <NuxtLink
           v-else
           :aria-label="`${localizedContent.visitVideoPage}${subjectTitle ? ` ${localizedContent.visitSubjectSuffix} ${subjectTitle}` : ''}`"
-          :to="{
-            path: subjectTitle
+          :to="buildAnonymousTarget(
+            subjectTitle
               ? topicId
                 ? `/video/${subjectTitle}/${topicId}`
                 : `/video/${subjectTitle}`
               : `/video`,
-            query: {
-              type: 'conc',
-            },
-          }"
+            { type: 'conc' },
+          )"
           @click="videoType = 'conceptual'"
           class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-[6px] cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
           :active-class="
@@ -334,16 +351,14 @@ const localizedContent = computed(() =>
         <NuxtLink
           v-else
           :aria-label="`${localizedContent.visitClassVideoPage}${subjectTitle ? ` ${localizedContent.visitSubjectSuffix} ${subjectTitle}` : ''}`"
-          :to="{
-            path: subjectTitle
+          :to="buildAnonymousTarget(
+            subjectTitle
               ? topicId
                 ? `/video/${subjectTitle}/${topicId}`
                 : `/video/${subjectTitle}`
               : `/video`,
-            query: {
-              type: 'oth',
-            },
-          }"
+            { type: 'oth' },
+          )"
           @click="videoType = 'class-video'"
           class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-[6px] cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
           :active-class="
@@ -389,13 +404,13 @@ const localizedContent = computed(() =>
         </div>
         <NuxtLink
           v-else
-          :to="
+          :to="buildAnonymousTarget(
             subjectTitle
               ? topicId
                 ? `/audio/${subjectTitle}/${topicId}`
                 : `/audio/${subjectTitle}`
-              : `/audio`
-          "
+              : `/audio`,
+          )"
           :aria-label="`${localizedContent.visitAudioPage}${subjectTitle ? ` ${localizedContent.visitSubjectSuffix} ${subjectTitle}` : ''}`"
           class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-[6px] cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
           active-class="text-white !bg-deepBlue"

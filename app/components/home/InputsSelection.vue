@@ -4,6 +4,7 @@ import type { educationLevel } from "~/types/educationlevel.interface";
 import type { LanguageSupport } from "~/types/language.interface";
 import type { Subjects } from "~/types/subject.interface";
 import apiDocs from "~/utilities/apiDocs";
+import { normalizeEducationLevel } from "~/utilities/educationRoute";
 
 type DropdownOption = {
   id: string;
@@ -38,30 +39,8 @@ const emit = defineEmits<{
 const normalizeValue = (value?: string | null) =>
   value?.trim().toLowerCase() ?? "";
 
-const getEducationBucket = (value?: string | null) => {
-  const normalizedValue = normalizeValue(value);
-
-  if (
-    ["primary", "primary education", "elimu ya msingi", "msingi"].includes(
-      normalizedValue,
-    )
-  ) {
-    return "primary";
-  }
-
-  if (
-    [
-      "secondary",
-      "secondary education",
-      "elimu ya sekondari",
-      "sekondari",
-    ].includes(normalizedValue)
-  ) {
-    return "secondary";
-  }
-
-  return normalizedValue || null;
-};
+const getEducationBucket = (value?: string | null) =>
+  value?.trim() ? normalizeEducationLevel(value) : null;
 
 const isPrimaryModule = computed(
   () => getEducationBucket(props.educationLevel) === "primary",
@@ -217,7 +196,12 @@ const { data: secondarySubjects, pending: secondarySubjectsPending } = useFetch<
   Subjects[]
 >(apiDocs.subjects.getPublicSubjects, {
   headers,
+  query: computed(() => {
+    const educationBucket = getEducationBucket(level.value || props.educationLevel);
+    return educationBucket ? { educationLevel: educationBucket } : {};
+  }),
   default: () => [],
+  watch: [level],
 });
 
 const { data: primaryGrades, pending: primaryGradesPending } = useFetch<
