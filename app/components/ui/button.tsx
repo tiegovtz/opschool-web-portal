@@ -9,11 +9,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-oceanBlue text-white hover:bg-oceanBlue/90 focus-visible:ring-oceanBlue",
+          "bg-[#084063] text-white hover:bg-[#084063]/90 focus-visible:ring-oceanBlue",
         brand:
-          "bg-oceanBlue text-white hover:bg-oceanBlue/90",
+          "bg-[#084063] text-white hover:bg-[#084063]/90",
         "brand-lemon":
-          "bg-oceanBlue text-white hover:bg-oceanBlue/90 focus-visible:ring-oceanBlue",
+          "bg-[#084063] text-white hover:bg-[#084063]/90 focus-visible:ring-oceanBlue",
         destructive:
           "bg-red-500 text-white hover:bg-red-500/90",
         "outline-brand":

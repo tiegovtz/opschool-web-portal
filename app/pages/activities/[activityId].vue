@@ -35,7 +35,7 @@ definePageMeta({
             width="18"
             height="18"
           />
-          Pack
+          Back
         </Button>
       </div>
 
