@@ -4,6 +4,7 @@ import apiDocs from "~/utilities/apiDocs";
 import type { educationLevel } from "~/types/educationlevel.interface";
 import type { ClassLevel } from "~/types/classlevel.interface";
 import type { Subjects } from "~/types/subject.interface";
+import { normalizeEducationLevel } from "~/utilities/educationRoute";
 
 const EDUCATION_LEVEL_RENDER_ORDER: Record<string, number> = {
   "Pre-Primary": 0,
@@ -26,7 +27,18 @@ const isLoading = ref(true);
 // Server data
 const { data: educationLevels } = useFetch<educationLevel[]>(apiDocs.educationLevel.getEducationLevels, { headers });
 const { data: classes } = useFetch<ClassLevel[]>(apiDocs.levels.getLevels, { headers });
-const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjects, { headers });
+const selectedEducationBucket = computed(() =>
+  selected.level?.trim() ? normalizeEducationLevel(selected.level) : null,
+);
+const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjects, {
+  headers,
+  query: computed(() =>
+    selectedEducationBucket.value
+      ? { educationLevel: selectedEducationBucket.value }
+      : {},
+  ),
+  watch: [selectedEducationBucket],
+});
 
 // Simulate skeleton time
 setTimeout(() => (isLoading.value = false), 500);
@@ -103,7 +115,7 @@ const createDebounce = <T extends (...args: any[]) => void>(fn: T, delay = 100) 
 const emitUpdate = createDebounce(() => {
   const q: Record<string, any> = {};
 
-  if (selected.level) q.educationLevel = selected.level.toLowerCase();
+  if (selected.level) q.educationLevel = normalizeEducationLevel(selected.level);
   if (selected.class) q.level = selected.class.toLowerCase();
   if (selected.subject) q.subject = selected.subject.toLowerCase();
 
@@ -160,7 +172,7 @@ const filterGroups = computed(() => {
   }
 
   // Subject
-  if (subjects.value && props.activeTab?.toLowerCase() !== "home") {
+  if (subjects.value) {
     groups.push({
       name: "subject",
       inputType: "radio",

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
+import {
+    getEducationRouteQuery,
+    resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 const navigationStore = useNavigationStore()
+const route = useRoute();
 
 const props = withDefaults( 
     defineProps<{
@@ -40,11 +45,16 @@ const setExperimentUrl =()=>{
         })
     );
 }
+
+const experimentTarget = computed(() => ({
+    path: `/experiments/${props.experimentStandard}/${props.experimentSubject}/${props.experimentName}/${props.experimentId}`,
+    query: getEducationRouteQuery(resolveEducationLevelFromRoute(route)),
+}));
 </script>
 
 <template>
     <NuxtLink
-        :to="`/experiments/${experimentStandard}/${experimentSubject}/${experimentName}/${experimentId}`" 
+        :to="experimentTarget" 
         @click="setExperimentUrl()"
         :aria-label="`View ${experimentName} experiment with experiment description ${experimentDescription}`"
         :class="[

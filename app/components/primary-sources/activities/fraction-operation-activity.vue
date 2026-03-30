@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // @ts-nocheck
 import { computed, ref } from "vue";
+import { Icon } from "@iconify/vue";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -187,7 +188,18 @@ const handleSubmit = () => {
         </div>
 
         <div v-if="!submitted" class="flex justify-end p-4">
-          <Button @click="handleSubmit">Check Answers</Button>
+          <Button
+            @click="handleSubmit"
+            class="group gap-2"
+          >
+            <Icon
+              icon="heroicons:sparkles"
+              width="18"
+              height="18"
+              class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
+            />
+            Check Answers
+          </Button>
         </div>
 
         <div v-else-if="props.feedback !== 'none'" class="bg-picton-blue-50 p-4 text-center">

@@ -12,6 +12,12 @@ import { fetchAsyncData } from '~/composables/useAsyncFetch';
 import type { tabs } from "~/types/types.data";
 import { layoutEffect } from '@/utilities/controlls';
 import InputsSelection from '~/components/home/InputsSelection.vue';
+import {
+  getEducationRouteQuery,
+  getHubLanguage,
+  getHubPath,
+  resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 
 useHead({
   title: "TIE - Video Resource",
@@ -44,6 +50,11 @@ const status = ref('pending'); // Initial Status State
 const videos = ref();         // Initial videos State
 const slicedData = ref();    // Initial slice data to 9
 const route = useRoute();
+const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const language = computed(() => getHubLanguage(educationLevel.value));
+const educationRouteQuery = computed(() =>
+  getEducationRouteQuery(educationLevel.value),
+);
 const videoType = computed<string>(() => {
   let type = route.query?.type as string;
   if (type === 'oth') return 'Others';
@@ -79,19 +90,19 @@ const currentPage = ref(1);
 const pageSize = ref();
 
 const VIDEO_TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
-  subjects: { path: "/home" },
-  "interactive-contents": { path: "/interactive" },
-  "learn-activities": { path: "/experiments" },
-  video: { path: "/video", query: { type: "conc" } },
-  "class-videos": { path: "/video", query: { type: "oth" } },
-  audio: { path: "/audio" },
+  subjects: { path: getHubPath(educationLevel.value) },
+  "interactive-contents": { path: "/interactive", query: educationRouteQuery.value },
+  "learn-activities": { path: "/experiments", query: educationRouteQuery.value },
+  video: { path: "/video", query: { ...educationRouteQuery.value, type: "conc" } },
+  "class-videos": { path: "/video", query: { ...educationRouteQuery.value, type: "oth" } },
+  audio: { path: "/audio", query: educationRouteQuery.value },
   "smart-class": { path: "/smart-class" },
 };
 
 const switchTab = async (tab: string) => {
   if (!tab) return;
   activeTab.value = tab as tabs;
-  const target = VIDEO_TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  const target = VIDEO_TAB_TO_ROUTE[tab] ?? { path: getHubPath(educationLevel.value) };
   await useRouter().push(target);
 };
 
@@ -99,12 +110,13 @@ const switchTab = async (tab: string) => {
 const fetchVideos = async (param?: any) => {
   param = {
     ...param,
+    educationLevel: educationLevel.value,
     videoType: videoType.value
   }
 
   try {
     status.value = 'pending';
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${videoType.value}`, () => $fetch(apiDocs.videos.getPublicVideo, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${videoType.value}`, () => $fetch(apiDocs.videos.getPublicVideo, {
       method: 'GET',
       params: {
         ...param
@@ -116,7 +128,9 @@ const fetchVideos = async (param?: any) => {
     videos.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
     // remove type
     // videos.value = videoType === 'conc' ? removeDataFromArrayOfJson( videos.value, 'videoType','Others' ):removeDataFromArrayOfJson( videos.value, 'videoType', 'Conceptual');
-    videos.value = filterKeyDataFromArrayOfJson(videos.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
+    videos.value = educationLevel.value === "secondary"
+      ? filterKeyDataFromArrayOfJson(videos.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
+      : videos.value;
     status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
@@ -261,14 +275,14 @@ const contentLayoutLanguage = useContentLayoutLanguage();
     ]">
       <!-- User Token Not Available -->
       <div v-if="!userToken">
-        <HeroSection />
-        <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+        <HeroSection :language :education-level="educationLevel" />
+        <InputsSelection :language :education-level="educationLevel" @emit-level="level = $event" @emit-standard="filters.level = $event"
           @emit-subject="filters.subject = $event" />
-        <TabBar :active-tab="activeTab" />
+        <TabBar :active-tab="activeTab" :language :education-level="educationLevel" :tab-group="educationLevel" />
       </div>
       <div v-else class="flex flex-col items-center justify-center w-full gap-4 pt-4">
-        <HomeSearchbar appearance="rounded" />
-        <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" />
+        <HomeSearchbar appearance="rounded" :language :education-level="educationLevel" />
+        <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" :language :education-level="educationLevel" :tab-group="educationLevel" />
       </div>
       <div class="items-center justify-end hidden gap-2 md:flex" role="group" aria-label="Layout options">
         <button @click="layoutEffect = 'grid'" :aria-pressed="layoutEffect === 'grid'" aria-label="Grid layout" :class="[

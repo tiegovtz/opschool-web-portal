@@ -21,13 +21,13 @@
             id="conversation-practice-title"
             class="text-lg font-semibold text-blue-700 tracking-tight"
           >
-            Conversation Practice
+            {{ practiceTitle }}
           </h1>
           <button
             v-if="!isEmbedded"
             type="button"
             class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
-            aria-label="Close conversation practice"
+            :aria-label="`Close ${practiceTitle}`"
             @click="closeModal"
           >
             <span class="text-xl leading-none">&times;</span>
@@ -288,6 +288,14 @@ definePageMeta({
 
 const router = useRouter()
 const route = useRoute()
+const practiceTitle = computed(() =>
+  String(route.query.language || '').trim().toLowerCase() === 'sw'
+    ? 'Mazoezi ya Mazungumzo'
+    : 'Conversation Practice'
+)
+const speechRecognitionLang = computed(() =>
+  String(route.query.language || '').trim().toLowerCase() === 'sw' ? 'sw-TZ' : 'en-US'
+)
 const originalBodyOverflow = ref('')
 const allowOverlayClose = ref(false)
 const returnTo = ref('')
@@ -532,7 +540,7 @@ onMounted(() => {
       recognition = new SpeechRecognition()
       recognition.continuous = false
       recognition.interimResults = false
-      recognition.lang = 'en-US'
+      recognition.lang = speechRecognitionLang.value
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript

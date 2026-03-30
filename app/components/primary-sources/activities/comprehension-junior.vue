@@ -8,6 +8,7 @@ import type { FeedbackType } from "@/lib/types/activity-types";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
 import LeftNotesWithImages from "@/components/templates/left-notes-with-images";
 import { useSoundEffects } from "~/composables/use-sound-effects";
+import { Icon } from "@iconify/vue";
 import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "@/components/templates/results";
@@ -16,6 +17,7 @@ type ComprehensionQuestion = {
   question: string;
   image?: string;
   answers: string[];
+  acceptedAnswers?: string[];
   options: {
     id: string;
     text: string;
@@ -146,10 +148,13 @@ const isQuestionCorrect = async (
   }
 
   if (props.questions.algorithm === "Comprehension junior one") {
+    const acceptedAnswers =
+      question.acceptedAnswers?.length ? question.acceptedAnswers : question.answers;
+
     return userAnswers.every(
       (answer) =>
         answerChecker.checkAnswer(answer, {
-          acceptedAnswers: question.answers,
+          acceptedAnswers,
         }).isCorrect,
     );
   }
@@ -286,7 +291,11 @@ const questionIsAnswered = (index: number) =>
               >
                 Correct answer:
                 {{
-                  props.questions.questions[originalIndex]?.answers.join(", ")
+                  (
+                    props.questions.questions[originalIndex]?.acceptedAnswers ||
+                    props.questions.questions[originalIndex]?.answers ||
+                    []
+                  ).join(", ")
                 }}
               </p>
             </div>
@@ -419,12 +428,19 @@ const questionIsAnswered = (index: number) =>
             currentAnswers.some((answer) => !answer?.trim()) ||
             isCheckingAnswers
           "
+          class="group gap-2"
           @click="
             activeQuestion < shuffledIndexes.length - 1
               ? handleNextQuestion()
               : handleCheckAnswers()
           "
         >
+          <Icon
+            icon="heroicons:sparkles"
+            width="18"
+            height="18"
+            class="text-lemon-700 transition-transform duration-200 group-hover:scale-110"
+          />
           {{
             isCheckingAnswers
               ? "Checking..."

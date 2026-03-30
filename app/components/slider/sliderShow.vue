@@ -2,16 +2,16 @@
 import type { SwiperContainer } from 'swiper/element'
 import type { LanguageSupport } from '~/types/language.interface';
 
-type ilipo = 'nyumbani'|'home'|'landing'
+type SliderVariant = 'primary'|'secondary'|'landing'
 const props = withDefaults(
-  defineProps<{ educationLevel?: string, language?: LanguageSupport,mahalIlipo?:ilipo }>(), {
+  defineProps<{ educationLevel?: string, language?: LanguageSupport, variant?: SliderVariant }>(), {
   language: 'english',
-  mahalIlipo:'home',
+  variant:'secondary',
 })
 
 const containerRef = ref<SwiperContainer | null>(null)
 const slides = computed(()=>{
-  if(props.mahalIlipo ==='home') return [
+  if(props.variant ==='secondary') return [
   {
     image: "/images/1.TIE-Interactive.webp",
     alt: "A student demonstrates work on a desktop computer to a former prime minister Kassimu Majaliwa in a school computer lab, while other officials and students watch from rows of computers in the background.",
@@ -46,7 +46,7 @@ const slides = computed(()=>{
   },
 ]
   
-   if(props.mahalIlipo ==='nyumbani') return [
+   if(props.variant ==='primary') return [
   {
     image: "/images/primary-01.png",
     alt: "",
@@ -57,7 +57,7 @@ const slides = computed(()=>{
   },
 ]
 
-  if(props.mahalIlipo ==='landing') return [
+  if(props.variant ==='landing') return [
   {
     image: "/images/primary-01.png",
     alt: "",
@@ -168,7 +168,7 @@ onMounted(async () => {
         role="region" aria-roledescription="carousel" aria-label="Image slider">
         <swiper-slide v-for="(slide, idx) in slides" :key="idx" role="group" aria-roledescription="slide"
           :aria-label="`Slide ${idx + 1} of ${slides.length}`" :aria-describedby="`slide-desc-${idx}`" :tabindex="idx">
-          <NuxtImg :src="slide.image" :alt="slide.alt" :class="['object-cover w-full h-full ',mahalIlipo =='landing' ? 'rounded-3xl':'rounded-md']"  />
+          <NuxtImg :src="slide.image" :alt="slide.alt" :class="['object-cover w-full h-full ',variant =='landing' ? 'rounded-3xl':'rounded-md']"  />
 
           <!-- Hidden description for SR -->
           <p class="sr-only" :id="`slide-desc-${idx}`">

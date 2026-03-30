@@ -1,93 +1,48 @@
-// components/Droppable.tsx
-import {
-  defineComponent,
-  inject,
-  ref,
-  computed,
-  type PropType,
-  type Slots,
-  type CSSProperties,
-} from "vue";
+import { defineComponent, computed } from "vue";
+import { useDroppable } from "@dnd-kit/vue";
 import { cn } from "~/utilities/utils";
-import { dndContextKey, type DndContextValue } from "~/components/layout/dnd-context";
 
-export interface DroppableProps {
-  id: string
-  data?: Record<string, any>
-  disabled?: boolean
-  isOverClassName?: string
-  className?: string
-}
 
 export default defineComponent({
   name: "Droppable",
-  inheritAttrs: false,
   props: {
-    id: { type: String, required: true },
-    data: { type: Object as PropType<Record<string, any>> },
-    disabled: { type: Boolean, default: false },
-    isOverClassName: { type: String },
-    className: { type: String },
+    id: {
+      type: [String, Number],
+      required: true,
+    },
+    data: {
+      type: Object,
+      default: undefined,
+    },
+    isOverClassName: {
+      type: String,
+      default: "",
+    },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
   },
-  setup(props, { attrs, slots }: { attrs: Record<string, unknown>; slots: Slots }) {
-    const element = ref<HTMLElement | null>(null);
-    const isOver = ref(false);
-    const dndContext = inject<DndContextValue | null>(dndContextKey, null);
+  setup(props, { slots, attrs }) {
+    const { droppable, isDropTarget } = useDroppable({
+      id: props.id,
+      data: props.data,
+      disabled: props.disabled,
+    });
 
-    // Track dragover / dragleave manually
-    const onDragEnter = (e: DragEvent) => {
-      if (!props.disabled) {
-        e.preventDefault();
-      }
-    };
-
-    const onDragOver = (e: DragEvent) => {
-      if (!props.disabled) {
-        e.preventDefault();
-        if (e.dataTransfer) {
-          e.dataTransfer.dropEffect = "move";
-        }
-        isOver.value = true;
-      }
-    };
-
-    const onDragLeave = () => {
-      if (!props.disabled) {
-        isOver.value = false;
-      }
-    };
-
-    const onDrop = (e: DragEvent) => {
-      e.preventDefault();
-      isOver.value = false;
-      const fromTransfer = e.dataTransfer?.getData("text/plain")?.trim() || "";
-      if (!fromTransfer && !dndContext?.activeId.value) return;
-      dndContext?.completeDrop(
-        props.id,
-        fromTransfer ? fromTransfer : undefined,
-      );
-    };
-
-    // Combine className + isOverClassName using cn
-    const classList = computed(() =>
+    const className = computed(() =>
       cn(
-        props.className,
-        attrs.class as string | undefined,
-        (attrs as { className?: string }).className,
-        !props.disabled && isOver.value && props.isOverClassName,
-      ),
+        attrs.class as string,
+        !props.disabled && isDropTarget.value && props.isOverClassName
+      )
     );
 
     return () => (
       <div
-        ref={element}
-        id={props.id}
-        class={classList.value}
-        onDragenter={onDragEnter}
-        onDragover={onDragOver}
-        onDragleave={onDragLeave}
-        onDrop={onDrop}
-        style={attrs.style as CSSProperties}
+        {...droppable.value} 
+        id={String(props.id)}
+        class={className.value}
+        {...attrs}
       >
         {slots.default?.()}
       </div>

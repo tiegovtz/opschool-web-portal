@@ -6,6 +6,9 @@ import { Icon } from "@iconify/vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, { ActivityResultsAlertDialog } from "@/components/templates/results";
 import { shuffle } from "~/utilities/utils";
+import DNDContext from "~/components/layout/dnd-context";
+import Draggable from "~/components/ui/dnd/draggable";
+import Droppable from "~/components/ui/dnd/droppable";
 
 // Props
 type QuestionItem = {
@@ -47,6 +50,7 @@ const initialOptions = props.questions.options.map((opt, idx) => ({
 }));
 const shuffledOptions = ref<UniqueOption[]>(shuffle([...initialOptions]));
 
+const questionParts = (question: string) => String(question ?? "").split("___");
 
 function handleDragEnd({ active, over }: any) {
   if (!over) return;
@@ -141,7 +145,7 @@ function handleTryAgain() {
       class="flex flex-col h-full bg-picton-blue-100 gap-2"
       :style="{ fontSize: props.questions.fontSize ? props.questions.fontSize + 'px' : '20px' }"
     >
-      <DndContext @drag-end="handleDragEnd">
+      <DNDContext :onDragEnd="handleDragEnd">
         <!-- Options pool -->
         <div class="flex flex-wrap gap-2 md:gap-4 mb-4 shrink-0">
           <Draggable
@@ -161,7 +165,7 @@ function handleTryAgain() {
         </div>
 
         <!-- Questions -->
-        <div v-for="(question, i) in props.questions.questions" :key="i" class="flex md:items-center rounded-md gap-2 md:gap-6 p-2 bg-picton-blue-50">
+        <div v-for="(question, i) in props.questions.questions" :key="i" class="flex md:items-center rounded-md gap-2 md:gap-6 p-3 bg-picton-blue-50">
           <div class="flex flex-col md:flex-row items-start gap-2">
             <img
               v-if="question.image"
@@ -170,17 +174,25 @@ function handleTryAgain() {
               class="min-w-24 h-20 object-cover rounded-md"
             />
 
-            <div class="flex flex-wrap items-center gap-2">
-              <template v-for="(word, idx) in question.question.split(' ')" :key="idx">
-                <template v-if="word === '___'">
+            <div class="flex flex-wrap items-center gap-2 leading-relaxed">
+              <span class="mr-1 font-bold text-picton-blue-700">
+                {{ i + 1 }}.
+              </span>
+
+              <template v-for="(part, idx) in questionParts(question.question)" :key="idx">
+                <span v-if="part" class="whitespace-pre-wrap">
+                  {{ part }}
+                </span>
+
+                <template v-if="idx < questionParts(question.question).length - 1">
                   <Droppable
                     v-if="!answers[i]"
-                    :id="`${i}%${idx}`"
-                    class="bg-picton-blue-100 min-w-32 rounded flex items-center justify-center h-12"
+                    :id="`${i}%blank-${idx}`"
+                    class="bg-picton-blue-100 min-w-32 rounded flex items-center justify-center h-12 border border-picton-blue-300"
                   />
                   <Draggable
                     v-else
-                    :id="`${i}%${answers[i].optionId}%${idx}`"
+                    :id="`${i}%${answers[i].optionId}%blank-${idx}`"
                     class="flex items-center min-w-32 border border-lemon-400 bg-lemon-100 text-lemon-700 h-12 p-2"
                     :disabled="showResults"
                   >
@@ -201,20 +213,17 @@ function handleTryAgain() {
                     height="20"
                   />
                 </template>
-                <template v-else>
-                  <span>{{ word }}</span>
-                </template>
               </template>
             </div>
           </div>
         </div>
-      </DndContext>
+      </DNDContext>
 
       <ActivityResults
         v-if="showResults"
         :score="score"
         :total="props.questions.questions.length"
-        @onRestart="handleTryAgain"
+        :onRestart="handleTryAgain"
       />
     </div>
 
@@ -222,7 +231,11 @@ function handleTryAgain() {
       :score="score"
       :total="props.questions.questions.length"
       :open="allAnswered"
-      @onOpenChange="(open:any) => { allAnswered = open; if (!open) showResults = true }"
+      :onRestart="handleTryAgain"
+      :onOpenChange="(open:any) => {
+        allAnswered = open;
+        if (!open) showResults = true;
+      }"
     />
   </div>
 </template>

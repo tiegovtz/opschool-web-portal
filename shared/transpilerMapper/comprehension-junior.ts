@@ -34,6 +34,9 @@ export const comprehensionJuniorPropsTranspiler = (
       : "Answer options";
 
   const theQuestions = serverQuestions.map((question) => {
+    const separatedAnswers =
+      question.textTwo?.split(getCommonSeparator(question.textTwo ?? "")) ?? [];
+
     return {
       question: question.textOne,
       image: question.path
@@ -43,15 +46,12 @@ export const comprehensionJuniorPropsTranspiler = (
         : "",
       answers:
         algorithm === "Comprehension junior one"
-          ? [
-              ...(question.textTwo?.split(
-                getCommonSeparator(question.textTwo ?? "")
-              ) ?? []),
-            ]
-          : question.textTwo
-              ?.split(getCommonSeparator(question.textTwo ?? ""))
+          ? [separatedAnswers[0] ?? ""]
+          : separatedAnswers
               .slice(0, (question.textOne?.split("___").length || 1) - 1)
               .map((option) => option),
+      acceptedAnswers:
+        algorithm === "Comprehension junior one" ? separatedAnswers : undefined,
       options: shuffle(
         Array.from(
           new Set(
@@ -67,8 +67,7 @@ export const comprehensionJuniorPropsTranspiler = (
           )
         ).map((lowerOption) => {
           const originalOption =
-            question.textTwo
-              ?.split(getCommonSeparator(question.textTwo ?? ""))
+            separatedAnswers
               .find((opt) => opt.toLowerCase() === lowerOption) || "";
           return {
             id: lowerOption,

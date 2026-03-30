@@ -21,7 +21,12 @@ import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import type { tabs } from "~/types/types.data";
 import { layoutEffect } from "@/utilities/controlls";
 import InputsSelection from "~/components/home/InputsSelection.vue";
-import { nyumbaniTopics } from "~/data/nyumbani.mock";
+import {
+  getEducationRouteQuery,
+  getHubLanguage,
+  getHubPath,
+  resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania Interactive Learning Platform",
@@ -69,16 +74,13 @@ useHead({
 
 // Define Cookie
 const userToken = useCookie("signInUserToken");
-
-const { $router } = useNuxtApp();
-const query = $router.currentRoute.value.query;
+const route = useRoute();
 
 // extract query params
-const educationLevel = computed(() =>
-  (query.edl as string) == "primary" ? "primary" : "secondary",
-);
-const language = computed(() =>
-  (query.lang as string) == "sw" ? "kiswahili" : "english",
+const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const language = computed(() => getHubLanguage(educationLevel.value));
+const educationRouteQuery = computed(() =>
+  getEducationRouteQuery(educationLevel.value),
 );
 
 const contentLayoutLanguage = useContentLayoutLanguage();
@@ -117,11 +119,9 @@ const buildTopicGroups = (items: any[] = []) => {
     true,
   );
 
-  return filterKeyDataFromArrayOfJson(
-    activeItems,
-    "subject.name",
-    TOPIC_SUBJECT_ORDER,
-  );
+  return educationLevel.value === "secondary"
+    ? filterKeyDataFromArrayOfJson(activeItems, "subject.name", TOPIC_SUBJECT_ORDER)
+    : activeItems;
 };
 
 // Define Ref status
@@ -153,25 +153,24 @@ const pageSize = ref(getPageSize());
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params?: any) => {
   const url = apiDocs.topics.filterTopics;
+  params = {
+    educationLevel: educationLevel.value,
+    ...params,
+  };
   if (userToken.value) {
     params = { ...params, userId: (userToken.value as any)?._id };
   }
   try {
     status.value = "pending";
     const { data: response, status: fetchStatus } = await fetchAsyncData(
-      "interactive",
+      `interactive-${educationLevel.value}`,
       () =>
         $fetch(url, {
           params: params,
         }),
     );
 
-    const resolvedTopics =
-      educationLevel.value === "primary"
-        ? nyumbaniTopics
-        : response.value ?? [];
-
-    topic.value = buildTopicGroups(resolvedTopics);
+    topic.value = buildTopicGroups(response.value ?? []);
     status.value = fetchStatus.value;
 
     // Call sliceData after data is loaded
@@ -256,11 +255,11 @@ const TAB_TO_ROUTE: Record<
   string,
   { path: string; query?: Record<string, any> }
 > = {
-  "interactive-contents": { path: "/interactive" },
-  "learn-activities": { path: "/experiments" },
-  video: { path: "/video", query: { type: "conc" } },
-  "class-videos": { path: "/video", query: { type: "oth" } },
-  audio: { path: "/audio" },
+  "interactive-contents": { path: "/interactive", query: educationRouteQuery.value },
+  "learn-activities": { path: "/experiments", query: educationRouteQuery.value },
+  video: { path: "/video", query: { ...educationRouteQuery.value, type: "conc" } },
+  "class-videos": { path: "/video", query: { ...educationRouteQuery.value, type: "oth" } },
+  audio: { path: "/audio", query: educationRouteQuery.value },
   "smart-class": { path: "/smart-class" },
 };
 
@@ -269,11 +268,11 @@ const switchTab = async (tab: any) => {
   activeTab.value = tab;
   if (tab === "subjects") {
     await useRouter().push({
-      path: educationLevel.value === "primary" ? "/nyumbani" : "/home",
+      path: getHubPath(educationLevel.value),
     });
     return;
   }
-  const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  const target = TAB_TO_ROUTE[tab] ?? { path: getHubPath(educationLevel.value) };
   await useRouter().push(target);
 };
 
@@ -316,7 +315,7 @@ watch(filters, (filters) => {
         v-if="userToken"
         class="flex flex-col items-center justify-center w-full gap-4 pt-4"
       >
-        <HomeSearchbar appearance="rounded" />
+        <HomeSearchbar appearance="rounded" :language :education-level="educationLevel" />
         <TabBar
           :is-logged-in="true"
           :active-tab="activeTab"

@@ -169,7 +169,7 @@ const signIn = async () => {
           ? route.query.redirect
           : returnPath.value;
       const landingChoiceHome = consumePostLoginHome();
-      router.replace(redirectPath || landingChoiceHome || "/home");
+      router.replace(redirectPath || landingChoiceHome || "/secondary");
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = messages.error.auth.invalidCredentials;

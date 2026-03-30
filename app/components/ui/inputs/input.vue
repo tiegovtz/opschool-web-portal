@@ -4,16 +4,16 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "~/utilities/utils";
 
 const inputVariants = cva(
-  "flex h-10 w-full rounded-md border px-3 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-800 dark:bg-gray-950 dark:ring-offset-gray-950 dark:file:text-gray-50 dark:placeholder:text-gray-400 dark:focus-visible:ring-gray-300",
+  "flex h-10 w-full rounded-md border px-3 py-2 text-slate-900 file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/30 disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
         default:
           "border-gray-200 bg-white file:text-gray-950 placeholder:text-gray-500",
         brand:
-          "text-lemon-600 border-lemon-300 bg-lemon-50 file:text-lemon-800 placeholder:text-lemon-600 focus-visible:ring-lemon-600",
+          "text-lemon-700 border-lemon-300 bg-lemon-50 file:text-lemon-800 placeholder:text-lemon-600 focus-visible:ring-lemon-500/40",
         picton:
-          "text-picton-blue-500 border-picton-blue-300 bg-picton-blue-50 file:text-picton-blue-600 placeholder:text-picton-blue-500 focus-visible:ring-picton-blue-800 focus-visible:ring-0",
+          "text-picton-blue-700 border-picton-blue-300 bg-picton-blue-50 file:text-picton-blue-700 placeholder:text-picton-blue-500 focus-visible:ring-picton-blue-500/40",
       },
     },
     defaultVariants: {
@@ -46,6 +46,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   "update:modelValue": [value: string];
+  "update:model-value": [value: string];
 }>();
 
 const inputClassName = computed(() =>
@@ -60,6 +61,7 @@ const inputClassName = computed(() =>
 const handleInput = (event: Event) => {
   const target = event.target as HTMLInputElement;
   emit("update:modelValue", target.value);
+  emit("update:model-value", target.value);
 };
 </script>
 

@@ -68,7 +68,10 @@ const toggleReadMore = async () => {
     <div class="grid grid-cols-1 xl:grid-cols-2 md:gap-2">
       <!-- Slider -->
       <div class="flex flex-col items-center justify-center h-full">
-        <SliderShow :language :mahal-ilipo="language=='kiswahili' ? 'nyumbani' :'home'"/>
+        <SliderShow
+          :language
+          :variant="language === 'kiswahili' ? 'primary' : 'secondary'"
+        />
       </div>
 
       <!-- Text / CTA -->

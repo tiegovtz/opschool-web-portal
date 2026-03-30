@@ -1,4 +1,4 @@
-import { ref, onUnmounted } from 'vue';
+import { ref, onUnmounted, unref, type MaybeRefOrGetter } from 'vue';
 
 export interface SpeechRecognitionResult {
   transcript: string;
@@ -12,7 +12,7 @@ export interface WordTiming {
   endTime: number;
 }
 
-export const useSpeechRecognition = () => {
+export const useSpeechRecognition = (language: MaybeRefOrGetter<string> = 'en-US') => {
   const isListening = ref(false);
   const transcript = ref('');
   const interimTranscript = ref('');
@@ -43,7 +43,7 @@ export const useSpeechRecognition = () => {
     const rec = new SpeechRecognition();
     rec.continuous = true;
     rec.interimResults = true;
-    rec.lang = 'en-US';
+    rec.lang = unref(language) || 'en-US';
     rec.maxAlternatives = 1;
 
     rec.onstart = () => {
