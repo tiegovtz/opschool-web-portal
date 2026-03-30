@@ -33,9 +33,9 @@ const isAccountRoute = computed(() =>
 );
 
 const desktopNavItemClass =
-  "flex items-center gap-2 rounded-xl px-3 py-2 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue min-h-11";
+  "flex items-center gap-2 rounded-[6px] px-3 py-1 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
 const mobileNavItemClass =
-  "flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
+  "flex items-center justify-center gap-2 rounded-[6px] px-3 py-1 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
 const activeNavItemClass = "bg-deepBlue text-white shadow-sm";
 const inactiveNavItemClass = "hover:bg-deepBlue/85 hover:shadow-sm";
 

@@ -104,7 +104,7 @@ const localizedContent = computed(() =>
         <button
           role="tab"
           :class="[
-            'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+            'flex items-center justify-center cursor-pointer rounded-[6px] bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
             {
               'text-white !bg-deepBlue':
                 (tabState.isChecked &&
@@ -141,7 +141,7 @@ const localizedContent = computed(() =>
         <button
           role="tab"
           :class="[
-            'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+            'flex items-center justify-center cursor-pointer rounded-[6px] bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
             {
               'text-white !bg-deepBlue':
                 (tabState.isChecked &&
@@ -179,7 +179,7 @@ const localizedContent = computed(() =>
               : `/interactive/${subjectTitle}`
             : `/interactive`
         "
-        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
+        class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-[6px] cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
         active-class="text-white !bg-deepBlue "
       >
         <div class="flex items-center justify-center">
@@ -197,7 +197,7 @@ const localizedContent = computed(() =>
           <button
             role="tab"
             :class="[
-              'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+              'flex items-center justify-center cursor-pointer rounded-[6px] bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
               {
                 'text-white !bg-deepBlue':
                   (tabState.isChecked &&
@@ -231,7 +231,7 @@ const localizedContent = computed(() =>
                 : `/experiments/${subjectTitle}`
               : `/experiments`
           "
-          class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
+          class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-[6px] cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
           active-class="text-white !bg-deepBlue"
         >
           <div class="flex items-center justify-center">
@@ -248,7 +248,7 @@ const localizedContent = computed(() =>
           <button
             role="tab"
             :class="[
-              'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+              'flex items-center justify-center cursor-pointer rounded-[6px] bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
               {
                 'text-white !bg-deepBlue':
                   (tabState.isChecked &&
@@ -286,7 +286,7 @@ const localizedContent = computed(() =>
             },
           }"
           @click="videoType = 'conceptual'"
-          class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
+          class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-[6px] cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
           :active-class="
             videoType == 'conceptual'
               ? 'text-white !bg-deepBlue'
@@ -307,7 +307,7 @@ const localizedContent = computed(() =>
           <button
             role="tab"
             :class="[
-              'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+              'flex items-center justify-center cursor-pointer rounded-[6px] bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
               {
                 'text-white !bg-deepBlue':
                   (tabState.isChecked &&
@@ -345,7 +345,7 @@ const localizedContent = computed(() =>
             },
           }"
           @click="videoType = 'class-video'"
-          class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
+          class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-[6px] cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
           :active-class="
             videoType == 'class-video'
               ? 'text-white !bg-deepBlue'
@@ -363,7 +363,7 @@ const localizedContent = computed(() =>
           <button
             role="tab"
             :class="[
-              'flex items-center justify-center cursor-pointer rounded-md bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
+              'flex items-center justify-center cursor-pointer rounded-[6px] bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed  transition-colors duration-500 ease-in-out px-2 text-white text-medium lg:w-45 text-center gap-2',
               {
                 'text-white !bg-deepBlue':
                   (tabState.isChecked &&
@@ -397,7 +397,7 @@ const localizedContent = computed(() =>
               : `/audio`
           "
           :aria-label="`${localizedContent.visitAudioPage}${subjectTitle ? ` ${localizedContent.visitSubjectSuffix} ${subjectTitle}` : ''}`"
-          class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
+          class="flex items-center justify-center gap-2 px-2 text-center text-white transition-colors duration-500 ease-in-out rounded-[6px] cursor-pointer bg-oceanBlue hover:bg-paleBrickRed focus:bg-paleBrickRed text-medium lg:w-45"
           active-class="text-white !bg-deepBlue"
         >
           <div class="flex items-center justify-center">
