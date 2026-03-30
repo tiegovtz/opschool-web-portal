@@ -2,10 +2,6 @@
 import { IconsMdiBookOpenPageVariantOutline, UiBackButton } from '#components';
 import apiDocs from '~/utilities/apiDocs';
 import type { IconType } from '../icons/stats.vue';
-import type { Audios } from '~/types/audio.interface';
-import type { Videos } from '~/types/video.interface';
-import type { Experiment } from '~/types/experiment.interface';
-import type { Topic } from '~/types/topic.interface';
 import { setPostLoginHome } from '~/utilities/postLoginHome';
 import { getHubPath } from '~/utilities/educationRoute';
 
@@ -175,8 +171,8 @@ onMounted(async () => {
             </p>
             <!-- buttons -->
             <div class="flex flex-wrap gap-5 pt-5">
-                <UiButtonShineParticles @click="$router.push('/nyumbani')" label="Primary" />
-                <UiButtonShineParticles @click="$router.push('/home')" label="Secondary" />
+                <UiButtonShineParticles @click="goToPrimary" label="Primary" />
+                <UiButtonShineParticles @click="goToSecondary" label="Secondary" />
             </div>
 
             <!-- static -->
