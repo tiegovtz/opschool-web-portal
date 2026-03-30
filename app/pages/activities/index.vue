@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import Activity from "~/components/activities/Activity.vue";
 import { Button } from "~/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
 import { ActivityType } from "~/types/activity-types";
 import apiDocs from "~/utilities/apiDocs";
 import {
@@ -38,10 +30,6 @@ type ActivitiesByTypeResponse = {
   items: ActivityByTypeItem[];
 };
 
-const selectedActivityId = ref<string>("");
-const selectedType = ref<string>("");
-const selectedActivityName = ref<string>("");
-const previewOpen = ref(false);
 const searchTerm = ref("");
 
 const {
@@ -142,21 +130,8 @@ const filteredItems = computed(() => {
   });
 });
 
-const openPreview = (item: ActivityByTypeItem) => {
-  selectedActivityId.value = String(item.activity.id);
-  selectedType.value = item.type;
-  selectedActivityName.value = item.activity.activityName;
-  previewOpen.value = true;
-};
-
-const handleDialogChange = (open: boolean) => {
-  previewOpen.value = open;
-
-  if (!open) {
-    selectedActivityId.value = "";
-    selectedType.value = "";
-    selectedActivityName.value = "";
-  }
+const openActivityPage = (item: ActivityByTypeItem) => {
+  navigateTo(`/activities/${encodeURIComponent(String(item.activity.id))}`);
 };
 </script>
 
@@ -265,7 +240,7 @@ const handleDialogChange = (open: boolean) => {
           :key="`${item.type}-${item.activity.id}`"
           type="button"
           class="group flex h-full flex-col rounded-[1.75rem] border border-oceanBlue/10 bg-white p-5 text-left shadow-[0_20px_70px_-52px_rgba(1,61,96,0.7)] transition duration-200 hover:-translate-y-1 hover:border-oceanBlue/25 hover:shadow-[0_28px_80px_-46px_rgba(1,61,96,0.55)]"
-          @click="openPreview(item)"
+          @click="openActivityPage(item)"
         >
           <div class="flex items-start justify-between gap-4">
             <span
@@ -308,33 +283,5 @@ const handleDialogChange = (open: boolean) => {
         </button>
       </section>
     </div>
-
-    <Dialog
-      :open="previewOpen"
-      :on-open-change="handleDialogChange"
-    >
-      <DialogContent class="max-h-[90vh] max-w-6xl overflow-hidden p-0">
-        <DialogHeader class="border-b border-oceanBlue/10 bg-sky-50 px-6 py-5">
-          <DialogTitle class="pr-10 text-2xl font-black text-oceanBlue">
-            {{ selectedActivityName || "Activity Preview" }}
-          </DialogTitle>
-          <DialogDescription class="pr-10 text-sm text-slate-600">
-            <span v-if="selectedType">{{ selectedType }}</span>
-            <span v-if="selectedType && selectedActivityId"> • </span>
-            <span v-if="selectedActivityId"
-              >Activity ID: {{ selectedActivityId }}</span
-            >
-          </DialogDescription>
-        </DialogHeader>
-
-        <div class="max-h-[calc(90vh-96px)] overflow-y-auto bg-white p-6">
-          <Activity
-            v-if="selectedActivityId"
-            :key="selectedActivityId"
-            :activity-id="selectedActivityId"
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
   </div>
 </template>
