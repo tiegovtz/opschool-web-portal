@@ -1,21 +1,36 @@
 const conversationParser = (query: string): string => {
-  const regex = /conversation="([^"]+)",chapterId="([^"]+)"(?:,type="([^"]+)")?/g;
+  const regex = /conversation="([^"]+)",chapterId="([^"]+)"((?:,[a-zA-Z]+="[^"]*")*)/g;
 
-  return query.replace(regex, (match, identifier, chapterId, type) => {
+  return query.replace(regex, (match, identifier, chapterId, rawAttributes) => {
     const safeIdentifier = String(identifier || '').trim();
     const safeChapterId = String(chapterId || '').trim();
-    const safeType = String(type || '').trim();
+    const attributes = Object.fromEntries(
+      Array.from(String(rawAttributes || '').matchAll(/,([a-zA-Z]+)="([^"]*)"/g)).map(
+        ([, key, value]) => [key.toLowerCase(), value]
+      )
+    );
+    const safeType = String(attributes.type || '').trim();
+    const safeLanguage = String(attributes.language || '').trim();
     const normalizedType = safeType.toLowerCase();
+    const normalizedLanguage = safeLanguage.toLowerCase();
     const isConstant = normalizedType === 'constant';
-    const buttonLabel = isConstant ? 'English Practice' : 'Conversation Practice';
+    const isSwahili = normalizedLanguage === 'sw';
+    const buttonLabel = isSwahili
+      ? isConstant
+        ? 'Mazoezi ya Kiswahili'
+        : 'Mazoezi ya Mazungumzo'
+      : isConstant
+        ? 'English Practice'
+        : 'Conversation Practice';
 
     return `<button
         type="button"
         class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-oceanBlue text-white hover:bg-deepBlue transition-colors"
-        onclick="openConversationPractice('${safeChapterId}','${safeIdentifier}','${safeType}')"
+        onclick="openConversationPractice('${safeChapterId}','${safeIdentifier}','${safeType}','${safeLanguage}')"
         data-conversation-identifier="${safeIdentifier}"
         data-conversation-chapter="${safeChapterId}"
         data-conversation-type="${safeType}"
+        data-conversation-language="${safeLanguage}"
         aria-label="Open ${buttonLabel.toLowerCase()}"
       >
         ${buttonLabel}
@@ -28,7 +43,8 @@ declare global {
     openConversationPractice: (
       chapterId: string,
       identifier: string,
-      type?: string
+      type?: string,
+      language?: string
     ) => void;
     closeConversationPractice?: () => void;
     closeEnglishPractice?: () => void;
@@ -102,9 +118,11 @@ if (typeof window !== 'undefined') {
   window.openConversationPractice = (
     chapterId: string,
     identifier: string,
-    type?: string
+    type?: string,
+    language?: string
   ) => {
     const normalizedType = String(type || '').trim().toLowerCase();
+    const normalizedLanguage = String(language || '').trim().toLowerCase();
     const baseRoute =
       normalizedType === 'constant' ? '/english-practice' : '/conversation-practice';
     const params = new URLSearchParams();
@@ -113,6 +131,7 @@ if (typeof window !== 'undefined') {
     // Set type parameter: use provided type, or default to 'engage' if missing (since missing type means engage)
     const typeToUse = normalizedType || 'engage';
     params.set('type', typeToUse);
+    if (normalizedLanguage) params.set('language', normalizedLanguage);
     params.set('embed', '1');
     const url = `${baseRoute}?${params.toString()}`;
 

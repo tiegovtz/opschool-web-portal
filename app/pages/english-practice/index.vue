@@ -19,7 +19,7 @@
         <header class="practice-header shrink-0 px-3 py-3 sm:px-6 sm:py-4 border-b border-slate-200">
           <div class="flex items-start justify-between gap-3 sm:hidden">
             <div class="min-w-0">
-              <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">English Speaking Practice</h1>
+              <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">{{ practiceTitle }}</h1>
               <p class="text-xs text-slate-500 mt-1">
                 Practice speaking with guided conversation
               </p>
@@ -28,7 +28,7 @@
               v-if="!isEmbedded"
               type="button"
               class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
-              aria-label="Close English practice"
+              :aria-label="`Close ${practiceTitle}`"
               @click="closeModal"
             >
               <span class="text-xl leading-none">&times;</span>
@@ -62,7 +62,7 @@
           </div>
           <div class="hidden sm:flex sm:items-start sm:justify-between sm:gap-4">
             <div>
-              <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">English Speaking Practice</h1>
+              <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">{{ practiceTitle }}</h1>
               <p class="text-xs text-slate-500 mt-1">
                 Practice speaking with guided conversation
               </p>
@@ -96,7 +96,7 @@
                 v-if="!isEmbedded"
                 type="button"
                 class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
-                aria-label="Close English practice"
+                :aria-label="`Close ${practiceTitle}`"
                 @click="closeModal"
               >
                 <span class="text-xl leading-none">&times;</span>
@@ -249,6 +249,14 @@ const currentWordIndex = ref(0); // Track current position in script words
 const mode = ref<PracticeMode>('multi-user'); // Can be changed based on user detection
 const route = useRoute();
 const router = useRouter();
+const practiceTitle = computed(() =>
+  String(route.query.language || '').trim().toLowerCase() === 'sw'
+    ? 'Mazoezi ya Kiswahili'
+    : 'English Speaking Practice'
+);
+const speechRecognitionLang = computed(() =>
+  String(route.query.language || '').trim().toLowerCase() === 'sw' ? 'sw-TZ' : 'en-US'
+);
 const isDebugMode = computed(() => {
   const debugParam = route.query.debug;
   return Array.isArray(debugParam) ? debugParam[0] === '1' : debugParam === '1';
@@ -298,7 +306,7 @@ const isEmbedded = computed(() => String(route.query.embed || '') === '1');
 const isModalOpen = computed(() => !isEmbedded.value);
 
 // Composables
-const speechRecognition = useSpeechRecognition();
+const speechRecognition = useSpeechRecognition(speechRecognitionLang);
 const turnManager = useTurnManager(() => mode.value);
 
 // Computed
