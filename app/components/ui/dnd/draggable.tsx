@@ -1,89 +1,54 @@
-// components/Draggable.tsx
-import {
-  computed,
-  defineComponent,
-  inject,
-  type CSSProperties,
-  type PropType,
-} from "vue";
-import { cn } from "~/utilities/utils";
-import { dndContextKey, type DndContextValue } from "~/components/layout/dnd-context";
-
-interface DraggableData {
-  [key: string]: any
-}
-
-export interface DraggableProps {
-  id: string
-  data?: DraggableData
-  resize?: boolean
-  disabled?: boolean
-  style?: CSSProperties
-}
+import { defineComponent, computed } from "vue";
+import { useDraggable } from "@dnd-kit/vue";
+import { CSS } from "@dnd-kit/utilities";
 
 export default defineComponent({
   name: "Draggable",
-  inheritAttrs: false,
   props: {
-    id: { type: String, required: true },
-    data: { type: Object as PropType<DraggableData> },
-    resize: { type: Boolean, default: true },
-    disabled: { type: Boolean, default: false },
-    style: { type: Object as PropType<CSSProperties> },
-    className: String,
-    class: String,
+    id: {
+      type: [String, Number],
+      required: true,
+    },
+    data: {
+      type: Object,
+      default: undefined,
+    },
+    resize: {
+      type: Boolean,
+      default: true,
+    },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
   },
-  setup(props, { attrs, slots }) {
-    const dndContext = inject<DndContextValue | null>(dndContextKey, null);
+  setup(props, { slots, attrs }) {
+    const { draggable, isDragging } = useDraggable({
+      id: props.id,
+      data: props.data,
+      disabled: props.disabled,
+    });
 
-    const isDragging = computed(
-      () => !props.disabled && dndContext?.activeId.value === props.id,
-    );
+    const style = computed(() => {
+      const transform = draggable.value?.transform;
 
-    const handleDragStart = (event: DragEvent) => {
-      if (props.disabled) return;
-      event.dataTransfer?.setData("text/plain", props.id);
-      event.dataTransfer!.effectAllowed = "move";
-      dndContext?.beginDrag(props.id);
-    };
+      const baseTransform = props.resize
+        ? CSS.Transform.toString(transform)
+        : `translate(${transform?.x || 0}px, ${transform?.y || 0}px)`;
 
-    const handleDragEnd = () => {
-      // Defer so the droppable's drop (same gesture) runs first and can read activeId / dataTransfer.
-      queueMicrotask(() => {
-        dndContext?.endDrag();
-      });
-    };
+      return {
+        touchAction: props.disabled ? "auto" : "none",
+        transform: baseTransform,
+        ...(attrs.style as object),
+      };
+    });
 
     return () => (
       <div
+        {...draggable.value} 
+        id={String(props.id)}
+        style={style.value}
         {...attrs}
-        draggable={!props.disabled}
-        onDragstart={handleDragStart}
-        onDragend={handleDragEnd}
-        style={{
-          touchAction: props.disabled ? "auto" : "none",
-          ...(props.disabled
-            ? {}
-            : {
-                userSelect: "none",
-                WebkitUserSelect: "none",
-              }),
-          ...(isDragging.value
-            ? {
-                zIndex: 9999,
-                position: "relative" as const,
-              }
-            : {}),
-          ...props.style,
-        }}
-        class={cn(
-          !props.disabled && "select-none [&_*]:select-none",
-          props.class,
-          props.className,
-          attrs.class as string | undefined,
-          (attrs as { className?: string }).className,
-        )}
-        id={props.id}
       >
         {slots.default?.()}
       </div>
