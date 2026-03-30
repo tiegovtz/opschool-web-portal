@@ -2,6 +2,23 @@ import { activityPopupId, experimrntUrl } from "../controlls";
 
 const activityParser = (query: string): string => {
   const source = String(query || "");
+  /**
+   * Regular expression pattern that matches activity attributes in a string.
+   * 
+   * Captures:
+   * - Group 1: The activity ID value (matches `activity="..."` or `activityId="..."`)
+   * - Group 2: Any additional comma-separated attributes following the activity ID
+   * 
+   * Pattern breakdown:
+   * - `activity(?:Id)?=` - Matches either "activity=" or "activityId=" (non-capturing group)
+   * - `"([^"]+)"` - Captures the quoted value (Group 1)
+   * - `((?:,[a-zA-Z]+="[^"]*")*)` - Optionally captures comma-separated key="value" pairs (Group 2)
+   * - `g` flag - Global flag for finding all matches in the string
+   * 
+   * @example
+   * // Matches: activity="123",param="value"
+   * // Matches: activityId="abc-456",title='xyz-789',x="y"
+   */
   const regex = /activity(?:Id)?="([^"]+)"((?:,[a-zA-Z]+="[^"]*")*)/g;
 
   return source.replace(regex, (match, identifier, rawAttributes) => {
