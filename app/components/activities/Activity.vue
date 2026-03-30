@@ -12,6 +12,7 @@ import {
   extractActivityFromPayload,
   normalizeActivity,
 } from "~/utilities/activitiesApi";
+import { Icon } from "@iconify/vue";
 
 
 // prpops
@@ -80,7 +81,27 @@ const transpiler = computed(() => activity.value && activityPropsTranspiler[acti
 <template>
     <div>
         <div v-if="status === 'idle'"> Nothing to show </div>
-        <div v-else-if="status == 'pending'">Loading ...</div>
+        <div
+          v-else-if="status == 'pending'"
+          class="flex min-h-[260px] flex-col items-center justify-center gap-4 px-4 text-center"
+        >
+          <div class="relative">
+            <span
+              class="absolute -inset-8 animate-ping rounded-full bg-lemon-100 opacity-70"
+            />
+            <span
+              class="absolute -inset-6 rounded-full bg-sky-50 opacity-60 blur-sm"
+            />
+            <Icon
+              icon="heroicons:sparkles"
+              width="40"
+              height="40"
+              class="relative text-lemon-700 animate-bounce"
+            />
+          </div>
+
+          <p class="text-lg font-semibold text-oceanBlue/90">Loading ...</p>
+        </div>
         <div v-else-if="status == 'success'" class="">
             <div v-if="!activity || !transpiler" class="">
                  This activity is not available

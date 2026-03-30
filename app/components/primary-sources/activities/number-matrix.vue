@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { Icon } from "@iconify/vue";
 import { Button } from "@/components/ui/button";
 import CustomInput from "@/components/ui/inputs/custom-input";
 import ActivityTitle from "@/components/templates/activity-title";
@@ -173,9 +174,15 @@ const handleResultsDialogClose = (open: boolean) => {
     <Button
       v-if="!showFeedback"
       variant="brand-lemon"
-      class="ml-auto mt-4 w-fit"
+      class="ml-auto mt-4 w-fit group gap-2"
       @click="checkAnswers"
     >
+      <Icon
+        icon="heroicons:sparkles"
+        width="18"
+        height="18"
+        class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
+      />
       Check Answers
     </Button>
 

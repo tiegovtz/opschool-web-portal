@@ -6,6 +6,7 @@ import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "@/components/templates/results";
 import { Button } from "@/components/ui/button";
+import { Icon } from "@iconify/vue";
 import { Input } from "@/components/ui/input";
 import { shuffle } from "@/lib/utils";
 import type { FeedbackType } from "@/lib/types/activity-types";
@@ -162,9 +163,15 @@ const getInputClass = (key: string) => {
     <Button
       v-if="!showFeedback"
       variant="brand-lemon"
-      class="mx-auto mt-4 w-fit"
+      class="mx-auto mt-4 w-fit group gap-2"
       @click="checkAnswers"
     >
+      <Icon
+        icon="heroicons:sparkles"
+        width="18"
+        height="18"
+        class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
+      />
       Check Answers
     </Button>
 
