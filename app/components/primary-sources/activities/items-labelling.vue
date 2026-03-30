@@ -13,6 +13,7 @@ import ActivityResults, {
 } from "@/components/templates/results";
 import { useObjects } from "@/hooks/useObjects";
 import { useSoundEffects } from "~/composables/use-sound-effects";
+import { Icon } from "@iconify/vue";
 
 type TItemsLabellingProps = {
   questions: {
@@ -330,7 +331,18 @@ const handleGameComplete = () => {
         </div>
 
         <div v-if="showSubmitButton && !isComplete && !isDragMode" class="flex justify-end">
-          <Button @click="handleSubmit">Check Answers</Button>
+          <Button
+            @click="handleSubmit"
+            class="group gap-2 px-6 py-2"
+          >
+            <Icon
+              icon="heroicons:sparkles"
+              width="18"
+              height="18"
+              class="text-lemon-600 transition-transform duration-200 group-hover:scale-110 animate-pulse"
+            />
+            Check Answers
+          </Button>
         </div>
 
         <ActivityResults

@@ -10,6 +10,7 @@ import ActivityResults, {
 import type { FeedbackType } from "@/lib/types/activity-types";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
 import { useSoundEffects } from "~/composables/use-sound-effects";
+import { Icon } from "@iconify/vue";
 
 type Props = {
   feedback?: FeedbackType;
@@ -191,7 +192,19 @@ const resetActivity = () => {
       </div>
 
       <div class="flex justify-end">
-        <Button :disabled="!allAnswersFilled" @click="checkAnswers">Check Answers</Button>
+        <Button
+          :disabled="!allAnswersFilled"
+          @click="checkAnswers"
+          class="group gap-2 px-6 py-2"
+        >
+          <Icon
+            icon="heroicons:sparkles"
+            width="18"
+            height="18"
+            class="text-lemon-600 transition-transform duration-200 group-hover:scale-110 animate-pulse"
+          />
+          Check Answers
+        </Button>
       </div>
     </div>
 

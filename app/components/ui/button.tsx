@@ -1,6 +1,7 @@
 import { defineComponent, resolveComponent, type PropType } from "vue";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "~/utilities/utils";
+import { Icon } from "@iconify/vue";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
@@ -11,7 +12,8 @@ const buttonVariants = cva(
           "bg-oceanBlue text-white hover:bg-oceanBlue/90 focus-visible:ring-oceanBlue",
         brand:
           "bg-oceanBlue text-white hover:bg-oceanBlue/90",
-        "brand-lemon": "bg-white text-oceanBlue ring-1 ring-oceanBlue/15 hover:bg-sky-50",
+        "brand-lemon":
+          "bg-oceanBlue text-white hover:bg-oceanBlue/90 focus-visible:ring-oceanBlue",
         destructive:
           "bg-red-500 text-white hover:bg-red-500/90",
         "outline-brand":
@@ -79,6 +81,35 @@ const Button = defineComponent({
   },
   setup(props, { attrs, slots }) {
     return () => {
+      const slotContent = slots.default?.();
+      const normalizedSlotNodes = Array.isArray(slotContent)
+        ? slotContent
+        : slotContent
+          ? [slotContent]
+          : [];
+
+      const slotText = normalizedSlotNodes
+        .map((node: any) => {
+          if (typeof node === "string") return node;
+          if (node && typeof node?.children === "string") return node.children;
+          return "";
+        })
+        .join(" ")
+        .trim();
+
+      const hasIconAlready = normalizedSlotNodes.some((node: any) => {
+        if (!node) return false;
+        if (node?.type === Icon) return true;
+        const iconProp = node?.props?.icon as string | undefined;
+        return typeof iconProp === "string" && iconProp.includes("sparkles");
+      });
+
+      const isCheckAnswersButton =
+        !hasIconAlready &&
+        (slotText.includes("Check Answers") ||
+          slotText.includes("Answers Checked") ||
+          slotText.includes("Checking..."));
+
       const className = cn(
         buttonVariants({
           variant: props.variant,
@@ -86,6 +117,7 @@ const Button = defineComponent({
         }),
         props.class,
         props.className,
+        isCheckAnswersButton ? "gap-2" : "",
         attrs.class as string | undefined,
         (attrs as { className?: string }).className,
       );
@@ -105,14 +137,38 @@ const Button = defineComponent({
 
         return (
           <NuxtLink to={props.href || props.to || "#"} {...sharedProps}>
-            {slots.default?.() || props.variant}
+            {isCheckAnswersButton ? (
+              <>
+                <Icon
+                  icon="heroicons:sparkles"
+                  width="18"
+                  height="18"
+                  class="text-white/90 animate-pulse"
+                />
+                {slotContent || props.variant}
+              </>
+            ) : (
+              slotContent || props.variant
+            )}
           </NuxtLink>
         );
       }
 
       return (
         <button {...sharedProps} disabled={props.disabled} type={props.type}>
-          {slots.default?.() || props.variant}
+          {isCheckAnswersButton ? (
+            <>
+              <Icon
+                icon="heroicons:sparkles"
+                width="18"
+                height="18"
+                class="text-white/90 animate-pulse"
+              />
+              {slotContent || props.variant}
+            </>
+          ) : (
+            slotContent || props.variant
+          )}
         </button>
       );
     };

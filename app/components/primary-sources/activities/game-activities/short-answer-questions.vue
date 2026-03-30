@@ -306,8 +306,17 @@ const handleResultsDialogChange = (open: boolean) => {
             size="lg"
             :disabled="!allQuestionsAnswered || allAnswered"
             @click="handleCheckAllAnswers"
+            class="gap-2"
           >
-            {{ allAnswered ? "Answers Checked" : "Check Answers" }}
+            <Icon
+              icon="heroicons:sparkles"
+              width="18"
+              height="18"
+              class="text-lemon-700 animate-pulse"
+            />
+            {{
+              allAnswered ? "Answers Checked" : "Check Answers"
+            }}
           </Button>
         </div>
       </div>

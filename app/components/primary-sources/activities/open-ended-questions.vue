@@ -8,6 +8,7 @@ import ActivityTitle from "@/components/templates/activity-title";
 import type { FeedbackType } from "@/lib/types/activity-types";
 import { AnswerChecker } from "@/lib/utils/answer-checker";
 import { useSoundEffects } from "~/composables/use-sound-effects";
+import { Icon } from "@iconify/vue";
 import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "@/components/templates/results";
@@ -455,7 +456,17 @@ const resultCardClass = (isCorrect?: boolean) =>
       </div>
 
       <div class="sticky bottom-0 flex justify-end bg-white/85 py-3 backdrop-blur">
-        <Button :disabled="isCalculatingScore || !Object.keys(answers).length" @click="handleSubmit">
+        <Button
+          :disabled="isCalculatingScore || !Object.keys(answers).length"
+          @click="handleSubmit"
+          class="group gap-2"
+        >
+          <Icon
+            icon="heroicons:sparkles"
+            width="18"
+            height="18"
+            class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
+          />
           {{ isCalculatingScore ? "Checking..." : "Check Answers" }}
         </Button>
       </div>
