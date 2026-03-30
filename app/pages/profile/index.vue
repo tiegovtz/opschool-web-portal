@@ -4,10 +4,12 @@ import ProfileCard from "@/components/profile/profileCard.vue";
 definePageMeta({
   middleware: "auth",
 });
+
+const hubHeaderLang = useHubHeaderLanguage();
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="hubHeaderLang">
     <section
       id="main-container"
       tabindex="-1"

@@ -30,8 +30,7 @@ export default defineComponent({
             </div>
           ) : null}
           {props.notes ? (
-            <div class="whitespace-pre-line text-base leading-7 text-slate-700">
-              {props.notes}
+            <div class="whitespace-pre-line text-base leading-7 text-slate-700" v-html={props.notes}>
             </div>
           ) : null}
         </div>

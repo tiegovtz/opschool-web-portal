@@ -71,6 +71,7 @@
     "redis": "^5.10.0",
     "tailwind-merge": "^3.5.0",
     "tailwind-scrollbar": "^3.1.0",
+    "tailwindcss-animate": "^1.0.7",
     "vidstack": "^1.12.13",
     "vue": "latest",
     "vue-pdf-embed": "^2.1.2",

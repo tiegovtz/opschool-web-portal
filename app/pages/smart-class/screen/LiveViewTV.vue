@@ -1,5 +1,8 @@
 <template>
-  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
+  <NuxtLayout
+    :name="route.fullPath.includes('header-less') ? 'normal' : 'home-layout'"
+    :language="route.fullPath.includes('header-less') ? undefined : hubHeaderLang"
+  >
 
   <div class="iframe-screen">
     <div class="header">
@@ -26,6 +29,9 @@
 
 <script setup lang="ts">
 import {onMounted} from "vue";
+
+const route = useRoute();
+const hubHeaderLang = useHubHeaderLanguage();
 
 const iframeSrc = ref("https://tv.somakwanza.tz");
 

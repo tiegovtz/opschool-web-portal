@@ -4,7 +4,7 @@ import { computed, ref, watch } from "vue";
 import { cn } from "@/lib/utils";
 import { useObjects } from "@/hooks/useObjects";
 import ActivityTitle from "@/components/templates/activity-title";
-import { useSoundEffects } from "@/shared/hooks/use-sound-effects";
+import { useSoundEffects } from "~/composables/use-sound-effects";
 import { GameModeWrapper } from "@/components/ui/game-mode";
 import ActivityResults, {
   ActivityResultsAlertDialog,

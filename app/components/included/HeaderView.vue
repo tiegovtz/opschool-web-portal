@@ -33,9 +33,9 @@ const isAccountRoute = computed(() =>
 );
 
 const desktopNavItemClass =
-  "flex items-center gap-2 rounded-xl px-3 py-2 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue min-h-11";
+  "flex items-center gap-2 rounded-[6px] px-3 py-1 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
 const mobileNavItemClass =
-  "flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-3 py-2 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
+  "flex items-center justify-center gap-2 rounded-[6px] px-3 py-1 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
 const activeNavItemClass = "bg-deepBlue text-white shadow-sm";
 const inactiveNavItemClass = "hover:bg-deepBlue/85 hover:shadow-sm";
 
@@ -111,6 +111,26 @@ const openLogoutConfirmFromMenu = () => {
   closeAccountMenu();
   showLogoutConfirm.value = true;
 };
+
+const authReturnQuery = computed(() => {
+  const p = route.path;
+  if (p === "/nyumbani" || p.startsWith("/nyumbani/")) {
+    return { redirect: route.fullPath };
+  }
+  return {};
+});
+
+const authSignInTo = computed(() =>
+  Object.keys(authReturnQuery.value).length
+    ? { path: "/auth", query: authReturnQuery.value }
+    : "/auth",
+);
+
+const authSignUpTo = computed(() =>
+  Object.keys(authReturnQuery.value).length
+    ? { path: "/auth/SignUp", query: authReturnQuery.value }
+    : "/auth/SignUp",
+);
 
 watch(
   () => route.fullPath,
@@ -201,7 +221,7 @@ onBeforeUnmount(() => {
           <div class="subInfo">
             <div class="flex items-center gap-4 p-2" v-if="!userToken">
               <!-- sign in -->
-              <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
+              <NuxtLink aria-label="go to sign in page" :to="authSignInTo" title="Sign in"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <IconsSignIn :size="20" />
                 <p class="hidden capitalize lg:flex">
@@ -210,7 +230,7 @@ onBeforeUnmount(() => {
               </NuxtLink>
 
               <!-- sign up -->
-              <NuxtLink aria-label="Go to sign up page" to="/auth/SignUp" title="Sign Up"
+              <NuxtLink aria-label="Go to sign up page" :to="authSignUpTo" title="Sign Up"
                 class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
                 <IconsProfileCircle :size="24" />
                 <p class="hidden capitalize lg:flex">
@@ -394,12 +414,12 @@ onBeforeUnmount(() => {
               </div>
 
               <div v-else class="flex items-center">
-                <NuxtLink to="/auth/SignUp" title="Sign Up"
+                <NuxtLink :to="authSignUpTo" title="Sign Up"
                   class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                   <IconsProfileCircle :size="20" />
                 </NuxtLink>
 
-                <NuxtLink aria-label="go to sign in page" to="/auth" title="Sign in"
+                <NuxtLink aria-label="go to sign in page" :to="authSignInTo" title="Sign in"
                   class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
                   <IconsSignIn :size="20" class="" />
                 </NuxtLink>

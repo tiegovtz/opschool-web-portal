@@ -35,9 +35,18 @@ export default defineComponent({
     const dndContext = inject<DndContextValue | null>(dndContextKey, null);
 
     // Track dragover / dragleave manually
+    const onDragEnter = (e: DragEvent) => {
+      if (!props.disabled) {
+        e.preventDefault();
+      }
+    };
+
     const onDragOver = (e: DragEvent) => {
       if (!props.disabled) {
         e.preventDefault();
+        if (e.dataTransfer) {
+          e.dataTransfer.dropEffect = "move";
+        }
         isOver.value = true;
       }
     };
@@ -51,10 +60,12 @@ export default defineComponent({
     const onDrop = (e: DragEvent) => {
       e.preventDefault();
       isOver.value = false;
-      const droppedId = e.dataTransfer?.getData("text/plain") || dndContext?.activeId.value;
-      if (droppedId) {
-        dndContext?.completeDrop(props.id);
-      }
+      const fromTransfer = e.dataTransfer?.getData("text/plain")?.trim() || "";
+      if (!fromTransfer && !dndContext?.activeId.value) return;
+      dndContext?.completeDrop(
+        props.id,
+        fromTransfer ? fromTransfer : undefined,
+      );
     };
 
     // Combine className + isOverClassName using cn
@@ -70,7 +81,9 @@ export default defineComponent({
     return () => (
       <div
         ref={element}
+        id={props.id}
         class={classList.value}
+        onDragenter={onDragEnter}
         onDragover={onDragOver}
         onDragleave={onDragLeave}
         onDrop={onDrop}

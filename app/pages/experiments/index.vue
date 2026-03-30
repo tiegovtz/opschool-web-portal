@@ -282,10 +282,12 @@ watch(filters, (filters) => {
   fetchExperiments(payload);
 });
 
+const contentLayoutLanguage = useContentLayoutLanguage();
+
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <section :class="[' ', { ' animate-pulse': isLoading }]" :aria-busy="isLoading ? 'true' : 'false'">
       <!-- User Token Available -->
       <section v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">

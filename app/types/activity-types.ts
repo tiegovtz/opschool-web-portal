@@ -7,8 +7,8 @@ export type ActivityComponentProps = {
   feedback?: FeedbackType;
   questions: any;
   isExamMode?: boolean;
-  activityId?: number;
-  userId?: number;
+  activityId?: string;
+  userId?: string;
   autoSaveAnswers?: boolean;
   onActivityComplete?: (
     score: number,
@@ -25,19 +25,20 @@ export type ActivityComponentProps = {
 
 export type Activity = {
   uuid: string;
-  id: number;
+  id: number | string;
   activityId: string;
   activityName: string;
-  description: ActivityType;
+  description: ActivityType | string;
   activityDescription: string;
   topicId: string;
   played: boolean;
   subTopic: string;
-  verified: string;
+  verified: string | boolean;
   topicUuid: string;
   questions: ServerQuestionType[];
   summary: string | null;
   summaryPath: string | null;
+  thumbnail?: string | null;
 };
 
 export type ActivityQuestion = Pick<

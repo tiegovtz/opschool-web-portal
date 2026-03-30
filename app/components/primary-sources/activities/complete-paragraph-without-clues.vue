@@ -38,14 +38,14 @@ const initialize = () => {
   score.value = 0;
   allAnswered.value = false;
   showResults.value = false;
-  userAnswers.value = Array.from({ length: props.questions.answers.length }, () => "");
-  isCorrectAnswers.value = Array.from({ length: props.questions.answers.length }, () => false);
+  userAnswers.value = Array.from({ length: props.questions?.answers?.length }, () => "");
+  isCorrectAnswers.value = Array.from({ length: props?.questions?.answers?.length }, () => false);
 };
 
 watch(() => props.questions, initialize, { deep: true, immediate: true });
 
 const allAnswersFilled = computed(() => userAnswers.value.every((answer) => answer.trim() !== ""));
-const paragraphParts = computed(() => props.questions.paragraph.split("___"));
+const paragraphParts = computed(() => props.questions?.paragraph?.split("___")??[]);
 
 const checkAnswers = () => {
   const correctness = userAnswers.value.map((answer, index) =>
@@ -197,7 +197,7 @@ const resetActivity = () => {
 
     <ActivityResultsAlertDialog
       :score="score"
-      :total="props.questions.answers.length"
+      :total="props.questions?.answers?.length ?? 0"
       :open="allAnswered"
       :onOpenChange="
         (open: boolean) => {

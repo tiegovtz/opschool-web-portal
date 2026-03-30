@@ -6,6 +6,7 @@ import apiDocs from "~/utilities/apiDocs";
 import { dataEncrypt, dataDecrypt } from "~/utilities/encryption";
 import { useNavigationStore } from "~/stores/navigationStore";
 import { useAuthStore } from "~/stores/auth";
+import { consumePostLoginHome } from "~/utilities/postLoginHome";
 
 // // Use the State
 const navigationStore = useNavigationStore();
@@ -167,7 +168,8 @@ const signIn = async () => {
         typeof route.query.redirect === "string" && route.query.redirect.length > 0
           ? route.query.redirect
           : returnPath.value;
-      router.replace(redirectPath || "/home");
+      const landingChoiceHome = consumePostLoginHome();
+      router.replace(redirectPath || landingChoiceHome || "/home");
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = messages.error.auth.invalidCredentials;

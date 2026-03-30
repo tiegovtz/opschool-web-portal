@@ -29,6 +29,13 @@ const decodeParam = (value: unknown) => {
 const subjectId = String(route.params.subjectId ?? "");
 const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
 
+const educationLevel = computed(() =>
+  (route.query.edl as string) === "primary" ? "primary" : "secondary",
+);
+const tabLanguage = computed(() =>
+  (route.query.lang as string) === "sw" ? "kiswahili" : "english",
+);
+
 // Define meta info about page
 useHead({
   title: "TIE - Tanzania Interactive Learning Platform",
@@ -105,7 +112,6 @@ const sliceData = (start, end) => {
 const currentPage = ref(1);
 const pageSize = ref();
 const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
-  subjects: { path: "/home" },
   "interactive-contents": { path: "/interactive" },
   "learn-activities": { path: "/experiments" },
   video: { path: "/video", query: { type: "conc" } },
@@ -117,7 +123,11 @@ const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }
 const subjectSlug = computed(() => subjectTitle.toLowerCase().trim().replace(/\s+/g, "-"));
 
 const buildTabTarget = (tab: string) => {
-  if (tab === "subjects") return TAB_TO_ROUTE.subjects;
+  if (tab === "subjects") {
+    return {
+      path: educationLevel.value === "primary" ? "/nyumbani" : "/home",
+    };
+  }
   if (tab === "smart-class") return TAB_TO_ROUTE["smart-class"];
 
   const hasSubjectContext = !!subjectId && !!subjectSlug.value;
@@ -248,6 +258,8 @@ const prevPage = () => {
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
 
+const contentLayoutLanguage = useContentLayoutLanguage();
+
 // Define Filters Reactive State
 const filters = reactive({
   level: null,
@@ -265,7 +277,7 @@ watch(filters, (filters) => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <div class="" :class="{ ' animate-pulse': isLoading }">
       <div class="flex flex-col gap-4">
         <!-- Keep hero-style search visible for both logged-in and logged-out -->
@@ -276,6 +288,8 @@ watch(filters, (filters) => {
           @emit-active-tab="switchTab($event)"
           :subject-title="subjectTitle"
           :topic-id="subjectId"
+          :tab-group="educationLevel"
+          :language="tabLanguage"
         />
       </div>
       <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">

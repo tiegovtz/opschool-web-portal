@@ -1,6 +1,6 @@
 export type ServerQuestionType = {
   // uuid: string;
-  id: number;
+  id: number | string;
   // activityUuid: string;
   // questionId: string;
   // title: string;

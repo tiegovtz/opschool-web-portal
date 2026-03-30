@@ -1,6 +1,9 @@
 <template>
 
-  <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
+  <NuxtLayout
+    :name="route.fullPath.includes('header-less') ? 'normal' : 'home-layout'"
+    :language="route.fullPath.includes('header-less') ? undefined : hubHeaderLang"
+  >
     <a class="skip-link" href="#main-content" @click.prevent="focusMain">Skip to main content</a>
 
   <v-dialog v-model="dialog" max-width="600px">
@@ -397,6 +400,8 @@ import axios from "axios";
 import {useSessionsSetup} from "../../../composables/usesSessions.js";
 
 const router = useRouter();
+const route = useRoute();
+const hubHeaderLang = useHubHeaderLanguage();
 
 function getDuration(start, end) {
   if (!start || !end) return 'Unknown duration';

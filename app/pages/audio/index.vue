@@ -228,10 +228,12 @@ watch(filters, (filters) => {
 
   fetchAudios(payload);
 });
+
+const contentLayoutLanguage = useContentLayoutLanguage();
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <section :class="[
       ' ',
       { ' animate-pulse': isLoading }

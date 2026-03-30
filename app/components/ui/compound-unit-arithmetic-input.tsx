@@ -1,7 +1,7 @@
 // CompoundUnitArithmeticInput.tsx
 import { defineComponent, computed } from "vue";
 import { cn } from "@/lib/utils";
-import Input from "@/components/ui/inputs/input";
+import Input from "@/components/ui/inputs/input.vue";
 
 export default defineComponent({
   name: "CompoundUnitArithmeticInput",

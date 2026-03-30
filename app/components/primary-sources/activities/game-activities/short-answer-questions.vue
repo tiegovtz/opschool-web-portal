@@ -4,12 +4,12 @@ import { Icon } from "@iconify/vue";
 import { useDebounceFn } from "@vueuse/core";
 import { cn, getImageUrl, shuffle } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import Input from "@/components/ui/inputs/input";
+import Input from "@/components/ui/inputs/input.vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "@/components/templates/results";
-import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper";
+import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper.vue";
 import type { GameStats } from "@/components/ui/game-mode";
 import type { FeedbackType } from "@/lib/types/activity-types";
 import { useObjects, type GameObject } from "~/composables/useObjects";
@@ -161,6 +161,10 @@ const handleInputChange = (index: number, value: string) => {
   debouncedCheckAndSave();
 };
 
+const handleInputUpdate = (index: number, value: string) => {
+  handleInputChange(index, value);
+};
+
 const handleResultsDialogChange = (open: boolean) => {
   if (!open) {
     showResults.value = true;
@@ -245,7 +249,7 @@ const handleResultsDialogChange = (open: boolean) => {
                       :disabled="checkedItems.includes(index)"
                       class="min-w-0 border-none bg-transparent px-2 text-center focus:outline-none"
                       :style="{ maxWidth: '320px' }"
-                      @update:model-value="(value) => handleInputChange(index, String(value))"
+                      @update:model-value="handleInputUpdate(index, $event)"
                     />
                     <div
                       :class="

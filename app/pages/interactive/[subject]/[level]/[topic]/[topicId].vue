@@ -17,6 +17,7 @@ import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer
 
 const route = useRoute();
 const router = useRouter();
+const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
 const safeDecode = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
   try {
@@ -887,7 +888,7 @@ definePageMeta({
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <section v-if="experimrntUrl" class="relative w-full center-height" id="experiment-container">
       <div
         class="absolute top-0 right-0 flex items-center justify-center w-10 h-10 p-2 bg-red-500 rounded-full cursor-pointer"
@@ -947,39 +948,28 @@ definePageMeta({
           ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
           class="w-full py-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <NuxtLink aria-label="press link tp go back" :to="{
-                path: '/',
-                query: {
-                  tab: 'interactive-contents',
-                  subject: topicLevel,
-                  class: topicStandard,
-                },
-              }"
-                class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
-                <!-- {{
-                  topicLevel != null &&
-                    topicLevel != undefined &&
-                    topicLevel != "null"
-                    ? topicLevel
-                    : `Secondary`
-                }} -->
-                <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
-                <!-- <span>Back</span> -->
+          <div class="flex w-full min-w-0 items-center justify-between gap-2">
+            <div class="flex min-w-0 flex-1 items-center gap-2">
+              <NuxtLink
+                to="/interactive"
+                class="inline-flex shrink-0 items-center justify-center rounded-full border-2 border-oceanBlue p-2 text-oceanBlue transition-colors hover:bg-oceanBlue/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/50"
+                aria-label="Back to interactive contents"
+              >
+                <Icon name="vaadin:arrow-backward" size="22" class="text-oceanBlue" aria-hidden="true" />
               </NuxtLink>
 
-              <p :aria-label="`Competence header, ${chapters.notes?.name}`" role="heading"
-                class="font-medium text-medium" v-if="chapters.status === 'success'">
-                {{
-                  chapters.notes?.name
-                }}
+              <p
+                :aria-label="`Competence header, ${chapters.notes?.name}`"
+                role="heading"
+                class="min-w-0 flex-1 truncate font-medium text-medium"
+                v-if="chapters.status === 'success'"
+              >
+                {{ chapters.notes?.name }}
               </p>
             </div>
 
-            <!-- Header Description -->
-            <div class="flex lg:hidden" @click="toggleSidebar()">
-              <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" />
+            <div class="flex shrink-0 lg:hidden" @click="toggleSidebar()">
+              <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" aria-hidden="true" />
             </div>
           </div>
 

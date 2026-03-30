@@ -6,6 +6,12 @@ import { type Activity } from '~/types/activity-types';
 import { enhancedActivityComponents } from '~/utilities/activityMapper/enhanced-mapper';
 import activityPropsTranspiler from '~~/shared/transpilerMapper';
 import type { ActivityType } from "~/types/activity-types";
+import apiDocs from "~/utilities/apiDocs";
+import {
+  activityAuthHeaders,
+  extractActivityFromPayload,
+  normalizeActivity,
+} from "~/utilities/activitiesApi";
 
 
 // prpops
@@ -22,12 +28,28 @@ const setWrongQuestionsFormat = (state:boolean)=>wrongQuestionsFormat.value = st
 // load activity data
 const fetchData = async () => {
     status.value = 'pending'
+    error.value = undefined;
     try {
-        const data = await $fetch<Activity>(';;')
-        activity.value = data;
+        const response = await $fetch(
+          apiDocs.activities.getActivityId.replace("{id}", props.activityId),
+          {
+            headers: activityAuthHeaders(),
+          }
+        );
+
+        const normalizedActivity = normalizeActivity(
+          extractActivityFromPayload(response)
+        );
+
+        if (!normalizedActivity) {
+          throw new Error("Activity payload is invalid.");
+        }
+
+        activity.value = normalizedActivity as Activity;
         status.value = 'success';
     } catch (e) {
         error.value = e as any;
+        activity.value = undefined;
         status.value = 'error';
         console.error(`[error while fetching activity info]:${error}`);
     }
@@ -35,9 +57,19 @@ const fetchData = async () => {
 
 
 // computed component to map
-onMounted(async () => {
-    await fetchData();
-})
+watch(
+    () => props.activityId,
+    async (value) => {
+        if (!value) {
+            activity.value = undefined;
+            status.value = 'idle';
+            return;
+        }
+
+        await fetchData();
+    },
+    { immediate: true }
+)
 
 // preparing component
 const activityComponent = computed(() => activity.value && enhancedActivityComponents[activity.value?.description])
