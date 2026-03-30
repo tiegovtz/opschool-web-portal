@@ -63,18 +63,14 @@ export const resolveEducationLevelFromRoute = (
 ): EducationBucket => {
   if (
     route.path === "/primary" ||
-    route.path.startsWith("/primary/") ||
-    route.path === "/nyumbani" ||
-    route.path.startsWith("/nyumbani/")
+    route.path.startsWith("/primary/")
   ) {
     return "primary";
   }
 
   if (
     route.path === "/secondary" ||
-    route.path.startsWith("/secondary/") ||
-    route.path === "/home" ||
-    route.path.startsWith("/home/")
+    route.path.startsWith("/secondary/")
   ) {
     return "secondary";
   }

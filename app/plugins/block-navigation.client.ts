@@ -51,8 +51,6 @@ export default defineNuxtPlugin({
       "/interactive-video",
       "/list-videos",
       "/image-list",
-      "/home#content-container-after-login",
-      "/nyumbani#content-container-after-login",
       "/secondary#content-container-after-login",
       "/primary#content-container-after-login",
       "/interactive",

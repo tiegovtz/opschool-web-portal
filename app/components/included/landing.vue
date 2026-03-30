@@ -22,32 +22,6 @@ function goToSecondary() {
     router.push(target);
 }
 
-const educationLevels = [
-    {
-        name: 'Elimu ya Msingi', description: `Pata masomo shirikishi, shughuli za kujifunzia, na nyenzo za elimu zilizoundwa kwa ajili ya wanafunzi wa shule ya msingi.`,
-        path: '/primary',
-        classList: ['bg-gradient-to-br from-[#4EA3D8] to-[#89C6F2] '],
-        icon: IconsMdiBookOpenPageVariantOutline,
-        images: [{
-            src: '/images/c43f7a911cc7ca9.png',
-            alt: ``
-        }],
-        motivation: `Tembelea Maudhui ya Elimu ya Msingi`
-    },
-    {
-        name: 'Secondary Education', description: `Access advanced lessons, instructional
-videos, and educational resources
-designed for secondary school students.`, path: '/secondary',
-        classList: ['bg-gradient-to-br from-[#1F6FB2] to-[#3DA0E3] '],
-        icon: IconsMdiBookOpenPageVariantOutline,
-        images: [{
-            src: '/images/cd228f4bc.png',
-            alt: ``
-        }],
-        motivation: `Explore Secondary Content`
-    },
-];
-
 const stats = [
     {
         value: "2,400+",
@@ -206,7 +180,7 @@ onMounted(async () => {
         </section>
         <!-- slides -->
         <section class="hidden md:block w-full overflow-hidden rounded-3xl">
-            <SliderShow mahal-ilipo="landing" />
+            <SliderShow variant="landing" />
         </section>
     </div>
 </template>

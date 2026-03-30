@@ -172,7 +172,7 @@ const filterGroups = computed(() => {
   }
 
   // Subject
-  if (subjects.value && props.activeTab?.toLowerCase() !== "home") {
+  if (subjects.value) {
     groups.push({
       name: "subject",
       inputType: "radio",

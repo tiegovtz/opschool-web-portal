@@ -23,8 +23,6 @@ const matchesPath = (path: string) =>
 
 const isHomeRoute = computed(() =>
   route.path === "/" ||
-  matchesPath("/home") ||
-  matchesPath("/nyumbani") ||
   matchesPath("/secondary") ||
   matchesPath("/primary")
 );
@@ -132,12 +130,8 @@ const authReturnQuery = computed(() => {
   if (
     p === "/primary" ||
     p.startsWith("/primary/") ||
-    p === "/nyumbani" ||
-    p.startsWith("/nyumbani/") ||
     p === "/secondary" ||
-    p.startsWith("/secondary/") ||
-    p === "/home" ||
-    p.startsWith("/home/")
+    p.startsWith("/secondary/")
   ) {
     return { redirect: route.fullPath };
   }
