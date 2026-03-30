@@ -2,9 +2,14 @@
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
 import { layoutEffect } from '~/utilities/controlls'
 import { useNavigationStore } from "~/stores/navigationStore";
+import {
+  getEducationRouteQuery,
+  resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 
 // Define Stores
 const navigationStore = useNavigationStore()
+const route = useRoute();
 
 // Define Props
 const props = withDefaults(defineProps<{
@@ -47,12 +52,17 @@ const setTopicToView = () => {
   useState('userViewedTopic', () => props.topicViewed)
 }
 
+const topicTarget = computed(() => ({
+  path: `/interactive/${props.topicStandard}/${props.subjectName}/${props.topicTitle}/${props.topicId}`,
+  query: getEducationRouteQuery(resolveEducationLevelFromRoute(route)),
+}));
+
 const userToken = useCookie('signInUserToken')
 </script>
 
 <template>
   <NuxtLink class="stat-card" v-if="modelType.toLowerCase() === 'profile'" @click="setTopicToView()"
-    :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`">
+    :to="topicTarget">
     <!-- profile view -->
     <div class="w-10 h-10 overflow-hidden rounded-full">
       <NuxtImg :src="topicImage" tabindex="0" :alt="altText ?? topicTitle" class="object-cover w-full h-full" />
@@ -63,7 +73,7 @@ const userToken = useCookie('signInUserToken')
     </div>
   </NuxtLink>
 
-  <NuxtLink  v-else :to="`/interactive/${topicStandard}/${subjectName}/${topicTitle}/${topicId}`"
+  <NuxtLink  v-else :to="topicTarget"
     @click="setTopicToView()" :class="[
       'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out min-w-[300px]',
       layoutEffect == 'grid' && modelType === 'card' ? 'flex-col lg:pb-4' : 'flex-row h-32',

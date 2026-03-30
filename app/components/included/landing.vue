@@ -2,52 +2,25 @@
 import { IconsMdiBookOpenPageVariantOutline, UiBackButton } from '#components';
 import apiDocs from '~/utilities/apiDocs';
 import type { IconType } from '../icons/stats.vue';
-import type { Audios } from '~/types/audio.interface';
-import type { Videos } from '~/types/video.interface';
-import type { Experiment } from '~/types/experiment.interface';
-import type { Topic } from '~/types/topic.interface';
 import { setPostLoginHome } from '~/utilities/postLoginHome';
+import { getHubPath } from '~/utilities/educationRoute';
 
 const router = useRouter();
 const hubHeaderLang = useHubHeaderLanguage();
 
 function goToPrimary() {
-    setPostLoginHome('/nyumbani');
+    const target = getHubPath('primary');
+    setPostLoginHome(target);
     hubHeaderLang.value = 'kiswahili';
-    router.push('/nyumbani');
+    router.push(target);
 }
 
 function goToSecondary() {
-    setPostLoginHome('/home');
+    const target = getHubPath('secondary');
+    setPostLoginHome(target);
     hubHeaderLang.value = 'english';
-    router.push('/home');
+    router.push(target);
 }
-
-const educationLevels = [
-    {
-        name: 'Elimu ya Msingi', description: `Pata masomo shirikishi, shughuli za kujifunzia, na nyenzo za elimu zilizoundwa kwa ajili ya wanafunzi wa shule ya msingi.`,
-        path: '/nyumbani',
-        classList: ['bg-gradient-to-br from-[#4EA3D8] to-[#89C6F2] '],
-        icon: IconsMdiBookOpenPageVariantOutline,
-        images: [{
-            src: '/images/c43f7a911cc7ca9.png',
-            alt: ``
-        }],
-        motivation: `Tembelea Maudhui ya Elimu ya Msingi`
-    },
-    {
-        name: 'Secondary Education', description: `Access advanced lessons, instructional
-videos, and educational resources
-designed for secondary school students.`, path: '/home',
-        classList: ['bg-gradient-to-br from-[#1F6FB2] to-[#3DA0E3] '],
-        icon: IconsMdiBookOpenPageVariantOutline,
-        images: [{
-            src: '/images/cd228f4bc.png',
-            alt: ``
-        }],
-        motivation: `Explore Secondary Content`
-    },
-];
 
 const stats = [
     {
@@ -163,7 +136,7 @@ onMounted(async () => {
 
 <template>
     <div
-        class="mt-8 grid grid-cols-1 items-start gap-10 lg:mt-10 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:items-stretch lg:gap-12">
+        class="mt-8 grid grid-cols-1 items-center gap-10 lg:mt-10 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-12">
         <section class="max-w-screen-md mx-auto">
             <h1 class="text-left text-xl font-tahomabd font-bold text-oceanBlue">Karibu!</h1>
             <h1 class="text-left text-3xl my-4 font-tahomabd font-bold text-[#f29253]">TIE ONLINE SCHOOL</h1>
@@ -177,9 +150,9 @@ onMounted(async () => {
             </div>
 
             <!-- static -->
-            <div class="grid gap-4 pt-6 mt-4 min-w-0 sm:pt-8 md:grid-cols-2 md:mt-8 lg:mt-12 lg:pt-10">
+            <div class="grid gap-4 pt-15 md:grid-cols-2 mt-4 md:mt-8 lg:mt-16">
                 <div v-for="(stat, idx) in stats" :key="`${idx}-${stat.label}`"
-                    class="group relative min-h-0 overflow-hidden rounded-[2rem] border border-[#e4edf5] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(247,251,255,0.98)_100%)] px-5 py-5 shadow-[0px_18px_40px_rgba(18,79,134,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0px_24px_48px_rgba(18,79,134,0.14)]">
+                    class="group relative overflow-hidden rounded-[2rem] border border-[#e4edf5] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(247,251,255,0.98)_100%)] px-5 py-4 shadow-[0px_18px_40px_rgba(18,79,134,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0px_24px_48px_rgba(18,79,134,0.14)]">
                     <div
                         class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(108,180,229,0.08),transparent_42%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <div class="relative flex items-center gap-4">
@@ -207,7 +180,7 @@ onMounted(async () => {
         </section>
         <!-- slides -->
         <section class="hidden md:block w-full overflow-hidden rounded-3xl">
-            <SliderShow mahal-ilipo="landing" />
+            <SliderShow variant="landing" />
         </section>
     </div>
 </template>

@@ -1,6 +1,6 @@
 import { useNavigationStore } from "~/stores/navigationStore";
 
-const HOME_PATHS = new Set(["/", "/home"]);
+const HOME_PATHS = new Set(["/", "/secondary", "/primary"]);
 
 export default defineNuxtRouteMiddleware((to, from) => {
   if (!from.path || !HOME_PATHS.has(from.path)) {

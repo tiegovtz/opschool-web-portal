@@ -62,3 +62,11 @@ tie-web-portal-main/
 /public/data/activity.json
 /public/data/question.json
 /public/data/topic.json
+
+
+# ignore generated files from codex
+.codex
+.codex/
+
+# tie primary folder
+tie_open_school_primary_frontend

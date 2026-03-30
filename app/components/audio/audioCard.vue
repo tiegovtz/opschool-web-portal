@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
+import {
+    getEducationRouteQuery,
+    resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 
 const navigationStore = useNavigationStore()
+const route = useRoute();
 
 const props = withDefaults(
     defineProps<{
@@ -43,10 +48,15 @@ const setAudioToListen = () => {
             }
         ));
 }
+
+const audioTarget = computed(() => ({
+    path: `/audio/${props.audioStandard}/${props.audioSubject}/${props.audioName}/${props.audioId}`,
+    query: getEducationRouteQuery(resolveEducationLevelFromRoute(route)),
+}));
 </script>
 
 <template>
-    <NuxtLink v-if="!isDeleted" :to="`/audio/${audioStandard}/${audioSubject}/${audioName}/${audioId}`"
+    <NuxtLink v-if="!isDeleted" :to="audioTarget"
         @click="setAudioToListen()" :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
             layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32'

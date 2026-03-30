@@ -38,6 +38,17 @@ import {
   SUBJECT_ID_QUERY_KEY,
   SUBJECT_QUERY_KEY,
 } from "~/utilities/homeSectionRouting";
+import {
+  getEducationRouteQuery,
+  getHubLanguage,
+  getHubPath,
+  normalizeEducationLevel,
+  resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
+
+definePageMeta({
+  path: "/:educationLevel(primary|secondary)",
+});
 
 // Define meta info about page
 useHead({
@@ -87,9 +98,29 @@ useHead({
 // Define Cookie
 const userToken = useCookie("signInUserToken");
 const hubHeaderLangCookie = useHubHeaderLanguage();
-hubHeaderLangCookie.value = "english";
 const route = useRoute();
 const router = useRouter();
+const currentEducationLevel = computed(() =>
+  resolveEducationLevelFromRoute(route),
+);
+const currentLanguage = computed(() =>
+  getHubLanguage(currentEducationLevel.value),
+);
+const currentHubPath = computed(() => getHubPath(currentEducationLevel.value));
+const currentHubQuery = computed(() =>
+  getEducationRouteQuery(currentEducationLevel.value),
+);
+const shouldRestrictToSecondarySubjects = computed(
+  () => currentEducationLevel.value === "secondary",
+);
+
+watch(
+  currentLanguage,
+  (language) => {
+    hubHeaderLangCookie.value = language;
+  },
+  { immediate: true },
+);
 // current page data
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(12);
@@ -108,15 +139,32 @@ const subjectName = ref<string>(""); // Initial subject name Value State
 const seeMoreDetails = ref<string | null>(null); // Initial See More
 const announcement = ref<string>();
 const subjectResolveState = ref({ slug: "", isLoading: false });
-const TAB_TO_ROUTE: Record<tabs, { path: string; query?: Record<string, any> }> = {
-  subjects: { path: "/home" },
-  "interactive-contents": { path: "/interactive" },
-  "learn-activities": { path: "/experiments" },
-  video: { path: "/video", query: { type: "conc" } },
-  "class-videos": { path: "/video", query: { type: "oth" } },
-  audio: { path: "/audio" },
+const TAB_TO_ROUTE = computed<
+  Record<tabs, { path: string; query?: Record<string, any> }>
+>(() => ({
+  subjects: { path: currentHubPath.value },
+  "interactive-contents": {
+    path: "/interactive",
+    query: currentHubQuery.value,
+  },
+  "learn-activities": {
+    path: "/experiments",
+    query: currentHubQuery.value,
+  },
+  video: {
+    path: "/video",
+    query: { ...currentHubQuery.value, type: "conc" },
+  },
+  "class-videos": {
+    path: "/video",
+    query: { ...currentHubQuery.value, type: "oth" },
+  },
+  audio: {
+    path: "/audio",
+    query: currentHubQuery.value,
+  },
   "smart-class": { path: "/smart-class" },
-};
+}));
 
 const isSubjectDetail = computed(
   () =>
@@ -140,6 +188,9 @@ const slugifySubject = (value: string) =>
 const normalizeQueryValue = (value: unknown) =>
   typeof value === "string" ? value.trim() : "";
 
+const getEducationLevelParam = () =>
+  normalizeEducationLevel(route.query.educationLevel ?? route.query.edl ?? currentEducationLevel.value);
+
 const resolveSubjectIdFromSlug = async (slug: string) => {
   if (
     !slug ||
@@ -155,6 +206,9 @@ const resolveSubjectIdFromSlug = async (slug: string) => {
   subjectResolveState.value = { slug, isLoading: true };
   try {
     const response = await $fetch<Subjects[] | unknown>(apiDocs.subjects.getPublicSubjects, {
+      params: {
+        educationLevel: getEducationLevelParam(),
+      },
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
@@ -194,11 +248,12 @@ watch(
     const subjectIdParam = normalizeQueryValue(query[SUBJECT_ID_QUERY_KEY]);
     if (section) {
       const tab = getTabFromSection(section);
-      const target = tab ? TAB_TO_ROUTE[tab] : null;
+      const target = tab ? TAB_TO_ROUTE.value[tab] : null;
       if (target) {
         const targetQuery =
           tab === "subjects" && (subjectParam || subjectIdParam)
             ? {
+                ...currentHubQuery.value,
                 subject: subjectParam || undefined,
                 subjectId: subjectIdParam || undefined,
               }
@@ -236,45 +291,41 @@ const fetchData = async (params?: any) => {
   status.value = "pending";
   error.value = null;
   const tab = displayTab.value;
+  const educationLevel = getEducationLevelParam();
+  const baseParams = {
+    educationLevel,
+    ...params,
+  };
 
   if (userToken.value) {
     // Check for specific tabs
     if (tab === "learn-activities") {
       url = apiDocs.experiments.getPublicExperiments;
-      params = {
-        ...params,
-      };
+      params = { ...baseParams };
     } else if (tab === "video") {
       url = apiDocs.videos.getPublicVideo;
       params = {
-        ...params,
+        ...baseParams,
         videoType: "Conceptual",
       };
     } else if (tab === "class-videos") {
       url = apiDocs.videos.getPublicVideo;
       params = {
-        ...params,
+        ...baseParams,
         videoType: "others",
       };
     } else if (tab === "subjects") {
       url = apiDocs.subjects.getPublicSubjects;
-      params = {
-        ...params,
-      };
+      params = { ...baseParams };
     } else if (tab === "interactive-contents") {
       url = apiDocs.topics.filterTopics;
       params = {
-        ...params,
+        ...baseParams,
         userId: (userToken.value as unknown as User)?._id,
       };
-    }
-    else if (tab === "audio") {
+    } else if (tab === "audio") {
       url = apiDocs.audio.getPublicAudio;
-      params = {
-        ...params,
-        // audioType: "",
-      };
-
+      params = { ...baseParams };
     }
 
     // Subject-specific tab overrides
@@ -286,7 +337,7 @@ const fetchData = async (params?: any) => {
         );
 
         params = {
-          ...params,
+          ...baseParams,
         };
       } else if (tab === "video") {
         url = apiDocs.videos.getPublicVideoBySubjectId.replace(
@@ -295,7 +346,7 @@ const fetchData = async (params?: any) => {
         );
 
         params = {
-          ...params,
+          ...baseParams,
           videoType: "Conceptual",
         };
       } else if (tab === "class-videos") {
@@ -305,7 +356,7 @@ const fetchData = async (params?: any) => {
         );
 
         params = {
-          ...params,
+          ...baseParams,
           videoType: "Others",
         };
       } else if (tab === "interactive-contents") {
@@ -314,32 +365,30 @@ const fetchData = async (params?: any) => {
           subjectId.value
         );
         params = {
-          ...params,
+          ...baseParams,
           userId: (userToken.value as unknown as User)?._id,
         };
-      }
-      else if (tab === "audio") {
+      } else if (tab === "audio") {
         url = apiDocs.audio.getPublicAudioBySubjectId.replace(
           "{subjectId}",
           subjectId.value
         );
-        params = {
-          ...params,
-          // audioType: "",
-        };
+        params = { ...baseParams };
       }
     }
   } else {
     if (params) {
       url = apiDocs.topics.filterTopics;
+      params = { ...baseParams };
     } else {
       url = apiDocs.subjects.getPublicSubjects;
+      params = { ...baseParams };
     }
   }
 
   try {
     announcement.value = `loading  ${getTabLabel(tab)} please wait.`;
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`tab-${tab}-${subjectId.value ? subjectId.value : ''}`, () => $fetch(url, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`tab-${educationLevel}-${tab}-${subjectId.value ? subjectId.value : ''}`, () => $fetch(url, {
       params: {
         ...params,
       },
@@ -353,18 +402,57 @@ const fetchData = async (params?: any) => {
     if (subjectId.value) {
       data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
     } else if (!subjectId.value && tab !== "subjects") {
-      data.value = filterKeyDataFromArrayOfJson(response.value, "subject.name", [
-        "physics",
-        "chemistry",
-        "mathematics",
-        "biology",
-        "geography",
-      ]);
+      data.value = shouldRestrictToSecondarySubjects.value
+        ? filterKeyDataFromArrayOfJson(response.value, "subject.name", [
+            "physics",
+            "chemistry",
+            "mathematics",
+            "biology",
+            "geography",
+          ])
+        : removeDataFromArrayOfJson(response.value, "isDeleted", true);
     } else {
       data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
       // remove some audio
       data.value = removeDataFromArrayOfJson(data.value,'audioType','NARRATION')
     }
+
+    // remove primary from data if current education level is secondary 
+    if(currentEducationLevel.value === "secondary" ){
+      data.value = removeDataFromArrayOfJson(data.value,'educationLevel','Primary')
+     // remove subject by their names
+      data.value = tab=='subjects' ?  removeDataFromArrayOfJson(data.value,'name',[
+        "Kusoma",
+        "Kuandika",
+        "Kuhesabu",
+        'Hisabati',
+      ]):  removeDataFromArrayOfJson(data.value,'subject.name',[
+        "Kusoma",
+        "Kuandika",
+        "Kuhesabu",
+        'Hisabati',
+      ])
+    }
+
+    // remove secondary from data if current education level is primary
+    if(currentEducationLevel.value === "primary" ){
+      data.value = removeDataFromArrayOfJson(data.value,'educationLevel','Secondary')
+
+       data.value =tab=='subjects' ? removeDataFromArrayOfJson(data.value,'name',[
+        "physics",
+        "chemistry",
+        "mathematics",
+        "biology",
+        "geography",
+      ]):removeDataFromArrayOfJson(data.value,'subject.name',[
+        "physics",
+        "chemistry",
+        "mathematics",
+        "biology",
+        "geography",
+      ])
+    }
+
 
     status.value = fetchStatus.value;
 
@@ -568,7 +656,7 @@ const switchTab = async (tab: tabs) => {
     subjectName.value = "";
   }
 
-  const target = TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  const target = TAB_TO_ROUTE.value[tab] ?? { path: currentHubPath.value };
   await router.push(target);
 };
 
@@ -576,14 +664,15 @@ const clearSubjectDetail = () => {
   subjectId.value = "";
   subjectSlug.value = "";
   subjectName.value = "";
-  router.push(TAB_TO_ROUTE.subjects ?? { path: "/home" });
+  router.push(TAB_TO_ROUTE.value.subjects ?? { path: currentHubPath.value });
 };
 
 const getSubjectRoute = (id?: string, slug?: string) => {
-  if (slug && id) return { path: `/interactive/${slug}/${id}` };
-  if (slug) return { path: `/interactive/${slug}` };
-  if (id) return { path: `/interactive/${id}` };
-  return { path: "/interactive" };
+  const query = currentHubQuery.value;
+  if (slug && id) return { path: `/interactive/${slug}/${id}`, query };
+  if (slug) return { path: `/interactive/${slug}`, query };
+  if (id) return { path: `/interactive/${id}`, query };
+  return { path: "/interactive", query };
 };
 
 const handleSubjectSelect = async (id: string, name: string) => {
@@ -598,11 +687,18 @@ const handleSubjectSelect = async (id: string, name: string) => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="currentLanguage" :education-level="currentEducationLevel">
     <!-- User Has a Token -->
     <section v-if="userToken">
-      <HomeSearchbar appearance="rounded" language="english" education-level="secondary" />
-      <TabBar :is-logged-in="true" @emit-active-tab="switchTab($event)" :active-tab="activeTab" />
+      <HomeSearchbar appearance="rounded" :language="currentLanguage" :education-level="currentEducationLevel" />
+      <TabBar
+        :is-logged-in="true"
+        @emit-active-tab="switchTab($event)"
+        :active-tab="activeTab"
+        :tab-group="currentEducationLevel"
+        :language="currentLanguage"
+        :education-level="currentEducationLevel"
+      />
 
       <!-- container filter Mobile -->
       <div class="flex items-center justify-between py-2 xl:hidden">
@@ -785,7 +881,7 @@ const handleSubjectSelect = async (id: string, name: string) => {
           <div v-else-if="status == 'success' && !subjectId && data && data.length > 0">
             <ClientOnly>
               <HomeCustomScrollView :shuffle-subject="shuffleSubject" :see-more-details="seeMoreDetails?.toString()"
-                :data="data" :active-tab="displayTab"
+                :data="data" :active-tab="displayTab" :education-level="currentEducationLevel" :language="currentLanguage"
                 @emittedSubjectId="(id) => { handleSubjectSelect(id, subjectName || subjectSlug || 'subject'); }"
                 @emittedActiveTab="switchTab($event)"
                 @emittedSubjectName="(name) => { subjectName = name; subjectSlug = slugifySubject(name); if(subjectId) handleSubjectSelect(subjectId, name); }" />
@@ -798,10 +894,10 @@ const handleSubjectSelect = async (id: string, name: string) => {
 
     <!-- User has no token -->
     <section v-else :class="[' ', { ' animate-pulse': isLoading }]">
-      <HeroSection />
-      <InputsSelection language="english" education-level="secondary" @emit-level="level = $event" @emit-standard="filters.level = $event"
+      <HeroSection :language="currentLanguage" :education-level="currentEducationLevel" />
+      <InputsSelection :language="currentLanguage" :education-level="currentEducationLevel" @emit-level="level = $event" @emit-standard="filters.level = $event"
         @emit-subject="filters.subject = $event" />
-      <TabBar />
+      <TabBar :language="currentLanguage" :education-level="currentEducationLevel" :tab-group="currentEducationLevel" />
 
       <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />

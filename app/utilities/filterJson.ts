@@ -264,6 +264,7 @@ const removeDataFromArrayOfJson = <T>(
   value: any
 ): T[] => {
   if (!Array.isArray(array) || !key) return array;
+  const valuesToRemove = Array.isArray(value) ? value : [value];
 
   return array.filter((item) => {
     const keys = key.split(".");
@@ -278,8 +279,8 @@ const removeDataFromArrayOfJson = <T>(
       }
     }
 
-    // Key found, now compare value
-    return target !== value;
+    // Remove item when the resolved value matches any configured removal value.
+    return !valuesToRemove.includes(target);
   });
 };
 
