@@ -61,8 +61,9 @@ const matchingItemsPictureTextTranspiler = (
       // Some picture-based activities provide pairs using `path` + `pathTwo`
       // (no `textOne` needed). Keep backward compatibility with the older
       // format that relied on `textOne` as the matching key.
-      (!question.path ||
-        (!question.pathTwo && !question.textOne))
+      // For picture-to-text, allow empty `textOne` (it can be a blank label),
+      // as long as an image path is present.
+      (!question.path || (algorithm === ActivityType.PicturePictureMatching && !question.pathTwo && !question.textOne))
     ) {
       isWrongFormat = true;
     }
@@ -88,13 +89,13 @@ const matchingItemsPictureTextTranspiler = (
     case ActivityType.PictureTextMatching:
     case ActivityType.PictureTextMatchingSixItems:
       // Left side: pictures, Right side: text
-      leftItems = shuffledQuestions.map((question) => ({
-        id: question.id,
+      leftItems = shuffledQuestions.map((question, index) => ({
+        id: String(question.id ?? index),
         content: { imageSrc: getImageUrl(question.path || "") },
       }));
-      rightItems = shuffledQuestions.map((question) => ({
-        id: question.id,
-        content: question.textOne,
+      rightItems = shuffledQuestions.map((question, index) => ({
+        id: String(question.id ?? index),
+        content: (question.textOne ?? "").toString(),
       }));
       break;
 
@@ -142,25 +143,25 @@ const matchingItemsPictureTextTranspiler = (
     case ActivityType.TextTextMatching:
     case ActivityType.TextTextMatchingSixItems:
       // Left side: text, Right side: text
-      leftItems = shuffledQuestions.map((question) => ({
-        id: question.id,
-        content: question.textTwo,
+      leftItems = shuffledQuestions.map((question, index) => ({
+        id: String(question.id ?? index),
+        content: (question.textTwo ?? "").toString(),
       }));
-      rightItems = shuffledQuestions.map((question) => ({
-        id: question.id,
-        content: question.textOne,
+      rightItems = shuffledQuestions.map((question, index) => ({
+        id: String(question.id ?? index),
+        content: (question.textOne ?? "").toString(),
       }));
       break;
 
     default:
       // Default to picture-text matching
-      leftItems = shuffledQuestions.map((question) => ({
-        id: question.id,
+      leftItems = shuffledQuestions.map((question, index) => ({
+        id: String(question.id ?? index),
         content: { imageSrc: getImageUrl(question.path || "") },
       }));
-      rightItems = shuffledQuestions.map((question) => ({
-        id: question.id,
-        content: question.textOne,
+      rightItems = shuffledQuestions.map((question, index) => ({
+        id: String(question.id ?? index),
+        content: (question.textOne ?? "").toString(),
       }));
   }
 
