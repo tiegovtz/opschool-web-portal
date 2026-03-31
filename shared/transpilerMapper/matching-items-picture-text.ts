@@ -58,7 +58,11 @@ const matchingItemsPictureTextTranspiler = (
     if (
       (algorithm === ActivityType.PictureTextMatching ||
         algorithm === ActivityType.PicturePictureMatching) &&
-      (!question.path || !question.textOne)
+      // Some picture-based activities provide pairs using `path` + `pathTwo`
+      // (no `textOne` needed). Keep backward compatibility with the older
+      // format that relied on `textOne` as the matching key.
+      (!question.path ||
+        (!question.pathTwo && !question.textOne))
     ) {
       isWrongFormat = true;
     }
@@ -96,6 +100,22 @@ const matchingItemsPictureTextTranspiler = (
 
     case ActivityType.PicturePictureMatching:
     case ActivityType.PicturePictureMatchingSixItems:
+      // Prefer the "paired images" format: `path` (left) + `pathTwo` (right).
+      // This supports activities where each question is an explicit image pair
+      // (e.g. counting objects ↔ fingers), and `textOne` is empty/null.
+      if (serverQuestions.every((q) => q.path && q.pathTwo)) {
+        leftItems = shuffledQuestions.map((question) => ({
+          id: String(question.id),
+          content: { imageSrc: getImageUrl(question.path || "") },
+        }));
+        rightItems = shuffledQuestions.map((question) => ({
+          id: String(question.id),
+          content: { imageSrc: getImageUrl(question.pathTwo || "") },
+        }));
+        break;
+      }
+
+      // Backward-compatible fallback: a "pool" of images where `textOne` is the key.
       // Left side: pictures, Right side: pictures
       const leftQuestions = shuffle(
         [...serverQuestions].slice(
@@ -110,11 +130,11 @@ const matchingItemsPictureTextTranspiler = (
       );
 
       leftItems = leftQuestions.map((question) => ({
-        id: question.textOne,
+        id: String(question.textOne),
         content: { imageSrc: getImageUrl(question.path || "") },
       }));
       rightItems = rightQuestions.map((question) => ({
-        id: question.textOne,
+        id: String(question.textOne),
         content: { imageSrc: getImageUrl(question.path || "") },
       }));
       break;
