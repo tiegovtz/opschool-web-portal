@@ -33,7 +33,7 @@ export const completeSentencesByRephrasingPropsTranspiler = (
   // This activity UI for rephrasing uses plain text inputs, so students likely type `4`.
   // To avoid strict-matching failures, unwrap `cua(x)` -> `x` and accept both forms.
   const unwrapCuaAnswers = (raw: string): string[] | null => {
-    const match = raw.match(/^cua\((.*?)\)$/i);
+    const match = raw.match(/^cua\s*\(\s*(.*?)\s*\)\s*$/i);
     if (!match) return null;
 
     const inner = match[1]?.trim() ?? "";
@@ -51,8 +51,10 @@ export const completeSentencesByRephrasingPropsTranspiler = (
       return (numMatch ? numMatch[1] : part).trim();
     }).filter(Boolean);
 
-    // Keep original too, in case the frontend user enters `cua(4)` directly.
-    return Array.from(new Set([raw, ...numbers]));
+    // Keep original too, in case the frontend user enters `cua(4)` / `cua (4)` directly.
+    // Also keep a normalized `cua(<inner>)` form so strict string matches are stable.
+    const normalizedCua = `cua(${inner.replace(/\s+/g, "")})`;
+    return Array.from(new Set([raw, normalizedCua, ...numbers]));
   };
 
   return {
