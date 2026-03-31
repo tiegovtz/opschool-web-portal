@@ -25,6 +25,7 @@ const router = useRouter();
 const navigationStore = useNavigationStore();
 const hubEducationLevel = useHubEducationLevel();
 const primaryContentLanguage = usePrimaryContentLanguage();
+const hubHeaderLang = useHubHeaderLanguage();
 
 const matchesPath = (path: string) =>
   route.path === path || route.path.startsWith(`${path}/`);
@@ -200,6 +201,36 @@ const setPrimaryLanguage = async (language: LanguageSupport) => {
     },
   });
 };
+const alternateEducationLevel = computed(() =>
+  currentEducationLevel.value === "primary" ? "secondary" : "primary",
+);
+const switchProfileTarget = computed(() => getHubPath(alternateEducationLevel.value));
+const switchProfileLabel = computed(() =>
+  alternateEducationLevel.value === "primary"
+    ? props.language === "english"
+      ? "Switch to Primary"
+      : "Badili kwenda Msingi"
+    : props.language === "english"
+      ? "Switch to Secondary"
+      : "Badili kwenda Sekondari",
+);
+const switchProfileShortLabel = computed(() =>
+  alternateEducationLevel.value === "primary"
+    ? props.language === "english"
+      ? "Primary"
+      : "Msingi"
+    : props.language === "english"
+      ? "Secondary"
+      : "Sekondari",
+);
+const shouldShowEducationSwitch = computed(() => isHomeRoute.value);
+
+const switchEducationProfile = async () => {
+  hubHeaderLang.value =
+    alternateEducationLevel.value === "primary" ? "kiswahili" : "english";
+  closeAccountMenu();
+  await router.push(switchProfileTarget.value);
+};
 
 const authReturnQuery = computed(() => {
   const p = route.path;
@@ -270,6 +301,20 @@ onBeforeUnmount(() => {
             </div>
             <p class="hidden capitalize lg:flex">{{ homeHubLabel }}</p>
           </NuxtLink>
+
+          <button
+            v-if="shouldShowEducationSwitch"
+            type="button"
+            :aria-label="switchProfileLabel"
+            :title="switchProfileLabel"
+            :class="[desktopNavItemClass, inactiveNavItemClass]"
+            @click="switchEducationProfile"
+          >
+            <div class="flex items-center justify-center">
+              <Icon name="heroicons:arrows-right-left-20-solid" class="w-5 h-5" />
+            </div>
+            <p class="hidden capitalize lg:flex">{{ switchProfileShortLabel }}</p>
+          </button>
 
           <!-- TIE Library Books -->
           <a
@@ -450,6 +495,19 @@ onBeforeUnmount(() => {
                   {{ homeHubLabel }}
                 </p>
               </NuxtLink>
+
+              <button
+                v-if="shouldShowEducationSwitch"
+                type="button"
+                :aria-label="switchProfileLabel"
+                :title="switchProfileLabel"
+                :class="[mobileNavItemClass, inactiveNavItemClass]"
+                @click="switchEducationProfile"
+              >
+                <div class="flex items-center justify-center">
+                  <Icon name="heroicons:arrows-right-left-20-solid" class="w-5 h-5" />
+                </div>
+              </button>
 
               <!-- TIE Library Books -->
               <a

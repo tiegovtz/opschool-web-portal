@@ -26,7 +26,7 @@
     </div>  -->
     
     <!-- Footer -->
-    <FooterView  :language/>
+    <FooterView  :language="language" :education-level="educationLevel" />
   </div>
 </template>
 
