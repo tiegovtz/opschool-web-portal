@@ -15,7 +15,7 @@
             : 'bg-gray-400 cursor-not-allowed scale-100',
           'focus:outline-none focus:ring-4 focus:ring-oceanBlue focus:ring-opacity-50'
         ]"
-        :aria-label="isRecording ? 'Stop recording' : 'Start recording'"
+        :aria-label="isRecording ? stopRecordingLabel : startRecordingLabel"
       >
         <Icon
           :name="isRecording ? 'heroicons:stop' : 'heroicons:microphone'"
@@ -35,10 +35,10 @@
 
       <!-- Status text -->
       <div class="text-xs text-gray-600 text-center">
-        <span v-if="isRecording">Recording... Speak now</span>
-        <span v-else-if="!isSpeechSupported">Speech-to-text not supported in this browser</span>
-        <span v-else-if="!canRecord">Waiting for turn...</span>
-        <span v-else>Click to start speaking</span>
+        <span v-if="isRecording">{{ recordingLabel }}</span>
+        <span v-else-if="!isSpeechSupported">{{ speechNotSupportedLabel }}</span>
+        <span v-else-if="!canRecord">{{ waitingForTurnLabel }}</span>
+        <span v-else>{{ clickToStartLabel }}</span>
       </div>
     </div>
   </div>
@@ -55,12 +55,14 @@ interface Props {
   canRecord?: boolean;
   isSpeechSupported?: boolean;
   audioLevel?: number;
+  uiLanguage?: 'en' | 'sw';
 }
 
 const props = withDefaults(defineProps<Props>(), {
   canRecord: true,
   isSpeechSupported: true,
   audioLevel: 0,
+  uiLanguage: 'en',
 });
 
 const emit = defineEmits<{
@@ -74,12 +76,21 @@ const handleClick = () => {
 };
 
 const isMicDisabled = computed(() => !props.canRecord || !props.isSpeechSupported);
+const isSwahili = computed(() => props.uiLanguage === 'sw');
+const startRecordingLabel = computed(() => (isSwahili.value ? 'Anza kurekodi' : 'Start recording'));
+const stopRecordingLabel = computed(() => (isSwahili.value ? 'Simamisha kurekodi' : 'Stop recording'));
+const recordingLabel = computed(() => (isSwahili.value ? 'Inarekodi... Ongea sasa' : 'Recording... Speak now'));
+const speechNotSupportedLabel = computed(() =>
+  isSwahili.value ? 'Hotuba kwenda maandishi haitumiki kwenye kivinjari hiki' : 'Speech-to-text not supported in this browser'
+);
+const waitingForTurnLabel = computed(() => (isSwahili.value ? 'Subiri zamu yako...' : 'Waiting for turn...'));
+const clickToStartLabel = computed(() => (isSwahili.value ? 'Bonyeza kuanza kuzungumza' : 'Click to start speaking'));
 
 const turnMessage = computed(() => {
   const name = String(props.currentSpeakerName || '').trim();
-  if (!props.currentTurn) return 'Ready to start';
-  if (name) return `${name}'s turn`;
-  return "Speaker's turn";
+  if (!props.currentTurn) return isSwahili.value ? 'Tayari kuanza' : 'Ready to start';
+  if (name) return isSwahili.value ? `Zamu ya ${name}` : `${name}'s turn`;
+  return isSwahili.value ? 'Zamu ya mzungumzaji' : "Speaker's turn";
 });
 
 const waveCanvas = ref<HTMLCanvasElement | null>(null);
