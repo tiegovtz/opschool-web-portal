@@ -390,6 +390,30 @@ export const normalizeActivity = (value: unknown): Activity | null => {
   const activityId = toNullableString(rawId);
   if (!activityId) return null;
 
+  // Heuristic: some upstream records come with the wrong `category`/algorithm label.
+  // If a "Dialog" activity contains only paired images (no text), treat it as
+  // picture-to-picture matching so it renders in the correct activity component.
+  const normalizedCategory =
+    toNullableString(raw.category) ??
+    toNullableString((raw as { description?: unknown }).description) ??
+    "";
+
+  const looksLikePairedImagesMatching =
+    questions.length > 0 &&
+    questions.every((q) => {
+      const hasPair = !!q.path && !!q.pathTwo;
+      const noText =
+        !toNullableString(q.textOne) &&
+        !toNullableString(q.textTwo) &&
+        !toNullableString(q.textThree);
+      return hasPair && noText;
+    });
+
+  const resolvedDescription =
+    normalizedCategory === "Dialog one side fixed" && looksLikePairedImagesMatching
+      ? "Picture-Picture Matching"
+      : normalizedCategory;
+
   return {
     uuid: activityId,
     id:
@@ -402,9 +426,7 @@ export const normalizeActivity = (value: unknown): Activity | null => {
       toNullableString(raw.title) ??
       "",
     description:
-      toNullableString(raw.category) ??
-      toNullableString((raw as { description?: unknown }).description) ??
-      "",
+      resolvedDescription,
     activityDescription:
       toNullableString(raw.activityDescription) ??
       toNullableString((raw as { description?: unknown }).description) ??
