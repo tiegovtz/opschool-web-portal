@@ -12,7 +12,7 @@ import { useSoundEffects } from "~/composables/use-sound-effects";
 import { AnswerChecker } from "~/lib/utils/answer-checker";
 import { ActivityType, type FeedbackType } from "~/types/activity-types";
 import { calculateBlankWidth, parseQuestionSegments } from "~/components/primary-sources/activity-helpers/question-renderer-utils";
-import { cn, shuffle } from "~/utilities/utils";
+import { cn, extractKatexSegments, shuffle } from "~/utilities/utils";
 
 type QuestionItem = {
   id: number;
@@ -127,6 +127,10 @@ const buildSegments = (questionText: string) => {
   });
 };
 
+const katexSegs = (text: string) => extractKatexSegments(text);
+const hasMathInText = (text: string) => katexSegs(text).some((s: any) => s.type === "math");
+const mathJaxWrap = (latex: string) => `\\[${latex}\\]`;
+
 const handleCheckAllAnswers = () => {
   let newScore = 0;
   const newFeedbacks: Record<number, boolean> = {};
@@ -202,7 +206,20 @@ const handleResetWithShuffle = () => {
                     v-for="segment in buildSegments(q.question)"
                     :key="`${q.id}-${segment.index}`"
                   >
-                    <span v-if="segment.type === 'text'" class="mx-1">{{ segment.content }}</span>
+                    <span v-if="segment.type === 'text'" class="mx-1">
+                      <template v-if="!hasMathInText(segment.content)">
+                        <span class="whitespace-pre-line">{{ segment.content }}</span>
+                      </template>
+                      <span v-else>
+                        <template
+                          v-for="(ks, ki) in katexSegs(segment.content)"
+                          :key="`${q.id}-${segment.index}-katex-${ki}`"
+                        >
+                          <span v-if="ks.type === 'text'" class="whitespace-pre-line">{{ ks.value }}</span>
+                          <span v-else v-mathjax>{{ mathJaxWrap(ks.value) }}</span>
+                        </template>
+                      </span>
+                    </span>
                     <span
                       v-else-if="segment.type === 'highlighted'"
                       class="mx-1 rounded bg-lemon-100 px-2 text-lemon-700"
