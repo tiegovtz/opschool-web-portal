@@ -20,25 +20,25 @@ withDefaults(
 
 <template>
   <article
-    class="flex gap-4 p-4 bg-white border shadow-sm rounded-3xl border-slate-200"
+    class="flex flex-col gap-3 p-4 bg-white border shadow-sm rounded-3xl border-slate-200 sm:flex-row sm:items-start"
     :class="cardClass"
   >
     <div
-      class="flex items-center justify-center w-12 h-12 rounded-2xl flex-shrink-0"
+      class="flex items-center justify-center w-11 h-11 rounded-2xl flex-shrink-0 sm:w-12 sm:h-12"
       :class="iconWrapperClass"
     >
       <Icon
         :name="icon"
-        class="w-6 h-6"
+        class="w-5 h-5 sm:w-6 sm:h-6"
       />
     </div>
 
-    <div class="min-w-0">
+    <div class="min-w-0 flex-1">
       <p class="text-xs font-semibold tracking-[0.24em] uppercase text-slate-500">
         {{ label }}
       </p>
       <p
-        class="mt-2 text-2xl font-semibold tracking-tight"
+        class="mt-1.5 text-xl font-semibold tracking-tight sm:mt-2 sm:text-2xl"
         :class="valueClass"
       >
         {{ value }}
