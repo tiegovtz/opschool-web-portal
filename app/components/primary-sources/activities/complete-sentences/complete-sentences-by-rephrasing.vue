@@ -38,6 +38,7 @@ const { playSound } = useSoundEffects();
 const answerChecker = new AnswerChecker();
 
 const shuffledQuestions = ref<QuestionItem[]>([]);
+const segmentsCache = ref<Record<number, any[]>>({});
 const score = ref(0);
 const allAnswered = ref(false);
 const checkedItems = ref<number[]>([]);
@@ -58,6 +59,7 @@ watch(
     checkedItems.value = [];
     answers.value = {};
     feedbacks.value = {};
+    segmentsCache.value = {};
     showResults.value = false;
   },
   { immediate: true, deep: true },
@@ -102,10 +104,8 @@ const handleInputChange = (questionIndex: number, blankIndex: number, value: str
     currentAnswers.push("");
   }
   currentAnswers[blankIndex] = String(value ?? "");
-  answers.value = {
-    ...answers.value,
-    [questionIndex]: currentAnswers.join("|"),
-  };
+  // Mutate in-place to avoid forcing a full list re-render on every keystroke
+  answers.value[questionIndex] = currentAnswers.join("|");
 };
 
 const buildSegments = (questionText: string) => {
@@ -130,6 +130,22 @@ const buildSegments = (questionText: string) => {
 const katexSegs = (text: string) => extractKatexSegments(text);
 const hasMathInText = (text: string) => katexSegs(text).some((s: any) => s.type === "math");
 const mathJaxWrap = (latex: string) => `\\[${latex}\\]`;
+
+const getSegmentsFor = (questionIndex: number, questionText: string) => {
+  const cached = segmentsCache.value[questionIndex];
+  if (cached) return cached;
+  const built = buildSegments(questionText);
+  segmentsCache.value[questionIndex] = built;
+  return built;
+};
+
+// If screen width changes (rare), recompute blank widths once (not per keystroke)
+watch(
+  () => width.value,
+  () => {
+    segmentsCache.value = {};
+  },
+);
 
 const handleCheckAllAnswers = () => {
   let newScore = 0;
@@ -203,10 +219,19 @@ const handleResetWithShuffle = () => {
                 <span>{{ i + 1 }}.</span>
                 <div class="inline leading-loose">
                   <template
-                    v-for="segment in buildSegments(q.question)"
+                    v-for="segment in getSegmentsFor(i, q.question)"
                     :key="`${q.id}-${segment.index}`"
                   >
-                    <span v-if="segment.type === 'text'" class="mx-1">
+                    <!--
+                      Important: MathJax typesetting is expensive.
+                      Memoize the static question text so it doesn't re-render (and re-typeset)
+                      on every keystroke in the inputs below.
+                    -->
+                    <span
+                      v-if="segment.type === 'text'"
+                      class="mx-1"
+                      v-memo="[segment.content]"
+                    >
                       <template v-if="!hasMathInText(segment.content)">
                         <span class="whitespace-pre-line">{{ segment.content }}</span>
                       </template>
