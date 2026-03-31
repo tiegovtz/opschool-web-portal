@@ -7,11 +7,15 @@ import { getHubPath } from '~/utilities/educationRoute';
 
 const router = useRouter();
 const hubHeaderLang = useHubHeaderLanguage();
+const hubEducationLevel = useHubEducationLevel();
+const primaryContentLanguage = usePrimaryContentLanguage();
 
 function goToPrimary() {
     const target = getHubPath('primary');
     setPostLoginHome(target);
     hubHeaderLang.value = 'kiswahili';
+    hubEducationLevel.value = 'primary';
+    primaryContentLanguage.value = 'kiswahili';
     router.push(target);
 }
 
@@ -19,6 +23,7 @@ function goToSecondary() {
     const target = getHubPath('secondary');
     setPostLoginHome(target);
     hubHeaderLang.value = 'english';
+    hubEducationLevel.value = 'secondary';
     router.push(target);
 }
 
@@ -111,9 +116,7 @@ const fetchData = async () => {
     try {
         const [audios, videos, experiments, topics] = await Promise.allSettled(reqwest);
         const getLength = (res: any) => {
-            console.log(res);
-
-            return res.status === "fulfilled" ? res?.value?.length || 0 : 0
+             return res.status === "fulfilled" ? res?.value?.length || 0 : 0
         }
 
         // const totalChapters = (topics as any)?.value?.reduce(

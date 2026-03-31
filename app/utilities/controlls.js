@@ -20,6 +20,7 @@ const popMessage= ref()
 const screenWidth = ref(0)
 
 const experimrntUrl = ref();
+const activityPopupId = ref("");
 
 const currentTopic = ref();
 
@@ -35,6 +36,7 @@ export {
     isPopUp,
     popMessage,
     experimrntUrl,
+    activityPopupId,
     currentTopic,
     layoutEffect,
 }

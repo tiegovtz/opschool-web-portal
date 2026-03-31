@@ -13,7 +13,7 @@ const hubHeaderLang = useHubHeaderLanguage();
     <section
       id="main-container"
       tabindex="-1"
-      class="flex justify-center px-4 py-6"
+      class="flex justify-center px-3 py-4 sm:px-4 sm:py-6 lg:px-6"
     >
       <div class="w-full max-w-7xl">
         <LearningStatisticsCard />

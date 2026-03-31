@@ -4,7 +4,11 @@ import apiDocs from "~/utilities/apiDocs";
 import type { educationLevel } from "~/types/educationlevel.interface";
 import type { ClassLevel } from "~/types/classlevel.interface";
 import type { Subjects } from "~/types/subject.interface";
-import { normalizeEducationLevel } from "~/utilities/educationRoute";
+import {
+  getApiContentLanguage,
+  normalizeEducationLevel,
+  resolveRouteLanguage,
+} from "~/utilities/educationRoute";
 
 const EDUCATION_LEVEL_RENDER_ORDER: Record<string, number> = {
   "Pre-Primary": 0,
@@ -20,6 +24,8 @@ const headers = {
   "Content-Type": "application/json",
   Authorization: `Bearer ${token}`,
 };
+const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
 
 // Loading state
 const isLoading = ref(true);
@@ -30,14 +36,30 @@ const { data: classes } = useFetch<ClassLevel[]>(apiDocs.levels.getLevels, { hea
 const selectedEducationBucket = computed(() =>
   selected.level?.trim() ? normalizeEducationLevel(selected.level) : null,
 );
+const selectedContentLanguage = computed(() =>
+  resolveRouteLanguage(route, selectedEducationBucket.value ?? undefined, primaryContentLanguage.value),
+);
 const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjects, {
   headers,
   query: computed(() =>
     selectedEducationBucket.value
-      ? { educationLevel: selectedEducationBucket.value }
+      ? {
+          educationLevel: selectedEducationBucket.value,
+          ...(getApiContentLanguage(
+            selectedEducationBucket.value,
+            selectedContentLanguage.value,
+          )
+            ? {
+                language: getApiContentLanguage(
+                  selectedEducationBucket.value,
+                  selectedContentLanguage.value,
+                ),
+              }
+            : {}),
+        }
       : {},
   ),
-  watch: [selectedEducationBucket],
+  watch: [selectedEducationBucket, selectedContentLanguage],
 });
 
 // Simulate skeleton time

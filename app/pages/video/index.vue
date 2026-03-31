@@ -13,9 +13,11 @@ import type { tabs } from "~/types/types.data";
 import { layoutEffect } from '@/utilities/controlls';
 import InputsSelection from '~/components/home/InputsSelection.vue';
 import {
+  getApiContentLanguage,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
+  resolveRouteLanguage,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
@@ -50,10 +52,19 @@ const status = ref('pending'); // Initial Status State
 const videos = ref();         // Initial videos State
 const slicedData = ref();    // Initial slice data to 9
 const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
-const language = computed(() => getHubLanguage(educationLevel.value));
+const language = computed(() =>
+  getHubLanguage(
+    educationLevel.value,
+    resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
+  ),
+);
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value),
+  getEducationRouteQuery(educationLevel.value, {}, language.value),
+);
+const apiLanguage = computed(() =>
+  getApiContentLanguage(educationLevel.value, language.value),
 );
 const videoType = computed<string>(() => {
   let type = route.query?.type as string;
@@ -89,7 +100,7 @@ const sliceData = (start: number, end: number) => {
 const currentPage = ref(1);
 const pageSize = ref();
 
-const VIDEO_TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
+const VIDEO_TAB_TO_ROUTE = computed<Record<string, { path: string; query?: Record<string, any> }>>(() => ({
   subjects: { path: getHubPath(educationLevel.value) },
   "interactive-contents": { path: "/interactive", query: educationRouteQuery.value },
   "learn-activities": { path: "/experiments", query: educationRouteQuery.value },
@@ -97,12 +108,12 @@ const VIDEO_TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, 
   "class-videos": { path: "/video", query: { ...educationRouteQuery.value, type: "oth" } },
   audio: { path: "/audio", query: educationRouteQuery.value },
   "smart-class": { path: "/smart-class" },
-};
+}));
 
 const switchTab = async (tab: string) => {
   if (!tab) return;
   activeTab.value = tab as tabs;
-  const target = VIDEO_TAB_TO_ROUTE[tab] ?? { path: getHubPath(educationLevel.value) };
+  const target = VIDEO_TAB_TO_ROUTE.value[tab] ?? { path: getHubPath(educationLevel.value) };
   await useRouter().push(target);
 };
 
@@ -111,12 +122,13 @@ const fetchVideos = async (param?: any) => {
   param = {
     ...param,
     educationLevel: educationLevel.value,
-    videoType: videoType.value
+    videoType: videoType.value,
+    ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
   }
 
   try {
     status.value = 'pending';
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${videoType.value}`, () => $fetch(apiDocs.videos.getPublicVideo, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${language.value}-${videoType.value}`, () => $fetch(apiDocs.videos.getPublicVideo, {
       method: 'GET',
       params: {
         ...param

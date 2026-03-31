@@ -1,6 +1,10 @@
 import type { RouteLocationNormalizedLoaded } from "vue-router";
 import type { LanguageSupport } from "~/types/language.interface";
-import { normalizeEducationLevel } from "~/utilities/educationRoute";
+import {
+  getHubLanguage,
+  normalizeEducationLevel,
+  normalizeLanguageSupport,
+} from "~/utilities/educationRoute";
 
 export function decodeRouteSegment(value: unknown): string {
   const raw = typeof value === "string" ? value : "";
@@ -19,12 +23,14 @@ export function decodeRouteSegment(value: unknown): string {
 export function inferHubLanguageFromContentRoute(
   route: RouteLocationNormalizedLoaded,
   levelParam?: unknown,
+  primaryFallback: LanguageSupport = "kiswahili",
 ): LanguageSupport | null {
+  const routeLanguage = typeof route.query.lang === "string"
+    ? normalizeLanguageSupport(route.query.lang, primaryFallback)
+    : null;
   const routeEducationLevel = route.query.educationLevel ?? route.query.edl;
   if (routeEducationLevel) {
-    return normalizeEducationLevel(routeEducationLevel) === "primary"
-      ? "kiswahili"
-      : "english";
+    return getHubLanguage(routeEducationLevel, routeLanguage ?? primaryFallback);
   }
 
   const levelRaw =
@@ -34,13 +40,13 @@ export function inferHubLanguageFromContentRoute(
 
   if (levelRaw !== undefined && levelRaw !== null && String(levelRaw).length > 0) {
     const level = decodeRouteSegment(levelRaw).toLowerCase();
-    if (level.includes("darasa")) return "kiswahili";
+    if (level.includes("darasa")) {
+      return getHubLanguage("primary", routeLanguage ?? primaryFallback);
+    }
     if (/\bform\b/.test(level)) return "english";
   }
 
-  const lang = route.query.lang;
-  if (lang === "sw") return "kiswahili";
-  if (lang === "en") return "english";
+  if (routeLanguage) return routeLanguage;
 
   return null;
 }

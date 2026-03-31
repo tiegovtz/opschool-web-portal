@@ -3,10 +3,12 @@ import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
 import {
     getEducationRouteQuery,
+    resolveRouteLanguage,
     resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 const navigationStore = useNavigationStore()
 const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
 
 const props = withDefaults( 
     defineProps<{
@@ -48,7 +50,11 @@ const setExperimentUrl =()=>{
 
 const experimentTarget = computed(() => ({
     path: `/experiments/${props.experimentStandard}/${props.experimentSubject}/${props.experimentName}/${props.experimentId}`,
-    query: getEducationRouteQuery(resolveEducationLevelFromRoute(route)),
+    query: getEducationRouteQuery(
+        resolveEducationLevelFromRoute(route),
+        {},
+        resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
+    ),
 }));
 </script>
 

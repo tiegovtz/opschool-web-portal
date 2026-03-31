@@ -16,9 +16,11 @@ import AudioCard from "~/components/audio/audioCard.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import {
+  getApiContentLanguage,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
+  resolveRouteLanguage,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
@@ -38,10 +40,19 @@ const subjectId = String(route.params.subjectId ?? "");
 const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
 const activeTab = ref("audio");
 const subjectSlug = computed(() => (subjectTitle || "").toLowerCase().trim().replace(/\s+/g, "-"));
+const primaryContentLanguage = usePrimaryContentLanguage();
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
-const language = computed(() => getHubLanguage(educationLevel.value));
+const language = computed(() =>
+  getHubLanguage(
+    educationLevel.value,
+    resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
+  ),
+);
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value),
+  getEducationRouteQuery(educationLevel.value, {}, language.value),
+);
+const apiLanguage = computed(() =>
+  getApiContentLanguage(educationLevel.value, language.value),
 );
 
 const buildTabTarget = (tab) => {
@@ -151,12 +162,13 @@ const fetchAudios = async (params) => {
 
   try {
     status.value = "pending";
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`audio-${educationLevel.value}-${subjectId}-${params?.toString()}`,()=>$fetch(apiDocs.audio.getPublicAudioBySubjectId.replace(
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`audio-${educationLevel.value}-${language.value}-${subjectId}-${params?.toString()}`,()=>$fetch(apiDocs.audio.getPublicAudioBySubjectId.replace(
         "{subjectId}",
         subjectId
       ), {
       params: {
         educationLevel: educationLevel.value,
+        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
         ...params,
       },
     }));
