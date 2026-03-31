@@ -211,7 +211,7 @@ const buildAnonymousTarget = (
       </NuxtLink>
 
       <!-- Learning Activities -->
-      <div v-if="tabGroup === 'secondary'" class="flex items-center text-center justify-start gap-3 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center"  >
+      <div v-if="tabGroup === 'lower secondary'" class="flex items-center text-center justify-start gap-3 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center"  >
         <div v-if="isLoggedIn">
           <button
             role="tab"

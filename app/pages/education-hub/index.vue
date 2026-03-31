@@ -111,7 +111,7 @@ const currentHubQuery = computed(() =>
   getEducationRouteQuery(currentEducationLevel.value),
 );
 const shouldRestrictToSecondarySubjects = computed(
-  () => currentEducationLevel.value === "secondary",
+  () => currentEducationLevel.value === "lower secondary",
 );
 
 watch(
@@ -416,43 +416,6 @@ const fetchData = async (params?: any) => {
       // remove some audio
       data.value = removeDataFromArrayOfJson(data.value,'audioType','NARRATION')
     }
-
-    // remove primary from data if current education level is secondary 
-    if(currentEducationLevel.value === "secondary" ){
-      data.value = removeDataFromArrayOfJson(data.value,'educationLevel','Primary')
-     // remove subject by their names
-      data.value = tab=='subjects' ?  removeDataFromArrayOfJson(data.value,'name',[
-        "Kusoma",
-        "Kuandika",
-        "Kuhesabu",
-        'Hisabati',
-      ]):  removeDataFromArrayOfJson(data.value,'subject.name',[
-        "Kusoma",
-        "Kuandika",
-        "Kuhesabu",
-        'Hisabati',
-      ])
-    }
-
-    // remove secondary from data if current education level is primary
-    if(currentEducationLevel.value === "primary" ){
-      data.value = removeDataFromArrayOfJson(data.value,'educationLevel','Secondary')
-
-       data.value =tab=='subjects' ? removeDataFromArrayOfJson(data.value,'name',[
-        "physics",
-        "chemistry",
-        "mathematics",
-        "biology",
-        "geography",
-      ]):removeDataFromArrayOfJson(data.value,'subject.name',[
-        "physics",
-        "chemistry",
-        "mathematics",
-        "biology",
-        "geography",
-      ])
-    }
-
 
     status.value = fetchStatus.value;
 

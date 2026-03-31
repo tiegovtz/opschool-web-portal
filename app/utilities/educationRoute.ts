@@ -1,7 +1,7 @@
 import type { RouteLocationNormalizedLoaded } from "vue-router";
 import type { LanguageSupport } from "~/types/language.interface";
 
-export type EducationBucket = "primary" | "secondary";
+export type EducationBucket = "primary" | "lower secondary"| "upper secondary" | "secondary";
 
 const PRIMARY_ALIASES = new Set([
   "primary",
@@ -21,11 +21,11 @@ const SECONDARY_ALIASES = new Set([
 
 export const normalizeEducationLevel = (
   value: unknown,
-  fallback: EducationBucket = "secondary",
+  fallback: EducationBucket = "lower secondary",
 ): EducationBucket => {
   const normalized = typeof value === "string" ? value.trim().toLowerCase() : "";
   if (PRIMARY_ALIASES.has(normalized)) return "primary";
-  if (SECONDARY_ALIASES.has(normalized)) return "secondary";
+  if (SECONDARY_ALIASES.has(normalized)) return "lower secondary";
   return fallback;
 };
 
@@ -59,7 +59,7 @@ export const getEducationRouteQuery = (
 
 export const resolveEducationLevelFromRoute = (
   route: Pick<RouteLocationNormalizedLoaded, "path" | "query">,
-  fallback: EducationBucket = "secondary",
+  fallback: EducationBucket ="lower secondary",
 ): EducationBucket => {
   if (
     route.path === "/primary" ||
@@ -72,7 +72,7 @@ export const resolveEducationLevelFromRoute = (
     route.path === "/secondary" ||
     route.path.startsWith("/secondary/")
   ) {
-    return "secondary";
+    return "lower secondary";
   }
 
   return normalizeEducationLevel(
