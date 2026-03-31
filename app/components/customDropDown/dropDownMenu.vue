@@ -27,6 +27,13 @@ const headers = {
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
 
+// Model
+const selected = reactive({
+  level: "",
+  class: "",
+  subject: "",
+});
+
 // Loading state
 const isLoading = ref(true);
 
@@ -68,12 +75,7 @@ setTimeout(() => (isLoading.value = false), 500);
 // Dropdown open status
 const openMenus = ref<number[]>([0]);
 
-// Model
-const selected = reactive({
-  level: "",
-  class: "",
-  subject: "",
-});
+
 
 const liveMessage = ref("");
 const isClassDisabled = computed(() => selected.level?.trim() === "");
