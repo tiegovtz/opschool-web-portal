@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white" @contextmenu.prevent >
     <!-- Header -->
-    <HeaderView :language/>
+    <HeaderView :language="language" :education-level="educationLevel" />
 
     <!-- Main content -->
     <main class="wrapper-container" tabindex="-1" role="main">
@@ -26,7 +26,7 @@
     </div>  -->
     
     <!-- Footer -->
-    <FooterView  :language/>
+    <FooterView  :language="language" :education-level="educationLevel" />
   </div>
 </template>
 
