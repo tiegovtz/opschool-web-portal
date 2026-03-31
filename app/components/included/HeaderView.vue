@@ -6,6 +6,7 @@ import ConfirmationModal from "~/components/ai-teacher/ConfirmationModal.vue";
 import { useNavigationStore } from "~/stores/navigationStore";
 import type { LanguageSupport } from "~/types/language.interface";
 import {
+  getHubLanguage,
   getHubLanguageCode,
   getHubPath,
   normalizeEducationLevel,
@@ -68,6 +69,7 @@ const showLogoutConfirm = ref(false);
 const showLogoutToast = ref(false);
 const logoutToastTimeout = ref<null|any>(null);
 const logoutAlert = ref<HTMLElement|null>(null);
+const isHomeMenuOpen = ref(false);
 const isAccountMenuOpen = ref(false);
 
 const logout = () => {
@@ -112,11 +114,21 @@ const onLogoutCancel = () => {
 };
 
 const toggleAccountMenu = () => {
+  isHomeMenuOpen.value = false;
   isAccountMenuOpen.value = !isAccountMenuOpen.value;
 };
 
 const closeAccountMenu = () => {
   isAccountMenuOpen.value = false;
+};
+
+const toggleHomeMenu = () => {
+  closeAccountMenu();
+  isHomeMenuOpen.value = !isHomeMenuOpen.value;
+};
+
+const closeHomeMenu = () => {
+  isHomeMenuOpen.value = false;
 };
 
 const openLogoutConfirmFromMenu = () => {
@@ -179,13 +191,19 @@ const languageSwitchContent = computed(() =>
 );
 
 const homeHubLabel = computed(() => {
-  if (currentEducationLevel.value === "primary") {
-    return props.language === "kiswahili" ? "Msingi" : "Primary";
-  }
-  return "Secondary";
+  return props.language === "kiswahili" ? "Nyumbani" : "Home";
 });
 
-const homeTarget = computed(() => getHubPath(currentEducationLevel.value));
+const homeMenuItems = computed(() => [
+  {
+    educationLevel: "primary" as const,
+    label: props.language === "kiswahili" ? "Msingi" : "Primary",
+  },
+  {
+    educationLevel: "secondary" as const,
+    label: props.language === "kiswahili" ? "Sekondari" : "Secondary",
+  },
+]);
 
 const setPrimaryLanguage = async (language: LanguageSupport) => {
   if (!showPrimaryLanguageSwitch.value) return;
@@ -201,35 +219,15 @@ const setPrimaryLanguage = async (language: LanguageSupport) => {
     },
   });
 };
-const alternateEducationLevel = computed(() =>
-  currentEducationLevel.value === "primary" ? "secondary" : "primary",
-);
-const switchProfileTarget = computed(() => getHubPath(alternateEducationLevel.value));
-const switchProfileLabel = computed(() =>
-  alternateEducationLevel.value === "primary"
-    ? props.language === "english"
-      ? "Switch to Primary"
-      : "Badili kwenda Msingi"
-    : props.language === "english"
-      ? "Switch to Secondary"
-      : "Badili kwenda Sekondari",
-);
-const switchProfileShortLabel = computed(() =>
-  alternateEducationLevel.value === "primary"
-    ? props.language === "english"
-      ? "Primary"
-      : "Msingi"
-    : props.language === "english"
-      ? "Secondary"
-      : "Sekondari",
-);
-const shouldShowEducationSwitch = computed(() => isHomeRoute.value);
-
-const switchEducationProfile = async () => {
-  hubHeaderLang.value =
-    alternateEducationLevel.value === "primary" ? "kiswahili" : "english";
+const navigateToHomeHub = async (educationLevel: "primary" | "secondary") => {
+  hubEducationLevel.value = educationLevel;
+  hubHeaderLang.value = getHubLanguage(
+    educationLevel,
+    educationLevel === "primary" ? primaryContentLanguage.value : "english",
+  );
+  closeHomeMenu();
   closeAccountMenu();
-  await router.push(switchProfileTarget.value);
+  await router.push(getHubPath(educationLevel));
 };
 
 const authReturnQuery = computed(() => {
@@ -260,6 +258,7 @@ const authSignUpTo = computed(() =>
 watch(
   () => route.fullPath,
   () => {
+    closeHomeMenu();
     closeAccountMenu();
   },
 );
@@ -290,31 +289,48 @@ onBeforeUnmount(() => {
         <!-- Media Screen -->
         <div
           class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container">
-          <NuxtLink
-            aria-label="Go home"
-            :to="homeTarget"
-            :aria-current="isHomeRoute ? 'page' : undefined"
-            :class="[desktopNavItemClass, isHomeRoute ? activeNavItemClass : inactiveNavItemClass]"
-          >
-            <div class="flex items-center justify-center">
-              <IconsHome :size="20" />
-            </div>
-            <p class="hidden capitalize lg:flex">{{ homeHubLabel }}</p>
-          </NuxtLink>
+          <div class="relative">
+            <button
+              type="button"
+              aria-label="Open home menu"
+              :aria-current="isHomeRoute ? 'page' : undefined"
+              :class="[
+                desktopNavItemClass,
+                isHomeRoute || isHomeMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+              ]"
+              @click="toggleHomeMenu"
+            >
+              <div class="flex items-center justify-center">
+                <IconsHome :size="20" />
+              </div>
+              <p class="hidden capitalize lg:flex">{{ homeHubLabel }}</p>
+              <Icon
+                name="heroicons:chevron-down-20-solid"
+                class="hidden w-5 h-5 lg:block"
+              />
+            </button>
 
-          <button
-            v-if="shouldShowEducationSwitch"
-            type="button"
-            :aria-label="switchProfileLabel"
-            :title="switchProfileLabel"
-            :class="[desktopNavItemClass, inactiveNavItemClass]"
-            @click="switchEducationProfile"
-          >
-            <div class="flex items-center justify-center">
-              <Icon name="heroicons:arrows-right-left-20-solid" class="w-5 h-5" />
+            <div
+              v-if="isHomeMenuOpen"
+              class="absolute left-0 z-30 w-52 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
+            >
+              <button
+                v-for="item in homeMenuItems"
+                :key="item.educationLevel"
+                type="button"
+                class="flex items-center justify-between w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-slate-700 hover:bg-slate-50"
+                :class="currentEducationLevel === item.educationLevel ? 'bg-slate-50 text-deepBlue' : ''"
+                @click="navigateToHomeHub(item.educationLevel)"
+              >
+                <span>{{ item.label }}</span>
+                <Icon
+                  v-if="currentEducationLevel === item.educationLevel"
+                  name="heroicons:check-20-solid"
+                  class="w-5 h-5"
+                />
+              </button>
             </div>
-            <p class="hidden capitalize lg:flex">{{ switchProfileShortLabel }}</p>
-          </button>
+          </div>
 
           <!-- TIE Library Books -->
           <a
@@ -482,32 +498,43 @@ onBeforeUnmount(() => {
           <!-- Profile and Sign Up and Home -->
           <div class="flex items-center justify-between w-full">
             <div class="flex">
-              <NuxtLink
-                aria-label="Go home"
-                :to="homeTarget"
-                :aria-current="isHomeRoute ? 'page' : undefined"
-                :class="[mobileNavItemClass, isHomeRoute ? activeNavItemClass : inactiveNavItemClass]"
-              >
-                <div class="flex items-center justify-center">
-                  <IconsHome :size="20" />
-                </div>
-                <p class="hidden capitalize lg:flex">
-                  {{ homeHubLabel }}
-                </p>
-              </NuxtLink>
+              <div class="relative">
+                <button
+                  type="button"
+                  aria-label="Open home menu"
+                  :aria-current="isHomeRoute ? 'page' : undefined"
+                  :class="[
+                    mobileNavItemClass,
+                    isHomeRoute || isHomeMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+                  ]"
+                  @click="toggleHomeMenu"
+                >
+                  <div class="flex items-center justify-center">
+                    <IconsHome :size="20" />
+                  </div>
+                </button>
 
-              <button
-                v-if="shouldShowEducationSwitch"
-                type="button"
-                :aria-label="switchProfileLabel"
-                :title="switchProfileLabel"
-                :class="[mobileNavItemClass, inactiveNavItemClass]"
-                @click="switchEducationProfile"
-              >
-                <div class="flex items-center justify-center">
-                  <Icon name="heroicons:arrows-right-left-20-solid" class="w-5 h-5" />
+                <div
+                  v-if="isHomeMenuOpen"
+                  class="absolute left-0 z-30 w-48 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
+                >
+                  <button
+                    v-for="item in homeMenuItems"
+                    :key="item.educationLevel"
+                    type="button"
+                    class="flex items-center justify-between w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-slate-700 hover:bg-slate-50"
+                    :class="currentEducationLevel === item.educationLevel ? 'bg-slate-50 text-deepBlue' : ''"
+                    @click="navigateToHomeHub(item.educationLevel)"
+                  >
+                    <span>{{ item.label }}</span>
+                    <Icon
+                      v-if="currentEducationLevel === item.educationLevel"
+                      name="heroicons:check-20-solid"
+                      class="w-5 h-5"
+                    />
+                  </button>
                 </div>
-              </button>
+              </div>
 
               <!-- TIE Library Books -->
               <a
