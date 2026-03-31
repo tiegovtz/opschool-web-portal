@@ -14,9 +14,11 @@ import {
 } from "~/utilities/educationRoute";
 
 const props = withDefaults(
-  defineProps<{educationLevel?:string,language?:LanguageSupport}>(),{
-    language:'english',
-})
+  defineProps<{ educationLevel?: string; language?: LanguageSupport }>(),
+  {
+    language: "english",
+  },
+);
 
 const userToken = useCookie<any>("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
@@ -31,21 +33,21 @@ const hubHeaderLang = useHubHeaderLanguage();
 const matchesPath = (path: string) =>
   route.path === path || route.path.startsWith(`${path}/`);
 
-const isHomeRoute = computed(() =>
-  route.path === "/" ||
-  matchesPath("/secondary") ||
-  matchesPath("/primary")
+const isHomeRoute = computed(
+  () =>
+    route.path === "/" || matchesPath("/secondary") || matchesPath("/primary"),
 );
 const isSmartClassRoute = computed(() => matchesPath("/smart-class"));
 const isLearningStatisticsRoute = computed(() =>
-  matchesPath("/profile/learning-statistics")
+  matchesPath("/profile/learning-statistics"),
 );
-const isAccountRoute = computed(() =>
-  route.path === "/profile" ||
-  (matchesPath("/profile") && !isLearningStatisticsRoute.value)
+const isAccountRoute = computed(
+  () =>
+    route.path === "/profile" ||
+    (matchesPath("/profile") && !isLearningStatisticsRoute.value),
 );
-const isAccountSectionRoute = computed(() =>
-  isAccountRoute.value || isLearningStatisticsRoute.value,
+const isAccountSectionRoute = computed(
+  () => isAccountRoute.value || isLearningStatisticsRoute.value,
 );
 
 const desktopNavItemClass =
@@ -65,13 +67,13 @@ const PROTECTED_RETURN_PREFIXES = [
 
 const shouldRememberCurrentRoute = () =>
   PROTECTED_RETURN_PREFIXES.some(
-    (prefix) => route.path === prefix || route.path.startsWith(prefix)
+    (prefix) => route.path === prefix || route.path.startsWith(prefix),
   );
 
 const showLogoutConfirm = ref(false);
 const showLogoutToast = ref(false);
-const logoutToastTimeout = ref<null|any>(null);
-const logoutAlert = ref<HTMLElement|null>(null);
+const logoutToastTimeout = ref<null | any>(null);
+const logoutAlert = ref<HTMLElement | null>(null);
 const isHomeMenuOpen = ref(false);
 const isAccountMenuOpen = ref(false);
 
@@ -148,7 +150,11 @@ const inferredRouteEducationLevel = computed(() => {
     return "secondary";
   }
 
-  if (String(route.params.level ?? "").toLowerCase().includes("darasa")) {
+  if (
+    String(route.params.level ?? "")
+      .toLowerCase()
+      .includes("darasa")
+  ) {
     return "primary";
   }
 
@@ -166,11 +172,17 @@ const currentEducationLevel = computed(() =>
     : inferredRouteEducationLevel.value,
 );
 
-const showPrimaryLanguageSwitch = computed(() =>
-  route.path === "/primary" ||
-  route.path.startsWith("/primary/") ||
-  String(route.params.level ?? "").toLowerCase().includes("darasa") ||
-  normalizeEducationLevel(route.query.educationLevel ?? route.query.edl, "secondary") === "primary",
+const showPrimaryLanguageSwitch = computed(
+  () =>
+    route.path === "/primary" ||
+    route.path.startsWith("/primary/") ||
+    String(route.params.level ?? "")
+      .toLowerCase()
+      .includes("darasa") ||
+    normalizeEducationLevel(
+      route.query.educationLevel ?? route.query.edl,
+      "secondary",
+    ) === "primary",
 );
 
 const activePrimaryLanguage = computed<LanguageSupport>(() =>
@@ -182,12 +194,12 @@ const activePrimaryLanguage = computed<LanguageSupport>(() =>
 const languageSwitchContent = computed(() =>
   props.language === "kiswahili"
     ? {
-        label: "Lugha",
+        // label: "Lugha",
         english: "English",
         kiswahili: "Kiswahili",
       }
     : {
-        label: "Language",
+        // label: "Language",
         english: "English",
         kiswahili: "Kiswahili",
       },
@@ -222,6 +234,12 @@ const setPrimaryLanguage = async (language: LanguageSupport) => {
     },
   });
 };
+
+const setPrimaryLanguageFromAccountMenu = async (language: LanguageSupport) => {
+  await setPrimaryLanguage(language);
+  closeAccountMenu();
+};
+
 const navigateToHomeHub = async (educationLevel: "primary" | "secondary") => {
   hubEducationLevel.value = educationLevel;
   hubHeaderLang.value = getHubLanguage(
@@ -279,19 +297,25 @@ watch(
 onBeforeUnmount(() => {
   if (logoutToastTimeout.value) clearTimeout(logoutToastTimeout.value);
 });
-
 </script>
 
 <template>
   <!-- Header -->
-  <header class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat" role="navigation">
+  <header
+    class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat"
+    role="navigation"
+  >
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
       <!-- Header -->
-      <included-upper-header class="w-full" :language />
-      <div class="w-full ">
+      <included-upper-header
+        class="w-full"
+        :language
+      />
+      <div class="w-full">
         <!-- Media Screen -->
         <div
-          class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container">
+          class="flex-col items-center hidden w-full gap-2 text-white md:flex md:flex-row bg-oceanBlue rounded-xs wrapper-container"
+        >
           <div class="relative">
             <button
               type="button"
@@ -299,7 +323,9 @@ onBeforeUnmount(() => {
               :aria-current="isHomeRoute ? 'page' : undefined"
               :class="[
                 desktopNavItemClass,
-                isHomeRoute || isHomeMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+                isHomeRoute || isHomeMenuOpen
+                  ? activeNavItemClass
+                  : inactiveNavItemClass,
               ]"
               @click="toggleHomeMenu"
             >
@@ -322,7 +348,11 @@ onBeforeUnmount(() => {
                 :key="item.educationLevel"
                 type="button"
                 class="flex items-center justify-between w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-slate-700 hover:bg-slate-50"
-                :class="currentEducationLevel === item.educationLevel ? 'bg-slate-50 text-deepBlue' : ''"
+                :class="
+                  currentEducationLevel === item.educationLevel
+                    ? 'bg-slate-50 text-deepBlue'
+                    : ''
+                "
                 @click="navigateToHomeHub(item.educationLevel)"
               >
                 <span>{{ item.label }}</span>
@@ -346,7 +376,9 @@ onBeforeUnmount(() => {
             <div class="flex items-center justify-center">
               <IconsTieLibrary :size="20" />
             </div>
-            <p class="hidden capitalize lg:flex">{{ language==='english' ? `TIE Library` :`Maktaba`}}</p>
+            <p class="hidden capitalize lg:flex">
+              {{ language === "english" ? `TIE Library` : `Maktaba` }}
+            </p>
           </a>
 
           <!-- Smart Class Hub -->
@@ -354,19 +386,36 @@ onBeforeUnmount(() => {
             to="/smart-class"
             aria-label="Go to Smart Class"
             :aria-current="isSmartClassRoute ? 'page' : undefined"
-            :class="[desktopNavItemClass, isSmartClassRoute ? activeNavItemClass : inactiveNavItemClass]"
+            :class="[
+              desktopNavItemClass,
+              isSmartClassRoute ? activeNavItemClass : inactiveNavItemClass,
+            ]"
           >
             <div class="flex items-center justify-center">
               <IconsSmartClassHub :size="20" />
             </div>
-            <p class="hidden capitalize lg:flex">{{ language==='english' ? `Smart class` :`Darasa janja`}}</p>
+            <p class="hidden capitalize lg:flex">
+              {{ language === "english" ? `Smart class` : `Darasa janja` }}
+            </p>
           </NuxtLink>
 
           <!-- title (TIE online public school) -->
-          <div class="flex-1" role="navigation">
-            <NuxtLink aria-label="Go home" to="/">
-              <p class="block text-center uppercase lg:text-large text-medium text-shadow">
-                {{ language==='english' ? `TIE online school` :`shule mtandao ya TET`}}
+          <div
+            class="flex-1"
+            role="navigation"
+          >
+            <NuxtLink
+              aria-label="Go home"
+              to="/"
+            >
+              <p
+                class="block text-center uppercase lg:text-large text-medium text-shadow"
+              >
+                {{
+                  language === "english"
+                    ? `TIE online school`
+                    : `shule mtandao ya TET`
+                }}
               </p>
             </NuxtLink>
           </div>
@@ -375,14 +424,20 @@ onBeforeUnmount(() => {
             v-if="showPrimaryLanguageSwitch"
             class="flex items-center gap-2 px-2"
           >
-            <span class="hidden text-xs uppercase lg:block text-white/80">
+            <!-- <span class="hidden text-xs uppercase lg:block text-white/80">
               {{ languageSwitchContent.label }}
-            </span>
-            <div class="flex overflow-hidden border rounded-full border-white/35 bg-white/10">
+            </span> -->
+            <div
+              class="flex overflow-hidden border rounded-full border-white/35 bg-white/10"
+            >
               <button
                 type="button"
                 class="px-3 py-1 text-xs font-medium transition-colors"
-                :class="activePrimaryLanguage === 'english' ? 'bg-white text-deepBlue' : 'text-white hover:bg-white/10'"
+                :class="
+                  activePrimaryLanguage === 'english'
+                    ? 'bg-white text-deepBlue'
+                    : 'text-white hover:bg-white/10'
+                "
                 @click="setPrimaryLanguage('english')"
               >
                 {{ languageSwitchContent.english }}
@@ -390,7 +445,11 @@ onBeforeUnmount(() => {
               <button
                 type="button"
                 class="px-3 py-1 text-xs font-medium transition-colors"
-                :class="activePrimaryLanguage === 'kiswahili' ? 'bg-white text-deepBlue' : 'text-white hover:bg-white/10'"
+                :class="
+                  activePrimaryLanguage === 'kiswahili'
+                    ? 'bg-white text-deepBlue'
+                    : 'text-white hover:bg-white/10'
+                "
                 @click="setPrimaryLanguage('kiswahili')"
               >
                 {{ languageSwitchContent.kiswahili }}
@@ -399,42 +458,63 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="subInfo">
-            <div class="flex items-center gap-4 p-2" v-if="!userToken">
+            <div
+              class="flex items-center gap-4 p-2"
+              v-if="!userToken"
+            >
               <!-- sign in -->
-              <NuxtLink aria-label="go to sign in page" :to="authSignInTo" title="Sign in"
-                class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
+              <NuxtLink
+                aria-label="go to sign in page"
+                :to="authSignInTo"
+                title="Sign in"
+                class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
+              >
                 <IconsSignIn :size="20" />
                 <p class="hidden capitalize lg:flex">
-                   {{ language==='english' ? `Sign in` :`Ingia`}}
-                  </p>
+                  {{ language === "english" ? `Sign in` : `Ingia` }}
+                </p>
               </NuxtLink>
 
               <!-- sign up -->
-              <NuxtLink aria-label="Go to sign up page" :to="authSignUpTo" title="Sign Up"
-                class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8">
+              <NuxtLink
+                aria-label="Go to sign up page"
+                :to="authSignUpTo"
+                title="Sign Up"
+                class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
+              >
                 <IconsProfileCircle :size="24" />
                 <p class="hidden capitalize lg:flex">
-                   {{ language==='english' ? `Create Account` :`Jisajili`}}
-                  </p>
+                  {{ language === "english" ? `Create Account` : `Jisajili` }}
+                </p>
               </NuxtLink>
             </div>
 
-            <div v-else class="relative px-2 py-1">
+            <div
+              v-else
+              class="relative px-2 py-1"
+            >
               <button
                 aria-label="Open account menu"
                 :aria-current="isAccountSectionRoute ? 'page' : undefined"
                 :class="[
                   desktopNavItemClass,
-                  isAccountSectionRoute || isAccountMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+                  isAccountSectionRoute || isAccountMenuOpen
+                    ? activeNavItemClass
+                    : inactiveNavItemClass,
                 ]"
                 @click="toggleAccountMenu"
               >
                 <div
-                  v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''"
+                  v-if="
+                    userToken?.profilePic &&
+                    userToken?.profilePic?.trim() !== ''
+                  "
                   class="w-8 h-8 overflow-hidden rounded-full ring-2 ring-white/30"
                 >
                   <img
-                    :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic"
+                    :src="
+                      apiDocs.baseURL.replace('v1', '') + userToken?.profilePic
+                    "
                     alt="User Profile"
                     class="object-cover w-full h-full rounded-full"
                   />
@@ -445,8 +525,10 @@ onBeforeUnmount(() => {
                 >
                   <IconsProfileCircle :size="20" />
                 </div>
-                <p class="hidden capitalize lg:flex text-medium line-clamp-1 max-w-40">
-                  {{ language==='english' ? `Account` :`Akaunti`}}
+                <p
+                  class="hidden capitalize lg:flex text-medium line-clamp-1 max-w-40"
+                >
+                  {{ language === "english" ? `Account` : `Akaunti` }}
                 </p>
                 <Icon
                   name="heroicons:chevron-down-20-solid"
@@ -464,8 +546,15 @@ onBeforeUnmount(() => {
                   class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
                   @click="closeAccountMenu"
                 >
-                  <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
-                  <span>{{ language==='english' ? `Learning statistics` :`Takwimu za ujifunzaji`}}</span>
+                  <Icon
+                    name="heroicons:chart-bar-square-20-solid"
+                    class="w-5 h-5"
+                  />
+                  <span>{{
+                    language === "english"
+                      ? `Learning statistics`
+                      : `Takwimu za ujifunzaji`
+                  }}</span>
                 </NuxtLink>
 
                 <NuxtLink
@@ -475,7 +564,9 @@ onBeforeUnmount(() => {
                   @click="closeAccountMenu"
                 >
                   <IconsProfileCircle :size="20" />
-                  <span>{{ language==='english' ? `Profile` :`Wasifu`}}</span>
+                  <span>{{
+                    language === "english" ? `Profile` : `Wasifu`
+                  }}</span>
                 </NuxtLink>
 
                 <button
@@ -483,8 +574,13 @@ onBeforeUnmount(() => {
                   class="flex items-center w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-rose-700 hover:bg-rose-50"
                   @click="openLogoutConfirmFromMenu"
                 >
-                  <IconsLogout :size="20" title="Sign out" />
-                  <span>{{ language==='english' ? `Logout` :`Ondoka`}}</span>
+                  <IconsLogout
+                    :size="20"
+                    title="Sign out"
+                  />
+                  <span>{{
+                    language === "english" ? `Logout` : `Ondoka`
+                  }}</span>
                 </button>
               </div>
             </div>
@@ -492,7 +588,9 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Mobile Menu -->
-        <div class="flex flex-col items-center w-full text-white md:hidden md:flex-row bg-oceanBlue rounded-b-md">
+        <div
+          class="flex flex-col items-center w-full text-white md:hidden md:flex-row bg-oceanBlue rounded-b-md"
+        >
           <!-- Profile and Sign Up and Home -->
           <div class="flex items-center justify-between w-full">
             <div class="flex">
@@ -503,7 +601,9 @@ onBeforeUnmount(() => {
                   :aria-current="isHomeRoute ? 'page' : undefined"
                   :class="[
                     mobileNavItemClass,
-                    isHomeRoute || isHomeMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+                    isHomeRoute || isHomeMenuOpen
+                      ? activeNavItemClass
+                      : inactiveNavItemClass,
                   ]"
                   @click="toggleHomeMenu"
                 >
@@ -521,7 +621,11 @@ onBeforeUnmount(() => {
                     :key="item.educationLevel"
                     type="button"
                     class="flex items-center justify-between w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-slate-700 hover:bg-slate-50"
-                    :class="currentEducationLevel === item.educationLevel ? 'bg-slate-50 text-deepBlue' : ''"
+                    :class="
+                      currentEducationLevel === item.educationLevel
+                        ? 'bg-slate-50 text-deepBlue'
+                        : ''
+                    "
                     @click="navigateToHomeHub(item.educationLevel)"
                   >
                     <span>{{ item.label }}</span>
@@ -550,19 +654,27 @@ onBeforeUnmount(() => {
                 to="/smart-class"
                 aria-label="Go to Smart Class"
                 :aria-current="isSmartClassRoute ? 'page' : undefined"
-                :class="[mobileNavItemClass, isSmartClassRoute ? activeNavItemClass : inactiveNavItemClass]"
+                :class="[
+                  mobileNavItemClass,
+                  isSmartClassRoute ? activeNavItemClass : inactiveNavItemClass,
+                ]"
               >
                 <div class="flex items-center justify-center">
                   <IconsSmartClassHub :size="20" />
                 </div>
               </NuxtLink>
-
             </div>
 
             <!-- Paragraph Text -->
             <NuxtLink to="/">
-              <p class="block text-center uppercase lg:text-large text-[14px] text-shadow">
-                 {{ language==='english' ? `TIE online school` :`shule mtandao ya TIE`}}
+              <p
+                class="block text-center uppercase lg:text-large text-[14px] text-shadow"
+              >
+                {{
+                  language === "english"
+                    ? `TIE online school`
+                    : `shule mtandao ya TIE`
+                }}
               </p>
             </NuxtLink>
 
@@ -574,35 +686,90 @@ onBeforeUnmount(() => {
                   :aria-current="isAccountSectionRoute ? 'page' : undefined"
                   :class="[
                     mobileNavItemClass,
-                    isAccountSectionRoute || isAccountMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+                    isAccountSectionRoute || isAccountMenuOpen
+                      ? activeNavItemClass
+                      : inactiveNavItemClass,
                   ]"
                   @click="toggleAccountMenu"
                 >
                   <div
-                    v-if="userToken?.profilePic && userToken?.profilePic?.trim() !== ''"
+                    v-if="
+                      userToken?.profilePic &&
+                      userToken?.profilePic?.trim() !== ''
+                    "
                     class="w-8 h-8 overflow-hidden rounded-full ring-2 ring-white/30"
                   >
                     <img
-                      :src="apiDocs.baseURL.replace('v1', '') + userToken?.profilePic"
+                      :src="
+                        apiDocs.baseURL.replace('v1', '') +
+                        userToken?.profilePic
+                      "
                       alt="User Profile"
                       class="object-cover w-full h-full rounded-full"
                     />
                   </div>
-                  <IconsProfileCircle v-else :size="22" />
+                  <IconsProfileCircle
+                    v-else
+                    :size="22"
+                  />
                 </button>
 
                 <div
                   v-if="isAccountMenuOpen"
                   class="absolute right-0 z-30 w-48 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
                 >
+                  <div
+                    v-if="showPrimaryLanguageSwitch"
+                    class="px-4 py-3 border-b border-slate-200"
+                  >
+                    <!-- <p class="mb-2 text-xs font-semibold tracking-wide uppercase text-slate-500">
+                      {{ languageSwitchContent.label }}
+                    </p> -->
+                    <div
+                      class="flex overflow-hidden border rounded-full border-slate-200 bg-slate-50"
+                    >
+                      <button
+                        type="button"
+                        class="flex-1 px-3 py-1.5 text-xs font-medium transition-colors"
+                        :class="
+                          activePrimaryLanguage === 'english'
+                            ? 'bg-deepBlue text-white'
+                            : 'text-slate-700 hover:bg-slate-100'
+                        "
+                        @click="setPrimaryLanguageFromAccountMenu('english')"
+                      >
+                        {{ languageSwitchContent.english }}
+                      </button>
+                      <button
+                        type="button"
+                        class="flex-1 px-3 py-1.5 text-xs font-medium transition-colors"
+                        :class="
+                          activePrimaryLanguage === 'kiswahili'
+                            ? 'bg-deepBlue text-white'
+                            : 'text-slate-700 hover:bg-slate-100'
+                        "
+                        @click="setPrimaryLanguageFromAccountMenu('kiswahili')"
+                      >
+                        {{ languageSwitchContent.kiswahili }}
+                      </button>
+                    </div>
+                  </div>
+
                   <NuxtLink
                     aria-label="Go to learning statistics page"
                     to="/profile/learning-statistics"
                     class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
                     @click="closeAccountMenu"
                   >
-                    <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
-                    <span>{{ language==='english' ? `Learning statistics` :`Takwimu za ujifunzaji`}}</span>
+                    <Icon
+                      name="heroicons:chart-bar-square-20-solid"
+                      class="w-5 h-5"
+                    />
+                    <span>{{
+                      language === "english"
+                        ? `Learning statistics`
+                        : `Takwimu za ujifunzaji`
+                    }}</span>
                   </NuxtLink>
 
                   <NuxtLink
@@ -612,7 +779,9 @@ onBeforeUnmount(() => {
                     @click="closeAccountMenu"
                   >
                     <IconsProfileCircle :size="20" />
-                    <span>{{ language==='english' ? `Profile` :`Wasifu`}}</span>
+                    <span>{{
+                      language === "english" ? `Profile` : `Wasifu`
+                    }}</span>
                   </NuxtLink>
 
                   <button
@@ -620,54 +789,50 @@ onBeforeUnmount(() => {
                     class="flex items-center w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-rose-700 hover:bg-rose-50"
                     @click="openLogoutConfirmFromMenu"
                   >
-                    <IconsLogout :size="20" title="Sign out" />
-                    <span>{{ language==='english' ? `Logout` :`Ondoka`}}</span>
+                    <IconsLogout
+                      :size="20"
+                      title="Sign out"
+                    />
+                    <span>{{
+                      language === "english" ? `Logout` : `Ondoka`
+                    }}</span>
                   </button>
                 </div>
               </div>
 
-              <div v-else class="flex items-center">
-                <NuxtLink :to="authSignUpTo" title="Sign Up"
-                  class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
+              <div
+                v-else
+                class="flex items-center"
+              >
+                <NuxtLink
+                  :to="authSignUpTo"
+                  title="Sign Up"
+                  class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8"
+                >
                   <IconsProfileCircle :size="20" />
                 </NuxtLink>
 
-                <NuxtLink aria-label="go to sign in page" :to="authSignInTo" title="Sign in"
-                  class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8">
-                  <IconsSignIn :size="20" class="" />
+                <NuxtLink
+                  aria-label="go to sign in page"
+                  :to="authSignInTo"
+                  title="Sign in"
+                  class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8"
+                >
+                  <IconsSignIn
+                    :size="20"
+                    class=""
+                  />
                 </NuxtLink>
               </div>
             </div>
           </div>
-
-          <div
-            v-if="showPrimaryLanguageSwitch"
-            class="flex items-center justify-center w-full gap-2 px-3 pb-2"
-          >
-            <span class="text-[11px] uppercase text-white/80">
-              {{ languageSwitchContent.label }}
-            </span>
-            <div class="flex overflow-hidden border rounded-full border-white/35 bg-white/10">
-              <button
-                type="button"
-                class="px-3 py-1 text-xs font-medium transition-colors"
-                :class="activePrimaryLanguage === 'english' ? 'bg-white text-deepBlue' : 'text-white hover:bg-white/10'"
-                @click="setPrimaryLanguage('english')"
-              >
-                {{ languageSwitchContent.english }}
-              </button>
-              <button
-                type="button"
-                class="px-3 py-1 text-xs font-medium transition-colors"
-                :class="activePrimaryLanguage === 'kiswahili' ? 'bg-white text-deepBlue' : 'text-white hover:bg-white/10'"
-                @click="setPrimaryLanguage('kiswahili')"
-              >
-                {{ languageSwitchContent.kiswahili }}
-              </button>
-            </div>
-          </div>
         </div>
-        <div ref="logoutAlert" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
+        <div
+          ref="logoutAlert"
+          aria-live="assertive"
+          aria-atomic="true"
+          class="sr-only"
+        ></div>
       </div>
     </nav>
 
@@ -702,7 +867,9 @@ onBeforeUnmount(() => {
 <style scoped>
 .toast-enter-active,
 .toast-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 .toast-enter-from,
 .toast-leave-to {
