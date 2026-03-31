@@ -482,11 +482,11 @@ onMounted(() => {
     <div
       class="w-full overflow-hidden bg-white border shadow-sm rounded-3xl border-slate-200"
     >
-      <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
+      <div class="px-5 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue sm:px-6">
         <h3 class="text-lg font-semibold text-white">Learning Statistics</h3>
       </div>
       <div
-        class="grid w-full grid-cols-1 gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5"
+        class="grid w-full grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
       >
         <LearningMetricCard
           label="Competences Opened"
@@ -531,7 +531,7 @@ onMounted(() => {
 
       <div
         v-if="recommendationStatus === 'pending'"
-        class="p-6 space-y-4 bg-[#f8fbfd]"
+        class="space-y-4 bg-[#f8fbfd] p-4 sm:p-5 lg:p-6"
       >
         <div class="w-2/3 h-4 rounded bg-slate-200 animate-pulse"></div>
         <div class="w-full h-40 rounded-3xl bg-slate-100 animate-pulse"></div>
@@ -541,7 +541,7 @@ onMounted(() => {
 
       <div
         v-else-if="recommendationError"
-        class="p-6 bg-[#f8fbfd]"
+        class="bg-[#f8fbfd] p-4 sm:p-5 lg:p-6"
       >
         <div
           class="p-4 border border-amber-200 rounded-2xl bg-amber-50 text-amber-900"
@@ -558,7 +558,7 @@ onMounted(() => {
 
       <div
         v-else-if="!recommendationOverview && recommendationCards.length === 0"
-        class="p-6 bg-[#f8fbfd]"
+        class="bg-[#f8fbfd] p-4 sm:p-5 lg:p-6"
       >
         <div class="p-5 border border-emerald-100 rounded-3xl bg-emerald-50/80">
           <p class="font-medium text-emerald-900">
@@ -576,9 +576,9 @@ onMounted(() => {
 
       <div
         v-else
-        class="p-6 space-y-5 bg-[#f8fbfd]"
+        class="space-y-5 bg-[#f8fbfd] p-4 sm:p-5 lg:p-6"
       >
-        <div class="p-5 border border-sky-100 rounded-3xl bg-white shadow-sm">
+        <div class="border border-sky-100 rounded-3xl bg-white p-4 shadow-sm sm:p-5">
           <p class="text-sm leading-6 text-slate-700">
             {{ personalizedRecommendations?.summary }}
           </p>
@@ -592,7 +592,7 @@ onMounted(() => {
 
         <section
           v-if="hasSnapshotAnalytics"
-          class="p-5 bg-white border rounded-3xl border-slate-200 shadow-sm"
+          class="border rounded-3xl border-slate-200 bg-white p-4 shadow-sm sm:p-5"
         >
           <div
             class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between"
@@ -629,7 +629,7 @@ onMounted(() => {
               comparisonStatus === 'loading' ||
               progressSummaryStatus === 'loading'
             "
-            class="grid gap-3 mt-5 md:grid-cols-3 xl:grid-cols-5"
+            class="grid gap-3 mt-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
           >
             <div
               v-for="index in 5"
@@ -662,7 +662,7 @@ onMounted(() => {
           >
             <div
               v-if="recommendationProgressSummary"
-              class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+              class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
             >
               <div class="p-4 rounded-3xl bg-slate-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
@@ -714,7 +714,7 @@ onMounted(() => {
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   Average Progress
                 </p>
-                <div class="grid grid-cols-3 gap-2 mt-3 text-sm">
+                <div class="grid gap-2 mt-3 text-sm sm:grid-cols-3">
                   <div>
                     <p class="text-slate-500">Before</p>
                     <p class="font-semibold text-slate-900">
@@ -766,7 +766,7 @@ onMounted(() => {
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   Assessment Average
                 </p>
-                <div class="grid grid-cols-3 gap-2 mt-3 text-sm">
+                <div class="grid gap-2 mt-3 text-sm sm:grid-cols-3">
                   <div>
                     <p class="text-slate-500">Before</p>
                     <p class="font-semibold text-slate-900">
@@ -818,7 +818,7 @@ onMounted(() => {
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   Quiz Attempts
                 </p>
-                <div class="grid grid-cols-3 gap-2 mt-3 text-sm">
+                <div class="grid gap-2 mt-3 text-sm sm:grid-cols-3">
                   <div>
                     <p class="text-slate-500">Before</p>
                     <p class="font-semibold text-slate-900">
@@ -867,7 +867,7 @@ onMounted(() => {
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   Covered / Failed Topics
                 </p>
-                <div class="grid grid-cols-2 gap-4 mt-3 text-sm">
+                <div class="grid gap-3 mt-3 text-sm sm:grid-cols-2">
                   <div>
                     <p class="text-slate-500">Covered delta</p>
                     <p
@@ -911,7 +911,7 @@ onMounted(() => {
         </section>
 
         <section
-          class="p-5 bg-white border rounded-3xl border-slate-200 shadow-sm"
+          class="border rounded-3xl border-slate-200 bg-white p-4 shadow-sm sm:p-5"
         >
           <div
             class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between"
@@ -927,12 +927,12 @@ onMounted(() => {
               </p>
             </div>
 
-            <div class="flex flex-wrap gap-2">
+            <div class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
               <button
                 v-for="prompt in talkToDataPrompts"
                 :key="prompt"
                 type="button"
-                class="px-3 py-2 text-xs font-medium transition-colors border rounded-full border-oceanBlue/15 bg-oceanBlue/5 text-oceanBlue hover:bg-oceanBlue/10"
+                class="shrink-0 rounded-full border border-oceanBlue/15 bg-oceanBlue/5 px-3 py-2 text-xs font-medium text-oceanBlue transition-colors hover:bg-oceanBlue/10"
                 @click="askTalkToData(prompt)"
               >
                 {{ prompt }}
@@ -965,7 +965,7 @@ onMounted(() => {
 
               <button
                 type="button"
-                class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40 disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl sm:w-auto bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40 disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="talkToDataStatus === 'loading'"
                 @click="askTalkToData()"
               >
@@ -1145,7 +1145,7 @@ onMounted(() => {
             <div class="flex flex-col gap-3 sm:flex-row">
               <NuxtLink
                 :to="recommendation.revisitPath"
-                class="inline-flex items-center justify-center gap-2 px-4 py-3 font-semibold transition-colors border rounded-xl border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5"
+                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold transition-colors border rounded-xl sm:w-auto border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5"
               >
                 <Icon
                   name="heroicons:play-circle"
@@ -1156,7 +1156,7 @@ onMounted(() => {
 
               <button
                 type="button"
-                class="inline-flex items-center justify-center gap-2 px-4 py-3 font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
+                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold text-white transition-colors rounded-xl sm:w-auto bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
                 @click="openAiTeacherWithPrompt(recommendation.seedPrompt)"
               >
                 <Icon
@@ -1175,13 +1175,13 @@ onMounted(() => {
       v-if="profileData?.recentTopics?.length > 0"
       class="w-full overflow-hidden bg-white border shadow-sm rounded-3xl border-slate-200"
     >
-      <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
+      <div class="px-5 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue sm:px-6">
         <h3 class="text-lg font-semibold text-white">
           Learning Topics Statistics
         </h3>
       </div>
       <div
-        class="grid w-full grid-cols-2 gap-2 p-4 md:grid-cols-3 xl:grid-cols-5"
+        class="grid w-full grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
       >
         <HomeTopicCard
           v-for="topic in profileData.recentTopics"
@@ -1215,11 +1215,11 @@ onMounted(() => {
       <Transition name="fade">
         <div
           v-if="selectedTopicImprovement"
-          class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 px-4"
+          class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 px-4 py-6"
           @click.self="closeTopicImprovement()"
         >
           <div
-            class="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl"
+            class="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl max-h-[90vh]"
           >
             <div
               class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-200"
@@ -1244,7 +1244,7 @@ onMounted(() => {
               </button>
             </div>
 
-            <div class="px-6 py-5 space-y-5">
+            <div class="space-y-5 overflow-y-auto px-4 py-5 sm:px-6">
               <div class="flex flex-wrap items-center gap-2">
                 <span
                   class="px-2.5 py-1 text-xs font-medium rounded-full"

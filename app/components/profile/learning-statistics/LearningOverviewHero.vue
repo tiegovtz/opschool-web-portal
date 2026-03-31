@@ -61,25 +61,25 @@ const assessmentTotal = computed(
 </script>
 
 <template>
-  <section class="relative overflow-hidden border shadow-sm rounded-[32px] border-slate-200 bg-[linear-gradient(135deg,#f8fbff_0%,#ffffff_45%,#f7fafc_100%)]">
+  <section class="relative overflow-hidden border shadow-sm rounded-[28px] border-slate-200 bg-[linear-gradient(135deg,#f8fbff_0%,#ffffff_45%,#f7fafc_100%)] sm:rounded-[32px]">
     <div class="absolute rounded-full -top-12 right-8 h-44 w-44 bg-sky-100/50 blur-3xl"></div>
     <div class="absolute rounded-full bottom-0 left-10 h-32 w-32 bg-emerald-100/40 blur-3xl"></div>
 
-    <div class="relative p-6 lg:p-7">
-      <div class="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(22rem,0.85fr)] xl:items-start">
+    <div class="relative p-4 sm:p-5 lg:p-7">
+      <div class="grid gap-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(19rem,0.92fr)] lg:items-start">
         <div>
-          <p class="text-xs font-semibold tracking-[0.3em] uppercase text-oceanBlue">
+          <p class="text-[11px] font-semibold tracking-[0.3em] uppercase text-oceanBlue sm:text-xs">
             Learning Pulse
           </p>
-          <h4 class="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
+          <h4 class="mt-3 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
             Visual overview of syllabus coverage and quiz health
           </h4>
-          <p class="mt-3 text-sm leading-7 text-slate-600">
+          <p class="mt-3 text-sm leading-6 text-slate-600 sm:leading-7">
             This view compresses topic coverage, active work, and assessment performance
             into a faster scan than the old number-first layout.
           </p>
 
-          <div class="flex flex-wrap gap-2 mt-5">
+          <div class="mt-4 flex flex-wrap gap-2 sm:mt-5">
             <span class="px-3 py-1.5 text-xs font-medium rounded-full bg-white/90 text-slate-700 shadow-sm">
               Tracked topics {{ topicCount }}
             </span>
@@ -92,7 +92,7 @@ const assessmentTotal = computed(
           </div>
         </div>
 
-        <div class="flex flex-col gap-4">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
           <LearningProgressRing
             label="Overall progress"
             :value="overview.averageProgress"
@@ -108,9 +108,9 @@ const assessmentTotal = computed(
         </div>
       </div>
 
-      <div class="grid gap-4 mt-6 xl:grid-cols-2">
-        <article class="p-5 bg-white/90 border rounded-3xl border-white shadow-sm">
-          <div class="grid gap-5 lg:grid-cols-[minmax(11rem,0.7fr)_minmax(0,1fr)] lg:items-center">
+      <div class="grid gap-4 mt-5 lg:mt-6 xl:grid-cols-2">
+        <article class="border rounded-3xl border-white bg-white/90 p-4 shadow-sm sm:p-5">
+          <div class="grid gap-4 md:grid-cols-[minmax(10rem,0.68fr)_minmax(0,1fr)] md:items-center sm:gap-5">
             <LearningDonutChart
               :segments="[
                 {
@@ -140,7 +140,7 @@ const assessmentTotal = computed(
                 :segments="topicSegments"
                 :total="overview.totalTopics"
               />
-              <p class="mt-4 text-sm leading-6 text-slate-600">
+              <p class="mt-3 text-sm leading-6 text-slate-600 sm:mt-4">
                 {{ overview.coveredTopics }}/{{ overview.totalTopics }} topics are already covered,
                 while {{ activeTopics }} are still in motion.
               </p>
@@ -148,8 +148,8 @@ const assessmentTotal = computed(
           </div>
         </article>
 
-        <article class="p-5 bg-white/90 border rounded-3xl border-white shadow-sm">
-          <div class="grid gap-5 lg:grid-cols-[minmax(11rem,0.7fr)_minmax(0,1fr)] lg:items-center">
+        <article class="border rounded-3xl border-white bg-white/90 p-4 shadow-sm sm:p-5">
+          <div class="grid gap-4 md:grid-cols-[minmax(10rem,0.68fr)_minmax(0,1fr)] md:items-center sm:gap-5">
             <LearningDonutChart
               :segments="[
                 {
@@ -175,13 +175,14 @@ const assessmentTotal = computed(
                 :total="assessmentTotal"
               />
 
-              <div class="flex gap-4 flex-col">
+              <div class="grid gap-3 sm:grid-cols-2">
                 <LearningMetricCard
                   label="Coverage depth"
                   :value="coveredRatioLabel"
                   helper="Covered topics out of all tracked topics."
                   icon="heroicons:academic-cap-20-solid"
                   icon-wrapper-class="bg-emerald-100 text-emerald-700"
+                  card-class="h-full"
                 />
                 <LearningMetricCard
                   label="Active topics"
@@ -189,6 +190,7 @@ const assessmentTotal = computed(
                   helper="Topics opened or in active progress."
                   icon="heroicons:bolt-20-solid"
                   icon-wrapper-class="bg-sky-100 text-sky-700"
+                  card-class="h-full"
                 />
               </div>
             </div>

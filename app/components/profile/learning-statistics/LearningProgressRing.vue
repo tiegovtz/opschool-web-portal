@@ -72,14 +72,14 @@ const palette = computed(() => {
 </script>
 
 <template>
-  <article class="p-4 bg-white/80 border rounded-3xl border-white/60 shadow-sm">
-    <div class="flex items-center gap-4">
+  <article class="p-4 bg-white/80 border rounded-3xl border-white/60 shadow-sm sm:p-5">
+    <div class="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:text-left">
       <div
-        class="relative flex items-center justify-center w-28 h-28 rounded-full"
+        class="relative flex items-center justify-center w-24 h-24 rounded-full sm:w-28 sm:h-28"
         :class="palette.halo"
       >
         <svg
-          class="w-24 h-24 -rotate-90"
+          class="w-20 h-20 -rotate-90 sm:w-24 sm:h-24"
           viewBox="0 0 100 100"
           aria-hidden="true"
         >

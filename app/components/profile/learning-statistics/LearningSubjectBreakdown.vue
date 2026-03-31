@@ -132,6 +132,14 @@ const getSubjectPriorityTopics = (subject: SubjectLearningAnalysis) =>
     .slice(0, 3)
     .map((topic) => topic.topicName);
 
+const getSubjectPrioritySummary = (subject: SubjectLearningAnalysis) => {
+  const topics = getSubjectPriorityTopics(subject);
+  return topics.length > 0 ? topics.join(", ") : "No urgent topic gaps";
+};
+
+const getSubjectActiveTopics = (subject: SubjectLearningAnalysis) =>
+  subject.inProgressTopics + subject.openedTopics;
+
 const isSubjectTopicListExpanded = (subjectName: string) =>
   Boolean(expandedSubjectTopics.value[subjectName]);
 
@@ -153,14 +161,14 @@ const getSubjectTopicsForDisplay = (subject: SubjectLearningAnalysis) => {
 const getSubjectHealthLabel = (subject: SubjectLearningAnalysis) => {
   if (subject.failedTopics > 0) return "Needs recovery";
   if (subject.notStartedTopics > 0) return "Coverage gaps";
-  if (subject.inProgressTopics + subject.openedTopics > 0) return "Building momentum";
+  if (getSubjectActiveTopics(subject) > 0) return "Building momentum";
   return "Stable";
 };
 
 const getSubjectHealthClass = (subject: SubjectLearningAnalysis) => {
   if (subject.failedTopics > 0) return "bg-rose-100 text-rose-800";
   if (subject.notStartedTopics > 0) return "bg-amber-100 text-amber-800";
-  if (subject.inProgressTopics + subject.openedTopics > 0) {
+  if (getSubjectActiveTopics(subject) > 0) {
     return "bg-sky-100 text-sky-800";
   }
   return "bg-emerald-100 text-emerald-800";
@@ -223,7 +231,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
   },
   {
     label: "Active",
-    value: subject.inProgressTopics + subject.openedTopics,
+    value: getSubjectActiveTopics(subject),
     colorClass: "bg-sky-500",
     badgeClass: "bg-sky-50 text-sky-700",
   },
@@ -261,9 +269,9 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
       class="overflow-hidden bg-white border rounded-[28px] border-slate-200 shadow-sm group"
     >
       <summary
-        class="flex flex-col gap-5 p-5 list-none cursor-pointer xl:flex-row xl:items-start xl:justify-between"
+        class="flex flex-col gap-4 p-4 list-none cursor-pointer sm:p-5 lg:flex-row lg:items-start lg:justify-between lg:gap-5"
       >
-        <div class="min-w-0 xl:max-w-sm">
+        <div class="min-w-0 lg:max-w-xs xl:max-w-sm">
           <div class="flex flex-wrap items-center gap-2">
             <h5 class="text-lg font-semibold tracking-tight text-slate-900">
               {{ subject.subjectName }}
@@ -288,20 +296,18 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
             }}
           </p>
 
-          <p class="mt-3 text-xs leading-6 text-slate-500">
+          <p class="hidden mt-3 text-xs leading-6 text-slate-500 sm:block">
             Priority topics:
             <span class="font-medium text-slate-700">
-              {{
-                getSubjectPriorityTopics(subject).join(", ") || "No urgent topic gaps"
-              }}
+              {{ getSubjectPrioritySummary(subject) }}
             </span>
           </p>
         </div>
 
-        <div class="w-full xl:flex-1 space-y-4">
-          <div class="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(13rem,0.8fr)]">
+        <div class="w-full space-y-3 sm:space-y-4 lg:flex-1">
+          <div class="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(14rem,0.85fr)]">
             <article class="p-4 border rounded-3xl border-slate-100 bg-slate-50/80">
-              <div class="grid gap-4 md:grid-cols-[minmax(10rem,0.7fr)_minmax(0,1fr)] md:items-center">
+              <div class="grid gap-4 sm:grid-cols-[minmax(9rem,0.72fr)_minmax(0,1fr)] sm:items-center">
                 <LearningDonutChart
                   :segments="[
                     {
@@ -311,7 +317,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
                     },
                     {
                       label: 'Active',
-                      value: subject.inProgressTopics + subject.openedTopics,
+                      value: getSubjectActiveTopics(subject),
                       strokeClass: 'stroke-sky-500',
                     },
                     {
@@ -323,7 +329,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
                   :total="subject.totalTopics"
                   :center-primary="`${subject.coveredTopics}/${subject.totalTopics}`"
                   center-secondary="covered"
-                  :size="156"
+                  :size="148"
                   :thickness="14"
                 />
 
@@ -334,14 +340,14 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
                     :total="subject.totalTopics"
                   />
                   <p class="mt-4 text-xs leading-6 text-slate-500">
-                    Active work is concentrated in {{ subject.inProgressTopics + subject.openedTopics }}
+                    Active work is concentrated in {{ getSubjectActiveTopics(subject) }}
                     topics right now.
                   </p>
                 </div>
               </div>
             </article>
 
-            <div class="grid gap-3 sm:grid-cols-2">
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
               <article class="p-4 border rounded-3xl border-slate-100 bg-slate-50/80">
                 <p class="text-xs font-semibold tracking-[0.24em] uppercase text-slate-500">
                   Subject progress
@@ -375,20 +381,20 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
             </div>
           </div>
 
-          <div class="flex items-center justify-between gap-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex flex-wrap gap-2 text-xs text-slate-600">
               <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">
                 Covered {{ subject.coveredTopics }}
               </span>
               <span class="px-2.5 py-1 rounded-full bg-sky-50 text-sky-700">
-                In progress {{ subject.inProgressTopics + subject.openedTopics }}
+                In progress {{ getSubjectActiveTopics(subject) }}
               </span>
               <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
                 Not started {{ subject.notStartedTopics }}
               </span>
             </div>
 
-            <div class="flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-500 transition-transform duration-300 group-open:rotate-180">
+            <div class="flex items-center justify-center self-end w-10 h-10 rounded-full bg-slate-100 text-slate-500 transition-transform duration-300 sm:self-auto group-open:rotate-180">
               <Icon
                 name="heroicons:chevron-down-20-solid"
                 class="w-5 h-5"
@@ -398,7 +404,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
         </div>
       </summary>
 
-      <div class="px-5 pb-5 border-t border-slate-100 bg-slate-50/70">
+      <div class="border-t border-slate-100 bg-slate-50/70 px-4 pb-4 sm:px-5 sm:pb-5">
         <div class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p class="text-xs text-slate-500">
             Showing topic-level details for {{ subject.subjectName }}.
@@ -412,7 +418,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
           <button
             v-if="subject.topics.length > 5"
             type="button"
-            class="inline-flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold transition-colors border rounded-full border-slate-200 bg-white text-slate-700 hover:border-oceanBlue/20 hover:text-oceanBlue"
+            class="inline-flex items-center justify-center w-full gap-2 px-3 py-2 text-xs font-semibold transition-colors border rounded-full sm:w-auto border-slate-200 bg-white text-slate-700 hover:border-oceanBlue/20 hover:text-oceanBlue"
             @click.stop="toggleSubjectTopicList(subject.subjectName)"
           >
             <Icon
@@ -433,7 +439,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
           </button>
         </div>
 
-        <div class="space-y-3 max-h-[32rem] overflow-y-auto pr-1">
+        <div class="space-y-3 md:max-h-[32rem] md:overflow-y-auto md:pr-1">
           <article
             v-for="topic in getSubjectTopicsForDisplay(subject)"
             :key="topic.topicId"
@@ -541,10 +547,10 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
               </div>
             </div>
 
-            <div class="flex flex-col gap-3 sm:flex-row">
+            <div class="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
               <NuxtLink
                 :to="topic.revisitPath"
-                class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors border rounded-xl border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5"
+                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold transition-colors border rounded-xl sm:w-auto border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5"
               >
                 <Icon
                   name="heroicons:play-circle"
@@ -555,7 +561,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
 
               <button
                 type="button"
-                class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
+                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl sm:w-auto bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
                 @click="emit('open-ai', buildTopicAnalysisPrompt(topic))"
               >
                 <Icon
