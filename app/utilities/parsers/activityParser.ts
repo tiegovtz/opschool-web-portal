@@ -2,48 +2,33 @@ import { activityPopupId, experimrntUrl } from "../controlls";
 
 const activityParser = (query: string): string => {
   const source = String(query || "");
-  /**
-   * Regular expression pattern that matches activity attributes in a string.
-   * 
-   * Captures:
-   * - Group 1: The activity ID value (matches `activity="..."` or `activityId="..."`)
-   * - Group 2: Any additional comma-separated attributes following the activity ID
-   * 
-   * Pattern breakdown:
-   * - `activity(?:Id)?=` - Matches either "activity=" or "activityId=" (non-capturing group)
-   * - `"([^"]+)"` - Captures the quoted value (Group 1)
-   * - `((?:,[a-zA-Z]+="[^"]*")*)` - Optionally captures comma-separated key="value" pairs (Group 2)
-   * - `g` flag - Global flag for finding all matches in the string
-   * 
-   * @example
-   * // Matches: activity="123",param="value"
-   * // Matches: activityId="abc-456",title='xyz-789',x="y"
-   */
-  const regex = /activity(?:Id)?="([^"]+)"((?:,[a-zA-Z]+="[^"]*")*)/g;
+  const regex = /activity(?:Id)?="([^"]+)"((?:,\s*[a-zA-Z]+="[^"]*")*)/g;
 
   return source.replace(regex, (match, identifier, rawAttributes) => {
     const safeIdentifier = String(identifier || "").trim();
     const attributes = Object.fromEntries(
-      Array.from(String(rawAttributes || "").matchAll(/,([a-zA-Z]+)="([^"]*)"/g)).map(
+      Array.from(String(rawAttributes || "").matchAll(/,\s*([a-zA-Z]+)="([^"]*)"/g)).map(
         ([, key, value]) => [key.toLowerCase(), value]
       )
     );
 
-    const buttonLabel = String(
-      attributes.buttontext || attributes.label || attributes.title || "Open Activity"
-    ).trim() || "Open Activity";
+    const title = String(attributes.title || "Untitled Activity").trim();
+    const thumbnail = attributes.thumbnail && attributes.thumbnail !== "null"
+      ? attributes.thumbnail
+      : "";
 
-    return `<button
-        type="button"
-        class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-oceanBlue text-white hover:bg-deepBlue transition-colors"
+    return `<div
+        class="flex flex-col items-center w-full gap-2 p-4 rounded-md border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors relative"
         onclick="openInteractiveActivity('${safeIdentifier}')"
         data-activity-id="${safeIdentifier}"
-        aria-label="${buttonLabel}"
+        aria-label="${title}"
       >
-        ${buttonLabel}
-      </button>`;
+      <p class="z-10 mt-2 font-semibold text-black bg-white rounded-md !p-2  text-wrap">${title}</p>
+      <img src="${thumbnail || '/images/c43f7a911cc7ca9.png'}" alt="${title}" class="absolute z-0 inset-0 w-full h-auto object-cover rounded-md" />
+      </div>`;
   });
 };
+
 
 declare global {
   interface Window {

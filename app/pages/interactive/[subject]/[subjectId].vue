@@ -15,9 +15,11 @@ import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import {
+  getApiContentLanguage,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
+  resolveRouteLanguage,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
@@ -34,11 +36,20 @@ const decodeParam = (value: unknown) => {
 };
 const subjectId = String(route.params.subjectId ?? "");
 const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
+const primaryContentLanguage = usePrimaryContentLanguage();
 
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
-const tabLanguage = computed(() => getHubLanguage(educationLevel.value));
+const tabLanguage = computed(() =>
+  getHubLanguage(
+    educationLevel.value,
+    resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
+  ),
+);
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value),
+  getEducationRouteQuery(educationLevel.value, {}, tabLanguage.value),
+);
+const apiLanguage = computed(() =>
+  getApiContentLanguage(educationLevel.value, tabLanguage.value),
 );
 
 // Define meta info about page
@@ -176,12 +187,13 @@ const switchTab = async (tab: string) => {
 const fetchTopics = async (params) => {
   try {
     status.value = "pending";
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`interactive-${educationLevel.value}-${subjectId}`,()=>$fetch(apiDocs.topics.getSubjectId.replace(
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`interactive-${educationLevel.value}-${tabLanguage.value}-${subjectId}`,()=>$fetch(apiDocs.topics.getSubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
       params: {
         educationLevel: educationLevel.value,
+        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
         ...params,
       },
       headers: {

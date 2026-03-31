@@ -6,10 +6,13 @@ import { moveFocus } from "~/utilities/focus.helper";
 import {
   getEducationRouteQuery,
   normalizeEducationLevel,
+  resolveRouteLanguage,
 } from "~/utilities/educationRoute";
 
 // Define Emit
 const emit = defineEmits(["emitActiveTab"]);
+const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
 
 // Define Props
 const props = withDefaults(
@@ -104,7 +107,11 @@ const buildAnonymousTarget = (
 ) => ({
   path,
   query: {
-    ...getEducationRouteQuery(anonymousEducationLevel.value),
+    ...getEducationRouteQuery(
+      anonymousEducationLevel.value,
+      {},
+      resolveRouteLanguage(route, anonymousEducationLevel.value, primaryContentLanguage.value),
+    ),
     ...extraQuery,
   },
 });
@@ -211,7 +218,7 @@ const buildAnonymousTarget = (
       </NuxtLink>
 
       <!-- Learning Activities -->
-      <div v-if="tabGroup === 'secondary'" class="flex items-center text-center justify-start gap-3 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center"  >
+      <div v-if="tabGroup === 'lower secondary'" class="flex items-center text-center justify-start gap-3 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center"  >
         <div v-if="isLoggedIn">
           <button
             role="tab"

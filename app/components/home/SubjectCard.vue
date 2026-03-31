@@ -3,6 +3,7 @@ import { layoutEffect } from "~/utilities/controlls";
 import { calculateTopicMetrics } from "~/utilities/topicMetrics.js";
 import {
   getEducationRouteQuery,
+  resolveRouteLanguage,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
@@ -23,9 +24,14 @@ const props = withDefaults(defineProps<{
 });
 
 const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
 const subjectTarget = computed(() => ({
   path: `/interactive/${props.subjectName?.toLowerCase()}/${props.subjectId?.toLowerCase()}`,
-  query: getEducationRouteQuery(resolveEducationLevelFromRoute(route)),
+  query: getEducationRouteQuery(
+    resolveEducationLevelFromRoute(route),
+    {},
+    resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
+  ),
 }));
 
 // Define Emits

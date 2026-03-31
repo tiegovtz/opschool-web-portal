@@ -4,12 +4,14 @@ import { layoutEffect } from '~/utilities/controlls'
 import { useNavigationStore } from "~/stores/navigationStore";
 import {
   getEducationRouteQuery,
+  resolveRouteLanguage,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
 // Define Stores
 const navigationStore = useNavigationStore()
 const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
 
 // Define Props
 const props = withDefaults(defineProps<{
@@ -54,7 +56,11 @@ const setTopicToView = () => {
 
 const topicTarget = computed(() => ({
   path: `/interactive/${props.topicStandard}/${props.subjectName}/${props.topicTitle}/${props.topicId}`,
-  query: getEducationRouteQuery(resolveEducationLevelFromRoute(route)),
+  query: getEducationRouteQuery(
+    resolveEducationLevelFromRoute(route),
+    {},
+    resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
+  ),
 }));
 
 const userToken = useCookie('signInUserToken')
@@ -94,7 +100,7 @@ const userToken = useCookie('signInUserToken')
       <!-- topic standard -->
       <div v-if="modelType === 'card'" class="absolute right-0 -bottom-0">
         <div
-          class="flex items-center justify-center w-20 h-8 duration-500 ease-in-out bg-oceanBlue group-hover:bg-deepBlue rounded-tl-md transition-color">
+          class="flex items-center justify-center w-auto h-8 duration-500 ease-in-out bg-oceanBlue group-hover:bg-deepBlue rounded-tl-md transition-color px-2">
           <p class="font-medium text-white text-extraSmall">{{ topicStandard }}</p>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { computed } from "vue";
 import apiDocs from "~/utilities/apiDocs";
+import { getApiContentLanguage, resolveRouteLanguage } from "~/utilities/educationRoute";
 
 type SubjectRecord = {
   id: number;
@@ -32,8 +33,19 @@ const authHeaders = () => {
 };
 
 export const useSubjects = (_curriculum = "TET", _gradeId?: number) => {
+  const route = useRoute();
+  const primaryContentLanguage = usePrimaryContentLanguage();
+  const contentLanguage = computed(() =>
+    resolveRouteLanguage(route, "primary", primaryContentLanguage.value),
+  );
   const { data, pending } = useFetch<SubjectRecord[]>(apiDocs.subjects.getPublicSubjects, {
     headers: authHeaders(),
+    query: computed(() => ({
+      educationLevel: "primary",
+      ...(getApiContentLanguage("primary", contentLanguage.value)
+        ? { language: getApiContentLanguage("primary", contentLanguage.value) }
+        : {}),
+    })),
     default: () => [],
   });
 

@@ -13,9 +13,11 @@ import type { tabs } from '~/types/types.data';
 import { layoutEffect } from '@/utilities/controlls';
 import InputsSelection from '~/components/home/InputsSelection.vue';
 import {
+  getApiContentLanguage,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
+  resolveRouteLanguage,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
@@ -50,10 +52,19 @@ const status = ref('pending'); // Initial Status State
 const audios = ref();         // Initial Audios State
 const slicedData = ref();    // Initial slice data to 9
 const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
-const language = computed(() => getHubLanguage(educationLevel.value));
+const language = computed(() =>
+  getHubLanguage(
+    educationLevel.value,
+    resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
+  ),
+);
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value),
+  getEducationRouteQuery(educationLevel.value, {}, language.value),
+);
+const apiLanguage = computed(() =>
+  getApiContentLanguage(educationLevel.value, language.value),
 );
 
 // Define Cookie
@@ -81,7 +92,7 @@ const sliceData = (start: number, end: number) => {
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(12);
 const activeTab = ref<tabs>("audio")
-const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
+const TAB_TO_ROUTE = computed<Record<string, { path: string; query?: Record<string, any> }>>(() => ({
   subjects: { path: getHubPath(educationLevel.value) },
   "interactive-contents": { path: "/interactive", query: educationRouteQuery.value },
   "learn-activities": { path: "/experiments", query: educationRouteQuery.value },
@@ -89,22 +100,23 @@ const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }
   "class-videos": { path: "/video", query: { ...educationRouteQuery.value, type: "oth" } },
   audio: { path: "/audio", query: educationRouteQuery.value },
   "smart-class": { path: "/smart-class" },
-};
+}));
 
 const switchTab = async (tab: string) => {
   if (!tab) return;
   activeTab.value = tab as tabs;
-  const target = TAB_TO_ROUTE[tab] ?? { path: getHubPath(educationLevel.value) };
+  const target = TAB_TO_ROUTE.value[tab] ?? { path: getHubPath(educationLevel.value) };
   await useRouter().push(target);
 };
 // Fetch audios From Server
 const fetchAudios = async (param?: any) => {
   try {
     status.value = 'pending';
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`audios-${educationLevel.value}-${param?.toString()}`, () => $fetch(apiDocs.audio.getPublicAudio, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`audios-${educationLevel.value}-${language.value}-${param?.toString()}`, () => $fetch(apiDocs.audio.getPublicAudio, {
       method: 'GET',
       params: {
         educationLevel: educationLevel.value,
+        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
         ...param
       },
     }));

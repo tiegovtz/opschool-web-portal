@@ -19,17 +19,28 @@ import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
 import { layoutEffect } from '@/utilities/controlls';
 import InputsSelection from "~/components/home/InputsSelection.vue";
 import {
+  getApiContentLanguage,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
+  resolveRouteLanguage,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
 const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
-const language = computed(() => getHubLanguage(educationLevel.value));
+const language = computed(() =>
+  getHubLanguage(
+    educationLevel.value,
+    resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
+  ),
+);
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value),
+  getEducationRouteQuery(educationLevel.value, {}, language.value),
+);
+const apiLanguage = computed(() =>
+  getApiContentLanguage(educationLevel.value, language.value),
 );
 const experimentId = route.fullPath.split("/").pop();
 const experimentTitle = String(route.fullPath.split("/")[4])
@@ -91,7 +102,7 @@ const experiments = ref();
 const slicedData = ref();
 
 const activeTab = ref<tabs>("learn-activities");
-const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
+const TAB_TO_ROUTE = computed<Record<string, { path: string; query?: Record<string, any> }>>(() => ({
   subjects: { path: getHubPath(educationLevel.value) },
   "interactive-contents": { path: "/interactive", query: educationRouteQuery.value },
   "learn-activities": { path: "/experiments", query: educationRouteQuery.value },
@@ -99,12 +110,12 @@ const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }
   "class-videos": { path: "/video", query: { ...educationRouteQuery.value, type: "oth" } },
   audio: { path: "/audio", query: educationRouteQuery.value },
   "smart-class": { path: "/smart-class" },
-};
+}));
 
 const switchTab = async (tab: string) => {
   if (!tab) return;
   activeTab.value = tab as tabs;
-  const target = TAB_TO_ROUTE[tab] ?? { path: getHubPath(educationLevel.value) };
+  const target = TAB_TO_ROUTE.value[tab] ?? { path: getHubPath(educationLevel.value) };
   await useRouter().push(target);
 };
   
@@ -143,9 +154,13 @@ const sliceData = (start: number, end: number) => {
 const fetchExperiments = async (param?: any) => {
   try {
     status.value = "pending";
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`experiments-${educationLevel.value}`, () => $fetch(apiDocs.experiments.getPublicExperiments, {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`experiments-${educationLevel.value}-${language.value}`, () => $fetch(apiDocs.experiments.getPublicExperiments, {
       method: "GET",
-      params: { educationLevel: educationLevel.value, ...param }
+      params: {
+        educationLevel: educationLevel.value,
+        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
+        ...param,
+      }
     }));
 
     // Call State Define above
