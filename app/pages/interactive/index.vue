@@ -320,6 +320,7 @@ watch(filters, (filters) => {
   <NuxtLayout
     name="home-layout"
     :language="contentLayoutLanguage"
+    :education-level
   >
     <div :class="[' ', { ' animate-pulse': isLoading }]">
       <!-- User Token Available -->

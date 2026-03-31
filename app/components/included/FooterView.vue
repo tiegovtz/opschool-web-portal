@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { LanguageSupport } from '~/types/language.interface';
 import { screenWidth } from '~/utilities/controlls'; 
+import type { EducationBucket } from '~/utilities/educationRoute';
 
 type Appearance = 'normal' | 'rounded-glass'
 withDefaults(
-  defineProps<{educationLevel?:string,language?:LanguageSupport,
+  defineProps<{educationLevel?:EducationBucket,language?:LanguageSupport,
     appearance?:Appearance
   }>(),{
     language:'english',

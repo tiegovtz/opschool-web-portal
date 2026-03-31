@@ -100,7 +100,7 @@ const userToken = useCookie('signInUserToken')
       <!-- topic standard -->
       <div v-if="modelType === 'card'" class="absolute right-0 -bottom-0">
         <div
-          class="flex items-center justify-center w-20 h-8 duration-500 ease-in-out bg-oceanBlue group-hover:bg-deepBlue rounded-tl-md transition-color">
+          class="flex items-center justify-center w-auto h-8 duration-500 ease-in-out bg-oceanBlue group-hover:bg-deepBlue rounded-tl-md transition-color px-2">
           <p class="font-medium text-white text-extraSmall">{{ topicStandard }}</p>
         </div>
       </div>
