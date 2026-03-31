@@ -18,13 +18,13 @@ const activityParser = (query: string): string => {
       : "";
 
     return `<div
-        class="inline-flex flex-col items-center gap-2 p-4 rounded-md border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors"
+        class="flex flex-col items-center w-full gap-2 p-4 rounded-md border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors"
         onclick="openInteractiveActivity('${safeIdentifier}')"
         data-activity-id="${safeIdentifier}"
         aria-label="${title}"
       >
-        ${thumbnail ? `<img src="${thumbnail}" alt="${title}" class="w-24 h-24 object-contain rounded-md" />` : ""}
-        <span class="mt-2 font-semibold text-gray-800">${title}</span>
+      <p class="mb-2 font-semibold text-gray-800">${title}</p>
+      <img src="${thumbnail || '/images/c43f7a911cc7ca9.png'}" alt="${title}" class="w-full h-auto object-cover rounded-md" />
       </div>`;
   });
 };
