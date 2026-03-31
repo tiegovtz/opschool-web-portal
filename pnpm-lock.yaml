@@ -17,6 +17,12 @@ importers:
       '@ai-sdk/vue':
         specifier: ^3.0.0-beta.124
         version: 3.0.27(vue@3.5.26(typescript@5.9.3))(zod@3.25.76)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@19.2.4)
+      '@dnd-kit/vue':
+        specifier: ^0.3.2
+        version: 0.3.2(vue@3.5.26(typescript@5.9.3))
       '@google/model-viewer':
         specifier: ^4.0.0
         version: 4.1.0(three@0.172.0)
@@ -86,6 +92,15 @@ importers:
       dompurify:
         specifier: ^3.3.0
         version: 3.3.1
+      embla-carousel:
+        specifier: ^8.6.0
+        version: 8.6.0
+      embla-carousel-autoplay:
+        specifier: ^8.6.0
+        version: 8.6.0(embla-carousel@8.6.0)
+      embla-carousel-vue:
+        specifier: ^8.6.0
+        version: 8.6.0(vue@3.5.26(typescript@5.9.3))
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.3
@@ -101,9 +116,6 @@ importers:
       nuxt:
         specifier: ^4.1.3
         version: 4.2.2(@parcel/watcher@2.5.1)(@types/node@25.0.6)(@vue/compiler-sfc@3.5.30)(cac@6.7.14)(db0@0.3.4(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(postgres@3.4.8)))(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(postgres@3.4.8))(ioredis@5.9.1)(lightningcss@1.30.2)(magicast@0.5.1)(meow@13.2.0)(rollup@4.55.1)(terser@5.44.1)(typescript@5.9.3)(vite@6.4.1(@types/node@25.0.6)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(yaml@2.8.2))(yaml@2.8.2)
-      nuxt-swiper:
-        specifier: ^2.0.0
-        version: 2.0.1(magicast@0.5.1)
       openai:
         specifier: ^4.0.0
         version: 4.104.0(ws@8.19.0)(zod@3.25.76)
@@ -432,6 +444,31 @@ packages:
   '@cloudflare/kv-asset-handler@0.4.1':
     resolution: {integrity: sha512-Nu8ahitGFFJztxUml9oD/DLb7Z28C8cd8F46IVQ7y5Btz575pvMY8AqZsXkX7Gds29eCKdMgIHjIvzskHgPSFg==}
     engines: {node: '>=18.0.0'}
+
+  '@dnd-kit/abstract@0.3.2':
+    resolution: {integrity: sha512-uvPVK+SZYD6Viddn9M0K0JQdXknuVSxA/EbMlFRanve3P/XTc18oLa5zGftKSGjfQGmuzkZ34E26DSbly1zi3Q==}
+
+  '@dnd-kit/collision@0.3.2':
+    resolution: {integrity: sha512-pNmNSLCI8S9fNQ7QJ3fBCDjiT0sqBhUFcKgmyYaGvGCAU+kq0AP8OWlh0JSisc9k5mFyxmRpmFQcnJpILz/RPA==}
+
+  '@dnd-kit/dom@0.3.2':
+    resolution: {integrity: sha512-cIUAVgt2szQyz6JRy7I+0r+xeyOAGH21Y15hb5bIyHoDEaZBvIDH+OOlD9eoLjCbsxDLN9WloU2CBi3OE6LYDg==}
+
+  '@dnd-kit/geometry@0.3.2':
+    resolution: {integrity: sha512-3UBPuIS7E3oGiHxOE8h810QA+0pnrnCtGxl4Os1z3yy5YkC/BEYGY+TxWPTQaY1/OMV7GCX7ZNMlama2QN3n3w==}
+
+  '@dnd-kit/state@0.3.2':
+    resolution: {integrity: sha512-dLUIkoYrIJhGXfF2wGLTfb46vUokEsO/OoE21TSfmahYrx7ysTmnwbePsznFaHlwgZhQEh6AlLvthLCeY21b1A==}
+
+  '@dnd-kit/utilities@3.2.2':
+    resolution: {integrity: sha512-+MKAJEOfaBe5SmV6t34p80MMKhjvUz0vRrvVJbPT0WElzaOJ/1xs+D+KDv+tD/NE5ujfrChEcshd4fLn0wpiqg==}
+    peerDependencies:
+      react: '>=16.8.0'
+
+  '@dnd-kit/vue@0.3.2':
+    resolution: {integrity: sha512-tYX0YzylmkPyjTM8Kv//o90sWNVRCFBtzSu7/Ung2aFMJhfEEUKJoEYRL2V4Cz+fLkOPQFaFqNxSDpNKTeWNxQ==}
+    peerDependencies:
+      vue: ^3.5.0
 
   '@dxup/nuxt@0.2.2':
     resolution: {integrity: sha512-RNpJjDZs9+JcT9N87AnOuHsNM75DEd58itADNd/s1LIF6BZbTLZV0xxilJZb55lntn4TYvscTaXLCBX2fq9CXg==}
@@ -2029,6 +2066,9 @@ packages:
   '@poppinss/exception@1.2.3':
     resolution: {integrity: sha512-dCED+QRChTVatE9ibtoaxc+WkdzOSjYTKi/+uacHWIsfodVfpsueo3+DKpgU5Px8qXjgmXkSvhXvSCz3fnP9lw==}
 
+  '@preact/signals-core@1.14.0':
+    resolution: {integrity: sha512-AowtCcCU/33lFlh1zRFf/u+12rfrhtNakj7UpaGEsmMwUKpKWMVvcktOGcwBBNiB4lWrZWc01LhiyyzVklJyaQ==}
+
   '@primeuix/forms@0.1.0':
     resolution: {integrity: sha512-LctcQidb+B5PuvAFWH24YH/SIzmHlOabLHpaTeGY/k51iBv1WyCp+5w9JMYuMB/BplSvV0ZGySxQVkN5Azr/aQ==}
     engines: {node: '>=12.11.0'}
@@ -3475,6 +3515,24 @@ packages:
   electron-to-chromium@1.5.267:
     resolution: {integrity: sha512-0Drusm6MVRXSOJpGbaSVgcQsuB4hEkMpHXaVstcPmhu5LIedxs1xNK/nIxmQIU/RPC0+1/o0AVZfBTkTNJOdUw==}
 
+  embla-carousel-autoplay@8.6.0:
+    resolution: {integrity: sha512-OBu5G3nwaSXkZCo1A6LTaFMZ8EpkYbwIaH+bPqdBnDGQ2fh4+NbzjXjs2SktoPNKCtflfVMc75njaDHOYXcrsA==}
+    peerDependencies:
+      embla-carousel: 8.6.0
+
+  embla-carousel-reactive-utils@8.6.0:
+    resolution: {integrity: sha512-fMVUDUEx0/uIEDM0Mz3dHznDhfX+znCCDCeIophYb1QGVM7YThSWX+wz11zlYwWFOr74b4QLGg0hrGPJeG2s4A==}
+    peerDependencies:
+      embla-carousel: 8.6.0
+
+  embla-carousel-vue@8.6.0:
+    resolution: {integrity: sha512-v8UO5UsyLocZnu/LbfQA7Dn2QHuZKurJY93VUmZYP//QRWoCWOsionmvLLAlibkET3pGPs7++03VhJKbWD7vhQ==}
+    peerDependencies:
+      vue: ^3.2.37
+
+  embla-carousel@8.6.0:
+    resolution: {integrity: sha512-SjWyZBHJPbqxHOzckOfo8lHisEaJWmwd23XppYFYVh10bU66/Pn5tkVkbkCMZVdbUE5eTCI2nD8OyIP4Z+uwkA==}
+
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
 
@@ -4455,9 +4513,6 @@ packages:
   nth-check@2.1.1:
     resolution: {integrity: sha512-lqjrjmaOoAnWfMmBPL+XNnynZh2+swxiX3WUE0s4yEHI6m+AwrK2UZOimIRl3X/4QctVqS8AiZjFqyOGrMXb/w==}
 
-  nuxt-swiper@2.0.1:
-    resolution: {integrity: sha512-mUAzuGqQHcsqJa1p5y/Hafvurn62o6njHq8DcwQErourkpJpv7z/SnnT0ezXMr7YvDPNg22ayEKGdHkGXXOxMQ==}
-
   nuxt@4.2.2:
     resolution: {integrity: sha512-n6oYFikgLEb70J4+K19jAzfx4exZcRSRX7yZn09P5qlf2Z59VNOBqNmaZO5ObzvyGUZ308SZfL629/Q2v2FVjw==}
     engines: {node: ^20.19.0 || >=22.12.0}
@@ -5345,10 +5400,6 @@ packages:
     resolution: {integrity: sha512-VvrHQ+9uniE+Mvx3+C9IEe/lWasXCU0nXMY2kZeLrHNICuRiC8uMPyM14UEaMOFA5mhyQqEkB02VoQ16n3DLaw==}
     engines: {node: '>=16'}
     hasBin: true
-
-  swiper@11.2.10:
-    resolution: {integrity: sha512-RMeVUUjTQH+6N3ckimK93oxz6Sn5la4aDlgPzB+rBrG/smPdCTicXyhxa+woIpopz+jewEloiEE3lKo1h9w2YQ==}
-    engines: {node: '>= 4.7.0'}
 
   swrv@1.1.0:
     resolution: {integrity: sha512-pjllRDr2s0iTwiE5Isvip51dZGR7GjLH1gCSVyE8bQnbAx6xackXsFdojau+1O5u98yHF5V73HQGOFxKUXO9gQ==}
@@ -6273,6 +6324,49 @@ snapshots:
   '@cloudflare/kv-asset-handler@0.4.1':
     dependencies:
       mime: 3.0.0
+
+  '@dnd-kit/abstract@0.3.2':
+    dependencies:
+      '@dnd-kit/geometry': 0.3.2
+      '@dnd-kit/state': 0.3.2
+      tslib: 2.8.1
+
+  '@dnd-kit/collision@0.3.2':
+    dependencies:
+      '@dnd-kit/abstract': 0.3.2
+      '@dnd-kit/geometry': 0.3.2
+      tslib: 2.8.1
+
+  '@dnd-kit/dom@0.3.2':
+    dependencies:
+      '@dnd-kit/abstract': 0.3.2
+      '@dnd-kit/collision': 0.3.2
+      '@dnd-kit/geometry': 0.3.2
+      '@dnd-kit/state': 0.3.2
+      tslib: 2.8.1
+
+  '@dnd-kit/geometry@0.3.2':
+    dependencies:
+      '@dnd-kit/state': 0.3.2
+      tslib: 2.8.1
+
+  '@dnd-kit/state@0.3.2':
+    dependencies:
+      '@preact/signals-core': 1.14.0
+      tslib: 2.8.1
+
+  '@dnd-kit/utilities@3.2.2(react@19.2.4)':
+    dependencies:
+      react: 19.2.4
+      tslib: 2.8.1
+
+  '@dnd-kit/vue@0.3.2(vue@3.5.26(typescript@5.9.3))':
+    dependencies:
+      '@dnd-kit/abstract': 0.3.2
+      '@dnd-kit/dom': 0.3.2
+      '@dnd-kit/state': 0.3.2
+      tslib: 2.8.1
+      vue: 3.5.26(typescript@5.9.3)
 
   '@dxup/nuxt@0.2.2(magicast@0.5.1)':
     dependencies:
@@ -7606,6 +7700,8 @@ snapshots:
       supports-color: 10.2.2
 
   '@poppinss/exception@1.2.3': {}
+
+  '@preact/signals-core@1.14.0': {}
 
   '@primeuix/forms@0.1.0':
     dependencies:
@@ -9035,6 +9131,22 @@ snapshots:
 
   electron-to-chromium@1.5.267: {}
 
+  embla-carousel-autoplay@8.6.0(embla-carousel@8.6.0):
+    dependencies:
+      embla-carousel: 8.6.0
+
+  embla-carousel-reactive-utils@8.6.0(embla-carousel@8.6.0):
+    dependencies:
+      embla-carousel: 8.6.0
+
+  embla-carousel-vue@8.6.0(vue@3.5.26(typescript@5.9.3)):
+    dependencies:
+      embla-carousel: 8.6.0
+      embla-carousel-reactive-utils: 8.6.0(embla-carousel@8.6.0)
+      vue: 3.5.26(typescript@5.9.3)
+
+  embla-carousel@8.6.0: {}
+
   emoji-regex@8.0.0: {}
 
   emoji-regex@9.2.2: {}
@@ -10135,13 +10247,6 @@ snapshots:
     dependencies:
       boolbase: 1.0.0
 
-  nuxt-swiper@2.0.1(magicast@0.5.1):
-    dependencies:
-      '@nuxt/kit': 3.20.2(magicast@0.5.1)
-      swiper: 11.2.10
-    transitivePeerDependencies:
-      - magicast
-
   nuxt@4.2.2(@parcel/watcher@2.5.1)(@types/node@25.0.6)(@vue/compiler-sfc@3.5.30)(cac@6.7.14)(db0@0.3.4(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(postgres@3.4.8)))(drizzle-orm@0.44.7(@opentelemetry/api@1.9.0)(postgres@3.4.8))(ioredis@5.9.1)(lightningcss@1.30.2)(magicast@0.5.1)(meow@13.2.0)(rollup@4.55.1)(terser@5.44.1)(typescript@5.9.3)(vite@6.4.1(@types/node@25.0.6)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)(yaml@2.8.2))(yaml@2.8.2):
     dependencies:
       '@dxup/nuxt': 0.2.2(magicast@0.5.1)
@@ -11234,8 +11339,6 @@ snapshots:
       picocolors: 1.1.1
       sax: 1.4.4
 
-  swiper@11.2.10: {}
-
   swrv@1.1.0(vue@3.5.26(typescript@5.9.3)):
     dependencies:
       vue: 3.5.26(typescript@5.9.3)
@@ -11398,8 +11501,7 @@ snapshots:
 
   tslib@2.4.0: {}
 
-  tslib@2.8.1:
-    optional: true
+  tslib@2.8.1: {}
 
   tunnel-agent@0.6.0:
     dependencies:
