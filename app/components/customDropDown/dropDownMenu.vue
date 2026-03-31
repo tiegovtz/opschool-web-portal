@@ -8,7 +8,21 @@ import {
   getApiContentLanguage,
   normalizeEducationLevel,
   resolveRouteLanguage,
+  type EducationBucket,
 } from "~/utilities/educationRoute";
+import type { LanguageSupport } from "~/types/language.interface";
+
+
+
+const props = withDefaults(
+  defineProps<{educationLevel?:EducationBucket,language?:LanguageSupport,activeTab?:string}>(),{
+    language:'english',
+})
+// // Props
+// const props = defineProps({
+//   activeTab: String,
+// });
+
 
 const EDUCATION_LEVEL_RENDER_ORDER: Record<string, number> = {
   "Pre-Primary": 0,
@@ -83,11 +97,6 @@ const isSubjectDisabled = computed(() => selected.class?.trim() === "");
 
 // Emits
 const emit = defineEmits(["emitUpdateFilterValue"]);
-
-// Props
-const props = defineProps({
-  activeTab: String,
-});
 
 // Reset all filters
 const resetFilters = async () => {
@@ -274,7 +283,7 @@ watch(
           <p v-if="group.name === 'subject' && group.disabled" class="text-sm text-gray-500">
             Select class first to choose a subject.
           </p>
-          <label v-for="item in group.items" :key="item" class="flex items-center gap-2"
+          <label v-for="item in group.items.filter((i:any)=>!i.includes(educationLevels))" :key="item" class="flex items-center gap-2"
             :class="group.disabled ? 'opacity-60 cursor-not-allowed' : ''">
             <input :type="group.inputType" :name="group.name" :value="item"
               :disabled="group.disabled"
