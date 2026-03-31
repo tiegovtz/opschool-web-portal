@@ -44,6 +44,9 @@ const isAccountRoute = computed(() =>
   route.path === "/profile" ||
   (matchesPath("/profile") && !isLearningStatisticsRoute.value)
 );
+const isAccountSectionRoute = computed(() =>
+  isAccountRoute.value || isLearningStatisticsRoute.value,
+);
 
 const desktopNavItemClass =
   "flex items-center gap-2 rounded-[6px] px-3 py-1 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
@@ -368,21 +371,6 @@ onBeforeUnmount(() => {
             </NuxtLink>
           </div>
 
-          <NuxtLink
-            v-if="userToken"
-            aria-label="Go to learning statistics page"
-            to="/profile/learning-statistics"
-            :aria-current="isLearningStatisticsRoute ? 'page' : undefined"
-            :class="[desktopNavItemClass, isLearningStatisticsRoute ? activeNavItemClass : inactiveNavItemClass]"
-          >
-            <div class="flex items-center justify-center">
-              <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
-            </div>
-            <p class="hidden capitalize lg:flex">
-              {{ language==='english' ? `Learning statistics` :`Takwimu za ujifunzaji`}}
-            </p>
-          </NuxtLink>
-
           <div
             v-if="showPrimaryLanguageSwitch"
             class="flex items-center gap-2 px-2"
@@ -434,10 +422,10 @@ onBeforeUnmount(() => {
             <div v-else class="relative px-2 py-1">
               <button
                 aria-label="Open account menu"
-                :aria-current="isAccountRoute ? 'page' : undefined"
+                :aria-current="isAccountSectionRoute ? 'page' : undefined"
                 :class="[
                   desktopNavItemClass,
-                  isAccountRoute || isAccountMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+                  isAccountSectionRoute || isAccountMenuOpen ? activeNavItemClass : inactiveNavItemClass,
                 ]"
                 @click="toggleAccountMenu"
               >
@@ -470,6 +458,16 @@ onBeforeUnmount(() => {
                 v-if="isAccountMenuOpen"
                 class="absolute right-0 z-30 w-56 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
               >
+                <NuxtLink
+                  aria-label="Go to learning statistics page"
+                  to="/profile/learning-statistics"
+                  class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
+                  @click="closeAccountMenu"
+                >
+                  <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
+                  <span>{{ language==='english' ? `Learning statistics` :`Takwimu za ujifunzaji`}}</span>
+                </NuxtLink>
+
                 <NuxtLink
                   aria-label="Go to profile page"
                   to="/profile"
@@ -559,17 +557,6 @@ onBeforeUnmount(() => {
                 </div>
               </NuxtLink>
 
-              <NuxtLink
-                v-if="userToken"
-                to="/profile/learning-statistics"
-                aria-label="Go to learning statistics page"
-                :aria-current="isLearningStatisticsRoute ? 'page' : undefined"
-                :class="[mobileNavItemClass, isLearningStatisticsRoute ? activeNavItemClass : inactiveNavItemClass]"
-              >
-                <div class="flex items-center justify-center">
-                  <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
-                </div>
-              </NuxtLink>
             </div>
 
             <!-- Paragraph Text -->
@@ -584,10 +571,10 @@ onBeforeUnmount(() => {
               <div v-if="userToken">
                 <button
                   aria-label="Open account menu"
-                  :aria-current="isAccountRoute ? 'page' : undefined"
+                  :aria-current="isAccountSectionRoute ? 'page' : undefined"
                   :class="[
                     mobileNavItemClass,
-                    isAccountRoute || isAccountMenuOpen ? activeNavItemClass : inactiveNavItemClass,
+                    isAccountSectionRoute || isAccountMenuOpen ? activeNavItemClass : inactiveNavItemClass,
                   ]"
                   @click="toggleAccountMenu"
                 >
@@ -608,6 +595,16 @@ onBeforeUnmount(() => {
                   v-if="isAccountMenuOpen"
                   class="absolute right-0 z-30 w-48 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
                 >
+                  <NuxtLink
+                    aria-label="Go to learning statistics page"
+                    to="/profile/learning-statistics"
+                    class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
+                    @click="closeAccountMenu"
+                  >
+                    <Icon name="heroicons:chart-bar-square-20-solid" class="w-5 h-5" />
+                    <span>{{ language==='english' ? `Learning statistics` :`Takwimu za ujifunzaji`}}</span>
+                  </NuxtLink>
+
                   <NuxtLink
                     aria-label="Go to profile page"
                     to="/profile"
