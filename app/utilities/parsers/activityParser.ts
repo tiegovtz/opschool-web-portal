@@ -23,7 +23,7 @@ const activityParser = (query: string): string => {
         data-activity-id="${safeIdentifier}"
         aria-label="${title}"
       >
-      <p class="z-10 mt-2 font-semibold text-oceanBlue bg-white rounded-md p-2">${title}</p>
+      <p class="z-10 mt-2 font-semibold text-black bg-white rounded-md !p-2  text-wrap">${title}</p>
       <img src="${thumbnail || '/images/c43f7a911cc7ca9.png'}" alt="${title}" class="absolute z-0 inset-0 w-full h-auto object-cover rounded-md" />
       </div>`;
   });
