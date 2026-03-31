@@ -108,7 +108,7 @@ const slicedData = ref(); // Initial slice data to 9
 const activeTab = ref<tabs>("subjects");
 
 // First, fix the sliceData function
-const sliceData = (start, end) => {
+const sliceData = (start:number, end:number) => {
   if (!topic.value || !Array.isArray(topic.value) || topic.value.length === 0) {
     slicedData.value = [];
     return;
@@ -184,7 +184,7 @@ const switchTab = async (tab: string) => {
 };
 
 // Then, update fetchTopics to call sliceData after data is loaded
-const fetchTopics = async (params) => {
+const fetchTopics = async (params:any) => {
   try {
     status.value = "pending";
     const {data:response,status:fetchStatus} = await fetchAsyncData(`interactive-${educationLevel.value}-${tabLanguage.value}-${subjectId}`,()=>$fetch(apiDocs.topics.getSubjectId.replace(
@@ -298,8 +298,8 @@ const level = ref(); // Initial Level State
 // watch emits changes
 watch(filters, (filters) => {
   fetchTopics({
-    level: filters.level.toString(),
-    subject: filters.subject.toString(),
+    level: filters?.level,
+    subject: filters?.subject,
   });
 });
 </script>

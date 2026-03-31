@@ -167,7 +167,7 @@ onMounted(async () => {
                             <p class="text-[15px] font-medium leading-6 text-[#30475d] md:text-base">
                                 {{ stat.label }}
                             </p>
-                            <p :class="`mt-1 text-[24px] font-bold leading-none tracking-[-0.02em] md:text-[28px]
+                            <p :class="`mt-1 text-[24px] font-bold leading-none tracking-[-0.02em] md:text-xl
                             ${getAccentStyles(stat.accent).value}`">
                                 {{ stat.data === 'topics' ? `${allTopics}+` : stat.data == 'resources' ? `${allContent}+` :
                                 stat.value }}

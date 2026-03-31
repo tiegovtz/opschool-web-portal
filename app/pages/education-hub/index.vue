@@ -1169,7 +1169,7 @@ const handleSubjectSelect = async (id: string, name: string) => {
             class="flex flex-col w-full"
           >
             <customGridTwo
-              v-if="filters.level !== null && filters.subject !== null"
+              v-if="filters.level !== null && filters.subject !== null && filters.level !== '' && filters.subject !== ''"
             >
               <template #data>
                 <!-- Topic Cards -->
