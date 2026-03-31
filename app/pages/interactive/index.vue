@@ -22,9 +22,11 @@ import type { tabs } from "~/types/types.data";
 import { layoutEffect } from "@/utilities/controlls";
 import InputsSelection from "~/components/home/InputsSelection.vue";
 import {
+  getApiContentLanguage,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
+  resolveRouteLanguage,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 // Define meta info about page
@@ -75,12 +77,21 @@ useHead({
 // Define Cookie
 const userToken = useCookie("signInUserToken");
 const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
 
 // extract query params
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
-const language = computed(() => getHubLanguage(educationLevel.value));
+const language = computed(() =>
+  getHubLanguage(
+    educationLevel.value,
+    resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
+  ),
+);
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value),
+  getEducationRouteQuery(educationLevel.value, {}, language.value),
+);
+const apiLanguage = computed(() =>
+  getApiContentLanguage(educationLevel.value, language.value),
 );
 
 const contentLayoutLanguage = useContentLayoutLanguage();
@@ -155,6 +166,7 @@ const fetchTopics = async (params?: any) => {
   const url = apiDocs.topics.filterTopics;
   params = {
     educationLevel: educationLevel.value,
+    ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
     ...params,
   };
   if (userToken.value) {
@@ -163,7 +175,7 @@ const fetchTopics = async (params?: any) => {
   try {
     status.value = "pending";
     const { data: response, status: fetchStatus } = await fetchAsyncData(
-      `interactive-${educationLevel.value}`,
+      `interactive-${educationLevel.value}-${language.value}`,
       () =>
         $fetch(url, {
           params: params,
@@ -251,17 +263,17 @@ watch(
 );
 
 /** Tab targets except `subjects` (Masomo vs Subjects is handled in switchTab). */
-const TAB_TO_ROUTE: Record<
+const TAB_TO_ROUTE = computed<Record<
   string,
   { path: string; query?: Record<string, any> }
-> = {
+>>(() => ({
   "interactive-contents": { path: "/interactive", query: educationRouteQuery.value },
   "learn-activities": { path: "/experiments", query: educationRouteQuery.value },
   video: { path: "/video", query: { ...educationRouteQuery.value, type: "conc" } },
   "class-videos": { path: "/video", query: { ...educationRouteQuery.value, type: "oth" } },
   audio: { path: "/audio", query: educationRouteQuery.value },
   "smart-class": { path: "/smart-class" },
-};
+}));
 
 const switchTab = async (tab: any) => {
   if (!tab) return;
@@ -272,7 +284,7 @@ const switchTab = async (tab: any) => {
     });
     return;
   }
-  const target = TAB_TO_ROUTE[tab] ?? { path: getHubPath(educationLevel.value) };
+  const target = TAB_TO_ROUTE.value[tab] ?? { path: getHubPath(educationLevel.value) };
   await useRouter().push(target);
 };
 

@@ -4,12 +4,14 @@ import { layoutEffect } from '~/utilities/controlls'
 import { useNavigationStore } from "~/stores/navigationStore";
 import {
   getEducationRouteQuery,
+  resolveRouteLanguage,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
 // Define Stores
 const navigationStore = useNavigationStore()
 const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
 
 // Define Props
 const props = withDefaults(defineProps<{
@@ -54,7 +56,11 @@ const setTopicToView = () => {
 
 const topicTarget = computed(() => ({
   path: `/interactive/${props.topicStandard}/${props.subjectName}/${props.topicTitle}/${props.topicId}`,
-  query: getEducationRouteQuery(resolveEducationLevelFromRoute(route)),
+  query: getEducationRouteQuery(
+    resolveEducationLevelFromRoute(route),
+    {},
+    resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
+  ),
 }));
 
 const userToken = useCookie('signInUserToken')

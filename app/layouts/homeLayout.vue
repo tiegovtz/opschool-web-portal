@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white" @contextmenu.prevent >
     <!-- Header -->
-    <HeaderView :language/>
+    <HeaderView :language :education-level />
 
     <!-- Main content -->
     <main class="wrapper-container" tabindex="-1" role="main">

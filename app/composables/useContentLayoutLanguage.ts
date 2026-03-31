@@ -1,6 +1,7 @@
 import { computed, watch, toValue, type MaybeRefOrGetter } from "vue";
 import type { LanguageSupport } from "~/types/language.interface";
 import { inferHubLanguageFromContentRoute } from "~/utilities/contentHubLanguage";
+import { normalizeEducationLevel } from "~/utilities/educationRoute";
 
 /**
  * Header/footer language for `home-layout` on content routes: Primary → kiswahili, Secondary → english.
@@ -9,14 +10,30 @@ import { inferHubLanguageFromContentRoute } from "~/utilities/contentHubLanguage
 export function useContentLayoutLanguage(levelSource?: MaybeRefOrGetter<unknown>) {
   const route = useRoute();
   const hub = useHubHeaderLanguage();
+  const primaryContentLanguage = usePrimaryContentLanguage();
+  const hubEducationLevel = useHubEducationLevel();
 
   const resolveLevel = () => {
     if (levelSource !== undefined) return toValue(levelSource);
     return route.params.level;
   };
 
+  const isPrimaryContentRoute = computed(() => {
+    const routeEducationLevel = route.query.educationLevel ?? route.query.edl;
+    if (routeEducationLevel) {
+      return normalizeEducationLevel(routeEducationLevel) === "primary";
+    }
+
+    const resolvedLevel = String(resolveLevel() ?? "").toLowerCase();
+    return resolvedLevel.includes("darasa");
+  });
+
   const layoutLanguage = computed<LanguageSupport>(() => {
-    const inferred = inferHubLanguageFromContentRoute(route, resolveLevel());
+    const inferred = inferHubLanguageFromContentRoute(
+      route,
+      resolveLevel(),
+      primaryContentLanguage.value,
+    );
     if (inferred !== null) return inferred;
     return hub.value ?? "english";
   });
@@ -24,8 +41,18 @@ export function useContentLayoutLanguage(levelSource?: MaybeRefOrGetter<unknown>
   watch(
     () => [route.fullPath, levelSource !== undefined ? toValue(levelSource) : null] as const,
     () => {
-      const inferred = inferHubLanguageFromContentRoute(route, resolveLevel());
-      if (inferred !== null) hub.value = inferred;
+      const inferred = inferHubLanguageFromContentRoute(
+        route,
+        resolveLevel(),
+        primaryContentLanguage.value,
+      );
+      if (inferred !== null) {
+        hub.value = inferred;
+        hubEducationLevel.value = isPrimaryContentRoute.value ? "primary" : "secondary";
+        if (isPrimaryContentRoute.value) {
+          primaryContentLanguage.value = inferred;
+        }
+      }
     },
     { immediate: true },
   );

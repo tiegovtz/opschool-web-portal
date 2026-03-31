@@ -5,7 +5,12 @@ import messages from "~/utilities/messages";
 import ConfirmationModal from "~/components/ai-teacher/ConfirmationModal.vue";
 import { useNavigationStore } from "~/stores/navigationStore";
 import type { LanguageSupport } from "~/types/language.interface";
-import { getHubPath, normalizeEducationLevel } from "~/utilities/educationRoute";
+import {
+  getHubLanguageCode,
+  getHubPath,
+  normalizeEducationLevel,
+  normalizeLanguageSupport,
+} from "~/utilities/educationRoute";
 
 const props = withDefaults(
   defineProps<{educationLevel?:string,language?:LanguageSupport}>(),{
@@ -16,7 +21,10 @@ const userToken = useCookie<any>("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
 const refreshToken = useCookie("signInRefreshToken");
 const route = useRoute();
+const router = useRouter();
 const navigationStore = useNavigationStore();
+const hubEducationLevel = useHubEducationLevel();
+const primaryContentLanguage = usePrimaryContentLanguage();
 
 const matchesPath = (path: string) =>
   route.path === path || route.path.startsWith(`${path}/`);
@@ -115,15 +123,83 @@ const openLogoutConfirmFromMenu = () => {
   showLogoutConfirm.value = true;
 };
 
+const inferredRouteEducationLevel = computed(() => {
+  if (route.path === "/primary" || route.path.startsWith("/primary/")) {
+    return "primary";
+  }
+
+  if (route.path === "/secondary" || route.path.startsWith("/secondary/")) {
+    return "secondary";
+  }
+
+  if (String(route.params.level ?? "").toLowerCase().includes("darasa")) {
+    return "primary";
+  }
+
+  const routeLevel = route.query.educationLevel ?? route.query.edl;
+  if (routeLevel) {
+    return normalizeEducationLevel(routeLevel);
+  }
+
+  return hubEducationLevel.value;
+});
+
 const currentEducationLevel = computed(() =>
   props.educationLevel
     ? normalizeEducationLevel(props.educationLevel)
-    : props.language === "kiswahili"
-      ? "primary"
-      : "secondary",
+    : inferredRouteEducationLevel.value,
 );
 
+const showPrimaryLanguageSwitch = computed(() =>
+  route.path === "/primary" ||
+  route.path.startsWith("/primary/") ||
+  String(route.params.level ?? "").toLowerCase().includes("darasa") ||
+  normalizeEducationLevel(route.query.educationLevel ?? route.query.edl, "secondary") === "primary",
+);
+
+const activePrimaryLanguage = computed<LanguageSupport>(() =>
+  showPrimaryLanguageSwitch.value
+    ? normalizeLanguageSupport(route.query.lang, primaryContentLanguage.value)
+    : "english",
+);
+
+const languageSwitchContent = computed(() =>
+  props.language === "kiswahili"
+    ? {
+        label: "Lugha",
+        english: "English",
+        kiswahili: "Kiswahili",
+      }
+    : {
+        label: "Language",
+        english: "English",
+        kiswahili: "Kiswahili",
+      },
+);
+
+const homeHubLabel = computed(() => {
+  if (currentEducationLevel.value === "primary") {
+    return props.language === "kiswahili" ? "Msingi" : "Primary";
+  }
+  return "Secondary";
+});
+
 const homeTarget = computed(() => getHubPath(currentEducationLevel.value));
+
+const setPrimaryLanguage = async (language: LanguageSupport) => {
+  if (!showPrimaryLanguageSwitch.value) return;
+
+  const normalizedLanguage = normalizeLanguageSupport(language, "kiswahili");
+  primaryContentLanguage.value = normalizedLanguage;
+
+  await router.replace({
+    path: route.path,
+    query: {
+      ...route.query,
+      lang: getHubLanguageCode("primary", normalizedLanguage),
+    },
+  });
+};
 
 const authReturnQuery = computed(() => {
   const p = route.path;
@@ -157,6 +233,16 @@ watch(
   },
 );
 
+watch(
+  activePrimaryLanguage,
+  (language) => {
+    if (showPrimaryLanguageSwitch.value) {
+      primaryContentLanguage.value = language;
+    }
+  },
+  { immediate: true },
+);
+
 onBeforeUnmount(() => {
   if (logoutToastTimeout.value) clearTimeout(logoutToastTimeout.value);
 });
@@ -182,7 +268,7 @@ onBeforeUnmount(() => {
             <div class="flex items-center justify-center">
               <IconsHome :size="20" />
             </div>
-            <p class="hidden capitalize lg:flex">{{ language==='english' ? `Secondary` :`Primary`}}</p>
+            <p class="hidden capitalize lg:flex">{{ homeHubLabel }}</p>
           </NuxtLink>
 
           <!-- TIE Library Books -->
@@ -235,6 +321,33 @@ onBeforeUnmount(() => {
               {{ language==='english' ? `Learning statistics` :`Takwimu za ujifunzaji`}}
             </p>
           </NuxtLink>
+
+          <div
+            v-if="showPrimaryLanguageSwitch"
+            class="flex items-center gap-2 px-2"
+          >
+            <span class="hidden text-xs uppercase lg:block text-white/80">
+              {{ languageSwitchContent.label }}
+            </span>
+            <div class="flex overflow-hidden border rounded-full border-white/35 bg-white/10">
+              <button
+                type="button"
+                class="px-3 py-1 text-xs font-medium transition-colors"
+                :class="activePrimaryLanguage === 'english' ? 'bg-white text-deepBlue' : 'text-white hover:bg-white/10'"
+                @click="setPrimaryLanguage('english')"
+              >
+                {{ languageSwitchContent.english }}
+              </button>
+              <button
+                type="button"
+                class="px-3 py-1 text-xs font-medium transition-colors"
+                :class="activePrimaryLanguage === 'kiswahili' ? 'bg-white text-deepBlue' : 'text-white hover:bg-white/10'"
+                @click="setPrimaryLanguage('kiswahili')"
+              >
+                {{ languageSwitchContent.kiswahili }}
+              </button>
+            </div>
+          </div>
 
           <div class="subInfo">
             <div class="flex items-center gap-4 p-2" v-if="!userToken">
@@ -334,7 +447,7 @@ onBeforeUnmount(() => {
                   <IconsHome :size="20" />
                 </div>
                 <p class="hidden capitalize lg:flex">
-                  {{ language==='english' ? `Secondary` :`Primary`}}
+                  {{ homeHubLabel }}
                 </p>
               </NuxtLink>
 
@@ -442,6 +555,33 @@ onBeforeUnmount(() => {
                   <IconsSignIn :size="20" class="" />
                 </NuxtLink>
               </div>
+            </div>
+          </div>
+
+          <div
+            v-if="showPrimaryLanguageSwitch"
+            class="flex items-center justify-center w-full gap-2 px-3 pb-2"
+          >
+            <span class="text-[11px] uppercase text-white/80">
+              {{ languageSwitchContent.label }}
+            </span>
+            <div class="flex overflow-hidden border rounded-full border-white/35 bg-white/10">
+              <button
+                type="button"
+                class="px-3 py-1 text-xs font-medium transition-colors"
+                :class="activePrimaryLanguage === 'english' ? 'bg-white text-deepBlue' : 'text-white hover:bg-white/10'"
+                @click="setPrimaryLanguage('english')"
+              >
+                {{ languageSwitchContent.english }}
+              </button>
+              <button
+                type="button"
+                class="px-3 py-1 text-xs font-medium transition-colors"
+                :class="activePrimaryLanguage === 'kiswahili' ? 'bg-white text-deepBlue' : 'text-white hover:bg-white/10'"
+                @click="setPrimaryLanguage('kiswahili')"
+              >
+                {{ languageSwitchContent.kiswahili }}
+              </button>
             </div>
           </div>
         </div>
