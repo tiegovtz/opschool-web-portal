@@ -111,9 +111,7 @@ const fetchData = async () => {
     try {
         const [audios, videos, experiments, topics] = await Promise.allSettled(reqwest);
         const getLength = (res: any) => {
-            console.log(res);
-
-            return res.status === "fulfilled" ? res?.value?.length || 0 : 0
+             return res.status === "fulfilled" ? res?.value?.length || 0 : 0
         }
 
         // const totalChapters = (topics as any)?.value?.reduce(

@@ -240,7 +240,7 @@ export const ActivityResultsAlertDialog = defineComponent({
           role="dialog"
           aria-modal="true"
           aria-live="polite"
-          class="fixed inset-0 z-[130] flex items-start justify-center px-4 pb-8 pt-12 md:pt-16"
+          class="fixed inset-0 z-[130] flex items-center justify-center px-4 py-8"
         >
           {/* Blur/dim the activity behind the modal */}
           <div
