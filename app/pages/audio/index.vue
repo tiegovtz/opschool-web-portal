@@ -294,6 +294,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
       </div>
       <HomeTabContentShell
         :active-tab="activeTab"
+        :language="language"
         :results-count="audios?.length || 0"
         :filter-value="filterValue"
         :show-filters="!!userToken"

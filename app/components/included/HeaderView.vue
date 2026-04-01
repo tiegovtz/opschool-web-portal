@@ -76,6 +76,10 @@ const logoutToastTimeout = ref<null | any>(null);
 const logoutAlert = ref<HTMLElement | null>(null);
 const isHomeMenuOpen = ref(false);
 const isAccountMenuOpen = ref(false);
+const activeHeaderLanguage = computed<LanguageSupport>(() =>
+  normalizeLanguageSupport(hubHeaderLang.value || props.language, "english"),
+);
+const isKiswahili = computed(() => activeHeaderLanguage.value === "kiswahili");
 
 const userDisplayName = computed(() => {
   const user = userToken.value;
@@ -97,8 +101,23 @@ const userDisplayName = computed(() => {
   ).trim();
   if (fallbackName) return fallbackName;
 
-  return props.language === "kiswahili" ? "Akaunti" : "Account";
+  return isKiswahili.value ? "Akaunti" : "Account";
 });
+
+const logoutConfirmTitle = computed(() =>
+  isKiswahili.value ? "Ondoka" : "Log out",
+);
+const logoutConfirmMessage = computed(() =>
+  isKiswahili.value
+    ? "Una uhakika unataka kutoka kwenye akaunti yako?"
+    : "Are you sure you want to log out of your account?",
+);
+const logoutConfirmButtonText = computed(() =>
+  isKiswahili.value ? "Ondoka" : "Log out",
+);
+const logoutCancelButtonText = computed(() =>
+  isKiswahili.value ? "Ghairi" : "Cancel",
+);
 
 const logout = () => {
   if (shouldRememberCurrentRoute()) {
@@ -923,10 +942,10 @@ onBeforeUnmount(() => {
     <!-- Logout confirmation modal -->
     <ConfirmationModal
       :is-open="showLogoutConfirm"
-      title="Log out"
-      :message="messages.info.auth.logoutConfirm"
-      confirm-text="Log out"
-      cancel-text="Cancel"
+      :title="logoutConfirmTitle"
+      :message="logoutConfirmMessage"
+      :confirm-text="logoutConfirmButtonText"
+      :cancel-text="logoutCancelButtonText"
       variant="danger"
       icon="heroicons:arrow-right-on-rectangle"
       @confirm="onLogoutConfirm"

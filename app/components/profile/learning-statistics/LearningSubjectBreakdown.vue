@@ -26,27 +26,94 @@ const emit = defineEmits<{
 }>();
 
 const expandedSubjectTopics = ref<Record<string, boolean>>({});
+const pageLanguage = useHubPageLanguage();
+const isSw = computed(() => pageLanguage.value === "kiswahili");
 
-const topicStatusLabels: Record<TopicLearningStatus, string> = {
-  covered: "Covered",
-  in_progress: "In progress",
-  opened_only: "Opened only",
-  not_started: "Not started",
-};
+const text = computed(() => ({
+  covered: isSw.value ? "Zimekamilika" : "Covered",
+  active: isSw.value ? "Zinaendelea" : "Active",
+  notStarted: isSw.value ? "Hazijaanza" : "Not started",
+  passed: isSw.value ? "Umefaulu" : "Passed",
+  failed: isSw.value ? "Umefeli" : "Failed",
+  notAttempted: isSw.value ? "Haijajaribiwa" : "Not attempted",
+  inProgress: isSw.value ? "Inaendelea" : "In progress",
+  openedOnly: isSw.value ? "Imefunguliwa tu" : "Opened only",
+  improved: isSw.value ? "Imeboreshwa" : "Improved",
+  resolved: isSw.value ? "Imetatuliwa" : "Resolved",
+  regressed: isSw.value ? "Imerudi nyuma" : "Regressed",
+  noChapterData: isSw.value ? "Hakuna taarifa za sura" : "No chapter data",
+  chapters: isSw.value ? "sura" : "chapters",
+  chaptersCompleted: isSw.value ? "zimekamilika" : "completed",
+  topicCoverageNearlyComplete: isSw.value ? "Ufunikaji wa mada unakaribia kukamilika" : "Topic coverage is nearly complete",
+  topicActivityStarted: isSw.value ? "Shughuli ya mada imeanza" : "Topic activity has started",
+  topicNotStartedYet: isSw.value ? "Mada haijaanza bado" : "Topic not started yet",
+  noUrgentTopicGaps: isSw.value ? "Hakuna mapengo ya mada ya haraka" : "No urgent topic gaps",
+  needsRecovery: isSw.value ? "Inahitaji kurekebishwa" : "Needs recovery",
+  coverageGaps: isSw.value ? "Kuna mapengo ya ufunikaji" : "Coverage gaps",
+  buildingMomentum: isSw.value ? "Inaongeza kasi" : "Building momentum",
+  stable: isSw.value ? "Imara" : "Stable",
+  noTrackedImprovement: isSw.value ? "Hakuna maboresho yaliyofuatiliwa bado" : "No tracked improvement yet",
+  progress: isSw.value ? "Maendeleo" : "Progress",
+  quiz: "Quiz",
+  attempts: isSw.value ? "Majaribio" : "Attempts",
+  helpStudyPrompt: isSw.value
+    ? "Nisaidie kusoma"
+    : "Help me study",
+  subjectAndTopicProgress: isSw.value ? "Maendeleo ya Masomo na Mada" : "Subject And Topic Progress",
+  subjectAndTopicHelper: isSw.value
+    ? "Kila somo sasa linaanza na muhtasari wa kuona kabla ya orodha ya kina ya mada."
+    : "Each subject now leads with a visual breakdown before the detailed topic list.",
+  subjectsTracked: isSw.value ? "masomo yamefuatiliwa" : "subjects tracked",
+  coveredInline: isSw.value ? "zimekamilika" : "covered",
+  failedInline: isSw.value ? "umefeli" : "failed",
+  priorityTopics: isSw.value ? "Mada za kipaumbele:" : "Priority topics:",
+  subjectDistribution: isSw.value ? "Mgawanyo wa somo" : "Subject distribution",
+  coveredCenter: isSw.value ? "zimekamilika" : "covered",
+  subjectDistributionSummary: (activeCount: number) =>
+    isSw.value
+      ? `Kazi inayoendelea imejikita kwenye mada ${activeCount} kwa sasa.`
+      : `Active work is concentrated in ${activeCount} topics right now.`,
+  subjectProgress: isSw.value ? "Maendeleo ya somo" : "Subject progress",
+  coverageDepth: isSw.value ? "Kina cha ufunikaji" : "Coverage depth",
+  quizAttempts: isSw.value ? "Majaribio ya quiz" : "Quiz attempts",
+  passedTopics: isSw.value ? "Mada ulizofaulu" : "Passed topics",
+  failedTopics: isSw.value ? "Mada ulizofeli" : "Failed topics",
+  showingTopicDetails: (subjectName: string, many: boolean) =>
+    isSw.value
+      ? `Inaonyesha maelezo ya kiwango cha mada kwa ${subjectName}.${many ? " Kwa chaguo-msingi, mada 5 zenye hatari kubwa zaidi ndizo huonyeshwa kwanza." : ""}`
+      : `Showing topic-level details for ${subjectName}.${many ? " By default, only the 5 highest-risk topics are shown first." : ""}`,
+  showTop5Only: isSw.value ? "Onyesha 5 bora tu" : "Show top 5 only",
+  showAllTopics: (count: number) =>
+    isSw.value ? `Onyesha mada zote ${count}` : `Show all ${count} topics`,
+  topicProgress: isSw.value ? "Maendeleo ya mada" : "Topic progress",
+  sinceSnapshot: isSw.value ? "Tangu Picha ya Mapendekezo" : "Since Recommendation Snapshot",
+  attemptsSinceSnapshot: isSw.value ? "Majaribio tangu picha:" : "Attempts since snapshot:",
+  viewImprovement: isSw.value ? "Tazama maboresho" : "View improvement",
+  openTopic: isSw.value ? "Fungua Mada" : "Open Topic",
+  analyzeWithAi: isSw.value ? "Chambua kwa AI" : "Analyze with AI",
+  items: isSw.value ? "vipengele" : "items",
+}));
 
-const assessmentStatusLabels: Record<TopicAssessmentStatus, string> = {
-  passed: "Passed",
-  failed: "Failed",
-  not_attempted: "Not attempted",
-};
+const topicStatusLabels = computed<Record<TopicLearningStatus, string>>(() => ({
+  covered: text.value.covered,
+  in_progress: text.value.inProgress,
+  opened_only: text.value.openedOnly,
+  not_started: text.value.notStarted,
+}));
 
-const recommendationOutcomeLabels = {
-  not_started: "Not started",
-  in_progress: "In progress",
-  improved: "Improved",
-  resolved: "Resolved",
-  regressed: "Regressed",
-} as const;
+const assessmentStatusLabels = computed<Record<TopicAssessmentStatus, string>>(() => ({
+  passed: text.value.passed,
+  failed: text.value.failed,
+  not_attempted: text.value.notAttempted,
+}));
+
+const recommendationOutcomeLabels = computed(() => ({
+  not_started: text.value.notStarted,
+  in_progress: text.value.inProgress,
+  improved: text.value.improved,
+  resolved: text.value.resolved,
+  regressed: text.value.regressed,
+}) as const);
 
 const comparisonTopicById = computed(
   () => new Map(props.comparisonTopics.map((topic) => [topic.topicId, topic])),
@@ -66,10 +133,10 @@ const buildSubjectCoverageWidth = (subject: SubjectLearningAnalysis) => {
 };
 
 const formatTopicStatus = (status: TopicLearningStatus) =>
-  topicStatusLabels[status] ?? status.replaceAll("_", " ");
+  topicStatusLabels.value[status] ?? status.replaceAll("_", " ");
 
 const formatAssessmentStatus = (status: TopicAssessmentStatus) =>
-  assessmentStatusLabels[status] ?? status.replaceAll("_", " ");
+  assessmentStatusLabels.value[status] ?? status.replaceAll("_", " ");
 
 const getTopicStatusClass = (status: TopicLearningStatus) => {
   if (status === "covered") return "bg-emerald-100 text-emerald-800";
@@ -103,18 +170,18 @@ const getProgressBarClass = (
 };
 
 const formatTopicChapterProgress = (topic: TopicLearningAnalysis) => {
-  if (!topic.totalChapters) return "No chapter data";
-  return `${topic.completedChapters}/${topic.totalChapters} chapters`;
+  if (!topic.totalChapters) return text.value.noChapterData;
+  return `${topic.completedChapters}/${topic.totalChapters} ${text.value.chapters}`;
 };
 
 const formatTopicProgressSummary = (topic: TopicLearningAnalysis) => {
   if (topic.totalChapters > 0) {
-    return `${topic.completedChapters} of ${topic.totalChapters} chapters completed`;
+    return `${topic.completedChapters} / ${topic.totalChapters} ${text.value.chaptersCompleted}`;
   }
 
-  if (topic.progressPercent >= 85) return "Topic coverage is nearly complete";
-  if (topic.progressPercent > 0) return "Topic activity has started";
-  return "Topic not started yet";
+  if (topic.progressPercent >= 85) return text.value.topicCoverageNearlyComplete;
+  if (topic.progressPercent > 0) return text.value.topicActivityStarted;
+  return text.value.topicNotStartedYet;
 };
 
 const getTopicRiskScore = (topic: TopicLearningAnalysis) =>
@@ -134,7 +201,7 @@ const getSubjectPriorityTopics = (subject: SubjectLearningAnalysis) =>
 
 const getSubjectPrioritySummary = (subject: SubjectLearningAnalysis) => {
   const topics = getSubjectPriorityTopics(subject);
-  return topics.length > 0 ? topics.join(", ") : "No urgent topic gaps";
+  return topics.length > 0 ? topics.join(", ") : text.value.noUrgentTopicGaps;
 };
 
 const getSubjectActiveTopics = (subject: SubjectLearningAnalysis) =>
@@ -159,10 +226,10 @@ const getSubjectTopicsForDisplay = (subject: SubjectLearningAnalysis) => {
 };
 
 const getSubjectHealthLabel = (subject: SubjectLearningAnalysis) => {
-  if (subject.failedTopics > 0) return "Needs recovery";
-  if (subject.notStartedTopics > 0) return "Coverage gaps";
-  if (getSubjectActiveTopics(subject) > 0) return "Building momentum";
-  return "Stable";
+  if (subject.failedTopics > 0) return text.value.needsRecovery;
+  if (subject.notStartedTopics > 0) return text.value.coverageGaps;
+  if (getSubjectActiveTopics(subject) > 0) return text.value.buildingMomentum;
+  return text.value.stable;
 };
 
 const getSubjectHealthClass = (subject: SubjectLearningAnalysis) => {
@@ -178,7 +245,7 @@ const getTopicComparison = (topicId: string) =>
   comparisonTopicById.value.get(topicId) ?? null;
 
 const getRecommendationOutcomeLabel = (status: string) =>
-  recommendationOutcomeLabels[
+  recommendationOutcomeLabels.value[
     status as keyof typeof recommendationOutcomeLabels
   ] ?? status.replaceAll("_", " ");
 
@@ -198,12 +265,12 @@ const formatMetricDelta = (value: number | null | undefined, suffix = "") => {
 
 const topicImprovementSummary = (topicId: string) => {
   const comparison = getTopicComparison(topicId);
-  if (!comparison) return "No tracked improvement yet";
+  if (!comparison) return text.value.noTrackedImprovement;
 
   return [
-    `Progress ${formatMetricDelta(comparison.delta.progressPercent, "%")}`,
-    `Quiz ${formatMetricDelta(comparison.delta.assessmentScore, "%")}`,
-    `Attempts ${formatMetricDelta(comparison.delta.assessmentAttempts)}`,
+    `${text.value.progress} ${formatMetricDelta(comparison.delta.progressPercent, "%")}`,
+    `${text.value.quiz} ${formatMetricDelta(comparison.delta.assessmentScore, "%")}`,
+    `${text.value.attempts} ${formatMetricDelta(comparison.delta.assessmentAttempts)}`,
   ].join(" | ");
 };
 
@@ -216,27 +283,31 @@ const getTopicComparisonAttemptCount = (topicId: string) =>
 const buildTopicAnalysisPrompt = (topic: TopicLearningAnalysis) => {
   const scorePart =
     topic.assessmentScore !== null
-      ? ` My latest quiz score is ${topic.assessmentScore}%.`
+      ? (isSw.value
+          ? ` Alama yangu ya mwisho ya quiz ni ${topic.assessmentScore}%.`
+          : ` My latest quiz score is ${topic.assessmentScore}%.`)
       : "";
 
-  return `Help me study ${topic.topicName} in ${topic.subjectName}. My progress is ${topic.progressPercent}%.${scorePart} Show me what I have likely covered, what I have not yet covered, and give me a short plan with practice questions.`;
+  return isSw.value
+    ? `Nisaidie kusoma ${topic.topicName} katika ${topic.subjectName}. Maendeleo yangu ni ${topic.progressPercent}%.${scorePart} Nionyeshe nilichoweza kufunika, nisichojafunika bado, na unipe mpango mfupi wenye maswali ya mazoezi.`
+    : `Help me study ${topic.topicName} in ${topic.subjectName}. My progress is ${topic.progressPercent}%.${scorePart} Show me what I have likely covered, what I have not yet covered, and give me a short plan with practice questions.`;
 };
 
 const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
   {
-    label: "Covered",
+    label: text.value.covered,
     value: subject.coveredTopics,
     colorClass: "bg-emerald-500",
     badgeClass: "bg-emerald-50 text-emerald-700",
   },
   {
-    label: "Active",
+    label: text.value.active,
     value: getSubjectActiveTopics(subject),
     colorClass: "bg-sky-500",
     badgeClass: "bg-sky-50 text-sky-700",
   },
   {
-    label: "Not started",
+    label: text.value.notStarted,
     value: subject.notStartedTopics,
     colorClass: "bg-slate-400",
     badgeClass: "bg-slate-100 text-slate-700",
@@ -252,14 +323,14 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
     <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h4 class="text-lg font-semibold text-slate-900">
-          Subject And Topic Progress
+          {{ text.subjectAndTopicProgress }}
         </h4>
         <p class="mt-1 text-sm text-slate-500">
-          Each subject now leads with a visual breakdown before the detailed topic list.
+          {{ text.subjectAndTopicHelper }}
         </p>
       </div>
       <p class="text-sm text-slate-500">
-        {{ subjects.length }} subjects tracked
+        {{ subjects.length }} {{ text.subjectsTracked }}
       </p>
     </div>
 
@@ -288,8 +359,8 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
             {{
               [
                 subject.levelName,
-                `${subject.coveredTopics}/${subject.totalTopics} covered`,
-                `${subject.failedTopics} failed`,
+                `${subject.coveredTopics}/${subject.totalTopics} ${text.coveredInline}`,
+                `${subject.failedTopics} ${text.failedInline}`,
               ]
                 .filter(Boolean)
                 .join(" | ")
@@ -297,7 +368,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
           </p>
 
           <p class="hidden mt-3 text-xs leading-6 text-slate-500 sm:block">
-            Priority topics:
+            {{ text.priorityTopics }}
             <span class="font-medium text-slate-700">
               {{ getSubjectPrioritySummary(subject) }}
             </span>
@@ -311,37 +382,37 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
                 <LearningDonutChart
                   :segments="[
                     {
-                      label: 'Covered',
+                      label: text.covered,
                       value: subject.coveredTopics,
                       strokeClass: 'stroke-emerald-500',
                     },
                     {
-                      label: 'Active',
+                      label: text.active,
                       value: getSubjectActiveTopics(subject),
                       strokeClass: 'stroke-sky-500',
                     },
                     {
-                      label: 'Not started',
+                      label: text.notStarted,
                       value: subject.notStartedTopics,
                       strokeClass: 'stroke-slate-400',
                     },
                   ]"
                   :total="subject.totalTopics"
                   :center-primary="`${subject.coveredTopics}/${subject.totalTopics}`"
-                  center-secondary="covered"
+                  :center-secondary="text.coveredCenter"
                   :size="148"
                   :thickness="14"
                 />
 
                 <div>
                   <LearningDistributionBar
-                    title="Subject distribution"
+                    :title="text.subjectDistribution"
                     :segments="getSubjectSegments(subject)"
                     :total="subject.totalTopics"
+                    :item-label="text.items"
                   />
                   <p class="mt-4 text-xs leading-6 text-slate-500">
-                    Active work is concentrated in {{ getSubjectActiveTopics(subject) }}
-                    topics right now.
+                    {{ text.subjectDistributionSummary(getSubjectActiveTopics(subject)) }}
                   </p>
                 </div>
               </div>
@@ -350,7 +421,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
             <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
               <article class="p-4 border rounded-3xl border-slate-100 bg-slate-50/80">
                 <p class="text-xs font-semibold tracking-[0.24em] uppercase text-slate-500">
-                  Subject progress
+                  {{ text.subjectProgress }}
                 </p>
                 <p class="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
                   {{ subject.averageProgress }}%
@@ -363,19 +434,19 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
                   ></div>
                 </div>
                 <p class="mt-2 text-xs text-slate-500">
-                  Coverage depth {{ buildSubjectCoverageWidth(subject) }}%
+                  {{ text.coverageDepth }} {{ buildSubjectCoverageWidth(subject) }}%
                 </p>
               </article>
 
               <article class="p-4 border rounded-3xl border-slate-100 bg-slate-50/80">
                 <p class="text-xs font-semibold tracking-[0.24em] uppercase text-slate-500">
-                  Quiz attempts
+                  {{ text.quizAttempts }}
                 </p>
                 <p class="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
                   {{ subject.assessmentAttempts }}
                 </p>
                 <p class="mt-2 text-xs leading-5 text-slate-500">
-                  Passed topics {{ subject.passedTopics }}. Failed topics {{ subject.failedTopics }}.
+                  {{ text.passedTopics }} {{ subject.passedTopics }}. {{ text.failedTopics }} {{ subject.failedTopics }}.
                 </p>
               </article>
             </div>
@@ -384,13 +455,13 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex flex-wrap gap-2 text-xs text-slate-600">
               <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">
-                Covered {{ subject.coveredTopics }}
+                {{ text.covered }} {{ subject.coveredTopics }}
               </span>
               <span class="px-2.5 py-1 rounded-full bg-sky-50 text-sky-700">
-                In progress {{ getSubjectActiveTopics(subject) }}
+                {{ text.inProgress }} {{ getSubjectActiveTopics(subject) }}
               </span>
               <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">
-                Not started {{ subject.notStartedTopics }}
+                {{ text.notStarted }} {{ subject.notStartedTopics }}
               </span>
             </div>
 
@@ -407,12 +478,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
       <div class="border-t border-slate-100 bg-slate-50/70 px-4 pb-4 sm:px-5 sm:pb-5">
         <div class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
           <p class="text-xs text-slate-500">
-            Showing topic-level details for {{ subject.subjectName }}.
-            {{
-              subject.topics.length > 5
-                ? " By default, only the 5 highest-risk topics are shown first."
-                : ""
-            }}
+            {{ text.showingTopicDetails(subject.subjectName, subject.topics.length > 5) }}
           </p>
 
           <button
@@ -432,8 +498,8 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
             <span>
               {{
                 isSubjectTopicListExpanded(subject.subjectName)
-                  ? "Show top 5 only"
-                  : `Show all ${subject.topics.length} topics`
+                  ? text.showTop5Only
+                  : text.showAllTopics(subject.topics.length)
               }}
             </span>
           </button>
@@ -467,25 +533,25 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
 
               <div class="flex flex-wrap gap-2 mt-3 text-xs text-slate-600">
                 <span class="px-2.5 py-1 rounded-full bg-slate-100">
-                  Progress {{ topic.progressPercent }}%
+                  {{ text.progress }} {{ topic.progressPercent }}%
                 </span>
                 <span class="px-2.5 py-1 rounded-full bg-slate-100">
                   {{ formatTopicChapterProgress(topic) }}
                 </span>
                 <span class="px-2.5 py-1 rounded-full bg-slate-100">
-                  Attempts {{ topic.assessmentAttempts }}
+                  {{ text.attempts }} {{ topic.assessmentAttempts }}
                 </span>
                 <span
                   v-if="topic.assessmentScore !== null"
                   class="px-2.5 py-1 rounded-full bg-slate-100"
                 >
-                  Quiz {{ topic.assessmentScore }}%
+                  {{ text.quiz }} {{ topic.assessmentScore }}%
                 </span>
               </div>
 
               <div class="mt-4">
                 <div class="flex items-center justify-between gap-3 text-xs text-slate-500">
-                  <span class="font-semibold tracking-wide uppercase">Topic progress</span>
+                  <span class="font-semibold tracking-wide uppercase">{{ text.topicProgress }}</span>
                   <span>{{ buildProgressWidth(topic.progressPercent) }}%</span>
                 </div>
                 <div class="h-2.5 mt-2 overflow-hidden rounded-full bg-slate-100">
@@ -508,7 +574,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div class="flex flex-wrap items-center gap-2">
                     <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
-                      Since Recommendation Snapshot
+                      {{ text.sinceSnapshot }}
                     </p>
                     <span
                       class="px-2.5 py-1 text-xs font-medium rounded-full"
@@ -523,7 +589,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
                   </div>
 
                   <p class="text-xs text-slate-500">
-                    Attempts since snapshot:
+                    {{ text.attemptsSinceSnapshot }}
                     {{ getTopicComparisonAttemptCount(topic.topicId) }}
                   </p>
                 </div>
@@ -541,7 +607,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
                       name="heroicons:chart-bar-square"
                       class="w-4 h-4"
                     />
-                    <span>View improvement</span>
+                    <span>{{ text.viewImprovement }}</span>
                   </button>
                 </div>
               </div>
@@ -556,7 +622,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
                   name="heroicons:play-circle"
                   class="w-5 h-5"
                 />
-                <span>Open Topic</span>
+                <span>{{ text.openTopic }}</span>
               </NuxtLink>
 
               <button
@@ -568,7 +634,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
                   name="heroicons:sparkles"
                   class="w-5 h-5"
                 />
-                <span>Analyze with AI</span>
+                <span>{{ text.analyzeWithAi }}</span>
               </button>
             </div>
           </article>
