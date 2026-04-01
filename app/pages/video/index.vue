@@ -140,7 +140,7 @@ const fetchVideos = async (param?: any) => {
     videos.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
     // remove type
     // videos.value = videoType === 'conc' ? removeDataFromArrayOfJson( videos.value, 'videoType','Others' ):removeDataFromArrayOfJson( videos.value, 'videoType', 'Conceptual');
-    videos.value = educationLevel.value === "secondary"
+    videos.value = educationLevel.value !== "primary"
       ? filterKeyDataFromArrayOfJson(videos.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
       : videos.value;
     status.value = fetchStatus.value;

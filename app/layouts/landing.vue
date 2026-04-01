@@ -9,7 +9,7 @@ withDefaults(
 </script>
 
 <template>
-    <div class="relative flex flex-col gap-10 justify-between h-full 2xl:h-dvh bg-[linear-gradient(135deg,#d8eafb_0%,#8bb8dd_34%,#1f6fb2_68%,#174f80_100%)] p-4 py-4 md:px-8 xl:px-16"
+    <div class="relative flex flex-col justify-evenly h-full 2xl:h-dvh bg-[linear-gradient(135deg,#d8eafb_0%,#8bb8dd_34%,#1f6fb2_68%,#174f80_100%)] p-4 py-4 md:px-8 xl:px-16"
         @contextmenu.prevent>
         <!-- background -->
         <Background class="" />
