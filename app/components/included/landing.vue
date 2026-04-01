@@ -116,7 +116,7 @@ const fetchData = async () => {
     try {
         const [audios, videos, experiments, topics] = await Promise.allSettled(reqwest);
         const getLength = (res: any) => {
-             return res.status === "fulfilled" ? res?.value?.length || 0 : 0
+            return res.status === "fulfilled" ? res?.value?.length || 0 : 0
         }
 
         // const totalChapters = (topics as any)?.value?.reduce(
@@ -153,26 +153,30 @@ onMounted(async () => {
             </div>
 
             <!-- static -->
-            <div class="grid gap-4 pt-15 md:grid-cols-2 mt-4 md:mt-8 lg:mt-16">
+            <div class="grid gap-4 pt-15 xl:grid-cols-2 mt-4 md:mt-8 lg:mt-16">
                 <div v-for="(stat, idx) in stats" :key="`${idx}-${stat.label}`"
                     class="group relative overflow-hidden rounded-[2rem] border border-[#e4edf5] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(247,251,255,0.98)_100%)] px-5 py-4 shadow-[0px_18px_40px_rgba(18,79,134,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0px_24px_48px_rgba(18,79,134,0.14)]">
                     <div
                         class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(108,180,229,0.08),transparent_42%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <div class="relative flex items-center gap-4">
-                        <div :class="`flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[1.55rem]
+                        <div :class="`hidden lg:flex lg:h-10 lg:w-10 h-9 w-9 shrink-0 items-center justify-center rounded-lg
                         text-white shadow-[0px_12px_22px_rgba(31,111,178,0.2)] ${getAccentStyles(stat.accent).tile}`">
                             <IconsStats :type="(stat.icon as IconType)" />
                         </div>
                         <div class="min-w-0">
-                            <p class="text-[15px] font-medium leading-6 text-[#30475d] md:text-base">
+                            <p class="hidden lg:block text-[15px] font-medium leading-6 text-[#30475d] md:text-base">
                                 {{ stat.label }}
                             </p>
                             <p :class="`mt-1 text-[24px] font-bold leading-none tracking-[-0.02em] md:text-xl
                             ${getAccentStyles(stat.accent).value}`">
-                                {{ stat.data === 'topics' ? `${allTopics}+` : stat.data == 'resources' ? `${allContent}+` :
+                                {{ stat.data === 'topics' ? `${allTopics}+` : stat.data == 'resources' ?
+                                    `${allContent}+` :
                                 stat.value }}
                             </p>
-                            <p class="mt-1 text-sm leading-5 text-[#72879a]">
+                            <p class="lg:hidden text-[15px] font-medium leading-6 text-[#30475d] md:text-base">
+                                {{ stat.label }}
+                            </p>
+                            <p class="lg:mt-1 text-sm leading-5 text-[#72879a]">
                                 {{ stat.detail }}
                             </p>
                         </div>
