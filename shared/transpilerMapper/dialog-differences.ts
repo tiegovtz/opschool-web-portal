@@ -15,6 +15,8 @@ const dialogDifferencesPropsTranspiler = (params: {
   const rebaseUploadsUrl = (value: unknown) => {
     const text = typeof value === "string" ? value.trim() : "";
     if (!text) return "";
+    // If we already have an absolute URL, keep it as-is. Rebasing can break working URLs.
+    if (/^https?:\/\//i.test(text) || text.startsWith("//")) return text;
     const idx = text.toLowerCase().indexOf("/uploads/");
     if (idx >= 0) return text.slice(idx + 1); // "uploads/..."
     return text;
