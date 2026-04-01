@@ -29,32 +29,12 @@ export const completeSentencesByRephrasingPropsTranspiler = (
 
   const titleDescription = title.split("||")[0];
 
-  // Backend may send correct numeric answers wrapped as `cua(4)` (compound-unit arithmetic format).
-  // This activity UI for rephrasing uses plain text inputs, so students likely type `4`.
-  // To avoid strict-matching failures, unwrap `cua(x)` -> `x` and accept both forms.
-  const unwrapCuaAnswers = (raw: string): string[] | null => {
-    const match = raw.match(/^cua\s*\(\s*(.*?)\s*\)\s*$/i);
-    if (!match) return null;
-
-    const inner = match[1]?.trim() ?? "";
-    if (!inner) return null;
-
-    const separator = inner.includes("|") ? "|" : ",";
-    const parts = inner
-      .split(separator)
-      .map((p) => p.trim())
-      .filter(Boolean);
-
-    // Extract numeric prefix from each part (e.g. "4", or "4m" -> "4")
-    const numbers = parts.map((part) => {
-      const numMatch = part.match(/^(\d+)/);
-      return (numMatch ? numMatch[1] : part).trim();
-    }).filter(Boolean);
-
-    // Keep original too, in case the frontend user enters `cua(4)` / `cua (4)` directly.
-    // Also keep a normalized `cua(<inner>)` form so strict string matches are stable.
-    const normalizedCua = `cua(${inner.replace(/\s+/g, "")})`;
-    return Array.from(new Set([raw, normalizedCua, ...numbers]));
+  // Backend may send correct answers wrapped as `cua(4)` (compound-unit arithmetic format).
+  // For this activity, students type plain digits, so unwrap per-token: `cua(4)` -> `4`.
+  const normalizeAnswerToken = (value: string) => {
+    const trimmed = (value ?? "").toString().trim();
+    const match = trimmed.match(/^cua\s*\(\s*(.*?)\s*\)\s*$/i);
+    return (match?.[1] ?? trimmed).toString().trim();
   };
 
   return {
@@ -74,11 +54,13 @@ export const completeSentencesByRephrasingPropsTranspiler = (
                 if (isFractionorMixedFraction(rawAnswer).isFractionOrMixedFraction) {
                   return [rawAnswer];
                 }
-
-                const cuaUnwrapped = unwrapCuaAnswers(rawAnswer);
-                if (cuaUnwrapped) return cuaUnwrapped;
-
-                return rawAnswer?.split("/").map((ans) => ans.trim()) || [rawAnswer];
+                return rawAnswer
+                  ? rawAnswer
+                      .split("/")
+                      .map((ans) => normalizeAnswerToken(ans))
+                      .map((ans) => ans.trim())
+                      .filter((ans) => ans.length > 0)
+                  : [];
               })()
             : q.textTwo?.split(" ") || [],
     })),
