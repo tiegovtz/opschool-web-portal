@@ -6,6 +6,7 @@ import type { LocationQueryRaw } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
+const contentLayoutLanguage = useContentLayoutLanguage();
 
 const userToken = useCookie("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
@@ -23,7 +24,6 @@ const openSubjectTeacherSignal = useState<number>(
 const isLoadingAllowedSubjects = ref(false);
 
 const EXCLUDED_PREFIXES = [
-  "/",
   "/tie-ai-teacher",
   "/auth",
   "/smart-class",
@@ -31,6 +31,7 @@ const EXCLUDED_PREFIXES = [
   "/conversation-practice",
 ];
 const EXCLUDED_EXACT: string[] = [
+  "/",
 ];
 
 const isLoggedIn = computed(() => !!(userToken.value || accessToken.value));
@@ -75,8 +76,21 @@ const hasValidSubjectContext = computed(() => {
 
   const querySubject =
     typeof route.query.subject === "string" ? route.query.subject : "";
-  const subjectSlugRaw = params.level ?? params.subject ?? params.subjectSlug ?? querySubject;
+  const subjectSlugRaw =
+    params.subject ??
+    params.subjectSlug ??
+    querySubject;
   const subjectSlug = normalizeSubjectSlug(subjectSlugRaw);
+  const isInteractiveTopicRoute =
+    route.path.toLowerCase().startsWith("/interactive/") &&
+    typeof params.topicId === "string" &&
+    params.topicId.trim().length > 0 &&
+    Boolean(subjectSlug);
+
+  if (isInteractiveTopicRoute) {
+    return true;
+  }
+
   const isAllowed =
     allowedSubjectSlugs.value.length === 0
       ? Boolean(subjectSlug)
@@ -88,11 +102,16 @@ const hasValidSubjectContext = computed(() => {
 const showLauncher = computed(
   () => isLoggedIn.value && !isExcluded.value && !isBusy.value
 );
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
 const launcherLabel = computed(() =>
-  hasValidSubjectContext.value ? "AI Subject Teacher" : "AI Teacher"
+  hasValidSubjectContext.value
+    ? (isSwahili.value ? "Mwalimu wa Somo wa Akili Unde" : "AI Subject Teacher")
+    : (isSwahili.value ? "Mwalimu wa Akili Unde" : "AI Teacher")
 );
 const launcherHoverLabel = computed(() =>
-  hasValidSubjectContext.value ? "Ask AI Subject Teacher" : "Ask AI Teacher"
+  hasValidSubjectContext.value
+    ? (isSwahili.value ? "Uliza Mwalimu wa Somo wa Akili Unde" : "Ask AI Subject Teacher")
+    : (isSwahili.value ? "Uliza Mwalimu wa Akili Unde" : "Ask AI Teacher")
 );
 const isLauncherHovered = ref(false);
 const isSmallScreen = ref(false);

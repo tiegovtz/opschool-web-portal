@@ -11,9 +11,88 @@ import CustomDate from "~/components/common/CustomDate.vue";
 
 const canGoBack = ref(false);
 const route = useRoute();
-const hubHeaderLang = useHubHeaderLanguage();
+const pageLanguage = useHubPageLanguage();
+const isSw = computed(() => pageLanguage.value === "kiswahili");
 const navigationStore = useNavigationStore();
 const router = useRouter();
+
+const smartText = computed(() => ({
+  back: isSw.value ? "Rudi" : "Back",
+  smartClassHub: isSw.value ? "Kituo cha Darasa Janja" : "Smart Class Hub",
+  heroTitle: isSw.value ? "Jifunze Mubashara, Tazama Tena, au Unganika" : "Learn Live, Rewatch, or Tune In",
+  heroSummary: isSw.value ? "Jiunge na madarasa mubashara, tazama SomaKwanza TV, au fikia vipindi vilivyorekodiwa." : "Join live classes, watch SomaKwanza TV, or access your recorded sessions.",
+  createClass: isSw.value ? "Unda darasa" : "Create class",
+  liveClasses: isSw.value ? "Madarasa Mubashara" : "Live Classes",
+  liveClassesNote: isSw.value ? "Vipindi vipya vinaanza karibuni" : "New sessions start soon",
+  liveTvNote: isSw.value ? "Matangazo ya elimu mubashara" : "Live educational broadcasts",
+  recordedSessions: isSw.value ? "Vipindi Vilivyorekodiwa" : "Recorded Sessions",
+  recordedSessionsNote: isSw.value ? "Jifunze kwa kasi yako" : "Learn at your own pace",
+  liveClassrooms: isSw.value ? "Madarasa ya mubashara" : "Live classrooms",
+  liveClassroomsSummary: isSw.value ? "Jiunge na masomo ya moja kwa moja." : "Join interactive lessons in real time.",
+  recordedLibrary: isSw.value ? "Maktaba ya vipindi" : "Recorded library",
+  recordedLibrarySummary: isSw.value ? "Rudia masomo ya zamani." : "Revisit past lessons.",
+  active: isSw.value ? "Mubashara" : "Active",
+  pastSessions: isSw.value ? "Vipindi Vilivyopita" : "Past Sessions",
+  all: isSw.value ? "Vyote" : "All",
+  today: isSw.value ? "Leo" : "Today",
+  tomorrow: isSw.value ? "Kesho" : "Tomorrow",
+  thisWeek: isSw.value ? "Wiki hii" : "This week",
+  searchLive: isSw.value ? "Tafuta madarasa mubashara..." : "Search live classes...",
+  searchRecorded: isSw.value ? "Tafuta vipindi vilivyorekodiwa..." : "Search recorded sessions...",
+  upcomingSession: isSw.value ? "Kipindi kijacho" : "Upcoming session",
+  live: isSw.value ? "Mubashara" : "Live",
+  noDescription: isSw.value ? "Hakuna maelezo yaliyowekwa." : "No description available.",
+  noLiveClassesYet: isSw.value ? "Hakuna madarasa mubashara bado" : "No live classes yet",
+  noRecordedSessions: isSw.value ? "Hakuna vipindi vilivyorekodiwa" : "No recorded sessions",
+  noRecordedSessionsDescription: isSw.value ? "Masomo yakisharekodiwa yataonekana hapa." : "Once lessons are recorded they will appear in this library.",
+  tvUnavailable: isSw.value ? "Mtiririko wa TV haupatikani" : "TV stream unavailable",
+  tvUnavailableDescription: isSw.value ? "SomaKwanza TV haitangazi kwa sasa." : "SomaKwanza TV is not broadcasting at the moment.",
+  noMatchingLiveClasses: isSw.value ? "Hakuna darasa linalolingana" : "No matching live classes",
+  noMatchingRecordedSessions: isSw.value ? "Hakuna kipindi kinacholingana" : "No matching recorded sessions",
+  tryAnotherKeyword: isSw.value ? "Jaribu neno jingine kutafuta kipindi kilichorekodiwa." : "Try another keyword to find a recorded session.",
+  noClassesToday: isSw.value ? "Hakuna madarasa leo" : "No classes today",
+  noClassesTodayDescription: isSw.value ? "Hakuna madarasa mubashara yaliyopangwa leo." : "There are no live classes scheduled for today.",
+  noClassesTomorrow: isSw.value ? "Hakuna madarasa kesho" : "No classes tomorrow",
+  noClassesTomorrowDescription: isSw.value ? "Hakuna madarasa mubashara yaliyopangwa kesho." : "There are no live classes scheduled for tomorrow.",
+  noClassesThisWeek: isSw.value ? "Hakuna madarasa wiki hii" : "No classes this week",
+  noClassesThisWeekDescription: isSw.value ? "Hakuna madarasa mubashara yaliyopangwa wiki hii." : "There are no live classes scheduled for this week.",
+  noActiveClasses: isSw.value ? "Hakuna darasa mubashara sasa" : "No active classes",
+  noActiveClassesDescription: isSw.value ? "Hakuna darasa mubashara linaloendelea sasa hivi." : "There are no live classes happening right now.",
+  itemLabelLive: isSw.value ? "madarasa mubashara" : "live classes",
+  itemLabelRecorded: isSw.value ? "vipindi vilivyorekodiwa" : "recorded sessions",
+  customLiveAria: isSw.value ? "Ukubwa maalum wa ukurasa wa madarasa mubashara" : "Custom live classes page size",
+  customRecordedAria: isSw.value ? "Ukubwa maalum wa ukurasa wa vipindi vilivyorekodiwa" : "Custom recorded sessions page size",
+  createLiveClass: isSw.value ? "Unda Darasa la Mubashara" : "Create Live Class",
+  closeButton: isSw.value ? "Funga" : "Close button",
+  selectClass: isSw.value ? "Chagua darasa" : "Select class",
+  selectSubject: isSw.value ? "Chagua somo" : "Select subject",
+  selectTopic: isSw.value ? "Chagua mada" : "Select topic",
+  startTime: isSw.value ? "Muda wa kuanza" : "Start time",
+  endTime: isSw.value ? "Muda wa kumaliza" : "End time",
+  startDateTime: isSw.value ? "Chagua tarehe na muda wa kuanza" : "Select start date & time",
+  endDateTime: isSw.value ? "Chagua tarehe na muda wa kumaliza" : "Select end date & time",
+  roomName: isSw.value ? "Jina la chumba" : "Room name",
+  schoolRegistrationNumber: isSw.value ? "Namba ya usajili wa shule" : "School registration number",
+  details: isSw.value ? "Maelezo" : "Details",
+  describeSession: isSw.value ? "Eleza kipindi kwa kifupi" : "Briefly describe the session",
+  cancel: isSw.value ? "Ghairi" : "Cancel",
+  creating: isSw.value ? "Inaunda..." : "Creating...",
+  session: isSw.value ? "Kipindi" : "Session",
+  instructor: isSw.value ? "Mwalimu" : "Instructor",
+  sessionSummary: isSw.value ? "Muhtasari wa kipindi" : "Session summary",
+  checking: isSw.value ? "Inakagua..." : "Checking...",
+  play: isSw.value ? "Cheza" : "Play",
+  joinSession: isSw.value ? "Jiunge na kipindi" : "Join Session",
+  preparingVideo: isSw.value ? "Inaandaa video..." : "Preparing video...",
+  preparingLiveClass: isSw.value ? "Inaandaa darasa mubashara..." : "Preparing live class...",
+  playPause: isSw.value ? "Cheza/Sitisha" : "Play/Pause",
+  muteUnmute: isSw.value ? "Nyamazisha/Rudisha sauti" : "Mute/Unmute",
+  fullscreen: isSw.value ? "Skrini nzima" : "Fullscreen",
+  liveClassUnavailable: isSw.value ? "Darasa mubashara halipatikani." : "Live class not available.",
+  sessionExpired: isSw.value ? "Muda wa kikao umeisha" : "Session expired",
+  signInAgain: isSw.value ? "Ingia tena" : "Sign in again",
+  sessionExpiredMessage: isSw.value ? "Muda wa kikao chako umeisha. Tafadhali ingia tena." : "Your session has expired. Please sign in again.",
+}));
 
 type TabKey = "live-classes" | "live-tv" | "recorded-sessions";
 
@@ -69,15 +148,15 @@ const isLoadingCards = ref(false);
  * Session-expired modal (shows on any 401 from requests on this page)
  */
 const sessionExpiredModalOpen = ref(false);
-const sessionExpiredMessage = ref("Your session has expired. Please sign in again.");
+const sessionExpiredMessage = ref(smartText.value.sessionExpiredMessage);
 
 const openSessionExpiredModal = (message?: string) => {
   // Avoid spamming if multiple requests fail at the same time
   if (sessionExpiredModalOpen.value) return;
 
   rememberCurrentFocus();
-  announceForScreenReader("Session expired dialog opened.");
-  sessionExpiredMessage.value = message || "Your session has expired. Please sign in again.";
+  announceForScreenReader(isSw.value ? "Dirisha la muda wa kikao kuisha limefunguliwa." : "Session expired dialog opened.");
+  sessionExpiredMessage.value = message || smartText.value.sessionExpiredMessage;
   sessionExpiredModalOpen.value = true;
 
   // Close other modals for clarity (optional)
@@ -275,19 +354,19 @@ const mapLiveSessionToCard = (session: any): SessionCard => {
     fetchTopicName(topicId);
     topicLoading = true;
   }
-  if (!safeTitle) safeTitle = "Live Session";
+  if (!safeTitle) safeTitle = isSw.value ? "Kipindi cha mubashara" : "Live Session";
 
   return {
     id: session?._id,
     title: safeTitle,
     instructor,
     thumbnail: session?.thumbnail || defaultThumbnail,
-    category: schoolLabel || "General",
-    subject: subjectLabel || "General",
+    category: schoolLabel || (isSw.value ? "Jumla" : "General"),
+    subject: subjectLabel || (isSw.value ? "Jumla" : "General"),
     topicId,
     topicLoading,
     duration: deriveDuration(start, end),
-    description: session?.details || session?.description || "Interactive live lesson",
+    description: session?.details || session?.description || (isSw.value ? "Somo la mubashara la maingiliano" : "Interactive live lesson"),
     time: formatSessionTime(start),
     createdAt: session?.createdAt || session?.updatedAt || start,
     startTime: start,
@@ -309,7 +388,7 @@ const mapRecordedSessionToCard = (session: any): SessionCard => {
     session?.school_class?.name ||
     session?.schoolClass ||
     session?.school_class ||
-    "Recorded";
+    isSw.value ? "Kimehifadhiwa" : "Recorded";
 
   const subjectLabel =
     (typeof session?.subject === "object" ? session.subject?.name : session?.subject) || classLabel;
@@ -318,16 +397,16 @@ const mapRecordedSessionToCard = (session: any): SessionCard => {
 
   return {
     id: session?._id ?? session?.videoId ?? session?.id,
-    title: session?.title || video?.name || "Recorded Session",
+    title: session?.title || video?.name || (isSw.value ? "Kipindi kilichorekodiwa" : "Recorded Session"),
     instructor: session?.teacher?.name || session?.teacherName || session?.teacher_name || "SomaKwanza",
     thumbnail: defaultRecordingThumbnail,
     category: classLabel,
     subject: subjectLabel,
-    duration: session?.duration || video?.duration || "Recorded",
-    description: session?.description || session?.details || video?.description || "Replay available",
+    duration: session?.duration || video?.duration || (isSw.value ? "Kimehifadhiwa" : "Recorded"),
+    description: session?.description || session?.details || video?.description || (isSw.value ? "Rejea inapatikana" : "Replay available"),
     time: formatSessionTime(timestamp),
     createdAt: timestamp,
-    badge: "Recorded",
+    badge: isSw.value ? "Kimehifadhiwa" : "Recorded",
     subjectGradient: buildGradient(subjectLabel ?? classLabel),
     subjectInitials: getSubjectInitials(subjectLabel ?? classLabel),
     recordingUrl: buildAssetUrl(video?.videoFileUrl || session?.recordingUrl || session?.videoFileUrl) || "",
@@ -339,7 +418,7 @@ const handleUnauthorized = (error: unknown) => {
   const status = payload?.status || payload?.response?.status || payload?.statusCode;
 
   if (status === 401) {
-    openSessionExpiredModal("Your session has expired. Please sign in again.");
+    openSessionExpiredModal(smartText.value.sessionExpiredMessage);
   }
 };
 
@@ -681,7 +760,7 @@ const submitCreateSession = async () => {
       body: payload,
     });
 
-    createSuccess.value = "Live class created successfully.";
+    createSuccess.value = isSw.value ? "Darasa la mubashara limeundwa kwa mafanikio." : "Live class created successfully.";
     await fetchLiveCards();
     closeCreateDialog();
   } catch (error: any) {
@@ -690,21 +769,21 @@ const submitCreateSession = async () => {
       error?.data?.message ||
       error?.response?._data?.message ||
       error?.message ||
-      "Failed to create live class. Please try again.";
+      (isSw.value ? "Imeshindikana kuunda darasa la mubashara. Tafadhali jaribu tena." : "Failed to create live class. Please try again.");
   } finally {
     createSubmitting.value = false;
   }
 };
 
 /* Tabs */
-const tabItems: TabItem[] = [
+const tabItems = computed<TabItem[]>(() => [
   {
-    title: "Live Classes",
+    title: smartText.value.liveClasses,
     value: "live-classes",
     icon: "mdi:video",
     notifications: 3,
     availability: "",
-    note: "New sessions start soon",
+    note: smartText.value.liveClassesNote,
   },
   {
     title: "SomaKwanza TV",
@@ -712,21 +791,21 @@ const tabItems: TabItem[] = [
     icon: "mdi:television",
     notifications: 1,
     availability: "",
-    note: "Live educational broadcasts",
+    note: smartText.value.liveTvNote,
   },
   {
-    title: "Recorded Sessions",
+    title: smartText.value.recordedSessions,
     value: "recorded-sessions",
     icon: "mdi:video-vintage",
     notifications: 0,
     availability: "",
-    note: "Learn at your own pace",
+    note: smartText.value.recordedSessionsNote,
   },
-];
+]);
 
-const activeTab = ref<TabKey>(tabItems[0]?.value ?? "live-classes");
-const activeItem = computed(() => tabItems.find((i) => i.value === activeTab.value) ?? tabItems[0] ?? {
-  title: "Live Classes",
+const activeTab = ref<TabKey>("live-classes");
+const activeItem = computed(() => tabItems.value.find((i) => i.value === activeTab.value) ?? tabItems.value[0] ?? {
+  title: smartText.value.liveClasses,
   value: "live-classes" as TabKey,
   icon: "mdi:video",
   notifications: 0,
@@ -745,12 +824,12 @@ type PanelConfig = {
 
 const tabPanels = computed<Record<TabKey, PanelConfig>>(() => ({
   "live-classes": {
-    heading: "Live classrooms",
-    summary: "Join interactive lessons in real time.",
+    heading: smartText.value.liveClassrooms,
+    summary: smartText.value.liveClassroomsSummary,
   },
   "live-tv": {
     heading: "SomaKwanza TV",
-    summary: "Educational live broadcast.",
+    summary: isSw.value ? "Matangazo ya elimu mubashara." : "Educational live broadcast.",
     streamUrl: somakwanzaStreamUrl.value,
     nowPlaying: somakwanzaStreamMeta.value.title,
     schedule: somakwanzaStreamMeta.value.description
@@ -758,8 +837,8 @@ const tabPanels = computed<Record<TabKey, PanelConfig>>(() => ({
       : [],
   },
   "recorded-sessions": {
-    heading: "Recorded library",
-    summary: "Revisit past lessons.",
+    heading: smartText.value.recordedLibrary,
+    summary: smartText.value.recordedLibrarySummary,
   },
 }));
 
@@ -768,18 +847,18 @@ const activeTabPanel = computed<PanelConfig>(
 );
 
 type LiveFilterKey = "all" | "today" | "tomorrow" | "week" | "active" | "past";
-const liveFilterGroups: Array<Array<{ key: LiveFilterKey; label: string }>> = [
+const liveFilterGroups = computed<Array<Array<{ key: LiveFilterKey; label: string }>>>(() => [
   [
-    { key: "active", label: "Active" },
-    { key: "past", label: "Past Sessions" },
+    { key: "active", label: smartText.value.active },
+    { key: "past", label: smartText.value.pastSessions },
   ],
   [
-    { key: "all", label: "All" },
-    { key: "today", label: "Today" },
-    { key: "tomorrow", label: "Tomorrow" },
-    { key: "week", label: "This week" },
+    { key: "all", label: smartText.value.all },
+    { key: "today", label: smartText.value.today },
+    { key: "tomorrow", label: smartText.value.tomorrow },
+    { key: "week", label: smartText.value.thisWeek },
   ],
-];
+]);
 const activeLiveFilter = ref<LiveFilterKey>("all");
 
 const isSameDay = (a: Date, b: Date) =>
@@ -879,7 +958,7 @@ const getTimeLeftLabel = (card: SessionCard) => {
   const start = card.startTime ? new Date(card.startTime) : null;
   const end = card.endTime ? new Date(card.endTime) : null;
   if (start && end && now >= start && now <= end) {
-    return { label: "Live", isLive: true };
+    return { label: smartText.value.live, isLive: true };
   }
   if (end && now > end) return { label: "Ended", isLive: false };
   if (start) {
@@ -1001,53 +1080,53 @@ const activeCards = computed(() => {
 
 const emptyStateMessages: Record<TabKey, { title: string; description: string }> = {
   "live-classes": {
-    title: "No live classes yet",
+    title: smartText.value.noLiveClassesYet,
     description: "New live lessons will appear here when scheduled.",
   },
   "recorded-sessions": {
-    title: "No recorded sessions",
-    description: "Once lessons are recorded they will appear in this library.",
+    title: smartText.value.noRecordedSessions,
+    description: smartText.value.noRecordedSessionsDescription,
   },
   "live-tv": {
-    title: "TV stream unavailable",
-    description: "SomaKwanza TV is not broadcasting at the moment.",
+    title: smartText.value.tvUnavailable,
+    description: smartText.value.tvUnavailableDescription,
   },
 };
 
 const currentEmptyStateMessage = computed(() => {
   if (activeTab.value === "live-classes" && liveSearch.value.trim()) {
     return {
-      title: "No matching live classes",
+      title: smartText.value.noMatchingLiveClasses,
       description: "Try another keyword to find a live class.",
     };
   }
   if (activeTab.value === "recorded-sessions" && recordedSearch.value.trim()) {
     return {
       title: "No matching recordings",
-      description: "Try another keyword to find a recorded session.",
+      description: smartText.value.tryAnotherKeyword,
     };
   }
   if (activeTab.value !== "live-classes") return emptyStateMessages[activeTab.value];
   switch (activeLiveFilter.value) {
     case "today":
       return {
-        title: "No classes today",
-        description: "There are no live classes scheduled for today.",
+        title: smartText.value.noClassesToday,
+        description: smartText.value.noClassesTodayDescription,
       };
     case "tomorrow":
       return {
-        title: "No classes tomorrow",
-        description: "There are no live classes scheduled for tomorrow.",
+        title: smartText.value.noClassesTomorrow,
+        description: smartText.value.noClassesTomorrowDescription,
       };
     case "week":
       return {
-        title: "No classes this week",
-        description: "There are no live classes scheduled for this week.",
+        title: smartText.value.noClassesThisWeek,
+        description: smartText.value.noClassesThisWeekDescription,
       };
     case "active":
       return {
-        title: "No active classes",
-        description: "There are no live classes happening right now.",
+        title: smartText.value.noActiveClasses,
+        description: smartText.value.noActiveClassesDescription,
       };
     case "past":
       return {
@@ -1227,7 +1306,7 @@ const trapFocusInModal = (container: HTMLElement | null, event: KeyboardEvent) =
 
 const openSessionModal = (card: SessionCard) => {
   rememberCurrentFocus();
-  announceForScreenReader("Session player dialog opened.");
+  announceForScreenReader(isSw.value ? "Dirisha la kipindi limefunguliwa." : "Session player dialog opened.");
   selectedSession.value = card;
   sessionModalOpen.value = true;
   joinRequested.value = false;
@@ -1491,9 +1570,9 @@ const prepareNavigation = () => {
 </script>
 
 <template>
-  <NuxtLayout
+    <NuxtLayout
     :name="$router.currentRoute.value.fullPath.includes('header-less') ? ('normal' as any) : ('home-layout' as any)"
-    :language="$router.currentRoute.value.fullPath.includes('header-less') ? undefined : hubHeaderLang"
+    :language="$router.currentRoute.value.fullPath.includes('header-less') ? undefined : pageLanguage"
   >
     <main ref="pageRoot" id="main-container" tabindex="-1" class="min-h-screen bg-white font-sans text-gray-900">
       <p class="sr-only" aria-live="assertive" aria-atomic="true">{{ srAnnouncement }}</p>
@@ -1502,17 +1581,17 @@ const prepareNavigation = () => {
         <NuxtLink v-if="canGoBack" to="/"
           class="mb-6 inline-flex items-center gap-2 rounded-full border border-primary bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm hover:bg-gray-50">
           <Icon name="mdi:arrow-left" size="18" />
-          Back
+          {{ smartText.back }}
         </NuxtLink>
 
         <!-- Header -->
         <header class="mb-8">
-          <p class="text-xs uppercase tracking-widest text-gray-400">Smart Class Hub</p>
+          <p class="text-xs uppercase tracking-widest text-gray-400">{{ smartText.smartClassHub }}</p>
 
-          <h1 class="mt-2 text-3xl font-bold text-primary">Learn Live, Rewatch, or Tune In</h1>
+          <h1 class="mt-2 text-3xl font-bold text-primary">{{ smartText.heroTitle }}</h1>
 
           <p class="mt-3 max-w-2xl text-gray-600">
-            Join live classes, watch SomaKwanza TV, or access your recorded sessions.
+            {{ smartText.heroSummary }}
           </p>
         </header>
 

@@ -2,7 +2,7 @@
 
   <NuxtLayout
     :name="route.fullPath.includes('header-less') ? 'normal' : 'home-layout'"
-    :language="route.fullPath.includes('header-less') ? undefined : hubHeaderLang"
+    :language="route.fullPath.includes('header-less') ? undefined : pageLanguage"
   >
     <a class="skip-link" href="#main-content" @click.prevent="focusMain">Skip to main content</a>
 
@@ -401,7 +401,7 @@ import {useSessionsSetup} from "../../../composables/usesSessions.js";
 
 const router = useRouter();
 const route = useRoute();
-const hubHeaderLang = useHubHeaderLanguage();
+const pageLanguage = useHubPageLanguage();
 
 function getDuration(start, end) {
   if (!start || !end) return 'Unknown duration';

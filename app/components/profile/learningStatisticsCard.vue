@@ -16,6 +16,8 @@ import type {
 type Status = "idle" | "pending" | "loading" | "success" | "error";
 
 const signInAccessToken = useCookie<string>("signInAccessToken");
+const pageLanguage = useHubPageLanguage();
+const isSw = computed(() => pageLanguage.value === "kiswahili");
 const route = useRoute();
 const router = useRouter();
 const tieOverlayOpen = useState<boolean>("tie-ai-overlay-open", () => false);
@@ -124,60 +126,94 @@ const talkToDataAnswer = ref("");
 const talkToDataError = ref("");
 const talkToDataGeneratedAt = ref("");
 const talkToDataStatus = ref<Status>("idle");
-const talkToDataPrompts = [
-  "Which topics have I not covered yet?",
-  "Which subject is my weakest right now?",
-  "Show me the topics where I am failing.",
-  "What should I revise before the teacher reviews me?",
-];
+const text = computed(() => ({
+  title: isSw.value ? "Takwimu za Ujifunzaji" : "Learning Statistics",
+  competencesOpened: isSw.value ? "Umahiri Uliotembelea" : "Competences Opened",
+  competencesHelper: isSw.value ? "Mada ambazo mwanafunzi amefungua." : "Topics the learner has opened.",
+  subjectsOpened: isSw.value ? "Masomo Yaliyofunguliwa" : "Subjects Opened",
+  subjectsHelper: isSw.value ? "Masomo yaliyofikiwa angalau mara moja." : "Subjects reached at least once.",
+  timeSpent: isSw.value ? "Muda Uliotumika" : "Time Spent",
+  timeSpentHelper: isSw.value ? "Jumla ya muda wa kujifunza uliofuatiliwa." : "Total tracked study time.",
+  quizAttempts: isSw.value ? "Majaribio ya Quiz" : "Quiz Attempts",
+  quizAttemptsHelper: isSw.value ? "Majaribio yaliyorekodiwa ya quiz za sura na video." : "Recorded chapter and video quiz tries.",
+  averageQuizScore: isSw.value ? "Wastani wa Alama za Quiz" : "Average Quiz Score",
+  averageQuizScoreHelper: isSw.value ? "Wastani wa alama kutoka quiz zilizofuatiliwa." : "Average score from tracked quizzes.",
+  recommendationUnavailable: isSw.value ? "Mapendekezo binafsi hayapatikani kwa sasa." : "Personalized recommendations are temporarily unavailable.",
+  profileDataStillAvailable: isSw.value ? "Taarifa zako za wasifu bado zinapatikana. Jaribu kufungua ukurasa upya baada ya muda mfupi." : "Your profile data is still available. Try refreshing the page in a moment.",
+  doingWellSummary: isSw.value ? "Unaendelea vizuri kwenye mada zako za hivi karibuni." : "You are keeping up well with your recent topics.",
+  keepReviewing: isSw.value ? "Endelea kupitia masomo ya hivi karibuni na songa mbele kwenye mada inayofuata." : "Keep reviewing your latest lessons and continue with the next topic in your current subject.",
+  progressSinceSnapshot: isSw.value ? "Maendeleo Tangu Mapendekezo ya Mwisho" : "Progress Since Recommendation Snapshot",
+  progressSinceSnapshotHelper: isSw.value ? "Fuatilia kilichobadilika baada ya mapendekezo yako ya mwisho kutolewa." : "Track what changed after your latest recommendation set was generated.",
+  talkToData: isSw.value ? "Zungumza na Taarifa Zako" : "Talk To Your Data",
+  talkToDataHelper: isSw.value ? "Uliza kuhusu rekodi yako ya ujifunzaji: mada ulizokamilisha, maeneo yenye udhaifu, quiz ulizoshindwa, kazi ambazo hazijakamilika, na cha kurejea baadaye." : "Ask questions about your own learning record: covered topics, weak areas, failed quizzes, unfinished work, and what to revise next.",
+  askAboutData: isSw.value ? "Uliza kuhusu taarifa zako za ujifunzaji" : "Ask about your learning data",
+  askPlaceholder: isSw.value ? "Mfano: Ni mada zipi sijazimaliza, na ninafeli wapi?" : "Example: Which topics have I not covered yet, and where am I failing?",
+  groundedAnswer: isSw.value ? "Jibu linatokana na maendeleo ya wasifu wako, ufunikaji wa mada, na taarifa za tathmini." : "The answer is grounded in your profile progress, topic coverage, and assessment data.",
+  analyzing: isSw.value ? "Inachambua..." : "Analyzing...",
+  askYourData: isSw.value ? "Uliza Taarifa Zako" : "Ask Your Data",
+  answerFromData: isSw.value ? "Jibu Kutoka Kwenye Taarifa Zako za Ujifunzaji" : "Answer From Your Learning Data",
+  noUrgentRevision: isSw.value ? "Hakuna mada ya haraka ya kurejea kwa sasa." : "No urgent revision topics were found right now.",
+  noUrgentRevisionHelper: isSw.value ? "Tumia mgawanyo hapo juu kuendelea kupitia mada ambazo hazijaguswa au hazijakamilika kabla mwalimu hajaangalia maendeleo yako." : "Use the breakdown above to keep reviewing untouched or partially completed topics before the teacher checks your progress.",
+  revisitCompetence: isSw.value ? "Rudia Umahiri" : "Revisit Compitence",
+  focusWhenRevisiting: isSw.value ? "Lenga unapopitia tena" : "Focus when revisiting",
+  progress: isSw.value ? "Maendeleo" : "Progress",
+  quiz: "Quiz",
+}));
+
+const talkToDataPrompts = computed(() => [
+  isSw.value ? "Ni mada zipi bado sijazifunika?" : "Which topics have I not covered yet?",
+  isSw.value ? "Ni somo gani ni dhaifu kwangu sasa?" : "Which subject is my weakest right now?",
+  isSw.value ? "Nionyeshe mada ninazofeli." : "Show me the topics where I am failing.",
+  isSw.value ? "Nirejee nini kabla mwalimu hajanipitia?" : "What should I revise before the teacher reviews me?",
+]);
 const talkToDataMarkdown = new MarkdownIt({
   html: false,
   breaks: true,
   linkify: true,
 });
 
-const actionLabels: Record<RecommendationAction, string> = {
-  start_topic: "Start topic",
-  rewatch_video: "Rewatch video",
-  review_notes: "Review notes",
-  practice_quiz: "Practice quiz",
-};
+const actionLabels = computed<Record<RecommendationAction, string>>(() => ({
+  start_topic: isSw.value ? "Anza mada" : "Start topic",
+  rewatch_video: isSw.value ? "Tazama video tena" : "Rewatch video",
+  review_notes: isSw.value ? "Pitia maelezo" : "Review notes",
+  practice_quiz: isSw.value ? "Fanya quiz" : "Practice quiz",
+}));
 
-const actionHelperLabels: Record<RecommendationAction, string> = {
-  start_topic: "Start topic",
-  rewatch_video: "Revisit lesson",
-  review_notes: "Open topic notes",
-  practice_quiz: "Review then practice",
-};
+const actionHelperLabels = computed<Record<RecommendationAction, string>>(() => ({
+  start_topic: isSw.value ? "Anza mada" : "Start topic",
+  rewatch_video: isSw.value ? "Rudia somo" : "Revisit lesson",
+  review_notes: isSw.value ? "Fungua maelezo ya mada" : "Open topic notes",
+  practice_quiz: isSw.value ? "Pitia kisha fanya quiz" : "Review then practice",
+}));
 
-const reasonLabels: Record<string, string> = {
-  not_started: "Not started",
-  low_progress: "Low progress",
-  low_assessment: "Low assessment",
-  started_not_finished: "Started, not finished",
-  needs_practice: "Needs practice",
-};
+const reasonLabels = computed<Record<string, string>>(() => ({
+  not_started: isSw.value ? "Haijaanza" : "Not started",
+  low_progress: isSw.value ? "Maendeleo madogo" : "Low progress",
+  low_assessment: isSw.value ? "Tathmini ndogo" : "Low assessment",
+  started_not_finished: isSw.value ? "Imeanza, haijakamilika" : "Started, not finished",
+  needs_practice: isSw.value ? "Inahitaji mazoezi" : "Needs practice",
+}));
 
-const recommendationOutcomeLabels = {
-  not_started: "Not started",
-  in_progress: "In progress",
-  improved: "Improved",
-  resolved: "Resolved",
-  regressed: "Regressed",
-} as const;
+const recommendationOutcomeLabels = computed(() => ({
+  not_started: isSw.value ? "Haijaanza" : "Not started",
+  in_progress: isSw.value ? "Inaendelea" : "In progress",
+  improved: isSw.value ? "Imeboreshwa" : "Improved",
+  resolved: isSw.value ? "Imetatuliwa" : "Resolved",
+  regressed: isSw.value ? "Imerudi nyuma" : "Regressed",
+}) as const);
 
 const formatRecommendationAction = (action: RecommendationAction) =>
-  actionLabels[action] ?? action.replaceAll("_", " ");
+  actionLabels.value[action] ?? action.replaceAll("_", " ");
 
 const formatRecommendationActionHelper = (action: RecommendationAction) =>
-  actionHelperLabels[action] ?? "Open topic";
+  actionHelperLabels.value[action] ?? (isSw.value ? "Fungua mada" : "Open topic");
 
 const formatReasonCode = (reasonCode: string) =>
-  reasonLabels[reasonCode] ?? reasonCode.replaceAll("_", " ");
+  reasonLabels.value[reasonCode] ?? reasonCode.replaceAll("_", " ");
 
 const getRecommendationOutcomeLabel = (status: string) =>
-  recommendationOutcomeLabels[
-    status as keyof typeof recommendationOutcomeLabels
+  recommendationOutcomeLabels.value[
+    status as keyof typeof recommendationOutcomeLabels.value
   ] ?? status.replaceAll("_", " ");
 
 const getRecommendationOutcomeClass = (status: string) => {
@@ -483,47 +519,47 @@ onMounted(() => {
       class="w-full overflow-hidden bg-white border shadow-sm rounded-3xl border-slate-200"
     >
       <div class="px-5 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue sm:px-6">
-        <h3 class="text-lg font-semibold text-white">Learning Statistics</h3>
+        <h3 class="text-lg font-semibold text-white">{{ text.title }}</h3>
       </div>
       <div
         class="grid w-full grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
       >
         <LearningMetricCard
-          label="Competences Opened"
+          :label="text.competencesOpened"
           :value="profileData?.totalTopicsOpened ?? 0"
-          helper="Topics the learner has opened."
+          :helper="text.competencesHelper"
           icon="fa6-solid:book-open-reader"
           icon-wrapper-class="bg-blue-100 text-deepBlue"
         />
         <LearningMetricCard
-          label="Subjects Opened"
+          :label="text.subjectsOpened"
           :value="profileData?.openedSubjects ?? 0"
-          helper="Subjects reached at least once."
+          :helper="text.subjectsHelper"
           icon="heroicons:folder-open-20-solid"
           icon-wrapper-class="bg-green-100 text-emerald-700"
         />
         <LearningMetricCard
-          label="Time Spent"
+          :label="text.timeSpent"
           :value="profileData?.timeSpentFormatted ?? '0h 0m'"
-          helper="Total tracked study time."
+          :helper="text.timeSpentHelper"
           icon="stash:clock-solid"
           icon-wrapper-class="bg-red-100 text-red-600"
         />
         <LearningMetricCard
-          label="Quiz Attempts"
+          :label="text.quizAttempts"
           :value="displayQuizAttempts"
-          helper="Recorded chapter and video quiz tries."
+          :helper="text.quizAttemptsHelper"
           icon="solar:notebook-bold"
           icon-wrapper-class="bg-purple-100 text-purple-600"
         />
         <LearningMetricCard
-          label="Average Quiz Score"
+          :label="text.averageQuizScore"
           :value="
             displayAverageQuizScore === '—'
               ? displayAverageQuizScore
               : `${displayAverageQuizScore}%`
           "
-          helper="Average score from tracked quizzes."
+          :helper="text.averageQuizScoreHelper"
           icon="heroicons:chart-bar-16-solid"
           icon-wrapper-class="bg-indigo-100 text-indigo-600"
         />
@@ -547,11 +583,10 @@ onMounted(() => {
           class="p-4 border border-amber-200 rounded-2xl bg-amber-50 text-amber-900"
         >
           <p class="font-medium">
-            Personalized recommendations are temporarily unavailable.
+            {{ text.recommendationUnavailable }}
           </p>
           <p class="mt-1 text-sm">
-            Your profile data is still available. Try refreshing the page in a
-            moment.
+            {{ text.profileDataStillAvailable }}
           </p>
         </div>
       </div>
@@ -564,12 +599,11 @@ onMounted(() => {
           <p class="font-medium text-emerald-900">
             {{
               personalizedRecommendations?.summary ||
-              "You are keeping up well with your recent topics."
+              text.doingWellSummary
             }}
           </p>
           <p class="mt-2 text-sm text-emerald-800">
-            Keep reviewing your latest lessons and continue with the next topic
-            in your current subject.
+            {{ text.keepReviewing }}
           </p>
         </div>
       </div>
@@ -588,6 +622,7 @@ onMounted(() => {
           v-if="recommendationOverview"
           :overview="recommendationOverview"
           :topic-count="topicBreakdown.length"
+          :language="pageLanguage"
         />
 
         <section
@@ -599,11 +634,10 @@ onMounted(() => {
           >
             <div>
               <h4 class="text-lg font-semibold text-slate-900">
-                Progress Since Recommendation Snapshot
+                {{ text.progressSinceSnapshot }}
               </h4>
               <p class="mt-1 text-sm leading-6 text-slate-600">
-                Track what changed after your latest recommendation set was
-                generated.
+                {{ text.progressSinceSnapshotHelper }}
               </p>
             </div>
 
@@ -918,12 +952,10 @@ onMounted(() => {
           >
             <div>
               <h4 class="text-lg font-semibold text-slate-900">
-                Talk To Your Data
+                {{ text.talkToData }}
               </h4>
               <p class="mt-1 text-sm leading-6 text-slate-600">
-                Ask questions about your own learning record: covered topics,
-                weak areas, failed quizzes, unfinished work, and what to revise
-                next.
+                {{ text.talkToDataHelper }}
               </p>
             </div>
 
@@ -945,22 +977,21 @@ onMounted(() => {
               for="talk-to-data-input"
               class="block text-sm font-medium text-slate-700"
             >
-              Ask about your learning data
+              {{ text.askAboutData }}
             </label>
             <textarea
               id="talk-to-data-input"
               v-model="talkToDataQuestion"
               rows="4"
               class="w-full px-4 py-3 text-sm transition-colors border rounded-2xl resize-y border-slate-200 bg-slate-50 focus:border-oceanBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/20"
-              placeholder="Example: Which topics have I not covered yet, and where am I failing?"
+              :placeholder="text.askPlaceholder"
             ></textarea>
 
             <div
               class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <p class="text-xs text-slate-500">
-                The answer is grounded in your profile progress, topic coverage,
-                and assessment data.
+                {{ text.groundedAnswer }}
               </p>
 
               <button
@@ -976,8 +1007,8 @@ onMounted(() => {
                 <span>
                   {{
                     talkToDataStatus === "loading"
-                      ? "Analyzing..."
-                      : "Ask Your Data"
+                      ? text.analyzing
+                      : text.askYourData
                   }}
                 </span>
               </button>
@@ -1002,7 +1033,7 @@ onMounted(() => {
                 <p
                   class="text-xs font-semibold tracking-wide uppercase text-oceanBlue"
                 >
-                  Answer From Your Learning Data
+                  {{ text.answerFromData }}
                 </p>
                 <p
                   v-if="talkToDataGeneratedAt"
@@ -1032,11 +1063,10 @@ onMounted(() => {
           class="p-5 border border-emerald-100 rounded-3xl bg-emerald-50/80"
         >
           <p class="font-medium text-emerald-900">
-            No urgent revision topics were found right now.
+            {{ text.noUrgentRevision }}
           </p>
           <p class="mt-2 text-sm text-emerald-800">
-            Use the breakdown above to keep reviewing untouched or partially
-            completed topics before the teacher checks your progress.
+            {{ text.noUrgentRevisionHelper }}
           </p>
         </div>
 
@@ -1061,7 +1091,7 @@ onMounted(() => {
                       name="fa6-solid:book-open-reader"
                       class="w-3.5 h-3.5"
                     />
-                    Revisit Compitence
+                    {{ text.revisitCompetence }}
                   </span>
                   <span
                     class="px-2.5 py-1 text-xs font-semibold rounded-full bg-oceanBlue/10 text-oceanBlue"
@@ -1090,7 +1120,7 @@ onMounted(() => {
                   <p
                     class="text-xs font-semibold tracking-wide uppercase text-oceanBlue"
                   >
-                    Focus when revisiting
+                    {{ text.focusWhenRevisiting }}
                   </p>
                   <p class="mt-2 text-sm leading-6 text-slate-700">
                     {{ recommendation.attainmentFocus }}
@@ -1101,13 +1131,13 @@ onMounted(() => {
                   <span
                     class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700"
                   >
-                    Progress {{ recommendation.progressPercent }}%
+                    {{ text.progress }} {{ recommendation.progressPercent }}%
                   </span>
                   <span
                     v-if="recommendation.assessmentScore !== null"
                     class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700"
                   >
-                    Quiz {{ recommendation.assessmentScore }}%
+                    {{ text.quiz }} {{ recommendation.assessmentScore }}%
                   </span>
                   <span
                     v-for="reasonCode in recommendation.reasonCodes"

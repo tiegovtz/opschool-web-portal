@@ -30,7 +30,7 @@ function goToSecondary() {
 const stats = [
     {
         value: "2,400+",
-        label: "Mada za kujifunza",
+        label: "Mada za Kujifunza",
         detail: "Msingi na sekondari",
         icon: "library",
         accent: "blue",
@@ -38,7 +38,7 @@ const stats = [
     },
     {
         value: "860+",
-        label: "Video na vielelezo",
+        label: "Video na Vielelezo",
         detail: "Masomo ya kuona",
         icon: "play",
         accent: "cyan",
@@ -142,14 +142,14 @@ onMounted(async () => {
         class="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-12 py-4">
         <section class="max-w-screen-md mx-auto">
             <h1 class="text-left text-xl font-tahomabd font-bold text-oceanBlue">Karibu!</h1>
-            <h1 class="text-left text-3xl my-4 font-tahomabd font-bold text-[#f29253]">TIE ONLINE SCHOOL</h1>
-            <p class="text-justify mt-4">Katika platfom hii utapata maudhui ya elimu ya msingi, sekondari na elimu ya
-                ualimu. chagua ili kuendelea.
+            <h1 class="text-left text-3xl my-4 font-tahomabd font-bold text-[#f29253]">SHULE MTANDAO YA TET</h1>
+            <p class="text-justify mt-4">
+                Katika jukwaa hili, utapata maudhui ya ngazi ya Elimu  ya msingi na sekondari. Chagua ngazi husika ili kuanza kujifunza
             </p>
             <!-- buttons -->
             <div class="flex flex-wrap gap-5 pt-5">
-                <UiButtonShineParticles @click="goToPrimary" label="Primary" />
-                <UiButtonShineParticles @click="goToSecondary" label="Secondary" />
+                <UiButtonShineParticles @click="goToPrimary" label="Msingi" />
+                <UiButtonShineParticles @click="goToSecondary" label="Sekondari" />
             </div>
 
             <!-- static -->

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+const contentLayoutLanguage = useContentLayoutLanguage();
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
 
 const props = defineProps<{
   chat: any;
@@ -35,6 +37,17 @@ const canSend = computed(
     (Boolean(input.value.trim()) || selectedFiles.value.length > 0),
 );
 const selectedFilePreviewUrls = ref<Record<string, string>>({});
+const labels = computed(() => ({
+  formLabel: isSwahili.value ? "Uliza swali kwa mwalimu wa AI" : "Ask a question to AI teacher",
+  inputLabel: isSwahili.value ? "Uliza Mwalimu wa AI wa TIE" : "Ask TIE AI Teacher",
+  removeFile: isSwahili.value ? "Ondoa" : "Remove",
+  attachFile: isSwahili.value ? "Ambatisha faili" : "Attach a file",
+  placeholder: isSwahili.value ? "Uliza chochote" : "Ask anything",
+  sendPrompt: isSwahili.value ? "Tuma swali kwa mwalimu wa AI" : "Send prompt to AI teacher",
+  questionHelp: isSwahili.value
+    ? "Bonyeza Enter kutuma swali lako. Bonyeza Shift Enter kuanza mstari mpya. Unaweza pia kuambatisha faili za PDF, maandishi, JSON, markdown, au picha."
+    : "Press Enter to submit your question. Press Shift Enter to start a new line. You can also attach PDF, text, JSON, markdown, or image files.",
+}));
 
 const inferSelectedFileMediaType = (file: Pick<File, "name" | "type">): string => {
   const declaredType = typeof file.type === "string" ? file.type.trim().toLowerCase() : "";
@@ -155,28 +168,36 @@ watch(
 const validateFiles = (nextFiles?: FileList): string => {
   if (!nextFiles || nextFiles.length === 0) return "";
   if (nextFiles.length > MAX_FILE_COUNT) {
-    return `You can attach up to ${MAX_FILE_COUNT} files at a time.`;
+    return isSwahili.value
+      ? `Unaweza kuambatisha hadi faili ${MAX_FILE_COUNT} kwa wakati mmoja.`
+      : `You can attach up to ${MAX_FILE_COUNT} files at a time.`;
   }
 
   for (const file of Array.from(nextFiles)) {
     const mediaType = inferSelectedFileMediaType(file);
 
     if (!isSupportedMediaType(mediaType)) {
-      return "Only PDF, TXT, MD, JSON, JPG, PNG, and WEBP files are supported.";
+      return isSwahili.value
+        ? "Ni faili za PDF, TXT, MD, JSON, JPG, PNG, na WEBP pekee zinazoruhusiwa."
+        : "Only PDF, TXT, MD, JSON, JPG, PNG, and WEBP files are supported.";
     }
 
     if (
       mediaType === "application/pdf" &&
       file.size > MAX_PDF_BYTES
     ) {
-      return "Each PDF must be 10MB or smaller.";
+      return isSwahili.value
+        ? "Kila faili la PDF linapaswa kuwa 10MB au chini."
+        : "Each PDF must be 10MB or smaller.";
     }
 
     if (
       mediaType.startsWith("image/") &&
       file.size > MAX_IMAGE_BYTES
     ) {
-      return "Each image must be 5MB or smaller.";
+      return isSwahili.value
+        ? "Kila picha inapaswa kuwa 5MB au chini."
+        : "Each image must be 5MB or smaller.";
     }
 
     if (
@@ -185,7 +206,9 @@ const validateFiles = (nextFiles?: FileList): string => {
         mediaType === "application/json") &&
       file.size > MAX_TEXT_DOCUMENT_BYTES
     ) {
-      return "Each text document must be 1MB or smaller.";
+      return isSwahili.value
+        ? "Kila faili la maandishi linapaswa kuwa 1MB au chini."
+        : "Each text document must be 1MB or smaller.";
     }
   }
 
@@ -273,7 +296,7 @@ onBeforeUnmount(() => {
     tabindex="-1"
     class="w-full border-t border-gray-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.98))] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 backdrop-blur sm:px-5 sm:pt-5"
     role="form"
-    aria-label="Ask a question to AI teacher"
+    :aria-label="labels.formLabel"
     @submit.prevent="handleSubmit"
   >
     <input
@@ -295,7 +318,7 @@ onBeforeUnmount(() => {
 
     <div class="rounded-[2rem] border border-slate-200/90 bg-white px-3 py-2 shadow-[0_10px_28px_rgba(15,23,42,0.08)] sm:px-4 sm:py-2.5">
       <label for="question-input" class="sr-only">
-        Ask TIE AI Teacher
+        {{ labels.inputLabel }}
       </label>
 
       <div
@@ -334,7 +357,7 @@ onBeforeUnmount(() => {
           <button
             type="button"
             class="rounded-full p-1 text-slate-400 transition hover:bg-white hover:text-slate-700"
-            :aria-label="`Remove ${file.name}`"
+            :aria-label="`${labels.removeFile} ${file.name}`"
             @click="removeFile(index)"
           >
             <Icon name="heroicons:x-mark" class="h-4 w-4" aria-hidden="true" />
@@ -347,7 +370,7 @@ onBeforeUnmount(() => {
           type="button"
           class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="isBusy"
-          aria-label="Attach a file"
+          :aria-label="labels.attachFile"
           @click="openFilePicker"
         >
           <Icon
@@ -363,7 +386,7 @@ onBeforeUnmount(() => {
             ref="messageInputRef"
             v-model="input"
             rows="1"
-            placeholder="Ask anything"
+            :placeholder="labels.placeholder"
             class="w-full resize-none border-0 bg-transparent px-1 py-[11px] text-base leading-6 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-0"
             :disabled="isBusy"
             aria-describedby="question-help"
@@ -375,7 +398,7 @@ onBeforeUnmount(() => {
           type="submit"
           class="group inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-oceanBlue text-white shadow-[0_10px_20px_rgba(18,95,167,0.22)] transition-all hover:-translate-y-0.5 hover:bg-oceanBlue/90 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
           :disabled="!canSend"
-          aria-label="Send prompt to AI teacher"
+          :aria-label="labels.sendPrompt"
         >
           <Icon
             name="heroicons:arrow-up"
@@ -386,7 +409,7 @@ onBeforeUnmount(() => {
       </div>
 
       <span id="question-help" class="sr-only">
-        Press Enter to submit your question. Press Shift Enter to start a new line. You can also attach PDF, text, JSON, markdown, or image files.
+        {{ labels.questionHelp }}
       </span>
     </div>
   </form>
