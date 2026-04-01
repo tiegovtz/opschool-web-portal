@@ -46,7 +46,7 @@ withDefaults(
                     aria-label="Presented by Ministry of education, science and technology together with Tanzania institute of education (TIE)"
                     role="region">
                     <p class="md:text-small text-extraSmall text-deepBlue text-shadow">
-                        {{ language=='english' ?`Ministry of education, science and technology`:`Wizara ya elimu, Sayansi na Tekinolojia` }}
+                        {{ language=='english' ?`Ministry of education, science and technology`:`Wizara ya elimu, Sayansi na Teknolojia` }}
                     </p>
                     <p class="lg:text-[1.8rem] md:text-[1.4rem] text-small">
                        {{ language=='english' ?`Tanzania institute of education (TIE)`:`Taasisi ya Elimu Tanzania (TET)` }}
