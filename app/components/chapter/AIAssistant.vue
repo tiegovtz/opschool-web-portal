@@ -239,6 +239,29 @@ const props = defineProps({
   chapterNo: { type: Number, default: null },
   audios: { type: Array, default: () => [] },
 });
+const contentLayoutLanguage = useContentLayoutLanguage(() => props.level);
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+const subjectUi = computed(() => ({
+  launcherTitle: isSwahili.value ? "Uliza Mwalimu wa Somo wa AI" : "Ask AI Subject Teacher",
+  title: isSwahili.value ? "Mwalimu wa Somo wa AI" : "AI Subject Teacher",
+  voiceSettings: isSwahili.value ? "Mipangilio ya Sauti" : "Voice Settings",
+  voiceSettingsHelp: isSwahili.value ? "Chagua sauti ya majibu ya sauti" : "Select voice for audio responses",
+  femaleVoice: isSwahili.value ? "Sauti ya Mwanamke" : "Female Voice",
+  maleVoice: isSwahili.value ? "Sauti ya Mwanaume" : "Male Voice",
+  welcome: isSwahili.value ? "Hujambo! Mimi ni" : "Hello! I'm your",
+  intro: isSwahili.value ? "Niko hapa kukusaidia kuelewa" : "I'm here to help you understand",
+  prompt: isSwahili.value ? "Usisite kuniuliza maswali yoyote kuhusu umahiri huu!" : "Feel free to ask me any questions about this competence!",
+  typing: isSwahili.value ? "AI inaandika..." : "AI is typing...",
+  inputPlaceholder: isSwahili.value ? "Andika ujumbe wako..." : "Type your message...",
+  inputAria: isSwahili.value ? "Andika swali lako kwa Mwalimu wa Somo wa AI" : "Type your question for AI Subject Teacher",
+  send: isSwahili.value ? "Tuma" : "Send",
+  summarizeIdle: isSwahili.value ? "Fupisha" : "Summarize",
+  summarizeBusy: isSwahili.value ? "Inafupisha..." : "Summarizing...",
+  englishCrashCourseIdle: isSwahili.value ? "Kozi Fupi ya Kiingereza" : "English Crash Course",
+  englishCrashCourseBusy: isSwahili.value ? "Inapakia..." : "Loading...",
+  stopReading: isSwahili.value ? "Simamisha Kusoma" : "Stop Reading",
+  read: isSwahili.value ? "Soma" : "Read",
+}));
 
 // state refs
 const isOpen = ref(false);
@@ -1547,13 +1570,13 @@ onUnmounted(() => {
     @click="toggleAssistant"
     :class="launcherClass"
     :style="launcherStyle"
-    title="Ask AI Subject Teacher"
+    :title="subjectUi.launcherTitle"
   >
     <Icon
       name="fluent:bot-28-filled"
       size="24"
     />
-    <span class="hidden md:block">AI Subject Teacher</span>
+    <span class="hidden md:block">{{ subjectUi.title }}</span>
   </button>
 
   <!-- AI Assistant Panel -->
@@ -1568,7 +1591,7 @@ onUnmounted(() => {
       :class="isSmallScreen ? 'rounded-t-2xl' : 'rounded-t-lg'"
     >
       <div class="min-w-0 pr-2">
-        <h3 class="font-semibold">AI Subject Teacher</h3>
+        <h3 class="font-semibold">{{ subjectUi.title }}</h3>
         <p class="truncate text-xs opacity-90">{{ chapterName }}</p>
       </div>
       <div class="relative flex items-center gap-2">
@@ -1576,7 +1599,7 @@ onUnmounted(() => {
         <button
           @click.stop="toggleSettings"
           class="p-1 rounded hover:bg-white/20"
-          title="Voice Settings"
+          :title="subjectUi.voiceSettings"
         >
           <Icon
             name="mdi:cog"
@@ -1589,9 +1612,9 @@ onUnmounted(() => {
           class="absolute top-full right-0 z-50 mt-2 min-w-[200px] max-w-[min(18rem,calc(100vw-2rem))] rounded-lg bg-white p-4 shadow-lg settings-container"
           @click.stop
         >
-          <h4 class="mb-2 font-semibold text-gray-900">Voice Settings</h4>
+          <h4 class="mb-2 font-semibold text-gray-900">{{ subjectUi.voiceSettings }}</h4>
           <p class="mb-3 text-xs text-gray-500">
-            Select voice for audio responses
+            {{ subjectUi.voiceSettingsHelp }}
           </p>
           <div class="space-y-2">
             <label class="flex items-center gap-2 cursor-pointer">
@@ -1601,7 +1624,7 @@ onUnmounted(() => {
                 :checked="voiceGender === 'female'"
                 @change="saveVoicePreference('female')"
               />
-              <span class="text-gray-900">Female Voice</span>
+              <span class="text-gray-900">{{ subjectUi.femaleVoice }}</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
               <input
@@ -1610,7 +1633,7 @@ onUnmounted(() => {
                 :checked="voiceGender === 'male'"
                 @change="saveVoicePreference('male')"
               />
-              <span class="text-gray-900">Male Voice</span>
+              <span class="text-gray-900">{{ subjectUi.maleVoice }}</span>
             </label>
           </div>
         </div>
@@ -1655,13 +1678,13 @@ onUnmounted(() => {
           v-if="messages.length === 0"
           class="text-center text-gray-500"
         >
-          <p>Hello! I'm your <strong>AI Subject Teacher</strong>.</p>
+          <p>{{ subjectUi.welcome }} <strong>{{ subjectUi.title }}</strong>.</p>
           <p class="mt-2 text-sm">
-            I'm here to help you understand <strong>{{ chapterName }}</strong
+            {{ subjectUi.intro }} <strong>{{ chapterName }}</strong
             >.
           </p>
           <p class="mt-1 text-xs opacity-75">
-            Feel free to ask me any questions about this competence!
+            {{ subjectUi.prompt }}
           </p>
         </div>
         <template #fallback>
@@ -1669,13 +1692,13 @@ onUnmounted(() => {
             v-if="messages.length === 0"
             class="text-center text-gray-500"
           >
-            <p>Hello! I'm your <strong>AI Subject Teacher</strong>.</p>
+            <p>{{ subjectUi.welcome }} <strong>{{ subjectUi.title }}</strong>.</p>
             <p class="mt-2 text-sm">
-              I'm here to help you understand <strong>{{ chapterName }}</strong
+              {{ subjectUi.intro }} <strong>{{ chapterName }}</strong
               >.
             </p>
             <p class="mt-1 text-xs opacity-75">
-              Feel free to ask me any questions about this competence!
+              {{ subjectUi.prompt }}
             </p>
           </div>
         </template>
@@ -1734,7 +1757,7 @@ onUnmounted(() => {
                 class="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-400"
               ></span>
             </div>
-            <span class="text-gray-500 text-sm ml-2">AI is typing...</span>
+            <span class="text-gray-500 text-sm ml-2">{{ subjectUi.typing }}</span>
           </div>
         </div>
       </div>
@@ -1749,8 +1772,8 @@ onUnmounted(() => {
         <input
           v-model="currentQuestion"
           type="text"
-          placeholder="Type your message..."
-          aria-label="Type your question for AI Subject Teacher"
+          :placeholder="subjectUi.inputPlaceholder"
+          :aria-label="subjectUi.inputAria"
           class="flex-1 rounded-lg border border-gray-300 p-3 focus:outline-none"
           :disabled="isLoading || !chapterId"
         />
@@ -1760,7 +1783,7 @@ onUnmounted(() => {
           :disabled="!currentQuestion.trim() || isLoading || !chapterId"
           class="rounded-lg bg-oceanBlue px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Send
+          {{ subjectUi.send }}
         </button>
       </form>
     </div>
@@ -1777,7 +1800,7 @@ onUnmounted(() => {
             name="mdi:file-document-outline"
             size="18"
           />
-          <span>{{ isSummarizing ? "Summarizing..." : "Summarize" }}</span>
+          <span>{{ isSummarizing ? subjectUi.summarizeBusy : subjectUi.summarizeIdle }}</span>
         </button>
         <button
           @click="handleEnglishCrashCourse"
@@ -1789,7 +1812,7 @@ onUnmounted(() => {
             size="18"
           />
           <span>{{
-            isEnglishCrashCourse ? "Loading..." : "English Crash Course"
+            isEnglishCrashCourse ? subjectUi.englishCrashCourseBusy : subjectUi.englishCrashCourseIdle
           }}</span>
         </button>
         <button
@@ -1801,7 +1824,7 @@ onUnmounted(() => {
             :name="isPlayingAudio ? 'mdi:pause' : 'mdi:volume-high'"
             size="18"
           />
-          <span>{{ isPlayingAudio ? "Stop Reading" : "Read" }}</span>
+          <span>{{ isPlayingAudio ? subjectUi.stopReading : subjectUi.read }}</span>
         </button>
       </div>
     </div>

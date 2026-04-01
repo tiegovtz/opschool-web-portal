@@ -6,6 +6,7 @@ import type { LocationQueryRaw } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
+const contentLayoutLanguage = useContentLayoutLanguage();
 
 const userToken = useCookie("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
@@ -101,11 +102,16 @@ const hasValidSubjectContext = computed(() => {
 const showLauncher = computed(
   () => isLoggedIn.value && !isExcluded.value && !isBusy.value
 );
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
 const launcherLabel = computed(() =>
-  hasValidSubjectContext.value ? "AI Subject Teacher" : "AI Teacher"
+  hasValidSubjectContext.value
+    ? (isSwahili.value ? "Mwalimu wa Somo wa Akili Unde" : "AI Subject Teacher")
+    : (isSwahili.value ? "Mwalimu wa Akili Unde" : "AI Teacher")
 );
 const launcherHoverLabel = computed(() =>
-  hasValidSubjectContext.value ? "Ask AI Subject Teacher" : "Ask AI Teacher"
+  hasValidSubjectContext.value
+    ? (isSwahili.value ? "Uliza Mwalimu wa Somo wa Akili Unde" : "Ask AI Subject Teacher")
+    : (isSwahili.value ? "Uliza Mwalimu wa Akili Unde" : "Ask AI Teacher")
 );
 const isLauncherHovered = ref(false);
 const isSmallScreen = ref(false);
