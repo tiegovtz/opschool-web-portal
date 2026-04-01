@@ -7,10 +7,14 @@ const props = withDefaults(
     value: number | null;
     helper?: string;
     accent?: "ocean" | "emerald" | "amber" | "slate";
+    emptyStateLabel?: string;
+    activeStateLabel?: string;
   }>(),
   {
     helper: "",
     accent: "ocean",
+    emptyStateLabel: "Awaiting tracked data",
+    activeStateLabel: "Current learning signal",
   },
 );
 
@@ -123,8 +127,8 @@ const palette = computed(() => {
         >
           {{
             normalizedValue === null
-              ? "Awaiting tracked data"
-              : "Current learning signal"
+              ? emptyStateLabel
+              : activeStateLabel
           }}
         </p>
         <p

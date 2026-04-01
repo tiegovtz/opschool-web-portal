@@ -40,6 +40,7 @@ const headers = {
 };
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
+const isKiswahili = computed(() => props.language === "kiswahili");
 
 // Model
 const selected = reactive({
@@ -58,6 +59,7 @@ const selectedEducationBucket = computed(() =>
   selected.level?.trim() ? normalizeEducationLevel(selected.level) : null,
 );
 const selectedContentLanguage = computed(() =>
+  props.language ||
   resolveRouteLanguage(route, selectedEducationBucket.value ?? undefined, primaryContentLanguage.value),
 );
 const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjects, {
@@ -231,26 +233,51 @@ watch(
   }
 );
 
+const filterTitle = computed(() => (isKiswahili.value ? "Chuja" : "Filter"));
+const resetLabel = computed(() => (isKiswahili.value ? "Weka upya" : "Reset"));
+const loadingLabel = computed(() => (isKiswahili.value ? "Vichujio vinapakia..." : "Loading filters..."));
+const contentFiltersLabel = computed(() =>
+  isKiswahili.value ? "Vichujio vya maudhui" : "Content filters",
+);
+const educationLevelLabel = computed(() =>
+  isKiswahili.value ? "Ngazi ya elimu" : "Education level",
+);
+const classLabel = computed(() => (isKiswahili.value ? "Darasa" : "Class"));
+const subjectLabel = computed(() => (isKiswahili.value ? "Somo" : "Subject"));
+const selectLevelFirstLabel = computed(() =>
+  isKiswahili.value ? "Chagua ngazi kwanza ili uchague darasa." : "Select level first to choose a class.",
+);
+const selectClassFirstLabel = computed(() =>
+  isKiswahili.value ? "Chagua darasa kwanza ili uchague somo." : "Select class first to choose a subject.",
+);
+
+const groupHeading = (groupName: string) => {
+  if (groupName === "level") return educationLevelLabel.value;
+  if (groupName === "class") return classLabel.value;
+  if (groupName === "subject") return subjectLabel.value;
+  return groupName;
+};
+
 </script>
 <template>
   <!-- Loading State -->
   <div v-if="isLoading" role="status" aria-live="polite" aria-busy="true">
-    <p class="text-gray-400 animate-pulse">Loading filters…</p>
+    <p class="text-gray-400 animate-pulse">{{ loadingLabel }}</p>
   </div>
 
   <!-- Filters Form -->
   <form v-else class="flex flex-col w-full bg-white divide-y rounded-md" @reset="resetFilters"
-    aria-label="Content filters" role="search">
+    :aria-label="contentFiltersLabel" role="search">
     <span class="sr-only" aria-live="polite" aria-atomic="true">{{ liveMessage }}</span>
     <!-- Header -->
     <div class="flex items-center justify-between p-4 bg-gray-50 border-b">
       <h2 id="filter-heading" class="font-bold text-gray-700">
-        Filter
+        {{ filterTitle }}
       </h2>
 
-      <button type="reset" aria-label="Reset all filters"
+      <button type="reset" :aria-label="resetLabel"
         class="px-3 py-1 text-sm border border-oceanBlue text-oceanBlue rounded-md transition hover:bg-oceanBlue hover:text-white">
-        Reset
+        {{ resetLabel }}
       </button>
     </div>
 
@@ -265,7 +292,7 @@ watch(
           pos > -1 ? openMenus.splice(pos, 1) : openMenus.push(i);
         }">
         <h3 class="capitalize font-semibold">
-          {{ group.name === "level" ? "Education level" : group.name }}
+          {{ groupHeading(group.name) }}
         </h3>
 
         <Icon :name="openMenus.includes(i)
@@ -278,10 +305,10 @@ watch(
         <div v-if="openMenus.includes(i)" :id="`filter-panel-${i}`" class="mt-3 ml-2 space-y-2" role="group"
           :aria-labelledby="`filter-group-${i}`">
           <p v-if="group.name === 'class' && group.disabled" class="text-sm text-gray-500">
-            Select level first to choose a class.
+            {{ selectLevelFirstLabel }}
           </p>
           <p v-if="group.name === 'subject' && group.disabled" class="text-sm text-gray-500">
-            Select class first to choose a subject.
+            {{ selectClassFirstLabel }}
           </p>
           <label v-for="item in group.items.filter((i:any)=>!i.includes(educationLevels))" :key="item" class="flex items-center gap-2"
             :class="group.disabled ? 'opacity-60 cursor-not-allowed' : ''">

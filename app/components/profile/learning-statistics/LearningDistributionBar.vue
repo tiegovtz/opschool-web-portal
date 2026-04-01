@@ -12,6 +12,7 @@ const props = defineProps<{
   title?: string;
   segments: DistributionSegment[];
   total?: number;
+  itemLabel?: string;
 }>();
 
 const normalizedSegments = computed(() => {
@@ -27,6 +28,8 @@ const normalizedSegments = computed(() => {
         : 0,
   }));
 });
+
+const totalLabel = computed(() => props.itemLabel ?? "items");
 </script>
 
 <template>
@@ -39,7 +42,7 @@ const normalizedSegments = computed(() => {
         {{ title }}
       </p>
       <p class="text-xs text-slate-500">
-        {{ total ?? segments.reduce((sum, segment) => sum + segment.value, 0) }} items
+        {{ total ?? segments.reduce((sum, segment) => sum + segment.value, 0) }} {{ totalLabel }}
       </p>
     </div>
 

@@ -310,7 +310,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
           <Icon name="fa-solid:list" size="1.5rem" aria-hidden="true" />
         </button>
       </div>
-      <HomeTabContentShell :active-tab="activeTab" :results-count="videos?.length || 0" :filter-value="filterValue"
+      <HomeTabContentShell :active-tab="activeTab" :language="language" :results-count="videos?.length || 0" :filter-value="filterValue"
         :show-filters="!!userToken" @update-filter="filterValue = $event" @reset-filter="filterValue = {}">
         <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
           <LoadingIndicator :is-loading="true" />

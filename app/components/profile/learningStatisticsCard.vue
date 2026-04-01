@@ -134,10 +134,10 @@ const text = computed(() => ({
   subjectsHelper: isSw.value ? "Masomo yaliyofikiwa angalau mara moja." : "Subjects reached at least once.",
   timeSpent: isSw.value ? "Muda Uliotumika" : "Time Spent",
   timeSpentHelper: isSw.value ? "Jumla ya muda wa kujifunza uliofuatiliwa." : "Total tracked study time.",
-  quizAttempts: isSw.value ? "Majaribio ya Quiz" : "Quiz Attempts",
-  quizAttemptsHelper: isSw.value ? "Majaribio yaliyorekodiwa ya quiz za sura na video." : "Recorded chapter and video quiz tries.",
-  averageQuizScore: isSw.value ? "Wastani wa Alama za Quiz" : "Average Quiz Score",
-  averageQuizScoreHelper: isSw.value ? "Wastani wa alama kutoka quiz zilizofuatiliwa." : "Average score from tracked quizzes.",
+  quizAttempts: isSw.value ? "Majaribio ya Zoezi" : "Quiz Attempts",
+  quizAttemptsHelper: isSw.value ? "Majaribio yaliyorekodiwa ya Mazoezi ya sura na video." : "Recorded chapter and video quiz tries.",
+  averageQuizScore: isSw.value ? "Wastani wa Alama za Zoezi" : "Average Quiz Score",
+  averageQuizScoreHelper: isSw.value ? "Wastani wa alama kutoka kwa mazoezi yaliyofuatiliwa." : "Average score from tracked quizzes.",
   recommendationUnavailable: isSw.value ? "Mapendekezo binafsi hayapatikani kwa sasa." : "Personalized recommendations are temporarily unavailable.",
   profileDataStillAvailable: isSw.value ? "Taarifa zako za wasifu bado zinapatikana. Jaribu kufungua ukurasa upya baada ya muda mfupi." : "Your profile data is still available. Try refreshing the page in a moment.",
   doingWellSummary: isSw.value ? "Unaendelea vizuri kwenye mada zako za hivi karibuni." : "You are keeping up well with your recent topics.",
@@ -145,7 +145,7 @@ const text = computed(() => ({
   progressSinceSnapshot: isSw.value ? "Maendeleo Tangu Mapendekezo ya Mwisho" : "Progress Since Recommendation Snapshot",
   progressSinceSnapshotHelper: isSw.value ? "Fuatilia kilichobadilika baada ya mapendekezo yako ya mwisho kutolewa." : "Track what changed after your latest recommendation set was generated.",
   talkToData: isSw.value ? "Zungumza na Taarifa Zako" : "Talk To Your Data",
-  talkToDataHelper: isSw.value ? "Uliza kuhusu rekodi yako ya ujifunzaji: mada ulizokamilisha, maeneo yenye udhaifu, quiz ulizoshindwa, kazi ambazo hazijakamilika, na cha kurejea baadaye." : "Ask questions about your own learning record: covered topics, weak areas, failed quizzes, unfinished work, and what to revise next.",
+  talkToDataHelper: isSw.value ? "Uliza kuhusu rekodi yako ya ujifunzaji: mada ulizokamilisha, maeneo yenye udhaifu, mazoezi ulizoshindwa, kazi ambazo hazijakamilika, na cha kurejea baadaye." : "Ask questions about your own learning record: covered topics, weak areas, failed quizzes, unfinished work, and what to revise next.",
   askAboutData: isSw.value ? "Uliza kuhusu taarifa zako za ujifunzaji" : "Ask about your learning data",
   askPlaceholder: isSw.value ? "Mfano: Ni mada zipi sijazimaliza, na ninafeli wapi?" : "Example: Which topics have I not covered yet, and where am I failing?",
   groundedAnswer: isSw.value ? "Jibu linatokana na maendeleo ya wasifu wako, ufunikaji wa mada, na taarifa za tathmini." : "The answer is grounded in your profile progress, topic coverage, and assessment data.",
@@ -158,6 +158,35 @@ const text = computed(() => ({
   focusWhenRevisiting: isSw.value ? "Lenga unapopitia tena" : "Focus when revisiting",
   progress: isSw.value ? "Maendeleo" : "Progress",
   quiz: "Quiz",
+  askQuestionError: isSw.value ? "Uliza swali kuhusu taarifa zako binafsi za ujifunzaji." : "Ask a question about your own learning data.",
+  failedAnalyze: isSw.value ? "Imeshindikana kuchambua taarifa zako za ujifunzaji kwa sasa." : "Failed to analyze your learning data right now.",
+  failedProgressSummary: isSw.value ? "Imeshindikana kupakia muhtasari wa maendeleo ya mapendekezo." : "Failed to load recommendation progress summary.",
+  failedSnapshotProgress: isSw.value ? "Imeshindikana kupakia maendeleo tangu picha ya mwisho ya mapendekezo." : "Failed to load progress since the latest recommendation snapshot.",
+  failedSnapshotSave: isSw.value ? "Imeshindikana kuhifadhi picha ya mwisho ya mapendekezo." : "Failed to save the latest recommendation snapshot.",
+  snapshotUnavailable: isSw.value ? "Takwimu za picha ya mapendekezo hazipatikani kwa sasa." : "Snapshot analytics are temporarily unavailable.",
+  totalRecommendations: isSw.value ? "Jumla ya Mapendekezo" : "Total Recommendations",
+  resolved: isSw.value ? "Yametatuliwa" : "Resolved",
+  improving: isSw.value ? "Yanaboreshwa" : "Improving",
+  notStarted: isSw.value ? "Haijaanza" : "Not Started",
+  averageProgress: isSw.value ? "Wastani wa Maendeleo" : "Average Progress",
+  assessmentAverageShort: isSw.value ? "Wastani wa Tathmini" : "Assessment Average",
+  before: isSw.value ? "Kabla" : "Before",
+  after: isSw.value ? "Baada" : "After",
+  delta: isSw.value ? "Tofauti" : "Delta",
+  coveredFailedTopics: isSw.value ? "Mada Zilizofunikwa / Zilizofeli" : "Covered / Failed Topics",
+  coveredDelta: isSw.value ? "Tofauti ya zilizofunikwa" : "Covered delta",
+  failedDelta: isSw.value ? "Tofauti ya zilizofeli" : "Failed delta",
+  directOpenOrAskAi: isSw.value ? "Fungua mada moja kwa moja au mwombe Mwalimu wa AI akuongoze kwenye marejeo yako." : "Open the topic directly or ask AI Teacher to guide your revision.",
+  openCompetence: isSw.value ? "Umahiri" : "Competence",
+  studyWithAi: isSw.value ? "Soma na Mwalimu wa Akili Unde" : "Study with AI Teacher",
+  learningTopicsStatistics: isSw.value ? "Takwimu za Mada za Ujifunzaji" : "Learning Topics Statistics",
+  lowerSecondary: isSw.value ? "sekondari ya chini" : "lower secondary",
+  topicImprovement: isSw.value ? "Maboresho ya Mada" : "Topic Improvement",
+  quizScore: isSw.value ? "Alama ya Zoezi" : "Quiz score",
+  quizActivitySinceSnapshot: isSw.value ? "Shughuli za Zoezi Tangu Picha" : "Quiz Activity Since Snapshot",
+  correct: isSw.value ? "Sahihi" : "Correct",
+  incorrect: isSw.value ? "Si sahihi" : "Incorrect",
+  genericError: isSw.value ? "Jaribu kufungua ukurasa upya, kuna hitilafu imetokea" : "Try to refresh the page, Something went Wrong",
 }));
 
 const talkToDataPrompts = computed(() => [
@@ -176,14 +205,14 @@ const actionLabels = computed<Record<RecommendationAction, string>>(() => ({
   start_topic: isSw.value ? "Anza mada" : "Start topic",
   rewatch_video: isSw.value ? "Tazama video tena" : "Rewatch video",
   review_notes: isSw.value ? "Pitia maelezo" : "Review notes",
-  practice_quiz: isSw.value ? "Fanya quiz" : "Practice quiz",
+  practice_quiz: isSw.value ? "Fanya Zoezi" : "Practice quiz",
 }));
 
 const actionHelperLabels = computed<Record<RecommendationAction, string>>(() => ({
   start_topic: isSw.value ? "Anza mada" : "Start topic",
   rewatch_video: isSw.value ? "Rudia somo" : "Revisit lesson",
   review_notes: isSw.value ? "Fungua maelezo ya mada" : "Open topic notes",
-  practice_quiz: isSw.value ? "Pitia kisha fanya quiz" : "Review then practice",
+  practice_quiz: isSw.value ? "Pitia kisha fanya Zoezi" : "Review then practice",
 }));
 
 const reasonLabels = computed<Record<string, string>>(() => ({
@@ -251,7 +280,7 @@ const askTalkToData = async (presetQuestion?: string) => {
   const resolvedQuestion = (presetQuestion ?? talkToDataQuestion.value).trim();
   if (!resolvedQuestion) {
     talkToDataStatus.value = "error";
-    talkToDataError.value = "Ask a question about your own learning data.";
+    talkToDataError.value = text.value.askQuestionError;
     return;
   }
 
@@ -278,7 +307,7 @@ const askTalkToData = async (presetQuestion?: string) => {
     talkToDataError.value =
       error?.data?.message ||
       error?.message ||
-      "Failed to analyze your learning data right now.";
+      text.value.failedAnalyze;
   }
 };
 
@@ -381,7 +410,7 @@ const loadRecommendationProgressSummary = async () => {
     progressSummaryError.value =
       error?.data?.message ||
       error?.message ||
-      "Failed to load recommendation progress summary.";
+      text.value.failedProgressSummary;
   }
 };
 
@@ -403,7 +432,7 @@ const loadSnapshotComparison = async (snapshotId: string) => {
     comparisonError.value =
       error?.data?.message ||
       error?.message ||
-      "Failed to load progress since the latest recommendation snapshot.";
+      text.value.failedSnapshotProgress;
   }
 };
 
@@ -460,7 +489,7 @@ const syncActiveRecommendationSnapshot = async () => {
     snapshotSyncError.value =
       error?.data?.message ||
       error?.message ||
-      "Failed to save the latest recommendation snapshot.";
+      text.value.failedSnapshotSave;
   }
 };
 
@@ -679,7 +708,7 @@ onMounted(() => {
             class="p-4 mt-5 border rounded-2xl border-amber-200 bg-amber-50 text-amber-900"
           >
             <p class="font-medium">
-              Snapshot analytics are temporarily unavailable.
+              {{ text.snapshotUnavailable }}
             </p>
             <p class="mt-1 text-sm">
               {{
@@ -700,7 +729,7 @@ onMounted(() => {
             >
               <div class="p-4 rounded-3xl bg-slate-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                  Total Recommendations
+                  {{ text.totalRecommendations }}
                 </p>
                 <p class="mt-2 text-2xl font-semibold text-slate-900">
                   {{ recommendationProgressSummary.totalRecommendations }}
@@ -708,7 +737,7 @@ onMounted(() => {
               </div>
               <div class="p-4 rounded-3xl bg-emerald-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-emerald-700">
-                  Resolved
+                  {{ text.resolved }}
                 </p>
                 <p class="mt-2 text-2xl font-semibold text-emerald-900">
                   {{ recommendationProgressSummary.resolved }}
@@ -716,7 +745,7 @@ onMounted(() => {
               </div>
               <div class="p-4 rounded-3xl bg-sky-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-sky-700">
-                  Improving
+                  {{ text.improving }}
                 </p>
                 <p class="mt-2 text-2xl font-semibold text-sky-900">
                   {{ recommendationProgressSummary.improving }}
@@ -724,7 +753,7 @@ onMounted(() => {
               </div>
               <div class="p-4 rounded-3xl bg-amber-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-amber-700">
-                  Not Started
+                  {{ text.notStarted }}
                 </p>
                 <p class="mt-2 text-2xl font-semibold text-amber-900">
                   {{ recommendationProgressSummary.notStarted }}
@@ -746,11 +775,11 @@ onMounted(() => {
             >
               <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                  Average Progress
+                  {{ text.averageProgress }}
                 </p>
                 <div class="grid gap-2 mt-3 text-sm sm:grid-cols-3">
                   <div>
-                    <p class="text-slate-500">Before</p>
+                    <p class="text-slate-500">{{ text.before }}</p>
                     <p class="font-semibold text-slate-900">
                       {{
                         formatMetricValue(
@@ -762,7 +791,7 @@ onMounted(() => {
                     </p>
                   </div>
                   <div>
-                    <p class="text-slate-500">After</p>
+                    <p class="text-slate-500">{{ text.after }}</p>
                     <p class="font-semibold text-slate-900">
                       {{
                         formatMetricValue(
@@ -774,7 +803,7 @@ onMounted(() => {
                     </p>
                   </div>
                   <div>
-                    <p class="text-slate-500">Delta</p>
+                    <p class="text-slate-500">{{ text.delta }}</p>
                     <p
                       class="font-semibold"
                       :class="
@@ -798,11 +827,11 @@ onMounted(() => {
 
               <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                  Assessment Average
+                  {{ text.assessmentAverageShort }}
                 </p>
                 <div class="grid gap-2 mt-3 text-sm sm:grid-cols-3">
                   <div>
-                    <p class="text-slate-500">Before</p>
+                    <p class="text-slate-500">{{ text.before }}</p>
                     <p class="font-semibold text-slate-900">
                       {{
                         formatMetricValue(
@@ -814,7 +843,7 @@ onMounted(() => {
                     </p>
                   </div>
                   <div>
-                    <p class="text-slate-500">After</p>
+                    <p class="text-slate-500">{{ text.after }}</p>
                     <p class="font-semibold text-slate-900">
                       {{
                         formatMetricValue(
@@ -826,7 +855,7 @@ onMounted(() => {
                     </p>
                   </div>
                   <div>
-                    <p class="text-slate-500">Delta</p>
+                    <p class="text-slate-500">{{ text.delta }}</p>
                     <p
                       class="font-semibold"
                       :class="
@@ -850,11 +879,11 @@ onMounted(() => {
 
               <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                  Quiz Attempts
+                  {{ text.quizAttempts }}
                 </p>
                 <div class="grid gap-2 mt-3 text-sm sm:grid-cols-3">
                   <div>
-                    <p class="text-slate-500">Before</p>
+                    <p class="text-slate-500">{{ text.before }}</p>
                     <p class="font-semibold text-slate-900">
                       {{
                         formatMetricValue(
@@ -865,7 +894,7 @@ onMounted(() => {
                     </p>
                   </div>
                   <div>
-                    <p class="text-slate-500">After</p>
+                    <p class="text-slate-500">{{ text.after }}</p>
                     <p class="font-semibold text-slate-900">
                       {{
                         formatMetricValue(
@@ -876,7 +905,7 @@ onMounted(() => {
                     </p>
                   </div>
                   <div>
-                    <p class="text-slate-500">Delta</p>
+                    <p class="text-slate-500">{{ text.delta }}</p>
                     <p
                       class="font-semibold"
                       :class="
@@ -899,11 +928,11 @@ onMounted(() => {
 
               <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
-                  Covered / Failed Topics
+                  {{ text.coveredFailedTopics }}
                 </p>
                 <div class="grid gap-3 mt-3 text-sm sm:grid-cols-2">
                   <div>
-                    <p class="text-slate-500">Covered delta</p>
+                    <p class="text-slate-500">{{ text.coveredDelta }}</p>
                     <p
                       class="font-semibold"
                       :class="
@@ -920,7 +949,7 @@ onMounted(() => {
                     </p>
                   </div>
                   <div>
-                    <p class="text-slate-500">Failed delta</p>
+                    <p class="text-slate-500">{{ text.failedDelta }}</p>
                     <p
                       class="font-semibold"
                       :class="
@@ -1169,7 +1198,7 @@ onMounted(() => {
             class="flex flex-col gap-3 px-5 py-4 border-t border-slate-200 bg-white sm:flex-row sm:items-center sm:justify-between"
           >
             <p class="text-sm text-slate-500">
-              Open the topic directly or ask AI Teacher to guide your revision.
+              {{ text.directOpenOrAskAi }}
             </p>
 
             <div class="flex flex-col gap-3 sm:flex-row">
@@ -1181,7 +1210,7 @@ onMounted(() => {
                   name="heroicons:play-circle"
                   class="w-5 h-5"
                 />
-                <span>Open Compitence</span>
+                <span>{{ text.openCompetence }}</span>
               </NuxtLink>
 
               <button
@@ -1193,7 +1222,7 @@ onMounted(() => {
                   name="heroicons:sparkles"
                   class="w-5 h-5"
                 />
-                <span>Study with AI Teacher</span>
+                <span>{{ text.studyWithAi }}</span>
               </button>
             </div>
           </div>
@@ -1207,7 +1236,7 @@ onMounted(() => {
     >
       <div class="px-5 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue sm:px-6">
         <h3 class="text-lg font-semibold text-white">
-          Learning Topics Statistics
+          {{ text.learningTopicsStatistics }}
         </h3>
       </div>
       <div
@@ -1231,7 +1260,7 @@ onMounted(() => {
                 ? topic?.views
                 : 0
           "
-          topic-level="lower secondary"
+          :topic-level="text.lowerSecondary"
           :topic-standard="topic?.level?.name"
           :subject-name="topic?.subject?.name"
           :topic-viewed="topic?.isViewed"
@@ -1256,7 +1285,7 @@ onMounted(() => {
             >
               <div>
                 <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
-                  Topic Improvement
+                  {{ text.topicImprovement }}
                 </p>
                 <h4 class="mt-2 text-xl font-semibold text-slate-900">
                   {{ selectedTopicImprovement.topicName }}
@@ -1289,7 +1318,7 @@ onMounted(() => {
 
               <div class="grid gap-3 sm:grid-cols-3">
                 <div class="p-4 rounded-2xl bg-slate-50">
-                  <p class="text-xs uppercase text-slate-500">Progress</p>
+                  <p class="text-xs uppercase text-slate-500">{{ text.progress }}</p>
                   <p class="mt-2 text-sm font-semibold text-slate-900">
                     {{ selectedTopicImprovement.before.progressPercent }}% →
                     {{ selectedTopicImprovement.after.progressPercent }}%
@@ -1303,7 +1332,7 @@ onMounted(() => {
                 </div>
 
                 <div class="p-4 rounded-2xl bg-slate-50">
-                  <p class="text-xs uppercase text-slate-500">Quiz score</p>
+                  <p class="text-xs uppercase text-slate-500">{{ text.quizScore }}</p>
                   <p class="mt-2 text-sm font-semibold text-slate-900">
                     {{ formatMetricValue(selectedTopicImprovement.before.assessmentScore, "%") }} →
                     {{ formatMetricValue(selectedTopicImprovement.after.assessmentScore, "%") }}
@@ -1317,7 +1346,7 @@ onMounted(() => {
                 </div>
 
                 <div class="p-4 rounded-2xl bg-slate-50">
-                  <p class="text-xs uppercase text-slate-500">Attempts</p>
+                  <p class="text-xs uppercase text-slate-500">{{ text.quizAttempts }}</p>
                   <p class="mt-2 text-sm font-semibold text-slate-900">
                     {{ selectedTopicImprovement.before.assessmentAttempts }} →
                     {{ selectedTopicImprovement.after.assessmentAttempts }}
@@ -1336,23 +1365,23 @@ onMounted(() => {
                 class="p-4 rounded-2xl bg-sky-50 border border-sky-100"
               >
                 <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
-                  Quiz Activity Since Snapshot
+                  {{ text.quizActivitySinceSnapshot }}
                 </p>
                 <div class="grid gap-3 mt-3 sm:grid-cols-3 text-sm">
                   <p class="text-slate-700">
-                    Attempts
+                    {{ text.quizAttempts }}
                     <span class="font-semibold text-slate-900">{{
                       selectedTopicImprovement.quizSummarySinceSnapshot.attemptCount
                     }}</span>
                   </p>
                   <p class="text-slate-700">
-                    Correct
+                    {{ text.correct }}
                     <span class="font-semibold text-slate-900">{{
                       selectedTopicImprovement.quizSummarySinceSnapshot.correctCount
                     }}</span>
                   </p>
                   <p class="text-slate-700">
-                    Incorrect
+                    {{ text.incorrect }}
                     <span class="font-semibold text-slate-900">{{
                       selectedTopicImprovement.quizSummarySinceSnapshot.incorrectCount
                     }}</span>
@@ -1378,7 +1407,7 @@ onMounted(() => {
     class="flex items-center justify-center w-full"
   >
     <p class="text-center text-medium">
-      Try to refresh the page, Something went Wrong
+      {{ text.genericError }}
     </p>
   </div>
 </template>
