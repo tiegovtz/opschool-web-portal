@@ -4,14 +4,19 @@ import { sanitize } from "~/utilities/sanitizeInput";
 import { auth } from "~/utilities/validationInput";
 import { generateRandomID } from "~/utilities/generateRandomNumber";
 import apiDocs from "~/utilities/apiDocs";
+import {
+  educationLevelNameToLevelsApiQuery,
+} from "~/utilities/educationLevelApiMaps";
 import { CustomDropDownList } from "#components";
 import type { Level } from "~/types/level.interface";
+import type { educationLevel } from "~/types/educationlevel.interface";
 import type { FetchError } from "ofetch";
 
 // input tabs control
 const inputTabs = ref("tabOne");
 const headingRef = ref<HTMLElement | null>(null);
 const listLevel = ref<Level[]>([]);
+const listEducationLevels = ref<educationLevel[]>([]);
 const classLevel = ref<string>('');
 const route = useRoute();
 
@@ -33,6 +38,7 @@ interface userSignUp {
   userName: string | null;
   age: string;
   region: string;
+  educationLevel: string;
   school: string;
   district: string;
   organization: string | null;
@@ -58,6 +64,7 @@ interface userSignUp {
       region: string | null;
       password: string | null;
       confirm_password: string | null;
+      educationLevel: string | null;
       school: string | null;
       district: string | null;
       organization: string | null;
@@ -73,6 +80,11 @@ const levelsLists = computed(() =>
   (listLevel.value ?? []).map((level) => ({ id: level._id, name: level.name }))
 )
 
+
+const educationLevelLists = computed(() =>
+  (listEducationLevels.value ?? []).map((level) => ({ id: level._id, name: level.name }))
+)
+
 const usersignUp = reactive<userSignUp>({
   type: "",
   fname: null,
@@ -83,6 +95,7 @@ const usersignUp = reactive<userSignUp>({
   userName: null,
   age: "",
   region: "",
+  educationLevel: "",
   school: "",
   district: "",
   organization: null,
@@ -108,6 +121,7 @@ const usersignUp = reactive<userSignUp>({
       region: null,
       password: null,
       confirm_password: null,
+      educationLevel: null,
       school: null,
       district: null,
       organization: null,
@@ -123,6 +137,39 @@ const normalizeUserTypeKey = (type: string) => {
   return value;
 };
 
+const isStudentOrTeacher = computed(() =>
+  ["Student", "Teacher"].includes(normalizeUserTypeKey(usersignUp.type))
+);
+
+watch(
+  () => usersignUp.educationLevel,
+  async (id) => {
+    usersignUp.school = "";
+    classLevel.value = "";
+    const trimmed = (id || "").toString().trim();
+    if (!trimmed) {
+      listLevel.value = [];
+      return;
+    }
+    const row = listEducationLevels.value.find((e) => e._id === trimmed);
+    if (!row?.name) {
+      listLevel.value = [];
+      return;
+    }
+    const educationLevelParam = educationLevelNameToLevelsApiQuery(row.name);
+    try {
+      const response = await $fetch<Level[]>(apiDocs.levels.getLevels, {
+        method: "GET",
+        query: { educationLevel: educationLevelParam },
+      });
+      listLevel.value = response ?? [];
+    } catch (error) {
+      console.error("Error fetching levels for education level:", error);
+      listLevel.value = [];
+    }
+  }
+);
+
 const toBackendUserType = (type: string) => {
   const key = normalizeUserTypeKey(type);
   if (key === "Student") return "Student";
@@ -131,14 +178,14 @@ const toBackendUserType = (type: string) => {
   return type?.toString().trim() || "";
 };
 
-const getLevel = async () => {
+const getEducationLevels = async () => {
   try {
-    const response = await $fetch<Level[]>(apiDocs.levels.getLevels, {
+    const response = await $fetch<educationLevel[]>(apiDocs.educationLevel.getEducationLevels, {
       method: "GET",
     });
-    listLevel.value = response;
+    listEducationLevels.value = response;
   } catch (error) {
-    console.error("Error fetching levels:", error);
+    console.error("Error fetching education levels:", error);
   }
 };
 
@@ -160,6 +207,8 @@ const signUp = async () => {
     usersignUp.region?.trim() &&                            // Region is required
     usersignUp.type?.trim() &&                              // User type is required
     usersignUp.district?.trim() &&                          // District is required
+    // Education Level required for Student/Teacher (used for fetching only, not sent)
+    ((!isStudentOrTeacher.value) || usersignUp.educationLevel?.trim()) &&
 
     // If not an "Education Stakeholder", user must provide their school
     (typeKey !== 'EducationStakeholder' && usersignUp.school?.trim()) ||
@@ -347,6 +396,13 @@ const signUp = async () => {
 
     if (!usersignUp.userOrgRole.trim()) {
       usersignUp.controller.errors.userOrgRole = messages.error.form.role;
+    }
+
+    if (isStudentOrTeacher.value && !usersignUp.educationLevel?.trim()) {
+      usersignUp.controller.errors.educationLevel = messages.error.validation.required;
+      switchTab("tabOne");
+    } else {
+      usersignUp.controller.errors.educationLevel = null;
     }
   }
 };
@@ -717,8 +773,7 @@ const organization = [
 onMounted(async () => {
   headingRef.value?.focus();
 
-  // Get Levels
-  await getLevel();
+  await getEducationLevels();
 });
 
 </script>
@@ -742,7 +797,7 @@ onMounted(async () => {
           alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
       </NuxtLink>
 
-      <form @submit.prevent="signUp" @keydown.enter.prevent :class="['text-textGray md:h-[530px] h-dvh relative overflow-hidden text-extraSmall lg:scroll-height lg:overflow-y-scroll',
+      <form @submit.prevent="signUp" @keydown.enter.prevent :class="['text-textGray md:h-[530px] h-dvh relative overflow-hidden text-extraSmall lg:scroll-height lg:overflow-y-scroll no-scrollbar',
         {
           'md:h-[600px]':
             usersignUp.controller.errors.age ||
@@ -772,7 +827,8 @@ onMounted(async () => {
                 Select User Type:</label>
 
               <!-- Use the Custom Dropdown instead of <select> -->
-              <CustomDropDownList v-model="usersignUp.type" :list="userTypes" placeholder="(eg: Student, Teacher ...)"
+              <CustomDropDownList v-model="usersignUp.type" :list="userTypes" :searchable="false"
+                placeholder="(eg: Student, Teacher ...)"
                 @update-model-value="usersignUp.type = $event" />
             </div>
 
@@ -854,8 +910,30 @@ onMounted(async () => {
               :region="usersignUp.region" @update-district="usersignUp.district = $event" />
           </div>
 
+          <!-- education level -->
+          <div v-if="isStudentOrTeacher" :class="[
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.educationLevel,
+            }
+          ]">
+            <div class="flex flex-col items-start w-full">
+              <label for="educationLevel" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+                Select Education Level:</label>
+
+              <CustomDropDownList id="educationLevel" v-model="usersignUp.educationLevel" :list="educationLevelLists"
+                placeholder="(eg: Secondary, Primary ...)" @update-model-value="usersignUp.educationLevel = $event" />
+            </div>
+
+            <small v-if="usersignUp.controller.errors.educationLevel" aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.educationLevel}`" class="w-full text-red-500 text-smallest">
+              {{ usersignUp.controller.errors.educationLevel }}
+            </small>
+          </div>
+
           <!-- school -->
-          <div v-if="['Student', 'Teacher'].includes(usersignUp.type)" :class="[
+          <div v-if="isStudentOrTeacher" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -874,7 +952,7 @@ onMounted(async () => {
               Class Level:</label>
             <!-- Use the Custom Dropdown instead of <select> -->
             <CustomDropDownList v-model="classLevel" :list="levelsLists"
-              placeholder="(eg: Baraa Secondary School ...)" @update-model-value="classLevel = $event" />
+              placeholder="(eg: Form One ...)" @update-model-value="classLevel = $event" />
           </div>
 
           <!-- gender input radio -->
@@ -1207,3 +1285,13 @@ onMounted(async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
