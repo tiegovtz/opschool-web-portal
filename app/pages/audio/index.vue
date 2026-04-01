@@ -124,7 +124,7 @@ const fetchAudios = async (param?: any) => {
     // Call State Define above
     audios.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
     audios.value = removeDataFromArrayOfJson(audios.value, 'audioType', 'NARRATION');
-    audios.value = educationLevel.value === "secondary"
+    audios.value = educationLevel.value !== "primary"
       ? filterKeyDataFromArrayOfJson(audios.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
       : audios.value;
     status.value = fetchStatus.value;

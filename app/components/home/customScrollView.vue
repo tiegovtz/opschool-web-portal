@@ -30,8 +30,38 @@ const props = defineProps<{
   language?: LanguageSupport;
 }>();
 
+type GroupedCollection<T = any> = {
+  dataOfKey: string | null;
+  data: T[];
+};
+
 const seeMoreDetails = ref<string | null>(props.seeMoreDetails ?? null); // Initial See More
 const userToken = useCookie("signInUserToken");
+
+const normalizedGroups = computed<GroupedCollection[]>(() => {
+  if (!Array.isArray(props.data) || props.data.length === 0) return [];
+
+  const isGroupedCollection = props.data.every((item) =>
+    Array.isArray(item?.data),
+  );
+
+  if (isGroupedCollection) {
+    return props.data as GroupedCollection[];
+  }
+
+  return [
+    {
+      dataOfKey: null,
+      data: props.data,
+    },
+  ];
+});
+
+const hasMultipleGroups = computed(() => normalizedGroups.value.length > 1);
+
+const showGroupHeader = (group: GroupedCollection) =>
+  hasMultipleGroups.value || !!group?.dataOfKey;
+
 // modify see more
 const setSeeMore = (seeMore: string) => {
   if (seeMoreDetails.value === seeMore) {
@@ -95,11 +125,12 @@ const setLevel = (key: string, lvl: string) => {
       v-else-if="activeTab === 'interactive-contents'"
     >
       <div
-        v-for="(topics, index) in data"
+        v-for="(topics, index) in normalizedGroups"
         :key="index"
       >
         <div
           v-if="
+            showGroupHeader(topics) &&
             seeMoreDetails &&
             seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
           "
@@ -143,7 +174,7 @@ const setLevel = (key: string, lvl: string) => {
           </div>
         </div>
         <div
-          v-else-if="!seeMoreDetails"
+          v-else-if="showGroupHeader(topics) && !seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
           <p class="font-bold text-[1.3rem] capitalize">
@@ -182,7 +213,7 @@ const setLevel = (key: string, lvl: string) => {
           </div>
         </div>
 
-        <div v-if="(data as any)?.length > 1">
+        <div v-if="hasMultipleGroups">
           <customGridOne
             v-if="
               seeMoreDetails &&
@@ -301,11 +332,12 @@ const setLevel = (key: string, lvl: string) => {
       v-else-if="activeTab === 'learn-activities'"
     >
       <div
-        v-for="(experiments, index) in data"
+        v-for="(experiments, index) in normalizedGroups"
         :key="index"
       >
         <div
           v-if="
+            showGroupHeader(experiments) &&
             seeMoreDetails &&
             seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
           "
@@ -330,7 +362,7 @@ const setLevel = (key: string, lvl: string) => {
           </small>
         </div>
         <div
-          v-else-if="!seeMoreDetails"
+          v-else-if="showGroupHeader(experiments) && !seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
           <p class="font-bold text-[1.3rem] capitalize">
@@ -374,7 +406,7 @@ const setLevel = (key: string, lvl: string) => {
           </div>
         </div>
 
-        <div v-if="(data as any)?.length > 1">
+        <div v-if="hasMultipleGroups">
           <customGridOne
             v-if="
               seeMoreDetails &&
@@ -470,11 +502,12 @@ const setLevel = (key: string, lvl: string) => {
       v-else-if="activeTab === 'video' || activeTab === 'class-videos'"
     >
       <div
-        v-for="(videos, index) in data"
+        v-for="(videos, index) in normalizedGroups"
         :key="index"
       >
         <div
           v-if="
+            showGroupHeader(videos) &&
             seeMoreDetails &&
             seeMoreDetails === (videos?.dataOfKey as any)?.toLowerCase()
           "
@@ -499,7 +532,7 @@ const setLevel = (key: string, lvl: string) => {
           </small>
         </div>
         <div
-          v-else-if="!seeMoreDetails"
+          v-else-if="showGroupHeader(videos) && !seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
           <p class="font-bold text-[1.3rem] capitalize">
@@ -536,7 +569,7 @@ const setLevel = (key: string, lvl: string) => {
             </small>
           </div>
         </div>
-        <div v-if="(data as any)?.length > 1">
+        <div v-if="hasMultipleGroups">
           <customGridOne
             v-if="
               seeMoreDetails &&
@@ -644,11 +677,12 @@ const setLevel = (key: string, lvl: string) => {
       v-else-if="activeTab === 'audio'"
     >
       <div
-        v-for="(audios, index) in data"
+        v-for="(audios, index) in normalizedGroups"
         :key="index"
       >
         <div
           v-if="
+            showGroupHeader(audios) &&
             seeMoreDetails &&
             seeMoreDetails === (audios?.dataOfKey as any)?.toLowerCase()
           "
@@ -673,7 +707,7 @@ const setLevel = (key: string, lvl: string) => {
           </small>
         </div>
         <div
-          v-else-if="!seeMoreDetails"
+          v-else-if="showGroupHeader(audios) && !seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
           <p class="font-bold text-[1.3rem] capitalize">
@@ -710,7 +744,7 @@ const setLevel = (key: string, lvl: string) => {
             </small>
           </div>
         </div>
-        <div v-if="(data as any)?.length > 1">
+        <div v-if="hasMultipleGroups">
           <customGridOne
             v-if="
               seeMoreDetails &&
@@ -841,11 +875,12 @@ const setLevel = (key: string, lvl: string) => {
       v-else-if="activeTab === 'interactive-contents'"
     >
       <div
-        v-for="(topics, index) in data"
+        v-for="(topics, index) in normalizedGroups"
         :key="index"
       >
         <div
           v-if="
+            showGroupHeader(topics) &&
             seeMoreDetails &&
             seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
           "
@@ -873,7 +908,7 @@ const setLevel = (key: string, lvl: string) => {
           </small>
         </div>
         <div
-          v-else-if="!seeMoreDetails"
+          v-else-if="showGroupHeader(topics) && !seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
           <h2 class="font-bold text-[1.3rem] capitalize">
@@ -913,7 +948,7 @@ const setLevel = (key: string, lvl: string) => {
           </div>
         </div>
 
-        <div v-if="(data as any)?.length > 1">
+        <div v-if="hasMultipleGroups">
           <customGridTwo
             v-if="
               seeMoreDetails &&
@@ -1024,11 +1059,12 @@ const setLevel = (key: string, lvl: string) => {
       v-else-if="activeTab === 'learn-activities'"
     >
       <div
-        v-for="(experiments, index) in data"
+        v-for="(experiments, index) in normalizedGroups"
         :key="index"
       >
         <div
           v-if="
+            showGroupHeader(experiments) &&
             seeMoreDetails &&
             seeMoreDetails === (experiments?.dataOfKey as any)?.toLowerCase()
           "
@@ -1056,7 +1092,7 @@ const setLevel = (key: string, lvl: string) => {
           </small>
         </div>
         <div
-          v-else-if="!seeMoreDetails"
+          v-else-if="showGroupHeader(experiments) && !seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
           <p class="font-bold text-[1.3rem] capitalize">
@@ -1101,7 +1137,7 @@ const setLevel = (key: string, lvl: string) => {
           </div>
         </div>
 
-        <div v-if="(data as any)?.length > 1">
+        <div v-if="hasMultipleGroups">
           <customGridTwo
             v-if="
               seeMoreDetails &&
@@ -1190,11 +1226,15 @@ const setLevel = (key: string, lvl: string) => {
       v-else-if="activeTab === 'video' || activeTab === 'class-videos'"
     >
       <div
-        v-for="(videos, index) in data"
+        v-for="(videos, index) in normalizedGroups"
         :key="index"
       >
         <div
-          v-if="seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)"
+          v-if="
+            showGroupHeader(videos) &&
+            seeMoreDetails &&
+            seeMoreDetails === (videos?.dataOfKey as any)
+          "
           class="flex items-center justify-between py-4"
         >
           <p class="font-bold text-[1.3rem] capitalize">
@@ -1215,7 +1255,7 @@ const setLevel = (key: string, lvl: string) => {
           </small>
         </div>
         <div
-          v-else-if="!seeMoreDetails"
+          v-else-if="showGroupHeader(videos) && !seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
           <p class="font-bold text-[1.3rem] capitalize">
@@ -1254,7 +1294,7 @@ const setLevel = (key: string, lvl: string) => {
             </small>
           </div>
         </div>
-        <div v-if="(data as any)?.length > 1">
+        <div v-if="hasMultipleGroups">
           <customGridTwo
             v-if="
               seeMoreDetails && seeMoreDetails === (videos?.dataOfKey as any)
@@ -1353,11 +1393,15 @@ const setLevel = (key: string, lvl: string) => {
       v-else-if="activeTab === 'audio'"
     >
       <div
-        v-for="(audios, index) in data"
+        v-for="(audios, index) in normalizedGroups"
         :key="index"
       >
         <div
-          v-if="seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)"
+          v-if="
+            showGroupHeader(audios) &&
+            seeMoreDetails &&
+            seeMoreDetails === (audios?.dataOfKey as any)
+          "
           class="flex items-center justify-between py-4"
         >
           <p class="font-bold text-[1.3rem] capitalize">
@@ -1378,7 +1422,7 @@ const setLevel = (key: string, lvl: string) => {
           </small>
         </div>
         <div
-          v-else-if="!seeMoreDetails"
+          v-else-if="showGroupHeader(audios) && !seeMoreDetails"
           class="flex items-center justify-between py-4"
         >
           <p class="font-bold text-[1.3rem] capitalize">
@@ -1417,7 +1461,7 @@ const setLevel = (key: string, lvl: string) => {
             </small>
           </div>
         </div>
-        <div v-if="(data as any)?.length > 1">
+        <div v-if="hasMultipleGroups">
           <customGridTwo
             v-if="
               seeMoreDetails && seeMoreDetails === (audios?.dataOfKey as any)

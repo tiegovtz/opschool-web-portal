@@ -130,7 +130,7 @@ const buildTopicGroups = (items: any[] = []) => {
     true,
   );
 
-  return educationLevel.value === "secondary"
+  return educationLevel.value !== "primary"
     ? filterKeyDataFromArrayOfJson(activeItems, "subject.name", TOPIC_SUBJECT_ORDER)
     : activeItems;
 };

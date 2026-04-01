@@ -165,7 +165,7 @@ const fetchExperiments = async (param?: any) => {
 
     // Call State Define above
     experiments.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
-    experiments.value = educationLevel.value === "secondary"
+    experiments.value = educationLevel.value !== "primary"
       ? filterKeyDataFromArrayOfJson(experiments.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
       : experiments.value;
     status.value = fetchStatus.value;
