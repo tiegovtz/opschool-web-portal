@@ -4,7 +4,7 @@ import type { LanguageSupport } from '~/types/language.interface';
 
 withDefaults(
     defineProps<{ educationLevel?: string, language?: LanguageSupport }>(), {
-    language: 'english',
+    language: 'kiswahili',
 })
 </script>
 
