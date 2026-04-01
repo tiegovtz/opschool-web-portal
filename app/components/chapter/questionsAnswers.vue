@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, computed, nextTick, watch } from "vue";
+import { reactive, ref, computed, watch } from "vue";
 import type { Question } from "~/types/question.interface";
 
 // Define State
@@ -20,12 +20,16 @@ const questionAnswer = reactive({
   selectedChoice: "",
   isCorrectAnswer: false,
   clickedChoice: "" as string | null,
+  isManualMode: true,
 });
 const questionPresentedAt = ref<number>(Date.now());
+const isSubmitted = ref(false);
 
-const questionProps = defineProps<Question>();
+const questionProps = withDefaults(defineProps<Question & { isLastQuestion?: boolean }>(), {
+  isLastQuestion: false,
+});
 
-const emit = defineEmits(["questionAnswered", "clickedChoice"]);
+const emit = defineEmits(["questionAnswered", "clickedChoice", "nextQuestion"]);
 
 const buildAnswerPayload = (selectedChoice: string, isCorrect: boolean) => {
   const submittedAt = new Date().toISOString();
@@ -48,10 +52,22 @@ const markQuestion = (choice: string) => {
   if (questionAnswer.disableAnswer) return;
 
   questionAnswer.selectedChoice = choice;
+  questionAnswer.clickedChoice = choice;
+
+  if (questionAnswer.isManualMode) {
+    return;
+  }
+
+  submitMultipleChoice(choice);
+};
+
+const submitMultipleChoice = (choice = questionAnswer.selectedChoice) => {
+  if (!choice || questionAnswer.disableAnswer) return;
+
   questionAnswer.isAnswered = true;
   questionAnswer.isCorrectAnswer = choice === questionProps.trueAnswer;
   questionAnswer.disableAnswer = true;
-  questionAnswer.clickedChoice = choice;
+  isSubmitted.value = true;
 
   emit(
     "questionAnswered",
@@ -59,13 +75,11 @@ const markQuestion = (choice: string) => {
   );
   emit("clickedChoice", questionAnswer.clickedChoice);
 
-  setTimeout(() => {
-    questionAnswer.isAnswered = false;
-    questionAnswer.selectedChoice = "";
-    questionAnswer.isCorrectAnswer = false;
-    questionAnswer.disableAnswer = false;
-    questionAnswer.clickedChoice = null;
-  }, 1000);
+  if (!questionAnswer.isManualMode && !questionProps.isLastQuestion) {
+    setTimeout(() => {
+      emit("nextQuestion");
+    }, 800);
+  }
 };
 
 const indexToAlpha = (index: number) => String.fromCharCode(65 + index);
@@ -82,40 +96,142 @@ const shuffleChoices = computed(() => {
 
 
 const dropZoneAnswers = ref<(string | null)[]>([]);
-const isDropped = ref(false);
+const submittedBlankStatuses = ref<boolean[]>([]);
+
+const resetQuestionState = () => {
+  questionPresentedAt.value = Date.now();
+  questionAnswer.disableAnswer = false;
+  questionAnswer.isAnswered = false;
+  questionAnswer.selectedChoice = "";
+  questionAnswer.isCorrectAnswer = false;
+  questionAnswer.clickedChoice = null;
+  isSubmitted.value = false;
+  submittedBlankStatuses.value = [];
+
+  const blanks =
+    questionProps.blanks ||
+    (questionProps.question.match(/(_\$blank)/g) || []).length;
+  dropZoneAnswers.value = Array.from({ length: blanks as number }, () => null) ?? [];
+};
 
 watch(
   () => questionProps.question,
   () => {
-    questionPresentedAt.value = Date.now();
-    isDropped.value = false;
-    const blanks =
-      questionProps.blanks ||
-      (questionProps.question.match(/(_\$blank)/g) || []).length;
-    dropZoneAnswers.value = Array.from({ length: blanks as number }, () => null) ?? [];
+    resetQuestionState();
   },
   { immediate: true }
 );
 
 const handleDrop = (index: number, event: { dataTransfer: { getData: (arg0: string) => any; }; }) => {
-  if (isDropped.value) return;
-  if (dropZoneAnswers.value[index]) return;
+  if (questionAnswer.disableAnswer) return;
 
   const data = event.dataTransfer.getData("text");
+  if (!data) return;
+
+  const existingIndex = dropZoneAnswers.value.findIndex((answer) => answer === data);
+  if (existingIndex !== -1) {
+    dropZoneAnswers.value[existingIndex] = null;
+  }
+
   dropZoneAnswers.value[index] = data;
 
   const filled = dropZoneAnswers.value.every(
     (ans) => ans !== null && ans !== ""
   );
-  const expected = questionProps.blanks || dropZoneAnswers.value.length;
-  const currentConcat = dropZoneAnswers.value.filter(Boolean).join("-");
 
-  if (filled && dropZoneAnswers.value.length === expected) {
-    const isCorrect = currentConcat === questionProps.trueAnswer;
-    isDropped.value = true;
-    emit("questionAnswered", buildAnswerPayload(currentConcat, isCorrect));
-    emit("clickedChoice", currentConcat);
+  if (filled && !questionAnswer.isManualMode) {
+    submitDragAnswer();
   }
+};
+
+const clearDropZone = (index: number) => {
+  if (questionAnswer.disableAnswer) return;
+  dropZoneAnswers.value[index] = null;
+};
+
+const undoLastDrop = () => {
+  if (questionAnswer.disableAnswer) return;
+
+  const lastFilledIndex = [...dropZoneAnswers.value]
+    .map((value, index) => ({ value, index }))
+    .reverse()
+    .find((entry) => entry.value)?.index;
+
+  if (lastFilledIndex !== undefined) {
+    dropZoneAnswers.value[lastFilledIndex] = null;
+  }
+};
+
+const clearAllDrops = () => {
+  if (questionAnswer.disableAnswer) return;
+  dropZoneAnswers.value = dropZoneAnswers.value.map(() => null);
+};
+
+const submitDragAnswer = () => {
+  if (questionAnswer.disableAnswer) return;
+
+  const filled = dropZoneAnswers.value.every(
+    (ans) => ans !== null && ans !== ""
+  );
+
+  if (!filled) return;
+
+  const expectedAnswers = questionProps.trueAnswer
+    .split("-")
+    .map((answer) => answer.trim());
+  const currentAnswers = dropZoneAnswers.value.map((answer) => (answer ?? "").trim());
+  const blankStatuses = currentAnswers.map(
+    (answer, index) => answer === expectedAnswers[index]
+  );
+  const currentConcat = currentAnswers.join("-");
+  const isCorrect = blankStatuses.every(Boolean);
+
+  submittedBlankStatuses.value = blankStatuses;
+  questionAnswer.selectedChoice = currentConcat;
+  questionAnswer.clickedChoice = currentConcat;
+  questionAnswer.isAnswered = true;
+  questionAnswer.isCorrectAnswer = isCorrect;
+  questionAnswer.disableAnswer = true;
+  isSubmitted.value = true;
+
+  emit(
+    "questionAnswered",
+    {
+      ...buildAnswerPayload(currentConcat, isCorrect),
+      blankStatuses,
+    },
+  );
+  emit("clickedChoice", currentConcat);
+
+  if (!questionAnswer.isManualMode && !questionProps.isLastQuestion) {
+    setTimeout(() => {
+      emit("nextQuestion");
+    }, 800);
+  }
+};
+
+const canSubmitDragAnswer = computed(() =>
+  dropZoneAnswers.value.length > 0 &&
+  dropZoneAnswers.value.every((answer) => answer !== null && answer !== "")
+);
+
+const goToNextQuestion = () => {
+  emit("nextQuestion");
+};
+
+const toggleAnswerMode = () => {
+  questionAnswer.isManualMode = !questionAnswer.isManualMode;
+  resetQuestionState();
+};
+
+const blankClass = (index: number) => {
+  if (!isSubmitted.value) {
+    return "border-oceanBlue bg-blue-50";
+  }
+
+  return submittedBlankStatuses.value[index]
+    ? "border-green-500 bg-green-50 text-green-700"
+    : "border-red-500 bg-red-50 text-red-700";
 };
 
 const renderQuestionWithBlanks = computed(() => {
@@ -139,16 +255,8 @@ const renderQuestionWithBlanks = computed(() => {
   });
 });
 
-const liveFilledSentence = computed(() => {
-  return renderQuestionWithBlanks.value
-    .map((part) =>
-      part.isBlank ? dropZoneAnswers.value[part.index as number] || "____" : part.text
-    )
-    .join("");
-});
-
 // playDemoAnimation and flyToTarget Function
-const flyToTarget = (sourceEl: HTMLElement, targetEl: HTMLElement, index?: number) => {
+const flyToTarget = (sourceEl: HTMLElement, targetEl: HTMLElement) => {
   const clone = sourceEl.cloneNode(true) as HTMLElement;
   clone.innerText = "example";
 
@@ -196,7 +304,6 @@ const flyToTarget = (sourceEl: HTMLElement, targetEl: HTMLElement, index?: numbe
 
 const playDemoAnimation = async () => {
   if (!shuffleChoices.value.length) return;
-  let i = 0;
 
   // drag-zone and drag-answers class
   const choiceElements = document.querySelectorAll(".drag-answers");
@@ -233,9 +340,17 @@ const playDemoAnimation = async () => {
 </script>
 
 <template>
-
   <section class="flex flex-col" v-if="questionType.toLowerCase() === 'multiple_choice'">
-    <p>Choose the most correct answer.</p>
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <p>Choose the most correct answer.</p>
+      <button
+        type="button"
+        class="px-3 py-1 text-sm font-medium border rounded-md border-oceanBlue text-oceanBlue"
+        @click="toggleAnswerMode()"
+      >
+        {{ questionAnswer.isManualMode ? "Switch to auto" : "Switch to manual" }}
+      </button>
+    </div>
     <div class="inline-flex">
       <p class="pr-4">{{ number + ". " }}</p>
       <div class="flex flex-wrap items-center w-full">
@@ -257,20 +372,58 @@ const playDemoAnimation = async () => {
             class="flex items-center justify-between w-full px-3 py-2 my-2 transition-all duration-500 ease-in-out rounded-md cursor-pointer custom-box-shadow hover:bg-oceanBlue hover:text-white"
             :class="{
               'bg-deepBlue hover:!bg-deepBlue text-white':
-                questionAnswer.isAnswered &&
+                (questionAnswer.isAnswered || questionAnswer.isManualMode) &&
                 choice.value === questionAnswer.clickedChoice,
               'cursor-not-allowed': questionAnswer.disableAnswer,
             }" @click="markQuestion(choice.value)">
             <span>{{ indexToAlpha(index) + ") " + choice.value }}</span>
           </li>
         </ol>
+        <div
+          v-if="questionAnswer.isManualMode"
+          class="flex flex-wrap items-center gap-3 mt-4"
+        >
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-medium border rounded-md border-slate-300 text-slate-700 disabled:opacity-50"
+            :disabled="!questionAnswer.selectedChoice || questionAnswer.disableAnswer"
+            @click="questionAnswer.selectedChoice = ''; questionAnswer.clickedChoice = null"
+          >
+            Undo choice
+          </button>
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-medium text-white rounded-md bg-oceanBlue disabled:opacity-50"
+            :disabled="!questionAnswer.selectedChoice || questionAnswer.disableAnswer"
+            @click="submitMultipleChoice()"
+          >
+            Submit answer
+          </button>
+          <button
+            v-if="isSubmitted && !questionProps.isLastQuestion"
+            type="button"
+            class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue"
+            @click="goToNextQuestion()"
+          >
+            Next question
+          </button>
+        </div>
       </div>
     </div>
   </section>
 
   <!-- drag and drop question and answer container -->
   <section v-else class="mt-6">
-    <p>Drag and Drop respective answers in blank provided.</p>
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <p>Drag and drop the answers into the blanks.</p>
+      <button
+        type="button"
+        class="px-3 py-1 text-sm font-medium border rounded-md border-oceanBlue text-oceanBlue"
+        @click="toggleAnswerMode()"
+      >
+        {{ questionAnswer.isManualMode ? "Switch to auto" : "Switch to manual" }}
+      </button>
+    </div>
     <div class="flex flex-col gap-4">
       <!-- Question Text with inline blanks -->
       <div class="flex justify-start">
@@ -279,9 +432,20 @@ const playDemoAnimation = async () => {
           <template v-for="(part, i) in renderQuestionWithBlanks">
             <span v-if="!part.isBlank" :key="part.key">{{ part.text }}</span>
             <span v-else :key="part.key + i"
-              class="drag-zone inline-block min-w-[100px] px-2 py-1 border-b border-dashed border-oceanBlue text-center text-sm bg-blue-50 rounded-sm"
+              :class="[
+                'drag-zone inline-flex min-w-[100px] items-center justify-center gap-2 px-2 py-1 border-b border-dashed text-center text-sm rounded-sm transition-colors duration-300',
+                blankClass(part.index as number),
+              ]"
               @drop.prevent="handleDrop(part.index as number, $event as any)" @dragover.prevent>
               {{ dropZoneAnswers[part.index as number] || "____" }}
+              <button
+                v-if="dropZoneAnswers[part.index as number] && !questionAnswer.disableAnswer"
+                type="button"
+                class="text-xs font-bold text-slate-500"
+                @click.stop="clearDropZone(part.index as number)"
+              >
+                ×
+              </button>
             </span>
           </template>
         </p>
@@ -300,9 +464,47 @@ const playDemoAnimation = async () => {
       <div class="flex flex-wrap gap-4 pl-6 mt-4">
         <div v-for="(choice, index) in shuffleChoices" :key="index"
           class="p-2 transition-all duration-500 ease-in-out rounded-md shadow cursor-move bg-oceanBlue bg-opacity-20 hover:bg-oceanBlue hover:text-white drag-answers"
+          :class="{
+            'opacity-40 cursor-not-allowed': questionAnswer.disableAnswer,
+          }"
           draggable="true" @dragstart="(e) => (e as DragEvent).dataTransfer?.setData('text', choice.value)">
           {{ choice.value }}
         </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-3 pl-6">
+        <button
+          type="button"
+          class="px-4 py-2 text-sm font-medium border rounded-md border-slate-300 text-slate-700 disabled:opacity-50"
+          :disabled="questionAnswer.disableAnswer || !dropZoneAnswers.some(Boolean)"
+          @click="undoLastDrop()"
+        >
+          Undo last
+        </button>
+        <button
+          type="button"
+          class="px-4 py-2 text-sm font-medium border rounded-md border-slate-300 text-slate-700 disabled:opacity-50"
+          :disabled="questionAnswer.disableAnswer || !dropZoneAnswers.some(Boolean)"
+          @click="clearAllDrops()"
+        >
+          Clear all
+        </button>
+        <button
+          v-if="questionAnswer.isManualMode"
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-white rounded-md bg-oceanBlue disabled:opacity-50"
+          :disabled="questionAnswer.disableAnswer || !canSubmitDragAnswer"
+          @click="submitDragAnswer()"
+        >
+          Submit answer
+        </button>
+        <button
+          v-if="isSubmitted && !questionProps.isLastQuestion"
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue"
+          @click="goToNextQuestion()"
+        >
+          Next question
+        </button>
       </div>
       <!-- tips or Help information -->
       <div class="flex items-center gap-4 mt-4">
@@ -314,9 +516,7 @@ const playDemoAnimation = async () => {
           <p :class="[
             'max-w-2xl text-oceanBlue text-sm transition-all duration-500 ease-in-out',
           ]">
-            Drag each answer choice into the blank space by clicking and
-            dragging with your mouse on desktop, or by tapping, holding, and
-            sliding with your finger on mobile.
+            Drag each answer choice into the blank space. In manual mode, learners can undo, clear, submit, and then move with the next button.
           </p>
         </div>
       </div>
