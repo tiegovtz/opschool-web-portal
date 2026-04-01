@@ -5,11 +5,11 @@ definePageMeta({
   middleware: "auth",
 });
 
-const hubHeaderLang = useHubHeaderLanguage();
+const pageLanguage = useHubPageLanguage();
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="hubHeaderLang">
+  <NuxtLayout name="home-layout" :language="pageLanguage">
     <section
       id="main-container"
       tabindex="-1"

@@ -1,7 +1,7 @@
 <template>
   <NuxtLayout
     :name="route.fullPath.includes('header-less') ? 'normal' : 'home-layout'"
-    :language="route.fullPath.includes('header-less') ? undefined : hubHeaderLang"
+    :language="route.fullPath.includes('header-less') ? undefined : pageLanguage"
   >
     <a class="skip-link" href="#main-content" @click.prevent="focusMain">Skip to main content</a>
 
@@ -43,7 +43,7 @@ import {onMounted, ref, watch, nextTick} from "vue";
 import VidstackPlayer from '~/components/video-player/VidstackPlayer.vue'
 
 const route = useRoute()
-const hubHeaderLang = useHubHeaderLanguage()
+const pageLanguage = useHubPageLanguage()
 
 const iframeSrc = ref("https://tv.somakwanza.tz/hls/stream.m3u8");
 const playerRef = ref(null)

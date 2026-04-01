@@ -16,10 +16,16 @@ import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
+import {
+  getEducationRouteQuery,
+  resolveEducationLevelFromRoute,
+  resolveRouteLanguage,
+} from "~/utilities/educationRoute";
 
 const route = useRoute();
 const router = useRouter();
 const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
+const primaryContentLanguage = usePrimaryContentLanguage();
 const safeDecode = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
   try {
@@ -33,6 +39,29 @@ const topicTitle = safeDecode(route.params.topic).replaceAll("-", " ");
 const topicStandard = safeDecode(route.params.subject);
 const topicLevel = safeDecode(route.params.level);
 currentTopic.value = topicTitle;
+
+const interactiveFallbackRoute = computed(() => {
+  const educationLevel = resolveEducationLevelFromRoute(route);
+  const language = resolveRouteLanguage(
+    route,
+    educationLevel,
+    primaryContentLanguage.value,
+  );
+
+  return {
+    path: "/interactive",
+    query: getEducationRouteQuery(educationLevel, {}, language),
+  };
+});
+
+const goToPreviousPage = async () => {
+  if (import.meta.client && window.history.length > 1) {
+    await router.back();
+    return;
+  }
+
+  await router.push(interactiveFallbackRoute.value);
+};
 
 // tokens cookies
 const signInAccessToken = useCookie("signInAccessToken");
@@ -979,13 +1008,14 @@ definePageMeta({
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex w-full min-w-0 items-center justify-between gap-2">
             <div class="flex min-w-0 flex-1 items-center gap-2">
-              <NuxtLink
-                to="/interactive"
+              <button
+                type="button"
                 class="inline-flex shrink-0 items-center justify-center rounded-full border-2 border-oceanBlue p-2 text-oceanBlue transition-colors hover:bg-oceanBlue/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/50"
                 aria-label="Back to interactive contents"
+                @click="goToPreviousPage"
               >
                 <Icon name="vaadin:arrow-backward" size="22" class="text-oceanBlue" aria-hidden="true" />
-              </NuxtLink>
+              </button>
 
               <p
                 :aria-label="`Competence header, ${chapters.notes?.name}`"

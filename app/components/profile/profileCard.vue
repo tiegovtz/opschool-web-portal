@@ -9,6 +9,8 @@ type Status = "idle" | "pending" | "loading" | "success" | "error";
 
 const signInAccessToken = useCookie<string>("signInAccessToken");
 const userToken = useCookie<any>("signInUserToken");
+const pageLanguage = useHubPageLanguage();
+const isSw = computed(() => pageLanguage.value === "kiswahili");
 let uploadedPic: File | null = null;
 
 interface UserProfile {
@@ -147,29 +149,64 @@ const regionOptions = computed(() =>
   })),
 );
 
+const profileText = computed(() => ({
+  profile: isSw.value ? "Wasifu" : "Profile",
+  personalDetails: isSw.value ? "Taarifa Binafsi" : "Personal Details",
+  manageAccount: isSw.value
+    ? "Simamia taarifa za akaunti yako hapa. Takwimu za ujifunzaji sasa zipo kwenye ukurasa wake."
+    : "Manage your account information here. Learning statistics now has its own page.",
+  openLearningStatistics: isSw.value
+    ? "Fungua Takwimu za Ujifunzaji"
+    : "Open Learning Statistics",
+  personalInformation: isSw.value ? "Taarifa Binafsi" : "Personal Information",
+  firstName: isSw.value ? "Jina la Kwanza" : "First Name",
+  lastName: isSw.value ? "Jina la Mwisho" : "Last Name",
+  emailAddress: isSw.value ? "Barua Pepe" : "Email Address",
+  phoneNumber: isSw.value ? "Namba ya Simu" : "Phone Number",
+  organization: isSw.value ? "Taasisi" : "Organization",
+  region: isSw.value ? "Mkoa" : "Region",
+  district: isSw.value ? "Wilaya" : "District",
+  school: isSw.value ? "Shule" : "School",
+  level: isSw.value ? "Ngazi" : "Level",
+  firstNamePlaceholder: isSw.value ? "Weka jina lako la kwanza" : "Enter your first name",
+  lastNamePlaceholder: isSw.value ? "Weka jina lako la mwisho" : "Enter your last name",
+  emailPlaceholder: isSw.value ? "Weka barua pepe yako" : "Enter your email address",
+  phonePlaceholder: isSw.value ? "Weka namba yako ya simu" : "Enter your phone number",
+  organizationPlaceholder: isSw.value
+    ? "Taasisi yako, kwa mfano Ekima Interactive"
+    : "Organization (eg: Ekima interctive company)",
+  levelPlaceholder: isSw.value ? "(mfano: Kidato cha 1, Kidato cha 2 ...)" : "(eg: Form 1, Form 2 ...)",
+  discardChanges: isSw.value ? "Tupa Mabadiliko" : "Discard Changes",
+  saveChanges: isSw.value ? "Hifadhi Mabadiliko" : "Save Changes",
+  pleaseWait: isSw.value ? "Tafadhali subiri..." : "Please Wait...",
+  changesSaved: isSw.value ? "Mabadiliko yamehifadhiwa!" : "Changes Saved Successfully!",
+  changesFailed: isSw.value ? "Mabadiliko yameshindwa kuhifadhiwa!" : "Changes Failed to Save!",
+  uploadProfilePicture: isSw.value ? "Pakia picha mpya ya wasifu" : "Upload new profile picture",
+}));
+
 const regionPlaceholder = computed(() => {
-  if (data.status === "idle") return "Select Region";
-  if (data.status === "pending") return "Loading...";
-  if (data.status === "error") return data.error ?? "An error occurred.";
-  if (data.regions && data.status === "success") return "Eg (Mwanza) ...";
-  return "Select Region";
+  if (data.status === "idle") return isSw.value ? "Chagua mkoa" : "Select Region";
+  if (data.status === "pending") return isSw.value ? "Inapakia..." : "Loading...";
+  if (data.status === "error") return data.error ?? (isSw.value ? "Hitilafu imetokea." : "An error occurred.");
+  if (data.regions && data.status === "success") return isSw.value ? "Mfano (Mwanza) ..." : "Eg (Mwanza) ...";
+  return isSw.value ? "Chagua mkoa" : "Select Region";
 });
 
 const schoolPlaceholder = computed(() => {
-  if (data.status === "idle") return "Select Region and District First";
-  if (data.status === "pending") return "Loading...";
-  if (data.status === "error") return data.error ?? "An error occurred.";
+  if (data.status === "idle") return isSw.value ? "Chagua mkoa na wilaya kwanza" : "Select Region and District First";
+  if (data.status === "pending") return isSw.value ? "Inapakia..." : "Loading...";
+  if (data.status === "error") return data.error ?? (isSw.value ? "Hitilafu imetokea." : "An error occurred.");
   if (data.schools && data.status === "success")
-    return "Eg (Taifa Secondary School) ...";
-  return "Select School";
+    return isSw.value ? "Mfano (Shule ya Sekondari Taifa) ..." : "Eg (Taifa Secondary School) ...";
+  return isSw.value ? "Chagua shule" : "Select School";
 });
 
 const districtPlaceholder = computed(() => {
-  if (data.status === "idle") return "Select Region First";
-  if (data.status === "pending") return "Loading...";
-  if (data.status === "error") return data.error ?? "An error occurred.";
-  if (data.district && data.status === "success") return "Eg (Mwanza) ...";
-  return "Select District";
+  if (data.status === "idle") return isSw.value ? "Chagua mkoa kwanza" : "Select Region First";
+  if (data.status === "pending") return isSw.value ? "Inapakia..." : "Loading...";
+  if (data.status === "error") return data.error ?? (isSw.value ? "Hitilafu imetokea." : "An error occurred.");
+  if (data.district && data.status === "success") return isSw.value ? "Mfano (Ilemela) ..." : "Eg (Mwanza) ...";
+  return isSw.value ? "Chagua wilaya" : "Select District";
 });
 
 const updatedProfile = async () => {
@@ -506,7 +543,7 @@ const discardChanges = () => {
         <label
           for="picture_input"
           class="absolute rounded-full bottom-2 right-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-oceanBlue"
-          aria-label="Upload new profile picture"
+          :aria-label="profileText.uploadProfilePicture"
         >
           <div
             class="flex items-center justify-center p-2 bg-white rounded-full shadow-md"
@@ -540,14 +577,13 @@ const discardChanges = () => {
         <p
           class="text-sm font-medium uppercase tracking-[0.2em] text-oceanBlue"
         >
-          Profile
+          {{ profileText.profile }}
         </p>
         <h1 class="mt-2 text-2xl font-semibold text-slate-900">
-          Personal Details
+          {{ profileText.personalDetails }}
         </h1>
         <p class="mt-2 text-sm leading-6 text-slate-600">
-          Manage your account information here. Learning statistics now has its
-          own page.
+          {{ profileText.manageAccount }}
         </p>
       </div>
 
@@ -559,13 +595,13 @@ const discardChanges = () => {
           name="heroicons:chart-bar-square-20-solid"
           class="w-5 h-5"
         />
-        <span>Open Learning Statistics</span>
+        <span>{{ profileText.openLearningStatistics }}</span>
       </NuxtLink>
     </div>
     <div class="w-full mx-auto my-6">
       <div class="bg-white border border-gray-100 rounded-md shadow-md">
         <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
-          <h3 class="text-lg font-semibold text-white">Personal Information</h3>
+          <h3 class="text-lg font-semibold text-white">{{ profileText.personalInformation }}</h3>
         </div>
 
         <div class="p-6">
@@ -577,7 +613,7 @@ const discardChanges = () => {
                 for="fname"
                 class="block mb-1 ml-1 text-xs font-medium text-textGray"
               >
-                First Name
+                {{ profileText.firstName }}
               </label>
               <div class="relative flex items-center w-full">
                 <span
@@ -595,7 +631,7 @@ const discardChanges = () => {
                   name="fname"
                   autocomplete="off-name"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                  placeholder="Enter your first name"
+                  :placeholder="profileText.firstNamePlaceholder"
                   @input="onValueChanged('fname')"
                   @keydown.space.prevent
                 />
@@ -607,7 +643,7 @@ const discardChanges = () => {
                 for="lname"
                 class="block mb-1 ml-1 text-xs font-medium text-textGray"
               >
-                Last Name
+                {{ profileText.lastName }}
               </label>
               <div class="relative flex items-center w-full">
                 <span
@@ -625,7 +661,7 @@ const discardChanges = () => {
                   name="lname"
                   autocomplete="off-name"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                  placeholder="Enter your last name"
+                  :placeholder="profileText.lastNamePlaceholder"
                   @input="onValueChanged('lname')"
                   @keydown.space.prevent
                 />
@@ -640,7 +676,7 @@ const discardChanges = () => {
                 for="email"
                 class="block mb-1 ml-1 text-xs font-medium text-textGray"
               >
-                Email Address
+                {{ profileText.emailAddress }}
               </label>
               <div class="relative flex items-center w-full">
                 <span
@@ -658,7 +694,7 @@ const discardChanges = () => {
                   name="username"
                   autocomplete="off"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                  placeholder="Enter your email address"
+                  :placeholder="profileText.emailPlaceholder"
                   @input="onValueChanged('email')"
                 />
               </div>
@@ -672,7 +708,7 @@ const discardChanges = () => {
                 for="phone"
                 class="block mb-1 ml-1 text-xs font-medium text-textGray"
               >
-                Phone Number
+                {{ profileText.phoneNumber }}
               </label>
               <div class="relative flex items-center w-full">
                 <span
@@ -690,7 +726,7 @@ const discardChanges = () => {
                   name="phone"
                   autocomplete="off"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                  placeholder="Enter your phone number"
+                  :placeholder="profileText.phonePlaceholder"
                   @input="onValueChanged('phone')"
                 />
               </div>
@@ -704,7 +740,7 @@ const discardChanges = () => {
                 for="organization"
                 class="block mb-1 ml-1 text-xs font-medium text-textGray"
               >
-                Organization
+                {{ profileText.organization }}
               </label>
               <div class="relative flex items-center w-full">
                 <span
@@ -722,7 +758,7 @@ const discardChanges = () => {
                   name="organization"
                   autocomplete="off"
                   class="w-full py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
-                  placeholder="Organization (eg: Ekima interctive company)"
+                  :placeholder="profileText.organizationPlaceholder"
                   @input="onValueChanged('organization')"
                   @keydown.space.prevent
                 />
@@ -734,7 +770,7 @@ const discardChanges = () => {
                 for="region"
                 class="block mb-1 ml-1 text-xs font-medium text-textGray"
               >
-                Region
+                {{ profileText.region }}
               </label>
 
               <div class="relative flex items-center">
@@ -767,7 +803,7 @@ const discardChanges = () => {
                 for="district"
                 class="block mb-1 ml-1 text-xs font-medium text-textGray"
               >
-                District
+                {{ profileText.district }}
               </label>
 
               <div class="relative flex items-center">
@@ -803,7 +839,7 @@ const discardChanges = () => {
                 for="school"
                 class="block mb-1 ml-1 text-xs font-medium text-textGray"
               >
-                School
+                {{ profileText.school }}
               </label>
 
               <div class="relative flex items-center">
@@ -843,14 +879,14 @@ const discardChanges = () => {
                 for="level"
                 class="block mb-1 ml-1 text-xs font-medium text-textGray"
               >
-                Level
+                {{ profileText.level }}
               </label>
 
               <div class="relative flex items-center">
                 <CustomDropDownList
                   v-model="profile.level"
                   :list="levelsLists"
-                  placeholder="(eg: Form 1, Form 2 ...)"
+                  :placeholder="profileText.levelPlaceholder"
                   button-class="py-3 pl-10 pr-3 transition-all duration-500 border rounded-lg border-textGray text-textGray bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-deepBlue"
                   @update-model-value="
                     (value: string) => {
@@ -876,7 +912,7 @@ const discardChanges = () => {
           class="flex items-center justify-center w-full gap-2 px-6 py-3 font-medium transition-colors duration-500 ease-in-out border-2 rounded-md hover:text-white text-deepBlue border-oceanBlue hover:bg-gradient-to-r from-deepBlue to-oceanBlue hover:shadow-md"
           @click="discardChanges"
         >
-          Discard Changes
+          {{ profileText.discardChanges }}
           <Icon
             name="heroicons:arrow-right"
             class="w-4 h-4"
@@ -909,7 +945,7 @@ const discardChanges = () => {
             v-if="profile.controller.status === 'loading'"
             class="flex items-center justify-center gap-4"
           >
-            <span>Please Wait...</span>
+            <span>{{ profileText.pleaseWait }}</span>
             <IconsLoading
               class="text-white"
               :size="20"
@@ -920,7 +956,7 @@ const discardChanges = () => {
             v-else-if="profile.controller.status === 'success'"
             class="flex items-center justify-center gap-4"
           >
-            <span>Changes Saved Successfully!</span>
+            <span>{{ profileText.changesSaved }}</span>
             <IconsChecked
               class="text-white"
               :size="20"
@@ -931,7 +967,7 @@ const discardChanges = () => {
             v-else-if="profile.controller.feedback === 'error'"
             class="flex items-center justify-center gap-4"
           >
-            <span>Changes Failed to Save!</span>
+            <span>{{ profileText.changesFailed }}</span>
             <IconsCrossCircle
               class="text-white"
               :size="20"
@@ -942,7 +978,7 @@ const discardChanges = () => {
             v-else
             class="flex items-center justify-center gap-4"
           >
-            Save Changes
+            {{ profileText.saveChanges }}
             <Icon
               name="heroicons:arrow-right"
               class="w-4 h-4"

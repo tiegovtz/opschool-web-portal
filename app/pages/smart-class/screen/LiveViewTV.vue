@@ -1,7 +1,7 @@
 <template>
   <NuxtLayout
     :name="route.fullPath.includes('header-less') ? 'normal' : 'home-layout'"
-    :language="route.fullPath.includes('header-less') ? undefined : hubHeaderLang"
+    :language="route.fullPath.includes('header-less') ? undefined : pageLanguage"
   >
 
   <div class="iframe-screen">
@@ -31,7 +31,7 @@
 import {onMounted} from "vue";
 
 const route = useRoute();
-const hubHeaderLang = useHubHeaderLanguage();
+const pageLanguage = useHubPageLanguage();
 
 const iframeSrc = ref("https://tv.somakwanza.tz");
 

@@ -6,7 +6,7 @@ import apiDocs from '~/utilities/apiDocs.js';
 
 const router = useRouter();
 const route = useRoute();
-const hubHeaderLang = useHubHeaderLanguage();
+const pageLanguage = useHubPageLanguage();
 const authAccessToken = useCookie('signInAccessToken');
 const authUserToken = useCookie('signInUserToken');
 
@@ -703,7 +703,7 @@ loadClasses();
 
   <NuxtLayout
     :name="route.fullPath.includes('header-less') ? 'normal' : 'home-layout'"
-    :language="route.fullPath.includes('header-less') ? undefined : hubHeaderLang"
+    :language="route.fullPath.includes('header-less') ? undefined : pageLanguage"
   >
     <a class="skip-link" href="#main-container" @click.prevent="focusMain">Skip to main content</a>
 

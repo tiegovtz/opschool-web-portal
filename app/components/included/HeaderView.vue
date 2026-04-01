@@ -77,6 +77,29 @@ const logoutAlert = ref<HTMLElement | null>(null);
 const isHomeMenuOpen = ref(false);
 const isAccountMenuOpen = ref(false);
 
+const userDisplayName = computed(() => {
+  const user = userToken.value;
+  if (!user) return "";
+
+  const fullName = String(user.name ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
+  if (fullName) return fullName;
+
+  const composedName = [user.fname, user.lname]
+    .map((value) => String(value ?? "").trim())
+    .filter(Boolean)
+    .join(" ");
+  if (composedName) return composedName;
+
+  const fallbackName = String(
+    user.username ?? user.userName ?? user.email ?? user.phoneNumber ?? "",
+  ).trim();
+  if (fallbackName) return fallbackName;
+
+  return props.language === "kiswahili" ? "Akaunti" : "Account";
+});
+
 const logout = () => {
   if (shouldRememberCurrentRoute()) {
     navigationStore.setGoBack(route.fullPath);
@@ -176,6 +199,8 @@ const showPrimaryLanguageSwitch = computed(
   () =>
     route.path === "/primary" ||
     route.path.startsWith("/primary/") ||
+    ((isSmartClassRoute.value || isAccountSectionRoute.value) &&
+      hubEducationLevel.value === "primary") ||
     String(route.params.level ?? "")
       .toLowerCase()
       .includes("darasa") ||
@@ -225,14 +250,27 @@ const setPrimaryLanguage = async (language: LanguageSupport) => {
 
   const normalizedLanguage = normalizeLanguageSupport(language, "kiswahili");
   primaryContentLanguage.value = normalizedLanguage;
+  hubHeaderLang.value = normalizedLanguage;
 
-  await router.replace({
-    path: route.path,
-    query: {
-      ...route.query,
-      lang: getHubLanguageCode("primary", normalizedLanguage),
-    },
-  });
+  if (
+    route.path === "/primary" ||
+    route.path.startsWith("/primary/") ||
+    String(route.params.level ?? "")
+      .toLowerCase()
+      .includes("darasa") ||
+    normalizeEducationLevel(
+      route.query.educationLevel ?? route.query.edl,
+      "secondary",
+    ) === "primary"
+  ) {
+    await router.replace({
+      path: route.path,
+      query: {
+        ...route.query,
+        lang: getHubLanguageCode("primary", normalizedLanguage),
+      },
+    });
+  }
 };
 
 const setPrimaryLanguageFromAccountMenu = async (language: LanguageSupport) => {
@@ -294,8 +332,39 @@ watch(
   { immediate: true },
 );
 
+const onDocumentPointerDown = (event: PointerEvent) => {
+  const target = event.target instanceof Element ? event.target : null;
+  if (!target) return;
+
+  if (isHomeMenuOpen.value && !target.closest("[data-home-menu-root]")) {
+    closeHomeMenu();
+  }
+
+  if (isAccountMenuOpen.value && !target.closest("[data-account-menu-root]")) {
+    closeAccountMenu();
+  }
+};
+
+const onDocumentKeydown = (event: KeyboardEvent) => {
+  if (event.key === "Escape") {
+    closeHomeMenu();
+    closeAccountMenu();
+  }
+};
+
+onMounted(() => {
+  if (!process.client) return;
+
+  document.addEventListener("pointerdown", onDocumentPointerDown);
+  document.addEventListener("keydown", onDocumentKeydown);
+});
+
 onBeforeUnmount(() => {
   if (logoutToastTimeout.value) clearTimeout(logoutToastTimeout.value);
+  if (!process.client) return;
+
+  document.removeEventListener("pointerdown", onDocumentPointerDown);
+  document.removeEventListener("keydown", onDocumentKeydown);
 });
 </script>
 
@@ -317,7 +386,10 @@ onBeforeUnmount(() => {
           class="hidden w-full items-center gap-4 text-white md:grid md:grid-cols-[1fr_auto_1fr] bg-oceanBlue rounded-xs wrapper-container"
         >
           <div class="flex items-center gap-2 justify-self-start">
-            <div class="relative">
+            <div
+              class="relative"
+              data-home-menu-root
+            >
               <button
                 type="button"
                 aria-label="Open home menu"
@@ -490,6 +562,7 @@ onBeforeUnmount(() => {
               <div
                 v-else
                 class="relative px-2 py-1"
+                data-account-menu-root
               >
                 <button
                   aria-label="Open account menu"
@@ -526,7 +599,7 @@ onBeforeUnmount(() => {
                   <p
                     class="hidden capitalize lg:flex text-medium line-clamp-1 max-w-40"
                   >
-                    {{ language === "english" ? `Account` : `Akaunti` }}
+                    {{ userDisplayName }}
                   </p>
                   <Icon
                     name="heroicons:chevron-down-20-solid"
@@ -593,7 +666,10 @@ onBeforeUnmount(() => {
           <!-- Profile and Sign Up and Home -->
           <div class="grid w-full grid-cols-[1fr_auto_1fr] items-center">
             <div class="flex items-center justify-self-start">
-              <div class="relative">
+              <div
+                class="relative"
+                data-home-menu-root
+              >
                 <button
                   type="button"
                   aria-label="Open home menu"
@@ -682,7 +758,10 @@ onBeforeUnmount(() => {
 
             <!-- Account and Sign in -->
             <div class="relative flex items-center justify-self-end">
-              <div v-if="userToken">
+              <div
+                v-if="userToken"
+                data-account-menu-root
+              >
                 <button
                   aria-label="Open account menu"
                   :aria-current="isAccountSectionRoute ? 'page' : undefined"
@@ -714,6 +793,9 @@ onBeforeUnmount(() => {
                     v-else
                     :size="22"
                   />
+                  <span class="hidden max-w-24 truncate text-sm font-medium sm:block">
+                    {{ userDisplayName }}
+                  </span>
                 </button>
 
                 <div
