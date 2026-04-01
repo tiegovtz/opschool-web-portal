@@ -21,7 +21,7 @@
             <div class="min-w-0">
               <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">{{ practiceTitle }}</h1>
               <p class="text-xs text-slate-500 mt-1">
-                Practice speaking with guided conversation
+                {{ practiceSubtitle }}
               </p>
             </div>
             <button
@@ -45,7 +45,7 @@
                     : 'text-slate-500 hover:text-slate-700'
                 ]"
               >
-                Multi-user
+                {{ multiUserLabel }}
               </button>
               <button
                 @click="switchMode('single-user')"
@@ -56,7 +56,7 @@
                     : 'text-slate-500 hover:text-slate-700'
                 ]"
               >
-                Single-user
+                {{ singleUserLabel }}
               </button>
             </div>
           </div>
@@ -64,7 +64,7 @@
             <div>
               <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">{{ practiceTitle }}</h1>
               <p class="text-xs text-slate-500 mt-1">
-                Practice speaking with guided conversation
+                {{ practiceSubtitle }}
               </p>
             </div>
             <div class="flex items-center gap-3">
@@ -78,7 +78,7 @@
                       : 'text-slate-500 hover:text-slate-700'
                   ]"
                 >
-                  Multi-user
+                  {{ multiUserLabel }}
                 </button>
                 <button
                   @click="switchMode('single-user')"
@@ -89,7 +89,7 @@
                       : 'text-slate-500 hover:text-slate-700'
                   ]"
                 >
-                  Single-user
+                  {{ singleUserLabel }}
                 </button>
               </div>
               <button
@@ -112,7 +112,7 @@
         >
           <div ref="topAnchor" aria-hidden="true"></div>
           <div v-if="scriptLoading" class="text-center text-sm text-gray-500 mt-2 mb-4">
-            Loading conversation content…
+            {{ loadingContentLabel }}
           </div>
           <div
             v-else-if="scriptError"
@@ -136,6 +136,7 @@
                 : turnManager.currentTurn.value === aiSpeakerId && (isAiAudioLoading || isPlayingAiAudio)"
               :current-word-index="currentWordIndex"
               :participants="participants"
+              :ui-language="uiLanguage"
             />
           </div>
           <div class="sticky bottom-4 flex justify-end pointer-events-none">
@@ -145,7 +146,7 @@
               class="pointer-events-auto rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-md hover:bg-blue-700"
               @click="handleBackToTop"
             >
-              Back to top
+              {{ backToTopLabel }}
             </button>
           </div>
         </div>
@@ -176,6 +177,7 @@
               :can-record="canRecord"
               :is-speech-supported="isSpeechSupported"
               :audio-level="audioLevel"
+              :ui-language="uiLanguage"
               @toggle="handleMicToggle"
             />
           </div>
@@ -254,6 +256,20 @@ const practiceTitle = computed(() =>
     ? 'Mazoezi ya Kiswahili'
     : 'English Speaking Practice'
 );
+const uiLanguage = computed(() =>
+  String(route.query.language || '').trim().toLowerCase() === 'sw' ? 'sw' : 'en'
+);
+const practiceSubtitle = computed(() =>
+  uiLanguage.value === 'sw'
+    ? 'Fanya mazoezi ya kuzungumza kwa mazungumzo yaliyoongozwa'
+    : 'Practice speaking with guided conversation'
+);
+const multiUserLabel = computed(() => (uiLanguage.value === 'sw' ? 'Watumiaji wengi' : 'Multi-user'));
+const singleUserLabel = computed(() => (uiLanguage.value === 'sw' ? 'Mtumiaji mmoja' : 'Single-user'));
+const loadingContentLabel = computed(() =>
+  uiLanguage.value === 'sw' ? 'Inapakia maudhui ya mazungumzo…' : 'Loading conversation content…'
+);
+const backToTopLabel = computed(() => (uiLanguage.value === 'sw' ? 'Rudi juu' : 'Back to top'));
 const speechRecognitionLang = computed(() =>
   String(route.query.language || '').trim().toLowerCase() === 'sw' ? 'sw-TZ' : 'en-US'
 );

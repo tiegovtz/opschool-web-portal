@@ -199,14 +199,14 @@ const assessmentTotal = computed(
               :center-secondary="text.attemptsCenter"
             />
 
-            <div class="space-y-4">
+            <div class="space-y-4 ">
               <LearningDistributionBar
                 :title="text.assessmentStatus"
                 :segments="assessmentSegments"
                 :total="assessmentTotal"
               />
 
-              <div class="grid gap-3 sm:grid-cols-2">
+              <div class="flex flex-col gap-4">
                 <LearningMetricCard
                   :label="text.coverageDepth"
                   :value="coveredRatioLabel"
