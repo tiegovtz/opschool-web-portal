@@ -12,11 +12,16 @@ const dialogDifferencesPropsTranspiler = (params: {
   let items;
   const { titleDescription, algorithm, serverQuestions } = params;
 
-  // check if all questions have the correct format
-  // check if textOne and textTwo are not null
-  const isWrongFormat = serverQuestions.some(
-    (question) => question.textOne === null || question.textTwo === null,
-  );
+  // Each row must have something on the left and something on the right.
+  // Left can be image-only (path) with empty text; right can be text-only (textTwo).
+  const hasNonEmptyText = (value: string | null | undefined) =>
+    typeof value === "string" && value.trim().length > 0;
+
+  const isWrongFormat = serverQuestions.some((question) => {
+    const hasLeft = hasNonEmptyText(question.textOne) || Boolean(question.path);
+    const hasRight = hasNonEmptyText(question.textTwo) || Boolean(question.pathTwo);
+    return !hasLeft || !hasRight;
+  });
 
   if (isWrongFormat) {
     params.setWrongQuestionsFormat(true);
@@ -28,14 +33,14 @@ const dialogDifferencesPropsTranspiler = (params: {
     if (question.path)
       return {
         id: idCounter++,
-        text: question.textOne,
+        text: question.textOne ?? "",
         image: getImageUrl(question.path || ""),
         side: "left",
       };
     else
       return {
         id: idCounter++,
-        text: question.textOne,
+        text: question.textOne ?? "",
         side: "left",
       };
   });
@@ -45,14 +50,14 @@ const dialogDifferencesPropsTranspiler = (params: {
       if (question.pathTwo)
         return {
           id: idCounter++,
-          text: question.textTwo,
+          text: question.textTwo ?? "",
           image: getImageUrl(question.pathTwo || ""),
           side: "right",
         };
       else
         return {
           id: idCounter++,
-          text: question.textTwo,
+          text: question.textTwo ?? "",
           side: "right",
         };
     }),
