@@ -1346,7 +1346,7 @@ onMounted(() => {
                 </div>
 
                 <div class="p-4 rounded-2xl bg-slate-50">
-                  <p class="text-xs uppercase text-slate-500">{{ text.attempts }}</p>
+                  <p class="text-xs uppercase text-slate-500">{{ text.quizAttempts }}</p>
                   <p class="mt-2 text-sm font-semibold text-slate-900">
                     {{ selectedTopicImprovement.before.assessmentAttempts }} →
                     {{ selectedTopicImprovement.after.assessmentAttempts }}
@@ -1369,7 +1369,7 @@ onMounted(() => {
                 </p>
                 <div class="grid gap-3 mt-3 sm:grid-cols-3 text-sm">
                   <p class="text-slate-700">
-                    {{ text.attempts }}
+                    {{ text.quizAttempts }}
                     <span class="font-semibold text-slate-900">{{
                       selectedTopicImprovement.quizSummarySinceSnapshot.attemptCount
                     }}</span>
