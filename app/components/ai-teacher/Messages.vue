@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { ref, watch, nextTick, onMounted, computed } from 'vue';
 import { loadDynamicShortcodes } from '~/utilities/imageShortcodes';
 
 const props = defineProps<{ messages: any[]; isTyping?: boolean }>();
+const contentLayoutLanguage = useContentLayoutLanguage();
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
 
 const messagesContainer = ref<HTMLElement | null>(null);
 const shouldAutoScroll = ref(true);
@@ -71,7 +73,7 @@ onMounted(() => {
 <template>
   <section ref="messagesContainer" @scroll="handleScroll"
     class="flex-1 min-h-0 overflow-y-auto bg-gradient-to-b from-gray-50/30 to-white px-4 py-4 sm:px-6 sm:py-6"
-    role="log" aria-live="polite" aria-relevant="additions" aria-label="Chat messages" tabindex="0">
+    role="log" aria-live="polite" aria-relevant="additions" :aria-label="isSwahili ? 'Ujumbe wa mazungumzo' : 'Chat messages'" tabindex="0">
     <!-- Empty state -->
     <div v-if="messages.length === 0" class="flex h-full flex-col items-center justify-center px-4 text-center"
       role="status" aria-live="polite">
@@ -82,12 +84,15 @@ onMounted(() => {
       </div>
 
       <h2 class="mb-2 text-xl font-semibold text-gray-800">
-        How can I help you today?
+        {{ isSwahili ? "Nikusaidieje leo?" : "How can I help you today?" }}
       </h2>
 
       <p class="max-w-md text-sm text-gray-500">
-        Ask me anything about your learning journey, assignments, or any
-        questions you have.
+        {{
+          isSwahili
+            ? "Niulize chochote kuhusu safari yako ya kujifunza, kazi zako, au maswali yoyote uliyo nayo."
+            : "Ask me anything about your learning journey, assignments, or any questions you have."
+        }}
       </p>
     </div>
 
@@ -100,13 +105,13 @@ onMounted(() => {
     </ul>
 
     <!-- Typing indicator -->
-    <div v-if="isTyping" class="flex items-center space-x-2" role="status" aria-live="polite" aria-label="AI is typing">
+    <div v-if="isTyping" class="flex items-center space-x-2" role="status" aria-live="polite" :aria-label="isSwahili ? 'AI inaandika' : 'AI is typing'">
       <div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-0" aria-hidden="true"></div>
       <div class="w-3 h-3 delay-200 bg-gray-400 rounded-full animate-bounce" aria-hidden="true"></div>
       <div class="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-400" aria-hidden="true"></div>
 
       <span class="ml-2 text-sm text-gray-500">
-        AI is typing…
+        {{ isSwahili ? "AI inaandika..." : "AI is typing..." }}
       </span>
     </div>
   </section>

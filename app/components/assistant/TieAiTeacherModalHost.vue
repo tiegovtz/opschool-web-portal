@@ -3,6 +3,7 @@ import TieAiTeacherWorkspace from "~/components/assistant/TieAiTeacherWorkspace.
 
 const route = useRoute();
 const router = useRouter();
+const contentLayoutLanguage = useContentLayoutLanguage();
 
 const accessToken = useCookie("signInAccessToken");
 const userToken = useCookie("signInUserToken");
@@ -37,6 +38,16 @@ const overlaySessionId = computed(() => {
   const sessionId = route.query.sessionId;
   return typeof sessionId === "string" ? sessionId : "";
 });
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+const labels = computed(() => ({
+  dialog: isSwahili.value ? "Mwalimu wa AI wa TIE" : "TIE AI Teacher",
+  openPage: isSwahili.value
+    ? "Fungua ukurasa wa Mwalimu wa AI wa TIE"
+    : "Open TIE AI Teacher page",
+  closeModal: isSwahili.value
+    ? "Funga dirisha la Mwalimu wa AI wa TIE"
+    : "Close TIE AI Teacher modal",
+}));
 
 const updateViewportState = () => {
   if (typeof window === "undefined") return;
@@ -214,14 +225,14 @@ onBeforeUnmount(() => {
         :style="modalShellStyle"
         role="dialog"
         aria-modal="true"
-        aria-label="TIE AI Teacher"
+        :aria-label="labels.dialog"
         tabindex="-1"
       >
         <div class="absolute right-2 top-2 z-20 flex items-center gap-1">
           <button
             type="button"
             class="rounded bg-white/90 p-1 text-gray-700 shadow hover:text-black"
-            aria-label="Open TIE AI Teacher page"
+            :aria-label="labels.openPage"
             @click.stop="expandToFullPage"
           >
             <Icon name="mdi:arrow-expand" size="18" />
@@ -229,7 +240,7 @@ onBeforeUnmount(() => {
           <button
             type="button"
             class="rounded bg-white/90 p-1 text-gray-700 shadow hover:text-black"
-            aria-label="Close TIE AI Teacher modal"
+            :aria-label="labels.closeModal"
             @click.stop="closeOverlay"
           >
             <Icon name="mdi:close" size="18" />
