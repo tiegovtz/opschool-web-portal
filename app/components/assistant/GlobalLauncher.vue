@@ -23,7 +23,6 @@ const openSubjectTeacherSignal = useState<number>(
 const isLoadingAllowedSubjects = ref(false);
 
 const EXCLUDED_PREFIXES = [
-  "/",
   "/tie-ai-teacher",
   "/auth",
   "/smart-class",
@@ -31,6 +30,7 @@ const EXCLUDED_PREFIXES = [
   "/conversation-practice",
 ];
 const EXCLUDED_EXACT: string[] = [
+  "/",
 ];
 
 const isLoggedIn = computed(() => !!(userToken.value || accessToken.value));
@@ -75,8 +75,21 @@ const hasValidSubjectContext = computed(() => {
 
   const querySubject =
     typeof route.query.subject === "string" ? route.query.subject : "";
-  const subjectSlugRaw = params.level ?? params.subject ?? params.subjectSlug ?? querySubject;
+  const subjectSlugRaw =
+    params.subject ??
+    params.subjectSlug ??
+    querySubject;
   const subjectSlug = normalizeSubjectSlug(subjectSlugRaw);
+  const isInteractiveTopicRoute =
+    route.path.toLowerCase().startsWith("/interactive/") &&
+    typeof params.topicId === "string" &&
+    params.topicId.trim().length > 0 &&
+    Boolean(subjectSlug);
+
+  if (isInteractiveTopicRoute) {
+    return true;
+  }
+
   const isAllowed =
     allowedSubjectSlugs.value.length === 0
       ? Boolean(subjectSlug)

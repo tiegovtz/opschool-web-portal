@@ -1522,6 +1522,7 @@ const stopReading = () => {
 
 // cleanup
 onUnmounted(() => {
+  subjectTeacherOpenState.value = false;
   stopReading();
   // Clean up audio element
   if (audioElement.value) {
