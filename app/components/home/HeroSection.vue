@@ -8,7 +8,7 @@ const props = withDefaults(
   language: 'english',
 })
 // Define the full text
-const fullText = props.language == 'english' ? `
+const fullText = computed(()=>props.language == 'english' ? `
 Welcome to <b>TIE ONLINE SCHOOL</b>, an innovative platform developed by the
 Tanzania Institute of Education (TIE) to assist you in reaching your educational goals
 through engaging methods. Here, you will access high-quality learning resources for
@@ -27,10 +27,10 @@ soar to greater heights. <br/><b>Welcome onboard!</b>
 <br/><br />
 Jukwaa hili limeandaliwa kwa ajili ya wanafunzi wa rika zote kwa kuwawezesha kufanya shughuli za masomo mbalimbali zinazofaa kwa darasani au kujisomea binafsi.
 <br/>
-Jukwaa hii linafanya ujifunzaji uwe rahisi, wa kufurahisha na kumfanya mwanafunzi asisahau kile alichojifunza.`;
+Jukwaa hii linafanya ujifunzaji uwe rahisi, wa kufurahisha na kumfanya mwanafunzi asisahau kile alichojifunza.`);
 
 // Define the short preview text
-const shortText = props.language == 'english' ? `
+const shortText =computed(()=> props.language == 'english' ? `
 Welcome to <b>TIE ONLINE SCHOOL</b>, an innovative platform developed by the
 Tanzania Institute of Education (TIE) to assist you in reaching your educational goals
 through engaging methods. Here, you will access high-quality learning resources for
@@ -48,7 +48,7 @@ Jukwaa hili limeandaliwa kwa ajili ya wanafunzi wa rika zote kwa kuwawezesha kuf
 Jukwaa hii linafanya ujifunzaji uwe rahisi, wa kufurahisha na kumfanya mwanafunzi asisahau kile alichojifunza.
 <br/><br />
 
-Furahia kujifunza kwa kufanya shughuli mbalimbali zinazofurahisha na kukuwezesha kupata maarifa ya kina, kukuza ubunifu, uwezo wa kufikiri kwa kina, na kukuhamasisha kupenda kujifunza kwa muda wote.`;
+Furahia kujifunza kwa kufanya shughuli mbalimbali zinazofurahisha na kukuwezesha kupata maarifa ya kina, kukuza ubunifu, uwezo wa kufikiri kwa kina, na kukuhamasisha kupenda kujifunza kwa muda wote.`);
 
 // Track if the user has clicked "Read More"
 const isExpanded = ref<boolean>(false);
