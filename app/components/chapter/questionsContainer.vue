@@ -6,7 +6,7 @@ import type {
   QuizAttemptPayload,
   QuizAttemptSessionPayload,
 } from "~/types/recommendation.interface";
-import { generateSuggestion, parseTextAndLinks } from "~/utilities/linkfy.helper";
+import { generateSuggestion } from "~/utilities/linkfy.helper";
 import {
   buildChapterQuizId,
   buildStableQuestionId,
@@ -38,6 +38,13 @@ type QuestionAnsweredPayload = {
   startedAt: string;
   submittedAt: string;
   timeSpentSeconds: number;
+  blankStatuses?: boolean[];
+};
+
+type RecordedAnswer = {
+  selectedChoice: string;
+  isCorrect: boolean;
+  blankStatuses: boolean[];
 };
 
 // Define states
@@ -54,8 +61,7 @@ const { snapshotId: activeRecommendationSnapshotId } =
   useRecommendationSnapshot();
 const questionAttempts = ref<QuizAttemptPayload[]>([]);
 const quizStartedAt = ref<string | null>(null);
-
-const emits = defineEmits(["emitQuizScore"])
+const recordedAnswers = ref<RecordedAnswer[]>([]);
 
 // Result Scored Computed
 const scoredComputed = computed(() => {
@@ -100,6 +106,19 @@ const resetQuiz = () => {
   quizAttempt.isAttempting = false;
   quizAttempt.quizCompleted = false;
   quizAttempt.clickedAnswer = [];
+  recordedAnswers.value = [];
+  startQuizSession();
+};
+
+const repeatQuiz = () => {
+  quizAttempt.totalQuestions = props.questions.length;
+  quizAttempt.answeredQuestions = 0;
+  quizAttempt.currentQuestion = 0;
+  quizAttempt.scored = 0;
+  quizAttempt.isAttempting = false;
+  quizAttempt.quizCompleted = false;
+  quizAttempt.clickedAnswer = [];
+  recordedAnswers.value = [];
   startQuizSession();
 };
 
@@ -142,23 +161,20 @@ const answeredAttempt = async (result: QuestionAnsweredPayload) => {
   }
 
   quizAttempt.clickedAnswer.push(result.selectedChoice);
+  recordedAnswers.value.push({
+    selectedChoice: result.selectedChoice,
+    isCorrect: result.isCorrect,
+    blankStatuses: result.blankStatuses ?? [],
+  });
 
   // If Is answer the question
   if (result.isCorrect) {
     quizAttempt.scored++;
   }
 
-  setTimeout(() => {
-    // Increment answered questions only if not already answered
-    if (quizAttempt.answeredQuestions < quizAttempt.currentQuestion + 1) {
-      quizAttempt.answeredQuestions++;
-    }
-
-    // Move to next question if available
-    if (quizAttempt.currentQuestion < props.questions.length - 1) {
-      quizAttempt.currentQuestion++;
-    }
-  }, 800);
+  if (quizAttempt.answeredQuestions < quizAttempt.currentQuestion + 1) {
+    quizAttempt.answeredQuestions++;
+  }
 };
 
 // shuffle Questions
@@ -278,6 +294,21 @@ const getChoiceReason = (question: Question,userAnswer:string):string => {
   )?.description || '';
 };
 
+const getBlankStatusForQuestion = (index: number) =>
+  recordedAnswers.value[index]?.blankStatuses ?? [];
+
+const goToNextQuestion = () => {
+  if (quizAttempt.currentQuestion < props.questions.length - 1) {
+    quizAttempt.currentQuestion++;
+  }
+};
+
+const isDragAnswerCorrectAt = (questionIndex: number, blankIndex: number) =>
+  getBlankStatusForQuestion(questionIndex)[blankIndex] ?? false;
+
+const getDragAnswerParts = (answer: string) =>
+  answer ? answer.split("-").filter(Boolean) : [];
+
 
 </script>
 
@@ -344,13 +375,29 @@ const getChoiceReason = (question: Question,userAnswer:string):string => {
                 ">
                 <b :class="['text-black', { 'capitalize': question.questionType === 'drag_and_drop' }]">Your choice:
                 </b>
-                <span :class="[question.questionType === 'drag_and_drop' ? 'capitalize' : '']">{{
-                  quizAttempt.clickedAnswer[index]?.replaceAll('-', ' ,') }}</span>
+                <template v-if="question.questionType === 'drag_and_drop'">
+                  <span
+                    v-for="(answerPart, blankIndex) in getDragAnswerParts(quizAttempt.clickedAnswer[index] ?? '')"
+                    :key="`${index}-${blankIndex}-${answerPart}`"
+                    :class="[
+                      'capitalize mr-2 font-medium',
+                      isDragAnswerCorrectAt(index, blankIndex)
+                        ? 'text-normalGreener'
+                        : 'text-red-600'
+                    ]"
+                  >
+                    {{ answerPart }}
+                    <span>{{ isDragAnswerCorrectAt(index, blankIndex) ? '✓' : '✗' }}</span>
+                  </span>
+                </template>
+                <span v-else>
+                  {{ (quizAttempt.clickedAnswer[index] ?? '').replaceAll('-', ' ,') }}
+                </span>
 
                 <!-- Mark Tick and Wrong -->
-                <span v-if="quizAttempt.clickedAnswer[index] == question.answer"
+                <span v-if="question.questionType !== 'drag_and_drop' && quizAttempt.clickedAnswer[index] == question.answer"
                   class="font-bold text-normalGreener">✓</span>
-                <span v-else class="font-bold text-red-600">✗</span>
+                <span v-else-if="question.questionType !== 'drag_and_drop'" class="font-bold text-red-600">✗</span>
               </p>
               <!-- choice description (reason)-->
               <!--  -->
@@ -366,6 +413,12 @@ const getChoiceReason = (question: Question,userAnswer:string):string => {
 
         <!-- Read notes again and Read next -->
         <div class="flex items-center justify-end w-full gap-2">
+          <button
+            @click="repeatQuiz()"
+            class="flex items-center justify-center px-4 py-1 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-deepBlue hover:bg-oceanBlue"
+          >
+            Repeat quiz
+          </button>
           <small>Recommendation:</small>
           <button v-if="quizAttempt.quizCompleted" @click="resetQuiz()"
             class="flex items-center justify-center px-4 py-1 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
@@ -399,13 +452,15 @@ const getChoiceReason = (question: Question,userAnswer:string):string => {
 
       <!-- Use currentQuestion instead of shuffleQuestions to determine which question to display -->
       <questionsAnswers v-else-if="shuffleQuestions" @question-answered="answeredAttempt($event)"
+        @next-question="goToNextQuestion()"
         :question-type="shuffleQuestions[quizAttempt.currentQuestion]?.questionType ?? 'multiple_choice'
           " :thumbnail="shuffleQuestions[quizAttempt.currentQuestion]?.thumbnail ?? ''"
         :true-answer="shuffleQuestions[quizAttempt.currentQuestion]?.answer ?? ''"
         :choices="shuffleQuestions[quizAttempt.currentQuestion]?.choices ?? []"
         :question="shuffleQuestions[quizAttempt.currentQuestion]?.question ?? ''"
         :number="`${quizAttempt.currentQuestion + 1}`.toString()"
-        :answer="shuffleQuestions[quizAttempt.currentQuestion]?.answer ?? ''" />
+        :answer="shuffleQuestions[quizAttempt.currentQuestion]?.answer ?? ''"
+        :is-last-question="quizAttempt.currentQuestion === questions.length - 1" />
     </div>
   </section>
 </template>
