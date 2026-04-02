@@ -12,7 +12,7 @@
     
     <!-- Feedback -->
     <div v-if="route.path !== '/feedback'" class="fixed right-2 z-10 top-[40%] transform -rotate-90 origin-bottom-right bg-oceanBlue hover:bg-deepBlue transition-all duration-500 ease-in-out rounded-md cursor-pointer">
-      <NuxtLink to="/feedback" class="px-4 py-2 text-white">{{ language === 'english' ? 'Feedback' : 'Maoni' }}</NuxtLink>
+      <NuxtLink :to="feedbackLink" class="px-4 py-2 text-white">{{ language === 'english' ? 'Feedback' : 'Maoni' }}</NuxtLink>
     </div>
     
     <!-- Combinations -->
@@ -36,9 +36,16 @@ import HeaderView from '~/components/included/HeaderView.vue'
 import type { LanguageSupport } from '~/types/language.interface';
 import type { EducationBucket } from '~/utilities/educationRoute';
 const route = useRoute()
-
-withDefaults(
+const props = withDefaults(
   defineProps<{educationLevel?:EducationBucket,language?:LanguageSupport}>(),{
     language:'english',
-})
+  },
+)
+const feedbackLink = computed(() => ({
+  path: "/feedback",
+  query: {
+    lang: props.language === "kiswahili" ? "sw" : "en",
+    ...(props.educationLevel ? { educationLevel: props.educationLevel } : {}),
+  },
+}))
 </script>
