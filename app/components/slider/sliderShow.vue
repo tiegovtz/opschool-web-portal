@@ -230,7 +230,7 @@ onBeforeUnmount(() => {
 
 <template>
   <section
-    class="group relative w-full h-full max-h-[550px]"
+    class="group relative w-full h-full "
     aria-label="Featured interactive learning content"
   >
     <div class="embla relative h-full">
@@ -433,15 +433,15 @@ onBeforeUnmount(() => {
 }
 
 .embla__dot {
-  height: 10px;
-  width: 10px;
-  border-radius: 9999px;
+  height: 8px;
+  width: 8px;
+  border-radius: 4px;
   background-color: white;
   transition: all 0.5s ease-in-out;
 }
 
 .embla__dot--selected {
-  height: 14px;
-  background-color: var(--color-oceanBlue);
+  width: 30px;
+  background-color: #0077c5;
 }
 </style>
