@@ -144,7 +144,7 @@ onMounted(async () => {
             <h1 class="text-left text-xl font-tahomabd font-bold text-oceanBlue">Karibu!</h1>
             <h1 class="text-left text-3xl my-4 font-tahomabd font-bold text-[#f29253]">SHULE MTANDAO YA TET</h1>
             <p class="text-justify mt-4">
-                Katika jukwaa hili, utapata maudhui ya ngazi ya Elimu  ya Msingi na Sekondari. Chagua ngazi husika ili kuanza kujifunza
+                Kupitia jukwaa hili, utapata maudhui ya ngazi ya Elimu  ya Msingi na Sekondari. Chagua ngazi husika ili kuanza kujifunza
             </p>
             <!-- buttons -->
             <div class="flex flex-wrap gap-5 pt-5">
