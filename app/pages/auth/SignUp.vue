@@ -29,6 +29,8 @@ const content = computed(() => ({
   userTypePlaceholder: isSwahili.value ? "(mfano: Mwanafunzi, Mwalimu ...)" : "(eg: Student, Teacher ...)",
   firstNamePlaceholder: isSwahili.value ? "Jina la kwanza" : "First Name",
   lastNamePlaceholder: isSwahili.value ? "Jina la mwisho" : "Last Name",
+  educationLevelLabel: isSwahili.value ? "Chagua ngazi ya elimu:" : "Select Education Level:",
+  educationLevelPlaceholder: isSwahili.value ? "(mfano: Msingi, Sekondari ...)" : "(eg: Secondary, Primary ...)",
   classLevelLabel: isSwahili.value ? "Ngazi ya darasa:" : "Class Level:",
   classLevelPlaceholder: isSwahili.value ? "(mfano: Darasa la Kwanza ...)" : "(eg: Baraa Secondary School ...)",
   sexLabel: isSwahili.value ? "Chagua jinsia:" : "Select Sex:",
@@ -86,7 +88,11 @@ const content = computed(() => ({
     invalidPhone: isSwahili.value ? "Tafadhali weka namba sahihi ya simu" : "Please enter a valid phone number",
     region: isSwahili.value ? "Mkoa unahitajika" : "Region is required",
     userType: isSwahili.value ? "Aina ya mtumiaji inahitajika" : "User role is required",
+    educationLevel: isSwahili.value ? "Ngazi ya elimu inahitajika" : "Education level is required",
+    classLevel: isSwahili.value ? "Darasa linahitajika" : "Class level is required",
     role: isSwahili.value ? "Jukumu linahitajika" : "Role is required",
+    organization: isSwahili.value ? "Taasisi/Shirika linahitajika" : "Organization is required",
+    otherRole: isSwahili.value ? "Tafadhali eleza jukumu lako" : "Please specify your role",
     invalidUserName: isSwahili.value ? "Jina la mtumiaji si sahihi. Hakikisha linafuata muundo unaotakiwa." : "Invalid username. Ensure it meets the required format.",
     nameMinLength: isSwahili.value ? "Jina lazima liwe na angalau herufi 3" : " Name must be at least 3 characters long",
     nameSpecialChars: isSwahili.value ? "Jina lisitumie alama maalum au namba" : "Name should not contain special characters or numbers",
@@ -160,6 +166,7 @@ interface userSignUp {
       password: string | null;
       confirm_password: string | null;
       educationLevel: string | null;
+      classLevel: string | null;
       school: string | null;
       district: string | null;
       organization: string | null;
@@ -217,6 +224,7 @@ const usersignUp = reactive<userSignUp>({
       password: null,
       confirm_password: null,
       educationLevel: null,
+      classLevel: null,
       school: null,
       district: null,
       organization: null,
@@ -232,8 +240,22 @@ const normalizeUserTypeKey = (type: string) => {
   return value;
 };
 
+const normalizedUserType = computed(() => normalizeUserTypeKey(usersignUp.type));
+const isStudent = computed(() => normalizedUserType.value === "Student");
 const isStudentOrTeacher = computed(() =>
-  ["Student", "Teacher"].includes(normalizeUserTypeKey(usersignUp.type))
+  ["Student", "Teacher"].includes(normalizedUserType.value)
+);
+const isStakeholder = computed(() => normalizedUserType.value === "EducationStakeholder");
+const requiresEducationLevel = computed(() => isStudentOrTeacher.value);
+const requiresClassLevel = computed(() => isStudent.value);
+const requiresSchoolSelection = computed(() => isStudentOrTeacher.value);
+const requiresContactInfo = computed(() =>
+  ["Teacher", "EducationStakeholder"].includes(normalizedUserType.value),
+);
+const resolvedStakeholderRole = computed(() =>
+  usersignUp.userOrgRole.toLowerCase().trim() === "others"
+    ? (usersignUp.otherRole || "").trim()
+    : (usersignUp.userOrgRole || "").trim(),
 );
 
 watch(
@@ -242,6 +264,10 @@ watch(
     usersignUp.school = "";
     classLevel.value = "";
     const trimmed = (id || "").toString().trim();
+    usersignUp.controller.errors.educationLevel = trimmed
+      ? null
+      : usersignUp.controller.errors.educationLevel;
+    usersignUp.controller.errors.classLevel = null;
     if (!trimmed) {
       listLevel.value = [];
       return;
@@ -285,35 +311,33 @@ const getEducationLevels = async () => {
 };
 
 const signUp = async () => {
-  if (usersignUp.userOrgRole.toLowerCase().trim() == 'others' && usersignUp.otherRole) {
-    usersignUp.userOrgRole = usersignUp.otherRole
-  }
   const typeKey = normalizeUserTypeKey(usersignUp.type);
   const backendType = toBackendUserType(usersignUp.type);
+  const hasBaseFields = Boolean(
+    usersignUp.age &&
+    usersignUp.confirm_password?.trim() &&
+    usersignUp.fname?.trim() &&
+    usersignUp.lname?.trim() &&
+    usersignUp.gender?.trim() &&
+    usersignUp.password?.trim() &&
+    usersignUp.password === usersignUp.confirm_password &&
+    usersignUp.region?.trim() &&
+    usersignUp.type?.trim() &&
+    usersignUp.district?.trim(),
+  );
+  const hasEducationFields = !requiresEducationLevel.value || Boolean(usersignUp.educationLevel?.trim());
+  const hasSchoolFields = !requiresSchoolSelection.value || Boolean(usersignUp.school?.trim());
+  const hasContactFields = !requiresContactInfo.value || Boolean(usersignUp.email?.trim() && usersignUp.phone?.trim());
+  const hasStakeholderFields = !isStakeholder.value || Boolean(usersignUp.organization?.trim() && resolvedStakeholderRole.value);
+  const hasStudentLevel = !requiresClassLevel.value || Boolean(classLevel.value?.trim());
 
   if (
-    usersignUp.age &&                                       // Age must be greater than 0
-    usersignUp.confirm_password?.trim() &&                  // Confirm password is required
-    usersignUp.fname?.trim() &&                             // First name is required
-    usersignUp.lname?.trim() &&                             // Last name is required
-    usersignUp.gender?.trim() &&                            // Gender is required
-    usersignUp.password?.trim() &&                          // Password is required
-    usersignUp.password === usersignUp.confirm_password &&  // Passwords must match
-    usersignUp.region?.trim() &&                            // Region is required
-    usersignUp.type?.trim() &&                              // User type is required
-    usersignUp.district?.trim() &&                          // District is required
-    // Education Level required for Student/Teacher (used for fetching only, not sent)
-    ((!isStudentOrTeacher.value) || usersignUp.educationLevel?.trim()) &&
-
-    // If not an "Education Stakeholder", user must provide their school
-    (typeKey !== 'EducationStakeholder' && usersignUp.school?.trim()) ||
-
-    // If user is an "Education Stakeholder", they must provide organization and role
-    (typeKey === 'EducationStakeholder' &&
-      usersignUp.organization?.trim() && usersignUp.userOrgRole?.trim()) ||
-
-    // Either user is not "Student"  they must provide both email and phone
-    (typeKey !== 'Student' && (usersignUp.email?.trim() && usersignUp.phone?.trim()))
+    hasBaseFields &&
+    hasEducationFields &&
+    hasSchoolFields &&
+    hasContactFields &&
+    hasStakeholderFields &&
+    hasStudentLevel
   ) {
 
     // 
@@ -371,7 +395,7 @@ const signUp = async () => {
               roles: ['EducationStakeholder'],
               terms: true,
               organization: usersignUp.organization,
-              stakeholder: usersignUp.userOrgRole && usersignUp.userOrgRole.trim() !== '' ? usersignUp.userOrgRole : null,
+              stakeholder: resolvedStakeholderRole.value || null,
             }
       });
 
@@ -457,7 +481,7 @@ const signUp = async () => {
     if (!usersignUp.confirm_password) {
       usersignUp.controller.errors.confirm_password = content.value.errors.confirmPassword;
     }
-    if (!usersignUp.email) {
+    if (requiresContactInfo.value && !usersignUp.email) {
       usersignUp.controller.errors.email = content.value.errors.invalidEmail;
     }
     if (!usersignUp.fname) {
@@ -475,32 +499,52 @@ const signUp = async () => {
     if (!usersignUp.password) {
       usersignUp.controller.errors.password = content.value.errors.passwordMinLength;
     }
-    if (!usersignUp.phone) {
+    if (requiresContactInfo.value && !usersignUp.phone) {
       usersignUp.controller.errors.phone = content.value.errors.invalidPhone;
     }
     if (!usersignUp.region) {
       usersignUp.controller.errors.region = content.value.errors.region;
     }
+    if (!usersignUp.district) {
+      usersignUp.controller.errors.district = content.value.errors.district;
+    }
     if (!usersignUp.type) {
       usersignUp.controller.errors.type = content.value.errors.userType;
     }
 
-    if (!usersignUp.userOrgRole.trim()) {
+    if (isStakeholder.value && !usersignUp.organization?.trim()) {
+      usersignUp.controller.errors.organization = content.value.errors.organization;
+    }
+
+    if (isStakeholder.value && !usersignUp.userOrgRole.trim()) {
       usersignUp.controller.errors.userOrgRole = content.value.errors.role;
     }
 
-    if (isStudentOrTeacher.value && !usersignUp.educationLevel?.trim()) {
-      usersignUp.controller.errors.educationLevel = content.value.errors.school;
+    if (requiresEducationLevel.value && !usersignUp.educationLevel?.trim()) {
+      usersignUp.controller.errors.educationLevel = content.value.errors.educationLevel;
       switchTab("tabOne");
     } else {
       usersignUp.controller.errors.educationLevel = null;
     }
 
-    if (isStudentOrTeacher.value && !usersignUp.educationLevel?.trim()) {
-      usersignUp.controller.errors.educationLevel = content.value.errors.school;
+    if (requiresSchoolSelection.value && !usersignUp.school?.trim()) {
+      usersignUp.controller.errors.school = content.value.errors.school;
       switchTab("tabOne");
     } else {
-      usersignUp.controller.errors.educationLevel = null;
+      usersignUp.controller.errors.school = null;
+    }
+
+    if (requiresClassLevel.value && !classLevel.value?.trim()) {
+      usersignUp.controller.errors.classLevel = content.value.errors.classLevel;
+      switchTab("tabOne");
+    } else {
+      usersignUp.controller.errors.classLevel = null;
+    }
+
+    if (isStakeholder.value && usersignUp.userOrgRole.toLowerCase().trim() === "others" && !usersignUp.otherRole?.trim()) {
+      usersignUp.controller.errors.otherRole = content.value.errors.otherRole;
+    } else {
+      usersignUp.controller.errors.otherRole = null;
     }
   }
 };
@@ -640,6 +684,39 @@ watch(
     } else {
       usersignUp.controller.errors.type = content.value.errors.userType;
     }
+
+    if (normalizeUserTypeKey(type) !== "EducationStakeholder") {
+      usersignUp.organization = null;
+      usersignUp.otherRole = null;
+      usersignUp.userOrgRole = "";
+      usersignUp.controller.errors.organization = null;
+      usersignUp.controller.errors.userOrgRole = null;
+      usersignUp.controller.errors.otherRole = null;
+    }
+
+    if (normalizeUserTypeKey(type) === "EducationStakeholder") {
+      usersignUp.educationLevel = "";
+      usersignUp.school = "";
+      classLevel.value = "";
+      listLevel.value = [];
+      usersignUp.controller.errors.educationLevel = null;
+      usersignUp.controller.errors.school = null;
+      usersignUp.controller.errors.classLevel = null;
+    }
+
+    if (normalizeUserTypeKey(type) !== "Student") {
+      usersignUp.userName = null;
+      classLevel.value = "";
+      usersignUp.controller.errors.userName = null;
+      usersignUp.controller.errors.classLevel = null;
+    }
+
+    if (normalizeUserTypeKey(type) === "Student") {
+      usersignUp.email = null;
+      usersignUp.phone = null;
+      usersignUp.controller.errors.email = null;
+      usersignUp.controller.errors.phone = null;
+    }
   }
 );
 
@@ -654,6 +731,49 @@ watch(
       usersignUp.controller.errors.region = content.value.errors.region;
     }
   }
+);
+
+watch(
+  () => usersignUp.district,
+  (district) => {
+    if (district) {
+      usersignUp.controller.errors.district = null;
+    } else {
+      usersignUp.controller.errors.district = content.value.errors.district;
+    }
+  },
+);
+
+watch(
+  () => usersignUp.educationLevel,
+  (educationLevel) => {
+    if (!requiresEducationLevel.value) {
+      usersignUp.controller.errors.educationLevel = null;
+      return;
+    }
+
+    if (educationLevel) {
+      usersignUp.controller.errors.educationLevel = null;
+    } else {
+      usersignUp.controller.errors.educationLevel = content.value.errors.educationLevel;
+    }
+  },
+);
+
+watch(
+  classLevel,
+  (value) => {
+    if (!requiresClassLevel.value) {
+      usersignUp.controller.errors.classLevel = null;
+      return;
+    }
+
+    if (value) {
+      usersignUp.controller.errors.classLevel = null;
+    } else {
+      usersignUp.controller.errors.classLevel = content.value.errors.classLevel;
+    }
+  },
 );
 
 // Age watching
@@ -685,12 +805,60 @@ watch(
 // School watching
 watch(
   () => usersignUp.school, (school) => {
-    if (school) {
+    if (!requiresSchoolSelection.value) {
+      usersignUp.controller.errors.school = null;
+    } else if (school) {
       usersignUp.controller.errors.school = null;
     } else {
       usersignUp.controller.errors.school = content.value.errors.school;
     }
   }
+);
+
+watch(
+  () => usersignUp.organization,
+  (organization) => {
+    if (!isStakeholder.value) {
+      usersignUp.controller.errors.organization = null;
+    } else if (organization?.trim()) {
+      usersignUp.controller.errors.organization = null;
+    } else {
+      usersignUp.controller.errors.organization = content.value.errors.organization;
+    }
+  },
+);
+
+watch(
+  () => usersignUp.userOrgRole,
+  (role) => {
+    if (!isStakeholder.value) {
+      usersignUp.controller.errors.userOrgRole = null;
+      usersignUp.controller.errors.otherRole = null;
+      return;
+    }
+
+    if (role?.trim()) {
+      usersignUp.controller.errors.userOrgRole = null;
+      if (role.toLowerCase().trim() !== "others") {
+        usersignUp.controller.errors.otherRole = null;
+      }
+    } else {
+      usersignUp.controller.errors.userOrgRole = content.value.errors.role;
+    }
+  },
+);
+
+watch(
+  () => usersignUp.otherRole,
+  (role) => {
+    if (!isStakeholder.value || usersignUp.userOrgRole.toLowerCase().trim() !== "others") {
+      usersignUp.controller.errors.otherRole = null;
+    } else if (role?.trim()) {
+      usersignUp.controller.errors.otherRole = null;
+    } else {
+      usersignUp.controller.errors.otherRole = content.value.errors.otherRole;
+    }
+  },
 );
 
 // password watching
@@ -764,10 +932,18 @@ const switchTab = (tabName: string) => {
       usersignUp.controller.errors.district = content.value.errors.district;
     }
 
-    // school for student and teacher
-    if ((!usersignUp.school || usersignUp.school.trim() == " ") &&
-      normalizeUserTypeKey(usersignUp.type) !== "EducationStakeholder") {
+    if (requiresEducationLevel.value && (!usersignUp.educationLevel || usersignUp.educationLevel.trim() === "")) {
+      usersignUp.controller.errors.educationLevel = content.value.errors.educationLevel;
+      return;
+    }
+
+    if (requiresSchoolSelection.value && (!usersignUp.school || usersignUp.school.trim() == " ")) {
       usersignUp.controller.errors.school = content.value.errors.school;
+      return;
+    }
+
+    if (requiresClassLevel.value && !classLevel.value.trim()) {
+      usersignUp.controller.errors.classLevel = content.value.errors.classLevel;
       return;
     }
 
@@ -778,7 +954,9 @@ const switchTab = (tabName: string) => {
       usersignUp.gender &&
       usersignUp.region &&
       usersignUp.district &&
-      (normalizeUserTypeKey(usersignUp.type) === "EducationStakeholder" ? true : usersignUp.school)
+      (!requiresEducationLevel.value || usersignUp.educationLevel) &&
+      (!requiresSchoolSelection.value || usersignUp.school) &&
+      (!requiresClassLevel.value || classLevel.value)
     ) {
 
       // Validate first name
@@ -917,8 +1095,8 @@ onMounted(async () => {
                 {{ content.userTypeLabel }}</label>
 
               <!-- Use the Custom Dropdown instead of <select> -->
-              <CustomDropDownList v-model="usersignUp.type" :list="userTypes" ::searchable="false"
-                placeholder="content.userTypePlaceholder"
+              <CustomDropDownList v-model="usersignUp.type" :list="userTypes"
+                :placeholder="content.userTypePlaceholder"
                 @update-model-value="usersignUp.type = $event" />
             </div>
 
@@ -1010,32 +1188,10 @@ onMounted(async () => {
           ]">
             <div class="flex flex-col items-start w-full">
               <label for="educationLevel" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-                Select Education Level:</label>
+                {{ content.educationLevelLabel }}</label>
 
               <CustomDropDownList id="educationLevel" v-model="usersignUp.educationLevel" :list="educationLevelLists"
-                placeholder="(eg: Secondary, Primary ...)" @update-model-value="usersignUp.educationLevel = $event" />
-            </div>
-
-            <small v-if="usersignUp.controller.errors.educationLevel" aria-live="assertive"
-              :aria-label="`${usersignUp.controller.errors.educationLevel}`" class="w-full text-red-500 text-smallest">
-              {{ usersignUp.controller.errors.educationLevel }}
-            </small>
-          </div>
-
-          <!-- education level -->
-          <div v-if="isStudentOrTeacher" :class="[
-            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-            {
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.educationLevel,
-            }
-          ]">
-            <div class="flex flex-col items-start w-full">
-              <label for="educationLevel" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-                Select Education Level:</label>
-
-              <CustomDropDownList id="educationLevel" v-model="usersignUp.educationLevel" :list="educationLevelLists"
-                placeholder="(eg: Secondary, Primary ...)" @update-model-value="usersignUp.educationLevel = $event" />
+                :placeholder="content.educationLevelPlaceholder" @update-model-value="usersignUp.educationLevel = $event" />
             </div>
 
             <small v-if="usersignUp.controller.errors.educationLevel" aria-live="assertive"
@@ -1065,6 +1221,10 @@ onMounted(async () => {
             <!-- Use the Custom Dropdown instead of <select> -->
             <CustomDropDownList v-model="classLevel" :list="levelsLists"
               :placeholder="content.classLevelPlaceholder" @update-model-value="classLevel = $event" />
+            <small v-if="usersignUp.controller.errors.classLevel" aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.classLevel}`" class="w-full text-red-500 text-smallest">
+              {{ usersignUp.controller.errors.classLevel }}
+            </small>
           </div>
 
           <!-- gender input radio -->
@@ -1255,7 +1415,7 @@ onMounted(async () => {
                 'flex flex-col items-start justify-start gap-2 px-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
                 {
                   'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                    usersignUp.controller.errors.userOrgRole,
+                    usersignUp.controller.errors.otherRole,
                 }
               ]">
                 <div class="flex items-center w-full">
