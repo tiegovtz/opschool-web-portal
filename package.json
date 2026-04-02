@@ -10,7 +10,7 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare",
+    "postinstall": "nuxt prepare && mkdir -p node_modules/@nuxt/vite-builder/dist/runtime && ln -sf ../vite-node.mjs node_modules/@nuxt/vite-builder/dist/runtime/vite-node.mjs",
     "migrate-figures-to-api": "npx tsx scripts/migrate-figures-to-api.ts",
     "ai:decision-smoke": "npx tsx scripts/ai-decision-smoke.ts",
     "test:rag": "npx tsx scripts/test-rag.ts"
