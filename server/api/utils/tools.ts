@@ -800,10 +800,10 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
           return {
             found: false,
             query: query,
-            message: "No textbook context returned.",
+            message: "No relevant textbook content found for this topic.",
             context: "",
             instruction:
-              "Answer using general knowledge. Do NOT say the information is unavailable. Clearly label the response as general knowledge (not from the textbooks) if needed.",
+              "Tell the student honestly: 'I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic.' Do NOT answer from your own knowledge.",
           };
         }
 
@@ -819,15 +819,22 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
         const maxChars = 5000;
 
         for (const result of sorted) {
-          // Use parentContent (richer context) when available, fall back to content
-          const text = result.parentContent || result.content || "";
+          // Use content (child chunk) as primary — it's precise and right-sized
+          // Fall back to parentContent only if content is empty, but truncate it
+          let text = result.content || "";
+          if (!text.trim() && result.parentContent) {
+            text = result.parentContent.slice(0, 1500);
+          }
           if (!text.trim()) continue;
 
           const citation = result.citation || result.parentCitation || "Unknown source";
+          const parentCitation = result.parentCitation || "";
           const source = result.source || "";
-          const score = result.score ? `Relevance: ${result.score.toFixed(2)}` : "";
 
-          const header = [source, citation, score].filter(Boolean).join(" | ");
+          const headerParts = [source];
+          if (parentCitation) headerParts.push(parentCitation);
+          headerParts.push(citation);
+          const header = headerParts.filter(Boolean).join(" | ");
           const chunk = `[${header}]\n${text.trim()}`;
 
           if (totalChars + chunk.length > maxChars) break;
@@ -837,6 +844,17 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
 
         const context = contextParts.join("\n\n---\n\n");
 
+        if (!context.trim()) {
+          return {
+            found: false,
+            query: query,
+            message: "No relevant textbook content found for this topic.",
+            context: "",
+            instruction:
+              "Tell the student honestly: 'I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic.' Do NOT answer from your own knowledge.",
+          };
+        }
+
         return {
           found: true,
           query: query,
@@ -845,7 +863,7 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
           queriesUsed: ragData.queriesUsed || [rawQuery],
           methods: ragData.methods || [],
           instruction:
-            "You MUST use the context above to answer. ALWAYS cite the source using format: 'According to [Book Title] ([Citation])...'. Do NOT use information outside this context.",
+            "You MUST use the context above to answer. ALWAYS cite the source using format: 'According to [Book Title], [Chapter] ([Page])...'. Do NOT use information outside this context.",
         };
       } catch (error: any) {
         // If RAG API fails, fall back to the old external RAG
