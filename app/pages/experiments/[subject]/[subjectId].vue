@@ -15,6 +15,14 @@ import apiDocs from "~/utilities/apiDocs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
+import {
+  getApiContentLanguage,
+  getEducationRouteQuery,
+  getHubLanguage,
+  getHubPath,
+  resolveRouteLanguage,
+  resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 
 // Defin Route
 const route = useRoute();
@@ -31,28 +39,42 @@ const subjectId = String(route.params.subjectId ?? "");
 const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
 const activeTab = ref("learn-activities");
 const subjectSlug = computed(() => (subjectTitle || "").toLowerCase().trim().replace(/\s+/g, "-"));
+const primaryContentLanguage = usePrimaryContentLanguage();
+const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const language = computed(() =>
+  getHubLanguage(
+    educationLevel.value,
+    resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
+  ),
+);
+const educationRouteQuery = computed(() =>
+  getEducationRouteQuery(educationLevel.value, {}, language.value),
+);
+const apiLanguage = computed(() =>
+  getApiContentLanguage(educationLevel.value, language.value),
+);
 
 const buildTabTarget = (tab) => {
-  if (tab === "subjects") return { path: "/home" };
+  if (tab === "subjects") return { path: getHubPath(educationLevel.value) };
   if (tab === "smart-class") return { path: "/smart-class" };
 
   const hasSubjectContext = !!subjectId && !!subjectSlug.value;
   if (!hasSubjectContext) {
-    if (tab === "interactive-contents") return { path: "/interactive" };
-    if (tab === "learn-activities") return { path: "/experiments" };
-    if (tab === "video") return { path: "/video", query: { type: "conc" } };
-    if (tab === "class-videos") return { path: "/video", query: { type: "oth" } };
-    if (tab === "audio") return { path: "/audio" };
-    return { path: "/home" };
+    if (tab === "interactive-contents") return { path: "/interactive", query: educationRouteQuery.value };
+    if (tab === "learn-activities") return { path: "/experiments", query: educationRouteQuery.value };
+    if (tab === "video") return { path: "/video", query: { ...educationRouteQuery.value, type: "conc" } };
+    if (tab === "class-videos") return { path: "/video", query: { ...educationRouteQuery.value, type: "oth" } };
+    if (tab === "audio") return { path: "/audio", query: educationRouteQuery.value };
+    return { path: getHubPath(educationLevel.value) };
   }
 
-  if (tab === "interactive-contents") return { path: `/interactive/${subjectSlug.value}/${subjectId}` };
-  if (tab === "learn-activities") return { path: `/experiments/${subjectSlug.value}/${subjectId}` };
-  if (tab === "video") return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "conc" } };
-  if (tab === "class-videos") return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "oth" } };
-  if (tab === "audio") return { path: `/audio/${subjectSlug.value}/${subjectId}` };
+  if (tab === "interactive-contents") return { path: `/interactive/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
+  if (tab === "learn-activities") return { path: `/experiments/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
+  if (tab === "video") return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { ...educationRouteQuery.value, type: "conc" } };
+  if (tab === "class-videos") return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { ...educationRouteQuery.value, type: "oth" } };
+  if (tab === "audio") return { path: `/audio/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
 
-  return { path: "/home" };
+  return { path: getHubPath(educationLevel.value) };
 };
 
 const switchTab = async (tab) => {
@@ -138,11 +160,15 @@ const pageSize = ref();
 const fetchTopics = async (params) => {
   try {
     status.value = "pending";
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`experiments-${subjectId}`, () => $fetch(apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`experiments-${language.value}-${subjectId}`, () => $fetch(apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
-      params: params,
+      params: {
+        educationLevel: educationLevel.value,
+        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
+        ...params,
+      },
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
@@ -233,16 +259,18 @@ const prevPage = () => {
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
 
+const contentLayoutLanguage = useContentLayoutLanguage();
+
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <main class="" :class="{ ' animate-pulse': isLoading }"  aria-busy="isLoading ? 'true' : 'false'">
-      <HomeSearchbar v-if="userToken" appearance="rounded" />
-      <HeroSection v-else />
+      <HomeSearchbar v-if="userToken" appearance="rounded" :language :education-level="educationLevel" />
+      <HeroSection v-else :language :education-level="educationLevel" />
       <!-- Tabs -->
       <nav aria-label="Subject tabs">
-      <TabBar :is-logged-in="!!userToken" :active-tab="activeTab" @emit-active-tab="switchTab($event)" :subject-title="subjectTitle" :topic-id="subjectId" />
+      <TabBar :is-logged-in="!!userToken" :active-tab="activeTab" @emit-active-tab="switchTab($event)" :subject-title="subjectTitle" :topic-id="subjectId" :language :education-level="educationLevel" :tab-group="educationLevel" />
       </nav>
       <!-- Loading -->
       <div v-if="status === 'pending'" class="flex flex-col items-center justify-center" role="status"

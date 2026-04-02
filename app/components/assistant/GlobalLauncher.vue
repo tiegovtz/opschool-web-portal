@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import apiDocs from "~/utilities/apiDocs";
 import { extractSubjectSlugs, normalizeSubjectSlug } from "~/config/aiLauncherConfig";
+import { onBeforeUnmount, onMounted } from "vue";
+import type { LocationQueryRaw } from "vue-router";
 
 const route = useRoute();
 const router = useRouter();
+const contentLayoutLanguage = useContentLayoutLanguage();
 
 const userToken = useCookie("signInUserToken");
 const accessToken = useCookie("signInAccessToken");
@@ -28,6 +31,7 @@ const EXCLUDED_PREFIXES = [
   "/conversation-practice",
 ];
 const EXCLUDED_EXACT: string[] = [
+  "/",
 ];
 
 const isLoggedIn = computed(() => !!(userToken.value || accessToken.value));
@@ -72,8 +76,21 @@ const hasValidSubjectContext = computed(() => {
 
   const querySubject =
     typeof route.query.subject === "string" ? route.query.subject : "";
-  const subjectSlugRaw = params.level ?? params.subject ?? params.subjectSlug ?? querySubject;
+  const subjectSlugRaw =
+    params.subject ??
+    params.subjectSlug ??
+    querySubject;
   const subjectSlug = normalizeSubjectSlug(subjectSlugRaw);
+  const isInteractiveTopicRoute =
+    route.path.toLowerCase().startsWith("/interactive/") &&
+    typeof params.topicId === "string" &&
+    params.topicId.trim().length > 0 &&
+    Boolean(subjectSlug);
+
+  if (isInteractiveTopicRoute) {
+    return true;
+  }
+
   const isAllowed =
     allowedSubjectSlugs.value.length === 0
       ? Boolean(subjectSlug)
@@ -85,13 +102,24 @@ const hasValidSubjectContext = computed(() => {
 const showLauncher = computed(
   () => isLoggedIn.value && !isExcluded.value && !isBusy.value
 );
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
 const launcherLabel = computed(() =>
-  hasValidSubjectContext.value ? "AI Subject Teacher" : "AI Teacher"
+  hasValidSubjectContext.value
+    ? (isSwahili.value ? "Mwalimu wa Somo wa Akili Unde" : "AI Subject Teacher")
+    : (isSwahili.value ? "Mwalimu wa Akili Unde" : "AI Teacher")
 );
 const launcherHoverLabel = computed(() =>
-  hasValidSubjectContext.value ? "Ask AI Subject Teacher" : "Ask AI Teacher"
+  hasValidSubjectContext.value
+    ? (isSwahili.value ? "Uliza Mwalimu wa Somo wa Akili Unde" : "Ask AI Subject Teacher")
+    : (isSwahili.value ? "Uliza Mwalimu wa Akili Unde" : "Ask AI Teacher")
 );
 const isLauncherHovered = ref(false);
+const isSmallScreen = ref(false);
+
+const updateViewportState = () => {
+  if (typeof window === "undefined") return;
+  isSmallScreen.value = window.innerWidth < 640;
+};
 
 const openTieOverlay = async () => {
   if (tieOverlayOpen.value || tieOverlayOpening.value) return;
@@ -99,10 +127,10 @@ const openTieOverlay = async () => {
   try {
     tieOverlayBackground.value = route.fullPath;
     tieOverlayPushed.value = true;
-    const query = {
+    const query: LocationQueryRaw = {
       ...route.query,
       overlay: "1",
-    } as Record<string, unknown>;
+    };
     const state = {
       aiOverlay: true,
       aiOverlayBackground: route.fullPath,
@@ -122,19 +150,37 @@ const handleClick = async () => {
   }
   await openTieOverlay();
 };
+
+onMounted(() => {
+  updateViewportState();
+  if (typeof window === "undefined") return;
+  window.addEventListener("resize", updateViewportState);
+  window.addEventListener("orientationchange", updateViewportState);
+});
+
+onBeforeUnmount(() => {
+  if (typeof window === "undefined") return;
+  window.removeEventListener("resize", updateViewportState);
+  window.removeEventListener("orientationchange", updateViewportState);
+});
 </script>
 
 <template>
   <Teleport to="body">
     <client-only>
-      <div v-if="showLauncher" class="fixed z-[80] right-4 bottom-[calc(16px+env(safe-area-inset-bottom))]">
+      <div
+        v-if="showLauncher"
+        class="fixed z-[80]"
+        :class="isSmallScreen ? 'right-3 bottom-[calc(12px+env(safe-area-inset-bottom))]' : 'right-4 bottom-[calc(16px+env(safe-area-inset-bottom))]'"
+      >
         <div class="absolute inset-0 rounded-full bg-[rgba(245,245,245,0.35)] backdrop-blur-sm pointer-events-none">
         </div>
         <button type="button"
-          class="relative flex items-center justify-center gap-2 p-4 rounded-full bg-oceanBlue text-white border border-white/80 ring-2 ring-white/90 shadow-2xl transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue whitespace-nowrap"
+          class="relative flex items-center justify-center gap-2 rounded-full bg-oceanBlue text-white border border-white/80 ring-2 ring-white/90 shadow-2xl transition hover:bg-deepBlue focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue whitespace-nowrap"
+          :class="isSmallScreen ? 'px-3 py-3' : 'p-4'"
           :aria-label="launcherLabel" :disabled="isBusy" @mouseenter="isLauncherHovered = true"
           @mouseleave="isLauncherHovered = false" @click="handleClick">
-          <IconsRobotAi :size="24" />
+          <IconsRobotAi :size="isSmallScreen ? 22 : 24" />
           <span class="hidden md:block">{{ launcherLabel }}</span>
         </button>
         <div v-if="isLauncherHovered"

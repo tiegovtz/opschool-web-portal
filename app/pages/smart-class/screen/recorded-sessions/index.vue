@@ -5,6 +5,8 @@ import { useSessionsSetup } from "../../../../composables/usesSessions.js";
 import apiDocs from '~/utilities/apiDocs.js';
 
 const router = useRouter();
+const route = useRoute();
+const pageLanguage = useHubPageLanguage();
 const authAccessToken = useCookie('signInAccessToken');
 const authUserToken = useCookie('signInUserToken');
 
@@ -699,7 +701,10 @@ loadClasses();
     <span :aria-label="snackbar.message">{{ snackbar.message }}</span>
   </div>
 
-  <NuxtLayout :name="$router.currentRoute.value.fullPath.includes('header-less') ? 'normal' : 'home-layout'">
+  <NuxtLayout
+    :name="route.fullPath.includes('header-less') ? 'normal' : 'home-layout'"
+    :language="route.fullPath.includes('header-less') ? undefined : pageLanguage"
+  >
     <a class="skip-link" href="#main-container" @click.prevent="focusMain">Skip to main content</a>
 
     <div id="main-container" tabindex="-1" class="live-classes" role="main" aria-label="Recorded sessions main content">

@@ -1,18 +1,18 @@
 <template>
   <div
     :class="isEmbedded
-      ? 'fixed inset-0 p-2 sm:p-4 flex items-start justify-center overflow-y-auto'
-      : 'fixed inset-0 z-50 flex items-start justify-center bg-black/30 p-2 sm:p-4 overflow-y-auto'"
+      ? 'fixed inset-0 p-2 sm:p-4 flex items-center justify-center overflow-hidden'
+      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-2 sm:p-4 overflow-hidden'"
     @click.self="!isEmbedded && handleOverlayClick"
   >
     <div
-      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-16px))] max-h-[calc(100vh-16px)] overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent mt-2 sm:mt-4"
+      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-16px))] h-[calc(100dvh-16px)] max-h-[calc(100dvh-16px)] min-h-0 overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent"
       role="dialog"
       aria-modal="true"
       aria-labelledby="conversation-practice-title"
       @click.stop
     >
-      <div class="modal-inner relative w-full flex flex-col min-h-0 rounded-2xl bg-white overflow-hidden">
+      <div class="modal-inner relative w-full flex-1 flex flex-col min-h-0 rounded-2xl bg-white overflow-hidden">
         <div v-if="showLoadingBar" class="loading-bar">
           <div class="loading-bar__inner"></div>
         </div>
@@ -21,24 +21,18 @@
             id="conversation-practice-title"
             class="text-lg font-semibold text-blue-700 tracking-tight"
           >
-            Conversation Practice
+            {{ practiceTitle }}
           </h1>
           <button
             v-if="!isEmbedded"
             type="button"
             class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
-            aria-label="Close conversation practice"
+            :aria-label="`Close ${practiceTitle}`"
             @click="closeModal"
           >
             <span class="text-xl leading-none">&times;</span>
           </button>
         </header>
-        <div
-          v-if="showRotateBanner"
-          class="mx-3 mt-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700"
-        >
-          Rotate to portrait for a better experience.
-        </div>
         <div
           class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-3 py-3 sm:px-6 sm:py-4 min-h-0"
           :class="isRecording ? 'pb-[190px]' : ''"
@@ -52,18 +46,18 @@
         <!-- Voice Settings -->
         <div class="conversation-settings flex flex-col gap-4 mb-4">
           <div class="flex items-center gap-4">
-            <label class="text-sm font-medium text-gray-700">Voice Type:</label>
+            <label class="text-sm font-medium text-gray-700">{{ voiceTypeLabel }}</label>
             <select
               v-model="voiceType"
               class="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500"
               :disabled="isPlaying || isRecording || isGeneratingTTS"
             >
-              <option value="male">Male</option>
-              <option value="female">Female</option>
+              <option value="male">{{ maleLabel }}</option>
+              <option value="female">{{ femaleLabel }}</option>
             </select>
           </div>
           <div class="flex items-center gap-4">
-            <label class="text-sm font-medium text-gray-700 min-w-[120px]">Playback Speed:</label>
+            <label class="text-sm font-medium text-gray-700 min-w-[120px]">{{ playbackSpeedLabel }}</label>
             <input
               v-model.number="playbackSpeed"
               type="range"
@@ -81,8 +75,8 @@
         <!-- Conversation Preview -->
         <div v-if="!conversationStarted">
           <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-            <p class="font-medium text-gray-800">Conversation preview</p>
-            <p v-if="previewLoading" class="text-gray-500">Loading preview...</p>
+            <p class="font-medium text-gray-800">{{ conversationPreviewLabel }}</p>
+            <p v-if="previewLoading" class="text-gray-500">{{ loadingPreviewLabel }}</p>
             <p v-else-if="previewError" class="text-red-600">{{ previewError }}</p>
             <div v-else-if="previewPieces.length" class="mt-2 max-h-[40vh] overflow-y-auto sm:max-h-40">
               <ul class="list-disc pl-5 space-y-1">
@@ -91,7 +85,7 @@
                 </li>
               </ul>
             </div>
-            <p v-else class="text-gray-500">Preview not available.</p>
+            <p v-else class="text-gray-500">{{ previewNotAvailableLabel }}</p>
           </div>
         </div>
 
@@ -112,7 +106,7 @@
 
           <!-- Next Question Preview (context) -->
           <div v-if="nextConversationPiece && !isProcessing && !isConversationComplete" class="bg-blue-50 border border-blue-200 rounded-md p-3">
-            <h4 class="text-xs font-medium text-blue-700 mb-1">Context of next question:</h4>
+            <h4 class="text-xs font-medium text-blue-700 mb-1">{{ nextQuestionContextLabel }}</h4>
             <p class="text-sm text-blue-800">{{ nextConversationPiece }}</p>
           </div>
 
@@ -126,14 +120,14 @@
 
           <!-- User Answer Display -->
           <div v-if="userAnswer" class="bg-blue-50 rounded-md p-4">
-            <h3 class="text-sm font-medium text-gray-700 mb-2">Your Answer:</h3>
+            <h3 class="text-sm font-medium text-gray-700 mb-2">{{ yourAnswerLabel }}</h3>
             <p class="text-gray-800">{{ userAnswer }}</p>
           </div>
 
           <!-- TTS Loading Indicator -->
           <div v-if="isGeneratingTTS" class="flex flex-col items-center justify-center py-8">
             <LoadingIndicator :is-loading="true" />
-            <p class="mt-4 text-gray-600">Generating audio...</p>
+            <p class="mt-4 text-gray-600">{{ generatingAudioLabel }}</p>
           </div>
 
           <!-- Recording Controls (Speech Mode) -->
@@ -144,14 +138,14 @@
                 @click="playCurrentPiece"
                 class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
               >
-                Play Audio
+                {{ playAudioLabel }}
               </button>
               <button
                 v-if="isPlaying"
                 @click="stopAudioAndStartRecording"
                 class="px-6 py-3 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition-colors"
               >
-                Skip & Answer
+                {{ skipAndAnswerLabel }}
               </button>
             </div>
             <button
@@ -160,7 +154,7 @@
               class="px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2"
             >
               <span class="w-3 h-3 bg-white rounded-full animate-pulse"></span>
-              Stop Recording
+              {{ stopRecordingLabel }}
             </button>
             <!-- Try Again Button (Speech Mode) -->
             <button
@@ -168,7 +162,7 @@
               @click="startRecording"
               class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
             >
-              Try Again
+              {{ tryAgainLabel }}
             </button>
           </div>
 
@@ -177,7 +171,7 @@
             <div v-if="!isProcessing" class="w-full space-y-3">
               <textarea
                 v-model="textAnswer"
-                placeholder="Type your answer here..."
+                :placeholder="typeAnswerPlaceholder"
                 class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 min-h-[100px]"
                 rows="4"
                 @keydown.enter.exact.prevent="submitTextAnswer"
@@ -189,7 +183,7 @@
                   :disabled="!textAnswer.trim()"
                   class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 >
-                  Submit Answer
+                  {{ submitAnswerLabel }}
                 </button>
               </div>
             </div>
@@ -199,21 +193,21 @@
               @click="textAnswer = ''; statusMessage = null"
               class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
             >
-              Try Again
+              {{ tryAgainLabel }}
             </button>
           </div>
 
           <!-- Conversation History -->
           <div v-if="conversationHistory.length > 0" class="mt-6">
-            <h3 class="text-sm font-medium text-gray-700 mb-2">Conversation History:</h3>
+            <h3 class="text-sm font-medium text-gray-700 mb-2">{{ conversationHistoryLabel }}</h3>
             <div class="space-y-2 max-h-60 overflow-y-auto">
               <div
                 v-for="(item, idx) in conversationHistory"
                 :key="idx"
                 class="bg-gray-50 rounded-md p-3 text-sm"
               >
-                <p class="font-semibold text-gray-700">AI: {{ item.ai }}</p>
-                <p v-if="item.user" class="text-gray-600 mt-1">You: {{ item.user }}</p>
+                <p class="font-semibold text-gray-700">{{ aiSpeakerLabel }}: {{ item.ai }}</p>
+                <p v-if="item.user" class="text-gray-600 mt-1">{{ youLabel }}: {{ item.user }}</p>
               </div>
             </div>
           </div>
@@ -231,13 +225,13 @@
                   isSpeechSupported ? 'hover:bg-blue-700' : 'opacity-70 cursor-not-allowed'
                 ]"
               >
-                Start Interactive Conversation (Voice)
+                {{ startVoiceConversationLabel }}
               </button>
               <button
                 @click="inputMode = 'text'; startConversation()"
                 class="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
               >
-                Start Conversation by Text
+                {{ startTextConversationLabel }}
               </button>
             </div>
             <div v-else class="flex justify-center">
@@ -245,7 +239,7 @@
                 @click="resetConversation"
                 class="w-full sm:w-auto px-6 py-3 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
               >
-                Restart Conversation
+                {{ restartConversationLabel }}
               </button>
             </div>
           </div>
@@ -294,12 +288,48 @@ definePageMeta({
 
 const router = useRouter()
 const route = useRoute()
+const practiceTitle = computed(() =>
+  String(route.query.language || '').trim().toLowerCase() === 'sw'
+    ? 'Mazoezi ya Mazungumzo'
+    : 'Conversation Practice'
+)
+const uiLanguage = computed(() =>
+  String(route.query.language || '').trim().toLowerCase() === 'sw' ? 'sw' : 'en'
+)
+const voiceTypeLabel = computed(() => (uiLanguage.value === 'sw' ? 'Aina ya sauti:' : 'Voice Type:'))
+const maleLabel = computed(() => (uiLanguage.value === 'sw' ? 'Kiume' : 'Male'))
+const femaleLabel = computed(() => (uiLanguage.value === 'sw' ? 'Kike' : 'Female'))
+const playbackSpeedLabel = computed(() => (uiLanguage.value === 'sw' ? 'Kasi ya kucheza:' : 'Playback Speed:'))
+const conversationPreviewLabel = computed(() => (uiLanguage.value === 'sw' ? 'Muhtasari wa mazungumzo' : 'Conversation preview'))
+const loadingPreviewLabel = computed(() => (uiLanguage.value === 'sw' ? 'Inapakia muhtasari...' : 'Loading preview...'))
+const previewNotAvailableLabel = computed(() => (uiLanguage.value === 'sw' ? 'Muhtasari haupatikani.' : 'Preview not available.'))
+const nextQuestionContextLabel = computed(() => (uiLanguage.value === 'sw' ? 'Muktadha wa swali linalofuata:' : 'Context of next question:'))
+const yourAnswerLabel = computed(() => (uiLanguage.value === 'sw' ? 'Jibu lako:' : 'Your Answer:'))
+const generatingAudioLabel = computed(() => (uiLanguage.value === 'sw' ? 'Inatengeneza sauti...' : 'Generating audio...'))
+const playAudioLabel = computed(() => (uiLanguage.value === 'sw' ? 'Cheza sauti' : 'Play Audio'))
+const skipAndAnswerLabel = computed(() => (uiLanguage.value === 'sw' ? 'Ruka na ujibu' : 'Skip & Answer'))
+const stopRecordingLabel = computed(() => (uiLanguage.value === 'sw' ? 'Simamisha kurekodi' : 'Stop Recording'))
+const tryAgainLabel = computed(() => (uiLanguage.value === 'sw' ? 'Jaribu tena' : 'Try Again'))
+const typeAnswerPlaceholder = computed(() => (uiLanguage.value === 'sw' ? 'Andika jibu lako hapa...' : 'Type your answer here...'))
+const submitAnswerLabel = computed(() => (uiLanguage.value === 'sw' ? 'Wasilisha jibu' : 'Submit Answer'))
+const conversationHistoryLabel = computed(() => (uiLanguage.value === 'sw' ? 'Historia ya mazungumzo:' : 'Conversation History:'))
+const aiSpeakerLabel = computed(() => 'AI')
+const youLabel = computed(() => (uiLanguage.value === 'sw' ? 'Wewe' : 'You'))
+const startVoiceConversationLabel = computed(() =>
+  uiLanguage.value === 'sw' ? 'Anza mazungumzo shirikishi (sauti)' : 'Start Interactive Conversation (Voice)'
+)
+const startTextConversationLabel = computed(() =>
+  uiLanguage.value === 'sw' ? 'Anza mazungumzo kwa maandishi' : 'Start Conversation by Text'
+)
+const restartConversationLabel = computed(() =>
+  uiLanguage.value === 'sw' ? 'Anzisha mazungumzo upya' : 'Restart Conversation'
+)
+const speechRecognitionLang = computed(() =>
+  String(route.query.language || '').trim().toLowerCase() === 'sw' ? 'sw-TZ' : 'en-US'
+)
 const originalBodyOverflow = ref('')
 const allowOverlayClose = ref(false)
 const returnTo = ref('')
-const isPortrait = ref(false)
-const isSmallScreen = ref(false)
-const showRotateBanner = computed(() => !isPortrait.value && isSmallScreen.value)
 
 const closeModal = () => {
   if (
@@ -344,13 +374,6 @@ const handlePopstate = () => {
       closeModal()
     }
   }, 0)
-}
-
-const updateOrientationState = () => {
-  if (typeof window === 'undefined') return
-  const shortestSide = Math.min(window.innerWidth, window.innerHeight)
-  isSmallScreen.value = shortestSide < 640
-  isPortrait.value = window.matchMedia('(orientation: portrait)').matches
 }
 
 // ============================================================================
@@ -514,9 +537,6 @@ onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', handleKeydown)
     window.addEventListener('popstate', handlePopstate)
-    updateOrientationState()
-    window.addEventListener('resize', updateOrientationState)
-    window.addEventListener('orientationchange', updateOrientationState)
     if (!isEmbedded.value) {
       // Avoid immediately closing the modal on the opening click.
       setTimeout(() => {
@@ -551,7 +571,7 @@ onMounted(() => {
       recognition = new SpeechRecognition()
       recognition.continuous = false
       recognition.interimResults = false
-      recognition.lang = 'en-US'
+      recognition.lang = speechRecognitionLang.value
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript
@@ -625,8 +645,6 @@ onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', handleKeydown)
     window.removeEventListener('popstate', handlePopstate)
-    window.removeEventListener('resize', updateOrientationState)
-    window.removeEventListener('orientationchange', updateOrientationState)
   }
   if (typeof document !== 'undefined') {
     document.body.style.overflow = originalBodyOverflow.value

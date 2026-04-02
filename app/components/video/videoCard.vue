@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
+import {
+    getEducationRouteQuery,
+    resolveRouteLanguage,
+    resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 const navigationStore = useNavigationStore()
+const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
 const props = withDefaults( defineProps<{
     videoId: string|any,
     videoName: string|any,
@@ -40,12 +47,21 @@ const setVideoToView = () => {
         }
       ));
 }
+
+const videoTarget = computed(() => ({
+    path: `/video/${props.videoStandard}/${props.videoSubject}/${props.videoName}/${props.videoId}`,
+    query: getEducationRouteQuery(
+        resolveEducationLevelFromRoute(route),
+        {},
+        resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
+    ),
+}));
 </script>
 
 <template>
     <NuxtLink 
         v-if="!isDeleted"
-        :to="`/video/${videoStandard}/${videoSubject}/${videoName}/${videoId}`" @click="setVideoToView()"
+        :to="videoTarget" @click="setVideoToView()"
         :class="[
             'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
             layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32',

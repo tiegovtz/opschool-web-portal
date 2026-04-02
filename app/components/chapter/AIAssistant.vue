@@ -239,6 +239,29 @@ const props = defineProps({
   chapterNo: { type: Number, default: null },
   audios: { type: Array, default: () => [] },
 });
+const contentLayoutLanguage = useContentLayoutLanguage(() => props.level);
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+const subjectUi = computed(() => ({
+  launcherTitle: isSwahili.value ? "Uliza Mwalimu wa Somo wa AI" : "Ask AI Subject Teacher",
+  title: isSwahili.value ? "Mwalimu wa Somo wa AI" : "AI Subject Teacher",
+  voiceSettings: isSwahili.value ? "Mipangilio ya Sauti" : "Voice Settings",
+  voiceSettingsHelp: isSwahili.value ? "Chagua sauti ya majibu ya sauti" : "Select voice for audio responses",
+  femaleVoice: isSwahili.value ? "Sauti ya Mwanamke" : "Female Voice",
+  maleVoice: isSwahili.value ? "Sauti ya Mwanaume" : "Male Voice",
+  welcome: isSwahili.value ? "Hujambo! Mimi ni" : "Hello! I'm your",
+  intro: isSwahili.value ? "Niko hapa kukusaidia kuelewa" : "I'm here to help you understand",
+  prompt: isSwahili.value ? "Usisite kuniuliza maswali yoyote kuhusu umahiri huu!" : "Feel free to ask me any questions about this competence!",
+  typing: isSwahili.value ? "AI inaandika..." : "AI is typing...",
+  inputPlaceholder: isSwahili.value ? "Andika ujumbe wako..." : "Type your message...",
+  inputAria: isSwahili.value ? "Andika swali lako kwa Mwalimu wa Somo wa AI" : "Type your question for AI Subject Teacher",
+  send: isSwahili.value ? "Tuma" : "Send",
+  summarizeIdle: isSwahili.value ? "Fupisha" : "Summarize",
+  summarizeBusy: isSwahili.value ? "Inafupisha..." : "Summarizing...",
+  englishCrashCourseIdle: isSwahili.value ? "Kozi Fupi ya Kiingereza" : "English Crash Course",
+  englishCrashCourseBusy: isSwahili.value ? "Inapakia..." : "Loading...",
+  stopReading: isSwahili.value ? "Simamisha Kusoma" : "Stop Reading",
+  read: isSwahili.value ? "Soma" : "Read",
+}));
 
 // state refs
 const isOpen = ref(false);
@@ -259,6 +282,7 @@ const previousChapterId = ref(null); // will store the previous ID (old value)
 const shouldAutoScroll = ref(true); // Re-enabled for Subject AI Teacher
 const bottomOffset = ref(24); // Dynamic bottom offset in pixels (default: 24px near bottom)
 const footerObserver = ref(null); // Footer intersection observer
+const isSmallScreen = ref(false);
 
 watch(
   () => isOpen.value,
@@ -333,6 +357,45 @@ const effectiveContext = computed(() => {
 // Chat component for regular messages (using /api/chat)
 // Use computed to ensure chapterName is reactive with localStorage fallback
 const currentChapterName = computed(() => effectiveContext.value.chapterName);
+const updateViewportState = () => {
+  if (typeof window === "undefined") return;
+  isSmallScreen.value = window.innerWidth < 768;
+};
+
+const launcherClass = computed(() =>
+  isSmallScreen.value
+    ? "fixed z-50 flex items-center gap-2 rounded-full bg-oceanBlue px-3 py-3 text-white shadow-lg transition-all duration-300 hover:bg-deepBlue right-3"
+    : "fixed z-50 flex items-center gap-2 rounded-full bg-oceanBlue p-4 text-white shadow-lg transition-all duration-300 hover:bg-deepBlue right-6"
+);
+
+const launcherStyle = computed(() => ({
+  bottom: isSmallScreen.value
+    ? `max(${bottomOffset.value}px, calc(12px + env(safe-area-inset-bottom)))`
+    : `${bottomOffset.value}px`,
+  transition: "bottom 0.3s ease-in-out",
+}));
+
+const panelClass = computed(() =>
+  isSmallScreen.value
+    ? "fixed inset-x-2 top-2 z-50 flex min-h-0 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
+    : "fixed right-6 z-50 flex w-full max-w-md min-h-0 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-2xl"
+);
+
+const panelStyle = computed(() =>
+  isSmallScreen.value
+    ? {
+        bottom: "max(8px, env(safe-area-inset-bottom))",
+        height: "min(calc(100dvh - 16px), calc(100svh - 16px))",
+        maxHeight: "min(calc(100dvh - 16px), calc(100svh - 16px))",
+        transition: "inset 0.3s ease-in-out, height 0.3s ease-in-out, max-height 0.3s ease-in-out",
+      }
+    : {
+        height: "min(600px, calc(100dvh - 48px), calc(100svh - 48px))",
+        bottom: `${bottomOffset.value}px`,
+        maxHeight: `min(600px, calc(100dvh - ${bottomOffset.value + 24}px), calc(100svh - ${bottomOffset.value + 24}px))`,
+        transition: "bottom 0.3s ease-in-out, max-height 0.3s ease-in-out, height 0.3s ease-in-out",
+      }
+);
 
 // Computed property to determine if typing indicator should be visible
 // This will be defined after chat is initialized
@@ -810,6 +873,7 @@ const throttledCheckFooter = () => {
 
 // Combine onMounted tasks
 onMounted(() => {
+  updateViewportState();
   // Initialize stored context from localStorage
   initializeStoredContext();
   
@@ -821,6 +885,8 @@ onMounted(() => {
   // Also check on scroll/resize as fallback - use throttled version for performance
   window.addEventListener('scroll', throttledCheckFooter, { passive: true });
   window.addEventListener('resize', checkFooterPosition, { passive: true });
+  window.addEventListener('resize', updateViewportState, { passive: true });
+  window.addEventListener('orientationchange', updateViewportState);
   
   // Initial check
   checkFooterPosition();
@@ -897,6 +963,8 @@ onMounted(() => {
     // Remove scroll/resize listeners
     window.removeEventListener('scroll', throttledCheckFooter);
     window.removeEventListener('resize', checkFooterPosition);
+    window.removeEventListener('resize', updateViewportState);
+    window.removeEventListener('orientationchange', updateViewportState);
     
     // Clear any pending scroll timeout
     if (scrollTimeout) {
@@ -1477,6 +1545,7 @@ const stopReading = () => {
 
 // cleanup
 onUnmounted(() => {
+  subjectTeacherOpenState.value = false;
   stopReading();
   // Clean up audio element
   if (audioElement.value) {
@@ -1499,45 +1568,38 @@ onUnmounted(() => {
   <button
     v-if="showLocalLauncher && !isOpen"
     @click="toggleAssistant"
-    class="fixed z-50 flex items-center gap-2 p-4 text-white transition-all duration-300 rounded-full shadow-lg right-6 bg-oceanBlue hover:bg-deepBlue"
-    :style="{ 
-      bottom: `${bottomOffset}px`,
-      transition: 'bottom 0.3s ease-in-out'
-    }"
-    title="Ask AI Subject Teacher"
+    :class="launcherClass"
+    :style="launcherStyle"
+    :title="subjectUi.launcherTitle"
   >
     <Icon
       name="fluent:bot-28-filled"
       size="24"
     />
-    <span class="hidden md:block">AI Subject Teacher</span>
+    <span class="hidden md:block">{{ subjectUi.title }}</span>
   </button>
 
   <!-- AI Assistant Panel -->
   <div
     v-if="isOpen"
-    class="fixed z-50 flex flex-col w-full max-w-md bg-white border border-gray-200 rounded-lg shadow-2xl right-6"
-    :style="{ 
-      height: '600px', 
-      bottom: `${bottomOffset}px`,
-      maxHeight: `calc(100vh - ${bottomOffset + 24}px)`,
-      transition: 'bottom 0.3s ease-in-out, max-height 0.3s ease-in-out'
-    }"
+    :class="panelClass"
+    :style="panelStyle"
   >
     <!-- Header -->
     <div
-      class="relative flex items-center justify-between p-4 text-white border-b rounded-t-lg bg-oceanBlue settings-container"
+      class="relative flex items-center justify-between border-b bg-oceanBlue p-4 text-white settings-container"
+      :class="isSmallScreen ? 'rounded-t-2xl' : 'rounded-t-lg'"
     >
-      <div>
-        <h3 class="font-semibold">AI Subject Teacher</h3>
-        <p class="text-xs opacity-90">{{ chapterName }}</p>
+      <div class="min-w-0 pr-2">
+        <h3 class="font-semibold">{{ subjectUi.title }}</h3>
+        <p class="truncate text-xs opacity-90">{{ chapterName }}</p>
       </div>
       <div class="relative flex items-center gap-2">
         <!-- Settings Button -->
         <button
           @click.stop="toggleSettings"
           class="p-1 rounded hover:bg-white/20"
-          title="Voice Settings"
+          :title="subjectUi.voiceSettings"
         >
           <Icon
             name="mdi:cog"
@@ -1547,12 +1609,12 @@ onUnmounted(() => {
         <!-- Settings Dropdown -->
         <div
           v-if="showSettings"
-          class="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg p-4 z-50 min-w-[200px] settings-container"
+          class="absolute top-full right-0 z-50 mt-2 min-w-[200px] max-w-[min(18rem,calc(100vw-2rem))] rounded-lg bg-white p-4 shadow-lg settings-container"
           @click.stop
         >
-          <h4 class="mb-2 font-semibold text-gray-900">Voice Settings</h4>
+          <h4 class="mb-2 font-semibold text-gray-900">{{ subjectUi.voiceSettings }}</h4>
           <p class="mb-3 text-xs text-gray-500">
-            Select voice for audio responses
+            {{ subjectUi.voiceSettingsHelp }}
           </p>
           <div class="space-y-2">
             <label class="flex items-center gap-2 cursor-pointer">
@@ -1562,7 +1624,7 @@ onUnmounted(() => {
                 :checked="voiceGender === 'female'"
                 @change="saveVoicePreference('female')"
               />
-              <span class="text-gray-900">Female Voice</span>
+              <span class="text-gray-900">{{ subjectUi.femaleVoice }}</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer">
               <input
@@ -1571,7 +1633,7 @@ onUnmounted(() => {
                 :checked="voiceGender === 'male'"
                 @change="saveVoicePreference('male')"
               />
-              <span class="text-gray-900">Male Voice</span>
+              <span class="text-gray-900">{{ subjectUi.maleVoice }}</span>
             </label>
           </div>
         </div>
@@ -1602,7 +1664,7 @@ onUnmounted(() => {
       role="log"
       aria-live="polite"
       :class="[
-        'flex-1 p-4 overflow-y-auto',
+        'flex-1 min-h-0 overflow-y-auto p-4',
         messages.length === 0
           ? 'flex items-center justify-center'
           : 'flex flex-col space-y-4',
@@ -1616,13 +1678,13 @@ onUnmounted(() => {
           v-if="messages.length === 0"
           class="text-center text-gray-500"
         >
-          <p>Hello! I'm your <strong>AI Subject Teacher</strong>.</p>
+          <p>{{ subjectUi.welcome }} <strong>{{ subjectUi.title }}</strong>.</p>
           <p class="mt-2 text-sm">
-            I'm here to help you understand <strong>{{ chapterName }}</strong
+            {{ subjectUi.intro }} <strong>{{ chapterName }}</strong
             >.
           </p>
           <p class="mt-1 text-xs opacity-75">
-            Feel free to ask me any questions about this competence!
+            {{ subjectUi.prompt }}
           </p>
         </div>
         <template #fallback>
@@ -1630,13 +1692,13 @@ onUnmounted(() => {
             v-if="messages.length === 0"
             class="text-center text-gray-500"
           >
-            <p>Hello! I'm your <strong>AI Subject Teacher</strong>.</p>
+            <p>{{ subjectUi.welcome }} <strong>{{ subjectUi.title }}</strong>.</p>
             <p class="mt-2 text-sm">
-              I'm here to help you understand <strong>{{ chapterName }}</strong
+              {{ subjectUi.intro }} <strong>{{ chapterName }}</strong
               >.
             </p>
             <p class="mt-1 text-xs opacity-75">
-              Feel free to ask me any questions about this competence!
+              {{ subjectUi.prompt }}
             </p>
           </div>
         </template>
@@ -1695,39 +1757,39 @@ onUnmounted(() => {
                 class="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-400"
               ></span>
             </div>
-            <span class="text-gray-500 text-sm ml-2">AI is typing...</span>
+            <span class="text-gray-500 text-sm ml-2">{{ subjectUi.typing }}</span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Input Area -->
-    <div class="p-4 border-t border-gray-200">
+    <div class="border-t border-gray-200 p-4">
       <form
         @submit.prevent="handleFormSubmit"
-        class="flex gap-2"
+        class="flex flex-col gap-2 sm:flex-row"
       >
         <input
           v-model="currentQuestion"
           type="text"
-          placeholder="Type your message..."
-          aria-label="Type your question for AI Subject Teacher"
-          class="flex-1 p-3 rounded-lg border border-gray-300 focus:outline-none"
+          :placeholder="subjectUi.inputPlaceholder"
+          :aria-label="subjectUi.inputAria"
+          class="flex-1 rounded-lg border border-gray-300 p-3 focus:outline-none"
           :disabled="isLoading || !chapterId"
         />
 
         <button
           type="submit"
           :disabled="!currentQuestion.trim() || isLoading || !chapterId"
-          class="bg-oceanBlue text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          class="rounded-lg bg-oceanBlue px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Send
+          {{ subjectUi.send }}
         </button>
       </form>
     </div>
 
     <!-- Quick Action Buttons -->
-    <div class="px-4 pt-2 pb-4 border-t border-gray-200">
+    <div class="border-t border-gray-200 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-2">
       <div class="flex flex-wrap gap-2">
         <button
           @click="handleSummarize"
@@ -1738,7 +1800,7 @@ onUnmounted(() => {
             name="mdi:file-document-outline"
             size="18"
           />
-          <span>{{ isSummarizing ? "Summarizing..." : "Summarize" }}</span>
+          <span>{{ isSummarizing ? subjectUi.summarizeBusy : subjectUi.summarizeIdle }}</span>
         </button>
         <button
           @click="handleEnglishCrashCourse"
@@ -1750,7 +1812,7 @@ onUnmounted(() => {
             size="18"
           />
           <span>{{
-            isEnglishCrashCourse ? "Loading..." : "English Crash Course"
+            isEnglishCrashCourse ? subjectUi.englishCrashCourseBusy : subjectUi.englishCrashCourseIdle
           }}</span>
         </button>
         <button
@@ -1762,7 +1824,7 @@ onUnmounted(() => {
             :name="isPlayingAudio ? 'mdi:pause' : 'mdi:volume-high'"
             size="18"
           />
-          <span>{{ isPlayingAudio ? "Stop Reading" : "Read" }}</span>
+          <span>{{ isPlayingAudio ? subjectUi.stopReading : subjectUi.read }}</span>
         </button>
       </div>
     </div>

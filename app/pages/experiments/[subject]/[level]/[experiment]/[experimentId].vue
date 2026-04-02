@@ -141,6 +141,8 @@ definePageMeta({
     middleware: 'auth'
 })
 
+const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
+
 // Define OnMounted
 onMounted(() => {
     //Add event listener to window screen /full/exit
@@ -151,7 +153,7 @@ onMounted(() => {
 })
 </script>
 <template>
-    <NuxtLayout name="home-layout">
+    <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
         <section class="relative inline-flex w-full overflow-hidden center-height" aria-labelledby="experiment-title"
             role="main">
             <!-- w-3/4 -->

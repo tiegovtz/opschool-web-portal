@@ -1,16 +1,74 @@
 <script setup>
-import messages from "~/utilities/messages";
 import { auth } from "~/utilities/validationInput";
 import { sanitize } from "~/utilities/sanitizeInput";
 import apiDocs from "~/utilities/apiDocs";
 import { dataEncrypt, dataDecrypt } from "~/utilities/encryption";
 import { useNavigationStore } from "~/stores/navigationStore";
 import { useAuthStore } from "~/stores/auth";
+import { consumePostLoginHome } from "~/utilities/postLoginHome";
 
 // // Use the State
 const navigationStore = useNavigationStore();
-const returnPath = navigationStore.getLatestRoute();
+const returnPath = computed(() => navigationStore.getLatestRoute());
 const route = useRoute();
+const authRedirectQuery = computed(() =>
+  typeof route.query.redirect === "string" && route.query.redirect.length > 0
+    ? { redirect: route.query.redirect }
+    : {}
+);
+const authLanguage = useAuthPageLanguage();
+const isSwahili = computed(() => authLanguage.value === "kiswahili");
+const content = computed(() => ({
+  title: isSwahili.value ? "Karibu" : "Welcome",
+  helper: isSwahili.value
+    ? "Weka jina la mtumiaji na nenosiri kuingia. Sehemu zinazotakiwa ni jina la mtumiaji na nenosiri."
+    : "Enter your username and password to sign in. Required fields are username and password.",
+  homeLinkAria: isSwahili.value
+    ? "Bonyeza kurudi nyumbani. Kiungo hiki kina nembo ya TET."
+    : "Press to go home. The link contains the TIE logo.",
+  usernameLabel: isSwahili.value
+    ? "Jina la mtumiaji, mfano barua pepe, simu, au jina la mwanafunzi"
+    : "Username (e.g., email, phone, or student name)",
+  usernamePlaceholder: isSwahili.value
+    ? "(mfano: example@email.com / 0622***722 / Student.Name)"
+    : "(e.g. example@email.com / 0622***722 / Student.Name)",
+  passwordLabel: isSwahili.value ? "Nenosiri" : "Password",
+  passwordPlaceholder: isSwahili.value ? "Nenosiri" : "Password",
+  showPassword: isSwahili.value ? "Onyesha nenosiri" : "Show password",
+  hidePassword: isSwahili.value ? "Ficha nenosiri" : "Hide password",
+  forgotPassword: isSwahili.value ? "Umesahau nenosiri?" : "Forgot password?",
+  rememberMe: isSwahili.value ? "Nikumbuke" : "Remember me",
+  signIn: isSwahili.value ? "Ingia" : "Sign in",
+  signingIn: isSwahili.value ? "Inaingia, tafadhali subiri" : "Signing in, please wait",
+  noAccount: isSwahili.value ? "Huna akaunti?" : "Don't have an account?",
+  signUp: isSwahili.value ? "Jisajili" : "Sign up",
+  tooManyAttempts: isSwahili.value
+    ? "Umejaribu kuingia mara"
+    : "You have attempted to sign in",
+  tooManyAttemptsSuffix: isSwahili.value
+    ? "Tafadhali weka upya nenosiri lako au fungua akaunti mpya."
+    : "times. Please reset your password or register a new account.",
+  resetPassword: isSwahili.value ? "Weka upya nenosiri" : "Reset your password",
+  registerNewAccount: isSwahili.value ? "Sajili akaunti mpya" : "Register a new account",
+  signInErrorAria: isSwahili.value ? "Hitilafu ya kuingia" : "Sign in error",
+  resetPasswordAria: isSwahili.value
+    ? "Tembelea ukurasa wa kuweka upya nenosiri kama hukumbuki nenosiri lako"
+    : "Visit the reset password page if you do not remember your password",
+  registerAria: isSwahili.value
+    ? "Tembelea ukurasa wa usajili kama huna akaunti"
+    : "Visit the registration page if you do not have an account",
+  errors: {
+    usernameInvalid: isSwahili.value
+      ? "Jina la mtumiaji si sahihi. Tumia barua pepe, namba ya simu au jina la mtumiaji."
+      : "Username is not valid (use email or phone number or username)",
+    passwordRequired: isSwahili.value ? "Nenosiri linahitajika" : "Password is required",
+    invalidCredentials: isSwahili.value ? "Jina la mtumiaji au nenosiri si sahihi" : "Invalid username or password",
+  },
+  feedback: {
+    authenticated: isSwahili.value ? "Umefanikiwa kuingia" : "Successfully logged in",
+    registered: isSwahili.value ? "Akaunti imefunguliwa. Tafadhali ingia." : "Account successfully created, Please login",
+  },
+}));
 const userRememberMe = useCookie("userRememberMe");
 const pass = userRememberMe?.value?.password?.length > 0 ? dataDecrypt(userRememberMe?.value?.password) : null
 useCookie("signInUserToken").value ? useCookie("signInUserToken").value = null : '';
@@ -47,13 +105,12 @@ const signIn = async () => {
   // Check for empty fields first - safely handle null/undefined username
   const username = (userSignIn.username || "").trim();
   if (!username || !auth.checkEmailPhoneOrUsername(username)) {
-    userSignIn.controller.errors.username = messages.error.form.usernameValid;
+    userSignIn.controller.errors.username = content.value.errors.usernameInvalid;
     isValid = false;
   }
 
   if (!userSignIn.password) {
-    userSignIn.controller.errors.password =
-      messages.error.form.passwordRequired;
+    userSignIn.controller.errors.password = content.value.errors.passwordRequired;
     isValid = false;
   }
 
@@ -82,12 +139,12 @@ const signIn = async () => {
         }
       );
 
-      userSignIn.controller.feedback = messages.success.auth.authenticated;
+      userSignIn.controller.feedback = content.value.feedback.authenticated;
 
       // unlock button
       isDisable.value = false;
 
-      userSignIn.controller.feedback = messages.success.auth.authenticated;
+      userSignIn.controller.feedback = content.value.feedback.authenticated;
       userSignIn.controller.isSucces = true;
 
       const accessToken = useCookie("signInAccessToken", {
@@ -161,11 +218,12 @@ const signIn = async () => {
       const redirectPath =
         typeof route.query.redirect === "string" && route.query.redirect.length > 0
           ? route.query.redirect
-          : returnPath;
-      router.replace(redirectPath || "/home");
+          : returnPath.value;
+      const landingChoiceHome = consumePostLoginHome();
+      router.replace(redirectPath || landingChoiceHome || "/secondary");
     } catch (error) {
       userSignIn.controller.attemps++;
-      userSignIn.controller.feedback = messages.error.auth.invalidCredentials;
+      userSignIn.controller.feedback = content.value.errors.invalidCredentials;
       isDisable.value = false;
 
       console.error("[Auth Error]:", error);
@@ -187,6 +245,17 @@ const togglePassword = () => {
 onMounted(() => {
   // Move focus to the heading when the sign-in page mounts
   headingRef.value?.focus();
+
+  // Show "account created successfully" after redirect from SignUp
+  if (route.query.registered === "1") {
+    userSignIn.controller.feedback = content.value.feedback.registered;
+    userSignIn.controller.isSucces = true;
+
+    const router = useRouter();
+    const nextQuery = { ...(route.query || {}) };
+    delete nextQuery.registered;
+    router.replace({ path: route.path, query: nextQuery });
+  }
 });
 
 // Clear validation errors when user types
@@ -198,8 +267,7 @@ watch(
       if (trimmedUsername && auth.checkEmailPhoneOrUsername(trimmedUsername)) {
         userSignIn.controller.errors.username = "";
       } else {
-        userSignIn.controller.errors.username =
-          messages.error.form.usernameValid;
+        userSignIn.controller.errors.username = content.value.errors.usernameInvalid;
       }
     } else {
       userSignIn.controller.errors.username = null;
@@ -229,10 +297,10 @@ watch(
     <div class="w-full max-w-md px-4 rounded-lg md:bg-white md:shadow-2xl md:pt-3">
       <!-- Main heading for this view -->
       <h1 id="Welcome" ref="headingRef" tabindex="-1" class="font-bold text-center text-large">
-        Welcome
+        {{ content.title }}
       </h1>
 
-      <NuxtLink aria-label="press to go home.The link contain TIE logo" to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
+      <NuxtLink :aria-label="content.homeLinkAria" to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
         <img tabindex="0" src="/logo/logo_tie.gif" class="object-contain w-full h-full"
           alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
       </NuxtLink>
@@ -242,7 +310,7 @@ watch(
         class="px-4 overflow-hidden text-textGray text-extraSmall" aria-describedby="signin-helper">
         <!-- Helper text (optional, can be expanded) -->
         <p id="signin-helper" class="sr-only">
-          Enter your username and password to sign in. Required fields are username and password.
+          {{ content.helper }}
         </p>
 
         <!-- Username -->
@@ -254,14 +322,14 @@ watch(
           },
         ]">
           <label for="username" class="sr-only">
-            Username (e.g., email, phone, or student name)
+            {{ content.usernameLabel }}
           </label>
 
           <div class="flex items-center w-full">
             <input id="username" type="text" v-model="userSignIn.username" name="username" autocomplete="username"
               :aria-invalid="!!userSignIn.controller.errors.username" aria-describedby="username-error"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
-              placeholder="(e.g. example@email.com / 0622***722 / Student.Name)" />
+              :placeholder="content.usernamePlaceholder" />
             <Icon name="solar:user-outline" class="w-5 h-5 text-textGray" aria-hidden="true" focusable="false" />
           </div>
 
@@ -288,18 +356,18 @@ watch(
               userSignIn.controller.errors.password,
           },
         ]">
-          <label for="password" class="sr-only">Password</label>
+          <label for="password" class="sr-only">{{ content.passwordLabel }}</label>
 
           <div class="flex items-center w-full gap-2">
             <input :type="showPassword ? 'text' : 'password'" id="password" v-model="userSignIn.password"
               name="password" autocomplete="current-password" aria-describedby="password-error"
-              :aria-invalid="!!userSignIn.controller.errors.password" placeholder="Password"
+              :aria-invalid="!!userSignIn.controller.errors.password" :placeholder="content.passwordPlaceholder"
               class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs" />
 
             <!-- Proper button for toggling password visibility -->
             <button type="button" class="p-1 rounded text-textGray focus:outline-none focus:ring-2 focus:ring-oceanBlue"
               :aria-pressed="showPassword ? 'true' : 'false'"
-              :aria-label="showPassword ? 'Hide password' : 'Show password'" @click="togglePassword">
+              :aria-label="showPassword ? content.hidePassword : content.showPassword" @click="togglePassword">
               <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'" class="w-5 h-5"
                 aria-hidden="true" />
             </button>
@@ -316,13 +384,13 @@ watch(
         <div class="flex items-center justify-between my-6">
           <NuxtLink to="/auth/ForgotPassword"
             class="text-sm cursor-pointer text-textGray underline-offset-2 hover:underline">
-            Forgot password?
+            {{ content.forgotPassword }}
           </NuxtLink>
 
           <div class="flex items-center gap-2">
             <input type="checkbox" id="remember" v-model="userSignIn.rememberMe" class="w-4 h-4 cursor-pointer" />
             <label for="remember" class="text-sm cursor-pointer text-textGray">
-              Remember me
+              {{ content.rememberMe }}
             </label>
           </div>
         </div>
@@ -330,46 +398,46 @@ watch(
         <!-- Sign in button -->
         <button type="submit" :disabled="isDisable" :aria-disabled="isDisable ? 'true' : 'false'"
           class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
-          <span v-if="!isDisable">Sign in</span>
-          <span v-else>Signing in, please wait</span>
+          <span v-if="!isDisable">{{ content.signIn }}</span>
+          <span v-else>{{ content.signingIn }}</span>
         </button>
 
         <p class="sr-only" role="status" aria-live="assertive" aria-atomic="true">
-          {{ isDisable ? 'Signing in, please wait...' : '' }}
+          {{ isDisable ? content.signingIn : '' }}
         </p>
 
         <!-- Sign up -->
         <div class="flex flex-col items-center gap-4 my-4">
-          <p class="text-sm text-textGray">Don&apos;t have an account?</p>
-          <NuxtLink to="/auth/SignUp"
+          <p class="text-sm text-textGray">{{ content.noAccount }}</p>
+          <NuxtLink :to="{ path: '/auth/SignUp', query: authRedirectQuery }"
             class="w-full p-2 text-center text-white capitalize transition-all duration-500 rounded-md cursor-pointer bg-darkBlue hover:bg-darkBlue/80">
-            Sign up
+            {{ content.signUp }}
           </NuxtLink>
         </div>
       </form>
 
       <!-- Too many attempts state -->
       <div v-else class="flex flex-col items-center justify-center w-full gap-2" aria-live="assertive" role="alert"
-        aria-label="sign in error">
+        :aria-label="content.signInErrorAria">
         <div class="py-3 text-center">
-          You have attempted to sign in
+          {{ content.tooManyAttempts }}
           <span class="text-oceanBlue">
             {{ userSignIn.controller.attemps }}
           </span>
-          times. Please reset your password or register a new account.
+          {{ content.tooManyAttemptsSuffix }}
         </div>
 
-        <NuxtLink aria-label="Visit to reset your password page, if you dont remember the password"
+        <NuxtLink :aria-label="content.resetPasswordAria"
           to="/auth/ForgotPassword"
           class="flex items-center justify-center w-full p-2 text-white capitalize rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
-          Reset your password
+          {{ content.resetPassword }}
         </NuxtLink>
 
         <span>or</span>
 
-        <NuxtLink aria-label="visit registration page, if you dont have " to="/auth/SignUp"
+        <NuxtLink :aria-label="content.registerAria" :to="{ path: '/auth/SignUp', query: authRedirectQuery }"
           class="flex items-center justify-center w-full p-2 mb-3 text-white capitalize rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
-          Register a new account
+          {{ content.registerNewAccount }}
         </NuxtLink>
       </div>
     </div>

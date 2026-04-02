@@ -19,6 +19,7 @@ logs
 .DS_Store
 .fleet
 .idea
+.nvmrc
 
 # Local env files
 .env
@@ -53,3 +54,19 @@ nextjs-migration-package/
 # Testing scripts
 scripts/test-*.js
 scripts/test-*.ts
+
+#ignore refference folder
+tie-web-portal-main/
+
+#ignore data files
+/public/data/activity.json
+/public/data/question.json
+/public/data/topic.json
+
+
+# ignore generated files from codex
+.codex
+.codex/
+
+# tie primary folder
+tie_open_school_primary_frontend

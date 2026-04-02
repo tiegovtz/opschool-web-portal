@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { layoutEffect } from "~/utilities/controlls";
 import { calculateTopicMetrics } from "~/utilities/topicMetrics.js";
+import {
+  getEducationRouteQuery,
+  resolveRouteLanguage,
+  resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 
 // Define Props
 const props = withDefaults(defineProps<{
@@ -17,6 +22,17 @@ const props = withDefaults(defineProps<{
   isLoggedIn:false,
   subjectImage:'/images/background2.webp'
 });
+
+const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
+const subjectTarget = computed(() => ({
+  path: `/interactive/${props.subjectName?.toLowerCase()}/${props.subjectId?.toLowerCase()}`,
+  query: getEducationRouteQuery(
+    resolveEducationLevelFromRoute(route),
+    {},
+    resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
+  ),
+}));
 
 // Define Emits
 const emit = defineEmits([
@@ -102,7 +118,7 @@ const setSubjectToView = () => {
   <!-- Is Logged In = False -->
   <NuxtLink
     v-else
-    :to="`/interactive/${subjectName?.toLowerCase()}/${subjectId?.toLowerCase()}`"
+    :to="subjectTarget"
     @click="setSubjectToView()"
     :class="[
       'relative flex  w-full  overflow-hidden transition-all duration-500 ease-in-out rounded-lg shadow-md group hover:bg-deepBlue',

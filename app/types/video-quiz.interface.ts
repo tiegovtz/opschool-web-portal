@@ -96,10 +96,17 @@ export interface QuizResult {
   score: number;
   response: any;
   timeSpent: number;
+  maxScore?: number;
+  percentage?: number;
+  startedAt?: string | null;
+  submittedAt?: string;
+  questionText?: string;
+  correctAnswer?: string | number | boolean;
+  questionType?: VideoQuizType;
 }
 
 // Extended video interface
-import type { Videos } from './video.iunterface';
+import type { Videos } from './video.interface';
 
 export interface InteractiveVideo extends Videos {
   quizzes?: VideoQuiz[];
@@ -112,4 +119,3 @@ export interface InteractiveVideo extends Videos {
     difficulty: 'beginner' | 'intermediate' | 'advanced';
   };
 }
-

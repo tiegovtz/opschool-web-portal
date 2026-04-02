@@ -1,21 +1,36 @@
 const conversationParser = (query: string): string => {
-  const regex = /conversation="([^"]+)",chapterId="([^"]+)"(?:,type="([^"]+)")?/g;
+  const regex = /conversation="([^"]+)",chapterId="([^"]+)"((?:,[a-zA-Z]+="[^"]*")*)/g;
 
-  return query.replace(regex, (match, identifier, chapterId, type) => {
+  return query.replace(regex, (match, identifier, chapterId, rawAttributes) => {
     const safeIdentifier = String(identifier || '').trim();
     const safeChapterId = String(chapterId || '').trim();
-    const safeType = String(type || '').trim();
+    const attributes = Object.fromEntries(
+      Array.from(String(rawAttributes || '').matchAll(/,([a-zA-Z]+)="([^"]*)"/g)).map(
+        ([, key, value]) => [key.toLowerCase(), value]
+      )
+    );
+    const safeType = String(attributes.type || '').trim();
+    const safeLanguage = String(attributes.language || '').trim();
     const normalizedType = safeType.toLowerCase();
+    const normalizedLanguage = safeLanguage.toLowerCase();
     const isConstant = normalizedType === 'constant';
-    const buttonLabel = isConstant ? 'English Practice' : 'Conversation Practice';
+    const isSwahili = normalizedLanguage === 'sw';
+    const buttonLabel = isSwahili
+      ? isConstant
+        ? 'Mazoezi ya Kiswahili'
+        : 'Mazoezi ya Mazungumzo'
+      : isConstant
+        ? 'English Practice'
+        : 'Conversation Practice';
 
     return `<button
         type="button"
         class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-oceanBlue text-white hover:bg-deepBlue transition-colors"
-        onclick="openConversationPractice('${safeChapterId}','${safeIdentifier}','${safeType}')"
+        onclick="openConversationPractice('${safeChapterId}','${safeIdentifier}','${safeType}','${safeLanguage}')"
         data-conversation-identifier="${safeIdentifier}"
         data-conversation-chapter="${safeChapterId}"
         data-conversation-type="${safeType}"
+        data-conversation-language="${safeLanguage}"
         aria-label="Open ${buttonLabel.toLowerCase()}"
       >
         ${buttonLabel}
@@ -28,7 +43,8 @@ declare global {
     openConversationPractice: (
       chapterId: string,
       identifier: string,
-      type?: string
+      type?: string,
+      language?: string
     ) => void;
     closeConversationPractice?: () => void;
     closeEnglishPractice?: () => void;
@@ -92,6 +108,9 @@ if (typeof window !== 'undefined') {
       messageHandler = null;
     }
   };
+  const handleCloseOverlayClick = (_event: MouseEvent) => {
+    closeOverlay();
+  };
 
   window.closeConversationPractice = closeOverlay;
   window.closeEnglishPractice = closeOverlay;
@@ -99,9 +118,11 @@ if (typeof window !== 'undefined') {
   window.openConversationPractice = (
     chapterId: string,
     identifier: string,
-    type?: string
+    type?: string,
+    language?: string
   ) => {
     const normalizedType = String(type || '').trim().toLowerCase();
+    const normalizedLanguage = String(language || '').trim().toLowerCase();
     const baseRoute =
       normalizedType === 'constant' ? '/english-practice' : '/conversation-practice';
     const params = new URLSearchParams();
@@ -110,6 +131,7 @@ if (typeof window !== 'undefined') {
     // Set type parameter: use provided type, or default to 'engage' if missing (since missing type means engage)
     const typeToUse = normalizedType || 'engage';
     params.set('type', typeToUse);
+    if (normalizedLanguage) params.set('language', normalizedLanguage);
     params.set('embed', '1');
     const url = `${baseRoute}?${params.toString()}`;
 
@@ -123,14 +145,14 @@ if (typeof window !== 'undefined') {
       overlay.setAttribute('role', 'dialog');
       overlay.setAttribute('aria-modal', 'true');
       overlay.style.cssText =
-        'position:fixed;inset:0;z-index:1000;display:flex;align-items:flex-start;justify-content:center;background:rgba(0,0,0,0.6);padding:16px;overflow-y:auto;padding-top:40px;';
+        'position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);padding:8px;overflow:hidden;';
       overlay.addEventListener('click', (event) => {
         if (event.target === overlay) closeOverlay();
       });
 
       const container = document.createElement('div');
       container.style.cssText =
-        'position:relative;width:100%;max-width:1100px;max-height:calc(100vh - 80px);background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.2);display:flex;flex-direction:column;';
+        'position:relative;width:100%;max-width:1100px;height:min(calc(100dvh - 16px), calc(100svh - 16px));max-height:min(calc(100dvh - 16px), calc(100svh - 16px));background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.2);display:flex;flex-direction:column;';
 
       const closeButton = document.createElement('button');
       closeButton.type = 'button';
@@ -138,7 +160,7 @@ if (typeof window !== 'undefined') {
       closeButton.textContent = '×';
       closeButton.style.cssText =
         'position:absolute;top:12px;right:12px;width:40px;height:40px;border-radius:9999px;border:none;background:#fff;color:#374151;font-size:24px;cursor:pointer;z-index:2;';
-      closeButton.addEventListener('click', closeOverlay);
+      closeButton.addEventListener('click', handleCloseOverlayClick);
 
       iframe = document.createElement('iframe');
       iframeRef = iframe;
@@ -146,7 +168,7 @@ if (typeof window !== 'undefined') {
       iframe.src = url;
       iframe.title = 'Conversation practice';
       iframe.style.cssText =
-        'width:100%;height:100%;min-height:520px;max-height:calc(100vh - 80px);border:none;display:block;background:#fff;';
+        'width:100%;height:100%;min-height:0;flex:1 1 auto;border:none;display:block;background:#fff;';
 
       container.appendChild(closeButton);
       container.appendChild(iframe);

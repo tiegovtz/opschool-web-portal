@@ -14,6 +14,14 @@ import apiDocs from "~/utilities/apiDocs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
+import {
+  getApiContentLanguage,
+  getEducationRouteQuery,
+  getHubLanguage,
+  getHubPath,
+  resolveRouteLanguage,
+  resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 
 // Defin Route
 const route = useRoute();
@@ -28,6 +36,21 @@ const decodeParam = (value: unknown) => {
 };
 const subjectId = String(route.params.subjectId ?? "");
 const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
+const primaryContentLanguage = usePrimaryContentLanguage();
+
+const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const tabLanguage = computed(() =>
+  getHubLanguage(
+    educationLevel.value,
+    resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
+  ),
+);
+const educationRouteQuery = computed(() =>
+  getEducationRouteQuery(educationLevel.value, {}, tabLanguage.value),
+);
+const apiLanguage = computed(() =>
+  getApiContentLanguage(educationLevel.value, tabLanguage.value),
+);
 
 // Define meta info about page
 useHead({
@@ -85,7 +108,7 @@ const slicedData = ref(); // Initial slice data to 9
 const activeTab = ref<tabs>("subjects");
 
 // First, fix the sliceData function
-const sliceData = (start, end) => {
+const sliceData = (start:number, end:number) => {
   if (!topic.value || !Array.isArray(topic.value) || topic.value.length === 0) {
     slicedData.value = [];
     return;
@@ -105,41 +128,52 @@ const sliceData = (start, end) => {
 const currentPage = ref(1);
 const pageSize = ref();
 const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
-  subjects: { path: "/home" },
-  "interactive-contents": { path: "/interactive" },
-  "learn-activities": { path: "/experiments" },
-  video: { path: "/video", query: { type: "conc" } },
-  "class-videos": { path: "/video", query: { type: "oth" } },
-  audio: { path: "/audio" },
+  "interactive-contents": { path: "/interactive", query: educationRouteQuery.value },
+  "learn-activities": { path: "/experiments", query: educationRouteQuery.value },
+  video: { path: "/video", query: { ...educationRouteQuery.value, type: "conc" } },
+  "class-videos": { path: "/video", query: { ...educationRouteQuery.value, type: "oth" } },
+  audio: { path: "/audio", query: educationRouteQuery.value },
   "smart-class": { path: "/smart-class" },
 };
 
 const subjectSlug = computed(() => subjectTitle.toLowerCase().trim().replace(/\s+/g, "-"));
 
 const buildTabTarget = (tab: string) => {
-  if (tab === "subjects") return TAB_TO_ROUTE.subjects;
+  if (tab === "subjects") {
+    return {
+      path: getHubPath(educationLevel.value),
+    };
+  }
   if (tab === "smart-class") return TAB_TO_ROUTE["smart-class"];
 
   const hasSubjectContext = !!subjectId && !!subjectSlug.value;
-  if (!hasSubjectContext) return TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  if (!hasSubjectContext) {
+    return TAB_TO_ROUTE[tab] ?? { path: getHubPath(educationLevel.value) };
+  }
 
   if (tab === "interactive-contents") {
-    return { path: `/interactive/${subjectSlug.value}/${subjectId}` };
+    return { path: `/interactive/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
   }
   if (tab === "learn-activities") {
-    return { path: `/experiments/${subjectSlug.value}/${subjectId}` };
+    return { path: `/experiments/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
   }
   if (tab === "video") {
-    return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "conc" } };
+    return {
+      path: `/video/${subjectSlug.value}/${subjectId}`,
+      query: { ...educationRouteQuery.value, type: "conc" },
+    };
   }
   if (tab === "class-videos") {
-    return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "oth" } };
+    return {
+      path: `/video/${subjectSlug.value}/${subjectId}`,
+      query: { ...educationRouteQuery.value, type: "oth" },
+    };
   }
   if (tab === "audio") {
-    return { path: `/audio/${subjectSlug.value}/${subjectId}` };
+    return { path: `/audio/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
   }
 
-  return TAB_TO_ROUTE[tab] ?? { path: "/home" };
+  return TAB_TO_ROUTE[tab] ?? { path: getHubPath(educationLevel.value) };
 };
 
 const switchTab = async (tab: string) => {
@@ -150,14 +184,18 @@ const switchTab = async (tab: string) => {
 };
 
 // Then, update fetchTopics to call sliceData after data is loaded
-const fetchTopics = async (params) => {
+const fetchTopics = async (params:any) => {
   try {
     status.value = "pending";
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`interactive-${subjectId}`,()=>$fetch(apiDocs.topics.getSubjectId.replace(
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`interactive-${educationLevel.value}-${tabLanguage.value}-${subjectId}`,()=>$fetch(apiDocs.topics.getSubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
-      params: params,
+      params: {
+        educationLevel: educationLevel.value,
+        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
+        ...params,
+      },
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
       },
@@ -248,6 +286,8 @@ const prevPage = () => {
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
 
+const contentLayoutLanguage = useContentLayoutLanguage();
+
 // Define Filters Reactive State
 const filters = reactive({
   level: null,
@@ -258,14 +298,14 @@ const level = ref(); // Initial Level State
 // watch emits changes
 watch(filters, (filters) => {
   fetchTopics({
-    level: filters.level.toString(),
-    subject: filters.subject.toString(),
+    level: filters?.level,
+    subject: filters?.subject,
   });
 });
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <div class="" :class="{ ' animate-pulse': isLoading }">
       <div class="flex flex-col gap-4">
         <!-- Keep hero-style search visible for both logged-in and logged-out -->
@@ -276,6 +316,8 @@ watch(filters, (filters) => {
           @emit-active-tab="switchTab($event)"
           :subject-title="subjectTitle"
           :topic-id="subjectId"
+          :tab-group="educationLevel"
+          :language="tabLanguage"
         />
       </div>
       <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">

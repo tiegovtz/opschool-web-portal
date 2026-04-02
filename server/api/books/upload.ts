@@ -175,7 +175,7 @@ export default defineEventHandler(async (event) => {
       
       const documents = chunks.map((chunk, index) => ({
         content: chunk.content,
-        embedding: embeddings[index],
+        embedding: embeddings[index] ?? [],
         metadata: {
           bookId,
           bookTitle,
@@ -267,4 +267,3 @@ export default defineEventHandler(async (event) => {
     });
   }
 });
-

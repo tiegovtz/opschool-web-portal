@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
+import Activity from "~/components/activities/Activity.vue";
+import activityParser from "~/utilities/parsers/activityParser";
 import experimentParser from "~/utilities/parsers/experimentParser";
 import modelParser from "~/utilities/parsers/modelParser";
 import { mediaParser } from "~/utilities/parsers/mediaParser";
 import conversationParser from "~/utilities/parsers/conversationParser";
-import { currentTopic, experimrntUrl } from "~/utilities/controlls";
+import { activityPopupId, currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import AIAssistant from "~/components/chapter/AIAssistant.vue";
 import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
@@ -14,9 +16,16 @@ import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
+import {
+  getEducationRouteQuery,
+  resolveEducationLevelFromRoute,
+  resolveRouteLanguage,
+} from "~/utilities/educationRoute";
 
 const route = useRoute();
 const router = useRouter();
+const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
+const primaryContentLanguage = usePrimaryContentLanguage();
 const safeDecode = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
   try {
@@ -30,6 +39,29 @@ const topicTitle = safeDecode(route.params.topic).replaceAll("-", " ");
 const topicStandard = safeDecode(route.params.subject);
 const topicLevel = safeDecode(route.params.level);
 currentTopic.value = topicTitle;
+
+const interactiveFallbackRoute = computed(() => {
+  const educationLevel = resolveEducationLevelFromRoute(route);
+  const language = resolveRouteLanguage(
+    route,
+    educationLevel,
+    primaryContentLanguage.value,
+  );
+
+  return {
+    path: "/interactive",
+    query: getEducationRouteQuery(educationLevel, {}, language),
+  };
+});
+
+const goToPreviousPage = async () => {
+  if (import.meta.client && window.history.length > 1) {
+    await router.back();
+    return;
+  }
+
+  await router.push(interactiveFallbackRoute.value);
+};
 
 // tokens cookies
 const signInAccessToken = useCookie("signInAccessToken");
@@ -119,6 +151,7 @@ let previousScrollTop = 0;
 
 // flag for toggling experiment fullscreeen
 const isFullscreen = ref(false);
+const activePopupActivityId = computed(() => String(activityPopupId.value ?? ""));
 
 // Changer Chapter
 const changeChapter = (action: string) => {
@@ -158,6 +191,17 @@ const fullScreen = () => {
     // set flag to opposite
     isFullscreen.value = !isFullscreen.value;
   }
+};
+
+const closeInteractivePopup = async () => {
+  experimrntUrl.value = null;
+  activityPopupId.value = "";
+
+  if (import.meta.client && document.fullscreenElement) {
+    await document.exitFullscreen().catch(() => null);
+  }
+
+  isFullscreen.value = false;
 };
 
 // const istoggleSidebar = ref(false)
@@ -299,6 +343,9 @@ const getChapter = async (chapterId: string) => {
   chapters.questions = null;
   chapters.isAttemptingQuizes = false; //close quiz
   chapters.currentChapterId = chapterId;
+  activityPopupId.value = "";
+  experimrntUrl.value = null;
+  isFullscreen.value = false;
   handleAudio(); // Pause any playing audio when chapter changes
   await ensureAccessTokenValid();
   announcement.value = `Loading activity of ${chapters.list?.find(c => c._id === chapterId)?.name} content please wait`;
@@ -870,9 +917,9 @@ watch(() => chapters.isAttemptingQuizes, async (newAttemptingQuizes) => {
   }
 })
 
-// Watch Exit experiment
-watch(() => experimrntUrl.value, async (newExperimentUrl) => {
-  if (!newExperimentUrl) {
+// Watch Exit interactive popup
+watch(() => [experimrntUrl.value, activityPopupId.value], async ([newExperimentUrl, newActivityId]) => {
+  if (!newExperimentUrl && !newActivityId) {
     await nextTick();
 
     // Call Function
@@ -887,17 +934,29 @@ definePageMeta({
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
-    <section v-if="experimrntUrl" class="relative w-full center-height" id="experiment-container">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
+    <section v-if="experimrntUrl || activityPopupId" class="relative w-full center-height" id="experiment-container">
       <div
         class="absolute top-0 right-0 flex items-center justify-center w-10 h-10 p-2 bg-red-500 rounded-full cursor-pointer"
-        @click="experimrntUrl = null">
+        @click="closeInteractivePopup">
         <Icon name="formkit:close" size="24" class="font-bold text-white" />
       </div>
-      <iframe :src="experimrntUrl" frameborder="0" :class="[
+      <iframe v-if="experimrntUrl" :src="experimrntUrl" frameborder="0" :class="[
         ' w-full  rounded-md !bg-white',
         isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
       ]"></iframe>
+      <div v-else :class="[
+        'w-full rounded-md !bg-white overflow-y-auto',
+        isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
+      ]">
+        <div class="mx-auto w-full max-w-7xl p-3 md:p-6">
+          <Activity
+            v-if="activePopupActivityId"
+            :key="activePopupActivityId"
+            :activity-id="activePopupActivityId"
+          />
+        </div>
+      </div>
       <!-- full screen controls -->
       <div
         class="absolute bottom-0 right-0 flex items-center justify-center w-10 h-10 p-2 text-white transition-all duration-500 rounded-md cursor-pointer screen-control bg-oceanBlue hover:bg-white hover:text-oceanBlue"
@@ -913,6 +972,9 @@ definePageMeta({
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :chapter-id="chapters.notes?._id ?? chapters.currentChapterId" :change-chapter="changeChapter"
+        :topic-id="chapters.notes?.topic?._id ?? topicId"
+        :subject-id="chapters.notes?.subject?._id ?? null"
+        :level-id="chapters.notes?.level?._id ?? ((userToken as any)?.value?.level?._id ?? null)"
         :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
         @emit-quiz-score="updateChapterProgress" />
     </div>
@@ -944,39 +1006,29 @@ definePageMeta({
           ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
           class="w-full py-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <NuxtLink aria-label="press link tp go back" :to="{
-                path: '/',
-                query: {
-                  tab: 'interactive-contents',
-                  subject: topicLevel,
-                  class: topicStandard,
-                },
-              }"
-                class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
-                <!-- {{
-                  topicLevel != null &&
-                    topicLevel != undefined &&
-                    topicLevel != "null"
-                    ? topicLevel
-                    : `Secondary`
-                }} -->
-                <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
-                <!-- <span>Back</span> -->
-              </NuxtLink>
+          <div class="flex w-full min-w-0 items-center justify-between gap-2">
+            <div class="flex min-w-0 flex-1 items-center gap-2">
+              <button
+                type="button"
+                class="inline-flex shrink-0 items-center justify-center rounded-full border-2 border-oceanBlue p-2 text-oceanBlue transition-colors hover:bg-oceanBlue/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/50"
+                aria-label="Back to interactive contents"
+                @click="goToPreviousPage"
+              >
+                <Icon name="vaadin:arrow-backward" size="22" class="text-oceanBlue" aria-hidden="true" />
+              </button>
 
-              <p :aria-label="`Competence header, ${chapters.notes?.name}`" role="heading"
-                class="font-medium text-medium" v-if="chapters.status === 'success'">
-                {{
-                  chapters.notes?.name
-                }}
+              <p
+                :aria-label="`Competence header, ${chapters.notes?.name}`"
+                role="heading"
+                class="min-w-0 flex-1 truncate font-medium text-medium"
+                v-if="chapters.status === 'success'"
+              >
+                {{ chapters.notes?.name }}
               </p>
             </div>
 
-            <!-- Header Description -->
-            <div class="flex lg:hidden" @click="toggleSidebar()">
-              <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" />
+            <div class="flex shrink-0 lg:hidden" @click="toggleSidebar()">
+              <Icon name="basil:menu-outline" class="cursor-pointer" size="2rem" aria-hidden="true" />
             </div>
           </div>
 
@@ -984,9 +1036,9 @@ definePageMeta({
           <div class="relative flex flex-col justify-center w-full gap-2 py-3 content-view">
 
             <!-- Chapter Notes -->
-            <div v-mathjax class="mx-auto notes md:px-4 w-full max-w-7xl" aria-label="Compitencies notes"
+            <div v-mathjax class="mx-auto notes md:px-4 w-full max-w-7xl flex-1" aria-label="Compitencies notes"
               aria-details="notes-extra-details" role="region"
-              v-html="enhanceAccessibility(conversationParser(experimentParser(modelParser(mediaParser(chapters.notes?.content)))))">
+              v-html="enhanceAccessibility(conversationParser(activityParser(experimentParser(modelParser(mediaParser(chapters.notes?.content))))))">
             </div>
 
             <p id="notes-extra-details" class="sr-only">

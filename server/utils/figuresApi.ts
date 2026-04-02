@@ -90,13 +90,13 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
   try {
     const authToken = await getAuthToken(token);
     
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...((options.headers as Record<string, string> | undefined) ?? {}),
     };
 
     if (authToken && authToken.trim()) {
-      headers['Authorization'] = `Bearer ${authToken}`;
+      headers.Authorization = `Bearer ${authToken}`;
     } else {
       const errorMessage = 'No user authentication token available. User must be authenticated to access figures API.';
       trackFiguresApiError({

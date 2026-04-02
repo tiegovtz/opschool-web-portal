@@ -4,13 +4,14 @@ export interface BaseEntity {
   name: string;
   createdAt?: string;
   updatedAt?: string;
-  isDefault?:boolean;
-  alt?:string;
-  thumbnail?:string;
-  syllabus?:string;
-  views?:number;
-  viewedBy?:any[];
-  isViewed?:boolean;
-  avgProgress?:number;
-  isDeleted?:boolean
+  isDefault?: boolean;
+  alt?: string;
+  thumbnail?: string;
+  syllabus?: string;
+  views?: number;
+  viewedBy?: any[];
+  isViewed?: boolean;
+  avgProgress?: number;
+  isDeleted?: boolean;
+  language?: string;
 }

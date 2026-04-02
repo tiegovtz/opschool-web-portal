@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white" @contextmenu.prevent >
     <!-- Header -->
-    <HeaderView />
+    <HeaderView :language :education-level />
 
     <!-- Main content -->
     <main class="wrapper-container" tabindex="-1" role="main">
@@ -12,12 +12,12 @@
     
     <!-- Feedback -->
     <div v-if="route.path !== '/feedback'" class="fixed right-2 z-10 top-[40%] transform -rotate-90 origin-bottom-right bg-oceanBlue hover:bg-deepBlue transition-all duration-500 ease-in-out rounded-md cursor-pointer">
-      <NuxtLink to="/feedback" class="px-4 py-2 text-white">feedback</NuxtLink>
+      <NuxtLink :to="feedbackLink" class="px-4 py-2 text-white">{{ language === 'english' ? 'Feedback' : 'Maoni' }}</NuxtLink>
     </div>
     
     <!-- Combinations -->
      <div  v-if="route.path !== '/pdf'" class="fixed right-2 z-10 top-[55%] transform -rotate-90 origin-bottom-right bg-oceanBlue hover:bg-deepBlue transition-all duration-500 ease-in-out rounded-md cursor-pointer">
-      <NuxtLink to="/pdf" class="px-4 py-2 text-white">Combinations of Subjects</NuxtLink>
+      <NuxtLink v-if="educationLevel !=='primary'" to="/pdf" class="px-4 py-2 text-white">{{ language === 'english' ? 'Combinations of Subjects' : 'Muhtasari wa Mafunzo' }}</NuxtLink>
      </div>
     
     <!-- 50 Years -->
@@ -26,12 +26,26 @@
     </div>  -->
     
     <!-- Footer -->
-    <FooterView />
+    <FooterView  :language :education-level />
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import FooterView from '@/components/included/FooterView.vue'
 import HeaderView from '~/components/included/HeaderView.vue'
+import type { LanguageSupport } from '~/types/language.interface';
+import type { EducationBucket } from '~/utilities/educationRoute';
 const route = useRoute()
+const props = withDefaults(
+  defineProps<{educationLevel?:EducationBucket,language?:LanguageSupport}>(),{
+    language:'english',
+  },
+)
+const feedbackLink = computed(() => ({
+  path: "/feedback",
+  query: {
+    lang: props.language === "kiswahili" ? "sw" : "en",
+    ...(props.educationLevel ? { educationLevel: props.educationLevel } : {}),
+  },
+}))
 </script>

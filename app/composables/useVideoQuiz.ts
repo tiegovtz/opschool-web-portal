@@ -1,17 +1,125 @@
 import { ref, computed, type Ref } from 'vue';
 import type { VideoQuiz, VideoInteraction, QuizResult, BranchResult } from '~/types/video-quiz.interface';
+import type {
+  QuizAttemptPayload,
+  QuizAttemptSessionPayload,
+} from '~/types/recommendation.interface';
+import { useRecommendationSnapshot } from '~/composables/useRecommendationSnapshot';
+import { buildVideoQuizId } from '~/utilities/learnerProgressHistory';
 
-export const useVideoQuiz = (videoId: string) => {
+type VideoQuizPersistenceContext = {
+  topicId?: string | null;
+  subjectId?: string | null;
+  levelId?: string | null;
+  sourceId?: string;
+  recommendationSnapshotId?: string | null;
+};
+
+export const useVideoQuiz = (
+  videoId: string,
+  persistenceContext: VideoQuizPersistenceContext = {},
+) => {
   const activeQuiz = ref<VideoQuiz | null>(null);
   const quizHistory = ref<VideoInteraction[]>([]);
   const currentPath = ref<string[]>([]);
   const quizzes = ref<VideoQuiz[]>([]);
   const quizStartTime = ref<number>(0);
+  const { snapshotId: activeRecommendationSnapshotId } =
+    useRecommendationSnapshot();
   
   const onQuizTrigger = ref<((quiz: VideoQuiz) => void) | null>(null);
   const onQuizSubmit = ref<((result: QuizResult) => void) | null>(null);
   const onBranchExecute = ref<((branchResult: BranchResult) => void) | null>(null);
   const onError = ref<((error: string) => void) | null>(null);
+
+  const persistQuizAttempt = async (
+    quiz: VideoQuiz,
+    result: QuizResult,
+  ): Promise<void> => {
+    const maxScore = Math.max(quiz.points || 1, 1);
+    const resolvedQuizId = buildVideoQuizId(videoId, quiz.id);
+    const resolvedSnapshotId =
+      persistenceContext.recommendationSnapshotId ??
+      activeRecommendationSnapshotId.value ??
+      null;
+
+    const sessionPayload: QuizAttemptSessionPayload = {
+      topicId: persistenceContext.topicId ?? null,
+      subjectId: persistenceContext.subjectId ?? null,
+      levelId: persistenceContext.levelId ?? null,
+      chapterId: null,
+      videoId,
+      sourceType: 'interactive_video_quiz',
+      sourceId: persistenceContext.sourceId ?? videoId,
+      recommendationSnapshotId: resolvedSnapshotId,
+      quizId: resolvedQuizId,
+      totalQuestions: 1,
+      correctAnswers: result.isCorrect ? 1 : 0,
+      totalScore: result.score,
+      maxScore,
+      percentage: result.percentage ?? (result.isCorrect ? 100 : 0),
+      startedAt: result.startedAt ?? null,
+      submittedAt: result.submittedAt ?? new Date().toISOString(),
+    };
+
+    const attemptPayload: QuizAttemptPayload = {
+      topicId: persistenceContext.topicId ?? null,
+      subjectId: persistenceContext.subjectId ?? null,
+      levelId: persistenceContext.levelId ?? null,
+      chapterId: null,
+      videoId,
+      sourceType: 'interactive_video_quiz',
+      sourceId: persistenceContext.sourceId ?? videoId,
+      recommendationSnapshotId: resolvedSnapshotId,
+      quizId: resolvedQuizId,
+      questionId: resolvedQuizId,
+      questionType: result.questionType ?? quiz.type,
+      questionText: result.questionText ?? quiz.question,
+      selectedAnswer: result.response,
+      correctAnswer: result.correctAnswer ?? quiz.correctAnswer,
+      isCorrect: result.isCorrect,
+      scoreEarned: result.score,
+      maxScore,
+      percentage: result.percentage ?? (result.isCorrect ? 100 : 0),
+      timeSpentSeconds: result.timeSpent,
+      startedAt: result.startedAt ?? null,
+      submittedAt: result.submittedAt ?? new Date().toISOString(),
+      metadata: {
+        difficulty: quiz.metadata?.difficulty ?? null,
+        learningObjective: quiz.metadata?.learningObjective ?? null,
+        videoTimestamp: quiz.timestamp ?? null,
+      },
+    };
+
+    try {
+      const sessionResponse = await $fetch<any>(
+        '/api/progress/quiz-attempt-sessions',
+        {
+          method: 'POST',
+          body: sessionPayload,
+        },
+      );
+      const sessionId =
+        sessionResponse?.sessionId ||
+        sessionResponse?._id ||
+        sessionResponse?.id ||
+        null;
+
+      await $fetch('/api/progress/quiz-attempts', {
+        method: 'POST',
+        body: {
+          sessionId,
+          attempts: [attemptPayload],
+        },
+      });
+    } catch (error: any) {
+      const errorMsg = `Failed to persist quiz attempt: ${error?.message || error}`;
+      console.error('[useVideoQuiz]', errorMsg, error);
+      if (onError.value) {
+        onError.value(errorMsg);
+      }
+    }
+  };
 
   /**
    * Load quizzes for video
@@ -100,6 +208,11 @@ export const useVideoQuiz = (videoId: string) => {
     const timeSpent = quizStartTime.value > 0 
       ? Math.floor((Date.now() - quizStartTime.value) / 1000) 
       : 0;
+    const startedAt = quizStartTime.value > 0
+      ? new Date(quizStartTime.value).toISOString()
+      : null;
+    const submittedAt = new Date().toISOString();
+    const maxScore = Math.max(quiz.points || 1, 1);
 
     // Create interaction record
     const interaction: VideoInteraction = {
@@ -129,7 +242,16 @@ export const useVideoQuiz = (videoId: string) => {
       score: interaction.score,
       response: answer,
       timeSpent,
+      maxScore,
+      percentage: maxScore > 0 ? Math.round((interaction.score / maxScore) * 100) : 0,
+      startedAt,
+      submittedAt,
+      questionText: quiz.question,
+      correctAnswer: quiz.correctAnswer,
+      questionType: quiz.type,
     };
+
+    void persistQuizAttempt(quiz, result);
 
     if (onQuizSubmit.value) {
       onQuizSubmit.value(result);
@@ -249,4 +371,3 @@ export const useVideoQuiz = (videoId: string) => {
     onError,
   };
 };
-

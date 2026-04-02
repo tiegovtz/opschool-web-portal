@@ -1,4 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import { fileURLToPath } from "node:url";
 import { vite as vidstack } from "vidstack/plugins";
 
 export default defineNuxtConfig({
@@ -39,7 +40,6 @@ export default defineNuxtConfig({
     "@nuxtjs/google-fonts",
     "@nuxt/image",
     "@nuxt/icon",
-    "nuxt-swiper",
   ],
 
   image: {
@@ -65,7 +65,7 @@ export default defineNuxtConfig({
   build: {
     transpile: ["vuetify"],
   },
-
+  
   vite: {
     css: {
       preprocessorOptions: {
@@ -77,7 +77,17 @@ export default defineNuxtConfig({
     plugins: [vidstack()],
     optimizeDeps: {
       force: true, // Force re-optimization of dependencies
-      include: ['pinia', 'pinia-plugin-persistedstate'],
+      include: [
+        'pinia',
+        'pinia-plugin-persistedstate',
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        '@google/model-viewer',
+        '@ai-sdk/vue',
+        'bowser',
+        'axios',
+        'markdown-it',
+      ],
     },
     server: {
       fs: {
@@ -92,4 +102,3 @@ export default defineNuxtConfig({
     },
   }
 });
-

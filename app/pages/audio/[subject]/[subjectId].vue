@@ -15,6 +15,14 @@ import customGridTwo from "~/components/home/customGridTwo.vue";
 import AudioCard from "~/components/audio/audioCard.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
+import {
+  getApiContentLanguage,
+  getEducationRouteQuery,
+  getHubLanguage,
+  getHubPath,
+  resolveRouteLanguage,
+  resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 
 
 // Defin Route
@@ -32,28 +40,42 @@ const subjectId = String(route.params.subjectId ?? "");
 const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
 const activeTab = ref("audio");
 const subjectSlug = computed(() => (subjectTitle || "").toLowerCase().trim().replace(/\s+/g, "-"));
+const primaryContentLanguage = usePrimaryContentLanguage();
+const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const language = computed(() =>
+  getHubLanguage(
+    educationLevel.value,
+    resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
+  ),
+);
+const educationRouteQuery = computed(() =>
+  getEducationRouteQuery(educationLevel.value, {}, language.value),
+);
+const apiLanguage = computed(() =>
+  getApiContentLanguage(educationLevel.value, language.value),
+);
 
 const buildTabTarget = (tab) => {
-  if (tab === "subjects") return { path: "/home" };
+  if (tab === "subjects") return { path: getHubPath(educationLevel.value) };
   if (tab === "smart-class") return { path: "/smart-class" };
 
   const hasSubjectContext = !!subjectId && !!subjectSlug.value;
   if (!hasSubjectContext) {
-    if (tab === "interactive-contents") return { path: "/interactive" };
-    if (tab === "learn-activities") return { path: "/experiments" };
-    if (tab === "video") return { path: "/video", query: { type: "conc" } };
-    if (tab === "class-videos") return { path: "/video", query: { type: "oth" } };
-    if (tab === "audio") return { path: "/audio" };
-    return { path: "/home" };
+    if (tab === "interactive-contents") return { path: "/interactive", query: educationRouteQuery.value };
+    if (tab === "learn-activities") return { path: "/experiments", query: educationRouteQuery.value };
+    if (tab === "video") return { path: "/video", query: { ...educationRouteQuery.value, type: "conc" } };
+    if (tab === "class-videos") return { path: "/video", query: { ...educationRouteQuery.value, type: "oth" } };
+    if (tab === "audio") return { path: "/audio", query: educationRouteQuery.value };
+    return { path: getHubPath(educationLevel.value) };
   }
 
-  if (tab === "interactive-contents") return { path: `/interactive/${subjectSlug.value}/${subjectId}` };
-  if (tab === "learn-activities") return { path: `/experiments/${subjectSlug.value}/${subjectId}` };
-  if (tab === "video") return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "conc" } };
-  if (tab === "class-videos") return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { type: "oth" } };
-  if (tab === "audio") return { path: `/audio/${subjectSlug.value}/${subjectId}` };
+  if (tab === "interactive-contents") return { path: `/interactive/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
+  if (tab === "learn-activities") return { path: `/experiments/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
+  if (tab === "video") return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { ...educationRouteQuery.value, type: "conc" } };
+  if (tab === "class-videos") return { path: `/video/${subjectSlug.value}/${subjectId}`, query: { ...educationRouteQuery.value, type: "oth" } };
+  if (tab === "audio") return { path: `/audio/${subjectSlug.value}/${subjectId}`, query: educationRouteQuery.value };
 
-  return { path: "/home" };
+  return { path: getHubPath(educationLevel.value) };
 };
 
 const switchTab = async (tab) => {
@@ -113,7 +135,6 @@ const userToken = useCookie("signInUserToken");
 const status = ref("pending"); // Initial Status State
 const topic = ref([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
-const videoType = route.query?.type ? route.query?.type === 'conc' ? "Conceptual":'Other' :'Conceptual'; // Initial audio type state
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
@@ -136,31 +157,20 @@ const sliceData = (start, end) => {
 const currentPage = ref(1);
 const pageSize = ref();
 
-// Then, update fetchVideos to call sliceData after data is loaded
-const fetchVideos = async (params) => {
-
-  if(!params){
-    params = {
-      ...params,
-      videoType:videoType?videoType: 'Conceptual'
-    }
-
-    delete params?.type
-  }
-
-
-// remove key type from params
-  if(params){
-    delete params?.type
-  }
+// Then, update fetchAudios to call sliceData after data is loaded
+const fetchAudios = async (params) => {
 
   try {
     status.value = "pending";
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`videos-${subjectId}-${params?.toString()}`,()=>$fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`audio-${educationLevel.value}-${language.value}-${subjectId}-${params?.toString()}`,()=>$fetch(apiDocs.audio.getPublicAudioBySubjectId.replace(
         "{subjectId}",
         subjectId
       ), {
-      params: params,
+      params: {
+        educationLevel: educationLevel.value,
+        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
+        ...params,
+      },
     }));
 
     // Call State Define above
@@ -179,7 +189,7 @@ const fetchVideos = async (params) => {
 };
 
 // Call Fetch Topics function
-fetchVideos();
+fetchAudios();
 
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
@@ -256,35 +266,32 @@ const filters = reactive({
 const level = ref(); // Initial Level State
 // watch emits changes
 watch(filters, (filters) => {
-  fetchVideos({
+  fetchAudios({
     level: filters.level.toString(),
     subject: filters.subject.toString(),
   });
 });
 
-watch (()=>route.query?.type,()=>{
-  activeTab.value = "audio";
-  
-  fetchVideos({
-    videoType: route.query?.type == 'conc'? 'Conceptual' : 'others'
-  })
-})
+const contentLayoutLanguage = useContentLayoutLanguage();
 </script>
 
 <template>
-  <NuxtLayout name="home-layout">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <div :class="[
       ' ',
       { ' animate-pulse': isLoading }
     ]">
-      <HomeSearchbar v-if="userToken" appearance="rounded" />
-      <HeroSection v-else />
+      <HomeSearchbar v-if="userToken" appearance="rounded" :language :education-level="educationLevel" />
+      <HeroSection v-else :language :education-level="educationLevel" />
         <TabBar 
           :is-logged-in="!!userToken"
           :active-tab="activeTab"
           @emit-active-tab="switchTab($event)"
           :subject-title="subjectTitle"
           :topic-id="subjectId"
+          :language
+          :education-level="educationLevel"
+          :tab-group="educationLevel"
         />
       <div
         v-if="status === 'pending'"

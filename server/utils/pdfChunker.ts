@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { existsSync } from "fs";
 

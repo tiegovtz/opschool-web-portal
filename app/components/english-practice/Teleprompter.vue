@@ -7,6 +7,7 @@
           :name="primaryAvatar.name"
           :type="primaryAvatar.type"
           position="left"
+          :ui-language="uiLanguage"
           :is-active="currentTurn === primaryAvatar.id"
           :is-speaking="currentTurn === primaryAvatar.id && (primaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
           :is-waiting="currentTurn !== primaryAvatar.id && !(primaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
@@ -17,6 +18,7 @@
           :name="secondaryAvatar.name"
           :type="secondaryAvatar.type"
           position="right"
+          :ui-language="uiLanguage"
           :is-active="currentTurn === secondaryAvatar.id"
           :is-speaking="currentTurn === secondaryAvatar.id && (secondaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
           :is-waiting="currentTurn !== secondaryAvatar.id && !(secondaryAvatar.type === 'ai' ? isAISpeaking : isRecording)"
@@ -32,7 +34,7 @@
       <div class="text-center mb-2">
         <div class="inline-block px-3 py-1.5 sm:px-4 sm:py-2 bg-oceanBlue/10 rounded-full">
           <span class="text-xs sm:text-sm font-medium text-oceanBlue">
-            Line {{ currentLineIndex + 1 }} of {{ totalLines }}
+            {{ lineCounterLabel }}
           </span>
         </div>
       </div>
@@ -41,7 +43,7 @@
         <!-- Header with read-aloud controls -->
         <div class="flex items-center justify-between mb-3">
           <div class="text-xs text-gray-500 uppercase tracking-wider">
-            {{ currentSpeakerLabel }}'s Line
+            {{ currentSpeakerLineLabel }}
           </div>
           <!-- Read-aloud controls -->
           <div class="flex items-center gap-2">
@@ -145,17 +147,17 @@
         />
       </div>
       <h2 class="text-3xl font-bold text-gray-800 mb-4">
-        Ready to Practice
+        {{ emptyStateTitle }}
       </h2>
       <p class="text-lg text-gray-600">
-        Click the microphone to start speaking. Words will light up as you speak!
+        {{ emptyStateDescription }}
       </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, watch, ref, nextTick } from 'vue';
+import { computed, watch, ref, nextTick, type ComponentPublicInstance } from 'vue';
 import type { SpeakerType, PracticeMode, ConversationParticipant } from '~/types/script.interface';
 import type { ScriptLine } from '~/types/script.interface';
 import { useReadAloud } from '~/composables/useReadAloud';
@@ -174,9 +176,11 @@ interface Props {
   isAISpeaking?: boolean;
   currentWordIndex?: number; // Track current position in script words
   participants?: ConversationParticipant[];
+  uiLanguage?: 'en' | 'sw';
 }
 
 const props = defineProps<Props>();
+const isSwahili = computed(() => props.uiLanguage === 'sw');
 
 // Read-aloud composable
 const readAloud = useReadAloud();
@@ -189,8 +193,14 @@ const scriptWords = computed(() => {
   return props.currentScriptLine.text.trim().split(/\s+/);
 });
 
-const setWordRef = (index: number, el: Element | null) => {
-  wordRefs.value[index] = el as HTMLElement | null;
+const setWordRef = (index: number, el: Element | ComponentPublicInstance | null) => {
+  if (!el) {
+    wordRefs.value[index] = null;
+    return;
+  }
+  const maybeVm = el as ComponentPublicInstance & { $el?: unknown };
+  const resolved = (maybeVm.$el as Element | undefined) ?? (el as Element);
+  wordRefs.value[index] = (resolved as HTMLElement) || null;
 };
 
 // Get word state based on sequential position
@@ -282,6 +292,20 @@ const currentSpeakerLabel = computed(() => {
   }
   return participantNameMap.value.get(props.currentScriptLine.speaker) || 'Speaker';
 });
+const lineCounterLabel = computed(() =>
+  isSwahili.value
+    ? `Mstari wa ${props.currentLineIndex + 1} kati ya ${props.totalLines}`
+    : `Line ${props.currentLineIndex + 1} of ${props.totalLines}`
+);
+const currentSpeakerLineLabel = computed(() =>
+  isSwahili.value ? `Mstari wa ${currentSpeakerLabel.value}` : `${currentSpeakerLabel.value}'s Line`
+);
+const emptyStateTitle = computed(() => (isSwahili.value ? 'Tayari Kufanya Mazoezi' : 'Ready to Practice'));
+const emptyStateDescription = computed(() =>
+  isSwahili.value
+    ? 'Bonyeza kipaza sauti kuanza kuzungumza. Maneno yataangazwa unapoongea!'
+    : 'Click the microphone to start speaking. Words will light up as you speak!'
+);
 
 // Check if read-aloud should be disabled
 const isReadAloudDisabled = computed(() => {
@@ -318,7 +342,6 @@ const handleReadAloudToggle = () => {
       pitch: 1.1,
       volume: 1,
       voiceType: inferVoiceTypeByName(currentSpeakerLabel.value),
-      audioUrl: constantAudioUrl,
       disableHighlighting: Boolean(constantAudioUrl),
     }
   );
@@ -346,7 +369,6 @@ const handleRepeat = () => {
       pitch: 1.1,
       volume: 1,
       voiceType: inferVoiceTypeByName(currentSpeakerLabel.value),
-      audioUrl: constantAudioUrl,
       disableHighlighting: Boolean(constantAudioUrl),
     }
   );
@@ -385,7 +407,7 @@ watch(
   () => [props.currentWordIndex, props.isRecording],
   ([index, isRecording]) => {
     if (!isRecording) return;
-    if (!textContainer.value || index == null || index < 0) return;
+    if (!textContainer.value || typeof index !== 'number' || index < 0) return;
     const el = wordRefs.value[index];
     if (!el) return;
     el.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });

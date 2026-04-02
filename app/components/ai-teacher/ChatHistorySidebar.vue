@@ -3,12 +3,14 @@
   <div
     v-if="isOpen"
     :class="[
-      'flex-shrink-0 w-80 h-full bg-white shadow-lg relative flex-col',
-      compact ? 'flex' : 'hidden md:flex'
+      'relative min-h-0 flex-col overflow-hidden bg-white shadow-lg',
+      compact
+        ? 'flex h-full w-full rounded-2xl border border-gray-200'
+        : 'hidden h-full w-80 flex-shrink-0 md:flex'
     ]"
   >
     <!-- Header -->
-    <div class="p-5">
+    <div class="border-b border-gray-100 p-4 sm:p-5">
       <div class="flex items-center justify-between mb-4">
         <div class="flex w-full items-center gap-3">
           <div
@@ -22,8 +24,8 @@
             />
           </div>
           <div class="">
-            <h2 class="text-lg font-bold tracking-tight">Chat History</h2>
-            <p class="text-xs font-medium">Your conversations</p>
+            <h2 class="text-lg font-bold tracking-tight">{{ labels.historyTitle }}</h2>
+            <p class="text-xs font-medium">{{ labels.yourConversations }}</p>
           </div>
           <!-- <button
             @click="handleNewChat"
@@ -37,8 +39,8 @@
         </div>
         <button
           @click="$emit('close')"
-          class="md:hidden text-oceanBlue hover:bg-white/20 p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95"
-          aria-label="Close sidebar"
+          class="p-2 text-oceanBlue transition-all duration-200 rounded-xl hover:bg-slate-100 active:scale-95"
+          :aria-label="labels.closeSidebar"
         >
           <Icon
             name="heroicons:x-mark"
@@ -48,14 +50,20 @@
       </div>
       <button
         @click="handleNewChat"
-        class="w-full text-oceanBlue text-sm px-4 py-3 rounded-xl hover:bg-gray-50 transition-all duration-200 shadow-[0px_0px_50px_5px_rgba(0,0,0,0.1)] hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 group"
+        class="flex items-center justify-center w-full gap-2 px-4 py-3 text-sm text-oceanBlue transition-all duration-200 rounded-xl hover:bg-gray-50 shadow-[0px_0px_50px_5px_rgba(0,0,0,0.1)] hover:scale-[1.02] active:scale-[0.98] group"
       >
         <Icon
           name="heroicons:plus"
           class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300"
         />
-        <span>New Chat</span>
+        <span>{{ labels.newChat }}</span>
       </button>
+      <p
+        v-if="navigationMessage"
+        class="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700"
+      >
+        {{ navigationMessage }}
+      </p>
     </div>
 
     <!-- Search Bar (optional enhancement) -->
@@ -77,7 +85,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search conversations..."
+            :placeholder="labels.searchPlaceholder"
             class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue/20 focus:border-oceanBlue/50 bg-white transition-all"
           />
         </div>
@@ -96,7 +104,7 @@
             ></div>
           </div>
           <p class="mt-4 text-sm text-gray-500 font-medium">
-            Loading conversations...
+            {{ labels.loadingConversations }}
           </p>
         </div>
       </div>
@@ -117,13 +125,13 @@
             />
           </div>
           <p class="text-sm font-semibold text-gray-700 mb-1">
-            {{ searchQuery ? "No conversations found" : "No chat history yet" }}
+            {{ searchQuery ? labels.noConversationsFound : labels.noChatHistory }}
           </p>
           <p class="text-xs text-gray-500 mt-1">
             {{
               searchQuery
-                ? "Try a different search term"
-                : "Start a new conversation to see it here"
+                ? labels.tryDifferentSearch
+                : labels.startNewConversation
             }}
           </p>
           <button
@@ -131,7 +139,7 @@
             @click="handleNewChat"
             class="mt-4 px-4 py-2 text-xs font-medium text-oceanBlue hover:text-deepBlue hover:bg-oceanBlue/5 rounded-lg transition-colors"
           >
-            Create your first chat →
+            {{ labels.createFirstChat }} →
           </button>
         </div>
       </div>
@@ -199,7 +207,7 @@
                     : 'text-gray-600'
                 "
               >
-                {{ session.topic || session.details || "No description" }}
+                {{ session.topic || session.details || labels.noDescription }}
               </p>
               <div class="flex items-center gap-2.5 mt-2.5 flex-wrap">
                 <div class="flex items-center gap-1.5">
@@ -233,7 +241,7 @@
                   "
                 >
                   {{ session.messageCount }}
-                  {{ session.messageCount === 1 ? "msg" : "msgs" }}
+                  {{ session.messageCount === 1 ? labels.msg : labels.msgs }}
                 </span>
               </div>
             </div>
@@ -241,8 +249,10 @@
             <!-- Delete Button -->
             <button
               @click.stop="handleDeleteSession(session.id)"
+              :disabled="disableDelete"
               class="opacity-0 group-hover:opacity-100 flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
-              aria-label="Delete conversation"
+              :class="disableDelete ? 'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-gray-400 hover:scale-100' : ''"
+              :aria-label="labels.deleteConversation"
             >
               <Icon
                 name="heroicons:trash"
@@ -262,7 +272,7 @@
         <div class="text-xs text-gray-600 font-semibold">
           <span class="text-oceanBlue font-bold">{{ sessions.length }}</span>
           <span class="ml-1">{{
-            sessions.length === 1 ? "conversation" : "conversations"
+            sessions.length === 1 ? labels.conversation : labels.conversations
           }}</span>
         </div>
         <button
@@ -270,7 +280,7 @@
           @click="searchQuery = ''"
           class="text-xs text-oceanBlue hover:text-deepBlue font-medium hover:underline"
         >
-          Clear
+          {{ labels.clear }}
         </button>
       </div>
     </div>
@@ -279,10 +289,10 @@
   <!-- Mobile Sidebar (overlay) -->
   <div
     v-show="isOpen && !compact"
-    class="md:hidden fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-xl z-30 w-80 flex flex-col"
+    class="fixed left-0 top-0 z-30 flex h-full w-80 max-w-[calc(100%-1rem)] min-h-0 flex-col overflow-hidden border-r border-gray-200 bg-white shadow-xl md:hidden"
   >
     <!-- Header -->
-    <div class="p-5 border-b bg-oceanBlue shadow-lg">
+    <div class="border-b bg-oceanBlue p-4 shadow-lg sm:p-5">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-3">
           <div
@@ -295,15 +305,15 @@
           </div>
           <div>
             <h2 class="text-lg font-bold text-white tracking-tight">
-              Chat History
+              {{ labels.historyTitle }}
             </h2>
-            <p class="text-xs text-white/80 font-medium">Your conversations</p>
+            <p class="text-xs text-white/80 font-medium">{{ labels.yourConversations }}</p>
           </div>
         </div>
         <button
           @click="$emit('close')"
           class="text-white hover:bg-white/20 p-2 rounded-xl transition-all duration-200 hover:scale-110 active:scale-95"
-          aria-label="Close sidebar"
+          :aria-label="labels.closeSidebar"
         >
           <Icon
             name="heroicons:x-mark"
@@ -319,8 +329,14 @@
           name="heroicons:plus"
           class="w-5 h-5 group-hover:rotate-90 transition-transform duration-300"
         />
-        <span>New Chat</span>
+        <span>{{ labels.newChat }}</span>
       </button>
+      <p
+        v-if="navigationMessage"
+        class="mt-3 rounded-xl bg-white/90 px-3 py-2 text-xs font-medium text-oceanBlue"
+      >
+        {{ navigationMessage }}
+      </p>
     </div>
 
     <!-- Search Bar -->
@@ -336,7 +352,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Search conversations..."
+          :placeholder="labels.searchPlaceholder"
           class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-oceanBlue/20 focus:border-oceanBlue/50 bg-white transition-all"
         />
       </div>
@@ -499,7 +515,9 @@
             <!-- Delete Button -->
             <button
               @click.stop="handleDeleteSession(session.id)"
+              :disabled="disableDelete"
               class="opacity-0 group-hover:opacity-100 flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
+              :class="disableDelete ? 'cursor-not-allowed opacity-40 hover:bg-transparent hover:text-gray-400 hover:scale-100' : ''"
               aria-label="Delete conversation"
             >
               <Icon
@@ -536,7 +554,7 @@
 
   <!-- Mobile Overlay -->
   <div
-    v-if="isOpen"
+    v-if="isOpen && !compact"
     @click="$emit('close')"
     class="md:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-20 transition-opacity duration-300"
   ></div>
@@ -544,10 +562,10 @@
   <!-- Confirmation Modal -->
   <ConfirmationModal
     :is-open="showDeleteConfirm"
-    title="Delete Conversation"
+    :title="labels.deleteConversationTitle"
     :message="deleteConfirmMessage"
-    confirm-text="Delete"
-    cancel-text="Cancel"
+    :confirm-text="labels.deleteAction"
+    :cancel-text="labels.cancel"
     variant="danger"
     icon="heroicons:trash"
     @confirm="confirmDelete"
@@ -561,10 +579,44 @@ import { computed, ref, watch, nextTick, onMounted, onUnmounted } from "vue";
 import { useChatStore } from "~/stores/chatStore";
 import type { ChatSession } from "~/types/chat.interface";
 import ConfirmationModal from "./ConfirmationModal.vue";
+const contentLayoutLanguage = useContentLayoutLanguage();
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+const labels = computed(() => ({
+  historyTitle: isSwahili.value ? "Historia ya Mazungumzo" : "Chat History",
+  yourConversations: isSwahili.value ? "Mazungumzo yako" : "Your conversations",
+  closeSidebar: isSwahili.value ? "Funga pembeni" : "Close sidebar",
+  newChat: isSwahili.value ? "Mazungumzo Mapya" : "New Chat",
+  searchPlaceholder: isSwahili.value ? "Tafuta mazungumzo..." : "Search conversations...",
+  loadingConversations: isSwahili.value ? "Inapakia mazungumzo..." : "Loading conversations...",
+  noConversationsFound: isSwahili.value ? "Hakuna mazungumzo yaliyopatikana" : "No conversations found",
+  noChatHistory: isSwahili.value ? "Bado hakuna historia ya mazungumzo" : "No chat history yet",
+  tryDifferentSearch: isSwahili.value ? "Jaribu neno jingine la utafutaji" : "Try a different search term",
+  startNewConversation: isSwahili.value ? "Anza mazungumzo mapya yaonekane hapa" : "Start a new conversation to see it here",
+  createFirstChat: isSwahili.value ? "Anza mazungumzo yako ya kwanza" : "Create your first chat",
+  noDescription: isSwahili.value ? "Hakuna maelezo" : "No description",
+  msg: isSwahili.value ? "ujumbe" : "msg",
+  msgs: isSwahili.value ? "ujumbe" : "msgs",
+  deleteConversation: isSwahili.value ? "Futa mazungumzo" : "Delete conversation",
+  conversation: isSwahili.value ? "mazungumzo" : "conversation",
+  conversations: isSwahili.value ? "mazungumzo" : "conversations",
+  clear: isSwahili.value ? "Futa" : "Clear",
+  deleteConversationTitle: isSwahili.value ? "Futa Mazungumzo" : "Delete Conversation",
+  deleteAction: isSwahili.value ? "Futa" : "Delete",
+  cancel: isSwahili.value ? "Ghairi" : "Cancel",
+  defaultConversation: isSwahili.value ? "Mazungumzo Mapya" : "New Conversation",
+  justNow: isSwahili.value ? "Sasa hivi" : "Just now",
+  recently: isSwahili.value ? "Hivi karibuni" : "Recently",
+  deleteTarget: isSwahili.value ? "mazungumzo haya" : "this conversation",
+  deleteConfirmPrefix: isSwahili.value ? "Una uhakika unataka kufuta" : "Are you sure you want to delete",
+  deleteConfirmSuffix: isSwahili.value ? "Hatua hii haiwezi kutenguliwa." : "This action cannot be undone.",
+  deleteFailed: isSwahili.value ? "Imeshindikana kufuta mazungumzo. Tafadhali jaribu tena." : "Failed to delete conversation. Please try again.",
+}));
 
 const props = defineProps<{
   isOpen: boolean;
   compact?: boolean;
+  navigationMessage?: string;
+  disableDelete?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -657,7 +709,7 @@ const scrollToActiveSession = () => {
 // Get session title
 const getSessionTitle = (session: ChatSession): string => {
   // Prioritize custom title (generated from first message)
-  if (session.title && session.title !== "New Conversation") {
+  if (session.title && session.title !== labels.value.defaultConversation) {
     return session.title;
   }
   // Fallback to other fields
@@ -668,12 +720,12 @@ const getSessionTitle = (session: ChatSession): string => {
       ? session.details.substring(0, 40) + "..."
       : session.details;
   }
-  return "New Conversation";
+  return labels.value.defaultConversation;
 };
 
 // Format date with better relative time
 const formatDate = (dateString?: string): string => {
-  if (!dateString) return "Just now";
+  if (!dateString) return labels.value.justNow;
 
   try {
     const date = new Date(dateString);
@@ -686,29 +738,29 @@ const formatDate = (dateString?: string): string => {
     const diffMonths = Math.floor(diffDays / 30);
     const diffYears = Math.floor(diffDays / 365);
 
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    if (diffWeeks < 4) return `${diffWeeks}w ago`;
-    if (diffMonths < 12) return `${diffMonths}mo ago`;
-    if (diffYears < 1) return `${diffYears}y ago`;
+    if (diffMins < 1) return labels.value.justNow;
+    if (diffMins < 60) return isSwahili.value ? `${diffMins}dk zilizopita` : `${diffMins}m ago`;
+    if (diffHours < 24) return isSwahili.value ? `${diffHours}s zilizopita` : `${diffHours}h ago`;
+    if (diffDays < 7) return isSwahili.value ? `${diffDays}d zilizopita` : `${diffDays}d ago`;
+    if (diffWeeks < 4) return isSwahili.value ? `${diffWeeks}w zilizopita` : `${diffWeeks}w ago`;
+    if (diffMonths < 12) return isSwahili.value ? `${diffMonths}mo zilizopita` : `${diffMonths}mo ago`;
+    if (diffYears < 1) return isSwahili.value ? `${diffYears}y zilizopita` : `${diffYears}y ago`;
 
     // For older dates, show formatted date
     const isThisYear = date.getFullYear() === now.getFullYear();
     if (isThisYear) {
-      return date.toLocaleDateString("en-US", {
+      return date.toLocaleDateString(isSwahili.value ? "sw-TZ" : "en-US", {
         month: "short",
         day: "numeric",
       });
     }
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString(isSwahili.value ? "sw-TZ" : "en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
   } catch (error) {
-    return "Recently";
+    return labels.value.recently;
   }
 };
 
@@ -738,11 +790,13 @@ const handleSelectSession = async (sessionId: string) => {
 
 // Handle delete session - show confirmation modal
 const handleDeleteSession = (sessionId: string) => {
+  if (props.disableDelete) return;
+
   const session = sessions.value.find((s) => s.id === sessionId);
-  const sessionTitle = session ? getSessionTitle(session) : "this conversation";
+  const sessionTitle = session ? getSessionTitle(session) : labels.value.deleteTarget;
 
   pendingDeleteSessionId.value = sessionId;
-  deleteConfirmMessage.value = `Are you sure you want to delete <strong>"${sessionTitle}"</strong>?<br><br>This action cannot be undone.`;
+  deleteConfirmMessage.value = `${labels.value.deleteConfirmPrefix} <strong>"${sessionTitle}"</strong>?<br><br>${labels.value.deleteConfirmSuffix}`;
   showDeleteConfirm.value = true;
 };
 
@@ -768,8 +822,7 @@ const confirmDelete = async () => {
   } catch (error) {
     console.error("[ChatHistory] Error deleting session:", error);
     // Show error message (could be enhanced with a toast notification)
-    deleteConfirmMessage.value =
-      "Failed to delete conversation. Please try again.";
+    deleteConfirmMessage.value = labels.value.deleteFailed;
     // Keep modal open to show error, then close after a delay
     setTimeout(() => {
       showDeleteConfirm.value = false;

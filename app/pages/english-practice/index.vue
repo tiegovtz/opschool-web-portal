@@ -1,71 +1,109 @@
 <template>
   <div
     :class="isEmbedded
-      ? 'fixed inset-0 p-2 sm:p-4 flex items-start justify-center overflow-y-auto'
-      : 'fixed inset-0 z-50 flex items-start justify-center bg-black/30 p-2 sm:p-4 overflow-y-auto'"
+      ? 'fixed inset-0 p-2 sm:p-4 flex items-center justify-center overflow-hidden'
+      : 'fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-2 sm:p-4 overflow-hidden'"
     @click.self="!isEmbedded && handleOverlayClick"
   >
     <div
-      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-16px))] max-h-[calc(100vh-16px)] overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent mt-2 sm:mt-4"
+      class="modal-shell practice-modal relative w-[min(1100px,calc(100vw-16px))] h-[calc(100dvh-16px)] max-h-[calc(100dvh-16px)] min-h-0 overflow-hidden flex flex-col p-0 rounded-2xl bg-transparent"
       role="dialog"
       aria-modal="true"
       aria-labelledby="english-practice-title"
       @click.stop
     >
-      <div class="modal-inner relative w-full flex flex-col min-h-0 rounded-2xl bg-white overflow-hidden">
+      <div class="modal-inner relative w-full flex-1 flex flex-col min-h-0 rounded-2xl bg-white overflow-hidden">
         <div v-if="showLoadingBar" class="loading-bar">
           <div class="loading-bar__inner"></div>
         </div>
-        <header class="practice-header shrink-0 flex items-start justify-between gap-4 px-3 py-3 sm:px-6 sm:py-4 border-b border-slate-200">
-          <div>
-            <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">English Speaking Practice</h1>
-            <p class="text-xs text-slate-500 mt-1">
-              Practice speaking with guided conversation
-            </p>
-          </div>
-          <div class="flex items-center gap-3">
-            <div class="flex items-center gap-2 rounded-full bg-slate-100 p-1">
-              <button
-                @click="switchMode('multi-user')"
-                :class="[
-                  'px-3 py-1 rounded-full text-xs font-semibold transition-colors',
-                  mode === 'multi-user'
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
-                ]"
-              >
-                Multi-user
-              </button>
-              <button
-                @click="switchMode('single-user')"
-                :class="[
-                  'px-3 py-1 rounded-full text-xs font-semibold transition-colors',
-                  mode === 'single-user'
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
-                ]"
-              >
-                Single-user
-              </button>
+        <header class="practice-header shrink-0 px-3 py-3 sm:px-6 sm:py-4 border-b border-slate-200">
+          <div class="flex items-start justify-between gap-3 sm:hidden">
+            <div class="min-w-0">
+              <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">{{ practiceTitle }}</h1>
+              <p class="text-xs text-slate-500 mt-1">
+                {{ practiceSubtitle }}
+              </p>
             </div>
             <button
               v-if="!isEmbedded"
               type="button"
-              class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
-              aria-label="Close English practice"
+              class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
+              :aria-label="`Close ${practiceTitle}`"
               @click="closeModal"
             >
               <span class="text-xl leading-none">&times;</span>
             </button>
           </div>
+          <div class="mt-3 flex sm:hidden">
+            <div class="flex w-full items-center gap-1 rounded-full bg-slate-100 p-1">
+              <button
+                @click="switchMode('multi-user')"
+                :class="[
+                  'min-w-0 flex-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                  mode === 'multi-user'
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                ]"
+              >
+                {{ multiUserLabel }}
+              </button>
+              <button
+                @click="switchMode('single-user')"
+                :class="[
+                  'min-w-0 flex-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                  mode === 'single-user'
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                ]"
+              >
+                {{ singleUserLabel }}
+              </button>
+            </div>
+          </div>
+          <div class="hidden sm:flex sm:items-start sm:justify-between sm:gap-4">
+            <div>
+              <h1 id="english-practice-title" class="text-lg font-semibold tracking-tight text-blue-700">{{ practiceTitle }}</h1>
+              <p class="text-xs text-slate-500 mt-1">
+                {{ practiceSubtitle }}
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2 rounded-full bg-slate-100 p-1">
+                <button
+                  @click="switchMode('multi-user')"
+                  :class="[
+                    'whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold transition-colors',
+                    mode === 'multi-user'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  ]"
+                >
+                  {{ multiUserLabel }}
+                </button>
+                <button
+                  @click="switchMode('single-user')"
+                  :class="[
+                    'whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold transition-colors',
+                    mode === 'single-user'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  ]"
+                >
+                  {{ singleUserLabel }}
+                </button>
+              </div>
+              <button
+                v-if="!isEmbedded"
+                type="button"
+                class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 hover:bg-red-50"
+                :aria-label="`Close ${practiceTitle}`"
+                @click="closeModal"
+              >
+                <span class="text-xl leading-none">&times;</span>
+              </button>
+            </div>
+          </div>
         </header>
-        <div
-          v-if="showRotateBanner"
-          class="mx-3 mt-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700"
-        >
-          Rotate to portrait for a better experience.
-        </div>
-
         <div
           ref="scrollContainer"
           class="flex-1 overflow-y-auto overscroll-contain touch-pan-y px-3 py-3 sm:px-6 sm:py-4 min-h-0"
@@ -74,7 +112,7 @@
         >
           <div ref="topAnchor" aria-hidden="true"></div>
           <div v-if="scriptLoading" class="text-center text-sm text-gray-500 mt-2 mb-4">
-            Loading conversation content…
+            {{ loadingContentLabel }}
           </div>
           <div
             v-else-if="scriptError"
@@ -98,6 +136,7 @@
                 : turnManager.currentTurn.value === aiSpeakerId && (isAiAudioLoading || isPlayingAiAudio)"
               :current-word-index="currentWordIndex"
               :participants="participants"
+              :ui-language="uiLanguage"
             />
           </div>
           <div class="sticky bottom-4 flex justify-end pointer-events-none">
@@ -107,7 +146,7 @@
               class="pointer-events-auto rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow-md hover:bg-blue-700"
               @click="handleBackToTop"
             >
-              Back to top
+              {{ backToTopLabel }}
             </button>
           </div>
         </div>
@@ -138,6 +177,7 @@
               :can-record="canRecord"
               :is-speech-supported="isSpeechSupported"
               :audio-level="audioLevel"
+              :ui-language="uiLanguage"
               @toggle="handleMicToggle"
             />
           </div>
@@ -211,6 +251,28 @@ const currentWordIndex = ref(0); // Track current position in script words
 const mode = ref<PracticeMode>('multi-user'); // Can be changed based on user detection
 const route = useRoute();
 const router = useRouter();
+const practiceTitle = computed(() =>
+  String(route.query.language || '').trim().toLowerCase() === 'sw'
+    ? 'Mazoezi ya Kiswahili'
+    : 'English Speaking Practice'
+);
+const uiLanguage = computed(() =>
+  String(route.query.language || '').trim().toLowerCase() === 'sw' ? 'sw' : 'en'
+);
+const practiceSubtitle = computed(() =>
+  uiLanguage.value === 'sw'
+    ? 'Fanya mazoezi ya kuzungumza kwa mazungumzo yaliyoongozwa'
+    : 'Practice speaking with guided conversation'
+);
+const multiUserLabel = computed(() => (uiLanguage.value === 'sw' ? 'Watumiaji wengi' : 'Multi-user'));
+const singleUserLabel = computed(() => (uiLanguage.value === 'sw' ? 'Mtumiaji mmoja' : 'Single-user'));
+const loadingContentLabel = computed(() =>
+  uiLanguage.value === 'sw' ? 'Inapakia maudhui ya mazungumzo…' : 'Loading conversation content…'
+);
+const backToTopLabel = computed(() => (uiLanguage.value === 'sw' ? 'Rudi juu' : 'Back to top'));
+const speechRecognitionLang = computed(() =>
+  String(route.query.language || '').trim().toLowerCase() === 'sw' ? 'sw-TZ' : 'en-US'
+);
 const isDebugMode = computed(() => {
   const debugParam = route.query.debug;
   return Array.isArray(debugParam) ? debugParam[0] === '1' : debugParam === '1';
@@ -222,9 +284,6 @@ if (String(route.query.mode || '').trim().toLowerCase() === 'single') {
 const originalBodyOverflow = ref('');
 const allowOverlayClose = ref(false);
 const returnTo = ref('');
-const isPortrait = ref(false);
-const isSmallScreen = ref(false);
-const showRotateBanner = computed(() => !isPortrait.value && isSmallScreen.value);
 const openedAt = ref(0);
 let popstateReady = false;
 const scriptLoading = ref(false);
@@ -263,7 +322,7 @@ const isEmbedded = computed(() => String(route.query.embed || '') === '1');
 const isModalOpen = computed(() => !isEmbedded.value);
 
 // Composables
-const speechRecognition = useSpeechRecognition();
+const speechRecognition = useSpeechRecognition(speechRecognitionLang);
 const turnManager = useTurnManager(() => mode.value);
 
 // Computed
@@ -1718,13 +1777,6 @@ const handlePopstate = () => {
   }, 0);
 };
 
-const updateOrientationState = () => {
-  if (typeof window === 'undefined') return;
-  const shortestSide = Math.min(window.innerWidth, window.innerHeight);
-  isSmallScreen.value = shortestSide < 640;
-  isPortrait.value = window.matchMedia('(orientation: portrait)').matches;
-};
-
 // Lifecycle
 onMounted(() => {
   if (typeof performance !== 'undefined') {
@@ -1739,9 +1791,6 @@ onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', handleKeydown);
     window.addEventListener('popstate', handlePopstate);
-    updateOrientationState();
-    window.addEventListener('resize', updateOrientationState);
-    window.addEventListener('orientationchange', updateOrientationState);
     if (!isEmbedded.value) {
       // Avoid immediately closing the modal on the opening click
       setTimeout(() => {
@@ -1800,8 +1849,6 @@ onUnmounted(() => {
   if (typeof window !== 'undefined') {
     window.removeEventListener('keydown', handleKeydown);
     window.removeEventListener('popstate', handlePopstate);
-    window.removeEventListener('resize', updateOrientationState);
-    window.removeEventListener('orientationchange', updateOrientationState);
   }
   if (typeof document !== 'undefined') {
     document.body.style.overflow = originalBodyOverflow.value;

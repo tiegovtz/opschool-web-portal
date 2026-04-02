@@ -168,14 +168,11 @@ const handleVideoClick = () => {
 
 const handleQuizSubmit = (answer: any) => {
   if (activeQuiz.value) {
-    const result = {
-      quizId: activeQuiz.value.id,
+    const result = videoQuiz.submitQuizAnswer(
+      activeQuiz.value.id,
       answer,
-      isCorrect: false,
-      score: 0,
-    };
-    
-    videoQuiz.submitQuizAnswer(activeQuiz.value.id, answer, props.userId);
+      props.userId,
+    );
     emit('quiz-complete', result);
   }
 };
@@ -298,4 +295,3 @@ onUnmounted(() => {
   opacity: 0;
 }
 </style>
-

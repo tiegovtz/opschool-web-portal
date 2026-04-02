@@ -10,6 +10,11 @@ export const useVideoSession = (videoId: string, userId: string) => {
   const onSessionCreated = ref<((session: VideoSession) => void) | null>(null);
   const onSessionUpdated = ref<((session: VideoSession) => void) | null>(null);
   const onError = ref<((error: string) => void) | null>(null);
+  const sessionEndpoints = {
+    create: `/api/video/${videoId}/sessions`,
+    read: (sessionId: string) => `/api/video/${videoId}/sessions/${sessionId}`,
+    update: (sessionId: string) => `/api/video/${videoId}/sessions/${sessionId}`,
+  };
 
   /**
    * Create new video session
@@ -35,7 +40,7 @@ export const useVideoSession = (videoId: string, userId: string) => {
       try {
         const authToken = useCookie('signInAccessToken').value;
         if (authToken) {
-          await $fetch(apiDocs.videos.postVideoSession?.replace('{id}', videoId) || `/api/video/${videoId}/sessions`, {
+          await $fetch(sessionEndpoints.create, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${authToken}`,
@@ -87,7 +92,7 @@ export const useVideoSession = (videoId: string, userId: string) => {
         try {
           const authToken = useCookie('signInAccessToken').value;
           if (authToken) {
-            const session = await $fetch(apiDocs.videos.getVideoSession?.replace('{id}', videoId).replace('{sessionId}', sessionId) || `/api/video/${videoId}/sessions/${sessionId}`, {
+            const session = await $fetch(sessionEndpoints.read(sessionId), {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${authToken}`,
@@ -184,14 +189,6 @@ export const useVideoSession = (videoId: string, userId: string) => {
 
     // Calculate completion percentage (based on interactions vs expected)
     // For now, we'll calculate based on interactions completed
-    const totalPossibleScore = currentSession.value.interactions.reduce(
-      (sum, interaction) => {
-        // Assume each interaction is worth points, sum max possible
-        return sum + interaction.score + (interaction.isCorrect ? 0 : interaction.score);
-      },
-      0
-    );
-
     // Simple completion percentage based on interactions
     if (currentSession.value.interactions.length > 0) {
       const correctCount = currentSession.value.interactions.filter(i => i.isCorrect).length;
@@ -219,7 +216,7 @@ export const useVideoSession = (videoId: string, userId: string) => {
       try {
         const authToken = useCookie('signInAccessToken').value;
         if (authToken) {
-          await $fetch(apiDocs.videos.updateVideoSession?.replace('{id}', videoId).replace('{sessionId}', currentSession.value.id) || `/api/video/${videoId}/sessions/${currentSession.value.id}`, {
+          await $fetch(sessionEndpoints.update(currentSession.value.id), {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${authToken}`,
@@ -317,4 +314,3 @@ export const useVideoSession = (videoId: string, userId: string) => {
     onError,
   };
 };
-

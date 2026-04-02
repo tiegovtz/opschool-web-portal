@@ -1,5 +1,8 @@
 <template>
-  <NuxtLayout  :name="$router.currentRoute.value.fullPath.includes('header-less') ?'normal':'home-layout'">
+  <NuxtLayout
+    :name="route.fullPath.includes('header-less') ? 'normal' : 'home-layout'"
+    :language="route.fullPath.includes('header-less') ? undefined : pageLanguage"
+  >
     <a class="skip-link" href="#main-content" @click.prevent="focusMain">Skip to main content</a>
   <div id="main-content" class="iframe-screen" role="main" tabindex="-1" aria-label="Live view main content">
     <div class="header">
@@ -42,6 +45,9 @@
 import { onMounted, ref, watch, nextTick } from 'vue'
 import VidstackPlayer from '~/components/video-player/VidstackPlayer.vue'
 import apiDocs from '~/utilities/apiDocs'
+
+const route = useRoute()
+const pageLanguage = useHubPageLanguage()
 
 const token = useCookie('signInAccessToken').value
 const headers = {

@@ -1,5 +1,11 @@
 import { ref, onUnmounted } from 'vue';
 
+type TtsInlineResponse = {
+  success?: boolean;
+  audioBase64?: string;
+  contentType?: string;
+};
+
 export const useReadAloud = () => {
   const isPlaying = ref(false);
   const currentPlaybackWordIndex = ref(-1);
@@ -74,7 +80,7 @@ export const useReadAloud = () => {
       if (resolvedAudioUrl) {
         audioSrc = resolvedAudioUrl;
       } else {
-        const response = await $fetch('/api/conversation/tts', {
+        const response = await $fetch<TtsInlineResponse>('/api/conversation/tts', {
           method: 'POST',
           body: {
             text: normalizedText,
@@ -83,7 +89,7 @@ export const useReadAloud = () => {
           },
         });
 
-        if (!response?.success || !response?.audioBase64) {
+        if (!response.success || !response.audioBase64) {
           throw new Error('TTS audio unavailable');
         }
 
@@ -91,7 +97,10 @@ export const useReadAloud = () => {
           URL.revokeObjectURL(objectUrl);
           objectUrl = null;
         }
-        objectUrl = decodeAudioBase64(response.audioBase64, response.contentType || 'audio/wav');
+        objectUrl = decodeAudioBase64(
+          response.audioBase64,
+          response.contentType || 'audio/wav',
+        );
         audioSrc = objectUrl;
       }
 
@@ -172,6 +181,8 @@ export const useReadAloud = () => {
       rate?: number;
       volume?: number;
       voiceType?: 'male' | 'female';
+      audioUrl?: string;
+      disableHighlighting?: boolean;
     }
   ) => {
     stop();
@@ -192,6 +203,8 @@ export const useReadAloud = () => {
       rate?: number;
       volume?: number;
       voiceType?: 'male' | 'female';
+      audioUrl?: string;
+      disableHighlighting?: boolean;
     }
   ) => {
     if (isPlaying.value) {
@@ -222,7 +235,6 @@ export const useReadAloud = () => {
     toggle,
   };
 };
-
 
 
 
