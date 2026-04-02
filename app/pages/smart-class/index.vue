@@ -134,9 +134,9 @@ type SessionCard = {
   joinUrl?: string; // mapped from meet_link
 };
 
-const authAccessTokenCookie = useCookie("signInAccessToken");
+const authAccessTokenCookie =  useCookie("signInAccessToken");
 const authUserTokenCookie = useCookie("signInUserToken");
-const accessToken = authAccessTokenCookie.value;
+const accessToken = route.query.token || authAccessTokenCookie.value;
 const currentUser = computed(() => authUserTokenCookie.value as Record<string, any> | null);
 const isTeacherAdmin = computed(() => currentUser.value?.roles?.includes("TeacherAdmin"));
 
