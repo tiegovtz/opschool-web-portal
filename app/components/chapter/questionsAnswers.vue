@@ -31,12 +31,14 @@ const questionProps = withDefaults(
     hasPreviousQuestion?: boolean;
     initialSelectedChoice?: string;
     revealFeedbackDuringAttempt?: boolean;
+    advanceOnSubmit?: boolean;
   }>(),
   {
     isLastQuestion: false,
     hasPreviousQuestion: false,
     initialSelectedChoice: "",
     revealFeedbackDuringAttempt: true,
+    advanceOnSubmit: false,
   },
 );
 
@@ -95,6 +97,16 @@ const submitMultipleChoice = (choice = questionAnswer.selectedChoice) => {
     setTimeout(() => {
       emit("nextQuestion");
     }, 800);
+  }
+};
+
+const submitAndAdvanceMultipleChoice = () => {
+  if (!questionAnswer.selectedChoice || questionAnswer.disableAnswer) return;
+
+  submitMultipleChoice();
+
+  if (!questionProps.isLastQuestion) {
+    emit("nextQuestion");
   }
 };
 
@@ -242,6 +254,16 @@ const submitDragAnswer = () => {
     setTimeout(() => {
       emit("nextQuestion");
     }, 800);
+  }
+};
+
+const submitAndAdvanceDragAnswer = () => {
+  if (questionAnswer.disableAnswer || !canSubmitDragAnswer.value) return;
+
+  submitDragAnswer();
+
+  if (!questionProps.isLastQuestion) {
+    emit("nextQuestion");
   }
 };
 
@@ -434,7 +456,7 @@ const playDemoAnimation = async () => {
             Undo choice
           </button>
           <button
-            v-if="questionAnswer.isManualMode"
+            v-if="questionAnswer.isManualMode && !questionProps.advanceOnSubmit"
             type="button"
             class="px-4 py-2 text-sm font-medium text-white rounded-md bg-oceanBlue disabled:opacity-50"
             :disabled="!questionAnswer.selectedChoice || questionAnswer.disableAnswer"
@@ -443,7 +465,16 @@ const playDemoAnimation = async () => {
             Submit answer
           </button>
           <button
-            v-if="questionAnswer.isManualMode && isSubmitted && !questionProps.isLastQuestion"
+            v-if="questionAnswer.isManualMode && questionProps.advanceOnSubmit"
+            type="button"
+            class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue disabled:opacity-50"
+            :disabled="!questionAnswer.selectedChoice || questionAnswer.disableAnswer"
+            @click="submitAndAdvanceMultipleChoice()"
+          >
+            {{ questionProps.isLastQuestion ? "Finish quiz" : "Next question" }}
+          </button>
+          <button
+            v-if="questionAnswer.isManualMode && !questionProps.advanceOnSubmit && isSubmitted && !questionProps.isLastQuestion"
             type="button"
             class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue"
             @click="goToNextQuestion()"
@@ -540,7 +571,7 @@ const playDemoAnimation = async () => {
           Clear all
         </button>
         <button
-          v-if="questionAnswer.isManualMode"
+          v-if="questionAnswer.isManualMode && !questionProps.advanceOnSubmit"
           type="button"
           class="px-4 py-2 text-sm font-medium text-white rounded-md bg-oceanBlue disabled:opacity-50"
           :disabled="questionAnswer.disableAnswer || !canSubmitDragAnswer"
@@ -549,7 +580,16 @@ const playDemoAnimation = async () => {
           Submit answer
         </button>
         <button
-          v-if="isSubmitted && !questionProps.isLastQuestion"
+          v-if="questionAnswer.isManualMode && questionProps.advanceOnSubmit"
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue disabled:opacity-50"
+          :disabled="questionAnswer.disableAnswer || !canSubmitDragAnswer"
+          @click="submitAndAdvanceDragAnswer()"
+        >
+          {{ questionProps.isLastQuestion ? "Finish quiz" : "Next question" }}
+        </button>
+        <button
+          v-if="!questionProps.advanceOnSubmit && isSubmitted && !questionProps.isLastQuestion"
           type="button"
           class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue"
           @click="goToNextQuestion()"

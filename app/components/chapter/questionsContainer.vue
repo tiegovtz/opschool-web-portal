@@ -70,7 +70,7 @@ const shuffleList = <T>(items: T[]) =>
 const route = useRoute();
 const shuffledQuestions = ref<Question[]>([]);
 const isSecondaryQuiz = computed(
-  () => resolveEducationLevelFromRoute(route) === "secondary",
+  () => resolveEducationLevelFromRoute(route) !== "primary",
 );
 
 // Result Scored Computed
@@ -441,6 +441,7 @@ const goToPreviousQuestion = () => {
         :initial-selected-choice="quizAttempt.clickedAnswer[quizAttempt.currentQuestion] ?? ''"
         :has-previous-question="quizAttempt.currentQuestion > 0"
         :reveal-feedback-during-attempt="!isSecondaryQuiz"
+        :advance-on-submit="isSecondaryQuiz"
         :is-last-question="quizAttempt.currentQuestion === questions.length - 1" />
     </div>
   </section>
