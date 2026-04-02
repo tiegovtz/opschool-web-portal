@@ -25,6 +25,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY || "",
+    ragApiBaseUrl: process.env.RAG_API_BASE_URL || "http://opschool.tie.go.tz:5002",
+    insightsApiKey: process.env.INSIGHTS_API_KEY || "",
   },
 
   plugins: [

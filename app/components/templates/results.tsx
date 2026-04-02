@@ -1,6 +1,7 @@
 import { computed, defineComponent, ref, watch } from "vue";
 import { cn } from "~/utilities/utils";
 import { Button } from "~/components/ui/button";
+import { normalizeLanguageSupport } from "~/utilities/educationRoute";
 
 interface ResultsProps {
   score?: number;
@@ -13,16 +14,24 @@ interface ResultsProps {
   className?: string;
 }
 
-const resolveMessage = (score: number, total: number) => {
+const resolveMessage = (score: number, total: number, isSwahili: boolean) => {
   if (!total) {
-    return "No questions were available for scoring.";
+    return isSwahili
+      ? "Hakukuwa na maswali ya kupimwa."
+      : "No questions were available for scoring.";
   }
 
   const ratio = score / total;
-  if (ratio === 1) return "Excellent work.";
-  if (ratio >= 0.7) return "Strong result.";
-  if (ratio >= 0.4) return "Good attempt. Review and try again.";
-  return "Keep practicing and try again.";
+  if (ratio === 1) return isSwahili ? "Umefanya vizuri sana." : "Excellent work.";
+  if (ratio >= 0.7) return isSwahili ? "Matokeo mazuri sana." : "Strong result.";
+  if (ratio >= 0.4) {
+    return isSwahili
+      ? "Jaribio zuri. Pitia tena kisha ujaribu tena."
+      : "Good attempt. Review and try again.";
+  }
+  return isSwahili
+    ? "Endelea kufanya mazoezi kisha ujaribu tena."
+    : "Keep practicing and try again.";
 };
 
 const ResultsCard = defineComponent({
@@ -42,6 +51,18 @@ const ResultsCard = defineComponent({
     className: String,
   },
   setup(props) {
+    const route = useRoute();
+    const hubHeaderLang = useHubHeaderLanguage();
+    const primaryContentLanguage = usePrimaryContentLanguage();
+    const isSwahili = computed(
+      () =>
+        normalizeLanguageSupport(
+          route.query.lang ||
+            hubHeaderLang.value ||
+            primaryContentLanguage.value,
+          "english",
+        ) === "kiswahili",
+    );
     const percentage = computed(() =>
       props.total ? Math.round((props.score / props.total) * 100) : 0,
     );
@@ -56,13 +77,13 @@ const ResultsCard = defineComponent({
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div class="space-y-1">
             <p class="text-sm font-medium uppercase tracking-[0.18em] text-oceanBlue/70">
-              {props.title || "Results"}
+              {props.title || (isSwahili.value ? "Matokeo" : "Results")}
             </p>
             <h3 class="text-2xl font-semibold text-oceanBlue">
               {props.score}/{props.total}
             </h3>
             <p class="text-sm text-slate-600">
-              {props.description || resolveMessage(props.score, props.total)}
+              {props.description || resolveMessage(props.score, props.total, isSwahili.value)}
             </p>
           </div>
 
@@ -72,7 +93,7 @@ const ResultsCard = defineComponent({
             </div>
             {props.onRestart ? (
               <Button variant="brand" onClick={() => props.onRestart?.()}>
-                Play Again
+                {isSwahili.value ? "Fanya tena" : "Play Again"}
               </Button>
             ) : null}
           </div>
@@ -108,6 +129,18 @@ export const ActivityResultsAlertDialog = defineComponent({
     description: String,
   },
   setup(props) {
+    const route = useRoute();
+    const hubHeaderLang = useHubHeaderLanguage();
+    const primaryContentLanguage = usePrimaryContentLanguage();
+    const isSwahili = computed(
+      () =>
+        normalizeLanguageSupport(
+          route.query.lang ||
+            hubHeaderLang.value ||
+            primaryContentLanguage.value,
+          "english",
+        ) === "kiswahili",
+    );
     const close = () => props.onOpenChange?.(false);
 
     type ConfettiPiece = {
@@ -223,15 +256,23 @@ export const ActivityResultsAlertDialog = defineComponent({
     );
 
     const modalTitle = computed(() =>
-      props.isCompletionOnly ? "" : props.title || "Results",
+      props.isCompletionOnly
+        ? ""
+        : props.title || (isSwahili.value ? "Matokeo" : "Results"),
     );
 
     const modalDescription = computed(() => {
       if (props.isCompletionOnly) {
-        return props.completionMessage || resolveMessage(props.score, props.total);
+        return (
+          props.completionMessage ||
+          resolveMessage(props.score, props.total, isSwahili.value)
+        );
       }
 
-      return props.description || resolveMessage(props.score, props.total);
+      return (
+        props.description ||
+        resolveMessage(props.score, props.total, isSwahili.value)
+      );
     });
 
     return () =>
@@ -328,7 +369,7 @@ export const ActivityResultsAlertDialog = defineComponent({
                   }}
                   class="w-full md:w-auto"
                 >
-                  Restart
+                  {isSwahili.value ? "Fanya tena" : "Restart"}
                 </Button>
               ) : null}
 
@@ -337,7 +378,7 @@ export const ActivityResultsAlertDialog = defineComponent({
                 onClick={close}
                 class="w-full md:w-auto"
               >
-                Continue
+                {isSwahili.value ? "Endelea" : "Continue"}
               </Button>
             </div>
           </div>

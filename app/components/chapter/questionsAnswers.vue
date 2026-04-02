@@ -25,11 +25,29 @@ const questionAnswer = reactive({
 const questionPresentedAt = ref<number>(Date.now());
 const isSubmitted = ref(false);
 
-const questionProps = withDefaults(defineProps<Question & { isLastQuestion?: boolean }>(), {
-  isLastQuestion: false,
-});
+const questionProps = withDefaults(
+  defineProps<Question & {
+    isLastQuestion?: boolean;
+    hasPreviousQuestion?: boolean;
+    initialSelectedChoice?: string;
+    revealFeedbackDuringAttempt?: boolean;
+    advanceOnSubmit?: boolean;
+  }>(),
+  {
+    isLastQuestion: false,
+    hasPreviousQuestion: false,
+    initialSelectedChoice: "",
+    revealFeedbackDuringAttempt: true,
+    advanceOnSubmit: false,
+  },
+);
 
-const emit = defineEmits(["questionAnswered", "clickedChoice", "nextQuestion"]);
+const emit = defineEmits([
+  "questionAnswered",
+  "clickedChoice",
+  "nextQuestion",
+  "previousQuestion",
+]);
 
 const buildAnswerPayload = (selectedChoice: string, isCorrect: boolean) => {
   const submittedAt = new Date().toISOString();
@@ -82,17 +100,31 @@ const submitMultipleChoice = (choice = questionAnswer.selectedChoice) => {
   }
 };
 
+const submitAndAdvanceMultipleChoice = () => {
+  if (!questionAnswer.selectedChoice || questionAnswer.disableAnswer) return;
+
+  submitMultipleChoice();
+
+  if (!questionProps.isLastQuestion) {
+    emit("nextQuestion");
+  }
+};
+
 const indexToAlpha = (index: number) => String.fromCharCode(65 + index);
 
-const shuffleChoices = computed(() => {
-  const shuffled = questionProps.choices
+const shuffledChoices = ref<Question["choices"]>([]);
+
+const setShuffledChoices = () => {
+  const shuffled = [...questionProps.choices]
     .map((choice) => ({ choice, sort: Math.random() }))
     .sort((a, b) => a.sort - b.sort)
     .map(({ choice }) => choice);
 
-  // Remove duplicates
-  return shuffled.filter((item, index, self) => self.indexOf(item) === index);
-});
+  shuffledChoices.value = shuffled.filter(
+    (item, index, self) =>
+      self.findIndex((choice) => choice.value === item.value) === index,
+  );
+};
 
 
 const dropZoneAnswers = ref<(string | null)[]>([]);
@@ -102,21 +134,36 @@ const resetQuestionState = () => {
   questionPresentedAt.value = Date.now();
   questionAnswer.disableAnswer = false;
   questionAnswer.isAnswered = false;
-  questionAnswer.selectedChoice = "";
+  questionAnswer.selectedChoice = questionProps.initialSelectedChoice;
   questionAnswer.isCorrectAnswer = false;
-  questionAnswer.clickedChoice = null;
+  questionAnswer.clickedChoice = questionProps.initialSelectedChoice || null;
   isSubmitted.value = false;
   submittedBlankStatuses.value = [];
 
   const blanks =
     questionProps.blanks ||
     (questionProps.question.match(/(_\$blank)/g) || []).length;
-  dropZoneAnswers.value = Array.from({ length: blanks as number }, () => null) ?? [];
+  const initialAnswers = questionProps.initialSelectedChoice
+    ? questionProps.initialSelectedChoice
+        .split("-")
+        .map((answer) => answer.trim())
+        .filter(Boolean)
+    : [];
+
+  dropZoneAnswers.value = Array.from(
+    { length: blanks as number },
+    (_, index) => initialAnswers[index] ?? null,
+  ) ?? [];
 };
 
 watch(
-  () => questionProps.question,
+  () => [
+    questionProps.question,
+    questionProps.choices,
+    questionProps.initialSelectedChoice,
+  ],
   () => {
+    setShuffledChoices();
     resetQuestionState();
   },
   { immediate: true }
@@ -210,6 +257,16 @@ const submitDragAnswer = () => {
   }
 };
 
+const submitAndAdvanceDragAnswer = () => {
+  if (questionAnswer.disableAnswer || !canSubmitDragAnswer.value) return;
+
+  submitDragAnswer();
+
+  if (!questionProps.isLastQuestion) {
+    emit("nextQuestion");
+  }
+};
+
 const canSubmitDragAnswer = computed(() =>
   dropZoneAnswers.value.length > 0 &&
   dropZoneAnswers.value.every((answer) => answer !== null && answer !== "")
@@ -219,19 +276,17 @@ const goToNextQuestion = () => {
   emit("nextQuestion");
 };
 
+const goToPreviousQuestion = () => {
+  emit("previousQuestion");
+};
+
 const toggleAnswerMode = () => {
   questionAnswer.isManualMode = !questionAnswer.isManualMode;
   resetQuestionState();
 };
 
 const blankClass = (index: number) => {
-  if (!isSubmitted.value) {
-    return "border-oceanBlue bg-blue-50";
-  }
-
-  return submittedBlankStatuses.value[index]
-    ? "border-green-500 bg-green-50 text-green-700"
-    : "border-red-500 bg-red-50 text-red-700";
+  return "border-oceanBlue bg-blue-50";
 };
 
 const renderQuestionWithBlanks = computed(() => {
@@ -303,7 +358,7 @@ const flyToTarget = (sourceEl: HTMLElement, targetEl: HTMLElement) => {
 
 
 const playDemoAnimation = async () => {
-  if (!shuffleChoices.value.length) return;
+  if (!shuffledChoices.value.length) return;
 
   // drag-zone and drag-answers class
   const choiceElements = document.querySelectorAll(".drag-answers");
@@ -317,7 +372,7 @@ const playDemoAnimation = async () => {
   const randomIndex =
     availableIndexes[Math.floor(Math.random() * availableIndexes.length)] as number;
   const randomChoiceIndex = Math.floor(
-    Math.random() * shuffleChoices.value.length
+    Math.random() * shuffledChoices.value.length
   );
 
   const sourceEl = choiceElements[randomChoiceIndex] as HTMLElement;
@@ -368,7 +423,7 @@ const playDemoAnimation = async () => {
           />
         </p> -->
         <ol class="w-full text-small">
-          <li v-for="(choice, index) in shuffleChoices" :key="index"
+          <li v-for="(choice, index) in shuffledChoices" :key="choice._id || choice.value"
             class="flex items-center justify-between w-full px-3 py-2 my-2 transition-all duration-500 ease-in-out rounded-md cursor-pointer custom-box-shadow hover:bg-oceanBlue hover:text-white"
             :class="{
               'bg-deepBlue hover:!bg-deepBlue text-white':
@@ -380,10 +435,19 @@ const playDemoAnimation = async () => {
           </li>
         </ol>
         <div
-          v-if="questionAnswer.isManualMode"
+          v-if="questionProps.hasPreviousQuestion || questionAnswer.isManualMode"
           class="flex flex-wrap items-center gap-3 mt-4"
         >
           <button
+            v-if="questionProps.hasPreviousQuestion"
+            type="button"
+            class="px-4 py-2 text-sm font-medium border rounded-md border-slate-300 text-slate-700"
+            @click="goToPreviousQuestion()"
+          >
+            Previous question
+          </button>
+          <button
+            v-if="questionAnswer.isManualMode"
             type="button"
             class="px-4 py-2 text-sm font-medium border rounded-md border-slate-300 text-slate-700 disabled:opacity-50"
             :disabled="!questionAnswer.selectedChoice || questionAnswer.disableAnswer"
@@ -392,6 +456,7 @@ const playDemoAnimation = async () => {
             Undo choice
           </button>
           <button
+            v-if="questionAnswer.isManualMode && !questionProps.advanceOnSubmit"
             type="button"
             class="px-4 py-2 text-sm font-medium text-white rounded-md bg-oceanBlue disabled:opacity-50"
             :disabled="!questionAnswer.selectedChoice || questionAnswer.disableAnswer"
@@ -400,7 +465,16 @@ const playDemoAnimation = async () => {
             Submit answer
           </button>
           <button
-            v-if="isSubmitted && !questionProps.isLastQuestion"
+            v-if="questionAnswer.isManualMode && questionProps.advanceOnSubmit"
+            type="button"
+            class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue disabled:opacity-50"
+            :disabled="!questionAnswer.selectedChoice || questionAnswer.disableAnswer"
+            @click="submitAndAdvanceMultipleChoice()"
+          >
+            {{ questionProps.isLastQuestion ? "Finish quiz" : "Next question" }}
+          </button>
+          <button
+            v-if="questionAnswer.isManualMode && !questionProps.advanceOnSubmit && isSubmitted && !questionProps.isLastQuestion"
             type="button"
             class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue"
             @click="goToNextQuestion()"
@@ -462,7 +536,7 @@ const playDemoAnimation = async () => {
       </p> -->
       <!-- Choices to Drag -->
       <div class="flex flex-wrap gap-4 pl-6 mt-4">
-        <div v-for="(choice, index) in shuffleChoices" :key="index"
+        <div v-for="(choice, index) in shuffledChoices" :key="choice._id || choice.value"
           class="p-2 transition-all duration-500 ease-in-out rounded-md shadow cursor-move bg-oceanBlue bg-opacity-20 hover:bg-oceanBlue hover:text-white drag-answers"
           :class="{
             'opacity-40 cursor-not-allowed': questionAnswer.disableAnswer,
@@ -472,6 +546,14 @@ const playDemoAnimation = async () => {
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-3 pl-6">
+        <button
+          v-if="questionProps.hasPreviousQuestion"
+          type="button"
+          class="px-4 py-2 text-sm font-medium border rounded-md border-slate-300 text-slate-700"
+          @click="goToPreviousQuestion()"
+        >
+          Previous question
+        </button>
         <button
           type="button"
           class="px-4 py-2 text-sm font-medium border rounded-md border-slate-300 text-slate-700 disabled:opacity-50"
@@ -489,7 +571,7 @@ const playDemoAnimation = async () => {
           Clear all
         </button>
         <button
-          v-if="questionAnswer.isManualMode"
+          v-if="questionAnswer.isManualMode && !questionProps.advanceOnSubmit"
           type="button"
           class="px-4 py-2 text-sm font-medium text-white rounded-md bg-oceanBlue disabled:opacity-50"
           :disabled="questionAnswer.disableAnswer || !canSubmitDragAnswer"
@@ -498,7 +580,16 @@ const playDemoAnimation = async () => {
           Submit answer
         </button>
         <button
-          v-if="isSubmitted && !questionProps.isLastQuestion"
+          v-if="questionAnswer.isManualMode && questionProps.advanceOnSubmit"
+          type="button"
+          class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue disabled:opacity-50"
+          :disabled="questionAnswer.disableAnswer || !canSubmitDragAnswer"
+          @click="submitAndAdvanceDragAnswer()"
+        >
+          {{ questionProps.isLastQuestion ? "Finish quiz" : "Next question" }}
+        </button>
+        <button
+          v-if="!questionProps.advanceOnSubmit && isSubmitted && !questionProps.isLastQuestion"
           type="button"
           class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue"
           @click="goToNextQuestion()"
