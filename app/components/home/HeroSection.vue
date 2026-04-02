@@ -27,7 +27,7 @@ soar to greater heights. <br/><b>Welcome onboard!</b>
 <br/><br />
 Jukwaa hili limeandaliwa kwa ajili ya wanafunzi wa rika zote kwa kuwawezesha kufanya shughuli za masomo mbalimbali zinazofaa kwa darasani au kujisomea binafsi.
 <br/>
-Jukwaa hii linafanya ujifunzaji uwe rahisi, wa kufurahisha na kumfanya mwanafunzi asisahau kile alichojifunza.`);
+Jukwaa hili linafanya ujifunzaji uwe rahisi, kufurahisha na kumfanya mwanafunzi asisahau kile alichojifunza.`);
 
 // Define the short preview text
 const shortText =computed(()=> props.language == 'english' ? `
@@ -45,7 +45,7 @@ SHULE MTANDAO YA TET ni jukwaa shirikishi la kujifunzia kupitia maudhui ya kidij
 <br/>
 Jukwaa hili limeandaliwa kwa ajili ya wanafunzi wa rika zote kwa kuwawezesha kufanya shughuli za masomo mbalimbali zinazofaa kwa darasani au kujisomea binafsi.
 <br/><br />
-Jukwaa hii linafanya ujifunzaji uwe rahisi, wa kufurahisha na kumfanya mwanafunzi asisahau kile alichojifunza.
+Jukwaa hili linafanya ujifunzaji uwe rahisi, kufurahisha na kumfanya mwanafunzi asisahau kile alichojifunza.
 <br/><br />
 
 Furahia kujifunza kwa kufanya shughuli mbalimbali zinazofurahisha na kukuwezesha kupata maarifa ya kina, kukuza ubunifu, uwezo wa kufikiri kwa kina, na kukuhamasisha kupenda kujifunza kwa muda wote.`);

@@ -502,12 +502,12 @@ onBeforeUnmount(() => {
               to="/"
             >
               <p
-                class="block px-4 text-center uppercase lg:text-large text-medium text-shadow whitespace-nowrap"
+                class="block px-4 text-center lg:text-large text-medium text-shadow whitespace-nowrap"
               >
                 {{
                   language === "english"
-                    ? `TIE online school`
-                    : `shule mtandao ya TET`
+                    ? `TIE Online School`
+                    : `Shule Mtandao ya TET`
                 }}
               </p>
             </NuxtLink>
@@ -769,8 +769,8 @@ onBeforeUnmount(() => {
               >
                 {{
                   language === "english"
-                    ? `TIE online school`
-                    : `shule mtandao ya TIE`
+                    ? `TIE Online School`
+                    : `Shule Mtandao ya TET`
                 }}
               </p>
             </NuxtLink>
