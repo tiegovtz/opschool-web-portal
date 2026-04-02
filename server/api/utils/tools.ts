@@ -716,8 +716,8 @@ export const studentTools = {
   }),
 
   searchTextbooks: tool({
-    description: `Search uploaded textbooks (external RAG) for factual information about a topic. 
-    
+    description: `Search uploaded textbooks (external RAG) for factual information about a topic.
+
 WHEN TO USE THIS TOOL:
 - When a student asks a FACTUAL question about curriculum content (e.g., "What is photosynthesis?", "Explain Newton's laws")
 - When you need ACCURATE information from official textbooks
@@ -749,75 +749,147 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
       }
 
       try {
-        const queryContext =
-          subject || level
-            ? {
-                subject: subject || undefined,
-                level: level || undefined,
-              }
-            : undefined;
+        const config = useRuntimeConfig();
+        const ragApiBaseUrl = config.ragApiBaseUrl || "http://opschool.tie.go.tz:5002";
+        const insightsApiKey = config.insightsApiKey || "";
 
         const rawQuery = query.trim();
-        const normalized = rawQuery.toLowerCase();
-        const isSubjectTopicQuery =
-          /(topics?|syllabus|outline|subject|about)/i.test(rawQuery);
-        const cleanedQuery = normalized
-          .replace(
-            /what is|what are|about|topics?|subject|course|for|in|of/gi,
-            " ",
-          )
-          .replace(/form\s*\d+/gi, " ")
-          .replace(/[^a-z0-9\s]/gi, " ")
-          .replace(/\s+/g, " ")
-          .trim();
-        const expandedQuery =
-          isSubjectTopicQuery && cleanedQuery
-            ? `${cleanedQuery} syllabus topics outline`
-            : cleanedQuery;
 
-        const fetchContext = async (q: string) =>
-          fetchCombinedRAGContext(q, currentAuthToken, queryContext, {
-            useLocal: false,
-            useExternal: true,
-            preferExternal: true,
-          });
+        // Call the advanced RAG search endpoint (POST /rag/query)
+        const ragRequestBody: Record<string, any> = {
+          query: rawQuery,
+          topK: 5,
+          useQueryExpansion: true,
+          useMultiQuery: true,
+          useHybrid: true,
+          useReranking: false,
+          returnParent: true,
+        };
 
-        let ragResult = await fetchContext(rawQuery);
-        if (
-          (!ragResult.context || ragResult.context.trim().length === 0) &&
-          expandedQuery &&
-          expandedQuery !== rawQuery
-        ) {
-          ragResult = await fetchContext(expandedQuery);
+        // Note: subject/classLevel filters are NOT passed to the RAG API
+        // because the tool receives text names (e.g. "physics") while the RAG
+        // API expects database IDs. The query expansion and hybrid search
+        // already find the right content without explicit filters.
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+        const ragResponse = await fetch(`${ragApiBaseUrl}/rag/query`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-API-Key": insightsApiKey,
+          },
+          body: JSON.stringify(ragRequestBody),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!ragResponse.ok) {
+          const errorText = await ragResponse.text().catch(() => "");
+          throw new Error(
+            `RAG API error ${ragResponse.status}: ${errorText || ragResponse.statusText}`
+          );
         }
 
-        if (!ragResult.context || ragResult.context.trim().length === 0) {
+        const ragData = await ragResponse.json();
+        const results: any[] = ragData?.results || [];
+
+        if (results.length === 0) {
           return {
             found: false,
             query: query,
-            message: "No textbook context returned.",
+            message: "No relevant textbook content found for this topic.",
             context: "",
             instruction:
-              "Answer using general knowledge. Do NOT say the information is unavailable. Clearly label the response as general knowledge (not from the textbooks) if needed.",
+              "Tell the student honestly: 'I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic.' Do NOT answer from your own knowledge.",
           };
         }
 
-        let context = ragResult.context;
-        const maxChars = ragResult.source === "combined" ? 5000 : 3500;
-        if (context.length > maxChars) {
-          context = context.slice(0, maxChars).trimEnd() + "...";
+        // Prioritize "content" chunks over "exercise" chunks, build context from parentContent
+        const sorted = [...results].sort((a, b) => {
+          if (a.chunkType === "content" && b.chunkType !== "content") return -1;
+          if (a.chunkType !== "content" && b.chunkType === "content") return 1;
+          return (b.score || 0) - (a.score || 0);
+        });
+
+        const contextParts: string[] = [];
+        let totalChars = 0;
+        const maxChars = 5000;
+
+        for (const result of sorted) {
+          // Use parentContent (richer context) when available, fall back to content
+          const text = result.parentContent || result.content || "";
+          if (!text.trim()) continue;
+
+          const citation = result.citation || result.parentCitation || "Unknown source";
+          const source = result.source || "";
+          const score = result.score ? `Relevance: ${result.score.toFixed(2)}` : "";
+
+          const header = [source, citation, score].filter(Boolean).join(" | ");
+          const chunk = `[${header}]\n${text.trim()}`;
+
+          if (totalChars + chunk.length > maxChars) break;
+          contextParts.push(chunk);
+          totalChars += chunk.length;
+        }
+
+        const context = contextParts.join("\n\n---\n\n");
+
+        if (!context.trim()) {
+          return {
+            found: false,
+            query: query,
+            message: "No relevant textbook content found for this topic.",
+            context: "",
+            instruction:
+              "Tell the student honestly: 'I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic.' Do NOT answer from your own knowledge.",
+          };
         }
 
         return {
           found: true,
           query: query,
-          source: ragResult.source,
+          source: "rag-api",
           context: context,
-          hasExternalResults: !!ragResult.externalContext,
+          queriesUsed: ragData.queriesUsed || [rawQuery],
+          methods: ragData.methods || [],
           instruction:
-            "You MUST use the context above to answer. ALWAYS cite the source using format: 'According to [Book Title] ([Citation])...'. Do NOT use information outside this context.",
+            "You MUST use the context above to answer. ALWAYS cite the source using format: 'According to [Book Title], [Chapter] ([Page])...'. Do NOT use information outside this context.",
         };
       } catch (error: any) {
+        // If RAG API fails, fall back to the old external RAG
+        try {
+          const queryContext =
+            subject || level
+              ? { subject: subject || undefined, level: level || undefined }
+              : undefined;
+
+          const ragResult = await fetchCombinedRAGContext(query.trim(), currentAuthToken, queryContext, {
+            useLocal: false,
+            useExternal: true,
+            preferExternal: true,
+          });
+
+          if (ragResult.context && ragResult.context.trim().length > 0) {
+            let context = ragResult.context;
+            if (context.length > 3500) {
+              context = context.slice(0, 3500).trimEnd() + "...";
+            }
+            return {
+              found: true,
+              query: query,
+              source: ragResult.source,
+              context: context,
+              instruction:
+                "You MUST use the context above to answer. ALWAYS cite the source using format: 'According to [Book Title] ([Citation])...'. Do NOT use information outside this context.",
+            };
+          }
+        } catch {
+          // Both failed
+        }
+
         return {
           found: false,
           query: query,
