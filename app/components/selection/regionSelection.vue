@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue';
+import { reactive, onMounted, computed, type PropType } from 'vue';
 import { CustomDropDownList } from '#components';
 import apiDocs from '~/utilities/apiDocs';
+import type { LanguageSupport } from '~/types/language.interface';
 
 // Props
 const props = defineProps({
     error: String,       // validation error from parent
     region: String,      // current selected region value
+    language: {
+        type: String as PropType<LanguageSupport>,
+        default: 'english',
+    },
 });
 
 type statusType = "idle" | "pending" | "success" | "error";
@@ -20,6 +25,15 @@ const data =  reactive<{ regions: any[], status: statusType, error: any }>({
 
 // Emit
 const emit = defineEmits(['updateRegion']);
+
+const isSwahili = computed(() => props.language === 'kiswahili');
+const content = computed(() => ({
+    label: isSwahili.value ? 'Chagua mkoa:' : 'Select region:',
+    placeholder: isSwahili.value ? 'Mfano: Arusha' : 'Eg ( Arusha ) ...',
+    loading: isSwahili.value ? 'Inapakia mikoa…' : 'Loading regions…',
+    error: isSwahili.value ? 'Imeshindikana kupakia mikoa. Tafadhali jaribu tena.' : 'Failed to fetch regions. Please try again.',
+    unknown: isSwahili.value ? 'Kuna tatizo limetokea.' : 'Something went wrong',
+}));
 
 // Fetch Region function
 const fetchRegion = async () => {
@@ -46,27 +60,27 @@ onMounted(async () => {
 <template>
     <div class="flex flex-col items-start w-full" :aria-busy="data.status === 'pending' ? 'true' : 'false'">
         <label for="region-select" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-            Select region:
+            {{ content.label }}
         </label>
 
         <!-- Dropdown when data loaded -->
         <CustomDropDownList v-if="data.status === 'success' && data.regions.length" id="region-select"
             :list="data.regions.map((regionName) => ({ id: regionName, name: regionName }))"
-            placeholder="Eg ( Arusha ) ..." :model-value="region" :aria-invalid="!!error"
+            :placeholder="content.placeholder" :model-value="region" :aria-invalid="!!error"
             aria-describedby="region-error" @update-model-value="emit('updateRegion', $event)" />
 
         <!-- Loading state (announced to screen readers) -->
         <p v-else-if="data.status === 'pending'" role="status" aria-live="polite"
             class="mt-1 text-extraSmall text-textGray">
-            Loading regions…
+            {{ content.loading }}
         </p>
 
         <!-- Fetch error state -->
         <p v-else-if="data.status === 'error'" class="mt-1 text-normalRed text-smallest" role="alert">
-            Failed to fetch regions. Please try again.
+            {{ content.error }}
         </p>
         <p v-else>
-            something went wrong
+            {{ content.unknown }}
         </p>
 
         <!-- Validation error from parent (e.g. "Region is required") -->
