@@ -216,6 +216,7 @@ const currentEducationLevel = computed(() =>
 
 const showPrimaryLanguageSwitch = computed(
   () =>
+    route.path === "/feedback" ||
     route.path === "/primary" ||
     route.path.startsWith("/primary/") ||
     ((isSmartClassRoute.value || isAccountSectionRoute.value) &&
@@ -270,6 +271,17 @@ const setPrimaryLanguage = async (language: LanguageSupport) => {
   const normalizedLanguage = normalizeLanguageSupport(language, "kiswahili");
   primaryContentLanguage.value = normalizedLanguage;
   hubHeaderLang.value = normalizedLanguage;
+
+  if (route.path === "/feedback") {
+    await router.replace({
+      path: route.path,
+      query: {
+        ...route.query,
+        lang: getHubLanguageCode("primary", normalizedLanguage),
+      },
+    });
+    return;
+  }
 
   if (
     route.path === "/primary" ||

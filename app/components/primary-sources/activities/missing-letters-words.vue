@@ -23,6 +23,16 @@ type Props = {
 
 const props = defineProps<Props>();
 const { playSound } = useSoundEffects();
+const contentLayoutLanguage = useContentLayoutLanguage();
+const completionMessage = computed(() =>
+  score.value === props.questions.questions.length
+    ? contentLayoutLanguage.value === "kiswahili"
+      ? "Hongera! Umefanikiwa kukamilisha maneno yote kwa kujaza herufi zilizokosekana!"
+      : "Fantastic! You've successfully completed all the words by filling in the missing letters!"
+    : contentLayoutLanguage.value === "kiswahili"
+      ? `Kazi nzuri! Umepata ${score.value} kati ya ${props.questions.questions.length} kwa usahihi. Endelea kufanya mazoezi ili uboreshe zaidi!`
+      : `Good work! You completed ${score.value} out of ${props.questions.questions.length} words correctly. Keep practicing to improve!`,
+);
 
 const showResults = ref(false);
 const userAnswers = ref<Record<number, Record<number, string>>>({});
@@ -235,11 +245,7 @@ const blankIndicesBefore = (text: string, charIndex: number) =>
           }
         }
       "
-      :completionMessage="
-        score === props.questions.questions.length
-          ? `Fantastic! You've successfully completed all the words by filling in the missing letters!`
-          : `Good work! You completed ${score} out of ${props.questions.questions.length} words correctly. Keep practicing to improve!`
-      "
+      :completionMessage="completionMessage"
     />
   </div>
 </template>
