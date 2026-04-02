@@ -302,6 +302,18 @@ const goToPreviousQuestion = () => {
   }
 };
 
+const getBlankStatusForQuestion = (index: number) =>
+  recordedAnswers.value[index]?.blankStatuses ?? [];
+
+const getDragAnswerParts = (answer: string) =>
+  answer ? answer.split("-").filter(Boolean) : [];
+
+const isDragAndDropQuestion = (questionType: string) =>
+  questionType === "drag_and_drop";
+
+const isDragAnswerCorrectAt = (questionIndex: number, blankIndex: number) =>
+  getBlankStatusForQuestion(questionIndex)[blankIndex] ?? false;
+
 
 </script>
 
@@ -357,7 +369,7 @@ const goToPreviousQuestion = () => {
             <div class="pl-4 text-justify flex-1">
               <p class="mb-2">
                 {{
-                  question.questionType === 'drag_and_drop'
+                  isDragAndDropQuestion(question.questionType)
                     ? question.question.replace(/(_\$blank)/g, ' __________ ')
                     : question.question
                 }}
@@ -368,17 +380,36 @@ const goToPreviousQuestion = () => {
                 ">
                 <b class="text-black">Your choice:
                 </b>
-                <span :class="{ 'capitalize': question.questionType === 'drag_and_drop' }">
+                <template v-if="question.questionType === 'drag_and_drop'">
+                  <span
+                    v-for="(answerPart, blankIndex) in getDragAnswerParts(quizAttempt.clickedAnswer[index] ?? '')"
+                    :key="`${index}-${blankIndex}-${answerPart}`"
+                    class="mr-2 capitalize"
+                    :class="isDragAnswerCorrectAt(index, blankIndex)
+                      ? 'text-normalGreener font-medium'
+                      : 'text-red-600 font-medium'"
+                  >
+                    {{ answerPart }}
+                    <span class="font-bold">
+                      {{ isDragAnswerCorrectAt(index, blankIndex) ? '✓' : '✗' }}
+                    </span>
+                  </span>
+                </template>
+                <span
+                  v-else
+                  :class="{ 'capitalize': isDragAndDropQuestion(question.questionType) }"
+                >
                   {{ (quizAttempt.clickedAnswer[index] ?? '').replaceAll('-', ' ,') }}
                 </span>
-              </p>
-              <p
-                class="mt-2 font-medium"
-                :class="quizAttempt.clickedAnswer[index] == question.answer
-                  ? 'text-normalGreener'
-                  : 'text-red-600'"
-              >
-                {{ quizAttempt.clickedAnswer[index] == question.answer ? 'Correct' : 'Wrong' }}
+                <span
+                  v-if="question.questionType !== 'drag_and_drop'"
+                  class="ml-2 font-bold"
+                  :class="quizAttempt.clickedAnswer[index] == question.answer
+                    ? 'text-normalGreener'
+                    : 'text-red-600'"
+                >
+                  {{ quizAttempt.clickedAnswer[index] == question.answer ? '✓' : '✗' }}
+                </span>
               </p>
             </div>
           </div>
