@@ -52,7 +52,7 @@ FAILED=0
 
 echo "========================================="
 echo "Uploading $TOTAL books to production RAG"
-echo "Endpoint: $API_URL/rag/upload (STRUCTURED)"
+echo "Endpoint: $API_URL/rag/documents"
 echo "========================================="
 echo ""
 
@@ -68,10 +68,10 @@ for i in "${!BOOKS[@]}"; do
   fi
 
   filesize=$(du -h "$filepath" | cut -f1)
-  echo "[$num/$TOTAL] Uploading (structured): $title ($filesize)..."
+  echo "[$num/$TOTAL] Uploading: $title ($filesize)..."
 
   RESPONSE=$(curl -s -w "\n__HTTP_STATUS__%{http_code}__TIME__%{time_total}" \
-    -X POST "$API_URL/rag/upload" \
+    -X POST "$API_URL/rag/documents" \
     -H "X-API-Key: $API_KEY" \
     -F "file=@$filepath" \
     -F "title=$title" \

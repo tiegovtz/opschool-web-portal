@@ -819,22 +819,15 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
         const maxChars = 5000;
 
         for (const result of sorted) {
-          // Use content (child chunk) as primary — it's precise and right-sized
-          // Fall back to parentContent only if content is empty, but truncate it
-          let text = result.content || "";
-          if (!text.trim() && result.parentContent) {
-            text = result.parentContent.slice(0, 1500);
-          }
+          // Use parentContent (richer context) when available, fall back to content
+          const text = result.parentContent || result.content || "";
           if (!text.trim()) continue;
 
           const citation = result.citation || result.parentCitation || "Unknown source";
-          const parentCitation = result.parentCitation || "";
           const source = result.source || "";
+          const score = result.score ? `Relevance: ${result.score.toFixed(2)}` : "";
 
-          const headerParts = [source];
-          if (parentCitation) headerParts.push(parentCitation);
-          headerParts.push(citation);
-          const header = headerParts.filter(Boolean).join(" | ");
+          const header = [source, citation, score].filter(Boolean).join(" | ");
           const chunk = `[${header}]\n${text.trim()}`;
 
           if (totalChars + chunk.length > maxChars) break;
