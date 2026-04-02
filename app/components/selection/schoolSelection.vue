@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { CustomDropDownList } from "#components";
-import { reactive, ref, watch } from "vue";
+import { reactive, ref, watch, computed, type PropType } from "vue";
 import apiDocs from "~/utilities/apiDocs";
+import type { LanguageSupport } from "~/types/language.interface";
 
 const props = defineProps({
   region: String,
   district: String,
   error: String,   // validation error from parent
   school: String,  // currently selected school id (optional)
+  language: {
+    type: String as PropType<LanguageSupport>,
+    default: "english",
+  },
 });
 
 type statusType = "idle" | "pending" | "success" | "error";
@@ -19,6 +24,19 @@ const data = reactive<{ schools: any[], status: statusType, error: any }>({
 });
 
 const emit = defineEmits(["updateSchool"]);
+
+const isSwahili = computed(() => props.language === "kiswahili");
+const content = computed(() => ({
+  label: isSwahili.value ? "Chagua shule:" : "Select school:",
+  placeholder: isSwahili.value ? "Chagua shule" : "Choose a school",
+  selectRegionAndDistrictFirst: isSwahili.value
+    ? "Chagua mkoa na wilaya kwanza."
+    : "Select region and district first.",
+  loading: isSwahili.value ? "Inapakia shule…" : "Loading schools…",
+  empty: isSwahili.value
+    ? "Hakuna shule zilizopatikana kwa mkoa na wilaya uliyochagua."
+    : "No schools found for the selected region and district.",
+}));
 
 // local v-model for dropdown
 const selectedSchool = ref<string | null | any>(props.school ?? null);
@@ -92,27 +110,27 @@ watch(
   <div class="flex flex-col items-start w-full">
     <!-- Label correctly linked to dropdown via id -->
     <label for="school" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-      Select school:
+      {{ content.label }}
     </label>
 
     <!-- Accessible dropdown -->
     <CustomDropDownList v-if="data.status === 'success' && data.schools.length" id="school" v-model="selectedSchool"
-      :list="data.schools.map((school) => ({ id: school._id, name: school.name }))" placeholder="Choose a school"
+      :list="data.schools.map((school) => ({ id: school._id, name: school.name }))" :placeholder="content.placeholder"
       :aria-invalid="!!error" aria-describedby="school-error" @update-model-value="emit('updateSchool', $event)" />
 
     <!-- Status / helper messages (live region) -->
     <div v-else class="mt-2 text-textGray/40" role="status" aria-live="polite">
       <span v-if="data.status === 'idle'">
-        Select region and district first.
+        {{ content.selectRegionAndDistrictFirst }}
       </span>
       <span v-else-if="data.status === 'pending'">
-        Loading schools…
+        {{ content.loading }}
       </span>
       <span v-else-if="data.status === 'error'" class="text-red-500">
         {{ data.error }}
       </span>
       <span v-else-if="data.status === 'success' && !data.schools.length">
-        No schools found for the selected region and district.
+        {{ content.empty }}
       </span>
     </div>
 
