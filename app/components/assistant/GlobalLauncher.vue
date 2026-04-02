@@ -131,7 +131,7 @@ const launcherLabel = computed(() =>
 const launcherHoverLabel = computed(() =>
   hasValidSubjectContext.value
     ? isSwahili.value
-      ? "Uliza Mwalimu wa Somo wa Akili Unde"
+      ? "Uliza Mwalimu wa Somo Akili Unde"
       : "Ask AI Subject Teacher"
     : isSwahili.value
       ? "Uliza Mwalimu Akili Unde"
