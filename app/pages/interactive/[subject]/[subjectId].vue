@@ -305,11 +305,11 @@ watch(filters, (filters) => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage" :education-level>
     <div class="" :class="{ ' animate-pulse': isLoading }">
       <div class="flex flex-col gap-4">
         <!-- Keep hero-style search visible for both logged-in and logged-out -->
-        <HomeSearchbar appearance="not-normal" />
+        <HomeSearchbar appearance="not-normal" :language="contentLayoutLanguage"/>
         <TabBar
           :is-logged-in="isLoggedIn"
           :active-tab="activeTab"

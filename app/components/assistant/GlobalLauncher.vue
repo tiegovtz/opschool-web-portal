@@ -3,6 +3,7 @@ import apiDocs from "~/utilities/apiDocs";
 import { extractSubjectSlugs, normalizeSubjectSlug } from "~/config/aiLauncherConfig";
 import { onBeforeUnmount, onMounted } from "vue";
 import type { LocationQueryRaw } from "vue-router";
+import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
 
 const route = useRoute();
 const router = useRouter();
@@ -17,6 +18,7 @@ const tieOverlayBackground = useState<string>("tie-ai-overlay-background", () =>
 const tieOverlayPushed = useState<boolean>("tie-ai-overlay-pushed", () => false);
 const subjectTeacherOpen = useState<boolean>("ai-subject-teacher-is-open", () => false);
 const allowedSubjectSlugs = useState<string[]>("ai-launcher-allowed-subjects", () => []);
+const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
 const openSubjectTeacherSignal = useState<number>(
   "ai-subject-teacher-open-signal",
   () => 0
@@ -100,7 +102,7 @@ const hasValidSubjectContext = computed(() => {
 });
 
 const showLauncher = computed(
-  () => isLoggedIn.value && !isExcluded.value && !isBusy.value
+  () => isLoggedIn.value && !isExcluded.value && !isBusy.value && !educationLevel.value.includes('primary') 
 );
 const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
 const launcherLabel = computed(() =>
