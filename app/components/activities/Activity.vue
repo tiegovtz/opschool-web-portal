@@ -87,7 +87,7 @@ const transpiler = computed(() => activity.value && activityPropsTranspiler[acti
         >
           <div class="relative">
             <span
-              class="absolute -inset-8 animate-ping rounded-full bg-lemon-100 opacity-70"
+              class="absolute -inset-8 animate-ping rounded-full bg-oceanBlue opacity-70"
             />
             <span
               class="absolute -inset-6 rounded-full bg-sky-50 opacity-60 blur-sm"
@@ -96,7 +96,7 @@ const transpiler = computed(() => activity.value && activityPropsTranspiler[acti
               icon="heroicons:sparkles"
               width="40"
               height="40"
-              class="relative text-lemon-700 animate-bounce"
+              class="relative text-oceanBlue animate-bounce"
             />
           </div>
 
