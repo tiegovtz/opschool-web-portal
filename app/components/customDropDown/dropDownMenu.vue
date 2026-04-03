@@ -6,6 +6,7 @@ import type { ClassLevel } from "~/types/classlevel.interface";
 import type { Subjects } from "~/types/subject.interface";
 import {
   getApiContentLanguage,
+  isEducationLevelVisibleInHub,
   normalizeEducationLevel,
   resolveRouteLanguage,
   type EducationBucket,
@@ -160,7 +161,11 @@ const emitUpdate = createDebounce(() => {
 const sortedEducationLevelNames = computed(() => {
   const names = (educationLevels.value || [])
     .map((level) => level?.name)
-    .filter((name): name is string => !!name?.trim());
+    .filter((name): name is string => {
+      if (!name?.trim()) return false;
+      if (!props.educationLevel) return true;
+      return isEducationLevelVisibleInHub(name, props.educationLevel);
+    });
 
   return [...names].sort((a, b) => {
     const aOrder = EDUCATION_LEVEL_RENDER_ORDER[a] ?? Number.MAX_SAFE_INTEGER;
