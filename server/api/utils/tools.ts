@@ -723,13 +723,10 @@ WHEN TO USE THIS TOOL:
 - When you need ACCURATE information from official textbooks
 
 WHEN NOT TO USE THIS TOOL:
-- For greetings (e.g., "Hello", "Hi", "How are you?")
-- For questions about yourself (e.g., "Who are you?", "What can you do?")
-- For general conversation or clarification questions
 - For getting images (use getChapterFigures instead)
 - For listing subjects (use getSubjects instead)
 
-IMPORTANT: If this tool returns results, you MUST cite them using: "According to [Book Title] ([Citation])..."`,
+IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "According to [Book Title]..."). Do NOT mention chapter numbers or page numbers.`,
     inputSchema: z.object({
       query: z
         .string()
@@ -856,7 +853,7 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
           queriesUsed: ragData.queriesUsed || [rawQuery],
           methods: ragData.methods || [],
           instruction:
-            "You MUST use the context above to answer. ALWAYS cite the source using format: 'According to [Book Title], [Chapter] ([Page])...'. Do NOT use information outside this context.",
+            "You MUST use the context above to answer. Mention the book title (e.g. 'According to [Book Title]...') but do NOT mention chapter numbers or page numbers. Do NOT use information outside this context.",
         };
       } catch (error: any) {
         // If RAG API fails, fall back to the old external RAG
@@ -883,7 +880,7 @@ IMPORTANT: If this tool returns results, you MUST cite them using: "According to
               source: ragResult.source,
               context: context,
               instruction:
-                "You MUST use the context above to answer. ALWAYS cite the source using format: 'According to [Book Title] ([Citation])...'. Do NOT use information outside this context.",
+                "You MUST use the context above to answer. Mention the book title (e.g. 'According to [Book Title]...') but do NOT mention chapter numbers or page numbers. Do NOT use information outside this context.",
             };
           }
         } catch {
