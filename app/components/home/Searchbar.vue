@@ -7,6 +7,7 @@ import apiDocs from "~/utilities/apiDocs";
 import SearchResults from "./SearchResults.vue";
 import type { Topic } from "~/types/topic.interface";
 import type { LanguageSupport } from "~/types/language.interface";
+import { normalizeEducationLevel } from "~/utilities/educationRoute";
 
 declare global {
   interface Window {
@@ -34,27 +35,7 @@ const normalizeValue = (value?: string | null) =>
 
 const getEducationBucket = (value?: string | null) => {
   const normalizedValue = normalizeValue(value);
-
-  if (
-    ["primary", "primary education", "elimu ya msingi", "msingi"].includes(
-      normalizedValue,
-    )
-  ) {
-    return "primary";
-  }
-
-  if (
-    [
-      "secondary",
-      "secondary education",
-      "elimu ya sekondari",
-      "sekondari",
-    ].includes(normalizedValue)
-  ) {
-    return "secondary";
-  }
-
-  return normalizedValue || "";
+  return normalizedValue ? normalizeEducationLevel(normalizedValue) : "";
 };
 
 const localizedContent = computed(() =>

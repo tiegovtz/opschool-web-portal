@@ -41,6 +41,12 @@ const text = computed(() => ({
   coverageDepthHelper: isSw.value ? "Mada zilizokamilika kati ya zote zilizofuatiliwa." : "Covered topics out of all tracked topics.",
   activeTopics: isSw.value ? "Mada zinazotumika" : "Active topics",
   activeTopicsHelper: isSw.value ? "Mada zilizofunguliwa au zinazoendelea." : "Topics opened or in active progress.",
+  items: isSw.value ? "vipengele" : "items",
+  progressRingEmpty: isSw.value ? "Inasubiri taarifa zilizofuatiliwa" : "Awaiting tracked data",
+  progressRingActive: isSw.value ? "Ishara ya sasa ya ujifunzaji" : "Current learning signal",
+  topicDistributionSummary: isSw.value
+    ? `${props.overview.coveredTopics}/${props.overview.totalTopics} ya mada zimefunikwa tayari, huku ${activeTopics.value} zikiendelea sasa.`
+    : `${props.overview.coveredTopics}/${props.overview.totalTopics} topics are already covered, while ${activeTopics.value} are still in motion.`,
 }));
 
 const activeTopics = computed(
@@ -129,12 +135,16 @@ const assessmentTotal = computed(
             :value="overview.averageProgress"
             accent="ocean"
             :helper="text.overallProgressHelper"
+            :empty-state-label="text.progressRingEmpty"
+            :active-state-label="text.progressRingActive"
           />
           <LearningProgressRing
             :label="text.assessmentAverage"
             :value="assessmentAverage"
             accent="amber"
             :helper="text.assessmentAverageHelper"
+            :empty-state-label="text.progressRingEmpty"
+            :active-state-label="text.progressRingActive"
           />
         </div>
       </div>
@@ -170,10 +180,10 @@ const assessmentTotal = computed(
                 :title="text.topicDistribution"
                 :segments="topicSegments"
                 :total="overview.totalTopics"
+                :item-label="text.items"
               />
               <p class="mt-3 text-sm leading-6 text-slate-600 sm:mt-4">
-                {{ overview.coveredTopics }}/{{ overview.totalTopics }} topics are already covered,
-                while {{ activeTopics }} are still in motion.
+                {{ text.topicDistributionSummary }}
               </p>
             </div>
           </div>
@@ -204,6 +214,7 @@ const assessmentTotal = computed(
                 :title="text.assessmentStatus"
                 :segments="assessmentSegments"
                 :total="assessmentTotal"
+                :item-label="text.items"
               />
 
               <div class="flex flex-col gap-4">

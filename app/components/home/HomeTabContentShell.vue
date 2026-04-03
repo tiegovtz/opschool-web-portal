@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import DropDownMenu from "~/components/customDropDown/dropDownMenu.vue";
+import type { LanguageSupport } from "~/types/language.interface";
+import type { EducationBucket } from "~/utilities/educationRoute";
 
 const props = withDefaults(
   defineProps<{
@@ -8,11 +10,14 @@ const props = withDefaults(
     resultsCount?: number;
     filterValue?: Record<string, any> | any[];
     showFilters?: boolean;
+    language?: LanguageSupport;
+    educationLevel?: EducationBucket;
   }>(),
   {
     resultsCount: 0,
     filterValue: () => ({}),
     showFilters: true,
+    language: "english",
   }
 );
 
@@ -69,7 +74,7 @@ const handleReset = () => {
             </button>
           </div>
           <div class="flex flex-col gap-4 mt-10">
-            <DropDownMenu :active-tab="activeTab" @emit-update-filter-value="handleFilterUpdate" />
+            <DropDownMenu :active-tab="activeTab" :language="language" @emit-update-filter-value="handleFilterUpdate" />
             <!-- <button v-if="hasActiveFilter" type="button" class="px-4 py-2 text-left cursor-pointer text-oceanBlue"
               @click="handleReset">
               Reset filters
@@ -82,7 +87,7 @@ const handleReset = () => {
     <div class="flex items-center justify-center w-full gap-4 xl:items-start">
       <div v-if="showFilters && !isSubjectsTab" aria-label="Filters" role="group"
         class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
-        <DropDownMenu :active-tab="activeTab" :filter-value="[]" @emit-update-filter-value="handleFilterUpdate" />
+        <DropDownMenu :active-tab="activeTab" :language="language" :filter-value="[]" :education-level @emit-update-filter-value="handleFilterUpdate" />
         <!-- <button v-if="hasActiveFilter" type="button" class="px-2 pt-2 cursor-pointer text-oceanBlue"
           @click="handleReset">
           Reset filters
@@ -96,3 +101,4 @@ const handleReset = () => {
     </div>
   </div>
 </template>
+

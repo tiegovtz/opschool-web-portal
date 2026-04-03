@@ -4,7 +4,7 @@
       <button
         @click="$emit('toggle-sidebar')"
         class="flex items-center justify-center w-10 h-10 transition-all rounded-full shadow-md cursor-pointer sm:h-12 sm:w-12 hover:shadow-lg active:scale-95"
-        aria-label="Toggle chat history"
+        :aria-label="isSwahili ? 'Onyesha au ficha historia ya mazungumzo' : 'Toggle chat history'"
       >
         <Icon
           name="heroicons:bars-3"
@@ -18,13 +18,13 @@
         class="min-w-0 text-gray-900"
       >
         <h1 class="text-sm font-semibold leading-tight text-slate-900 sm:text-base">
-          TIE AI Teacher
+          {{ isSwahili ? "Mwalimu wa AI wa TIE" : "TIE AI Teacher" }}
         </h1>
         <p
           class="text-xs text-slate-500 sm:text-sm"
           id="app-description"
         >
-          Your intelligent learning companion
+          {{ isSwahili ? "Msaidizi wako mahiri wa kujifunza" : "Your intelligent learning companion" }}
         </p>
       </div>
     </div>
@@ -32,6 +32,9 @@
 </template>
 
 <script setup lang="ts">
+const contentLayoutLanguage = useContentLayoutLanguage();
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+
 defineEmits<{
   "toggle-sidebar": [];
 }>();

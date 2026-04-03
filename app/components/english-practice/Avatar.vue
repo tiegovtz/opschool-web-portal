@@ -43,19 +43,21 @@
         v-if="isActive"
         class="text-oceanBlue text-xs mt-1"
       >
-        Your turn
+        {{ isSwahili ? 'Zamu yako' : 'Your turn' }}
       </div>
       <div
         v-else-if="isWaiting"
         class="text-gray-500 text-xs mt-1"
       >
-        Waiting...
+        {{ isSwahili ? 'Subiri...' : 'Waiting...' }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
 interface Props {
   name: string;
   type: 'student' | 'ai';
@@ -63,13 +65,17 @@ interface Props {
   isActive?: boolean;
   isSpeaking?: boolean;
   isWaiting?: boolean;
+  uiLanguage?: 'en' | 'sw';
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   isActive: false,
   isSpeaking: false,
   isWaiting: false,
+  uiLanguage: 'en',
 });
+
+const isSwahili = computed(() => props.uiLanguage === 'sw');
 </script>
 
 <style scoped>

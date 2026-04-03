@@ -389,6 +389,8 @@ watch(filters, (filters) => {
 
       <HomeTabContentShell
         :active-tab="activeTab"
+        :language="language"
+        :education-level
         :results-count="topic?.length || 0"
         :filter-value="filterValue"
         :show-filters="!!userToken"

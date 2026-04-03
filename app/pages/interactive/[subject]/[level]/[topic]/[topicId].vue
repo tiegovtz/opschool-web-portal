@@ -16,16 +16,10 @@ import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
-import {
-  getEducationRouteQuery,
-  resolveEducationLevelFromRoute,
-  resolveRouteLanguage,
-} from "~/utilities/educationRoute";
-
+import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
 const route = useRoute();
 const router = useRouter();
 const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
-const primaryContentLanguage = usePrimaryContentLanguage();
 const safeDecode = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
   try {
@@ -40,27 +34,8 @@ const topicStandard = safeDecode(route.params.subject);
 const topicLevel = safeDecode(route.params.level);
 currentTopic.value = topicTitle;
 
-const interactiveFallbackRoute = computed(() => {
-  const educationLevel = resolveEducationLevelFromRoute(route);
-  const language = resolveRouteLanguage(
-    route,
-    educationLevel,
-    primaryContentLanguage.value,
-  );
-
-  return {
-    path: "/interactive",
-    query: getEducationRouteQuery(educationLevel, {}, language),
-  };
-});
-
-const goToPreviousPage = async () => {
-  if (import.meta.client && window.history.length > 1) {
-    await router.back();
-    return;
-  }
-
-  await router.push(interactiveFallbackRoute.value);
+const goToPreviousPage = () => {
+  router.back();
 };
 
 // tokens cookies
@@ -71,6 +46,7 @@ const announcement = ref();
 const chapterProgress = useCookie<any>("chapterProgress");
 const userViewedTopic = useState("userViewedTopic");
 
+const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
 // Define meta info about page
 useHead({
   title: `TIE - Tanzania/${topicTitle}`,
@@ -931,10 +907,11 @@ watch(() => [experimrntUrl.value, activityPopupId.value], async ([newExperimentU
 definePageMeta({
   middleware: "auth",
 });
+
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage" :education-level>
     <section v-if="experimrntUrl || activityPopupId" class="relative w-full center-height" id="experiment-container">
       <div
         class="absolute top-0 right-0 flex items-center justify-center w-10 h-10 p-2 bg-red-500 rounded-full cursor-pointer"
@@ -1097,7 +1074,7 @@ definePageMeta({
         <div tabindex="0"
           class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2 lg:static bg-white lg:scroll-height lg:overflow-y-scroll">
           <div class="flex items-center justify-between mb-4">
-            <h1 aria-label="Activity list" class="pt-5 pl-4 font-medium  text-medium">Learning contents</h1>
+            <h1 aria-label="Activity list" class="pt-5 pl-4 font-medium  text-medium">{{ contentLayoutLanguage ==='english' ? 'Learning contents' :'Maudhui ya ujifunzaji'}}</h1>
             <!-- toggle menu -->
             <div
               class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"

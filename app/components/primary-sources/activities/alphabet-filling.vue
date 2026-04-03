@@ -14,6 +14,12 @@ type Props = {
 const props = defineProps<Props>();
 
 const { playSound } = useSoundEffects();
+const contentLayoutLanguage = useContentLayoutLanguage();
+const completionMessage = computed(() =>
+  contentLayoutLanguage.value === "kiswahili"
+    ? `Hongera! Umefanikiwa kukamilisha maneno yote ${props.questions.targetWords.length}!`
+    : `Great job! You've successfully completed all ${props.questions.targetWords.length} words!`,
+);
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
 const alphabetColors: Record<string, string> = {
@@ -213,7 +219,7 @@ const handleRemoveLetter = (index: number) => {
         }
       "
       :isCompletionOnly="true"
-      :completionMessage="`Great job! You've successfully completed all ${props.questions.targetWords.length} words!`"
+      :completionMessage="completionMessage"
     />
   </div>
 </template>

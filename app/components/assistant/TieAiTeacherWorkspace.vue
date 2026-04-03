@@ -8,6 +8,7 @@ import type { PendingNavigation } from "~/types/tie-ai-teacher.interface";
 const route = useRoute();
 const router = useRouter();
 const chatStore = useChatStore();
+const contentLayoutLanguage = useContentLayoutLanguage();
 
 const props = defineProps<{
   externalSessionId?: string;
@@ -44,9 +45,15 @@ const isSessionNavigationLocked = computed(
     chat.status === "submitted" ||
     chat.status === "streaming"
 );
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+const defaultConversationTitle = computed(() =>
+  isSwahili.value ? "Mazungumzo Mapya" : "New Conversation"
+);
 const navigationMessage = computed(() => {
   if (pendingNavigation.value) {
-    return "Switching chats shortly.";
+    return isSwahili.value
+      ? "Inabadilisha mazungumzo hivi karibuni."
+      : "Switching chats shortly.";
   }
   return "";
 });
@@ -181,7 +188,7 @@ const extractMessageContent = (message: any): string => {
 const generateTitleFromMessage = (message: string): string => {
   const cleaned = message.trim();
 
-  if (!cleaned) return "New Conversation";
+  if (!cleaned) return defaultConversationTitle.value;
 
   const prefixes = [
     /^explain\s+/i,
@@ -220,7 +227,7 @@ const generateTitleFromMessage = (message: string): string => {
     title = title.substring(0, 47) + "...";
   }
 
-  return title || "New Conversation";
+  return title || defaultConversationTitle.value;
 };
 
 type AiTeacherSendPayload = {
@@ -236,7 +243,7 @@ const updateSessionTitleIfNeeded = async (
 
   try {
     const title = generateTitleFromMessage(firstUserMessage);
-    if (title && title !== "New Conversation") {
+    if (title && title !== defaultConversationTitle.value) {
       await chatStore.updateSessionTitle(sessionId, title);
       hasTitleBeenSet.value = true;
     }
@@ -417,7 +424,7 @@ onBeforeUnmount(() => {
           v-if="isHistoryOpen"
           type="button"
           class="absolute inset-0 z-20 bg-slate-900/30 md:hidden"
-          aria-label="Close chat history"
+          :aria-label="isSwahili ? 'Funga historia ya mazungumzo' : 'Close chat history'"
           @click="isHistoryOpen = false"
         />
       </Transition>
@@ -495,7 +502,7 @@ onBeforeUnmount(() => {
       <main
         v-else
         role="main"
-        aria-label="AI Teacher conversation"
+        :aria-label="isSwahili ? 'Mazungumzo ya Mwalimu wa AI' : 'AI Teacher conversation'"
         class="flex min-h-0 flex-1 flex-col overflow-hidden"
       >
         <AiTeacherMessages

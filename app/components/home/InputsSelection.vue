@@ -4,23 +4,15 @@ import type { educationLevel } from "~/types/educationlevel.interface";
 import type { LanguageSupport } from "~/types/language.interface";
 import type { Subjects } from "~/types/subject.interface";
 import apiDocs from "~/utilities/apiDocs";
-import { normalizeEducationLevel } from "~/utilities/educationRoute";
+import {
+  getApiContentLanguage,
+  isEducationLevelVisibleInHub,
+  normalizeEducationLevel,
+} from "~/utilities/educationRoute";
 
 type DropdownOption = {
   id: string;
   name: string;
-};
-
-type PrimaryGrade = {
-  id?: number | string;
-  gradeId?: number | string;
-  gradeName: string;
-  name?: string;
-};
-
-type PrimarySubject = {
-  name?: string;
-  subjectName?: string;
 };
 
 const props = withDefaults(
@@ -114,19 +106,17 @@ const getEducationLevelLabel = (educationLevelName: string) => {
       : "Primary Education";
   }
 
-  if (bucket === "secondary") {
-    return props.language === "kiswahili"
-      ? "Elimu ya Sekondari"
-      : "Secondary Education";
-  }
+  // if (bucket === "lower secondary" || bucket === "secondary") {
+  //   return props.language === "kiswahili"
+  //     ? "Elimu ya Sekondari"
+  //     : "Secondary Education";
+  // }
 
   return educationLevelName;
 };
 
 const dropdownButtonClass =
   "h-10 w-full rounded-none border-b border-gray-300 px-2 py-2 text-left text-sm text-gray-700 shadow-none focus:border-oceanBlue disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500";
-
-const primaryGradesUrl = `${apiDocs.primary.getGradesByLevel}?levelId=2&source=Tet&section=REGULAR_ACTIVITIES`;
 
 const emitSelection = () => {
   emit("emitLevel", level.value);
@@ -185,83 +175,59 @@ const { data: educationLevels, pending: educationLevelsPending } = useFetch<
   default: () => [],
 });
 
-const { data: secondaryClasses, pending: secondaryClassesPending } = useFetch<
+const selectedEducationBucket = computed(
+  () => getEducationBucket(level.value || props.educationLevel),
+);
+
+const { data: classLevels, pending: classLevelsPending } = useFetch<
   ClassLevel[]
 >(apiDocs.levels.getLevels, {
   headers,
+  query: computed(() =>
+    selectedEducationBucket.value
+      ? { educationLevel: selectedEducationBucket.value }
+      : {},
+  ),
   default: () => [],
+  watch: [selectedEducationBucket],
 });
 
-const { data: secondarySubjects, pending: secondarySubjectsPending } = useFetch<
+const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
   Subjects[]
 >(apiDocs.subjects.getPublicSubjects, {
   headers,
   query: computed(() => {
-    const educationBucket = getEducationBucket(level.value || props.educationLevel);
-    return educationBucket ? { educationLevel: educationBucket } : {};
+    if (!selectedEducationBucket.value) return {};
+
+    const apiLanguage = getApiContentLanguage(
+      selectedEducationBucket.value,
+      props.language,
+    );
+
+    return {
+      educationLevel: selectedEducationBucket.value,
+      ...(apiLanguage ? { language: apiLanguage } : {}),
+    };
   }),
   default: () => [],
   watch: [level],
 });
 
-const { data: primaryGrades, pending: primaryGradesPending } = useFetch<
-  PrimaryGrade[]
->(primaryGradesUrl, {
-  headers,
-  default: () => [],
-  immediate: isPrimaryModule.value,
-});
-
-const selectedPrimaryGrade = computed<PrimaryGrade | null>(() => {
-  if (!isPrimaryModule.value || !standard.value.trim()) return null;
-
-  return (
-    primaryGrades.value.find(
-      (grade) =>
-        normalizeValue(grade.gradeName ?? grade.name) ===
-        normalizeValue(standard.value),
-    ) ?? null
-  );
-});
-
-const selectedPrimaryGradeId = computed<number | string | null>(() => {
-  const grade = selectedPrimaryGrade.value;
-  return grade?.gradeId ?? grade?.id ?? null;
-});
-
-const primarySubjects = ref<PrimarySubject[]>([]);
-const primarySubjectsPending = ref(false);
-
-watch(
-  selectedPrimaryGradeId,
-  async (gradeId) => {
-    if (!isPrimaryModule.value || !gradeId) {
-      primarySubjects.value = [];
-      return;
-    }
-
-    primarySubjectsPending.value = true;
-
-    try {
-      primarySubjects.value = await $fetch<PrimarySubject[]>(
-        apiDocs.primary.getSubjectsByGrade + `?gradeId=${gradeId}&source=Tet`,
-        { headers },
-      );
-    } catch (error) {
-      console.error("Failed to fetch primary subjects:", error);
-      primarySubjects.value = [];
-    } finally {
-      primarySubjectsPending.value = false;
-    }
-  },
-  { immediate: true },
-);
-
 const matchedEducationLevels = computed(() => {
   if (!props.educationLevel || !educationLevels.value.length) return [];
 
+  if (isPrimaryModule.value) {
+    return educationLevels.value.filter(
+      (educationLevelOption) =>
+        normalizeValue(educationLevelOption.name) === "primary",
+    );
+  }
+
   return educationLevels.value.filter((educationLevelOption) =>
-    matchesEducationLevel(educationLevelOption.name, props.educationLevel),
+    isEducationLevelVisibleInHub(
+      educationLevelOption.name,
+      props.educationLevel,
+    ),
   );
 });
 
@@ -290,17 +256,8 @@ const educationLevelOptions = computed<DropdownOption[]>(() => {
 const classOptions = computed<DropdownOption[]>(() => {
   if (!level.value.trim()) return [];
 
-  if (isPrimaryModule.value) {
-    return sortOptionsByNameAsc(
-      primaryGrades.value.map((grade) => ({
-        id: grade.gradeName,
-        name: grade.gradeName,
-      })),
-    );
-  }
-
   return sortOptionsByNameAsc(
-    secondaryClasses.value
+    classLevels.value
       .filter((classLevel) =>
         matchesEducationLevel(classLevel.educationLevel?.name, level.value),
       )
@@ -314,41 +271,17 @@ const classOptions = computed<DropdownOption[]>(() => {
 const subjectOptions = computed<DropdownOption[]>(() => {
   if (!level.value.trim() || !standard.value.trim()) return [];
 
-  if (isPrimaryModule.value) {
-    return sortOptionsByNameAsc(
-      primarySubjects.value
-        .map(
-          (primarySubject) => primarySubject.subjectName ?? primarySubject.name,
-        )
-        .filter((subjectName): subjectName is string =>
-          Boolean(subjectName?.trim()),
-        )
-        .map((subjectName) => ({
-          id: subjectName,
-          name: subjectName,
-        })),
-    );
-  }
-
   return sortOptionsByNameAsc(
-    secondarySubjects.value.map((secondarySubject) => ({
-      id: secondarySubject.name,
-      name: secondarySubject.name,
+    publicSubjects.value.map((publicSubject) => ({
+      id: publicSubject.name,
+      name: publicSubject.name,
     })),
   );
 });
 
-const isClassesLoading = computed(() =>
-  isPrimaryModule.value
-    ? primaryGradesPending.value
-    : secondaryClassesPending.value,
-);
+const isClassesLoading = computed(() => classLevelsPending.value);
 
-const isSubjectsLoading = computed(() =>
-  isPrimaryModule.value
-    ? primarySubjectsPending.value
-    : secondarySubjectsPending.value,
-);
+const isSubjectsLoading = computed(() => publicSubjectsPending.value);
 
 const showEducationLevelDropdown = computed(() => !isPrimaryModule.value);
 

@@ -9,6 +9,10 @@ const route = useRoute();
 const router = useRouter();
 const contentLayoutLanguage = useContentLayoutLanguage();
 const chatStore = useChatStore();
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+const defaultConversationTitle = computed(() =>
+  isSwahili.value ? "Mazungumzo Mapya" : "New Conversation"
+);
 const canMinimize = computed(() => {
   const stateFromRoute = (route as any).state as
     | Record<string, unknown>
@@ -85,7 +89,9 @@ const isSessionNavigationLocked = computed(
 );
 const navigationMessage = computed(() => {
   if (pendingNavigation.value) {
-    return "Switching chats shortly.";
+    return isSwahili.value
+      ? "Inabadilisha mazungumzo hivi karibuni."
+      : "Switching chats shortly.";
   }
   return "";
 });
@@ -344,7 +350,7 @@ const generateTitleFromMessage = (message: string): string => {
   // Clean the message
   const cleaned = message.trim();
 
-  if (!cleaned) return "New Conversation";
+  if (!cleaned) return defaultConversationTitle.value;
 
   // Remove common question prefixes to make it more concise
   const prefixes = [
@@ -390,7 +396,7 @@ const generateTitleFromMessage = (message: string): string => {
     title = title.substring(0, 47) + "...";
   }
 
-  return title || "New Conversation";
+  return title || defaultConversationTitle.value;
 };
 
 // Update session title if not set
@@ -402,7 +408,7 @@ const updateSessionTitleIfNeeded = async (
 
   try {
     const title = generateTitleFromMessage(firstUserMessage);
-    if (title && title !== "New Conversation") {
+    if (title && title !== defaultConversationTitle.value) {
       await chatStore.updateSessionTitle(sessionId, title);
       hasTitleBeenSet.value = true;
     }
@@ -724,7 +730,7 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="rounded bg-white/90 p-1 text-gray-700 shadow hover:text-black"
-          aria-label="Minimize to overlay"
+          :aria-label="isSwahili ? 'Punguza hadi dirisha dogo' : 'Minimize to overlay'"
           @click="minimizeToOverlay"
         >
           <Icon
@@ -735,7 +741,7 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="rounded bg-white/90 p-1 text-gray-700 shadow hover:text-black"
-          aria-label="Close and return"
+          :aria-label="isSwahili ? 'Funga na urudi' : 'Close and return'"
           @click="closeToBackground"
         >
           <Icon
@@ -757,7 +763,7 @@ onBeforeUnmount(() => {
             v-if="isHistoryOpen"
             type="button"
             class="absolute inset-0 z-10 bg-slate-900/30 md:hidden"
-            aria-label="Close chat history"
+            :aria-label="isSwahili ? 'Funga historia ya mazungumzo' : 'Close chat history'"
             @click="isHistoryOpen = false"
           />
         </Transition>
@@ -810,7 +816,7 @@ onBeforeUnmount(() => {
 
         <main
           role="main"
-          aria-label="AI Teacher conversation"
+          :aria-label="isSwahili ? 'Mazungumzo ya Mwalimu wa AI' : 'AI Teacher conversation'"
           v-else
           class="flex min-h-0 flex-1 flex-col overflow-hidden"
         >

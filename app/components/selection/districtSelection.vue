@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { reactive, watch, computed } from "vue";
+import { reactive, watch, computed, type PropType } from "vue";
 import { CustomDropDownList } from "#components";
 import apiDocs from "~/utilities/apiDocs";
+import type { LanguageSupport } from "~/types/language.interface";
 
 const props = defineProps({
   region: String,
   district: String,
   error: String,
+  language: {
+    type: String as PropType<LanguageSupport>,
+    default: "english",
+  },
 });
 
 type statusType = "idle" | "pending" | "success" | "error";
@@ -18,6 +23,14 @@ const data = reactive<{ district: any[], status: statusType, error: any }>({
 });
 
 const emit = defineEmits(["updateDistrict"]);
+
+const isSwahili = computed(() => props.language === "kiswahili");
+const content = computed(() => ({
+  label: isSwahili.value ? "Chagua wilaya:" : "Select district:",
+  selectRegionFirst: isSwahili.value ? "Chagua mkoa kwanza" : "Select a region first",
+  loading: isSwahili.value ? "Inapakia wilaya…" : "Loading districts…",
+  selectDistrict: isSwahili.value ? "Chagua wilaya" : "Select a district",
+}));
 
 const districtValue = computed({
   get: () => props.district,
@@ -74,16 +87,16 @@ const isDisabled = computed(
 <template>
   <div class="flex flex-col items-start w-full">
     <label for="district-select" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-      Select district:
+      {{ content.label }}
     </label>
 
     <CustomDropDownList id="district-select" v-model="districtValue" :list="districtOptions"
       @update-model-value="emit('updateDistrict', $event);" aria-describedby="district-status district-error"
       :placeholder="!props.region
-        ? 'Select a region first'
+        ? content.selectRegionFirst
         : data.status === 'pending'
-          ? 'Loading districts…'
-          : 'Select a district'
+          ? content.loading
+          : content.selectDistrict
         " :disabled="isDisabled" :aria-invalid="!!error" />
 
     <!-- Status / helper text -->

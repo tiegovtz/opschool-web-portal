@@ -11,6 +11,7 @@ import {
   getHubPath,
   normalizeEducationLevel,
   normalizeLanguageSupport,
+  type EducationBucket,
 } from "~/utilities/educationRoute";
 
 const props = withDefaults(
@@ -76,6 +77,10 @@ const logoutToastTimeout = ref<null | any>(null);
 const logoutAlert = ref<HTMLElement | null>(null);
 const isHomeMenuOpen = ref(false);
 const isAccountMenuOpen = ref(false);
+const activeHeaderLanguage = computed<LanguageSupport>(() =>
+  normalizeLanguageSupport(hubHeaderLang.value || props.language, "english"),
+);
+const isKiswahili = computed(() => activeHeaderLanguage.value === "kiswahili");
 
 const userDisplayName = computed(() => {
   const user = userToken.value;
@@ -97,8 +102,23 @@ const userDisplayName = computed(() => {
   ).trim();
   if (fallbackName) return fallbackName;
 
-  return props.language === "kiswahili" ? "Akaunti" : "Account";
+  return isKiswahili.value ? "Akaunti" : "Account";
 });
+
+const logoutConfirmTitle = computed(() =>
+  isKiswahili.value ? "Ondoka" : "Log out",
+);
+const logoutConfirmMessage = computed(() =>
+  isKiswahili.value
+    ? "Una uhakika unataka kutoka kwenye akaunti yako?"
+    : "Are you sure you want to log out of your account?",
+);
+const logoutConfirmButtonText = computed(() =>
+  isKiswahili.value ? "Ondoka" : "Log out",
+);
+const logoutCancelButtonText = computed(() =>
+  isKiswahili.value ? "Ghairi" : "Cancel",
+);
 
 const logout = () => {
   if (shouldRememberCurrentRoute()) {
@@ -197,6 +217,7 @@ const currentEducationLevel = computed(() =>
 
 const showPrimaryLanguageSwitch = computed(
   () =>
+    route.path === "/feedback" ||
     route.path === "/primary" ||
     route.path.startsWith("/primary/") ||
     ((isSmartClassRoute.value || isAccountSectionRoute.value) &&
@@ -231,6 +252,14 @@ const languageSwitchContent = computed(() =>
 );
 
 const homeHubLabel = computed(() => {
+  if (currentEducationLevel.value === "primary") {
+    return props.language === "kiswahili" ? "Msingi" : "Primary";
+  }
+
+  if (currentEducationLevel.value === "lower secondary" || currentEducationLevel.value === "secondary") {
+    return props.language === "kiswahili" ? "Sekondari" : "Secondary";
+  }
+
   return props.language === "kiswahili" ? "Nyumbani" : "Home";
 });
 
@@ -240,7 +269,7 @@ const homeMenuItems = computed(() => [
     label: props.language === "kiswahili" ? "Msingi" : "Primary",
   },
   {
-    educationLevel: "secondary" as const,
+    educationLevel: "lower secondary" as EducationBucket,
     label: props.language === "kiswahili" ? "Sekondari" : "Secondary",
   },
 ]);
@@ -251,6 +280,17 @@ const setPrimaryLanguage = async (language: LanguageSupport) => {
   const normalizedLanguage = normalizeLanguageSupport(language, "kiswahili");
   primaryContentLanguage.value = normalizedLanguage;
   hubHeaderLang.value = normalizedLanguage;
+
+  if (route.path === "/feedback") {
+    await router.replace({
+      path: route.path,
+      query: {
+        ...route.query,
+        lang: getHubLanguageCode("primary", normalizedLanguage),
+      },
+    });
+    return;
+  }
 
   if (
     route.path === "/primary" ||
@@ -426,7 +466,7 @@ onBeforeUnmount(() => {
                       ? 'bg-slate-50 text-deepBlue'
                       : ''
                   "
-                  @click="navigateToHomeHub(item.educationLevel)"
+                  @click="navigateToHomeHub(item.educationLevel =='primary' ? 'primary':'secondary')"
                 >
                   <span>{{ item.label }}</span>
                   <Icon
@@ -483,12 +523,12 @@ onBeforeUnmount(() => {
               to="/"
             >
               <p
-                class="block px-4 text-center uppercase lg:text-large text-medium text-shadow whitespace-nowrap"
+                class="block px-4 text-center lg:text-large text-medium text-shadow whitespace-nowrap"
               >
                 {{
                   language === "english"
-                    ? `TIE online school`
-                    : `shule mtandao ya TET`
+                    ? `TIE Online School`
+                    : `Shule Mtandao ya TET`
                 }}
               </p>
             </NuxtLink>
@@ -701,7 +741,7 @@ onBeforeUnmount(() => {
                         ? 'bg-slate-50 text-deepBlue'
                         : ''
                     "
-                    @click="navigateToHomeHub(item.educationLevel)"
+                    @click="navigateToHomeHub(item.educationLevel == 'primary' ? 'primary':'secondary')"
                   >
                     <span>{{ item.label }}</span>
                     <Icon
@@ -750,8 +790,8 @@ onBeforeUnmount(() => {
               >
                 {{
                   language === "english"
-                    ? `TIE online school`
-                    : `shule mtandao ya TIE`
+                    ? `TIE Online School`
+                    : `Shule Mtandao ya TET`
                 }}
               </p>
             </NuxtLink>
@@ -923,10 +963,10 @@ onBeforeUnmount(() => {
     <!-- Logout confirmation modal -->
     <ConfirmationModal
       :is-open="showLogoutConfirm"
-      title="Log out"
-      :message="messages.info.auth.logoutConfirm"
-      confirm-text="Log out"
-      cancel-text="Cancel"
+      :title="logoutConfirmTitle"
+      :message="logoutConfirmMessage"
+      :confirm-text="logoutConfirmButtonText"
+      :cancel-text="logoutCancelButtonText"
       variant="danger"
       icon="heroicons:arrow-right-on-rectangle"
       @confirm="onLogoutConfirm"

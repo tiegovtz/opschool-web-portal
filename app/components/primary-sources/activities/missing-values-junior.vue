@@ -26,6 +26,12 @@ type Props = {
 const props = defineProps<Props>();
 
 const { playSound } = useSoundEffects();
+const contentLayoutLanguage = useContentLayoutLanguage();
+const completionMessage = computed(() =>
+  contentLayoutLanguage.value === "kiswahili"
+    ? `Umefanikiwa kukamilisha mipangilio yote ${props.questions.sequences.length} ya namba!`
+    : `You've completed all ${props.questions.sequences.length} number sequences!`,
+);
 
 const currentSequenceIndex = ref(0);
 const placedNumbers = ref<string[]>([]);
@@ -287,7 +293,7 @@ const renderedResults = computed(() =>
       :isCompletionOnly="props.feedback === 'none'"
       :score="score"
       :total="props.questions.sequences.length"
-      :completionMessage="`You've completed all ${props.questions.sequences.length} number sequences!`"
+      :completionMessage="completionMessage"
     />
   </div>
 </template>

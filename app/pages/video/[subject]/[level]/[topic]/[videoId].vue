@@ -2,7 +2,7 @@
 import apiDocs from "~/utilities/apiDocs";
 
 const route = useRoute();
-// const router = useRouter();
+const router = useRouter();
 const videoId = route.fullPath.split("/").pop();
 const videoTitle = String(route.fullPath.split("/")[4])
     .toString()
@@ -93,22 +93,9 @@ const fetchVideoById = async () => {
 // Call FetchVideos Function
 fetchVideoById();
 
-/** Back to video list for this class + subject (same pattern as interactive topic page). */
-const backToVideoListPath = computed(() => {
-    const sub = String(route.params.subject ?? "").trim();
-    const lev = String(route.params.level ?? "").trim();
-    const type =
-        videoInfo.value?.videoType === "Conceptual"
-            ? "conc"
-            : videoInfo.value?.videoType
-              ? "oth"
-              : "conc";
-    if (!sub || !lev) return { path: "/video" };
-    return {
-        path: `/video/${encodeURIComponent(sub)}/${encodeURIComponent(lev)}`,
-        query: { type },
-    };
-});
+const goBack = () => {
+    router.back();
+};
 
 // Toggle Sidebar
 const toggleSidebar = () => {
@@ -134,13 +121,14 @@ const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level)
                 <!-- Videovideo Level Standard and Subject Indicator -->
                 <div class="flex w-full min-w-0 items-center justify-between gap-2">
                     <div class="flex min-w-0 flex-1 items-center gap-2">
-                        <NuxtLink
-                            :to="backToVideoListPath"
+                        <button
+                            type="button"
                             class="inline-flex shrink-0 items-center justify-center rounded-full border-2 border-oceanBlue p-2 text-oceanBlue transition-colors hover:bg-oceanBlue/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/50"
-                            aria-label="Back to videos for this subject"
+                            aria-label="Go back"
+                            @click="goBack"
                         >
                             <Icon name="vaadin:arrow-backward" size="22" class="text-oceanBlue" aria-hidden="true" />
-                        </NuxtLink>
+                        </button>
 
                         <p class="min-w-0 flex-1 truncate font-medium text-medium">
                             {{

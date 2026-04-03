@@ -5,14 +5,13 @@ import Activity from "~/components/activities/Activity.vue";
 import { Button } from "~/components/ui/button";
 
 const route = useRoute();
+const router = useRouter();
 
 const activityId = computed(() => String(route.params.activityId ?? ""));
 
-const backHref = computed(() => {
-  // Keep the user on the same learning filter when navigating back.
-  const curc = route.query.curc ? `?curc=${encodeURIComponent(String(route.query.curc))}` : "";
-  return `/activities${curc}`;
-});
+const goBack = () => {
+  router.back();
+};
 
 definePageMeta({
   middleware: "auth",
@@ -24,10 +23,10 @@ definePageMeta({
     <div class="mx-auto w-full max-w-7xl px-4 py-6 md:px-6">
       <div class="mb-5 flex items-start justify-start">
         <Button
-          :href="backHref"
           variant="brand"
           size="sm"
           class="w-fit rounded-xl"
+          :onClick="goBack"
         >
           <Icon
             icon="heroicons:arrow-left-20-solid"

@@ -1,12 +1,8 @@
 const baseURL =
   import.meta.env?.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
-const primaryBaseURL =
-  import.meta.env?.VITE_PRIMARY_API_BASE_URL ||
-  "http://41.59.251.164:9000/api/v1";
 
 const apiDocs = {
   baseURL: baseURL, // You can include it here for reference
-  primaryBaseURL,
 
   // AUTH API
   auth: {
@@ -92,13 +88,6 @@ const apiDocs = {
     getSubjects: `${baseURL}/subjects`,
     getSubjectId: `${baseURL}/subjects/:id`,
     getPublicSubjects: `${baseURL}/public-subjects`,
-  },
-
-  // PRIMARY MODULE API
-  primary: {
-    getGradesByLevel: `${primaryBaseURL}/smartbook/grade/list-by-level`,
-    getSubjectsByGrade: `${primaryBaseURL}/smartbook/subject/list-by-grade`,
-     getTopicsByGradeSubject:`${primaryBaseURL}/smartbook/topic/list-by-grade-subject`,
   },
 
   // SYLLABUS API (rich syllabus by subject + level; query params: subject, level, educationLevel as IDs)

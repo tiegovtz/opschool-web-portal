@@ -123,7 +123,7 @@ const generateSuggestion = (
                   `<li class="flex items-center gap-4 text-sm text-blue-600">
                 ${icon}
                     <a href="${link}" target="_blank" rel="noopener noreferrer">
-                      ${link}
+                      visit reference to learn more. 
                     </a>
                   </li>`
               )
