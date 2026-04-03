@@ -4,6 +4,7 @@ import { ref, watchEffect, onMounted, onUnmounted } from "vue";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 
 const route = useRoute();
+const router = useRouter();
 const audioId = route.fullPath.split("/").pop();
 const audioTitle = decodeURIComponent(route.fullPath.split("/")[4]?.replaceAll("-", " "));
 const audioStandard = decodeURIComponent(route.fullPath.split("/")[2]);
@@ -156,6 +157,10 @@ onUnmounted(() => {
     audioContext?.close();
 });
 
+const goBack = () => {
+    router.back();
+};
+
 </script>
 
 <template>
@@ -165,11 +170,11 @@ onUnmounted(() => {
                 class="w-full py-5 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink
-                            :to="{ path: '/', query: { tab: 'audio', subject: audioSubject, class: audioStandard } }"
-                            class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
+                        <button type="button"
+                            class="flex items-center gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small border-oceanBlue cursor-pointer hover:bg-oceanBlue/5"
+                            aria-label="Go back" @click="goBack">
                             <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
-                        </NuxtLink>
+                        </button>
                         <p class="font-medium text-medium">
                             {{
                                 audioTitle != null &&
