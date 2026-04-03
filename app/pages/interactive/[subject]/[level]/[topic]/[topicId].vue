@@ -16,16 +16,10 @@ import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
-import {
-  getEducationRouteQuery,
-  resolveEducationLevelFromRoute,
-  resolveRouteLanguage,
-} from "~/utilities/educationRoute";
-
+import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
 const route = useRoute();
 const router = useRouter();
 const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
-const primaryContentLanguage = usePrimaryContentLanguage();
 const safeDecode = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
   try {
@@ -40,28 +34,8 @@ const topicStandard = safeDecode(route.params.subject);
 const topicLevel = safeDecode(route.params.level);
 currentTopic.value = topicTitle;
 
-const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
-const interactiveFallbackRoute = computed(() => {
-  // const educationLevel = resolveEducationLevelFromRoute(route);
-  const language = resolveRouteLanguage(
-    route,
-    educationLevel,
-    primaryContentLanguage.value,
-  );
-
-  return {
-    path: "/interactive",
-    query: getEducationRouteQuery(educationLevel, {}, language),
-  };
-});
-
-const goToPreviousPage = async () => {
-  if (import.meta.client && window.history.length > 1) {
-    await router.back();
-    return;
-  }
-
-  await router.push(interactiveFallbackRoute.value);
+const goToPreviousPage = () => {
+  router.back();
 };
 
 // tokens cookies
@@ -72,6 +46,7 @@ const announcement = ref();
 const chapterProgress = useCookie<any>("chapterProgress");
 const userViewedTopic = useState("userViewedTopic");
 
+const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
 // Define meta info about page
 useHead({
   title: `TIE - Tanzania/${topicTitle}`,

@@ -2,7 +2,7 @@
 import apiDocs from "~/utilities/apiDocs";
 
 const route = useRoute();
-// const router = useRouter();
+const router = useRouter();
 const safeDecode = (value) => {
     const raw = typeof value === "string" ? value : "";
     try {
@@ -143,6 +143,10 @@ definePageMeta({
 
 const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
 
+const goBack = () => {
+    router.back();
+};
+
 // Define OnMounted
 onMounted(() => {
     //Add event listener to window screen /full/exit
@@ -162,12 +166,14 @@ onMounted(() => {
                 <!-- Experiments Level Standard and Subject Indicator -->
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <NuxtLink
-                            :to="{ path: '/', query: { tab: 'learn-activities', subject: experimentSubject, class: experimentStandard } }"
-                            class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue"
-                            aria-label="Go back to experiment list">
+                        <button
+                            type="button"
+                            class="flex items-center gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small border-oceanBlue cursor-pointer hover:bg-oceanBlue/5"
+                            aria-label="Go back"
+                            @click="goBack"
+                        >
                             <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" aria-hidden="true" />
-                        </NuxtLink>
+                        </button>
 
                         <!-- <NuxtLink
                             :to="{ path: '/', query: { tab: 'experiments', subject: experimentSubject, class: experimentStandard } }"

@@ -6,6 +6,7 @@ import type { Subjects } from "~/types/subject.interface";
 import apiDocs from "~/utilities/apiDocs";
 import {
   getApiContentLanguage,
+  isEducationLevelVisibleInHub,
   normalizeEducationLevel,
 } from "~/utilities/educationRoute";
 
@@ -215,8 +216,18 @@ const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
 const matchedEducationLevels = computed(() => {
   if (!props.educationLevel || !educationLevels.value.length) return [];
 
+  if (isPrimaryModule.value) {
+    return educationLevels.value.filter(
+      (educationLevelOption) =>
+        normalizeValue(educationLevelOption.name) === "primary",
+    );
+  }
+
   return educationLevels.value.filter((educationLevelOption) =>
-    matchesEducationLevel(educationLevelOption.name, props.educationLevel),
+    isEducationLevelVisibleInHub(
+      educationLevelOption.name,
+      props.educationLevel,
+    ),
   );
 });
 

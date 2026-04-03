@@ -11,6 +11,7 @@ import {
   getHubPath,
   normalizeEducationLevel,
   normalizeLanguageSupport,
+  type EducationBucket,
 } from "~/utilities/educationRoute";
 
 const props = withDefaults(
@@ -251,6 +252,14 @@ const languageSwitchContent = computed(() =>
 );
 
 const homeHubLabel = computed(() => {
+  if (currentEducationLevel.value === "primary") {
+    return props.language === "kiswahili" ? "Msingi" : "Primary";
+  }
+
+  if (currentEducationLevel.value === "lower secondary" || currentEducationLevel.value === "secondary") {
+    return props.language === "kiswahili" ? "Sekondari" : "Secondary";
+  }
+
   return props.language === "kiswahili" ? "Nyumbani" : "Home";
 });
 
@@ -260,7 +269,7 @@ const homeMenuItems = computed(() => [
     label: props.language === "kiswahili" ? "Msingi" : "Primary",
   },
   {
-    educationLevel: "secondary" as const,
+    educationLevel: "lower secondary" as EducationBucket,
     label: props.language === "kiswahili" ? "Sekondari" : "Secondary",
   },
 ]);
@@ -457,7 +466,7 @@ onBeforeUnmount(() => {
                       ? 'bg-slate-50 text-deepBlue'
                       : ''
                   "
-                  @click="navigateToHomeHub(item.educationLevel)"
+                  @click="navigateToHomeHub(item.educationLevel =='primary' ? 'primary':'secondary')"
                 >
                   <span>{{ item.label }}</span>
                   <Icon
@@ -732,7 +741,7 @@ onBeforeUnmount(() => {
                         ? 'bg-slate-50 text-deepBlue'
                         : ''
                     "
-                    @click="navigateToHomeHub(item.educationLevel)"
+                    @click="navigateToHomeHub(item.educationLevel == 'primary' ? 'primary':'secondary')"
                   >
                     <span>{{ item.label }}</span>
                     <Icon
