@@ -16,6 +16,7 @@ import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
+import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
 const route = useRoute();
 const router = useRouter();
 const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
@@ -45,6 +46,7 @@ const announcement = ref();
 const chapterProgress = useCookie<any>("chapterProgress");
 const userViewedTopic = useState("userViewedTopic");
 
+const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
 // Define meta info about page
 useHead({
   title: `TIE - Tanzania/${topicTitle}`,
