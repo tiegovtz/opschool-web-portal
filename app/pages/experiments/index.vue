@@ -351,6 +351,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
       <HomeTabContentShell
         :active-tab="activeTab"
         :language="language"
+        :education-level="educationLevel"
         :results-count="experiments?.length || 0"
         :filter-value="filterValue"
         :show-filters="!!userToken"
