@@ -2,10 +2,16 @@
 import type { LanguageSupport } from '~/types/language.interface';
 import { moveFocus } from '~/utilities/focus.helper';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{educationLevel?:string,language?:LanguageSupport}>(),{
     language:'english',
-})
+});
+
+const tieLogoAlt = computed(() =>
+  props.language === 'kiswahili'
+    ? "Nembo ya Taasisi ya Elimu Tanzania. Bango la juu lenye ukingo wa bluu lina maandishi 'Taasisi ya Elimu Tanzania.' Katikati kuna mwenge mweusi wenye mwali mwekundu na wa manjano. Chini ya mwenge kuna kitabu kilichofunguliwa chenye mistari ya bluu na dira mbili nyeusi chini yake. Upande wa kushoto wa nembo kuna jembe la rangi ya machungwa, na upande wa kulia kuna shoka la rangi ya machungwa, yote yakiwa yameelekezwa kuelekea ndani. Nembo imezungukwa na mabango ya utepe yaliyopinda yenye ukingo wa bluu. Bango la chini, pia lenye ukingo wa bluu, lina maandishi 'Elimu ni Kazi.'"
+    : "An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text 'Taasisi ya Elimu Tanzania.' At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text 'Elimu ni Kazi.'",
+);
 
 </script>
 
@@ -13,7 +19,7 @@ withDefaults(
     <div class="relative shadow-sm ">
         <button
             class="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2 -z-30 focus:z-50 border border-blue-800 rounded-full px-4 py-1 bg-white"
-            aria-label="Press Enter to jump to main content" @click="moveFocus('main-container')" type="button">{{ language=='english' ?`Skip to
+            aria-label="Press Enter to jump to main content" @click="moveFocus('main-container')" type="button">{{ props.language=='english' ?`Skip to
             the
             Content`:`Nenda kwenye maudhui` }}</button>
         <div class="relative flex justify-center w-full h-24 pt-1 bg-white/75 ">
@@ -46,15 +52,15 @@ withDefaults(
                     aria-label="Presented by Ministry of education, science and technology together with Tanzania institute of education (TIE)"
                     role="region">
                     <p class="md:text-small text-extraSmall text-deepBlue text-shadow">
-                        {{ language=='english' ?`Ministry of education, science and technology`:`Wizara ya elimu, Sayansi na Teknolojia` }}
+                        {{ props.language=='english' ?`Ministry of education, science and technology`:`Wizara ya elimu, Sayansi na Teknolojia` }}
                     </p>
                     <p class="lg:text-[1.8rem] md:text-[1.4rem] text-small">
-                       {{ language=='english' ?`Tanzania institute of education (TIE)`:`Taasisi ya Elimu Tanzania (TET)` }}
+                       {{ props.language=='english' ?`Tanzania institute of education (TIE)`:`Taasisi ya Elimu Tanzania (TET)` }}
                     </p>
                 </div>
                 <NuxtLink to="/" class="flex items-center justify-center h-full p-2 cursor-pointer">
                     <img src="/logo/logo_tie.gif" class="w-16 h-16"
-                        alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
+                        :alt="tieLogoAlt" />
                 </NuxtLink>
             </div>
         </div>
