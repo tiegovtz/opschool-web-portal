@@ -22,7 +22,7 @@ const activateWithKeyboard = (event: KeyboardEvent) => {
 
 <template>
     <button type="button" class="tie-cta-button cursor-pointer relative inline-flex items-center overflow-hidden border-none outline-none rounded-full py-4 px-9 focus-visible:ring-4 focus-visible:ring-oceanBlue/30 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
-        tabindex="-1" :aria-label="props.ariaLabel ?? props.label" :aria-describedby="props.ariaDescribedby" @click="emit('click', $event)"
+        :aria-label="props.ariaLabel ?? props.label" :aria-describedby="props.ariaDescribedby" @click="emit('click', $event)"
         @keydown.enter="activateWithKeyboard" @keydown.space="activateWithKeyboard">
         <span class="tie-cta-fold" aria-hidden="true" />
         <span class="tie-cta-points" aria-hidden="true">

@@ -5,26 +5,23 @@ import type { IconType } from '../icons/stats.vue';
 import { setPostLoginHome } from '~/utilities/postLoginHome';
 import { getHubPath } from '~/utilities/educationRoute';
 
-const router = useRouter();
 const hubHeaderLang = useHubHeaderLanguage();
 const hubEducationLevel = useHubEducationLevel();
 const primaryContentLanguage = usePrimaryContentLanguage();
+const primaryHubPath = computed(() => getHubPath('primary'));
+const secondaryHubPath = computed(() => getHubPath('secondary'));
 
 function goToPrimary() {
-    const target = getHubPath('primary');
-    setPostLoginHome(target);
+    setPostLoginHome(primaryHubPath.value);
     hubHeaderLang.value = 'kiswahili';
     hubEducationLevel.value = 'primary';
     primaryContentLanguage.value = 'kiswahili';
-    router.push(target);
 }
 
 function goToSecondary() {
-    const target = getHubPath('secondary');
-    setPostLoginHome(target);
+    setPostLoginHome(secondaryHubPath.value);
     hubHeaderLang.value = 'english';
     hubEducationLevel.value = 'secondary';
-    router.push(target);
 }
 
 const stats = [
@@ -159,18 +156,24 @@ onMounted(async () => {
                 <p id="education-level-actions" class="sr-only">
                     Chagua ngazi ya elimu. Tumia kitufe cha Msingi kufungua maudhui ya elimu ya msingi, au kitufe cha Sekondari kufungua maudhui ya sekondari.
                 </p>
-                <UiButtonShineParticles
-                    @click="goToPrimary"
-                    label="Msingi"
+                <NuxtLink
+                    :to="primaryHubPath"
                     aria-label="Fungua maudhui ya elimu ya msingi"
                     aria-describedby="landing-summary education-level-actions"
-                />
-                <UiButtonShineParticles
-                    @click="goToSecondary"
-                    label="Sekondari"
+                    class="tie-landing-cta"
+                    @click="goToPrimary"
+                >
+                    Msingi
+                </NuxtLink>
+                <NuxtLink
+                    :to="secondaryHubPath"
                     aria-label="Fungua maudhui ya elimu ya sekondari"
                     aria-describedby="landing-summary education-level-actions"
-                />
+                    class="tie-landing-cta"
+                    @click="goToSecondary"
+                >
+                    Sekondari
+                </NuxtLink>
             </div>
 
             <!-- static -->
@@ -214,3 +217,42 @@ onMounted(async () => {
         </section>
     </div>
 </template>
+
+<style scoped>
+.tie-landing-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 9999px;
+  padding: 1rem 2.25rem;
+  color: white;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  background:
+    radial-gradient(70% 80% at 50% 100%, rgba(122, 201, 255, 0.45) 0%, rgba(122, 201, 255, 0) 100%),
+    linear-gradient(135deg, #3e87c5 0%, #1f6fb2 45%, #174f80 100%);
+  box-shadow: 0px 14px 28px rgba(31, 111, 178, 0.34);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.tie-landing-cta:hover {
+  transform: translateY(-4px);
+  box-shadow: 0px 18px 34px rgba(31, 111, 178, 0.42);
+}
+
+.tie-landing-cta:active {
+  transform: scale(0.95);
+}
+
+.tie-landing-cta:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 4px rgba(31, 111, 178, 0.2),
+    0 0 0 8px rgba(255, 255, 255, 1),
+    0px 18px 34px rgba(31, 111, 178, 0.42);
+}
+</style>
