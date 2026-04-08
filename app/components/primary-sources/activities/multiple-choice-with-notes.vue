@@ -336,7 +336,7 @@ const resultRows = computed(() =>
                     class="flex items-start gap-2 text-base font-thin text-picton-blue-700"
                     style="font-family: var(--font-shaky-hand-some-comic);"
                   >
-                    <p>{{ option.id }})</p>
+                    <p>{{ option.id }}</p>
                     <p>{{ option.text }}</p>
                   </div>
                 </div>
