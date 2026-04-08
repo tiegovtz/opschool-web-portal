@@ -117,7 +117,7 @@ const selectLevel = async (name: string) => {
   selected.class = "";
   selected.subject = "";
   await nextTick();
-  liveMessage.value = `Level selected: ${name}`;
+  liveMessage.value = `${name} level selected`;
   emitUpdate();
 };
 
@@ -126,7 +126,7 @@ const selectClass = async (name: string) => {
   selected.class = name;
   selected.subject = "";
   await nextTick();
-  liveMessage.value = `Class selected: ${name}`;
+  liveMessage.value = `${name} class selected`;
   emitUpdate();
 };
 
@@ -134,7 +134,7 @@ const selectClass = async (name: string) => {
 const selectSubject = async (name: string) => {
   selected.subject = name;
   await nextTick();
-  liveMessage.value = `Subject selected: ${name}`;
+  liveMessage.value = `${name} subject selected`;
   emitUpdate();
 };
 

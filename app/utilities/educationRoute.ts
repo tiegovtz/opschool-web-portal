@@ -1,7 +1,7 @@
 import type { RouteLocationNormalizedLoaded } from "vue-router";
 import type { LanguageSupport } from "~/types/language.interface";
 
-export type EducationBucket = "primary" | "lower secondary"| "upper secondary" | "secondary";
+export type EducationBucket = "primary" |"pre-primary" | "lower secondary"| "upper secondary" | "secondary";
 export type EducationHubBucket = "primary" | "secondary";
 
 const PRIMARY_ALIASES = new Set([
@@ -9,6 +9,14 @@ const PRIMARY_ALIASES = new Set([
   "primary education",
   "elimu ya msingi",
   "msingi",
+]);
+
+const PRE_PRIMARY_ALIASES = new Set([
+  "pre-primary",
+  "pre primary",
+  "pre primary education",
+  "elimu ya awali",
+  "awali",
 ]);
 
 const PRIMARY_HUB_LEVEL_ALIASES = new Set([
@@ -71,6 +79,7 @@ export const normalizeEducationLevel = (
 ): EducationBucket => {
   const normalized = normalizeEducationAlias(value);
   if (PRIMARY_ALIASES.has(normalized)) return "primary";
+  if (PRE_PRIMARY_ALIASES.has(normalized)) return "pre-primary";
   if (SECONDARY_ALIASES.has(normalized)) return "lower secondary";
   return fallback;
 };
