@@ -19,7 +19,7 @@ withDefaults(
   :class="[appearance === 'rounded-glass' ? 'rounded-3xl border border-white/20 backdrop-filter bg-[linear-gradient(135deg,rgba(6,42,73,0.2)_0%,rgba(12,74,122,0.16)_42%,rgba(255,255,255,0.08)_100%)] shadow-[0px_22px_48px_rgba(7,42,74,0.2)] backdrop-blur-xl' :' bg-oceanBlue']">
    <div class="p-4">
     <div class="flex flex-col items-center justify-between gap-2 xl:flex-row wrapper-container">
-      <div class="flex flex-col items-start gap-1 text-center">
+      <address tabindex="0" class="not-italic flex flex-col items-start gap-1 text-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue">
         <p class="">
           P.O. Box 35094, Dar es Salaam, Tanzania
         </p>
@@ -32,7 +32,7 @@ withDefaults(
             <Icon name="ic:round-email" class=""/> director.general@tie.go.tz 
           </a>
         </div>
-      </div>
+      </address>
       <!-- Canada and unicef Logo -->
       <div tabindex="0" class="flex items-center justify-center h-12 gap-2 px-4 bg-white rounded-md">
         <a href="http://www.canada.ca/" target="_blank" aria-label="Visit Government of Canada website"
