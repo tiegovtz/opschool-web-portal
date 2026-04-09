@@ -1,6 +1,6 @@
-import { defineComponent, computed } from "vue";
-import { useDraggable } from "@dnd-kit/vue";
-import { CSS } from "@dnd-kit/utilities";
+import { computed, defineComponent, inject } from "vue";
+import { cn } from "~/utilities/utils";
+import { dndContextKey, type DndContextValue } from "~/components/layout/dnd-context";
 
 export default defineComponent({
   name: "Draggable",
@@ -23,23 +23,39 @@ export default defineComponent({
     },
   },
   setup(props, { slots, attrs }) {
-    const { draggable, isDragging } = useDraggable({
-      id: props.id,
-      data: props.data,
-      disabled: props.disabled,
-    });
+    const dndContext = inject<DndContextValue | null>(dndContextKey, null);
+    const dragId = computed(() => String(props.id));
+    const isDragging = computed(() => dndContext?.activeId.value === dragId.value);
+    const className = computed(() =>
+      cn(
+        !props.disabled && "select-none [&_*]:select-none",
+        attrs.class as string | undefined,
+        (attrs as { className?: string }).className,
+      )
+    );
+    const style = computed(() => ({
+      touchAction: props.disabled ? "auto" : "none",
+      ...(props.disabled
+        ? {}
+        : {
+            userSelect: "none",
+            WebkitUserSelect: "none",
+          }),
+      ...(isDragging.value
+        ? {
+            zIndex: 9999,
+            position: "relative" as const,
+          }
+        : {}),
+    }));
 
     const handleDragStart = (event: DragEvent) => {
       if (props.disabled) return;
-      event.dataTransfer?.setData("text/plain", props.id);
-      event.dataTransfer!.effectAllowed = "move";
-      dndContext?.beginDrag(props.id);
-      dndContext?.notifyDragStart(event, props.id);
-    };
-
-    const handleDrag = (event: DragEvent) => {
-      if (props.disabled) return;
-      dndContext?.notifyDragMove(event, props.id);
+      event.dataTransfer?.setData("text/plain", dragId.value);
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+      }
+      dndContext?.beginDrag(dragId.value);
     };
 
     const handleDragEnd = () => {
@@ -51,38 +67,13 @@ export default defineComponent({
 
     return () => (
       <div
-        {...draggable.value} 
-        id={String(props.id)}
-        style={style.value}
         {...attrs}
+        id={dragId.value}
         draggable={!props.disabled}
         onDragstart={handleDragStart}
-        onDrag={handleDrag}
         onDragend={handleDragEnd}
-        style={{
-          touchAction: props.disabled ? "auto" : "none",
-          ...(props.disabled
-            ? {}
-            : {
-                userSelect: "none",
-                WebkitUserSelect: "none",
-              }),
-          ...(isDragging.value
-            ? {
-                zIndex: 9999,
-                position: "relative" as const,
-              }
-            : {}),
-          ...props.style,
-        }}
-        class={cn(
-          !props.disabled && "select-none [&_*]:select-none",
-          props.class,
-          props.className,
-          attrs.class as string | undefined,
-          (attrs as { className?: string }).className,
-        )}
-        id={props.id}
+        style={style.value}
+        class={className.value}
       >
         {slots.default?.()}
       </div>
