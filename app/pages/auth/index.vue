@@ -6,11 +6,13 @@ import { dataEncrypt, dataDecrypt } from "~/utilities/encryption";
 import { useNavigationStore } from "~/stores/navigationStore";
 import { useAuthStore } from "~/stores/auth";
 import { consumePostLoginHome } from "~/utilities/postLoginHome";
+import { getHubPath } from "~/utilities/educationRoute";
 
 // // Use the State
 const navigationStore = useNavigationStore();
 const returnPath = computed(() => navigationStore.getLatestRoute());
 const route = useRoute();
+const hubEducationLevel = useHubEducationLevel();
 const authRedirectQuery = computed(() =>
   typeof route.query.redirect === "string" && route.query.redirect.length > 0
     ? { redirect: route.query.redirect }
@@ -223,7 +225,8 @@ const signIn = async () => {
           ? route.query.redirect
           : returnPath.value;
       const landingChoiceHome = consumePostLoginHome();
-      router.replace(redirectPath || landingChoiceHome || "/secondary");
+      const fallbackHubPath = getHubPath(hubEducationLevel.value);
+      router.replace(redirectPath || landingChoiceHome || fallbackHubPath || "/secondary");
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = content.value.errors.invalidCredentials;
