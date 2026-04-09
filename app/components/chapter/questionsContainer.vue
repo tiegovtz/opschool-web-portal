@@ -317,7 +317,7 @@ const isDragAnswerCorrectAt = (questionIndex: number, blankIndex: number) =>
 
 const getChoiceReason = (question: Question, userAnswer: string): string => {
   return question.choices.find(
-    (choice: Choice) => choice.value === userAnswer.trim()
+    (choice: Choice) => choice.value.trim().toLowerCase() === userAnswer.trim().toLowerCase()
   )?.description || '';
 };
 </script>
@@ -410,7 +410,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
           <!-- choice description (reason)-->
           <!--  -->
           <div class="px-4"
-            v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description?.trim() && getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? '')"
+            v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description?.trim() && getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? '').trim()"
             :aria-label="`Explanation to justify why you answer ${quizAttempt.clickedAnswer[index] == question.answer ? 'correct' : 'incorrect'}`"
             v-html="generateSuggestion(getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? ''), quizAttempt.clickedAnswer[index] == question.answer)">
           </div>
