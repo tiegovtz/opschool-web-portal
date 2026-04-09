@@ -26,6 +26,11 @@ import {
 // Defin Route
 const route = useRoute();
 const router = useRouter();
+const redirectToAuth = () =>
+  router.replace({
+    path: "/auth",
+    query: { redirect: route.fullPath },
+  });
 const decodeParam = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
   try {
@@ -213,7 +218,7 @@ const fetchTopics = async (params:any) => {
   } catch (error) {
     status.value = "error";
     slicedData.value = [];
-    router.replace("/auth");
+    redirectToAuth();
   }
 };
 

@@ -37,6 +37,7 @@ useHead({
 
 // Video source - fetch from the interactive topic route
 const route = useRoute()
+const authRedirectTarget = computed(() => route.fullPath)
 const { snapshotId: activeRecommendationSnapshotId } =
   useRecommendationSnapshot()
 const videoSrc = ref<string>('/videos/TestVideo.mp4')
@@ -85,7 +86,10 @@ const fetchVideo = async () => {
     // Check if user is authenticated (middleware should handle this, but double-check)
     if (!signInAccessToken.value || !userToken.value) {
       // Redirect to auth page if not authenticated
-      await navigateTo('/auth')
+      await navigateTo({
+        path: '/auth',
+        query: { redirect: authRedirectTarget.value },
+      })
       return
     }
 
@@ -95,7 +99,10 @@ const fetchVideo = async () => {
       if (newToken && 'access_token' in newToken && typeof newToken.access_token === 'string') {
         signInAccessToken.value = newToken.access_token
       } else {
-        await navigateTo('/auth')
+        await navigateTo({
+          path: '/auth',
+          query: { redirect: authRedirectTarget.value },
+        })
         return
       }
     }
