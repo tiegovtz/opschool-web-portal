@@ -7,6 +7,7 @@ import {
   getEducationRouteQuery,
   normalizeEducationLevel,
   resolveRouteLanguage,
+  type EducationBucket,
 } from "~/utilities/educationRoute";
 
 // Define Emit
@@ -20,7 +21,7 @@ const props = withDefaults(
     educationLevel?: string;
     language?: LanguageSupport;
     subjectTitle?: string;
-    tabGroup?: tabGroup;
+    tabGroup?: EducationBucket;
     topicId?: string;
     isLoggedIn?: boolean;
     activeTab?: tabs;
