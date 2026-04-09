@@ -487,10 +487,17 @@ const fetchData = async (params?: any) => {
 
 // shuffle Subject
 const shuffleSubject = (subjects: Subjects[]) => {
-  return subjects
-    .map((subject: Subjects) => ({ subject, sort: Math.random() })) // Assign a random sort key
-    .sort((a: any, b: any) => a.name - b.name) // Sort by random key
-    .map(({ subject }: { subject: Subjects }) => subject); // Extract shuffled choices
+  const shuffled = [...subjects];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [
+      shuffled[randomIndex]!,
+      shuffled[index]!,
+    ];
+  }
+
+  return shuffled;
 };
 
 //  assigning page size based on screen sizes

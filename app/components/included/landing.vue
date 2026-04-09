@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { IconsMdiBookOpenPageVariantOutline, UiBackButton } from '#components';
 import apiDocs from '~/utilities/apiDocs';
 import type { IconType } from '../icons/stats.vue';
 import { setPostLoginHome } from '~/utilities/postLoginHome';
@@ -16,12 +15,14 @@ function goToPrimary() {
     hubHeaderLang.value = 'kiswahili';
     hubEducationLevel.value = 'primary';
     primaryContentLanguage.value = 'kiswahili';
+    useRouter().push(primaryHubPath.value);
 }
 
 function goToSecondary() {
     setPostLoginHome(secondaryHubPath.value);
     hubHeaderLang.value = 'english';
     hubEducationLevel.value = 'secondary';
+    useRouter().push(secondaryHubPath.value);
 }
 
 const stats = [

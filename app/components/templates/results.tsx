@@ -1,7 +1,11 @@
 import { computed, defineComponent, ref, watch } from "vue";
 import { cn } from "~/utilities/utils";
 import { Button } from "~/components/ui/button";
-import { normalizeLanguageSupport } from "~/utilities/educationRoute";
+import {
+  normalizeLanguageSupport,
+  resolveEducationLevelFromRoute,
+  resolveRouteLanguage,
+} from "~/utilities/educationRoute";
 
 interface ResultsProps {
   score?: number;
@@ -34,6 +38,27 @@ const resolveMessage = (score: number, total: number, isSwahili: boolean) => {
     : "Keep practicing and try again.";
 };
 
+const useIsSwahiliResultsUi = () => {
+  const route = useRoute();
+  const hubHeaderLang = useHubHeaderLanguage();
+  const primaryContentLanguage = usePrimaryContentLanguage();
+  const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+  const routeLanguage = computed(() =>
+    resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
+  );
+
+  return computed(
+    () =>
+      normalizeLanguageSupport(
+        route.query.lang ||
+          routeLanguage.value ||
+          hubHeaderLang.value ||
+          primaryContentLanguage.value,
+        "english",
+      ) === "kiswahili",
+  );
+};
+
 const ResultsCard = defineComponent({
   name: "ActivityResults",
   props: {
@@ -51,18 +76,7 @@ const ResultsCard = defineComponent({
     className: String,
   },
   setup(props) {
-    const route = useRoute();
-    const hubHeaderLang = useHubHeaderLanguage();
-    const primaryContentLanguage = usePrimaryContentLanguage();
-    const isSwahili = computed(
-      () =>
-        normalizeLanguageSupport(
-          route.query.lang ||
-            hubHeaderLang.value ||
-            primaryContentLanguage.value,
-          "english",
-        ) === "kiswahili",
-    );
+    const isSwahili = useIsSwahiliResultsUi();
     const percentage = computed(() =>
       props.total ? Math.round((props.score / props.total) * 100) : 0,
     );
@@ -129,18 +143,7 @@ export const ActivityResultsAlertDialog = defineComponent({
     description: String,
   },
   setup(props) {
-    const route = useRoute();
-    const hubHeaderLang = useHubHeaderLanguage();
-    const primaryContentLanguage = usePrimaryContentLanguage();
-    const isSwahili = computed(
-      () =>
-        normalizeLanguageSupport(
-          route.query.lang ||
-            hubHeaderLang.value ||
-            primaryContentLanguage.value,
-          "english",
-        ) === "kiswahili",
-    );
+    const isSwahili = useIsSwahiliResultsUi();
     const close = () => props.onOpenChange?.(false);
 
     type ConfettiPiece = {

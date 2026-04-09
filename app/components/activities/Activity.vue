@@ -8,6 +8,11 @@ import activityPropsTranspiler from '~~/shared/transpilerMapper';
 import type { ActivityType } from "~/types/activity-types";
 import apiDocs from "~/utilities/apiDocs";
 import {
+  getApiContentLanguage,
+  resolveEducationLevelFromRoute,
+  resolveRouteLanguage,
+} from "~/utilities/educationRoute";
+import {
   activityAuthHeaders,
   extractActivityFromPayload,
   normalizeActivity,
@@ -23,6 +28,15 @@ const activity = ref<Activity>();
 const error = ref<Error>();
 const wrongQuestionsFormat = ref<boolean>(false);
 const isMobile = useIsMobile()
+const route = useRoute();
+const primaryContentLanguage = usePrimaryContentLanguage();
+const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const contentLanguage = computed(() =>
+  resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
+);
+const apiLanguage = computed(() =>
+  getApiContentLanguage(educationLevel.value, contentLanguage.value),
+);
 
 const setWrongQuestionsFormat = (state:boolean)=>wrongQuestionsFormat.value = state; 
 
@@ -35,6 +49,9 @@ const fetchData = async () => {
           apiDocs.activities.getActivityId.replace("{id}", props.activityId),
           {
             headers: activityAuthHeaders(),
+            query: apiLanguage.value
+              ? { language: apiLanguage.value }
+              : undefined,
           }
         );
 
@@ -59,8 +76,8 @@ const fetchData = async () => {
 
 // computed component to map
 watch(
-    () => props.activityId,
-    async (value) => {
+    () => [props.activityId, apiLanguage.value],
+    async ([value]) => {
         if (!value) {
             activity.value = undefined;
             status.value = 'idle';
