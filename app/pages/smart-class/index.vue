@@ -15,6 +15,11 @@ const pageLanguage = useHubPageLanguage();
 const isSw = computed(() => pageLanguage.value === "kiswahili");
 const navigationStore = useNavigationStore();
 const router = useRouter();
+const redirectToAuth = () =>
+  router.push({
+    path: "/auth",
+    query: { redirect: route.fullPath },
+  });
 
 const smartText = computed(() => ({
   back: isSw.value ? "Rudi" : "Back",
@@ -175,7 +180,7 @@ const clearSessionAndRedirect = async () => {
   sessionExpiredModalOpen.value = false;
   if (process.client) document.documentElement.style.overflow = "";
 
-  await router.push("/auth");
+  await redirectToAuth();
 };
 
 const streamHeaders = {

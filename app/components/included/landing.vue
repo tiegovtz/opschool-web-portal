@@ -156,31 +156,14 @@ onMounted(async () => {
                 <p id="education-level-actions" class="sr-only">
                     Chagua ngazi ya elimu. Tumia kitufe cha Msingi kufungua maudhui ya elimu ya msingi, au kitufe cha Sekondari kufungua maudhui ya sekondari.
                 </p>
-                <NuxtLink
-                    :to="primaryHubPath"
-                    aria-label="Fungua maudhui ya elimu ya msingi"
-                    aria-describedby="landing-summary education-level-actions"
-                    class="tie-landing-cta"
-                    @click="goToPrimary"
-                >
-                    Msingi
-                </NuxtLink>
-                <NuxtLink
-                    :to="secondaryHubPath"
-                    aria-label="Fungua maudhui ya elimu ya sekondari"
-                    aria-describedby="landing-summary education-level-actions"
-                    class="tie-landing-cta"
-                    @click="goToSecondary"
-                >
-                    Sekondari
-                </NuxtLink>
+                <UiButtonShineParticles @click="goToPrimary" label="Msingi" />
+                <UiButtonShineParticles @click="goToSecondary" label="Sekondari" />
             </div>
 
             <!-- static -->
             <div class="flex flex-wrap lg:grid gap-4 pt-15 xl:grid-cols-2 mt-4 md:mt-8 lg:mt-16">
-                <div v-for="(stat, idx) in stats" :key="`${idx}-${stat.label}`"
+                <div v-for="(stat, idx) in stats" :key="`${idx}-${stat.label}`" tabindex="0"
                     class="group relative overflow-hidden rounded-[2rem] border border-[#e4edf5] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(247,251,255,0.98)_100%)] px-5 py-4 shadow-[0px_18px_40px_rgba(18,79,134,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0px_24px_48px_rgba(18,79,134,0.14)] w-full md:max-w-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/50 focus-visible:ring-offset-2"
-                    tabindex="0"
                     role="group" :aria-label="`${stat.label}: ${stat.data === 'topics' ? `${allTopics}+` : stat.data == 'resources' ? `${allContent}+` : stat.value}. ${stat.detail}`">
                     <div
                         class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(108,180,229,0.08),transparent_42%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -217,42 +200,3 @@ onMounted(async () => {
         </section>
     </div>
 </template>
-
-<style scoped>
-.tie-landing-cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border-radius: 9999px;
-  padding: 1rem 2.25rem;
-  color: white;
-  font-size: 1.125rem;
-  font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: -0.01em;
-  text-decoration: none;
-  background:
-    radial-gradient(70% 80% at 50% 100%, rgba(122, 201, 255, 0.45) 0%, rgba(122, 201, 255, 0) 100%),
-    linear-gradient(135deg, #3e87c5 0%, #1f6fb2 45%, #174f80 100%);
-  box-shadow: 0px 14px 28px rgba(31, 111, 178, 0.34);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.tie-landing-cta:hover {
-  transform: translateY(-4px);
-  box-shadow: 0px 18px 34px rgba(31, 111, 178, 0.42);
-}
-
-.tie-landing-cta:active {
-  transform: scale(0.95);
-}
-
-.tie-landing-cta:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 4px rgba(31, 111, 178, 0.2),
-    0 0 0 8px rgba(255, 255, 255, 1),
-    0px 18px 34px rgba(31, 111, 178, 0.42);
-}
-</style>

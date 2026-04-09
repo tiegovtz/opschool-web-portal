@@ -38,6 +38,12 @@ const goToPreviousPage = () => {
   router.back();
 };
 
+const redirectToAuth = () =>
+  router.replace({
+    path: "/auth",
+    query: { redirect: route.fullPath },
+  });
+
 // tokens cookies
 const signInAccessToken = useCookie("signInAccessToken");
 const userToken = useCookie("signInUserToken");
@@ -100,7 +106,7 @@ const chapters = reactive<{
   status: string;
   error: any;
   currentChapterId: string | null;
-  notesStatus: string;
+  notesStatus: "pending" | "success" | "error" | "empty";
   questions: any[] | null;
   number: number;
   isAttemptingQuizes: boolean;
@@ -197,7 +203,7 @@ const ensureAccessTokenValid = async () => {
     if (response && 'access_token' in response) {
       signInAccessToken.value = (response as { access_token: string }).access_token;
     } else {
-      router.replace("/auth");
+      redirectToAuth();
     }
   }
 };
@@ -373,7 +379,6 @@ const getChapter = async (chapterId: string) => {
 
 // Submit Topic viewed Read
 const topicViewedRead = async (topicId: string) => {
-  chapters.notesStatus = "pending";
   await $fetch(apiDocs.topics.topicViewedRead.replaceAll("{id}", topicId), {
     headers: {
       Authorization: `Bearer ${signInAccessToken.value}`,
@@ -426,6 +431,9 @@ try {
         chapterNo: firstChapter.chapterNo,
       });
       getChapter(firstChapterId);
+    } else {
+      chapters.notesStatus = "empty";
+      announcement.value = "No content available for this topic";
     }
   }
 } catch (error) {
@@ -433,7 +441,7 @@ try {
   chapters.error = error;
   signInAccessToken.value = null;
   userToken.value = null;
-  router.replace("/auth");
+  redirectToAuth();
 }
 
 // Call Submit Topic Viewed Read
@@ -446,7 +454,7 @@ watch(
   (token) => {
     // Get the router instance
     if (!token) {
-      router.replace("/auth");
+      redirectToAuth();
     }
   }
 );
@@ -976,6 +984,13 @@ definePageMeta({
           <div class="flex items-center justify-center flex-1">
             <LoadingIndicator :is-loading="true" />
           </div>
+        </div>
+
+        <div
+          v-else-if="chapters.notesStatus == 'empty'"
+          class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll"
+        >
+          <MessageTopicNotFound message="No content available" />
         </div>
 
         <!-- Notes loaded successfully -->
