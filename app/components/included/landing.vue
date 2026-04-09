@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { IconsMdiBookOpenPageVariantOutline, UiBackButton } from '#components';
 import apiDocs from '~/utilities/apiDocs';
 import type { IconType } from '../icons/stats.vue';
 import { setPostLoginHome } from '~/utilities/postLoginHome';
