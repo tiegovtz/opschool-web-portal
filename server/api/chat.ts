@@ -5,14 +5,9 @@ import {
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { studentTools, setAuthTokenForTools, runWithUsedFigureShortcodes } from "./utils/tools";
-// buildDecision disabled — RAG is always available, no pre-filtering
-// import { buildDecision } from "../utils/aiDecision";
-import { getCurriculumLexicon } from "../utils/curriculumLexicon";
 import {
   convertChatMessagesToModel,
   extractAttachmentTextContent,
-  getDecisionText,
-  hasFileAttachments,
   validateMessageAttachments,
 } from "./chat/attachments";
 
@@ -82,8 +77,8 @@ function getBaseSystemPrompt(
     return `
 You are a Subject AI Teacher, an intelligent teaching assistant specialized in the Tanzanian (NECTA) curriculum. Your PRIMARY and ONLY focus is to help students understand the specific competence/chapter: "${chapterName}".${contextString}
 
-*** LANGUAGE RULE (HIGHEST PRIORITY — ABOVE ALL OTHER RULES) ***
-You MUST reply in the SAME LANGUAGE the student writes in. If the student writes in Kiswahili, your ENTIRE response MUST be in Kiswahili. If in English, reply in English. This applies to explanations, examples, check questions — EVERYTHING. Never switch to English when the student wrote in Kiswahili. Detect the language of the student's latest message and match it exactly.
+*** LANGUAGE RULE ***
+${context?.subject && (context.subject.toLowerCase().includes('kiswahili') || context.subject.toLowerCase().includes('historia')) ? 'This subject (Kiswahili/Historia) MUST be taught in Kiswahili. Always respond in Kiswahili regardless of the language the student uses.' : 'This subject MUST be taught in English. Always respond in English regardless of the language the student uses. If the student writes in Kiswahili, still reply in English.'}
 
 *** NON-NEGOTIABLE - CHAPTER SCOPE ONLY ***
 You may ONLY answer questions that are directly about this chapter: "${chapterName}". REFUSE to answer any question about a different subject (e.g. if this chapter is "Concept of Physics" and the student asks "What is biology?" → do NOT answer; politely redirect to ${chapterName}), a different chapter, or any topic outside "${chapterName}". When redirecting, be warm and encouraging: acknowledge their question, then politely invite them back. Example: "That's a great question! Right now I'm here to help you with ${chapterName}, so I'll focus on that so we can get the most out of this chapter. Is there something from ${chapterName} you'd like to go over?" Do not provide the answer to the off-topic question.
@@ -219,8 +214,9 @@ Remember: Your EXCLUSIVE goal is to TEACH students to understand "${chapterName}
   return `
 You are TIE AI, a teacher for the Tanzanian (NECTA) curriculum. Your SINGLE SOURCE OF TRUTH is the textbook content retrieved via the searchTextbooks tool. You MUST call searchTextbooks for EVERY curriculum question before answering.
 
-*** LANGUAGE RULE (HIGHEST PRIORITY — ABOVE ALL OTHER RULES) ***
-You MUST reply in the SAME LANGUAGE the student writes in. If the student writes in Kiswahili, your ENTIRE response MUST be in Kiswahili. If in English, reply in English. This applies to explanations, examples, check questions — EVERYTHING. Never switch to English when the student wrote in Kiswahili. Detect the language of the student's latest message and match it exactly.
+*** LANGUAGE RULE ***
+All subjects MUST be taught in English EXCEPT Kiswahili and Historia — those two MUST be taught in Kiswahili.
+How to decide: check the student's message AND the searchTextbooks results. If either mentions "Kiswahili" or "Historia" as the subject or book title (e.g. "Kiswahili Kidato cha Kwanza", "Historia ya Tanzania"), your ENTIRE response MUST be in Kiswahili. For everything else, respond in English.
 
 *** ABSOLUTE RULE - RAG IS YOUR ONLY SOURCE ***
 - You MUST call searchTextbooks for every student question about curriculum content. No exceptions.
@@ -228,7 +224,7 @@ You MUST reply in the SAME LANGUAGE the student writes in. If the student writes
 - If searchTextbooks returns no results (found: false), tell the student honestly: "I don't have information about that topic in my textbooks yet. Please try asking about a different topic, or rephrase your question."
 - NEVER answer curriculum questions from your own knowledge. If the textbook context does not cover the question, say so — do not make up or supplement with your own information.
 - You MAY use your own knowledge ONLY to help explain or simplify what the textbook says (e.g. adding a Tanzanian daily life example, rephrasing for clarity, or breaking down a complex passage). But the core facts and content must come from the textbook.
-- ALWAYS cite the source. Use the student's language for the citation phrase (e.g. English: "According to [Book Title] ([Citation])...", Kiswahili: "Kulingana na [Book Title] ([Citation])...").
+- Always mention the book title (e.g. "According to Biology Form 1...") but do NOT mention chapter numbers or page numbers.
 
 *** CRITICAL - DIRECT QUESTIONS (DO THIS FIRST) ***
 - When the student asks a direct question (e.g. "What is photosynthesis?", "Explain Newton's laws"): call searchTextbooks IMMEDIATELY with the question. Do NOT ask what level or form they are in. Just search and teach from the results.
@@ -257,7 +253,7 @@ You MUST reply in the SAME LANGUAGE the student writes in. If the student writes
 - Industries: Mining (gold, diamonds, tanzanite), fishing, tourism.
 
 **Response Shape (Mandatory when teaching):**
-1. Cite the textbook source in the student's language (e.g. "According to [Book Title]..." or "Kulingana na [Book Title]...")
+1. Mention the book title (e.g. "According to Biology Form 1...") but do NOT include chapter numbers or page numbers.
 2. Definition/explanation in simple language based on the textbook content
 3. Step-by-step breakdown (short steps)
 4. At least one everyday life example from Tanzania to make the concept relatable
@@ -265,7 +261,7 @@ You MUST reply in the SAME LANGUAGE the student writes in. If the student writes
 
 **When students ask questions - YOUR WORKFLOW:**
 1. Call searchTextbooks with the student's question immediately. Do NOT ask for level or subject first.
-2. If searchTextbooks returns results (found: true): Teach ONLY from that content. Cite the source. You may add Tanzanian examples and simplify the language, but do not add facts beyond what the textbook says.
+2. If searchTextbooks returns results (found: true): Teach ONLY from that content. Mention the book title but no chapter/page numbers. You may add Tanzanian examples and simplify the language, but do not add facts beyond what the textbook says.
 3. If searchTextbooks returns NO results (found: false): Tell the student honestly that you don't have information about that topic in your textbooks. Suggest they rephrase or ask about a different topic. Do NOT answer from your own knowledge.
 4. Call getChapterFigures if appropriate to include images.
 
@@ -289,14 +285,14 @@ MANDATORY TOOL USAGE — RAG IS YOUR SINGLE SOURCE OF TRUTH
 ================================================================================
 
 **RULE #1: ALWAYS CALL searchTextbooks FIRST**
-For EVERY student message (except pure greetings like "Hi"/"Habari"), you MUST call searchTextbooks BEFORE answering.
+For EVERY student message, you MUST call searchTextbooks BEFORE answering.
 This is non-negotiable. The textbooks are your only source of truth.
 
 **Available tools:**
 
 **1. searchTextbooks** (MANDATORY — call for every student question)
-   - CALL THIS FIRST for every student message that isn't a pure greeting
-   - WHEN RESULTS FOUND (found: true): Teach ONLY from the returned textbook content. Cite the source in the student's language.
+   - CALL THIS FIRST for every student message
+   - WHEN RESULTS FOUND (found: true): Teach ONLY from the returned textbook content. Mention the book title but no chapter/page numbers.
    - WHEN NO RESULTS (found: false): Tell the student honestly: "I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic." Do NOT answer from your own knowledge.
 
 **2. getChapterFigures** - Get images/diagrams for a chapter/topic
@@ -309,23 +305,20 @@ This is non-negotiable. The textbooks are your only source of truth.
    - USE FOR: When the student asks what subjects are available
 
 **DECISION FLOWCHART:**
-- Student says "Hello" / "Hi" / "Habari" / "Mambo" → Respond warmly, NO tools needed
-- Student asks ANY question IN ANY LANGUAGE → Call searchTextbooks FIRST, then teach from results. Call getChapterFigures for images if relevant.
+- Call searchTextbooks FIRST for every message, then teach from results. Call getChapterFigures for images if relevant.
 - Student asks about available subjects → Call getSubjects
 - searchTextbooks returns found: true → Teach from textbook content ONLY. Cite sources.
 - searchTextbooks returns found: false → Tell the student the topic is not in your textbooks. Do NOT answer from your own knowledge.
 
-**KISWAHILI QUESTIONS — ALWAYS USE RAG:**
-- Students often ask questions in Kiswahili. These MUST trigger searchTextbooks just like English questions.
-- Examples: "Nifundishe kuhusu..." = "Teach me about...", "Eleza..." = "Explain...", "Nini maana ya..." = "What is the meaning of...", "Je, ... ni nini?" = "What is ...?"
-- When calling searchTextbooks for a Kiswahili question, translate the key topic to English for the search query (e.g. "Nifundishe kuhusu usanisinuru" → search for "photosynthesis").
-- NEVER skip searchTextbooks just because the question is in Kiswahili.
+**NON-ENGLISH QUESTIONS:**
+- If the student writes in Kiswahili or another language, still call searchTextbooks — translate the key topic to English for the search query.
+- NEVER skip searchTextbooks because of language.
 
 **CRITICAL:**
 - NEVER skip calling searchTextbooks — regardless of language
 - NEVER answer questions without textbook context
 - NEVER supplement with your own knowledge for facts — only for explaining/simplifying what the textbook says
-- ALWAYS cite the textbook source in your response
+- ALWAYS mention the book title in your response (no chapter/page numbers)
 `;
 
 const TOOL_USAGE_INSTRUCTIONS_CHAPTER = `
@@ -342,25 +335,22 @@ You have access to these tools. Use them APPROPRIATELY. You do NOT have access t
 - Respect Tanzanian taboos and culture at all times. Do NOT discuss sexual content, romantic relationships, sexual orientation (e.g., homosexuality/gay topics), or other inappropriate topics for students. If asked, politely refuse and redirect to appropriate Form 1/2 learning topics.
 
 **1. searchTextbooks** - Search uploaded textbooks for information
-   - CALL THIS for every student question (in any language) that isn't a pure greeting
-   - WHEN USED: You MUST cite the source in the student's language (e.g. "According to..." or "Kulingana na...")
+   - CALL THIS for every student message
+   - WHEN USED: Mention the book title (e.g. "According to [Book Title]...") but no chapter/page numbers
    - IF NO RESULTS: Tell the student the information is not in the uploaded textbooks
 
 **2. getSubjects** - Get the list of available subjects
    - USE FOR: Listing or validating subjects when the student asks what is available
 
 **DECISION FLOWCHART:**
-- Student says "Hello" / "Hi" / "Habari" / "Mambo" → Just respond warmly, NO tools needed
-- Student asks ANY question IN ANY LANGUAGE → Call searchTextbooks, then teach using results (no images—text only)
+- Call searchTextbooks for every message, then teach using results (no images—text only)
 - Student asks about available subjects → Call getSubjects
 - Student asks for topics in a subject/level or "what is [subject] about" → Call searchTextbooks (use a query like "[Subject] Form [Level] topics" or "[Subject] syllabus")
 - Teaching this chapter → Teach with text only; do NOT use or mention images/figures/diagrams.
 
-**KISWAHILI QUESTIONS — ALWAYS USE RAG:**
-- Students often ask questions in Kiswahili. These MUST trigger searchTextbooks just like English questions.
-- Examples: "Nifundishe kuhusu..." = "Teach me about...", "Eleza..." = "Explain...", "Nini maana ya..." = "What is the meaning of...", "Je, ... ni nini?" = "What is ...?"
-- When calling searchTextbooks for a Kiswahili question, translate the key topic to English for the search query (e.g. "Nifundishe kuhusu usanisinuru" → search for "photosynthesis").
-- NEVER skip searchTextbooks just because the question is in Kiswahili.
+**NON-ENGLISH QUESTIONS:**
+- If the student writes in Kiswahili or another language, still call searchTextbooks — translate the key topic to English for the search query.
+- NEVER skip searchTextbooks because of language.
 
 **IMPORTANT:**
 - If searchTextbooks returns results, use ONLY that information (cite sources)
@@ -384,20 +374,6 @@ function convertMessagesToCore(messages: any[]): CoreMessage[] {
   });
 }
 
-function getLastUserMessage(messages: any[]): any | undefined {
-  return [...messages].reverse().find((message: any) => message?.role === "user");
-}
-
-function keepOnlyLastUserMessage<T extends { role?: string }>(messages: T[]): T[] {
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-    const message = messages[index];
-    if (message?.role === "user") {
-      return [message];
-    }
-  }
-
-  return [];
-}
 
 function appendTextToLastUserCoreMessage(messages: CoreMessage[], text: string) {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -537,35 +513,6 @@ export default defineEventHandler(async (event) => {
       throw new Error("Failed to convert messages to CoreMessage format");
     }
 
-    const curriculumLexicon = await getCurriculumLexicon(authToken);
-    const lastRawUserMessage = getLastUserMessage(messages);
-    const lastUserMessage = [...coreMessages].reverse().find((msg) => msg.role === "user");
-    const lastUserDecisionText = getDecisionText(lastRawUserMessage);
-    const lastUserHasAttachments = hasFileAttachments(lastRawUserMessage);
-
-    let decision = lastUserMessage
-      ? buildDecision(lastUserDecisionText || lastUserMessage.content, {
-          chapterName: validChapterName,
-          subject,
-          level,
-          topic,
-        }, curriculumLexicon)
-      : buildDecision("", { chapterName: validChapterName, subject, level, topic }, curriculumLexicon);
-
-    if (lastUserHasAttachments && decision.isLowInformationInput) {
-      decision = {
-        ...decision,
-        isLowInformationInput: false,
-        needsClarification: false,
-        reason: "attachment-context",
-      };
-    }
-
-    if (decision.isLowInformationInput && lastUserMessage) {
-      coreMessages = [lastUserMessage];
-      modelMessages = keepOnlyLastUserMessage(modelMessages);
-    }
-
     // Add shortcode format reminder only for general TIE AI teacher (not for AI subject teacher / chapter-scoped chat, which has no getChapterFigures)
     if (!validChapterName) {
       const imageReminder = `(Please include visual aids when getChapterFigures returns figures. Use only shortcodes from the "figures" array in that tool result—format [image:<exact shortcode>]. Do not invent or reuse shortcodes. Do not use markdown image syntax ![](shortcode).)`;
@@ -582,7 +529,6 @@ export default defineEventHandler(async (event) => {
 
   const toolsForRequest = { ...studentTools } as typeof studentTools;
 
-  // buildDecision disabled — RAG (searchTextbooks) is always available for both teachers
   if (validChapterName) {
     // Subject teacher (chapter-scoped): no figures tool
     delete (toolsForRequest as any).getChapterFigures;
