@@ -16,12 +16,14 @@ function goToPrimary() {
     hubHeaderLang.value = 'kiswahili';
     hubEducationLevel.value = 'primary';
     primaryContentLanguage.value = 'kiswahili';
+    useRouter().push(primaryHubPath.value);
 }
 
 function goToSecondary() {
     setPostLoginHome(secondaryHubPath.value);
     hubHeaderLang.value = 'english';
     hubEducationLevel.value = 'secondary';
+    useRouter().push(secondaryHubPath.value);
 }
 
 const stats = [
