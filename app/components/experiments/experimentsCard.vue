@@ -37,17 +37,6 @@ const props = withDefaults(
 
 })
 
-// Define Set Experiment URL Function
-const setExperimentUrl =()=>{
-    navigationStore.setExperiment(`/experiments/${props.experimentStandard}/${props.experimentSubject}/${props.experimentName}/${props.experimentId}`);
-    useState('experimentToView', () => (
-           {
-            route:`/experiments/${props.experimentStandard}/${props.experimentSubject}/${props.experimentName}/${props.experimentId}`,
-            updatedAt:Date.now()
-        })
-    );
-}
-
 const experimentTarget = computed(() => ({
     path: `/experiments/${props.experimentStandard}/${props.experimentSubject}/${props.experimentName}/${props.experimentId}`,
     query: getEducationRouteQuery(
@@ -56,6 +45,25 @@ const experimentTarget = computed(() => ({
         resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
     ),
 }));
+
+const rememberedExperimentRoute = computed(() => {
+    const params = new URLSearchParams(
+        experimentTarget.value.query as Record<string, string>,
+    ).toString();
+
+    return `${experimentTarget.value.path}${params ? `?${params}` : ""}`;
+});
+
+// Define Set Experiment URL Function
+const setExperimentUrl =()=>{
+    navigationStore.setExperiment(rememberedExperimentRoute.value);
+    useState('experimentToView', () => (
+           {
+            route: rememberedExperimentRoute.value,
+            updatedAt:Date.now()
+        })
+    );
+}
 </script>
 
 <template>

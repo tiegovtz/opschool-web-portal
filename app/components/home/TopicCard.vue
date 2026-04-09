@@ -42,18 +42,6 @@ const props = withDefaults(defineProps<{
   topicViewed: false,
 })
 
-const setTopicToView = () => {
-  navigationStore.setTopic(`/interactive/${props.topicStandard}/${props.subjectName}/${props.topicTitle}/${props.topicId}`)
-  useState('topicToView',
-    () => (
-      {
-        route: `/interactive/${props.topicStandard}/${props.subjectName}/${props.topicTitle}/${props.topicId}`,
-        updatedAt: Date.now()
-      })
-  );
-  useState('userViewedTopic', () => props.topicViewed)
-}
-
 const topicTarget = computed(() => ({
   path: `/interactive/${props.topicStandard}/${props.subjectName}/${props.topicTitle}/${props.topicId}`,
   query: getEducationRouteQuery(
@@ -62,6 +50,26 @@ const topicTarget = computed(() => ({
     resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
   ),
 }));
+
+const rememberedTopicRoute = computed(() => {
+  const params = new URLSearchParams(
+    topicTarget.value.query as Record<string, string>,
+  ).toString();
+
+  return `${topicTarget.value.path}${params ? `?${params}` : ""}`;
+});
+
+const setTopicToView = () => {
+  navigationStore.setTopic(rememberedTopicRoute.value)
+  useState('topicToView',
+    () => (
+      {
+        route: rememberedTopicRoute.value,
+        updatedAt: Date.now()
+      })
+  );
+  useState('userViewedTopic', () => props.topicViewed)
+}
 
 const userToken = useCookie('signInUserToken')
 </script>

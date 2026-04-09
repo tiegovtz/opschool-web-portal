@@ -2,7 +2,7 @@ import type { RouteLocationNormalizedLoaded } from "vue-router";
 import type { LanguageSupport } from "~/types/language.interface";
 import {
   getHubLanguage,
-  normalizeEducationLevel,
+  resolveEducationLevelFromRoute,
   normalizeLanguageSupport,
 } from "~/utilities/educationRoute";
 
@@ -28,22 +28,9 @@ export function inferHubLanguageFromContentRoute(
   const routeLanguage = typeof route.query.lang === "string"
     ? normalizeLanguageSupport(route.query.lang, primaryFallback)
     : null;
-  const routeEducationLevel = route.query.educationLevel ?? route.query.edl;
-  if (routeEducationLevel) {
-    return getHubLanguage(routeEducationLevel, routeLanguage ?? primaryFallback);
-  }
-
-  const levelRaw =
-    levelParam !== undefined && levelParam !== null && String(levelParam).length > 0
-      ? levelParam
-      : route.params.level;
-
-  if (levelRaw !== undefined && levelRaw !== null && String(levelRaw).length > 0) {
-    const level = decodeRouteSegment(levelRaw).toLowerCase();
-    if (level.includes("darasa")) {
-      return getHubLanguage("primary", routeLanguage ?? primaryFallback);
-    }
-    if (/\bform\b/.test(level)) return "english";
+  const resolvedEducationLevel = resolveEducationLevelFromRoute(route, "lower secondary");
+  if (resolvedEducationLevel) {
+    return getHubLanguage(resolvedEducationLevel, routeLanguage ?? primaryFallback);
   }
 
   if (routeLanguage) return routeLanguage;

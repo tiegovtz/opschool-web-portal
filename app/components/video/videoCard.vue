@@ -36,18 +36,6 @@ const props = withDefaults( defineProps<{
 
 })
 
-// Define Function
-const setVideoToView = () => {
-    navigationStore.setVideo(`/video/${props.videoStandard}/${props.videoSubject}/${props.videoName}/${props.videoId}`)
-    useState('videoToView',
-      () =>(
-         {
-            route:`/video/${props.videoStandard}/${props.videoSubject}/${props.videoName}/${props.videoId}`,
-            updatedAt:Date.now()
-        }
-      ));
-}
-
 const videoTarget = computed(() => ({
     path: `/video/${props.videoStandard}/${props.videoSubject}/${props.videoName}/${props.videoId}`,
     query: getEducationRouteQuery(
@@ -56,6 +44,26 @@ const videoTarget = computed(() => ({
         resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
     ),
 }));
+
+const rememberedVideoRoute = computed(() => {
+    const params = new URLSearchParams(
+        videoTarget.value.query as Record<string, string>,
+    ).toString();
+
+    return `${videoTarget.value.path}${params ? `?${params}` : ""}`;
+});
+
+// Define Function
+const setVideoToView = () => {
+    navigationStore.setVideo(rememberedVideoRoute.value)
+    useState('videoToView',
+      () =>(
+         {
+            route: rememberedVideoRoute.value,
+            updatedAt:Date.now()
+        }
+      ));
+}
 </script>
 
 <template>

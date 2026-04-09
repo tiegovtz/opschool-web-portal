@@ -81,7 +81,7 @@ export default defineNuxtPlugin({
     if (contentRoutePattern.test(to.path)) {
       // Set the navigation store based on the route type for consistency
       const routeType = to.path.split('/')[1];
-      const routePath = to.path;
+      const routePath = to.fullPath;
       
       if (routeType === 'video') {
         navigationStore.setVideo(routePath);
