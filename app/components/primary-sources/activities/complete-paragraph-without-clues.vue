@@ -26,6 +26,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const answerChecker = new AnswerChecker();
 const { playSound } = useSoundEffects();
 
@@ -203,7 +204,7 @@ const resetActivity = () => {
             height="18"
             class="text-lemon-600 transition-transform duration-200 group-hover:scale-110 animate-pulse"
           />
-          Check Answers
+          {{ ui.checkAnswers }}
         </Button>
       </div>
     </div>

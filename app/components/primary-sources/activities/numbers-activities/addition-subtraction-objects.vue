@@ -29,6 +29,7 @@ type AdditionSubtractionObjectsProps = {
 };
 
 const props = defineProps<AdditionSubtractionObjectsProps>();
+const ui = useActivityUiText();
 
 const score = ref(0);
 const showResults = ref(false);
@@ -239,7 +240,7 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
             class="mt-4 text-center"
           >
             <div class="text-sm text-gray-500">
-              Correct Answer: {{ question.leftNumber }} {{ question.operator }}
+              {{ ui.correctAnswer }} {{ question.leftNumber }} {{ question.operator }}
               {{ question.rightNumber }} {{ question.displayAnswer || "=" }}
               {{ question.answer }}
             </div>
@@ -248,7 +249,7 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
       </div>
 
       <div v-if="!showResults" class="flex justify-end">
-        <Button :onClick="handleSubmit" :disabled="!canSubmit">Check Answers</Button>
+        <Button :onClick="handleSubmit" :disabled="!canSubmit">{{ ui.checkAnswers }}</Button>
       </div>
 
       <div v-if="showResults" class="mt-4">

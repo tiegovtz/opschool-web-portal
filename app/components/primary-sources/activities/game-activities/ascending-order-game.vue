@@ -42,6 +42,7 @@ type DragEndEvent = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 
 const currentQuestionIndex = ref(0);
 const score = ref(0);
@@ -287,7 +288,7 @@ const handleResultsDialogChange = (open: boolean) => {
               "
               class="mt-3 rounded-lg border border-green-200 bg-green-50 p-3"
             >
-              <p class="mb-2 text-sm text-gray-600">Correct answer:</p>
+              <p class="mb-2 text-sm text-gray-600">{{ ui.correctAnswer }}</p>
               <div class="flex flex-wrap gap-2">
                 <span
                   v-for="(number, index) in currentQuestion.correctOrder"

@@ -23,6 +23,7 @@ type CountingObjectsActivityProps = {
 };
 
 const props = defineProps<CountingObjectsActivityProps>();
+const ui = useActivityUiText();
 
 // Colors for different place values (3D cube colors)
 const PLACE_VALUE_COLORS = [
@@ -316,7 +317,7 @@ const handleResetWithShuffle = () => {
                 class="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg"
               >
                 <p class="text-red-700 text-sm">
-                  Correct answer:
+                  {{ ui.correctAnswer }}
                   <strong>{{ currentQuestion?.number?.toLocaleString?.() }}</strong>
                 </p>
               </div>
@@ -330,7 +331,7 @@ const handleResetWithShuffle = () => {
                 :onClick="checkCurrentAnswer"
               >
                 {{
-                  currentQuestionIndex < total - 1 ? "Next Question" : "Check Answer"
+                  currentQuestionIndex < total - 1 ? ui.nextQuestion : ui.checkAnswer
                 }}
               </Button>
               <Button
@@ -393,7 +394,7 @@ const handleResetWithShuffle = () => {
           >
             <div class="flex justify-between items-center mb-2">
               <div>
-                <p class="font-medium">Question {{ idx + 1 }}</p>
+                <p class="font-medium">{{ ui.formatQuestion(idx + 1) }}</p>
                 <p class="text-sm text-gray-600">
                   Number: {{ question.number.toLocaleString() }}
                 </p>
@@ -412,7 +413,7 @@ const handleResetWithShuffle = () => {
 
             <div class="grid grid-cols-2 gap-4 mt-2">
               <div>
-                <p class="text-sm text-gray-500">Your answer:</p>
+                <p class="text-sm text-gray-500">{{ ui.yourAnswer }}</p>
                 <p
                   :class="
                     cn('font-medium', feedbacks[idx] ? 'text-green-600' : 'text-red-600')
@@ -424,7 +425,7 @@ const handleResetWithShuffle = () => {
               <div
                 v-if="props.feedback === 'wrong-correct-answers' && !feedbacks[idx]"
               >
-                <p class="text-sm text-gray-500">Correct answer:</p>
+                <p class="text-sm text-gray-500">{{ ui.correctAnswer }}</p>
                 <p class="text-green-600 font-medium">
                   {{ question.number.toLocaleString() }}
                 </p>

@@ -40,6 +40,7 @@ const props = withDefaults(defineProps<Props>(), {
   feedback: "none",
   timePerQuestion: 40,
 });
+const ui = useActivityUiText();
 
 const currentQuestionIndex = ref(0);
 const selectedAnswer = ref<string | null>(null);
@@ -241,12 +242,12 @@ const resultsSummary = computed(() =>
             </div>
 
             <div class="flex-1 space-y-2">
-              <p class="font-semibold">Question {{ index + 1 }}</p>
+              <p class="font-semibold">{{ ui.formatQuestion(index + 1) }}</p>
               <p>{{ item.question.question }}</p>
 
               <div class="space-y-1 text-sm">
                 <div v-if="props.feedback === 'wrong-correct' && item.selectedAnswer">
-                  <strong>Your Answer:</strong> {{ item.selectedAnswer }}
+                  <strong>{{ ui.yourAnswer }}</strong> {{ item.selectedAnswer }}
                 </div>
                 <div class="flex items-center gap-2">
                   <Icon icon="mdi:clock-outline" width="16" height="16" />
@@ -254,9 +255,9 @@ const resultsSummary = computed(() =>
                 </div>
 
                 <template v-if="props.feedback === 'wrong-correct-answers'">
-                  <div><strong>Correct Answer:</strong> {{ item.question.correctAnswer }}</div>
+                  <div><strong>{{ ui.correctAnswer }}</strong> {{ item.question.correctAnswer }}</div>
                   <div v-if="!item.isCorrect && item.selectedAnswer" class="text-red-600">
-                    <strong>Your Answer:</strong> {{ item.selectedAnswer }}
+                    <strong>{{ ui.yourAnswer }}</strong> {{ item.selectedAnswer }}
                   </div>
                   <div v-if="!item.selectedAnswer" class="text-red-600">
                     <strong>Time expired - No answer given</strong>
@@ -345,10 +346,10 @@ const resultsSummary = computed(() =>
                   >
                     {{
                       timeLeft === 0
-                        ? "Time's up!"
+                        ? ui.timesUp
                         : answerFeedback === "correct"
-                          ? "Correct!"
-                          : "Incorrect!"
+                          ? `${ui.correct}!`
+                          : `${ui.incorrect}!`
                     }}
                   </p>
                 </div>

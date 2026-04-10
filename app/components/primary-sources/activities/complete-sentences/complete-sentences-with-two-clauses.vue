@@ -24,6 +24,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const shuffledQuestions = ref([...props.questions.questions]);
@@ -169,7 +170,7 @@ const contentStyle = computed(() => ({
         variant="brand-lemon"
         class="ml-auto text-lg py-3"
       >
-        Check Answers
+        {{ ui.checkAnswers }}
       </Button>
 
       <div v-if="allChecked" class="p-4 bg-picton-blue-100 border-t">
@@ -178,7 +179,7 @@ const contentStyle = computed(() => ({
           variant="brand-lemon"
           class="w-full text-lg py-3"
         >
-          View Results
+          {{ ui.viewResults }}
         </Button>
       </div>
     </div>
@@ -207,7 +208,7 @@ const contentStyle = computed(() => ({
 
             <div class="space-y-2">
               <div>
-                <p class="text-sm text-gray-500">Your answer:</p>
+                <p class="text-sm text-gray-500">{{ ui.yourAnswer }}</p>
                 <p :class="compareAnswersLocal(answers[idx] || '', question.answer) ? 'text-green-600' : 'text-red-600'">
                   {{ answers[idx] || "(no answer)" }}
                 </p>
@@ -215,7 +216,7 @@ const contentStyle = computed(() => ({
               <div
                 v-if="props.feedback === 'wrong-correct-answers' && !compareAnswersLocal(answers[idx] || '', question.answer)"
               >
-                <p class="text-sm text-gray-500">Correct answer:</p>
+                <p class="text-sm text-gray-500">{{ ui.correctAnswer }}</p>
                 <p class="text-green-600">
                   {{ Array.isArray(question.answer) ? question.answer.join(" / ") : question.answer }}
                 </p>

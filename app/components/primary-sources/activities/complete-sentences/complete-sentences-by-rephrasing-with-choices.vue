@@ -32,6 +32,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 
 const shuffledQuestions = ref<QuestionItem[]>([]);
 const answers = ref<Record<number, string>>({});
@@ -221,14 +222,8 @@ const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
         </div>
       </div>
 
-      <Button
-        :disabled="!allQuestionsAnswered || allAnswered"
-        @click="handleCheckAllAnswers"
-        variant="brand-lemon"
-        class="ml-auto w-fit"
-        size="lg"
-      >
-        {{ allAnswered ? "Answers Checked" : "Check All Answers" }}
+      <Button :disabled="!allQuestionsAnswered || allAnswered" @click="handleCheckAllAnswers" variant="brand-lemon" class="w-fit ml-auto" size="lg">
+        {{ allAnswered ? ui.answersChecked : ui.checkAllAnswers }}
       </Button>
     </div>
 
@@ -257,14 +252,12 @@ const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
 
             <div class="mt-2 grid grid-cols-2 gap-4">
               <div>
-                <p class="text-sm text-gray-500">Majibu yako:</p>
-                <p :class="{ 'text-red-600': !checkAnswer(idx) }">
-                  {{ answers[idx] || "(no answer)" }}
-                </p>
+                <p class="text-sm text-gray-500">{{ ui.yourAnswer }}</p>
+                <p :class="{ 'text-red-600': !checkAnswer(answers[idx] || '', idx) }">{{ answers[idx] || "(no answer)" }}</p>
               </div>
               <div v-if="props.feedback === 'wrong-correct-answers'">
-                <p class="text-sm text-gray-500">Correct answer:</p>
-                <p class="text-green-600">{{ getCorrectAnswer(idx) }}</p>
+                <p class="text-sm text-gray-500">{{ ui.correctAnswer }}</p>
+                <p class="text-green-600">{{ question.answer }}</p>
               </div>
             </div>
           </div>

@@ -30,6 +30,7 @@ const wrongQuestionsFormat = ref<boolean>(false);
 const isMobile = useIsMobile()
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
+const ui = useActivityUiText();
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
 const contentLanguage = computed(() =>
   resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
@@ -94,10 +95,31 @@ const activityComponent = computed(() => activity.value && enhancedActivityCompo
 
 // transplier
 const transpiler = computed(() => activity.value && activityPropsTranspiler[activity.value.description])
+const transpiledQuestions = ref<Record<string, unknown> | null>(null);
+
+watchEffect(() => {
+    if (!activity.value || !transpiler.value) {
+        wrongQuestionsFormat.value = false;
+        transpiledQuestions.value = null;
+        return;
+    }
+
+    wrongQuestionsFormat.value = false;
+    transpiledQuestions.value =
+      transpiler.value({
+        setWrongQuestionsFormat,
+        summary: (activity.value.summary as string),
+        algorithm: (activity.value.description as ActivityType),
+        summaryPath: (activity.value.summaryPath as string),
+        serverQuestions: (activity.value.questions as ServerQuestionType[]),
+        titleDescription: (activity.value.activityDescription as string),
+        isMobile,
+      }) ?? null;
+})
 </script>
 <template>
     <div>
-        <div v-if="status === 'idle'"> Nothing to show </div>
+        <div v-if="status === 'idle'">{{ ui.nothingToShow }}</div>
         <div
           v-else-if="status == 'pending'"
           class="flex min-h-[260px] flex-col items-center justify-center gap-4 px-4 text-center"
@@ -117,28 +139,21 @@ const transpiler = computed(() => activity.value && activityPropsTranspiler[acti
             />
           </div>
 
-          <p class="text-lg font-semibold text-oceanBlue/90">Loading ...</p>
+          <p class="text-lg font-semibold text-oceanBlue/90">{{ ui.loading }}</p>
         </div>
         <div v-else-if="status == 'success'" class="">
-            <div v-if="!activity || !transpiler" class="">
-                 This activity is not available
+            <div v-if="!activity || !transpiler || !transpiledQuestions || wrongQuestionsFormat" class="">
+                 {{ ui.activityUnavailable }}
             </div>
             <component
+              v-else
               :is="activityComponent"
               v-bind="props"
               feedback="wrong-correct"
-              :questions="(transpiler?.({
-                setWrongQuestionsFormat,
-                summary: (activity?.summary as string),
-                algorithm: (activity?.description as ActivityType),
-                summaryPath: (activity?.summaryPath as string),
-                serverQuestions: (activity?.questions as ServerQuestionType[]),
-                titleDescription: (activity?.activityDescription as string),
-                isMobile,
-              }) ?? {})"
+              :questions="transpiledQuestions"
             />
         </div>
         <div v-else-if="status == 'error'">{{ error }}</div>
-        <div v-else> unknown issue occurred </div>
+        <div v-else>{{ ui.unknownIssue }}</div>
     </div>
 </template>

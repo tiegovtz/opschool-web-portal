@@ -16,6 +16,7 @@ const props = defineProps<{
   };
 }>();
 
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 // STATE
@@ -211,7 +212,7 @@ function resetGame() {
           class="w-full py-3 bg-yellow-400 rounded"
           @click="showResults = true"
         >
-          View Results
+          {{ ui.viewResults }}
         </button>
       </div>
     </div>
@@ -224,7 +225,7 @@ function resetGame() {
           :key="idx"
           class="p-4 rounded border"
         >
-          <p class="text-sm text-gray-500">Your answer:</p>
+          <p class="text-sm text-gray-500">{{ ui.yourAnswer }}</p>
           <div class="flex gap-2">
             <span
               v-for="(word, i) in getSelectedWords(idx)"
@@ -235,7 +236,7 @@ function resetGame() {
           </div>
 
           <p class="text-sm text-gray-500 mt-2">
-            Correct answer:
+            {{ ui.correctAnswer }}
           </p>
           <div class="flex gap-2">
             <span

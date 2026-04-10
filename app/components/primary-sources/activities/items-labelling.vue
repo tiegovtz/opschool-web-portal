@@ -38,6 +38,7 @@ type AnswerOption = {
 };
 
 const props = defineProps<TItemsLabellingProps>();
+const ui = useActivityUiText();
 
 const answerChecker = new AnswerChecker();
 const { playSound } = useSoundEffects();
@@ -303,7 +304,7 @@ const handleGameComplete = () => {
                 v-if="isComplete && props.feedback === 'wrong-correct-answers' && !feedbacks[index]"
                 class="text-sm text-green-600"
               >
-                Correct: {{ question.answer }}
+                {{ ui.formatCorrect(question.answer) }}
               </div>
             </div>
           </div>
@@ -341,7 +342,7 @@ const handleGameComplete = () => {
               height="18"
               class="text-lemon-600 transition-transform duration-200 group-hover:scale-110 animate-pulse"
             />
-            Check Answers
+            {{ ui.checkAnswers }}
           </Button>
         </div>
 

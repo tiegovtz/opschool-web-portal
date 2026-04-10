@@ -38,6 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
   feedback: "wrong-correct-answers",
 });
 
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const answerCount = computed(() =>
@@ -186,7 +187,7 @@ const resetActivity = () => {
         :style="{ opacity: allFillableAnswered ? 1 : 0, transition: 'opacity 0.3s ease' }"
         :disabled="!allFillableAnswered"
       >
-        Check Answers
+        {{ ui.checkAnswers }}
       </Button>
     </div>
 

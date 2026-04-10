@@ -68,6 +68,7 @@ const props = withDefaults(defineProps<Props>(), {
   feedback: "wrong-correct",
 });
 
+const ui = useActivityUiText();
 const answerChecker = new AnswerChecker();
 const { playSound } = useSoundEffects();
 
@@ -293,7 +294,7 @@ const resultCardClass = (isCorrect?: boolean) =>
                 v-if="props.feedback === 'wrong-correct-answers'"
                 class="mt-2 text-sm text-green-700"
               >
-                Correct answer:
+                {{ ui.correctAnswer }}
                 {{ getAcceptedAnswerText(question.acceptedAnswers, question.hint) }}
               </p>
             </div>
@@ -325,7 +326,7 @@ const resultCardClass = (isCorrect?: boolean) =>
                     v-if="props.feedback === 'wrong-correct-answers'"
                     class="mt-2 text-sm text-green-700"
                   >
-                    Correct answer:
+                    {{ ui.correctAnswer }}
                     {{ getAcceptedAnswerText(part.acceptedAnswers, part.hint) }}
                   </p>
                 </div>
@@ -352,7 +353,7 @@ const resultCardClass = (isCorrect?: boolean) =>
                       v-if="props.feedback === 'wrong-correct-answers'"
                       class="mt-2 text-sm text-green-700"
                     >
-                      Correct answer:
+                      {{ ui.correctAnswer }}
                       {{ getAcceptedAnswerText(subQuestion.acceptedAnswers, subQuestion.hint) }}
                     </p>
                     <p
@@ -467,7 +468,7 @@ const resultCardClass = (isCorrect?: boolean) =>
             height="18"
             class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
           />
-          {{ isCalculatingScore ? "Checking..." : "Check Answers" }}
+          {{ isCalculatingScore ? ui.checking : ui.checkAnswers }}
         </Button>
       </div>
     </div>

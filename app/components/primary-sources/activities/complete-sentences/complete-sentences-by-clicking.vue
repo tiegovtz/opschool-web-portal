@@ -21,6 +21,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 
 // State
 const shuffledQuestions = ref<Question[]>([]);
@@ -177,7 +178,7 @@ function renderQuestion(question: Question, questionIndex: number) {
 
         <div v-if="allAnswered && !showResults" class="ml-auto w-fit">
           <button class="px-4 py-2 bg-yellow-400 rounded" @click="handleCheckAnswers">
-            Check Answers
+            {{ ui.checkAnswers }}
           </button>
         </div>
       </div>

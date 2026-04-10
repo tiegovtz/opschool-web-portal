@@ -17,6 +17,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const generateItems = () => {
@@ -172,8 +173,8 @@ const handleCountChange = (type: string, value: string) => {
                   >
                     {{
                       userCounts[question.type] === question.count
-                        ? "Correct!"
-                        : `Incorrect. Answer: ${question.count}`
+                        ? `${ui.correct}!`
+                        : ui.formatIncorrectAnswer(question.count)
                     }}
                   </span>
 
@@ -197,7 +198,7 @@ const handleCountChange = (type: string, value: string) => {
               :disabled="Object.values(userCounts).some((value) => value === '')"
               @click="handleComplete"
             >
-              Check Answers
+              {{ ui.checkAnswers }}
             </Button>
           </div>
         </div>

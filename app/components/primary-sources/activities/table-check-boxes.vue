@@ -36,6 +36,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const cellStates = ref<CellState[]>([]);
@@ -229,7 +230,7 @@ const resetActivity = () => {
             height="18"
             class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
           />
-          Check Answers
+          {{ ui.checkAnswers }}
         </Button>
       </div>
     </div>

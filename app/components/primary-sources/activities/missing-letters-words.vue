@@ -24,6 +24,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 const contentLayoutLanguage = useContentLayoutLanguage();
 const completionMessage = computed(() =>
@@ -276,7 +277,7 @@ const blankPartIndex = (parts: string[], partIndex: number) =>
         :disabled="!allQuestionsAnswered || allAnswered"
         @click="handleCheckAllAnswers"
       >
-        {{ allAnswered ? "Answers Checked" : "Check All Answers" }}
+        {{ allAnswered ? ui.answersChecked : ui.checkAllAnswers }}
       </Button>
     </div>
 
