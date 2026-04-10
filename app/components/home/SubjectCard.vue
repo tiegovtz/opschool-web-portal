@@ -22,8 +22,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   totalViews: 0,
   isLoggedIn: false,
-  subjectImage: '/images/background2.webp',
-  subjectEducationLevel: 'primary'
+  subjectImage: '/images/background2.webp'
 });
 
 const route = useRoute();
