@@ -117,6 +117,8 @@ const getGameItems = () => {
 const leftItems = computed(() => getGameItems().leftItems);
 const rightItems = computed(() => getGameItems().rightItems);
 const totalPairs = computed(() => leftItems.value.length);
+const renderedLeftItems = computed(() => shuffledRightItems.value);
+const renderedRightItems = computed(() => leftItems.value);
 const hasRenderableItems = computed(
   () => leftItems.value.length > 0 && rightItems.value.length > 0,
 );
@@ -244,7 +246,7 @@ const refreshConnectionPositions = () => {
 };
 
 const findHoveredRightTarget = (clientX: number, clientY: number) => {
-  for (const item of shuffledRightItems.value) {
+  for (const item of renderedRightItems.value) {
     const element = document.getElementById(`right-${item.id}`);
     if (!(element instanceof HTMLElement)) continue;
 
@@ -637,9 +639,7 @@ const liveDragLine = computed(() => {
     <div class="flex h-full flex-col text-lg">
       <ActivityTitle :title="props.questions.title" />
 
-      <div class="mb-3 text-sm text-slate-600">
-        Drag from the left to a match, or tap a left item then tap the answer on the right.
-      </div>
+      
 
       <div
         ref="boardRef"
@@ -657,7 +657,7 @@ const liveDragLine = computed(() => {
           "
         >
           <div
-            v-for="item in leftItems"
+            v-for="item in renderedLeftItems"
             :id="`left-${item.id}`"
             :key="item.id"
             :class="
@@ -699,7 +699,7 @@ const liveDragLine = computed(() => {
           "
         >
           <button
-            v-for="item in shuffledRightItems"
+            v-for="item in renderedRightItems"
             :id="`right-${item.id}`"
             :key="item.id"
             type="button"

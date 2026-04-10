@@ -11,6 +11,7 @@ import {
   getHubPath,
   normalizeEducationLevel,
   normalizeLanguageSupport,
+  resolveEducationLevelFromRoute,
   type EducationBucket,
 } from "~/utilities/educationRoute";
 
@@ -185,28 +186,7 @@ const openLogoutConfirmFromMenu = () => {
 };
 
 const inferredRouteEducationLevel = computed(() => {
-  if (route.path === "/primary" || route.path.startsWith("/primary/")) {
-    return "primary";
-  }
-
-  if (route.path === "/secondary" || route.path.startsWith("/secondary/")) {
-    return "secondary";
-  }
-
-  if (
-    String(route.params.level ?? "")
-      .toLowerCase()
-      .includes("darasa")
-  ) {
-    return "primary";
-  }
-
-  const routeLevel = route.query.educationLevel ?? route.query.edl;
-  if (routeLevel) {
-    return normalizeEducationLevel(routeLevel);
-  }
-
-  return hubEducationLevel.value;
+  return resolveEducationLevelFromRoute(route, normalizeEducationLevel(hubEducationLevel.value));
 });
 
 const currentEducationLevel = computed(() =>
@@ -222,13 +202,7 @@ const showPrimaryLanguageSwitch = computed(
     route.path.startsWith("/primary/") ||
     ((isSmartClassRoute.value || isAccountSectionRoute.value) &&
       hubEducationLevel.value === "primary") ||
-    String(route.params.level ?? "")
-      .toLowerCase()
-      .includes("darasa") ||
-    normalizeEducationLevel(
-      route.query.educationLevel ?? route.query.edl,
-      "secondary",
-    ) === "primary",
+    resolveEducationLevelFromRoute(route, "lower secondary") === "primary",
 );
 
 const activePrimaryLanguage = computed<LanguageSupport>(() =>
@@ -295,13 +269,7 @@ const setPrimaryLanguage = async (language: LanguageSupport) => {
   if (
     route.path === "/primary" ||
     route.path.startsWith("/primary/") ||
-    String(route.params.level ?? "")
-      .toLowerCase()
-      .includes("darasa") ||
-    normalizeEducationLevel(
-      route.query.educationLevel ?? route.query.edl,
-      "secondary",
-    ) === "primary"
+    resolveEducationLevelFromRoute(route, "lower secondary") === "primary"
   ) {
     await router.replace({
       path: route.path,

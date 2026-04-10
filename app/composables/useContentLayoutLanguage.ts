@@ -1,7 +1,7 @@
 import { computed, watch, toValue, type MaybeRefOrGetter } from "vue";
 import type { LanguageSupport } from "~/types/language.interface";
 import { inferHubLanguageFromContentRoute } from "~/utilities/contentHubLanguage";
-import { normalizeEducationLevel } from "~/utilities/educationRoute";
+import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
 
 /**
  * Header/footer language for `home-layout` on content routes: Primary → kiswahili, Secondary → english.
@@ -19,13 +19,7 @@ export function useContentLayoutLanguage(levelSource?: MaybeRefOrGetter<unknown>
   };
 
   const isPrimaryContentRoute = computed(() => {
-    const routeEducationLevel = route.query.educationLevel ?? route.query.edl;
-    if (routeEducationLevel) {
-      return normalizeEducationLevel(routeEducationLevel) === "primary";
-    }
-
-    const resolvedLevel = String(resolveLevel() ?? "").toLowerCase();
-    return resolvedLevel.includes("darasa");
+    return resolveEducationLevelFromRoute(route) === "primary";
   });
 
   const layoutLanguage = computed<LanguageSupport>(() => {

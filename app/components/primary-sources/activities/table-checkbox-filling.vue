@@ -26,6 +26,8 @@ type Props = {
     title: string;
     fontSize?: string;
     tableTitles: string[];
+    options?: string[];
+    instructions?: string[];
     questions: {
       title: {
         text: string;
@@ -49,16 +51,23 @@ const showResults = ref(false);
 const score = ref(0);
 const resultsDialogOpen = ref(false);
 
+const hasBlank = (cell: string) => cell.includes("_");
+
+const getCellPrompt = (cell: string) =>
+  cell.replace(/_+/g, "_____").trim();
+
+const getInputWidth = (answer = "") => `${Math.max(answer.length, 4) * 1.2 + 2.5}rem`;
+
 const initializeCells = () => {
   const cells: InputCell[] = [];
   shuffledQuestions.value.forEach((row, rowIndex) => {
     row.question.forEach((cell, cellIndex) => {
-      if (cell.startsWith("_")) {
+      if (hasBlank(cell)) {
         cells.push({
           rowIndex,
           cellIndex,
           value: "",
-          correctAnswer: cell.substring(1),
+          correctAnswer: cell.replace(/^_+/, "").trim(),
         });
       }
     });
@@ -73,6 +82,9 @@ watch(() => props.questions.questions, () => {
 }, { deep: true, immediate: true });
 
 const allAnswered = computed(() => inputCells.value.every((cell) => cell.value.trim() !== ""));
+const hasVisibleHeaders = computed(() =>
+  props.questions.tableTitles?.some((title) => String(title ?? "").trim().length > 0),
+);
 
 const handleInputChange = (rowIndex: number, cellIndex: number, value: string) => {
   inputCells.value = inputCells.value.map((cell) =>
@@ -124,9 +136,40 @@ const resetActivity = () => {
     <ActivityTitle :title="props.questions.title" />
 
     <div class="flex h-full flex-col gap-4">
+      <div
+        v-if="props.questions.instructions?.length"
+        class="space-y-2 rounded-lg bg-white/80 p-4 shadow-sm"
+      >
+        <p
+          v-for="(instruction, instructionIndex) in props.questions.instructions"
+          :key="`${instruction}-${instructionIndex}`"
+          class="whitespace-pre-line text-base text-slate-700"
+        >
+          {{ instruction }}
+        </p>
+      </div>
+
+      <div
+        v-if="props.questions.options?.length"
+        class="rounded-xl border border-picton-blue-200 bg-white/95 p-4 shadow-sm"
+      >
+        <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-picton-blue-700">
+          Silabi za kutumia
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <span
+            v-for="(option, optionIndex) in props.questions.options"
+            :key="`${option}-${optionIndex}`"
+            class="rounded-xl border border-picton-blue-200 bg-picton-blue-50 px-4 py-2 text-lg font-semibold text-picton-blue-900 shadow-sm"
+          >
+            {{ option }}
+          </span>
+        </div>
+      </div>
+
       <div class="overflow-auto rounded-lg bg-picton-blue-100 p-4">
         <table class="w-full border-collapse">
-          <thead>
+          <thead v-if="hasVisibleHeaders">
             <tr>
               <th
                 v-for="(tableTitle, index) in props.questions.tableTitles"
@@ -195,17 +238,22 @@ const resetActivity = () => {
                   )
                 "
               >
-                <div v-if="cell.startsWith('_')" class="w-full">
+                <div v-if="hasBlank(cell)" class="w-full">
+                  <div class="mb-3 whitespace-pre-line text-sm font-medium text-picton-blue-800">
+                    {{ getCellPrompt(cell) }}
+                  </div>
                   <Input
                     :model-value="getInputCell(rowIndex, cellIndex)?.value || ''"
                     type="text"
                     :disabled="showResults"
+                    :placeholder="'andika hapa'"
+                    :style="{ width: getInputWidth(getInputCell(rowIndex, cellIndex)?.correctAnswer) }"
                     :class="
                       cn(
-                        'border-none bg-transparent focus-visible:ring-0',
+                        'h-14 min-w-[7rem] rounded-xl border-2 border-dashed border-picton-blue-500 bg-white px-3 text-center text-xl font-semibold text-picton-blue-900 shadow-sm focus-visible:ring-0',
                         showResults && {
-                          'bg-green-200 text-green-600': getInputCell(rowIndex, cellIndex)?.isCorrect,
-                          'bg-red-100 text-red-600': getInputCell(rowIndex, cellIndex)?.isCorrect === false,
+                          'border-green-500 bg-green-100 text-green-700': getInputCell(rowIndex, cellIndex)?.isCorrect,
+                          'border-red-500 bg-red-100 text-red-700': getInputCell(rowIndex, cellIndex)?.isCorrect === false,
                         },
                       )
                     "
@@ -216,20 +264,20 @@ const resetActivity = () => {
                   <div
                     :class="
                       cn(
-                        'mt-1 border-b border-dashed',
+                        'mt-2 border-b border-dashed',
                         showResults
                           ? {
                               'border-green-600': getInputCell(rowIndex, cellIndex)?.isCorrect,
                               'border-red-600': getInputCell(rowIndex, cellIndex)?.isCorrect === false,
                             }
-                          : 'border-picton-blue-700',
+                          : 'border-picton-blue-500',
                       )
                     "
                   />
                   <p
                     v-if="showResults"
                     :class="
-                      cn('mt-1 text-center text-sm', {
+                      cn('mt-2 text-center text-sm font-medium', {
                         'text-green-600': getInputCell(rowIndex, cellIndex)?.isCorrect,
                         'text-red-600': getInputCell(rowIndex, cellIndex)?.isCorrect === false,
                       })
@@ -242,6 +290,9 @@ const resetActivity = () => {
                           ? ui.formatCorrect(getInputCell(rowIndex, cellIndex)?.correctAnswer)
                           : `${ui.incorrect}!`
                     }}
+                  </p>
+                  <p v-else class="mt-2 text-xs text-picton-blue-700">
+                    Jaza silabi hapa
                   </p>
                 </div>
                 <span v-else class="whitespace-pre-line">{{ cell }}</span>

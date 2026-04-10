@@ -62,6 +62,55 @@ const KISWAHILI_ALIASES = new Set(["kiswahili", "swahili", "sw"]);
 const normalizeEducationAlias = (value: unknown) =>
   typeof value === "string" ? value.trim().toLowerCase() : "";
 
+const decodeRouteSegment = (value: unknown) => {
+  const raw = typeof value === "string" ? value : "";
+  if (!raw) return "";
+
+  try {
+    return decodeURIComponent(raw).replaceAll("-", " ").trim().toLowerCase();
+  } catch {
+    return raw.replaceAll("-", " ").trim().toLowerCase();
+  }
+};
+
+const inferEducationLevelFromRouteParams = (params?: Record<string, unknown>) => {
+  if (!params) return null;
+
+  const routeSegments = [
+    params.educationLevel,
+    params.subject,
+    params.level,
+    params.topic,
+    params.experiment,
+  ]
+    .map((value) => decodeRouteSegment(value))
+    .filter(Boolean);
+
+  for (const segment of routeSegments) {
+    if (
+      segment.includes("darasa") ||
+      segment.includes("standard") ||
+      segment.includes("grade") ||
+      segment.includes("msingi") ||
+      segment.includes("awali") ||
+      segment.includes("pre primary") ||
+      segment.includes("pre-primary")
+    ) {
+      return "primary" as const;
+    }
+
+    if (
+      /\bform\b/.test(segment) ||
+      segment.includes("secondary") ||
+      segment.includes("sekondari")
+    ) {
+      return "lower secondary" as const;
+    }
+  }
+
+  return null;
+};
+
 export const getEducationHubBucket = (
   value: unknown,
 ): EducationHubBucket | null => {
@@ -160,9 +209,14 @@ export const getEducationRouteQuery = (
 };
 
 export const resolveEducationLevelFromRoute = (
-  route: Pick<RouteLocationNormalizedLoaded, "path" | "query">,
+  route: Pick<RouteLocationNormalizedLoaded, "path" | "query" | "params">,
   fallback: EducationBucket ="lower secondary",
 ): EducationBucket => {
+  const queryEducationLevel = route.query.educationLevel ?? route.query.edl;
+  if (queryEducationLevel) {
+    return normalizeEducationLevel(queryEducationLevel, fallback);
+  }
+
   if (
     route.path === "/primary" ||
     route.path.startsWith("/primary/")
@@ -177,8 +231,5 @@ export const resolveEducationLevelFromRoute = (
     return "lower secondary";
   }
 
-  return normalizeEducationLevel(
-    route.query.educationLevel ?? route.query.edl,
-    fallback,
-  );
+  return inferEducationLevelFromRouteParams(route.params) ?? fallback;
 };

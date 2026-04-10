@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // @ts-nocheck
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { cn, shuffle } from "@/lib/utils";
 import  Input  from "@/components/ui/inputs/input.vue";
 import ActivityTitle from "@/components/templates/activity-title";
@@ -43,11 +43,13 @@ const score = ref(0);
 const allAnswered = ref(false);
 const activeQuestion = ref(0);
 const currentAnswer = ref("");
+const inputRef = ref<any>(null);
 const attemptedQuestions = ref<Record<number, { answer: string; isCorrect: boolean; text: string }>>({});
 const showResults = ref(false);
 const shuffledQuestions = ref<MultipleChoiceQuestion[]>([]);
 const allAnswers = ref<Record<number, string>>({});
 const answersChecked = ref(false);
+const isAdvancingQuestion = ref(false);
 
 const hasNotes = computed(() => !!props.questions.notes?.trim());
 
@@ -61,9 +63,20 @@ const initialize = () => {
   showResults.value = false;
   allAnswers.value = {};
   answersChecked.value = false;
+  isAdvancingQuestion.value = false;
 };
 
 watch(() => props.questions, initialize, { deep: true, immediate: true });
+
+watch(
+  [activeQuestion, shuffledQuestions, showResults],
+  async ([, , resultsVisible]) => {
+    if (resultsVisible) return;
+    await nextTick();
+    inputRef.value?.focus?.();
+  },
+  { flush: "post" },
+);
 
 const allQuestionsAnswered = computed(
   () =>
@@ -72,17 +85,23 @@ const allQuestionsAnswered = computed(
 );
 
 const checkAnswer = (answer: string) => {
+  if (isAdvancingQuestion.value || attemptedQuestions.value[activeQuestion.value]) {
+    return;
+  }
+
+  isAdvancingQuestion.value = true;
   const question = shuffledQuestions.value[activeQuestion.value];
   const correctOption = question.options.find((option) => option.correct);
   const isCorrect = answer.toLowerCase() === correctOption?.id.toLowerCase();
+  const nextAttempt = {
+    answer,
+    isCorrect,
+    text: question.options.find((option) => option.id === answer.toUpperCase())?.text || "",
+  };
 
   attemptedQuestions.value = {
     ...attemptedQuestions.value,
-    [activeQuestion.value]: {
-      answer,
-      isCorrect,
-      text: question.options.find((option) => option.id === answer.toUpperCase())?.text || "",
-    },
+    [activeQuestion.value]: nextAttempt,
   };
 
   playSound(isCorrect ? "correct" : "failure");
@@ -91,17 +110,14 @@ const checkAnswer = (answer: string) => {
     window.setTimeout(() => {
       activeQuestion.value += 1;
       currentAnswer.value = "";
+      isAdvancingQuestion.value = false;
     }, 500);
     return;
   }
 
   const nextAttempts = {
     ...attemptedQuestions.value,
-    [activeQuestion.value]: {
-      answer,
-      isCorrect,
-      text: question.options.find((option) => option.id === answer.toUpperCase())?.text || "",
-    },
+    [activeQuestion.value]: nextAttempt,
   };
 
   score.value = Object.values(nextAttempts).reduce(
@@ -109,6 +125,7 @@ const checkAnswer = (answer: string) => {
     0,
   );
   allAnswered.value = true;
+  isAdvancingQuestion.value = false;
 };
 
 const handleInputChange = (value: string) => {
@@ -272,6 +289,7 @@ const resultRows = computed(() =>
               </div>
 
               <Input
+                ref="inputRef"
                 :model-value="currentAnswer"
                 type="text"
                 maxlength="1"
@@ -337,7 +355,7 @@ const resultRows = computed(() =>
                     class="flex items-start gap-2 text-base font-thin text-picton-blue-700"
                     style="font-family: var(--font-shaky-hand-some-comic);"
                   >
-                    <p>{{ option.id }}</p>
+                    <p>{{ option.id }})</p>
                     <p>{{ option.text }}</p>
                   </div>
                 </div>

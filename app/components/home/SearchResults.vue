@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import { useNavigationStore } from "~/stores/navigationStore";
+import type { LanguageSupport } from "~/types/language.interface";
+import {
+    getEducationHubBucket,
+    getEducationRouteQuery,
+    normalizeEducationLevel,
+} from "~/utilities/educationRoute";
 // Define Stores
 const navigationStore = useNavigationStore()
 
@@ -11,8 +17,12 @@ const props = withDefaults(defineProps<{
     level:string,
     subject: string,
     type:string,
+    educationLevel?: string,
+    searchEducationLevel?: string,
+    language?: LanguageSupport,
 }>(),{
     thumbnail:'/images/background2.webp',
+    language: 'english',
 });
 
 
@@ -32,25 +42,57 @@ const pageToView = computed(() => {
     return page;
 });
 
+const resolvedEducationLevel = computed(() => {
+    const explicitEducationLevel = getEducationHubBucket(props.educationLevel)
+        ? props.educationLevel
+        : undefined;
+    const searchEducationLevel = getEducationHubBucket(props.searchEducationLevel)
+        ? props.searchEducationLevel
+        : undefined;
+
+    return normalizeEducationLevel(
+        explicitEducationLevel ??
+        searchEducationLevel ??
+        props.level,
+    );
+});
+
+const pageTarget = computed(() => ({
+    path: `/${pageToView.value}/${props.level}/${props.subject}/${props.title}/${props.id}`,
+    query: getEducationRouteQuery(
+        resolvedEducationLevel.value,
+        {},
+        props.language,
+    ),
+}));
+
+const rememberedRoute = computed(() => {
+    const params = new URLSearchParams(
+        pageTarget.value.query as Record<string, string>,
+    ).toString();
+
+    return `${pageTarget.value.path}${params ? `?${params}` : ""}`;
+});
+
 const setPageToView = () => {
     if (props.type.toLocaleLowerCase() === 'topic') {
-        navigationStore.setTopic(`/${pageToView.value}/${props.level}/${props.subject}/${props.title}/${props.id}`)
+        navigationStore.setTopic(rememberedRoute.value)
     }
     if (props.type.toLocaleLowerCase() === 'activity') {
-        navigationStore.setExperiment(`/${pageToView.value}/${props.level}/${props.subject}/${props.title}/${props.id}`)
+        navigationStore.setExperiment(rememberedRoute.value)
     }
     if (props.type.toLocaleLowerCase() === 'video') {
-        navigationStore.setVideo(`/${pageToView.value}/${props.level}/${props.subject}/${props.title}/${props.id}`)
+        navigationStore.setVideo(rememberedRoute.value)
     }
     if (props.type.toLocaleLowerCase() === 'audio') {
-        navigationStore.setAudio(`/${pageToView.value}/${props.level}/${props.subject}/${props.title}/${props.id}`)
+        navigationStore.setAudio(rememberedRoute.value)
     }
 }
 </script>
 
 <template>
     <NuxtLink role="navigation" :aria-label="`Go to ${title}`" @click="setPageToView()"
-        :to="`/${pageToView}/${level}/${subject}/${title}/${id}`"
+        :to="pageTarget"
         class="flex items-center p-4 transition-shadow duration-500 ease-in-out bg-white rounded-lg shadow-md hover:shadow-lg">
         <div class="max-w-[100px] h-20 mb-4 overflow-hidden rounded-md" tabindex="0">
             <NuxtImg :src="thumbnail" loading="lazy" :alt="'Image of ' + subject + ' for ' + title"
