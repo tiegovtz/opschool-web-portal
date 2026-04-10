@@ -1027,7 +1027,7 @@ const handleSubjectSelect = async (
                     :subject-name="subject.name"
                     :subject-image="subject.thumbnail"
                     :subject-description="subject.description"
-                    :subject-education-level="subject.educationLevel || (subject.educationLevel as any)?.name"
+                    :subject-education-level="(subject.educationLevel as any)?.name ||  subject.educationLevel"
                     :total-views="subject.views ?? 0"
                     :is-logged-in="userToken != null || userToken != undefined"
                     @emit-subject-name="
@@ -1339,7 +1339,7 @@ const handleSubjectSelect = async (
                   :subject-name="subject.name"
                   :subject-image="subject.thumbnail"
                   :subject-description="subject.description"
-                  :subject-education-level="subject.educationLevel || (subject.educationLevel as any)?.name"
+                  :subject-education-level="(subject.educationLevel as any)?.name ||  subject.educationLevel"
                   :total-views="subject.views ?? 0"
                   :is-logged-in="userToken != null || userToken != undefined"
                 />

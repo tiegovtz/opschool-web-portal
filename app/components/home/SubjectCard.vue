@@ -28,7 +28,7 @@ const props = withDefaults(defineProps<{
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
 const educationLevelBadge = computed(() => {
-  if (!props.subjectEducationLevel?.trim()) return "";
+  if (!(props?.subjectEducationLevel as string)?.trim()) return "";
 
   switch (normalizeEducationLevel(props.subjectEducationLevel, "primary")) {
     case "pre-primary":
