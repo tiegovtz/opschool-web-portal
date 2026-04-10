@@ -3,6 +3,7 @@ import { layoutEffect } from "~/utilities/controlls";
 import { calculateTopicMetrics } from "~/utilities/topicMetrics.js";
 import {
   getEducationRouteQuery,
+  normalizeEducationLevel,
   resolveRouteLanguage,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
@@ -13,6 +14,7 @@ const props = withDefaults(defineProps<{
     subjectName:string,
   subjectImage?:string,
   subjectDescription: string,
+  subjectEducationLevel?: string,
   totalViews:number,
   isLoggedIn:boolean,
   altText?:string
@@ -25,6 +27,22 @@ const props = withDefaults(defineProps<{
 
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
+const educationLevelBadge = computed(() => {
+  if (!props.subjectEducationLevel?.trim()) return "";
+
+  switch (normalizeEducationLevel(props.subjectEducationLevel, "primary")) {
+    case "pre-primary":
+      return "Pre-Primary";
+    case "primary":
+      return "Primary";
+    case "lower secondary":
+      return "Lower Secondary";
+    case "upper secondary":
+      return "Upper Secondary";
+    default:
+      return props.subjectEducationLevel;
+  }
+});
 const subjectTarget = computed(() => ({
   path: `/interactive/${props.subjectName?.toLowerCase()}/${props.subjectId?.toLowerCase()}`,
   query: getEducationRouteQuery(
@@ -93,11 +111,19 @@ const setSubjectToView = () => {
      <div  :class="[
       'flex justify-between items-start transition-all duration-500 ease-in-out group-hover:text-white w-full',
      ]">
-       <p
-       class="text-left text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out"
-     >
-       {{ subjectName }}
-     </p>
+       <div class="flex min-w-0 flex-col gap-2">
+         <p
+           class="text-left text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out"
+         >
+           {{ subjectName }}
+         </p>
+         <span
+           v-if="educationLevelBadge"
+           class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white"
+         >
+           {{ educationLevelBadge }}
+         </span>
+       </div>
   
      <small
        :class="[
@@ -145,11 +171,19 @@ const setSubjectToView = () => {
         layoutEffect == 'grid' ? 'flex-wrap justify-between item-center' : 'flex-col  flex-1'
       ]">
       <!-- title & description -->
-      <p
-        class="flex text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out"
-      >
-        {{ subjectName }}
-      </p>
+      <div class="flex min-w-0 flex-col gap-2">
+        <p
+          class="flex text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out"
+        >
+          {{ subjectName }}
+        </p>
+        <span
+          v-if="educationLevelBadge"
+          class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white"
+        >
+          {{ educationLevelBadge }}
+        </span>
+      </div>
       <!-- metrics -->
       <small
         class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white"

@@ -14,7 +14,6 @@ import {
 import InputsSelection from "~/components/home/InputsSelection.vue";
 import apiDocs from "~/utilities/apiDocs";
 import {
-  filterKeyDataFromArrayOfJson,
   removeDataFromArrayOfJson,
 } from "~/utilities/filterJson";
 import customGridOne from "~/components/home/customGridOne.vue";
@@ -40,12 +39,15 @@ import {
 } from "~/utilities/homeSectionRouting";
 import {
   getApiContentLanguage,
+  getEducationHubBucket,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
   normalizeEducationLevel,
   resolveRouteLanguage,
   resolveEducationLevelFromRoute,
+  type EducationBucket,
+  type EducationHubBucket,
 } from "~/utilities/educationRoute";
 
 definePageMeta({
@@ -107,6 +109,19 @@ const router = useRouter();
 const currentEducationLevel = computed(() =>
   resolveEducationLevelFromRoute(route),
 );
+const currentHubBucket = computed<EducationHubBucket>(() =>
+  getEducationHubBucket(route.params.educationLevel ?? route.path) ??
+  (normalizeEducationLevel(currentEducationLevel.value) === "primary"
+    ? "primary"
+    : "secondary"),
+);
+const HUB_BUCKET_LEVELS: Record<EducationHubBucket, EducationBucket[]> = {
+  primary: ["pre-primary", "primary"],
+  secondary: ["lower secondary", "upper secondary"],
+};
+const hubEducationLevels = computed<EducationBucket[]>(
+  () => HUB_BUCKET_LEVELS[currentHubBucket.value],
+);
 const currentLanguage = computed(() =>
   getHubLanguage(
     currentEducationLevel.value,
@@ -127,9 +142,6 @@ const currentHubQuery = computed(() =>
 );
 const primaryApiLanguage = computed(() =>
   getApiContentLanguage(currentEducationLevel.value, currentLanguage.value),
-);
-const shouldRestrictToSecondarySubjects = computed(
-  () => currentEducationLevel.value === "lower secondary",
 );
 
 watch(
@@ -165,6 +177,7 @@ const filterValue = ref(); // Initial Filter Value State
 const subjectId = ref<string>(""); // Initial subjectId Value State
 const subjectSlug = ref<string>(""); // Initial subject slug Value State
 const subjectName = ref<string>(""); // Initial subject name Value State
+const subjectEducationLevel = ref<EducationBucket | "">("");
 const seeMoreDetails = ref<string | null>(null); // Initial See More
 const announcement = ref<string>();
 const subjectResolveState = ref({ slug: "", isLoading: false });
@@ -218,11 +231,49 @@ const normalizeQueryValue = (value: unknown) =>
   typeof value === "string" ? value.trim() : "";
 
 const getEducationLevelParam = () =>
+  subjectEducationLevel.value ||
   normalizeEducationLevel(
     route.query.educationLevel ??
       route.query.edl ??
       currentEducationLevel.value,
   );
+
+const dedupeById = <T extends { _id?: string }>(items: T[]) => {
+  const seen = new Set<string>();
+
+  return items.filter((item) => {
+    if (!item?._id) return true;
+    if (seen.has(item._id)) return false;
+    seen.add(item._id);
+    return true;
+  });
+};
+
+const mergeFetchedCollections = <T extends { _id?: string }>(responses: unknown[]) =>
+  dedupeById(
+    responses.flatMap((response) => {
+      if (Array.isArray(response)) return response as T[];
+      return removeDataFromArrayOfJson(response as T[], "isDeleted", true) as T[];
+    }),
+  );
+
+const getRequestedEducationLevels = (params?: Record<string, any>) => {
+  const explicitLevel = normalizeQueryValue(params?.educationLevel);
+
+  if (explicitLevel) {
+    return [normalizeEducationLevel(explicitLevel)];
+  }
+
+  if (subjectEducationLevel.value) {
+    return [subjectEducationLevel.value];
+  }
+
+  if (!subjectId.value && !subjectSlug.value) {
+    return hubEducationLevels.value;
+  }
+
+  return [getEducationLevelParam()];
+};
 
 const resolveSubjectIdFromSlug = async (slug: string) => {
   if (
@@ -238,32 +289,32 @@ const resolveSubjectIdFromSlug = async (slug: string) => {
 
   subjectResolveState.value = { slug, isLoading: true };
   try {
-    const response = await $fetch<Subjects[] | unknown>(
-      apiDocs.subjects.getPublicSubjects,
-      {
-        params: {
-          educationLevel: getEducationLevelParam(),
-          ...(primaryApiLanguage.value
-            ? { language: primaryApiLanguage.value }
-            : {}),
-        },
-        headers: {
-          Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
-        },
-      },
+    const responses = await Promise.all(
+      getRequestedEducationLevels().map((educationLevel) =>
+        $fetch<Subjects[] | unknown>(apiDocs.subjects.getPublicSubjects, {
+          params: {
+            educationLevel,
+            ...(primaryApiLanguage.value
+              ? { language: primaryApiLanguage.value }
+              : {}),
+          },
+          headers: {
+            Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+          },
+        }),
+      ),
     );
-    const rawSubjects = Array.isArray(response)
-      ? response
-      : removeDataFromArrayOfJson(response as Subjects[], "isDeleted", true);
-    const subjects = Array.isArray(rawSubjects)
-      ? (rawSubjects as Subjects[])
-      : [];
+    const subjects = mergeFetchedCollections<Subjects>(responses);
     const match = subjects.find(
       (subject) => slugifySubject(subject.name) === slug,
     );
     if (match?._id) {
       subjectId.value = match._id;
       subjectName.value = match.name;
+      subjectEducationLevel.value = normalizeEducationLevel(
+        match.educationLevel,
+        getEducationLevelParam(),
+      );
     }
   } catch (error) {
     console.warn("Failed to resolve subject from slug:", error);
@@ -333,9 +384,8 @@ const fetchData = async (params?: any) => {
   status.value = "pending";
   error.value = null;
   const tab = displayTab.value;
-  const educationLevel = getEducationLevelParam();
+  const requestedEducationLevels = getRequestedEducationLevels(params);
   const baseParams = {
-    educationLevel,
     ...(primaryApiLanguage.value ? { language: primaryApiLanguage.value } : {}),
     ...params,
   };
@@ -432,31 +482,31 @@ const fetchData = async (params?: any) => {
   try {
     announcement.value = `loading  ${getTabLabel(tab)} please wait.`;
     const { data: response, status: fetchStatus } = await fetchAsyncData(
-      `tab-${educationLevel}-${currentLanguage.value}-${tab}-${subjectId.value ? subjectId.value : ""}`,
-      () =>
-        $fetch(url, {
-          params: {
-            ...params,
-          },
-          headers: {
-            Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
-          },
-        }),
+      `tab-${requestedEducationLevels.join("-")}-${currentLanguage.value}-${tab}-${subjectId.value ? subjectId.value : ""}`,
+      async () => {
+        const responses = await Promise.all(
+          requestedEducationLevels.map((level) =>
+            $fetch(url, {
+              params: {
+                ...params,
+                ...(!subjectId.value ? { educationLevel: level } : {}),
+              },
+              headers: {
+                Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+              },
+            }),
+          ),
+        );
+
+        return mergeFetchedCollections<any>(responses);
+      },
     );
 
     // Call State Define above
     if (subjectId.value) {
       data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
     } else if (!subjectId.value && tab !== "subjects") {
-      data.value = shouldRestrictToSecondarySubjects.value
-        ? filterKeyDataFromArrayOfJson(response.value, "subject.name", [
-            "physics",
-            "chemistry",
-            "mathematics",
-            "biology",
-            "geography",
-          ])
-        : removeDataFromArrayOfJson(response.value, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
     } else {
       data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
       // remove some audio
@@ -674,6 +724,7 @@ const switchTab = async (tab: tabs) => {
     subjectId.value = "";
     subjectSlug.value = "";
     subjectName.value = "";
+    subjectEducationLevel.value = "";
   }
 
   const target = TAB_TO_ROUTE.value[tab] ?? { path: currentHubPath.value };
@@ -684,6 +735,7 @@ const clearSubjectDetail = () => {
   subjectId.value = "";
   subjectSlug.value = "";
   subjectName.value = "";
+  subjectEducationLevel.value = "";
   router.push(TAB_TO_ROUTE.value.subjects ?? { path: currentHubPath.value });
 };
 
@@ -695,10 +747,17 @@ const getSubjectRoute = (id?: string, slug?: string) => {
   return { path: "/interactive", query };
 };
 
-const handleSubjectSelect = async (id: string, name: string) => {
+const handleSubjectSelect = async (
+  id: string,
+  name: string,
+  educationLevel?: string,
+) => {
   subjectId.value = id;
   subjectName.value = name;
   subjectSlug.value = slugifySubject(name);
+  subjectEducationLevel.value = educationLevel
+    ? normalizeEducationLevel(educationLevel, getEducationLevelParam())
+    : "";
   activeTab.value = "subjects";
   const target = getSubjectRoute(id, subjectSlug.value);
   await router.push(target);
@@ -907,20 +966,27 @@ const handleSubjectSelect = async (id: string, name: string) => {
                     :subject-name="subject.name"
                     :subject-image="subject.thumbnail"
                     :subject-description="subject.description"
+                    :subject-education-level="subject.educationLevel"
                     :total-views="subject.views ?? 0"
                     :is-logged-in="userToken != null || userToken != undefined"
                     @emit-subject-name="
                       (name) => {
                         subjectName = name;
                         subjectSlug = slugifySubject(name);
-                        if (subjectId) handleSubjectSelect(subjectId, name);
+                        if (subjectId)
+                          handleSubjectSelect(
+                            subjectId,
+                            name,
+                            subject.educationLevel,
+                          );
                       }
                     "
                     @emit-subject-id="
                       (id) => {
                         handleSubjectSelect(
                           id,
-                          subjectName || subjectSlug || 'subject',
+                          subjectName || subjectSlug || subject.name,
+                          subject.educationLevel,
                         );
                       }
                     "
@@ -1217,6 +1283,7 @@ const handleSubjectSelect = async (id: string, name: string) => {
                   :subject-name="subject.name"
                   :subject-image="subject.thumbnail"
                   :subject-description="subject.description"
+                  :subject-education-level="subject.educationLevel"
                   :total-views="subject.views ?? 0"
                   :is-logged-in="userToken != null || userToken != undefined"
                 />
