@@ -157,7 +157,7 @@ const resetActivity = () => {
         />
 
         <div v-else class="space-y-4">
-          <h3 class="font-semibold">Options</h3>
+          <h3 class="font-semibold">Machaguo</h3>
           <div class="flex flex-wrap gap-2 text-lg">
             <Draggable
               v-for="(answer, index) in remainingOptions"

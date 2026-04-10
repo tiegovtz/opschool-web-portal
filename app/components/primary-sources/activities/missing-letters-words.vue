@@ -13,6 +13,8 @@ type Props = {
   feedback?: FeedbackType;
   questions: {
     title: string;
+    instructions?: string[];
+    options?: string[];
     questions: {
       textOne: string;
       textTwo: string;
@@ -41,9 +43,14 @@ const feedbacks = ref<Record<number, boolean>>({});
 const allAnswered = ref(false);
 const score = ref(0);
 
+const blankGroups = (text: string) => text.match(/_+/g) || [];
+const splitQuestionParts = (text: string) =>
+  text.split(/(_+)/).filter((part) => part.length > 0);
+const isBlankPart = (part: string) => /^_+$/.test(part);
+
 const allQuestionsAnswered = computed(() =>
   props.questions.questions.every((question, questionIndex) => {
-    const blankCount = (question.textOne.match(/_/g) || []).length;
+    const blankCount = blankGroups(question.textOne).length;
     const answers = userAnswers.value[questionIndex] || {};
 
     for (let index = 0; index < blankCount; index += 1) {
@@ -57,7 +64,7 @@ const allQuestionsAnswered = computed(() =>
 );
 
 const handleInputChange = (questionIndex: number, blankIndex: number, value: string) => {
-  const nextValue = value.slice(-1).toLowerCase();
+  const nextValue = value.trim().toLowerCase();
   userAnswers.value = {
     ...userAnswers.value,
     [questionIndex]: {
@@ -71,18 +78,18 @@ const checkWordAnswer = (questionIndex: number) => {
   const wordWithBlanks = props.questions.questions[questionIndex].textOne.toLowerCase();
   const correctWord = props.questions.questions[questionIndex].textTwo.toLowerCase();
   const answers = userAnswers.value[questionIndex] || {};
-
-  let reconstructed = "";
   let blankIndex = 0;
+  const reconstructed = splitQuestionParts(wordWithBlanks)
+    .map((part) => {
+      if (!isBlankPart(part)) {
+        return part;
+      }
 
-  for (let index = 0; index < wordWithBlanks.length; index += 1) {
-    if (wordWithBlanks[index] === "_") {
-      reconstructed += answers[blankIndex] || "_";
+      const answer = answers[blankIndex] || "_".repeat(part.length);
       blankIndex += 1;
-    } else {
-      reconstructed += wordWithBlanks[index];
-    }
-  }
+      return answer;
+    })
+    .join("");
 
   return reconstructed === correctWord;
 };
@@ -117,49 +124,80 @@ const handleReset = () => {
   showResults.value = false;
 };
 
-const blankIndicesBefore = (text: string, charIndex: number) =>
-  text.slice(0, charIndex).split("").filter((char) => char === "_").length;
+const blankPartIndex = (parts: string[], partIndex: number) =>
+  parts.slice(0, partIndex).filter((part) => isBlankPart(part)).length;
 </script>
 
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
 
+    <div
+      v-if="props.questions.instructions?.length"
+      class="mb-3 space-y-2 rounded-lg bg-white/80 p-4 shadow-sm"
+    >
+      <p
+        v-for="(instruction, instructionIndex) in props.questions.instructions"
+        :key="`${instruction}-${instructionIndex}`"
+        class="whitespace-pre-line text-base text-slate-700"
+      >
+        {{ instruction }}
+      </p>
+    </div>
+
+    <div
+      v-if="props.questions.options?.length"
+      class="mb-3 rounded-xl border border-picton-blue-200 bg-white/90 p-4 shadow-sm"
+    >
+      <p class="mb-3 text-sm font-semibold uppercase tracking-wide text-picton-blue-700">
+        Chaguo za kutumia
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <span
+          v-for="(option, optionIndex) in props.questions.options"
+          :key="`${option}-${optionIndex}`"
+          class="rounded-xl border border-picton-blue-200 bg-picton-blue-50 px-4 py-2 text-lg font-semibold text-picton-blue-900 shadow-sm"
+        >
+          {{ option }}
+        </span>
+      </div>
+    </div>
+
     <div class="flex h-full flex-col gap-2 bg-picton-blue-100">
       <div class="flex-1 space-y-4 overflow-y-auto p-4">
         <div
           v-for="(question, questionIndex) in props.questions.questions"
           :key="`question-${questionIndex}`"
-          class="flex items-center justify-between gap-5 rounded-lg bg-picton-blue-50 p-2"
+          class="rounded-xl bg-picton-blue-50 p-4 shadow-sm"
         >
-          <div class="flex w-full items-center justify-between">
-            <div class="flex items-center gap-4">
+          <div class="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex min-w-0 items-start gap-4">
               <span class="font-medium text-gray-600">{{ questionIndex + 1 }}.</span>
 
               <div
                 :class="
-                  cn('rounded p-4', {
+                  cn('min-w-0 rounded-xl p-4', {
                     'bg-green-100': checkedItems.includes(questionIndex) && feedbacks[questionIndex],
                     'bg-red-100': checkedItems.includes(questionIndex) && feedbacks[questionIndex] === false,
                   })
                 "
               >
-                <div class="flex items-center gap-1">
+                <div class="flex flex-wrap items-center gap-2">
                   <template
-                    v-for="(char, charIndex) in question.textOne.split('')"
-                    :key="`${questionIndex}-${charIndex}`"
+                    v-for="(part, partIndex) in splitQuestionParts(question.textOne)"
+                    :key="`${questionIndex}-${partIndex}`"
                   >
                     <Input
-                      v-if="char === '_'"
-                      :model-value="
-                        userAnswers[questionIndex]?.[blankIndicesBefore(question.textOne, charIndex)] || ''
-                      "
+                      v-if="isBlankPart(part)"
+                      :model-value="userAnswers[questionIndex]?.[blankPartIndex(splitQuestionParts(question.textOne), partIndex)] || ''"
                       type="text"
-                      maxlength="1"
+                      :maxlength="Math.max(part.length + 2, 6)"
+                      :placeholder="part.length > 1 ? 'silabi' : ''"
                       :disabled="allAnswered || checkedItems.includes(questionIndex)"
+                      :style="{ width: `${Math.max((userAnswers[questionIndex]?.[blankPartIndex(splitQuestionParts(question.textOne), partIndex)] || '').length, part.length, 2) * 1.3 + 1.8}rem` }"
                       :class="
                         cn(
-                          'h-12 w-12 border-2 border-dashed border-picton-blue-400 bg-transparent !p-0 text-center text-3xl font-semibold',
+                          'h-14 min-w-[4.5rem] border-2 border-dashed border-picton-blue-400 bg-white !p-0 text-center text-2xl font-semibold',
                           {
                             'border-green-400 bg-green-50 text-green-700':
                               checkedItems.includes(questionIndex) && feedbacks[questionIndex],
@@ -175,7 +213,7 @@ const blankIndicesBefore = (text: string, charIndex: number) =>
                         (value) =>
                           handleInputChange(
                             questionIndex,
-                            blankIndicesBefore(question.textOne, charIndex),
+                            blankPartIndex(splitQuestionParts(question.textOne), partIndex),
                             String(value ?? ''),
                           )
                       "
@@ -185,7 +223,7 @@ const blankIndicesBefore = (text: string, charIndex: number) =>
                       v-else
                       :class="
                         cn(
-                          'flex h-12 w-12 items-center justify-center bg-picton-blue-200 text-3xl font-semibold',
+                          'flex min-h-14 min-w-[3.5rem] items-center justify-center rounded-lg bg-picton-blue-200 px-3 text-2xl font-semibold',
                           {
                             'text-green-700':
                               checkedItems.includes(questionIndex) && feedbacks[questionIndex],
@@ -195,10 +233,18 @@ const blankIndicesBefore = (text: string, charIndex: number) =>
                         )
                       "
                     >
-                      {{ char }}
+                      {{ part }}
                     </span>
                   </template>
                 </div>
+
+                <p
+                  v-if="checkedItems.includes(questionIndex)"
+                  class="mt-3 text-sm font-medium"
+                  :class="feedbacks[questionIndex] ? 'text-green-700' : 'text-slate-700'"
+                >
+                  Jibu: <span class="font-bold">{{ question.textTwo }}</span>
+                </p>
               </div>
             </div>
 

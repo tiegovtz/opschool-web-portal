@@ -3,6 +3,12 @@ import { getImageUrl, shuffle } from "@/lib/utils";
 import { ActivityType } from "@/lib/types/activity-types";
 import type { ServerQuestionType } from "~/types/activity-props";
 
+const splitValues = (value: string | null | undefined, separator: "," | "/") =>
+  (value ?? "")
+    .split(separator)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
 
 
 const imagePathBasedOnQuestion = (
@@ -84,10 +90,11 @@ export const inWhichBoxPropsTranspiler = (params: ActivityTranspilerProps) => {
   }
 
   const textOneQuestions = shuffle(
-    (
+    splitValues(
       question[
         algorithm === "In Which Box Two Boxes" ? "textTwo" : "textOne"
-      ]?.split(algorithm === "In Which Box Two Boxes" ? "/" : ",") || []
+      ],
+      algorithm === "In Which Box Two Boxes" ? "/" : ",",
     )
       .slice(
         0,
@@ -113,11 +120,11 @@ export const inWhichBoxPropsTranspiler = (params: ActivityTranspilerProps) => {
   );
 
   const textTwoQuestions = shuffle(
-    (
-      (algorithm === "In Which Box Two Boxes"
+    splitValues(
+      algorithm === "In Which Box Two Boxes"
         ? serverQuestions[1].textTwo
-        : question.textTwo
-      )?.split(algorithm === "In Which Box Two Boxes" ? "/" : ",") || []
+        : question.textTwo,
+      algorithm === "In Which Box Two Boxes" ? "/" : ",",
     )
       .slice(
         0,
@@ -206,7 +213,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     }
 
     textOneQuestions = shuffle(
-      (question.textOne?.split(",") || []).slice(0, 4).map((content, i) => ({
+      splitValues(question.textOne, ",").slice(0, 4).map((content, i) => ({
         id: Math.random().toString(36).substring(7),
         // content,
         content: {
@@ -220,7 +227,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     );
 
     textTwoQuestions = shuffle(
-      (question.textTwo?.split(",") || []).slice(0, 4).map((content, i) => ({
+      splitValues(question.textTwo, ",").slice(0, 4).map((content, i) => ({
         id: Math.random().toString(36).substring(7),
         // content,
         content: {
@@ -234,7 +241,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     );
 
     textThreeQuestions = shuffle(
-      (question.textThree?.split(",") || []).slice(0, 4).map((content, i) => ({
+      splitValues(question.textThree, ",").slice(0, 4).map((content, i) => ({
         id: Math.random().toString(36).substring(7),
         // content,
         content: {
@@ -255,7 +262,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     }
 
     textOneQuestions = shuffle(
-      (serverQuestions[0].textTwo?.split("/") || [])
+      splitValues(serverQuestions[0].textTwo, "/")
         .slice(0, 6)
         .map((content, i) => ({
           id: content.toLowerCase(),
@@ -265,7 +272,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     );
 
     textTwoQuestions = shuffle(
-      (serverQuestions[1].textTwo?.split("/") || [])
+      splitValues(serverQuestions[1].textTwo, "/")
         .slice(0, 6)
         .map((content, i) => ({
           id: content.toLowerCase(),
@@ -275,7 +282,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     );
 
     textThreeQuestions = shuffle(
-      (serverQuestions[2].textTwo?.split("/") || [])
+      splitValues(serverQuestions[2].textTwo, "/")
         .slice(0, 6)
         .map((content, i) => ({
           id: content.toLowerCase(),
