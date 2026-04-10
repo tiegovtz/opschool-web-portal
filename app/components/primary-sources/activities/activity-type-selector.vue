@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const route = useRoute();
+const ui = useActivityUiText();
 
 const curriculum = computed(() => String(route.query.curc || "").trim());
 
@@ -67,7 +68,7 @@ const handleSelect = async (type: string) => {
       <div class="mb-4 flex items-center justify-between">
         <Button :href="backHref" class="w-fit xl:hidden">
           <Icon icon="lucide:arrow-left" width="16" height="16" class="mr-1" />
-          Back
+          {{ ui.back }}
         </Button>
 
         <div

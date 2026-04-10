@@ -20,6 +20,7 @@ type ShapesRenderingActivityProps = {
 };
 
 const props = defineProps<ShapesRenderingActivityProps>();
+const ui = useActivityUiText();
 const isMobile = useIsMobile();
 
 const buildDefaultShapesData = (): ShapesData => ({
@@ -261,7 +262,7 @@ const handleCheckAllAnswers = () => {
               "
               class="mt-2 text-sm text-green-600 font-medium"
             >
-              Correct answer: {{ question.answer }}
+              {{ ui.formatCorrectAnswer(question.answer) }}
             </div>
           </div>
         </div>
@@ -273,7 +274,7 @@ const handleCheckAllAnswers = () => {
           :disabled="answers.every((answer) => !answer.trim())"
           variant="brand-lemon"
         >
-          Check All Answers
+          {{ ui.checkAllAnswers }}
         </Button>
       </div>
 

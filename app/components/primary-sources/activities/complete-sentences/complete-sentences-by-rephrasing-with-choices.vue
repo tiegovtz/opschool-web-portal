@@ -29,6 +29,7 @@ interface Props {
 
 // Props
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 
 // State
 const shuffledQuestions = ref([...props.questions.questions]);
@@ -159,7 +160,7 @@ const renderQuestionWords = (q: string, questionIndex: number) => {
       </div>
 
       <Button :disabled="!allQuestionsAnswered || allAnswered" @click="handleCheckAllAnswers" variant="brand-lemon" class="w-fit ml-auto" size="lg">
-        {{ allAnswered ? "Answers Checked" : "Check All Answers" }}
+        {{ allAnswered ? ui.answersChecked : ui.checkAllAnswers }}
       </Button>
     </div>
 
@@ -175,11 +176,11 @@ const renderQuestionWords = (q: string, questionIndex: number) => {
             </div>
             <div class="grid grid-cols-2 gap-4 mt-2">
               <div>
-                <p class="text-sm text-gray-500">Your answer:</p>
+                <p class="text-sm text-gray-500">{{ ui.yourAnswer }}</p>
                 <p :class="{ 'text-red-600': !checkAnswer(answers[idx] || '', idx) }">{{ answers[idx] || "(no answer)" }}</p>
               </div>
               <div v-if="props.feedback === 'wrong-correct-answers'">
-                <p class="text-sm text-gray-500">Correct answer:</p>
+                <p class="text-sm text-gray-500">{{ ui.correctAnswer }}</p>
                 <p class="text-green-600">{{ question.answer }}</p>
               </div>
             </div>

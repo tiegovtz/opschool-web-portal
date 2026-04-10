@@ -25,6 +25,7 @@ type Props = {
 const props = withDefaults(defineProps<Props>(), {
   feedback: "wrong-correct",
 });
+const ui = useActivityUiText();
 
 const userAnswers = ref<string[]>(Array.from({ length: props.questions.length }, () => ""));
 const submitted = ref(false);
@@ -180,7 +181,7 @@ const handleSubmit = () => {
                 "
                 class="mt-2 text-center"
               >
-                <p class="text-sm text-gray-500">Correct answer:</p>
+                <p class="text-sm text-gray-500">{{ ui.correctAnswer }}</p>
                 <p class="font-medium text-green-600">{{ question.answers[0] }}</p>
               </div>
             </div>
@@ -198,7 +199,7 @@ const handleSubmit = () => {
               height="18"
               class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
             />
-            Check Answers
+            {{ ui.checkAnswers }}
           </Button>
         </div>
 

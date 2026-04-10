@@ -50,6 +50,7 @@ type Props = {
 const props = withDefaults(defineProps<Props>(), {
   feedback: "wrong-correct",
 });
+const ui = useActivityUiText();
 
 const { playSound } = useSoundEffects();
 
@@ -306,7 +307,7 @@ const resetActivity = () => {
                 v-if="showResults && props.feedback === 'wrong-correct-answers' && !isCorrectInBox(answer, 'first')"
                 class="absolute bottom-2 rounded bg-white/80 px-2 py-1 text-xs text-green-700"
               >
-                Correct: {{ correctBoxTitle(answer) }}
+                {{ ui.formatCorrect(correctBoxTitle(answer)) }}
               </span>
             </template>
           </button>
@@ -347,7 +348,7 @@ const resetActivity = () => {
                 v-if="showResults && props.feedback === 'wrong-correct-answers' && !isCorrectInBox(answer, 'second')"
                 class="absolute bottom-2 rounded bg-white/80 px-2 py-1 text-xs text-green-700"
               >
-                Correct: {{ correctBoxTitle(answer) }}
+                {{ ui.formatCorrect(correctBoxTitle(answer)) }}
               </span>
             </template>
           </button>
@@ -388,7 +389,7 @@ const resetActivity = () => {
                 v-if="showResults && props.feedback === 'wrong-correct-answers' && !isCorrectInBox(answer, 'third')"
                 class="absolute bottom-2 rounded bg-white/80 px-2 py-1 text-xs text-green-700"
               >
-                Correct: {{ correctBoxTitle(answer) }}
+                {{ ui.formatCorrect(correctBoxTitle(answer)) }}
               </span>
             </template>
           </button>

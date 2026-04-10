@@ -8,6 +8,7 @@ type PlaceValueBlocksProps = {
 const props = withDefaults(defineProps<PlaceValueBlocksProps>(), {
   maxNumber: 9999,
 });
+const ui = useActivityUiText();
 
 const inputValue = ref("");
 const currentNumber = ref(0);
@@ -185,7 +186,7 @@ const ONE = computed(() => renderCube(25, "#ef4444"));
           class="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
           @click="handleNextQuestion"
         >
-          Next Question
+          {{ ui.nextQuestion }}
         </button>
       </div>
 

@@ -27,6 +27,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const score = ref(0);
@@ -142,14 +143,14 @@ const resultRows = computed(() =>
           </div>
 
           <div class="flex-1">
-            <p class="font-medium">Question {{ index + 1 }}</p>
+            <p class="font-medium">{{ ui.formatQuestion(index + 1) }}</p>
             <div class="mt-1 flex flex-col gap-1 text-sm">
               <p>{{ row.question.question }}</p>
               <span v-if="props.feedback === 'wrong-correct-answers'">
-                Correct Answer: <strong>{{ row.question.answer }}</strong>
+                {{ ui.correctAnswer }} <strong>{{ row.question.answer }}</strong>
               </span>
               <span v-if="!row.isCorrect && row.userAnswer" class="text-red-600">
-                Your Answer: <strong>{{ row.userAnswer }}</strong>
+                {{ ui.yourAnswer }} <strong>{{ row.userAnswer }}</strong>
               </span>
             </div>
           </div>
@@ -205,7 +206,7 @@ const resultRows = computed(() =>
                       })
                     "
                   >
-                    {{ answerFeedback === "correct" ? "Correct!" : "Incorrect!" }}
+                    {{ answerFeedback === "correct" ? `${ui.correct}!` : `${ui.incorrect}!` }}
                   </p>
                 </div>
               </div>

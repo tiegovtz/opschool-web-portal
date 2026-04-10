@@ -39,6 +39,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const answerChecker = new AnswerChecker();
 const { playSound } = useSoundEffects();
 
@@ -236,10 +237,10 @@ const resetActivity = () => {
                   >
                     {{
                       getInputCell(rowIndex, cellIndex)?.isCorrect
-                        ? "Correct!"
+                        ? `${ui.correct}!`
                         : props.feedback === "wrong-correct-answers"
-                          ? `Correct: ${getInputCell(rowIndex, cellIndex)?.correctAnswer}`
-                          : "Incorrect!"
+                          ? ui.formatCorrect(getInputCell(rowIndex, cellIndex)?.correctAnswer)
+                          : `${ui.incorrect}!`
                     }}
                   </p>
                 </div>
@@ -267,7 +268,7 @@ const resetActivity = () => {
             height="18"
             class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
           />
-          Check Answers
+          {{ ui.checkAnswers }}
         </Button>
       </div>
     </div>

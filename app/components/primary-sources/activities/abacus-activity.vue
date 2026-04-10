@@ -31,6 +31,7 @@ type AnswerRecord = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const currentQuestionIndex = ref(0);
@@ -249,9 +250,9 @@ const resetActivity = () => {
           </div>
 
           <div class="flex-1">
-            <p class="font-medium">Question {{ index + 1 }}</p>
+            <p class="font-medium">{{ ui.formatQuestion(index + 1) }}</p>
             <div class="mt-1 flex items-center gap-2 text-sm">
-              <span>Correct Answer: <strong>{{ question.number }}</strong></span>
+              <span>{{ ui.correctAnswer }} <strong>{{ question.number }}</strong></span>
               <span
                 v-if="
                   props.feedback === 'wrong-correct-answers' &&
@@ -260,7 +261,7 @@ const resetActivity = () => {
                 "
                 class="text-red-600"
               >
-                Your Answer:
+                {{ ui.yourAnswer }}
                 <strong>{{ answerRecords.find((record) => record.questionIndex === index)?.userAnswer || "No answer" }}</strong>
               </span>
             </div>
@@ -369,7 +370,7 @@ const resetActivity = () => {
         </div>
 
         <Button variant="brand-lemon" class="w-fit" @click="checkAnswers">
-          Check Answer
+          {{ ui.checkAnswer }}
         </Button>
       </div>
     </template>
