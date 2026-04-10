@@ -569,6 +569,56 @@ const totalPages = computed(() => {
   return 0; // Default to 0 if no data
 });
 
+type PaginationItem =
+  | { type: "page"; value: number }
+  | { type: "ellipsis"; key: string };
+
+const paginationItems = computed<PaginationItem[]>(() => {
+  if (totalPages.value <= 0) return [];
+  if (totalPages.value <= 7) {
+    return Array.from({ length: totalPages.value }, (_, index) => ({
+      type: "page" as const,
+      value: index + 1,
+    }));
+  }
+
+  const pages = new Set<number>([1, totalPages.value]);
+  const windowStart = Math.max(2, currentPage.value - 1);
+  const windowEnd = Math.min(totalPages.value - 1, currentPage.value + 1);
+
+  for (let page = windowStart; page <= windowEnd; page += 1) {
+    pages.add(page);
+  }
+
+  const sortedPages = [...pages].sort((a, b) => a - b);
+  const items: PaginationItem[] = [];
+
+  sortedPages.forEach((page, index) => {
+    if (index > 0) {
+      const previousPage = sortedPages[index - 1]!;
+      if (page - previousPage > 1) {
+        items.push({
+          type: "ellipsis",
+          key: `ellipsis-${previousPage}-${page}`,
+        });
+      }
+    }
+
+    items.push({ type: "page", value: page });
+  });
+
+  return items;
+});
+
+const goToPage = (page: number) => {
+  const nextPageNumber = Math.min(Math.max(page, 1), totalPages.value || 1);
+  currentPage.value = nextPageNumber;
+  sliceData(
+    (currentPage.value - 1) * pageSize.value,
+    currentPage.value * pageSize.value,
+  );
+};
+
 // Watch screen width and update page size accordingly
 watch(
   () => screenWidth.value,
@@ -595,22 +645,11 @@ watch(
 
 // once pages are more than 5, handle pagination
 const nextPage = () => {
-  currentPage.value++;
-  currentPage.value =
-    currentPage.value > totalPages.value ? totalPages.value : currentPage.value;
-  sliceData(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value,
-  );
+  goToPage(currentPage.value + 1);
 };
 
 const prevPage = () => {
-  currentPage.value--;
-  currentPage.value = currentPage.value < 1 ? 1 : currentPage.value;
-  sliceData(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value,
-  );
+  goToPage(currentPage.value - 1);
 };
 
 const level = ref(); // Initial Level State
@@ -639,6 +678,28 @@ sliceData(
 );
 
 // watch current tab (data panel uses displayTab, UI uses activeTab)
+watch(
+  totalPages,
+  (pages) => {
+    if (!pages) {
+      currentPage.value = 1;
+      slicedData.value = [];
+      return;
+    }
+
+    if (currentPage.value > pages) {
+      goToPage(pages);
+      return;
+    }
+
+    sliceData(
+      (currentPage.value - 1) * pageSize.value,
+      currentPage.value * pageSize.value,
+    );
+  },
+  { immediate: true },
+);
+
 watch(
   () => displayTab.value,
   async (nextTab) => {
@@ -1085,26 +1146,11 @@ const handleSubjectSelect = async (
               class="flex justify-center my-5"
             >
               <div
-                v-if="totalPages <= 5"
-                class="flex justify-center gap-2"
-              >
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
-              </div>
-              <div
-                v-else
                 class="flex items-center gap-2"
               >
                 <div
                   class="flex items-center justify-center"
-                  v-if="currentPage > 5"
+                  v-if="currentPage > 1"
                 >
                   <Icon
                     name="iconamoon:arrow-left-2-fill"
@@ -1114,22 +1160,32 @@ const handleSubjectSelect = async (
                 </div>
 
                 <div
-                  class="overflow-x-scroll scrollbar-none max-w-[250px] flex items-center justify-start gap-2"
+                  class="flex items-center justify-center gap-2"
                 >
-                  <PaginationBtn
-                    v-for="page in totalPages"
-                    :key="page"
-                    :page-number="page"
-                    :is-active="page === currentPage"
-                    :disabled="page === currentPage"
-                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                    @send-page-number="currentPage = $event"
-                  />
+                  <template
+                    v-for="item in paginationItems"
+                    :key="item.type === 'page' ? item.value : item.key"
+                  >
+                    <PaginationBtn
+                      v-if="item.type === 'page'"
+                      :page-number="item.value"
+                      :is-active="item.value === currentPage"
+                      :disabled="item.value === currentPage"
+                      @send-page-number="goToPage"
+                    />
+                    <span
+                      v-else
+                      class="flex items-center justify-center w-10 h-10 text-gray-500"
+                      aria-hidden="true"
+                    >
+                      ...
+                    </span>
+                  </template>
                 </div>
 
                 <div
                   class="flex items-center justify-center"
-                  v-if="currentPage > 4"
+                  v-if="currentPage < totalPages"
                 >
                   <Icon
                     name="iconamoon:arrow-right-2-fill"
@@ -1296,27 +1352,12 @@ const handleSubjectSelect = async (
               class="flex justify-center my-5"
             >
               <div
-                v-if="totalPages <= 5"
-                class="flex justify-center gap-2"
-              >
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
-              </div>
-              <div
-                v-else
                 class="flex justify-center gap-2"
               >
                 <!-- previous -->
                 <div
                   class="flex items-center justify-center"
-                  v-if="currentPage > 5"
+                  v-if="currentPage > 1"
                 >
                   <Icon
                     name="iconamoon:arrow-left-2-fill"
@@ -1325,20 +1366,30 @@ const handleSubjectSelect = async (
                   />
                 </div>
 
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
+                <template
+                  v-for="item in paginationItems"
+                  :key="item.type === 'page' ? item.value : item.key"
+                >
+                  <PaginationBtn
+                    v-if="item.type === 'page'"
+                    :page-number="item.value"
+                    :is-active="item.value === currentPage"
+                    :disabled="item.value === currentPage"
+                    @send-page-number="goToPage"
+                  />
+                  <span
+                    v-else
+                    class="flex items-center justify-center w-10 h-10 text-gray-500"
+                    aria-hidden="true"
+                  >
+                    ...
+                  </span>
+                </template>
 
                 <!-- next button -->
                 <div
                   class="flex items-center justify-center"
-                  v-if="currentPage > 4"
+                  v-if="currentPage < totalPages"
                 >
                   <Icon
                     name="iconamoon:arrow-right-2-fill"
