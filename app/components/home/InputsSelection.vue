@@ -33,12 +33,7 @@ const normalizeValue = (value?: string | null) =>
 
 const getEducationBucket = (value?: string | null) =>
   value?.trim() ? normalizeEducationLevel(value) : null;
-
-const isPrimaryModule = computed(
-  () => getEducationBucket(props.educationLevel) === "primary",
-);
-
-const level = ref<string>(isPrimaryModule.value ? "primary" : "");
+const level = ref<string>("");
 const standard = ref<string>("");
 const subject = ref<string>("");
 
@@ -100,17 +95,25 @@ const content = computed(() =>
 const getEducationLevelLabel = (educationLevelName: string) => {
   const bucket = getEducationBucket(educationLevelName);
 
-  if (bucket === "primary") {
-    return props.language === "kiswahili"
-      ? "Elimu ya Msingi"
-      : "Primary Education";
+  if (bucket === "pre-primary") {
+    return props.language === "kiswahili" ? "Elimu ya Awali" : "Pre-Primary";
   }
 
-  // if (bucket === "lower secondary" || bucket === "secondary") {
-  //   return props.language === "kiswahili"
-  //     ? "Elimu ya Sekondari"
-  //     : "Secondary Education";
-  // }
+  if (bucket === "primary") {
+    return props.language === "kiswahili" ? "Elimu ya Msingi" : "Primary";
+  }
+
+  if (bucket === "lower secondary") {
+    return props.language === "kiswahili"
+      ? "Sekondari ya Chini"
+      : "Lower Secondary";
+  }
+
+  if (bucket === "upper secondary") {
+    return props.language === "kiswahili"
+      ? "Sekondari ya Juu"
+      : "Upper Secondary";
+  }
 
   return educationLevelName;
 };
@@ -175,9 +178,7 @@ const { data: educationLevels, pending: educationLevelsPending } = useFetch<
   default: () => [],
 });
 
-const selectedEducationBucket = computed(
-  () => getEducationBucket(level.value || props.educationLevel),
-);
+const selectedEducationBucket = computed(() => getEducationBucket(level.value));
 
 const { data: classLevels, pending: classLevelsPending } = useFetch<
   ClassLevel[]
@@ -215,13 +216,6 @@ const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
 
 const matchedEducationLevels = computed(() => {
   if (!props.educationLevel || !educationLevels.value.length) return [];
-
-  if (isPrimaryModule.value) {
-    return educationLevels.value.filter(
-      (educationLevelOption) =>
-        normalizeValue(educationLevelOption.name) === "primary",
-    );
-  }
 
   return educationLevels.value.filter((educationLevelOption) =>
     isEducationLevelVisibleInHub(
@@ -283,17 +277,29 @@ const isClassesLoading = computed(() => classLevelsPending.value);
 
 const isSubjectsLoading = computed(() => publicSubjectsPending.value);
 
-const showEducationLevelDropdown = computed(() => !isPrimaryModule.value);
+const showEducationLevelDropdown = computed(
+  () => educationLevelOptions.value.length > 1,
+);
 
 watch(
   matchedEducationLevels,
   (matchedLevels) => {
     if (!matchedLevels.length) return;
 
-    const nextLevel = normalizeValue(matchedLevels[0]?.name);
-    if (!nextLevel || level.value === nextLevel) return;
+    if (matchedLevels.length === 1) {
+      const nextLevel = normalizeValue(matchedLevels[0]?.name);
+      if (!nextLevel || level.value === nextLevel) return;
+      onLevelChange(nextLevel);
+      return;
+    }
 
-    onLevelChange(nextLevel);
+    const currentLevelStillVisible = matchedLevels.some(
+      (matchedLevel) => normalizeValue(matchedLevel.name) === level.value,
+    );
+
+    if (!currentLevelStillVisible && level.value) {
+      onLevelChange("");
+    }
   },
   { immediate: true },
 );

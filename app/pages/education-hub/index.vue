@@ -14,7 +14,6 @@ import {
 import InputsSelection from "~/components/home/InputsSelection.vue";
 import apiDocs from "~/utilities/apiDocs";
 import {
-  filterKeyDataFromArrayOfJson,
   removeDataFromArrayOfJson,
 } from "~/utilities/filterJson";
 import customGridOne from "~/components/home/customGridOne.vue";
@@ -40,12 +39,15 @@ import {
 } from "~/utilities/homeSectionRouting";
 import {
   getApiContentLanguage,
+  getEducationHubBucket,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
   normalizeEducationLevel,
   resolveRouteLanguage,
   resolveEducationLevelFromRoute,
+  type EducationBucket,
+  type EducationHubBucket,
 } from "~/utilities/educationRoute";
 
 definePageMeta({
@@ -107,6 +109,19 @@ const router = useRouter();
 const currentEducationLevel = computed(() =>
   resolveEducationLevelFromRoute(route),
 );
+const currentHubBucket = computed<EducationHubBucket>(() =>
+  getEducationHubBucket(route.params.educationLevel ?? route.path) ??
+  (normalizeEducationLevel(currentEducationLevel.value) === "primary"
+    ? "primary"
+    : "secondary"),
+);
+const HUB_BUCKET_LEVELS: Record<EducationHubBucket, EducationBucket[]> = {
+  primary: ["pre-primary", "primary"],
+  secondary: ["lower secondary", "upper secondary"],
+};
+const hubEducationLevels = computed<EducationBucket[]>(
+  () => HUB_BUCKET_LEVELS[currentHubBucket.value],
+);
 const currentLanguage = computed(() =>
   getHubLanguage(
     currentEducationLevel.value,
@@ -127,9 +142,6 @@ const currentHubQuery = computed(() =>
 );
 const primaryApiLanguage = computed(() =>
   getApiContentLanguage(currentEducationLevel.value, currentLanguage.value),
-);
-const shouldRestrictToSecondarySubjects = computed(
-  () => currentEducationLevel.value === "lower secondary",
 );
 
 watch(
@@ -165,6 +177,7 @@ const filterValue = ref(); // Initial Filter Value State
 const subjectId = ref<string>(""); // Initial subjectId Value State
 const subjectSlug = ref<string>(""); // Initial subject slug Value State
 const subjectName = ref<string>(""); // Initial subject name Value State
+const subjectEducationLevel = ref<EducationBucket | "">("");
 const seeMoreDetails = ref<string | null>(null); // Initial See More
 const announcement = ref<string>();
 const subjectResolveState = ref({ slug: "", isLoading: false });
@@ -218,11 +231,49 @@ const normalizeQueryValue = (value: unknown) =>
   typeof value === "string" ? value.trim() : "";
 
 const getEducationLevelParam = () =>
+  subjectEducationLevel.value ||
   normalizeEducationLevel(
     route.query.educationLevel ??
       route.query.edl ??
       currentEducationLevel.value,
   );
+
+const dedupeById = <T extends { _id?: string }>(items: T[]) => {
+  const seen = new Set<string>();
+
+  return items.filter((item) => {
+    if (!item?._id) return true;
+    if (seen.has(item._id)) return false;
+    seen.add(item._id);
+    return true;
+  });
+};
+
+const mergeFetchedCollections = <T extends { _id?: string }>(responses: unknown[]) =>
+  dedupeById(
+    responses.flatMap((response) => {
+      if (Array.isArray(response)) return response as T[];
+      return removeDataFromArrayOfJson(response as T[], "isDeleted", true) as T[];
+    }),
+  );
+
+const getRequestedEducationLevels = (params?: Record<string, any>) => {
+  const explicitLevel = normalizeQueryValue(params?.educationLevel);
+
+  if (explicitLevel) {
+    return [normalizeEducationLevel(explicitLevel)];
+  }
+
+  if (subjectEducationLevel.value) {
+    return [subjectEducationLevel.value];
+  }
+
+  if (!subjectId.value && !subjectSlug.value) {
+    return hubEducationLevels.value;
+  }
+
+  return [getEducationLevelParam()];
+};
 
 const resolveSubjectIdFromSlug = async (slug: string) => {
   if (
@@ -238,32 +289,32 @@ const resolveSubjectIdFromSlug = async (slug: string) => {
 
   subjectResolveState.value = { slug, isLoading: true };
   try {
-    const response = await $fetch<Subjects[] | unknown>(
-      apiDocs.subjects.getPublicSubjects,
-      {
-        params: {
-          educationLevel: getEducationLevelParam(),
-          ...(primaryApiLanguage.value
-            ? { language: primaryApiLanguage.value }
-            : {}),
-        },
-        headers: {
-          Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
-        },
-      },
+    const responses = await Promise.all(
+      getRequestedEducationLevels().map((educationLevel) =>
+        $fetch<Subjects[] | unknown>(apiDocs.subjects.getPublicSubjects, {
+          params: {
+            educationLevel,
+            ...(primaryApiLanguage.value
+              ? { language: primaryApiLanguage.value }
+              : {}),
+          },
+          headers: {
+            Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+          },
+        }),
+      ),
     );
-    const rawSubjects = Array.isArray(response)
-      ? response
-      : removeDataFromArrayOfJson(response as Subjects[], "isDeleted", true);
-    const subjects = Array.isArray(rawSubjects)
-      ? (rawSubjects as Subjects[])
-      : [];
+    const subjects = mergeFetchedCollections<Subjects>(responses);
     const match = subjects.find(
       (subject) => slugifySubject(subject.name) === slug,
     );
     if (match?._id) {
       subjectId.value = match._id;
       subjectName.value = match.name;
+      subjectEducationLevel.value = normalizeEducationLevel(
+        match.educationLevel,
+        getEducationLevelParam(),
+      );
     }
   } catch (error) {
     console.warn("Failed to resolve subject from slug:", error);
@@ -333,9 +384,8 @@ const fetchData = async (params?: any) => {
   status.value = "pending";
   error.value = null;
   const tab = displayTab.value;
-  const educationLevel = getEducationLevelParam();
+  const requestedEducationLevels = getRequestedEducationLevels(params);
   const baseParams = {
-    educationLevel,
     ...(primaryApiLanguage.value ? { language: primaryApiLanguage.value } : {}),
     ...params,
   };
@@ -432,31 +482,31 @@ const fetchData = async (params?: any) => {
   try {
     announcement.value = `loading  ${getTabLabel(tab)} please wait.`;
     const { data: response, status: fetchStatus } = await fetchAsyncData(
-      `tab-${educationLevel}-${currentLanguage.value}-${tab}-${subjectId.value ? subjectId.value : ""}`,
-      () =>
-        $fetch(url, {
-          params: {
-            ...params,
-          },
-          headers: {
-            Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
-          },
-        }),
+      `tab-${requestedEducationLevels.join("-")}-${currentLanguage.value}-${tab}-${subjectId.value ? subjectId.value : ""}`,
+      async () => {
+        const responses = await Promise.all(
+          requestedEducationLevels.map((level) =>
+            $fetch(url, {
+              params: {
+                ...params,
+                ...(!subjectId.value ? { educationLevel: level } : {}),
+              },
+              headers: {
+                Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
+              },
+            }),
+          ),
+        );
+
+        return mergeFetchedCollections<any>(responses);
+      },
     );
 
     // Call State Define above
     if (subjectId.value) {
       data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
     } else if (!subjectId.value && tab !== "subjects") {
-      data.value = shouldRestrictToSecondarySubjects.value
-        ? filterKeyDataFromArrayOfJson(response.value, "subject.name", [
-            "physics",
-            "chemistry",
-            "mathematics",
-            "biology",
-            "geography",
-          ])
-        : removeDataFromArrayOfJson(response.value, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
     } else {
       data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
       // remove some audio
@@ -519,6 +569,56 @@ const totalPages = computed(() => {
   return 0; // Default to 0 if no data
 });
 
+type PaginationItem =
+  | { type: "page"; value: number }
+  | { type: "ellipsis"; key: string };
+
+const paginationItems = computed<PaginationItem[]>(() => {
+  if (totalPages.value <= 0) return [];
+  if (totalPages.value <= 7) {
+    return Array.from({ length: totalPages.value }, (_, index) => ({
+      type: "page" as const,
+      value: index + 1,
+    }));
+  }
+
+  const pages = new Set<number>([1, totalPages.value]);
+  const windowStart = Math.max(2, currentPage.value - 1);
+  const windowEnd = Math.min(totalPages.value - 1, currentPage.value + 1);
+
+  for (let page = windowStart; page <= windowEnd; page += 1) {
+    pages.add(page);
+  }
+
+  const sortedPages = [...pages].sort((a, b) => a - b);
+  const items: PaginationItem[] = [];
+
+  sortedPages.forEach((page, index) => {
+    if (index > 0) {
+      const previousPage = sortedPages[index - 1]!;
+      if (page - previousPage > 1) {
+        items.push({
+          type: "ellipsis",
+          key: `ellipsis-${previousPage}-${page}`,
+        });
+      }
+    }
+
+    items.push({ type: "page", value: page });
+  });
+
+  return items;
+});
+
+const goToPage = (page: number) => {
+  const nextPageNumber = Math.min(Math.max(page, 1), totalPages.value || 1);
+  currentPage.value = nextPageNumber;
+  sliceData(
+    (currentPage.value - 1) * pageSize.value,
+    currentPage.value * pageSize.value,
+  );
+};
+
 // Watch screen width and update page size accordingly
 watch(
   () => screenWidth.value,
@@ -545,22 +645,11 @@ watch(
 
 // once pages are more than 5, handle pagination
 const nextPage = () => {
-  currentPage.value++;
-  currentPage.value =
-    currentPage.value > totalPages.value ? totalPages.value : currentPage.value;
-  sliceData(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value,
-  );
+  goToPage(currentPage.value + 1);
 };
 
 const prevPage = () => {
-  currentPage.value--;
-  currentPage.value = currentPage.value < 1 ? 1 : currentPage.value;
-  sliceData(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value,
-  );
+  goToPage(currentPage.value - 1);
 };
 
 const level = ref(); // Initial Level State
@@ -589,6 +678,28 @@ sliceData(
 );
 
 // watch current tab (data panel uses displayTab, UI uses activeTab)
+watch(
+  totalPages,
+  (pages) => {
+    if (!pages) {
+      currentPage.value = 1;
+      slicedData.value = [];
+      return;
+    }
+
+    if (currentPage.value > pages) {
+      goToPage(pages);
+      return;
+    }
+
+    sliceData(
+      (currentPage.value - 1) * pageSize.value,
+      currentPage.value * pageSize.value,
+    );
+  },
+  { immediate: true },
+);
+
 watch(
   () => displayTab.value,
   async (nextTab) => {
@@ -674,6 +785,7 @@ const switchTab = async (tab: tabs) => {
     subjectId.value = "";
     subjectSlug.value = "";
     subjectName.value = "";
+    subjectEducationLevel.value = "";
   }
 
   const target = TAB_TO_ROUTE.value[tab] ?? { path: currentHubPath.value };
@@ -684,6 +796,7 @@ const clearSubjectDetail = () => {
   subjectId.value = "";
   subjectSlug.value = "";
   subjectName.value = "";
+  subjectEducationLevel.value = "";
   router.push(TAB_TO_ROUTE.value.subjects ?? { path: currentHubPath.value });
 };
 
@@ -695,10 +808,17 @@ const getSubjectRoute = (id?: string, slug?: string) => {
   return { path: "/interactive", query };
 };
 
-const handleSubjectSelect = async (id: string, name: string) => {
+const handleSubjectSelect = async (
+  id: string,
+  name: string,
+  educationLevel?: string,
+) => {
   subjectId.value = id;
   subjectName.value = name;
   subjectSlug.value = slugifySubject(name);
+  subjectEducationLevel.value = educationLevel
+    ? normalizeEducationLevel(educationLevel, getEducationLevelParam())
+    : "";
   activeTab.value = "subjects";
   const target = getSubjectRoute(id, subjectSlug.value);
   await router.push(target);
@@ -907,20 +1027,27 @@ const handleSubjectSelect = async (id: string, name: string) => {
                     :subject-name="subject.name"
                     :subject-image="subject.thumbnail"
                     :subject-description="subject.description"
+                    :subject-education-level="subject.educationLevel || (subject.educationLevel as any)?.name"
                     :total-views="subject.views ?? 0"
                     :is-logged-in="userToken != null || userToken != undefined"
                     @emit-subject-name="
                       (name) => {
                         subjectName = name;
                         subjectSlug = slugifySubject(name);
-                        if (subjectId) handleSubjectSelect(subjectId, name);
+                        if (subjectId)
+                          handleSubjectSelect(
+                            subjectId,
+                            name,
+                            subject.educationLevel,
+                          );
                       }
                     "
                     @emit-subject-id="
                       (id) => {
                         handleSubjectSelect(
                           id,
-                          subjectName || subjectSlug || 'subject',
+                          subjectName || subjectSlug || subject.name,
+                          subject.educationLevel,
                         );
                       }
                     "
@@ -1019,26 +1146,11 @@ const handleSubjectSelect = async (id: string, name: string) => {
               class="flex justify-center my-5"
             >
               <div
-                v-if="totalPages <= 5"
-                class="flex justify-center gap-2"
-              >
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
-              </div>
-              <div
-                v-else
                 class="flex items-center gap-2"
               >
                 <div
                   class="flex items-center justify-center"
-                  v-if="currentPage > 5"
+                  v-if="currentPage > 1"
                 >
                   <Icon
                     name="iconamoon:arrow-left-2-fill"
@@ -1048,22 +1160,32 @@ const handleSubjectSelect = async (id: string, name: string) => {
                 </div>
 
                 <div
-                  class="overflow-x-scroll scrollbar-none max-w-[250px] flex items-center justify-start gap-2"
+                  class="flex items-center justify-center gap-2"
                 >
-                  <PaginationBtn
-                    v-for="page in totalPages"
-                    :key="page"
-                    :page-number="page"
-                    :is-active="page === currentPage"
-                    :disabled="page === currentPage"
-                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                    @send-page-number="currentPage = $event"
-                  />
+                  <template
+                    v-for="item in paginationItems"
+                    :key="item.type === 'page' ? item.value : item.key"
+                  >
+                    <PaginationBtn
+                      v-if="item.type === 'page'"
+                      :page-number="item.value"
+                      :is-active="item.value === currentPage"
+                      :disabled="item.value === currentPage"
+                      @send-page-number="goToPage"
+                    />
+                    <span
+                      v-else
+                      class="flex items-center justify-center w-10 h-10 text-gray-500"
+                      aria-hidden="true"
+                    >
+                      ...
+                    </span>
+                  </template>
                 </div>
 
                 <div
                   class="flex items-center justify-center"
-                  v-if="currentPage > 4"
+                  v-if="currentPage < totalPages"
                 >
                   <Icon
                     name="iconamoon:arrow-right-2-fill"
@@ -1217,6 +1339,7 @@ const handleSubjectSelect = async (id: string, name: string) => {
                   :subject-name="subject.name"
                   :subject-image="subject.thumbnail"
                   :subject-description="subject.description"
+                  :subject-education-level="subject.educationLevel || (subject.educationLevel as any)?.name"
                   :total-views="subject.views ?? 0"
                   :is-logged-in="userToken != null || userToken != undefined"
                 />
@@ -1229,27 +1352,12 @@ const handleSubjectSelect = async (id: string, name: string) => {
               class="flex justify-center my-5"
             >
               <div
-                v-if="totalPages <= 5"
-                class="flex justify-center gap-2"
-              >
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
-              </div>
-              <div
-                v-else
                 class="flex justify-center gap-2"
               >
                 <!-- previous -->
                 <div
                   class="flex items-center justify-center"
-                  v-if="currentPage > 5"
+                  v-if="currentPage > 1"
                 >
                   <Icon
                     name="iconamoon:arrow-left-2-fill"
@@ -1258,20 +1366,30 @@ const handleSubjectSelect = async (id: string, name: string) => {
                   />
                 </div>
 
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
+                <template
+                  v-for="item in paginationItems"
+                  :key="item.type === 'page' ? item.value : item.key"
+                >
+                  <PaginationBtn
+                    v-if="item.type === 'page'"
+                    :page-number="item.value"
+                    :is-active="item.value === currentPage"
+                    :disabled="item.value === currentPage"
+                    @send-page-number="goToPage"
+                  />
+                  <span
+                    v-else
+                    class="flex items-center justify-center w-10 h-10 text-gray-500"
+                    aria-hidden="true"
+                  >
+                    ...
+                  </span>
+                </template>
 
                 <!-- next button -->
                 <div
                   class="flex items-center justify-center"
-                  v-if="currentPage > 4"
+                  v-if="currentPage < totalPages"
                 >
                   <Icon
                     name="iconamoon:arrow-right-2-fill"

@@ -108,6 +108,7 @@ const setLevel = (key: string, lvl: string) => {
             :subject-name="subject.name"
             :subject-image="subject.thumbnail"
             :subject-description="subject.description"
+            :subject-education-level="subject.educationLevel || (subject.educationLevel as any)?.name"
             :total-views="subject.views ?? 0"
             :alt-text="subject.alt"
             :is-logged-in="userToken != null || userToken != undefined"
@@ -853,12 +854,13 @@ const setLevel = (key: string, lvl: string) => {
         <template #data>
           <!-- Subject Cards are in Grid -->
           <SubjectCard
-            v-for="subject in data as unknown as Subjects[]"
+            v-for="subject in (data as unknown as Subjects[])"
             :key="subject._id"
             :subject-id="subject._id"
             :subject-name="subject.name"
             :subject-image="subject.thumbnail"
             :subject-description="subject.description"
+            :subject-education-level="subject.educationLevel || (subject.educationLevel as any)?.name"
             :total-views="subject.views ?? 0"
             :is-logged-in="userToken != null || userToken != undefined"
             :alt-text="subject.alt"

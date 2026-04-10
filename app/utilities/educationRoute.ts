@@ -28,11 +28,21 @@ const PRIMARY_HUB_LEVEL_ALIASES = new Set([
   "msingi",
 ]);
 
+const LOWER_SECONDARY_ALIASES = new Set([
+  "lower secondary",
+  "elimu ya sekondari ya chini",
+  "sekondari ya chini",
+]);
+
+const UPPER_SECONDARY_ALIASES = new Set([
+  "upper secondary",
+  "elimu ya sekondari ya juu",
+  "sekondari ya juu",
+]);
+
 const SECONDARY_ALIASES = new Set([
   "secondary",
   "secondary education",
-  "lower secondary",
-  "upper secondary",
   "elimu ya sekondari",
   "sekondari",
 ]);
@@ -80,6 +90,8 @@ export const normalizeEducationLevel = (
   const normalized = normalizeEducationAlias(value);
   if (PRIMARY_ALIASES.has(normalized)) return "primary";
   if (PRE_PRIMARY_ALIASES.has(normalized)) return "pre-primary";
+  if (UPPER_SECONDARY_ALIASES.has(normalized)) return "upper secondary";
+  if (LOWER_SECONDARY_ALIASES.has(normalized)) return "lower secondary";
   if (SECONDARY_ALIASES.has(normalized)) return "lower secondary";
   return fallback;
 };
