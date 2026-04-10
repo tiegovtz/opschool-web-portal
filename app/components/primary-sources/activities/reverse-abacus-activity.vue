@@ -30,6 +30,7 @@ type AnswerRecord = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const beadCounts = ref<Record<string, number>>({});
@@ -244,7 +245,7 @@ const resetActivity = () => {
           </div>
 
           <div class="flex-1">
-            <p class="font-medium">Question {{ index + 1 }}</p>
+            <p class="font-medium">{{ ui.formatQuestion(index + 1) }}</p>
             <div class="mt-1 flex items-center gap-2 text-sm">
               <span>Number to represent: <strong>{{ question.number }}</strong></span>
               <span
@@ -318,7 +319,7 @@ const resetActivity = () => {
                       : 'absolute -top-8 left-1/2 -translate-x-1/2 rounded bg-red-100 px-2 py-1 text-sm font-semibold text-red-700'
                   "
                 >
-                  {{ (beadCounts[placeValue] || 0) === expectedDigitsByPlace[placeValue] ? "Correct" : "Wrong" }}
+                  {{ (beadCounts[placeValue] || 0) === expectedDigitsByPlace[placeValue] ? ui.correct : ui.incorrect }}
                 </div>
               </div>
             </div>
@@ -353,7 +354,7 @@ const resetActivity = () => {
         </div>
 
         <Button variant="brand-lemon" class="w-fit" @click="checkAnswers">
-          Check Answer
+          {{ ui.checkAnswer }}
         </Button>
       </div>
     </template>

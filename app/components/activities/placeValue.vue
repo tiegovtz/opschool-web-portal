@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue"
 import Cube from "./cube.vue"
+const ui = useActivityUiText()
 
 const maxNumber = 9999
 const totalQuestions = 10
@@ -136,7 +137,7 @@ const breakdownText = computed(() => {
         </p>
 
         <button @click="handleNextQuestion" class="px-6 py-3 bg-amber-600 text-white rounded-lg">
-          Next Question
+          {{ ui.nextQuestion }}
         </button>
       </div>
 

@@ -123,6 +123,7 @@ const handleTopicSelect = (topicId: number, subjectId: string) => {
 const backHref = computed(
   () => `/activities${route.query.curc ? `?curc=${encodeURIComponent(String(route.query.curc))}` : ""}`,
 );
+const ui = useActivityUiText();
 </script>
 
 <template>
@@ -130,7 +131,7 @@ const backHref = computed(
     <div class="mb-6 flex flex-col gap-5 py-6 md:flex-row md:items-center md:gap-0">
       <Button :href="backHref" class="w-fit">
         <ArrowLeft :size="16" class="mr-1" />
-        Back
+        {{ ui.back }}
       </Button>
 
       <div class="flex-1 md:text-center">

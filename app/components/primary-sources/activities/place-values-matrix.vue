@@ -41,6 +41,7 @@ type AnswerRecord = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const userAnswers = ref<Record<number, Record<string, string>>>({});
@@ -310,7 +311,7 @@ const getRowClassName = (questionIndex: number) => {
                   "
                   class="mt-1 text-xs text-red-700"
                 >
-                  Correct: {{ getExpectedDigitForPlaceValue(question, placeValue) }}
+                  {{ ui.formatCorrect(getExpectedDigitForPlaceValue(question, placeValue)) }}
                 </div>
               </TableCell>
 
@@ -351,7 +352,7 @@ const getRowClassName = (questionIndex: number) => {
           height="18"
           class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
         />
-        Check Answers
+        {{ ui.checkAnswers }}
       </Button>
     </div>
 

@@ -31,6 +31,7 @@ const serverQuestions: Question[] = [
 ];
 
 const { playSound } = useSoundEffects();
+const ui = useActivityUiText();
 
 const questions = ref(serverQuestions.map((question) => ({ ...question, answer: "" })));
 const score = ref(0);
@@ -147,7 +148,7 @@ const resetActivity = () => {
             </div>
 
             <div class="flex-1">
-              <p class="font-medium">Question {{ index + 1 }}</p>
+              <p class="font-medium">{{ ui.formatQuestion(index + 1) }}</p>
               <div class="mt-1 text-sm">
                 <span>{{ question.firstNumber }} </span>
                 <span
@@ -172,7 +173,7 @@ const resetActivity = () => {
                   v-if="question.answer !== serverQuestions[index]?.answer"
                   class="mt-1 text-green-700"
                 >
-                  Correct answer: {{ serverQuestions[index]?.answer }}
+                  {{ ui.formatCorrectAnswer(serverQuestions[index]?.answer) }}
                 </div>
               </div>
             </div>

@@ -37,6 +37,7 @@ type DragEndEvent = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const availableItems = ref<StepItem[]>([]);
@@ -256,7 +257,7 @@ const shouldShowDetailedResults = props.feedback === "wrong-correct-answers";
 
             <div v-else class="space-y-3">
               <div class="rounded-md border border-red-100 bg-red-50 p-3">
-                <p class="mb-1 text-sm font-medium text-red-600">Your Answer:</p>
+                <p class="mb-1 text-sm font-medium text-red-600">{{ ui.yourAnswer }}</p>
                 <div class="flex flex-col items-center text-center">
                   <p v-if="!props.questions.hideWords" class="text-gray-700">
                     {{ item?.question || "No step placed" }}
@@ -271,7 +272,7 @@ const shouldShowDetailedResults = props.feedback === "wrong-correct-answers";
               </div>
 
               <div class="rounded-md border border-green-100 bg-green-50 p-3">
-                <p class="mb-1 text-sm font-medium text-green-600">Correct Step:</p>
+                <p class="mb-1 text-sm font-medium text-green-600">{{ ui.correctStep }}</p>
                 <div class="flex flex-col items-center text-center">
                   <p v-if="!props.questions.hideWords" class="text-gray-700">
                     {{ props.questions.questions[index]?.question }}

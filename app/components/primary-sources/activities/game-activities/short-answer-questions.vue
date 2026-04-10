@@ -34,6 +34,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 
 const { objects, loading, error, refetch } = useObjects({
   type: props.questions.type || null,
@@ -315,7 +316,7 @@ const handleResultsDialogChange = (open: boolean) => {
               class="text-lemon-700 animate-pulse"
             />
             {{
-              allAnswered ? "Answers Checked" : "Check Answers"
+              allAnswered ? ui.answersChecked : ui.checkAnswers
             }}
           </Button>
         </div>

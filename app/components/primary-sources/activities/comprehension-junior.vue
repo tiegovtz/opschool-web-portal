@@ -41,6 +41,7 @@ const props = withDefaults(defineProps<Props>(), {
   feedback: "wrong-correct",
 });
 
+const ui = useActivityUiText();
 const answerChecker = new AnswerChecker();
 const { playSound } = useSoundEffects();
 
@@ -282,14 +283,14 @@ const questionIsAnswered = (index: number) =>
                 :key="`${visibleIndex}-${answerIndex}`"
                 class="text-sm text-neutral-700"
               >
-                <span class="font-medium">Your answer:</span>
+                <span class="font-medium">{{ ui.yourAnswer }}</span>
                 {{ answer || "No answer provided." }}
               </p>
               <p
                 v-if="props.feedback === 'wrong-correct-answers'"
                 class="text-sm text-green-700"
               >
-                Correct answer:
+                {{ ui.correctAnswer }}
                 {{
                   (
                     props.questions.questions[originalIndex]?.acceptedAnswers ||
@@ -443,10 +444,10 @@ const questionIsAnswered = (index: number) =>
           />
           {{
             isCheckingAnswers
-              ? "Checking..."
+              ? ui.checking
               : activeQuestion < shuffledIndexes.length - 1
-                ? "Next Question"
-                : "Check Answers"
+                ? ui.nextQuestion
+                : ui.checkAnswers
           }}
         </Button>
       </div>
