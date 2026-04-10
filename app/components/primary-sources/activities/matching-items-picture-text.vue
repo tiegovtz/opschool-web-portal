@@ -78,11 +78,14 @@ const { objects, loading, error, refetch } = useObjects({
   autoFetch: !!props.questions.isGameMode,
 });
 
+const normalizeMatchingItems = (items: unknown): MatchingItem[] =>
+  Array.isArray(items) ? (items as MatchingItem[]) : [];
+
 const getGameItems = () => {
   if (!props.questions.isGameMode) {
     return {
-      leftItems: props.questions.leftItems,
-      rightItems: props.questions.rightItems,
+      leftItems: normalizeMatchingItems(props.questions.leftItems),
+      rightItems: normalizeMatchingItems(props.questions.rightItems),
     };
   }
 
@@ -114,6 +117,9 @@ const getGameItems = () => {
 const leftItems = computed(() => getGameItems().leftItems);
 const rightItems = computed(() => getGameItems().rightItems);
 const totalPairs = computed(() => leftItems.value.length);
+const hasRenderableItems = computed(
+  () => leftItems.value.length > 0 && rightItems.value.length > 0,
+);
 
 const resetRoundState = () => {
   connections.value = [];
@@ -506,7 +512,9 @@ const handleRestart = async () => {
     completedObjectIds.value = updatedIds;
     await refetch(updatedIds);
   } else {
-    shuffledRightItems.value = shuffle([...props.questions.rightItems]);
+    shuffledRightItems.value = shuffle([
+      ...normalizeMatchingItems(props.questions.rightItems),
+    ]);
   }
 
   window.setTimeout(() => {
@@ -605,6 +613,16 @@ const liveDragLine = computed(() => {
     <h1 class="text-2xl font-bold">No objects found for the specified criteria</h1>
   </div>
 
+  <div
+    v-else-if="!props.questions.isGameMode && !hasRenderableItems"
+    class="space-y-4"
+  >
+    <ActivityTitle :title="props.questions.title" />
+    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+      This matching activity has no items to display.
+    </div>
+  </div>
+
   <GameModeWrapper
     v-else
     class="h-full"
@@ -625,7 +643,7 @@ const liveDragLine = computed(() => {
 
       <div
         ref="boardRef"
-        class="relative flex h-full justify-between overflow-auto md:p-4"
+        class="relative flex min-h-[320px] justify-between overflow-auto md:p-4"
         :style="{ fontSize: boardFontSize }"
       >
         <div
