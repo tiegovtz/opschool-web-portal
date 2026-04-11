@@ -151,3 +151,19 @@ export function calculateBlankWidth(
     widthMultiplier,
   };
 }
+
+/** True when a `cua(...)` value has a non-empty digit part in every column. */
+export function isCompoundCuaAnswerFilled(value: string): boolean {
+  const trimmed = (value ?? "").trim();
+  const m = trimmed.match(/^cua\s*\(\s*(.*?)\s*\)\s*$/i);
+  if (!m) return trimmed.length > 0;
+  const inner = m[1] ?? "";
+  const sep = inner.includes("|") ? "|" : ",";
+  const parts = inner.split(sep).map((p) => p.trim());
+  const nonEmpty = parts.filter((p) => p.length > 0);
+  if (nonEmpty.length === 0) return false;
+  return nonEmpty.every((part) => {
+    const vm = part.match(/^(\d+)([a-zA-Z]*)$/);
+    return vm != null && vm[1].length > 0;
+  });
+}

@@ -2,17 +2,21 @@
 import { computed, ref, watch } from "vue";
 import { useWindowSize } from "@vueuse/core";
 import { Icon } from "@iconify/vue";
-import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import ActivityTitle from "~/components/templates/activity-title";
 import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "~/components/templates/results";
+import QuestionRenderer from "~/components/primary-sources/activity-helpers/question-renderer.vue";
 import { useSoundEffects } from "~/composables/use-sound-effects";
 import { AnswerChecker } from "~/lib/utils/answer-checker";
 import { ActivityType, type FeedbackType } from "~/types/activity-types";
-import { calculateBlankWidth, parseQuestionSegments } from "~/components/primary-sources/activity-helpers/question-renderer-utils";
-import { cn, extractKatexSegments, shuffle } from "~/utilities/utils";
+import {
+  isCompoundCuaAnswerFilled,
+  parseQuestionSegments,
+} from "~/components/primary-sources/activity-helpers/question-renderer-utils";
+import { detectCompoundUnitArithmeticPattern } from "~/components/ui/compound-unit-arithmetic-input";
+import { cn, shuffle } from "~/utilities/utils";
 
 type QuestionItem = {
   id: number;
@@ -39,7 +43,6 @@ const { playSound } = useSoundEffects();
 const answerChecker = new AnswerChecker();
 
 const shuffledQuestions = ref<QuestionItem[]>([]);
-const segmentsCache = ref<Record<number, any[]>>({});
 const score = ref(0);
 const allAnswered = ref(false);
 const checkedItems = ref<number[]>([]);
@@ -60,14 +63,33 @@ watch(
     checkedItems.value = [];
     answers.value = {};
     feedbacks.value = {};
-    segmentsCache.value = {};
     showResults.value = false;
   },
   { immediate: true, deep: true },
 );
 
+function isBlankFilledForQuestion(question: QuestionItem, blankIndex: number, userPart: string) {
+  const correct = question.answer[blankIndex] ?? "";
+  if (detectCompoundUnitArithmeticPattern(correct).isCompoundUnitArithmetic) {
+    return isCompoundCuaAnswerFilled(userPart);
+  }
+  return (userPart ?? "").trim() !== "";
+}
+
+const getCurrentAnswers = (questionIndex: number) =>
+  (answers.value[questionIndex] || "").split("|");
+
 const allQuestionsAnswered = computed(() =>
-  shuffledQuestions.value.every((_, index) => (answers.value[index] || "").trim() !== ""),
+  shuffledQuestions.value.every((q, qIndex) => {
+    const parts = getCurrentAnswers(qIndex);
+    let bi = 0;
+    for (const seg of parseQuestionSegments(q.question)) {
+      if (seg.type !== "blank") continue;
+      if (!isBlankFilledForQuestion(q, bi, parts[bi] ?? "")) return false;
+      bi++;
+    }
+    return true;
+  }),
 );
 
 const checkAnswer = (userAnswer: string, questionIndex: number) => {
@@ -96,9 +118,6 @@ const checkAnswer = (userAnswer: string, questionIndex: number) => {
   );
 };
 
-const getCurrentAnswers = (questionIndex: number) =>
-  (answers.value[questionIndex] || "").split("|");
-
 const handleInputChange = (questionIndex: number, blankIndex: number, value: string | number) => {
   const currentAnswers = getCurrentAnswers(questionIndex);
   while (currentAnswers.length <= blankIndex) {
@@ -108,45 +127,6 @@ const handleInputChange = (questionIndex: number, blankIndex: number, value: str
   // Mutate in-place to avoid forcing a full list re-render on every keystroke
   answers.value[questionIndex] = currentAnswers.join("|");
 };
-
-const buildSegments = (questionText: string) => {
-  let blankIndex = 0;
-  return parseQuestionSegments(questionText).map((segment) => {
-    if (segment.type !== "blank") return segment as any;
-    const { calculatedWidth, isTwoUnderscores } = calculateBlankWidth(
-      segment.content.length,
-      width.value || 1024,
-    );
-    const result = {
-      ...segment,
-      blankIndex,
-      calculatedWidth,
-      isTwoUnderscores,
-    };
-    blankIndex++;
-    return result as any;
-  });
-};
-
-const katexSegs = (text: string) => extractKatexSegments(text);
-const hasMathInText = (text: string) => katexSegs(text).some((s: any) => s.type === "math");
-const mathJaxWrap = (latex: string) => `\\[${latex}\\]`;
-
-const getSegmentsFor = (questionIndex: number, questionText: string) => {
-  const cached = segmentsCache.value[questionIndex];
-  if (cached) return cached;
-  const built = buildSegments(questionText);
-  segmentsCache.value[questionIndex] = built;
-  return built;
-};
-
-// If screen width changes (rare), recompute blank widths once (not per keystroke)
-watch(
-  () => width.value,
-  () => {
-    segmentsCache.value = {};
-  },
-);
 
 const handleCheckAllAnswers = () => {
   let newScore = 0;
@@ -216,64 +196,18 @@ const handleResetWithShuffle = () => {
         >
           <div class="py-2 flex items-center justify-between w-full gap-4">
             <div class="flex flex-col md:flex-row items-center justify-between gap-2 w-full">
-              <div>
-                <span>{{ i + 1 }}.</span>
-                <div class="inline leading-loose">
-                  <template
-                    v-for="segment in getSegmentsFor(i, q.question)"
-                    :key="`${q.id}-${segment.index}`"
-                  >
-                    <!--
-                      Important: MathJax typesetting is expensive.
-                      Memoize the static question text so it doesn't re-render (and re-typeset)
-                      on every keystroke in the inputs below.
-                    -->
-                    <span
-                      v-if="segment.type === 'text'"
-                      class="mx-1"
-                      v-memo="[segment.content]"
-                    >
-                      <template v-if="!hasMathInText(segment.content)">
-                        <span class="whitespace-pre-line">{{ segment.content }}</span>
-                      </template>
-                      <span v-else>
-                        <template
-                          v-for="(ks, ki) in katexSegs(segment.content)"
-                          :key="`${q.id}-${segment.index}-katex-${ki}`"
-                        >
-                          <span v-if="ks.type === 'text'" class="whitespace-pre-line">{{ ks.value }}</span>
-                          <span v-else v-mathjax>{{ mathJaxWrap(ks.value) }}</span>
-                        </template>
-                      </span>
-                    </span>
-                    <span
-                      v-else-if="segment.type === 'highlighted'"
-                      class="mx-1 rounded bg-lemon-100 px-2 text-lemon-700"
-                    >
-                      {{ segment.content }}
-                    </span>
-                    <span
-                      v-else
-                      :class="cn('mx-1 inline-flex', { 'flex-col': !segment.isTwoUnderscores })"
-                      :style="{ width: `${segment.calculatedWidth || 120}px` }"
-                    >
-                      <Input
-                        type="text"
-                        :model-value="getCurrentAnswers(i)[segment.blankIndex || 0] || ''"
-                        class="min-w-0 border-none bg-transparent px-2 text-center"
-                        :disabled="checkedItems.includes(i)"
-                        :style="{ maxWidth: `${(segment.calculatedWidth || 120) * 1.6}px` }"
-                        @update:model-value="
-                          (value) => handleInputChange(i, segment.blankIndex || 0, value)
-                        "
-                      />
-                      <div
-                        v-if="!segment.isTwoUnderscores"
-                        class="border-b border-dashed border-picton-blue-700"
-                      />
-                    </span>
-                  </template>
-                </div>
+              <div class="flex-1 min-w-0">
+                <span class="mr-1 font-medium text-picton-blue-800">{{ i + 1 }}.</span>
+                <QuestionRenderer
+                  :question="q.question"
+                  :answers="q.answer"
+                  :user-answers="getCurrentAnswers(i)"
+                  :screen-width="width ?? 1024"
+                  :is-checked="checkedItems.includes(i)"
+                  :is-correct="feedbacks[i] === true"
+                  :disabled="checkedItems.includes(i)"
+                  @blank-change="(bi, val) => handleInputChange(i, bi, val)"
+                />
               </div>
               <div v-if="q.image" class="min-w-[150px] h-32 md:h-28">
                 <img :src="q.image" :alt="q.question" class="w-full h-full rounded-lg object-contain">

@@ -28,8 +28,28 @@ export default defineNuxtPlugin(() => {
     startup: {
       ready: () => {
         MathJax.startup.defaultReady();
-        // Allow manual rendering
-        window.MathJaxRender = () => MathJax.typesetPromise();
+        /**
+         * When `elements` is passed, only typeset within those nodes (fast).
+         * The previous implementation ignored the argument and always re-typeset the
+         * whole document, which blocked the UI on every mathjax directive update.
+         */
+        window.MathJaxRender = (elements) => {
+          const MJ = window.MathJax;
+          if (!MJ?.typesetPromise) return Promise.resolve();
+          const els =
+            Array.isArray(elements) && elements.length > 0 ? elements : null;
+          const run = async () => {
+            if (els && typeof MJ.typesetClear === "function") {
+              MJ.typesetClear(els);
+            }
+            if (els) {
+              await MJ.typesetPromise(els);
+            } else {
+              await MJ.typesetPromise();
+            }
+          };
+          return run();
+        };
       }
     }
   };
