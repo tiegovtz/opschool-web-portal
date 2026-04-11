@@ -29,12 +29,15 @@ export const completeSentencesByRephrasingPropsTranspiler = (
 
   const titleDescription = title.split("||")[0];
 
-  // Backend may send correct answers wrapped as `cua(4)` (compound-unit arithmetic format).
-  // For this activity, students type plain digits, so unwrap per-token: `cua(4)` -> `4`.
+  // Backend may send `cua(4)` (plain number) or `cua(11km,6dam,2m)` (metric compound).
+  // Unwrap only when the payload is digits-only so the UI can use CompoundUnitArithmeticInput for real cua().
   const normalizeAnswerToken = (value: string) => {
     const trimmed = (value ?? "").toString().trim();
     const match = trimmed.match(/^cua\s*\(\s*(.*?)\s*\)\s*$/i);
-    return (match?.[1] ?? trimmed).toString().trim();
+    if (!match) return trimmed;
+    const inner = (match[1] ?? "").toString().trim();
+    if (/^\d+$/.test(inner)) return inner;
+    return trimmed;
   };
 
   return {

@@ -136,7 +136,8 @@ const katexSegs = (text: string) => extractKatexSegments(text);
 const hasMathInText = (text: string) =>
   katexSegs(text).some((s) => s.type === "math");
 
-const mathJaxWrap = (latex: string) => `\\(${latex}\\)`;
+const mathJaxWrap = (latex: string) =>
+  latex.includes("\\begin{array}") ? `\\[${latex}\\]` : `\\(${latex}\\)`;
 
 const getBlankColorClasses = (blankIsCorrect: boolean) => {
   if (props.mode === "results") {
@@ -199,10 +200,97 @@ const fractionColorScheme = (
   }
   return colorScheme;
 };
+
+/** One compound blank at the end: show vertical math on the left, unit inputs on the right. */
+const metricCompoundSplit = computed(() => {
+  const items = renderItems.value;
+  if (items.length < 2) return null;
+  const last = items[items.length - 1];
+  if (last.kind !== "blank") return null;
+  if (!last.state.compound.isCompoundUnitArithmetic) return null;
+  if (items.filter((i) => i.kind === "blank").length !== 1) return null;
+  return { leading: items.slice(0, -1), compound: last };
+});
 </script>
 
 <template>
-  <template v-for="item in renderItems" :key="`${item.segment.type}-${item.segment.index}`">
+  <div v-if="metricCompoundSplit" class="metric-compound-question w-full max-w-full">
+    <div
+      class="flex flex-col gap-6 md:flex-row md:items-start md:justify-between md:gap-10 rounded-xl bg-white/90 p-4 shadow-sm border border-picton-blue-100"
+    >
+      <div
+        class="flex-1 min-w-0 text-picton-blue-900 [&_.MathJax]:text-picton-blue-900"
+      >
+        <template
+          v-for="item in metricCompoundSplit.leading"
+          :key="`${item.segment.type}-${item.segment.index}`"
+        >
+          <span
+            v-if="item.kind === 'highlighted'"
+            :class="
+              cn(
+                'bg-picton-blue-200 text-picton-blue-700 px-2 rounded mx-1 items-center leading-loose',
+                highlightClassName,
+              )
+            "
+          >
+            <template v-if="!hasMathInText(item.segment.content)">
+              <span class="whitespace-pre-line">{{ item.segment.content }}</span>
+            </template>
+            <span v-else>
+              <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
+                <span v-if="ks.type === 'text'">{{ ks.value }}</span>
+                <span v-else v-mathjax>{{ mathJaxWrap(ks.value) }}</span>
+              </template>
+            </span>
+          </span>
+          <span
+            v-else
+            :class="cn('mx-1 items-center leading-loose', textClassName)"
+          >
+            <template v-if="!hasMathInText(item.segment.content)">
+              <span class="whitespace-pre-line">{{ item.segment.content }}</span>
+            </template>
+            <span v-else>
+              <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
+                <span v-if="ks.type === 'text'">{{ ks.value }}</span>
+                <span v-else v-mathjax>{{ mathJaxWrap(ks.value) }}</span>
+              </template>
+            </span>
+          </span>
+        </template>
+      </div>
+      <div
+        class="shrink-0 flex w-full md:w-auto justify-center md:justify-end pt-1 md:pt-2 md:min-w-[12rem]"
+      >
+        <CompoundUnitArithmeticInput
+          :model-value="
+            metricCompoundSplit.compound.state.userAnswer ||
+            getEmptyCompoundUnitArithmeticValue(
+              metricCompoundSplit.compound.state.compound.columnCount,
+            )
+          "
+          :disabled="disabled || mode === 'results'"
+          :read-only="mode === 'results'"
+          :is-checked="isChecked || mode === 'results'"
+          :color-scheme="
+            compoundColorScheme(
+              mode,
+              metricCompoundSplit.compound.state.blankIsCorrect,
+              colorScheme,
+            )
+          "
+          :column-count="metricCompoundSplit.compound.state.compound.columnCount"
+          :correct-answer="metricCompoundSplit.compound.state.correctAnswer"
+          @update:model-value="
+            onBlankUpdate(metricCompoundSplit.compound.state.blankIndex, $event)
+          "
+        />
+      </div>
+    </div>
+  </div>
+
+  <template v-else v-for="item in renderItems" :key="`${item.segment.type}-${item.segment.index}`">
     <!-- blank -->
     <template v-if="item.kind === 'blank'">
       <span
