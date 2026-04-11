@@ -9,6 +9,7 @@ import { shuffle } from "~/utilities/utils";
 import DNDContext from "~/components/layout/dnd-context";
 import Draggable from "~/components/ui/dnd/draggable";
 import Droppable from "~/components/ui/dnd/droppable";
+import { ActivityType } from "~/types/activity-types";
 
 // Props
 type QuestionItem = {
@@ -48,6 +49,7 @@ const initialOptions = props.questions.options.map((opt, idx) => ({
   image: opt.image,
   uniqueIndex: idx,
 }));
+
 const shuffledOptions = ref<UniqueOption[]>(shuffle([...initialOptions]));
 
 const questionParts = (question: string) => String(question ?? "").split("___");
@@ -155,7 +157,7 @@ function handleTryAgain() {
             class="rounded flex min-w-32 border border-picton-blue-400 overflow-hidden items-center justify-center bg-picton-blue-200 h-12 p-2"
           >
             <img
-              v-if="option.image"
+              v-if="questions.algorithm === ActivityType.CompleteSentencesByDraggingCluesPics "
               :src="option.image"
               :alt="option.value"
               class="w-full h-full object-contain"

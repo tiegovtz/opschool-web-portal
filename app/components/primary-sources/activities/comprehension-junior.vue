@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { Button } from "@/components/ui/button";
-import { cn, shuffle, toRoman } from "@/lib/utils";
+import { cn, shuffle } from "@/lib/utils";
 import Input from "@/components/ui/inputs/input.vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import type { FeedbackType } from "@/lib/types/activity-types";
@@ -54,8 +54,8 @@ const currentAnswers = ref<string[]>([]);
 const attemptedQuestions = ref<Record<number, string[]>>({});
 const correctAnswers = ref<Record<number, boolean>>({});
 const isCheckingAnswers = ref(false);
+const allUserAnswers = ref<Record<number, string[]>>({});
 
-const totalQuestions = computed(() => props.questions.questions.length);
 const shouldUseBatchAI = computed(
   () =>
     props.questions.algorithm === "Comprehension junior one" &&
@@ -66,12 +66,22 @@ const currentQuestion = computed(
     props.questions.questions[shuffledIndexes.value[activeQuestion.value] ?? 0],
 );
 
-const ensureAnswerSlots = (questionIndex: number) => {
+const ensureAttemptedAnswerSlots = (questionIndex: number) => {
   const originalIndex = shuffledIndexes.value[questionIndex] ?? 0;
   const answerCount =
     props.questions.questions[originalIndex]?.answers.length || 1;
   return (
     attemptedQuestions.value[questionIndex] ||
+    Array.from({ length: answerCount }, () => "")
+  );
+};
+
+const ensureUserAnswerSlots = (questionIndex: number) => {
+  const originalIndex = shuffledIndexes.value[questionIndex] ?? 0;
+  const answerCount =
+    props.questions.questions[originalIndex]?.answers.length || 1;
+  return (
+    allUserAnswers.value[questionIndex] ||
     Array.from({ length: answerCount }, () => "")
   );
 };
@@ -87,6 +97,7 @@ const initializeActivity = () => {
   activeQuestion.value = 0;
   attemptedQuestions.value = {};
   correctAnswers.value = {};
+  allUserAnswers.value = {};
   score.value = 0;
   allAnswered.value = false;
   showResults.value = false;
@@ -119,43 +130,50 @@ const isQuestionCorrect = async (
   if (!question) return false;
 
   if (shouldUseBatchAI.value) {
-    const submissions = userAnswers.map((answer, answerIndex) => ({
-      questionId: `${originalIndex}-${answerIndex}`,
-      answer: answer.trim(),
-    }));
+    try {
+      const submissions = userAnswers.map((answer, answerIndex) => ({
+        questionId: `${originalIndex}-${answerIndex}`,
+        answer: answer.trim(),
+      }));
 
-    const aiQuestions = userAnswers.map((_, answerIndex) => ({
-      id: `${originalIndex}-${answerIndex}`,
-      question: question.question,
-      acceptedAnswers: question.answers[answerIndex]
-        ? [question.answers[answerIndex]]
-        : [],
-      strictMode: false,
-      maxMarks: 1,
-      questionType: "reasoning" as const,
-      context: {
-        readingMaterial: props.questions.notes,
-        activityTitle: props.questions.title,
-      },
-      evaluationCriteria:
-        "Evaluate this answer based on understanding of the reading material and semantic similarity to the accepted answer.",
-    }));
+      const aiQuestions = userAnswers.map((_, answerIndex) => ({
+        id: `${originalIndex}-${answerIndex}`,
+        question: question.question,
+        acceptedAnswers: question.answers[answerIndex]
+          ? [question.answers[answerIndex]]
+          : [],
+        strictMode: false,
+        maxMarks: 1,
+        questionType: "reasoning" as const,
+        context: {
+          notes: props.questions.notes,
+          title: props.questions.title,
+          questionText: question.question,
+          image: question.image || props.questions.image,
+        },
+        evaluationCriteria:
+          "Evaluate based on comprehension of the provided text/context and semantic similarity to the accepted answer.",
+      }));
 
-    const results = await answerChecker.checkAnswersWithAI(
-      submissions,
-      aiQuestions,
-    );
-    return results.every((result) => result.result.isCorrect);
+      const results = await answerChecker.checkAnswersWithAI(
+        submissions,
+        aiQuestions,
+      );
+      return results.every((result) => result.result.isCorrect);
+    } catch {
+      return userAnswers.every((answer) =>
+        answerChecker.checkAnswer(answer, {
+          acceptedAnswers: question.answers,
+        }).isCorrect,
+      );
+    }
   }
 
   if (props.questions.algorithm === "Comprehension junior one") {
-    const acceptedAnswers =
-      question.acceptedAnswers?.length ? question.acceptedAnswers : question.answers;
-
     return userAnswers.every(
       (answer) =>
         answerChecker.checkAnswer(answer, {
-          acceptedAnswers,
+          acceptedAnswers: question.answers,
         }).isCorrect,
     );
   }
@@ -167,6 +185,12 @@ const isQuestionCorrect = async (
   );
 };
 
+const loadQuestionAnswers = (questionIndex: number) => {
+  currentAnswers.value = shouldUseBatchAI.value
+    ? [...ensureUserAnswerSlots(questionIndex)]
+    : [...ensureAttemptedAnswerSlots(questionIndex)];
+};
+
 const advanceToNextQuestion = () => {
   if (activeQuestion.value >= shuffledIndexes.value.length - 1) {
     return false;
@@ -174,67 +198,159 @@ const advanceToNextQuestion = () => {
 
   const nextQuestionIndex = activeQuestion.value + 1;
   activeQuestion.value = nextQuestionIndex;
-  currentAnswers.value = [...ensureAnswerSlots(nextQuestionIndex)];
+  loadQuestionAnswers(nextQuestionIndex);
   return true;
 };
 
-const handleNextQuestion = async () => {
-  const savedAnswers = [...currentAnswers.value];
+const handleAnswerSubmission = async (
+  questionIndex: number,
+  userAnswers: string[],
+) => {
+  isCheckingAnswers.value = true;
+  const isCorrect = await isQuestionCorrect(questionIndex, userAnswers);
+  isCheckingAnswers.value = false;
 
   attemptedQuestions.value = {
     ...attemptedQuestions.value,
+    [questionIndex]: userAnswers,
+  };
+
+  correctAnswers.value = {
+    ...correctAnswers.value,
+    [questionIndex]: isCorrect,
+  };
+
+  playSound(isCorrect ? "correct" : "failure");
+  return isCorrect;
+};
+
+const handleNextQuestion = () => {
+  const savedAnswers = [...currentAnswers.value];
+
+  allUserAnswers.value = {
+    ...allUserAnswers.value,
     [activeQuestion.value]: savedAnswers,
   };
 
-  if (!shouldUseBatchAI.value) {
-    isCheckingAnswers.value = true;
-    const isCorrect = await isQuestionCorrect(
-      activeQuestion.value,
-      savedAnswers,
-    );
-    isCheckingAnswers.value = false;
-
-    correctAnswers.value = {
-      ...correctAnswers.value,
-      [activeQuestion.value]: isCorrect,
-    };
-
-    score.value =
-      Object.values(correctAnswers.value).filter(Boolean).length +
-      (isCorrect ? 1 : 0);
-    playSound(isCorrect ? "correct" : "failure");
-  }
-
-  if (!advanceToNextQuestion()) {
-    await handleCheckAnswers();
-  }
+  advanceToNextQuestion();
 };
 
 const handleCheckAnswers = async () => {
-  attemptedQuestions.value = {
-    ...attemptedQuestions.value,
-    [activeQuestion.value]: [...currentAnswers.value],
-  };
-
   isCheckingAnswers.value = true;
 
-  const nextCorrectAnswers: Record<number, boolean> = {};
-  for (let index = 0; index < shuffledIndexes.value.length; index += 1) {
-    const answersForQuestion = attemptedQuestions.value[index] || [];
-    nextCorrectAnswers[index] = await isQuestionCorrect(
-      index,
-      answersForQuestion,
-    );
+  if (shouldUseBatchAI.value) {
+    const nextAllUserAnswers = {
+      ...allUserAnswers.value,
+      [activeQuestion.value]: [...currentAnswers.value],
+    };
+    allUserAnswers.value = nextAllUserAnswers;
+
+    try {
+      const submissions: { questionId: string; answer: string }[] = [];
+      const aiQuestions: {
+        id: string;
+        question: string;
+        acceptedAnswers: string[];
+        strictMode: boolean;
+        maxMarks: number;
+        questionType: "reasoning";
+        context: Record<string, unknown>;
+        evaluationCriteria: string;
+      }[] = [];
+
+      shuffledIndexes.value.forEach((originalIndex, questionIndex) => {
+        const question = props.questions.questions[originalIndex];
+        const userAnswers = nextAllUserAnswers[questionIndex] || [];
+
+        userAnswers.forEach((answer, answerIndex) => {
+          const questionId = `${originalIndex}-${answerIndex}`;
+          submissions.push({
+            questionId,
+            answer: answer.trim(),
+          });
+
+          aiQuestions.push({
+            id: questionId,
+            question: question.question,
+            acceptedAnswers: question.answers,
+            strictMode: false,
+            maxMarks: 1,
+            questionType: "reasoning",
+            context: {
+              notes: props.questions.notes,
+              title: props.questions.title,
+              questionText: question.question,
+            },
+            evaluationCriteria:
+              "Evaluate based on comprehension of the provided text/context and semantic similarity to the accepted answer.",
+          });
+        });
+      });
+
+      const results = await answerChecker.checkAnswersWithAI(
+        submissions,
+        aiQuestions,
+      );
+
+      const nextCorrectAnswers: Record<number, boolean> = {};
+      const nextAttemptedQuestions: Record<number, string[]> = {};
+
+      shuffledIndexes.value.forEach((originalIndex, questionIndex) => {
+        const userAnswers = nextAllUserAnswers[questionIndex] || [];
+        nextAttemptedQuestions[questionIndex] = userAnswers;
+
+        const questionResults = results.filter((result) =>
+          result.questionId.startsWith(`${originalIndex}-`),
+        );
+        const isCorrect = questionResults.every(
+          (result) => result.result.isCorrect,
+        );
+
+        nextCorrectAnswers[questionIndex] = isCorrect;
+        playSound(isCorrect ? "correct" : "failure");
+      });
+
+      attemptedQuestions.value = nextAttemptedQuestions;
+      correctAnswers.value = nextCorrectAnswers;
+      score.value = Object.values(nextCorrectAnswers).filter(Boolean).length;
+      allAnswered.value = true;
+    } catch {
+      const nextCorrectAnswers: Record<number, boolean> = {};
+
+      for (let index = 0; index < shuffledIndexes.value.length; index += 1) {
+        const answersForQuestion = nextAllUserAnswers[index] || [];
+        nextCorrectAnswers[index] = await isQuestionCorrect(
+          index,
+          answersForQuestion,
+        );
+      }
+
+      attemptedQuestions.value = nextAllUserAnswers;
+      correctAnswers.value = nextCorrectAnswers;
+      score.value = Object.values(nextCorrectAnswers).filter(Boolean).length;
+      allAnswered.value = true;
+    } finally {
+      isCheckingAnswers.value = false;
+    }
+
+    return;
   }
 
-  correctAnswers.value = nextCorrectAnswers;
-  score.value = Object.values(nextCorrectAnswers).filter(Boolean).length;
+  const savedAnswers = [...currentAnswers.value];
+  const isCorrect = await handleAnswerSubmission(activeQuestion.value, savedAnswers);
+  score.value = Object.values({
+    ...correctAnswers.value,
+    [activeQuestion.value]: isCorrect,
+  }).filter(Boolean).length;
+
+  if (activeQuestion.value < shuffledIndexes.value.length - 1) {
+    advanceToNextQuestion();
+    isCheckingAnswers.value = false;
+    return;
+  }
+
   allAnswered.value = true;
   isCheckingAnswers.value = false;
-
-  playSound(
-    score.value >= Math.ceil(totalQuestions.value / 2) ? "correct" : "failure",
-  );
 };
 
 const resetActivity = () => {
@@ -242,10 +358,32 @@ const resetActivity = () => {
 };
 
 const questionParts = (questionText: string) => questionText.split("___");
-const questionIsAnswered = (index: number) =>
-  (attemptedQuestions.value[index] || []).every(
-    (answer) => answer.trim() !== "",
-  );
+const questionIsAnswered = (index: number) => {
+  const answers = shouldUseBatchAI.value
+    ? allUserAnswers.value[index] || []
+    : attemptedQuestions.value[index] || [];
+
+  return answers.length > 0 && answers.every((answer) => answer.trim() !== "");
+};
+const isQuestionCorrectState = (index: number) => correctAnswers.value[index] ?? false;
+const displayAnswer = (index: number, answerIndex: number) =>
+  attemptedQuestions.value[index]?.[answerIndex] ||
+  allUserAnswers.value[index]?.[answerIndex] ||
+  "_____";
+const closeResultsDialog = (open: boolean) => {
+  if (open) {
+    return;
+  }
+
+  allAnswered.value = false;
+
+  if (props.feedback === "none") {
+    resetActivity();
+    return;
+  }
+
+  showResults.value = true;
+};
 </script>
 
 <template>
@@ -269,36 +407,151 @@ const questionIsAnswered = (index: number) =>
             )
           "
         >
-          <div class="space-y-2">
-            <p class="text-base font-medium text-neutral-800">
-              {{ visibleIndex + 1 }}.
-              {{ props.questions.questions[originalIndex]?.question }}
-            </p>
+          <div class="flex items-start gap-3">
+            <div
+              :class="
+                cn(
+                  'mt-1 flex h-8 w-8 items-center justify-center rounded-full',
+                  isQuestionCorrectState(visibleIndex)
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700',
+                )
+              "
+            >
+              <Icon
+                :icon="
+                  isQuestionCorrectState(visibleIndex)
+                    ? 'heroicons:check-20-solid'
+                    : 'heroicons:x-mark-20-solid'
+                "
+                width="18"
+                height="18"
+              />
+            </div>
 
-            <div class="space-y-2 pl-4">
-              <p
-                v-for="(answer, answerIndex) in attemptedQuestions[
-                  visibleIndex
-                ] || []"
-                :key="`${visibleIndex}-${answerIndex}`"
-                class="text-sm text-neutral-700"
+            <div class="flex-1 space-y-2 text-base leading-loose text-neutral-800">
+              <template
+                v-if="
+                  props.questions.questions[originalIndex]?.question.includes(
+                    '___',
+                  )
+                "
               >
-                <span class="font-medium">{{ ui.yourAnswer }}</span>
-                {{ answer || "No answer provided." }}
-              </p>
-              <p
-                v-if="props.feedback === 'wrong-correct-answers'"
-                class="text-sm text-green-700"
-              >
-                {{ ui.correctAnswer }}
-                {{
-                  (
-                    props.questions.questions[originalIndex]?.acceptedAnswers ||
-                    props.questions.questions[originalIndex]?.answers ||
-                    []
-                  ).join(", ")
-                }}
-              </p>
+                <template
+                  v-for="(part, partIndex) in questionParts(
+                    props.questions.questions[originalIndex]?.question || '',
+                  )"
+                  :key="`${visibleIndex}-${partIndex}`"
+                >
+                  <span>{{ partIndex === 0 ? `${visibleIndex + 1}. ${part}` : part }}</span>
+                  <span
+                    v-if="
+                      partIndex <
+                      questionParts(
+                        props.questions.questions[originalIndex]?.question || '',
+                      ).length - 1
+                    "
+                    class="mx-1 px-1"
+                  >
+                    <template v-if="props.feedback === 'wrong-correct-answers'">
+                      <span
+                        v-if="attemptedQuestions[visibleIndex]?.[partIndex]"
+                        :class="
+                          answerChecker.checkAnswer(
+                            attemptedQuestions[visibleIndex][partIndex],
+                            {
+                              acceptedAnswers: props.questions.questions[
+                                originalIndex
+                              ]?.answers || [],
+                            },
+                          ).isCorrect
+                            ? 'rounded bg-green-200 px-1 font-medium text-green-800'
+                            : 'mr-1 rounded bg-red-200 px-1 font-medium text-red-800 line-through'
+                        "
+                      >
+                        {{ attemptedQuestions[visibleIndex][partIndex] }}
+                      </span>
+                      <span
+                        v-if="
+                          !attemptedQuestions[visibleIndex]?.[partIndex] ||
+                          !answerChecker.checkAnswer(
+                            attemptedQuestions[visibleIndex][partIndex],
+                            {
+                              acceptedAnswers: props.questions.questions[
+                                originalIndex
+                              ]?.answers || [],
+                            },
+                          ).isCorrect
+                        "
+                        class="rounded bg-green-200 px-1 font-medium text-green-800"
+                      >
+                        {{
+                          props.questions.questions[originalIndex]?.answers[
+                            partIndex
+                          ] || "_____"
+                        }}
+                      </span>
+                    </template>
+                    <template v-else>
+                      <span
+                        :class="
+                          isQuestionCorrectState(visibleIndex)
+                            ? 'rounded bg-green-200 px-1 font-medium text-green-800'
+                            : 'rounded bg-red-200 px-1 font-medium text-red-800'
+                        "
+                      >
+                        {{ displayAnswer(visibleIndex, partIndex) }}
+                      </span>
+                    </template>
+                  </span>
+                </template>
+              </template>
+
+              <template v-else>
+                <p>
+                  {{ `${visibleIndex + 1}. ${props.questions.questions[originalIndex]?.question}` }}
+                </p>
+                <div class="mt-1 pl-6">
+                  <template v-if="props.feedback === 'wrong-correct-answers'">
+                    <span
+                      v-if="attemptedQuestions[visibleIndex]?.[0]"
+                      :class="
+                        answerChecker.checkAnswer(attemptedQuestions[visibleIndex][0], {
+                          acceptedAnswers:
+                            props.questions.questions[originalIndex]?.answers || [],
+                        }).isCorrect
+                          ? 'rounded bg-green-200 px-1 font-medium text-green-800'
+                          : 'mr-1 rounded bg-red-200 px-1 font-medium text-red-800 line-through'
+                      "
+                    >
+                      {{ attemptedQuestions[visibleIndex][0] }}
+                    </span>
+                    <span
+                      v-if="
+                        !attemptedQuestions[visibleIndex]?.[0] ||
+                        !answerChecker.checkAnswer(attemptedQuestions[visibleIndex][0], {
+                          acceptedAnswers:
+                            props.questions.questions[originalIndex]?.answers || [],
+                        }).isCorrect
+                      "
+                      class="rounded bg-green-200 px-1 font-medium text-green-800"
+                    >
+                      {{ props.questions.questions[originalIndex]?.answers[0] || "_____" }}
+                    </span>
+                  </template>
+                  <template v-else>
+                    <span
+                      :class="
+                        isQuestionCorrectState(visibleIndex)
+                          ? 'rounded bg-green-200 px-1 font-medium text-green-800'
+                          : 'rounded bg-red-200 px-1 font-medium text-red-800'
+                      "
+                    >
+                      {{ displayAnswer(visibleIndex, 0) }}
+                    </span>
+                  </template>
+                </div>
+              </template>
             </div>
           </div>
         </div>
@@ -342,7 +595,7 @@ const questionIsAnswered = (index: number) =>
                     <span>
                       {{
                         partIndex === 0
-                          ? `${toRoman(activeQuestion + 1)}. ${part}`
+                          ? `${activeQuestion + 1}. ${part}`
                           : part
                       }}
                     </span>
@@ -370,7 +623,7 @@ const questionIsAnswered = (index: number) =>
                 <template v-else>
                   <p>
                     {{
-                      `${toRoman(activeQuestion + 1)}. ${currentQuestion.question}`
+                      `${activeQuestion + 1}. ${currentQuestion.question}`
                     }}
                   </p>
                   <div class="mt-3">
@@ -420,7 +673,22 @@ const questionIsAnswered = (index: number) =>
               )
             "
           >
-            {{ index + 1 }}
+            <template v-if="questionIsAnswered(index) && (!shouldUseBatchAI || allAnswered)">
+              <Icon
+                v-if="isQuestionCorrectState(index)"
+                icon="heroicons:check-20-solid"
+                width="20"
+                height="20"
+                class="text-green-600"
+              />
+              <Icon
+                v-else
+                icon="heroicons:x-mark-20-solid"
+                width="20"
+                height="20"
+                class="text-red-600"
+              />
+            </template>
           </div>
         </div>
 
@@ -431,7 +699,7 @@ const questionIsAnswered = (index: number) =>
           "
           class="group gap-2"
           @click="
-            activeQuestion < shuffledIndexes.length - 1
+            shouldUseBatchAI && activeQuestion < shuffledIndexes.length - 1
               ? handleNextQuestion()
               : handleCheckAnswers()
           "
@@ -444,10 +712,14 @@ const questionIsAnswered = (index: number) =>
           />
           {{
             isCheckingAnswers
-              ? ui.checking
-              : activeQuestion < shuffledIndexes.length - 1
-                ? ui.nextQuestion
-                : ui.checkAnswers
+              ? shouldUseBatchAI
+                ? 'Checking All Answers...'
+                : ui.checking
+              : shouldUseBatchAI
+                ? activeQuestion < shuffledIndexes.length - 1
+                  ? ui.nextQuestion
+                  : 'Check All Answers'
+                : ui.checkAnswer
           }}
         </Button>
       </div>
@@ -457,19 +729,7 @@ const questionIsAnswered = (index: number) =>
       :score="score"
       :total="props.questions.questions.length"
       :open="allAnswered"
-      :on-open-change="
-        (open: boolean) => {
-          if (open) {
-            return;
-          }
-          allAnswered = false;
-          if (props.feedback === 'none') {
-            resetActivity();
-          } else {
-            showResults = true;
-          }
-        }
-      "
+      :on-open-change="closeResultsDialog"
     />
   </div>
 </template>
