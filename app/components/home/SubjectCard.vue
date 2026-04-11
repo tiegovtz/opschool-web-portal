@@ -32,9 +32,9 @@ const educationLevelBadge = computed(() => {
 
   switch (normalizeEducationLevel(props.subjectEducationLevel, "primary")) {
     case "pre-primary":
-      return "Pre-Primary";
+      return primaryContentLanguage.value === 'english' ? "Pre-Primary" : "Elimu ya Awali";
     case "primary":
-      return "Primary";
+      return  primaryContentLanguage.value === 'english' ?  "Primary" : "Elimu ya Msingi";
     case "lower secondary":
       return "Lower Secondary";
     case "upper secondary":
