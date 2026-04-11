@@ -78,7 +78,7 @@ export default defineComponent({
     });
 
     return () => (
-      <div class="compound-unit-arithmetic-input flex flex-row flex-wrap items-end justify-center gap-3 md:gap-4">
+      <div class="compound-unit-arithmetic-input flex flex-row flex-wrap items-end justify-start gap-2 sm:gap-3">
         {Array.from({ length: props.columnCount }).map((_, index) => (
           <div
             key={`col-${index}`}

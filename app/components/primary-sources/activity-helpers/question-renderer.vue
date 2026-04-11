@@ -209,52 +209,54 @@ const metricCompoundSplit = computed(() => {
 <template>
   <div v-if="metricCompoundSplit" class="metric-compound-question w-full max-w-full">
     <div
-      class="flex flex-col gap-6 md:flex-row md:items-start md:justify-between md:gap-10 rounded-xl bg-white/90 p-4 shadow-sm border border-picton-blue-100"
+      class="metric-compound-row flex flex-col gap-3 sm:flex-row sm:flex-nowrap sm:items-center sm:justify-start sm:gap-x-3 md:gap-x-4 rounded-xl bg-white/90 p-3 sm:p-4 shadow-sm border border-picton-blue-100"
     >
       <div
-        class="flex-1 min-w-0 text-picton-blue-900 [&_.MathJax]:text-picton-blue-900"
+        class="metric-compound-math w-full sm:w-auto sm:shrink-0 min-w-0 text-picton-blue-900 [&_.MathJax]:m-0 [&_.MathJax]:text-picton-blue-900 [&_.MathJax_Display]:!m-0 [&_mjx-container]:!m-0 [&_mjx-math]:!my-0"
       >
-        <template
-          v-for="item in metricCompoundSplit.leading"
-          :key="`${item.segment.type}-${item.segment.index}`"
-        >
-          <span
-            v-if="item.kind === 'highlighted'"
-            :class="
-              cn(
-                'bg-picton-blue-200 text-picton-blue-700 px-2 rounded mx-1 items-center leading-loose',
-                highlightClassName,
-              )
-            "
+        <span class="inline-flex flex-wrap items-center align-middle">
+          <template
+            v-for="item in metricCompoundSplit.leading"
+            :key="`${item.segment.type}-${item.segment.index}`"
           >
-            <template v-if="!hasMathInText(item.segment.content)">
-              <span class="whitespace-pre-line">{{ item.segment.content }}</span>
-            </template>
-            <span v-else>
-              <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
-                <span v-if="ks.type === 'text'">{{ ks.value }}</span>
-                <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
+            <span
+              v-if="item.kind === 'highlighted'"
+              :class="
+                cn(
+                  'bg-picton-blue-200 text-picton-blue-700 px-2 rounded mx-1 items-center leading-loose',
+                  highlightClassName,
+                )
+              "
+            >
+              <template v-if="!hasMathInText(item.segment.content)">
+                <span class="whitespace-pre-line">{{ item.segment.content }}</span>
               </template>
+              <span v-else>
+                <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
+                  <span v-if="ks.type === 'text'">{{ ks.value }}</span>
+                  <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
+                </template>
+              </span>
             </span>
-          </span>
-          <span
-            v-else
-            :class="cn('mx-1 items-center leading-loose', textClassName)"
-          >
-            <template v-if="!hasMathInText(item.segment.content)">
-              <span class="whitespace-pre-line">{{ item.segment.content }}</span>
-            </template>
-            <span v-else>
-              <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
-                <span v-if="ks.type === 'text'">{{ ks.value }}</span>
-                <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
+            <span
+              v-else
+              :class="cn('mx-1 items-center leading-loose', textClassName)"
+            >
+              <template v-if="!hasMathInText(item.segment.content)">
+                <span class="whitespace-pre-line">{{ item.segment.content }}</span>
               </template>
+              <span v-else>
+                <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
+                  <span v-if="ks.type === 'text'">{{ ks.value }}</span>
+                  <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
+                </template>
+              </span>
             </span>
-          </span>
-        </template>
+          </template>
+        </span>
       </div>
       <div
-        class="shrink-0 flex w-full md:w-auto justify-center md:justify-end pt-1 md:pt-2 md:min-w-[12rem]"
+        class="metric-compound-inputs shrink-0 flex w-full sm:w-auto items-center justify-start sm:pl-1 md:pl-2"
       >
         <CompoundUnitArithmeticInput
           :model-value="
