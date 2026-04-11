@@ -55,19 +55,20 @@ type SegmentWithBlank = QuestionSegment & {
   blankIndex: number | null;
 };
 
-type BlankRenderState = {
+/** Question + correct answers only — does not depend on userAnswers (avoids re-running MathJax on every keystroke). */
+type StructuralBlankItem = {
+  kind: "blank";
+  segment: SegmentWithBlank;
   blankIndex: number;
-  userAnswer: string;
   correctAnswer: string;
   compound: ReturnType<typeof detectCompoundUnitArithmeticPattern>;
   fraction: ReturnType<typeof detectFractionPattern>;
-  blankIsCorrect: boolean;
   calculatedWidth: number;
   isTwoUnderscores: boolean;
 };
 
-type RenderItem =
-  | { kind: "blank"; segment: SegmentWithBlank; state: BlankRenderState }
+type StructuralItem =
+  | StructuralBlankItem
   | { kind: "highlighted"; segment: SegmentWithBlank }
   | { kind: "text"; segment: SegmentWithBlank };
 
@@ -83,45 +84,37 @@ const segmentsWithBlankIndex = computed((): SegmentWithBlank[] => {
   });
 });
 
-function computeBlankState(
-  blankIndex: number,
-  underscoreCount: number,
-): BlankRenderState {
-  const userAnswer = props.userAnswers[blankIndex] || "";
-  const correctAnswer = props.answers[blankIndex] || "";
-  const compound = detectCompoundUnitArithmeticPattern(correctAnswer);
-  const fraction = detectFractionPattern(correctAnswer);
-  const blankIsCorrect =
-    props.mode === "results"
-      ? props.isCorrect
-      : userAnswer.toLowerCase().trim() ===
-        correctAnswer.toLowerCase().trim();
-  const { calculatedWidth, isTwoUnderscores } = calculateBlankWidth(
-    underscoreCount,
-    props.screenWidth,
-  );
-  return {
-    blankIndex,
-    userAnswer,
-    correctAnswer,
-    compound,
-    fraction,
-    blankIsCorrect,
-    calculatedWidth,
-    isTwoUnderscores,
-  };
+function isBlankCorrect(blankIndex: number) {
+  if (props.mode === "results") return props.isCorrect;
+  const ua = (props.userAnswers[blankIndex] || "").toLowerCase().trim();
+  const ca = (props.answers[blankIndex] || "").toLowerCase().trim();
+  return ua === ca;
 }
 
-const renderItems = computed((): RenderItem[] =>
+function blankUserAnswer(blankIndex: number) {
+  return props.userAnswers[blankIndex] || "";
+}
+
+const structuralRenderItems = computed((): StructuralItem[] =>
   segmentsWithBlankIndex.value.map((segment) => {
     if (segment.type === "blank" && segment.blankIndex !== null) {
+      const blankIndex = segment.blankIndex;
+      const correctAnswer = props.answers[blankIndex] || "";
+      const compound = detectCompoundUnitArithmeticPattern(correctAnswer);
+      const fraction = detectFractionPattern(correctAnswer);
+      const { calculatedWidth, isTwoUnderscores } = calculateBlankWidth(
+        segment.content.length,
+        props.screenWidth,
+      );
       return {
         kind: "blank",
         segment,
-        state: computeBlankState(
-          segment.blankIndex,
-          segment.content.length,
-        ),
+        blankIndex,
+        correctAnswer,
+        compound,
+        fraction,
+        calculatedWidth,
+        isTwoUnderscores,
       };
     }
     if (segment.type === "highlighted") {
@@ -203,13 +196,13 @@ const fractionColorScheme = (
 
 /** One compound blank at the end: show vertical math on the left, unit inputs on the right. */
 const metricCompoundSplit = computed(() => {
-  const items = renderItems.value;
+  const items = structuralRenderItems.value;
   if (items.length < 2) return null;
   const last = items[items.length - 1];
   if (last.kind !== "blank") return null;
-  if (!last.state.compound.isCompoundUnitArithmetic) return null;
+  if (!last.compound.isCompoundUnitArithmetic) return null;
   if (items.filter((i) => i.kind === "blank").length !== 1) return null;
-  return { leading: items.slice(0, -1), compound: last };
+  return { leading: items.slice(0, -1), compoundBlank: last };
 });
 </script>
 
@@ -240,7 +233,7 @@ const metricCompoundSplit = computed(() => {
             <span v-else>
               <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
                 <span v-if="ks.type === 'text'">{{ ks.value }}</span>
-                <span v-else v-mathjax>{{ mathJaxWrap(ks.value) }}</span>
+                <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
               </template>
             </span>
           </span>
@@ -254,7 +247,7 @@ const metricCompoundSplit = computed(() => {
             <span v-else>
               <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
                 <span v-if="ks.type === 'text'">{{ ks.value }}</span>
-                <span v-else v-mathjax>{{ mathJaxWrap(ks.value) }}</span>
+                <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
               </template>
             </span>
           </span>
@@ -265,9 +258,9 @@ const metricCompoundSplit = computed(() => {
       >
         <CompoundUnitArithmeticInput
           :model-value="
-            metricCompoundSplit.compound.state.userAnswer ||
+            blankUserAnswer(metricCompoundSplit.compoundBlank.blankIndex) ||
             getEmptyCompoundUnitArithmeticValue(
-              metricCompoundSplit.compound.state.compound.columnCount,
+              metricCompoundSplit.compoundBlank.compound.columnCount,
             )
           "
           :disabled="disabled || mode === 'results'"
@@ -276,61 +269,61 @@ const metricCompoundSplit = computed(() => {
           :color-scheme="
             compoundColorScheme(
               mode,
-              metricCompoundSplit.compound.state.blankIsCorrect,
+              isBlankCorrect(metricCompoundSplit.compoundBlank.blankIndex),
               colorScheme,
             )
           "
-          :column-count="metricCompoundSplit.compound.state.compound.columnCount"
-          :correct-answer="metricCompoundSplit.compound.state.correctAnswer"
+          :column-count="metricCompoundSplit.compoundBlank.compound.columnCount"
+          :correct-answer="metricCompoundSplit.compoundBlank.correctAnswer"
           @update:model-value="
-            onBlankUpdate(metricCompoundSplit.compound.state.blankIndex, $event)
+            onBlankUpdate(metricCompoundSplit.compoundBlank.blankIndex, $event)
           "
         />
       </div>
     </div>
   </div>
 
-  <template v-else v-for="item in renderItems" :key="`${item.segment.type}-${item.segment.index}`">
+  <template v-else v-for="item in structuralRenderItems" :key="`${item.segment.type}-${item.segment.index}`">
     <!-- blank -->
     <template v-if="item.kind === 'blank'">
       <span
-        v-if="item.state.compound.isCompoundUnitArithmetic"
+        v-if="item.compound.isCompoundUnitArithmetic"
         class="inline-flex mx-1 relative"
       >
         <CompoundUnitArithmeticInput
           :model-value="
-            item.state.userAnswer ||
-            getEmptyCompoundUnitArithmeticValue(item.state.compound.columnCount)
+            blankUserAnswer(item.blankIndex) ||
+            getEmptyCompoundUnitArithmeticValue(item.compound.columnCount)
           "
           :disabled="disabled || mode === 'results'"
           :read-only="mode === 'results'"
           :is-checked="isChecked || mode === 'results'"
           :color-scheme="
-            compoundColorScheme(mode, item.state.blankIsCorrect, colorScheme)
+            compoundColorScheme(mode, isBlankCorrect(item.blankIndex), colorScheme)
           "
-          :column-count="item.state.compound.columnCount"
-          :correct-answer="item.state.correctAnswer"
-          @update:model-value="onBlankUpdate(item.state.blankIndex, $event)"
+          :column-count="item.compound.columnCount"
+          :correct-answer="item.correctAnswer"
+          @update:model-value="onBlankUpdate(item.blankIndex, $event)"
         />
       </span>
 
       <span
-        v-else-if="item.state.fraction.isFraction"
+        v-else-if="item.fraction.isFraction"
         class="inline-flex mx-1 relative"
       >
         <FractionInput
           :model-value="
-            item.state.userAnswer ||
-            getEmptyFractionValue(item.state.fraction.isMixed)
+            blankUserAnswer(item.blankIndex) ||
+            getEmptyFractionValue(item.fraction.isMixed)
           "
           :disabled="disabled || mode === 'results'"
           :read-only="mode === 'results'"
-          :is-mixed="item.state.fraction.isMixed"
+          :is-mixed="item.fraction.isMixed"
           :is-checked="isChecked || mode === 'results'"
           :color-scheme="
-            fractionColorScheme(mode, item.state.blankIsCorrect, colorScheme)
+            fractionColorScheme(mode, isBlankCorrect(item.blankIndex), colorScheme)
           "
-          @update:model-value="onBlankUpdate(item.state.blankIndex, $event)"
+          @update:model-value="onBlankUpdate(item.blankIndex, $event)"
         />
       </span>
 
@@ -338,40 +331,40 @@ const metricCompoundSplit = computed(() => {
         v-else
         :class="
           cn('inline-flex mx-1', blankClassName, {
-            'flex-col': !item.state.isTwoUnderscores,
+            'flex-col': !item.isTwoUnderscores,
           })
         "
         :style="{
-          width: `${item.state.calculatedWidth}px`,
+          width: `${item.calculatedWidth}px`,
         }"
       >
         <Input
           type="text"
-          :model-value="item.state.userAnswer"
+          :model-value="blankUserAnswer(item.blankIndex)"
           :disabled="disabled || mode === 'results'"
           :readonly="mode === 'results'"
           :class="
             cn('min-w-0 px-2 text-center bg-transparent', {
-              'border-none focus:outline-none': !item.state.isTwoUnderscores,
-              'border rounded': item.state.isTwoUnderscores,
-              [getBlankColorClasses(item.state.blankIsCorrect)]: true,
+              'border-none focus:outline-none': !item.isTwoUnderscores,
+              'border rounded': item.isTwoUnderscores,
+              [getBlankColorClasses(isBlankCorrect(item.blankIndex))]: true,
             })
           "
           :style="{
-            maxWidth: `${item.state.calculatedWidth * 1.6}px`,
+            maxWidth: `${item.calculatedWidth * 1.6}px`,
           }"
-          @update:model-value="onBlankUpdate(item.state.blankIndex, $event)"
+          @update:model-value="onBlankUpdate(item.blankIndex, $event)"
         />
         <div
-          v-if="!item.state.isTwoUnderscores"
+          v-if="!item.isTwoUnderscores"
           :class="
             cn('border-b border-dashed', {
               'border-picton-blue-700': !isChecked && colorScheme === 'default',
               'border-lemon-700': isChecked && colorScheme === 'yellow',
               'border-green-500':
-                isChecked && item.state.blankIsCorrect && colorScheme === 'default',
+                isChecked && isBlankCorrect(item.blankIndex) && colorScheme === 'default',
               'border-red-500':
-                isChecked && !item.state.blankIsCorrect && colorScheme === 'default',
+                isChecked && !isBlankCorrect(item.blankIndex) && colorScheme === 'default',
             })
           "
         />
@@ -394,7 +387,7 @@ const metricCompoundSplit = computed(() => {
       <span v-else>
         <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
           <span v-if="ks.type === 'text'">{{ ks.value }}</span>
-          <span v-else v-mathjax>{{ mathJaxWrap(ks.value) }}</span>
+          <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
         </template>
       </span>
     </span>
@@ -410,7 +403,7 @@ const metricCompoundSplit = computed(() => {
       <span v-else>
         <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
           <span v-if="ks.type === 'text'">{{ ks.value }}</span>
-          <span v-else v-mathjax>{{ mathJaxWrap(ks.value) }}</span>
+          <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
         </template>
       </span>
     </span>
