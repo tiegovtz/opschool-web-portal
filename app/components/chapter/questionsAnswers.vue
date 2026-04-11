@@ -289,6 +289,116 @@ const blankClass = (index: number) => {
   return "border-oceanBlue bg-blue-50";
 };
 
+type OrderedQuestionSegment =
+  | { type: "text"; text: string; key: string }
+  | { type: "blank"; index: number; key: string };
+
+type OrderedQuestionBlock =
+  | { type: "paragraph"; segments: OrderedQuestionSegment[]; key: string }
+  | {
+      type: "ordered-item";
+      marker: string;
+      segments: OrderedQuestionSegment[];
+      key: string;
+    };
+
+const orderedMarkerPattern =
+  /(?<![A-Za-z0-9])(\(\s*(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)\s*\)\.?\s*|(?:\d+|[A-Za-z]|[ivxlcdmIVXLCDM]+)[.)]\s+)/g;
+
+const splitSegmentsWithBlanks = (
+  text: string,
+  blankStartIndex = 0,
+) => {
+  const parts = text.split(/(_\$blank)/);
+  let blankIndex = blankStartIndex;
+  const segments: OrderedQuestionSegment[] = [];
+
+  parts.forEach((part, index) => {
+    if (!part) return;
+
+    if (part === "_$blank") {
+      segments.push({
+        type: "blank",
+        index: blankIndex,
+        key: `blank-${blankIndex}`,
+      });
+      blankIndex += 1;
+      return;
+    }
+
+    segments.push({
+      type: "text",
+      text: part,
+      key: `text-${blankIndex}-${index}`,
+    });
+  });
+
+  return { segments, nextBlankIndex: blankIndex };
+};
+
+const orderedQuestionBlocks = computed<OrderedQuestionBlock[] | null>(() => {
+  const rawQuestion = String(questionProps.question ?? "");
+  const matches = Array.from(rawQuestion.matchAll(orderedMarkerPattern));
+
+  if (matches.length < 2) return null;
+
+  const blocks: OrderedQuestionBlock[] = [];
+  let blankIndex = 0;
+
+  matches.forEach((match, index) => {
+    const markerStart = match.index ?? 0;
+    const markerText = match[0];
+    const contentStart = markerStart + markerText.length;
+    const nextMarkerStart =
+      index + 1 < matches.length
+        ? (matches[index + 1].index ?? rawQuestion.length)
+        : rawQuestion.length;
+
+    if (index === 0) {
+      const introText = rawQuestion.slice(0, markerStart);
+      if (introText.trim()) {
+        const parsed = splitSegmentsWithBlanks(introText, blankIndex);
+        blankIndex = parsed.nextBlankIndex;
+        blocks.push({
+          type: "paragraph",
+          segments: parsed.segments,
+          key: "paragraph-intro",
+        });
+      }
+    }
+
+    let itemText = rawQuestion.slice(contentStart, nextMarkerStart);
+    const trailingBreakMatch = itemText.match(/^(.*?)(\n\s*\n+)$/s);
+    let trailingText = "";
+
+    if (trailingBreakMatch) {
+      itemText = trailingBreakMatch[1];
+      trailingText = trailingBreakMatch[2];
+    }
+
+    const parsed = splitSegmentsWithBlanks(itemText, blankIndex);
+    blankIndex = parsed.nextBlankIndex;
+    blocks.push({
+      type: "ordered-item",
+      marker: markerText.trim(),
+      segments: parsed.segments,
+      key: `ordered-item-${index}`,
+    });
+
+    if (index === matches.length - 1 && trailingText.trim()) {
+      const parsedTrailing = splitSegmentsWithBlanks(trailingText, blankIndex);
+      blankIndex = parsedTrailing.nextBlankIndex;
+      blocks.push({
+        type: "paragraph",
+        segments: parsedTrailing.segments,
+        key: "paragraph-outro",
+      });
+    }
+  });
+
+  return blocks;
+});
+
 const renderQuestionWithBlanks = computed(() => {
   const parts = questionProps.question.split(/(_\$blank)/);
   let blankIndex = 0;
@@ -409,7 +519,39 @@ const playDemoAnimation = async () => {
     <div class="inline-flex">
       <p class="pr-4">{{ number + ". " }}</p>
       <div class="flex flex-wrap items-center w-full">
-        <p class="mb-4 text-justify">
+        <div
+          v-if="orderedQuestionBlocks"
+          class="w-full mb-4 space-y-3 text-justify"
+        >
+          <template v-for="block in orderedQuestionBlocks" :key="block.key">
+            <p v-if="block.type === 'paragraph'" class="leading-relaxed">
+              <template v-for="segment in block.segments" :key="segment.key">
+                <span v-if="segment.type === 'text'">{{ segment.text }}</span>
+                <span
+                  v-else
+                  class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle"
+                >
+                  &nbsp;
+                </span>
+              </template>
+            </p>
+            <div v-else class="flex items-start gap-3 leading-relaxed">
+              <span class="shrink-0 font-medium">{{ block.marker }}</span>
+              <div class="flex-1">
+                <template v-for="segment in block.segments" :key="segment.key">
+                  <span v-if="segment.type === 'text'">{{ segment.text }}</span>
+                  <span
+                    v-else
+                    class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle"
+                  >
+                    &nbsp;
+                  </span>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+        <p v-else class="mb-4 text-justify">
           {{ question }}
         </p>
         <!-- <p
@@ -502,7 +644,68 @@ const playDemoAnimation = async () => {
       <!-- Question Text with inline blanks -->
       <div class="flex justify-start">
         <p class="pr-4">{{ number + ". " }}</p>
-        <p class="flex flex-wrap items-center justify-start gap-2 text-justify">
+        <div
+          v-if="orderedQuestionBlocks"
+          class="w-full space-y-3 text-justify"
+        >
+          <template v-for="block in orderedQuestionBlocks" :key="block.key">
+            <p
+              v-if="block.type === 'paragraph'"
+              class="flex flex-wrap items-center justify-start gap-2 leading-relaxed"
+            >
+              <template v-for="segment in block.segments" :key="segment.key">
+                <span v-if="segment.type === 'text'">{{ segment.text }}</span>
+                <span
+                  v-else
+                  :class="[
+                    'drag-zone inline-flex min-w-[100px] items-center justify-center gap-2 px-2 py-1 border-b border-dashed text-center text-sm rounded-sm transition-colors duration-300',
+                    blankClass(segment.index),
+                  ]"
+                  @drop.prevent="handleDrop(segment.index, $event as any)"
+                  @dragover.prevent
+                >
+                  {{ dropZoneAnswers[segment.index] || "____" }}
+                  <button
+                    v-if="dropZoneAnswers[segment.index] && !questionAnswer.disableAnswer"
+                    type="button"
+                    class="text-xs font-bold text-slate-500"
+                    @click.stop="clearDropZone(segment.index)"
+                  >
+                    ×
+                  </button>
+                </span>
+              </template>
+            </p>
+            <div v-else class="flex items-start gap-3 leading-relaxed">
+              <span class="shrink-0 font-medium">{{ block.marker }}</span>
+              <div class="flex flex-wrap items-center justify-start flex-1 gap-2">
+                <template v-for="segment in block.segments" :key="segment.key">
+                  <span v-if="segment.type === 'text'">{{ segment.text }}</span>
+                  <span
+                    v-else
+                    :class="[
+                      'drag-zone inline-flex min-w-[100px] items-center justify-center gap-2 px-2 py-1 border-b border-dashed text-center text-sm rounded-sm transition-colors duration-300',
+                      blankClass(segment.index),
+                    ]"
+                    @drop.prevent="handleDrop(segment.index, $event as any)"
+                    @dragover.prevent
+                  >
+                    {{ dropZoneAnswers[segment.index] || '____' }}
+                    <button
+                      v-if="dropZoneAnswers[segment.index] && !questionAnswer.disableAnswer"
+                      type="button"
+                      class="text-xs font-bold text-slate-500"
+                      @click.stop="clearDropZone(segment.index)"
+                    >
+                      ×
+                    </button>
+                  </span>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+        <p v-else class="flex flex-wrap items-center justify-start gap-2 text-justify">
           <template v-for="(part, i) in renderQuestionWithBlanks">
             <span v-if="!part.isBlank" :key="part.key">{{ part.text }}</span>
             <span v-else :key="part.key + i"

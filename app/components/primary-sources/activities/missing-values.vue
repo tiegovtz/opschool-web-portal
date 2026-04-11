@@ -27,6 +27,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 
 const questions = ref<SequenceQuestion["questions"]>([...props.questions.questions]);
 const answers = ref<Record<string, string>>({});
@@ -172,7 +173,7 @@ const getInputClass = (key: string) => {
         height="18"
         class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
       />
-      Check Answers
+      {{ ui.checkAnswers }}
     </Button>
 
     <ActivityResults

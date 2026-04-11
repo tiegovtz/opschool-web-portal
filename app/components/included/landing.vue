@@ -1,30 +1,28 @@
 <script lang="ts" setup>
-import { IconsMdiBookOpenPageVariantOutline, UiBackButton } from '#components';
 import apiDocs from '~/utilities/apiDocs';
 import type { IconType } from '../icons/stats.vue';
 import { setPostLoginHome } from '~/utilities/postLoginHome';
 import { getHubPath } from '~/utilities/educationRoute';
 
-const router = useRouter();
 const hubHeaderLang = useHubHeaderLanguage();
 const hubEducationLevel = useHubEducationLevel();
 const primaryContentLanguage = usePrimaryContentLanguage();
+const primaryHubPath = computed(() => getHubPath('primary'));
+const secondaryHubPath = computed(() => getHubPath('secondary'));
 
 function goToPrimary() {
-    const target = getHubPath('primary');
-    setPostLoginHome(target);
+    setPostLoginHome(primaryHubPath.value);
     hubHeaderLang.value = 'kiswahili';
     hubEducationLevel.value = 'primary';
     primaryContentLanguage.value = 'kiswahili';
-    router.push(target);
+    useRouter().push(primaryHubPath.value);
 }
 
 function goToSecondary() {
-    const target = getHubPath('secondary');
-    setPostLoginHome(target);
+    setPostLoginHome(secondaryHubPath.value);
     hubHeaderLang.value = 'english';
     hubEducationLevel.value = 'secondary';
-    router.push(target);
+    useRouter().push(secondaryHubPath.value);
 }
 
 const stats = [
@@ -140,22 +138,34 @@ onMounted(async () => {
 <template>
     <div
         class="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-12 py-4">
-        <section class="max-w-screen-md mx-auto">
-            <h1 class="text-left text-xl font-tahomabd font-bold text-oceanBlue">Karibu!</h1>
-            <h1 class="text-left text-3xl my-4 font-tahomabd font-bold text-[#f29253]">SHULE MTANDAO YA TET</h1>
-            <p class="text-justify mt-4">
+        <section class="max-w-screen-md mx-auto"
+            aria-labelledby="landing-welcome landing-title" aria-describedby="landing-summary">
+            <h1 id="landing-welcome" tabindex="0"
+                class="text-left text-xl font-tahomabd font-bold text-oceanBlue rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2">
+                Karibu!
+            </h1>
+            <h1 id="landing-title" tabindex="0"
+                class="text-left text-3xl my-4 font-tahomabd font-bold text-[#f29253] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2">
+                SHULE MTANDAO YA TET
+            </h1>
+            <p id="landing-summary" tabindex="0"
+                class="text-justify mt-4 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2">
                 Kupitia jukwaa hili, utapata maudhui shirikishi ya ngazi ya Elimu  ya Msingi na Sekondari. Chagua ngazi husika ili kuanza kujifunza.
             </p>
             <!-- buttons -->
-            <div class="flex flex-wrap gap-5 pt-5">
+            <div class="flex flex-wrap gap-5 pt-5" role="group" aria-labelledby="education-level-actions">
+                <p id="education-level-actions" class="sr-only">
+                    Chagua ngazi ya elimu. Tumia kitufe cha Msingi kufungua maudhui ya elimu ya msingi, au kitufe cha Sekondari kufungua maudhui ya sekondari.
+                </p>
                 <UiButtonShineParticles @click="goToPrimary" label="Msingi" />
                 <UiButtonShineParticles @click="goToSecondary" label="Sekondari" />
             </div>
 
             <!-- static -->
             <div class="flex flex-wrap lg:grid gap-4 pt-15 xl:grid-cols-2 mt-4 md:mt-8 lg:mt-16">
-                <div v-for="(stat, idx) in stats" :key="`${idx}-${stat.label}`"
-                    class="group relative overflow-hidden rounded-[2rem] border border-[#e4edf5] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(247,251,255,0.98)_100%)] px-5 py-4 shadow-[0px_18px_40px_rgba(18,79,134,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0px_24px_48px_rgba(18,79,134,0.14)] w-full md:max-w-60">
+                <div v-for="(stat, idx) in stats" :key="`${idx}-${stat.label}`" tabindex="0"
+                    class="group relative overflow-hidden rounded-[2rem] border border-[#e4edf5] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(247,251,255,0.98)_100%)] px-5 py-4 shadow-[0px_18px_40px_rgba(18,79,134,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0px_24px_48px_rgba(18,79,134,0.14)] w-full md:max-w-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/50 focus-visible:ring-offset-2"
+                    role="group" :aria-label="`${stat.label}: ${stat.data === 'topics' ? `${allTopics}+` : stat.data == 'resources' ? `${allContent}+` : stat.value}. ${stat.detail}`">
                     <div
                         class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(108,180,229,0.08),transparent_42%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <div class="relative flex items-center gap-4">

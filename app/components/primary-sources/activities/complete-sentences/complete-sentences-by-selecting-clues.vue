@@ -34,6 +34,7 @@ type QuestionState = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const buildProcessedQuestions = (): QuestionState[] =>
@@ -137,14 +138,14 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
             class="text-sm"
             :class="q.isCorrect ? 'text-green-600' : 'text-red-600'"
           >
-            {{ q.isCorrect ? "Correct" : "Wrong" }}
+            {{ q.isCorrect ? ui.correct : ui.incorrect }}
           </div>
         </div>
         <div
           v-if="showResults && props.feedback === 'wrong-correct-answers' && q.isCorrect === false"
           class="mt-2 text-sm text-green-600"
         >
-          Correct answer: {{ q.correctAnswer }}
+          {{ ui.formatCorrectAnswer(q.correctAnswer) }}
         </div>
       </div>
     </div>
@@ -166,7 +167,7 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
       :onRestart="resetActivity"
     />
     <div v-else class="flex mt-4 justify-end">
-      <Button :onClick="checkAnswers" :disabled="!allAnswered">Check Answers</Button>
+      <Button :onClick="checkAnswers" :disabled="!allAnswered">{{ ui.checkAnswers }}</Button>
     </div>
 
     <ActivityResultsAlertDialog

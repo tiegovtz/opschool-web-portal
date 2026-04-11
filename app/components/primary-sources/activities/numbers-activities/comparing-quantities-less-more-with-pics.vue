@@ -29,6 +29,7 @@ type ComparingQuantitiesLessMoreWithPicsProps = {
 };
 
 const props = defineProps<ComparingQuantitiesLessMoreWithPicsProps>();
+const ui = useActivityUiText();
 
 const OPERATORS = [">", "=", "<"] as const;
 
@@ -243,14 +244,14 @@ const fieldStyle = (questionIndex: number, field: string, value: string) => {
 
             <div v-if="showResults && props.feedback === 'wrong-correct-answers'" class="mt-4 text-center">
               <div class="text-sm text-gray-500">
-                Correct Answer: {{ question.leftNumber }} {{ question.answer }} {{ question.rightNumber }}
+                {{ ui.correctAnswer }} {{ question.leftNumber }} {{ question.answer }} {{ question.rightNumber }}
               </div>
             </div>
           </div>
         </div>
 
         <div v-if="!showResults" class="flex justify-end">
-          <Button :onClick="handleSubmit" :disabled="!canSubmit">Check Answers</Button>
+          <Button :onClick="handleSubmit" :disabled="!canSubmit">{{ ui.checkAnswers }}</Button>
         </div>
 
         <div v-if="showResults" class="mt-4">

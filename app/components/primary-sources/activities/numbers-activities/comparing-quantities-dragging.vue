@@ -29,6 +29,7 @@ type ComparingQuantitiesDraggingProps = {
 };
 
 const props = defineProps<ComparingQuantitiesDraggingProps>();
+const ui = useActivityUiText();
 
 const score = ref(0);
 const showResults = ref(false);
@@ -260,7 +261,7 @@ const resetActivity = () => {
 
                 <div v-if="showResults && props.feedbackType === 'wrong-correct-answers'" class="text-center">
                   <div class="text-sm text-gray-500">
-                    Correct: {{ question.leftAnswer }} | {{ question.rightAnswer }}
+                    {{ ui.formatCorrect(`${question.leftAnswer} | ${question.rightAnswer}`) }}
                   </div>
                 </div>
               </div>

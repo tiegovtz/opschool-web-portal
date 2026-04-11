@@ -1,16 +1,20 @@
-<script setup lang="tsx">
-import { ref, reactive, computed, watchEffect } from "vue";
+<script setup lang="ts">
+import { computed, ref, watch } from "vue";
 import { Icon } from "@iconify/vue";
-
-// Local imports
 import ActivityTitle from "@/components/templates/activity-title";
-import { Input } from "@/components/ui/input";
-import ActivityResults,{ActivityResultsAlertDialog} from "@/components/templates/results";
-import { shuffle } from "~/utilities/utils";
+import ActivityResults, { ActivityResultsAlertDialog } from "@/components/templates/results";
+import Input from "@/components/ui/inputs/input.vue";
 import { Button } from "~/components/ui/button";
+import { shuffle } from "~/utilities/utils";
+import { cn } from "~/lib/utils";
+import {
+  calculateBlankWidth,
+  parseQuestionSegments,
+  type QuestionSegment,
+} from "~/components/primary-sources/activity-helpers/question-renderer-utils";
 
-// Types
 interface QuestionItem {
+  id?: number | string;
   question: string;
   answer: string | string[];
 }
@@ -18,7 +22,7 @@ interface QuestionItem {
 interface QuestionsProps {
   title: string;
   fontSize?: number;
-  options: string[];
+  options?: string[];
   questions: QuestionItem[];
 }
 
@@ -27,130 +31,190 @@ interface Props {
   questions: QuestionsProps;
 }
 
-// Props
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 
-// State
-const shuffledQuestions = ref([...props.questions.questions]);
-const answers = reactive<{ [key: number]: string }>({});
-const feedbacks = reactive<{ [key: number]: boolean }>({});
+const shuffledQuestions = ref<QuestionItem[]>([]);
+const answers = ref<Record<number, string>>({});
+const feedbacks = ref<Record<number, boolean>>({});
 const checkedItems = ref<number[]>([]);
 const allAnswered = ref(false);
 const showResults = ref(false);
 const score = ref(0);
 
-// Computed
-const allQuestionsAnswered = computed(() =>
-  shuffledQuestions.value.every((_, index) => answers[index]?.trim() !== "")
+const availableOptions = computed(() =>
+  (props.questions.options || []).map((option) => option.trim()).filter(Boolean),
 );
 
-// Shuffle questions on mount
-watchEffect(() => {
+const resetState = () => {
   shuffledQuestions.value = shuffle([...props.questions.questions]);
-});
-
-// Handlers
-const handleInputChange = (index: number, value: string) => {
-  answers[index] = value;
+  answers.value = {};
+  feedbacks.value = {};
+  checkedItems.value = [];
+  allAnswered.value = false;
+  showResults.value = false;
+  score.value = 0;
 };
 
-const checkAnswer = (userAnswer: string, questionIndex: number) => {
-  const rawAnswer = (shuffledQuestions.value as any[])[questionIndex].answer;
-  const correctAnswer = Array.isArray(rawAnswer) ? String(rawAnswer[0] ?? "") : String(rawAnswer ?? "");
-  return userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+watch(
+  () => props.questions,
+  () => {
+    resetState();
+  },
+  { immediate: true, deep: true },
+);
+
+const allQuestionsAnswered = computed(() =>
+  shuffledQuestions.value.every((_, index) => (answers.value[index] || "").trim() !== ""),
+);
+
+const getCorrectAnswer = (questionIndex: number) => {
+  const rawAnswer = shuffledQuestions.value[questionIndex]?.answer;
+  return Array.isArray(rawAnswer) ? String(rawAnswer[0] ?? "") : String(rawAnswer ?? "");
+};
+
+const handleInputChange = (questionIndex: number, value: string | number) => {
+  answers.value = {
+    ...answers.value,
+    [questionIndex]: String(value ?? ""),
+  };
+};
+
+const checkAnswer = (questionIndex: number) => {
+  const userAnswer = (answers.value[questionIndex] || "").toLowerCase().trim();
+  const correctAnswer = getCorrectAnswer(questionIndex).toLowerCase().trim();
+  return userAnswer === correctAnswer;
 };
 
 const handleCheckAllAnswers = () => {
-  let newScore = 0;
+  let nextScore = 0;
+  const nextFeedbacks: Record<number, boolean> = {};
+  const nextCheckedItems: number[] = [];
+
   shuffledQuestions.value.forEach((_, index) => {
-    const userAnswer = answers[index] || "";
-    const isCorrect = checkAnswer(userAnswer, index);
-    feedbacks[index] = isCorrect;
-    checkedItems.value.push(index);
-    if (isCorrect) newScore++;
+    const isCorrect = checkAnswer(index);
+    nextFeedbacks[index] = isCorrect;
+    nextCheckedItems.push(index);
+    if (isCorrect) {
+      nextScore += 1;
+    }
   });
 
-  score.value = newScore;
+  feedbacks.value = nextFeedbacks;
+  checkedItems.value = nextCheckedItems;
+  score.value = nextScore;
   allAnswered.value = true;
-  // Optionally play success/failure sound
 };
 
-const handleReset = () => {
-  shuffledQuestions.value = shuffle([...props.questions.questions]);
-  Object.keys(answers).forEach((k) => delete answers[+k]);
-  Object.keys(feedbacks).forEach((k) => delete feedbacks[+k]);
-  checkedItems.value = [];
-  score.value = 0;
-  allAnswered.value = false;
-  showResults.value = false;
+type QuestionRenderSegment = QuestionSegment & {
+  calculatedWidth?: number;
 };
 
-const renderQuestionWords = (q: string, questionIndex: number) => {
-  return q.split(" ").map((word, i) => {
-    if (word.startsWith("___")) {
-      const underscoreCount = word.length;
-      const widthMultiplier = underscoreCount / 3;
-      const baseWidth = 200;
-      const calculatedWidth = baseWidth * widthMultiplier;
-      return (
-        <span class="inline-flex flex-col mx-1" style={{ minWidth: `${calculatedWidth}px` }}>
-          <Input
-            modelValue={answers[questionIndex] || ""}
-            onUpdate:modelValue={(val) => handleInputChange(questionIndex, val)}
-            disabled={checkedItems.value.includes(questionIndex)}
-            class="min-w-0 px-2 border-none bg-transparent text-center focus:outline-none"
-            style={{ maxWidth: `${calculatedWidth * 1.6}px` }}
-          />
-          <div
-            class={["border-b border-dashed border-picton-blue-700", { "border-lemon-700": checkedItems.value.includes(questionIndex) }]}
-          />
-        </span>
-      );
+const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
+  return parseQuestionSegments(question).map((segment) => {
+    if (segment.type !== "blank") {
+      return segment;
     }
-    return (
-      <span
-        class={["inline-flex items-center mx-1", { "bg-lemon-100 text-lemon-700 px-2 py-1 rounded": word.includes("_") && word.split("_").length === 2 }]}
-        key={i}
-      >
-        {word.replace(/_/g, "")}
-      </span>
-    );
+
+    const { calculatedWidth } = calculateBlankWidth(segment.content.length, 1024);
+
+    return {
+      ...segment,
+      calculatedWidth: Math.max(calculatedWidth, 120),
+    };
   });
 };
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
 
     <div
-      v-if="!showResults"
-      class="flex flex-col h-full bg-picton-blue-100"
-      :style="{ fontSize: props.questions.fontSize ? props.questions.fontSize + 'px' : '20px' }"
+      v-if="availableOptions.length"
+      class="mb-4 rounded-xl border border-picton-blue-200 bg-white/95 p-4 shadow-sm"
     >
-      <div class="grid gap-4 py-4 h-full grow overflow-y-auto">
+      <div class="flex w-fit flex-wrap gap-4 rounded bg-picton-blue-200 p-3">
+        <div
+          v-for="(option, optionIndex) in availableOptions"
+          :key="`${option}-${optionIndex}`"
+          class="rounded px-5 py-1 text-picton-blue-700"
+        >
+          {{ option }}
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="!showResults"
+      class="flex h-full flex-col bg-picton-blue-100"
+      :style="{ fontSize: props.questions.fontSize ? `${props.questions.fontSize}px` : '20px' }"
+    >
+      <div class="grid h-full grow gap-4 overflow-y-auto py-4">
         <div
           v-for="(q, i) in shuffledQuestions"
-          :key="i"
+          :key="q.id ?? i"
           :class="[
             'h-full rounded-lg p-4 flex flex-col justify-between',
             !checkedItems.includes(i)
               ? 'bg-picton-blue-50'
               : feedbacks[i]
-              ? 'bg-green-100 text-green-700'
-              : 'bg-red-100 text-red-700'
+                ? 'bg-green-100 text-green-700'
+                : 'bg-red-100 text-red-700'
           ]"
         >
-          <div class="flex flex-wrap items-center">
-            <template v-for="(word, wi) in renderQuestionWords(q.question, i)" :key="wi">
-              <component :is="word" />
+          <div class="flex flex-wrap items-center leading-loose">
+            <span class="mr-2 font-medium text-gray-600">{{ i + 1 }}.</span>
+
+            <template
+              v-for="segment in getQuestionSegments(q.question)"
+              :key="`${q.id ?? i}-${segment.index}`"
+            >
+              <span
+                v-if="segment.type === 'text'"
+                class="mx-1 whitespace-pre-line"
+              >
+                {{ segment.content }}
+              </span>
+
+              <span
+                v-else-if="segment.type === 'highlighted'"
+                class="inline-flex items-center mx-1 rounded bg-lemon-100 px-2 py-1 text-lemon-700"
+              >
+                {{ segment.content }}
+              </span>
+
+              <span
+                v-else
+                class="inline-flex flex-col mx-1"
+                :style="{ minWidth: `${segment.calculatedWidth}px` }"
+              >
+                <Input
+                  type="text"
+                  :model-value="answers[i] || ''"
+                  :disabled="checkedItems.includes(i)"
+                  class="min-w-0 px-2 border-none bg-transparent text-center focus:outline-none"
+                  :style="{ maxWidth: `${(segment.calculatedWidth || 120) * 1.6}px` }"
+                  @update:model-value="(value) => handleInputChange(i, value)"
+                />
+                <div
+                  :class="
+                    cn('border-b border-dashed border-picton-blue-700', {
+                      'border-lemon-700': checkedItems.includes(i),
+                    })
+                  "
+                />
+              </span>
             </template>
           </div>
 
           <div class="flex items-center gap-2 mt-4 ml-auto">
             <div
               v-if="checkedItems.includes(i)"
-              :class="['flex items-center justify-center rounded-full p-1', feedbacks[i] ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600']"
+              :class="[
+                'flex items-center justify-center rounded-full p-1',
+                feedbacks[i] ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600',
+              ]"
             >
               <Icon :icon="feedbacks[i] ? 'mdi:check' : 'mdi:close'" width="20" height="20" />
             </div>
@@ -159,34 +223,47 @@ const renderQuestionWords = (q: string, questionIndex: number) => {
       </div>
 
       <Button :disabled="!allQuestionsAnswered || allAnswered" @click="handleCheckAllAnswers" variant="brand-lemon" class="w-fit ml-auto" size="lg">
-        {{ allAnswered ? "Answers Checked" : "Check All Answers" }}
+        {{ allAnswered ? ui.answersChecked : ui.checkAllAnswers }}
       </Button>
     </div>
 
-    <div v-else class="flex flex-col h-full bg-picton-blue-100 p-6 overflow-y-auto">
-      <div class="bg-picton-blue-50 rounded-lg p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <div v-for="(question, idx) in shuffledQuestions" :key="idx" :class="['p-4 rounded-lg border', checkAnswer(answers[idx] || '', idx) ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200']">
-            <div class="flex justify-between items-center mb-2">
+    <div v-else class="flex h-full flex-col overflow-y-auto bg-picton-blue-100 p-6">
+      <div class="rounded-lg bg-picton-blue-50 p-6">
+        <div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div
+            v-for="(question, idx) in shuffledQuestions"
+            :key="question.id ?? idx"
+            :class="[
+              'rounded-lg border p-4',
+              checkAnswer(idx) ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50',
+            ]"
+          >
+            <div class="mb-2 flex items-center justify-between gap-3">
               <p class="font-medium">{{ question.question }}</p>
-              <div :class="['flex items-center justify-center rounded-full p-1', checkAnswer(answers[idx] || '', idx) ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600']">
-                <Icon :icon="checkAnswer(answers[idx] || '', idx) ? 'mdi:check' : 'mdi:close'" width="20" height="20" />
+              <div
+                :class="[
+                  'flex items-center justify-center rounded-full p-1',
+                  checkAnswer(idx) ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600',
+                ]"
+              >
+                <Icon :icon="checkAnswer(idx) ? 'mdi:check' : 'mdi:close'" width="20" height="20" />
               </div>
             </div>
-            <div class="grid grid-cols-2 gap-4 mt-2">
+
+            <div class="mt-2 grid grid-cols-2 gap-4">
               <div>
-                <p class="text-sm text-gray-500">Your answer:</p>
+                <p class="text-sm text-gray-500">{{ ui.yourAnswer }}</p>
                 <p :class="{ 'text-red-600': !checkAnswer(answers[idx] || '', idx) }">{{ answers[idx] || "(no answer)" }}</p>
               </div>
               <div v-if="props.feedback === 'wrong-correct-answers'">
-                <p class="text-sm text-gray-500">Correct answer:</p>
+                <p class="text-sm text-gray-500">{{ ui.correctAnswer }}</p>
                 <p class="text-green-600">{{ question.answer }}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <ActivityResults :score="score" :total="shuffledQuestions.length" :onRestart="handleReset" />
+        <ActivityResults :score="score" :total="shuffledQuestions.length" :onRestart="resetState" />
       </div>
     </div>
 
@@ -194,10 +271,14 @@ const renderQuestionWords = (q: string, questionIndex: number) => {
       :score="score"
       :total="shuffledQuestions.length"
       :open="allAnswered && !showResults"
-      :onRestart="handleReset"
-      :onOpenChange="(open:any) => {
-        if (!open) showResults = true;
-      }"
+      :onRestart="resetState"
+      :onOpenChange="
+        (open: boolean) => {
+          if (!open) {
+            showResults = true;
+          }
+        }
+      "
     />
   </div>
 </template>

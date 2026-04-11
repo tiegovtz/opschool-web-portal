@@ -39,18 +39,6 @@ const props = withDefaults(
     }
 )
 
-// Define Function
-const setAudioToListen = () => {
-    navigationStore.setAudio(`/audio/${props.audioStandard}/${props.audioSubject}/${props.audioName}/${props.audioId}`)
-    useState('audioToView',
-        () => (
-            {
-                route: `/audio/${props.audioStandard}/${props.audioSubject}/${props.audioName}/${props.audioId}`,
-                updatedAt: Date.now()
-            }
-        ));
-}
-
 const audioTarget = computed(() => ({
     path: `/audio/${props.audioStandard}/${props.audioSubject}/${props.audioName}/${props.audioId}`,
     query: getEducationRouteQuery(
@@ -59,6 +47,26 @@ const audioTarget = computed(() => ({
         resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
     ),
 }));
+
+const rememberedAudioRoute = computed(() => {
+    const params = new URLSearchParams(
+        audioTarget.value.query as Record<string, string>,
+    ).toString();
+
+    return `${audioTarget.value.path}${params ? `?${params}` : ""}`;
+});
+
+// Define Function
+const setAudioToListen = () => {
+    navigationStore.setAudio(rememberedAudioRoute.value)
+    useState('audioToView',
+        () => (
+            {
+                route: rememberedAudioRoute.value,
+                updatedAt: Date.now()
+            }
+        ));
+}
 </script>
 
 <template>

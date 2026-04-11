@@ -25,6 +25,9 @@ const content = computed(() => ({
   homeLinkAria: isSwahili.value
     ? "Bonyeza kurudi nyumbani. Kiungo hiki kina nembo ya TET."
     : "Press to go home. The link contain TIE logo",
+  logoAlt: isSwahili.value
+    ? "Nembo ya Taasisi ya Elimu Tanzania. Bango la juu lenye ukingo wa bluu lina maandishi 'Taasisi ya Elimu Tanzania.' Katikati kuna mwenge mweusi wenye mwali mwekundu na wa manjano. Chini ya mwenge kuna kitabu kilichofunguliwa chenye mistari ya bluu na dira mbili nyeusi chini yake. Upande wa kushoto wa nembo kuna jembe la rangi ya machungwa, na upande wa kulia kuna shoka la rangi ya machungwa, yote yakiwa yameelekezwa kuelekea ndani. Nembo imezungukwa na mabango ya utepe yaliyopinda yenye ukingo wa bluu. Bango la chini, pia lenye ukingo wa bluu, lina maandishi 'Elimu ni Kazi.'"
+    : "An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text 'Taasisi ya Elimu Tanzania.' At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text 'Elimu ni Kazi.'",
   userTypeLabel: isSwahili.value ? "Chagua aina ya mtumiaji:" : "Select User Type:",
   userTypePlaceholder: isSwahili.value ? "(mfano: Mwanafunzi, Mwalimu ...)" : "(eg: Student, Teacher ...)",
   firstNamePlaceholder: isSwahili.value ? "Jina la kwanza" : "First Name",
@@ -1062,7 +1065,7 @@ onMounted(async () => {
       <NuxtLink to="/" :aria-label="content.homeLinkAria"
         class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
         <img tabindex="0" src="/logo/logo_tie.gif" class="object-contain w-full h-full"
-          alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
+          :alt="content.logoAlt" />
       </NuxtLink>
 
       <form @submit.prevent="signUp" @keydown.enter.prevent :class="['text-textGray md:h-[530px] h-dvh relative overflow-hidden text-extraSmall lg:scroll-height lg:overflow-y-scroll no-scrollbar',

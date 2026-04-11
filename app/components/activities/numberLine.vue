@@ -7,6 +7,7 @@ const props = defineProps<{
   max: number
   correctAnswers: number[]
 }>()
+const ui = useActivityUiText()
 
 const userAnswers = ref<Record<number, string>>({})
 const showResults = ref(false)
@@ -197,7 +198,7 @@ const inputClass = (answer: number) => {
         @click="checkAnswers"
         class="px-6 py-2 bg-blue-600 text-white rounded-lg"
       >
-        Check Answers
+        {{ ui.checkAnswers }}
       </button>
 
       <button
@@ -228,7 +229,7 @@ const inputClass = (answer: number) => {
         >
           <span>Position: {{ answer }}</span>
           <span>
-            Your answer: {{ userAnswers[answer] || 'No answer' }}
+            {{ ui.yourAnswer }} {{ userAnswers[answer] || 'No answer' }}
             {{ isCorrect(answer) ? '✓' : '✗' }}
           </span>
         </div>

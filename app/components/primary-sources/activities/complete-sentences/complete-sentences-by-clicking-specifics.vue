@@ -24,6 +24,7 @@ type ActivityProps = {
 };
 
 const props = defineProps<ActivityProps>();
+const ui = useActivityUiText();
 
 // State
 const score = ref(0);
@@ -145,7 +146,7 @@ function renderWords(questionId: string, question: string) {
 
     <div v-if="!showResults" class="mt-4 flex justify-end">
       <button class="px-4 py-2 bg-yellow-400 rounded" @click="checkAnswers">
-        Check Answers
+        {{ ui.checkAnswers }}
       </button>
     </div>
 

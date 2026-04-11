@@ -37,6 +37,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { width } = useWindowSize();
 const { playSound } = useSoundEffects();
 const answerChecker = new AnswerChecker();
@@ -238,7 +239,7 @@ const handleResetWithShuffle = () => {
           variant="brand-lemon"
           size="lg"
         >
-          {{ allAnswered ? "Answers Checked" : "Check Answers" }}
+          {{ allAnswered ? ui.answersChecked : ui.checkAnswers }}
         </Button>
       </div>
     </div>

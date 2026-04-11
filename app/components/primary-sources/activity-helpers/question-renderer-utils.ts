@@ -15,11 +15,11 @@ export type QuestionSegment = {
  * @returns Array of segments with their types
  *
  * @example
- * parseQuestionSegments("The answer is $x + y$ and __ is _correct")
+ * parseQuestionSegments("The answer is $x + y$ and _ is _correct")
  * // Returns:
  * // [
  * //   { type: "text", content: "The answer is $x + y$ and ", index: 0 },
- * //   { type: "blank", content: "__", index: 1 },
+ * //   { type: "blank", content: "_", index: 1 },
  * //   { type: "text", content: " is ", index: 2 },
  * //   { type: "highlighted", content: "correct", index: 3 }
  * // ]
@@ -30,7 +30,7 @@ export function parseQuestionSegments(question: string): QuestionSegment[] {
   let segmentIndex = 0;
 
   // Use regex to find blanks and highlighted text
-  const blankRegex = /_{2,}/g;
+  const blankRegex = /_{1,}/g;
   const highlightRegex = /\s_(?!_)(\S+)/g;
 
   // First, find all blanks
@@ -129,11 +129,11 @@ export function calculateBlankWidth(
   baseWidth: number;
   widthMultiplier: number;
 } {
-  const isTwoUnderscores = underscoreCount === 2;
+  const isSingleOrDoubleUnderscore = underscoreCount <= 2;
   let baseWidth;
   let widthMultiplier;
 
-  if (isTwoUnderscores) {
+  if (isSingleOrDoubleUnderscore) {
     baseWidth = 60; // Half of the original base width
     widthMultiplier = 1;
   } else {
@@ -146,7 +146,7 @@ export function calculateBlankWidth(
 
   return {
     calculatedWidth,
-    isTwoUnderscores,
+    isTwoUnderscores: isSingleOrDoubleUnderscore,
     baseWidth,
     widthMultiplier,
   };

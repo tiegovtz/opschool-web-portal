@@ -7,7 +7,7 @@ import activityComponents from "./index";
 import type { ActivityComponentProps, ActivityType } from "~/types/activity-types";
 
 interface WithAnswerCollectionProps {
-  activityId?: number;
+  activityId?: string | number;
   studentProfileId?: number;
   parentAccountId?: number;
   sessionId?: number;
@@ -38,7 +38,7 @@ const withAnswerCollection = (ActivityComponent: any) => {
     name: "WithAnswerCollection",
 
     props: {
-      activityId: Number,
+      activityId: [String, Number],
       studentProfileId: Number,
       parentAccountId: Number,
       sessionId: Number,

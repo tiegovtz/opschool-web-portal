@@ -6,11 +6,13 @@ import { dataEncrypt, dataDecrypt } from "~/utilities/encryption";
 import { useNavigationStore } from "~/stores/navigationStore";
 import { useAuthStore } from "~/stores/auth";
 import { consumePostLoginHome } from "~/utilities/postLoginHome";
+import { getHubPath } from "~/utilities/educationRoute";
 
 // // Use the State
 const navigationStore = useNavigationStore();
 const returnPath = computed(() => navigationStore.getLatestRoute());
 const route = useRoute();
+const hubEducationLevel = useHubEducationLevel();
 const authRedirectQuery = computed(() =>
   typeof route.query.redirect === "string" && route.query.redirect.length > 0
     ? { redirect: route.query.redirect }
@@ -26,6 +28,9 @@ const content = computed(() => ({
   homeLinkAria: isSwahili.value
     ? "Bonyeza kurudi nyumbani. Kiungo hiki kina nembo ya TET."
     : "Press to go home. The link contains the TIE logo.",
+  logoAlt: isSwahili.value
+    ? "Nembo ya Taasisi ya Elimu Tanzania. Bango la juu lenye ukingo wa bluu lina maandishi 'Taasisi ya Elimu Tanzania.' Katikati kuna mwenge mweusi wenye mwali mwekundu na wa manjano. Chini ya mwenge kuna kitabu kilichofunguliwa chenye mistari ya bluu na dira mbili nyeusi chini yake. Upande wa kushoto wa nembo kuna jembe la rangi ya machungwa, na upande wa kulia kuna shoka la rangi ya machungwa, yote yakiwa yameelekezwa kuelekea ndani. Nembo imezungukwa na mabango ya utepe yaliyopinda yenye ukingo wa bluu. Bango la chini, pia lenye ukingo wa bluu, lina maandishi 'Elimu ni Kazi.'"
+    : "An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text 'Taasisi ya Elimu Tanzania.' At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text 'Elimu ni Kazi.'",
   usernameLabel: isSwahili.value
     ? "Jina la mtumiaji, mfano barua pepe, simu, au jina la mwanafunzi"
     : "Username (e.g., email, phone, or student name)",
@@ -220,7 +225,8 @@ const signIn = async () => {
           ? route.query.redirect
           : returnPath.value;
       const landingChoiceHome = consumePostLoginHome();
-      router.replace(redirectPath || landingChoiceHome || "/secondary");
+      const fallbackHubPath = getHubPath(hubEducationLevel.value);
+      router.replace(redirectPath || landingChoiceHome || fallbackHubPath || "/secondary");
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = content.value.errors.invalidCredentials;
@@ -302,7 +308,7 @@ watch(
 
       <NuxtLink :aria-label="content.homeLinkAria" to="/" class="w-[100px] h-[100px] mx-auto my-6 flex items-center justify-center">
         <img tabindex="0" src="/logo/logo_tie.gif" class="object-contain w-full h-full"
-          alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
+          :alt="content.logoAlt" />
       </NuxtLink>
 
       <!-- Sign in form -->
