@@ -49,8 +49,8 @@ const { playSound } = useSoundEffects();
 const { width } = useWindowSize();
 
 const boardRef = ref<HTMLElement | null>(null);
-const SCROLL_EDGE_THRESHOLD = 72;
-const SCROLL_STEP = 28;
+const SCROLL_EDGE_THRESHOLD = 96;
+const MAX_SCROLL_STEP = 42;
 const DRAG_START_THRESHOLD = 6;
 const completedObjectIds = ref<number[]>([]);
 const connections = ref<Connection[]>([]);
@@ -117,11 +117,15 @@ const getGameItems = () => {
 const leftItems = computed(() => getGameItems().leftItems);
 const rightItems = computed(() => getGameItems().rightItems);
 const totalPairs = computed(() => leftItems.value.length);
-const renderedLeftItems = computed(() => shuffledRightItems.value);
-const renderedRightItems = computed(() => leftItems.value);
+const leftItemsToRender = computed(() => shuffledRightItems.value);
+const rightItemsToRender = computed(() => leftItems.value);
 const hasRenderableItems = computed(
   () => leftItems.value.length > 0 && rightItems.value.length > 0,
 );
+
+const shuffleRightColumn = () => {
+  shuffledRightItems.value = shuffle([...rightItems.value]);
+};
 
 const resetRoundState = () => {
   connections.value = [];
@@ -148,7 +152,7 @@ watch(
     if (isLoading || !left.length || !right.length) return;
 
     resetRoundState();
-    shuffledRightItems.value = shuffle([...right]);
+    shuffleRightColumn();
   },
   { immediate: true },
 );
@@ -186,6 +190,12 @@ const boardFontSize = computed(() => {
   if (width.value <= 640) return "14px";
   return props.questions.fontSize ? `${props.questions.fontSize}px` : "20px";
 });
+
+const completionMessage = computed(() =>
+  timeUp.value
+    ? "Time's up! Don't worry, you can try again with new items. Keep practicing to improve your matching skills!"
+    : `Fantastic work! You successfully matched all ${totalPairs.value} pairs! Your matching skills are excellent!`,
+);
 
 const isImageItem = (item?: MatchingItem | null) =>
   !!item && typeof item.content !== "string" && "imageSrc" in item.content;
@@ -246,7 +256,7 @@ const refreshConnectionPositions = () => {
 };
 
 const findHoveredRightTarget = (clientX: number, clientY: number) => {
-  for (const item of renderedRightItems.value) {
+  for (const item of rightItemsToRender.value) {
     const element = document.getElementById(`right-${item.id}`);
     if (!(element instanceof HTMLElement)) continue;
 
@@ -287,8 +297,8 @@ const connectItems = (leftId: string, rightId: string) => {
 
   if (!startPosition || !endPosition) return;
 
-  const leftItem = leftItems.value.find((item) => String(item.id) === leftId);
-  const rightItem = rightItems.value.find((item) => String(item.id) === rightId);
+  const leftItem = rightItems.value.find((item) => String(item.id) === leftId);
+  const rightItem = leftItems.value.find((item) => String(item.id) === rightId);
   const isCorrect = leftItem?.id === rightItem?.id;
 
   connections.value = [
@@ -343,17 +353,24 @@ const runAutoScroll = () => {
   const rect = container.getBoundingClientRect();
   const { x, y } = lastPointerClient.value;
 
-  const nextScrollLeft = (() => {
-    if (x < rect.left + SCROLL_EDGE_THRESHOLD) return -SCROLL_STEP;
-    if (x > rect.right - SCROLL_EDGE_THRESHOLD) return SCROLL_STEP;
-    return 0;
-  })();
+  const getScrollDelta = (position: number, start: number, end: number) => {
+    if (position < start + SCROLL_EDGE_THRESHOLD) {
+      const intensity =
+        (start + SCROLL_EDGE_THRESHOLD - position) / SCROLL_EDGE_THRESHOLD;
+      return -Math.max(12, Math.round(MAX_SCROLL_STEP * intensity));
+    }
 
-  const nextScrollTop = (() => {
-    if (y < rect.top + SCROLL_EDGE_THRESHOLD) return -SCROLL_STEP;
-    if (y > rect.bottom - SCROLL_EDGE_THRESHOLD) return SCROLL_STEP;
+    if (position > end - SCROLL_EDGE_THRESHOLD) {
+      const intensity =
+        (position - (end - SCROLL_EDGE_THRESHOLD)) / SCROLL_EDGE_THRESHOLD;
+      return Math.max(12, Math.round(MAX_SCROLL_STEP * intensity));
+    }
+
     return 0;
-  })();
+  };
+
+  const nextScrollLeft = getScrollDelta(x, rect.left, rect.right);
+  const nextScrollTop = getScrollDelta(y, rect.top, rect.bottom);
 
   if (nextScrollLeft || nextScrollTop) {
     container.scrollBy({
@@ -390,9 +407,6 @@ const finishPointerInteraction = () => {
 
 const handleWindowPointerMove = (event: PointerEvent) => {
   if (!activeDragLeftId.value) return;
-  if (event.cancelable) {
-    event.preventDefault();
-  }
 
   if (dragStartClient.value && !hasDragMoved.value) {
     const distance = Math.hypot(
@@ -404,8 +418,14 @@ const handleWindowPointerMove = (event: PointerEvent) => {
     }
   }
 
+  if (hasDragMoved.value && event.cancelable) {
+    event.preventDefault();
+  }
+
   updateDragFromClientPoint(event.clientX, event.clientY);
-  startAutoScroll();
+  if (hasDragMoved.value) {
+    startAutoScroll();
+  }
 };
 
 const handleWindowPointerUp = () => {
@@ -433,7 +453,9 @@ const handleLeftItemPointerDown = (event: PointerEvent, leftId: string) => {
   if (showResults.value || timeUp.value) return;
   if (event.pointerType !== "touch" && event.button !== 0) return;
 
-  event.preventDefault();
+  if (event.pointerType !== "touch") {
+    event.preventDefault();
+  }
 
   removePointerListeners();
   stopAutoScroll();
@@ -514,9 +536,7 @@ const handleRestart = async () => {
     completedObjectIds.value = updatedIds;
     await refetch(updatedIds);
   } else {
-    shuffledRightItems.value = shuffle([
-      ...normalizeMatchingItems(props.questions.rightItems),
-    ]);
+    shuffleRightColumn();
   }
 
   window.setTimeout(() => {
@@ -632,9 +652,11 @@ const liveDragLine = computed(() => {
     :total-questions="totalPairs"
     :completed-questions="completedPairs"
     :incorrect-questions="incorrectAttempts"
-    :total-time-limit="props.questions.gameTimeLimit || 300"
+    :total-time-limit="props.questions.gameTimeLimit"
     :on-time-up="handleGameTimeUp"
     :on-game-complete="handleGameComplete"
+    :show-timer="!!props.questions.isGameMode"
+    :show-progress="!!props.questions.isGameMode"
   >
     <div class="flex h-full flex-col text-lg">
       <ActivityTitle :title="props.questions.title" />
@@ -643,7 +665,7 @@ const liveDragLine = computed(() => {
 
       <div
         ref="boardRef"
-        class="relative flex min-h-[320px] justify-between overflow-auto md:p-4"
+        class="relative flex min-h-[320px] justify-between overflow-auto touch-pan-x touch-pan-y md:p-4"
         :style="{ fontSize: boardFontSize }"
       >
         <div
@@ -657,7 +679,7 @@ const liveDragLine = computed(() => {
           "
         >
           <div
-            v-for="item in renderedLeftItems"
+            v-for="item in leftItemsToRender"
             :id="`left-${item.id}`"
             :key="item.id"
             :class="
@@ -699,7 +721,7 @@ const liveDragLine = computed(() => {
           "
         >
           <button
-            v-for="item in renderedRightItems"
+            v-for="item in rightItemsToRender"
             :id="`right-${item.id}`"
             :key="item.id"
             type="button"
@@ -783,7 +805,7 @@ const liveDragLine = computed(() => {
             style="top: 1rem; left: 1rem; height: calc(100% - 2rem);"
           >
             <div
-              v-for="item in leftItems"
+              v-for="item in leftItemsToRender"
               :key="`${item.id}-indicator`"
               class="relative flex h-full w-full items-center justify-center"
             >
@@ -812,7 +834,7 @@ const liveDragLine = computed(() => {
             style="top: 1rem; right: 1rem; left: auto; height: calc(100% - 2rem);"
           >
             <div
-              v-for="item in shuffledRightItems"
+              v-for="item in rightItemsToRender"
               :key="`${item.id}-indicator`"
               class="relative flex h-full w-full items-center justify-start"
             >
@@ -843,6 +865,7 @@ const liveDragLine = computed(() => {
         :score="timeUp ? 0 : score"
         :total="totalPairs"
         :open="allAnswered && !isResetting && !showResults"
+        :completionMessage="completionMessage"
         :on-open-change="
           (open) => {
             if (open) {
