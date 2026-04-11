@@ -119,7 +119,7 @@ const setSubjectToView = () => {
        <div class="flex items-center justify-between">
          <small
           v-if="educationLevelBadge"
-          class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white"
+          class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white"
         >
           {{ educationLevelBadge }}
         </small>
@@ -164,7 +164,7 @@ const setSubjectToView = () => {
       <!-- metrics  and level-->
       <div class="flex items-center justify-between">
         <small v-if="educationLevelBadge"
-          class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white">
+          class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white">
           {{ educationLevelBadge }}
         </small>
 

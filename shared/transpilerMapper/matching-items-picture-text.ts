@@ -218,8 +218,8 @@ const matchingItemsPictureTextTranspiler = (
 
     case ActivityType.TextTextMatching:
     case ActivityType.TextTextMatchingSixItems:
-      leftItems = textTextPairs.map((item) => item.left);
-      rightItems = textTextPairs.map((item) => item.right);
+      leftItems = textTextPairs.map((item) => item.right);
+      rightItems = textTextPairs.map((item) => item.left);
       break;
 
     default:
