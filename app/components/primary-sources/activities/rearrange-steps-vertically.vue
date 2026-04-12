@@ -100,7 +100,7 @@ const handleDialogChange = (open: boolean) => {
             :value="order[index]"
             :disabled="showFeedback"
             :class="[
-              'h-16 w-16 text-center text-2xl no-number-input-arrows',
+              'h-16 w-16 text-center text-2xl no-number-input-arrows text-black rounded border-2 transition-colors duration-300',
               showFeedback
                 ? isAnswerCorrect(index)
                   ? 'border-green-500 bg-green-100'
