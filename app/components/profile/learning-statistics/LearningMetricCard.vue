@@ -20,7 +20,7 @@ withDefaults(
 
 <template>
   <article
-    class="flex flex-col gap-3 p-4 bg-white border shadow-sm rounded-3xl border-slate-200 sm:flex-row sm:items-start"
+    class="flex flex-col gap-3 p-4 bg-white border shadow-sm rounded-lg border-slate-200 sm:flex-row sm:items-start"
     :class="cardClass"
   >
     <div
