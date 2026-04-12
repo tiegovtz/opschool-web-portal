@@ -384,7 +384,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
                 ? 'text-normalGreener'
                 : 'text-red-600'
                 ">
-                <b class="text-black">Your choice:
+                <b class="text-black">  {{ topicLanguage.toLowerCase().trim() === 'english' ?'Your choice':'Chaguao lako'}}:
                 </b>
                 <template v-if="question.questionType === 'drag_and_drop'">
                   <span v-for="(answerPart, blankIndex) in getDragAnswerParts(quizAttempt.clickedAnswer[index] ?? '')"
@@ -413,7 +413,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
           <div class="px-4"
             v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description?.trim() && getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? '').trim()"
             :aria-label="`Explanation to justify why you answer ${quizAttempt.clickedAnswer[index] == question.answer ? 'correct' : 'incorrect'}`"
-            v-html="generateSuggestion(getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? ''), quizAttempt.clickedAnswer[index] == question.answer)">
+            v-html="generateSuggestion(getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? ''), quizAttempt.clickedAnswer[index] == question.answer,topicLanguage)">
           </div>
         </div>
 
