@@ -999,6 +999,7 @@ definePageMeta({
         :topic-id="chapters.notes?.topic?._id ?? topicId" :subject-id="chapters.notes?.subject?._id ?? null"
         :level-id="chapters.notes?.level?._id ?? ((userToken as any)?.value?.level?._id ?? null)"
         :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
+        :topic-language="topicLanguageData?.name"
         @emit-quiz-score="updateChapterProgress" />
     </div>
 
