@@ -258,7 +258,7 @@ const subjectUi = computed(() => ({
   send: isSwahili.value ? "Tuma" : "Send",
   summarizeIdle: isSwahili.value ? "Fupisha" : "Summarize",
   summarizeBusy: isSwahili.value ? "Inafupisha..." : "Summarizing...",
-  englishCrashCourseIdle: isSwahili.value ? "Kozi Fupi ya Kiingereza" : "English Crash Course",
+  englishCrashCourseIdle: isSwahili.value ? "Kozi Fupi ya Kiswahili" : "English Crash Course",
   englishCrashCourseBusy: isSwahili.value ? "Inapakia..." : "Loading...",
   stopReading: isSwahili.value ? "Simamisha Kusoma" : "Stop Reading",
   read: isSwahili.value ? "Soma" : "Read",
