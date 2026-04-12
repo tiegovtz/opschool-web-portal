@@ -2,6 +2,7 @@
 import { ref, watch, nextTick, onUnmounted, onMounted, computed } from "vue";
 import { Chat } from "@ai-sdk/vue";
 import apiDocs from "~/utilities/apiDocs";
+import { normalizeLanguageSupport } from "~/utilities/educationRoute";
 import { tr } from "zod/v4/locales";
 
 // Development mode flag for conditional logging
@@ -241,7 +242,15 @@ const props = defineProps({
   topicLanguage:{type:String,default:'English'}
 });
 const contentLayoutLanguage = useContentLayoutLanguage(() => props.level);
-const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili" || props.topicLanguage.toLowerCase().trim() === "kiswahili" );
+const normalizedTopicLanguage = computed(() =>
+  normalizeLanguageSupport(props.topicLanguage, contentLayoutLanguage.value)
+);
+const isSwahili = computed(
+  () =>
+    normalizedTopicLanguage.value === "kiswahili" ||
+    normalizeLanguageSupport(contentLayoutLanguage.value, "english") === "kiswahili"
+);
+const uiLanguage = computed(() => (isSwahili.value ? "kiswahili" : "english"));
 const subjectUi = computed(() => ({
   launcherTitle: isSwahili.value  ? "Uliza Mwalimu akili unde wa Somo" : "Ask AI Subject Teacher",
   title: isSwahili.value ? "Mwalimu akili unde wa Somo" : "AI Subject Teacher",
@@ -258,10 +267,15 @@ const subjectUi = computed(() => ({
   send: isSwahili.value ? "Tuma" : "Send",
   summarizeIdle: isSwahili.value ? "Fupisha" : "Summarize",
   summarizeBusy: isSwahili.value ? "Inafupisha..." : "Summarizing...",
-  englishCrashCourseIdle: isSwahili.value ? "Kozi Fupi ya Kiswahili" : "English Crash Course",
+  englishCrashCourseIdle: isSwahili.value ? "Kozi Fupi ya Kiingereza" : "English Crash Course",
   englishCrashCourseBusy: isSwahili.value ? "Inapakia..." : "Loading...",
   stopReading: isSwahili.value ? "Simamisha Kusoma" : "Stop Reading",
   read: isSwahili.value ? "Soma" : "Read",
+  signInRequired: isSwahili.value ? "Tafadhali ingia ili kutumia msaidizi wa AI." : "Please sign in to use the AI assistant.",
+  missingChapterId: isSwahili.value ? "Kitambulisho cha umahiri hakipo. Tafadhali pakia ukurasa upya." : "Chapter ID is missing. Please reload the page.",
+  genericError: isSwahili.value ? "Samahani, hitilafu imetokea. Tafadhali jaribu tena." : "Sorry, I encountered an error. Please try again.",
+  summaryRequest: isSwahili.value ? "Nifupishie maudhui haya" : "Create a summary",
+  englishCrashCourseRequest: isSwahili.value ? "Nisaidie kwa kozi fupi ya Kiswahili" : "Help with English crash course",
 }));
 
 // state refs
@@ -1023,7 +1037,7 @@ const handleFormSubmit = async (e) => {
   if (!currentTokenValue) {
     messages.value.push({
       role: "assistant",
-      content: "Please sign in to use the AI assistant.",
+      content: subjectUi.value.signInRequired,
       timestamp: new Date().toLocaleTimeString(),
     });
     return;
@@ -1122,7 +1136,7 @@ const askQuestion = async (
     if (!currentTokenValue) {
       messages.value.push({
         role: "assistant",
-        content: "Please sign in to use the AI assistant.",
+        content: subjectUi.value.signInRequired,
         timestamp: new Date().toLocaleTimeString(),
       });
       isLoading.value = false;
@@ -1132,7 +1146,7 @@ const askQuestion = async (
     if (!props.chapterId) {
       messages.value.push({
         role: "assistant",
-        content: "Chapter ID is missing. Please reload the page.",
+        content: subjectUi.value.missingChapterId,
         timestamp: new Date().toLocaleTimeString(),
       });
       isLoading.value = false;
@@ -1178,7 +1192,12 @@ const askQuestion = async (
       // $fetch automatically sends cookies for same-origin requests
       const response = await $fetch("/api/ai-assistant/ask", {
         method: "POST",
-        body: { question, chapterId: props.chapterId, conversationHistory },
+        body: {
+          question,
+          chapterId: props.chapterId,
+          conversationHistory,
+          uiLanguage: uiLanguage.value,
+        },
         signal,
       });
 
@@ -1209,7 +1228,7 @@ const askQuestion = async (
         content:
           error?.data?.message ||
           error?.message ||
-          "Sorry, I encountered an error. Please try again.",
+          subjectUi.value.genericError,
         timestamp: new Date().toLocaleTimeString(),
       });
     }
@@ -1337,7 +1356,7 @@ const handleSummarize = async () => {
   isSummarizing.value = true;
   const prompt = `Please provide a comprehensive summary of this chapter/competence: ${props.chapterName}. Include main concepts, key points, and important information.`;
   try {
-    await askQuestion(prompt, "Create a summary", {
+    await askQuestion(prompt, subjectUi.value.summaryRequest, {
       useDocsAPI: true,
       docsField: "summary",
     });
@@ -1351,7 +1370,7 @@ const handleEnglishCrashCourse = async () => {
   isEnglishCrashCourse.value = true;
   const prompt = `I'm a Tanzanian student who learned in Swahili. Please explain this chapter/competence "${props.chapterName}" in simple English, helping me understand the key concepts and terms. Use Tanzanian context, examples, and references that relate to Tanzania. Use simple language and provide examples where helpful. use swahili to make more emphasis on points.`;
   try {
-    await askQuestion(prompt,  isSwahili.value ? "Nisaidie kujifunza kiswahili" : "Help with English crash course", {
+    await askQuestion(prompt, subjectUi.value.englishCrashCourseRequest, {
       useDocsAPI: true,
       docsField: "crashCourse",
     });

@@ -78,7 +78,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { question, chapterId, conversationHistory } = body || {};
+  const { question, chapterId, conversationHistory, uiLanguage } = body || {};
 
   if (!question || !chapterId) {
     throw createError({
@@ -138,8 +138,18 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const preferredUiLanguage =
+      typeof uiLanguage === "string" && uiLanguage.trim().toLowerCase() === "kiswahili"
+        ? "kiswahili"
+        : "english";
+
     // 2. Prepare prompt with strict instructions
     const systemPrompt = `You are AI Subject Teacher, a friendly and experienced teacher helping Tanzanian students. Your goal is to help students understand and learn about the current competence/chapter they are studying.
+
+*** LANGUAGE RULE ***
+- The student's current interface language is ${preferredUiLanguage}.
+- Respond in ${preferredUiLanguage === "kiswahili" ? "Kiswahili" : "English"} by default so your explanation matches the active learning mode.
+- If the student explicitly asks for a translation or asks you to explain in the other language, you may switch for that request.
 
 *** NON-NEGOTIABLE - CHAPTER SCOPE ONLY ***
 You may ONLY answer questions that are directly about this chapter: "${chapterName}". You must REFUSE to answer any question that is:
