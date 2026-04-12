@@ -24,6 +24,7 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  topicLanguage: { type: String, default: "English" },
   chaptersList: Number,
   chaptersNumber: Number,
   changeChapter: Function,
@@ -338,14 +339,14 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
       <!-- Header and Button -->
       <div class="flex items-center justify-between">
         <h1 class="tracking-wide underline text-large font-bold" v-if="questions.length > 0">
-          Quiz
+          {{ topicLanguage.toLowerCase().trim() === 'english' ? 'Quiz' : 'Zoezi' }}
         </h1>
 
         <!-- Answer and Read Notes again and Read Next Topic -->
         <div class="flex items-center justify-end gap-4">
           <!-- Simplified counter display -->
           <p class="flex gap-2 font-bold">
-            Answered
+            {{ topicLanguage.toLowerCase().trim() === 'english' ? 'Answered' : 'Uliyojibu' }}
             <span class="font-normal">{{ quizAttempt.answeredQuestions }}/{{ questions.length }}</span>
           </p>
         </div>
@@ -359,7 +360,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
         <!-- Scores -->
         <div class="flex flex-col items-center w-full mb-4">
           <p>
-            Total scores: <b>{{ quizAttempt.scored + '/' + quizAttempt.totalQuestions }}</b>
+            {{ topicLanguage.toLowerCase().trim() === 'english' ? 'Total scores:' : 'Alama zote:' }} <b>{{ quizAttempt.scored + '/' + quizAttempt.totalQuestions }}</b>
           </p>
           <p class="flex items-center justify-center flex-1 gap-2 font-bold" :class="getScoreColor(scoredComputed)">
             {{ getMotivationMessage(scoredComputed) }}
@@ -418,7 +419,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
 
         <!-- Read notes again and Read next -->
         <div class="flex items-center justify-end w-full gap-2">
-          <small>Recommendation:</small>
+          <small>{{ topicLanguage.toLowerCase().trim() === 'english' ? 'Recommendation:' : 'Pendekezo:' }}</small>
           <button v-if="quizAttempt.quizCompleted" @click="changeChapter?.(
             quizAttempt.scored === quizAttempt.totalQuestions ? 'N' : 'R'
           )"
@@ -426,8 +427,8 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
             <span class="capitalize">
               {{
                 quizAttempt.scored === quizAttempt.totalQuestions
-                  ? 'Next quiz'
-                  : 'Read notes again'
+                  ? topicLanguage.toLowerCase().trim() === 'english' ? 'Next quiz':'Zoezi lijalo'
+                  : topicLanguage.toLowerCase().trim() === 'english' ? 'Read notes again' :' Soma maudhui tena'
               }}
             </span>
           </button>
@@ -458,6 +459,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
 
       <!-- Use currentQuestion instead of shuffleQuestions to determine which question to display -->
       <questionsAnswers v-else-if="shuffledQuestions.length" @question-answered="answeredAttempt($event)"
+        :used-language="topicLanguage"
         @next-question="goToNextQuestion()" @previous-question="goToPreviousQuestion()" :question-type="shuffledQuestions[quizAttempt.currentQuestion]?.questionType ?? 'multiple_choice'
           " :thumbnail="shuffledQuestions[quizAttempt.currentQuestion]?.thumbnail ?? ''"
         :true-answer="shuffledQuestions[quizAttempt.currentQuestion]?.answer ?? ''"
