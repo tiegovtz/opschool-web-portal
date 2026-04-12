@@ -127,7 +127,7 @@ const userTypes = [
                     alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
             </NuxtLink>
             <form @submit.prevent="forgotPassword" :class="[
-                'px-4 text-textGray md:h-[150px] relative overflow-hidden text-extraSmall',
+                'px-4 text-textGray md:h-[150px] relative text-extraSmall',
                 { 'md:h-[200px]': userForgotPassword.controller.errors.type },
                 { 'md:h-[300px]': userForgotPassword.type.toLowerCase() === 'student' },
             ]">
