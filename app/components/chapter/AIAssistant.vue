@@ -238,12 +238,13 @@ const props = defineProps({
   topic: { type: String, default: "" },
   chapterNo: { type: Number, default: null },
   audios: { type: Array, default: () => [] },
+  topicLanguage:{type:String,default:'English'}
 });
 const contentLayoutLanguage = useContentLayoutLanguage(() => props.level);
-const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili" || props.topicLanguage.toLowerCase().trim() === "kiswahili" );
 const subjectUi = computed(() => ({
-  launcherTitle: isSwahili.value ? "Uliza Mwalimu wa Somo wa AI" : "Ask AI Subject Teacher",
-  title: isSwahili.value ? "Mwalimu wa Somo wa AI" : "AI Subject Teacher",
+  launcherTitle: isSwahili.value  ? "Uliza Mwalimu akili unde wa Somo" : "Ask AI Subject Teacher",
+  title: isSwahili.value ? "Mwalimu akili unde wa Somo" : "AI Subject Teacher",
   voiceSettings: isSwahili.value ? "Mipangilio ya Sauti" : "Voice Settings",
   voiceSettingsHelp: isSwahili.value ? "Chagua sauti ya majibu ya sauti" : "Select voice for audio responses",
   femaleVoice: isSwahili.value ? "Sauti ya Mwanamke" : "Female Voice",
@@ -257,7 +258,7 @@ const subjectUi = computed(() => ({
   send: isSwahili.value ? "Tuma" : "Send",
   summarizeIdle: isSwahili.value ? "Fupisha" : "Summarize",
   summarizeBusy: isSwahili.value ? "Inafupisha..." : "Summarizing...",
-  englishCrashCourseIdle: isSwahili.value ? "Kozi Fupi ya Kiingereza" : "English Crash Course",
+  englishCrashCourseIdle: isSwahili.value ? "Kozi Fupi ya Kiswahili" : "English Crash Course",
   englishCrashCourseBusy: isSwahili.value ? "Inapakia..." : "Loading...",
   stopReading: isSwahili.value ? "Simamisha Kusoma" : "Stop Reading",
   read: isSwahili.value ? "Soma" : "Read",
@@ -1350,7 +1351,7 @@ const handleEnglishCrashCourse = async () => {
   isEnglishCrashCourse.value = true;
   const prompt = `I'm a Tanzanian student who learned in Swahili. Please explain this chapter/competence "${props.chapterName}" in simple English, helping me understand the key concepts and terms. Use Tanzanian context, examples, and references that relate to Tanzania. Use simple language and provide examples where helpful. use swahili to make more emphasis on points.`;
   try {
-    await askQuestion(prompt, "Help with English crash course", {
+    await askQuestion(prompt,  isSwahili.value ? "Nisaidie kujifunza kiswahili" : "Help with English crash course", {
       useDocsAPI: true,
       docsField: "crashCourse",
     });
