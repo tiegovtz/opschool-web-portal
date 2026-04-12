@@ -82,11 +82,11 @@ const scoredComputed = computed(() => {
 
 // Motivation Messages
 const getMotivationMessage = (score: number) => {
-  if (score >= 81) return "Excellent! Keep it up! 🎉";
-  if (score >= 61) return "Great job! Aim higher! 💪";
-  if (score >= 41) return "Good effort! Keep improving! 🌟";
-  if (score >= 21) return "Don't give up! Keep practicing! 🚀";
-  return "Keep trying! You can do it! 🔥";
+  if (score >= 81) return props.topicLanguage.toLowerCase().trim() === 'english' ? "Excellent! Keep it up! 🎉" : "Vema sana! Endelea! 🎉";
+  if (score >= 61) return props.topicLanguage.toLowerCase().trim() === 'english' ? "Great job! Aim higher! 💪" : "Kazi nzuri! Lenga zaidi! 💪";
+  if (score >= 41) return props.topicLanguage.toLowerCase().trim() === 'english' ? "Good effort! Keep improving! 🌟" : "Ujuzi mzuri! Endelea kuboresha! 🌟";
+  if (score >= 21) return props.topicLanguage.toLowerCase().trim() === 'english' ? "Don't give up! Keep practicing! 🚀" : "Usikate tamaa! Endelea kujaribu! 🚀";
+  return props.topicLanguage.toLowerCase().trim() === 'english' ? "Keep trying! You can do it! 🔥" : "Endelea kujaribu! Unaweza kufanya hivyo! 🔥";
 };
 
 // Function to set color based on score
