@@ -593,7 +593,7 @@ onMounted(() => {
       </div>
 
       <div v-else-if="recommendationError" class="bg-[#f8fbfd] p-4 sm:p-5 lg:p-6">
-        <div class="p-4 border border-amber-200 rounded-2xl bg-amber-50 text-amber-900">
+        <div class="p-4 border border-amber-200 rounded-lg bg-amber-50 text-amber-900">
           <p class="font-medium">
             {{ text.recommendationUnavailable }}
           </p>
@@ -619,7 +619,7 @@ onMounted(() => {
       </div>
 
       <div v-else class="space-y-5 bg-[#f8fbfd] p-4 sm:p-5 lg:p-6">
-        <div class="border border-sky-100 rounded-3xl bg-white p-4 shadow-sm sm:p-5">
+        <div class="border border-sky-100 rounded-lg bg-white p-4 shadow-sm sm:p-5">
           <p class="text-sm leading-6 text-slate-700">
             {{ personalizedRecommendations?.summary }}
           </p>
@@ -665,7 +665,7 @@ onMounted(() => {
 
           <div v-else-if="
             snapshotSyncError || comparisonError || progressSummaryError
-          " class="p-4 mt-5 border rounded-2xl border-amber-200 bg-amber-50 text-amber-900">
+          " class="p-4 mt-5 border rounded-lg border-amber-200 bg-amber-50 text-amber-900">
             <p class="font-medium">
               {{ text.snapshotUnavailable }}
             </p>
@@ -680,7 +680,7 @@ onMounted(() => {
 
           <div v-else class="mt-5 space-y-5">
             <div v-if="recommendationProgressSummary" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-              <div class="p-4 rounded-3xl bg-slate-50">
+              <div class="p-4 rounded-lg bg-slate-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   {{ text.totalRecommendations }}
                 </p>
@@ -688,7 +688,7 @@ onMounted(() => {
                   {{ recommendationProgressSummary.totalRecommendations }}
                 </p>
               </div>
-              <div class="p-4 rounded-3xl bg-emerald-50">
+              <div class="p-4 rounded-lg bg-emerald-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-emerald-700">
                   {{ text.resolved }}
                 </p>
@@ -696,7 +696,7 @@ onMounted(() => {
                   {{ recommendationProgressSummary.resolved }}
                 </p>
               </div>
-              <div class="p-4 rounded-3xl bg-sky-50">
+              <div class="p-4 rounded-lg bg-sky-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-sky-700">
                   {{ text.improving }}
                 </p>
@@ -704,7 +704,7 @@ onMounted(() => {
                   {{ recommendationProgressSummary.improving }}
                 </p>
               </div>
-              <div class="p-4 rounded-3xl bg-amber-50">
+              <div class="p-4 rounded-lg bg-amber-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-amber-700">
                   {{ text.notStarted }}
                 </p>
@@ -712,7 +712,7 @@ onMounted(() => {
                   {{ recommendationProgressSummary.notStarted }}
                 </p>
               </div>
-              <div class="p-4 rounded-3xl bg-rose-50">
+              <div class="p-4 rounded-lg bg-rose-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-rose-700">
                   Regressed
                 </p>
@@ -723,7 +723,7 @@ onMounted(() => {
             </div>
 
             <div v-if="activeSnapshotComparison?.overview" class="grid gap-3 lg:grid-cols-2">
-              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+              <div class="p-4 border rounded-lg border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   {{ text.averageProgress }}
                 </p>
@@ -771,7 +771,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+              <div class="p-4 border rounded-lg border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   {{ text.assessmentAverageShort }}
                 </p>
@@ -819,7 +819,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+              <div class="p-4 border rounded-lg border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   {{ text.quizAttempts }}
                 </p>
@@ -864,7 +864,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+              <div class="p-4 border rounded-lg border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   {{ text.coveredFailedTopics }}
                 </p>
@@ -903,7 +903,7 @@ onMounted(() => {
           </div>
         </section>
 
-        <section class="border rounded-3xl border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <section class="border rounded-lg border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h4 class="text-lg font-semibold text-slate-900">
@@ -929,7 +929,7 @@ onMounted(() => {
               {{ text.askAboutData }}
             </label>
             <textarea id="talk-to-data-input" v-model="talkToDataQuestion" rows="4"
-              class="w-full px-4 py-3 text-sm transition-colors border rounded-2xl resize-y border-slate-200 bg-slate-50 focus:border-oceanBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/20"
+              class="w-full px-4 py-3 text-sm transition-colors border rounded-lg resize-y border-slate-200 bg-slate-50 focus:border-oceanBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/20"
               :placeholder="text.askPlaceholder"></textarea>
 
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -938,7 +938,7 @@ onMounted(() => {
               </p>
 
               <button type="button"
-                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl sm:w-auto bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40 disabled:cursor-not-allowed disabled:opacity-60"
+                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-md sm:w-auto bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40 disabled:cursor-not-allowed disabled:opacity-60"
                 :disabled="talkToDataStatus === 'loading'" @click="askTalkToData()">
                 <Icon name="heroicons:chart-bar-square" class="w-5 h-5" />
                 <span>
@@ -952,14 +952,14 @@ onMounted(() => {
             </div>
 
             <div v-if="talkToDataStatus === 'error'"
-              class="p-4 border rounded-2xl border-rose-200 bg-rose-50 text-rose-800">
+              class="p-4 border rounded-lg border-rose-200 bg-rose-50 text-rose-800">
               <p class="text-sm font-medium">
                 {{ talkToDataError }}
               </p>
             </div>
 
             <div v-else-if="talkToDataStatus === 'success' && talkToDataAnswer"
-              class="p-5 border rounded-2xl border-sky-100 bg-sky-50/70">
+              class="p-5 border rounded-lg border-sky-100 bg-sky-50/70">
               <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
                   {{ text.answerFromData }}
@@ -1017,7 +1017,7 @@ onMounted(() => {
                   {{ recommendation.explanation }}
                 </p>
 
-                <div class="p-4 mt-4 border rounded-2xl border-sky-100 bg-sky-50/80">
+                <div class="p-4 mt-4 border rounded-lg border-sky-100 bg-sky-50/80">
                   <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
                     {{ text.focusWhenRevisiting }}
                   </p>
@@ -1061,13 +1061,13 @@ onMounted(() => {
 
             <div class="flex flex-col gap-3 sm:flex-row">
               <NuxtLink :to="recommendation.revisitPath"
-                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold transition-colors border rounded-xl sm:w-auto border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5">
+                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold transition-colors border rounded-md sm:w-auto border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5">
                 <Icon name="heroicons:play-circle" class="w-5 h-5" />
                 <span>{{ text.openCompetence }}</span>
               </NuxtLink>
 
               <button type="button"
-                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold text-white transition-colors rounded-xl sm:w-auto bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
+                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold text-white transition-colors rounded-md sm:w-auto bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
                 @click="openAiTeacherWithPrompt(recommendation.seedPrompt)">
                 <Icon name="heroicons:sparkles" class="w-5 h-5" />
                 <span>{{ text.studyWithAi }}</span>
@@ -1113,7 +1113,7 @@ onMounted(() => {
               </div>
 
               <div class="grid gap-3 sm:grid-cols-3">
-                <div class="p-4 rounded-2xl bg-slate-50">
+                <div class="p-4 rounded-lg bg-slate-50">
                   <p class="text-xs uppercase text-slate-500">{{ text.progress }}</p>
                   <p class="mt-2 text-sm font-semibold text-slate-900">
                     {{ selectedTopicImprovement.before.progressPercent }}% →
@@ -1125,7 +1125,7 @@ onMounted(() => {
                   </p>
                 </div>
 
-                <div class="p-4 rounded-2xl bg-slate-50">
+                <div class="p-4 rounded-lg bg-slate-50">
                   <p class="text-xs uppercase text-slate-500">{{ text.quizScore }}</p>
                   <p class="mt-2 text-sm font-semibold text-slate-900">
                     {{ formatMetricValue(selectedTopicImprovement.before.assessmentScore, "%") }} →
@@ -1137,7 +1137,7 @@ onMounted(() => {
                   </p>
                 </div>
 
-                <div class="p-4 rounded-2xl bg-slate-50">
+                <div class="p-4 rounded-lg bg-slate-50">
                   <p class="text-xs uppercase text-slate-500">{{ text.quizAttempts }}</p>
                   <p class="mt-2 text-sm font-semibold text-slate-900">
                     {{ selectedTopicImprovement.before.assessmentAttempts }} →
@@ -1151,7 +1151,7 @@ onMounted(() => {
               </div>
 
               <div v-if="selectedTopicImprovement.quizSummarySinceSnapshot"
-                class="p-4 rounded-2xl bg-sky-50 border border-sky-100">
+                class="p-4 rounded-lg bg-sky-50 border border-sky-100">
                 <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
                   {{ text.quizActivitySinceSnapshot }}
                 </p>
