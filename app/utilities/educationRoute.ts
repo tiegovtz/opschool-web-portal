@@ -190,7 +190,7 @@ export const resolveRouteLanguage = (
   fallback: LanguageSupport = "kiswahili",
 ): LanguageSupport =>
   getHubLanguage(
-    educationLevel ?? resolveEducationLevelFromRoute(route),
+    educationLevel ?? resolveEducationLevelFromRoute(route as any),
     route.query.lang ?? fallback,
   );
 

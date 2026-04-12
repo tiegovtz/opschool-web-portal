@@ -377,7 +377,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
 
         <div class="w-full space-y-3 sm:space-y-4 lg:flex-1">
           <div class="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(14rem,0.85fr)]">
-            <article class="p-4 border rounded-3xl border-slate-100 bg-slate-50/80">
+            <article class="p-4 border rounded-lg border-slate-100 bg-slate-50/80">
               <div class="grid gap-4 sm:grid-cols-[minmax(9rem,0.72fr)_minmax(0,1fr)] sm:items-center">
                 <LearningDonutChart
                   :segments="[
@@ -419,11 +419,11 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
             </article>
 
             <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
-              <article class="p-4 border rounded-3xl border-slate-100 bg-slate-50/80">
+              <article class="p-4 border rounded-lg border-slate-100 bg-slate-50/80">
                 <p class="text-xs font-semibold tracking-[0.24em] uppercase text-slate-500">
                   {{ text.subjectProgress }}
                 </p>
-                <p class="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
+                <p class="mt-2 text-lg font-semibold tracking-tight text-slate-900">
                   {{ subject.averageProgress }}%
                 </p>
                 <div class="h-2.5 mt-4 overflow-hidden rounded-full bg-slate-200">
@@ -438,7 +438,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
                 </p>
               </article>
 
-              <article class="p-4 border rounded-3xl border-slate-100 bg-slate-50/80">
+              <article class="p-4 border rounded-lg border-slate-100 bg-slate-50/80">
                 <p class="text-xs font-semibold tracking-[0.24em] uppercase text-slate-500">
                   {{ text.quizAttempts }}
                 </p>
@@ -509,7 +509,7 @@ const getSubjectSegments = (subject: SubjectLearningAnalysis) => [
           <article
             v-for="topic in getSubjectTopicsForDisplay(subject)"
             :key="topic.topicId"
-            class="flex flex-col gap-4 p-4 bg-white border rounded-2xl border-slate-200 lg:flex-row lg:items-center lg:justify-between"
+            class="flex flex-col gap-4 p-4 bg-white border rounded-lg border-slate-200 lg:flex-row lg:items-center lg:justify-between"
           >
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-2">

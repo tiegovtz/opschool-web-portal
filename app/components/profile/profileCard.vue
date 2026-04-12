@@ -571,7 +571,7 @@ const discardChanges = () => {
       </div>
     </div>
     <div
-      class="flex flex-col w-full mt-5 gap-3 p-5 bg-white border shadow-sm rounded-3xl border-slate-200 md:flex-row md:items-center md:justify-between"
+      class="flex flex-col w-full mt-5 gap-3 p-5 bg-white border shadow-sm rounded-md border-slate-200 md:flex-row md:items-center md:justify-between"
     >
       <div>
         <p
@@ -589,7 +589,7 @@ const discardChanges = () => {
 
       <NuxtLink
         to="/profile/learning-statistics"
-        class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl bg-oceanBlue hover:bg-deepBlue"
+        class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-md bg-oceanBlue hover:bg-deepBlue"
       >
         <Icon
           name="heroicons:chart-bar-square-20-solid"

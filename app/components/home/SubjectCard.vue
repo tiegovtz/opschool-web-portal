@@ -34,7 +34,7 @@ const educationLevelBadge = computed(() => {
     case "pre-primary":
       return primaryContentLanguage.value === 'english' ? "Pre-Primary" : "Elimu ya Awali";
     case "primary":
-      return  primaryContentLanguage.value === 'english' ?  "Primary" : "Elimu ya Msingi";
+      return primaryContentLanguage.value === 'english' ? "Primary" : "Elimu ya Msingi";
     case "lower secondary":
       return "Lower Secondary";
     case "upper secondary":
@@ -90,6 +90,13 @@ const setSubjectToView = () => {
     ]">
       <NuxtImg :src="subjectImage" loading="lazy" tabindex="0" :alt="altText ?? `Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110" />
+
+      <div class="absolute right-0 -bottom-0">
+        <div
+          class="flex items-center justify-center w-auto h-8 duration-500 ease-in-out bg-oceanBlue group-hover:bg-deepBlue rounded-tl-md transition-color px-2">
+          <p class="font-medium text-white text-extraSmall">{{ educationLevelBadge }}</p>
+        </div>
+      </div>
     </div>
 
     <!-- content -->
@@ -116,22 +123,19 @@ const setSubjectToView = () => {
       </p>
 
       <!-- metrics  and level-->
-       <div class="flex items-center justify-between">
-         <small
-          v-if="educationLevelBadge"
-          class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white"
-        >
+      <div class="flex items-center justify-end w-full whitespace-nowrap text-oceanBlue group-hover:text-white">
+        <!-- Education Level -->
+        <!-- <small v-if="educationLevelBadge"
+          class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white">
           {{ educationLevelBadge }}
+        </small> -->
+
+        <!-- Total Views -->
+        <small class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white">
+          <Icon name="flowbite:users-outline" class="text-medium" aria-hidden="true" />
+          <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
         </small>
-
-
-      <small
-        class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white"
-      >
-        <Icon name="flowbite:users-outline" class="text-medium" aria-hidden="true" />
-        <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
-      </small>
-       </div>
+      </div>
     </div>
   </button>
   <!-- Is Logged In = False -->
