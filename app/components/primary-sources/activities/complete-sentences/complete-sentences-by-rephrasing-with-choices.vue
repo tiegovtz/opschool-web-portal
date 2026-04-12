@@ -7,6 +7,7 @@ import Input from "@/components/ui/inputs/input.vue";
 import { Button } from "~/components/ui/button";
 import { shuffle } from "~/utilities/utils";
 import { cn } from "~/lib/utils";
+import { AnswerChecker } from "~/lib/utils/answer-checker";
 import {
   calculateBlankWidth,
   parseQuestionSegments,
@@ -18,6 +19,8 @@ interface QuestionItem {
   question: string;
   answer: string | string[];
 }
+
+const answerChecker = new AnswerChecker();
 
 interface QuestionsProps {
   title: string;
@@ -68,9 +71,24 @@ const allQuestionsAnswered = computed(() =>
   shuffledQuestions.value.every((_, index) => (answers.value[index] || "").trim() !== ""),
 );
 
-const getCorrectAnswer = (questionIndex: number) => {
+/** Accepted forms for one question (`/` in CMS = alternatives, same as non-choices rephrasing). */
+const getAcceptedAnswers = (questionIndex: number): string[] => {
   const rawAnswer = shuffledQuestions.value[questionIndex]?.answer;
-  return Array.isArray(rawAnswer) ? String(rawAnswer[0] ?? "") : String(rawAnswer ?? "");
+  if (Array.isArray(rawAnswer)) {
+    return rawAnswer.map((a) => String(a ?? "").trim()).filter(Boolean);
+  }
+  const s = String(rawAnswer ?? "").trim();
+  if (!s) return [];
+  return s
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean);
+};
+
+/** Human-readable correct answer for results (`wrong-correct-answers`). */
+const getCorrectAnswerLabel = (questionIndex: number) => {
+  const forms = getAcceptedAnswers(questionIndex);
+  return forms.length ? forms.join(" or ") : "";
 };
 
 const handleInputChange = (questionIndex: number, value: string | number) => {
@@ -81,9 +99,13 @@ const handleInputChange = (questionIndex: number, value: string | number) => {
 };
 
 const checkAnswer = (questionIndex: number) => {
-  const userAnswer = (answers.value[questionIndex] || "").toLowerCase().trim();
-  const correctAnswer = getCorrectAnswer(questionIndex).toLowerCase().trim();
-  return userAnswer === correctAnswer;
+  const userAnswer = (answers.value[questionIndex] || "").trim();
+  const accepted = getAcceptedAnswers(questionIndex);
+  if (!accepted.length) return false;
+  return answerChecker.checkAnswer(userAnswer, {
+    acceptedAnswers: accepted,
+    strictMode: true,
+  }).isCorrect;
 };
 
 const handleCheckAllAnswers = () => {
@@ -253,11 +275,11 @@ const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
             <div class="mt-2 grid grid-cols-2 gap-4">
               <div>
                 <p class="text-sm text-gray-500">{{ ui.yourAnswer }}</p>
-                <p :class="{ 'text-red-600': !checkAnswer(answers[idx] || '', idx) }">{{ answers[idx] || "(no answer)" }}</p>
+                <p :class="{ 'text-red-600': !checkAnswer(idx) }">{{ answers[idx] || "(no answer)" }}</p>
               </div>
               <div v-if="props.feedback === 'wrong-correct-answers'">
                 <p class="text-sm text-gray-500">{{ ui.correctAnswer }}</p>
-                <p class="text-green-600">{{ question.answer }}</p>
+                <p class="text-green-600">{{ getCorrectAnswerLabel(idx) }}</p>
               </div>
             </div>
           </div>

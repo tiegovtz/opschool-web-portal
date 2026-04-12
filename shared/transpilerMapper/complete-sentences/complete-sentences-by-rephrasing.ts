@@ -43,17 +43,6 @@ const extractServerOptions = (serverQuestions: ActivityTranspilerProps["serverQu
     ),
   );
 
-const extractAnswerFallbackOptions = (
-  serverQuestions: ActivityTranspilerProps["serverQuestions"],
-) =>
-  Array.from(
-    new Set(
-      serverQuestions
-        .map((question) => (question.textTwo ?? "").trim())
-        .filter((value) => value.length > 0),
-    ),
-  );
-
 export const completeSentencesByRephrasingPropsTranspiler = (
   params: ActivityTranspilerProps,
   examMode?: boolean,
@@ -102,7 +91,15 @@ export const completeSentencesByRephrasingPropsTranspiler = (
       image: q.path ? getImageUrl(q.path) : null,
       answer:
         algorithm === ActivityType.CompleteSentenceByRephrasingWithChoices
-          ? q.textTwo || ""
+          ? (() => {
+              const rawAnswer = q.textTwo || "";
+              if (!rawAnswer) return [];
+              return rawAnswer
+                .split("/")
+                .map((ans) => normalizeAnswerToken(ans))
+                .map((ans) => ans.trim())
+                .filter((ans) => ans.length > 0);
+            })()
           : algorithm === ActivityType.CompleteSentencesByRephrasing
             ? (() => {
                 const rawAnswer = q.textTwo || "";
@@ -126,13 +123,13 @@ export const completeSentencesByRephrasingPropsTranspiler = (
             algorithm === ActivityType.CompleteSentenceByRephrasingWithChoices
               ? (() => {
                   const serverOptions = extractServerOptions(serverQuestions);
-                  const fallbackOptions = extractAnswerFallbackOptions(serverQuestions);
+                  // Do not fall back to correct answers (textTwo); that leaks solutions in the word bank.
                   const options =
                     serverOptions.length > 0
                       ? serverOptions
                       : titleOptions.length > 0
                         ? titleOptions
-                        : fallbackOptions;
+                        : [];
                   return examMode
                     ? shuffle(options.map((option: string) => option.toLowerCase().trim()))
                     : shuffle(options);
