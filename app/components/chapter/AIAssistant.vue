@@ -238,11 +238,12 @@ const props = defineProps({
   topic: { type: String, default: "" },
   chapterNo: { type: Number, default: null },
   audios: { type: Array, default: () => [] },
+  topicLanguage:{type:String,default:'English'}
 });
 const contentLayoutLanguage = useContentLayoutLanguage(() => props.level);
-const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili" || props.topicLanguage.toLowerCase().trim() === "kiswahili" );
 const subjectUi = computed(() => ({
-  launcherTitle: isSwahili.value ? "Uliza Mwalimu wa Somo wa AI" : "Ask AI Subject Teacher",
+  launcherTitle: isSwahili.value  ? "Uliza Mwalimu wa Somo wa AI" : "Ask AI Subject Teacher",
   title: isSwahili.value ? "Mwalimu wa Somo wa AI" : "AI Subject Teacher",
   voiceSettings: isSwahili.value ? "Mipangilio ya Sauti" : "Voice Settings",
   voiceSettingsHelp: isSwahili.value ? "Chagua sauti ya majibu ya sauti" : "Select voice for audio responses",

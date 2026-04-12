@@ -29,6 +29,7 @@ const safeDecode = (value: unknown) => {
   }
 };
 const topicId = String(route.params.topicId ?? "");
+const topicLanguageData = ref<{ name: string, _id: string }>()
 const topicTitle = safeDecode(route.params.topic).replaceAll("-", " ");
 const topicStandard = safeDecode(route.params.subject);
 const topicLevel = safeDecode(route.params.level);
@@ -407,11 +408,11 @@ const getQNTopicChapter = async (chapterId: string) => {
   }
 };
 
-// Fetch chapters
+// Fetch topic information
 try {
   const { data: response, status } = await fetchAsyncData(
     `chapters-${topicId}`,
-    () => $fetch(apiDocs.chapters.getByTopicId.replaceAll('{topicId}', topicId as string), {
+    () => $fetch(apiDocs.topics.getTopicId.replaceAll(':id', topicId as string), {
       headers: {
         Authorization: `Bearer ${signInAccessToken.value}`,
       },
@@ -420,9 +421,10 @@ try {
 
   if (response) {
     chapters.status = status.value;
-    chapters.list = (response.value as any[]) || [];
+    chapters.list = (response.value.chapters as any[]) || [];
     const firstChapterId = chapters.list[0]?._id;
     chapters.currentChapterId = firstChapterId || null;
+    topicLanguageData.value = (response.value.languageData as any)
 
     if (firstChapterId && chapters.list.length) {
       const firstChapter = chapters.list[0];
@@ -476,7 +478,7 @@ onMounted(async () => {
 
 const updateInteractiveVideoLinks = async () => {
   if (!import.meta.client || !notesContainer.value) return;
-  
+
   const container = notesContainer.value as HTMLElement;
   if (!signInAccessToken.value || !container) return;
   const links = Array.from(
@@ -935,11 +937,7 @@ definePageMeta({
         isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
       ]">
         <div class="mx-auto w-full max-w-7xl p-3 md:p-6">
-          <Activity
-            v-if="activePopupActivityId"
-            :key="activePopupActivityId"
-            :activity-id="activePopupActivityId"
-          />
+          <Activity v-if="activePopupActivityId" :key="activePopupActivityId" :activity-id="activePopupActivityId" />
         </div>
       </div>
       <!-- full screen controls -->
@@ -957,8 +955,7 @@ definePageMeta({
       <!-- Chapter Questions -->
       <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :chapter-id="chapters.notes?._id ?? chapters.currentChapterId" :change-chapter="changeChapter"
-        :topic-id="chapters.notes?.topic?._id ?? topicId"
-        :subject-id="chapters.notes?.subject?._id ?? null"
+        :topic-id="chapters.notes?.topic?._id ?? topicId" :subject-id="chapters.notes?.subject?._id ?? null"
         :level-id="chapters.notes?.level?._id ?? ((userToken as any)?.value?.level?._id ?? null)"
         :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
         @emit-quiz-score="updateChapterProgress" />
@@ -972,8 +969,9 @@ definePageMeta({
 
       <!-- Error state -->
       <div v-else-if="chapters.status == 'error'" class="flex flex-col items-center justify-center w-full gap-2 error">
-        <MessagePageNotFound message="Error while loading chapter"
-          subMessage="Make sure you are connected to the stable internet or try to reload the page" />
+        <MessagePageNotFound
+          :message="topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ? `Error while loading chapter` : `Hitilafu wakati wa kupakia chapo`"
+          :subMessage="topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ? `Make sure you are connected to the stable internet or try to reload the page` : `Hakikisha upo kwa mtandao`" />
       </div>
 
       <!-- Success state -->
@@ -986,11 +984,10 @@ definePageMeta({
           </div>
         </div>
 
-        <div
-          v-else-if="chapters.notesStatus == 'empty'"
-          class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll"
-        >
-          <MessageTopicNotFound message="No content available" />
+        <div v-else-if="chapters.notesStatus == 'empty'"
+          class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
+          <MessageTopicNotFound
+            :message="topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ? `No content available` : `Hakuna maudhui yaliyopatikana`" />
         </div>
 
         <!-- Notes loaded successfully -->
@@ -1000,21 +997,14 @@ definePageMeta({
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex w-full min-w-0 items-center justify-between gap-2">
             <div class="flex min-w-0 flex-1 items-center gap-2">
-              <button
-                type="button"
+              <button type="button"
                 class="inline-flex shrink-0 items-center justify-center rounded-full border-2 border-oceanBlue p-2 text-oceanBlue transition-colors hover:bg-oceanBlue/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/50"
-                aria-label="Back to interactive contents"
-                @click="goToPreviousPage"
-              >
+                aria-label="Back to interactive contents" @click="goToPreviousPage">
                 <Icon name="vaadin:arrow-backward" size="22" class="text-oceanBlue" aria-hidden="true" />
               </button>
 
-              <p
-                :aria-label="`Competence header, ${chapters.notes?.name}`"
-                role="heading"
-                class="min-w-0 flex-1 truncate font-medium text-medium"
-                v-if="chapters.status === 'success'"
-              >
+              <p :aria-label="`Competence header, ${chapters.notes?.name}`" role="heading"
+                class="min-w-0 flex-1 truncate font-medium text-medium" v-if="chapters.status === 'success'">
                 {{ chapters.notes?.name }}
               </p>
             </div>
@@ -1034,9 +1024,13 @@ definePageMeta({
             </div>
 
             <p id="notes-extra-details" class="sr-only">
-              These notes include at least one video, two-dimensional images such as GIFs,
+              {{ topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ?
+                `These notes include at least one video, two-dimensional images such as GIFs,
               interactive gamified experiments, a three-dimensional model, and a short quiz
-              at the end of each competency.
+              at the end of each competency.` : `Vidokezo hivi vinajumlisha video moja, picha mbili ya kawaida kama
+              GIFs,
+              mazoezi ya kufanikiwa, modeli ya tatu ya kiwango, na mtihani mdogo
+              mwisho wa kila uwezo.` }}
             </p>
 
             <!-- Chapter Button - (Quiz) -->
@@ -1045,7 +1039,7 @@ definePageMeta({
               <button
                 class="h-10 px-4 text-white uppercase transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
                 @click="chapters.isAttemptingQuizes = true">
-                Quiz
+                {{ topicLanguageData?.name.toLowerCase().trim() === 'kiswahili' ? 'Zoezi' : 'Quiz' }}
               </button>
             </div>
 
@@ -1056,7 +1050,8 @@ definePageMeta({
                 'flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue',
                 { 'opacity-0': chapters.number == chapters.list?.length }]">
                 <p class="flex gap-2 capitalize">
-                  Next
+                  {{ topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ?
+                    'Next' : 'Inayofuata' }}
                 </p>
                 <div class="flex items-center justify-center w-4 h-4 bg-white rounded-full animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
@@ -1072,7 +1067,8 @@ definePageMeta({
                   <Icon name="weui:arrow-filled" size="20" class="transform rotate-180 text-oceanBlue" />
                 </div>
                 <p class="flex gap-2 capitalize">
-                  Previous
+                  {{ topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ?
+                    'Previous' : 'Awali' }}
                 </p>
               </button>
             </div>
@@ -1082,14 +1078,16 @@ definePageMeta({
         <!-- Notes failed to load -->
         <div aria-live="polite" aria-label="error,activity not found" v-else
           class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
-          <MessageTopicNotFound message="This activity currently not available" />
+          <MessageTopicNotFound
+            :message="topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ? 'This activity currently not available' : 'Shughuli hii kwa sasa haipatikan'" />
         </div>
 
         <!-- Sidebar w-1/4 -->
         <div tabindex="0"
           class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2 lg:static bg-white lg:scroll-height lg:overflow-y-scroll">
           <div class="flex items-center justify-between mb-4">
-            <h1 aria-label="Activity list" class="pt-5 pl-4 font-medium  text-medium">{{ contentLayoutLanguage ==='english' ? 'Learning contents' :'Maudhui ya ujifunzaji'}}</h1>
+            <h1 aria-label="Activity list" class="pt-5 pl-4 font-medium  text-medium">{{ contentLayoutLanguage
+              === 'english' ? 'Learning contents' : 'Maudhui ya ujifunzaji' }}</h1>
             <!-- toggle menu -->
             <div
               class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"
@@ -1106,13 +1104,14 @@ definePageMeta({
 
       <!-- Default/idle state -->
       <div v-else class="idle">
-        <p>Try to reload the page, something went wrong</p>
+        <p>{{ topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ? `Try
+          to reload the page, something went wrong` : ` Tafadhali pazia upya ukurasa, kuna hitilafu` }}</p>
       </div>
     </section>
 
     <!-- AI Assistant -->
     <!-- Use chapters.notes._id as primary source since it's the actual ID from API response -->
-    <AIAssistant v-if="chapters.notes?._id" :chapter-id="chapters.notes._id"
+    <AIAssistant v-if="chapters.notes?._id" :chapter-id="chapters.notes._id" :topic-language="topicLanguageData?.name"
       :chapter-name="chapters.notes?.name || 'this competence'" :subject="topicStandard" :level="topicLevel"
       :topic="topicTitle" :chapter-no="chapters.notes?.chapterNo" :audios="chapters.notes?.audios || []" />
 
