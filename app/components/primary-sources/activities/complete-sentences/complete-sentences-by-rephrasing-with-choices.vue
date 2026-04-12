@@ -8,7 +8,6 @@ import { Button } from "~/components/ui/button";
 import { AnswerChecker } from "~/lib/utils/answer-checker";
 import { shuffle } from "~/utilities/utils";
 import { cn } from "~/lib/utils";
-import { AnswerChecker } from "~/lib/utils/answer-checker";
 import {
   calculateBlankWidth,
   parseQuestionSegments,
@@ -21,7 +20,7 @@ interface QuestionItem {
   answer: string | string[];
 }
 
-const answerChecker = new AnswerChecker();
+const answerNewChecker = new AnswerChecker();
 
 interface QuestionsProps {
   title: string;
@@ -111,10 +110,10 @@ const handleInputChange = (questionIndex: number, blankIndex: number, value: str
 };
 
 const checkAnswer = (questionIndex: number) => {
-  const userAnswer = (answers.value[questionIndex] || "").trim();
+  const userAnswer = (answers.value[questionIndex] || "").map((ans) => String(ans ?? "").trim()).filter(Boolean).join(", ");
   const accepted = getAcceptedAnswers(questionIndex);
   if (!accepted.length) return false;
-  return answerChecker.checkAnswer(userAnswer, {
+  return answerNewChecker.checkAnswer(userAnswer, {
     acceptedAnswers: accepted,
     strictMode: true,
   }).isCorrect;
@@ -180,7 +179,7 @@ const formatUserAnswer = (questionIndex: number) => {
   return userAnswers.length ? userAnswers.join(", ") : "(no answer)";
 };
 
-const formatCorrectAnswer = (questionIndex: number) => getCorrectAnswers(questionIndex).join(", ");
+// const formatCorrectAnswer = (questionIndex: number) => getCorrectAnswerLabel(questionIndex).join(", ");
 </script>
 
 <template>
