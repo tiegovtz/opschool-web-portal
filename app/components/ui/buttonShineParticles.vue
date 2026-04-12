@@ -1,17 +1,27 @@
 <script setup lang="ts">
-withDefaults(defineProps<{label?:string}>(),{
-    label:'click me'
-})
+const props = withDefaults(defineProps<{
+    label?: string
+    ariaLabel?: string
+    ariaDescribedby?: string
+}>(), {
+    label: 'click me',
+    ariaLabel: undefined,
+    ariaDescribedby: undefined,
+});
 
+const emit = defineEmits<{
+    click: [event: MouseEvent]
+}>();
 </script>
 
 <template>
-    <button type="button" class="tie-cta-button cursor-pointer relative inline-flex items-center overflow-hidden border-none outline-none rounded-full py-4 px-9">
+    <button type="button" class="tie-cta-button cursor-pointer relative inline-flex items-center overflow-hidden border-none rounded-full py-4 px-9 focus-visible:outline focus-visible:outline-2 focus-visible:outline-oceanBlue focus-visible:ring-4 focus-visible:ring-oceanBlue/30 focus-visible:ring-offset-4 focus-visible:ring-offset-white"
+        :aria-label="props.ariaLabel ?? props.label" :aria-describedby="props.ariaDescribedby" @click="emit('click', $event)">
         <span class="tie-cta-fold" aria-hidden="true" />
         <span class="tie-cta-points" aria-hidden="true">
-             <span v-for="(_,index) in Array.from({ length: 10 })" :key="`${index}-${label.toLowerCase().split('').join('-')}`" class="tie-cta-point" />
+             <span v-for="(_,index) in Array.from({ length: 10 })" :key="`${index}-${props.label.toLowerCase().split('').join('-')}`" class="tie-cta-point" />
         </span>
-        <span class="tie-cta-inner">{{ label }}</span>
+        <span class="tie-cta-inner">{{ props.label }}</span>
     </button>
 </template>
 

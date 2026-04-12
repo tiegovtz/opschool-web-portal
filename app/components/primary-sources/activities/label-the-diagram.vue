@@ -31,6 +31,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const answerChecker = new AnswerChecker();
 const { playSound } = useSoundEffects();
 
@@ -220,7 +221,7 @@ const resetActivity = () => {
 
       <div v-else class="flex items-center justify-end gap-4">
         <Button :disabled="!areAllRequiredInputsFilled || answersChecked" @click="handleCheckAnswer">
-          Check Answer
+          {{ ui.checkAnswer }}
         </Button>
       </div>
     </div>

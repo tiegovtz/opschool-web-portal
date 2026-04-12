@@ -21,6 +21,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const score = ref(0);
@@ -143,7 +144,7 @@ const containerStyle = computed(() => ({
     </div>
 
     <div v-if="!showResults && allAnswered" class="p-4 flex justify-end">
-      <Button :onClick="checkAnswers" variant="brand-lemon">Check Answers</Button>
+      <Button :onClick="checkAnswers" variant="brand-lemon">{{ ui.checkAnswers }}</Button>
     </div>
 
     <div v-if="showResults" class="p-4">

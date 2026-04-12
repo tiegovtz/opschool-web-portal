@@ -15,21 +15,17 @@ export type QuestionSegment = {
  * @returns Array of segments with their types
  *
  * @example
- * parseQuestionSegments("The answer is $x + y$ and __ is _correct")
- * // Returns:
- * // [
- * //   { type: "text", content: "The answer is $x + y$ and ", index: 0 },
- * //   { type: "blank", content: "__", index: 1 },
- * //   { type: "text", content: " is ", index: 2 },
- * //   { type: "highlighted", content: "correct", index: 3 }
- * // ]
+ * // Leading `_word` (space + underscore + word) is highlighted; only 2+ underscores is a blank.
+ * parseQuestionSegments("gari _dogo ___")
+ * // text "gari", highlighted "dogo", blank "___"
  */
 export function parseQuestionSegments(question: string): QuestionSegment[] {
   const segments: QuestionSegment[] = [];
   let currentIndex = 0;
   let segmentIndex = 0;
 
-  // Use regex to find blanks and highlighted text
+  // Blanks: two or more consecutive underscores only. A single `_` before a word is reserved for
+  // the highlight pattern `\s_(?!_)(\S+)` (e.g. `_dogo ___` → box around dogo + dotted blank).
   const blankRegex = /_{2,}/g;
   const highlightRegex = /\s_(?!_)(\S+)/g;
 
@@ -129,11 +125,11 @@ export function calculateBlankWidth(
   baseWidth: number;
   widthMultiplier: number;
 } {
-  const isTwoUnderscores = underscoreCount === 2;
+  const isSingleOrDoubleUnderscore = underscoreCount <= 2;
   let baseWidth;
   let widthMultiplier;
 
-  if (isTwoUnderscores) {
+  if (isSingleOrDoubleUnderscore) {
     baseWidth = 60; // Half of the original base width
     widthMultiplier = 1;
   } else {
@@ -146,8 +142,24 @@ export function calculateBlankWidth(
 
   return {
     calculatedWidth,
-    isTwoUnderscores,
+    isTwoUnderscores: isSingleOrDoubleUnderscore,
     baseWidth,
     widthMultiplier,
   };
+}
+
+/** True when a `cua(...)` value has a non-empty digit part in every column. */
+export function isCompoundCuaAnswerFilled(value: string): boolean {
+  const trimmed = (value ?? "").trim();
+  const m = trimmed.match(/^cua\s*\(\s*(.*?)\s*\)\s*$/i);
+  if (!m) return trimmed.length > 0;
+  const inner = m[1] ?? "";
+  const sep = inner.includes("|") ? "|" : ",";
+  const parts = inner.split(sep).map((p) => p.trim());
+  const nonEmpty = parts.filter((p) => p.length > 0);
+  if (nonEmpty.length === 0) return false;
+  return nonEmpty.every((part) => {
+    const vm = part.match(/^(\d+)([a-zA-Z]*)$/);
+    return vm != null && vm[1].length > 0;
+  });
 }

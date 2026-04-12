@@ -952,6 +952,16 @@ const mouseOut = () => {
               localizedContent.notAvailable
             "
             :type="result?.type || 'topic'"
+            :education-level="
+              result?.educationLevel ||
+              result?.educationLevel?.name ||
+              result?.level?.educationLevel ||
+              result?.level?.educationLevel?.name ||
+              result?.level?.name ||
+              result?.level
+            "
+            :search-education-level="props.educationLevel"
+            :language="props.language"
           />
         </div>
       </div>

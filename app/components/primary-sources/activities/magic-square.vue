@@ -27,6 +27,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 
 const userAnswers = ref<Record<number, string[][]>>({});
 const showResults = ref(false);
@@ -230,7 +231,7 @@ const allCellsFilled = computed(() =>
           height="18"
           class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
         />
-        Check Answers
+        {{ ui.checkAnswers }}
       </Button>
     </div>
 

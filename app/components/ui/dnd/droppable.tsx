@@ -1,7 +1,6 @@
-import { defineComponent, computed } from "vue";
-import { useDroppable } from "@dnd-kit/vue";
+import { computed, defineComponent, inject } from "vue";
 import { cn } from "~/utilities/utils";
-
+import { dndContextKey, type DndContextValue } from "~/components/layout/dnd-context";
 
 export default defineComponent({
   name: "Droppable",
@@ -24,11 +23,11 @@ export default defineComponent({
     },
   },
   setup(props, { slots, attrs }) {
-    const { droppable, isDropTarget } = useDroppable({
-      id: props.id,
-      data: props.data,
-      disabled: props.disabled,
-    });
+    const dndContext = inject<DndContextValue | null>(dndContextKey, null);
+    const droppableId = computed(() => String(props.id));
+    const isDropTarget = computed(
+      () => !props.disabled && dndContext?.activeId.value !== null,
+    );
 
     const className = computed(() =>
       cn(
@@ -37,12 +36,28 @@ export default defineComponent({
       )
     );
 
+    const handleDragOver = (event: DragEvent) => {
+      if (props.disabled) return;
+      event.preventDefault();
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "move";
+      }
+    };
+
+    const handleDrop = (event: DragEvent) => {
+      if (props.disabled) return;
+      event.preventDefault();
+      const draggedId = event.dataTransfer?.getData("text/plain") || undefined;
+      dndContext?.completeDrop(droppableId.value, draggedId);
+    };
+
     return () => (
       <div
-        {...droppable.value} 
-        id={String(props.id)}
-        class={className.value}
         {...attrs}
+        id={droppableId.value}
+        class={className.value}
+        onDragover={handleDragOver}
+        onDrop={handleDrop}
       >
         {slots.default?.()}
       </div>

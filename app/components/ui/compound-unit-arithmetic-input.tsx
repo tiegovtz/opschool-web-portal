@@ -74,26 +74,36 @@ export default defineComponent({
       if (props.isChecked || props.colorScheme === "yellow") {
         return { border: "border-lemon-500", bg: "bg-lemon-50" };
       }
-      return { border: "border-picton-blue-500", bg: "bg-transparent" };
+      return { border: "border-picton-blue-500", bg: "bg-white" };
     });
 
     return () => (
-      <div class="flex gap-2 items-end my-2">
+      <div class="compound-unit-arithmetic-input flex flex-row flex-wrap items-end justify-start gap-2 sm:gap-3">
         {Array.from({ length: props.columnCount }).map((_, index) => (
-          <div key={`col-${index}`} class="flex flex-col items-start">
-            {units.value[index] && (
-              <span class="font-medium ml-1">{units.value[index]}</span>
+          <div
+            key={`col-${index}`}
+            class="flex flex-col items-center gap-1 min-w-[4.25rem]"
+          >
+            {units.value[index] ? (
+              <span class="text-sm font-semibold text-picton-blue-700 font-sans tracking-tight">
+                {units.value[index]}
+              </span>
+            ) : (
+              <span class="text-sm font-sans min-h-[1.25rem]" aria-hidden="true">
+                &nbsp;
+              </span>
             )}
 
             <Input
               type="text"
+              inputmode="numeric"
               modelValue={userValues.value[index] || ""}
               onUpdate:modelValue={(val: string) =>
                 handleChange(index, val)
               }
               disabled={props.disabled}
               class={cn(
-                "w-20 h-10 px-2 text-center border-2 rounded",
+                "w-[4.25rem] h-10 px-2 text-center text-base font-sans border-2 rounded-md shadow-sm",
                 colors.value.border,
                 colors.value.bg,
                 {

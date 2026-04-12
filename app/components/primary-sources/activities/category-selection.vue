@@ -8,6 +8,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const route = useRoute();
 const curriculum = computed(() => String(route.query.curc || "").trim());
 
@@ -51,7 +52,7 @@ const categories = [
       <div class="mb-4 flex items-center justify-between">
         <Button href="/" class="w-fit xl:hidden">
           <Icon icon="lucide:arrow-left" width="16" height="16" class="mr-1" />
-          Back
+          {{ ui.back }}
         </Button>
 
         <div

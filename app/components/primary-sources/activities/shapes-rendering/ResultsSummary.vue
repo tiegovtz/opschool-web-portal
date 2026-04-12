@@ -13,6 +13,7 @@ type ResultsSummaryProps = {
 };
 
 const props = defineProps<ResultsSummaryProps>();
+const ui = useActivityUiText();
 </script>
 
 <template>
@@ -31,7 +32,7 @@ const props = defineProps<ResultsSummaryProps>();
         "
       >
         <div class="flex items-center justify-between mb-2">
-          <p class="font-medium text-lg">Question {{ idx + 1 }}</p>
+          <p class="font-medium text-lg">{{ ui.formatQuestion(idx + 1) }}</p>
           <div
             :class="
               cn(
@@ -58,7 +59,7 @@ const props = defineProps<ResultsSummaryProps>();
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
           <div>
-            <p class="text-sm font-medium mb-1 text-gray-500">Correct Shape:</p>
+            <p class="text-sm font-medium mb-1 text-gray-500">{{ ui.correctShape }}</p>
             <div class="flex flex-col items-center">
               <canvas
                 :ref="
@@ -82,7 +83,7 @@ const props = defineProps<ResultsSummaryProps>();
               (props.answers[idx] || '')
             "
           >
-            <p class="text-sm font-medium mb-1 text-gray-500">Your Answer:</p>
+            <p class="text-sm font-medium mb-1 text-gray-500">{{ ui.yourAnswer }}</p>
             <div class="flex flex-col items-center">
               <div class="border border-red-300 rounded-md h-[200px] w-[200px] flex items-center justify-center bg-white">
                 <span class="font-medium text-red-700 text-lg">

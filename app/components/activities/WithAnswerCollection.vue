@@ -11,7 +11,7 @@ import { computed } from "vue"
 const props = defineProps({
   component: { type: Object, required: true },
 
-  activityId: Number,
+  activityId: [String, Number],
   studentProfileId: Number,
   parentAccountId: Number,
   sessionId: Number,

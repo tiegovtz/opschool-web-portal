@@ -39,6 +39,7 @@ type Question = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 
 const { objects, loading, error, refetch } = useObjects({
   type: props.questions.type || null,
@@ -278,7 +279,7 @@ const handleResultsDialogChange = (open: boolean) => {
                     })
                   "
                 >
-                  {{ answerFeedback === "correct" ? "Correct!" : "Incorrect!" }}
+                  {{ answerFeedback === "correct" ? `${ui.correct}!` : `${ui.incorrect}!` }}
                 </p>
               </div>
             </div>
@@ -354,12 +355,12 @@ const handleResultsDialogChange = (open: boolean) => {
               </p>
 
               <div v-if="props.feedback === 'wrong-correct-answers'" class="space-y-1 text-sm">
-                <div><strong>Correct Definition:</strong> {{ question.definition }}</div>
+                <div><strong>{{ ui.correctDefinition }}</strong> {{ question.definition }}</div>
                 <div
                   v-if="userAnswers.find((item) => item.word === question.word) && !userAnswers.find((item) => item.word === question.word)?.isCorrect"
                   class="text-red-600"
                 >
-                  <strong>Your Answer:</strong>
+                  <strong>{{ ui.yourAnswer }}</strong>
                   {{ userAnswers.find((item) => item.word === question.word)?.selectedDefinition }}
                 </div>
                 <div

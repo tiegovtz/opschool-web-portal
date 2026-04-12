@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import apiDocs from "~/utilities/apiDocs";
 import questionsAnswers from "./questionsAnswers.vue";
-import type { Question } from "~/types/question.interface";
+import type { Choice, Question } from "~/types/question.interface";
 import type {
   QuizAttemptPayload,
   QuizAttemptSessionPayload,
@@ -12,6 +12,7 @@ import {
   getChapterQuestionType,
 } from "~/utilities/learnerProgressHistory";
 import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
+import { generateSuggestion } from "~/utilities/linkfy.helper";
 
 // define Props
 const props = defineProps({
@@ -249,9 +250,9 @@ watch(
           const sessionId =
             sessionResult.status === "fulfilled"
               ? sessionResult.value?.sessionId ||
-                sessionResult.value?._id ||
-                sessionResult.value?.id ||
-                null
+              sessionResult.value?._id ||
+              sessionResult.value?.id ||
+              null
               : null;
 
           const completedAttempts = questionAttempts.value.filter(
@@ -314,7 +315,11 @@ const isDragAndDropQuestion = (questionType: string) =>
 const isDragAnswerCorrectAt = (questionIndex: number, blankIndex: number) =>
   getBlankStatusForQuestion(questionIndex)[blankIndex] ?? false;
 
-
+const getChoiceReason = (question: Question, userAnswer: string): string => {
+  return question.choices.find(
+    (choice: Choice) => choice.value.trim().toLowerCase() === userAnswer.trim().toLowerCase()
+  )?.description || '';
+};
 </script>
 
 <template>
@@ -362,8 +367,8 @@ const isDragAnswerCorrectAt = (questionIndex: number, blankIndex: number) =>
         </div>
 
         <!-- Question with Answers -->
-        <div class="flex items-center w-full gap-20 my-2" v-for="(question, index) in shuffledQuestions" :key="index">
-          <div class="flex w-full rounded-lg shadow-[0px_0px_8px_3px_rgba(0,0,0,0.05)] p-4">
+        <div class="flex flex-col w-full rounded-lg my-4 shadow-[0px_0px_8px_3px_rgba(0,0,0,0.05)]" v-for="(question, index) in shuffledQuestions" :key="index">
+          <div class="flex w-full rounded-lg  p-4">
             <span class="flex rounded-full bg-[#2b7efe] text-white h-6 w-6 p-2 items-center justify-center text-sm">{{
               index + 1 }}</span>
             <div class="pl-4 text-justify flex-1">
@@ -381,48 +386,42 @@ const isDragAnswerCorrectAt = (questionIndex: number, blankIndex: number) =>
                 <b class="text-black">Your choice:
                 </b>
                 <template v-if="question.questionType === 'drag_and_drop'">
-                  <span
-                    v-for="(answerPart, blankIndex) in getDragAnswerParts(quizAttempt.clickedAnswer[index] ?? '')"
-                    :key="`${index}-${blankIndex}-${answerPart}`"
-                    class="mr-2 capitalize"
-                    :class="isDragAnswerCorrectAt(index, blankIndex)
+                  <span v-for="(answerPart, blankIndex) in getDragAnswerParts(quizAttempt.clickedAnswer[index] ?? '')"
+                    :key="`${index}-${blankIndex}-${answerPart}`" class="mr-2 capitalize" :class="isDragAnswerCorrectAt(index, blankIndex)
                       ? 'text-normalGreener font-medium'
-                      : 'text-red-600 font-medium'"
-                  >
+                      : 'text-red-600 font-medium'">
                     {{ answerPart }}
                     <span class="font-bold">
                       {{ isDragAnswerCorrectAt(index, blankIndex) ? '✓' : '✗' }}
                     </span>
                   </span>
                 </template>
-                <span
-                  v-else
-                  :class="{ 'capitalize': isDragAndDropQuestion(question.questionType) }"
-                >
+                <span v-else :class="{ 'capitalize': isDragAndDropQuestion(question.questionType) }">
                   {{ (quizAttempt.clickedAnswer[index] ?? '').replaceAll('-', ' ,') }}
                 </span>
-                <span
-                  v-if="question.questionType !== 'drag_and_drop'"
-                  class="ml-2 font-bold"
-                  :class="quizAttempt.clickedAnswer[index] == question.answer
-                    ? 'text-normalGreener'
-                    : 'text-red-600'"
-                >
+                <span v-if="question.questionType !== 'drag_and_drop'" class="ml-2 font-bold" :class="quizAttempt.clickedAnswer[index] == question.answer
+                  ? 'text-normalGreener'
+                  : 'text-red-600'">
                   {{ quizAttempt.clickedAnswer[index] == question.answer ? '✓' : '✗' }}
                 </span>
               </p>
             </div>
+          </div>
+          <!-- choice description (reason)-->
+          <!--  -->
+          <div class="px-4"
+            v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description?.trim() && getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? '').trim()"
+            :aria-label="`Explanation to justify why you answer ${quizAttempt.clickedAnswer[index] == question.answer ? 'correct' : 'incorrect'}`"
+            v-html="generateSuggestion(getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? ''), quizAttempt.clickedAnswer[index] == question.answer)">
           </div>
         </div>
 
         <!-- Read notes again and Read next -->
         <div class="flex items-center justify-end w-full gap-2">
           <small>Recommendation:</small>
-          <button
-            v-if="quizAttempt.quizCompleted"
-            @click="changeChapter?.(
-              quizAttempt.scored === quizAttempt.totalQuestions ? 'N' : 'R'
-            )"
+          <button v-if="quizAttempt.quizCompleted" @click="changeChapter?.(
+            quizAttempt.scored === quizAttempt.totalQuestions ? 'N' : 'R'
+          )"
             class="flex items-center justify-center px-4 py-1 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
             <span class="capitalize">
               {{
@@ -459,21 +458,16 @@ const isDragAnswerCorrectAt = (questionIndex: number, blankIndex: number) =>
 
       <!-- Use currentQuestion instead of shuffleQuestions to determine which question to display -->
       <questionsAnswers v-else-if="shuffledQuestions.length" @question-answered="answeredAttempt($event)"
-        @next-question="goToNextQuestion()"
-        @previous-question="goToPreviousQuestion()"
-        :question-type="shuffledQuestions[quizAttempt.currentQuestion]?.questionType ?? 'multiple_choice'
-          "
-        :thumbnail="shuffledQuestions[quizAttempt.currentQuestion]?.thumbnail ?? ''"
+        @next-question="goToNextQuestion()" @previous-question="goToPreviousQuestion()" :question-type="shuffledQuestions[quizAttempt.currentQuestion]?.questionType ?? 'multiple_choice'
+          " :thumbnail="shuffledQuestions[quizAttempt.currentQuestion]?.thumbnail ?? ''"
         :true-answer="shuffledQuestions[quizAttempt.currentQuestion]?.answer ?? ''"
         :choices="shuffledQuestions[quizAttempt.currentQuestion]?.choices ?? []"
         :question="shuffledQuestions[quizAttempt.currentQuestion]?.question ?? ''"
         :number="`${quizAttempt.currentQuestion + 1}`.toString()"
         :answer="shuffledQuestions[quizAttempt.currentQuestion]?.answer ?? ''"
         :initial-selected-choice="quizAttempt.clickedAnswer[quizAttempt.currentQuestion] ?? ''"
-        :has-previous-question="quizAttempt.currentQuestion > 0"
-        :reveal-feedback-during-attempt="!isSecondaryQuiz"
-        :advance-on-submit="isSecondaryQuiz"
-        :is-last-question="quizAttempt.currentQuestion === questions.length - 1" />
+        :has-previous-question="quizAttempt.currentQuestion > 0" :reveal-feedback-during-attempt="!isSecondaryQuiz"
+        :advance-on-submit="isSecondaryQuiz" :is-last-question="quizAttempt.currentQuestion === questions.length - 1" />
     </div>
   </section>
 </template>
