@@ -8,6 +8,7 @@ import { Button } from "~/components/ui/button";
 import { AnswerChecker } from "~/lib/utils/answer-checker";
 import { shuffle } from "~/utilities/utils";
 import { cn } from "~/lib/utils";
+import { AnswerChecker } from "~/lib/utils/answer-checker";
 import {
   calculateBlankWidth,
   parseQuestionSegments,
@@ -19,6 +20,8 @@ interface QuestionItem {
   question: string;
   answer: string | string[];
 }
+
+const answerChecker = new AnswerChecker();
 
 interface QuestionsProps {
   title: string;
@@ -72,30 +75,24 @@ const splitAnswerValue = (value: string) =>
     .map((answer) => String(answer ?? "").trim())
     .filter(Boolean);
 
-const getCorrectAnswers = (questionIndex: number) => {
+/** Accepted forms for one question (`/` in CMS = alternatives, same as non-choices rephrasing). */
+const getAcceptedAnswers = (questionIndex: number): string[] => {
   const rawAnswer = shuffledQuestions.value[questionIndex]?.answer;
   if (Array.isArray(rawAnswer)) {
-    return rawAnswer
-      .map((answer) => String(answer ?? "").trim())
-      .filter(Boolean);
+    return rawAnswer.map((a) => String(a ?? "").trim()).filter(Boolean);
   }
+  const s = String(rawAnswer ?? "").trim();
+  if (!s) return [];
+  return s
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean);
+};
 
-  const normalizedAnswer = String(rawAnswer ?? "").trim();
-  const blankCount = getBlankCount(shuffledQuestions.value[questionIndex]?.question || "");
-  const splitAnswers = splitAnswerValue(normalizedAnswer);
-
-  if (splitAnswers.length > 1) {
-    return splitAnswers;
-  }
-
-  if (blankCount > 1 && normalizedAnswer.includes(" ")) {
-    return normalizedAnswer
-      .split(/\s+/)
-      .map((answer) => answer.trim())
-      .filter(Boolean);
-  }
-
-  return normalizedAnswer ? [normalizedAnswer] : [];
+/** Human-readable correct answer for results (`wrong-correct-answers`). */
+const getCorrectAnswerLabel = (questionIndex: number) => {
+  const forms = getAcceptedAnswers(questionIndex);
+  return forms.length ? forms.join(" or ") : "";
 };
 
 const getUserAnswers = (questionIndex: number) => answers.value[questionIndex] || [];
@@ -114,19 +111,13 @@ const handleInputChange = (questionIndex: number, blankIndex: number, value: str
 };
 
 const checkAnswer = (questionIndex: number) => {
-  const userAnswers = getUserAnswers(questionIndex).map((answer) => answer.trim());
-  const correctAnswers = getCorrectAnswers(questionIndex).map((answer) => answer.trim());
-
-  if (userAnswers.length !== correctAnswers.length) {
-    return false;
-  }
-
-  return correctAnswers.every((answer, index) =>
-    answerChecker.checkAnswer(userAnswers[index] || "", {
-      acceptedAnswers: [answer],
-      strictMode: true,
-    }).isCorrect,
-  );
+  const userAnswer = (answers.value[questionIndex] || "").trim();
+  const accepted = getAcceptedAnswers(questionIndex);
+  if (!accepted.length) return false;
+  return answerChecker.checkAnswer(userAnswer, {
+    acceptedAnswers: accepted,
+    strictMode: true,
+  }).isCorrect;
 };
 
 const handleCheckAllAnswers = () => {
@@ -319,11 +310,11 @@ const formatCorrectAnswer = (questionIndex: number) => getCorrectAnswers(questio
             <div class="mt-2 grid grid-cols-2 gap-4">
               <div>
                 <p class="text-sm text-gray-500">{{ ui.yourAnswer }}</p>
-                <p :class="{ 'text-red-600': !checkAnswer(idx) }">{{ formatUserAnswer(idx) }}</p>
+                <p :class="{ 'text-red-600': !checkAnswer(idx) }">{{ answers[idx] || "(no answer)" }}</p>
               </div>
               <div v-if="props.feedback === 'wrong-correct-answers'">
                 <p class="text-sm text-gray-500">{{ ui.correctAnswer }}</p>
-                <p class="text-green-600">{{ formatCorrectAnswer(idx) }}</p>
+                <p class="text-green-600">{{ getCorrectAnswerLabel(idx) }}</p>
               </div>
             </div>
           </div>
