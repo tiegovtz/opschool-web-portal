@@ -1351,7 +1351,7 @@ const handleEnglishCrashCourse = async () => {
   isEnglishCrashCourse.value = true;
   const prompt = `I'm a Tanzanian student who learned in Swahili. Please explain this chapter/competence "${props.chapterName}" in simple English, helping me understand the key concepts and terms. Use Tanzanian context, examples, and references that relate to Tanzania. Use simple language and provide examples where helpful. use swahili to make more emphasis on points.`;
   try {
-    await askQuestion(prompt, "Help with English crash course", {
+    await askQuestion(prompt,  isSwahili.value ? "Nisaidie kujifunza kiswahili" : "Help with English crash course", {
       useDocsAPI: true,
       docsField: "crashCourse",
     });

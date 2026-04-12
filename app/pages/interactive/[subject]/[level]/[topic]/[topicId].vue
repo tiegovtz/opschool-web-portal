@@ -424,7 +424,7 @@ try {
     chapters.list = (response.value.chapters as any[]) || [];
     const firstChapterId = chapters.list[0]?._id;
     chapters.currentChapterId = firstChapterId || null;
-    topicLanguageData.value = (response.value.languageData as any)
+    topicLanguageData.value = (response.value.languageData as any[])?.[0] || { name: contentLayoutLanguage.value, _id: "" };
 
     if (firstChapterId && chapters.list.length) {
       const firstChapter = chapters.list[0];
@@ -970,8 +970,8 @@ definePageMeta({
       <!-- Error state -->
       <div v-else-if="chapters.status == 'error'" class="flex flex-col items-center justify-center w-full gap-2 error">
         <MessagePageNotFound
-          :message="topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ? `Error while loading chapter` : `Hitilafu wakati wa kupakia chapo`"
-          :subMessage="topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ? `Make sure you are connected to the stable internet or try to reload the page` : `Hakikisha upo kwa mtandao`" />
+          :message="topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ? `Error while loading chapter` : `Hitilafu wakati wa kupakia chapo`"
+          :subMessage="topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ? `Make sure you are connected to the stable internet or try to reload the page` : `Hakikisha upo kwa mtandao`" />
       </div>
 
       <!-- Success state -->
@@ -987,7 +987,7 @@ definePageMeta({
         <div v-else-if="chapters.notesStatus == 'empty'"
           class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
           <MessageTopicNotFound
-            :message="topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ? `No content available` : `Hakuna maudhui yaliyopatikana`" />
+            :message="topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ? `No content available` : `Hakuna maudhui yaliyopatikana`" />
         </div>
 
         <!-- Notes loaded successfully -->
@@ -1024,7 +1024,7 @@ definePageMeta({
             </div>
 
             <p id="notes-extra-details" class="sr-only">
-              {{ topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ?
+              {{ topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ?
                 `These notes include at least one video, two-dimensional images such as GIFs,
               interactive gamified experiments, a three-dimensional model, and a short quiz
               at the end of each competency.` : `Vidokezo hivi vinajumlisha video moja, picha mbili ya kawaida kama
@@ -1039,7 +1039,7 @@ definePageMeta({
               <button
                 class="h-10 px-4 text-white uppercase transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
                 @click="chapters.isAttemptingQuizes = true">
-                {{ topicLanguageData?.name.toLowerCase().trim() === 'kiswahili' ? 'Zoezi' : 'Quiz' }}
+                {{ topicLanguageData?.name?.toLowerCase()?.trim() === 'kiswahili' ? 'Zoezi' : 'Quiz' }}
               </button>
             </div>
 
@@ -1050,7 +1050,7 @@ definePageMeta({
                 'flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue',
                 { 'opacity-0': chapters.number == chapters.list?.length }]">
                 <p class="flex gap-2 capitalize">
-                  {{ topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ?
+                  {{ topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ?
                     'Next' : 'Inayofuata' }}
                 </p>
                 <div class="flex items-center justify-center w-4 h-4 bg-white rounded-full animate-bounce-horizontal">
@@ -1067,7 +1067,7 @@ definePageMeta({
                   <Icon name="weui:arrow-filled" size="20" class="transform rotate-180 text-oceanBlue" />
                 </div>
                 <p class="flex gap-2 capitalize">
-                  {{ topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ?
+                  {{ topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ?
                     'Previous' : 'Awali' }}
                 </p>
               </button>
@@ -1079,7 +1079,7 @@ definePageMeta({
         <div aria-live="polite" aria-label="error,activity not found" v-else
           class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
           <MessageTopicNotFound
-            :message="topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ? 'This activity currently not available' : 'Shughuli hii kwa sasa haipatikan'" />
+            :message="topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ? 'This activity currently not available' : 'Shughuli hii kwa sasa haipatikan'" />
         </div>
 
         <!-- Sidebar w-1/4 -->
@@ -1104,7 +1104,7 @@ definePageMeta({
 
       <!-- Default/idle state -->
       <div v-else class="idle">
-        <p>{{ topicLanguageData?.name.toLowerCase().trim() === 'english' || contentLayoutLanguage === 'english' ? `Try
+        <p>{{ topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ? `Try
           to reload the page, something went wrong` : ` Tafadhali pazia upya ukurasa, kuna hitilafu` }}</p>
       </div>
     </section>
@@ -1120,7 +1120,7 @@ definePageMeta({
     <div class="sr-only" aria-live="assertive" aria-atomic role="status">
       {{ announcement }}
     </div>
-
+    {{ console.log(topicLanguageData) }}
   </NuxtLayout>
 
 </template>
