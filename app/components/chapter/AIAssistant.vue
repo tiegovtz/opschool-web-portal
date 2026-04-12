@@ -243,8 +243,8 @@ const props = defineProps({
 const contentLayoutLanguage = useContentLayoutLanguage(() => props.level);
 const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili" || props.topicLanguage.toLowerCase().trim() === "kiswahili" );
 const subjectUi = computed(() => ({
-  launcherTitle: isSwahili.value  ? "Uliza Mwalimu wa Somo wa AI" : "Ask AI Subject Teacher",
-  title: isSwahili.value ? "Mwalimu wa Somo wa AI" : "AI Subject Teacher",
+  launcherTitle: isSwahili.value  ? "Uliza Mwalimu akili unde wa Somo" : "Ask AI Subject Teacher",
+  title: isSwahili.value ? "Mwalimu akili unde wa Somo" : "AI Subject Teacher",
   voiceSettings: isSwahili.value ? "Mipangilio ya Sauti" : "Voice Settings",
   voiceSettingsHelp: isSwahili.value ? "Chagua sauti ya majibu ya sauti" : "Select voice for audio responses",
   femaleVoice: isSwahili.value ? "Sauti ya Mwanamke" : "Female Voice",
