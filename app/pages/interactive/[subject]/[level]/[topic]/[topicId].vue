@@ -16,7 +16,10 @@ import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
 import { moveFocus } from "~/utilities/focus.helper";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
-import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
+import {
+  normalizeLanguageSupport,
+  resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 const route = useRoute();
 const router = useRouter();
 const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level);
@@ -54,6 +57,44 @@ const chapterProgress = useCookie<any>("chapterProgress");
 const userViewedTopic = useState("userViewedTopic");
 
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const normalizedTopicLanguage = computed(() =>
+  normalizeLanguageSupport(topicLanguageData.value?.name, contentLayoutLanguage.value),
+);
+const usesSwahiliInstructions = computed(
+  () =>
+    normalizedTopicLanguage.value === "kiswahili" ||
+    normalizeLanguageSupport(contentLayoutLanguage.value, "english") === "kiswahili",
+);
+const pageUi = computed(() =>
+  usesSwahiliInstructions.value
+    ? {
+      errorLoadingChapter: "Hitilafu wakati wa kupakia chapo",
+      loadingChapterHelp: "Hakikisha upo kwa mtandao imara au jaribu kupakia upya ukurasa",
+      noContentAvailable: "Hakuna maudhui yaliyopatikana",
+      notesSummary:
+        "Vidokezo hivi vinajumlisha angalau video moja, picha za kawaida za pande mbili kama GIF, majaribio ya kimwingiliano yaliyo katika mfumo wa mchezo, modeli ya pande tatu, na zoezi fupi mwishoni mwa kila umahiri.",
+      quiz: "Zoezi",
+      next: "Inayofuata",
+      previous: "Awali",
+      activityUnavailable: "Shughuli hii kwa sasa haipatikani",
+      learningContents: "Maudhui ya ujifunzaji",
+      reloadPage: "Tafadhali pakia upya ukurasa, kuna hitilafu",
+    }
+    : {
+      errorLoadingChapter: "Error while loading chapter",
+      loadingChapterHelp:
+        "Make sure you are connected to stable internet or try to reload the page",
+      noContentAvailable: "No content available",
+      notesSummary:
+        "These notes include at least one video, two-dimensional images such as GIFs, interactive gamified experiments, a three-dimensional model, and a short quiz at the end of each competency.",
+      quiz: "Quiz",
+      next: "Next",
+      previous: "Previous",
+      activityUnavailable: "This activity currently not available",
+      learningContents: "Learning contents",
+      reloadPage: "Try to reload the page, something went wrong",
+    },
+);
 // Define meta info about page
 useHead({
   title: `TIE - Tanzania/${topicTitle}`,
@@ -970,8 +1011,8 @@ definePageMeta({
       <!-- Error state -->
       <div v-else-if="chapters.status == 'error'" class="flex flex-col items-center justify-center w-full gap-2 error">
         <MessagePageNotFound
-          :message="topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ? `Error while loading chapter` : `Hitilafu wakati wa kupakia chapo`"
-          :subMessage="topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ? `Make sure you are connected to the stable internet or try to reload the page` : `Hakikisha upo kwa mtandao`" />
+          :message="pageUi.errorLoadingChapter"
+          :subMessage="pageUi.loadingChapterHelp" />
       </div>
 
       <!-- Success state -->
@@ -987,7 +1028,7 @@ definePageMeta({
         <div v-else-if="chapters.notesStatus == 'empty'"
           class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
           <MessageTopicNotFound
-            :message="topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ? `No content available` : `Hakuna maudhui yaliyopatikana`" />
+            :message="pageUi.noContentAvailable" />
         </div>
 
         <!-- Notes loaded successfully -->
@@ -1024,13 +1065,7 @@ definePageMeta({
             </div>
 
             <p id="notes-extra-details" class="sr-only">
-              {{ topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ?
-                `These notes include at least one video, two-dimensional images such as GIFs,
-              interactive gamified experiments, a three-dimensional model, and a short quiz
-              at the end of each competency.` : `Vidokezo hivi vinajumlisha video moja, picha mbili ya kawaida kama
-              GIFs,
-              mazoezi ya kufanikiwa, modeli ya tatu ya kiwango, na mtihani mdogo
-              mwisho wa kila uwezo.` }}
+              {{ pageUi.notesSummary }}
             </p>
 
             <!-- Chapter Button - (Quiz) -->
@@ -1039,7 +1074,7 @@ definePageMeta({
               <button
                 class="h-10 px-4 text-white uppercase transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue"
                 @click="chapters.isAttemptingQuizes = true">
-                {{ topicLanguageData?.name?.toLowerCase()?.trim() === 'kiswahili' ? 'Zoezi' : 'Quiz' }}
+                {{ pageUi.quiz }}
               </button>
             </div>
 
@@ -1050,8 +1085,7 @@ definePageMeta({
                 'flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue',
                 { 'opacity-0': chapters.number == chapters.list?.length }]">
                 <p class="flex gap-2 capitalize">
-                  {{ topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ?
-                    'Next' : 'Inayofuata' }}
+                  {{ pageUi.next }}
                 </p>
                 <div class="flex items-center justify-center w-4 h-4 bg-white rounded-full animate-bounce-horizontal">
                   <Icon name="weui:arrow-filled" size="20" class="text-oceanBlue" />
@@ -1067,8 +1101,7 @@ definePageMeta({
                   <Icon name="weui:arrow-filled" size="20" class="transform rotate-180 text-oceanBlue" />
                 </div>
                 <p class="flex gap-2 capitalize">
-                  {{ topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ?
-                    'Previous' : 'Awali' }}
+                  {{ pageUi.previous }}
                 </p>
               </button>
             </div>
@@ -1079,15 +1112,14 @@ definePageMeta({
         <div aria-live="polite" aria-label="error,activity not found" v-else
           class="flex items-center justify-center w-full p-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll">
           <MessageTopicNotFound
-            :message="topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ? 'This activity currently not available' : 'Shughuli hii kwa sasa haipatikan'" />
+            :message="pageUi.activityUnavailable" />
         </div>
 
         <!-- Sidebar w-1/4 -->
         <div tabindex="0"
           class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2 lg:static bg-white lg:scroll-height lg:overflow-y-scroll">
           <div class="flex items-center justify-between mb-4">
-            <h1 aria-label="Activity list" class="pt-5 pl-4 font-medium  text-medium">{{ contentLayoutLanguage
-              === 'english' ? 'Learning contents' : 'Maudhui ya ujifunzaji' }}</h1>
+            <h1 aria-label="Activity list" class="pt-5 pl-4 font-medium  text-medium">{{ pageUi.learningContents }}</h1>
             <!-- toggle menu -->
             <div
               class="flex items-center justify-center w-5 h-5 transition-all duration-500 ease-in-out rounded-full cursor-pointer hover:bg-oceanBlue lg:hidden group"
@@ -1104,8 +1136,7 @@ definePageMeta({
 
       <!-- Default/idle state -->
       <div v-else class="idle">
-        <p>{{ topicLanguageData?.name?.toLowerCase()?.trim() === 'english' || contentLayoutLanguage === 'english' ? `Try
-          to reload the page, something went wrong` : ` Tafadhali pazia upya ukurasa, kuna hitilafu` }}</p>
+        <p>{{ pageUi.reloadPage }}</p>
       </div>
     </section>
 
