@@ -5,6 +5,7 @@ import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, { ActivityResultsAlertDialog } from "@/components/templates/results";
 import Input from "@/components/ui/inputs/input.vue";
 import { Button } from "~/components/ui/button";
+import { AnswerChecker } from "~/lib/utils/answer-checker";
 import { shuffle } from "~/utilities/utils";
 import { cn } from "~/lib/utils";
 import {
@@ -33,9 +34,10 @@ interface Props {
 
 const props = defineProps<Props>();
 const ui = useActivityUiText();
+const answerChecker = new AnswerChecker();
 
 const shuffledQuestions = ref<QuestionItem[]>([]);
-const answers = ref<Record<number, string>>({});
+const answers = ref<Record<number, string[]>>({});
 const feedbacks = ref<Record<number, boolean>>({});
 const checkedItems = ref<number[]>([]);
 const allAnswered = ref(false);
@@ -64,26 +66,67 @@ watch(
   { immediate: true, deep: true },
 );
 
-const allQuestionsAnswered = computed(() =>
-  shuffledQuestions.value.every((_, index) => (answers.value[index] || "").trim() !== ""),
-);
+const splitAnswerValue = (value: string) =>
+  value
+    .split(/[/,;|\n]+/)
+    .map((answer) => String(answer ?? "").trim())
+    .filter(Boolean);
 
-const getCorrectAnswer = (questionIndex: number) => {
+const getCorrectAnswers = (questionIndex: number) => {
   const rawAnswer = shuffledQuestions.value[questionIndex]?.answer;
-  return Array.isArray(rawAnswer) ? String(rawAnswer[0] ?? "") : String(rawAnswer ?? "");
+  if (Array.isArray(rawAnswer)) {
+    return rawAnswer
+      .map((answer) => String(answer ?? "").trim())
+      .filter(Boolean);
+  }
+
+  const normalizedAnswer = String(rawAnswer ?? "").trim();
+  const blankCount = getBlankCount(shuffledQuestions.value[questionIndex]?.question || "");
+  const splitAnswers = splitAnswerValue(normalizedAnswer);
+
+  if (splitAnswers.length > 1) {
+    return splitAnswers;
+  }
+
+  if (blankCount > 1 && normalizedAnswer.includes(" ")) {
+    return normalizedAnswer
+      .split(/\s+/)
+      .map((answer) => answer.trim())
+      .filter(Boolean);
+  }
+
+  return normalizedAnswer ? [normalizedAnswer] : [];
 };
 
-const handleInputChange = (questionIndex: number, value: string | number) => {
+const getUserAnswers = (questionIndex: number) => answers.value[questionIndex] || [];
+
+const getAnswerValue = (questionIndex: number, blankIndex: number) =>
+  getUserAnswers(questionIndex)[blankIndex] || "";
+
+const handleInputChange = (questionIndex: number, blankIndex: number, value: string | number) => {
+  const nextAnswers = [...getUserAnswers(questionIndex)];
+  nextAnswers[blankIndex] = String(value ?? "");
+
   answers.value = {
     ...answers.value,
-    [questionIndex]: String(value ?? ""),
+    [questionIndex]: nextAnswers,
   };
 };
 
 const checkAnswer = (questionIndex: number) => {
-  const userAnswer = (answers.value[questionIndex] || "").toLowerCase().trim();
-  const correctAnswer = getCorrectAnswer(questionIndex).toLowerCase().trim();
-  return userAnswer === correctAnswer;
+  const userAnswers = getUserAnswers(questionIndex).map((answer) => answer.trim());
+  const correctAnswers = getCorrectAnswers(questionIndex).map((answer) => answer.trim());
+
+  if (userAnswers.length !== correctAnswers.length) {
+    return false;
+  }
+
+  return correctAnswers.every((answer, index) =>
+    answerChecker.checkAnswer(userAnswers[index] || "", {
+      acceptedAnswers: [answer],
+      strictMode: true,
+    }).isCorrect,
+  );
 };
 
 const handleCheckAllAnswers = () => {
@@ -108,9 +151,12 @@ const handleCheckAllAnswers = () => {
 
 type QuestionRenderSegment = QuestionSegment & {
   calculatedWidth?: number;
+  blankIndex?: number;
 };
 
 const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
+  let blankIndex = 0;
+
   return parseQuestionSegments(question).map((segment) => {
     if (segment.type !== "blank") {
       return segment;
@@ -120,10 +166,30 @@ const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
 
     return {
       ...segment,
+      blankIndex: blankIndex++,
       calculatedWidth: Math.max(calculatedWidth, 120),
     };
   });
 };
+
+const getBlankCount = (question: string) =>
+  getQuestionSegments(question).filter((segment) => segment.type === "blank").length;
+
+const allQuestionsAnswered = computed(() =>
+  shuffledQuestions.value.every((question, index) => {
+    const blankCount = getBlankCount(question.question);
+    return Array.from({ length: blankCount }).every(
+      (_, blankIndex) => getAnswerValue(index, blankIndex).trim() !== "",
+    );
+  }),
+);
+
+const formatUserAnswer = (questionIndex: number) => {
+  const userAnswers = getUserAnswers(questionIndex).filter((answer) => answer.trim() !== "");
+  return userAnswers.length ? userAnswers.join(", ") : "(no answer)";
+};
+
+const formatCorrectAnswer = (questionIndex: number) => getCorrectAnswers(questionIndex).join(", ");
 </script>
 
 <template>
@@ -191,11 +257,11 @@ const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
               >
                 <Input
                   type="text"
-                  :model-value="answers[i] || ''"
+                  :model-value="getAnswerValue(i, segment.blankIndex || 0)"
                   :disabled="checkedItems.includes(i)"
                   class="min-w-0 px-2 border-none bg-transparent text-center focus:outline-none"
                   :style="{ maxWidth: `${(segment.calculatedWidth || 120) * 1.6}px` }"
-                  @update:model-value="(value) => handleInputChange(i, value)"
+                  @update:model-value="(value) => handleInputChange(i, segment.blankIndex || 0, value)"
                 />
                 <div
                   :class="
@@ -253,11 +319,11 @@ const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
             <div class="mt-2 grid grid-cols-2 gap-4">
               <div>
                 <p class="text-sm text-gray-500">{{ ui.yourAnswer }}</p>
-                <p :class="{ 'text-red-600': !checkAnswer(answers[idx] || '', idx) }">{{ answers[idx] || "(no answer)" }}</p>
+                <p :class="{ 'text-red-600': !checkAnswer(idx) }">{{ formatUserAnswer(idx) }}</p>
               </div>
               <div v-if="props.feedback === 'wrong-correct-answers'">
                 <p class="text-sm text-gray-500">{{ ui.correctAnswer }}</p>
-                <p class="text-green-600">{{ question.answer }}</p>
+                <p class="text-green-600">{{ formatCorrectAnswer(idx) }}</p>
               </div>
             </div>
           </div>
