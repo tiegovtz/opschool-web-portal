@@ -78,7 +78,15 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { question, chapterId, conversationHistory } = body || {};
+  const { question, chapterId, conversationHistory, uiLanguage } = body || {};
+  const preferredUiLanguage =
+    typeof uiLanguage === "string" && uiLanguage.trim().toLowerCase() === "kiswahili"
+      ? "kiswahili"
+      : "english";
+  const safeServiceUnavailableMessage =
+    preferredUiLanguage === "kiswahili"
+      ? "Mwalimu wa Somo wa AI hapatikani kwa muda huu. Tafadhali jaribu tena baada ya muda mfupi."
+      : "AI Subject Teacher is temporarily unavailable. Please try again in a few minutes.";
 
   if (!question || !chapterId) {
     throw createError({
@@ -140,6 +148,11 @@ export default defineEventHandler(async (event) => {
 
     // 2. Prepare prompt with strict instructions
     const systemPrompt = `You are AI Subject Teacher, a friendly and experienced teacher helping Tanzanian students. Your goal is to help students understand and learn about the current competence/chapter they are studying.
+
+*** LANGUAGE RULE ***
+- The student's current interface language is ${preferredUiLanguage}.
+- Respond in ${preferredUiLanguage === "kiswahili" ? "Kiswahili" : "English"} by default so your explanation matches the active learning mode.
+- If the student explicitly asks for a translation or asks you to explain in the other language, you may switch for that request.
 
 *** NON-NEGOTIABLE - CHAPTER SCOPE ONLY ***
 You may ONLY answer questions that are directly about this chapter: "${chapterName}". You must REFUSE to answer any question that is:
@@ -389,19 +402,37 @@ Before sending any reply that taught something, verify: (a) you included at leas
           model: result.model,
         };
       } catch (fallbackError: any) {
+        console.error("[AI Subject Teacher] Provider failure", {
+          chapterId,
+          chapterName,
+          primaryProvider: primaryConfig.provider,
+          fallbackProvider: fallbackConfig.provider,
+          primaryError: primaryError?.message || String(primaryError),
+          fallbackError: fallbackError?.message || String(fallbackError),
+        });
+
         throw createError({
           statusCode: 503,
-          message: `Both primary (OpenAI) and fallback (${fallbackConfig.provider}) providers failed. Primary error: ${primaryError.message}. Fallback error: ${fallbackError.message}`,
+          message: safeServiceUnavailableMessage,
         });
       }
     }
   } catch (error: any) {
-    if (error.statusCode) {
+    if (error.statusCode && error.statusCode < 500) {
       throw error;
     }
+
+    if (error?.statusCode >= 500) {
+      console.error("[AI Subject Teacher] Request failed", {
+        chapterId,
+        statusCode: error.statusCode,
+        message: error.message,
+      });
+    }
+
     throw createError({
       statusCode: error.statusCode || 500,
-      message: error.message || "Failed to get AI assistance",
+      message: safeServiceUnavailableMessage,
     });
   }
 });

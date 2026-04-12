@@ -5,6 +5,7 @@ import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, { ActivityResultsAlertDialog } from "@/components/templates/results";
 import Input from "@/components/ui/inputs/input.vue";
 import { Button } from "~/components/ui/button";
+import { AnswerChecker } from "~/lib/utils/answer-checker";
 import { shuffle } from "~/utilities/utils";
 import { cn } from "~/lib/utils";
 import { AnswerChecker } from "~/lib/utils/answer-checker";
@@ -36,9 +37,10 @@ interface Props {
 
 const props = defineProps<Props>();
 const ui = useActivityUiText();
+const answerChecker = new AnswerChecker();
 
 const shuffledQuestions = ref<QuestionItem[]>([]);
-const answers = ref<Record<number, string>>({});
+const answers = ref<Record<number, string[]>>({});
 const feedbacks = ref<Record<number, boolean>>({});
 const checkedItems = ref<number[]>([]);
 const allAnswered = ref(false);
@@ -67,9 +69,11 @@ watch(
   { immediate: true, deep: true },
 );
 
-const allQuestionsAnswered = computed(() =>
-  shuffledQuestions.value.every((_, index) => (answers.value[index] || "").trim() !== ""),
-);
+const splitAnswerValue = (value: string) =>
+  value
+    .split(/[/,;|\n]+/)
+    .map((answer) => String(answer ?? "").trim())
+    .filter(Boolean);
 
 /** Accepted forms for one question (`/` in CMS = alternatives, same as non-choices rephrasing). */
 const getAcceptedAnswers = (questionIndex: number): string[] => {
@@ -91,10 +95,18 @@ const getCorrectAnswerLabel = (questionIndex: number) => {
   return forms.length ? forms.join(" or ") : "";
 };
 
-const handleInputChange = (questionIndex: number, value: string | number) => {
+const getUserAnswers = (questionIndex: number) => answers.value[questionIndex] || [];
+
+const getAnswerValue = (questionIndex: number, blankIndex: number) =>
+  getUserAnswers(questionIndex)[blankIndex] || "";
+
+const handleInputChange = (questionIndex: number, blankIndex: number, value: string | number) => {
+  const nextAnswers = [...getUserAnswers(questionIndex)];
+  nextAnswers[blankIndex] = String(value ?? "");
+
   answers.value = {
     ...answers.value,
-    [questionIndex]: String(value ?? ""),
+    [questionIndex]: nextAnswers,
   };
 };
 
@@ -130,9 +142,12 @@ const handleCheckAllAnswers = () => {
 
 type QuestionRenderSegment = QuestionSegment & {
   calculatedWidth?: number;
+  blankIndex?: number;
 };
 
 const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
+  let blankIndex = 0;
+
   return parseQuestionSegments(question).map((segment) => {
     if (segment.type !== "blank") {
       return segment;
@@ -142,10 +157,30 @@ const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
 
     return {
       ...segment,
+      blankIndex: blankIndex++,
       calculatedWidth: Math.max(calculatedWidth, 120),
     };
   });
 };
+
+const getBlankCount = (question: string) =>
+  getQuestionSegments(question).filter((segment) => segment.type === "blank").length;
+
+const allQuestionsAnswered = computed(() =>
+  shuffledQuestions.value.every((question, index) => {
+    const blankCount = getBlankCount(question.question);
+    return Array.from({ length: blankCount }).every(
+      (_, blankIndex) => getAnswerValue(index, blankIndex).trim() !== "",
+    );
+  }),
+);
+
+const formatUserAnswer = (questionIndex: number) => {
+  const userAnswers = getUserAnswers(questionIndex).filter((answer) => answer.trim() !== "");
+  return userAnswers.length ? userAnswers.join(", ") : "(no answer)";
+};
+
+const formatCorrectAnswer = (questionIndex: number) => getCorrectAnswers(questionIndex).join(", ");
 </script>
 
 <template>
@@ -213,11 +248,11 @@ const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
               >
                 <Input
                   type="text"
-                  :model-value="answers[i] || ''"
+                  :model-value="getAnswerValue(i, segment.blankIndex || 0)"
                   :disabled="checkedItems.includes(i)"
                   class="min-w-0 px-2 border-none bg-transparent text-center focus:outline-none"
                   :style="{ maxWidth: `${(segment.calculatedWidth || 120) * 1.6}px` }"
-                  @update:model-value="(value) => handleInputChange(i, value)"
+                  @update:model-value="(value) => handleInputChange(i, segment.blankIndex || 0, value)"
                 />
                 <div
                   :class="
