@@ -78,8 +78,15 @@ const userToken = useCookie('signInUserToken')
   <NuxtLink class="stat-card" v-if="modelType.toLowerCase() === 'profile'" @click="setTopicToView()"
     :to="topicTarget">
     <!-- profile view -->
-    <div class="w-10 h-10 overflow-hidden rounded-full">
-      <NuxtImg :src="topicImage" tabindex="0" :alt="altText ?? topicTitle" class="object-cover w-full h-full" />
+    <div class="relative shrink-0 overflow-hidden rounded-full size-10 aspect-square">
+      <NuxtImg
+        :src="topicImage"
+        tabindex="0"
+        :alt="altText ?? topicTitle"
+        width="40"
+        height="40"
+        class="block object-cover w-full h-full"
+      />
     </div>
     <div class="stat-content">
       <span class="stat-label">{{ topicTitle }}</span>

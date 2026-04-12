@@ -1,6 +1,6 @@
 const STORAGE_KEY = "tie-post-login-home";
 
-export function setPostLoginHome(path: string) {
+export const setPostLoginHome = (path: string) => {
   if (!import.meta.client) return;
   try {
     sessionStorage.setItem(STORAGE_KEY, path);
@@ -10,7 +10,7 @@ export function setPostLoginHome(path: string) {
 }
 
 /** Returns stored path once, then clears it. */
-export function consumePostLoginHome(): string | null {
+export const consumePostLoginHome = (): string | null => {
   if (!import.meta.client) return null;
   try {
     const v = sessionStorage.getItem(STORAGE_KEY);

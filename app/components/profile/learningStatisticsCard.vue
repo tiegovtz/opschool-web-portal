@@ -242,7 +242,7 @@ const formatReasonCode = (reasonCode: string) =>
 
 const getRecommendationOutcomeLabel = (status: string) =>
   recommendationOutcomeLabels.value[
-    status as keyof typeof recommendationOutcomeLabels.value
+  status as keyof typeof recommendationOutcomeLabels.value
   ] ?? status.replaceAll("_", " ");
 
 const getRecommendationOutcomeClass = (status: string) => {
@@ -533,84 +533,67 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    v-if="status == 'pending'"
-    class="flex items-center justify-center w-full"
-  >
+  <div v-if="status == 'pending'" class="flex items-center justify-center w-full">
     <LoadingIndicator :is-loading="true" />
   </div>
 
-  <div
-    v-else-if="status == 'success'"
-    class="flex flex-col w-full gap-6"
-  >
-    <div
-      class="w-full overflow-hidden bg-white border shadow-sm rounded-3xl border-slate-200"
-    >
+  <div v-else-if="status == 'success'" class="flex flex-col w-full gap-6">
+
+    <!-- Recent Learning Topics -->
+    <div v-if="profileData?.recentTopics?.length > 0"
+      class="w-full bg-white border border-gray-100 rounded-md shadow-md">
+      <div class="px-6 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue">
+        <h3 class="text-lg font-semibold text-white">
+          {{ text.learningTopicsStatistics }}
+        </h3>
+      </div>
+      <div class="grid w-full grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+        <HomeTopicCard v-for="topic in profileData.recentTopics" :key="topic?._id" :topic-id="topic?._id"
+          :topic-image="topic?.thumbnail" :topic-title="topic?.name" :topic-description="topic?.descriptions"
+          :topic-duration="topic?.topic_duration ? topic?.topic_duration : '10 min'
+            " :topic-likes="topic?.topic_likes ? topic?.topic_likes : 100" :topic-views="topic?.viewedBy?.length
+              ? topic?.viewedBy?.length
+              : topic?.views
+                ? topic?.views
+                : 0
+              " :topic-level="text.lowerSecondary" :topic-standard="topic?.level?.name"
+          :subject-name="topic?.subject?.name" :topic-viewed="topic?.isViewed"
+          :topic-progress="topic?.progress?.avgProgress" model-type="profile" />
+      </div>
+    </div>
+
+    <!-- Learning Statistics -->
+    <div class="w-full bg-white border border-gray-100 rounded-md shadow-md">
       <div class="px-5 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue sm:px-6">
         <h3 class="text-lg font-semibold text-white">{{ text.title }}</h3>
       </div>
-      <div
-        class="grid w-full grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
-      >
-        <LearningMetricCard
-          :label="text.competencesOpened"
-          :value="profileData?.totalTopicsOpened ?? 0"
-          :helper="text.competencesHelper"
-          icon="fa6-solid:book-open-reader"
-          icon-wrapper-class="bg-blue-100 text-deepBlue"
-        />
-        <LearningMetricCard
-          :label="text.subjectsOpened"
-          :value="profileData?.openedSubjects ?? 0"
-          :helper="text.subjectsHelper"
-          icon="heroicons:folder-open-20-solid"
-          icon-wrapper-class="bg-green-100 text-emerald-700"
-        />
-        <LearningMetricCard
-          :label="text.timeSpent"
-          :value="profileData?.timeSpentFormatted ?? '0h 0m'"
-          :helper="text.timeSpentHelper"
-          icon="stash:clock-solid"
-          icon-wrapper-class="bg-red-100 text-red-600"
-        />
-        <LearningMetricCard
-          :label="text.quizAttempts"
-          :value="displayQuizAttempts"
-          :helper="text.quizAttemptsHelper"
-          icon="solar:notebook-bold"
-          icon-wrapper-class="bg-purple-100 text-purple-600"
-        />
-        <LearningMetricCard
-          :label="text.averageQuizScore"
-          :value="
-            displayAverageQuizScore === '—'
-              ? displayAverageQuizScore
-              : `${displayAverageQuizScore}%`
-          "
-          :helper="text.averageQuizScoreHelper"
-          icon="heroicons:chart-bar-16-solid"
-          icon-wrapper-class="bg-indigo-100 text-indigo-600"
-        />
+      <div class="grid w-full grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+        <LearningMetricCard :label="text.competencesOpened" :value="profileData?.totalTopicsOpened ?? 0"
+          :helper="text.competencesHelper" icon="fa6-solid:book-open-reader"
+          icon-wrapper-class="bg-blue-100 text-deepBlue" />
+        <LearningMetricCard :label="text.subjectsOpened" :value="profileData?.openedSubjects ?? 0"
+          :helper="text.subjectsHelper" icon="heroicons:folder-open-20-solid"
+          icon-wrapper-class="bg-green-100 text-emerald-700" />
+        <LearningMetricCard :label="text.timeSpent" :value="profileData?.timeSpentFormatted ?? '0h 0m'"
+          :helper="text.timeSpentHelper" icon="stash:clock-solid" icon-wrapper-class="bg-red-100 text-red-600" />
+        <LearningMetricCard :label="text.quizAttempts" :value="displayQuizAttempts" :helper="text.quizAttemptsHelper"
+          icon="solar:notebook-bold" icon-wrapper-class="bg-purple-100 text-purple-600" />
+        <LearningMetricCard :label="text.averageQuizScore" :value="displayAverageQuizScore === '—'
+          ? displayAverageQuizScore
+          : `${displayAverageQuizScore}%`
+          " :helper="text.averageQuizScoreHelper" icon="heroicons:chart-bar-16-solid"
+          icon-wrapper-class="bg-indigo-100 text-indigo-600" />
       </div>
 
-      <div
-        v-if="recommendationStatus === 'pending'"
-        class="space-y-4 bg-[#f8fbfd] p-4 sm:p-5 lg:p-6"
-      >
+      <div v-if="recommendationStatus === 'pending'" class="space-y-4 bg-[#f8fbfd] p-4 sm:p-5 lg:p-6">
         <div class="w-2/3 h-4 rounded bg-slate-200 animate-pulse"></div>
         <div class="w-full h-40 rounded-3xl bg-slate-100 animate-pulse"></div>
         <div class="w-full h-40 rounded-3xl bg-slate-100 animate-pulse"></div>
         <div class="w-full h-40 rounded-3xl bg-slate-100 animate-pulse"></div>
       </div>
 
-      <div
-        v-else-if="recommendationError"
-        class="bg-[#f8fbfd] p-4 sm:p-5 lg:p-6"
-      >
-        <div
-          class="p-4 border border-amber-200 rounded-2xl bg-amber-50 text-amber-900"
-        >
+      <div v-else-if="recommendationError" class="bg-[#f8fbfd] p-4 sm:p-5 lg:p-6">
+        <div class="p-4 border border-amber-200 rounded-lg bg-amber-50 text-amber-900">
           <p class="font-medium">
             {{ text.recommendationUnavailable }}
           </p>
@@ -620,10 +603,8 @@ onMounted(() => {
         </div>
       </div>
 
-      <div
-        v-else-if="!recommendationOverview && recommendationCards.length === 0"
-        class="bg-[#f8fbfd] p-4 sm:p-5 lg:p-6"
-      >
+      <div v-else-if="!recommendationOverview && recommendationCards.length === 0"
+        class="bg-[#f8fbfd] p-4 sm:p-5 lg:p-6">
         <div class="p-5 border border-emerald-100 rounded-3xl bg-emerald-50/80">
           <p class="font-medium text-emerald-900">
             {{
@@ -637,30 +618,18 @@ onMounted(() => {
         </div>
       </div>
 
-      <div
-        v-else
-        class="space-y-5 bg-[#f8fbfd] p-4 sm:p-5 lg:p-6"
-      >
-        <div class="border border-sky-100 rounded-3xl bg-white p-4 shadow-sm sm:p-5">
+      <div v-else class="space-y-5 bg-[#f8fbfd] p-4 sm:p-5 lg:p-6">
+        <div class="border border-sky-100 rounded-lg bg-white p-4 shadow-sm sm:p-5">
           <p class="text-sm leading-6 text-slate-700">
             {{ personalizedRecommendations?.summary }}
           </p>
         </div>
 
-        <LearningOverviewHero
-          v-if="recommendationOverview"
-          :overview="recommendationOverview"
-          :topic-count="topicBreakdown.length"
-          :language="pageLanguage"
-        />
+        <LearningOverviewHero v-if="recommendationOverview" :overview="recommendationOverview"
+          :topic-count="topicBreakdown.length" :language="pageLanguage" />
 
-        <section
-          v-if="hasSnapshotAnalytics"
-          class="border rounded-3xl border-slate-200 bg-white p-4 shadow-sm sm:p-5"
-        >
-          <div
-            class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between"
-          >
+        <section v-if="hasSnapshotAnalytics" class="border rounded-3xl border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
               <h4 class="text-lg font-semibold text-slate-900">
                 {{ text.progressSinceSnapshot }}
@@ -686,27 +655,17 @@ onMounted(() => {
             </div> -->
           </div>
 
-          <div
-            v-if="
-              snapshotSyncStatus === 'loading' ||
-              comparisonStatus === 'loading' ||
-              progressSummaryStatus === 'loading'
-            "
-            class="grid gap-3 mt-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
-          >
-            <div
-              v-for="index in 5"
-              :key="index"
-              class="h-24 rounded-3xl bg-slate-100 animate-pulse"
-            ></div>
+          <div v-if="
+            snapshotSyncStatus === 'loading' ||
+            comparisonStatus === 'loading' ||
+            progressSummaryStatus === 'loading'
+          " class="grid gap-3 mt-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+            <div v-for="index in 5" :key="index" class="h-24 rounded-3xl bg-slate-100 animate-pulse"></div>
           </div>
 
-          <div
-            v-else-if="
-              snapshotSyncError || comparisonError || progressSummaryError
-            "
-            class="p-4 mt-5 border rounded-2xl border-amber-200 bg-amber-50 text-amber-900"
-          >
+          <div v-else-if="
+            snapshotSyncError || comparisonError || progressSummaryError
+          " class="p-4 mt-5 border rounded-lg border-amber-200 bg-amber-50 text-amber-900">
             <p class="font-medium">
               {{ text.snapshotUnavailable }}
             </p>
@@ -719,15 +678,9 @@ onMounted(() => {
             </p>
           </div>
 
-          <div
-            v-else
-            class="mt-5 space-y-5"
-          >
-            <div
-              v-if="recommendationProgressSummary"
-              class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
-            >
-              <div class="p-4 rounded-3xl bg-slate-50">
+          <div v-else class="mt-5 space-y-5">
+            <div v-if="recommendationProgressSummary" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
+              <div class="p-4 rounded-lg bg-slate-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   {{ text.totalRecommendations }}
                 </p>
@@ -735,7 +688,7 @@ onMounted(() => {
                   {{ recommendationProgressSummary.totalRecommendations }}
                 </p>
               </div>
-              <div class="p-4 rounded-3xl bg-emerald-50">
+              <div class="p-4 rounded-lg bg-emerald-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-emerald-700">
                   {{ text.resolved }}
                 </p>
@@ -743,7 +696,7 @@ onMounted(() => {
                   {{ recommendationProgressSummary.resolved }}
                 </p>
               </div>
-              <div class="p-4 rounded-3xl bg-sky-50">
+              <div class="p-4 rounded-lg bg-sky-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-sky-700">
                   {{ text.improving }}
                 </p>
@@ -751,7 +704,7 @@ onMounted(() => {
                   {{ recommendationProgressSummary.improving }}
                 </p>
               </div>
-              <div class="p-4 rounded-3xl bg-amber-50">
+              <div class="p-4 rounded-lg bg-amber-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-amber-700">
                   {{ text.notStarted }}
                 </p>
@@ -759,7 +712,7 @@ onMounted(() => {
                   {{ recommendationProgressSummary.notStarted }}
                 </p>
               </div>
-              <div class="p-4 rounded-3xl bg-rose-50">
+              <div class="p-4 rounded-lg bg-rose-50">
                 <p class="text-xs font-semibold tracking-wide uppercase text-rose-700">
                   Regressed
                 </p>
@@ -769,11 +722,8 @@ onMounted(() => {
               </div>
             </div>
 
-            <div
-              v-if="activeSnapshotComparison?.overview"
-              class="grid gap-3 lg:grid-cols-2"
-            >
-              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+            <div v-if="activeSnapshotComparison?.overview" class="grid gap-3 lg:grid-cols-2">
+              <div class="p-4 border rounded-lg border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   {{ text.averageProgress }}
                 </p>
@@ -804,15 +754,11 @@ onMounted(() => {
                   </div>
                   <div>
                     <p class="text-slate-500">{{ text.delta }}</p>
-                    <p
-                      class="font-semibold"
-                      :class="
-                        getDeltaClass(
-                          activeSnapshotComparison.overview.delta
-                            .averageProgress,
-                        )
-                      "
-                    >
+                    <p class="font-semibold" :class="getDeltaClass(
+                      activeSnapshotComparison.overview.delta
+                        .averageProgress,
+                    )
+                      ">
                       {{
                         formatMetricDelta(
                           activeSnapshotComparison.overview.delta
@@ -825,7 +771,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+              <div class="p-4 border rounded-lg border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   {{ text.assessmentAverageShort }}
                 </p>
@@ -856,15 +802,11 @@ onMounted(() => {
                   </div>
                   <div>
                     <p class="text-slate-500">{{ text.delta }}</p>
-                    <p
-                      class="font-semibold"
-                      :class="
-                        getDeltaClass(
-                          activeSnapshotComparison.overview.delta
-                            .averageAssessmentScore,
-                        )
-                      "
-                    >
+                    <p class="font-semibold" :class="getDeltaClass(
+                      activeSnapshotComparison.overview.delta
+                        .averageAssessmentScore,
+                    )
+                      ">
                       {{
                         formatMetricDelta(
                           activeSnapshotComparison.overview.delta
@@ -877,7 +819,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+              <div class="p-4 border rounded-lg border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   {{ text.quizAttempts }}
                 </p>
@@ -906,15 +848,11 @@ onMounted(() => {
                   </div>
                   <div>
                     <p class="text-slate-500">{{ text.delta }}</p>
-                    <p
-                      class="font-semibold"
-                      :class="
-                        getDeltaClass(
-                          activeSnapshotComparison.overview.delta
-                            .totalAssessmentAttempts,
-                        )
-                      "
-                    >
+                    <p class="font-semibold" :class="getDeltaClass(
+                      activeSnapshotComparison.overview.delta
+                        .totalAssessmentAttempts,
+                    )
+                      ">
                       {{
                         formatMetricDelta(
                           activeSnapshotComparison.overview.delta
@@ -926,21 +864,17 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="p-4 border rounded-3xl border-slate-200 bg-slate-50/70">
+              <div class="p-4 border rounded-lg border-slate-200 bg-slate-50/70">
                 <p class="text-xs font-semibold tracking-wide uppercase text-slate-500">
                   {{ text.coveredFailedTopics }}
                 </p>
                 <div class="grid gap-3 mt-3 text-sm sm:grid-cols-2">
                   <div>
                     <p class="text-slate-500">{{ text.coveredDelta }}</p>
-                    <p
-                      class="font-semibold"
-                      :class="
-                        getDeltaClass(
-                          activeSnapshotComparison.overview.delta.coveredTopics,
-                        )
-                      "
-                    >
+                    <p class="font-semibold" :class="getDeltaClass(
+                      activeSnapshotComparison.overview.delta.coveredTopics,
+                    )
+                      ">
                       {{
                         formatMetricDelta(
                           activeSnapshotComparison.overview.delta.coveredTopics,
@@ -950,15 +884,11 @@ onMounted(() => {
                   </div>
                   <div>
                     <p class="text-slate-500">{{ text.failedDelta }}</p>
-                    <p
-                      class="font-semibold"
-                      :class="
-                        getDeltaClass(
-                          activeSnapshotComparison.overview.delta.failedTopics,
-                          'lower_is_better',
-                        )
-                      "
-                    >
+                    <p class="font-semibold" :class="getDeltaClass(
+                      activeSnapshotComparison.overview.delta.failedTopics,
+                      'lower_is_better',
+                    )
+                      ">
                       {{
                         formatMetricDelta(
                           activeSnapshotComparison.overview.delta.failedTopics,
@@ -973,12 +903,8 @@ onMounted(() => {
           </div>
         </section>
 
-        <section
-          class="border rounded-3xl border-slate-200 bg-white p-4 shadow-sm sm:p-5"
-        >
-          <div
-            class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between"
-          >
+        <section class="border rounded-lg border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div class="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h4 class="text-lg font-semibold text-slate-900">
                 {{ text.talkToData }}
@@ -988,51 +914,33 @@ onMounted(() => {
               </p>
             </div>
 
-            <div class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
-              <button
-                v-for="prompt in talkToDataPrompts"
-                :key="prompt"
-                type="button"
+            <div
+              class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:pb-0">
+              <button v-for="prompt in talkToDataPrompts" :key="prompt" type="button"
                 class="shrink-0 rounded-full border border-oceanBlue/15 bg-oceanBlue/5 px-3 py-2 text-xs font-medium text-oceanBlue transition-colors hover:bg-oceanBlue/10"
-                @click="askTalkToData(prompt)"
-              >
+                @click="askTalkToData(prompt)">
                 {{ prompt }}
               </button>
             </div>
           </div>
 
           <div class="mt-5 space-y-4">
-            <label
-              for="talk-to-data-input"
-              class="block text-sm font-medium text-slate-700"
-            >
+            <label for="talk-to-data-input" class="block text-sm font-medium text-slate-700">
               {{ text.askAboutData }}
             </label>
-            <textarea
-              id="talk-to-data-input"
-              v-model="talkToDataQuestion"
-              rows="4"
-              class="w-full px-4 py-3 text-sm transition-colors border rounded-2xl resize-y border-slate-200 bg-slate-50 focus:border-oceanBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/20"
-              :placeholder="text.askPlaceholder"
-            ></textarea>
+            <textarea id="talk-to-data-input" v-model="talkToDataQuestion" rows="4"
+              class="w-full px-4 py-3 text-sm transition-colors border rounded-lg resize-y border-slate-200 bg-slate-50 focus:border-oceanBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/20"
+              :placeholder="text.askPlaceholder"></textarea>
 
-            <div
-              class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-            >
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p class="text-xs text-slate-500">
                 {{ text.groundedAnswer }}
               </p>
 
-              <button
-                type="button"
-                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-xl sm:w-auto bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40 disabled:cursor-not-allowed disabled:opacity-60"
-                :disabled="talkToDataStatus === 'loading'"
-                @click="askTalkToData()"
-              >
-                <Icon
-                  name="heroicons:chart-bar-square"
-                  class="w-5 h-5"
-                />
+              <button type="button"
+                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-md sm:w-auto bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40 disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="talkToDataStatus === 'loading'" @click="askTalkToData()">
+                <Icon name="heroicons:chart-bar-square" class="w-5 h-5" />
                 <span>
                   {{
                     talkToDataStatus === "loading"
@@ -1043,54 +951,35 @@ onMounted(() => {
               </button>
             </div>
 
-            <div
-              v-if="talkToDataStatus === 'error'"
-              class="p-4 border rounded-2xl border-rose-200 bg-rose-50 text-rose-800"
-            >
+            <div v-if="talkToDataStatus === 'error'"
+              class="p-4 border rounded-lg border-rose-200 bg-rose-50 text-rose-800">
               <p class="text-sm font-medium">
                 {{ talkToDataError }}
               </p>
             </div>
 
-            <div
-              v-else-if="talkToDataStatus === 'success' && talkToDataAnswer"
-              class="p-5 border rounded-2xl border-sky-100 bg-sky-50/70"
-            >
-              <div
-                class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"
-              >
-                <p
-                  class="text-xs font-semibold tracking-wide uppercase text-oceanBlue"
-                >
+            <div v-else-if="talkToDataStatus === 'success' && talkToDataAnswer"
+              class="p-5 border rounded-lg border-sky-100 bg-sky-50/70">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
                   {{ text.answerFromData }}
                 </p>
-                <p
-                  v-if="talkToDataGeneratedAt"
-                  class="text-xs text-slate-500"
-                >
+                <p v-if="talkToDataGeneratedAt" class="text-xs text-slate-500">
                   {{ formatGeneratedAt(talkToDataGeneratedAt) }}
                 </p>
               </div>
 
               <div
                 class="mt-3 prose prose-sm max-w-none text-slate-700 prose-p:my-2 prose-ul:my-2 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-2 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-strong:font-semibold prose-headings:text-slate-900"
-                v-html="renderTalkToDataAnswer(talkToDataAnswer)"
-              ></div>
+                v-html="renderTalkToDataAnswer(talkToDataAnswer)"></div>
             </div>
           </div>
         </section>
 
-        <LearningSubjectBreakdown
-          :subjects="subjectBreakdown"
-          :comparison-topics="comparisonTopics"
-          @open-improvement="openTopicImprovement"
-          @open-ai="openAiTeacherWithPrompt"
-        />
+        <LearningSubjectBreakdown :subjects="subjectBreakdown" :comparison-topics="comparisonTopics"
+          @open-improvement="openTopicImprovement" @open-ai="openAiTeacherWithPrompt" />
 
-        <div
-          v-if="recommendationCards.length === 0"
-          class="p-5 border border-emerald-100 rounded-3xl bg-emerald-50/80"
-        >
+        <div v-if="recommendationCards.length === 0" class="p-5 border border-emerald-100 rounded-3xl bg-emerald-50/80">
           <p class="font-medium text-emerald-900">
             {{ text.noUrgentRevision }}
           </p>
@@ -1099,32 +988,19 @@ onMounted(() => {
           </p>
         </div>
 
-        <article
-          v-for="recommendation in recommendationCards"
-          :key="recommendation.topicId"
-          class="overflow-hidden bg-white border border-slate-200 shadow-sm rounded-3xl"
-        >
-          <NuxtLink
-            :to="recommendation.revisitPath"
-            class="block p-5 transition-all duration-300 group hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
-          >
-            <div
-              class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
-            >
+        <article v-for="recommendation in recommendationCards" :key="recommendation.topicId"
+          class="overflow-hidden bg-white border border-slate-200 shadow-sm rounded-3xl">
+          <NuxtLink :to="recommendation.revisitPath"
+            class="block p-5 transition-all duration-300 group hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-oceanBlue/40">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
                   <span
-                    class="inline-flex items-center gap-2 px-2.5 py-1 text-xs font-semibold tracking-wide uppercase rounded-full bg-slate-100 text-slate-600"
-                  >
-                    <Icon
-                      name="fa6-solid:book-open-reader"
-                      class="w-3.5 h-3.5"
-                    />
+                    class="inline-flex items-center gap-2 px-2.5 py-1 text-xs font-semibold tracking-wide uppercase rounded-full bg-slate-100 text-slate-600">
+                    <Icon name="fa6-solid:book-open-reader" class="w-3.5 h-3.5" />
                     {{ text.revisitCompetence }}
                   </span>
-                  <span
-                    class="px-2.5 py-1 text-xs font-semibold rounded-full bg-oceanBlue/10 text-oceanBlue"
-                  >
+                  <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-oceanBlue/10 text-oceanBlue">
                     {{
                       formatRecommendationAction(
                         recommendation.recommendedAction,
@@ -1133,9 +1009,7 @@ onMounted(() => {
                   </span>
                 </div>
 
-                <h4
-                  class="mt-3 text-lg font-semibold text-slate-900 group-hover:text-deepBlue"
-                >
+                <h4 class="mt-3 text-lg font-semibold text-slate-900 group-hover:text-deepBlue">
                   {{ recommendation.topicName }}
                 </h4>
 
@@ -1143,12 +1017,8 @@ onMounted(() => {
                   {{ recommendation.explanation }}
                 </p>
 
-                <div
-                  class="p-4 mt-4 border rounded-2xl border-sky-100 bg-sky-50/80"
-                >
-                  <p
-                    class="text-xs font-semibold tracking-wide uppercase text-oceanBlue"
-                  >
+                <div class="p-4 mt-4 border rounded-lg border-sky-100 bg-sky-50/80">
+                  <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
                     {{ text.focusWhenRevisiting }}
                   </p>
                   <p class="mt-2 text-sm leading-6 text-slate-700">
@@ -1157,71 +1027,49 @@ onMounted(() => {
                 </div>
 
                 <div class="flex flex-wrap gap-2 mt-4">
-                  <span
-                    class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700"
-                  >
+                  <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700">
                     {{ text.progress }} {{ recommendation.progressPercent }}%
                   </span>
-                  <span
-                    v-if="recommendation.assessmentScore !== null"
-                    class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700"
-                  >
+                  <span v-if="recommendation.assessmentScore !== null"
+                    class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700">
                     {{ text.quiz }} {{ recommendation.assessmentScore }}%
                   </span>
-                  <span
-                    v-for="reasonCode in recommendation.reasonCodes"
-                    :key="reasonCode"
-                    class="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800"
-                  >
+                  <span v-for="reasonCode in recommendation.reasonCodes" :key="reasonCode"
+                    class="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
                     {{ formatReasonCode(reasonCode) }}
                   </span>
                 </div>
               </div>
 
-              <div
-                class="flex items-center gap-2 text-sm font-semibold text-oceanBlue group-hover:text-deepBlue"
-              >
+              <div class="flex items-center gap-2 text-sm font-semibold text-oceanBlue group-hover:text-deepBlue">
                 <span>{{
                   formatRecommendationActionHelper(
                     recommendation.recommendedAction,
                   )
                 }}</span>
-                <Icon
-                  name="heroicons:arrow-right-20-solid"
-                  class="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1"
-                />
+                <Icon name="heroicons:arrow-right-20-solid"
+                  class="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
               </div>
             </div>
           </NuxtLink>
 
           <div
-            class="flex flex-col gap-3 px-5 py-4 border-t border-slate-200 bg-white sm:flex-row sm:items-center sm:justify-between"
-          >
+            class="flex flex-col gap-3 px-5 py-4 border-t border-slate-200 bg-white sm:flex-row sm:items-center sm:justify-between">
             <p class="text-sm text-slate-500">
               {{ text.directOpenOrAskAi }}
             </p>
 
             <div class="flex flex-col gap-3 sm:flex-row">
-              <NuxtLink
-                :to="recommendation.revisitPath"
-                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold transition-colors border rounded-xl sm:w-auto border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5"
-              >
-                <Icon
-                  name="heroicons:play-circle"
-                  class="w-5 h-5"
-                />
+              <NuxtLink :to="recommendation.revisitPath"
+                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold transition-colors border rounded-md sm:w-auto border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5">
+                <Icon name="heroicons:play-circle" class="w-5 h-5" />
                 <span>{{ text.openCompetence }}</span>
               </NuxtLink>
 
-              <button
-                type="button"
-                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold text-white transition-colors rounded-xl sm:w-auto bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
-                @click="openAiTeacherWithPrompt(recommendation.seedPrompt)"
-              >
-                <Icon
-                  name="heroicons:sparkles"
-                  class="w-5 h-5"
-                />
+              <button type="button"
+                class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold text-white transition-colors rounded-md sm:w-auto bg-oceanBlue hover:bg-deepBlue focus:outline-none focus:ring-2 focus:ring-oceanBlue/40"
+                @click="openAiTeacherWithPrompt(recommendation.seedPrompt)">
+                <Icon name="heroicons:sparkles" class="w-5 h-5" />
                 <span>{{ text.studyWithAi }}</span>
               </button>
             </div>
@@ -1230,59 +1078,14 @@ onMounted(() => {
       </div>
     </div>
 
-    <div
-      v-if="profileData?.recentTopics?.length > 0"
-      class="w-full overflow-hidden bg-white border shadow-sm rounded-3xl border-slate-200"
-    >
-      <div class="px-5 py-4 bg-gradient-to-r from-deepBlue to-oceanBlue sm:px-6">
-        <h3 class="text-lg font-semibold text-white">
-          {{ text.learningTopicsStatistics }}
-        </h3>
-      </div>
-      <div
-        class="grid w-full grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
-      >
-        <HomeTopicCard
-          v-for="topic in profileData.recentTopics"
-          :key="topic?._id"
-          :topic-id="topic?._id"
-          :topic-image="topic?.thumbnail"
-          :topic-title="topic?.name"
-          :topic-description="topic?.descriptions"
-          :topic-duration="
-            topic?.topic_duration ? topic?.topic_duration : '10 min'
-          "
-          :topic-likes="topic?.topic_likes ? topic?.topic_likes : 100"
-          :topic-views="
-            topic?.viewedBy?.length
-              ? topic?.viewedBy?.length
-              : topic?.views
-                ? topic?.views
-                : 0
-          "
-          :topic-level="text.lowerSecondary"
-          :topic-standard="topic?.level?.name"
-          :subject-name="topic?.subject?.name"
-          :topic-viewed="topic?.isViewed"
-          :topic-progress="topic?.progress?.avgProgress"
-          model-type="profile"
-        />
-      </div>
-    </div>
-
+    <!-- Topic Improvement Modal -->
     <Teleport to="body">
       <Transition name="fade">
-        <div
-          v-if="selectedTopicImprovement"
+        <div v-if="selectedTopicImprovement"
           class="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/55 px-4 py-6"
-          @click.self="closeTopicImprovement()"
-        >
-          <div
-            class="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl max-h-[90vh]"
-          >
-            <div
-              class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-200"
-            >
+          @click.self="closeTopicImprovement()">
+          <div class="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl max-h-[90vh]">
+            <div class="flex items-start justify-between gap-4 px-6 py-5 border-b border-slate-200">
               <div>
                 <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
                   {{ text.topicImprovement }}
@@ -1291,24 +1094,17 @@ onMounted(() => {
                   {{ selectedTopicImprovement.topicName }}
                 </h4>
               </div>
-              <button
-                type="button"
+              <button type="button"
                 class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"
-                @click="closeTopicImprovement()"
-              >
-                <Icon
-                  name="heroicons:x-mark-20-solid"
-                  class="w-5 h-5"
-                />
+                @click="closeTopicImprovement()">
+                <Icon name="heroicons:x-mark-20-solid" class="w-5 h-5" />
               </button>
             </div>
 
             <div class="space-y-5 overflow-y-auto px-4 py-5 sm:px-6">
               <div class="flex flex-wrap items-center gap-2">
-                <span
-                  class="px-2.5 py-1 text-xs font-medium rounded-full"
-                  :class="getRecommendationOutcomeClass(selectedTopicImprovement.status)"
-                >
+                <span class="px-2.5 py-1 text-xs font-medium rounded-full"
+                  :class="getRecommendationOutcomeClass(selectedTopicImprovement.status)">
                   {{ getRecommendationOutcomeLabel(selectedTopicImprovement.status) }}
                 </span>
                 <span class="px-2.5 py-1 text-xs rounded-full bg-slate-100 text-slate-700">
@@ -1317,53 +1113,45 @@ onMounted(() => {
               </div>
 
               <div class="grid gap-3 sm:grid-cols-3">
-                <div class="p-4 rounded-2xl bg-slate-50">
+                <div class="p-4 rounded-lg bg-slate-50">
                   <p class="text-xs uppercase text-slate-500">{{ text.progress }}</p>
                   <p class="mt-2 text-sm font-semibold text-slate-900">
                     {{ selectedTopicImprovement.before.progressPercent }}% →
                     {{ selectedTopicImprovement.after.progressPercent }}%
                   </p>
-                  <p
-                    class="mt-1 text-xs font-medium"
-                    :class="getDeltaClass(selectedTopicImprovement.delta.progressPercent)"
-                  >
+                  <p class="mt-1 text-xs font-medium"
+                    :class="getDeltaClass(selectedTopicImprovement.delta.progressPercent)">
                     {{ formatMetricDelta(selectedTopicImprovement.delta.progressPercent, "%") }}
                   </p>
                 </div>
 
-                <div class="p-4 rounded-2xl bg-slate-50">
+                <div class="p-4 rounded-lg bg-slate-50">
                   <p class="text-xs uppercase text-slate-500">{{ text.quizScore }}</p>
                   <p class="mt-2 text-sm font-semibold text-slate-900">
                     {{ formatMetricValue(selectedTopicImprovement.before.assessmentScore, "%") }} →
                     {{ formatMetricValue(selectedTopicImprovement.after.assessmentScore, "%") }}
                   </p>
-                  <p
-                    class="mt-1 text-xs font-medium"
-                    :class="getDeltaClass(selectedTopicImprovement.delta.assessmentScore)"
-                  >
+                  <p class="mt-1 text-xs font-medium"
+                    :class="getDeltaClass(selectedTopicImprovement.delta.assessmentScore)">
                     {{ formatMetricDelta(selectedTopicImprovement.delta.assessmentScore, "%") }}
                   </p>
                 </div>
 
-                <div class="p-4 rounded-2xl bg-slate-50">
+                <div class="p-4 rounded-lg bg-slate-50">
                   <p class="text-xs uppercase text-slate-500">{{ text.quizAttempts }}</p>
                   <p class="mt-2 text-sm font-semibold text-slate-900">
                     {{ selectedTopicImprovement.before.assessmentAttempts }} →
                     {{ selectedTopicImprovement.after.assessmentAttempts }}
                   </p>
-                  <p
-                    class="mt-1 text-xs font-medium"
-                    :class="getDeltaClass(selectedTopicImprovement.delta.assessmentAttempts)"
-                  >
+                  <p class="mt-1 text-xs font-medium"
+                    :class="getDeltaClass(selectedTopicImprovement.delta.assessmentAttempts)">
                     {{ formatMetricDelta(selectedTopicImprovement.delta.assessmentAttempts) }}
                   </p>
                 </div>
               </div>
 
-              <div
-                v-if="selectedTopicImprovement.quizSummarySinceSnapshot"
-                class="p-4 rounded-2xl bg-sky-50 border border-sky-100"
-              >
+              <div v-if="selectedTopicImprovement.quizSummarySinceSnapshot"
+                class="p-4 rounded-lg bg-sky-50 border border-sky-100">
                 <p class="text-xs font-semibold tracking-wide uppercase text-oceanBlue">
                   {{ text.quizActivitySinceSnapshot }}
                 </p>
@@ -1395,17 +1183,11 @@ onMounted(() => {
     </Teleport>
   </div>
 
-  <div
-    v-else-if="status == 'error'"
-    class="flex items-center justify-center w-full"
-  >
+  <div v-else-if="status == 'error'" class="flex items-center justify-center w-full">
     <MessagePageNotFound />
   </div>
 
-  <div
-    v-else
-    class="flex items-center justify-center w-full"
-  >
+  <div v-else class="flex items-center justify-center w-full">
     <p class="text-center text-medium">
       {{ text.genericError }}
     </p>

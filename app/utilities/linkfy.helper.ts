@@ -8,7 +8,7 @@
  * linkify("Visit https://example.com")
  * // => 'Visit <a href="https://example.com" target="_blank" rel="noopener noreferrer">https://example.com</a>'
  */
-function linkify(text: string) {
+const linkify = (text: string) => {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   return text.replace(
     urlRegex,
@@ -27,7 +27,7 @@ function linkify(text: string) {
  * extractLinksToHtml("Docs: https://a.com and https://b.com")
  * // => '<ul><li><a href="https://a.com" target="_blank">https://a.com</a></li>...</ul>'
  */
-function extractLinksToHtml(text: string) {
+const extractLinksToHtml = (text: string) => {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const links = text.match(urlRegex) || [];
 
@@ -56,7 +56,7 @@ function extractLinksToHtml(text: string) {
  * //   links: ["https://a.com", "https://b.com"]
  * // }
  */
-function parseTextAndLinks(input: string): { text: string; links: string[] } {
+const parseTextAndLinks = (input: string) => {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
 
   const links = input.match(urlRegex) || [];
