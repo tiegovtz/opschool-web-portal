@@ -753,7 +753,7 @@ const liveDragLine = computed(() => {
             :class="
               cn('absolute flex flex-col justify-evenly space-y-4', {
                 'w-[30%]': props.questions.category === 'text-to-text',
-                'w-[15%]':
+                'md:w-[15%]':
                   props.questions.category === 'image-to-image'
                   || props.questions.category === 'image-to-text',
               })
@@ -763,13 +763,20 @@ const liveDragLine = computed(() => {
             <div
               v-for="item in leftItems"
               :key="`${item.id}-indicator`"
-              class="relative flex h-full w-full items-center justify-center"
+              :class="
+                cn(
+                  'relative flex w-full shrink-0 items-center justify-center',
+                  (props.questions.category === 'text-to-text'
+                    || props.questions.category === 'image-to-text') && 'min-h-20',
+                  props.questions.category === 'image-to-image' && 'min-h-[5rem] md:min-h-[7rem]',
+                )
+              "
             >
               <div
                 v-if="connectionByStartKey(`left-${item.id}`)"
                 :class="
                   cn(
-                    'absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg',
+                    'absolute -right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg md:top-3',
                     connectionByStartKey(`left-${item.id}`)?.isCorrect ? 'bg-green-500' : 'bg-red-500',
                   )
                 "
@@ -782,9 +789,10 @@ const liveDragLine = computed(() => {
           <div
             :class="
               cn('absolute flex flex-col justify-evenly space-y-4', {
-                'w-[15%]': props.questions.category === 'image-to-image',
-                'w-[30%]': props.questions.category === 'text-to-text',
-                'max-w-xl': props.questions.category === 'image-to-text',
+                'md:w-[15%]': props.questions.category === 'image-to-image',
+                'w-[30%] md:w-auto md:max-w-xl':
+                  props.questions.category === 'text-to-text'
+                  || props.questions.category === 'image-to-text',
               })
             "
             style="top: 1rem; right: 1rem; left: auto; height: calc(100% - 2rem);"
@@ -792,13 +800,20 @@ const liveDragLine = computed(() => {
             <div
               v-for="item in shuffledRightItems"
               :key="`${item.id}-indicator`"
-              class="relative flex h-full w-full items-center justify-start"
+              :class="
+                cn(
+                  'relative flex w-full shrink-0 items-center justify-start',
+                  (props.questions.category === 'text-to-text'
+                    || props.questions.category === 'image-to-text') && 'min-h-20',
+                  props.questions.category === 'image-to-image' && 'min-h-[5rem] md:min-h-[7rem]',
+                )
+              "
             >
               <div
                 v-if="connectionByEndKey(`right-${item.id}`)"
                 :class="
                   cn(
-                    'absolute -left-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg',
+                    'absolute -left-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg md:top-3',
                     connectionByEndKey(`right-${item.id}`)?.isCorrect ? 'bg-green-500' : 'bg-red-500',
                   )
                 "

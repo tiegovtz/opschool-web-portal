@@ -4,7 +4,7 @@ let currentPlayingBtn: HTMLButtonElement | null = null;
 export function initAudioCanvasPlayers() {
   if (typeof document === "undefined") return;
   document.querySelectorAll(".play-btn").forEach((btn) => {
-   
+
     const src = btn.getAttribute("data-audio-src");
     if (!src) return;
 
@@ -53,24 +53,24 @@ export function initAudioCanvasPlayers() {
       playing = !playing;
     });
 
-    if(currentPlayingAudio) handleAudio()
+    if (currentPlayingAudio) handleAudio()
   });
 }
 
-function drawGlow(
+const drawGlow = (
   analyser: AnalyserNode,
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
-) {
+) => {
   const data = new Uint8Array(analyser.frequencyBinCount);
 
   const render = () => {
     analyser.getByteFrequencyData(data);
-    
+
     const avg = data.reduce((a, b) => a + b, 0) / data.length;
-    
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
     const radius = 14 + avg / 25;
@@ -90,27 +90,27 @@ function drawGlow(
   render();
 }
 
-export function handleAudio() {
+export const handleAudio = () => {
   if (typeof document === "undefined") return;
   document.addEventListener("visibilitychange", () => {
     if (document.hidden && !currentPlayingAudio?.paused) {
       currentPlayingAudio?.pause();
-    }    
+    }
   });
 
-    if (!currentPlayingAudio?.paused) {
-      currentPlayingAudio?.pause();
-      currentPlayingAudio=null;
-      
-    }
+  if (!currentPlayingAudio?.paused) {
+    currentPlayingAudio?.pause();
+    currentPlayingAudio = null;
+
+  }
 
 }
 
-function drawWave(
+const drawWave = (
   analyser: AnalyserNode,
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
-) {
+) => {
   const bufferLength = analyser.frequencyBinCount;
   const dataArray = new Uint8Array(bufferLength);
 
@@ -123,7 +123,7 @@ function drawWave(
     ctx.strokeStyle = "#56ade8";
     ctx.beginPath();
 
-    const sliceWidth = (canvas.width / bufferLength)*2.5;
+    const sliceWidth = (canvas.width / bufferLength) * 2.5;
     let x = 0;
 
     for (let i = 0; i < bufferLength; i++) {

@@ -76,7 +76,7 @@ const palette = computed(() => {
 </script>
 
 <template>
-  <article class="p-4 bg-white/80 border rounded-3xl border-white/60 shadow-sm sm:p-5">
+  <article class="p-4 bg-white/80 border rounded-lg border-white/60 shadow-sm sm:p-5">
     <div class="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:text-left">
       <div
         class="relative flex items-center justify-center w-24 h-24 rounded-full sm:w-28 sm:h-28"
