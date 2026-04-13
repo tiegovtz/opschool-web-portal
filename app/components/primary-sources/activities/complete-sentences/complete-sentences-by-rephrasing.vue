@@ -184,7 +184,7 @@ const handleResetWithShuffle = () => {
         <div
           v-for="(q, i) in shuffledQuestions"
           :key="q.id"
-          class="rounded-lg min-h-[80px] p-2 flex items-center"
+          class="rounded-lg min-h-0 p-2 flex items-start"
           :class="
             cn({
               'bg-picton-blue-50': !checkedItems.includes(i),
@@ -194,20 +194,22 @@ const handleResetWithShuffle = () => {
             })
           "
         >
-          <div class="py-2 flex items-center justify-between w-full gap-4">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-2 w-full">
-              <div class="flex-1 min-w-0">
-                <span class="mr-1 font-medium text-picton-blue-800">{{ i + 1 }}.</span>
-                <QuestionRenderer
-                  :question="q.question"
-                  :answers="q.answer"
-                  :user-answers="getCurrentAnswers(i)"
-                  :screen-width="width ?? 1024"
-                  :is-checked="checkedItems.includes(i)"
-                  :is-correct="feedbacks[i] === true"
-                  :disabled="checkedItems.includes(i)"
-                  @blank-change="(bi, val) => handleInputChange(i, bi, val)"
-                />
+          <div class="py-2 flex items-start justify-between w-full gap-4">
+            <div class="flex flex-col md:flex-row items-start justify-between gap-2 w-full">
+              <div class="flex flex-1 min-w-0 items-start gap-2">
+                <span class="shrink-0 font-medium text-picton-blue-800 pt-0.5">{{ i + 1 }}.</span>
+                <div class="min-w-0 flex-1">
+                  <QuestionRenderer
+                    :question="q.question"
+                    :answers="q.answer"
+                    :user-answers="getCurrentAnswers(i)"
+                    :screen-width="width ?? 1024"
+                    :is-checked="checkedItems.includes(i)"
+                    :is-correct="feedbacks[i] === true"
+                    :disabled="checkedItems.includes(i)"
+                    @blank-change="(bi, val) => handleInputChange(i, bi, val)"
+                  />
+                </div>
               </div>
               <div v-if="q.image" class="min-w-[150px] h-32 md:h-28">
                 <img :src="q.image" :alt="q.question" class="w-full h-full rounded-lg object-contain">
