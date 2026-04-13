@@ -4,23 +4,26 @@ import { computed, ref, watch } from "vue";
 import DNDContext from "@/components/layout/dnd-context";
 import Droppable from "@/components/ui/dnd/droppable";
 import Draggable from "@/components/ui/dnd/draggable";
+import { Button } from "@/components/ui/button";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, {
   ActivityResultsAlertDialog,
 } from "@/components/templates/results";
-import { shuffle } from "@/lib/utils";
+import { cn, shuffle } from "@/lib/utils";
 import { useSoundEffects } from "~/composables/use-sound-effects";
 
 type Props = {
   questions: {
     title: string;
+    mode?: "kweliSikweli";
+    sharedImage?: string;
     questions: {
       id: string;
       text: string;
       image?: string;
       correctAnswer: string;
     }[];
-    answers: string[];
+    answers?: string[];
   };
 };
 
@@ -31,6 +34,28 @@ type DragEndEvent = {
 
 const props = defineProps<Props>();
 const { playSound } = useSoundEffects();
+
+const isKweliMode = computed(() => props.questions.mode === "kweliSikweli");
+
+const kweliSelections = ref<("T" | "F" | undefined)[]>([]);
+type KweliBoxStatus = "empty" | "correct" | "wrong";
+const kweliBoxStatus = ref<KweliBoxStatus[]>([]);
+const kweliCurrentIndex = ref(0);
+
+const resetKweliFlow = () => {
+  const n = props.questions.questions.length;
+  kweliSelections.value = Array.from({ length: n }, () => undefined);
+  kweliBoxStatus.value = Array.from({ length: n }, () => "empty" as KweliBoxStatus);
+  kweliCurrentIndex.value = 0;
+};
+
+watch(
+  () => [props.questions.mode, props.questions.questions.length] as const,
+  () => {
+    resetKweliFlow();
+  },
+  { immediate: true },
+);
 
 const createShuffledAnswers = (
   answers: string[],
@@ -75,11 +100,37 @@ const createShuffledAnswers = (
   };
 };
 
+const emptyLetterState = () => ({
+  shuffledAnswers: [] as { display: string; letter: string; content: string }[],
+  correctAnswerMapping: new Map<string, string>(),
+});
+
 const answers = ref<(string | undefined)[]>([]);
 const score = ref(0);
 const allAnswered = ref(false);
 const showResults = ref(false);
-const shuffledState = ref(createShuffledAnswers([...props.questions.answers], props.questions.questions));
+
+const kweliDisplayIndex = computed(() => {
+  if (!isKweliMode.value) return 0;
+  if (showResults.value) return 0;
+  if (allAnswered.value) {
+    return Math.max(0, props.questions.questions.length - 1);
+  }
+  return kweliCurrentIndex.value;
+});
+
+const kweliActiveQuestion = computed(() => {
+  if (!isKweliMode.value || showResults.value) return null;
+  const list = props.questions.questions;
+  const i = kweliDisplayIndex.value;
+  return list[i] ?? null;
+});
+
+const shuffledState = ref(
+  props.questions.answers?.length && props.questions.mode !== "kweliSikweli"
+    ? createShuffledAnswers([...props.questions.answers], props.questions.questions)
+    : emptyLetterState(),
+);
 
 watch(
   () => props.questions,
@@ -88,17 +139,53 @@ watch(
     score.value = 0;
     allAnswered.value = false;
     showResults.value = false;
-    shuffledState.value = createShuffledAnswers(
-      [...props.questions.answers],
-      props.questions.questions,
-    );
+    if (isKweliMode.value) {
+      resetKweliFlow();
+    }
+    if (!isKweliMode.value && props.questions.answers?.length) {
+      shuffledState.value = createShuffledAnswers(
+        [...props.questions.answers],
+        props.questions.questions,
+      );
+    } else if (!isKweliMode.value) {
+      shuffledState.value = emptyLetterState();
+    }
   },
   { deep: true, immediate: true },
 );
 
+const pickKweli = (choice: "T" | "F") => {
+  if (!isKweliMode.value || showResults.value || allAnswered.value) return;
+
+  const i = kweliCurrentIndex.value;
+  const q = props.questions.questions[i];
+  if (!q) return;
+
+  const isCorrect = choice === q.correctAnswer;
+
+  const boxes = [...kweliBoxStatus.value];
+  boxes[i] = isCorrect ? "correct" : "wrong";
+  kweliBoxStatus.value = boxes;
+
+  const sel = [...kweliSelections.value];
+  sel[i] = choice;
+  kweliSelections.value = sel;
+
+  playSound(isCorrect ? "correct" : "failure");
+
+  const last = props.questions.questions.length - 1;
+  if (i < last) {
+    kweliCurrentIndex.value = i + 1;
+  } else {
+    score.value = boxes.filter((b) => b === "correct").length;
+    allAnswered.value = true;
+  }
+};
+
 watch(
   answers,
   (value) => {
+    if (isKweliMode.value) return;
     if (value.length === props.questions.questions.length && !value.includes(undefined)) {
       score.value = value.reduce((total, answer, index) => {
         const question = props.questions.questions[index];
@@ -117,6 +204,9 @@ const availableAnswers = computed(() =>
 
 const isAnswerCorrect = (questionIndex: number) => {
   const question = props.questions.questions[questionIndex];
+  if (isKweliMode.value) {
+    return kweliSelections.value[questionIndex] === question.correctAnswer;
+  }
   return answers.value[questionIndex] === shuffledState.value.correctAnswerMapping.get(question.id);
 };
 
@@ -151,13 +241,16 @@ const handleDragEnd = (event: DragEndEvent) => {
 
 const resetActivity = () => {
   answers.value = [];
+  resetKweliFlow();
   score.value = 0;
   allAnswered.value = false;
   showResults.value = false;
-  shuffledState.value = createShuffledAnswers(
-    [...props.questions.answers],
-    props.questions.questions,
-  );
+  if (!isKweliMode.value && props.questions.answers?.length) {
+    shuffledState.value = createShuffledAnswers(
+      [...props.questions.answers],
+      props.questions.questions,
+    );
+  }
 };
 </script>
 
@@ -165,7 +258,105 @@ const resetActivity = () => {
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
 
-    <DNDContext :onDragEnd="handleDragEnd">
+    <div
+      v-if="isKweliMode"
+      class="flex flex-col gap-6 overflow-auto rounded-xl bg-picton-blue-50/80 p-4 md:max-h-[calc(100dvh-100px)] md:overflow-y-auto"
+    >
+      <div
+        v-if="!showResults && kweliActiveQuestion"
+        class="flex flex-col gap-4 rounded-lg border border-picton-blue-100 bg-white/90 p-4 shadow-sm"
+      >
+        <p class="text-lg font-medium text-picton-blue-800">
+          {{ kweliDisplayIndex + 1 }}. {{ kweliActiveQuestion.text }}
+        </p>
+
+        <div
+          v-if="!allAnswered"
+          class="flex flex-wrap items-center justify-center gap-4 sm:justify-start"
+        >
+          <Button
+            type="button"
+            variant="outline"
+            :class="
+              cn(
+                'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
+              )
+            "
+            @click="pickKweli('T')"
+          >
+            Kweli
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            :class="
+              cn(
+                'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
+              )
+            "
+            @click="pickKweli('F')"
+          >
+            Si Kweli
+          </Button>
+        </div>
+
+        <p
+          v-else
+          class="text-center text-base font-medium text-picton-blue-600"
+        >
+          Umekamilisha maswali yote.
+        </p>
+
+        <img
+          v-if="props.questions.sharedImage"
+          :src="props.questions.sharedImage"
+          alt=""
+          class="mx-auto max-h-56 w-full max-w-lg rounded-lg object-contain"
+        >
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <p class="text-center text-sm font-medium text-picton-blue-700">
+          Maendeleo
+        </p>
+        <div class="flex flex-wrap justify-center gap-2 sm:gap-3">
+          <div
+            v-for="(status, idx) in kweliBoxStatus"
+            :key="idx"
+            :class="
+              cn(
+                'flex h-11 w-11 items-center justify-center rounded-lg border-2 text-base font-bold transition-all sm:h-12 sm:w-12 sm:text-lg',
+                status === 'empty' &&
+                  'border-dashed border-picton-blue-200 bg-white/70 text-picton-blue-400',
+                status === 'correct' &&
+                  'border-green-500 bg-emerald-50 text-green-700 shadow-sm',
+                status === 'wrong' && 'border-red-500 bg-red-50 text-red-700 shadow-sm',
+                idx === kweliCurrentIndex &&
+                  status === 'empty' &&
+                  !allAnswered &&
+                  !showResults &&
+                  'ring-2 ring-oceanBlue ring-offset-2',
+              )
+            "
+          >
+            <span v-if="status === 'empty'">{{ idx + 1 }}</span>
+            <span v-else-if="status === 'correct'">✓</span>
+            <span v-else>✕</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="w-full">
+        <ActivityResults
+          v-if="showResults"
+          :score="score"
+          :total="props.questions.questions.length"
+          :onRestart="resetActivity"
+        />
+      </div>
+    </div>
+
+    <DNDContext v-else :onDragEnd="handleDragEnd">
       <div class="flex h-full flex-col justify-between gap-4 overflow-auto md:flex-row">
         <div class="flex w-full flex-col justify-between rounded-xl bg-picton-blue-50 p-4 md:max-h-[calc(100dvh-100px)] md:overflow-y-auto">
           <div class="flex flex-col gap-y-4">
