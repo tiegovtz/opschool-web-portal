@@ -212,7 +212,7 @@ const metricCompoundSplit = computed(() => {
       class="metric-compound-row flex flex-col gap-1 items-stretch justify-start rounded-xl bg-white/90 px-2 py-2 sm:px-3 sm:py-2 shadow-sm border border-picton-blue-100"
     >
       <div
-        class="metric-compound-math w-full min-w-0 text-left text-picton-blue-900 [&_.MathJax]:!m-0 [&_.MathJax]:text-picton-blue-900 [&_.MathJax_Display]:!m-0 [&_mjx-container]:!m-0 [&_mjx-container]:!my-0 [&_mjx-container]:!text-left [&_mjx-math]:!my-0"
+        class="metric-compound-math w-full min-w-0 text-left text-picton-blue-900 [&_.MathJax]:!m-0 [&_.MathJax]:text-picton-blue-900 [&_.MathJax_Display]:!m-0 [&_mjx-container]:!mx-0 [&_mjx-container]:!text-left [&_mjx-math]:!my-0"
       >
         <span class="inline-flex flex-wrap items-start align-top">
           <template
@@ -223,7 +223,7 @@ const metricCompoundSplit = computed(() => {
               v-if="item.kind === 'highlighted'"
               :class="
                 cn(
-                  'bg-picton-blue-200 text-picton-blue-700 px-2 rounded mx-1 items-center leading-loose',
+                  'bg-picton-blue-200 text-picton-blue-700 px-2 rounded mx-1 items-center leading-snug',
                   highlightClassName,
                 )
               "
@@ -240,7 +240,7 @@ const metricCompoundSplit = computed(() => {
             </span>
             <span
               v-else
-              :class="cn('mx-1 items-center leading-loose', textClassName)"
+              :class="cn('mx-1 items-center leading-snug', textClassName)"
             >
               <template v-if="!hasMathInText(item.segment.content)">
                 <span class="whitespace-pre-line">{{ item.segment.content }}</span>
@@ -256,7 +256,7 @@ const metricCompoundSplit = computed(() => {
         </span>
       </div>
       <div
-        class="metric-compound-inputs shrink-0 flex w-full items-start justify-start -mt-0.5 pt-0"
+        class="metric-compound-inputs shrink-0 flex w-full items-start justify-start pt-0"
       >
         <CompoundUnitArithmeticInput
           :model-value="
@@ -287,7 +287,7 @@ const metricCompoundSplit = computed(() => {
 
   <div
     v-else
-    class="question-renderer-segments w-full max-w-full text-left [&_mjx-container]:!mx-0 [&_mjx-container]:!my-0 [&_mjx-container]:!text-left [&_mjx-container[display='true']]:!mb-0 [&_.MathJax]:!my-0"
+    class="question-renderer-segments w-full max-w-full text-left [&_mjx-container]:!mx-0 [&_mjx-container]:!text-left"
   >
   <template v-for="item in structuralRenderItems" :key="`${item.segment.type}-${item.segment.index}`">
     <!-- blank -->
@@ -382,7 +382,7 @@ const metricCompoundSplit = computed(() => {
       v-else-if="item.kind === 'highlighted'"
       :class="
         cn(
-          'bg-picton-blue-200 text-picton-blue-700 px-2 rounded mx-1 items-center leading-loose',
+          'bg-picton-blue-200 text-picton-blue-700 px-2 rounded mx-1 items-center leading-snug',
           highlightClassName,
         )
       "
@@ -401,7 +401,7 @@ const metricCompoundSplit = computed(() => {
     <!-- text -->
     <span
       v-else
-      :class="cn('mx-1 items-center leading-loose', textClassName)"
+      :class="cn('mx-1 items-center leading-snug', textClassName)"
     >
       <template v-if="!hasMathInText(item.segment.content)">
         <span class="whitespace-pre-line">{{ item.segment.content }}</span>
@@ -416,3 +416,12 @@ const metricCompoundSplit = computed(() => {
   </template>
   </div>
 </template>
+
+<style scoped>
+/* Long-form (display) math defaults to large vertical margins; pull it up next to blanks/inputs. */
+.question-renderer-segments :deep(mjx-container[display="true"]),
+.metric-compound-math :deep(mjx-container[display="true"]) {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+</style>
