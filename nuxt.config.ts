@@ -91,7 +91,8 @@ export default defineNuxtConfig({
         '@iconify/vue',
         'clsx', 
         'tailwind-merge', 
-        'class-variance-authority'
+        'class-variance-authority',
+         'crypto-js'
       ],
     },
     server: {
