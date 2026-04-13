@@ -34,12 +34,14 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 
 // State
 const score = ref(0);
 const allAnswered = ref(false);
 const showResults = ref(false);
 const answers = ref<Record<number, { value: string; optionId: string; image?: string }>>({});
+const activityInstructionsId = "complete-sentences-dragging-clues-instructions";
 
 // Shuffle options
 type UniqueOption = { id: string; value: string; image?: string; uniqueIndex: number };
@@ -140,8 +142,20 @@ function handleTryAgain() {
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="complete-sentences-dragging-clues-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="complete-sentences-dragging-clues-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{ ui.isSwahili
+        ? "Buruta kila kidokezo hadi kwenye nafasi inayolingana. Ukimaliza, dirisha la matokeo litaonekana na sehemu ya mwisho ya matokeo itaonyesha majibu yaliyokuwa sahihi au yasiyo sahihi."
+        : "Drag each clue into the matching blank. After you finish, the results dialog will appear and the final results section will show which answers were correct or incorrect." }}
+    </p>
 
     <div
       class="flex flex-col h-full bg-picton-blue-100 gap-2"
@@ -167,7 +181,16 @@ function handleTryAgain() {
         </div>
 
         <!-- Questions -->
-        <div v-for="(question, i) in props.questions.questions" :key="i" class="flex md:items-center rounded-md gap-2 md:gap-6 p-3 bg-picton-blue-50">
+        <div
+          v-for="(question, i) in props.questions.questions"
+          :key="i"
+          class="flex md:items-center rounded-md gap-2 md:gap-6 p-3 bg-picton-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+          :class="showResults ? (answers[i]?.value === question.answer ? 'bg-green-100' : 'bg-red-100') : ''"
+          role="group"
+          tabindex="0"
+          :aria-labelledby="`complete-sentences-dragging-clues-question-${i}`"
+          :aria-describedby="showResults ? `complete-sentences-dragging-clues-result-${i}` : undefined"
+        >
           <div class="flex flex-col md:flex-row items-start gap-2">
             <img
               v-if="question.image"
@@ -177,7 +200,7 @@ function handleTryAgain() {
             />
 
             <div class="flex flex-wrap items-center gap-2 leading-relaxed">
-              <span class="mr-1 font-bold text-picton-blue-700">
+              <span :id="`complete-sentences-dragging-clues-question-${i}`" class="mr-1 font-bold text-picton-blue-700">
                 {{ i + 1 }}.
               </span>
 
@@ -213,11 +236,20 @@ function handleTryAgain() {
                     :class="answers[i]?.value === question.answer ? 'text-green-600' : 'text-red-600'"
                     width="20"
                     height="20"
+                    aria-hidden="true"
                   />
                 </template>
               </template>
             </div>
           </div>
+          <span
+            v-if="showResults"
+            :id="`complete-sentences-dragging-clues-result-${i}`"
+            class="sr-only"
+            role="status"
+          >
+            {{ ui.formatQuestionResult(i + 1, answers[i]?.value === question.answer) }}
+          </span>
         </div>
       </DNDContext>
 
@@ -226,6 +258,7 @@ function handleTryAgain() {
         :score="score"
         :total="props.questions.questions.length"
         :onRestart="handleTryAgain"
+        class-name="mt-2"
       />
     </div>
 
@@ -239,5 +272,5 @@ function handleTryAgain() {
         if (!open) showResults = true;
       }"
     />
-  </div>
+  </section>
 </template>

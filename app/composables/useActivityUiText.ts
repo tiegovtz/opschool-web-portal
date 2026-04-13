@@ -66,6 +66,27 @@ export const useActivityUiText = () => {
     isSwahili.value ? "Tatizo lisilojulikana limetokea" : "Unknown issue occurred",
   );
   const timesUp = computed(() => (isSwahili.value ? "Muda umeisha!" : "Time's up!"));
+  const availableAnswerChoices = computed(() =>
+    isSwahili.value ? "Chaguo za majibu zinazopatikana" : "Available answer choices",
+  );
+  const completeSentenceQuestions = computed(() =>
+    isSwahili.value ? "Maswali ya kukamilisha sentensi" : "Complete sentence questions",
+  );
+  const availableClueWords = computed(() =>
+    isSwahili.value ? "Maneno ya vidokezo yanayopatikana" : "Available clue words",
+  );
+  const sentenceRearrangeQuestions = computed(() =>
+    isSwahili.value ? "Maswali ya kupanga upya sentensi" : "Sentence rearrange questions",
+  );
+  const sentenceRearrangeResults = computed(() =>
+    isSwahili.value ? "Matokeo ya kupanga upya sentensi" : "Sentence rearrange results",
+  );
+  const resultsByQuestion = computed(() =>
+    isSwahili.value ? "Matokeo kwa kila swali" : "Results by question",
+  );
+  const resultEmojiAlt = computed(() =>
+    isSwahili.value ? "Picha ya matokeo" : "Result emoji",
+  );
 
   const formatQuestion = (index: number) => `${question.value} ${index}`;
   const formatCorrect = (value?: string | number | null) =>
@@ -82,6 +103,10 @@ export const useActivityUiText = () => {
       : isSwahili.value
         ? `Si sahihi. Jibu: ${value}`
         : `Incorrect. Answer: ${value}`;
+  const formatQuestionResult = (index: number, isCorrectResult: boolean) =>
+    isSwahili.value
+      ? `Swali la ${index} ${isCorrectResult ? "ni sahihi" : "si sahihi"}`
+      : `Question ${index} ${isCorrectResult ? "correct" : "incorrect"}`;
 
   return {
     isSwahili,
@@ -106,9 +131,17 @@ export const useActivityUiText = () => {
     activityUnavailable,
     unknownIssue,
     timesUp,
+    availableAnswerChoices,
+    completeSentenceQuestions,
+    availableClueWords,
+    sentenceRearrangeQuestions,
+    sentenceRearrangeResults,
+    resultsByQuestion,
+    resultEmojiAlt,
     formatQuestion,
     formatCorrect,
     formatCorrectAnswer,
     formatIncorrectAnswer,
+    formatQuestionResult,
   };
 };

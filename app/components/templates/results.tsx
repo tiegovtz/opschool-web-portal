@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref, watch } from "vue";
+import { computed, defineComponent, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { cn } from "~/utilities/utils";
 import { Button } from "~/components/ui/button";
 import {
@@ -77,9 +77,12 @@ const ResultsCard = defineComponent({
   },
   setup(props) {
     const isSwahili = useIsSwahiliResultsUi();
+    const ui = useActivityUiText();
     const percentage = computed(() =>
       props.total ? Math.round((props.score / props.total) * 100) : 0,
     );
+    const resultsHeadingId = `activity-results-heading-${Math.random().toString(36).slice(2, 9)}`;
+    const resultsDescriptionId = `activity-results-description-${Math.random().toString(36).slice(2, 9)}`;
 
     return () => (
       <div
@@ -87,16 +90,19 @@ const ResultsCard = defineComponent({
           "rounded-2xl border border-oceanBlue/15 bg-white p-5 shadow-sm",
           props.className,
         )}
+        role="region"
+        aria-labelledby={resultsHeadingId}
+        aria-describedby={resultsDescriptionId}
       >
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div class="space-y-1">
             <p class="text-sm font-medium uppercase tracking-[0.18em] text-oceanBlue/70">
               {props.title || (isSwahili.value ? "Matokeo" : "Results")}
             </p>
-            <h3 class="text-2xl font-semibold text-oceanBlue">
+            <h3 id={resultsHeadingId} class="text-2xl font-semibold text-oceanBlue">
               {props.score}/{props.total}
             </h3>
-            <p class="text-sm text-slate-600">
+            <p id={resultsDescriptionId} class="text-sm text-slate-600">
               {props.description || resolveMessage(props.score, props.total, isSwahili.value)}
             </p>
           </div>
@@ -144,7 +150,12 @@ export const ActivityResultsAlertDialog = defineComponent({
   },
   setup(props) {
     const isSwahili = useIsSwahiliResultsUi();
+    const ui = useActivityUiText();
+    const dialogRef = ref<HTMLElement | null>(null);
+    const lastFocusedElement = ref<HTMLElement | null>(null);
     const close = () => props.onOpenChange?.(false);
+    const dialogTitleId = `activity-results-dialog-title-${Math.random().toString(36).slice(2, 9)}`;
+    const dialogDescriptionId = `activity-results-dialog-description-${Math.random().toString(36).slice(2, 9)}`;
 
     type ConfettiPiece = {
       leftPct: number;
@@ -237,8 +248,18 @@ export const ActivityResultsAlertDialog = defineComponent({
 
     watch(
       () => props.open,
-      (nextOpen) => {
-        if (!nextOpen) return;
+      async (nextOpen) => {
+        if (!nextOpen) {
+          window.requestAnimationFrame(() => {
+            lastFocusedElement.value?.focus?.();
+          });
+          return;
+        }
+        if (typeof document !== "undefined") {
+          lastFocusedElement.value = document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+        }
         // Ensure the user can see the result popup immediately,
         // even if the activity content was scrolled down.
         if (typeof window !== "undefined") {
@@ -255,8 +276,46 @@ export const ActivityResultsAlertDialog = defineComponent({
         const seed = props.score * 997 + props.total * 619 + animationKey.value;
         confettiPieces.value = createConfettiPieces(seed, 34);
         triggerCelebration();
+
+        await nextTick();
+        const firstFocusable = dialogRef.value?.querySelector<HTMLElement>("[data-results-primary-action]");
+        firstFocusable?.focus?.();
       },
     );
+
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
+      if (!props.open || event.key !== "Tab" || !dialogRef.value) return;
+
+      const focusableElements = Array.from(
+        dialogRef.value.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => !element.hasAttribute("disabled"));
+
+      if (!focusableElements.length) return;
+
+      const firstElement = focusableElements[0]!;
+      const lastElement = focusableElements[focusableElements.length - 1]!;
+      const activeElement = document.activeElement as HTMLElement | null;
+
+      if (event.shiftKey && activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("keydown", handleDialogKeyDown);
+    }
+
+    onBeforeUnmount(() => {
+      if (typeof document !== "undefined") {
+        document.removeEventListener("keydown", handleDialogKeyDown);
+      }
+    });
 
     const modalTitle = computed(() =>
       props.isCompletionOnly
@@ -284,6 +343,8 @@ export const ActivityResultsAlertDialog = defineComponent({
           role="dialog"
           aria-modal="true"
           aria-live="polite"
+          aria-labelledby={dialogTitleId}
+          aria-describedby={dialogDescriptionId}
           class="fixed inset-0 z-[130] flex items-center justify-center px-4 py-8"
         >
           {/* Blur/dim the activity behind the modal */}
@@ -294,6 +355,7 @@ export const ActivityResultsAlertDialog = defineComponent({
 
           <div
             key={animationKey.value}
+            ref={dialogRef}
             class="relative w-full max-w-md overflow-hidden rounded-3xl border border-oceanBlue/15 bg-white/95 shadow-[0_30px_120px_-60px_rgba(1,61,96,0.7)] md:max-w-lg"
           >
             <div class="absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-amber-50 opacity-70" />
@@ -328,7 +390,7 @@ export const ActivityResultsAlertDialog = defineComponent({
               <div class="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-sky-50 shadow-sm ring-1 ring-oceanBlue/10 md:h-28 md:w-28">
                 <img
                   src={emojiSrc.value}
-                  alt="Result Emoji"
+                  alt={ui.resultEmojiAlt.value}
                   class={cn(
                     "h-16 w-16 object-contain md:h-20 md:w-20",
                     celebrate.value ? "animate-bounce" : "",
@@ -339,7 +401,7 @@ export const ActivityResultsAlertDialog = defineComponent({
 
               {!props.isCompletionOnly ? (
                 <>
-                  <p class="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-oceanBlue/70">
+                  <p id={dialogTitleId} class="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-oceanBlue/70">
                     {modalTitle.value}
                   </p>
 
@@ -347,7 +409,7 @@ export const ActivityResultsAlertDialog = defineComponent({
                     {props.score}/{props.total}
                   </div>
 
-                  <div class="mt-2 text-xl font-semibold text-oceanBlue md:text-2xl">
+                  <div id={dialogDescriptionId} class="mt-2 text-xl font-semibold text-oceanBlue md:text-2xl">
                     {modalDescription.value}
                   </div>
 
@@ -356,7 +418,7 @@ export const ActivityResultsAlertDialog = defineComponent({
                   </div>
                 </>
               ) : (
-                <div class="mt-4 text-lg font-bold text-oceanBlue md:text-xl">
+                <div id={dialogDescriptionId} class="mt-4 text-lg font-bold text-oceanBlue md:text-xl">
                   {modalDescription.value}
                 </div>
               )}
@@ -380,6 +442,7 @@ export const ActivityResultsAlertDialog = defineComponent({
                 variant="brand"
                 onClick={close}
                 class="w-full md:w-auto"
+                data-results-primary-action="true"
               >
                 {isSwahili.value ? "Endelea" : "Continue"}
               </Button>

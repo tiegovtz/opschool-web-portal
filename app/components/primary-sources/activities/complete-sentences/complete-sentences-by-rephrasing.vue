@@ -49,6 +49,8 @@ const checkedItems = ref<number[]>([]);
 const answers = ref<Record<number, string>>({});
 const feedbacks = ref<Record<number, boolean>>({});
 const showResults = ref(false);
+const activityInstructionsId = "complete-sentences-instructions";
+const activityOptionsId = "complete-sentences-options";
 
 const shuffleQuestions = () => {
   shuffledQuestions.value = shuffle([...props.questions.questions]);
@@ -160,8 +162,20 @@ const handleResetWithShuffle = () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="complete-sentences-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="complete-sentences-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{ ui.isSwahili
+        ? "Kamilisha kila sentensi kwa kutumia kitufe cha Tab kupita kwenye sehemu za kuandika. Baada ya kujaza nafasi zote wazi, tumia kitufe cha Kagua Majibu kuona matokeo yako."
+        : "Complete each sentence by moving through the input fields with the Tab key. After all blanks are filled, use the Check Answers button to review your results." }}
+    </p>
 
     <div
       class="flex flex-col h-full bg-picton-blue-100 gap-2 text-lg"
@@ -169,22 +183,34 @@ const handleResetWithShuffle = () => {
     >
       <div
         v-if="props.questions.options && props.questions.options.length > 0"
+        :id="activityOptionsId"
         class="flex flex-wrap gap-4 border-2 border-picton-blue-300 bg-picton-blue-200 w-fit py-4 rounded"
+        role="group"
+        :aria-label="ui.availableAnswerChoices.value"
       >
         <span
           v-for="(option, index) in props.questions.options"
           :key="index"
-          class="text-picton-blue-700 leading-4 px-3"
+          tabindex="0"
+          class="text-picton-blue-700 leading-4 px-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-200"
         >
           {{ option }}
         </span>
       </div>
 
-      <div class="flex-1 overflow-y-auto space-y-4 py-4">
+      <div
+        class="flex-1 overflow-y-auto space-y-4 py-4"
+        role="list"
+        :aria-label="ui.completeSentenceQuestions.value"
+      >
         <div
           v-for="(q, i) in shuffledQuestions"
           :key="q.id"
-          class="rounded-lg min-h-[80px] p-2 flex items-center"
+          class="rounded-lg min-h-[80px] p-2 flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-100"
+          role="listitem"
+          tabindex="0"
+          :aria-labelledby="`complete-sentence-question-${q.id}`"
+          :aria-describedby="q.image ? `complete-sentence-image-${q.id}` : undefined"
           :class="
             cn({
               'bg-picton-blue-50': !checkedItems.includes(i),
@@ -197,7 +223,12 @@ const handleResetWithShuffle = () => {
           <div class="py-2 flex items-center justify-between w-full gap-4">
             <div class="flex flex-col md:flex-row items-center justify-between gap-2 w-full">
               <div class="flex-1 min-w-0">
-                <span class="mr-1 font-medium text-picton-blue-800">{{ i + 1 }}.</span>
+                <span
+                  :id="`complete-sentence-question-${q.id}`"
+                  class="mr-1 font-medium text-picton-blue-800"
+                >
+                  {{ i + 1 }}.
+                </span>
                 <QuestionRenderer
                   :question="q.question"
                   :answers="q.answer"
@@ -209,17 +240,26 @@ const handleResetWithShuffle = () => {
                   @blank-change="(bi, val) => handleInputChange(i, bi, val)"
                 />
               </div>
-              <div v-if="q.image" class="min-w-[150px] h-32 md:h-28">
+              <div
+                v-if="q.image"
+                :id="`complete-sentence-image-${q.id}`"
+                class="min-w-[150px] h-32 md:h-28"
+              >
                 <img :src="q.image" :alt="q.question" class="w-full h-full rounded-lg object-contain">
               </div>
             </div>
 
-            <div v-if="checkedItems.includes(i)" class="flex items-center gap-2">
+            <div
+              v-if="checkedItems.includes(i)"
+              class="flex items-center gap-2"
+              role="status"
+              :aria-label="ui.formatQuestionResult(i + 1, feedbacks[i])"
+            >
               <div
                 class="flex items-center justify-center rounded-full p-1"
                 :class="feedbacks[i] ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
               >
-                <Icon :icon="feedbacks[i] ? 'mdi:check' : 'mdi:close'" class="h-5 w-5" />
+                <Icon :icon="feedbacks[i] ? 'mdi:check' : 'mdi:close'" class="h-5 w-5" aria-hidden="true" />
               </div>
             </div>
           </div>
@@ -238,6 +278,7 @@ const handleResetWithShuffle = () => {
           :onClick="handleCheckAllAnswers"
           variant="brand-lemon"
           size="lg"
+          :aria-describedby="props.questions.options && props.questions.options.length > 0 ? activityOptionsId : activityInstructionsId"
         >
           {{ allAnswered ? ui.answersChecked : ui.checkAnswers }}
         </Button>
@@ -250,5 +291,5 @@ const handleResetWithShuffle = () => {
       :open="allAnswered && !showResults"
       :onOpenChange="(open: boolean) => { if (!open) showResults = true; }"
     />
-  </div>
+  </section>
 </template>

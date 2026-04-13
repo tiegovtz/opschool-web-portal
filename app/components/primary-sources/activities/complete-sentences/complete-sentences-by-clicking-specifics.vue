@@ -5,6 +5,7 @@ import { ref, computed, watch } from "vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults from "@/components/templates/results";
 import { ActivityResultsAlertDialog } from "@/components/templates/results";
+import { Button } from "~/components/ui/button";
 import { shuffle } from "~/utilities/utils";
 
 // Props
@@ -32,6 +33,7 @@ const allAnswered = ref(false);
 const showResults = ref(false);
 const selectedWords = ref<Record<string, string[]>>({});
 const shuffledQuestions = ref<Question[]>(shuffle([...props.questions.questions]));
+const activityInstructionsId = "complete-sentences-clicking-specifics-instructions";
 
 const { playSound } = useSoundEffects();
 
@@ -113,30 +115,48 @@ function renderWords(questionId: string, question: string) {
     }
 
     return (
-      <span
+      <button
         key={idx}
+        type="button"
         class={classes}
+        disabled={showResults.value}
+        aria-pressed={isSelected}
         onClick={() => !showResults.value && handleWordClick(questionId, word)}
       >
         {word}
-      </span>
+      </button>
     );
   });
 }
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="complete-sentences-clicking-specifics-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="complete-sentences-clicking-specifics-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{ ui.isSwahili
+        ? "Tumia kitufe cha Tab kupita kwenye chaguo za maneno yaliyoangaziwa. Bonyeza Enter au Space kuchagua au kuondoa neno, kisha kagua majibu yako ukimaliza."
+        : "Use the Tab key to move between highlighted word choices. Press Enter or Space to select or remove a word, then check your answers when you are done." }}
+    </p>
 
     <div
       class="flex flex-col gap-2"
       :style="{ fontSize: props.questions.fontSize ? props.questions.fontSize + 'px' : '20px' }"
-    >
+      role="list"
+       :aria-label="ui.completeSentenceQuestions.value">
       <div
         v-for="(question, i) in shuffledQuestions"
         :key="question.id"
-        class="p-4 bg-picton-blue-50 rounded-md"
+        class="p-4 bg-picton-blue-50 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+        role="listitem"
+        tabindex="0"
       >
         <p>
           {{ i + 1 }}. <span v-for="w in renderWords(question.id, question.question)">{{ w }}</span>
@@ -145,9 +165,9 @@ function renderWords(questionId: string, question: string) {
     </div>
 
     <div v-if="!showResults" class="mt-4 flex justify-end">
-      <button class="px-4 py-2 bg-yellow-400 rounded" @click="checkAnswers">
+      <Button variant="brand-lemon" :onClick="checkAnswers" :aria-describedby="activityInstructionsId">
         {{ ui.checkAnswers }}
-      </button>
+      </Button>
     </div>
 
     <div v-if="showResults">
@@ -164,5 +184,5 @@ function renderWords(questionId: string, question: string) {
       :open="allAnswered"
       @onOpenChange="(open:any) => { allAnswered = open; if (!open) showResults = true }"
     />
-  </div>
+  </section>
 </template>

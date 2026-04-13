@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import ActivityTitle from "~/components/templates/activity-title";
 import DNDContext from "~/components/layout/dnd-context";
 import Draggable from "~/components/ui/dnd/draggable";
 import Droppable from "~/components/ui/dnd/droppable";
@@ -28,6 +29,8 @@ type DragEndEvent = {
 };
 
 const props = defineProps<ExamMatchingWithLettersProps>();
+const ui = useActivityUiText();
+const activityInstructionsId = "exam-matching-letters-instructions";
 
 const createShuffledAnswers = (
   answers: string[],
@@ -184,15 +187,33 @@ const handleDragEnd = (event: DragEndEvent) => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="exam-matching-letters-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="exam-matching-letters-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
+    <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye swali, nafasi za kuweka herufi, na chaguo. Shughuli hii bado inategemea mfumo wa kuburuta kwa kupanga herufi."
+          : "Use Tab to move through the questions, answer slots, and options. This activity still relies on drag and drop to place the letters."
+      }}
+    </p>
     <DNDContext :onDragEnd="handleDragEnd">
       <div class="flex h-full flex-col justify-between overflow-auto pb-2 md:flex-row">
         <div class="flex w-full flex-col justify-between bg-white p-4 md:max-h-[calc(100dvh-100px)] md:rounded-bl-xl">
-          <div class="flex flex-col gap-y-4">
+          <div class="flex flex-col gap-y-4" role="list" :aria-label="ui.question.value">
             <div
               v-for="(question, index) in props.questions.questions"
               :key="question.id"
               class="flex items-center gap-4 text-lg text-picton-blue-700"
+              role="listitem"
+              tabindex="0"
+              :aria-labelledby="`exam-matching-question-${question.id}`"
             >
               <p>{{ toRoman(index + 1) }}.</p>
               <div class="flex w-full items-center justify-between gap-4">
@@ -203,20 +224,20 @@ const handleDragEnd = (event: DragEndEvent) => {
                     :alt="question.text"
                     class="h-16 sm:h-24"
                   >
-                  <span>{{ question.text }}</span>
+                  <span :id="`exam-matching-question-${question.id}`">{{ question.text }}</span>
                 </div>
                 <div class="flex items-center gap-2">
                   <Draggable
                     v-if="answers[index]"
                     :id="answers[index]!"
-                    class="flex h-10 w-14 cursor-move items-center justify-center rounded bg-lemon-200 text-xl font-semibold text-lemon-700"
+                    class="flex h-10 w-14 cursor-move items-center justify-center rounded bg-lemon-200 text-xl font-semibold text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
                   >
                     {{ answers[index] }}
                   </Draggable>
                   <Droppable
                     v-else
                     :id="`q-${index}`"
-                    class="h-10 w-14 rounded bg-picton-blue-200"
+                    class="h-10 w-14 rounded bg-picton-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
                     isOverClassName="bg-lemon-200"
                   />
                 </div>
@@ -225,19 +246,19 @@ const handleDragEnd = (event: DragEndEvent) => {
           </div>
 
           <div class="flex w-full flex-col gap-y-4 rounded-xl">
-            <h3 class="mb-2 font-semibold">Options</h3>
-            <div class="flex flex-wrap gap-4 text-lg">
+            <h3 class="mb-2 font-semibold">{{ ui.availableAnswerChoices }}</h3>
+            <div class="flex flex-wrap gap-4 text-lg" role="group" :aria-label="ui.availableAnswerChoices.value">
               <Draggable
                 v-for="answer in availableAnswers"
                 :key="answer.letter"
                 :id="(answer.letter as string)"
-                class="flex h-10 w-14 cursor-move items-center justify-center rounded bg-lemon-200 text-xl font-semibold text-lemon-700"
+                class="flex h-10 w-14 cursor-move items-center justify-center rounded bg-lemon-200 text-xl font-semibold text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
               >
                 <span>{{ answer.letter }}</span>
               </Draggable>
             </div>
-            <div v-if="!availableAnswers.length" class="py-4 text-center text-gray-500">
-              All options have been used
+            <div v-if="!availableAnswers.length" class="py-4 text-center text-gray-500" role="status" aria-live="polite">
+              {{ ui.isSwahili ? 'Chaguo zote zimetumika' : 'All options have been used' }}
             </div>
           </div>
         </div>
@@ -253,5 +274,5 @@ const handleDragEnd = (event: DragEndEvent) => {
         </div>
       </div>
     </DNDContext>
-  </div>
+  </section>
 </template>
