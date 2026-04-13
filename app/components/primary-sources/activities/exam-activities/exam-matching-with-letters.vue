@@ -3,19 +3,22 @@ import { computed, ref, watch } from "vue";
 import DNDContext from "~/components/layout/dnd-context";
 import Draggable from "~/components/ui/dnd/draggable";
 import Droppable from "~/components/ui/dnd/droppable";
-import { shuffle, toRoman } from "~/utilities/utils";
+import { Button } from "~/components/ui/button";
+import { cn, shuffle, toRoman } from "~/utilities/utils";
 import { useExamContext, type QuestionAnswer } from "~/shared/context/exam-context";
 
 type ExamMatchingWithLettersProps = {
   questions: {
     title: string;
+    mode?: "kweliSikweli";
+    sharedImage?: string;
     questions: {
       id: string;
       text: string;
       image?: string;
       correctAnswer: string;
     }[];
-    answers: string[];
+    answers?: string[];
   };
   activityIndex: number;
   activityId: string;
@@ -28,6 +31,18 @@ type DragEndEvent = {
 };
 
 const props = defineProps<ExamMatchingWithLettersProps>();
+
+const isKweliMode = computed(() => props.questions.mode === "kweliSikweli");
+
+const kweliSelections = ref<("T" | "F" | undefined)[]>([]);
+
+watch(
+  () => [props.questions.mode, props.questions.questions.length] as const,
+  () => {
+    kweliSelections.value = props.questions.questions.map(() => undefined);
+  },
+  { immediate: true },
+);
 
 const createShuffledAnswers = (
   answers: string[],
@@ -72,27 +87,83 @@ const createShuffledAnswers = (
   };
 };
 
+const emptyLetterState = () => ({
+  shuffledAnswers: [] as { display: string; letter: string; content: string }[],
+  correctAnswerMapping: new Map<string, string>(),
+});
+
 const answers = ref<(string | undefined)[]>([]);
 
 const { playSound } = useSoundEffects();
 const { collectAnswers, updateActivityScore } = useExamContext();
 
-const initialShuffledState = createShuffledAnswers(
-  [...props.questions.answers],
-  props.questions.questions,
-);
+const initialLetterState =
+  props.questions.answers?.length && !isKweliMode.value
+    ? createShuffledAnswers([...props.questions.answers], props.questions.questions)
+    : emptyLetterState();
 
-const shuffledAnswers = ref(initialShuffledState.shuffledAnswers);
-const correctAnswerMapping = ref(initialShuffledState.correctAnswerMapping);
+const shuffledAnswers = ref(initialLetterState.shuffledAnswers);
+const correctAnswerMapping = ref(initialLetterState.correctAnswerMapping);
+
+watch(
+  () => props.questions,
+  () => {
+    answers.value = [];
+    if (!isKweliMode.value && props.questions.answers?.length) {
+      const next = createShuffledAnswers([...props.questions.answers], props.questions.questions);
+      shuffledAnswers.value = next.shuffledAnswers;
+      correctAnswerMapping.value = next.correctAnswerMapping;
+    } else if (!isKweliMode.value) {
+      const next = emptyLetterState();
+      shuffledAnswers.value = next.shuffledAnswers;
+      correctAnswerMapping.value = next.correctAnswerMapping;
+    }
+  },
+  { deep: true },
+);
 
 const totalQuestions = computed(() => props.questions.questions.length);
 const availableAnswers = computed(() =>
   shuffledAnswers.value.filter((answer) => !answers.value.includes(answer.letter)),
 );
 
+const kweliLabel = (v: "T" | "F" | undefined) =>
+  v === "T" ? "Kweli" : v === "F" ? "Si Kweli" : "";
+
+const setKweliAnswer = (index: number, choice: "T" | "F") => {
+  const next = [...kweliSelections.value];
+  next[index] = choice;
+  kweliSelections.value = next;
+  playSound("click");
+};
+
 const calculateScore = () => {
   let score = 0;
   const detailedAnswers: QuestionAnswer[] = [];
+
+  if (isKweliMode.value) {
+    props.questions.questions.forEach((question, index) => {
+      const userAnswer = kweliSelections.value[index] || "";
+      const correctAnswer = question.correctAnswer;
+      const isCorrect = userAnswer === correctAnswer;
+
+      if (isCorrect) {
+        score++;
+      }
+
+      detailedAnswers.push({
+        questionId: question.id,
+        userAnswer: kweliLabel(userAnswer as "T" | "F" | undefined) || userAnswer,
+        correctAnswer: kweliLabel(correctAnswer as "T" | "F") || correctAnswer,
+        isCorrect,
+        question: question.text,
+        image: props.questions.sharedImage || question.image,
+        options: ["Kweli", "Si Kweli"],
+      });
+    });
+
+    return { score, answers: detailedAnswers };
+  }
 
   props.questions.questions.forEach((question, index) => {
     const userAnswer = answers.value[index] || "";
@@ -117,17 +188,20 @@ const calculateScore = () => {
   return { score, answers: detailedAnswers };
 };
 
-watch(
-  answers,
-  () => {
-    const answeredCount = answers.value.filter((answer) => answer !== undefined).length;
+const reportProgress = () => {
+  if (isKweliMode.value) {
+    const answeredCount = kweliSelections.value.filter((a) => a !== undefined).length;
     props.onStateUpdate?.(totalQuestions.value, answeredCount);
-  },
-  { deep: true },
-);
+    return;
+  }
+  const answeredCount = answers.value.filter((answer) => answer !== undefined).length;
+  props.onStateUpdate?.(totalQuestions.value, answeredCount);
+};
+
+watch([answers, kweliSelections], reportProgress, { deep: true, immediate: true });
 
 watch(
-  [answers, collectAnswers],
+  [answers, kweliSelections, collectAnswers],
   () => {
     if (!collectAnswers.value) return;
 
@@ -144,6 +218,8 @@ watch(
 );
 
 const handleDragEnd = (event: DragEndEvent) => {
+  if (isKweliMode.value) return;
+
   const draggedItemLetter = event.active?.id;
   if (!draggedItemLetter) return;
 
@@ -185,7 +261,56 @@ const handleDragEnd = (event: DragEndEvent) => {
 
 <template>
   <div class="flex h-full flex-col">
-    <DNDContext :onDragEnd="handleDragEnd">
+    <div
+      v-if="isKweliMode"
+      class="flex flex-col gap-4 overflow-auto rounded-xl bg-white p-4 pb-2 md:max-h-[calc(100dvh-100px)]"
+    >
+      <div class="flex flex-col gap-5">
+        <div
+          v-for="(question, index) in props.questions.questions"
+          :key="question.id"
+          class="flex flex-col gap-3 rounded-lg border border-picton-blue-100 bg-picton-blue-50/60 p-4"
+        >
+          <p class="text-lg text-picton-blue-800">
+            {{ toRoman(index + 1) }}. {{ question.text }}
+          </p>
+          <div class="flex flex-wrap items-center justify-center gap-4 sm:justify-start">
+            <Button
+              type="button"
+              :variant="kweliSelections[index] === 'T' ? 'default' : 'outline'"
+              :class="
+                cn(
+                  'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
+                )
+              "
+              @click="setKweliAnswer(index, 'T')"
+            >
+              Kweli
+            </Button>
+            <Button
+              type="button"
+              :variant="kweliSelections[index] === 'F' ? 'default' : 'outline'"
+              :class="
+                cn(
+                  'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
+                )
+              "
+              @click="setKweliAnswer(index, 'F')"
+            >
+              Si Kweli
+            </Button>
+          </div>
+          <img
+            v-if="props.questions.sharedImage"
+            :src="props.questions.sharedImage"
+            alt=""
+            class="mx-auto max-h-56 w-full max-w-lg rounded-lg object-contain"
+          >
+        </div>
+      </div>
+    </div>
+
+    <DNDContext v-else :onDragEnd="handleDragEnd">
       <div class="flex h-full flex-col justify-between overflow-auto pb-2 md:flex-row">
         <div class="flex w-full flex-col justify-between bg-white p-4 md:max-h-[calc(100dvh-100px)] md:rounded-bl-xl">
           <div class="flex flex-col gap-y-4">
