@@ -7,6 +7,11 @@ type MatchingItem = {
   content: string | { imageSrc: string };
 };
 
+type ImageMatchingItem = {
+  id: string;
+  content: { imageSrc: string };
+};
+
 const TEXT_FIELD_KEYS = [
   "textOne",
   "textTwo",
@@ -50,22 +55,85 @@ const getQuestionId = (question: ActivityTranspilerProps["serverQuestions"][numb
 const getQuestionTexts = (
   question: ActivityTranspilerProps["serverQuestions"][number],
 ) => {
+  const externalQuestion = question as Record<string, unknown>;
   const descriptionTexts = Array.isArray(question.description)
     ? question.description
         .map((item) => getTextValue(item?.details))
         .filter(Boolean)
     : [];
 
-  return [
+  const externalTexts = [
+    getTextValue(externalQuestion.text),
+    getTextValue(externalQuestion.answer),
+  ].filter(Boolean);
+
+  return Array.from(new Set([
     ...TEXT_FIELD_KEYS.map((key) => getTextValue(question[key])).filter(Boolean),
+    ...externalTexts,
     ...descriptionTexts,
-  ];
+  ]));
 };
 
 const getQuestionImages = (
   question: ActivityTranspilerProps["serverQuestions"][number],
-) =>
-  IMAGE_FIELD_KEYS.map((key) => getImageValue(question[key])).filter(Boolean);
+) => {
+  const externalQuestion = question as Record<string, unknown>;
+  const externalImages = Array.isArray(externalQuestion.images)
+    ? externalQuestion.images.map((image) => getImageValue(image)).filter(Boolean)
+    : [];
+
+  return Array.from(new Set([
+    ...IMAGE_FIELD_KEYS.map((key) => getImageValue(question[key])).filter(Boolean),
+    ...externalImages,
+  ]));
+};
+
+const groupedSingleImagePairs = (
+  questions: ActivityTranspilerProps["serverQuestions"],
+) => {
+  const eligibleQuestions = questions.filter((question) => {
+    const [imageSrc] = getQuestionImages(question);
+    const [pairKey] = getQuestionTexts(question);
+
+    return !!imageSrc && !!pairKey;
+  });
+
+  const groupedItems = eligibleQuestions.reduce<Map<string, MatchingItem[]>>((groups, question) => {
+    const [imageSrc] = getQuestionImages(question);
+    const [pairKey] = getQuestionTexts(question);
+
+    if (!imageSrc || !pairKey) return groups;
+
+    const groupItems = groups.get(pairKey) || [];
+    groupItems.push({
+      id: pairKey,
+      content: { imageSrc },
+    });
+    groups.set(pairKey, groupItems);
+
+    return groups;
+  }, new Map());
+
+  const groupedEntries = Array.from(groupedItems.entries());
+
+  if (
+    !groupedEntries.length ||
+    groupedEntries.some(([, items]) => items.length !== 2) ||
+    groupedEntries.length * 2 !== eligibleQuestions.length
+  ) {
+    return [];
+  }
+
+  return groupedEntries
+    .map(([id, items]) => {
+      return {
+        id,
+        left: { id, content: items[0].content },
+        right: { id, content: items[1].content },
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+};
 
 const matchingItemsPictureTextTranspiler = (
   params: ActivityTranspilerProps,
@@ -176,6 +244,8 @@ const matchingItemsPictureTextTranspiler = (
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 
+  const groupedImagePairs = groupedSingleImagePairs(serverQuestions);
+
   // Structure the items based on algorithm type
   switch (algorithm) {
     case ActivityType.PictureTextMatching:
@@ -192,6 +262,12 @@ const matchingItemsPictureTextTranspiler = (
         break;
       }
 
+      if (groupedImagePairs.length) {
+        leftItems = groupedImagePairs.map((item) => item.left);
+        rightItems = groupedImagePairs.map((item) => item.right);
+        break;
+      }
+
       const imagePoolItems = shuffledQuestions
         .map((question, index) => {
           const [imageSrc] = getQuestionImages(question);
@@ -205,7 +281,7 @@ const matchingItemsPictureTextTranspiler = (
             content: { imageSrc },
           };
         })
-        .filter((item): item is MatchingItem => item !== null);
+        .filter((item): item is ImageMatchingItem => item !== null);
 
       const splitIndex =
         algorithm === ActivityType.PicturePictureMatchingSixItems
