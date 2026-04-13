@@ -87,6 +87,11 @@ export default defineNuxtConfig({
         'bowser',
         'axios',
         'markdown-it',
+        'zod/v4/locales',
+        '@iconify/vue',
+        'clsx', 
+        'tailwind-merge', 
+        'class-variance-authority'
       ],
     },
     server: {
