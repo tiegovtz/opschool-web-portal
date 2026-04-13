@@ -35,11 +35,21 @@ const props = defineProps<ExamMatchingWithLettersProps>();
 const isKweliMode = computed(() => props.questions.mode === "kweliSikweli");
 
 const kweliSelections = ref<("T" | "F" | undefined)[]>([]);
+type KweliBoxStatus = "empty" | "correct" | "wrong";
+const kweliBoxStatus = ref<KweliBoxStatus[]>([]);
+const kweliCurrentIndex = ref(0);
+
+const resetKweliFlow = () => {
+  const n = props.questions.questions.length;
+  kweliSelections.value = Array.from({ length: n }, () => undefined);
+  kweliBoxStatus.value = Array.from({ length: n }, () => "empty" as KweliBoxStatus);
+  kweliCurrentIndex.value = 0;
+};
 
 watch(
   () => [props.questions.mode, props.questions.questions.length] as const,
   () => {
-    kweliSelections.value = props.questions.questions.map(() => undefined);
+    resetKweliFlow();
   },
   { immediate: true },
 );
@@ -109,6 +119,9 @@ watch(
   () => props.questions,
   () => {
     answers.value = [];
+    if (isKweliMode.value) {
+      resetKweliFlow();
+    }
     if (!isKweliMode.value && props.questions.answers?.length) {
       const next = createShuffledAnswers([...props.questions.answers], props.questions.questions);
       shuffledAnswers.value = next.shuffledAnswers;
@@ -127,14 +140,53 @@ const availableAnswers = computed(() =>
   shuffledAnswers.value.filter((answer) => !answers.value.includes(answer.letter)),
 );
 
+const kweliRoundComplete = computed(
+  () =>
+    isKweliMode.value &&
+    kweliBoxStatus.value.length > 0 &&
+    kweliBoxStatus.value.every((b) => b !== "empty"),
+);
+
+const kweliDisplayIndex = computed(() => {
+  if (!isKweliMode.value) return 0;
+  if (kweliRoundComplete.value) {
+    return Math.max(0, props.questions.questions.length - 1);
+  }
+  return kweliCurrentIndex.value;
+});
+
+const kweliActiveQuestion = computed(() => {
+  if (!isKweliMode.value) return null;
+  const list = props.questions.questions;
+  const i = kweliDisplayIndex.value;
+  return list[i] ?? null;
+});
+
 const kweliLabel = (v: "T" | "F" | undefined) =>
   v === "T" ? "Kweli" : v === "F" ? "Si Kweli" : "";
 
-const setKweliAnswer = (index: number, choice: "T" | "F") => {
-  const next = [...kweliSelections.value];
-  next[index] = choice;
-  kweliSelections.value = next;
-  playSound("click");
+const pickKweli = (choice: "T" | "F") => {
+  if (!isKweliMode.value || kweliRoundComplete.value) return;
+
+  const i = kweliCurrentIndex.value;
+  const q = props.questions.questions[i];
+  if (!q) return;
+
+  const isCorrect = choice === q.correctAnswer;
+
+  const boxes = [...kweliBoxStatus.value];
+  boxes[i] = isCorrect ? "correct" : "wrong";
+  kweliBoxStatus.value = boxes;
+
+  const sel = [...kweliSelections.value];
+  sel[i] = choice;
+  kweliSelections.value = sel;
+
+  playSound(isCorrect ? "correct" : "failure");
+
+  if (i < props.questions.questions.length - 1) {
+    kweliCurrentIndex.value = i + 1;
+  }
 };
 
 const calculateScore = () => {
@@ -263,49 +315,88 @@ const handleDragEnd = (event: DragEndEvent) => {
   <div class="flex h-full flex-col">
     <div
       v-if="isKweliMode"
-      class="flex flex-col gap-4 overflow-auto rounded-xl bg-white p-4 pb-2 md:max-h-[calc(100dvh-100px)]"
+      class="flex flex-col gap-6 overflow-auto rounded-xl bg-white p-4 pb-2 md:max-h-[calc(100dvh-100px)]"
     >
-      <div class="flex flex-col gap-5">
+      <div
+        v-if="kweliActiveQuestion"
+        class="flex flex-col gap-4 rounded-lg border border-picton-blue-100 bg-picton-blue-50/60 p-4"
+      >
+        <p class="text-lg text-picton-blue-800">
+          {{ toRoman(kweliDisplayIndex + 1) }}. {{ kweliActiveQuestion.text }}
+        </p>
+
         <div
-          v-for="(question, index) in props.questions.questions"
-          :key="question.id"
-          class="flex flex-col gap-3 rounded-lg border border-picton-blue-100 bg-picton-blue-50/60 p-4"
+          v-if="!kweliRoundComplete"
+          class="flex flex-wrap items-center justify-center gap-4 sm:justify-start"
         >
-          <p class="text-lg text-picton-blue-800">
-            {{ toRoman(index + 1) }}. {{ question.text }}
-          </p>
-          <div class="flex flex-wrap items-center justify-center gap-4 sm:justify-start">
-            <Button
-              type="button"
-              :variant="kweliSelections[index] === 'T' ? 'default' : 'outline'"
-              :class="
-                cn(
-                  'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
-                )
-              "
-              @click="setKweliAnswer(index, 'T')"
-            >
-              Kweli
-            </Button>
-            <Button
-              type="button"
-              :variant="kweliSelections[index] === 'F' ? 'default' : 'outline'"
-              :class="
-                cn(
-                  'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
-                )
-              "
-              @click="setKweliAnswer(index, 'F')"
-            >
-              Si Kweli
-            </Button>
-          </div>
-          <img
-            v-if="props.questions.sharedImage"
-            :src="props.questions.sharedImage"
-            alt=""
-            class="mx-auto max-h-56 w-full max-w-lg rounded-lg object-contain"
+          <Button
+            type="button"
+            variant="outline"
+            :class="
+              cn(
+                'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
+              )
+            "
+            @click="pickKweli('T')"
           >
+            Kweli
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            :class="
+              cn(
+                'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
+              )
+            "
+            @click="pickKweli('F')"
+          >
+            Si Kweli
+          </Button>
+        </div>
+
+        <p
+          v-else
+          class="text-center text-base font-medium text-picton-blue-600"
+        >
+          Umekamilisha maswali yote.
+        </p>
+
+        <img
+          v-if="props.questions.sharedImage"
+          :src="props.questions.sharedImage"
+          alt=""
+          class="mx-auto max-h-56 w-full max-w-lg rounded-lg object-contain"
+        >
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <p class="text-center text-sm font-medium text-picton-blue-700">
+          Maendeleo
+        </p>
+        <div class="flex flex-wrap justify-center gap-2 sm:gap-3">
+          <div
+            v-for="(status, idx) in kweliBoxStatus"
+            :key="idx"
+            :class="
+              cn(
+                'flex h-11 w-11 items-center justify-center rounded-lg border-2 text-base font-bold transition-all sm:h-12 sm:w-12 sm:text-lg',
+                status === 'empty' &&
+                  'border-dashed border-picton-blue-200 bg-white/70 text-picton-blue-400',
+                status === 'correct' &&
+                  'border-green-500 bg-emerald-50 text-green-700 shadow-sm',
+                status === 'wrong' && 'border-red-500 bg-red-50 text-red-700 shadow-sm',
+                idx === kweliCurrentIndex &&
+                  status === 'empty' &&
+                  !kweliRoundComplete &&
+                  'ring-2 ring-oceanBlue ring-offset-2',
+              )
+            "
+          >
+            <span v-if="status === 'empty'">{{ idx + 1 }}</span>
+            <span v-else-if="status === 'correct'">✓</span>
+            <span v-else>✕</span>
+          </div>
         </div>
       </div>
     </div>
