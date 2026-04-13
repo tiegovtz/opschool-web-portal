@@ -49,24 +49,24 @@ const forgotPassword = async () => {
         userForgotPassword.controller.isDisabled = true;
     }
 
-    const schoolName = userForgotPassword.school.toLowerCase();
+    const schoolName = userForgotPassword?.school?.toLowerCase();
     const cutoffIndexes = [
-        schoolName.indexOf('secondary'),
-        schoolName.indexOf('sekondari')
+        schoolName?.indexOf('secondary'),
+        schoolName?.indexOf('sekondari')
     ].filter(i => i !== -1); // remove not found
 
     const cutoff = cutoffIndexes.length > 0 ? Math.min(...cutoffIndexes) : schoolName.length;
 
-    const school = userForgotPassword.school.substring(0, cutoff).trim();
+    const school = userForgotPassword.school?.substring(0, cutoff).trim();
 
     // send data to server
     try {
-        const response = await $fetch(userForgotPassword.type.toLowerCase().trim() == 'student' ?
+        const response = await $fetch(userForgotPassword?.type?.toLowerCase().trim() == 'student' ?
             apiDocs.auth.forgotPasswordStudent :
             '/api/auth/forgot-password',
             {
                 method: 'POST',
-                body: userForgotPassword.type.toLowerCase().trim() == 'student' ?
+                body: userForgotPassword?.type?.toLowerCase().trim() == 'student' ?
                     {
                         name: userForgotPassword.fname + ' ' + userForgotPassword.lname,
                         school: school,
@@ -77,7 +77,7 @@ const forgotPassword = async () => {
                     }
             });
 
-        if (userForgotPassword.type.toLowerCase().trim() == 'student') {
+        if (userForgotPassword?.type?.toLowerCase().trim() == 'student') {
             userForgotPassword.controller.isSucces = true;
             const route = useRouter();
             userForgotPassword.controller.feedback = messages.success.auth.studentPasswordChanged;
@@ -92,17 +92,20 @@ const forgotPassword = async () => {
                 userForgotPassword.controller.isSucces = true;
             }
         }
-        // clear all error message feedback
-        setTimeout(() => {
-            userForgotPassword.controller.feedback = null;
-            userForgotPassword.controller.isSucces = false;
-            userForgotPassword.controller.isDisabled = false;
-        }, 1000)
+
     } catch (error) {
         userForgotPassword.controller.feedback = messages.error.auth.invalidCredentials;
         userForgotPassword.controller.isSucces = false;
         userForgotPassword.controller.isDisabled = false;
         console.error('Error sending forgot password request:', error);
+    }
+    finally{
+                // clear all error message feedback
+        setTimeout(() => {
+            userForgotPassword.controller.feedback = null;
+            userForgotPassword.controller.isSucces = false;
+            userForgotPassword.controller.isDisabled = false;
+        }, 1000) 
     }
 };
 
@@ -127,7 +130,7 @@ const userTypes = [
                     alt="An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text ‘Taasisi ya Elimu Tanzania.’ At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text ‘Elimu ni Kazi." />
             </NuxtLink>
             <form @submit.prevent="forgotPassword" :class="[
-                'px-4 text-textGray md:h-[150px] relative overflow-hidden text-extraSmall',
+                'px-4 text-textGray md:h-[150px] relative text-extraSmall',
                 { 'md:h-[200px]': userForgotPassword.controller.errors.type },
                 { 'md:h-[300px]': userForgotPassword.type.toLowerCase() === 'student' },
             ]">

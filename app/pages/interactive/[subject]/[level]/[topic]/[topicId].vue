@@ -1152,7 +1152,6 @@ definePageMeta({
     <div class="sr-only" aria-live="assertive" aria-atomic role="status">
       {{ announcement }}
     </div>
-    {{ console.log(topicLanguageData) }}
   </NuxtLayout>
 
 </template>

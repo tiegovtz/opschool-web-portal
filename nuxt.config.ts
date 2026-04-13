@@ -25,7 +25,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY || "",
-    ragApiBaseUrl: process.env.RAG_API_BASE_URL || "http://opschool.tie.go.tz:5002",
+    ragApiBaseUrl:
+      process.env.RAG_API_BASE_URL || "http://opschool.tie.go.tz:5002",
     insightsApiKey: process.env.INSIGHTS_API_KEY || "",
   },
 
@@ -36,11 +37,7 @@ export default defineNuxtConfig({
     { src: "~/plugins/init-chapter-progress.client.js", mode: "client" },
   ],
 
-  modules: [
-    "@nuxtjs/google-fonts",
-    "@nuxt/image",
-    "@nuxt/icon",
-  ],
+  modules: ["@nuxtjs/google-fonts", "@nuxt/image", "@nuxt/icon"],
 
   image: {
     quality: 80,
@@ -65,7 +62,7 @@ export default defineNuxtConfig({
   build: {
     transpile: ["vuetify"],
   },
-  
+
   vite: {
     css: {
       preprocessorOptions: {
@@ -78,20 +75,29 @@ export default defineNuxtConfig({
     optimizeDeps: {
       force: true, // Force re-optimization of dependencies
       include: [
-        'pinia',
-        'pinia-plugin-persistedstate',
-        '@vue/devtools-core',
-        '@vue/devtools-kit',
-        '@google/model-viewer',
-        '@ai-sdk/vue',
-        'bowser',
-        'axios',
-        'markdown-it',
+        "pinia",
+        "pinia-plugin-persistedstate",
+        "@vue/devtools-core",
+        "@vue/devtools-kit",
+        "@google/model-viewer",
+        "@ai-sdk/vue",
+        "bowser",
+        "axios",
+        "markdown-it",
+        "zod/v4/locales",
+        "@iconify/vue",
+        "clsx",
+        "tailwind-merge",
+        "class-variance-authority",
+        "crypto-js",
+        "embla-carousel-autoplay",
+        "embla-carousel-vue",
+        'jwt-decode'
       ],
     },
     server: {
       fs: {
-        allow: ['..'], // Allow accessing files outside the project root
+        allow: [".."], // Allow accessing files outside the project root
       },
     },
   },
@@ -100,5 +106,5 @@ export default defineNuxtConfig({
     head: {
       meta: [{ name: "generator", content: "" }],
     },
-  }
+  },
 });
