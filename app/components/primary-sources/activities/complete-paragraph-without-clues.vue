@@ -48,6 +48,7 @@ watch(() => props.questions, initialize, { deep: true, immediate: true });
 
 const allAnswersFilled = computed(() => userAnswers.value.every((answer) => answer.trim() !== ""));
 const paragraphParts = computed(() => props.questions?.paragraph?.split("___")??[]);
+const getPartTokens = (part: string) => part.split(/(\s+)/).filter((token) => token.length > 0);
 
 const checkAnswers = () => {
   const correctness = userAnswers.value.map((answer, index) =>
@@ -150,9 +151,8 @@ const resetActivity = () => {
 
           <div class="leading-loose">
             <template v-for="(part, index) in paragraphParts" :key="index">
-              <span>
-                <template v-for="(word, wordIndex) in part.split(' ')" :key="wordIndex">
-                  <template v-if="wordIndex > 0"> </template>
+              <span class="whitespace-pre-wrap">
+                <template v-for="(word, wordIndex) in getPartTokens(part)" :key="wordIndex">
                   <span
                     :class="word.startsWith('_') ? 'rounded bg-yellow-100 p-1 text-lemon-700' : ''"
                   >

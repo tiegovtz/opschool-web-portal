@@ -32,6 +32,7 @@ const questionProps = withDefaults(
     initialSelectedChoice?: string;
     revealFeedbackDuringAttempt?: boolean;
     advanceOnSubmit?: boolean;
+    usedLanguage?: string;
   }>(),
   {
     isLastQuestion: false,
@@ -39,6 +40,7 @@ const questionProps = withDefaults(
     initialSelectedChoice: "",
     revealFeedbackDuringAttempt: true,
     advanceOnSubmit: false,
+    usedLanguage: "English",
   },
 );
 
@@ -423,7 +425,7 @@ const renderQuestionWithBlanks = computed(() => {
 // playDemoAnimation and flyToTarget Function
 const flyToTarget = (sourceEl: HTMLElement, targetEl: HTMLElement) => {
   const clone = sourceEl.cloneNode(true) as HTMLElement;
-  clone.innerText = "example";
+  clone.innerText = questionProps.usedLanguage.toLowerCase().trim() === 'english' ? "example" : "mfano";
 
   const sourceRect = sourceEl.getBoundingClientRect();
   const targetRect = targetEl.getBoundingClientRect();
@@ -493,7 +495,7 @@ const playDemoAnimation = async () => {
 
   // Set value after delay
   setTimeout(() => {
-    dropZoneAnswers.value[randomIndex] = 'example';
+    dropZoneAnswers.value[randomIndex] = questionProps.usedLanguage.toLowerCase().trim() === 'english' ? 'example' : 'mfano';
 
     // Clean up after 2 sec
     setTimeout(() => {
@@ -507,13 +509,13 @@ const playDemoAnimation = async () => {
 <template>
   <section class="flex flex-col" v-if="questionType.toLowerCase() === 'multiple_choice'">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <p>Choose the most correct answer.</p>
+      <p>{{ usedLanguage.toLowerCase().trim() === 'english' ? 'Choose the most correct answer.' : 'Chagua jibu sahihi zaidi.' }}</p>
       <button
         type="button"
         class="px-3 py-1 text-sm font-medium border rounded-md border-oceanBlue text-oceanBlue"
         @click="toggleAnswerMode()"
       >
-        {{ questionAnswer.isManualMode ? "Switch to auto" : "Switch to manual" }}
+        {{ usedLanguage.toLowerCase().trim() === 'english' ? questionAnswer.isManualMode ? "Switch to auto" : "Switch to manual" : questionAnswer.isManualMode ? "Badilisha hadi auto" : "Badilisha hadi mwenyewe" }}
       </button>
     </div>
     <div class="inline-flex">
@@ -586,7 +588,7 @@ const playDemoAnimation = async () => {
             class="px-4 py-2 text-sm font-medium border rounded-md border-slate-300 text-slate-700"
             @click="goToPreviousQuestion()"
           >
-            Previous question
+            {{ usedLanguage.toLowerCase().trim() === 'english' ? 'Previous question' :' Swali lililopita' }}
           </button>
           <button
             v-if="questionAnswer.isManualMode"
@@ -595,7 +597,7 @@ const playDemoAnimation = async () => {
             :disabled="!questionAnswer.selectedChoice || questionAnswer.disableAnswer"
             @click="questionAnswer.selectedChoice = ''; questionAnswer.clickedChoice = null"
           >
-            Undo choice
+           {{ usedLanguage.toLowerCase().trim() === 'english' ? 'Undo choice' : 'Futa chaguo' }}
           </button>
           <button
             v-if="questionAnswer.isManualMode && !questionProps.advanceOnSubmit"
@@ -604,7 +606,7 @@ const playDemoAnimation = async () => {
             :disabled="!questionAnswer.selectedChoice || questionAnswer.disableAnswer"
             @click="submitMultipleChoice()"
           >
-            Submit answer
+            {{ usedLanguage.toLowerCase().trim() === 'english' ? 'Submit answer' : 'Wasilisha jibu' }}
           </button>
           <button
             v-if="questionAnswer.isManualMode && questionProps.advanceOnSubmit"
@@ -613,7 +615,7 @@ const playDemoAnimation = async () => {
             :disabled="!questionAnswer.selectedChoice || questionAnswer.disableAnswer"
             @click="submitAndAdvanceMultipleChoice()"
           >
-            {{ questionProps.isLastQuestion ? "Finish quiz" : "Next question" }}
+            {{ usedLanguage.toLowerCase().trim() === 'english' ?  questionProps.isLastQuestion ? "Finish quiz" : "Next question" : questionProps.isLastQuestion ? "Maliza zoezi" : "Swali lijalo" }}
           </button>
           <button
             v-if="questionAnswer.isManualMode && !questionProps.advanceOnSubmit && isSubmitted && !questionProps.isLastQuestion"
@@ -621,7 +623,7 @@ const playDemoAnimation = async () => {
             class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue"
             @click="goToNextQuestion()"
           >
-            Next question
+           {{ usedLanguage.toLowerCase().trim() === 'english' ? 'Next question' : 'Swali lijalo' }}
           </button>
         </div>
       </div>
@@ -631,13 +633,13 @@ const playDemoAnimation = async () => {
   <!-- drag and drop question and answer container -->
   <section v-else class="mt-6">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <p>Drag and drop the answers into the blanks.</p>
+      <p>{{ usedLanguage.toLowerCase().trim() === 'english' ? "Drag and drop the answers into the blanks." : "Buruta chaguo la jibu kwa nafasi tupu." }}</p>
       <button
         type="button"
         class="px-3 py-1 text-sm font-medium border rounded-md border-oceanBlue text-oceanBlue"
         @click="toggleAnswerMode()"
       >
-        {{ questionAnswer.isManualMode ? "Switch to auto" : "Switch to manual" }}
+        {{ usedLanguage.toLowerCase().trim() === 'english' ?  questionAnswer.isManualMode ? "Switch to auto" : "Switch to manual" : questionAnswer.isManualMode ? "Badilisha hadi auto" : "Badilisha hadi mwenyewe" }}
       </button>
     </div>
     <div class="flex flex-col gap-4">
@@ -755,7 +757,7 @@ const playDemoAnimation = async () => {
           class="px-4 py-2 text-sm font-medium border rounded-md border-slate-300 text-slate-700"
           @click="goToPreviousQuestion()"
         >
-          Previous question
+         {{usedLanguage.toLowerCase().trim() === 'english' ? ' Previous question' : 'Swali kabla'}}
         </button>
         <button
           type="button"
@@ -763,7 +765,7 @@ const playDemoAnimation = async () => {
           :disabled="questionAnswer.disableAnswer || !dropZoneAnswers.some(Boolean)"
           @click="undoLastDrop()"
         >
-          Undo last
+         {{usedLanguage.toLowerCase().trim() === 'english' ? ' Undo last' : 'Futa mwisho'}}
         </button>
         <button
           type="button"
@@ -771,7 +773,7 @@ const playDemoAnimation = async () => {
           :disabled="questionAnswer.disableAnswer || !dropZoneAnswers.some(Boolean)"
           @click="clearAllDrops()"
         >
-          Clear all
+          {{ usedLanguage.toLowerCase().trim() === 'english' ? 'Clear all' : 'Futa zote' }}
         </button>
         <button
           v-if="questionAnswer.isManualMode && !questionProps.advanceOnSubmit"
@@ -780,7 +782,7 @@ const playDemoAnimation = async () => {
           :disabled="questionAnswer.disableAnswer || !canSubmitDragAnswer"
           @click="submitDragAnswer()"
         >
-          Submit answer
+          {{ usedLanguage.toLowerCase().trim() === 'english' ? 'Submit answer' : 'Wasilisha jibu' }}
         </button>
         <button
           v-if="questionAnswer.isManualMode && questionProps.advanceOnSubmit"
@@ -789,7 +791,7 @@ const playDemoAnimation = async () => {
           :disabled="questionAnswer.disableAnswer || !canSubmitDragAnswer"
           @click="submitAndAdvanceDragAnswer()"
         >
-          {{ questionProps.isLastQuestion ? "Finish quiz" : "Next question" }}
+          {{ usedLanguage.toLowerCase().trim() === 'english' ? questionProps.isLastQuestion ? "Finish quiz" : "Next question" : questionProps.isLastQuestion ? "Maliza Zoezi" : "Swali linalofuata" }}
         </button>
         <button
           v-if="!questionProps.advanceOnSubmit && isSubmitted && !questionProps.isLastQuestion"
@@ -797,7 +799,7 @@ const playDemoAnimation = async () => {
           class="px-4 py-2 text-sm font-medium text-white rounded-md bg-deepBlue"
           @click="goToNextQuestion()"
         >
-          Next question
+          {{ usedLanguage.toLowerCase().trim() === 'english' ? 'Next question' : 'Swali linalofuata' }}
         </button>
       </div>
       <!-- tips or Help information -->
@@ -810,7 +812,7 @@ const playDemoAnimation = async () => {
           <p :class="[
             'max-w-2xl text-oceanBlue text-sm transition-all duration-500 ease-in-out',
           ]">
-            Drag each answer choice into the blank space. In manual mode, learners can undo, clear, submit, and then move with the next button.
+            {{ usedLanguage.toLowerCase().trim() === 'english' ? 'Drag each answer choice into the blank space. In manual mode, learners can undo, clear, submit, and then move with the next button.' : 'Buruta chaguo la jibu kwa nafasi tupu. Katika modi ya mwenyewe, wanafunzi wanaweza kufuta, kufuta, kuwasilisha na kisha kuendelea kwa kitufe cha inayofuata.' }}
           </p>
         </div>
       </div>

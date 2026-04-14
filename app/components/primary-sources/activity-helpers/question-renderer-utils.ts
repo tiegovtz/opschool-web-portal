@@ -15,19 +15,21 @@ export type QuestionSegment = {
  * @returns Array of segments with their types
  *
  * @example
- * // Leading `_word` (space + underscore + word) is highlighted; only 2+ underscores is a blank.
+ * // `_word` after whitespace OR at line/string start is highlighted; only 2+ underscores is a blank.
  * parseQuestionSegments("gari _dogo ___")
  * // text "gari", highlighted "dogo", blank "___"
+ * parseQuestionSegments("_Dagaa ni samaki ___")
+ * // highlighted "Dagaa", text " ni samaki ", blank "___"
  */
 export function parseQuestionSegments(question: string): QuestionSegment[] {
   const segments: QuestionSegment[] = [];
   let currentIndex = 0;
   let segmentIndex = 0;
 
-  // Blanks: two or more consecutive underscores only. A single `_` before a word is reserved for
-  // the highlight pattern `\s_(?!_)(\S+)` (e.g. `_dogo ___` → box around dogo + dotted blank).
+  // Blanks: two or more consecutive underscores only. A single `_` before a word is the highlight
+  // marker: either after whitespace or at the start of the string / a new line (m flag).
   const blankRegex = /_{2,}/g;
-  const highlightRegex = /\s_(?!_)(\S+)/g;
+  const highlightRegex = /(?:^|\s)_(?!_)(\S+)/gm;
 
   // First, find all blanks
   const blanks: Array<{ start: number; end: number; content: string }> = [];

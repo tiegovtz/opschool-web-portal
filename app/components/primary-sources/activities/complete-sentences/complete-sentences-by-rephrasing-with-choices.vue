@@ -5,6 +5,7 @@ import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, { ActivityResultsAlertDialog } from "@/components/templates/results";
 import Input from "@/components/ui/inputs/input.vue";
 import { Button } from "~/components/ui/button";
+import { AnswerChecker } from "~/lib/utils/answer-checker";
 import { shuffle } from "~/utilities/utils";
 import { cn } from "~/lib/utils";
 import {
@@ -33,9 +34,10 @@ interface Props {
 
 const props = defineProps<Props>();
 const ui = useActivityUiText();
+const answerChecker = new AnswerChecker();
 
 const shuffledQuestions = ref<QuestionItem[]>([]);
-const answers = ref<Record<number, string>>({});
+const answers = ref<Record<number, string[]>>({});
 const feedbacks = ref<Record<number, boolean>>({});
 const checkedItems = ref<number[]>([]);
 const allAnswered = ref(false);
@@ -64,26 +66,97 @@ watch(
   { immediate: true, deep: true },
 );
 
-const allQuestionsAnswered = computed(() =>
-  shuffledQuestions.value.every((_, index) => (answers.value[index] || "").trim() !== ""),
-);
+const splitAnswerValue = (value: string) =>
+  value
+    .split(/[/,;|\n]+/)
+    .map((answer) => String(answer ?? "").trim())
+    .filter(Boolean);
 
-const getCorrectAnswer = (questionIndex: number) => {
+/** Accepted forms for one question (`/` in CMS = alternatives, same as non-choices rephrasing). */
+const getAcceptedAnswers = (questionIndex: number): string[] => {
   const rawAnswer = shuffledQuestions.value[questionIndex]?.answer;
-  return Array.isArray(rawAnswer) ? String(rawAnswer[0] ?? "") : String(rawAnswer ?? "");
+  if (Array.isArray(rawAnswer)) {
+    return rawAnswer.map((a) => String(a ?? "").trim()).filter(Boolean);
+  }
+  const s = String(rawAnswer ?? "").trim();
+  if (!s) return [];
+  return s
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean);
 };
 
-const handleInputChange = (questionIndex: number, value: string | number) => {
+/** Human-readable correct answer for results (`wrong-correct-answers`). */
+const getCorrectAnswerLabel = (questionIndex: number) => {
+  const forms = getAcceptedAnswers(questionIndex);
+  return forms.length ? forms.join(" or ") : "";
+};
+
+const getUserAnswers = (questionIndex: number) => answers.value[questionIndex] || [];
+
+const getAnswerValue = (questionIndex: number, blankIndex: number) =>
+  getUserAnswers(questionIndex)[blankIndex] || "";
+
+const handleInputChange = (questionIndex: number, blankIndex: number, value: string | number) => {
+  const nextAnswers = [...getUserAnswers(questionIndex)];
+  nextAnswers[blankIndex] = String(value ?? "");
+
   answers.value = {
     ...answers.value,
-    [questionIndex]: String(value ?? ""),
+    [questionIndex]: nextAnswers,
   };
 };
 
+type QuestionRenderSegment = QuestionSegment & {
+  calculatedWidth?: number;
+  blankIndex?: number;
+};
+
+const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
+  let blankIndex = 0;
+
+  return parseQuestionSegments(question).map((segment) => {
+    if (segment.type !== "blank") {
+      return segment;
+    }
+
+    const { calculatedWidth } = calculateBlankWidth(segment.content.length, 1024);
+
+    return {
+      ...segment,
+      blankIndex: blankIndex++,
+      calculatedWidth: Math.max(calculatedWidth, 120),
+    };
+  });
+};
+
+const getBlankCount = (question: string) =>
+  getQuestionSegments(question).filter((segment) => segment.type === "blank").length;
+
 const checkAnswer = (questionIndex: number) => {
-  const userAnswer = (answers.value[questionIndex] || "").toLowerCase().trim();
-  const correctAnswer = getCorrectAnswer(questionIndex).toLowerCase().trim();
-  return userAnswer === correctAnswer;
+  const question = shuffledQuestions.value[questionIndex];
+  if (!question) return false;
+
+  const blankCount = getBlankCount(question.question);
+  if (blankCount === 0) return false;
+
+  const userParts = Array.from({ length: blankCount }, (_, i) =>
+    (getUserAnswers(questionIndex)[i] ?? "").trim().toLowerCase(),
+  );
+
+  const rawAnswer = question.answer;
+  const correctAnswers = Array.isArray(rawAnswer)
+    ? rawAnswer.map((a) => String(a ?? "").trim().toLowerCase()).filter(Boolean)
+    : getAcceptedAnswers(questionIndex).map((a) => a.toLowerCase());
+
+  if (!correctAnswers.length) return false;
+
+  return userParts.every((ans) =>
+    answerChecker.checkAnswer(ans, {
+      acceptedAnswers: correctAnswers,
+      strictMode: true,
+    }).isCorrect,
+  );
 };
 
 const handleCheckAllAnswers = () => {
@@ -106,23 +179,18 @@ const handleCheckAllAnswers = () => {
   allAnswered.value = true;
 };
 
-type QuestionRenderSegment = QuestionSegment & {
-  calculatedWidth?: number;
-};
+const allQuestionsAnswered = computed(() =>
+  shuffledQuestions.value.every((question, index) => {
+    const blankCount = getBlankCount(question.question);
+    return Array.from({ length: blankCount }).every(
+      (_, blankIndex) => getAnswerValue(index, blankIndex).trim() !== "",
+    );
+  }),
+);
 
-const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
-  return parseQuestionSegments(question).map((segment) => {
-    if (segment.type !== "blank") {
-      return segment;
-    }
-
-    const { calculatedWidth } = calculateBlankWidth(segment.content.length, 1024);
-
-    return {
-      ...segment,
-      calculatedWidth: Math.max(calculatedWidth, 120),
-    };
-  });
+const formatUserAnswer = (questionIndex: number) => {
+  const userAnswers = getUserAnswers(questionIndex).filter((answer) => answer.trim() !== "");
+  return userAnswers.length ? userAnswers.join(", ") : "(no answer)";
 };
 </script>
 
@@ -191,11 +259,11 @@ const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
               >
                 <Input
                   type="text"
-                  :model-value="answers[i] || ''"
+                  :model-value="getAnswerValue(i, segment.blankIndex || 0)"
                   :disabled="checkedItems.includes(i)"
                   class="min-w-0 px-2 border-none bg-transparent text-center focus:outline-none"
                   :style="{ maxWidth: `${(segment.calculatedWidth || 120) * 1.6}px` }"
-                  @update:model-value="(value) => handleInputChange(i, value)"
+                  @update:model-value="(value) => handleInputChange(i, segment.blankIndex || 0, value)"
                 />
                 <div
                   :class="
@@ -253,11 +321,11 @@ const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
             <div class="mt-2 grid grid-cols-2 gap-4">
               <div>
                 <p class="text-sm text-gray-500">{{ ui.yourAnswer }}</p>
-                <p :class="{ 'text-red-600': !checkAnswer(answers[idx] || '', idx) }">{{ answers[idx] || "(no answer)" }}</p>
+                <p :class="{ 'text-red-600': !checkAnswer(idx) }">{{ formatUserAnswer(idx) }}</p>
               </div>
               <div v-if="props.feedback === 'wrong-correct-answers'">
                 <p class="text-sm text-gray-500">{{ ui.correctAnswer }}</p>
-                <p class="text-green-600">{{ question.answer }}</p>
+                <p class="text-green-600">{{ getCorrectAnswerLabel(idx) }}</p>
               </div>
             </div>
           </div>
