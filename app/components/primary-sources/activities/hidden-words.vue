@@ -63,6 +63,8 @@ const timeUp = ref(false);
 const completedWords = ref(new Set<number>());
 const incorrectWords = ref(new Set<number>());
 const wordColors = ref<Map<string, (typeof WORD_COLORS)[number]>>(new Map());
+const activityInstructionsId = "hidden-words-instructions";
+const ui = useActivityUiText();
 
 const { playSound } = useSoundEffects();
 
@@ -330,7 +332,22 @@ const handlePlayAgain = async () => {
     :on-time-up="handleGameTimeUp"
     :on-game-complete="handleGameComplete"
   >
-    <ActivityTitle :title="props.questions.title" />
+    <section
+      class="flex h-full flex-col"
+      aria-labelledby="hidden-words-title"
+      :aria-describedby="activityInstructionsId"
+    >
+      <h2 id="hidden-words-title" class="sr-only">
+        {{ props.questions.title }}
+      </h2>
+      <ActivityTitle :title="props.questions.title" />
+      <p :id="activityInstructionsId" class="sr-only">
+        {{
+          ui.isSwahili
+            ? "Tumia tab kusogea kwenye visanduku vya herufi. Bonyeza enter au space kuchagua herufi na kuunda neno lililofichwa."
+            : "Use Tab to move through the letter cells. Press Enter or Space to select letters and build a hidden word."
+        }}
+      </p>
 
     <div class="flex flex-1 flex-col gap-4 md:flex-row">
       <div class="rounded-2xl bg-picton-blue-50 p-4 md:w-72">
@@ -363,9 +380,12 @@ const handlePlayAgain = async () => {
             <button
               v-for="(cell, colIndex) in row"
               :key="`${rowIndex}-${colIndex}`"
+              type="button"
+              :aria-pressed="selectedCells.some((selected) => selected.row === rowIndex && selected.col === colIndex)"
+              :aria-label="ui.isSwahili ? `Herufi ${cell}, mstari ${rowIndex + 1}, safu ${colIndex + 1}` : `Letter ${cell}, row ${rowIndex + 1}, column ${colIndex + 1}`"
               :class="
                 cn(
-                  'flex h-9 w-9 items-center justify-center rounded-lg border-2 border-transparent text-lg font-semibold uppercase transition-all md:h-11 md:w-11',
+                  'flex h-9 w-9 items-center justify-center rounded-lg border-2 border-transparent text-lg font-semibold uppercase transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2 md:h-11 md:w-11',
                   selectedCells.some((selected) => selected.row === rowIndex && selected.col === colIndex)
                     ? 'border-picton-blue-500 bg-picton-blue-300'
                     : 'bg-picton-blue-100 hover:bg-picton-blue-200',
@@ -404,5 +424,6 @@ const handlePlayAgain = async () => {
         }
       "
     />
+    </section>
   </GameModeWrapper>
 </template>

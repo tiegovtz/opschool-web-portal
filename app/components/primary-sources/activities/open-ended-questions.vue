@@ -78,6 +78,7 @@ const allAnswered = ref(false);
 const showResults = ref(false);
 const finalScore = ref(0);
 const aiResults = ref<Record<string, ScoredAnswer>>({});
+const activityInstructionsId = "open-ended-questions-instructions";
 
 const totalMarks = computed(() =>
   props.questions.questions.reduce(
@@ -246,8 +247,22 @@ const resultCardClass = (isCorrect?: boolean) =>
 </script>
 
 <template>
-  <div class="relative flex h-full flex-col">
+  <section
+    class="relative flex h-full flex-col"
+    aria-labelledby="open-ended-questions-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="open-ended-questions-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila swali na sehemu ya kuandika jibu. Andika majibu yako katika nafasi zilizotolewa."
+          : "Use Tab to move through each question and answer field. Type your responses in the spaces provided."
+      }}
+    </p>
 
     <div
       v-if="isCalculatingScore"
@@ -402,6 +417,7 @@ const resultCardClass = (isCorrect?: boolean) =>
               :model-value="normalizedAnswer(`${question.id}-answer`)"
               class="min-h-[80px] bg-white"
               placeholder="Type your answer"
+              :aria-label="ui.isSwahili ? `Jibu la swali ${question.questionNumber}` : `Answer for question ${question.questionNumber}`"
               @update:model-value="(value) => handleInputChange(`${question.id}-answer`, value)"
             />
 
@@ -425,6 +441,7 @@ const resultCardClass = (isCorrect?: boolean) =>
                   :model-value="normalizedAnswer(`${part.id}-answer`)"
                   class="min-h-[80px] bg-white md:ml-4"
                   placeholder="Type your answer"
+                  :aria-label="ui.isSwahili ? `Jibu la sehemu ${part.partLabel}` : `Answer for part ${part.partLabel}`"
                   @update:model-value="(value) => handleInputChange(`${part.id}-answer`, value)"
                 />
 
@@ -446,6 +463,7 @@ const resultCardClass = (isCorrect?: boolean) =>
                       :model-value="normalizedAnswer(subQuestion.id)"
                       class="min-h-[72px] bg-white"
                       placeholder="Type your answer"
+                      :aria-label="ui.isSwahili ? `Jibu la ${subQuestion.subLabel}` : `Answer for ${subQuestion.subLabel}`"
                       @update:model-value="(value) => handleInputChange(subQuestion.id, value)"
                     />
                   </div>
@@ -491,5 +509,5 @@ const resultCardClass = (isCorrect?: boolean) =>
         }
       "
     />
-  </div>
+  </section>
 </template>

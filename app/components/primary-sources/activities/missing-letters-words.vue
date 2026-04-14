@@ -43,6 +43,7 @@ const checkedItems = ref<number[]>([]);
 const feedbacks = ref<Record<number, boolean>>({});
 const allAnswered = ref(false);
 const score = ref(0);
+const instructionsId = "missing-letters-words-instructions";
 
 const blankGroups = (text: string) => text.match(/_+/g) || [];
 const splitQuestionParts = (text: string) =>
@@ -127,11 +128,18 @@ const handleReset = () => {
 
 const blankPartIndex = (parts: string[], partIndex: number) =>
   parts.slice(0, partIndex).filter((part) => isBlankPart(part)).length;
+
+const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: string) =>
+  `Question ${questionIndex + 1}, missing part ${blankIndex + 1}. ${questionText.replace(/_+/g, "blank")}`;
 </script>
 
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Fill in the missing letters for each word. Use the Tab key to move between the blanks, then
+      activate the check answers button when all blanks are filled.
+    </p>
 
     <div
       v-if="props.questions.instructions?.length"
@@ -170,6 +178,7 @@ const blankPartIndex = (parts: string[], partIndex: number) =>
           v-for="(question, questionIndex) in props.questions.questions"
           :key="`question-${questionIndex}`"
           class="rounded-xl bg-picton-blue-50 p-4 shadow-sm"
+          :aria-describedby="instructionsId"
         >
           <div class="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex min-w-0 items-start gap-4">
@@ -195,10 +204,12 @@ const blankPartIndex = (parts: string[], partIndex: number) =>
                       :maxlength="Math.max(part.length + 2, 6)"
                       :placeholder="part.length > 1 ? 'silabi' : ''"
                       :disabled="allAnswered || checkedItems.includes(questionIndex)"
+                      :aria-label="getBlankLabel(questionIndex, blankPartIndex(splitQuestionParts(question.textOne), partIndex), question.textOne)"
+                      :aria-describedby="instructionsId"
                       :style="{ width: `${Math.max((userAnswers[questionIndex]?.[blankPartIndex(splitQuestionParts(question.textOne), partIndex)] || '').length, part.length, 2) * 1.3 + 1.8}rem` }"
                       :class="
                         cn(
-                          'h-14 min-w-[4.5rem] border-2 border-dashed border-picton-blue-400 bg-white !p-0 text-center text-2xl font-semibold',
+                          'h-14 min-w-[4.5rem] border-2 border-dashed border-picton-blue-400 bg-white !p-0 text-center text-2xl font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
                           {
                             'border-green-400 bg-green-50 text-green-700':
                               checkedItems.includes(questionIndex) && feedbacks[questionIndex],
@@ -263,7 +274,7 @@ const blankPartIndex = (parts: string[], partIndex: number) =>
               </div>
 
               <div v-if="question.image" class="relative h-32">
-                <img :src="question.image" alt="Word image" class="h-full w-full object-contain">
+                <img :src="question.image" :alt="`Image for question ${questionIndex + 1}`" class="h-full w-full object-contain">
               </div>
             </div>
           </div>
@@ -275,6 +286,7 @@ const blankPartIndex = (parts: string[], partIndex: number) =>
         size="lg"
         class="ml-auto w-fit"
         :disabled="!allQuestionsAnswered || allAnswered"
+        :aria-describedby="instructionsId"
         @click="handleCheckAllAnswers"
       >
         {{ allAnswered ? ui.answersChecked : ui.checkAllAnswers }}

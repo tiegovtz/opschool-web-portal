@@ -3,7 +3,7 @@ import { ref, watch, computed } from "vue";
 import { Icon } from "@iconify/vue";
 import { cn, shuffle } from "~/utilities/utils";
 import { Button } from "~/components/ui/button";
-// import Input from "~/components/ui/inputs/input";
+import Input from "~/components/ui/inputs/input.vue";
 import type { FeedbackType } from "~/types/activity-types";
 import ActivityTitle from "~/components/templates/activity-title";
 import { useSoundEffects } from "~/composables/use-sound-effects";
@@ -114,6 +114,9 @@ const resetGame = () => {
 const contentStyle = computed(() => ({
   fontSize: props.questions.fontSize ? `${props.questions.fontSize}px` : "20px",
 }));
+
+const getInputLabel = (index: number, word: string) =>
+  `Question ${index + 1}. Answer for ${word}`;
 </script>
 
 <template>
@@ -154,7 +157,9 @@ const contentStyle = computed(() => ({
               <Input
                 :model-value="answers[index] || ''"
                 :disabled="allChecked"
-                class="px-2 border-none bg-transparent text-center"
+                :aria-label="getInputLabel(index, question.word)"
+                :aria-describedby="activityInstructionsId"
+                class="px-2 border-none bg-transparent text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
                 @update:modelValue="(v: string | number) => handleInputChange(index, String(v ?? ''))"
               />
               <div

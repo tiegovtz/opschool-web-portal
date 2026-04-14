@@ -29,6 +29,7 @@ const ui = useActivityUiText();
 
 const userAnswers = ref<string[]>(Array.from({ length: props.questions.length }, () => ""));
 const submitted = ref(false);
+const instructionsId = "fraction-operation-activity-instructions";
 
 const parseQuestionParts = (question: string) =>
   question.split(/(\s+)/).map((part, index) => {
@@ -112,6 +113,11 @@ const handleSubmit = () => {
 
 <template>
   <div class="flex h-full flex-col">
+    <p :id="instructionsId" class="sr-only">
+      Solve each fraction operation by entering a numerator and denominator. Use the Tab key to
+      move through the numerator and denominator fields, then activate the check answers button when
+      all questions are complete.
+    </p>
     <div class="flex flex-1 gap-4">
       <div class="flex h-full w-full flex-col gap-4">
         <div class="h-full bg-picton-blue-50 p-4">
@@ -146,7 +152,9 @@ const handleSubmit = () => {
                   :value="parseInputValue(userAnswers[index]).numerator"
                   :disabled="submitted"
                   inputmode="numeric"
-                  class="h-10 w-full border-none text-center text-2xl font-medium outline-none"
+                  :aria-label="`Question ${index + 1} numerator`"
+                  :aria-describedby="instructionsId"
+                  class="h-10 w-full border-none text-center text-2xl font-medium outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600"
                   @input="updateAnswerPart(index, 'numerator', ($event.target as HTMLInputElement).value)"
                 >
                 <div class="w-full border-t border-gray-400" />
@@ -154,7 +162,9 @@ const handleSubmit = () => {
                   :value="parseInputValue(userAnswers[index]).denominator"
                   :disabled="submitted"
                   inputmode="numeric"
-                  class="h-10 w-full border-none text-center text-2xl font-medium outline-none"
+                  :aria-label="`Question ${index + 1} denominator`"
+                  :aria-describedby="instructionsId"
+                  class="h-10 w-full border-none text-center text-2xl font-medium outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600"
                   @input="updateAnswerPart(index, 'denominator', ($event.target as HTMLInputElement).value)"
                 >
               </div>
@@ -192,6 +202,7 @@ const handleSubmit = () => {
           <Button
             @click="handleSubmit"
             class="group gap-2"
+            :aria-describedby="instructionsId"
           >
             <Icon
               icon="heroicons:sparkles"

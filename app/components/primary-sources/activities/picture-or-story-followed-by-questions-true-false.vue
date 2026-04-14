@@ -37,6 +37,7 @@ const shuffledIndexes = ref<number[]>([]);
 const attemptedQuestions = ref<Record<number, "T" | "F" | "">>({});
 const answerFeedback = ref<"correct" | "incorrect" | null>(null);
 const showResults = ref(false);
+const instructionsId = "picture-story-true-false-instructions";
 
 const initialize = () => {
   shuffledIndexes.value = shuffle(
@@ -121,6 +122,10 @@ const resultRows = computed(() =>
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Read the notes or story, then answer each question by choosing true or false. Use the Tab key
+      to move between the answer choices and the question navigation buttons.
+    </p>
 
     <div
       v-if="showResults"
@@ -190,6 +195,8 @@ const resultRows = computed(() =>
                   <Button
                     :variant="attemptedQuestions[activeQuestion] === 'T' ? 'default' : 'outline'"
                     :disabled="!!attemptedQuestions[activeQuestion]"
+                    :aria-describedby="instructionsId"
+                    :aria-label="`Question ${activeQuestion + 1}, choose true`"
                     :class="
                       cn('h-14 w-20 text-xl md:h-16 md:w-24', {
                         'bg-green-500':
@@ -206,6 +213,8 @@ const resultRows = computed(() =>
                   <Button
                     :variant="attemptedQuestions[activeQuestion] === 'F' ? 'default' : 'outline'"
                     :disabled="!!attemptedQuestions[activeQuestion]"
+                    :aria-describedby="instructionsId"
+                    :aria-label="`Question ${activeQuestion + 1}, choose false`"
                     :class="
                       cn('h-14 w-20 text-xl md:h-16 md:w-24', {
                         'bg-green-500':
@@ -243,7 +252,7 @@ const resultRows = computed(() =>
           >
             <img
               :src="props.questions.image"
-              alt="Activity Image"
+              :alt="props.questions.title"
               class="h-full w-full object-contain"
             >
           </div>
@@ -256,6 +265,8 @@ const resultRows = computed(() =>
             v-for="(originalIndex, index) in shuffledIndexes"
             :key="index"
             type="button"
+            :aria-describedby="instructionsId"
+            :aria-label="`Go to question ${index + 1}`"
             :class="
               cn(
                 'flex h-10 w-10 items-center justify-center rounded-lg bg-picton-blue-200',

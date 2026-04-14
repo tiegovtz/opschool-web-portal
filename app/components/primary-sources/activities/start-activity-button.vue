@@ -31,6 +31,7 @@ const resolvedHref = computed(() => {
     :size="props.size"
     :class="props.class"
     :class-name="props.className"
+    :aria-label="isAuthenticated ? 'Start activity' : 'Log in to start activity'"
   >
     <slot />
   </Button>

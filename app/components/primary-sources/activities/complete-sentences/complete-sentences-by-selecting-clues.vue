@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { Button } from "~/components/ui/button";
-// import Input from "~/components/ui/inputs/input";
+import Input from "~/components/ui/inputs/input.vue";
 import ActivityTitle from "~/components/templates/activity-title";
 import type { FeedbackType } from "~/types/activity-types";
 import { useSoundEffects } from "~/composables/use-sound-effects";
@@ -57,6 +57,8 @@ const allAnswered = ref(false);
 const isDialogOpen = ref(false);
 const activityInstructionsId = "complete-sentences-selecting-clues-instructions";
 const activityOptionsId = "complete-sentences-selecting-clues-options";
+const getInputLabel = (index: number, questionText: string) =>
+  `Question ${index + 1}. ${questionText}`;
 
 const resetActivity = () => {
   questionsState.value = shuffle(
@@ -145,6 +147,8 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
           <Input
             :model-value="q.userAnswer"
             :disabled="showResults"
+            :aria-label="getInputLabel(index, q.question)"
+            :aria-describedby="selectableWords.length ? `${activityInstructionsId} ${activityOptionsId}` : activityInstructionsId"
             class="flex-1 min-w-32 ml-4"
             placeholder="Type answer here"
             @update:modelValue="(v: string | number) => handleInputChange(q.id, String(v ?? ''))"

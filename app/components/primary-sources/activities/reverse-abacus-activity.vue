@@ -41,6 +41,7 @@ const showResultsDialog = ref(false);
 const answerRecords = ref<AnswerRecord[]>([]);
 const showResults = ref(false);
 const validationError = ref<string | null>(null);
+const instructionsId = "reverse-abacus-activity-instructions";
 
 const currentQuestion = computed(() => props.questions.questions[currentQuestionIndex.value]);
 const totalQuestions = computed(() => props.questions.questions.length);
@@ -213,6 +214,11 @@ const resetActivity = () => {
 <template>
   <div class="relative flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Represent the shown number on the abacus. Use the Tab key to move between columns. Activate a
+      large bead button to add a bead to that place value, and activate an existing bead to remove
+      it.
+    </p>
 
     <div
       v-if="validationError"
@@ -275,6 +281,7 @@ const resetActivity = () => {
               v-for="placeValue in placeValues"
               :key="placeValue"
               class="flex w-24 flex-shrink-0 flex-col items-center rounded-lg"
+              :aria-describedby="instructionsId"
             >
               <h3 class="my-4 px-1 text-center text-sm font-bold leading-tight text-picton-blue-700">
                 {{ placeValue }}
@@ -287,6 +294,8 @@ const resetActivity = () => {
                   v-for="beadIndex in beadCounts[placeValue] || 0"
                   :key="`${placeValue}-${beadIndex}`"
                   type="button"
+                  :aria-label="`Remove one bead from ${placeValue}. Current count ${beadCounts[placeValue] || 0}.`"
+                  :aria-describedby="instructionsId"
                   :class="[
                     'absolute left-1/2 h-[25px] w-[50px] -translate-x-1/2 rounded-[20px] border border-black/30 shadow-[0_2px_4px_rgba(0,0,0,0.2),inset_0_-2px_4px_rgba(0,0,0,0.2),inset_0_2px_4px_rgba(255,255,255,0.5)]',
                     getBeadColor(placeValue),
@@ -302,8 +311,10 @@ const resetActivity = () => {
                 <button
                   type="button"
                   :disabled="(beadCounts[placeValue] || 0) >= 9 || showFeedback"
+                  :aria-label="`Add one bead to ${placeValue}. Current count ${beadCounts[placeValue] || 0}.`"
+                  :aria-describedby="instructionsId"
                   :class="[
-                    'relative h-[50px] w-[50px] rounded-full border border-black/30 shadow-[0_2px_4px_rgba(0,0,0,0.2),inset_0_-2px_4px_rgba(0,0,0,0.2),inset_0_2px_4px_rgba(255,255,255,0.5)]',
+                    'relative h-[50px] w-[50px] rounded-full border border-black/30 shadow-[0_2px_4px_rgba(0,0,0,0.2),inset_0_-2px_4px_rgba(0,0,0,0.2),inset_0_2px_4px_rgba(255,255,255,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
                     getBeadColor(placeValue),
                     ((beadCounts[placeValue] || 0) >= 9 || showFeedback) && 'opacity-50',
                     !((beadCounts[placeValue] || 0) >= 9 || showFeedback) && 'hover:brightness-110 active:brightness-90',
@@ -353,7 +364,7 @@ const resetActivity = () => {
           </div>
         </div>
 
-        <Button variant="brand-lemon" class="w-fit" @click="checkAnswers">
+        <Button variant="brand-lemon" class="w-fit" :aria-describedby="instructionsId" @click="checkAnswers">
           {{ ui.checkAnswer }}
         </Button>
       </div>

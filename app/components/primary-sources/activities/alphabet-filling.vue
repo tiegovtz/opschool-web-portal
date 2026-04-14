@@ -57,6 +57,7 @@ const isCorrect = ref(false);
 const isIncorrect = ref(false);
 const showDialog = ref(false);
 const isTransitioning = ref(false);
+const activityInstructionsId = "alphabet-filling-instructions";
 
 const currentWord = computed(() => props.questions.targetWords[currentWordIndex.value] || "");
 
@@ -150,22 +151,41 @@ const handleRemoveLetter = (index: number) => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="alphabet-filling-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="alphabet-filling-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        contentLayoutLanguage === "kiswahili"
+          ? "Tumia tab kusogea kwenye herufi. Bonyeza enter au space kuweka herufi kwenye nafasi inayofuata. Tumia tab kufikia herufi uliyoweka na bonyeza enter au space kuiondoa."
+          : "Use Tab to move through the letters. Press Enter or Space to place a letter in the next empty slot. Use Tab to reach a placed letter and press Enter or Space to remove it."
+      }}
+    </p>
 
     <div class="flex h-full flex-col items-center justify-between">
       <div
         class="grid grid-cols-12 gap-2 text-center font-bold"
+        role="group"
+        :aria-label="contentLayoutLanguage === 'kiswahili' ? 'Herufi zinazopatikana' : 'Available letters'"
         style="grid-template-columns: repeat(13, minmax(0, 1fr));"
       >
-        <p
+        <button
           v-for="letter in alphabet"
           :key="letter"
-          :class="['cursor-pointer select-none text-6xl', alphabetColors[letter]]"
+          type="button"
+          :disabled="isTransitioning"
+          :aria-label="contentLayoutLanguage === 'kiswahili' ? `Chagua herufi ${letter.toUpperCase()}` : `Choose letter ${letter.toUpperCase()}`"
+          :class="['select-none rounded text-6xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2 disabled:opacity-50', alphabetColors[letter]]"
           @click="handleLetterClick(letter)"
         >
           {{ letter }}
-        </p>
+        </button>
       </div>
 
       <div class="max-h-44 max-w-44">
@@ -183,6 +203,8 @@ const handleRemoveLetter = (index: number) => {
           isCorrect && 'bg-green-200',
           isIncorrect && 'bg-red-200',
         ]"
+        role="group"
+        :aria-label="contentLayoutLanguage === 'kiswahili' ? 'Nafasi za herufi ulizochagua' : 'Placed letter slots'"
       >
         <div v-for="(_, index) in currentWord.split('')" :key="index" class="relative">
           <div
@@ -196,7 +218,8 @@ const handleRemoveLetter = (index: number) => {
             <button
               v-if="placedLetters[index]"
               type="button"
-              class="flex h-full w-full cursor-pointer items-center justify-center"
+              :aria-label="contentLayoutLanguage === 'kiswahili' ? `Ondoa herufi ${placedLetters[index]?.toUpperCase()} kutoka nafasi ya ${index + 1}` : `Remove letter ${placedLetters[index]?.toUpperCase()} from slot ${index + 1}`"
+              class="flex h-full w-full cursor-pointer items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
               @click="handleRemoveLetter(index)"
             >
               {{ placedLetters[index] }}
@@ -221,5 +244,5 @@ const handleRemoveLetter = (index: number) => {
       :isCompletionOnly="true"
       :completionMessage="completionMessage"
     />
-  </div>
+  </section>
 </template>

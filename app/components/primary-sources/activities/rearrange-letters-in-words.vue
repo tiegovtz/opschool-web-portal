@@ -69,6 +69,7 @@ const showResultsDialog = ref(false);
 const showResults = ref(false);
 const timeUp = ref(false);
 const completedObjectIds = ref<number[]>([]);
+const instructionsId = "rearrange-letters-in-words-instructions";
 
 const { playSound } = useSoundEffects();
 
@@ -224,6 +225,8 @@ const handlePlayAgain = async () => {
 
   initializeWords();
 };
+
+const getWordPromptLabel = (word: WordState) => word.word.toUpperCase();
 </script>
 
 <template>
@@ -247,12 +250,18 @@ const handlePlayAgain = async () => {
     :on-game-complete="handleGameComplete"
   >
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Use the Tab key to move through the scrambled letters and answer slots. Activate a scrambled
+      letter to place it into the next empty slot. Activate a filled slot to return that letter to
+      the scrambled letter list.
+    </p>
 
     <div class="flex flex-1 flex-col gap-4 overflow-auto">
       <div
         v-for="(word, wordIndex) in scrambledWords"
         :key="`${word.word}-${wordIndex}`"
         class="rounded-2xl bg-picton-blue-50 p-4"
+        :aria-describedby="instructionsId"
       >
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div class="space-y-3">
@@ -262,11 +271,13 @@ const handlePlayAgain = async () => {
                 :key="`${wordIndex}-${letterIndex}-${letter}`"
                 :class="
                   cn(
-                    'flex h-10 w-10 items-center justify-center rounded-lg bg-picton-blue-200 text-xl font-semibold uppercase transition hover:bg-picton-blue-300',
+                    'flex h-10 w-10 items-center justify-center rounded-lg bg-picton-blue-200 text-xl font-semibold uppercase transition hover:bg-picton-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
                     !letter || isActivityDisabled || completedWords.has(wordIndex) ? 'cursor-not-allowed opacity-40' : '',
                   )
                 "
                 :disabled="!letter || isActivityDisabled || completedWords.has(wordIndex)"
+                :aria-describedby="instructionsId"
+                :aria-label="`Letter ${letter.toUpperCase()} for ${getWordPromptLabel(word)}`"
                 @click="handleLetterClick(wordIndex, letterIndex)"
               >
                 {{ letter }}
@@ -279,7 +290,7 @@ const handlePlayAgain = async () => {
                 :key="`${wordIndex}-slot-${slotIndex}`"
                 :class="
                   cn(
-                    'flex h-10 w-10 items-center justify-center rounded-lg border-2 border-dashed text-xl font-semibold uppercase transition',
+                    'flex h-10 w-10 items-center justify-center rounded-lg border-2 border-dashed text-xl font-semibold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
                     completedWords.has(wordIndex)
                       ? 'border-green-400 bg-green-100 text-green-700'
                       : incorrectWords.has(wordIndex)
@@ -288,6 +299,12 @@ const handlePlayAgain = async () => {
                   )
                 "
                 :disabled="isActivityDisabled || completedWords.has(wordIndex)"
+                :aria-describedby="instructionsId"
+                :aria-label="
+                  letter
+                    ? `Filled slot ${slotIndex + 1} for ${getWordPromptLabel(word)} containing letter ${letter.toUpperCase()}. Activate to remove it.`
+                    : `Empty slot ${slotIndex + 1} for ${getWordPromptLabel(word)}.`
+                "
                 @click="handleSlotClick(wordIndex, slotIndex)"
               >
                 {{ letter }}
@@ -296,7 +313,7 @@ const handlePlayAgain = async () => {
           </div>
 
           <div v-if="word.image" class="overflow-hidden rounded-xl bg-white p-2 md:w-40">
-            <img :src="word.image" alt="Word reference" class="mx-auto max-h-28 object-contain">
+            <img :src="word.image" :alt="`Reference image for ${getWordPromptLabel(word)}`" class="mx-auto max-h-28 object-contain">
           </div>
         </div>
       </div>

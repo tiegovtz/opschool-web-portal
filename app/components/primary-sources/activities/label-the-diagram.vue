@@ -41,6 +41,7 @@ const answersChecked = ref(false);
 const correctAnswers = ref<boolean[]>([]);
 const typedAnswers = ref<string[]>([]);
 const checkboxAnswers = ref<boolean[]>([]);
+const instructionsId = "label-the-diagram-instructions";
 
 const isCheckboxVariant = computed(() => props.questions.variant === "checkbox");
 
@@ -70,6 +71,9 @@ const areAllRequiredInputsFilled = computed(() => {
     (question, index) => !question.question.includes("___") || !!typedAnswers.value[index],
   );
 });
+
+const getQuestionLabel = (question: DiagramQuestions["questions"][number], index: number) =>
+  question.title ? `${question.title}: ${question.question}` : `Question ${index + 1}: ${question.question}`;
 
 const handleCheckAnswer = () => {
   const nextCorrectAnswers = props.questions.questions.map((question, index) => {
@@ -103,6 +107,10 @@ const resetActivity = () => {
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Review the notes and image, then answer each prompt. Use the Tab key to move between the
+      answer fields or checkboxes and activate the check answers button when you are done.
+    </p>
 
     <div class="flex h-full flex-col gap-4">
       <div class="grid h-full gap-4 md:grid-cols-2">
@@ -117,13 +125,16 @@ const resetActivity = () => {
           <div v-if="props.questions.image" class="h-3/4 rounded-xl p-1">
             <img
               :src="props.questions.image"
-              alt="Matching Items"
+              :alt="props.questions.title"
               class="mx-auto h-full object-contain"
             >
           </div>
         </div>
 
-        <div class="flex w-full justify-between gap-4 rounded-xl bg-white p-4 text-lg md:p-6">
+        <div
+          class="flex w-full justify-between gap-4 rounded-xl bg-white p-4 text-lg md:p-6"
+          :aria-describedby="instructionsId"
+        >
           <div
             v-for="(group, groupIndex) in groupedQuestions"
             :key="groupIndex"
@@ -142,6 +153,7 @@ const resetActivity = () => {
                 <Checkbox
                   :checked="checkboxAnswers[originalIndex]"
                   :disabled="answersChecked"
+                  :aria-label="getQuestionLabel(question, originalIndex)"
                   :class="
                     cn('h-5 w-5', {
                       'border-green-500': answersChecked && correctAnswers[originalIndex],
@@ -171,9 +183,11 @@ const resetActivity = () => {
                         type="text"
                         :model-value="typedAnswers[originalIndex] || ''"
                         :readonly="answersChecked"
+                        :aria-label="getQuestionLabel(question, originalIndex)"
+                        :aria-describedby="instructionsId"
                         :class="
                           cn(
-                            'max-w-48 rounded-none border-none bg-transparent text-center !text-lg text-picton-blue-700',
+                            'max-w-48 rounded-none border-none bg-transparent text-center !text-lg text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
                             answersChecked && correctAnswers[originalIndex] && 'bg-green-50',
                             answersChecked && !correctAnswers[originalIndex] && 'bg-red-50',
                           )
@@ -220,7 +234,11 @@ const resetActivity = () => {
       />
 
       <div v-else class="flex items-center justify-end gap-4">
-        <Button :disabled="!areAllRequiredInputsFilled || answersChecked" @click="handleCheckAnswer">
+        <Button
+          :disabled="!areAllRequiredInputsFilled || answersChecked"
+          :aria-describedby="instructionsId"
+          @click="handleCheckAnswer"
+        >
           {{ ui.checkAnswer }}
         </Button>
       </div>

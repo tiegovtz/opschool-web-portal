@@ -63,6 +63,7 @@ const timeUp = ref(false);
 const isResetting = ref(false);
 const completedQuestions = ref(new Set<number>());
 const incorrectQuestions = ref(new Set<number>());
+const activityInstructionsId = "items-labelling-instructions";
 
 const isGameMode = computed(() => !!props.questions.isGameMode);
 const isDragMode = computed(
@@ -242,8 +243,22 @@ const handleGameComplete = () => {
     :on-time-up="handleGameTimeUp"
     :on-game-complete="handleGameComplete"
   >
-    <div class="flex h-full flex-col">
+    <section
+      class="flex h-full flex-col"
+      aria-labelledby="items-labelling-title"
+      :aria-describedby="activityInstructionsId"
+    >
+      <h2 id="items-labelling-title" class="sr-only">
+        {{ props.questions.title }}
+      </h2>
       <ActivityTitle :title="props.questions.title" />
+      <p :id="activityInstructionsId" class="sr-only">
+        {{
+          ui.isSwahili
+            ? "Tumia tab kusogea kwenye picha, sehemu za majibu, na chaguo za lebo. Chagua lebo kwa enter au space kisha chagua mahali pa kuiweka."
+            : "Use Tab to move through the images, answer areas, and available labels. Select a label with Enter or Space, then choose where to place it."
+        }}
+      </p>
 
       <div class="flex flex-1 flex-col gap-4">
         <div class="rounded-2xl bg-picton-blue-50 p-4">
@@ -266,9 +281,11 @@ const handleGameComplete = () => {
 
               <div v-if="isDragMode" class="w-full">
                 <button
+                  type="button"
+                  :aria-label="placedAnswers[index] ? `${ui.yourAnswer}: ${placedAnswers[index]?.value}` : (ui.isSwahili ? `Weka lebo kwa picha ya ${question.answer}` : `Place a label for image ${question.answer}`)"
                   :class="
                     cn(
-                      'flex min-h-[44px] w-full items-center justify-center rounded-lg border border-dashed px-3 py-2 text-center text-base',
+                      'flex min-h-[44px] w-full items-center justify-center rounded-lg border border-dashed px-3 py-2 text-center text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                       placedAnswers[index]
                         ? isComplete && feedbacks[index]
                           ? 'border-green-300 bg-green-100 text-green-700'
@@ -288,6 +305,7 @@ const handleGameComplete = () => {
                 <Input
                   :model-value="textAnswers[index]"
                   :disabled="isComplete || timeUp"
+                  :aria-label="ui.isSwahili ? `Jibu la picha ${index + 1}` : `Answer for image ${index + 1}`"
                   :class="
                     cn(
                       'rounded-none border-x-0 border-t-0 border-b-2 border-dashed bg-transparent text-center text-lg',
@@ -312,13 +330,16 @@ const handleGameComplete = () => {
 
         <div v-if="isDragMode && !isComplete" class="rounded-2xl bg-white p-4 shadow-sm">
           <div class="mb-3 text-sm font-medium text-oceanBlue">Available labels</div>
-          <div class="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <div class="grid grid-cols-2 gap-3 md:grid-cols-3" role="group" :aria-label="ui.isSwahili ? 'Lebo zinazopatikana' : 'Available labels'">
             <button
               v-for="option in getAvailableOptions()"
               :key="option.id"
+              type="button"
+              :aria-pressed="selectedOptionId === option.id"
+              :aria-label="ui.isSwahili ? `Chagua lebo ${option.value}` : `Choose label ${option.value}`"
               :class="
                 cn(
-                  'rounded-lg px-3 py-2 text-center transition',
+                  'rounded-lg px-3 py-2 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                   selectedOptionId === option.id
                     ? 'bg-picton-blue-500 text-white'
                     : 'bg-picton-blue-100 text-picton-blue-700 hover:bg-picton-blue-200',
@@ -371,6 +392,6 @@ const handleGameComplete = () => {
           }
         "
       />
-    </div>
+    </section>
   </GameModeWrapper>
 </template>

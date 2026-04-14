@@ -47,6 +47,8 @@ const score = ref({ correct: 0, total: props.questions.options.length });
 const allAnswered = ref(false);
 const showFeedback = ref(false);
 const showCorrectAnswers = ref(false);
+const selectedOption = ref<string | null>(null);
+const instructionsId = "complete-matrix-instructions";
 
 const initialize = () => {
   droppedItems.value = props.questions.questions.reduce((acc, question) => {
@@ -58,6 +60,7 @@ const initialize = () => {
   allAnswered.value = false;
   showFeedback.value = false;
   showCorrectAnswers.value = false;
+  selectedOption.value = null;
 };
 
 watch(() => props.questions, initialize, { deep: true, immediate: true });
@@ -114,7 +117,68 @@ const handleDragEnd = (event: DragEndEvent) => {
     [droppableId]: updatedItems,
   };
 
+  selectedOption.value = null;
   playSound("click");
+};
+
+const assignOptionToSlot = (questionId: string, slotIndex: number, option: string) => {
+  const existingOption = droppedItems.value[questionId]?.[slotIndex];
+
+  if (existingOption === option) {
+    selectedOption.value = null;
+    return;
+  }
+
+  let sourceQuestionId: string | null = null;
+  Object.entries(droppedItems.value).forEach(([id, items]) => {
+    if (items.includes(option)) {
+      sourceQuestionId = id;
+    }
+  });
+
+  if (sourceQuestionId) {
+    droppedItems.value = {
+      ...droppedItems.value,
+      [sourceQuestionId]: droppedItems.value[sourceQuestionId].map((item, index) =>
+        item === option ? "" : item,
+      ),
+    };
+  } else {
+    availableOptions.value = availableOptions.value.filter((item) => item !== option);
+  }
+
+  if (existingOption) {
+    availableOptions.value = [...availableOptions.value, existingOption];
+  }
+
+  const updatedItems = [...(droppedItems.value[questionId] || [])];
+  updatedItems[slotIndex] = option;
+  droppedItems.value = {
+    ...droppedItems.value,
+    [questionId]: updatedItems,
+  };
+  selectedOption.value = null;
+  playSound("click");
+};
+
+const handleSlotActivate = (questionId: string, slotIndex: number) => {
+  if (showFeedback.value) return;
+
+  const existingOption = droppedItems.value[questionId]?.[slotIndex];
+  if (existingOption && !selectedOption.value) {
+    const updatedItems = [...(droppedItems.value[questionId] || [])];
+    updatedItems[slotIndex] = "";
+    droppedItems.value = {
+      ...droppedItems.value,
+      [questionId]: updatedItems,
+    };
+    availableOptions.value = shuffle([...availableOptions.value, existingOption]);
+    return;
+  }
+
+  if (selectedOption.value) {
+    assignOptionToSlot(questionId, slotIndex, selectedOption.value);
+  }
 };
 
 const isCorrectAnswer = (questionId: string, option: string) =>
@@ -138,11 +202,16 @@ const resetActivity = () => {
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Complete the matrix by matching each option to the correct category. You can drag with a
+      pointer, or use the Tab key to select an option and then activate an empty answer slot to
+      place it. Activate a filled slot with no option selected to remove it.
+    </p>
 
     <div>
       <div class="mb-6">
         <DNDContext :onDragEnd="handleDragEnd">
-          <div class="rounded-lg bg-white">
+          <div class="rounded-lg bg-white" :aria-describedby="instructionsId">
             <div class="grid grid-cols-12 gap-4 rounded-t-lg bg-picton-blue-200 p-2 font-bold text-picton-blue-700">
               <div class="col-span-3 text-center">{{ props.questions.titles[0] }}</div>
               <div class="col-span-4 text-center">{{ props.questions.titles[1] }}</div>
@@ -189,12 +258,14 @@ const resetActivity = () => {
                         v-for="(_, optionIndex) in Array.from({ length: question.correctOptions.length })"
                         :key="optionIndex"
                       >
-                        <Draggable
+                        <button
                           v-if="droppedItems[question.id]?.[optionIndex]"
-                          :id="droppedItems[question.id][optionIndex]"
+                          type="button"
                           :disabled="showFeedback"
+                          :aria-describedby="instructionsId"
+                          :aria-label="`Placed option ${droppedItems[question.id][optionIndex]} in ${question.name}, slot ${optionIndex + 1}. Activate to remove it.`"
                           :class="[
-                            'flex min-h-10 w-full items-center rounded-lg px-4 text-lg',
+                            'flex min-h-10 w-full items-center rounded-lg px-4 text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
                             !showFeedback && 'bg-lemon-200 text-lemon-700',
                             showFeedback && isCorrectAnswer(question.id, droppedItems[question.id][optionIndex])
                               ? 'bg-green-200 text-green-700'
@@ -202,6 +273,7 @@ const resetActivity = () => {
                                 ? 'bg-red-200 text-red-700'
                                 : '',
                           ]"
+                          @click="handleSlotActivate(question.id, optionIndex)"
                         >
                           {{ droppedItems[question.id][optionIndex] }}
                           <span
@@ -214,7 +286,7 @@ const resetActivity = () => {
                           >
                             → {{ getCorrectCategory(droppedItems[question.id][optionIndex]) }}
                           </span>
-                        </Draggable>
+                        </button>
 
                         <div
                           v-else-if="showCorrectAnswers"
@@ -223,13 +295,23 @@ const resetActivity = () => {
                           {{ question.correctOptions[optionIndex] }}
                         </div>
 
-                        <Droppable
+                        <button
                           v-else
-                          :id="`${question.id}%${optionIndex}`"
-                          class="flex h-10 w-full items-center justify-center rounded-lg bg-picton-blue-200"
-                          isOverClassName="bg-lemon-200"
+                          type="button"
+                          :aria-describedby="instructionsId"
+                          :aria-label="
+                            selectedOption
+                              ? `Empty slot ${optionIndex + 1} for ${question.name}. Activate to place ${selectedOption}.`
+                              : `Empty slot ${optionIndex + 1} for ${question.name}. Select an option first.`
+                          "
+                          class="flex h-10 w-full items-center justify-center rounded-lg bg-picton-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
                           :disabled="showFeedback"
-                        />
+                          @click="handleSlotActivate(question.id, optionIndex)"
+                        >
+                          <span class="text-sm text-picton-blue-700">
+                            {{ selectedOption ? `Place ${selectedOption}` : "Empty slot" }}
+                          </span>
+                        </button>
                       </template>
                     </div>
                   </div>
@@ -246,9 +328,18 @@ const resetActivity = () => {
                 :id="option"
                 :disabled="showFeedback"
               >
-                <div class="flex min-h-10 min-w-36 items-center gap-4 rounded bg-picton-blue-200 px-4 text-center text-lg text-picton-blue-700">
+                <button
+                  type="button"
+                  :aria-describedby="instructionsId"
+                  :aria-pressed="selectedOption === option"
+                  :class="[
+                    'flex min-h-10 min-w-36 items-center gap-4 rounded bg-picton-blue-200 px-4 text-center text-lg text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
+                    selectedOption === option ? 'ring-2 ring-picton-blue-500 ring-offset-2' : '',
+                  ]"
+                  @click="selectedOption = selectedOption === option ? null : option"
+                >
                   <span>{{ option }}</span>
-                </div>
+                </button>
               </Draggable>
             </div>
           </div>

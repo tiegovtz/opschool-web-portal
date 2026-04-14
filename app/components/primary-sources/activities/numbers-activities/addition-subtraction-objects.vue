@@ -39,6 +39,7 @@ const questionAnswers = reactive<
   Record<number, { left: string; right: string; result: string }>
 >({});
 const correctAnswers = ref<string[]>([]);
+const activityInstructionsId = "numbers-addition-subtraction-instructions";
 
 const { playSound } = useSoundEffects();
 
@@ -133,8 +134,22 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="numbers-addition-subtraction-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="numbers-addition-subtraction-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye vikundi vya vitu na sehemu za majibu. Andika hesabu zako kwenye visanduku vilivyotolewa."
+          : "Use Tab to move through each group of objects and answer field. Type your counts and final answers in the provided inputs."
+      }}
+    </p>
 
     <div class="flex-1 flex flex-col gap-4 p-4">
       <div class="space-y-6">
@@ -142,12 +157,17 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
           v-for="(question, index) in props.questions.questions"
           :key="index"
           class="bg-white rounded-lg p-6 mb-6"
+          :aria-labelledby="`numbers-addition-subtraction-question-${index}`"
         >
+          <h3 :id="`numbers-addition-subtraction-question-${index}`" class="sr-only">
+            {{ ui.isSwahili ? `Swali la ${index + 1}` : `Question ${index + 1}` }}
+          </h3>
           <div class="flex flex-col md:flex-row items-center justify-center gap-4">
             <div class="bg-gray-50 md:flex md:items-center gap-2 p-4 rounded-lg border border-gray-200 w-full">
               <QuantityRenderer
                 :count="question.leftNumber"
                 :image="question.leftImage"
+                :summary-label="ui.isSwahili ? `Kundi la kwanza lina vitu ${question.leftNumber}` : `First group has ${question.leftNumber} items`"
                 :maxItemsPerRow="7"
                 className="sm:max-w-[350px] xl:max-w-full flex-wrap"
               />
@@ -160,6 +180,7 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
                   :showResults="showResults"
                   placeholder="Count"
                   :onInputChange="(v: string) => handleInputChange(index, 'left', v)"
+                  :ariaLabel="ui.isSwahili ? `Hesabu ya kundi la kwanza kwa swali la ${index + 1}` : `First count for question ${index + 1}`"
                   :className="cn('w-[100px] rounded-lg p-2', showResults ? 'border-none' : 'border border-picton-blue-500')"
                 />
                 <div v-if="showResults && (questionAnswers[index]?.left || '')" class="absolute -top-2 -right-2 z-10">
@@ -184,6 +205,7 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
               <QuantityRenderer
                 :count="question.rightNumber"
                 :image="question.rightImage || question.leftImage"
+                :summary-label="ui.isSwahili ? `Kundi la pili lina vitu ${question.rightNumber}` : `Second group has ${question.rightNumber} items`"
                 :maxItemsPerRow="7"
                 className="sm:max-w-[350px] xl:max-w-full flex-wrap"
               />
@@ -196,6 +218,7 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
                   :showResults="showResults"
                   placeholder="Count"
                   :onInputChange="(v: string) => handleInputChange(index, 'right', v)"
+                  :ariaLabel="ui.isSwahili ? `Hesabu ya kundi la pili kwa swali la ${index + 1}` : `Second count for question ${index + 1}`"
                   :className="cn('w-[100px] rounded-lg p-2', showResults ? 'border-none' : 'border border-picton-blue-500')"
                 />
                 <div v-if="showResults && (questionAnswers[index]?.right || '')" class="absolute -top-2 -right-2 z-10">
@@ -222,6 +245,7 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
                 :showResults="showResults"
                 placeholder="Answer"
                 :onInputChange="(v: string) => handleInputChange(index, 'result', v)"
+                :ariaLabel="ui.isSwahili ? `Jibu la mwisho kwa swali la ${index + 1}` : `Final answer for question ${index + 1}`"
                 :className="cn('w-[120px] rounded-lg p-2', showResults ? 'border-none' : 'border border-picton-blue-500')"
               />
               <div v-if="showResults && (questionAnswers[index]?.result || '')" class="absolute -top-2 -right-2 z-10">
@@ -269,5 +293,5 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
         }"
       />
     </div>
-  </div>
+  </section>
 </template>

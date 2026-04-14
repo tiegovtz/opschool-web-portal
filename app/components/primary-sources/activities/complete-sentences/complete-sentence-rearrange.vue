@@ -35,6 +35,8 @@ const checkedQuestions = ref<number[]>([]);
 const feedbacks = ref<Record<number, boolean>>({});
 const showResults = ref(false);
 const activityInstructionsId = "complete-sentences-rearrange-instructions";
+const getWordCount = (questionIndex: number) =>
+  shuffledQuestions.value[questionIndex]?.answer.split(" ").length || 0;
 
 // Shuffle
 function shuffleQuestions() {
@@ -75,10 +77,7 @@ function handleWordClick(questionIndex: number, wordIndex: number) {
     [questionIndex]: updated,
   };
 
-  const expected = computed(()=> (shuffledQuestions.value as any[])[questionIndex].answer.split(" ").length)
-    
-
-  if (updated.length === expected.value) {
+  if (updated.length === getWordCount(questionIndex)) {
     setTimeout(() => {
       const selectedWords = updated.map(
         (i) => (shuffledQuestions.value as any[])[questionIndex].options[i]
@@ -182,8 +181,9 @@ function resetGame() {
             <button
               v-for="(word, optionIndex) in question.options"
               :key="optionIndex"
-              class="px-3 py-1 text-lg rounded border cursor-pointer"
+              class="px-3 py-1 text-lg rounded border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
               :aria-label="ui.isSwahili ? `Swali la ${index + 1}, neno la ${optionIndex + 1}: ${word}` : `Question ${index + 1} word ${optionIndex + 1}: ${word}`"
+              :aria-describedby="activityInstructionsId"
               :class="{
                 'opacity-50 pointer-events-none':
                   (selectedWordIndices[index] || []).includes(optionIndex) ||
@@ -204,17 +204,22 @@ function resetGame() {
             <span :id="`complete-sentences-rearrange-question-${index}`" class="sr-only">
               Question {{ index + 1 }}
             </span>
-            <span
+            <button
               v-for="(word, i) in getSelectedWords(index)"
               :key="i"
-              class="px-3 py-1 rounded"
+              type="button"
+              class="px-3 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+              :aria-describedby="activityInstructionsId"
+              :aria-label="ui.isSwahili ? `Ondoa neno ${word} kutoka swali la ${index + 1}` : `Remove word ${word} from question ${index + 1}`"
               :class="{
                 'pointer-events-none':
                   checkedQuestions.includes(index),
               }"
+              :disabled="checkedQuestions.includes(index)"
+              @click="handleRemoveWord(index, i)"
             >
               {{ word }}
-            </span>
+            </button>
           </div>
 
           <!-- FEEDBACK -->

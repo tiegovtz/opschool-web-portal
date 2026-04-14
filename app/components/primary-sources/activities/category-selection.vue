@@ -79,7 +79,8 @@ const categories = [
         v-for="category in categories"
         :key="category.id"
         type="button"
-        class="group cursor-pointer text-left transition-transform duration-300 hover:-translate-y-2 hover:scale-[1.02]"
+        :aria-label="`${category.title}. ${category.description}`"
+        class="group cursor-pointer text-left transition-transform duration-300 hover:-translate-y-2 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
         @click="props.onCategorySelect(category.id)"
       >
         <div class="relative h-96 overflow-hidden rounded-3xl shadow-2xl transition-all duration-500 group-hover:shadow-[0_25px_60px_rgba(15,76,129,0.18)]">
@@ -116,7 +117,7 @@ const categories = [
 
               <div class="flex items-center space-x-2 pt-4">
                 <span :class="cn('text-sm font-semibold', category.textColor)">Start Learning</span>
-                <Icon icon="lucide:arrow-right" width="16" height="16" :class="cn(category.textColor, 'transition-transform duration-300 group-hover:translate-x-1')" />
+                <Icon icon="lucide:arrow-right" width="16" height="16" :class="cn(category.textColor, 'transition-transform duration-300 group-hover:translate-x-1')" aria-hidden="true" />
               </div>
             </div>
           </div>

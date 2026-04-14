@@ -23,6 +23,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 
 const { objects, loading, error, refetch } = useObjects({
   type: props.questions.type || null,
@@ -44,6 +45,7 @@ const wrongAttempts = ref(0);
 const showHint = ref(false);
 const completedQuestions = ref(new Set<number>());
 const incorrectQuestions = ref(new Set<number>());
+const activityInstructionsId = "game-arrange-alphabet-instructions";
 
 const { playSound } = useSoundEffects();
 const { width } = useWindowSize();
@@ -280,24 +282,43 @@ const handleRemoveLetter = (index: number) => {
     :show-timer="props.questions.isGameMode || false"
     :show-progress="props.questions.isGameMode || false"
   >
-    <div class="flex h-full flex-1 flex-col">
+    <section
+      class="flex h-full flex-1 flex-col"
+      aria-labelledby="game-arrange-alphabet-title"
+      :aria-describedby="activityInstructionsId"
+    >
+      <h2 id="game-arrange-alphabet-title" class="sr-only">
+        {{ props.questions.title }}
+      </h2>
       <ActivityTitle :title="props.questions.title" />
+      <p :id="activityInstructionsId" class="sr-only">
+        {{
+          ui.isSwahili
+            ? "Tumia tab kusogea kwenye herufi. Bonyeza enter au space kuweka herufi kwenye nafasi inayofuata. Tumia tab kufikia herufi uliyoweka na bonyeza enter au space kuiondoa."
+            : "Use Tab to move through the letters. Press Enter or Space to place a letter in the next empty slot. Use Tab to reach a placed letter and press Enter or Space to remove it."
+        }}
+      </p>
 
       <div class="flex h-full flex-1 flex-col items-center justify-between gap-10">
         <div
           class="grid gap-2 text-center font-bold"
+          role="group"
+          :aria-label="ui.isSwahili ? 'Herufi zinazopatikana' : 'Available letters'"
           :style="{
             gridTemplateColumns: `repeat(${width > 768 ? 13 : 7}, minmax(0, 1fr))`,
           }"
         >
-          <p
+          <button
             v-for="letter in alphabet"
             :key="letter"
-            :class="`cursor-pointer select-none text-4xl transition-transform hover:scale-110 md:text-6xl ${alphabetColors[letter]}`"
+            type="button"
+            :disabled="isTransitioning || !currentWord || isCorrect || isIncorrect"
+            :aria-label="ui.isSwahili ? `Chagua herufi ${letter.toUpperCase()}` : `Choose letter ${letter.toUpperCase()}`"
+            :class="`cursor-pointer select-none rounded text-4xl transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-6xl ${alphabetColors[letter]}`"
             @click="handleLetterClick(letter)"
           >
             {{ letter }}
-          </p>
+          </button>
         </div>
 
         <div class="relative h-[300px] rounded-lg bg-white p-2 md:shadow-md">
@@ -333,6 +354,8 @@ const handleRemoveLetter = (index: number) => {
               },
             )
           "
+          role="group"
+          :aria-label="ui.isSwahili ? 'Nafasi za herufi ulizochagua' : 'Placed letter slots'"
         >
           <div
             v-for="(_, index) in currentWord.split('')"
@@ -356,7 +379,8 @@ const handleRemoveLetter = (index: number) => {
               <button
                 v-if="placedLetters[index]"
                 type="button"
-                class="flex h-full w-full items-center justify-center rounded hover:bg-red-100"
+                :aria-label="ui.isSwahili ? `Ondoa herufi ${placedLetters[index]?.toUpperCase()} kutoka nafasi ya ${index + 1}` : `Remove letter ${placedLetters[index]?.toUpperCase()} from slot ${index + 1}`"
+                class="flex h-full w-full items-center justify-center rounded hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
                 @click="handleRemoveLetter(index)"
               >
                 {{ placedLetters[index] }}
@@ -379,6 +403,6 @@ const handleRemoveLetter = (index: number) => {
           :on-open-change="handleDialogChange"
         />
       </div>
-    </div>
+    </section>
   </GameModeWrapper>
 </template>

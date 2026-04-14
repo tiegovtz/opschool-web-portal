@@ -35,6 +35,7 @@ const props = defineProps<Props>();
       <button
         v-if="item.onClick"
         type="button"
+        :aria-current="item.active ? 'page' : undefined"
         :class="
           cn(
             'rounded-full px-3 py-1.5 font-medium transition-all duration-200',
@@ -50,6 +51,7 @@ const props = defineProps<Props>();
 
       <span
         v-else
+        :aria-current="item.active ? 'page' : undefined"
         :class="
           cn(
             'rounded-full px-3 py-1.5 font-medium',
