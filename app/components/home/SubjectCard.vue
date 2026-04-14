@@ -101,7 +101,7 @@ const setSubjectToView = () => {
 
     <!-- content -->
     <div :class="[
-      'flex px-4 pt-2 transition-all duration-500 ease-in-out group-hover:text-white',
+      'flex px-2 pt-1 transition-all duration-500 ease-in-out group-hover:text-white',
       layoutEffect == 'grid' ? 'flex-col' : 'flex-col flex-1'
     ]">
 
@@ -111,14 +111,14 @@ const setSubjectToView = () => {
       ]">
         <div class="flex min-w-0 flex-col gap-2">
           <p
-            class="text-left text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out">
+            class="text-left text-[1.1rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out">
             {{ subjectName }}
           </p>
         </div>
       </div>
 
       <!-- description -->
-      <p class="text-start text-small text-black/80 group-hover:text-white line-clamp-2">
+      <p class="text-start text-[1rem] text-black/80 group-hover:text-white line-clamp-2">
         {{ subjectDescription }}
       </p>
 
