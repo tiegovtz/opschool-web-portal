@@ -20,8 +20,6 @@ interface QuestionItem {
   answer: string | string[];
 }
 
-const answerNewChecker = new AnswerChecker();
-
 interface QuestionsProps {
   title: string;
   fontSize?: number;
@@ -111,36 +109,6 @@ const handleInputChange = (questionIndex: number, blankIndex: number, value: str
   };
 };
 
-const checkAnswer = (questionIndex: number) => {
-  const userAnswer = (answers.value[questionIndex] || "").map((ans) => String(ans ?? "").trim()).filter(Boolean).join(", ");
-  const accepted = getAcceptedAnswers(questionIndex);
-  if (!accepted.length) return false;
-  return answerNewChecker.checkAnswer(userAnswer, {
-    acceptedAnswers: accepted,
-    strictMode: true,
-  }).isCorrect;
-};
-
-const handleCheckAllAnswers = () => {
-  let nextScore = 0;
-  const nextFeedbacks: Record<number, boolean> = {};
-  const nextCheckedItems: number[] = [];
-
-  shuffledQuestions.value.forEach((_, index) => {
-    const isCorrect = checkAnswer(index);
-    nextFeedbacks[index] = isCorrect;
-    nextCheckedItems.push(index);
-    if (isCorrect) {
-      nextScore += 1;
-    }
-  });
-
-  feedbacks.value = nextFeedbacks;
-  checkedItems.value = nextCheckedItems;
-  score.value = nextScore;
-  allAnswered.value = true;
-};
-
 type QuestionRenderSegment = QuestionSegment & {
   calculatedWidth?: number;
   blankIndex?: number;
@@ -167,6 +135,52 @@ const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
 const getBlankCount = (question: string) =>
   getQuestionSegments(question).filter((segment) => segment.type === "blank").length;
 
+const checkAnswer = (questionIndex: number) => {
+  const question = shuffledQuestions.value[questionIndex];
+  if (!question) return false;
+
+  const blankCount = getBlankCount(question.question);
+  if (blankCount === 0) return false;
+
+  const userParts = Array.from({ length: blankCount }, (_, i) =>
+    (getUserAnswers(questionIndex)[i] ?? "").trim().toLowerCase(),
+  );
+
+  const rawAnswer = question.answer;
+  const correctAnswers = Array.isArray(rawAnswer)
+    ? rawAnswer.map((a) => String(a ?? "").trim().toLowerCase()).filter(Boolean)
+    : getAcceptedAnswers(questionIndex).map((a) => a.toLowerCase());
+
+  if (!correctAnswers.length) return false;
+
+  return userParts.every((ans) =>
+    answerChecker.checkAnswer(ans, {
+      acceptedAnswers: correctAnswers,
+      strictMode: true,
+    }).isCorrect,
+  );
+};
+
+const handleCheckAllAnswers = () => {
+  let nextScore = 0;
+  const nextFeedbacks: Record<number, boolean> = {};
+  const nextCheckedItems: number[] = [];
+
+  shuffledQuestions.value.forEach((_, index) => {
+    const isCorrect = checkAnswer(index);
+    nextFeedbacks[index] = isCorrect;
+    nextCheckedItems.push(index);
+    if (isCorrect) {
+      nextScore += 1;
+    }
+  });
+
+  feedbacks.value = nextFeedbacks;
+  checkedItems.value = nextCheckedItems;
+  score.value = nextScore;
+  allAnswered.value = true;
+};
+
 const allQuestionsAnswered = computed(() =>
   shuffledQuestions.value.every((question, index) => {
     const blankCount = getBlankCount(question.question);
@@ -180,8 +194,6 @@ const formatUserAnswer = (questionIndex: number) => {
   const userAnswers = getUserAnswers(questionIndex).filter((answer) => answer.trim() !== "");
   return userAnswers.length ? userAnswers.join(", ") : "(no answer)";
 };
-
-// const formatCorrectAnswer = (questionIndex: number) => getCorrectAnswerLabel(questionIndex).join(", ");
 </script>
 
 <template>
@@ -341,7 +353,7 @@ const formatUserAnswer = (questionIndex: number) => {
             <div class="mt-2 grid grid-cols-2 gap-4">
               <div>
                 <p class="text-sm text-gray-500">{{ ui.yourAnswer }}</p>
-                <p :class="{ 'text-red-600': !checkAnswer(idx) }">{{ answers[idx] || "(no answer)" }}</p>
+                <p :class="{ 'text-red-600': !checkAnswer(idx) }">{{ formatUserAnswer(idx) }}</p>
               </div>
               <div v-if="props.feedback === 'wrong-correct-answers'">
                 <p class="text-sm text-gray-500">{{ ui.correctAnswer }}</p>

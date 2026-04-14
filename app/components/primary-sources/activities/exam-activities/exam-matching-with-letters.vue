@@ -4,19 +4,22 @@ import ActivityTitle from "~/components/templates/activity-title";
 import DNDContext from "~/components/layout/dnd-context";
 import Draggable from "~/components/ui/dnd/draggable";
 import Droppable from "~/components/ui/dnd/droppable";
-import { shuffle, toRoman } from "~/utilities/utils";
+import { Button } from "~/components/ui/button";
+import { cn, shuffle, toRoman } from "~/utilities/utils";
 import { useExamContext, type QuestionAnswer } from "~/shared/context/exam-context";
 
 type ExamMatchingWithLettersProps = {
   questions: {
     title: string;
+    mode?: "kweliSikweli";
+    sharedImage?: string;
     questions: {
       id: string;
       text: string;
       image?: string;
       correctAnswer: string;
     }[];
-    answers: string[];
+    answers?: string[];
   };
   activityIndex: number;
   activityId: string;
@@ -31,6 +34,28 @@ type DragEndEvent = {
 const props = defineProps<ExamMatchingWithLettersProps>();
 const ui = useActivityUiText();
 const activityInstructionsId = "exam-matching-letters-instructions";
+
+const isKweliMode = computed(() => props.questions.mode === "kweliSikweli");
+
+const kweliSelections = ref<("T" | "F" | undefined)[]>([]);
+type KweliBoxStatus = "empty" | "correct" | "wrong";
+const kweliBoxStatus = ref<KweliBoxStatus[]>([]);
+const kweliCurrentIndex = ref(0);
+
+const resetKweliFlow = () => {
+  const n = props.questions.questions.length;
+  kweliSelections.value = Array.from({ length: n }, () => undefined);
+  kweliBoxStatus.value = Array.from({ length: n }, () => "empty" as KweliBoxStatus);
+  kweliCurrentIndex.value = 0;
+};
+
+watch(
+  () => [props.questions.mode, props.questions.questions.length] as const,
+  () => {
+    resetKweliFlow();
+  },
+  { immediate: true },
+);
 
 const createShuffledAnswers = (
   answers: string[],
@@ -75,27 +100,125 @@ const createShuffledAnswers = (
   };
 };
 
+const emptyLetterState = () => ({
+  shuffledAnswers: [] as { display: string; letter: string; content: string }[],
+  correctAnswerMapping: new Map<string, string>(),
+});
+
 const answers = ref<(string | undefined)[]>([]);
 
 const { playSound } = useSoundEffects();
 const { collectAnswers, updateActivityScore } = useExamContext();
 
-const initialShuffledState = createShuffledAnswers(
-  [...props.questions.answers],
-  props.questions.questions,
-);
+const initialLetterState =
+  props.questions.answers?.length && !isKweliMode.value
+    ? createShuffledAnswers([...props.questions.answers], props.questions.questions)
+    : emptyLetterState();
 
-const shuffledAnswers = ref(initialShuffledState.shuffledAnswers);
-const correctAnswerMapping = ref(initialShuffledState.correctAnswerMapping);
+const shuffledAnswers = ref(initialLetterState.shuffledAnswers);
+const correctAnswerMapping = ref(initialLetterState.correctAnswerMapping);
+
+watch(
+  () => props.questions,
+  () => {
+    answers.value = [];
+    if (isKweliMode.value) {
+      resetKweliFlow();
+    }
+    if (!isKweliMode.value && props.questions.answers?.length) {
+      const next = createShuffledAnswers([...props.questions.answers], props.questions.questions);
+      shuffledAnswers.value = next.shuffledAnswers;
+      correctAnswerMapping.value = next.correctAnswerMapping;
+    } else if (!isKweliMode.value) {
+      const next = emptyLetterState();
+      shuffledAnswers.value = next.shuffledAnswers;
+      correctAnswerMapping.value = next.correctAnswerMapping;
+    }
+  },
+  { deep: true },
+);
 
 const totalQuestions = computed(() => props.questions.questions.length);
 const availableAnswers = computed(() =>
   shuffledAnswers.value.filter((answer) => !answers.value.includes(answer.letter)),
 );
 
+const kweliRoundComplete = computed(
+  () =>
+    isKweliMode.value &&
+    kweliBoxStatus.value.length > 0 &&
+    kweliBoxStatus.value.every((b) => b !== "empty"),
+);
+
+const kweliDisplayIndex = computed(() => {
+  if (!isKweliMode.value) return 0;
+  if (kweliRoundComplete.value) {
+    return Math.max(0, props.questions.questions.length - 1);
+  }
+  return kweliCurrentIndex.value;
+});
+
+const kweliActiveQuestion = computed(() => {
+  if (!isKweliMode.value) return null;
+  const list = props.questions.questions;
+  const i = kweliDisplayIndex.value;
+  return list[i] ?? null;
+});
+
+const kweliLabel = (v: "T" | "F" | undefined) =>
+  v === "T" ? "Kweli" : v === "F" ? "Si Kweli" : "";
+
+const pickKweli = (choice: "T" | "F") => {
+  if (!isKweliMode.value || kweliRoundComplete.value) return;
+
+  const i = kweliCurrentIndex.value;
+  const q = props.questions.questions[i];
+  if (!q) return;
+
+  const isCorrect = choice === q.correctAnswer;
+
+  const boxes = [...kweliBoxStatus.value];
+  boxes[i] = isCorrect ? "correct" : "wrong";
+  kweliBoxStatus.value = boxes;
+
+  const sel = [...kweliSelections.value];
+  sel[i] = choice;
+  kweliSelections.value = sel;
+
+  playSound(isCorrect ? "correct" : "failure");
+
+  if (i < props.questions.questions.length - 1) {
+    kweliCurrentIndex.value = i + 1;
+  }
+};
+
 const calculateScore = () => {
   let score = 0;
   const detailedAnswers: QuestionAnswer[] = [];
+
+  if (isKweliMode.value) {
+    props.questions.questions.forEach((question, index) => {
+      const userAnswer = kweliSelections.value[index] || "";
+      const correctAnswer = question.correctAnswer;
+      const isCorrect = userAnswer === correctAnswer;
+
+      if (isCorrect) {
+        score++;
+      }
+
+      detailedAnswers.push({
+        questionId: question.id,
+        userAnswer: kweliLabel(userAnswer as "T" | "F" | undefined) || userAnswer,
+        correctAnswer: kweliLabel(correctAnswer as "T" | "F") || correctAnswer,
+        isCorrect,
+        question: question.text,
+        image: props.questions.sharedImage || question.image,
+        options: ["Kweli", "Si Kweli"],
+      });
+    });
+
+    return { score, answers: detailedAnswers };
+  }
 
   props.questions.questions.forEach((question, index) => {
     const userAnswer = answers.value[index] || "";
@@ -120,17 +243,20 @@ const calculateScore = () => {
   return { score, answers: detailedAnswers };
 };
 
-watch(
-  answers,
-  () => {
-    const answeredCount = answers.value.filter((answer) => answer !== undefined).length;
+const reportProgress = () => {
+  if (isKweliMode.value) {
+    const answeredCount = kweliSelections.value.filter((a) => a !== undefined).length;
     props.onStateUpdate?.(totalQuestions.value, answeredCount);
-  },
-  { deep: true },
-);
+    return;
+  }
+  const answeredCount = answers.value.filter((answer) => answer !== undefined).length;
+  props.onStateUpdate?.(totalQuestions.value, answeredCount);
+};
+
+watch([answers, kweliSelections], reportProgress, { deep: true, immediate: true });
 
 watch(
-  [answers, collectAnswers],
+  [answers, kweliSelections, collectAnswers],
   () => {
     if (!collectAnswers.value) return;
 
@@ -147,6 +273,8 @@ watch(
 );
 
 const handleDragEnd = (event: DragEndEvent) => {
+  if (isKweliMode.value) return;
+
   const draggedItemLetter = event.active?.id;
   if (!draggedItemLetter) return;
 
@@ -187,23 +315,96 @@ const handleDragEnd = (event: DragEndEvent) => {
 </script>
 
 <template>
-  <section
-    class="flex h-full flex-col"
-    aria-labelledby="exam-matching-letters-title"
-    :aria-describedby="activityInstructionsId"
-  >
-    <h2 id="exam-matching-letters-title" class="sr-only">
-      {{ props.questions.title }}
-    </h2>
-    <ActivityTitle :title="props.questions.title" />
-    <p :id="activityInstructionsId" class="sr-only">
-      {{
-        ui.isSwahili
-          ? "Tumia tab kusogea kwenye swali, nafasi za kuweka herufi, na chaguo. Shughuli hii bado inategemea mfumo wa kuburuta kwa kupanga herufi."
-          : "Use Tab to move through the questions, answer slots, and options. This activity still relies on drag and drop to place the letters."
-      }}
-    </p>
-    <DNDContext :onDragEnd="handleDragEnd">
+  <div class="flex h-full flex-col">
+    <div
+      v-if="isKweliMode"
+      class="flex flex-col gap-6 overflow-auto rounded-xl bg-white p-4 pb-2 md:max-h-[calc(100dvh-100px)]"
+    >
+      <div
+        v-if="kweliActiveQuestion"
+        class="flex flex-col gap-4 rounded-lg border border-picton-blue-100 bg-picton-blue-50/60 p-4"
+      >
+        <p class="text-lg text-picton-blue-800">
+          {{ toRoman(kweliDisplayIndex + 1) }}. {{ kweliActiveQuestion.text }}
+        </p>
+
+        <div
+          v-if="!kweliRoundComplete"
+          class="flex flex-wrap items-center justify-center gap-4 sm:justify-start"
+        >
+          <Button
+            type="button"
+            variant="outline"
+            :class="
+              cn(
+                'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
+              )
+            "
+            @click="pickKweli('T')"
+          >
+            Kweli
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            :class="
+              cn(
+                'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
+              )
+            "
+            @click="pickKweli('F')"
+          >
+            Si Kweli
+          </Button>
+        </div>
+
+        <p
+          v-else
+          class="text-center text-base font-medium text-picton-blue-600"
+        >
+          Umekamilisha maswali yote.
+        </p>
+
+        <img
+          v-if="props.questions.sharedImage"
+          :src="props.questions.sharedImage"
+          alt=""
+          class="mx-auto max-h-56 w-full max-w-lg rounded-lg object-contain"
+        >
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <p class="text-center text-sm font-medium text-picton-blue-700">
+          Maendeleo
+        </p>
+        <div class="flex flex-wrap justify-center gap-2 sm:gap-3">
+          <div
+            v-for="(status, idx) in kweliBoxStatus"
+            :key="idx"
+            :class="
+              cn(
+                'flex h-11 w-11 items-center justify-center rounded-lg border-2 text-base font-bold transition-all sm:h-12 sm:w-12 sm:text-lg',
+                status === 'empty' &&
+                  'border-dashed border-picton-blue-200 bg-white/70 text-picton-blue-400',
+                status === 'correct' &&
+                  'border-green-500 bg-emerald-50 text-green-700 shadow-sm',
+                status === 'wrong' && 'border-red-500 bg-red-50 text-red-700 shadow-sm',
+                idx === kweliCurrentIndex &&
+                  status === 'empty' &&
+                  !kweliRoundComplete &&
+                  'ring-2 ring-oceanBlue ring-offset-2',
+              )
+            "
+          >
+            <span v-if="status === 'empty'">{{ idx + 1 }}</span>
+            <span v-else-if="status === 'correct'">✓</span>
+            <span v-else>✕</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <DNDContext v-else :onDragEnd="handleDragEnd">
       <div class="flex h-full flex-col justify-between overflow-auto pb-2 md:flex-row">
         <div class="flex w-full flex-col justify-between bg-white p-4 md:max-h-[calc(100dvh-100px)] md:rounded-bl-xl">
           <div class="flex flex-col gap-y-4" role="list" :aria-label="ui.question.value">
