@@ -14,6 +14,7 @@ type ShapeCanvasProps = {
   width?: number;
   height?: number;
   className?: string;
+  ariaLabel?: string;
 };
 
 const props = withDefaults(defineProps<ShapeCanvasProps>(), {
@@ -74,5 +75,7 @@ watch(
     :width="props.width"
     :height="props.height"
     :class="props.className"
+    role="img"
+    :aria-label="props.ariaLabel || `Shape ${props.canvasIndex + 1}`"
   />
 </template>

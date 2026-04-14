@@ -43,6 +43,7 @@ const showResultsDialog = ref(false);
 const answerRecords = ref<AnswerRecord[]>([]);
 const showResults = ref(false);
 const validationError = ref<string | null>(null);
+const activityInstructionsId = "abacus-activity-instructions";
 
 const currentQuestion = computed(() => props.questions.questions[currentQuestionIndex.value]);
 const totalQuestions = computed(() => props.questions.questions.length);
@@ -216,8 +217,22 @@ const resetActivity = () => {
 </script>
 
 <template>
-  <div class="relative flex h-full flex-col">
+  <section
+    class="relative flex h-full flex-col"
+    aria-labelledby="abacus-activity-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="abacus-activity-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila thamani ya nafasi, sehemu zake za jibu, na kisanduku cha namba kamili."
+          : "Use Tab to move through each place value, its answer field, and the whole number answer field."
+      }}
+    </p>
 
     <div
       v-if="validationError"
@@ -307,6 +322,7 @@ const resetActivity = () => {
                 type="text"
                 maxlength="1"
                 :disabled="showFeedback"
+                :aria-label="ui.isSwahili ? `Namba ya ${placeValue}` : `${placeValue} digit`"
                 class="w-full text-center !text-xl"
                 @update:model-value="
                   (value) => {
@@ -326,6 +342,7 @@ const resetActivity = () => {
               :model-value="wholeNumberAnswer"
               type="text"
               :disabled="showFeedback"
+              :aria-label="ui.isSwahili ? 'Namba kamili' : 'Whole number answer'"
               :class="
                 cn('mx-auto min-w-32 text-center !text-xl', {
                   'border-green-500 bg-green-100 text-green-700':
@@ -392,5 +409,5 @@ const resetActivity = () => {
         }
       "
     />
-  </div>
+  </section>
 </template>

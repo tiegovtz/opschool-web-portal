@@ -26,6 +26,8 @@ const score = ref(0);
 const allAnswered = ref(false);
 const showResults = ref(false);
 const selectedItem = ref<string | null>(null);
+const activityInstructionsId = "pattern-matching-instructions";
+const ui = useActivityUiText();
 
 const initializeActivity = () => {
   answers.value = Array(props.questions.patterns.length).fill(null);
@@ -88,8 +90,22 @@ const resetActivity = () => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="pattern-matching-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="pattern-matching-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye chaguo na nafasi zilizo wazi. Chagua kipengee kwa enter au space, kisha chagua nafasi ya kukiweka."
+          : "Use Tab to move through the options and empty slots. Select an item with Enter or Space, then choose the slot where you want to place it."
+      }}
+    </p>
 
     <div class="flex flex-1 flex-col justify-between gap-6">
       <div class="space-y-4">
@@ -97,10 +113,11 @@ const resetActivity = () => {
           v-for="(pattern, rowIndex) in props.questions.patterns"
           :key="rowIndex"
           class="flex flex-col gap-4 rounded-2xl bg-picton-blue-50 p-4 md:flex-row md:items-center"
+          :aria-labelledby="`pattern-matching-row-${rowIndex}`"
         >
-          <div class="text-xl font-bold text-picton-blue-800 md:w-10">
+          <h3 :id="`pattern-matching-row-${rowIndex}`" class="text-xl font-bold text-picton-blue-800 md:w-10">
             {{ rowIndex + 1 }}.
-          </div>
+          </h3>
 
           <div class="flex flex-1 flex-wrap items-center gap-3">
             <div
@@ -113,9 +130,19 @@ const resetActivity = () => {
           </div>
 
           <button
+            type="button"
+            :aria-label="
+              answers[rowIndex]
+                ? ui.isSwahili
+                  ? `Swali la ${rowIndex + 1}, ondoa ${answers[rowIndex]}`
+                  : `Pattern ${rowIndex + 1}, remove ${answers[rowIndex]}`
+                : ui.isSwahili
+                  ? `Swali la ${rowIndex + 1}, weka kipengee kilichochaguliwa`
+                  : `Pattern ${rowIndex + 1}, place the selected item`
+            "
             :class="
               cn(
-                'relative flex h-16 w-24 items-center justify-center rounded-xl border-2 border-dashed transition',
+                'relative flex h-16 w-24 items-center justify-center rounded-xl border-2 border-dashed transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                 answers[rowIndex]
                   ? showResults
                     ? answers[rowIndex] === props.questions.patternAnswers[rowIndex]
@@ -133,6 +160,9 @@ const resetActivity = () => {
               :alt="answers[rowIndex] || ''"
               class="h-full w-full rounded-lg object-contain"
             >
+            <span v-else class="text-xs font-medium text-picton-blue-700">
+              {{ ui.isSwahili ? "Weka hapa" : "Place here" }}
+            </span>
             <span
               v-if="showResults && answers[rowIndex]"
               :class="
@@ -149,13 +179,20 @@ const resetActivity = () => {
       </div>
 
       <div v-if="!showResults" class="ml-auto w-fit rounded-2xl bg-picton-blue-200 p-3">
-        <div class="flex flex-wrap gap-3">
+        <div
+          class="flex flex-wrap gap-3"
+          role="group"
+          :aria-label="ui.isSwahili ? 'Chaguo zinazopatikana' : 'Available options'"
+        >
           <button
             v-for="item in availableItems"
             :key="item"
+            type="button"
+            :aria-pressed="selectedItem === item"
+            :aria-label="ui.isSwahili ? `Chagua ${item}` : `Choose ${item}`"
             :class="
               cn(
-                'flex h-16 w-24 items-center justify-center rounded-xl bg-white p-2 transition',
+                'flex h-16 w-24 items-center justify-center rounded-xl bg-white p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                 selectedItem === item ? 'ring-2 ring-picton-blue-600' : 'hover:bg-picton-blue-50',
               )
             "
@@ -187,5 +224,5 @@ const resetActivity = () => {
         }
       "
     />
-  </div>
+  </section>
 </template>

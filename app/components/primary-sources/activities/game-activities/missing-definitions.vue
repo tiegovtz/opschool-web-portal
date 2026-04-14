@@ -60,6 +60,7 @@ const showResults = ref(false);
 const showResultsDialog = ref(false);
 const answerFeedback = ref<"correct" | "incorrect" | null>(null);
 const completedObjectIds = ref<number[]>([]);
+const activityInstructionsId = "game-missing-definitions-instructions";
 
 const { playSound } = useSoundEffects();
 
@@ -212,8 +213,22 @@ const handleResultsDialogChange = (open: boolean) => {
     :show-timer="props.questions.isGameMode || false"
     :show-progress="props.questions.isGameMode || false"
   >
-    <div class="flex h-full flex-col">
+    <section
+      class="flex h-full flex-col"
+      aria-labelledby="game-missing-definitions-title"
+      :aria-describedby="activityInstructionsId"
+    >
+      <h2 id="game-missing-definitions-title" class="sr-only">
+        {{ props.questions.title }}
+      </h2>
       <ActivityTitle :title="props.questions.title" />
+      <p :id="activityInstructionsId" class="sr-only">
+        {{
+          ui.isSwahili
+            ? "Tumia tab kusogea kati ya neno na chaguo za maana yake. Tumia enter au space kuchagua jibu."
+            : "Use Tab to move between the word and its definition choices. Use Enter or Space to choose an answer."
+        }}
+      </p>
 
       <template v-if="!showResults && !gameComplete">
         <div
@@ -228,15 +243,21 @@ const handleResultsDialogChange = (open: boolean) => {
             </div>
 
             <div class="flex flex-col justify-center space-y-4">
-              <div class="space-y-3">
+              <div
+                class="space-y-3"
+                role="group"
+                :aria-label="ui.isSwahili ? `Chaguo za neno ${currentQuestion.word}` : `Definition choices for ${currentQuestion.word}`"
+              >
                 <button
                   v-for="(option, index) in shuffledOptions"
                   :key="`${option}-${index}`"
                   type="button"
                   :disabled="showFeedback"
+                  :aria-pressed="selectedAnswer === option"
+                  :aria-label="ui.isSwahili ? `Chaguo la ${index + 1}: ${option}` : `Option ${index + 1}: ${option}`"
                   :class="
                     cn(
-                      'w-full rounded-lg border-2 p-4 text-left transition-all duration-200',
+                      'w-full rounded-lg border-2 p-4 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                       {
                         'border-green-500 bg-green-500 text-white':
                           showFeedback && option === currentQuestion.definition,
@@ -387,6 +408,6 @@ const handleResultsDialogChange = (open: boolean) => {
         :total="totalQuestions"
         :on-open-change="handleResultsDialogChange"
       />
-    </div>
+    </section>
   </GameModeWrapper>
 </template>

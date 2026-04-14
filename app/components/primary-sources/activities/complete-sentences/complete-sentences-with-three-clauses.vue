@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import { Icon } from "@iconify/vue";
 import { cn } from "~/utilities/utils";
 import { Button } from "~/components/ui/button";
-// import Input from "~/components/ui/inputs/input";
+import Input from "~/components/ui/inputs/input.vue";
 import type { FeedbackType } from "~/types/activity-types";
 import ActivityTitle from "~/components/templates/activity-title";
 import { useSoundEffects } from "~/composables/use-sound-effects";
@@ -117,6 +117,9 @@ const resetActivity = () => {
   score.value = 0;
   resultsDialogOpen.value = false;
 };
+
+const getClauseInputLabel = (questionIndex: number, answerIndex: number, questionText: string) =>
+  `Question ${questionIndex + 1}, clause ${answerIndex + 1}. ${questionText}`;
 </script>
 
 <template>
@@ -184,7 +187,9 @@ const resetActivity = () => {
               type="text"
               :model-value="answer"
               :disabled="showResults"
-              class="p-2 bg-transparent text-center border-none rounded"
+              :aria-label="getClauseInputLabel(questionIndex, idx, q.question)"
+              :aria-describedby="activityInstructionsId"
+              class="p-2 bg-transparent text-center border-none rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
               @update:modelValue="(v: string | number) => handleInputChange(q.id, idx, String(v ?? ''))"
             />
             <div class="border-b border-dashed border-picton-blue-700" />

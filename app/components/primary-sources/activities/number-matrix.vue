@@ -36,6 +36,7 @@ const showFeedback = ref(false);
 const isCompleted = ref(false);
 const score = ref(0);
 const showResultsDialog = ref(false);
+const instructionsId = "number-matrix-instructions";
 
 const { playSound } = useSoundEffects();
 
@@ -123,8 +124,12 @@ const handleResultsDialogClose = (open: boolean) => {
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Fill in the missing numbers in each sequence. Use the Tab key to move through the missing
+      cells, then activate the check answers button when all blanks are filled.
+    </p>
 
-    <div class="overflow-x-auto rounded-lg bg-picton-blue-50 md:overflow-auto">
+    <div class="overflow-x-auto rounded-lg bg-picton-blue-50 md:overflow-auto" :aria-describedby="instructionsId">
       <div v-for="question in questions" :key="question.id" class="p-1">
         <div class="flex items-center gap-2">
           <template v-for="(item, index) in question.sequence" :key="`q${question.id}-${index}`">
@@ -142,6 +147,7 @@ const handleResultsDialogClose = (open: boolean) => {
               <CustomInput
                 :value="answers[getAnswerKey(question.id, index)] || ''"
                 :onChange="(value) => handleInputChange(question.id, index, value)"
+                :aria-label="`Missing number in sequence ${question.id}, position ${index + 1}`"
                 noBorder
                 :disabled="showFeedback"
                 :isCorrect="showFeedback ? validations[getAnswerKey(question.id, index)] : undefined"
@@ -176,6 +182,7 @@ const handleResultsDialogClose = (open: boolean) => {
       v-if="!showFeedback"
       variant="brand-lemon"
       class="ml-auto mt-4 w-fit group gap-2"
+      :aria-describedby="instructionsId"
       @click="checkAnswers"
     >
       <Icon

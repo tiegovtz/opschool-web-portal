@@ -95,9 +95,10 @@ const handleSelect = async (type: string) => {
         v-for="activity in activityTypes"
         :key="activity.type"
         type="button"
+        :aria-label="`${activity.label}. ${activity.description}`"
         :class="
           cn(
-            'group relative overflow-hidden rounded-2xl border-2 bg-white p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl',
+            'group relative overflow-hidden rounded-2xl border-2 bg-white p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2',
             activity.activeCurriculum.includes(curriculum || '')
               ? activity.borderColor
               : 'pointer-events-none opacity-50 grayscale',
@@ -126,6 +127,7 @@ const handleSelect = async (type: string) => {
 
           <div
             :class="`mt-4 rounded-full px-6 py-2 font-semibold text-white transition-colors duration-300 ${activity.buttonBg}`"
+            aria-hidden="true"
           >
             Get Started
           </div>

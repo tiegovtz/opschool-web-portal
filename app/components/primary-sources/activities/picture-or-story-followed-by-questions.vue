@@ -38,6 +38,7 @@ const attemptedQuestions = ref<Record<number, string>>({});
 const answerFeedback = ref<"correct" | "incorrect" | null>(null);
 const shuffledOptions = ref<string[]>([]);
 const showResults = ref(false);
+const instructionsId = "picture-or-story-followed-by-questions-instructions";
 
 const initialize = () => {
   shuffledQuestions.value = shuffle([...props.questions.questions]);
@@ -115,6 +116,10 @@ const resultRows = computed(() =>
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Read the notes or story, then answer each question by selecting one option. Use the Tab key to
+      move between the answer choices and the question navigation buttons.
+    </p>
 
     <div
       v-if="showResults"
@@ -182,6 +187,8 @@ const resultRows = computed(() =>
                     :key="optionIndex"
                     :variant="attemptedQuestions[activeQuestion] === option ? 'default' : 'outline'"
                     :disabled="!!attemptedQuestions[activeQuestion]"
+                    :aria-describedby="instructionsId"
+                    :aria-label="`Question ${activeQuestion + 1}, option ${optionIndex + 1}: ${option}`"
                     :class="
                       cn('w-full justify-start px-4 py-4 text-left', {
                         'bg-green-500':
@@ -221,6 +228,8 @@ const resultRows = computed(() =>
             v-for="(question, index) in shuffledQuestions"
             :key="index"
             type="button"
+            :aria-describedby="instructionsId"
+            :aria-label="`Go to question ${index + 1}`"
             :class="
               cn(
                 'flex h-10 w-10 items-center justify-center rounded-lg bg-picton-blue-200',

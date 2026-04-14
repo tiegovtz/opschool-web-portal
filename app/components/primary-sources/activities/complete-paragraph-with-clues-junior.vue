@@ -35,6 +35,8 @@ const allAnswered = ref(false);
 const showingFeedback = ref(false);
 const userAnswers = ref<string[]>([]);
 const remainingOptions = ref<string[]>([]);
+const selectedOption = ref<string | null>(null);
+const instructionsId = "complete-paragraph-with-clues-junior-instructions";
 
 const initialize = () => {
   score.value = 0;
@@ -42,6 +44,7 @@ const initialize = () => {
   showingFeedback.value = false;
   userAnswers.value = Array.from({ length: props.questions.answers.length }, () => "");
   remainingOptions.value = shuffle([...props.questions.options]);
+  selectedOption.value = null;
 };
 
 watch(() => props.questions, initialize, { deep: true, immediate: true });
@@ -73,7 +76,38 @@ const handleDragEnd = (event: DragEndEvent) => {
 
   userAnswers.value = nextAnswers;
   remainingOptions.value = remainingOptions.value.filter((option) => option !== activeId);
+  selectedOption.value = null;
   playSound("click");
+};
+
+const placeOptionInBlank = (blankIndex: number) => {
+  if (showingFeedback.value || !selectedOption.value) return;
+
+  const nextAnswers = [...userAnswers.value];
+  const existingAnswer = nextAnswers[blankIndex];
+
+  if (existingAnswer) {
+    remainingOptions.value = [...remainingOptions.value, existingAnswer];
+  }
+
+  nextAnswers[blankIndex] = selectedOption.value;
+  userAnswers.value = nextAnswers;
+  remainingOptions.value = remainingOptions.value.filter((option) => option !== selectedOption.value);
+  selectedOption.value = null;
+  playSound("click");
+};
+
+const removeAnswerFromBlank = (blankIndex: number) => {
+  if (showingFeedback.value) return;
+
+  const nextAnswers = [...userAnswers.value];
+  const existingAnswer = nextAnswers[blankIndex];
+  if (!existingAnswer) return;
+
+  nextAnswers[blankIndex] = "";
+  userAnswers.value = nextAnswers;
+  remainingOptions.value = shuffle([...remainingOptions.value, existingAnswer]);
+  selectedOption.value = null;
 };
 
 const resetActivity = () => {
@@ -84,11 +118,19 @@ const resetActivity = () => {
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Complete the paragraph by matching the options to the blanks. You can drag with a pointer, or
+      use the Tab key to move through the options and blanks. Activate an option to select it, then
+      activate a blank to place it.
+    </p>
 
     <DNDContext :onDragEnd="handleDragEnd">
       <div class="flex h-full flex-col gap-4">
         <div class="flex h-full flex-col gap-4 md:flex-row">
-          <div class="flex h-full w-full flex-col justify-between overflow-auto rounded-xl bg-picton-blue-50 p-4">
+          <div
+            class="flex h-full w-full flex-col justify-between overflow-auto rounded-xl bg-picton-blue-50 p-4"
+            :aria-describedby="instructionsId"
+          >
             <div class="text-lg leading-loose md:p-4">
               <template
                 v-for="(part, index) in props.questions.paragraph.split('___')"
@@ -120,20 +162,33 @@ const resetActivity = () => {
                     </span>
                   </span>
 
-                  <Draggable
+                  <button
                     v-else-if="userAnswers[index]"
-                    :id="userAnswers[index]"
-                    class="mx-2 inline-block h-8 w-36 bg-lemon-200 text-center align-middle text-lemon-700"
+                    type="button"
+                    :aria-describedby="instructionsId"
+                    :aria-label="`Placed answer ${userAnswers[index]} in blank ${index + 1}. Activate to remove it.`"
+                    class="mx-2 inline-flex h-8 w-36 items-center justify-center bg-lemon-200 text-center align-middle text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
+                    @click="removeAnswerFromBlank(index)"
                   >
                     <span>{{ userAnswers[index] }}</span>
-                  </Draggable>
+                  </button>
 
-                  <Droppable
+                  <button
                     v-else
-                    :id="`blank%${index}`"
-                    class="mx-2 inline-block h-8 w-36 bg-picton-blue-100 align-middle"
-                    isOverClassName="bg-lemon-200"
-                  />
+                    type="button"
+                    :aria-describedby="instructionsId"
+                    :aria-label="
+                      selectedOption
+                        ? `Blank ${index + 1}. Activate to place ${selectedOption}.`
+                        : `Blank ${index + 1}. Select an option first.`
+                    "
+                    class="mx-2 inline-flex h-8 w-36 items-center justify-center bg-picton-blue-100 align-middle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
+                    @click="placeOptionInBlank(index)"
+                  >
+                    <span class="text-sm text-picton-blue-700">
+                      {{ selectedOption ? `Place ${selectedOption}` : "Blank" }}
+                    </span>
+                  </button>
                 </template>
               </template>
             </div>
@@ -143,7 +198,7 @@ const resetActivity = () => {
             <img
               v-if="props.questions.image"
               :src="props.questions.image"
-              alt="complete paragraph with clues"
+              :alt="props.questions.title"
               class="max-h-[600px] w-full object-contain"
             >
           </div>
@@ -159,14 +214,21 @@ const resetActivity = () => {
         <div v-else class="space-y-4">
           <h3 class="font-semibold">Machaguo</h3>
           <div class="flex flex-wrap gap-2 text-lg">
-            <Draggable
+            <button
               v-for="(answer, index) in remainingOptions"
               :key="index"
-              :id="answer"
-              class="flex min-w-36 items-center justify-center gap-4 rounded bg-picton-blue-200 px-4 text-picton-blue-700 h-10"
+              type="button"
+              :aria-describedby="instructionsId"
+              :aria-pressed="selectedOption === answer"
+              :aria-label="`Option ${answer}. Activate to select it for a blank.`"
+              :class="[
+                'flex h-10 min-w-36 items-center justify-center gap-4 rounded bg-picton-blue-200 px-4 text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
+                selectedOption === answer ? 'ring-2 ring-picton-blue-500 ring-offset-2' : '',
+              ]"
+              @click="selectedOption = selectedOption === answer ? null : answer"
             >
               <span>{{ answer }}</span>
-            </Draggable>
+            </button>
           </div>
         </div>
       </div>

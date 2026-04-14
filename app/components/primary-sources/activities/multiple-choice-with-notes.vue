@@ -50,6 +50,7 @@ const shuffledQuestions = ref<MultipleChoiceQuestion[]>([]);
 const allAnswers = ref<Record<number, string>>({});
 const answersChecked = ref(false);
 const isAdvancingQuestion = ref(false);
+const activityInstructionsId = "multiple-choice-with-notes-instructions";
 
 const hasNotes = computed(() => !!props.questions.notes?.trim());
 
@@ -202,8 +203,22 @@ const resultRows = computed(() =>
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="multiple-choice-with-notes-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="multiple-choice-with-notes-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye swali, chaguo, na kisanduku cha jibu. Andika herufi ya jibu kwenye kisanduku."
+          : "Use Tab to move through the question, answer choices, and answer field. Type the answer letter in the input."
+      }}
+    </p>
 
     <div
       v-if="showResults"
@@ -293,6 +308,7 @@ const resultRows = computed(() =>
                 :model-value="currentAnswer"
                 type="text"
                 maxlength="1"
+                :aria-label="ui.isSwahili ? `Jibu la swali ${activeQuestion + 1}` : `Answer for question ${activeQuestion + 1}`"
                 :class="
                   cn('h-12 w-12 rounded bg-picton-blue-200 text-center text-2xl', {
                     'bg-lemon-200 text-lemon-700': currentAnswer,
@@ -367,6 +383,7 @@ const resultRows = computed(() =>
                   type="text"
                   maxlength="1"
                   :disabled="answersChecked"
+                  :aria-label="ui.isSwahili ? `Jibu la swali ${questionIndex + 1}` : `Answer for question ${questionIndex + 1}`"
                   :class="
                     cn('h-12 w-12 rounded text-center text-2xl', {
                       'bg-green-200 text-green-700':
@@ -434,5 +451,5 @@ const resultRows = computed(() =>
         }
       "
     />
-  </div>
+  </section>
 </template>
