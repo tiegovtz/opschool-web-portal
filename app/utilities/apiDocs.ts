@@ -19,6 +19,10 @@ const apiDocs = {
     resetPassword: `${baseURL}/auth/reset-password`,
     changePassword: `${baseURL}/auth/change-password`,
     userExists: `${baseURL}/auth/user-exists`,
+    primaryStudentInfo: (premNumber: string | number): string =>
+      `${baseURL}/auth/primary-student/info/${encodeURIComponent(String(premNumber))}`,
+    secondaryStudentInfo: (premNumber: string | number): string =>
+      `${baseURL}/auth/secondary-student/info/${encodeURIComponent(String(premNumber))}`,
 
     // GET
     profile: `${baseURL}/auth/profile`,
