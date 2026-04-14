@@ -192,6 +192,7 @@ const handleResetWithShuffle = () => {
           v-for="(option, index) in props.questions.options"
           :key="index"
           tabindex="0"
+          :aria-label="`Answer choice ${option}`"
           class="text-picton-blue-700 leading-4 px-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-200"
         >
           {{ option }}

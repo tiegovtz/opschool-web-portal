@@ -36,6 +36,7 @@ const showFeedback = ref(false);
 const isCompleted = ref(false);
 const score = ref(0);
 const showResultsDialog = ref(false);
+const activityInstructionsId = "missing-values-instructions";
 
 watch(
   () => props.questions.questions,
@@ -124,8 +125,22 @@ const getInputClass = (key: string) => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="missing-values-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="missing-values-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila pengo la mfuatano na andika jibu sahihi."
+          : "Use Tab to move through each blank in the sequence and type the correct value."
+      }}
+    </p>
 
     <div class="space-y-4">
       <div
@@ -150,6 +165,7 @@ const getInputClass = (key: string) => {
                   (value) => handleInputChange(question.id, index, String(value ?? ''))
                 "
                 :disabled="showFeedback"
+                :aria-label="ui.isSwahili ? `Jibu la swali ${questionIndex + 1}, pengo la ${question.blankIndices.indexOf(index) + 1}` : `Answer for question ${questionIndex + 1}, blank ${question.blankIndices.indexOf(index) + 1}`"
                 :class="[
                   'h-12 w-[90px] rounded border-2 bg-transparent text-center !text-2xl font-semibold',
                   getInputClass(answerKey(question.id, index)),
@@ -189,5 +205,5 @@ const getInputClass = (key: string) => {
       :open="showResultsDialog"
       :onOpenChange="handleResultsDialogClose"
     />
-  </div>
+  </section>
 </template>

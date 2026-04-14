@@ -35,6 +35,7 @@ const feedbacks = ref<Record<number, boolean>>({});
 const completedQuestions = ref(new Set<number>());
 const incorrectQuestions = ref(new Set<number>());
 const isComplete = ref(false);
+const instructionsId = "magic-square-instructions";
 
 const initializeAnswers = () => {
   const initialAnswers: Record<number, string[][]> = {};
@@ -142,6 +143,11 @@ const allCellsFilled = computed(() =>
 <template>
   <div>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Complete each magic square so every row, column, and diagonal matches the target sum. Use the
+      Tab key to move between the empty cells, then activate the check answers button when all
+      required cells are filled.
+    </p>
 
     <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <div
@@ -181,6 +187,7 @@ const allCellsFilled = computed(() =>
               'grid w-fit gap-1 rounded-lg border-2 border-neutral-400 bg-white p-1 sm:p-2',
               (question.gridSize || question.grid.length) === 3 ? 'grid-cols-3' : 'grid-cols-4',
             ]"
+            :aria-describedby="instructionsId"
           >
             <template
               v-for="(row, rowIndex) in (userAnswers[question.id] || question.grid)"
@@ -193,9 +200,11 @@ const allCellsFilled = computed(() =>
                 type="number"
                 removeArrows
                 :disabled="question.grid[rowIndex][colIndex] !== '_' || showResults"
+                :aria-label="`Magic square ${question.id}, row ${rowIndex + 1}, column ${colIndex + 1}`"
+                :aria-describedby="instructionsId"
                 :class="
                   cn(
-                    'rounded-lg border-2 text-center font-semibold !text-2xl !opacity-100',
+                    'rounded-lg border-2 text-center font-semibold !text-2xl !opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
                     (question.gridSize || question.grid.length) === 3
                       ? 'h-12 w-12 sm:h-16 sm:w-16'
                       : 'h-10 w-10 !px-0 sm:h-12 sm:w-12',
@@ -223,6 +232,7 @@ const allCellsFilled = computed(() =>
         :disabled="!allCellsFilled"
         variant="brand-lemon"
         @click="handleSubmit"
+        :aria-describedby="instructionsId"
         class="group gap-2"
       >
         <Icon

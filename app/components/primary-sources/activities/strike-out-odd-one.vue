@@ -46,6 +46,8 @@ const currentQuestions = ref<InternalQuestion[]>([]);
 const showResultsDialog = ref(false);
 const allAnswered = ref(false);
 const showFeedback = ref(false);
+const activityInstructionsId = "strike-out-odd-one-instructions";
+const ui = useActivityUiText();
 
 const initializeQuestions = (): InternalQuestion[] =>
   props.questions.questions.map((question) => ({
@@ -136,8 +138,22 @@ const handlePlayAgain = () => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="strike-out-odd-one-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="strike-out-odd-one-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila kundi la maneno. Tumia enter au space kuchagua neno lisilofaa."
+          : "Use Tab to move through each word group. Use Enter or Space to choose the odd word out."
+      }}
+    </p>
 
     <div
       class="flex-1 overflow-y-auto bg-gradient-to-b from-picton-blue-50 to-white p-6"
@@ -148,17 +164,25 @@ const handlePlayAgain = () => {
           v-for="(question, questionIndex) in currentQuestions"
           :key="question.id"
           class="flex items-center gap-6"
+          :aria-labelledby="`strike-out-odd-one-question-${question.id}`"
         >
-          <h3 class="font-semibold text-neutral-800">{{ questionIndex + 1 }}.</h3>
+          <h3 :id="`strike-out-odd-one-question-${question.id}`" class="font-semibold text-neutral-800">{{ questionIndex + 1 }}.</h3>
 
-          <div class="grid flex-1 gap-4" :style="{ gridTemplateColumns: `repeat(${question.words.length}, minmax(0, 1fr))` }">
+          <div
+            class="grid flex-1 gap-4"
+            :style="{ gridTemplateColumns: `repeat(${question.words.length}, minmax(0, 1fr))` }"
+            role="group"
+            :aria-label="ui.isSwahili ? `Chaguo za swali la ${questionIndex + 1}` : `Options for question ${questionIndex + 1}`"
+          >
             <button
               v-for="word in question.words"
               :key="word.id"
               type="button"
+              :aria-pressed="word.userSelected"
+              :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, ${word.text}` : `Question ${questionIndex + 1}, ${word.text}`"
               :class="
                 cn(
-                  'relative grow cursor-pointer rounded-lg bg-picton-blue-100 p-4 text-center font-medium shadow-md transition-all duration-300 hover:bg-picton-blue-200 hover:shadow-lg',
+                  'relative grow cursor-pointer rounded-lg bg-picton-blue-100 p-4 text-center font-medium shadow-md transition-all duration-300 hover:bg-picton-blue-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                   {
                     'border-neutral-300 bg-neutral-100 text-neutral-700': word.userSelected && !showFeedback,
                     'bg-green-100 text-green-700':
@@ -231,5 +255,5 @@ const handlePlayAgain = () => {
         }
       "
     />
-  </div>
+  </section>
 </template>

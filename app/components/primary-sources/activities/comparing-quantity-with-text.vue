@@ -1,9 +1,6 @@
 <script setup lang="ts">
 // @ts-nocheck
 import { ref } from "vue";
-import DNDContext from "@/components/layout/dnd-context";
-import Draggable from "@/components/ui/dnd/draggable";
-import Droppable from "@/components/ui/dnd/droppable";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, {
   ActivityResultsAlertDialog,
@@ -32,6 +29,7 @@ const serverQuestions: Question[] = [
 
 const { playSound } = useSoundEffects();
 const ui = useActivityUiText();
+const activityInstructionsId = "comparing-quantity-with-text-instructions";
 
 const questions = ref(serverQuestions.map((question) => ({ ...question, answer: "" })));
 const score = ref(0);
@@ -70,12 +68,55 @@ const resetActivity = () => {
   allAnswered.value = false;
   showResults.value = false;
 };
+
+const assignOption = (questionIndex: number, option: string) => {
+  const nextQuestions = [...questions.value];
+  nextQuestions[questionIndex] = {
+    ...nextQuestions[questionIndex],
+    answer: option,
+  };
+  questions.value = nextQuestions;
+
+  if (nextQuestions.every((question) => question.answer !== "")) {
+    score.value = nextQuestions.filter(
+      (question, index) => question.answer === serverQuestions[index]?.answer,
+    ).length;
+    allAnswered.value = true;
+    playSound("success");
+    return;
+  }
+
+  playSound("click");
+};
+
+const clearOption = (questionIndex: number) => {
+  const nextQuestions = [...questions.value];
+  nextQuestions[questionIndex] = {
+    ...nextQuestions[questionIndex],
+    answer: "",
+  };
+  questions.value = nextQuestions;
+  playSound("click");
+};
 </script>
 
 <template>
-  <DNDContext :onDragEnd="handleDragEnd">
-    <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="comparing-quantity-with-text-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="comparing-quantity-with-text-title" class="sr-only">
+      Drag the labels to the gaps to complete the sentences
+    </h2>
       <ActivityTitle title="Drag the labels to the gaps to complete the sentences" />
+      <p :id="activityInstructionsId" class="sr-only">
+        {{
+          ui.isSwahili
+            ? "Tumia tab kusogea kwenye chaguo na sentensi. Chagua chaguo kwa enter au space na litumie kwenye sentensi inayofaa."
+            : "Use Tab to move through the choices and sentences. Select a choice with Enter or Space and apply it to the correct sentence."
+        }}
+      </p>
 
       <div v-if="!showResults" class="flex h-full flex-col justify-between gap-4">
         <div
@@ -88,18 +129,20 @@ const resetActivity = () => {
               <p>{{ questionIndex + 1 }}</p>
               <div class="flex items-center gap-4">
                 <span>{{ question.firstNumber }}</span>
-                <span
-                  v-if="question.answer"
-                  class="rounded-xl bg-lemon-100 px-4 py-2 text-lemon-700"
+                <button
+                  type="button"
+                  class="flex h-12 w-40 items-center justify-center rounded-xl bg-picton-blue-200 px-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
+                  :aria-label="question.answer ? `${question.answer}` : `Select relation for question ${questionIndex + 1}`"
+                  @click="question.answer ? clearOption(questionIndex) : undefined"
                 >
-                  {{ question.answer }}
-                </span>
-                <Droppable
-                  v-else
-                  :id="String(questionIndex)"
-                  class="flex h-12 w-28 items-center justify-center rounded-xl bg-picton-blue-200"
-                  isOverClassName="bg-lemon-200"
-                />
+                  <span
+                    v-if="question.answer"
+                    class="rounded-xl bg-lemon-100 px-4 py-2 text-lemon-700"
+                  >
+                    {{ question.answer }}
+                  </span>
+                  <span v-else>{{ ui.isSwahili ? "Chagua" : "Choose" }}</span>
+                </button>
                 <span>
                   {{
                     `${question.firstNumber > question.lastNumber || question.firstNumber < question.lastNumber ? "than" : "to"} ${question.lastNumber}`
@@ -108,19 +151,21 @@ const resetActivity = () => {
               </div>
             </div>
 
-            <div class="flex space-x-2">
-              <Draggable
-                v-for="option in options.filter((option) => !question.answer || question.answer !== option)"
+            <div class="flex space-x-2" role="group" :aria-label="ui.isSwahili ? `Chaguo za swali la ${questionIndex + 1}` : `Choices for question ${questionIndex + 1}`">
+              <button
+                v-for="option in options"
                 :key="option"
-                :id="`option%${questionIndex}%${option}`"
-                :disabled="question.answer !== ''"
+                type="button"
+                :disabled="question.answer === option"
+                :aria-pressed="question.answer === option"
                 :class="[
-                  'flex items-center justify-center rounded-xl bg-picton-blue-200 p-2',
-                  question.answer !== '' && 'cursor-not-allowed opacity-50',
+                  'flex items-center justify-center rounded-xl bg-picton-blue-200 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
+                  question.answer === option && 'cursor-not-allowed opacity-50',
                 ]"
+                @click="assignOption(questionIndex, option)"
               >
                 {{ option }}
-              </Draggable>
+              </button>
             </div>
           </div>
         </div>
@@ -199,5 +244,5 @@ const resetActivity = () => {
         }
       "
     />
-  </DNDContext>
+  </section>
 </template>

@@ -142,9 +142,10 @@ const containerStyle = computed(() => ({
 
           <button
             type="button"
-            class="w-6 h-6 rounded border-2 flex items-center justify-center"
+            class="w-6 h-6 rounded border-2 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
             role="radio"
             :aria-checked="answers[questionIndex] === sentenceIndex"
+            :aria-describedby="activityInstructionsId"
             :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, chaguo la ${sentenceIndex + 1}: ${sentence}` : `Question ${questionIndex + 1}, option ${sentenceIndex + 1}: ${sentence}`"
             :class="
               cn({

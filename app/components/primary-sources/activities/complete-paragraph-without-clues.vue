@@ -35,6 +35,7 @@ const allAnswered = ref(false);
 const showResults = ref(false);
 const userAnswers = ref<string[]>([]);
 const isCorrectAnswers = ref<boolean[]>([]);
+const instructionsId = "complete-paragraph-without-clues-instructions";
 
 const initialize = () => {
   score.value = 0;
@@ -71,6 +72,10 @@ const resetActivity = () => {
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Complete the paragraph by filling in the missing words. Use the Tab key to move between the
+      blanks, then activate the check answers button when all blanks are filled.
+    </p>
 
     <template v-if="showResults">
       <div
@@ -139,6 +144,7 @@ const resetActivity = () => {
           <div
             v-if="props.questions.withClues"
             class="flex w-fit flex-wrap gap-4 rounded border-2 border-picton-blue-300 bg-picton-blue-100 py-4"
+            :aria-describedby="instructionsId"
           >
             <p
               v-for="(answer, index) in props.questions.options || []"
@@ -164,7 +170,9 @@ const resetActivity = () => {
                 <Input
                   :model-value="userAnswers[index]"
                   type="text"
-                  class="max-w-40 rounded-none border-none bg-transparent text-center !text-lg text-picton-blue-700"
+                  :aria-label="`Blank ${index + 1} in paragraph`"
+                  :aria-describedby="instructionsId"
+                  class="max-w-40 rounded-none border-none bg-transparent text-center !text-lg text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
                   :disabled="showResults"
                   @update:model-value="
                     (value) => {
@@ -186,7 +194,7 @@ const resetActivity = () => {
         >
           <img
             :src="props.questions.image"
-            alt="complete paragraph with clues"
+            :alt="props.questions.title"
             class="max-h-[600px] w-full object-contain"
           >
         </div>
@@ -195,6 +203,7 @@ const resetActivity = () => {
       <div class="flex justify-end">
         <Button
           :disabled="!allAnswersFilled"
+          :aria-describedby="instructionsId"
           @click="checkAnswers"
           class="group gap-2 px-6 py-2"
         >

@@ -467,7 +467,7 @@ const handleDragEnd = (event: DragEndEvent) => {
         <div class="flex w-full flex-col gap-4 overflow-auto bg-white p-4 text-lg md:max-h-[calc(100dvh-100px)] md:rounded-bl-none md:rounded-br-xl">
           <div v-for="answer in shuffledAnswers" :key="answer.display" class="flex items-center gap-4">
             <p>
-              <span class="text-xl font-semibold">{{ answer.display.slice(0, 1) }})</span>
+              <span class="text-xl font-semibold">{{ answer.display.slice(0, 1) }}</span>
               <span>{{ answer.display.slice(2) }}</span>
             </p>
             <div class="h-10" />
@@ -475,5 +475,5 @@ const handleDragEnd = (event: DragEndEvent) => {
         </div>
       </div>
     </DNDContext>
-  </section>
+  </div>
 </template>

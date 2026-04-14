@@ -59,6 +59,7 @@ const answers = ref<Record<number, string>>({});
 const feedbacks = ref<Record<number, boolean>>({});
 const showResults = ref(false);
 const isAnswerChecked = ref(false);
+const activityInstructionsId = "numbers-counting-objects-instructions";
 
 const { playSound } = useSoundEffects();
 
@@ -199,8 +200,22 @@ const handleResetWithShuffle = () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="numbers-counting-objects-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="numbers-counting-objects-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye maonyesho ya thamani za nafasi, sehemu ya kuandika jibu, na kitufe cha kukagua."
+          : "Use Tab to move through the place value displays, the answer field, and the check answer button."
+      }}
+    </p>
 
     <div v-if="!showResults" class="flex flex-col h-full bg-picton-blue-100">
       <div class="flex-1 overflow-y-auto py-2">
@@ -289,6 +304,7 @@ const handleResetWithShuffle = () => {
                   :disabled="isAnswerChecked"
                   class="max-w-xs !text-2xl text-center"
                   placeholder="Enter the number"
+                  :aria-label="ui.isSwahili ? `Jibu la swali la ${currentQuestionIndex + 1}` : `Answer for question ${currentQuestionIndex + 1}`"
                   @update:modelValue="(v: string) => (userAnswer = v)"
                 />
                 <div
@@ -444,5 +460,5 @@ const handleResetWithShuffle = () => {
       :open="allAnswered && !showResults"
       :onOpenChange="(open: boolean) => { if (!open) showResults = true }"
     />
-  </div>
+  </section>
 </template>
