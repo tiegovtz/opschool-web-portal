@@ -32,6 +32,34 @@ export const useReadAloud = () => {
     return URL.createObjectURL(blob);
   };
 
+  const fetchTtsAudioUrl = async (
+    text: string,
+    voiceType: 'male' | 'female' = 'female'
+  ): Promise<string> => {
+    const response = await $fetch<TtsInlineResponse>('/api/conversation/tts', {
+      method: 'POST',
+      body: {
+        text,
+        voiceType,
+        inline: true,
+      },
+    });
+
+    if (!response.success || !response.audioBase64) {
+      throw new Error('TTS audio unavailable');
+    }
+
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+      objectUrl = null;
+    }
+    objectUrl = decodeAudioBase64(
+      response.audioBase64,
+      response.contentType || 'audio/wav',
+    );
+    return objectUrl;
+  };
+
   const scheduleWordHighlighting = (
     text: string,
     durationMs: number,
@@ -80,28 +108,7 @@ export const useReadAloud = () => {
       if (resolvedAudioUrl) {
         audioSrc = resolvedAudioUrl;
       } else {
-        const response = await $fetch<TtsInlineResponse>('/api/conversation/tts', {
-          method: 'POST',
-          body: {
-            text: normalizedText,
-            voiceType: options?.voiceType || 'female',
-            inline: true,
-          },
-        });
-
-        if (!response.success || !response.audioBase64) {
-          throw new Error('TTS audio unavailable');
-        }
-
-        if (objectUrl) {
-          URL.revokeObjectURL(objectUrl);
-          objectUrl = null;
-        }
-        objectUrl = decodeAudioBase64(
-          response.audioBase64,
-          response.contentType || 'audio/wav',
-        );
-        audioSrc = objectUrl;
+        audioSrc = await fetchTtsAudioUrl(normalizedText, options?.voiceType || 'female');
       }
 
       hasPlayed.value = true;
@@ -136,7 +143,18 @@ export const useReadAloud = () => {
         currentPlaybackWordIndex.value = -1;
         onWordProgress?.(-1);
       }
-      await audioElement.play();
+      try {
+        await audioElement.play();
+      } catch (playError) {
+        // If provided backend audio fails, fallback to TTS once.
+        if (resolvedAudioUrl) {
+          const fallbackSrc = await fetchTtsAudioUrl(normalizedText, options?.voiceType || 'female');
+          audioElement.src = fallbackSrc;
+          await audioElement.play();
+        } else {
+          throw playError;
+        }
+      }
     } catch (error) {
       console.error('[useReadAloud] Piper TTS failed:', error);
       isPlaying.value = false;
@@ -235,7 +253,6 @@ export const useReadAloud = () => {
     toggle,
   };
 };
-
 
 
 
