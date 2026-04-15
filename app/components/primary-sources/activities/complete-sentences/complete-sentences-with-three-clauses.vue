@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import { Icon } from "@iconify/vue";
 import { cn } from "~/utilities/utils";
 import { Button } from "~/components/ui/button";
-import Input from "~/components/ui/inputs/input";
+import Input from "~/components/ui/inputs/input.vue";
 import type { FeedbackType } from "~/types/activity-types";
 import ActivityTitle from "~/components/templates/activity-title";
 import { useSoundEffects } from "~/composables/use-sound-effects";
@@ -64,6 +64,7 @@ const questionsState = ref<QuestionState[]>([]);
 const showResults = ref(false);
 const score = ref(0);
 const resultsDialogOpen = ref(false);
+const activityInstructionsId = "complete-sentences-three-clauses-instructions";
 
 watch(
   () => props.questions,
@@ -116,11 +117,26 @@ const resetActivity = () => {
   score.value = 0;
   resultsDialogOpen.value = false;
 };
+
+const getClauseInputLabel = (questionIndex: number, answerIndex: number, questionText: string) =>
+  `Question ${questionIndex + 1}, clause ${answerIndex + 1}. ${questionText}`;
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="complete-sentences-three-clauses-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="complete-sentences-three-clauses-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{ ui.isSwahili
+        ? "Tumia kitufe cha Tab kupita kwenye kila sehemu ya jibu, jaza vifungu vyote vinavyohitajika, kisha tumia kitufe cha Kagua Majibu kuona alama yako."
+        : "Move through each answer field with the Tab key, fill all required clauses, then use the Check Answers button to review your score." }}
+    </p>
 
     <div
       class="flex flex-col gap-2 h-full"
@@ -145,8 +161,11 @@ const resetActivity = () => {
       <div
         v-for="(q, questionIndex) in questionsState.slice(1)"
         :key="q.id"
-        class="p-2 rounded relative"
+        class="p-2 rounded relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
         :class="showResults ? (isQuestionCorrect(q) ? 'bg-green-100' : 'bg-red-100') : 'bg-picton-blue-50'"
+        role="group"
+        tabindex="0"
+        :aria-labelledby="`complete-sentences-three-clauses-question-${q.id}`"
       >
         <div v-if="showResults" class="absolute right-2">
           <Icon
@@ -154,12 +173,13 @@ const resetActivity = () => {
             :class="isQuestionCorrect(q) ? 'text-green-500' : 'text-red-500'"
             width="24"
             height="24"
+            aria-hidden="true"
           />
         </div>
         <div class="flex flex-col md:flex-row justify-between items-center gap-2 px-6">
           <div class="flex items-center gap-2">
             <span class="font-bold min-w-8">{{ questionIndex + 1 }}.</span>
-            <div class="mr-4">{{ q.question }}</div>
+            <div :id="`complete-sentences-three-clauses-question-${q.id}`" class="mr-4">{{ q.question }}</div>
           </div>
 
           <div v-for="(answer, idx) in q.userAnswers" :key="idx" class="flex-1 max-w-56 mt-2 md:mt-0">
@@ -167,7 +187,9 @@ const resetActivity = () => {
               type="text"
               :model-value="answer"
               :disabled="showResults"
-              class="p-2 bg-transparent text-center border-none rounded"
+              :aria-label="getClauseInputLabel(questionIndex, idx, q.question)"
+              :aria-describedby="activityInstructionsId"
+              class="p-2 bg-transparent text-center border-none rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
               @update:modelValue="(v: string | number) => handleInputChange(q.id, idx, String(v ?? ''))"
             />
             <div class="border-b border-dashed border-picton-blue-700" />
@@ -186,6 +208,7 @@ const resetActivity = () => {
         variant="brand-lemon"
         :style="{ opacity: allFillableAnswered ? 1 : 0, transition: 'opacity 0.3s ease' }"
         :disabled="!allFillableAnswered"
+        :aria-describedby="activityInstructionsId"
       >
         {{ ui.checkAnswers }}
       </Button>
@@ -203,5 +226,5 @@ const resetActivity = () => {
         resultsDialogOpen = open;
       }"
     />
-  </div>
+  </section>
 </template>

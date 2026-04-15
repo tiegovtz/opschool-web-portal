@@ -62,6 +62,7 @@ const timeUp = ref(false);
 const isResetting = ref(false);
 const completedGroups = ref(new Set<number>());
 const incorrectAttempts = ref(new Set<number>());
+const instructionsId = "connection-wall-instructions";
 
 const numItemsPerGroup = computed(() =>
   props.questions.algorithm === ActivityType.ConnectionWallThreeRows ? 3 : 4,
@@ -213,6 +214,11 @@ const handlePlayAgain = async () => {
   >
     <div class="flex h-full flex-col">
       <ActivityTitle :title="props.questions.title" />
+      <p :id="instructionsId" class="sr-only">
+        Find groups of related items. Use the Tab key to move between the item buttons and activate
+        items to select or unselect them. When the correct number of related items is selected, they
+        will be grouped automatically.
+      </p>
 
       <div class="rounded-2xl bg-picton-blue-50 p-4">
         <div
@@ -250,9 +256,12 @@ const handlePlayAgain = async () => {
           <button
             v-for="item in remainingItems"
             :key="item.id"
+            :aria-describedby="instructionsId"
+            :aria-pressed="selectedItems.some((current) => current.id === item.id)"
+            :aria-label="`Item ${item.name}`"
             :class="
               cn(
-                'flex min-h-[110px] flex-col items-center justify-center rounded-lg p-2 text-center shadow-md transition hover:shadow-lg',
+                'flex min-h-[110px] flex-col items-center justify-center rounded-lg p-2 text-center shadow-md transition hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
                 incorrectItems.includes(item.id)
                   ? 'animate-pulse bg-red-400 text-white'
                   : selectedItems.some((current) => current.id === item.id)

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useWindowSize } from "@vueuse/core";
+import ActivityTitle from "~/components/templates/activity-title";
 import { Input } from "~/components/ui/input";
 import { calculateBlankWidth, parseQuestionSegments, type QuestionSegment } from "~/components/primary-sources/activity-helpers/question-renderer-utils";
 import { AnswerChecker } from "~/lib/utils/answer-checker";
@@ -35,11 +36,14 @@ type RenderSegment = QuestionSegment & {
 const props = defineProps<ExamCompleteSentencesByRephrasingProps>();
 
 const answerChecker = new AnswerChecker();
+const ui = useActivityUiText();
 const { width } = useWindowSize();
 const { collectAnswers, updateActivityScore } = useExamContext();
 
 const answers = ref<Record<string, string>>({});
 const totalQuestions = computed(() => props.questions.questions.length);
+const activityInstructionsId = "exam-complete-sentences-rephrasing-instructions";
+const activityOptionsId = "exam-complete-sentences-rephrasing-options";
 const fontSizeStyle = computed(() => ({
   fontSize: props.questions.fontSize ? `${props.questions.fontSize}px` : "20px",
 }));
@@ -172,7 +176,23 @@ watch(
 </script>
 
 <template>
-  <div class="flex h-full flex-col rounded-b-xl bg-white shadow-sm" :style="fontSizeStyle">
+  <section
+    class="flex h-full flex-col rounded-b-xl bg-white shadow-sm"
+    :style="fontSizeStyle"
+    aria-labelledby="exam-complete-sentences-rephrasing-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="exam-complete-sentences-rephrasing-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
+    <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kufika kwenye chaguo na nafasi za kujaza. Andika jibu lako katika kila nafasi."
+          : "Use Tab to move to the answer choices and blanks. Type your answer in each blank."
+      }}
+    </p>
     <div
       v-if="
         props.questions.options?.length &&
@@ -180,11 +200,17 @@ watch(
       "
       class="p-4 pb-2"
     >
-      <div class="flex w-fit flex-wrap gap-2 rounded border-2 border-picton-blue-300 bg-picton-blue-100 py-4">
+      <div
+        :id="activityOptionsId"
+        class="flex w-fit flex-wrap gap-2 rounded border-2 border-picton-blue-300 bg-picton-blue-100 py-4"
+        role="group"
+        :aria-label="ui.availableAnswerChoices.value"
+      >
         <div
           v-for="option in props.questions.options"
           :key="option"
           class="px-3 leading-4 text-picton-blue-700"
+          tabindex="0"
         >
           {{ option }}
         </div>
@@ -192,15 +218,20 @@ watch(
     </div>
 
     <div class="flex-1 overflow-y-auto p-2 md:p-4">
-      <div class="space-y-8">
+      <div class="space-y-8" role="list" :aria-label="ui.completeSentenceQuestions.value">
         <div
           v-for="(question, questionIndex) in props.questions.questions"
           :key="question.id"
-          class="rounded-lg border bg-neutral-50 p-2 md:flex-1"
+          class="rounded-lg border bg-neutral-50 p-2 focus-within:ring-2 focus-within:ring-picton-blue-400 md:flex-1"
+          role="listitem"
+          tabindex="0"
+          :aria-labelledby="`exam-complete-sentences-question-${question.id}`"
+          :aria-describedby="question.image ? `exam-complete-sentences-image-${question.id}` : undefined"
         >
           <div class="flex flex-col items-center justify-between md:flex-row md:gap-2">
             <div>
               <p
+                :id="`exam-complete-sentences-question-${question.id}`"
                 :class="
                   cn(
                     'mr-1 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold md:h-8 md:w-8',
@@ -241,6 +272,7 @@ watch(
                       :model-value="getCurrentAnswers(question.id)[segment.blankIndex || 0] || ''"
                       class="min-w-0 border-none bg-transparent px-2 text-center"
                       :style="{ maxWidth: `${(segment.calculatedWidth || 0) * 1.6}px` }"
+                      :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, nafasi ya ${(segment.blankIndex || 0) + 1}` : `Question ${questionIndex + 1}, blank ${(segment.blankIndex || 0) + 1}`"
                       @update:model-value="
                         (value) => handleInputChange(question.id, segment.blankIndex || 0, value)
                       "
@@ -258,6 +290,7 @@ watch(
               <img
                 :src="question.image"
                 :alt="question.question"
+                :id="`exam-complete-sentences-image-${question.id}`"
                 class="h-full w-full rounded-lg object-cover"
               >
             </div>
@@ -273,16 +306,22 @@ watch(
       "
       class="space-y-1 border-t bg-white p-4 py-2"
     >
-      <h3 class="font-semibold text-picton-blue-700">Available options:</h3>
-      <div class="flex w-fit flex-wrap gap-2 rounded bg-picton-blue-100 py-4">
+      <h3 class="font-semibold text-picton-blue-700">{{ ui.availableAnswerChoices }}</h3>
+      <div
+        :id="activityOptionsId"
+        class="flex w-fit flex-wrap gap-2 rounded bg-picton-blue-100 py-4"
+        role="group"
+        :aria-label="ui.availableAnswerChoices.value"
+      >
         <div
           v-for="option in props.questions.options"
           :key="option"
           class="px-3 leading-4 text-picton-blue-700"
+          tabindex="0"
         >
           {{ option }}
         </div>
       </div>
     </div>
-  </div>
+  </section>
 </template>

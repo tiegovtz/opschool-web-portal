@@ -5,10 +5,12 @@ import { generateRandomID } from "~/utilities/generateRandomNumber";
 import apiDocs from "~/utilities/apiDocs";
 import {
   educationLevelNameToLevelsApiQuery,
+  educationLevelNameToSchoolEducationQuery,
 } from "~/utilities/educationLevelApiMaps";
 import { CustomDropDownList } from "#components";
 import type { Level } from "~/types/level.interface";
 import type { educationLevel } from "~/types/educationlevel.interface";
+import type { StudentPremLookupResponse } from "~/types/auth.interface";
 import type { FetchError } from "ofetch";
 
 // input tabs control
@@ -34,6 +36,28 @@ const content = computed(() => ({
   lastNamePlaceholder: isSwahili.value ? "Jina la mwisho" : "Last Name",
   educationLevelLabel: isSwahili.value ? "Chagua ngazi ya elimu:" : "Select Education Level:",
   educationLevelPlaceholder: isSwahili.value ? "(mfano: Msingi, Sekondari ...)" : "(eg: Secondary, Primary ...)",
+  schoolLabel: isSwahili.value ? "Shule:" : "School:",
+  studentRegistrationMethodLabel: isSwahili.value ? "Njia ya usajili wa mwanafunzi:" : "Student registration method:",
+  studentRegistrationMethods: {
+    manual: isSwahili.value ? "Weka taarifa mwenyewe" : "Enter details manually",
+    premNumber: isSwahili.value ? "Tumia Prem Number" : "Use Prem Number",
+  },
+  studentRegistrationHints: {
+    manual: isSwahili.value
+      ? "Jaza taarifa zote za mwanafunzi mwenyewe."
+      : "Fill in all student details manually.",
+    premNumber: isSwahili.value
+      ? "Weka Prem Number ili kupata taarifa za mwanafunzi, kisha ujaze taarifa zilizobaki."
+      : "Enter a Prem Number to load student details, then complete the remaining fields.",
+  },
+  premNumberLabel: isSwahili.value ? "Prem Number:" : "Prem Number:",
+  premNumberPlaceholder: isSwahili.value ? "Mfano: 20190928782" : "Eg: 20190928782",
+  fetchPremNumber: isSwahili.value ? "Pata taarifa" : "Fetch details",
+  fetchingPremNumber: isSwahili.value ? "Inatafuta..." : "Fetching...",
+  premLookupSuccess: isSwahili.value ? "Taarifa za mwanafunzi zimepatikana." : "Student details fetched successfully.",
+  premLookupDetailsTitle: isSwahili.value ? "Taarifa zilizopatikana" : "Fetched details",
+  dobLabel: isSwahili.value ? "Tarehe ya kuzaliwa" : "Date of birth",
+  schoolRegNoLabel: isSwahili.value ? "Namba ya usajili wa shule" : "School registration number",
   classLevelLabel: isSwahili.value ? "Ngazi ya darasa:" : "Class Level:",
   classLevelPlaceholder: isSwahili.value ? "(mfano: Darasa la Kwanza ...)" : "(eg: Baraa Secondary School ...)",
   sexLabel: isSwahili.value ? "Chagua jinsia:" : "Select Sex:",
@@ -79,6 +103,12 @@ const content = computed(() => ({
     noResponse: isSwahili.value ? "Hakuna majibu kutoka kwa seva. Tafadhali angalia muunganisho wa intaneti." : "No response from the server. Please check your internet connection.",
     requestFailed: isSwahili.value ? "Ombi limeshindwa kutokana na hitilafu isiyojulikana." : "Request failed due to an unknown error.",
     serverInternal: isSwahili.value ? "Hitilafu ya ndani ya seva." : "Internal server error",
+    premSchoolMappingFailed: isSwahili.value
+      ? "Imeshindikana kuoanisha shule ya mwanafunzi na shule iliyopo kwenye mfumo."
+      : "Failed to map the student school to an existing school in the system.",
+    premLevelMappingFailed: isSwahili.value
+      ? "Imeshindikana kuoanisha darasa la mwanafunzi na ngazi iliyopo kwenye mfumo."
+      : "Failed to map the student class level to an existing level in the system.",
   },
   errors: {
     age: isSwahili.value ? "Umri unahitajika" : "Age is required",
@@ -102,6 +132,13 @@ const content = computed(() => ({
     nameRepeatedChars: isSwahili.value ? "Jina lisiwe na herufi tatu au zaidi zinazojirudia" : "Name should not have three or more repeating characters",
     school: isSwahili.value ? "Shule inahitajika" : "School is required",
     district: isSwahili.value ? "Wilaya inahitajika" : "District is required",
+    premNumber: isSwahili.value ? "Prem Number inahitajika" : "Prem Number is required",
+    premLookup: isSwahili.value
+      ? "Pata kwanza taarifa za mwanafunzi kwa Prem Number."
+      : "Fetch the student details with the Prem Number first.",
+    premLookupEducationLevel: isSwahili.value
+      ? "Chagua kwanza ngazi ya elimu ya mwanafunzi."
+      : "Select the student's education level first.",
   },
   userTypes: {
     student: isSwahili.value ? "Mwanafunzi" : "Student",
@@ -131,6 +168,8 @@ const authRedirectQuery = computed(() =>
 );
 
 type userType = 'Student' | 'Teacher' | 'EducationStakeholder';
+type StudentRegistrationMethod = "manual" | "premNumber";
+type LookupStatus = "idle" | "pending" | "success" | "error";
 
 interface userSignUp {
   type: userType | string;
@@ -172,6 +211,7 @@ interface userSignUp {
       classLevel: string | null;
       school: string | null;
       district: string | null;
+      premNumber: string | null;
       organization: string | null;
       userOrgRole: string | null;
       otherRole: string | null;
@@ -230,6 +270,7 @@ const usersignUp = reactive<userSignUp>({
       classLevel: null,
       school: null,
       district: null,
+      premNumber: null,
       organization: null,
       userOrgRole: null,
       otherRole: null,
@@ -237,6 +278,240 @@ const usersignUp = reactive<userSignUp>({
     },
   },
 });
+
+const studentRegistrationMethod = ref<StudentRegistrationMethod>("manual");
+const studentPremLookup = reactive<{
+  premNumber: string;
+  status: LookupStatus;
+  feedback: string | null;
+  data: StudentPremLookupResponse | null;
+}>({
+  premNumber: "",
+  status: "idle",
+  feedback: null,
+  data: null,
+});
+
+const selectedEducationLevelRecord = computed(() =>
+  listEducationLevels.value.find((level) => level._id === usersignUp.educationLevel),
+);
+
+const selectedStudentEducationBucket = computed(() => {
+  const normalizedEducationLevel = (selectedEducationLevelRecord.value?.name || "")
+    .trim()
+    .toLowerCase();
+
+  if (!normalizedEducationLevel) return "";
+  if (normalizedEducationLevel.includes("primary") || normalizedEducationLevel.includes("msingi")) {
+    return "primary";
+  }
+  if (normalizedEducationLevel.includes("secondary") || normalizedEducationLevel.includes("sekondari")) {
+    return "secondary";
+  }
+
+  return "";
+});
+
+const isStudentManualRegistration = computed(
+  () => isStudent.value && studentRegistrationMethod.value === "manual",
+);
+const isStudentPremRegistration = computed(
+  () => isStudent.value && studentRegistrationMethod.value === "premNumber",
+);
+
+const studentPremLookupDisplay = computed(() => {
+  if (!studentPremLookup.data) return [];
+
+  return [
+    { label: content.value.firstNamePlaceholder, value: studentPremLookup.data.firstName },
+    { label: content.value.lastNamePlaceholder, value: studentPremLookup.data.lastName },
+    { label: content.value.dobLabel, value: studentPremLookup.data.dob },
+    { label: content.value.sexLabel, value: studentPremLookup.data.sex },
+    { label: content.value.classLevelLabel, value: studentPremLookup.data.classLevel },
+    { label: content.value.schoolLabel ?? "School", value: studentPremLookup.data.schoolName },
+    { label: content.value.schoolRegNoLabel, value: studentPremLookup.data.schoolRegNo },
+  ];
+});
+
+const normalizeLookupGender = (sex: string | null | undefined) => {
+  const normalizedSex = (sex || "").trim().toUpperCase();
+  if (normalizedSex === "M") return "male";
+  if (normalizedSex === "F") return "female";
+  return "";
+};
+
+const inferStudentAgeGroupFromDob = (dob: string | null | undefined) => {
+  if (!dob) return "";
+
+  const birthDate = new Date(dob);
+  if (Number.isNaN(birthDate.getTime())) return "";
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const hasHadBirthdayThisYear =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
+
+  if (!hasHadBirthdayThisYear) {
+    age -= 1;
+  }
+
+  if (age <= 12) return "Child";
+  if (age <= 19) return "Teen";
+  return "YoungAdult";
+};
+
+const normalizeLevelLabel = (value: string | null | undefined) =>
+  (value || "")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/\b(class|darasa|la|form|kidato|cha)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const levelAliasDictionary: Record<string, string[]> = {
+  "1": ["1", "i", "one", "first", "kwanza"],
+  "2": ["2", "ii", "two", "second", "pili"],
+  "3": ["3", "iii", "three", "third", "tatu"],
+  "4": ["4", "iv", "four", "fourth", "nne"],
+  "5": ["5", "v", "five", "fifth", "tano"],
+  "6": ["6", "vi", "six", "sixth", "sita"],
+  "7": ["7", "vii", "seven", "seventh", "saba"],
+};
+
+const findLevelAliasKey = (value: string | null | undefined) => {
+  const normalizedValue = normalizeLevelLabel(value);
+  if (!normalizedValue) return "";
+
+  return Object.entries(levelAliasDictionary).find(([, aliases]) =>
+    aliases.some((alias) => normalizedValue === alias || normalizedValue.includes(alias)),
+  )?.[0] || "";
+};
+
+const resolveLevelValueFromLookup = (levelName: string | null | undefined) => {
+  const normalizedLevelName = (levelName || "").trim().toLowerCase();
+  if (!normalizedLevelName) return "";
+
+  const idMatch = listLevel.value.find(
+    (level) => level._id?.trim().toLowerCase() === normalizedLevelName,
+  );
+
+  if (idMatch?._id) {
+    return idMatch._id;
+  }
+
+  const directMatch = listLevel.value.find(
+    (level) => level.name?.trim().toLowerCase() === normalizedLevelName,
+  );
+
+  if (directMatch?._id) {
+    return directMatch._id;
+  }
+
+  const normalizedLookupLabel = normalizeLevelLabel(levelName);
+  const lookupAliasKey = findLevelAliasKey(levelName);
+
+  const matchedLevel = listLevel.value.find((level) => {
+    const normalizedCandidate = normalizeLevelLabel(level.name);
+    const candidateAliasKey = findLevelAliasKey(level.name);
+
+    if (normalizedCandidate === normalizedLookupLabel) {
+      return true;
+    }
+
+    if (lookupAliasKey && candidateAliasKey && lookupAliasKey === candidateAliasKey) {
+      return true;
+    }
+
+    return Boolean(
+      normalizedCandidate &&
+      normalizedLookupLabel &&
+      (normalizedCandidate.includes(normalizedLookupLabel) ||
+        normalizedLookupLabel.includes(normalizedCandidate)),
+    );
+  });
+
+  return matchedLevel?._id || "";
+};
+
+const clearStudentPrefilledDetails = () => {
+  usersignUp.fname = null;
+  usersignUp.lname = null;
+  usersignUp.gender = null;
+  usersignUp.school = "";
+  classLevel.value = "";
+  usersignUp.userName = null;
+  usersignUp.controller.errors.fname = null;
+  usersignUp.controller.errors.lname = null;
+  usersignUp.controller.errors.gender = null;
+  usersignUp.controller.errors.school = null;
+  usersignUp.controller.errors.classLevel = null;
+};
+
+const resetStudentPremLookup = (options?: { preservePremNumber?: boolean }) => {
+  studentPremLookup.status = "idle";
+  studentPremLookup.feedback = null;
+  studentPremLookup.data = null;
+  if (!options?.preservePremNumber) {
+    studentPremLookup.premNumber = "";
+  }
+  usersignUp.controller.errors.premNumber = null;
+  clearStudentPrefilledDetails();
+};
+
+const applyStudentPremLookupData = (studentData: StudentPremLookupResponse) => {
+  usersignUp.fname = studentData.firstName?.trim() || null;
+  usersignUp.lname = studentData.lastName?.trim() || null;
+  usersignUp.gender = normalizeLookupGender(studentData.sex) || null;
+  usersignUp.school = studentData.schoolName?.trim() || "";
+  classLevel.value = resolveLevelValueFromLookup(studentData.classLevel);
+  usersignUp.age = inferStudentAgeGroupFromDob(studentData.dob) || usersignUp.age;
+  usersignUp.controller.errors.fname = null;
+  usersignUp.controller.errors.lname = null;
+  usersignUp.controller.errors.gender = null;
+  usersignUp.controller.errors.school = null;
+  usersignUp.controller.errors.classLevel = null;
+  usersignUp.controller.errors.premNumber = null;
+};
+
+const getStudentPremLookupEndpoint = () => {
+  if (selectedStudentEducationBucket.value === "primary") {
+    return apiDocs.auth.primaryStudentInfo(studentPremLookup.premNumber.trim());
+  }
+  if (selectedStudentEducationBucket.value === "secondary") {
+    return apiDocs.auth.secondaryStudentInfo(studentPremLookup.premNumber.trim());
+  }
+  return null;
+};
+
+const fetchSchoolsByRegionAndDistrict = async (region: string, district: string) => {
+  if (!region?.trim() || !district?.trim()) return [];
+
+  try {
+    const educationQuery = selectedEducationLevelRecord.value?.name
+      ? educationLevelNameToSchoolEducationQuery(selectedEducationLevelRecord.value.name)
+      : "";
+    const response = await $fetch<any[]>(apiDocs.school.get, {
+      query: {
+        region,
+        district,
+        ...(educationQuery ? { education: educationQuery } : {}),
+      },
+    });
+
+    return response ?? [];
+  } catch (error) {
+    console.error("Error fetching schools for signup:", error);
+    return [];
+  }
+};
+
+
+const resolveStudentLevelValue = () => {
+  const resolvedLevelValue = resolveLevelValueFromLookup(classLevel.value);
+  return resolvedLevelValue || null;
+};
 
 const normalizeUserTypeKey = (type: string) => {
   const value = (type || "").toString().trim().replace(/\s+/g, "") as userType;
@@ -266,6 +541,9 @@ watch(
   async (id) => {
     usersignUp.school = "";
     classLevel.value = "";
+    if (isStudentPremRegistration.value) {
+      resetStudentPremLookup({ preservePremNumber: true });
+    }
     const trimmed = (id || "").toString().trim();
     usersignUp.controller.errors.educationLevel = trimmed
       ? null
@@ -313,6 +591,62 @@ const getEducationLevels = async () => {
   }
 };
 
+const fetchStudentInfoByPremNumber = async () => {
+  const premNumber = studentPremLookup.premNumber.trim();
+
+  if (!usersignUp.educationLevel?.trim()) {
+    usersignUp.controller.errors.educationLevel = content.value.errors.premLookupEducationLevel;
+    usersignUp.controller.errors.premNumber = null;
+    return;
+  }
+
+  if (!premNumber) {
+    usersignUp.controller.errors.premNumber = content.value.errors.premNumber;
+    studentPremLookup.feedback = null;
+    return;
+  }
+
+  const endpoint = getStudentPremLookupEndpoint();
+  if (!endpoint) {
+    usersignUp.controller.errors.premNumber = content.value.errors.premLookupEducationLevel;
+    return;
+  }
+
+  usersignUp.controller.errors.premNumber = null;
+  studentPremLookup.status = "pending";
+  studentPremLookup.feedback = null;
+  studentPremLookup.data = null;
+  clearStudentPrefilledDetails();
+
+  try {
+    const response = await $fetch<StudentPremLookupResponse>(endpoint, {
+      method: "POST",
+    });
+
+    studentPremLookup.data = response;
+    studentPremLookup.status = "success";
+    studentPremLookup.feedback = content.value.premLookupSuccess;
+    applyStudentPremLookupData(response);
+  } catch (error: unknown) {
+    const fetchError = error as FetchError;
+    const status = fetchError?.response?.status ?? fetchError?.status;
+
+    studentPremLookup.status = "error";
+    studentPremLookup.data = null;
+    clearStudentPrefilledDetails();
+
+    if (status === 404) {
+      studentPremLookup.feedback = content.value.feedback.notFound;
+    } else if (status === 400) {
+      studentPremLookup.feedback = content.value.feedback.badRequest;
+    } else if (status === 503) {
+      studentPremLookup.feedback = content.value.feedback.serviceUnavailable;
+    } else {
+      studentPremLookup.feedback = content.value.feedback.unexpected;
+    }
+  }
+};
+
 const signUp = async () => {
   const typeKey = normalizeUserTypeKey(usersignUp.type);
   const backendType = toBackendUserType(usersignUp.type);
@@ -333,6 +667,9 @@ const signUp = async () => {
   const hasContactFields = !requiresContactInfo.value || Boolean(usersignUp.email?.trim() && usersignUp.phone?.trim());
   const hasStakeholderFields = !isStakeholder.value || Boolean(usersignUp.organization?.trim() && resolvedStakeholderRole.value);
   const hasStudentLevel = !requiresClassLevel.value || Boolean(classLevel.value?.trim());
+  const hasPremLookupFields = !isStudentPremRegistration.value || Boolean(
+    studentPremLookup.premNumber.trim() && studentPremLookup.data,
+  );
 
   if (
     hasBaseFields &&
@@ -340,7 +677,8 @@ const signUp = async () => {
     hasSchoolFields &&
     hasContactFields &&
     hasStakeholderFields &&
-    hasStudentLevel
+    hasStudentLevel &&
+    hasPremLookupFields
   ) {
 
     // 
@@ -349,7 +687,21 @@ const signUp = async () => {
     // user role other,
 
     try {
-      const response = await $fetch.raw(apiDocs.auth.signUp, {
+      const studentLevelValue = resolveStudentLevelValue();
+
+      if (typeKey === 'Student' && isStudentPremRegistration.value && !usersignUp.school?.trim()) {
+        usersignUp.controller.isSent = 'error';
+        usersignUp.controller.feedback = content.value.feedback.premSchoolMappingFailed;
+        return;
+      }
+
+      if (typeKey === 'Student' && !studentLevelValue) {
+        usersignUp.controller.isSent = 'error';
+        usersignUp.controller.feedback = content.value.feedback.premLevelMappingFailed;
+        return;
+      }
+
+      const response = await $fetch.raw('/api/auth/sign-up', {
         method: "POST",
         body: typeKey == 'Student' ?
           {
@@ -358,13 +710,14 @@ const signUp = async () => {
             type: backendType,
             gender: usersignUp.gender,
             region: usersignUp.region,
-            school: usersignUp.school && usersignUp.school.trim() !== '' ? usersignUp.school : null,
+            school: usersignUp.school,
             district: usersignUp.district,
             ageGroup: usersignUp.age,
-            level: classLevel.value,
+            level: studentLevelValue,
             terms: true,
             roles: ['Student'],
             username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
+            premNumber: isStudentPremRegistration.value ? studentPremLookup.premNumber.trim() : null,
           }
           :
           typeKey == 'Teacher' ?
@@ -425,20 +778,25 @@ const signUp = async () => {
       usersignUp.controller.isSent = 'error';
       const errorMessage = JSON.stringify(fetchError?.response?._data?.errors ?? fetchError?.data?.errors);
       const status = fetchError?.response?.status ?? fetchError?.status;
+      const backendMessage =
+        fetchError?.response?._data?.message ??
+        fetchError?.response?._data?.error ??
+        fetchError?.data?.message ??
+        fetchError?.data?.error;
       if (status) {
         // The request was made, but the server responded with a status code
         switch (status) {
           case 400:
-            usersignUp.controller.feedback = content.value.feedback.badRequest;
+            usersignUp.controller.feedback = backendMessage || content.value.feedback.badRequest;
             break;
           case 401:
-            usersignUp.controller.feedback = content.value.feedback.unauthorized;
+            usersignUp.controller.feedback = backendMessage || content.value.feedback.unauthorized;
             break;
           case 403:
-            usersignUp.controller.feedback = content.value.feedback.forbidden;
+            usersignUp.controller.feedback = backendMessage || content.value.feedback.forbidden;
             break;
           case 404:
-            usersignUp.controller.feedback = content.value.feedback.notFound;
+            usersignUp.controller.feedback = backendMessage || content.value.feedback.notFound;
             break;
           case 422:
             if (errorMessage.includes('email')) {
@@ -448,17 +806,17 @@ const signUp = async () => {
             } else if (errorMessage.includes('username')) {
               usersignUp.controller.feedback = content.value.feedback.usernameTaken;
             } else {
-              usersignUp.controller.feedback = content.value.feedback.unexpected;
+              usersignUp.controller.feedback = backendMessage || content.value.feedback.unexpected;
             }
             break;
           case 500:
-            usersignUp.controller.feedback = content.value.feedback.internalServer;
+            usersignUp.controller.feedback = backendMessage || content.value.feedback.internalServer;
             break;
           case 503:
-            usersignUp.controller.feedback = content.value.feedback.serviceUnavailable;
+            usersignUp.controller.feedback = backendMessage || content.value.feedback.serviceUnavailable;
             break;
           default:
-            usersignUp.controller.feedback = content.value.feedback.unexpected;
+            usersignUp.controller.feedback = backendMessage || content.value.feedback.unexpected;
         }
       } else if (fetchError?.request) {
         // The request was made but no response was received
@@ -487,15 +845,15 @@ const signUp = async () => {
     if (requiresContactInfo.value && !usersignUp.email) {
       usersignUp.controller.errors.email = content.value.errors.invalidEmail;
     }
-    if (!usersignUp.fname) {
+    if (!usersignUp.fname && (!isStudentPremRegistration.value || Boolean(studentPremLookup.data))) {
       usersignUp.controller.errors.fname = content.value.errors.firstName;
       switchTab("tabOne");
     }
-    if (!usersignUp.gender) {
+    if (!usersignUp.gender && (!isStudentPremRegistration.value || Boolean(studentPremLookup.data))) {
       usersignUp.controller.errors.gender = content.value.errors.gender;
       switchTab("tabOne");
     }
-    if (!usersignUp.lname) {
+    if (!usersignUp.lname && (!isStudentPremRegistration.value || Boolean(studentPremLookup.data))) {
       usersignUp.controller.errors.lname = content.value.errors.lastName;
       switchTab("tabOne");
     }
@@ -510,6 +868,15 @@ const signUp = async () => {
     }
     if (!usersignUp.district) {
       usersignUp.controller.errors.district = content.value.errors.district;
+    }
+    if (isStudentPremRegistration.value && !studentPremLookup.premNumber.trim()) {
+      usersignUp.controller.errors.premNumber = content.value.errors.premNumber;
+      switchTab("tabOne");
+    } else if (isStudentPremRegistration.value && !studentPremLookup.data) {
+      usersignUp.controller.errors.premNumber = content.value.errors.premLookup;
+      switchTab("tabOne");
+    } else {
+      usersignUp.controller.errors.premNumber = null;
     }
     if (!usersignUp.type) {
       usersignUp.controller.errors.type = content.value.errors.userType;
@@ -530,14 +897,22 @@ const signUp = async () => {
       usersignUp.controller.errors.educationLevel = null;
     }
 
-    if (requiresSchoolSelection.value && !usersignUp.school?.trim()) {
+    if (
+      requiresSchoolSelection.value &&
+      !usersignUp.school?.trim() &&
+      (!isStudentPremRegistration.value || Boolean(studentPremLookup.data))
+    ) {
       usersignUp.controller.errors.school = content.value.errors.school;
       switchTab("tabOne");
     } else {
       usersignUp.controller.errors.school = null;
     }
 
-    if (requiresClassLevel.value && !classLevel.value?.trim()) {
+    if (
+      requiresClassLevel.value &&
+      !classLevel.value?.trim() &&
+      (!isStudentPremRegistration.value || Boolean(studentPremLookup.data))
+    ) {
       usersignUp.controller.errors.classLevel = content.value.errors.classLevel;
       switchTab("tabOne");
     } else {
@@ -702,12 +1077,15 @@ watch(
       usersignUp.school = "";
       classLevel.value = "";
       listLevel.value = [];
+      resetStudentPremLookup();
       usersignUp.controller.errors.educationLevel = null;
       usersignUp.controller.errors.school = null;
       usersignUp.controller.errors.classLevel = null;
     }
 
     if (normalizeUserTypeKey(type) !== "Student") {
+      studentRegistrationMethod.value = "manual";
+      resetStudentPremLookup();
       usersignUp.userName = null;
       classLevel.value = "";
       usersignUp.controller.errors.userName = null;
@@ -721,6 +1099,41 @@ watch(
       usersignUp.controller.errors.phone = null;
     }
   }
+);
+
+watch(studentRegistrationMethod, (method) => {
+  usersignUp.controller.errors.premNumber = null;
+
+  if (method === "manual") {
+    resetStudentPremLookup();
+    return;
+  }
+
+  resetStudentPremLookup({ preservePremNumber: true });
+  usersignUp.email = null;
+  usersignUp.phone = null;
+  usersignUp.controller.errors.email = null;
+  usersignUp.controller.errors.phone = null;
+});
+
+watch(
+  () => studentPremLookup.premNumber,
+  (premNumber, previousPremNumber) => {
+    if (premNumber?.trim()) {
+      usersignUp.controller.errors.premNumber = null;
+    }
+
+    if (premNumber !== previousPremNumber && !studentPremLookup.data) {
+      studentPremLookup.feedback = null;
+      if (studentPremLookup.status !== "pending") {
+        studentPremLookup.status = "idle";
+      }
+    }
+
+    if (premNumber !== previousPremNumber && studentPremLookup.data) {
+      resetStudentPremLookup({ preservePremNumber: true });
+    }
+  },
 );
 
 // Region watching
@@ -743,6 +1156,15 @@ watch(
       usersignUp.controller.errors.district = null;
     } else {
       usersignUp.controller.errors.district = content.value.errors.district;
+    }
+  },
+);
+
+watch(
+  listLevel,
+  () => {
+    if (studentPremLookup.data && isStudentPremRegistration.value) {
+      classLevel.value = resolveLevelValueFromLookup(studentPremLookup.data.classLevel);
     }
   },
 );
@@ -917,16 +1339,6 @@ const switchTab = (tabName: string) => {
     if (!usersignUp.type || usersignUp.type.trim() === " ") {
       usersignUp.controller.errors.type = content.value.errors.userType;
     }
-    if (!usersignUp.fname || usersignUp.fname.trim() == " ") {
-      usersignUp.controller.errors.fname = content.value.errors.firstName;
-    }
-    if (!usersignUp.lname || usersignUp.lname.trim() == " ") {
-      usersignUp.controller.errors.lname = content.value.errors.lastName;
-    }
-
-    if (!usersignUp.gender || usersignUp.gender.trim() == " ") {
-      usersignUp.controller.errors.gender = content.value.errors.gender;
-    }
 
     if (!usersignUp.region || usersignUp.region.trim() == " ") {
       usersignUp.controller.errors.region = content.value.errors.region;
@@ -938,6 +1350,27 @@ const switchTab = (tabName: string) => {
     if (requiresEducationLevel.value && (!usersignUp.educationLevel || usersignUp.educationLevel.trim() === "")) {
       usersignUp.controller.errors.educationLevel = content.value.errors.educationLevel;
       return;
+    }
+
+    if (isStudentPremRegistration.value && !studentPremLookup.premNumber.trim()) {
+      usersignUp.controller.errors.premNumber = content.value.errors.premNumber;
+      return;
+    }
+
+    if (isStudentPremRegistration.value && !studentPremLookup.data) {
+      usersignUp.controller.errors.premNumber = content.value.errors.premLookup;
+      return;
+    }
+
+    if (!usersignUp.fname || usersignUp.fname.trim() == " ") {
+      usersignUp.controller.errors.fname = content.value.errors.firstName;
+    }
+    if (!usersignUp.lname || usersignUp.lname.trim() == " ") {
+      usersignUp.controller.errors.lname = content.value.errors.lastName;
+    }
+
+    if (!usersignUp.gender || usersignUp.gender.trim() == " ") {
+      usersignUp.controller.errors.gender = content.value.errors.gender;
     }
 
     if (requiresSchoolSelection.value && (!usersignUp.school || usersignUp.school.trim() == " ")) {
@@ -1068,7 +1501,7 @@ onMounted(async () => {
           :alt="content.logoAlt" />
       </NuxtLink>
 
-      <form @submit.prevent="signUp" @keydown.enter.prevent :class="['text-textGray md:h-[530px] h-dvh relative overflow-hidden text-extraSmall lg:scroll-height lg:overflow-y-scroll no-scrollbar',
+      <form @submit.prevent="signUp" @keydown.enter.prevent :class="['text-textGray md:h-[530px] h-dvh relative overflow-y-scroll text-extraSmall lg:scroll-height lg:overflow-y-scroll no-scrollbar',
         {
           'md:h-[600px]':
             usersignUp.controller.errors.age ||
@@ -1082,8 +1515,8 @@ onMounted(async () => {
       ]">
         <!-- First Input Group -->
         <div :class="[
-          'absolute top-0 flex flex-col px-6 transition-all duration-500 ',
-          inputTabs === 'tabOne' ? 'left-0 w-full' : '-left-full'
+          'absolute inset-0 flex flex-col px-6 transition-transform duration-500',
+          inputTabs === 'tabOne' ? 'translate-x-0' : '-translate-x-full pointer-events-none'
         ]">
           <!-- Select User Type -->
           <div :class="[
@@ -1110,8 +1543,120 @@ onMounted(async () => {
             </small>
           </div>
 
+          <div v-if="isStudent" class="px-2 mb-4 border-b border-gray-300">
+            <div class="flex flex-col items-start gap-3 py-2">
+              <label class="font-semibold capitalize text-oceanBlue text-extraSmall">
+                {{ content.studentRegistrationMethodLabel }}
+              </label>
+
+              <div class="flex flex-wrap gap-4">
+                <label class="inline-flex items-center gap-2 cursor-pointer">
+                  <input v-model="studentRegistrationMethod" type="radio" value="manual" class="w-4 h-4 checked:bg-oceanBlue" />
+                  <span>{{ content.studentRegistrationMethods.manual }}</span>
+                </label>
+                <label class="inline-flex items-center gap-2 cursor-pointer">
+                  <input v-model="studentRegistrationMethod" type="radio" value="premNumber" class="w-4 h-4 checked:bg-oceanBlue" />
+                  <span>{{ content.studentRegistrationMethods.premNumber }}</span>
+                </label>
+              </div>
+
+              <p class="text-textGray/70 text-smallest">
+                {{
+                  isStudentPremRegistration
+                    ? content.studentRegistrationHints.premNumber
+                    : content.studentRegistrationHints.manual
+                }}
+              </p>
+            </div>
+          </div>
+
+          <!-- education level -->
+          <div v-if="isStudentOrTeacher" :class="[
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.educationLevel,
+            }
+          ]">
+            <div class="flex flex-col items-start w-full">
+              <label for="educationLevel" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+                {{ content.educationLevelLabel }}</label>
+
+              <CustomDropDownList id="educationLevel" v-model="usersignUp.educationLevel" :list="educationLevelLists"
+                :placeholder="content.educationLevelPlaceholder" @update-model-value="usersignUp.educationLevel = $event" />
+            </div>
+
+            <small v-if="usersignUp.controller.errors.educationLevel" aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.educationLevel}`" class="w-full text-red-500 text-smallest">
+              {{ usersignUp.controller.errors.educationLevel }}
+            </small>
+          </div>
+
+          <div v-if="isStudentPremRegistration" :class="[
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.premNumber || studentPremLookup.status === 'error',
+            }
+          ]">
+            <label for="premNumber" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+              {{ content.premNumberLabel }}
+            </label>
+
+            <div class="flex items-center w-full gap-2">
+              <input
+                id="premNumber"
+                v-model="studentPremLookup.premNumber"
+                type="text"
+                name="premNumber"
+                autocomplete="off"
+                class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
+                :placeholder="content.premNumberPlaceholder"
+              />
+              <button
+                type="button"
+                class="px-3 py-2 text-white transition-colors rounded-md bg-oceanBlue hover:bg-oceanBlue/80 disabled:cursor-not-allowed disabled:bg-oceanBlue/50"
+                :disabled="studentPremLookup.status === 'pending'"
+                @click="fetchStudentInfoByPremNumber"
+              >
+                {{ studentPremLookup.status === 'pending' ? content.fetchingPremNumber : content.fetchPremNumber }}
+              </button>
+            </div>
+
+            <small
+              v-if="usersignUp.controller.errors.premNumber"
+              aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.premNumber}`"
+              class="w-full text-red-500 text-smallest"
+            >
+              {{ usersignUp.controller.errors.premNumber }}
+            </small>
+            <small
+              v-else-if="studentPremLookup.feedback"
+              aria-live="polite"
+              class="w-full text-smallest"
+              :class="studentPremLookup.status === 'success' ? 'text-green-600' : 'text-red-500'"
+            >
+              {{ studentPremLookup.feedback }}
+            </small>
+          </div>
+
+          <div v-if="isStudentPremRegistration && studentPremLookup.data" class="p-3 mb-4 rounded-md bg-slate-50">
+            <p class="mb-3 font-semibold text-oceanBlue text-extraSmall">{{ content.premLookupDetailsTitle }}</p>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div
+                v-for="item in studentPremLookupDisplay"
+                :key="item.label"
+                class="p-2 bg-white border border-slate-200 rounded-md"
+              >
+                <p class="text-textGray/60 text-smallest">{{ item.label }}</p>
+                <p class="font-medium text-textGray">{{ item.value }}</p>
+              </div>
+            </div>
+          </div>
+
           <!-- First Name -->
-          <div :class="[
+          <div v-if="!isStudentPremRegistration" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -1134,7 +1679,7 @@ onMounted(async () => {
           </div>
 
           <!-- Last Name -->
-          <div :class="[
+          <div v-if="!isStudentPremRegistration" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -1181,30 +1726,8 @@ onMounted(async () => {
              :region="usersignUp.region" :language="authLanguage" @update-district="usersignUp.district = $event" />
           </div>
 
-          <!-- education level -->
-          <div v-if="isStudentOrTeacher" :class="[
-            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
-            {
-              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
-                usersignUp.controller.errors.educationLevel,
-            }
-          ]">
-            <div class="flex flex-col items-start w-full">
-              <label for="educationLevel" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-                {{ content.educationLevelLabel }}</label>
-
-              <CustomDropDownList id="educationLevel" v-model="usersignUp.educationLevel" :list="educationLevelLists"
-                :placeholder="content.educationLevelPlaceholder" @update-model-value="usersignUp.educationLevel = $event" />
-            </div>
-
-            <small v-if="usersignUp.controller.errors.educationLevel" aria-live="assertive"
-              :aria-label="`${usersignUp.controller.errors.educationLevel}`" class="w-full text-red-500 text-smallest">
-              {{ usersignUp.controller.errors.educationLevel }}
-            </small>
-          </div>
-
           <!-- school -->
-          <div v-if="isStudentOrTeacher" :class="[
+          <div v-if="isStudentOrTeacher && !isStudentPremRegistration" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -1218,7 +1741,7 @@ onMounted(async () => {
               :error="(usersignUp.controller.errors.school as string)" :language="authLanguage" />
           </div>
 
-          <div class="flex flex-col items-start w-full my-2" v-if="usersignUp.type === 'Student'">
+          <div class="flex flex-col items-start w-full my-2" v-if="isStudentManualRegistration">
             <label for="level" class="font-semibold capitalize text-oceanBlue text-extraSmall">
               {{ content.classLevelLabel }}</label>
             <!-- Use the Custom Dropdown instead of <select> -->
@@ -1231,7 +1754,7 @@ onMounted(async () => {
           </div>
 
           <!-- gender input radio -->
-          <div :class="[
+          <div v-if="!isStudentPremRegistration" :class="[
             'py-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -1288,8 +1811,8 @@ onMounted(async () => {
 
         <!-- Second Input Group -->
         <div :class="[
-          'absolute top-0 flex flex-col px-6 transition-all duration-500 -right-full',
-          inputTabs === 'tabTwo' ? 'right-0 w-full h-full' : ''
+          'absolute inset-0 flex flex-col px-6 transition-transform duration-500',
+          inputTabs === 'tabTwo' ? 'translate-x-0' : 'translate-x-full pointer-events-none'
         ]">
           <!-- Select Age -->
           <div :class="[

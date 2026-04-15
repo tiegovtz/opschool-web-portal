@@ -50,6 +50,7 @@ const inputCells = ref<InputCell[]>([]);
 const showResults = ref(false);
 const score = ref(0);
 const resultsDialogOpen = ref(false);
+const activityInstructionsId = "table-checkbox-filling-instructions";
 
 const hasBlank = (cell: string) => cell.includes("_");
 
@@ -132,8 +133,22 @@ const resetActivity = () => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="table-checkbox-filling-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="table-checkbox-filling-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila kisanduku cha kujaza kwenye jedwali na andika jibu sahihi."
+          : "Use Tab to move through each fill-in table cell and type the correct answer."
+      }}
+    </p>
 
     <div class="flex h-full flex-col gap-4">
       <div
@@ -247,6 +262,7 @@ const resetActivity = () => {
                     type="text"
                     :disabled="showResults"
                     :placeholder="'andika hapa'"
+                    :aria-label="ui.isSwahili ? `Jibu la mstari ${rowIndex + 1}, safu ${cellIndex + 1}` : `Answer for row ${rowIndex + 1}, column ${cellIndex + 1}`"
                     :style="{ width: getInputWidth(getInputCell(rowIndex, cellIndex)?.correctAnswer) }"
                     :class="
                       cn(
@@ -341,5 +357,5 @@ const resetActivity = () => {
         }
       "
     />
-  </div>
+  </section>
 </template>

@@ -101,7 +101,7 @@ const setSubjectToView = () => {
 
     <!-- content -->
     <div :class="[
-      'flex px-4 pt-2 transition-all duration-500 ease-in-out group-hover:text-white',
+      'flex px-2 pt-1 transition-all duration-500 ease-in-out group-hover:text-white',
       layoutEffect == 'grid' ? 'flex-col' : 'flex-col flex-1'
     ]">
 
@@ -111,14 +111,14 @@ const setSubjectToView = () => {
       ]">
         <div class="flex min-w-0 flex-col gap-2">
           <p
-            class="text-left text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out">
+            class="text-left text-[1.1rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out">
             {{ subjectName }}
           </p>
         </div>
       </div>
 
       <!-- description -->
-      <p class="text-start text-small text-black/80 group-hover:text-white line-clamp-2">
+      <p class="text-start text-[1rem] text-black/80 group-hover:text-white line-clamp-2">
         {{ subjectDescription }}
       </p>
 
@@ -150,33 +150,44 @@ const setSubjectToView = () => {
     ]">
       <NuxtImg :src="subjectImage" loading="lazy" tabindex="0" :alt="`Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110" />
+
+        <div class="absolute right-0 -bottom-0">
+        <div
+          class="flex items-center justify-center w-auto h-8 duration-500 ease-in-out bg-oceanBlue group-hover:bg-deepBlue rounded-tl-md transition-color px-2">
+          <p class="font-medium text-white text-extraSmall">{{ educationLevelBadge }}</p>
+        </div>
+      </div>
     </div>
 
     <!-- content -->
     <div :class="[
-      'flex px-4 pt-2 transition-all duration-500 ease-in-out group-hover:text-white flex-col',
+      'flex px-2 pt-2 transition-all duration-500 ease-in-out group-hover:text-white flex-col',
       layoutEffect == 'grid' ? 'justify-between item-center' : 'flex-1'
     ]">
       <!-- title & description -->
-      <div class="flex min-w-0 flex-col gap-2">
+      <div class="flex items-center justify-between w-full">
         <p
-          class="flex text-[1.2rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out">
+          class="flex text-[1.1rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out">
           {{ subjectName }}
         </p>
-
-      </div>
-      <!-- metrics  and level-->
-      <div class="flex items-center justify-between">
-        <small v-if="educationLevelBadge"
-          class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white">
-          {{ educationLevelBadge }}
-        </small>
-
 
         <small class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white">
           <Icon name="flowbite:users-outline" class="text-medium" aria-hidden="true" />
           <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
         </small>
+
+      </div>
+      <!-- metrics  and level-->
+      <div class="flex items-center justify-between">
+        <!-- <small v-if="educationLevelBadge"
+          class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white">
+          {{ educationLevelBadge }}
+        </small> -->
+        
+        <!-- <small class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white">
+          <Icon name="flowbite:users-outline" class="text-medium" aria-hidden="true" />
+          <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
+        </small> -->
       </div>
     </div>
   </NuxtLink>

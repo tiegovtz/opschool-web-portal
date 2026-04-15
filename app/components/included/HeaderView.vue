@@ -422,13 +422,13 @@ onBeforeUnmount(() => {
 
               <div
                 v-if="isHomeMenuOpen"
-                class="absolute left-0 z-30 w-52 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
+                class="absolute left-0 z-30 w-52 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-lg border-slate-200"
               >
                 <button
                   v-for="item in homeMenuItems"
                   :key="item.educationLevel"
                   type="button"
-                  class="flex items-center justify-between w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-slate-700 hover:bg-slate-50"
+                  class="flex items-center justify-between w-full gap-3 px-4 py-2.5 text-sm font-medium text-left transition-colors text-slate-700 hover:bg-slate-50"
                   :class="
                     currentEducationLevel === item.educationLevel
                       ? 'bg-slate-50 text-deepBlue'
@@ -491,7 +491,7 @@ onBeforeUnmount(() => {
               to="/"
             >
               <p
-                class="block px-4 text-center lg:text-large text-medium text-shadow whitespace-nowrap"
+                class="block px-4 tex2.5-center lg:text-large text-medium text-shadow whitespace-nowrap"
               >
                 {{
                   language === "english"
@@ -617,12 +617,12 @@ onBeforeUnmount(() => {
 
                 <div
                   v-if="isAccountMenuOpen"
-                  class="absolute right-0 z-30 w-56 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
+                  class="absolute right-0 z-30 w-56 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-lg border-slate-200"
                 >
                   <NuxtLink
                     aria-label="Go to learning statistics page"
                     to="/profile/learning-statistics"
-                    class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
+                    class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
                     @click="closeAccountMenu"
                   >
                     <Icon
@@ -639,7 +639,7 @@ onBeforeUnmount(() => {
                   <NuxtLink
                     aria-label="Go to profile page"
                     to="/profile"
-                    class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
+                    class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
                     @click="closeAccountMenu"
                   >
                     <IconsProfileCircle :size="20" />
@@ -650,7 +650,7 @@ onBeforeUnmount(() => {
 
                   <button
                     aria-label="Log out"
-                    class="flex items-center w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-rose-700 hover:bg-rose-50"
+                    class="flex items-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-left transition-colors text-rose-700 hover:bg-rose-50"
                     @click="openLogoutConfirmFromMenu"
                   >
                     <IconsLogout
@@ -703,7 +703,7 @@ onBeforeUnmount(() => {
                     v-for="item in homeMenuItems"
                     :key="item.educationLevel"
                     type="button"
-                    class="flex items-center justify-between w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-slate-700 hover:bg-slate-50"
+                    class="flex items-center justify-between w-full gap-3 px-4 py-2.5 text-sm font-medium text-left transition-colors text-slate-700 hover:bg-slate-50"
                     :class="
                       currentEducationLevel === item.educationLevel
                         ? 'bg-slate-50 text-deepBlue'
@@ -812,7 +812,7 @@ onBeforeUnmount(() => {
                 >
                   <div
                     v-if="showPrimaryLanguageSwitch"
-                    class="px-4 py-3 border-b border-slate-200"
+                    class="px-4 py-2.5 border-b border-slate-200"
                   >
                     <!-- <p class="mb-2 text-xs font-semibold tracking-wide uppercase text-slate-500">
                       {{ languageSwitchContent.label }}
@@ -850,7 +850,7 @@ onBeforeUnmount(() => {
                   <NuxtLink
                     aria-label="Go to learning statistics page"
                     to="/profile/learning-statistics"
-                    class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
+                    class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
                     @click="closeAccountMenu"
                   >
                     <Icon
@@ -867,7 +867,7 @@ onBeforeUnmount(() => {
                   <NuxtLink
                     aria-label="Go to profile page"
                     to="/profile"
-                    class="flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
+                    class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
                     @click="closeAccountMenu"
                   >
                     <IconsProfileCircle :size="20" />
@@ -878,7 +878,7 @@ onBeforeUnmount(() => {
 
                   <button
                     aria-label="Log out"
-                    class="flex items-center w-full gap-3 px-4 py-3 text-sm font-medium text-left transition-colors text-rose-700 hover:bg-rose-50"
+                    class="flex items-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-left transition-colors text-rose-700 hover:bg-rose-50"
                     @click="openLogoutConfirmFromMenu"
                   >
                     <IconsLogout

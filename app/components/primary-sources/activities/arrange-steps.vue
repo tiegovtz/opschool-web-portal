@@ -44,6 +44,8 @@ const allAnswered = ref(false);
 const showResults = ref(false);
 const steps = ref<Step[]>([]);
 const arrangedSteps = ref<Array<Step | "">>([]);
+const activityInstructionsId = "arrange-steps-instructions";
+const ui = useActivityUiText();
 
 const initializeActivity = () => {
   steps.value = shuffle([...props.questions.steps]);
@@ -91,6 +93,27 @@ const handleDragEnd = (event: DragEndEvent) => {
   playSound("click");
 };
 
+const placeStep = (slotIndex: number, step: Step) => {
+  if (slotIndex < 0) return;
+  const nextArranged = [...arrangedSteps.value];
+  const existingIndex = nextArranged.findIndex((item) => item !== "" && item.id === step.id);
+  if (existingIndex !== -1) {
+    nextArranged[existingIndex] = "";
+  }
+  nextArranged[slotIndex] = step;
+  arrangedSteps.value = nextArranged;
+  steps.value = steps.value.filter((item) => item.id !== step.id);
+  playSound("click");
+};
+
+const removePlacedStep = (slotIndex: number) => {
+  const step = arrangedSteps.value[slotIndex];
+  if (!step || step === "") return;
+  arrangedSteps.value = arrangedSteps.value.map((item, index) => (index === slotIndex ? "" : item));
+  steps.value = [...steps.value, step];
+  playSound("click");
+};
+
 const resetActivity = () => {
   initializeActivity();
 };
@@ -100,8 +123,22 @@ const isCorrect = (step: Step, index: number) =>
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="arrange-steps-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="arrange-steps-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye hatua zilizopo na nafasi tupu. Chagua hatua kwa enter au space, kisha chagua nafasi ya kuiweka."
+          : "Use Tab to move through the available steps and empty slots. Select a step with Enter or Space, then choose the slot where you want to place it."
+      }}
+    </p>
 
     <div class="flex flex-col gap-4">
       <DNDContext :onDragEnd="handleDragEnd">
@@ -122,12 +159,14 @@ const isCorrect = (step: Step, index: number) =>
                 </div>
 
                 <div class="h-full flex-grow">
-                  <Droppable
+                  <button
                     v-if="step === ''"
-                    :id="`step%${index}`"
-                    class="flex h-full items-center justify-center rounded border border-picton-blue-200 bg-white"
-                    isOverClassName="bg-lemon-100"
-                  />
+                    type="button"
+                    class="flex h-full w-full items-center justify-center rounded border border-picton-blue-200 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
+                    :aria-label="ui.isSwahili ? `Nafasi tupu ya hatua ya ${index + 1}` : `Empty slot for step ${index + 1}`"
+                  >
+                    {{ ui.isSwahili ? "Weka hapa" : "Place here" }}
+                  </button>
 
                   <div
                     v-else-if="showResults"
@@ -155,10 +194,12 @@ const isCorrect = (step: Step, index: number) =>
                     </span>
                   </div>
 
-                  <Draggable
+                  <button
                     v-else
-                    :id="`${step.id}%${index}`"
-                    class="relative flex h-full items-center border border-picton-blue-200 bg-lemon-200 px-4 py-2 text-lemon-700"
+                    type="button"
+                    class="relative flex h-full w-full items-center border border-picton-blue-200 bg-lemon-200 px-4 py-2 text-left text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
+                    :aria-label="ui.isSwahili ? `Ondoa hatua ${step.text}` : `Remove step ${step.text}`"
+                    @click="!showResults && removePlacedStep(index)"
                   >
                     <div class="flex items-center gap-2">
                       <div v-if="step.image" class="w-fit h-full flex items-center gap-4">
@@ -167,27 +208,29 @@ const isCorrect = (step: Step, index: number) =>
                       </div>
                       <span v-else>{{ step.text }}</span>
                     </div>
-                  </Draggable>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div v-if="!showResults" class="relative mt-6 flex h-[100px] flex-wrap gap-2">
-          <Draggable
+        <div v-if="!showResults" class="relative mt-6 flex h-[100px] flex-wrap gap-2" role="group" :aria-label="ui.isSwahili ? 'Hatua zinazopatikana' : 'Available steps'">
+          <button
             v-for="(step, index) in steps"
             :key="step.id"
-            :id="step.id"
-            class="absolute flex h-full w-1/2 flex-grow items-center rounded border border-lemon-300 bg-lemon-100 px-4 py-2 text-lg text-lemon-700"
+            type="button"
+            class="absolute flex h-full w-1/2 flex-grow items-center rounded border border-lemon-300 bg-lemon-100 px-4 py-2 text-left text-lg text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
             :style="{ left: `${index * 50}px` }"
+            :aria-label="ui.isSwahili ? `Chagua hatua ${step.text}` : `Choose step ${step.text}`"
+            @click="placeStep(arrangedSteps.findIndex((item) => item === ''), step)"
           >
             <div v-if="step.image" class="w-fit h-full flex items-center gap-4">
               <img :src="step.image" :alt="step.text" class="h-full max-w-36 object-contain">
               <p>{{ step.text }}</p>
             </div>
             <span v-else>{{ step.text }}</span>
-          </Draggable>
+          </button>
         </div>
       </DNDContext>
 
@@ -213,5 +256,5 @@ const isCorrect = (step: Step, index: number) =>
         "
       />
     </div>
-  </div>
+  </section>
 </template>

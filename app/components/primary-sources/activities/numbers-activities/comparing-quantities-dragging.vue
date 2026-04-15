@@ -39,6 +39,7 @@ const questionAnswers = reactive<Record<number, { left: string; right: string }>
 );
 const questionAvailableAnswers = reactive<Record<number, string[]>>({});
 const correctAnswers = ref<string[]>([]);
+const activityInstructionsId = "numbers-comparing-quantities-dragging-instructions";
 
 const { playSound } = useSoundEffects();
 
@@ -89,6 +90,51 @@ watch(
 
 const isCorrect = (questionIndex: number, side: "left" | "right") =>
   correctAnswers.value.includes(`${questionIndex}-${side}`);
+
+const assignAnswer = (questionIndex: number, side: "left" | "right", answer: string) => {
+  const current = getQuestionAnswers(questionIndex);
+  const displaced = current[side];
+
+  if (displaced && displaced !== answer) {
+    questionAvailableAnswers[questionIndex] = [
+      ...(questionAvailableAnswers[questionIndex] || []).filter((item) => item !== answer),
+      displaced,
+    ];
+  } else {
+    questionAvailableAnswers[questionIndex] = (questionAvailableAnswers[questionIndex] || []).filter(
+      (item) => item !== answer,
+    );
+  }
+
+  const otherSide = side === "left" ? "right" : "left";
+  if (current[otherSide] === answer) {
+    questionAnswers[questionIndex] = {
+      ...current,
+      [otherSide]: "",
+      [side]: answer,
+    };
+  } else {
+    questionAnswers[questionIndex] = {
+      ...current,
+      [side]: answer,
+    };
+  }
+
+  playSound("click");
+};
+
+const clearAssignedAnswer = (questionIndex: number, side: "left" | "right") => {
+  const current = getQuestionAnswers(questionIndex);
+  const answer = current[side];
+  if (!answer) return;
+
+  questionAvailableAnswers[questionIndex] = [...(questionAvailableAnswers[questionIndex] || []), answer];
+  questionAnswers[questionIndex] = {
+    ...current,
+    [side]: "",
+  };
+  playSound("click");
+};
 
 const handleDragEnd = (event: DndDragEndEvent) => {
   const { active, over } = event;
@@ -185,25 +231,44 @@ const resetActivity = () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="numbers-comparing-quantities-dragging-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="numbers-comparing-quantities-dragging-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kufikia majibu yaliyo wazi. Bonyeza enter au space kulipeleka kushoto au kulia. Unaweza pia kutumia kuburuta. Tumia tab kufikia jibu lililowekwa na ubonyeze enter au space kuliondoa."
+          : "Use Tab to reach the available answers. Press Enter or Space to send an answer to the left or right side. You can also drag it. Use Tab to reach a placed answer and press Enter or Space to remove it."
+      }}
+    </p>
 
     <div class="flex-1 flex flex-col gap-6 overflow-y-auto p-4">
       <DNDContext :onDragEnd="handleDragEnd">
         <div class="space-y-6">
           <div
-            v-for="(question, index) in props.questions.questions"
-            :key="index"
-            class="bg-white rounded-lg p-6 mb-6"
-          >
-            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div class="bg-gray-50 p-4 md:flex md:items-center gap-2 rounded-lg border border-gray-200 w-full">
-                <QuantityRenderer
-                  :count="question.leftNumber"
-                  :image="question.leftImage"
-                  :maxItemsPerRow="7"
-                  className="md:max-w-[350px] xl:max-w-full flex-wrap"
-                />
+          v-for="(question, index) in props.questions.questions"
+          :key="index"
+          class="bg-white rounded-lg p-6 mb-6"
+          :aria-labelledby="`comparing-quantities-dragging-question-${index}`"
+        >
+          <h3 :id="`comparing-quantities-dragging-question-${index}`" class="sr-only">
+            {{ ui.isSwahili ? `Swali la ${index + 1}` : `Question ${index + 1}` }}
+          </h3>
+          <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="bg-gray-50 p-4 md:flex md:items-center gap-2 rounded-lg border border-gray-200 w-full">
+              <QuantityRenderer
+                :count="question.leftNumber"
+                :image="question.leftImage"
+                :summary-label="ui.isSwahili ? `Kundi la kushoto lina vitu ${question.leftNumber}` : `Left group has ${question.leftNumber} items`"
+                :maxItemsPerRow="7"
+                className="md:max-w-[350px] xl:max-w-full flex-wrap"
+              />
 
                 <div class="relative w-fit ml-auto mt-2 md:mt-0">
                   <Droppable
@@ -232,6 +297,15 @@ const resetActivity = () => {
                       {{ questionAnswers[index]?.left || "" }}
                     </template>
                   </Droppable>
+                  <button
+                    v-if="questionAnswers[index]?.left && !showResults"
+                    type="button"
+                    class="mt-2 w-full rounded border border-picton-blue-300 bg-white px-2 py-1 text-xs text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
+                    :aria-label="ui.isSwahili ? `Ondoa jibu la kushoto kwa swali la ${index + 1}` : `Remove left answer for question ${index + 1}`"
+                    @click="clearAssignedAnswer(index, 'left')"
+                  >
+                    {{ ui.isSwahili ? "Ondoa" : "Remove" }}
+                  </button>
 
                   <div v-if="showResults" class="absolute -top-2 -right-2 z-10">
                     <span
@@ -248,15 +322,39 @@ const resetActivity = () => {
                 <div
                   v-if="!showResults && (questionAvailableAnswers[index]?.length || 0) > 0"
                   class="flex md:flex-col justify-center gap-3"
+                  role="group"
+                  :aria-label="ui.isSwahili ? `Majibu ya swali la ${index + 1}` : `Available answers for question ${index + 1}`"
                 >
-                  <Draggable
+                  <div
                     v-for="(answer, answerIndex) in questionAvailableAnswers[index]"
                     :key="`answer-${index}-${answer}-${answerIndex}`"
-                    :id="`answer-${index}-${answer}`"
-                    class="bg-picton-blue-100 text-picton-blue-700 h-[50px] w-[90px] z-10 rounded-lg border border-picton-blue-300 cursor-move hover:bg-picton-blue-200 transition-colors text-lg font-medium flex justify-center items-center"
+                    class="flex flex-col gap-2"
                   >
-                    {{ answer }}
-                  </Draggable>
+                    <Draggable
+                      :id="`answer-${index}-${answer}`"
+                      class="bg-picton-blue-100 text-picton-blue-700 h-[50px] w-[90px] z-10 rounded-lg border border-picton-blue-300 cursor-move hover:bg-picton-blue-200 transition-colors text-lg font-medium flex justify-center items-center"
+                    >
+                      {{ answer }}
+                    </Draggable>
+                    <div class="flex gap-2">
+                      <button
+                        type="button"
+                        class="rounded border border-picton-blue-300 bg-white px-2 py-1 text-xs text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
+                        :aria-label="ui.isSwahili ? `Weka ${answer} kushoto` : `Place ${answer} on the left`"
+                        @click="assignAnswer(index, 'left', answer)"
+                      >
+                        {{ ui.isSwahili ? "Kushoto" : "Left" }}
+                      </button>
+                      <button
+                        type="button"
+                        class="rounded border border-picton-blue-300 bg-white px-2 py-1 text-xs text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
+                        :aria-label="ui.isSwahili ? `Weka ${answer} kulia` : `Place ${answer} on the right`"
+                        @click="assignAnswer(index, 'right', answer)"
+                      >
+                        {{ ui.isSwahili ? "Kulia" : "Right" }}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div v-if="showResults && props.feedbackType === 'wrong-correct-answers'" class="text-center">
@@ -294,6 +392,15 @@ const resetActivity = () => {
                       {{ questionAnswers[index]?.right || "" }}
                     </template>
                   </Droppable>
+                  <button
+                    v-if="questionAnswers[index]?.right && !showResults"
+                    type="button"
+                    class="mt-2 w-full rounded border border-picton-blue-300 bg-white px-2 py-1 text-xs text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
+                    :aria-label="ui.isSwahili ? `Ondoa jibu la kulia kwa swali la ${index + 1}` : `Remove right answer for question ${index + 1}`"
+                    @click="clearAssignedAnswer(index, 'right')"
+                  >
+                    {{ ui.isSwahili ? "Ondoa" : "Remove" }}
+                  </button>
 
                   <div v-if="showResults" class="absolute -top-2 -right-2 z-10">
                     <span
@@ -308,6 +415,7 @@ const resetActivity = () => {
                 <QuantityRenderer
                   :count="question.rightNumber"
                   :image="question.rightImage"
+                  :summary-label="ui.isSwahili ? `Kundi la kulia lina vitu ${question.rightNumber}` : `Right group has ${question.rightNumber} items`"
                   :maxItemsPerRow="7"
                   className="md:max-w-[350px] xl:max-w-full flex-wrap"
                 />
@@ -334,5 +442,5 @@ const resetActivity = () => {
         }"
       />
     </div>
-  </div>
+  </section>
 </template>

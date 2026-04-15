@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import Input from "~/components/ui/inputs/input";
+import ActivityTitle from "~/components/templates/activity-title";
+// import Input from "~/components/ui/inputs/input";
 import { cn } from "~/utilities/utils";
 import { useExamContext, type QuestionAnswer } from "~/shared/context/exam-context";
 
@@ -20,7 +21,9 @@ type ExamRearrangeStepsVerticallyProps = {
 
 const props = defineProps<ExamRearrangeStepsVerticallyProps>();
 
+const ui = useActivityUiText();
 const order = ref<Record<string, string>>({});
+const activityInstructionsId = "exam-rearrange-steps-instructions";
 
 const { collectAnswers, updateActivityScore } = useExamContext();
 
@@ -96,13 +99,29 @@ const handleChange = (questionId: string, value: string) => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col rounded-xl bg-white shadow-sm">
+  <section
+    class="flex h-full flex-col rounded-xl bg-white shadow-sm"
+    aria-labelledby="exam-rearrange-steps-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="exam-rearrange-steps-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
+    <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila hatua na andika namba ya mpangilio sahihi."
+          : "Use Tab to move through each step and enter its correct order number."
+      }}
+    </p>
     <div class="flex-1 overflow-y-auto p-4">
-      <div class="space-y-4">
+      <div class="space-y-4" role="list" :aria-label="ui.sentenceRearrangeQuestions.value">
         <div
           v-for="question in props.questions.questions"
           :key="question.id"
-          class="rounded-lg border bg-gray-50 p-4"
+          class="rounded-lg border bg-gray-50 p-4 focus-within:ring-2 focus-within:ring-picton-blue-400"
+          role="listitem"
         >
           <div class="flex items-center gap-4">
             <div class="relative flex-shrink-0">
@@ -113,6 +132,7 @@ const handleChange = (questionId: string, value: string) => {
                 remove-arrows
                 :model-value="order[question.id] || ''"
                 placeholder=""
+                :aria-label="ui.isSwahili ? `Mpangilio wa hatua: ${question.text}` : `Step order for: ${question.text}`"
                 :class="
                   cn(
                     'h-16 w-16 text-center text-2xl font-bold border-2',
@@ -121,7 +141,7 @@ const handleChange = (questionId: string, value: string) => {
                       : 'border-gray-300 bg-gray-100 text-gray-600',
                   )
                 "
-                @update:model-value="(value) => handleChange(question.id, String(value ?? ''))"
+                @update:model-value="(value: any) => handleChange(question.id, String(value ?? ''))"
               />
             </div>
 
@@ -145,5 +165,5 @@ const handleChange = (questionId: string, value: string) => {
         </div>
       </div>
     </div>
-  </div>
+  </section>
 </template>

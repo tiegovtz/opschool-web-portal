@@ -9,6 +9,7 @@ const props = withDefaults(defineProps<PlaceValueBlocksProps>(), {
   maxNumber: 9999,
 });
 const ui = useActivityUiText();
+const activityInstructionsId = "numbers-place-values-instructions";
 
 const inputValue = ref("");
 const currentNumber = ref(0);
@@ -80,8 +81,21 @@ const ONE = computed(() => renderCube(25, "#ef4444"));
 </script>
 
 <template>
-  <div class="w-full max-w-6xl mx-auto p-6 bg-gradient-to-b from-blue-50 to-white rounded-lg shadow-lg">
-    <h1 class="text-3xl font-bold text-center mb-8 text-blue-900">Place Value Blocks</h1>
+  <section
+    class="w-full max-w-6xl mx-auto p-6 bg-gradient-to-b from-blue-50 to-white rounded-lg shadow-lg"
+    aria-labelledby="numbers-place-values-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="numbers-place-values-title" class="text-3xl font-bold text-center mb-8 text-blue-900">
+      Place Value Blocks
+    </h2>
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kisanduku cha namba, kitufe cha kuonyesha vitalu, na kitufe cha swali linalofuata."
+          : "Use Tab to move through the number field, the show blocks button, and the next question button."
+      }}
+    </p>
 
     <div class="bg-white rounded-lg p-6 mb-6 shadow-inner">
       <div class="flex gap-6 mb-8">
@@ -168,6 +182,7 @@ const ONE = computed(() => renderCube(25, "#ef4444"));
           :max="props.maxNumber"
           :value="inputValue"
           placeholder="Enter the number"
+          :aria-label="ui.isSwahili ? 'Weka namba ya kuonyesha vitalu vya thamani ya nafasi' : 'Enter a number to display place value blocks'"
           class="px-4 py-2 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:border-blue-500 w-48"
           @input="(e) => (inputValue = (e.target as HTMLInputElement).value)"
           @keypress="(e) => (e.key === 'Enter' ? handleSubmit() : null)"
@@ -234,5 +249,5 @@ const ONE = computed(() => renderCube(25, "#ef4444"));
         </span>
       </p>
     </div>
-  </div>
+  </section>
 </template>

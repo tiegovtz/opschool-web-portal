@@ -1,5 +1,7 @@
 export type questionType = "multiple_choice" | "drag_and_drop";
 
+export const ANSWER_SEPARATOR = "<!-/>";
+
 export interface Choice {
   _id: string;
   value: string;

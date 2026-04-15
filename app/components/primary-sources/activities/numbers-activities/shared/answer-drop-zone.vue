@@ -2,7 +2,7 @@
 import { computed, useSlots } from "vue";
 import Droppable from "~/components/ui/dnd/droppable";
 import Draggable from "~/components/ui/dnd/draggable";
-import Input from "~/components/ui/inputs/input";
+// import Input from "~/components/ui/inputs/input";
 import { cn } from "~/utilities/utils";
 import type { AnswerType } from "./answer-drop-zone.types";
 
@@ -19,6 +19,7 @@ type AnswerDropZoneProps = {
   isDraggable?: boolean;
   dragId?: string;
   isSelected?: boolean;
+  ariaLabel?: string;
 };
 
 const props = withDefaults(defineProps<AnswerDropZoneProps>(), {
@@ -68,7 +69,7 @@ const renderTextContent = computed(() => {
     <Draggable
       v-if="props.currentAnswer && props.isDraggable && props.dragId"
       :id="props.dragId"
-      :class="`${baseStyles} bg-lemon-200 text-lemon-700 cursor-move`"
+      :class="`${baseStyles} bg-lemon-200 text-lemon-700 cursor-move focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2`"
     >
       <slot v-if="slots.default" />
       <template v-else>{{ renderTextContent }}</template>
@@ -77,7 +78,7 @@ const renderTextContent = computed(() => {
     <Droppable
       v-else
       :id="props.id"
-      :class="baseStyles"
+      :class="`${baseStyles} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2`"
       isOverClassName="bg-lemon-100 border-lemon-400"
     >
       <slot v-if="slots.default" />
@@ -93,6 +94,7 @@ const renderTextContent = computed(() => {
         :model-value="props.currentAnswer"
         :disabled="props.showResults"
         :placeholder="props.placeholder"
+        :aria-label="props.ariaLabel"
         :class="
           cn(
             'text-center border-none font-medium !text-3xl bg-transparent focus-visible:ring-offset-0',
@@ -122,17 +124,23 @@ const renderTextContent = computed(() => {
 
   <!-- click -->
   <template v-else-if="props.answerType === 'click'">
-    <div
+    <button
+      type="button"
+      :aria-label="props.ariaLabel"
+      :aria-pressed="props.isSelected"
+      :disabled="props.showResults"
       :class="`transition-colors
         ${props.isSelected ? 'bg-picton-blue-200 border-picton-blue-400' : ''}
         ${props.showResults ? 'cursor-default' : 'cursor-pointer hover:bg-picton-blue-100'}
-        ${baseStyles}`"
+        ${baseStyles} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2`"
       @click="() => !props.showResults && props.onClickChange?.(props.id)"
     >
       <div class="flex items-center justify-center gap-2">
+        <slot v-if="slots.default" />
+        <template v-else>{{ renderTextContent }}</template>
         <span v-if="props.isSelected" class="text-2xl leading-none">✓</span>
       </div>
-    </div>
+    </button>
   </template>
 
   <!-- fallback -->

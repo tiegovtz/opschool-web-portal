@@ -3,7 +3,7 @@ import { ref, watch, computed } from "vue";
 import { Icon } from "@iconify/vue";
 import { cn, shuffle } from "~/utilities/utils";
 import { Button } from "~/components/ui/button";
-import Input from "~/components/ui/inputs/input";
+import Input from "~/components/ui/inputs/input.vue";
 import type { FeedbackType } from "~/types/activity-types";
 import ActivityTitle from "~/components/templates/activity-title";
 import { useSoundEffects } from "~/composables/use-sound-effects";
@@ -34,6 +34,7 @@ const allChecked = ref(false);
 const answers = ref<Record<number, string>>({});
 const feedbacks = ref<Record<number, boolean>>({});
 const showResults = ref(false);
+const activityInstructionsId = "complete-sentences-two-clauses-instructions";
 
 const normalize = (value: string) => value.trim().toLowerCase();
 const compareAnswersLocal = (userAnswer: string, expected: string | string[]) => {
@@ -113,18 +114,36 @@ const resetGame = () => {
 const contentStyle = computed(() => ({
   fontSize: props.questions.fontSize ? `${props.questions.fontSize}px` : "20px",
 }));
+
+const getInputLabel = (index: number, word: string) =>
+  `Question ${index + 1}. Answer for ${word}`;
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="complete-sentences-two-clauses-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="complete-sentences-two-clauses-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{ ui.isSwahili
+        ? "Jaza kila sehemu ya jibu kwa kutumia kitufe cha Tab kupita kwenye shughuli. Baada ya kukagua majibu yako, tumia kitufe cha Tazama Matokeo kuona muhtasari."
+        : "Fill in each answer field using the Tab key to move through the activity. After checking your answers, use the View Results button to see the summary." }}
+    </p>
 
     <div v-if="!showResults" class="flex flex-col h-full bg-picton-blue-100" :style="contentStyle">
-      <div class="grid grid-cols-2 gap-4 py-4 flex-1 overflow-y-auto">
+      <div class="grid grid-cols-2 gap-4 py-4 flex-1 overflow-y-auto" role="list" :aria-label="ui.completeSentenceQuestions.value">
         <div
           v-for="(question, index) in shuffledQuestions"
           :key="index"
-          class="bg-picton-blue-50 h-fit flex flex-col rounded-lg p-6"
+          class="bg-picton-blue-50 h-fit flex flex-col rounded-lg p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+          role="listitem"
+          tabindex="0"
+          :aria-labelledby="`complete-sentences-two-clauses-question-${index}`"
           :class="
             cn({
               'bg-green-100 text-green-700': allChecked && feedbacks[index],
@@ -133,12 +152,14 @@ const contentStyle = computed(() => ({
           "
         >
           <div class="flex flex-col justify-between h-full">
-            <p class="mb-4">{{ question.word }}</p>
+            <p :id="`complete-sentences-two-clauses-question-${index}`" class="mb-4">{{ question.word }}</p>
             <div>
               <Input
                 :model-value="answers[index] || ''"
                 :disabled="allChecked"
-                class="px-2 border-none bg-transparent text-center"
+                :aria-label="getInputLabel(index, question.word)"
+                :aria-describedby="activityInstructionsId"
+                class="px-2 border-none bg-transparent text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
                 @update:modelValue="(v: string | number) => handleInputChange(index, String(v ?? ''))"
               />
               <div
@@ -156,8 +177,10 @@ const contentStyle = computed(() => ({
             <div
               class="flex items-center justify-center rounded-full p-1"
               :class="feedbacks[index] ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
+              role="status"
+              :aria-label="ui.formatQuestionResult(index + 1, feedbacks[index])"
             >
-              <Icon :icon="feedbacks[index] ? 'mdi:check' : 'mdi:close'" class="h-6 w-6" />
+              <Icon :icon="feedbacks[index] ? 'mdi:check' : 'mdi:close'" class="h-6 w-6" aria-hidden="true" />
             </div>
           </div>
         </div>
@@ -169,6 +192,7 @@ const contentStyle = computed(() => ({
         :disabled="!allAnswered"
         variant="brand-lemon"
         class="ml-auto text-lg py-3"
+        :aria-describedby="activityInstructionsId"
       >
         {{ ui.checkAnswers }}
       </Button>
@@ -178,6 +202,7 @@ const contentStyle = computed(() => ({
           :onClick="() => { showResults = true; }"
           variant="brand-lemon"
           class="w-full text-lg py-3"
+          :aria-describedby="activityInstructionsId"
         >
           {{ ui.viewResults }}
         </Button>
@@ -237,5 +262,5 @@ const contentStyle = computed(() => ({
         if (!open) showResults = true;
       }"
     />
-  </div>
+  </section>
 </template>

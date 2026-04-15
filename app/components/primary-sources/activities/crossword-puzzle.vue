@@ -101,6 +101,7 @@ const incorrectQuestions = ref(new Set<number>());
 const activeInputRef = ref<HTMLInputElement | null>(null);
 const inputValue = ref("");
 const isTouchDevice = ref(false);
+const instructionsId = "crossword-puzzle-instructions";
 
 const isActivityDisabled = computed(
   () => allAnswered.value || timeUp.value || gameComplete.value,
@@ -862,6 +863,10 @@ const downWords = computed(() =>
   >
     <div class="flex h-full flex-col">
       <ActivityTitle :title="props.questions.title" />
+      <p :id="instructionsId" class="sr-only">
+        Select a crossword cell or clue, then type letters to fill the word. Use Backspace to erase.
+        Use the Tab key to move between the puzzle grid and the clue buttons.
+      </p>
 
       <div class="flex flex-col justify-center gap-6 p-4 2xl:flex-row">
         <div class="relative flex-1">
@@ -878,6 +883,12 @@ const downWords = computed(() =>
             autocapitalize="characters"
             spellcheck="false"
             :disabled="isActivityDisabled"
+            :aria-label="
+              selectedCell
+                ? `Crossword cell row ${selectedCell.row + 1}, column ${selectedCell.col + 1}`
+                : 'Crossword input'
+            "
+            :aria-describedby="instructionsId"
             @input="handleInputChange"
           >
 
@@ -890,6 +901,9 @@ const downWords = computed(() =>
           <div
             tabindex="0"
             class="mx-auto w-fit outline-none"
+            :aria-describedby="instructionsId"
+            role="grid"
+            aria-label="Crossword puzzle grid"
             :style="{
               display: 'grid',
               gridTemplateRows: `repeat(${dimensions.rows}, ${width > 768 ? 48 : 25}px)`,
@@ -900,6 +914,12 @@ const downWords = computed(() =>
             <div
               v-for="(cell, index) in crosswordGrid.flat()"
               :key="`${cell.row}-${cell.col}-${index}`"
+              role="gridcell"
+              :aria-label="
+                cell.isEmpty
+                  ? `Blank space row ${cell.row + 1}, column ${cell.col + 1}`
+                  : `Crossword cell row ${cell.row + 1}, column ${cell.col + 1}${cell.clueNumber !== undefined ? `, clue ${cell.clueNumber}` : ''}`
+              "
               :class="
                 cn(
                   'relative flex items-center justify-center border border-picton-blue-300/70 select-none',
@@ -950,6 +970,8 @@ const downWords = computed(() =>
                 v-for="word in acrossWords"
                 :key="`across-${word.id}`"
                 type="button"
+                :aria-describedby="instructionsId"
+                :aria-label="`Across clue ${word.clueNumber}: ${word.clue}`"
                 :class="
                   cn(
                     'w-full rounded p-2 text-left',
@@ -980,6 +1002,8 @@ const downWords = computed(() =>
                 v-for="word in downWords"
                 :key="`down-${word.id}`"
                 type="button"
+                :aria-describedby="instructionsId"
+                :aria-label="`Down clue ${word.clueNumber}: ${word.clue}`"
                 :class="
                   cn(
                     'w-full rounded p-2 text-left',

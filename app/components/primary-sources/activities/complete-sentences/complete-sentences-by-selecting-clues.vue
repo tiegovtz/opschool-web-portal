@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { Button } from "~/components/ui/button";
-import Input from "~/components/ui/inputs/input";
+import Input from "~/components/ui/inputs/input.vue";
 import ActivityTitle from "~/components/templates/activity-title";
 import type { FeedbackType } from "~/types/activity-types";
 import { useSoundEffects } from "~/composables/use-sound-effects";
@@ -55,6 +55,10 @@ const showResults = ref(false);
 const score = ref(0);
 const allAnswered = ref(false);
 const isDialogOpen = ref(false);
+const activityInstructionsId = "complete-sentences-selecting-clues-instructions";
+const activityOptionsId = "complete-sentences-selecting-clues-options";
+const getInputLabel = (index: number, questionText: string) =>
+  `Question ${index + 1}. ${questionText}`;
 
 const resetActivity = () => {
   questionsState.value = shuffle(
@@ -108,17 +112,32 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="complete-sentences-selecting-clues-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="complete-sentences-selecting-clues-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{ ui.isSwahili
+        ? "Tumia kitufe cha Tab kupita kwenye kila sehemu ya jibu na kitufe cha Kagua Majibu. Maneno ya vidokezo yanaonyeshwa chini ya maswali kama rejea."
+        : "Use the Tab key to move between each answer field and the Check Answers button. The clue words are shown below the questions for reference." }}
+    </p>
 
-    <div class="space-y-4 overflow-y-auto flex-1 p-2">
+    <div class="space-y-4 overflow-y-auto flex-1 p-2" role="list" :aria-label="ui.completeSentenceQuestions.value">
       <div
         v-for="(q, index) in questionsState"
         :key="q.id"
-        class="p-4 bg-white rounded-md shadow-sm"
+        class="p-4 bg-white rounded-md shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+        role="listitem"
+        tabindex="0"
+        :aria-labelledby="`complete-sentences-selecting-clues-question-${q.id}`"
       >
         <div class="flex flex-wrap items-center gap-2">
-          <span class="font-bold text-red-500 min-w-8">{{ index + 1 }}.</span>
+          <span :id="`complete-sentences-selecting-clues-question-${q.id}`" class="font-bold text-red-500 min-w-8">{{ index + 1 }}.</span>
           <div class="font-medium">
             {{ q.displayText.split(q.highlightedWord)[0] }}
             <span class="bg-picton-blue-200 px-2 py-1 rounded">{{ q.highlightedWord }}</span>
@@ -128,6 +147,8 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
           <Input
             :model-value="q.userAnswer"
             :disabled="showResults"
+            :aria-label="getInputLabel(index, q.question)"
+            :aria-describedby="selectableWords.length ? `${activityInstructionsId} ${activityOptionsId}` : activityInstructionsId"
             class="flex-1 min-w-32 ml-4"
             placeholder="Type answer here"
             @update:modelValue="(v: string | number) => handleInputChange(q.id, String(v ?? ''))"
@@ -137,6 +158,8 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
             v-if="showResults"
             class="text-sm"
             :class="q.isCorrect ? 'text-green-600' : 'text-red-600'"
+            role="status"
+            :aria-label="ui.formatQuestionResult(index + 1, q.isCorrect === true)"
           >
             {{ q.isCorrect ? ui.correct : ui.incorrect }}
           </div>
@@ -150,11 +173,18 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
       </div>
     </div>
 
-    <div v-if="!showResults" class="flex flex-wrap mt-4 gap-4">
+    <div
+      v-if="!showResults"
+      :id="activityOptionsId"
+      class="flex flex-wrap mt-4 gap-4"
+      role="group"
+      :aria-label="ui.availableClueWords.value"
+    >
       <span
         v-for="(word, i) in selectableWords"
         :key="i"
-        class="px-2 py-1 rounded bg-picton-blue-100 text-picton-blue-700"
+        tabindex="0"
+        class="px-2 py-1 rounded bg-picton-blue-100 text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
       >
         {{ word }}
       </span>
@@ -167,7 +197,13 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
       :onRestart="resetActivity"
     />
     <div v-else class="flex mt-4 justify-end">
-      <Button :onClick="checkAnswers" :disabled="!allAnswered">{{ ui.checkAnswers }}</Button>
+      <Button
+        :onClick="checkAnswers"
+        :disabled="!allAnswered"
+        :aria-describedby="selectableWords.length ? activityOptionsId : activityInstructionsId"
+      >
+        {{ ui.checkAnswers }}
+      </Button>
     </div>
 
     <ActivityResultsAlertDialog
@@ -182,5 +218,5 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
         }
       }"
     />
-  </div>
+  </section>
 </template>

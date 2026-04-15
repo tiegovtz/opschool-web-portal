@@ -47,6 +47,7 @@ const isComplete = ref(false);
 const score = ref(0);
 const feedbacks = ref<Record<number, boolean>>({});
 const showAlertDialog = ref(false);
+const activityInstructionsId = "rearrange-the-steps-instructions";
 
 const initializeActivity = () => {
   const items = props.questions.questions.map((question, index) => ({
@@ -123,24 +124,64 @@ const resetActivity = () => {
 
 const isCorrect = (item: StepItem, index: number) => feedbacks.value[index] === true && item.correctPosition === index;
 const shouldShowDetailedResults = props.feedback === "wrong-correct-answers";
+
+const placeItem = (slotIndex: number, item: StepItem) => {
+  if (slotIndex < 0) return;
+  const nextPlacedItems = [...placedItems.value];
+  const existingIndex = nextPlacedItems.findIndex((placed) => placed?.id === item.id);
+  if (existingIndex !== -1) {
+    nextPlacedItems[existingIndex] = undefined;
+  }
+  nextPlacedItems[slotIndex] = item;
+  placedItems.value = nextPlacedItems;
+  availableItems.value = availableItems.value.filter((available) => available.id !== item.id);
+
+  if (nextPlacedItems.filter(Boolean).length === props.questions.questions.length) {
+    window.setTimeout(() => calculateScore(nextPlacedItems), 100);
+  }
+  playSound("click");
+};
+
+const removePlacedItem = (slotIndex: number) => {
+  const item = placedItems.value[slotIndex];
+  if (!item || showResults.value) return;
+  placedItems.value = placedItems.value.map((placed, index) => (index === slotIndex ? undefined : placed));
+  availableItems.value = [...availableItems.value, item];
+  playSound("click");
+};
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="rearrange-the-steps-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="rearrange-the-steps-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye hatua zilizopo na nafasi tupu. Chagua hatua kwa enter au space, kisha chagua nafasi ya kuiweka."
+          : "Use Tab to move through the available steps and empty slots. Select a step with Enter or Space, then choose the slot where you want to place it."
+      }}
+    </p>
 
     <template v-if="!showResults">
-      <DNDContext :onDragEnd="handleDragEnd">
         <div
           class="mb-8 grid gap-2 text-lg"
           style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"
         >
           <template v-for="(item, index) in Array.from({ length: props.questions.questions.length }).map((_, i) => availableItems[i])" :key="index">
             <div v-if="!item" />
-            <Draggable
+            <button
               v-else
-              :id="item.id"
-              class="flex min-h-72 flex-col items-center justify-between rounded border border-picton-blue-200 bg-picton-blue-50 p-3"
+              type="button"
+              class="flex min-h-72 flex-col items-center justify-between rounded border border-picton-blue-200 bg-picton-blue-50 p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
+              :aria-label="ui.isSwahili ? `Chagua hatua ${item.question}` : `Choose step ${item.question}`"
+              @click="placeItem(placedItems.findIndex((placed) => !placed), item)"
             >
               <p v-if="!props.questions.hideWords" class="mb-2 text-center">{{ item.question }}</p>
               <img
@@ -149,7 +190,7 @@ const shouldShowDetailedResults = props.feedback === "wrong-correct-answers";
                 :alt="item.question"
                 class="grow h-32 w-full object-contain"
               >
-            </Draggable>
+            </button>
           </template>
         </div>
 
@@ -158,21 +199,21 @@ const shouldShowDetailedResults = props.feedback === "wrong-correct-answers";
           style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"
         >
           <template v-for="(_, index) in props.questions.questions" :key="index">
-            <Droppable
+            <button
               v-if="!placedItems[index]"
-              :id="`event-${index + 1}`"
-              class="flex min-h-72 items-center justify-center rounded-md border border-picton-blue-300 bg-picton-blue-200 p-2"
-              isOverClassName="bg-lemon-100 border-lemon-400"
+              type="button"
+              class="flex min-h-72 items-center justify-center rounded-md border border-picton-blue-300 bg-picton-blue-200 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
+              :aria-label="ui.isSwahili ? `${props.questions.type} ${index + 1}, nafasi tupu` : `${props.questions.type} ${index + 1}, empty slot`"
             >
               <span>{{ props.questions.type }} {{ index + 1 }}</span>
-            </Droppable>
+            </button>
 
-            <Draggable
+            <button
               v-else
-              :id="placedItems[index]!.id"
+              type="button"
               :class="
                 cn(
-                  'flex min-h-72 w-full flex-col items-center justify-center rounded border border-picton-blue-200 p-4',
+                  'flex min-h-72 w-full flex-col items-center justify-center rounded border border-picton-blue-200 p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                   isComplete && props.feedback === 'wrong-correct' && feedbacks[index]
                     ? 'bg-green-100 text-green-800 border-green-500'
                     : isComplete && props.feedback === 'wrong-correct' && !feedbacks[index]
@@ -180,6 +221,8 @@ const shouldShowDetailedResults = props.feedback === "wrong-correct-answers";
                       : 'bg-lemon-100 text-lemon-700',
                 )
               "
+              :aria-label="ui.isSwahili ? `Ondoa hatua ${placedItems[index]!.question}` : `Remove step ${placedItems[index]!.question}`"
+              @click="removePlacedItem(index)"
             >
               <p v-if="!props.questions.hideWords" class="mb-2 text-center">{{ placedItems[index]!.question }}</p>
               <img
@@ -195,7 +238,7 @@ const shouldShowDetailedResults = props.feedback === "wrong-correct-answers";
                   <span v-else class="text-red-600">✕</span>
                 </div>
               </template>
-            </Draggable>
+            </button>
           </template>
         </div>
 
@@ -205,7 +248,6 @@ const shouldShowDetailedResults = props.feedback === "wrong-correct-answers";
           :total="props.questions.questions.length"
           :onRestart="resetActivity"
         />
-      </DNDContext>
     </template>
 
     <div
@@ -310,5 +352,5 @@ const shouldShowDetailedResults = props.feedback === "wrong-correct-answers";
         }
       "
     />
-  </div>
+  </section>
 </template>

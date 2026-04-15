@@ -49,6 +49,7 @@ const score = ref(0);
 const allAnswered = ref(false);
 const showResults = ref(false);
 const correctItems = ref<string[]>([]);
+const instructionsId = "dialog-differences-instructions";
 
 const getOppositeSide = (side: "left" | "right") => (side === "left" ? "right" : "left");
 
@@ -210,10 +211,16 @@ const resetActivity = () => {
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Match the related items from the two sides. Drag with a pointer, or use the visible item cards
+      and answer areas with the keyboard where available. Review the results after all spaces are
+      filled.
+    </p>
 
     <div
       class="flex flex-col gap-4"
       :style="{ fontSize: props.questions.fontSize ? `${props.questions.fontSize}px` : '20px' }"
+      :aria-describedby="instructionsId"
     >
       <DNDContext :onDragEnd="handleDragEnd">
         <div>

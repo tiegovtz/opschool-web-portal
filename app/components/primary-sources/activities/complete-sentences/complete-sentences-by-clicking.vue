@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, { ActivityResultsAlertDialog } from "@/components/templates/results";
+import { Button } from "~/components/ui/button";
 import { cn,shuffle } from "~/utilities/utils";
 
 // Props
@@ -28,6 +29,7 @@ const shuffledQuestions = ref<Question[]>([]);
 const crossedOptions = ref<Record<number, string[]>>({});
 const showResults = ref(false);
 const isSubmitted = ref(false);
+const activityInstructionsId = "complete-sentences-clicking-instructions";
 
 // Shuffle questions initially
 function shuffleQuestions() {
@@ -122,11 +124,14 @@ function renderQuestion(question: Question, questionIndex: number) {
               const canCross = !isCrossed && uncrossedCount > 1;
 
               return (
-                <span
+                <button
                   key={option}
+                  type="button"
                   onClick={() => handleOptionClick(questionIndex, option)}
+                  disabled={showResults.value}
+                  aria-pressed={isCrossed}
                   class={cn(
-                    "cursor-pointer px-1 py-1 rounded transition-all",
+                    "px-1 py-1 rounded transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2",
                     {
                       "bg-picton-blue-200 hover:bg-picton-blue-300":
                         !showResults.value && (canCross || isCrossed),
@@ -143,7 +148,7 @@ function renderQuestion(question: Question, questionIndex: number) {
                   )}
                 >
                   {option}
-                </span>
+                </button>
               );
             })}
           </span>
@@ -156,14 +161,26 @@ function renderQuestion(question: Question, questionIndex: number) {
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="complete-sentences-clicking-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="complete-sentences-clicking-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{ ui.isSwahili
+        ? "Tumia kitufe cha Tab kupita kwenye chaguo za majibu. Bonyeza Enter au Space kufuta au kurejesha neno. Kila swali likibaki na jibu moja, tumia kitufe cha Kagua Majibu."
+        : "Use the Tab key to move between answer choices. Press Enter or Space to cross out or restore a word. When each question has one answer left, use the Check Answers button." }}
+    </p>
 
     <div
       class="flex flex-col gap-2 h-full bg-picton-blue-100 text-[20px]"
       :style="{ fontSize: props.questions.fontSize ? props.questions.fontSize + 'px' : undefined }"
     >
-      <div class="md:p-4 overflow-y-auto">
+      <div class="md:p-4 overflow-y-auto" role="list" :aria-label="ui.completeSentenceQuestions.value">
         <div v-for="(q, idx) in shuffledQuestions" :key="q.id">
           <component :is="renderQuestion(q, idx)" />
         </div>
@@ -177,9 +194,9 @@ function renderQuestion(question: Question, questionIndex: number) {
         />
 
         <div v-if="allAnswered && !showResults" class="ml-auto w-fit">
-          <button class="px-4 py-2 bg-yellow-400 rounded" @click="handleCheckAnswers">
+          <Button variant="brand-lemon" :onClick="handleCheckAnswers" :aria-describedby="activityInstructionsId">
             {{ ui.checkAnswers }}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -190,5 +207,5 @@ function renderQuestion(question: Question, questionIndex: number) {
       :open="isSubmitted && !showResults"
       @onOpenChange="(open:any) => { if (!open) showResults = true }"
     />
-  </div>
+  </section>
 </template>
