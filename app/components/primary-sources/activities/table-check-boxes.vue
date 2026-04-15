@@ -44,6 +44,7 @@ const showResults = ref(false);
 const score = ref(0);
 const resultsDialogOpen = ref(false);
 const rowResults = ref<boolean[]>([]);
+const activityInstructionsId = "table-check-boxes-instructions";
 
 const initializeCells = () => {
   const cells: CellState[] = [];
@@ -113,8 +114,22 @@ const resetActivity = () => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="table-check-boxes-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="table-check-boxes-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila kisanduku cha jedwali. Tumia enter au space kuweka au kuondoa alama ya tiki."
+          : "Use Tab to move through each table checkbox. Use Enter or Space to check or uncheck it."
+      }}
+    </p>
 
     <div class="flex h-full flex-col gap-4">
       <div v-if="props.questions.image" class="mx-auto max-w-sm">
@@ -175,21 +190,29 @@ const resetActivity = () => {
                     },
                   )
                 "
-                @click="!showResults && handleCellClick(rowIndex, cellIndex)"
               >
                 <div class="flex h-12 items-center justify-center">
-                  <div
-                    :class="
-                      cn(
-                        'flex h-8 w-8 items-center justify-center rounded border-2 transition-all',
-                        getCellState(rowIndex, cellIndex)?.isChecked
-                          ? 'border-picton-blue-500 bg-picton-blue-500 text-white'
-                          : 'border-gray-300 bg-white hover:border-picton-blue-300',
-                      )
-                    "
+                  <button
+                    type="button"
+                    :disabled="showResults"
+                    :aria-pressed="getCellState(rowIndex, cellIndex)?.isChecked"
+                    :aria-label="ui.isSwahili ? `${row.text}, ${column.text}` : `${row.text}, ${column.text}`"
+                    class="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
+                    @click="!showResults && handleCellClick(rowIndex, cellIndex)"
                   >
-                    <span v-if="getCellState(rowIndex, cellIndex)?.isChecked">✓</span>
-                  </div>
+                    <div
+                      :class="
+                        cn(
+                          'flex h-8 w-8 items-center justify-center rounded border-2 transition-all',
+                          getCellState(rowIndex, cellIndex)?.isChecked
+                            ? 'border-picton-blue-500 bg-picton-blue-500 text-white'
+                            : 'border-gray-300 bg-white hover:border-picton-blue-300',
+                        )
+                      "
+                    >
+                      <span v-if="getCellState(rowIndex, cellIndex)?.isChecked">✓</span>
+                    </div>
+                  </button>
                 </div>
               </td>
 
@@ -252,5 +275,5 @@ const resetActivity = () => {
         }
       "
     />
-  </div>
+  </section>
 </template>

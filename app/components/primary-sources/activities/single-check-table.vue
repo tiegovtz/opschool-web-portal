@@ -52,6 +52,8 @@ const score = ref({ correct: 0, total: 0 });
 const allAnswered = ref(false);
 const showCorrectAnswers = ref(false);
 const shuffledQuestions = ref<TableQuestion[]>([]);
+const activityInstructionsId = "single-check-table-instructions";
+const ui = useActivityUiText();
 
 const initializeAnswers = () => {
   answers.value = props.questions.questions.flatMap((question) =>
@@ -129,8 +131,22 @@ const resetActivity = () => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="single-check-table-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="single-check-table-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila kisanduku cha jedwali. Tumia enter au space kuchagua jibu moja kwa kila mstari."
+          : "Use Tab to move through each table cell. Use Enter or Space to choose one answer for each row."
+      }}
+    </p>
 
     <div class="flex-1 rounded-lg bg-picton-blue-100 p-4">
       <table
@@ -193,41 +209,49 @@ const resetActivity = () => {
                     !answerFor(question.id, colIndex)?.isCorrect,
                 })
               "
-              @click="!showResults && toggleAnswer(question.id, colIndex)"
             >
               <div class="flex h-12 items-center justify-center">
-                <div
-                  :class="
-                    cn(
-                      'flex h-8 w-8 items-center justify-center rounded border-2 transition-all',
-                      answerFor(question.id, colIndex)?.isChecked && !showResults
-                        ? 'border-picton-blue-500 bg-picton-blue-500 text-white'
-                        : 'border-gray-300 bg-white hover:border-picton-blue-300',
-                    )
-                  "
+                <button
+                  type="button"
+                  :disabled="showResults"
+                  :aria-pressed="answerFor(question.id, colIndex)?.isChecked"
+                  :aria-label="ui.isSwahili ? `${question.question}, ${option.text}` : `${question.question}, ${option.text}`"
+                  class="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
+                  @click="!showResults && toggleAnswer(question.id, colIndex)"
                 >
-                  <span
-                    v-if="answerFor(question.id, colIndex)?.isChecked"
-                    :class="[
-                      'mx-auto w-fit',
-                      showResults && answerFor(question.id, colIndex)?.isCorrect && 'text-green-600',
-                      showResults && answerFor(question.id, colIndex)?.isCorrect === false && 'text-red-600',
-                    ]"
+                  <div
+                    :class="
+                      cn(
+                        'flex h-8 w-8 items-center justify-center rounded border-2 transition-all',
+                        answerFor(question.id, colIndex)?.isChecked && !showResults
+                          ? 'border-picton-blue-500 bg-picton-blue-500 text-white'
+                          : 'border-gray-300 bg-white hover:border-picton-blue-300',
+                      )
+                    "
                   >
-                    {{
-                      showResults && answerFor(question.id, colIndex)?.isCorrect === false
-                        ? "✕"
-                        : "✓"
-                    }}
-                  </span>
+                    <span
+                      v-if="answerFor(question.id, colIndex)?.isChecked"
+                      :class="[
+                        'mx-auto w-fit',
+                        showResults && answerFor(question.id, colIndex)?.isCorrect && 'text-green-600',
+                        showResults && answerFor(question.id, colIndex)?.isCorrect === false && 'text-red-600',
+                      ]"
+                    >
+                      {{
+                        showResults && answerFor(question.id, colIndex)?.isCorrect === false
+                          ? "✕"
+                          : "✓"
+                      }}
+                    </span>
 
-                  <span
-                    v-if="showCorrectAnswers && !answerFor(question.id, colIndex)?.isChecked && option.isCorrect"
-                    class="text-green-600"
-                  >
-                    ✓
-                  </span>
-                </div>
+                    <span
+                      v-if="showCorrectAnswers && !answerFor(question.id, colIndex)?.isChecked && option.isCorrect"
+                      class="text-green-600"
+                    >
+                      ✓
+                    </span>
+                  </div>
+                </button>
               </div>
             </td>
           </tr>
@@ -259,5 +283,5 @@ const resetActivity = () => {
         }
       "
     />
-  </div>
+  </section>
 </template>

@@ -30,6 +30,8 @@ const allAnswered = ref(false);
 const showFeedback = ref(false);
 const theQuestions = ref<Question[]>([...props.questions.questions]);
 const order = ref<string[]>(Array(props.questions.questions.length).fill(""));
+const activityInstructionsId = "rearrange-steps-vertically-instructions";
+const ui = useActivityUiText();
 
 const { playSound } = useSoundEffects();
 
@@ -84,8 +86,22 @@ const handleDialogChange = (open: boolean) => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="rearrange-steps-vertically-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="rearrange-steps-vertically-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila hatua na andika namba ya mpangilio sahihi."
+          : "Use Tab to move through each step and enter its correct order number."
+      }}
+    </p>
 
     <ul class="mt-4 flex flex-col justify-between gap-1">
       <li
@@ -99,6 +115,7 @@ const handleDialogChange = (open: boolean) => {
             min="1"
             :value="order[index]"
             :disabled="showFeedback"
+            :aria-label="ui.isSwahili ? `Mpangilio wa hatua: ${question.text}` : `Step order for: ${question.text}`"
             :class="[
               'h-16 w-16 text-center text-2xl no-number-input-arrows text-black rounded border-2 transition-colors duration-300',
               showFeedback
@@ -137,5 +154,5 @@ const handleDialogChange = (open: boolean) => {
       :open="allAnswered"
       :on-open-change="handleDialogChange"
     />
-  </div>
+  </section>
 </template>

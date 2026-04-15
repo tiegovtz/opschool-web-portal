@@ -18,7 +18,10 @@ export default defineComponent({
           props.className,
         )}
       >
-        <h2 class="text-xl font-semibold tracking-tight text-oceanBlue md:text-2xl">
+        <h2
+          tabindex={0}
+          class="text-xl font-semibold tracking-tight text-oceanBlue rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 md:text-2xl"
+        >
           {props.title || slots.default?.()}
         </h2>
       </div>

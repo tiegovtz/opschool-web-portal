@@ -43,6 +43,7 @@ const targetPositions = ref<number[]>([]);
 const sequenceResults = ref<boolean[]>([]);
 const showResults = ref(false);
 const score = ref(0);
+const activityInstructionsId = "missing-values-junior-instructions";
 
 const currentSequenceData = computed(
   () => props.questions.sequences[currentSequenceIndex.value] || { sequence: [], answers: [] },
@@ -164,8 +165,22 @@ const renderedResults = computed(() =>
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="missing-values-junior-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="missing-values-junior-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        contentLayoutLanguage === "kiswahili"
+          ? "Tumia tab kusogea kwenye namba zilizopo. Bonyeza enter au space kuweka namba kwenye nafasi inayofuata. Tumia tab kufikia namba uliyoweka na bonyeza enter au space kuiondoa."
+          : "Use Tab to move through the available numbers. Press Enter or Space to place a number in the next empty slot. Use Tab to reach a placed number and press Enter or Space to remove it."
+      }}
+    </p>
 
     <div v-if="showResults && props.feedback !== 'none'" class="w-full space-y-6">
       <div class="space-y-4">
@@ -221,7 +236,8 @@ const renderedResults = computed(() =>
           v-for="number in numberPad"
           :key="number"
           type="button"
-          class="flex h-10 w-10 items-center justify-center rounded-md bg-picton-blue-200 text-2xl md:h-14 md:w-14 md:text-3xl"
+          :aria-label="contentLayoutLanguage === 'kiswahili' ? `Chagua namba ${number}` : `Choose number ${number}`"
+          class="flex h-10 w-10 items-center justify-center rounded-md bg-picton-blue-200 text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2 md:h-14 md:w-14 md:text-3xl"
           @click="handleNumberClick(number)"
         >
           {{ number }}
@@ -262,7 +278,8 @@ const renderedResults = computed(() =>
               <button
                 v-if="placedNumbers[currentSequence.slice(0, index).filter((value) => value === '_').length - 1]"
                 type="button"
-                class="flex h-full w-full cursor-pointer items-center justify-center"
+                :aria-label="contentLayoutLanguage === 'kiswahili' ? `Ondoa namba kutoka nafasi ya ${currentSequence.slice(0, index).filter((value) => value === '_').length}` : `Remove number from slot ${currentSequence.slice(0, index).filter((value) => value === '_').length}`"
+                class="flex h-full w-full cursor-pointer items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
                 @click="handleRemoveNumber(currentSequence.slice(0, index).filter((value) => value === '_').length - 1)"
               >
                 {{ placedNumbers[currentSequence.slice(0, index).filter((value) => value === "_").length - 1] }}
@@ -295,5 +312,5 @@ const renderedResults = computed(() =>
       :total="props.questions.sequences.length"
       :completionMessage="completionMessage"
     />
-  </div>
+  </section>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import apiDocs from "~/utilities/apiDocs";
 import questionsAnswers from "./questionsAnswers.vue";
-import type { Choice, Question } from "~/types/question.interface";
+import { ANSWER_SEPARATOR, type Choice, type Question } from "~/types/question.interface";
 import type {
   QuizAttemptPayload,
   QuizAttemptSessionPayload,
@@ -308,7 +308,7 @@ const getBlankStatusForQuestion = (index: number) =>
   recordedAnswers.value[index]?.blankStatuses ?? [];
 
 const getDragAnswerParts = (answer: string) =>
-  answer ? answer.split("-").filter(Boolean) : [];
+  answer ? answer.split(ANSWER_SEPARATOR).filter(Boolean) : [];
 
 const isDragAndDropQuestion = (questionType: string) =>
   questionType === "drag_and_drop";
@@ -398,7 +398,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
                   </span>
                 </template>
                 <span v-else :class="{ 'capitalize': isDragAndDropQuestion(question.questionType) }">
-                  {{ (quizAttempt.clickedAnswer[index] ?? '').replaceAll('-', ' ,') }}
+                  {{ (quizAttempt.clickedAnswer[index] ?? '').replaceAll(ANSWER_SEPARATOR, ' ,') }}
                 </span>
                 <span v-if="question.questionType !== 'drag_and_drop'" class="ml-2 font-bold" :class="quizAttempt.clickedAnswer[index] == question.answer
                   ? 'text-normalGreener'

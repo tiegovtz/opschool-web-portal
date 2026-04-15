@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import ActivityTitle from "~/components/templates/activity-title";
 import { Button } from "~/components/ui/button";
 import { cn, toRoman } from "~/utilities/utils";
 import { useExamContext, type QuestionAnswer } from "~/shared/context/exam-context";
@@ -22,7 +23,9 @@ type ExamMultipleChoiceProps = {
 
 const props = defineProps<ExamMultipleChoiceProps>();
 
+const ui = useActivityUiText();
 const selectedAnswers = ref<Record<string, string>>({});
+const activityInstructionsId = "exam-multiple-choice-instructions";
 
 const { playSound } = useSoundEffects();
 const { collectAnswers, updateActivityScore } = useExamContext();
@@ -89,13 +92,30 @@ const handleAnswerSelect = (questionId: string, answer: string) => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col rounded-b-xl bg-white shadow-sm">
+  <section
+    class="flex h-full flex-col rounded-b-xl bg-white shadow-sm"
+    aria-labelledby="exam-multiple-choice-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="exam-multiple-choice-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
+    <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye maswali na chaguo zake. Tumia enter au space kuchagua jibu."
+          : "Use Tab to move through the questions and options. Use Enter or Space to choose an answer."
+      }}
+    </p>
     <div class="flex-1 overflow-y-auto p-2 md:p-4">
-      <div class="space-y-8">
+      <div class="space-y-8" role="list" :aria-label="ui.question.value">
         <div
           v-for="(question, questionIndex) in props.questions.questions"
           :key="question.id"
-          class="rounded-lg border bg-gray-50 p-2 md:p-6"
+          class="rounded-lg border bg-gray-50 p-2 focus-within:ring-2 focus-within:ring-picton-blue-400 md:p-6"
+          role="listitem"
+          :aria-labelledby="`exam-multiple-choice-question-${question.id}`"
         >
           <div class="flex items-end justify-between gap-6">
             <div class="flex-1">
@@ -112,7 +132,7 @@ const handleAnswerSelect = (questionId: string, answer: string) => {
                 >
                   {{ toRoman(questionIndex + 1) }}
                 </span>
-                <span class="text-lg text-picton-blue-700">
+                <span :id="`exam-multiple-choice-question-${question.id}`" class="text-lg text-picton-blue-700">
                   {{ question.question }}
                 </span>
               </p>
@@ -123,15 +143,19 @@ const handleAnswerSelect = (questionId: string, answer: string) => {
               >
                 <img
                   :src="question.questionImage"
-                  alt="Question image"
+                  :alt="ui.isSwahili ? `Picha ya swali la ${questionIndex + 1}` : `Question ${questionIndex + 1} image`"
                   class="h-auto w-full rounded-lg border object-contain"
                 >
               </div>
 
-              <div class="grid gap-2">
+              <div class="grid gap-2" role="radiogroup" :aria-labelledby="`exam-multiple-choice-question-${question.id}`">
                 <Button
-                  v-for="option in question.options"
+                  v-for="(option, optionIndex) in question.options"
                   :key="option"
+                  type="button"
+                  role="radio"
+                  :aria-checked="selectedAnswers[question.id] === option"
+                  :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, chaguo la ${optionIndex + 1}: ${option}` : `Question ${questionIndex + 1}, option ${optionIndex + 1}: ${option}`"
                   :variant="selectedAnswers[question.id] === option ? 'default' : 'outline'"
                   :class="
                     cn(
@@ -168,7 +192,7 @@ const handleAnswerSelect = (questionId: string, answer: string) => {
             <div v-if="question.questionImage" class="hidden w-1/3 max-w-sm md:block">
               <img
                 :src="question.questionImage"
-                alt="Question image"
+                :alt="ui.isSwahili ? `Picha ya swali la ${questionIndex + 1}` : `Question ${questionIndex + 1} image`"
                 class="h-auto w-full rounded-lg border object-contain"
               >
             </div>
@@ -176,5 +200,5 @@ const handleAnswerSelect = (questionId: string, answer: string) => {
         </div>
       </div>
     </div>
-  </div>
+  </section>
 </template>

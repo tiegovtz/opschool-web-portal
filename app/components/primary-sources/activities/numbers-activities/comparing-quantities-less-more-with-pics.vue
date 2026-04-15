@@ -41,6 +41,7 @@ const questionAnswers = reactive<
   Record<number, { left: string; right: string; operator: string }>
 >({});
 const correctAnswers = ref<string[]>([]);
+const activityInstructionsId = "numbers-less-more-pics-instructions";
 
 const { playSound } = useSoundEffects();
 
@@ -140,39 +141,77 @@ const fieldStyle = (questionIndex: number, field: string, value: string) => {
     ? "bg-green-200 text-green-700 border-green-300"
     : "bg-red-200 text-red-700 border-red-300";
 };
+
+const selectOperator = (questionIndex: number, operator: string) => {
+  const currentAnswer = getQuestionAnswer(questionIndex);
+  questionAnswers[questionIndex] = {
+    left: currentAnswer.left || "",
+    right: currentAnswer.right || "",
+    operator,
+  };
+  playSound("click");
+};
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="numbers-less-more-pics-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="numbers-less-more-pics-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye visanduku vya kuhesabu na chaguo za alama. Unaweza kuburuta alama au kuchagua kwa enter au space."
+          : "Use Tab to move through the counting fields and operator choices. You can drag an operator or choose it with Enter or Space."
+      }}
+    </p>
 
     <DNDContext :onDragEnd="handleDragEnd">
       <div class="flex-1 flex flex-col gap-4 p-4">
-        <div class="flex justify-center gap-4 sticky top-4 z-10 bg-picton-blue-100 px-4 py-2 rounded-lg mx-auto w-fit">
-          <Draggable
+        <div
+          class="flex justify-center gap-4 sticky top-4 z-10 bg-picton-blue-100 px-4 py-2 rounded-lg mx-auto w-fit"
+          role="group"
+          :aria-label="ui.isSwahili ? 'Chaguo za alama' : 'Operator choices'"
+        >
+          <div
             v-for="op in OPERATORS"
             :key="`operator-${op}`"
-            :id="`operator-${op}`"
-            class="bg-white w-16 h-16 rounded-lg flex items-center justify-center text-3xl font-bold shadow cursor-grab hover:shadow-lg z-10"
+            class="flex flex-col items-center gap-2"
           >
-            {{ op }}
-          </Draggable>
+            <Draggable
+              :id="`operator-${op}`"
+              class="bg-white w-16 h-16 rounded-lg flex items-center justify-center text-3xl font-bold shadow cursor-grab hover:shadow-lg z-10"
+            >
+              {{ op }}
+            </Draggable>
+            <span class="sr-only">{{ op }}</span>
+          </div>
         </div>
 
         <div class="space-y-6">
           <div
-            v-for="(question, index) in props.questions.questions"
-            :key="index"
-            class="bg-white rounded-lg p-6 mb-6"
-          >
-            <div class="flex flex-col md:flex-row items-center justify-center gap-8">
-              <div class="bg-gray-50 md:flex md:items-center gap-2 p-4 rounded-lg border border-gray-200 w-full">
-                <QuantityRenderer
-                  :count="question.leftNumber"
-                  :image="question.leftImage"
-                  :maxItemsPerRow="7"
-                  className="sm:max-w-[350px] xl:max-w-full flex-wrap"
-                />
+          v-for="(question, index) in props.questions.questions"
+          :key="index"
+          class="bg-white rounded-lg p-6 mb-6"
+          :aria-labelledby="`numbers-less-more-pics-question-${index}`"
+        >
+          <h3 :id="`numbers-less-more-pics-question-${index}`" class="sr-only">
+            {{ ui.isSwahili ? `Swali la ${index + 1}` : `Question ${index + 1}` }}
+          </h3>
+          <div class="flex flex-col md:flex-row items-center justify-center gap-8">
+            <div class="bg-gray-50 md:flex md:items-center gap-2 p-4 rounded-lg border border-gray-200 w-full">
+              <QuantityRenderer
+                :count="question.leftNumber"
+                :image="question.leftImage"
+                :summary-label="ui.isSwahili ? `Kundi la kushoto lina vitu ${question.leftNumber}` : `Left group has ${question.leftNumber} items`"
+                :maxItemsPerRow="7"
+                className="sm:max-w-[350px] xl:max-w-full flex-wrap"
+              />
                 <div class="relative w-fit ml-auto">
                   <AnswerDropZone
                     :id="`${index}-left`"
@@ -182,6 +221,7 @@ const fieldStyle = (questionIndex: number, field: string, value: string) => {
                     :showResults="showResults"
                     placeholder="Count"
                     :onInputChange="(v: string) => handleInputChange(index, 'left', v)"
+                    :ariaLabel="ui.isSwahili ? `Hesabu ya upande wa kushoto kwa swali la ${index + 1}` : `Left count for question ${index + 1}`"
                     :className="cn('w-[100px] rounded-lg p-2', showResults ? 'border-none' : 'border border-picton-blue-500')"
                   />
                   <div v-if="showResults && (questionAnswers[index]?.left || '')" class="absolute -top-2 -right-2 z-10">
@@ -208,6 +248,23 @@ const fieldStyle = (questionIndex: number, field: string, value: string) => {
                     {{ questionAnswers[index].operator }}
                   </div>
                 </Droppable>
+                <div
+                  v-if="!showResults"
+                  class="mt-2 flex justify-center gap-2"
+                  role="group"
+                  :aria-label="ui.isSwahili ? `Chagua alama kwa swali la ${index + 1}` : `Choose operator for question ${index + 1}`"
+                >
+                  <button
+                    v-for="op in OPERATORS"
+                    :key="`${index}-${op}`"
+                    type="button"
+                    :aria-pressed="questionAnswers[index]?.operator === op"
+                    :class="cn('rounded border px-2 py-1 text-lg font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500', questionAnswers[index]?.operator === op ? 'border-picton-blue-500 bg-picton-blue-100 text-picton-blue-700' : 'border-gray-300 bg-white text-gray-700')"
+                    @click="selectOperator(index, op)"
+                  >
+                    {{ op }}
+                  </button>
+                </div>
                 <div v-if="showResults && (questionAnswers[index]?.operator || '')" class="absolute -top-2 -right-2 z-10">
                   <span class="h-6 w-6 bg-white rounded-full p-1 inline-flex items-center justify-center" :class="isFieldCorrect(index,'operator') ? 'text-green-600' : 'text-red-600'">
                     {{ isFieldCorrect(index,'operator') ? '✓' : '✕' }}
@@ -222,11 +279,12 @@ const fieldStyle = (questionIndex: number, field: string, value: string) => {
                     answerType="input"
                     :currentAnswer="questionAnswers[index]?.right || ''"
                     :correctAnswer="question.rightNumber.toString()"
-                    :showResults="showResults"
-                    placeholder="Count"
-                    :onInputChange="(v: string) => handleInputChange(index, 'right', v)"
-                    :className="cn('w-[100px] rounded-lg p-2', showResults ? 'border-none' : 'border border-picton-blue-500')"
-                  />
+                  :showResults="showResults"
+                  placeholder="Count"
+                  :onInputChange="(v: string) => handleInputChange(index, 'right', v)"
+                  :ariaLabel="ui.isSwahili ? `Hesabu ya upande wa kulia kwa swali la ${index + 1}` : `Right count for question ${index + 1}`"
+                  :className="cn('w-[100px] rounded-lg p-2', showResults ? 'border-none' : 'border border-picton-blue-500')"
+                />
                   <div v-if="showResults && (questionAnswers[index]?.right || '')" class="absolute -top-2 -right-2 z-10">
                     <span class="h-6 w-6 bg-white rounded-full p-1 inline-flex items-center justify-center" :class="isFieldCorrect(index,'right') ? 'text-green-600' : 'text-red-600'">
                       {{ isFieldCorrect(index,'right') ? '✓' : '✕' }}
@@ -236,6 +294,7 @@ const fieldStyle = (questionIndex: number, field: string, value: string) => {
                 <QuantityRenderer
                   :count="question.rightNumber"
                   :image="question.leftImage"
+                  :summary-label="ui.isSwahili ? `Kundi la kulia lina vitu ${question.rightNumber}` : `Right group has ${question.rightNumber} items`"
                   :maxItemsPerRow="7"
                   className="sm:max-w-[350px] xl:max-w-full flex-wrap"
                 />
@@ -272,5 +331,5 @@ const fieldStyle = (questionIndex: number, field: string, value: string) => {
         />
       </div>
     </DNDContext>
-  </div>
+  </section>
 </template>

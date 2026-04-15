@@ -68,6 +68,7 @@ const answers = ref<{
   second: [],
   third: [],
 });
+const activityInstructionsId = "in-which-box-instructions";
 
 const currentQuestion = computed(() => props.questions);
 
@@ -193,8 +194,22 @@ const resetActivity = () => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="in-which-box-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="in-which-box-title" class="sr-only">
+      {{ currentQuestion.title }}
+    </h2>
     <ActivityTitle :title="currentQuestion.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye chaguo na visanduku. Chagua kipengee kwa enter au space, kisha chagua kisanduku cha kukiweka."
+          : "Use Tab to move through the options and boxes. Select an item with Enter or Space, then choose the box where you want to place it."
+      }}
+    </p>
 
     <div
       v-if="!showResults"
@@ -214,10 +229,12 @@ const resetActivity = () => {
           v-for="option in remainingOptions"
           :key="option.id"
           type="button"
+          :aria-pressed="selectedOptionId === option.id"
+          :aria-label="ui.isSwahili ? `Chagua ${typeof option.content === 'string' ? option.content : option.content.title || option.id}` : `Choose ${typeof option.content === 'string' ? option.content : option.content.title || option.id}`"
           :class="
             cn(
               'flex flex-col items-center justify-center rounded-md border text-center text-gray-900 shadow-sm transition select-none',
-              'touch-manipulation',
+              'touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
               isPicsTwoBoxes
                 ? [
                     'box-border h-32 min-h-32 max-h-32 min-w-0 w-full flex-col items-center justify-center rounded-xl p-3',
@@ -281,9 +298,11 @@ const resetActivity = () => {
           <button
             v-for="(answer, index) in answers.first"
             :key="`first-${index}`"
+            type="button"
+            :aria-label="answer ? `${currentQuestion.firstOption.title}: ${typeof answer.content === 'string' ? answer.content : answer.content.title || answer.id}` : `${currentQuestion.firstOption.title} empty slot ${index + 1}`"
             :class="
               cn(
-                'relative flex h-32 flex-col items-center justify-center rounded-xl border-2 border-dashed p-3 text-center transition',
+                'relative flex h-32 flex-col items-center justify-center rounded-xl border-2 border-dashed p-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                 answer
                   ? showResults && props.feedback !== 'none'
                     ? isCorrectInBox(answer, 'first')
@@ -322,9 +341,11 @@ const resetActivity = () => {
           <button
             v-for="(answer, index) in answers.second"
             :key="`second-${index}`"
+            type="button"
+            :aria-label="answer ? `${currentQuestion.secondOption.title}: ${typeof answer.content === 'string' ? answer.content : answer.content.title || answer.id}` : `${currentQuestion.secondOption.title} empty slot ${index + 1}`"
             :class="
               cn(
-                'relative flex h-32 flex-col items-center justify-center rounded-xl border-2 border-dashed p-3 text-center transition',
+                'relative flex h-32 flex-col items-center justify-center rounded-xl border-2 border-dashed p-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                 answer
                   ? showResults && props.feedback !== 'none'
                     ? isCorrectInBox(answer, 'second')
@@ -363,9 +384,11 @@ const resetActivity = () => {
           <button
             v-for="(answer, index) in answers.third"
             :key="`third-${index}`"
+            type="button"
+            :aria-label="answer ? `${currentQuestion.thirdOption.title}: ${typeof answer.content === 'string' ? answer.content : answer.content.title || answer.id}` : `${currentQuestion.thirdOption.title} empty slot ${index + 1}`"
             :class="
               cn(
-                'relative flex h-32 flex-col items-center justify-center rounded-xl border-2 border-dashed p-3 text-center transition',
+                'relative flex h-32 flex-col items-center justify-center rounded-xl border-2 border-dashed p-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                 answer
                   ? showResults && props.feedback !== 'none'
                     ? isCorrectInBox(answer, 'third')
@@ -419,5 +442,5 @@ const resetActivity = () => {
         }
       "
     />
-  </div>
+  </section>
 </template>

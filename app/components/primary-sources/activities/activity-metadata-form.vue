@@ -49,39 +49,39 @@ const handleSubmit = () => {
     <CardContent class="space-y-4">
       <div class="grid gap-4 md:grid-cols-2">
         <div class="space-y-2">
-          <label class="text-sm font-medium text-oceanBlue">Activity Name</label>
-          <Input v-model="metadata.activityName" placeholder="Activity name" />
+          <label class="text-sm font-medium text-oceanBlue" for="activity-name">Activity Name</label>
+          <Input id="activity-name" v-model="metadata.activityName" placeholder="Activity name" />
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium text-oceanBlue">Sub Topic</label>
-          <Input v-model="metadata.subTopic" placeholder="Sub topic" />
+          <label class="text-sm font-medium text-oceanBlue" for="sub-topic">Sub Topic</label>
+          <Input id="sub-topic" v-model="metadata.subTopic" placeholder="Sub topic" />
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium text-oceanBlue">Grade ID</label>
-          <Input v-model="metadata.gradeId" placeholder="e.g. 4" />
+          <label class="text-sm font-medium text-oceanBlue" for="grade-id">Grade ID</label>
+          <Input id="grade-id" v-model="metadata.gradeId" placeholder="e.g. 4" />
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium text-oceanBlue">Subject ID</label>
-          <Input v-model="metadata.subjectId" placeholder="e.g. 12" />
+          <label class="text-sm font-medium text-oceanBlue" for="subject-id">Subject ID</label>
+          <Input id="subject-id" v-model="metadata.subjectId" placeholder="e.g. 12" />
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium text-oceanBlue">Topic ID</label>
-          <Input v-model="metadata.topicId" placeholder="e.g. 38" />
+          <label class="text-sm font-medium text-oceanBlue" for="topic-id">Topic ID</label>
+          <Input id="topic-id" v-model="metadata.topicId" placeholder="e.g. 38" />
         </div>
 
         <div class="space-y-2">
-          <label class="text-sm font-medium text-oceanBlue">Summary Image Path</label>
-          <Input v-model="metadata.summaryPath" placeholder="/uploads/activity-image.png" />
+          <label class="text-sm font-medium text-oceanBlue" for="summary-path">Summary Image Path</label>
+          <Input id="summary-path" v-model="metadata.summaryPath" placeholder="/uploads/activity-image.png" />
         </div>
       </div>
 
       <div class="space-y-2">
-        <label class="text-sm font-medium text-oceanBlue">Summary</label>
-        <Textarea v-model="metadata.summary" class="min-h-[96px]" placeholder="Optional summary shown in Learn More" />
+        <label class="text-sm font-medium text-oceanBlue" for="summary">Summary</label>
+        <Textarea id="summary" v-model="metadata.summary" class="min-h-[96px]" placeholder="Optional summary shown in Learn More" />
       </div>
 
       <label class="flex items-center gap-3 rounded-xl border border-oceanBlue/10 bg-sky-50 px-4 py-3 text-sm text-oceanBlue">

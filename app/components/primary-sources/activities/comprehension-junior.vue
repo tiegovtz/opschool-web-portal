@@ -55,6 +55,7 @@ const attemptedQuestions = ref<Record<number, string[]>>({});
 const correctAnswers = ref<Record<number, boolean>>({});
 const isCheckingAnswers = ref(false);
 const allUserAnswers = ref<Record<number, string[]>>({});
+const instructionsId = "comprehension-junior-instructions";
 
 const shouldUseBatchAI = computed(
   () =>
@@ -384,11 +385,18 @@ const closeResultsDialog = (open: boolean) => {
 
   showResults.value = true;
 };
+
+const getInputLabel = (questionText: string, answerIndex: number) =>
+  `Answer ${answerIndex + 1} for question: ${questionText.replace(/___/g, "blank")}`;
 </script>
 
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Read the notes, then answer each question. Use the Tab key to move between the answer fields
+      and the next or check answer button.
+    </p>
 
     <div
       v-if="showResults"
@@ -578,6 +586,7 @@ const closeResultsDialog = (open: boolean) => {
 
         <div
           class="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm md:p-6"
+          :aria-describedby="instructionsId"
         >
           <div
             v-if="currentQuestion"
@@ -608,7 +617,9 @@ const closeResultsDialog = (open: boolean) => {
                     >
                       <Input
                         :model-value="currentAnswers[partIndex] || ''"
-                        class="rounded-none border-none bg-transparent px-0 text-center text-lg text-picton-blue-700 shadow-none"
+                        :aria-label="getInputLabel(currentQuestion.question, partIndex)"
+                        :aria-describedby="instructionsId"
+                        class="rounded-none border-none bg-transparent px-0 text-center text-lg text-picton-blue-700 shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
                         @update:model-value="
                           (value) => setAnswer(partIndex, value)
                         "
@@ -629,7 +640,9 @@ const closeResultsDialog = (open: boolean) => {
                   <div class="mt-3">
                     <Input
                       :model-value="currentAnswers[0] || ''"
-                      class="rounded-none border-none bg-transparent px-0 text-center text-lg text-picton-blue-700 shadow-none"
+                      :aria-label="getInputLabel(currentQuestion.question, 0)"
+                      :aria-describedby="instructionsId"
+                      class="rounded-none border-none bg-transparent px-0 text-center text-lg text-picton-blue-700 shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
                       @update:model-value="(value) => setAnswer(0, value)"
                     />
                     <div
@@ -646,7 +659,7 @@ const closeResultsDialog = (open: boolean) => {
             >
               <img
                 :src="currentQuestion.image"
-                alt="Comprehension question"
+                :alt="`Image for question ${activeQuestion + 1}`"
                 class="mx-auto max-h-72 w-full object-contain"
               />
             </div>
@@ -698,6 +711,7 @@ const closeResultsDialog = (open: boolean) => {
             isCheckingAnswers
           "
           class="group gap-2"
+          :aria-describedby="instructionsId"
           @click="
             shouldUseBatchAI && activeQuestion < shuffledIndexes.length - 1
               ? handleNextQuestion()

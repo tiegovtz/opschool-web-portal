@@ -5,3 +5,14 @@ export interface AuthResponse {
     refresh_token:string;
     user:User
 }
+
+export interface StudentPremLookupResponse {
+    premNumber: string | number;
+    firstName: string;
+    lastName: string;
+    dob: string;
+    sex: string;
+    classLevel: string;
+    schoolName: string;
+    schoolRegNo: string;
+}

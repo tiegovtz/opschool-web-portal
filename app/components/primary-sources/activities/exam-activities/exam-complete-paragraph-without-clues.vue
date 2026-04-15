@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import ActivityTitle from "~/components/templates/activity-title";
 import { Input } from "~/components/ui/input";
 import { cn } from "~/utilities/utils";
 import { AnswerChecker } from "~/lib/utils/answer-checker";
@@ -22,12 +23,15 @@ type ExamCompleteParagraphWithoutCluesProps = {
 const props = defineProps<ExamCompleteParagraphWithoutCluesProps>();
 
 const answerChecker = new AnswerChecker();
+const ui = useActivityUiText();
 const userAnswers = ref<string[]>(Array.from({ length: props.questions.answers.length }, () => ""));
 
 const { collectAnswers, updateActivityScore } = useExamContext();
 
 const totalQuestions = computed(() => props.questions.answers.length);
 const paragraphParts = computed(() => props.questions.paragraph.split("___"));
+const activityInstructionsId = "exam-complete-paragraph-instructions";
+const activityOptionsId = "exam-complete-paragraph-options";
 
 const calculateScore = () => {
   let score = 0;
@@ -89,7 +93,22 @@ const handleInputChange = (index: number, value: string | number) => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col rounded-xl">
+  <section
+    class="flex h-full flex-col rounded-xl"
+    aria-labelledby="exam-complete-paragraph-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="exam-complete-paragraph-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
+    <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye nafasi za aya na uandike jibu katika kila nafasi."
+          : "Use Tab to move through the paragraph blanks and type an answer in each blank."
+      }}
+    </p>
     <div class="h-full min-h-[400px] md:grid md:grid-cols-3">
       <div
         :class="
@@ -100,18 +119,28 @@ const handleInputChange = (index: number, value: string | number) => {
         "
       >
         <div v-if="props.questions.withClues && props.questions.options?.length">
-          <div class="flex w-fit flex-wrap gap-2 rounded border-2 border-picton-blue-300 bg-picton-blue-100 py-4">
+          <div
+            :id="activityOptionsId"
+            class="flex w-fit flex-wrap gap-2 rounded border-2 border-picton-blue-300 bg-picton-blue-100 py-4"
+            role="group"
+            :aria-label="ui.availableClueWords.value"
+          >
             <span
               v-for="option in props.questions.options"
               :key="option"
               class="px-3 text-base leading-4 text-picton-blue-700"
+              tabindex="0"
             >
               {{ option }}
             </span>
           </div>
         </div>
 
-        <div class="text-lg leading-loose">
+        <div
+          class="text-lg leading-loose"
+          role="group"
+          :aria-describedby="props.questions.withClues && props.questions.options?.length ? activityOptionsId : activityInstructionsId"
+        >
           <template v-for="(part, index) in paragraphParts" :key="`${index}-${part}`">
             <span>{{ part }}</span>
             <span
@@ -122,6 +151,7 @@ const handleInputChange = (index: number, value: string | number) => {
                 type="text"
                 :model-value="userAnswers[index]"
                 class="max-w-40 rounded-none border-none bg-transparent text-center !text-lg text-picton-blue-700 focus:bg-picton-blue-50"
+                :aria-label="ui.isSwahili ? `Nafasi ya ${index + 1}` : `Blank ${index + 1}`"
                 @update:model-value="(value) => handleInputChange(index, value)"
               />
               <div class="border-b border-dashed border-picton-blue-700" />
@@ -136,10 +166,10 @@ const handleInputChange = (index: number, value: string | number) => {
       >
         <img
           :src="props.questions.image"
-          alt="Activity illustration"
+          :alt="ui.isSwahili ? 'Picha ya shughuli' : 'Activity illustration'"
           class="max-h-[400px] w-full rounded-lg object-contain"
         >
       </div>
     </div>
-  </div>
+  </section>
 </template>

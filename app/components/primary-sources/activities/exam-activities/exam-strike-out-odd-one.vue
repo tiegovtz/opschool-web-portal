@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import ActivityTitle from "~/components/templates/activity-title";
 import { cn } from "~/utilities/utils";
 import { useExamContext } from "~/shared/context/exam-context";
 
@@ -31,12 +32,14 @@ type ExamStrikeOutOddOneProps = {
 
 const props = defineProps<ExamStrikeOutOddOneProps>();
 
+const ui = useActivityUiText();
 const userSelections = ref<UserSelection[]>(
   props.questions.questions.map((question) => ({
     questionId: question.id,
     selectedWordId: null,
   })),
 );
+const activityInstructionsId = "exam-strike-out-instructions";
 
 const { collectAnswers, updateActivityScore } = useExamContext();
 
@@ -114,9 +117,24 @@ const gridClass = (wordCount: number) => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col rounded-b-xl bg-white shadow-sm">
+  <section
+    class="flex h-full flex-col rounded-b-xl bg-white shadow-sm"
+    aria-labelledby="exam-strike-out-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="exam-strike-out-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
+    <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila kundi la maneno. Tumia enter au space kuchagua neno lisilofaa."
+          : "Use Tab to move through each word group. Use Enter or Space to choose the odd word out."
+      }}
+    </p>
     <div class="flex-1 overflow-y-auto p-6">
-      <div class="space-y-6">
+      <div class="space-y-6" role="list" :aria-label="ui.question.value">
         <div
           v-for="(question, questionIndex) in props.questions.questions"
           :key="question.id"
@@ -128,6 +146,8 @@ const gridClass = (wordCount: number) => {
                 : 'border-gray-200 bg-gray-50',
             )
           "
+          role="listitem"
+          :aria-labelledby="`exam-strike-out-question-${question.id}`"
         >
           <div
             :class="
@@ -142,11 +162,18 @@ const gridClass = (wordCount: number) => {
             {{ questionIndex + 1 }}
           </div>
 
-          <div :class="cn('grid flex-1 gap-4', gridClass(question.words.length))">
+          <div
+            :id="`exam-strike-out-question-${question.id}`"
+            :class="cn('grid flex-1 gap-4', gridClass(question.words.length))"
+            role="group"
+            :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}` : `Question ${questionIndex + 1}`"
+          >
             <button
-              v-for="word in question.words"
+              v-for="(word, wordIndex) in question.words"
               :key="word.id"
               type="button"
+              :aria-pressed="isWordSelected(question.id, word.id)"
+              :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, neno la ${wordIndex + 1}: ${word.text}` : `Question ${questionIndex + 1}, word ${wordIndex + 1}: ${word.text}`"
               :class="
                 cn(
                   'relative flex min-h-[60px] items-center justify-center rounded-lg border p-4 text-center font-medium shadow-sm transition-all duration-300 hover:shadow-md',
@@ -169,5 +196,5 @@ const gridClass = (wordCount: number) => {
         </div>
       </div>
     </div>
-  </div>
+  </section>
 </template>

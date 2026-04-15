@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
+import ActivityTitle from "@/components/templates/activity-title";
+import ActivityResults from "@/components/templates/results";
+import { Button } from "~/components/ui/button";
 
 // DND
 import { DndProvider } from "vue3-dnd";
@@ -27,6 +30,7 @@ const props = defineProps<{
   };
 }>();
 
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const questionsData = ref(
@@ -40,6 +44,8 @@ const questionsData = ref(
 const score = ref(0);
 const allAnswered = ref(false);
 const showResults = ref(false);
+const activityInstructionsId = "complete-sentences-rearrange-dragging-instructions";
+const selectedWord = ref<{ questionId: string; word: string } | null>(null);
 
 // ✅ Watch instead of useEffect
 watch(
@@ -92,6 +98,37 @@ function handleDrop(questionId: string, index: number, word: string) {
   });
 }
 
+function handleWordSelect(questionId: string, word: string) {
+  if (showResults.value || !word) return;
+  selectedWord.value =
+    selectedWord.value?.questionId === questionId && selectedWord.value.word === word
+      ? null
+      : { questionId, word };
+}
+
+function placeSelectedWord(questionId: string, index: number) {
+  if (!selectedWord.value || showResults.value) return;
+  handleDrop(questionId, index, selectedWord.value.word);
+  selectedWord.value = null;
+}
+
+function removePlacedWord(questionId: string, index: number, word: string) {
+  if (showResults.value) return;
+
+  questionsData.value = questionsData.value.map((q) => {
+    if (q.id !== questionId) return q;
+    const newAnswer = q.answer.map((value, answerIndex) => (answerIndex === index ? "" : value));
+    const newQuestion = [...q.question, word];
+    return {
+      ...q,
+      question: shuffle(newQuestion.filter(Boolean)),
+      answer: newAnswer,
+    };
+  });
+
+  allAnswered.value = false;
+}
+
 function resetActivity() {
   allAnswered.value = false;
   score.value = 0;
@@ -102,43 +139,102 @@ function resetActivity() {
     question: shuffle([...q.question]),
     answer: Array(q.answer.length).fill(""),
   }));
+  selectedWord.value = null;
 }
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
-    <h2 class="text-xl font-bold">{{ questionsList.title }}</h2>
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="complete-sentences-rearrange-dragging-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="complete-sentences-rearrange-dragging-title" class="sr-only">
+      {{ questionsList.title }}
+    </h2>
+    <ActivityTitle :title="questionsList.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{ ui.isSwahili
+        ? "Panga maneno kwa mpangilio sahihi. Unaweza kuburuta, au kutumia Tab kuchagua neno kisha kubonyeza nafasi inayofaa kuliweka. Bonyeza neno lililowekwa kuliondoa."
+        : "Rearrange the words into the correct order. You can drag, or use Tab to select a word and then activate the matching blank to place it. Activate a placed word to remove it." }}
+    </p>
 
     <!-- DND Provider -->
     <DndProvider :backend="isMobile ? TouchBackend : HTML5Backend">
-      <div class="flex-1 flex flex-col gap-10">
-        <div v-for="(question, i) in questionsList.questions" :key="question.id" class="p-4 rounded-lg bg-white">
-          <p>{{ i + 1 }}.</p>
+      <div v-if="!showResults" class="flex-1 flex flex-col gap-10" role="list" :aria-label="ui.sentenceRearrangeQuestions.value">
+        <div
+          v-for="(question, i) in questionsList.questions"
+          :key="question.id"
+          class="p-4 rounded-lg bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+          role="listitem"
+          tabindex="0"
+          :aria-labelledby="`complete-sentences-rearrange-dragging-question-${question.id}`"
+        >
+          <p :id="`complete-sentences-rearrange-dragging-question-${question.id}`">{{ i + 1 }}.</p>
 
           <!-- WORD BANK -->
-          <div class="flex gap-2">
-            <Draggable v-for="(word, index) in question.question" :key="index" :word="word" :questionId="question.id"
-              :id="`draggable-item-${index}`"><template>
-                {{ word }}
-              </template>
-            </Draggable>
+          <div class="flex gap-2" role="group" :aria-label="ui.isSwahili ? `Swali la ${i + 1} benki ya maneno` : `Question ${i + 1} word bank`">
+            <button
+              v-for="(word, index) in question.question"
+              :key="index"
+              type="button"
+              :aria-describedby="activityInstructionsId"
+              :aria-pressed="selectedWord?.questionId === question.id && selectedWord?.word === word"
+              :class="[
+                'rounded border border-picton-blue-400 bg-picton-blue-200 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2',
+                selectedWord?.questionId === question.id && selectedWord?.word === word ? 'ring-2 ring-picton-blue-500 ring-offset-2' : '',
+              ]"
+              @click="handleWordSelect(question.id, word)"
+            >
+              {{ word }}
+            </button>
           </div>
 
           <!-- ANSWERS -->
           <div class="flex gap-2 mt-4">
             <template v-for="(slot, index) in question.answer" :key="index">
-              <Draggable v-if="slot" :word="slot" :questionId="question.id" :id="`draggable-item-${index}`">
-                <template>
-                  {{ slot }}
-                </template>
-              </Draggable>
+              <button
+                v-if="slot"
+                type="button"
+                :aria-describedby="activityInstructionsId"
+                :aria-label="ui.isSwahili ? `Neno ${slot} limewekwa kwenye nafasi ya ${index + 1}. Bonyeza kuliondoa.` : `Placed word ${slot} in slot ${index + 1}. Activate to remove it.`"
+                class="rounded border border-lemon-400 bg-lemon-100 px-3 py-2 text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+                :disabled="showResults"
+                @click="removePlacedWord(question.id, index, slot)"
+              >
+                {{ slot }}
+              </button>
 
-              <Droppable v-else :id="`droppable-item${question.id}`" :questionId="question.id" :index="index"
-                @drop="handleDrop" />
+              <button
+                v-else
+                type="button"
+                :aria-describedby="activityInstructionsId"
+                :aria-label="
+                  selectedWord
+                    ? `Empty slot ${index + 1}. Activate to place ${selectedWord.word}.`
+                    : `Empty slot ${index + 1}. Select a word first.`
+                "
+                class="min-h-10 min-w-24 rounded border border-picton-blue-300 bg-picton-blue-100 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+                @click="placeSelectedWord(question.id, index)"
+              >
+                <span class="text-sm text-picton-blue-700">
+                  {{ selectedWord ? `Place ${selectedWord.word}` : "Blank" }}
+                </span>
+              </button>
             </template>
           </div>
         </div>
+
+        <div v-if="allAnswered" class="flex justify-end">
+          <Button variant="brand-lemon" :aria-describedby="activityInstructionsId" @click="showResults = true">
+            {{ ui.viewResults }}
+          </Button>
+        </div>
+      </div>
+
+      <div v-else class="bg-picton-blue-100 p-4 rounded-xl space-y-4" role="region" :aria-label="ui.sentenceRearrangeResults.value">
+        <ActivityResults :score="score" :total="questionsList.questions.length" :onRestart="resetActivity" />
       </div>
     </DndProvider>
-  </div>
+  </section>
 </template>

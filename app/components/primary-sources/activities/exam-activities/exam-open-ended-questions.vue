@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { refDebounced } from "@vueuse/core";
+import ActivityTitle from "~/components/templates/activity-title";
 import { Textarea } from "~/components/ui/textarea";
 import { ImageModal } from "~/components/ui/image-modal";
 import { AnswerChecker } from "~/lib/utils/answer-checker";
@@ -51,11 +52,13 @@ type ExamOpenEndedQuestionsProps = {
 const props = defineProps<ExamOpenEndedQuestionsProps>();
 
 const answerChecker = new AnswerChecker();
+const ui = useActivityUiText();
 const { collectAnswers, updateActivityScore } = useExamContext();
 
 const answers = ref<Record<string, string>>({});
 const isCalculatingScore = ref(false);
 const debouncedAnswers = refDebounced(answers, 500);
+const activityInstructionsId = "exam-open-ended-instructions";
 
 const totalQuestions = computed(() =>
   props.questions.questions.reduce(
@@ -288,16 +291,31 @@ watch(
 </script>
 
 <template>
-  <div
+  <section
     class="flex h-full flex-col rounded-b-xl bg-white shadow-sm"
+    aria-labelledby="exam-open-ended-title"
+    :aria-describedby="activityInstructionsId"
     :style="{ fontSize: props.questions.fontSize ? `${props.questions.fontSize}px` : '18px' }"
   >
+    <h2 id="exam-open-ended-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
+    <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila swali na sehemu ya kuandika jibu. Andika majibu yako katika nafasi zilizotolewa."
+          : "Use Tab to move through each question and answer field. Type your responses in the spaces provided."
+      }}
+    </p>
     <div class="flex-1 overflow-y-auto p-2 md:p-6">
-      <div class="space-y-8">
+      <div class="space-y-8" role="list" :aria-label="ui.question.value">
         <div
           v-for="(question, questionIndex) in props.questions.questions"
           :key="question.id"
-          class="rounded-lg border bg-neutral-50 p-2 md:p-6"
+          class="rounded-lg border bg-neutral-50 p-2 focus-within:ring-2 focus-within:ring-picton-blue-400 md:p-6"
+          role="listitem"
+          :aria-labelledby="`exam-open-ended-question-${question.id}`"
         >
           <div
             :class="
@@ -307,7 +325,11 @@ watch(
             "
           >
             <div class="mb-4">
-              <h4 v-if="Number.parseInt(question.questionNumber, 10) < 100" class="mr-2 inline font-bold">
+              <h4
+                v-if="Number.parseInt(question.questionNumber, 10) < 100"
+                :id="`exam-open-ended-question-${question.id}`"
+                class="mr-2 inline font-bold"
+              >
                 {{ question.questionNumber }}
               </h4>
               <p
@@ -320,7 +342,7 @@ watch(
             <div v-if="question.imagePath" class="mb-4">
               <ImageModal
                 :src="question.imagePath"
-                :alt="`Question ${question.questionNumber} image`"
+                :alt="ui.isSwahili ? `Picha ya swali ${question.questionNumber}` : `Question ${question.questionNumber} image`"
                 class="h-auto w-full max-w-md cursor-pointer rounded-lg border border-neutral-200 shadow-sm transition-opacity hover:opacity-80"
               />
             </div>
@@ -330,6 +352,7 @@ watch(
                 <Textarea
                   :model-value="answerValue(`${question.id}-answer`)"
                   class="min-h-[40px] bg-white focus:border-picton-blue-500"
+                  :aria-label="ui.isSwahili ? `Jibu la swali ${question.questionNumber}` : `Answer for question ${question.questionNumber}`"
                   :class="
                     cn({
                       'border-picton-blue-400 bg-picton-blue-50/30':
@@ -371,6 +394,7 @@ watch(
                     <Textarea
                       :model-value="answerValue(`${part.id}-answer`)"
                       class="min-h-[40px] bg-white focus:border-picton-blue-500"
+                      :aria-label="ui.isSwahili ? `Jibu la sehemu ${part.partLabel}` : `Answer for part ${part.partLabel}`"
                       :class="
                         cn({
                           'border-picton-blue-400 bg-picton-blue-50/30':
@@ -411,6 +435,7 @@ watch(
                           <Textarea
                             :model-value="answerValue(subQuestion.id)"
                             class="min-h-[40px] bg-white focus:border-picton-blue-500"
+                            :aria-label="ui.isSwahili ? `Jibu la ${subQuestion.subLabel}` : `Answer for ${subQuestion.subLabel}`"
                             :class="
                               cn({
                                 'border-picton-blue-400 bg-picton-blue-50/30':
@@ -442,5 +467,5 @@ watch(
         </div>
       </div>
     </div>
-  </div>
+  </section>
 </template>

@@ -52,6 +52,7 @@ const answerRecords = ref<AnswerRecord[]>([]);
 const showResults = ref(false);
 const validationError = ref<string | null>(null);
 const questionsData = ref(props.questions);
+const instructionsId = "place-values-matrix-instructions";
 
 const getExtendedPlaceValueNames = (numDigits: number) => {
   const baseNames = [
@@ -241,6 +242,10 @@ const getRowClassName = (questionIndex: number) => {
 <template>
   <div class="relative flex h-full flex-col">
     <ActivityTitle :title="questionsData.title" />
+    <p :id="instructionsId" class="sr-only">
+      Enter the correct digit for each place value in the table. Use the Tab key to move through
+      the cells, then activate the check answers button when all cells are filled.
+    </p>
 
     <div
       v-if="validationError"
@@ -251,7 +256,7 @@ const getRowClassName = (questionIndex: number) => {
 
     <div class="flex flex-1 flex-col justify-center">
       <div class="h-full w-full pb-4">
-        <Table>
+        <Table :aria-describedby="instructionsId">
           <TableHeader>
             <TableRow class="bg-picton-blue-50">
               <TableHead class="whitespace-nowrap text-center font-bold text-picton-blue-800">Number</TableHead>
@@ -297,7 +302,9 @@ const getRowClassName = (questionIndex: number) => {
                   type="text"
                   maxlength="1"
                   :disabled="showFeedback"
-                  class="mx-auto w-20 text-center !text-xl"
+                  :aria-label="`Question ${questionIndex + 1}, ${placeValue} digit for ${question.number}`"
+                  :aria-describedby="instructionsId"
+                  class="mx-auto w-20 text-center !text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
                   @update:model-value="
                     (value) => handlePlaceValueInput(questionIndex, placeValue, String(value ?? ''))
                   "
@@ -343,6 +350,7 @@ const getRowClassName = (questionIndex: number) => {
     <div v-else-if="!showFeedback" class="mb-4 flex justify-center">
       <Button
         variant="brand-lemon"
+        :aria-describedby="instructionsId"
         @click="checkAnswers"
         class="group gap-2"
       >

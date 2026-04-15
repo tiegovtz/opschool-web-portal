@@ -29,7 +29,12 @@ const config = computed(() =>
     :on-submit="props.onSubmit"
   />
 
-  <div v-else-if="props.activityType" class="rounded-2xl border border-red-200 bg-red-50 p-6">
+  <div
+    v-else-if="props.activityType"
+    class="rounded-2xl border border-red-200 bg-red-50 p-6"
+    role="alert"
+    aria-live="polite"
+  >
     <h3 class="font-semibold text-red-800">Form configuration missing</h3>
     <p class="mt-2 text-sm text-red-700">
       This activity type is not registered in the activity type config.

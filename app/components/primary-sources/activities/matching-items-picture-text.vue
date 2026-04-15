@@ -49,6 +49,8 @@ const { playSound } = useSoundEffects();
 const { width } = useWindowSize();
 
 const boardRef = ref<HTMLElement | null>(null);
+const instructionsId = "matching-items-picture-text-instructions";
+const statusId = "matching-items-picture-text-status";
 const SCROLL_EDGE_THRESHOLD = 72;
 const SCROLL_STEP = 28;
 const DRAG_START_THRESHOLD = 6;
@@ -187,6 +189,57 @@ const getItemValue = (item?: MatchingItem | null) => {
   if (typeof item.content === "string") return item.content;
   if ("imageSrc" in item.content) return item.content.imageSrc;
   return "";
+};
+
+const getItemLabel = (item?: MatchingItem | null) => {
+  if (!item) return "item";
+  if (typeof item.content === "string") return item.content;
+  if ("imageSrc" in item.content) return `Image item ${item.id}`;
+  if ("color" in item.content) return `${item.content.color} item`;
+  return `Item ${item.id}`;
+};
+
+const getLeftItemAriaLabel = (item: MatchingItem) => {
+  const label = getItemLabel(item);
+  const connection = connectionByStartKey(`left-${item.id}`);
+
+  if (showResults.value && connection) {
+    return `${label}. ${connection.isCorrect ? "Matched correctly." : "Matched incorrectly."}`;
+  }
+
+  if (selectedLeftId.value === item.id) {
+    return `${label}. Selected. Choose a matching item from the right column.`;
+  }
+
+  if (connection) {
+    const rightItemId = connection["end-key"].replace(/^right-/, "");
+    const rightItem = shuffledRightItems.value.find((candidate) => candidate.id === rightItemId);
+    return `${label}. Currently matched with ${getItemLabel(rightItem)}. Activate to change the match.`;
+  }
+
+  return `${label}. Activate to select this item for matching.`;
+};
+
+const getRightItemAriaLabel = (item: MatchingItem) => {
+  const label = getItemLabel(item);
+  const connection = connectionByEndKey(`right-${item.id}`);
+
+  if (showResults.value && connection) {
+    return `${label}. ${connection.isCorrect ? "Matched correctly." : "Matched incorrectly."}`;
+  }
+
+  if (selectedLeftId.value) {
+    const leftItem = leftItems.value.find((candidate) => candidate.id === selectedLeftId.value);
+    return `${label}. Activate to match with ${getItemLabel(leftItem)}.`;
+  }
+
+  if (connection) {
+    const leftItemId = connection["start-key"].replace(/^left-/, "");
+    const leftItem = leftItems.value.find((candidate) => candidate.id === leftItemId);
+    return `${label}. Currently matched with ${getItemLabel(leftItem)}. Select an item from the left column to change the match.`;
+  }
+
+  return `${label}. Select an item from the left column first.`;
 };
 
 const getRelativePoint = (clientX: number, clientY: number): Point | null => {
@@ -455,6 +508,11 @@ const handleRightItemSelect = (rightId: string) => {
   selectedLeftId.value = null;
 };
 
+const handleLeftItemActivate = (leftId: string) => {
+  if (showResults.value || timeUp.value) return;
+  selectedLeftId.value = selectedLeftId.value === leftId ? null : leftId;
+};
+
 onBeforeUnmount(() => {
   finishPointerInteraction();
 });
@@ -618,11 +676,24 @@ const liveDragLine = computed(() => {
   >
     <div class="flex h-full flex-col text-lg">
       <ActivityTitle :title="props.questions.title" />
+      <p :id="instructionsId" class="sr-only">
+        Match each item on the left with the correct item on the right. You can drag with a pointer,
+        or use the Tab key to move between items. Activate a left item to select it, then activate a
+        right item to complete the match.
+      </p>
+      <p :id="statusId" class="sr-only" aria-live="polite">
+        {{
+          selectedLeftId
+            ? `${getItemLabel(leftItems.find((item) => item.id === selectedLeftId))} selected. Choose a matching item from the right column.`
+            : "No item selected."
+        }}
+      </p>
 
       <div
         ref="boardRef"
         class="relative flex h-full justify-between overflow-scroll no-scrollbar md:p-4"
         :style="{ fontSize: boardFontSize }"
+        :aria-describedby="`${instructionsId} ${statusId}`"
       >
         <div
           :class="
@@ -634,13 +705,14 @@ const liveDragLine = computed(() => {
             })
           "
         >
-          <div
+          <button
             v-for="item in leftItems"
             :id="`left-${item.id}`"
             :key="item.id"
+            type="button"
             :class="
               cn(
-                'relative flex w-full select-none items-center justify-center rounded-lg bg-picton-blue-200 p-1 md:p-4',
+                'relative flex w-full select-none items-center justify-center rounded-lg bg-picton-blue-200 p-1 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2 md:p-4',
                 props.questions.category === 'text-to-text' && 'min-h-20',
                 !showResults && !timeUp && 'cursor-grab active:cursor-grabbing',
                 !showResults && selectedLeftId === item.id && 'ring-2 ring-picton-blue-500 ring-offset-2',
@@ -650,20 +722,25 @@ const liveDragLine = computed(() => {
                 showResults && connectionByStartKey(`left-${item.id}`) && !connectionByStartKey(`left-${item.id}`)?.isCorrect && 'border-2 border-red-300 bg-red-100',
               )
             "
+            :disabled="showResults || timeUp"
+            :aria-describedby="instructionsId"
+            :aria-label="getLeftItemAriaLabel(item)"
+            :aria-pressed="selectedLeftId === item.id"
             @pointerdown="handleLeftItemPointerDown($event, item.id)"
+            @click="handleLeftItemActivate(item.id)"
           >
             <span class="pointer-events-none">
               <div v-if="isImageItem(item)" class="max-h-[400px] w-20 md:w-36">
                 <img
                   :src="getItemValue(item)"
-                  :alt="item.id"
+                  :alt="getItemLabel(item)"
                   class="pointer-events-none h-full w-full select-none object-contain"
                   draggable="false"
                 >
               </div>
               <span v-else>{{ getItemValue(item) }}</span>
             </span>
-          </div>
+          </button>
         </div>
 
         <div
@@ -683,7 +760,7 @@ const liveDragLine = computed(() => {
             type="button"
             :class="
               cn(
-                'relative flex w-full items-center justify-start rounded-lg p-1 text-left md:p-4',
+                'relative flex w-full items-center justify-start rounded-lg p-1 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2 md:p-4',
                 (props.questions.category === 'text-to-text'
                   || props.questions.category === 'image-to-text') && 'min-h-20 p-2 leading-5 md:p-4',
                 props.questions.category === 'image-to-image' && '!justify-center',
@@ -697,13 +774,15 @@ const liveDragLine = computed(() => {
                 !showResults && hoverDropId !== `right-${item.id}` && !endKeyHasConnection(`right-${item.id}`) && 'bg-picton-blue-50',
               )
             "
-            :disabled="showResults"
+            :disabled="showResults || timeUp"
+            :aria-describedby="instructionsId"
+            :aria-label="getRightItemAriaLabel(item)"
             @click="handleRightItemSelect(item.id)"
           >
             <div v-if="isImageItem(item)" class="max-h-[400px] w-20 md:w-36">
               <img
                 :src="getItemValue(item)"
-                :alt="item.id"
+                :alt="getItemLabel(item)"
                 class="pointer-events-none h-full w-full select-none object-contain"
                 draggable="false"
               >

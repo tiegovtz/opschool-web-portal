@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import ActivityTitle from "~/components/templates/activity-title";
 import { cn } from "~/utilities/utils";
 import { useExamContext } from "~/shared/context/exam-context";
 
@@ -31,6 +32,7 @@ type ExamTableCheckBoxesProps = {
 
 const props = defineProps<ExamTableCheckBoxesProps>();
 
+const ui = useActivityUiText();
 const cellStates = ref<CellState[]>(
   props.questions.rowQuestions.flatMap((row) =>
     props.questions.columnQuestions.map((column) => ({
@@ -41,6 +43,7 @@ const cellStates = ref<CellState[]>(
     })),
   ),
 );
+const activityInstructionsId = "exam-table-checkboxes-instructions";
 
 const { collectAnswers, updateActivityScore } = useExamContext();
 
@@ -132,11 +135,26 @@ const hasRowAnswers = (rowId: string) =>
 </script>
 
 <template>
-  <div class="flex h-full flex-col rounded-b-xl bg-white shadow-sm">
+  <section
+    class="flex h-full flex-col rounded-b-xl bg-white shadow-sm"
+    aria-labelledby="exam-table-checkboxes-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="exam-table-checkboxes-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
+    <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila kisanduku cha jedwali. Tumia enter au space kuweka au kuondoa alama ya tiki."
+          : "Use Tab to move through each table checkbox. Use Enter or Space to check or uncheck it."
+      }}
+    </p>
     <div class="flex-1 overflow-y-auto p-4">
       <div class="space-y-4">
         <div class="overflow-x-auto rounded-lg border bg-gray-50">
-          <table class="w-full border-collapse">
+          <table class="w-full border-collapse" :aria-describedby="activityInstructionsId">
             <thead>
               <tr>
                 <th class="rounded-tl-lg bg-picton-blue-500 p-4 text-center font-semibold text-white" />
@@ -196,10 +214,16 @@ const hasRowAnswers = (rowId: string) =>
                       },
                     )
                   "
-                  @click="handleCellClick(row.id, column.id)"
                 >
                   <div class="flex h-12 items-center justify-center">
-                    <div
+                    <button
+                      type="button"
+                      :aria-pressed="getCellState(row.id, column.id)?.isChecked"
+                      :aria-label="ui.isSwahili ? `${row.text}, ${column.text}` : `${row.text}, ${column.text}`"
+                      class="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
+                      @click="handleCellClick(row.id, column.id)"
+                    >
+                      <div
                       :class="
                         cn(
                           'flex h-8 w-8 items-center justify-center rounded border-2 transition-all',
@@ -212,10 +236,12 @@ const hasRowAnswers = (rowId: string) =>
                       <span
                         v-if="getCellState(row.id, column.id)?.isChecked"
                         class="text-white"
+                        aria-hidden="true"
                       >
                         ✓
                       </span>
-                    </div>
+                      </div>
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -224,5 +250,5 @@ const hasRowAnswers = (rowId: string) =>
         </div>
       </div>
     </div>
-  </div>
+  </section>
 </template>
