@@ -178,13 +178,13 @@ const handleResetWithShuffle = () => {
     </p>
 
     <div
-      class="flex flex-col h-full bg-picton-blue-100 gap-2 text-lg"
+      class="flex h-full flex-col gap-3 bg-picton-blue-100 text-lg"
       :style="{ fontSize: props.questions.fontSize ? `${props.questions.fontSize}px` : undefined }"
     >
       <div
         v-if="props.questions.options && props.questions.options.length > 0"
         :id="activityOptionsId"
-        class="flex flex-wrap gap-4 border-2 border-picton-blue-300 bg-picton-blue-200 w-fit py-4 rounded"
+        class="flex w-full flex-wrap gap-3 rounded-xl border-2 border-picton-blue-300 bg-picton-blue-200 px-4 py-4 shadow-sm"
         role="group"
         :aria-label="ui.availableAnswerChoices.value"
       >
@@ -200,14 +200,14 @@ const handleResetWithShuffle = () => {
       </div>
 
       <div
-        class="flex-1 overflow-y-auto space-y-4 py-4"
+        class="flex-1 space-y-10 overflow-y-auto py-5"
         role="list"
         :aria-label="ui.completeSentenceQuestions.value"
       >
         <div
           v-for="(q, i) in shuffledQuestions"
           :key="q.id"
-          class="rounded-lg min-h-[80px] p-2 flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-100"
+          class="flex min-h-[280px] items-start rounded-2xl border border-picton-blue-200 p-7 shadow-sm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-100 md:p-8"
           role="listitem"
           tabindex="0"
           :aria-labelledby="`complete-sentence-question-${q.id}`"
@@ -221,38 +221,48 @@ const handleResetWithShuffle = () => {
             })
           "
         >
-          <div class="py-2 flex items-center justify-between w-full gap-4">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-2 w-full">
-              <div class="flex-1 min-w-0">
-                <span
-                  :id="`complete-sentence-question-${q.id}`"
-                  class="mr-1 font-medium text-picton-blue-800"
-                >
-                  {{ i + 1 }}.
-                </span>
-                <QuestionRenderer
-                  :question="q.question"
-                  :answers="q.answer"
-                  :user-answers="getCurrentAnswers(i)"
-                  :screen-width="width ?? 1024"
-                  :is-checked="checkedItems.includes(i)"
-                  :is-correct="feedbacks[i] === true"
-                  :disabled="checkedItems.includes(i)"
-                  @blank-change="(bi, val) => handleInputChange(i, bi, val)"
-                />
+          <div class="flex w-full items-start gap-8">
+            <div class="flex min-w-0 flex-1 flex-col gap-8">
+              <div class="min-w-0 rounded-xl bg-white px-7 py-7 shadow-sm md:px-8">
+                <div class="flex items-start gap-5">
+                  <span
+                    :id="`complete-sentence-question-${q.id}`"
+                    class="shrink-0 pt-1 text-2xl font-semibold text-picton-blue-900 md:text-4xl"
+                  >
+                    {{ i + 1 }}.
+                  </span>
+                  <div class="min-w-0 flex-1 text-[1.45rem] leading-loose text-picton-blue-950 md:text-[1.8rem]">
+                    <QuestionRenderer
+                      :question="q.question"
+                      :answers="q.answer"
+                      :user-answers="getCurrentAnswers(i)"
+                      :screen-width="width ?? 1024"
+                      :is-checked="checkedItems.includes(i)"
+                      :is-correct="feedbacks[i] === true"
+                      :disabled="checkedItems.includes(i)"
+                      @blank-change="(bi, val) => handleInputChange(i, bi, val)"
+                    />
+                  </div>
+                </div>
               </div>
               <div
                 v-if="q.image"
                 :id="`complete-sentence-image-${q.id}`"
-                class="min-w-[150px] h-32 md:h-28"
+                class="mx-auto w-fit max-w-full overflow-hidden rounded-2xl border border-picton-blue-300 bg-white p-7 shadow-sm"
               >
-                <img :src="q.image" :alt="q.question" class="w-full h-full rounded-lg object-contain">
+                <div class="flex max-w-[720px] items-center justify-center rounded-xl bg-slate-50 p-5 md:max-w-[840px]">
+                  <img
+                    :src="q.image"
+                    :alt="q.question"
+                    class="max-h-[560px] w-auto max-w-full rounded-lg object-contain md:max-h-[640px]"
+                  >
+                </div>
               </div>
             </div>
 
             <div
               v-if="checkedItems.includes(i)"
-              class="flex items-center gap-2"
+              class="flex shrink-0 items-center gap-2 pt-1"
               role="status"
               :aria-label="ui.formatQuestionResult(i + 1, feedbacks[i])"
             >
