@@ -63,11 +63,6 @@ const handleLinkClick = (event: MouseEvent) => {
 // Process math delimiters and image shortcodes - extract before markdown, restore after
 const processMathInText = (text: string): string => {
   if (!text) return "";
-  
-  // Debug: Log if text contains shortcode patterns
-  if (text.includes('_figure_')) {
-    console.log('[MessageAI] Processing text with potential shortcodes:', text.substring(0, 200));
-  }
 
   // Use unique placeholders that markdown won't modify
   const mathPlaceholders: Array<{ placeholder: string; replacement: string }> = [];
@@ -111,7 +106,6 @@ const processMathInText = (text: string): string => {
     } else {
       // Convert bare shortcode to proper format - don't check cache since it might not be loaded yet
       // The image pattern handler below will resolve it (with async fallback if needed)
-      console.log(`[MessageAI] Detected bare shortcode "${shortcode}" - converting to [image:${shortcode}] format`);
       convertedText.push(`[image:${shortcode}]`);
     }
     
@@ -122,11 +116,6 @@ const processMathInText = (text: string): string => {
   convertedText.push(text.substring(lastIndex));
   text = convertedText.join('');
   
-  // Debug: Log after bare shortcode conversion
-  if (text.includes('[image:')) {
-    console.log('[MessageAI] After Step 0 (bare shortcode conversion), text has [image:] patterns');
-  }
-
   // Step 0.5: Normalize markdown image syntax to a single [image:shortcode] so we don't get broken <img src="placeholder"> + duplicate image
   // If the AI outputs ![caption](shortcode) or ![caption]([image:shortcode]), convert to just [image:shortcode] (one block, no markdown img)
   text = text.replace(
@@ -187,8 +176,6 @@ const processMathInText = (text: string): string => {
         replacement: imageHtml
       });
     } else {
-      // Shortcode not in cache - keep it as a placeholder so it can render when cache loads
-      console.log(`[MessageAI] Image shortcode "${shortcodeName.trim()}" not in cache yet, keeping as placeholder`);
       // Return a visible placeholder that will be replaced on re-render when cache loads
       const placeholder = `IMAGE_PENDING_${counter}_END`;
       imagePlaceholders.push({
@@ -256,7 +243,6 @@ const processMathInText = (text: string): string => {
   rendered = rendered.replace(
     /<a\s+href="\/([a-z]+(?:_form\d+)?_figure_(?:\d+_\d+|Sim\d+)(?:_[a-z])?)"[^>]*>[^<]*<\/a>/gi,
     (match, shortcode) => {
-      console.log(`[MessageAI] Detected linkified shortcode "${shortcode}" - rendering image directly`);
       const imageMeta = getImageFromShortcode(shortcode);
       if (imageMeta) {
         // Render the image directly
@@ -277,7 +263,6 @@ const processMathInText = (text: string): string => {
         }
       }
       // If shortcode not in cache, return empty (image will appear on re-render when cache loads)
-      console.log(`[MessageAI] Shortcode "${shortcode}" not in cache yet, will render on next update`);
       return `<!-- pending image: ${shortcode} -->`;
     }
   );
@@ -333,9 +318,7 @@ watch(() => props.message, () => {
 
 onMounted(async () => {
   // Pre-load dynamic shortcodes from API
-  console.log('[MessageAI] Loading shortcodes...');
   await loadDynamicShortcodes();
-  console.log('[MessageAI] Shortcodes loaded, triggering re-render');
   shortcodesLoaded.value = true; // Trigger re-render
   renderMathJax();
 });

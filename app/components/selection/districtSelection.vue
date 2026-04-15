@@ -35,7 +35,7 @@ const content = computed(() => ({
 const districtValue = computed({
   get: () => props.district,
   set: (value) => {
-    emit("updateDistrict", value); console.log(value);
+    emit("updateDistrict", value);
   }
 });
 

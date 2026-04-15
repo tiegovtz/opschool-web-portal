@@ -178,7 +178,7 @@ const fetchExperiments = async (param?: any) => {
   } catch (error: any) {
     status.value = "error";
     error.value = error as any;
-    console.log(error);
+    console.error(error);
   }
 };
 

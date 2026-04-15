@@ -343,15 +343,14 @@ const storeChapterContext = (chapterId: string, chapterNotes: any) => {
 
   // Only store if chapterName is valid (not "this competence" or empty)
   if (!context.chapterName || context.chapterName === 'this competence' || !context.chapterName.trim()) {
-    console.warn('[Topic Page] ⚠️ Skipping context storage - invalid chapter name:', context.chapterName);
+    console.warn('[Topic Page] Skipping context storage - invalid chapter name:', context.chapterName);
     return;
   }
 
   try {
     localStorage.setItem('tie-ai-assistant-context', JSON.stringify(context));
-    console.log('[Topic Page] ✅ Stored chapter context in localStorage:', context);
   } catch (error) {
-    console.warn('[Topic Page] ⚠️ Failed to store context in localStorage:', error);
+    console.warn('[Topic Page] Failed to store context in localStorage:', error);
   }
 };
 

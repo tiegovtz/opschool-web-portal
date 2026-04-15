@@ -278,7 +278,6 @@ const isQuizAnswered = (quizId: string): boolean => {
 
 const handlePathSwitch = (path: string[]) => {
   // Handle path switching (could restart video with new path)
-  console.log('[InteractiveVidstackPlayer] Switch path:', path);
   // Implementation depends on requirements
 };
 

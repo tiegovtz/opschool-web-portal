@@ -154,7 +154,6 @@ const fetchVideos = async (param?: any) => {
   } catch (erro) {
     status.value = 'error';
     error.value = erro as any;
-    console.log(error);
   }
 }
 

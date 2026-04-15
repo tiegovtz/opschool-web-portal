@@ -36,8 +36,6 @@ export const useTextToSpeech = () => {
       return;
     }
 
-    console.log('[useTextToSpeech] Attempting to speak:', text);
-
     // Cancel any ongoing speech
     stop();
 
@@ -81,7 +79,6 @@ export const useTextToSpeech = () => {
         
         if (englishVoice) {
           utterance.voice = englishVoice;
-          console.log('[useTextToSpeech] Selected voice:', englishVoice.name);
         }
       } else {
         utterance.voice = options.voice;
@@ -91,13 +88,11 @@ export const useTextToSpeech = () => {
         isSpeaking.value = true;
         isPaused.value = false;
         error.value = null;
-        console.log('[useTextToSpeech] Speech started');
       };
 
       utterance.onend = () => {
         isSpeaking.value = false;
         isPaused.value = false;
-        console.log('[useTextToSpeech] Speech ended');
         if (onEnd.value) {
           onEnd.value();
         }
@@ -116,7 +111,6 @@ export const useTextToSpeech = () => {
 
       try {
         window.speechSynthesis.speak(utterance);
-        console.log('[useTextToSpeech] speak() called successfully');
       } catch (err: any) {
         const errMsg = `Failed to start speech: ${err.message}`;
         error.value = errMsg;

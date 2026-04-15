@@ -138,7 +138,7 @@ const fetchAudios = async (param?: any) => {
   } catch (error: any) {
     status.value = 'error';
     error.value = error;
-    console.log(error);
+    console.error(error);
   }
 }
 

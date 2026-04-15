@@ -654,7 +654,6 @@ const joinClass = (selectedClassItem) => {
 
 
 const onCreate = () => {
-  console.log("Sdefdsdf");
    dialog.value = true;
 };
 
