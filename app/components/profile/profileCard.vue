@@ -4,14 +4,40 @@ import { MessageComponent, ProfileDrawInitialLater } from "#components";
 import apiDocs from "~/utilities/apiDocs";
 import type { Level } from "~/types/level.interface";
 import { FetchError } from "ofetch";
+import {
+  getEducationRouteQuery,
+  normalizeEducationLevel,
+  resolveEducationLevelFromRoute,
+} from "~/utilities/educationRoute";
 
 type Status = "idle" | "pending" | "loading" | "success" | "error";
 
 const signInAccessToken = useCookie<string>("signInAccessToken");
 const userToken = useCookie<any>("signInUserToken");
+const route = useRoute();
+const hubEducationLevel = useHubEducationLevel();
+const primaryContentLanguage = usePrimaryContentLanguage();
 const pageLanguage = useHubPageLanguage();
 const isSw = computed(() => pageLanguage.value === "kiswahili");
 let uploadedPic: File | null = null;
+
+const currentEducationLevel = computed(() =>
+  resolveEducationLevelFromRoute(
+    route,
+    normalizeEducationLevel(hubEducationLevel.value),
+  ),
+);
+
+const learningStatisticsRoute = computed(() => ({
+  path: "/profile/learning-statistics",
+  query: getEducationRouteQuery(
+    currentEducationLevel.value,
+    {},
+    currentEducationLevel.value === "primary"
+      ? primaryContentLanguage.value
+      : "english",
+  ),
+}));
 
 interface UserProfile {
   fname: string;
@@ -588,7 +614,7 @@ const discardChanges = () => {
       </div>
 
       <NuxtLink
-        to="/profile/learning-statistics"
+        :to="learningStatisticsRoute"
         class="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white transition-colors rounded-md bg-oceanBlue hover:bg-deepBlue"
       >
         <Icon

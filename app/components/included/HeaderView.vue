@@ -9,6 +9,7 @@ import {
   getHubLanguage,
   getHubLanguageCode,
   getHubPath,
+  getEducationRouteQuery,
   normalizeEducationLevel,
   normalizeLanguageSupport,
   resolveEducationLevelFromRoute,
@@ -194,6 +195,26 @@ const currentEducationLevel = computed(() =>
     ? normalizeEducationLevel(props.educationLevel)
     : inferredRouteEducationLevel.value,
 );
+
+const accountRouteQuery = computed(() =>
+  getEducationRouteQuery(
+    currentEducationLevel.value,
+    {},
+    currentEducationLevel.value === "primary"
+      ? activePrimaryLanguage.value
+      : "english",
+  ),
+);
+
+const profileRoute = computed(() => ({
+  path: "/profile",
+  query: accountRouteQuery.value,
+}));
+
+const learningStatisticsRoute = computed(() => ({
+  path: "/profile/learning-statistics",
+  query: accountRouteQuery.value,
+}));
 
 const showPrimaryLanguageSwitch = computed(
   () =>
@@ -621,7 +642,7 @@ onBeforeUnmount(() => {
                 >
                   <NuxtLink
                     aria-label="Go to learning statistics page"
-                    to="/profile/learning-statistics"
+                    :to="learningStatisticsRoute"
                     class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
                     @click="closeAccountMenu"
                   >
@@ -638,7 +659,7 @@ onBeforeUnmount(() => {
 
                   <NuxtLink
                     aria-label="Go to profile page"
-                    to="/profile"
+                    :to="profileRoute"
                     class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
                     @click="closeAccountMenu"
                   >
@@ -849,7 +870,7 @@ onBeforeUnmount(() => {
 
                   <NuxtLink
                     aria-label="Go to learning statistics page"
-                    to="/profile/learning-statistics"
+                    :to="learningStatisticsRoute"
                     class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
                     @click="closeAccountMenu"
                   >
@@ -866,7 +887,7 @@ onBeforeUnmount(() => {
 
                   <NuxtLink
                     aria-label="Go to profile page"
-                    to="/profile"
+                    :to="profileRoute"
                     class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
                     @click="closeAccountMenu"
                   >
