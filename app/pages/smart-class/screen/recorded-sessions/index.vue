@@ -185,7 +185,6 @@ const submitForm = async () => {
     }, 200)
 
     // Here you would implement actual upload logic
-    console.log('Uploading class data:', classData)
 
   } catch (error) {
     uploading.value = false
@@ -381,7 +380,6 @@ const minLength = min => v => (v && v.length >= min) || `Min ${min} characters`;
 // Form submit
 // Submit handler
 const submit = async () => {
-  console.log("Sdsfe");
   // if (!isValid.value) {
   //   showToast('Please fill the form correctly.', 'error');
   //   return;

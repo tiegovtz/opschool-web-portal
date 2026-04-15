@@ -103,7 +103,6 @@ const handleSubmit = () => {
 const handleContinue = () => {
   // Store correctness before resetting
   const wasCorrect = isCorrect.value
-  console.log('QuizModal handleContinue - wasCorrect:', wasCorrect)
 
   // Reset UI state
   showFeedback.value = false

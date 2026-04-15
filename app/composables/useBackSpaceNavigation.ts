@@ -22,7 +22,6 @@ export const useBackSpaceNavigation = () => {
   })
 
   onBeforeUnmount(() => {
-    console.log('[BackspaceNav] mounted')
     window.removeEventListener('keydown', handler)
   })
 }

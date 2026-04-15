@@ -17,17 +17,15 @@ const activityParser = (query: string): string => {
       ? attributes.thumbnail
       : "";
 
-    return `<div
+    return `<button
         class="flex flex-col items-center w-full gap-2 p-4 rounded-md border border-gray-300 cursor-pointer hover:bg-gray-100 transition-colors relative"
         onclick="openInteractiveActivity('${safeIdentifier}')"
         data-activity-id="${safeIdentifier}"
-        aria-label="click to open ${title}"
-        tabindex="0"
-        role="button"
+        aria-label="click to open ${title}" 
       >
       <p class="z-10 mt-2 font-semibold text-black bg-white rounded-md !p-2  text-wrap">${title}</p>
       <img src="${thumbnail || '/images/activites-placeholder.png'}" alt="${title}" class="absolute z-0 inset-0 w-full h-auto object-cover rounded-md" />
-      </div>`;
+      </button>`;
   });
 };
 
