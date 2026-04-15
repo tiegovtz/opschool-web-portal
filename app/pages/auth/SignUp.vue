@@ -1615,7 +1615,7 @@ onMounted(async () => {
               />
               <button
                 type="button"
-                class="px-3 py-2 text-white transition-colors rounded-md bg-oceanBlue hover:bg-oceanBlue/80 disabled:cursor-not-allowed disabled:bg-oceanBlue/50"
+                class="py-2 w-44 text-white transition-colors rounded-md bg-oceanBlue hover:bg-oceanBlue/80 disabled:cursor-not-allowed disabled:bg-oceanBlue/50"
                 :disabled="studentPremLookup.status === 'pending'"
                 @click="fetchStudentInfoByPremNumber"
               >
