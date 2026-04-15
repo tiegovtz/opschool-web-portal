@@ -74,6 +74,17 @@ const fetchSchools = async (region: string, district: string) => {
 
     data.status = "success";
     data.schools = response;
+
+    // emit school to make it similar form of uid by taking it label 
+    // if passed as label instead of uid
+    if (props.school && typeof props.school === "string") {
+      const matchedSchool = response.find(school => school._id === props.school || school.name === props.school);
+      if (matchedSchool) {
+        emit("updateSchool", matchedSchool._id);
+      } else {
+        // If no match found, reset selection        emit("updateSchool", null);
+      }
+    }
   } catch (err) {
     data.status = "error";
     data.error = err;
