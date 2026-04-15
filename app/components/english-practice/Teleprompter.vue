@@ -306,7 +306,6 @@ const emptyStateDescription = computed(() =>
     ? 'Bonyeza kipaza sauti kuanza kuzungumza. Maneno yataangazwa unapoongea!'
     : 'Click the microphone to start speaking. Words will light up as you speak!'
 );
-
 // Check if read-aloud should be disabled
 const isReadAloudDisabled = computed(() => {
   return props.isRecording || props.isAISpeaking || !props.currentScriptLine?.text;
@@ -342,6 +341,7 @@ const handleReadAloudToggle = () => {
       pitch: 1.1,
       volume: 1,
       voiceType: inferVoiceTypeByName(currentSpeakerLabel.value),
+      audioUrl: constantAudioUrl || undefined,
       disableHighlighting: Boolean(constantAudioUrl),
     }
   );
@@ -369,6 +369,7 @@ const handleRepeat = () => {
       pitch: 1.1,
       volume: 1,
       voiceType: inferVoiceTypeByName(currentSpeakerLabel.value),
+      audioUrl: constantAudioUrl || undefined,
       disableHighlighting: Boolean(constantAudioUrl),
     }
   );
