@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, computed, watch } from "vue";
-import type { Question } from "~/types/question.interface";
+import { ANSWER_SEPARATOR, type Question } from "~/types/question.interface";
+
 
 // Define State
 const isTips = ref(false);
@@ -147,7 +148,7 @@ const resetQuestionState = () => {
     (questionProps.question.match(/(_\$blank)/g) || []).length;
   const initialAnswers = questionProps.initialSelectedChoice
     ? questionProps.initialSelectedChoice
-        .split("-")
+        .split(ANSWER_SEPARATOR)
         .map((answer) => answer.trim())
         .filter(Boolean)
     : [];
@@ -226,13 +227,13 @@ const submitDragAnswer = () => {
   if (!filled) return;
 
   const expectedAnswers = questionProps.trueAnswer
-    .split("-")
+    .split(ANSWER_SEPARATOR)
     .map((answer) => answer.trim());
   const currentAnswers = dropZoneAnswers.value.map((answer) => (answer ?? "").trim());
   const blankStatuses = currentAnswers.map(
     (answer, index) => answer === expectedAnswers[index]
   );
-  const currentConcat = currentAnswers.join("-");
+  const currentConcat = currentAnswers.join(ANSWER_SEPARATOR);
   const isCorrect = blankStatuses.every(Boolean);
 
   submittedBlankStatuses.value = blankStatuses;
