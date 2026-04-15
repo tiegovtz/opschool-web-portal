@@ -5,8 +5,12 @@ import { cn } from "~/utilities/utils";
 const props = defineProps<{
   notes?: string;
   image?: string;
+  notesLabel?: string;
+  imageAlt?: string;
 }>();
 
+const notesRegionId = "left-notes-with-images-notes";
+const imageRegionId = "left-notes-with-images-image";
 
 const notesWrapperClasses = computed(() =>
   cn("overflow-auto", { "max-h-[300px]": props.image })
@@ -19,19 +23,35 @@ const containerClasses = computed(() =>
   )
 );
 
+const accessibleNotesLabel = computed(() => props.notesLabel?.trim() || "Story notes");
+const accessibleImageAlt = computed(() => props.imageAlt?.trim() || "Activity illustration");
+
 </script>
 
 <template>
   <div v-if="notes" :class="containerClasses">
-    <div :class="notesWrapperClasses">
+    <div
+      :id="notesRegionId"
+      :class="notesWrapperClasses"
+      role="region"
+      :aria-label="accessibleNotesLabel"
+      tabindex="0"
+    >
       <p
         class="whitespace-pre-line text-lg tracking-wide text-picton-blue-700 h-full"
         v-html="notes"
       />
     </div>
 
-    <div v-if="image" class="rounded-xl p-1 md:h-[250px]">
-      <img src="image" alt="Matching Items" class="object-contain mx-auto h-full" />
-    </div>
+    <figure
+      v-if="image"
+      :id="imageRegionId"
+      class="rounded-xl p-1 md:h-[250px]"
+      role="group"
+      :aria-label="accessibleImageAlt"
+      tabindex="0"
+    >
+      <img :src="image" :alt="accessibleImageAlt" class="object-contain mx-auto h-full" />
+    </figure>
   </div>
 </template>
