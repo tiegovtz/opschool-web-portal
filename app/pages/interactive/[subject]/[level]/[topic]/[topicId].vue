@@ -17,6 +17,13 @@ import { moveFocus } from "~/utilities/focus.helper";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import { handleAudio, initAudioCanvasPlayers } from "~/utilities/initAudioPlayer";
 import {
+  appendTrackedActivityId,
+  createChapterActivityProgressState,
+  ensureChapterActivityProgressState,
+  extractActivityIdsFromContent,
+  type ChapterActivityProgressState,
+} from "~/utilities/activityProgress";
+import {
   normalizeLanguageSupport,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
@@ -54,6 +61,12 @@ const userToken = useCookie("signInUserToken");
 // search anouncement to screen reders
 const announcement = ref();
 const chapterProgress = useCookie<any>("chapterProgress");
+const chapterActivityProgress = useCookie<ChapterActivityProgressState>(
+  "chapterActivityProgress",
+  {
+    default: () => createChapterActivityProgressState(),
+  },
+);
 const userViewedTopic = useState("userViewedTopic");
 
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
@@ -250,38 +263,183 @@ const ensureAccessTokenValid = async () => {
   }
 };
 
-const initializeChapterProgress = (chapterId: string) => {
+type ActivityCompletionPayload = {
+  activityId: string;
+  score: number;
+  totalQuestions: number;
+  userAnswers: unknown[];
+  savedAnswers: unknown[];
+};
+
+const createChapterProgressPayload = (
+  chapterId: string,
+  totalExperiments = 0,
+) => ({
+  userId: (userToken.value as any)?._id,
+  chapterId: chapterId,
+  videoProgress: 0,
+  notesProgress: 0,
+  experimentsAttempted: 0,
+  totalExperiments,
+  assessmentsAttempted: 0,
+  totalAssessments: 0,
+  activityProgress: 0,
+});
+
+const initializeChapterProgress = (
+  chapterId: string,
+  totalExperiments = 0,
+) => {
+  chapterProgress.value = createChapterProgressPayload(chapterId, totalExperiments);
+};
+
+const ensureChapterProgressState = (
+  chapterId: string,
+  totalExperiments = 0,
+) => {
+  const nextUserId = String((userToken.value as any)?._id ?? "");
+  const currentProgress = chapterProgress.value;
+
+  if (
+    !currentProgress ||
+    currentProgress.userId !== nextUserId ||
+    currentProgress.chapterId !== chapterId
+  ) {
+    initializeChapterProgress(chapterId, totalExperiments);
+    return;
+  }
+
   chapterProgress.value = {
+    ...currentProgress,
     userId: (userToken.value as any)?._id,
-    chapterId: chapterId,
-    videoProgress: 0,
-    notesProgress: 0,
-    experimentsAttempted: 0,
-    totalExperiments: 0,
-    assessmentsAttempted: 0,
-    totalAssessments: 0,
-    activityProgress:0
+    chapterId,
+    totalExperiments,
+    activityProgress: Number(currentProgress.activityProgress ?? 0),
+    experimentsAttempted: Number(currentProgress.experimentsAttempted ?? 0),
+    totalAssessments: Number(currentProgress.totalAssessments ?? 0),
+    assessmentsAttempted: Number(currentProgress.assessmentsAttempted ?? 0),
+    videoProgress: Number(currentProgress.videoProgress ?? 0),
+    notesProgress: Number(currentProgress.notesProgress ?? 0),
   };
 };
 
-const postInitialProgressIfNeeded = async (chapterId: string) => {
+const prepareChapterActivityTracking = (
+  chapterId: string,
+  content: unknown,
+) => {
+  const activityIds = extractActivityIdsFromContent(content);
+
+  chapterActivityProgress.value = ensureChapterActivityProgressState(
+    chapterActivityProgress.value,
+    String((userToken.value as any)?._id ?? ""),
+    chapterId,
+    activityIds,
+  );
+
+  ensureChapterProgressState(chapterId, activityIds.length);
+
+  return activityIds;
+};
+
+const syncChapterActivityMetrics = () => {
+  if (!chapters.currentChapterId) return;
+
+  const currentActivityState = ensureChapterActivityProgressState(
+    chapterActivityProgress.value,
+    String((userToken.value as any)?._id ?? ""),
+    chapters.currentChapterId,
+    chapterActivityProgress.value?.totalActivityIds ?? [],
+  );
+
+  chapterActivityProgress.value = currentActivityState;
+  ensureChapterProgressState(
+    chapters.currentChapterId,
+    currentActivityState.totalActivityIds.length,
+  );
+
+  const attemptedCount = currentActivityState.attemptedActivityIds.length;
+  const completedCount = currentActivityState.completedActivityIds.length;
+  const totalActivities = currentActivityState.totalActivityIds.length;
+  const completionPercent = totalActivities
+    ? Math.round((completedCount / totalActivities) * 100)
+    : 0;
+
+  (chapterProgress.value as any).totalExperiments = totalActivities;
+  (chapterProgress.value as any).experimentsAttempted = Math.max(
+    Number((chapterProgress.value as any).experimentsAttempted ?? 0),
+    attemptedCount,
+  );
+  (chapterProgress.value as any).activityProgress = Math.max(
+    Number((chapterProgress.value as any).activityProgress ?? 0),
+    completionPercent,
+  );
+};
+
+const persistActivityProgressUpdate = async () => {
+  syncChapterActivityMetrics();
+  await updateChapterProgress();
+};
+
+const markActivityAttempted = async (activityId: string) => {
+  const normalizedActivityId = String(activityId || "").trim();
+  if (!normalizedActivityId || !chapters.currentChapterId) return;
+
+  chapterActivityProgress.value = ensureChapterActivityProgressState(
+    chapterActivityProgress.value,
+    String((userToken.value as any)?._id ?? ""),
+    chapters.currentChapterId,
+    chapterActivityProgress.value?.totalActivityIds ?? [],
+  );
+
+  if (
+    chapterActivityProgress.value.attemptedActivityIds.includes(normalizedActivityId)
+  ) {
+    return;
+  }
+
+  chapterActivityProgress.value = {
+    ...chapterActivityProgress.value,
+    attemptedActivityIds: appendTrackedActivityId(
+      chapterActivityProgress.value.attemptedActivityIds,
+      normalizedActivityId,
+    ),
+  };
+
+  await persistActivityProgressUpdate();
+};
+
+const markActivityCompleted = async (payload: ActivityCompletionPayload) => {
+  const normalizedActivityId = String(payload.activityId || "").trim();
+  if (!normalizedActivityId || !chapters.currentChapterId) return;
+
+  await markActivityAttempted(normalizedActivityId);
+
+  if (
+    chapterActivityProgress.value.completedActivityIds.includes(normalizedActivityId)
+  ) {
+    return;
+  }
+
+  chapterActivityProgress.value = {
+    ...chapterActivityProgress.value,
+    completedActivityIds: appendTrackedActivityId(
+      chapterActivityProgress.value.completedActivityIds,
+      normalizedActivityId,
+    ),
+  };
+
+  await persistActivityProgressUpdate();
+};
+
+const postInitialProgressIfNeeded = async (
+  chapterId: string,
+  totalExperiments = 0,
+) => {
   try {
     await $fetch("/api/progress/post-progress", {
       method: "POST",
-      body: {
-        userId: (userToken.value as any)?._id,
-        chapterId,
-        videoProgress: 0,
-        notesProgress: 0,
-        experimentsAttempted: 0,
-        totalExperiments: 0,
-        assessmentsAttempted: 0,
-        totalAssessments: 0,
-        activityProgress:0
-      },
+      body: createChapterProgressPayload(chapterId, totalExperiments),
     });
-
-    initializeChapterProgress(chapterId);
   } catch (error) {
     console.error("Error posting initial progress:", error);
   }
@@ -319,8 +477,13 @@ const syncRemoteProgress = async (chapterId: string) => {
       });
     } else {
       console.warn("Progress belongs to a different user or chapter. Ignored.");
-      initializeChapterProgress(chapterId);
+      initializeChapterProgress(
+        chapterId,
+        chapterActivityProgress.value?.totalActivityIds?.length ?? 0,
+      );
     }
+
+    syncChapterActivityMetrics();
   } catch (error) {
     console.error("Error fetching remote progress:", error);
   }
@@ -389,13 +552,17 @@ const getChapter = async (chapterId: string) => {
     if (response) {
       chapters.notesStatus = "success";
       chapters.notes = response;
+      const activityIds = prepareChapterActivityTracking(
+        chapterId,
+        (response as any)?.content,
+      );
 
       // Store context in localStorage for AI Assistant
       storeChapterContext(chapterId, response);
 
       const tasks = [
         getQNTopicChapter(chapterId),
-        postInitialProgressIfNeeded(chapterId),
+        postInitialProgressIfNeeded(chapterId, activityIds.length),
         syncRemoteProgress(chapterId),
       ];
 
@@ -407,6 +574,7 @@ const getChapter = async (chapterId: string) => {
       }
 
       await Promise.allSettled(tasks);
+      syncChapterActivityMetrics();
       announcement.value = `content of ${chapters.list?.find(c => c._id === chapterId)?.name} loaded successfully you may continue reading`;
       await nextTick(() => {
         moveFocus('main-container');
@@ -696,18 +864,10 @@ const observerContent = () => {
     const videoPlayer = (notesContainer.value as HTMLElement).querySelector("#video-player") as HTMLVideoElement;
     if (videoPlayer) {
       //setting user id and chapter id on play
-      if (chapterProgress) {
-        if (
-          (chapterProgress?.value as any).userId !== (userToken.value as any)?._id ||
-          (chapterProgress?.value as any).chapterId !== chapters.currentChapterId
-        ) {
-          (chapterProgress.value as any).userId = (userToken.value as any)?._id;
-          (chapterProgress.value as any).chapterId = chapters.currentChapterId;
-        }
-      }
-      else {
-        initializeChapterProgress(chapters.currentChapterId as string)
-      }
+      ensureChapterProgressState(
+        chapters.currentChapterId as string,
+        chapterActivityProgress.value?.totalActivityIds?.length ?? 0,
+      );
 
       // returning to previous progress is are available when video loaded
       videoPlayer.addEventListener("loadedmetadata", () => {
@@ -902,20 +1062,13 @@ watch(
 // wacth over scroll percent
 watch(scrollPercent, async (newPercent) => {
   // Submit to cookies only when scrolling down
-  if (chapterProgress) {
-    (chapterProgress?.value as any).userId.toString().trim() == ""
-      ? ((chapterProgress.value as any).userId = (userToken.value as any)?._id)
-      : "";
-    (chapterProgress?.value as any).chapterId.toString().trim() == ""
-      ? ((chapterProgress.value as any).chapterId = chapters.currentChapterId)
-      : "";
-    (chapterProgress?.value as any).notesProgress < newPercent
-      ? ((chapterProgress.value as any).notesProgress = newPercent)
-      : "";
-  }
-  else {
-    initializeChapterProgress(chapters.currentChapterId as string);
-  }
+  ensureChapterProgressState(
+    chapters.currentChapterId as string,
+    chapterActivityProgress.value?.totalActivityIds?.length ?? 0,
+  );
+  (chapterProgress?.value as any).notesProgress < newPercent
+    ? ((chapterProgress.value as any).notesProgress = newPercent)
+    : "";
 
   switch (newPercent) {
     case 25:
@@ -980,7 +1133,13 @@ definePageMeta({
         isFullscreen ? ' min-h-dvh min-w-full' : 'h-full center-height',
       ]">
         <div class="mx-auto w-full max-w-7xl p-3 md:p-6">
-          <Activity v-if="activePopupActivityId" :key="activePopupActivityId" :activity-id="activePopupActivityId" />
+          <Activity
+            v-if="activePopupActivityId"
+            :key="activePopupActivityId"
+            :activity-id="activePopupActivityId"
+            :on-activity-interacted="markActivityAttempted"
+            :on-activity-completed="markActivityCompleted"
+          />
         </div>
       </div>
       <!-- full screen controls -->
