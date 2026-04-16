@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { useWindowSize } from "@vueuse/core";
 import { Icon } from "@iconify/vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, { ActivityResultsAlertDialog } from "@/components/templates/results";
@@ -33,6 +34,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { width: windowWidth } = useWindowSize();
 const ui = useActivityUiText();
 const answerChecker = new AnswerChecker();
 
@@ -116,18 +118,20 @@ type QuestionRenderSegment = QuestionSegment & {
 
 const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
   let blankIndex = 0;
+  const sw = windowWidth.value ?? 1024;
+  const minBlank = sw <= 640 ? 72 : 120;
 
   return parseQuestionSegments(question).map((segment) => {
     if (segment.type !== "blank") {
       return segment;
     }
 
-    const { calculatedWidth } = calculateBlankWidth(segment.content.length, 1024);
+    const { calculatedWidth } = calculateBlankWidth(segment.content.length, sw);
 
     return {
       ...segment,
       blankIndex: blankIndex++,
-      calculatedWidth: Math.max(calculatedWidth, 120),
+      calculatedWidth: Math.max(calculatedWidth, minBlank),
     };
   });
 };

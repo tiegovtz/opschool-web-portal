@@ -425,18 +425,6 @@ export const ActivityResultsAlertDialog = defineComponent({
             </div>
 
             <div class="relative flex flex-col gap-3 px-5 pb-6 pt-0 md:flex-row md:items-center md:justify-center md:pb-8">
-              {props.onRestart ? (
-                <Button
-                  variant="outline-brand"
-                  onClick={() => {
-                    props.onRestart?.();
-                    close();
-                  }}
-                  class="w-full md:w-auto"
-                >
-                  {isSwahili.value ? "Fanya tena" : "Restart"}
-                </Button>
-              ) : null}
 
               <Button
                 variant="brand"

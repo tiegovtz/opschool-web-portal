@@ -136,11 +136,29 @@ export function calculateBlankWidth(
     widthMultiplier = 1;
   } else {
     // For three or more underscores (multiples of 3)
-    baseWidth = screenWidth > 448 ? 120 : 100;
+    if (screenWidth <= 480) {
+      baseWidth = 52;
+    } else if (screenWidth <= 640) {
+      baseWidth = 72;
+    } else {
+      baseWidth = screenWidth > 448 ? 120 : 100;
+    }
     widthMultiplier = underscoreCount / 3;
   }
 
-  const calculatedWidth = baseWidth * widthMultiplier;
+  let calculatedWidth = baseWidth * widthMultiplier;
+
+  // Long `___` runs can exceed viewport width on phones and force awkward vertical scroll;
+  // cap blank width on narrow screens while keeping tablet/desktop behavior close to before.
+  if (!isSingleOrDoubleUnderscore && screenWidth <= 640) {
+    const maxBlankPx =
+      screenWidth <= 400
+        ? 118
+        : screenWidth <= 480
+          ? 132
+          : Math.min(172, Math.floor(screenWidth * 0.26));
+    calculatedWidth = Math.min(calculatedWidth, maxBlankPx);
+  }
 
   return {
     calculatedWidth,
