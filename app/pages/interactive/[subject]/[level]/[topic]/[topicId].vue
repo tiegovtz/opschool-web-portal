@@ -260,6 +260,7 @@ const initializeChapterProgress = (chapterId: string) => {
     totalExperiments: 0,
     assessmentsAttempted: 0,
     totalAssessments: 0,
+    activityProgress:0
   };
 };
 
@@ -276,6 +277,7 @@ const postInitialProgressIfNeeded = async (chapterId: string) => {
         totalExperiments: 0,
         assessmentsAttempted: 0,
         totalAssessments: 0,
+        activityProgress:0
       },
     });
 
@@ -296,6 +298,7 @@ const syncRemoteProgress = async (chapterId: string) => {
       totalExperiments: number;
       assessmentsAttempted: number;
       totalAssessments: number;
+      activityProgress:number;
     }>(
       apiDocs.progressTracking.getProgresschapterId.replace("{chapterId}", chapterId),
       { headers: { Authorization: `Bearer ${signInAccessToken.value}` } }
