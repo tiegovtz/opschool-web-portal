@@ -90,6 +90,7 @@ const ResultsCard = defineComponent({
           "rounded-2xl border border-oceanBlue/15 bg-white p-5 shadow-sm",
           props.className,
         )}
+        data-activity-results="card"
         role="region"
         aria-labelledby={resultsHeadingId}
         aria-describedby={resultsDescriptionId}
@@ -345,6 +346,7 @@ export const ActivityResultsAlertDialog = defineComponent({
           aria-live="polite"
           aria-labelledby={dialogTitleId}
           aria-describedby={dialogDescriptionId}
+          data-activity-results="dialog"
           class="fixed inset-0 z-[130] flex items-center justify-center px-4 py-8"
         >
           {/* Blur/dim the activity behind the modal */}

@@ -7,13 +7,17 @@ export interface CreateChapterProgress {
   totalExperiments: number;
   assessmentsAttempted: number;
   totalAssessments: number;
+  activityProgress: number;
 }
 
 export interface UpdateChapterProgress {
   videoProgress: number;           // e.g. percentage watched (0–100)
   notesProgress: number;           // e.g. percentage read (0–100)
   experimentsAttempted: number;
+  totalExperiments: number;
   assessmentsAttempted: number;
+  totalAssessments: number;
+  activityProgress: number;
   isCompleted: boolean;
   completedAt: string;             // ISO date string (or use Date type if preferred)
 }

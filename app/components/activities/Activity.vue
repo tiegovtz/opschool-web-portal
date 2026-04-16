@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // @ts-nocheck
 import type { AsyncDataRequestStatus } from '#app';
+import { nextTick } from "vue";
 import type { ServerQuestionType } from '~/types/activity-props';
 import { type Activity } from '~/types/activity-types';
 import { enhancedActivityComponents } from '~/utilities/activityMapper/enhanced-mapper';
@@ -19,9 +20,20 @@ import {
 } from "~/utilities/activitiesApi";
 import { Icon } from "@iconify/vue";
 
+type ActivityCompletionPayload = {
+  activityId: string;
+  score: number;
+  totalQuestions: number;
+  userAnswers: unknown[];
+  savedAnswers: unknown[];
+};
 
 // prpops
-const props = withDefaults(defineProps<{ activityId: string }>(), {});
+const props = withDefaults(defineProps<{
+  activityId: string;
+  onActivityInteracted?: (activityId: string) => void;
+  onActivityCompleted?: (payload: ActivityCompletionPayload) => void;
+}>(), {});
 // states variable
 const status = ref<AsyncDataRequestStatus>('idle');
 const activity = ref<Activity>();
@@ -38,6 +50,11 @@ const contentLanguage = computed(() =>
 const apiLanguage = computed(() =>
   getApiContentLanguage(educationLevel.value, contentLanguage.value),
 );
+const activityRoot = ref<HTMLElement | null>(null);
+const hasReportedInteraction = ref(false);
+const hasReportedCompletion = ref(false);
+let removeInteractionListeners: (() => void) | null = null;
+let completionObserver: MutationObserver | null = null;
 
 const setWrongQuestionsFormat = (state:boolean)=>wrongQuestionsFormat.value = state; 
 
@@ -116,9 +133,159 @@ watchEffect(() => {
         isMobile,
       }) ?? null;
 })
+
+const toNumber = (value: unknown) =>
+  typeof value === "number" && Number.isFinite(value) ? value : 0;
+
+const toArray = (value: unknown) => (Array.isArray(value) ? value : []);
+
+const teardownActivityTracking = () => {
+  removeInteractionListeners?.();
+  removeInteractionListeners = null;
+  completionObserver?.disconnect();
+  completionObserver = null;
+};
+
+const emitActivityInteracted = () => {
+  if (hasReportedInteraction.value) return;
+  hasReportedInteraction.value = true;
+  props.onActivityInteracted?.(props.activityId);
+};
+
+const emitActivityCompleted = (payload?: Partial<ActivityCompletionPayload>) => {
+  emitActivityInteracted();
+
+  if (hasReportedCompletion.value) return;
+
+  hasReportedCompletion.value = true;
+  props.onActivityCompleted?.({
+    activityId: props.activityId,
+    score: toNumber(payload?.score),
+    totalQuestions: toNumber(payload?.totalQuestions),
+    userAnswers: toArray(payload?.userAnswers),
+    savedAnswers: toArray(payload?.savedAnswers),
+  });
+};
+
+const handleActivityComplete = (
+  score: number,
+  totalQuestions: number,
+  userAnswers: unknown[] = [],
+  savedAnswers: unknown[] = [],
+) => {
+  emitActivityCompleted({
+    score,
+    totalQuestions,
+    userAnswers,
+    savedAnswers,
+  });
+};
+
+const handleAnswerRecorded = () => {
+  emitActivityInteracted();
+};
+
+const isInteractiveTarget = (target: EventTarget | null) =>
+  target instanceof HTMLElement &&
+  Boolean(
+    target.closest(
+      'button, input, textarea, select, [role="button"], [draggable="true"], [contenteditable="true"]',
+    ),
+  );
+
+const detectResultsUi = () => {
+  if (!activityRoot.value || hasReportedCompletion.value) return;
+  if (activityRoot.value.querySelector("[data-activity-results]")) {
+    emitActivityCompleted();
+  }
+};
+
+const setupActivityTracking = async () => {
+  teardownActivityTracking();
+
+  if (status.value !== "success") return;
+
+  await nextTick();
+
+  const root = activityRoot.value;
+  if (!root) return;
+
+  const interactionHandler = (event: Event) => {
+    if (!isInteractiveTarget(event.target)) return;
+    emitActivityInteracted();
+  };
+
+  const keyboardHandler = (event: Event) => {
+    const keyboardEvent = event as KeyboardEvent;
+    if (!isInteractiveTarget(keyboardEvent.target)) return;
+
+    if (
+      [
+        "Enter",
+        " ",
+        "Spacebar",
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight",
+      ].includes(keyboardEvent.key)
+    ) {
+      emitActivityInteracted();
+    }
+  };
+
+  const listenerEntries: Array<[keyof HTMLElementEventMap, EventListener]> = [
+    ["click", interactionHandler],
+    ["input", interactionHandler],
+    ["change", interactionHandler],
+    ["drop", interactionHandler],
+    ["dragend", interactionHandler],
+    ["keydown", keyboardHandler],
+  ];
+
+  listenerEntries.forEach(([eventName, handler]) => {
+    root.addEventListener(eventName, handler, true);
+  });
+
+  removeInteractionListeners = () => {
+    listenerEntries.forEach(([eventName, handler]) => {
+      root.removeEventListener(eventName, handler, true);
+    });
+  };
+
+  completionObserver = new MutationObserver(() => {
+    detectResultsUi();
+  });
+
+  completionObserver.observe(root, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+  });
+
+  detectResultsUi();
+};
+
+watch(
+  () => [props.activityId, status.value],
+  async ([, nextStatus]) => {
+    teardownActivityTracking();
+    hasReportedInteraction.value = false;
+    hasReportedCompletion.value = false;
+
+    if (nextStatus === "success") {
+      await setupActivityTracking();
+    }
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  teardownActivityTracking();
+});
 </script>
 <template>
-    <div>
+    <div ref="activityRoot">
         <div v-if="status === 'idle'">{{ ui.nothingToShow }}</div>
         <div
           v-else-if="status == 'pending'"
@@ -148,9 +315,11 @@ watchEffect(() => {
             <component
               v-else
               :is="activityComponent"
-              v-bind="props"
+              :activity-id="props.activityId"
               feedback="wrong-correct"
               :questions="transpiledQuestions"
+              :on-activity-complete="handleActivityComplete"
+              :on-answer-recorded="handleAnswerRecorded"
             />
         </div>
         <div v-else-if="status == 'error'">{{ error }}</div>
