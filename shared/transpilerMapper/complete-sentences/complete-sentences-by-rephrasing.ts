@@ -37,9 +37,12 @@ const extractTitleOptions = (title: string) => {
 const extractServerOptions = (serverQuestions: ActivityTranspilerProps["serverQuestions"]) =>
   Array.from(
     new Set(
-      serverQuestions.flatMap((question) =>
-        OPTION_FIELD_KEYS.flatMap((key) => splitValues(question[key])),
-      ),
+      serverQuestions.flatMap((question) => {
+        const fromFields = OPTION_FIELD_KEYS.flatMap((key) => splitValues(question[key]));
+        const rawOption = (question as { option?: unknown }).option;
+        const fromOption = typeof rawOption === "string" ? splitValues(rawOption) : [];
+        return [...fromFields, ...fromOption];
+      }),
     ),
   );
 

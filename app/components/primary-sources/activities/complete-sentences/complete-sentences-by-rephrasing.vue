@@ -184,7 +184,7 @@ const handleResetWithShuffle = () => {
       <div
         v-if="props.questions.options && props.questions.options.length > 0"
         :id="activityOptionsId"
-        class="flex w-full flex-wrap gap-3 rounded-xl border-2 border-picton-blue-300 bg-picton-blue-200 px-4 py-4 shadow-sm"
+        class="flex w-full flex-wrap gap-2 sm:gap-3 rounded-xl border-2 border-picton-blue-300 bg-picton-blue-200 px-3 py-3 sm:px-4 sm:py-4 shadow-sm"
         role="group"
         :aria-label="ui.availableAnswerChoices.value"
       >
@@ -193,7 +193,7 @@ const handleResetWithShuffle = () => {
           :key="index"
           tabindex="0"
           :aria-label="`Answer choice ${option}`"
-          class="text-picton-blue-700 leading-4 px-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-200"
+          class="text-base sm:text-lg text-picton-blue-700 leading-snug px-2 sm:px-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-200"
         >
           {{ option }}
         </span>
@@ -207,7 +207,7 @@ const handleResetWithShuffle = () => {
         <div
           v-for="(q, i) in shuffledQuestions"
           :key="q.id"
-          class="flex min-h-[280px] items-start rounded-2xl border border-picton-blue-200 p-7 shadow-sm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-100 md:p-8"
+          class="flex min-h-[280px] items-start rounded-2xl border border-picton-blue-200 p-6 shadow-sm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-100 md:p-7"
           role="listitem"
           tabindex="0"
           :aria-labelledby="`complete-sentence-question-${q.id}`"
@@ -223,15 +223,15 @@ const handleResetWithShuffle = () => {
         >
           <div class="flex w-full items-start gap-8">
             <div class="flex min-w-0 flex-1 flex-col gap-8">
-              <div class="min-w-0 rounded-xl bg-white px-7 py-7 shadow-sm md:px-8">
-                <div class="flex items-start gap-5">
+              <div class="min-w-0 rounded-xl bg-white px-6 py-6 shadow-sm md:px-7 md:py-7">
+                <div class="flex items-start gap-4 md:gap-5">
                   <span
                     :id="`complete-sentence-question-${q.id}`"
-                    class="shrink-0 pt-1 text-2xl font-semibold text-picton-blue-900 md:text-4xl"
+                    class="shrink-0 pt-0.5 text-xl font-semibold text-picton-blue-900 md:text-2xl"
                   >
                     {{ i + 1 }}.
                   </span>
-                  <div class="min-w-0 flex-1 text-[1.45rem] leading-loose text-picton-blue-950 md:text-[1.8rem]">
+                  <div class="min-w-0 flex-1 text-lg leading-relaxed text-picton-blue-950 md:text-xl md:leading-relaxed">
                     <QuestionRenderer
                       :question="q.question"
                       :answers="q.answer"

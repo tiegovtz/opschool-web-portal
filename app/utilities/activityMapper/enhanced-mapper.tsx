@@ -51,19 +51,13 @@ const withAnswerCollection = (ActivityComponent: any) => {
     },
 
     setup(props, { attrs }) {
-      const handleAnswerRecorded = (
-        questionIndex: number,
-        answer: any,
-        isCorrect?: boolean
-      ) => {
-        props.onAnswerRecorded?.(questionIndex, answer, isCorrect);
-      };
-
       return () => h(
           ActivityComponent,{
           ...props,
           ...attrs,
-          handleAnswerRecorded}
+          onActivityComplete: props.onActivityComplete,
+          onAnswerRecorded: props.onAnswerRecorded,
+        }
       );
     },
   });

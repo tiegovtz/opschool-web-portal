@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { useWindowSize } from "@vueuse/core";
 import { Icon } from "@iconify/vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, { ActivityResultsAlertDialog } from "@/components/templates/results";
@@ -33,6 +34,7 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+const { width: windowWidth } = useWindowSize();
 const ui = useActivityUiText();
 const answerChecker = new AnswerChecker();
 
@@ -116,18 +118,20 @@ type QuestionRenderSegment = QuestionSegment & {
 
 const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
   let blankIndex = 0;
+  const sw = windowWidth.value ?? 1024;
+  const minBlank = sw <= 640 ? 72 : 120;
 
   return parseQuestionSegments(question).map((segment) => {
     if (segment.type !== "blank") {
       return segment;
     }
 
-    const { calculatedWidth } = calculateBlankWidth(segment.content.length, 1024);
+    const { calculatedWidth } = calculateBlankWidth(segment.content.length, sw);
 
     return {
       ...segment,
       blankIndex: blankIndex++,
-      calculatedWidth: Math.max(calculatedWidth, 120),
+      calculatedWidth: Math.max(calculatedWidth, minBlank),
     };
   });
 };
@@ -217,11 +221,11 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
 
     <div
       v-if="availableOptions.length"
-      class="mb-4 rounded-xl border border-picton-blue-200 bg-white/95 p-4 shadow-sm"
+      class="mb-4 w-full rounded-xl border border-picton-blue-200 bg-white/95 p-3 shadow-sm sm:p-4"
     >
       <div
         :id="activityOptionsId"
-        class="flex w-fit flex-wrap gap-4 rounded bg-picton-blue-200 p-3"
+        class="grid w-full grid-cols-2 gap-2 rounded bg-picton-blue-200 p-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 sm:gap-3"
         role="group"
         :aria-label="ui.availableAnswerChoices.value"
       >
@@ -230,7 +234,7 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
           :key="`${option}-${optionIndex}`"
           tabindex="0"
           :aria-label="`Answer choice ${option}`"
-          class="rounded px-5 py-1 text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-200"
+          class="min-w-0 rounded px-3 py-2 text-center text-base font-bold leading-snug text-picton-blue-800 sm:px-4 sm:py-2 sm:text-lg md:text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-200"
         >
           {{ option }}
         </div>

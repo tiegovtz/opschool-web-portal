@@ -312,6 +312,20 @@ const normalizeExternalQuestion = (
     normalized[key] = normalized[key] ?? fromOptionRecord ?? fromOptionList ?? null;
   });
 
+  // Single `option` string (e.g. "A/B/C/D") becomes one array element; it cannot map to
+  // textOne/textTwo because those come from `text` and `answer`. Put it on textThree so
+  // complete-sentences-by-rephrasing (word bank) transpilers can split it.
+  if (
+    optionStrings.length === 1 &&
+    !normalized.textThree &&
+    typeof optionStrings[0] === "string"
+  ) {
+    const blob = optionStrings[0];
+    if (blob && /[/,;|\n]/.test(blob)) {
+      normalized.textThree = blob;
+    }
+  }
+
   QUESTION_IMAGE_FIELD_KEYS.forEach((key, keyIndex) => {
     normalized[key] =
       normalized[key] ??
