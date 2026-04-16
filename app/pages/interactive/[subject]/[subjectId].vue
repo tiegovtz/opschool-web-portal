@@ -106,6 +106,36 @@ const accessToken = useCookie("signInAccessToken");
 const userToken = useCookie("signInUserToken");
 const isLoggedIn = computed(() => !!(accessToken?.value || userToken?.value));
 
+// general level
+const currentLevel = ref<Record<string, string>>({});
+const getLevels = (data: any[]) => {
+  // extracting levels
+  let list = data?.map((t: any) => (t?.level as any).name || t?.level);
+  return new Set(list);
+};
+const levelFilterKey = computed(() => subjectSlug.value || "topics");
+const selectedLevel = computed({
+  get: () => currentLevel.value[levelFilterKey.value] || "",
+  set: (value: string) => {
+    currentLevel.value[levelFilterKey.value] = value;
+  },
+});
+const availableLevels = computed(() =>
+  Array.from(getLevels(topic.value as any[]))
+    .filter((lvl): lvl is string => typeof lvl === "string" && !!lvl.trim())
+    .map((lvl) => ({
+      id: lvl,
+      name: lvl,
+    })),
+);
+const filteredTopics = computed(() => {
+  if (!Array.isArray(topic.value)) return [];
+  if (!selectedLevel.value) return topic.value;
+  return topic.value.filter(
+    (item: any) => ((item?.level as any)?.name || item?.level) === selectedLevel.value,
+  );
+});
+
 // Define Ref State
 const status = ref("pending"); // Initial Status State
 const topic = ref([]); // Initial Topics State
@@ -113,20 +143,20 @@ const slicedData = ref(); // Initial slice data to 9
 const activeTab = ref<tabs>("subjects");
 
 // First, fix the sliceData function
-const sliceData = (start:number, end:number) => {
-  if (!topic.value || !Array.isArray(topic.value) || topic.value.length === 0) {
+const sliceData = (start: number, end: number) => {
+  if (!filteredTopics.value.length) {
     slicedData.value = [];
     return;
   }
 
   // If only one page of data or less, return all data
-  if (topic.value.length <= pageSize.value) {
-    slicedData.value = topic.value;
+  if (filteredTopics.value.length <= pageSize.value) {
+    slicedData.value = filteredTopics.value;
     return;
   }
 
   // Otherwise slice the data
-  slicedData.value = topic.value.slice(start, end);
+  slicedData.value = filteredTopics.value.slice(start, end);
 };
 
 // current page data
@@ -189,10 +219,10 @@ const switchTab = async (tab: string) => {
 };
 
 // Then, update fetchTopics to call sliceData after data is loaded
-const fetchTopics = async (params:any) => {
+const fetchTopics = async (params: any) => {
   try {
     status.value = "pending";
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`interactive-${educationLevel.value}-${tabLanguage.value}-${subjectId}`,()=>$fetch(apiDocs.topics.getSubjectId.replace(
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`interactive-${educationLevel.value}-${tabLanguage.value}-${subjectId}`, () => $fetch(apiDocs.topics.getSubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
@@ -238,8 +268,8 @@ if (isGreaterToXL) {
 
 // total pages data
 const totalPages = computed(() => {
-  if (topic.value && Array.isArray(topic.value)) {
-    return Math.ceil(topic.value.length / pageSize.value);
+  if (filteredTopics.value.length) {
+    return Math.ceil(filteredTopics.value.length / pageSize.value);
   }
   return 0; // Default to 0 if no data
 });
@@ -307,6 +337,11 @@ watch(filters, (filters) => {
     subject: filters?.subject,
   });
 });
+
+watch(selectedLevel, () => {
+  currentPage.value = 1;
+  sliceData(0, pageSize.value);
+});
 </script>
 
 <template>
@@ -314,16 +349,9 @@ watch(filters, (filters) => {
     <div class="" :class="{ ' animate-pulse': isLoading }">
       <div class="flex flex-col gap-4">
         <!-- Keep hero-style search visible for both logged-in and logged-out -->
-        <HomeSearchbar appearance="not-normal" :language="contentLayoutLanguage"/>
-        <TabBar
-          :is-logged-in="isLoggedIn"
-          :active-tab="activeTab"
-          @emit-active-tab="switchTab($event)"
-          :subject-title="subjectTitle"
-          :topic-id="subjectId"
-          :tab-group="educationLevel"
-          :language="tabLanguage"
-        />
+        <HomeSearchbar appearance="not-normal" :language="contentLayoutLanguage" />
+        <TabBar :is-logged-in="isLoggedIn" :active-tab="activeTab" @emit-active-tab="switchTab($event)"
+          :subject-title="subjectTitle" :topic-id="subjectId" :tab-group="educationLevel" :language="tabLanguage" />
       </div>
       <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />
@@ -344,19 +372,24 @@ watch(filters, (filters) => {
           <div class="flex flex-col w-full">
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class="flex flex-col items-start">
+              <div class="flex flex-col w-full">
+
+                <div class="flex items-center justify-end w-full">
+                  <div class="w-64">
+                    <!-- Custom Drop Down -->
+                    <CustomDropDownList v-if="availableLevels.length > 1" class="px-2 cursor-pointer"
+                      v-model="selectedLevel" placeholder="select class level" :list="availableLevels" />
+                  </div>
+                </div>
+
                 <customGridTwo>
                   <template #data>
                     <TopicCard v-for="topic in slicedData" :key="topic._id" :topic-id="topic._id"
-                      :topic-image="topic.thumbnail" :topic-title="topic.name" 
-                      :topic-description="topic.descriptions"
-                      :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'" 
-                      :topic-likes="topic.topic_likes ? topic.topic_likes : 100" 
-                      :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length 
-                      :topic.views ? topic.views : 0" 
-                      :topic-level="level" :topic-standard="topic.level.name" 
-                      :subject-name="topic.subject.name"
-                      :topic-viewed="topic.isViewed" 
+                      :topic-image="topic.thumbnail" :topic-title="topic.name" :topic-description="topic.descriptions"
+                      :topic-duration="topic.topic_duration ? topic.topic_duration : '10 min'"
+                      :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length
+                        : topic.views ? topic.views : 0" :topic-level="level" :topic-standard="topic.level.name"
+                      :subject-name="topic.subject.name" :topic-viewed="topic.isViewed"
                       :topic-progress="topic.progressPercent" />
                   </template>
                 </customGridTwo>

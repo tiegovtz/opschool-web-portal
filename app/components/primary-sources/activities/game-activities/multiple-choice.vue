@@ -53,6 +53,7 @@ const questionStartTime = ref(Date.now());
 const userAnswers = ref<UserAnswer[]>([]);
 const showResults = ref(false);
 const answerFeedback = ref<"correct" | "incorrect" | null>(null);
+const activityInstructionsId = "game-multiple-choice-instructions";
 
 const { playSound } = useSoundEffects();
 
@@ -214,8 +215,22 @@ const resultsSummary = computed(() =>
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="game-multiple-choice-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="game-multiple-choice-title" class="sr-only">
+      {{ props.questions.title || "Speed Quiz Challenge" }}
+    </h2>
     <ActivityTitle :title="props.questions.title || 'Speed Quiz Challenge'" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye chaguo za kila swali. Tumia enter au space kuchagua jibu."
+          : "Use Tab to move through each answer choice. Use Enter or Space to select your answer."
+      }}
+    </p>
 
     <div v-if="showResults" class="flex-1 flex flex-col items-center justify-between gap-6 overflow-hidden p-6">
       <div class="w-full space-y-3">
@@ -312,10 +327,17 @@ const resultsSummary = computed(() =>
               </div>
 
               <div class="mt-6">
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div
+                  class="grid grid-cols-1 gap-4 md:grid-cols-2"
+                  role="group"
+                  :aria-label="ui.isSwahili ? `Chaguo za swali la ${currentQuestionIndex + 1}` : `Answer choices for question ${currentQuestionIndex + 1}`"
+                >
                   <Button
                     v-for="(option, index) in currentQuestion.options"
                     :key="`${currentQuestion.id}-${index}`"
+                    type="button"
+                    :aria-pressed="selectedAnswer === option"
+                    :aria-label="ui.isSwahili ? `Swali la ${currentQuestionIndex + 1}, chaguo la ${index + 1}: ${option}` : `Question ${currentQuestionIndex + 1}, option ${index + 1}: ${option}`"
                     :class="
                       cn(
                         'min-h-16 h-auto border-none bg-picton-blue-100 p-4 text-left text-lg font-medium text-picton-blue-700 text-wrap justify-start shadow-md transition-all duration-300 hover:bg-picton-blue-200 hover:shadow-lg md:min-h-24',
@@ -326,6 +348,7 @@ const resultsSummary = computed(() =>
                           'bg-red-50 text-red-700': showFeedback && selectedAnswer === option && option !== currentQuestion.correctAnswer,
                           'cursor-not-allowed pointer-events-none': showFeedback,
                         },
+                        'focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                       )
                     "
                     @click="handleAnswerSelect(option)"
@@ -398,5 +421,5 @@ const resultsSummary = computed(() =>
       :open="gameComplete"
       :on-open-change="handleResultsDialogChange"
     />
-  </div>
+  </section>
 </template>

@@ -31,7 +31,6 @@ export function clearShortcodesCache(): void {
   }).catch(() => {
     // Ignore if module not available
   });
-  console.log('[imageShortcodes] Cache cleared');
 }
 
 /**
@@ -52,7 +51,6 @@ export async function loadDynamicShortcodes(forceReload: boolean = false): Promi
   cacheLoadPromise = (async () => {
     try {
       // Load all shortcodes from our server endpoint (handles auth internally)
-      console.log('[imageShortcodes] Fetching from /api/image-list...');
       const response = await fetch('/api/image-list');
       
       if (!response.ok) {
@@ -85,8 +83,6 @@ export async function loadDynamicShortcodes(forceReload: boolean = false): Promi
             dynamicShortcodesCache[figure.shortcode] = metadata;
           }
         }
-        console.log(`[imageShortcodes] ✅ Loaded ${Object.keys(dynamicShortcodesCache).length} dynamic shortcodes from server`);
-        console.log('[imageShortcodes] Shortcodes in cache:', Object.keys(dynamicShortcodesCache).slice(0, 5).join(', '), '...');
       } else {
         console.warn('[imageShortcodes] No figures returned from server:', data);
       }
@@ -120,7 +116,6 @@ export const getImageFromShortcode = (shortcodeName: string): ImageMetadata | nu
   
   if (childShortcodes.length > 0) {
     // Found child images - combine them into a multi-image figure
-    console.log(`[imageShortcodes] Parent shortcode "${trimmed}" found ${childShortcodes.length} child images`);
     const paths: string[] = [];
     const alts: string[] = [];
     

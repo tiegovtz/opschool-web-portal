@@ -33,6 +33,8 @@ type DragEndEvent = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
+const activityInstructionsId = "matching-with-letters-instructions";
 const { playSound } = useSoundEffects();
 
 const isKweliMode = computed(() => props.questions.mode === "kweliSikweli");
@@ -255,8 +257,22 @@ const resetActivity = () => {
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="matching-with-letters-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="matching-with-letters-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila swali na chaguo za majibu. Chagua herufi kwa enter au space, kisha uweke kwenye nafasi ya swali."
+          : "Use Tab to move through each question and answer choices. Select a letter with Enter or Space, then place it in the question slot."
+      }}
+    </p>
 
     <div
       v-if="isKweliMode"
@@ -277,6 +293,7 @@ const resetActivity = () => {
           <Button
             type="button"
             variant="outline"
+            :aria-label="ui.isSwahili ? 'Chagua Kweli' : 'Choose True'"
             :class="
               cn(
                 'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
@@ -289,6 +306,7 @@ const resetActivity = () => {
           <Button
             type="button"
             variant="outline"
+            :aria-label="ui.isSwahili ? 'Chagua Si Kweli' : 'Choose False'"
             :class="
               cn(
                 'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
@@ -405,7 +423,7 @@ const resetActivity = () => {
                   <Droppable
                     v-else
                     :id="question.id"
-                    class="h-10 w-14 rounded bg-picton-blue-200"
+                    class="h-10 w-14 rounded bg-picton-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
                     isOverClassName="bg-lemon-200"
                   />
                 </div>
@@ -422,12 +440,12 @@ const resetActivity = () => {
             />
             <template v-else>
               <h3 class="mb-2 font-semibold">Options</h3>
-              <div class="flex flex-wrap gap-4 text-lg">
+              <div class="flex flex-wrap gap-4 text-lg" role="group" :aria-label="ui.availableAnswerChoices.value">
                 <Draggable
                   v-for="(answer, index) in availableAnswers"
                   :key="index"
                   :id="answer.letter"
-                  class="flex h-10 w-14 items-center justify-center rounded bg-lemon-200 text-xl font-semibold text-lemon-700"
+                  class="flex h-10 w-14 items-center justify-center rounded bg-lemon-200 text-xl font-semibold text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
                 >
                   <span>{{ answer.letter }}</span>
                 </Draggable>
@@ -465,5 +483,5 @@ const resetActivity = () => {
         }
       "
     />
-  </div>
+  </section>
 </template>

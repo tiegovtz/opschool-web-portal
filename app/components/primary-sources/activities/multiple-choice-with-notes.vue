@@ -50,8 +50,82 @@ const shuffledQuestions = ref<MultipleChoiceQuestion[]>([]);
 const allAnswers = ref<Record<number, string>>({});
 const answersChecked = ref(false);
 const isAdvancingQuestion = ref(false);
+const activityInstructionsId = "multiple-choice-with-notes-instructions";
+const activityStatusId = "multiple-choice-with-notes-status";
 
 const hasNotes = computed(() => !!props.questions.notes?.trim());
+const currentQuestionData = computed(
+  () => shuffledQuestions.value[activeQuestion.value],
+);
+
+const getQuestionId = (index: number) => `multiple-choice-with-notes-question-${index}`;
+const getOptionsId = (index: number) => `multiple-choice-with-notes-options-${index}`;
+const getOptionId = (questionIndex: number, optionId: string) =>
+  `multiple-choice-with-notes-option-${questionIndex}-${optionId.toLowerCase()}`;
+const getInputId = (index: number) => `multiple-choice-with-notes-input-${index}`;
+const getInputLabelId = (index: number) => `multiple-choice-with-notes-input-label-${index}`;
+const getQuestionStatusId = (index: number) => `multiple-choice-with-notes-question-status-${index}`;
+const getProgressLabel = (index: number) => {
+  const attempt = attemptedQuestions.value[index];
+
+  if (!attempt) {
+    return ui.isSwahili
+      ? `Swali la ${index + 1} bado halijajibiwa`
+      : `Question ${index + 1} not answered yet`;
+  }
+
+  return attempt.isCorrect
+    ? ui.isSwahili
+      ? `Swali la ${index + 1} limejibiwa kwa usahihi`
+      : `Question ${index + 1} answered correctly`
+    : ui.isSwahili
+      ? `Swali la ${index + 1} limejibiwa vibaya`
+      : `Question ${index + 1} answered incorrectly`;
+};
+
+const getQuestionResultText = (index: number) =>
+  attemptedQuestions.value[index]?.isCorrect
+    ? ui.isSwahili
+      ? "Jibu sahihi"
+      : "Correct answer"
+    : ui.isSwahili
+      ? "Jibu si sahihi"
+      : "Incorrect answer";
+
+const getValidOptionIds = (question: MultipleChoiceQuestion | undefined) =>
+  question?.options.map((option) => option.id.toUpperCase()) ?? [];
+
+const normalizeAnswer = (value: string, question: MultipleChoiceQuestion | undefined) => {
+  const upperValue = value.toUpperCase();
+
+  if (upperValue === "") return "";
+  return getValidOptionIds(question).includes(upperValue) ? upperValue : null;
+};
+
+const activityStatusMessage = computed(() => {
+  if (showResults.value) {
+    return ui.isSwahili
+      ? `Matokeo yanaonyeshwa. Umepata ${score.value} kati ya ${shuffledQuestions.value.length}.`
+      : `Results are shown. You scored ${score.value} out of ${shuffledQuestions.value.length}.`;
+  }
+
+  if (hasNotes.value) {
+    return ui.isSwahili
+      ? `Swali la ${activeQuestion.value + 1} kati ya ${shuffledQuestions.value.length}.`
+      : `Question ${activeQuestion.value + 1} of ${shuffledQuestions.value.length}.`;
+  }
+
+  if (answersChecked.value) {
+    return ui.isSwahili
+      ? `Majibu yamekaguliwa. Umepata ${score.value} kati ya ${shuffledQuestions.value.length}.`
+      : `Answers checked. You scored ${score.value} out of ${shuffledQuestions.value.length}.`;
+  }
+
+  const answeredCount = Object.values(allAnswers.value).filter((answer) => answer !== "").length;
+  return ui.isSwahili
+    ? `Umejaza majibu ${answeredCount} kati ya ${shuffledQuestions.value.length}.`
+    : `You have entered answers for ${answeredCount} of ${shuffledQuestions.value.length} questions.`;
+});
 
 const initialize = () => {
   shuffledQuestions.value = shuffle(props.questions.questions);
@@ -129,26 +203,26 @@ const checkAnswer = (answer: string) => {
 };
 
 const handleInputChange = (value: string) => {
-  const upperValue = value.toUpperCase();
-  if (!["A", "B", "C", "D", "E", ""].includes(upperValue)) {
+  const normalizedValue = normalizeAnswer(value, currentQuestionData.value);
+  if (normalizedValue === null) {
     return;
   }
 
-  currentAnswer.value = upperValue;
-  if (upperValue !== "") {
-    checkAnswer(upperValue);
+  currentAnswer.value = normalizedValue;
+  if (normalizedValue !== "") {
+    checkAnswer(normalizedValue);
   }
 };
 
 const handleAllAtOnceInputChange = (questionIndex: number, value: string) => {
-  const upperValue = value.toUpperCase();
-  if (!["A", "B", "C", "D", "E", ""].includes(upperValue)) {
+  const normalizedValue = normalizeAnswer(value, shuffledQuestions.value[questionIndex]);
+  if (normalizedValue === null) {
     return;
   }
 
   allAnswers.value = {
     ...allAnswers.value,
-    [questionIndex]: upperValue,
+    [questionIndex]: normalizedValue,
   };
 };
 
@@ -202,17 +276,36 @@ const resultRows = computed(() =>
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <section
+    class="flex h-full flex-col"
+    aria-labelledby="multiple-choice-with-notes-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="multiple-choice-with-notes-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye swali, chaguo, na kisanduku cha jibu. Andika herufi ya jibu kwenye kisanduku."
+          : "Use Tab to move through the question, answer choices, and answer field. Type the answer letter in the input."
+      }}
+    </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ activityStatusMessage }}
+    </p>
 
     <div
       v-if="showResults"
       class="flex flex-1 flex-col items-center justify-between overflow-auto md:p-4"
     >
-      <div class="w-full space-y-3">
+      <div class="w-full space-y-3" role="list" :aria-label="ui.isSwahili ? 'Muhtasari wa matokeo' : 'Results summary'">
         <div
           v-for="(row, index) in resultRows"
           :key="index"
+          role="listitem"
+          :aria-labelledby="`multiple-choice-with-notes-result-${index}`"
           :class="
             cn(
               'flex items-center gap-3 rounded-md border p-3',
@@ -227,12 +320,15 @@ const resultRows = computed(() =>
                 row.isCorrect ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700',
               )
             "
+            aria-hidden="true"
           >
             {{ row.isCorrect ? "✓" : "✕" }}
           </div>
 
           <div class="flex-1">
-            <p class="font-medium">{{ ui.formatQuestion(index + 1) }}</p>
+            <p :id="`multiple-choice-with-notes-result-${index}`" class="font-medium">
+              {{ ui.formatQuestion(index + 1) }}
+            </p>
             <div class="mt-1 flex flex-col gap-1 text-sm">
               <p>{{ row.question.question }}</p>
               <span v-if="props.feedback === 'wrong-correct-answers'">
@@ -270,16 +366,26 @@ const resultRows = computed(() =>
                 'md:max-h-[300px]': props.questions.image,
               })
             "
+            role="group"
+            :aria-labelledby="getQuestionId(activeQuestion)"
+            :aria-describedby="`${activityInstructionsId} ${getOptionsId(activeQuestion)} ${activityStatusId}`"
           >
-            <p class="text-lg text-picton-blue-700">
-              {{ activeQuestion + 1 }}. {{ shuffledQuestions[activeQuestion]?.question }}
-            </p>
+            <h3 :id="getQuestionId(activeQuestion)" class="text-lg text-picton-blue-700">
+              {{ activeQuestion + 1 }}. {{ currentQuestionData?.question }}
+            </h3>
 
             <div class="mt-4 flex items-center justify-between">
-              <div class="flex flex-col gap-2">
+              <div
+                class="flex flex-col gap-2"
+                role="list"
+                :id="getOptionsId(activeQuestion)"
+                :aria-label="ui.isSwahili ? `Chaguo za swali la ${activeQuestion + 1}` : `Answer choices for question ${activeQuestion + 1}`"
+              >
                 <div
-                  v-for="(option, optionIndex) in shuffledQuestions[activeQuestion]?.options || []"
+                  v-for="(option, optionIndex) in currentQuestionData?.options || []"
                   :key="optionIndex"
+                  role="listitem"
+                  :id="getOptionId(activeQuestion, option.id)"
                   class="flex items-start gap-2 text-lg font-thin text-picton-blue-700"
                   style="font-family: var(--font-shaky-hand-some-comic);"
                 >
@@ -288,28 +394,57 @@ const resultRows = computed(() =>
                 </div>
               </div>
 
-              <Input
-                ref="inputRef"
-                :model-value="currentAnswer"
-                type="text"
-                maxlength="1"
-                :class="
-                  cn('h-12 w-12 rounded bg-picton-blue-200 text-center text-2xl', {
-                    'bg-lemon-200 text-lemon-700': currentAnswer,
-                  })
-                "
-                @update:model-value="(value) => handleInputChange(String(value ?? ''))"
-              />
+              <div class="flex flex-col items-center gap-2">
+                <label :id="getInputLabelId(activeQuestion)" :for="getInputId(activeQuestion)" class="sr-only">
+                  {{
+                    ui.isSwahili
+                      ? `Jibu la swali ${activeQuestion + 1}`
+                      : `Answer for question ${activeQuestion + 1}`
+                  }}
+                </label>
+                <Input
+                  :id="getInputId(activeQuestion)"
+                  ref="inputRef"
+                  :model-value="currentAnswer"
+                  type="text"
+                  maxlength="1"
+                  inputmode="text"
+                  autocapitalize="characters"
+                  :aria-labelledby="getInputLabelId(activeQuestion)"
+                  :aria-describedby="`${activityInstructionsId} ${getOptionsId(activeQuestion)} ${activityStatusId}`"
+                  :class="
+                    cn('h-12 w-12 rounded bg-picton-blue-200 text-center text-2xl', {
+                      'bg-lemon-200 text-lemon-700': currentAnswer,
+                    })
+                  "
+                  @update:model-value="(value) => handleInputChange(String(value ?? ''))"
+                />
+                <p
+                  v-if="attemptedQuestions[activeQuestion]"
+                  :id="getQuestionStatusId(activeQuestion)"
+                  role="status"
+                  class="text-sm font-medium"
+                  :class="attemptedQuestions[activeQuestion].isCorrect ? 'text-green-600' : 'text-red-600'"
+                >
+                  {{ getQuestionResultText(activeQuestion) }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div class="flex h-full items-center justify-between">
-        <div class="flex flex-wrap justify-center gap-4">
+        <div
+          class="flex flex-wrap justify-center gap-4"
+          role="list"
+          :aria-label="ui.isSwahili ? 'Maendeleo ya maswali' : 'Question progress'"
+        >
           <div
             v-for="(_, index) in shuffledQuestions"
             :key="index"
+            role="listitem"
+            :aria-label="getProgressLabel(index)"
             :class="
               cn('flex h-10 w-10 items-center justify-center rounded-lg', {
                 'bg-lemon-200': attemptedQuestions[index],
@@ -319,8 +454,11 @@ const resultRows = computed(() =>
             "
           >
             <template v-if="attemptedQuestions[index]">
-              {{ attemptedQuestions[index].isCorrect ? "✓" : "✕" }}
+              <span aria-hidden="true">
+                {{ attemptedQuestions[index].isCorrect ? "✓" : "✕" }}
+              </span>
             </template>
+            <span v-else class="sr-only">{{ getProgressLabel(index) }}</span>
           </div>
         </div>
       </div>
@@ -328,10 +466,13 @@ const resultRows = computed(() =>
 
     <div v-else class="flex h-full flex-col gap-4 overflow-auto">
       <div class="rounded-xl bg-white p-4 md:p-6">
-        <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-4" role="list" :aria-label="ui.isSwahili ? 'Maswali ya kuchagua jibu' : 'Multiple choice questions'">
           <div
             v-for="(question, questionIndex) in shuffledQuestions"
             :key="questionIndex"
+            role="listitem"
+            :aria-labelledby="getQuestionId(questionIndex)"
+            :aria-describedby="`${getOptionsId(questionIndex)} ${activityInstructionsId} ${activityStatusId}`"
             :class="
               cn('rounded-lg border-2 p-4 transition-colors', {
                 'border-green-300 bg-green-50': answersChecked && attemptedQuestions[questionIndex]?.isCorrect,
@@ -345,13 +486,20 @@ const resultRows = computed(() =>
           >
             <div class="flex items-start justify-between gap-4">
               <div class="flex-1">
-                <p class="mb-3 text-lg text-picton-blue-700">
+                <h3 :id="getQuestionId(questionIndex)" class="mb-3 text-lg text-picton-blue-700">
                   {{ questionIndex + 1 }}. {{ question.question }}
-                </p>
-                <div class="flex flex-col gap-1">
+                </h3>
+                <div
+                  class="flex flex-col gap-1"
+                  role="list"
+                  :id="getOptionsId(questionIndex)"
+                  :aria-label="ui.isSwahili ? `Chaguo za swali la ${questionIndex + 1}` : `Answer choices for question ${questionIndex + 1}`"
+                >
                   <div
                     v-for="(option, optionIndex) in question.options"
                     :key="optionIndex"
+                    role="listitem"
+                    :id="getOptionId(questionIndex, option.id)"
                     class="flex items-start gap-2 text-base font-thin text-picton-blue-700"
                     style="font-family: var(--font-shaky-hand-some-comic);"
                   >
@@ -362,11 +510,23 @@ const resultRows = computed(() =>
               </div>
 
               <div class="flex flex-col items-center gap-2">
+                <label :id="getInputLabelId(questionIndex)" :for="getInputId(questionIndex)" class="sr-only">
+                  {{
+                    ui.isSwahili
+                      ? `Jibu la swali ${questionIndex + 1}`
+                      : `Answer for question ${questionIndex + 1}`
+                  }}
+                </label>
                 <Input
+                  :id="getInputId(questionIndex)"
                   :model-value="allAnswers[questionIndex] || ''"
                   type="text"
                   maxlength="1"
+                  inputmode="text"
+                  autocapitalize="characters"
                   :disabled="answersChecked"
+                  :aria-labelledby="getInputLabelId(questionIndex)"
+                  :aria-describedby="`${activityInstructionsId} ${getOptionsId(questionIndex)} ${activityStatusId}`"
                   :class="
                     cn('h-12 w-12 rounded text-center text-2xl', {
                       'bg-green-200 text-green-700':
@@ -386,6 +546,9 @@ const resultRows = computed(() =>
 
                 <div
                   v-if="answersChecked && attemptedQuestions[questionIndex]"
+                  :id="getQuestionStatusId(questionIndex)"
+                  role="status"
+                  :aria-label="getQuestionResultText(questionIndex)"
                   :class="
                     cn('flex h-8 w-8 items-center justify-center rounded-full', {
                       'bg-green-100': attemptedQuestions[questionIndex].isCorrect,
@@ -393,7 +556,9 @@ const resultRows = computed(() =>
                     })
                   "
                 >
-                  {{ attemptedQuestions[questionIndex].isCorrect ? "✓" : "✕" }}
+                  <span aria-hidden="true">
+                    {{ attemptedQuestions[questionIndex].isCorrect ? "✓" : "✕" }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -405,6 +570,7 @@ const resultRows = computed(() =>
         v-if="!answersChecked"
         class="ml-auto w-fit group gap-2"
         :disabled="!allQuestionsAnswered"
+        :aria-describedby="activityInstructionsId"
         @click="checkAllAnswers"
       >
         <Icon
@@ -412,6 +578,7 @@ const resultRows = computed(() =>
           width="18"
           height="18"
           class="text-lemon-700 transition-transform duration-200 group-hover:scale-110 animate-pulse"
+          aria-hidden="true"
         />
         {{ ui.checkAnswers }}
       </Button>
@@ -434,5 +601,5 @@ const resultRows = computed(() =>
         }
       "
     />
-  </div>
+  </section>
 </template>

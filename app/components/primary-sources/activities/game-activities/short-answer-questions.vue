@@ -53,6 +53,7 @@ const gameComplete = ref(false);
 const completedQuestions = ref(new Set<number>());
 const incorrectQuestions = ref(new Set<number>());
 const completedObjectIds = ref<number[]>([]);
+const activityInstructionsId = "game-short-answer-instructions";
 
 const { playSound } = useSoundEffects();
 
@@ -207,8 +208,22 @@ const handleResultsDialogChange = (open: boolean) => {
     :show-timer="props.questions.isGameMode || false"
     :show-progress="props.questions.isGameMode || false"
   >
-    <div class="flex h-full flex-col">
+    <section
+      class="flex h-full flex-col"
+      aria-labelledby="game-short-answer-title"
+      :aria-describedby="activityInstructionsId"
+    >
+      <h2 id="game-short-answer-title" class="sr-only">
+        {{ props.questions.title }}
+      </h2>
       <ActivityTitle :title="props.questions.title" />
+      <p :id="activityInstructionsId" class="sr-only">
+        {{
+          ui.isSwahili
+            ? "Tumia tab kusogea kwenye kila swali na sehemu ya jibu. Andika jibu lako, kisha tumia tab kufikia kitufe cha kukagua."
+            : "Use Tab to move through each question and answer field. Type your answer, then use Tab to reach the check answers button."
+        }}
+      </p>
 
       <div class="flex h-full flex-col gap-2 bg-picton-blue-100">
         <div
@@ -227,6 +242,7 @@ const handleResultsDialogChange = (open: boolean) => {
                   checkedItems.includes(index) && feedbacks[index] === undefined,
               })
             "
+            :aria-labelledby="`game-short-answer-question-${question.id}`"
           >
             <div class="flex w-full items-center justify-between px-4 py-2">
               <div>
@@ -241,7 +257,7 @@ const handleResultsDialogChange = (open: boolean) => {
                 </div>
 
                 <div class="inline-flex flex-1 items-center gap-4">
-                  <span class="font-medium">{{ question.question }}</span>
+                  <span :id="`game-short-answer-question-${question.id}`" class="font-medium">{{ question.question }}</span>
 
                   <span class="mx-1 inline-flex w-[150px] flex-col">
                     <Input
@@ -250,6 +266,7 @@ const handleResultsDialogChange = (open: boolean) => {
                       :disabled="checkedItems.includes(index)"
                       class="min-w-0 border-none bg-transparent px-2 text-center focus:outline-none"
                       :style="{ maxWidth: '320px' }"
+                      :aria-label="ui.isSwahili ? `Jibu la swali ${index + 1}: ${question.question}` : `Answer for question ${index + 1}: ${question.question}`"
                       @update:model-value="handleInputUpdate(index, $event)"
                     />
                     <div
@@ -328,6 +345,6 @@ const handleResultsDialogChange = (open: boolean) => {
         :open="allAnswered && !showResults"
         :on-open-change="handleResultsDialogChange"
       />
-    </div>
+    </section>
   </GameModeWrapper>
 </template>

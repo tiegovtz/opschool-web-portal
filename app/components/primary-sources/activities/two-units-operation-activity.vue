@@ -40,6 +40,7 @@ const emptyAnswers = () => props.questions.map(() => ({ shs: "", cts: "" }));
 const userAnswers = ref<CurrencyAnswer[]>(emptyAnswers());
 const submitted = ref(false);
 const showResults = ref(false);
+const instructionsId = "two-units-operation-activity-instructions";
 
 const parseOperation = (question: string) => {
   const match = question.match(
@@ -102,6 +103,11 @@ const handleSubmit = () => {
 
 <template>
   <div class="flex h-full flex-col">
+    <p :id="instructionsId" class="sr-only">
+      Solve each money operation by entering the shillings and cents parts of the answer. Use the
+      Tab key to move between the two answer fields for each question, then activate the check
+      answers button when all questions are filled.
+    </p>
     <div class="flex flex-1 gap-4">
       <div class="flex h-full w-full flex-col gap-4">
         <div class="h-full bg-picton-blue-50 p-4">
@@ -143,6 +149,8 @@ const handleSubmit = () => {
                   <span class="mr-2 text-gray-600">shs</span>
                   <Input
                     :model-value="userAnswers[index].shs"
+                    :aria-label="`Question ${index + 1} shillings`"
+                    :aria-describedby="instructionsId"
                     class="w-16 rounded-none border-x-0 border-b-2 border-t-0 border-dashed border-picton-blue-700 bg-transparent px-1 text-right focus-visible:ring-transparent"
                     :disabled="submitted"
                     @update:model-value="
@@ -154,6 +162,8 @@ const handleSubmit = () => {
                 <div class="flex w-full max-w-[200px] items-center justify-center gap-1">
                   <Input
                     :model-value="userAnswers[index].cts"
+                    :aria-label="`Question ${index + 1} cents`"
+                    :aria-describedby="instructionsId"
                     class="w-12 rounded-none border-x-0 border-b-2 border-t-0 border-dashed border-picton-blue-700 bg-transparent px-1 text-right focus-visible:ring-transparent"
                     :disabled="submitted"
                     @update:model-value="
@@ -196,6 +206,7 @@ const handleSubmit = () => {
         <Button
           v-if="!submitted && allAnswered"
           class="ml-auto w-fit group gap-2"
+          :aria-describedby="instructionsId"
           @click="handleSubmit"
         >
           <Icon

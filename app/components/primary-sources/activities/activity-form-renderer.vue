@@ -23,6 +23,7 @@ const metadata = ref<ActivityMetadata>(defaultActivityMetadata(props.metadata));
 const configurationText = ref("{}");
 const parseError = ref("");
 const isSubmitting = ref(false);
+const instructionsId = "activity-form-renderer-instructions";
 
 const config = computed(() =>
   props.activityType ? getActivityTypeConfig(props.activityType as ActivityType) : null,
@@ -98,6 +99,10 @@ const handleSubmit = async () => {
         <p class="text-sm text-slate-600">{{ contextCopy }}</p>
       </CardContent>
     </Card>
+    <p :id="instructionsId" class="sr-only">
+      Edit the activity metadata and raw JSON configuration. Use the Tab key to move through the
+      form fields, then choose save when you are ready.
+    </p>
 
     <ActivityMetadataForm
       :default-values="metadata"
@@ -123,6 +128,8 @@ const handleSubmit = async () => {
         <Textarea
           v-model="configurationText"
           class="min-h-[420px] font-mono text-sm"
+          :aria-describedby="instructionsId"
+          aria-label="Activity JSON configuration"
           placeholder="{&#10;  &quot;title&quot;: &quot;My Activity&quot;,&#10;  &quot;questions&quot;: []&#10;}"
         />
 
@@ -135,7 +142,7 @@ const handleSubmit = async () => {
           <Button v-if="props.onCancel" variant="outline-brand" @click="props.onCancel">
             Cancel
           </Button>
-          <Button :disabled="isSubmitting" @click="handleSubmit">
+          <Button :disabled="isSubmitting" :aria-describedby="instructionsId" @click="handleSubmit">
             {{ isSubmitting ? "Saving..." : "Save Activity Form" }}
           </Button>
         </div>

@@ -2,9 +2,6 @@
 import { computed, ref, watch } from "vue";
 import { Icon } from "@iconify/vue";
 import { cn, shuffle } from "@/lib/utils";
-import Draggable from "@/components/ui/dnd/draggable";
-import Droppable from "@/components/ui/dnd/droppable";
-import DNDContext from "@/components/layout/dnd-context";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, {
   ActivityResultsAlertDialog,
@@ -32,17 +29,9 @@ type Props = {
   };
 };
 
-type DragEndEvent = {
-  active: {
-    id: string;
-  };
-  over?: {
-    id: string;
-  };
-};
-
 const props = defineProps<Props>();
 const ui = useActivityUiText();
+const activityInstructionsId = "game-ascending-order-instructions";
 
 const currentQuestionIndex = ref(0);
 const score = ref(0);
@@ -119,35 +108,41 @@ watch(
   },
 );
 
-const handleDragEnd = (event: DragEndEvent) => {
-    if (!event.over) return;
+const placeNumberInNextSlot = (number: number) => {
+  const nextSlotIndex = questionState.value.answer.findIndex((item) => !item);
+  if (nextSlotIndex === -1) return;
 
-    const activeParts = String(event.active.id).split("%");
-    const overParts = String(event.over.id).split("%");
+  questionState.value = {
+    ...questionState.value,
+    availableNumbers: questionState.value.availableNumbers.map((item) =>
+      item === number ? "" : item,
+    ),
+    answer: questionState.value.answer.map((item, index) => {
+      if (index === nextSlotIndex) return number;
+      if (item === number) return "";
+      return item;
+    }),
+  };
+};
 
-    const activeQuestionId = activeParts[0];
-    const overQuestionId = overParts[0];
+const removeNumberFromSlot = (slotIndex: number) => {
+  const slotValue = questionState.value.answer[slotIndex];
+  if (!slotValue || typeof slotValue !== "number") return;
 
-    if (activeQuestionId !== questionState.value.id || overQuestionId !== questionState.value.id) {
-      return;
-    }
+  const availableIndex = questionState.value.availableNumbers.findIndex((item) => !item);
+  const nextAvailableNumbers = [...questionState.value.availableNumbers];
 
-    const number = Number(activeParts[1]);
-    const slotIndex = Number(overParts[1]);
+  if (availableIndex !== -1) {
+    nextAvailableNumbers[availableIndex] = slotValue;
+  } else {
+    nextAvailableNumbers.push(slotValue);
+  }
 
-    if (!Number.isFinite(number) || !Number.isFinite(slotIndex)) return;
-
-    questionState.value = {
-      ...questionState.value,
-      availableNumbers: questionState.value.availableNumbers.map((item) =>
-        item === number ? "" : item,
-      ),
-      answer: questionState.value.answer.map((item, index) => {
-        if (index === slotIndex) return number;
-        if (item === number) return "";
-        return item;
-      }),
-    };
+  questionState.value = {
+    ...questionState.value,
+    availableNumbers: nextAvailableNumbers,
+    answer: questionState.value.answer.map((item, index) => (index === slotIndex ? "" : item)),
+  };
 };
 
 const handleTimeUp = () => {
@@ -198,10 +193,24 @@ const handleResultsDialogChange = (open: boolean) => {
     :on-time-up="handleTimeUp"
     :on-game-complete="handleGameComplete"
   >
-    <ActivityTitle :title="props.questions.title" />
+    <section
+      class="h-full flex-1"
+      aria-labelledby="game-ascending-order-title"
+      :aria-describedby="activityInstructionsId"
+    >
+      <h2 id="game-ascending-order-title" class="sr-only">
+        {{ props.questions.title }}
+      </h2>
+      <ActivityTitle :title="props.questions.title" />
+      <p :id="activityInstructionsId" class="sr-only">
+        {{
+          ui.isSwahili
+            ? "Tumia tab kuchagua namba kutoka chaguo zilizopo. Bonyeza enter au space kuiweka kwenye nafasi inayofuata. Tumia tab kufikia nafasi zilizojaa na bonyeza enter au space kuondoa namba."
+            : "Use Tab to choose a number from the available choices. Press Enter or Space to place it in the next empty slot. Use Tab to reach a filled slot and press Enter or Space to remove the number."
+        }}
+      </p>
 
-    <div class="h-full flex-1">
-      <DNDContext :on-drag-end="showResults ? () => {} : handleDragEnd">
+      <div class="h-full">
         <div
           :class="
             cn(
@@ -218,6 +227,8 @@ const handleResultsDialogChange = (open: boolean) => {
             <div
               v-if="questionState.availableNumbers.some((value) => value)"
               class="flex flex-1 flex-wrap gap-2 xl:gap-6"
+              role="group"
+              :aria-label="ui.isSwahili ? 'Namba zinazopatikana' : 'Available numbers'"
             >
               <template v-for="(number, index) in questionState.availableNumbers" :key="index">
                 <div
@@ -225,33 +236,40 @@ const handleResultsDialogChange = (open: boolean) => {
                   class="min-h-12 flex-1 p-3"
                 />
 
-                <Draggable
+                <button
                   v-else
-                  :id="`${questionState.id}%${number}%${index}`"
+                  type="button"
                   :disabled="showResults"
+                  :aria-label="ui.isSwahili ? `Weka namba ${number}` : `Place number ${number}`"
                   :class="
                     cn(
-                      'min-h-12 flex-1 rounded-lg p-3 text-center text-lg font-bold',
+                      'min-h-12 flex-1 rounded-lg p-3 text-center text-lg font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                       showResults
                         ? 'cursor-not-allowed bg-gray-200'
                         : 'cursor-move bg-picton-blue-200 hover:bg-picton-blue-300',
                     )
                   "
+                  @click="placeNumberInNextSlot(Number(number))"
                 >
                   {{ number }}
-                </Draggable>
+                </button>
               </template>
             </div>
 
-            <div class="flex flex-1 gap-2 xl:gap-6">
+            <div
+              class="flex flex-1 gap-2 xl:gap-6"
+              role="group"
+              :aria-label="ui.isSwahili ? 'Mpangilio wako wa namba' : 'Your number order'"
+            >
               <template v-for="(number, index) in questionState.answer" :key="index">
-                <Draggable
+                <button
                   v-if="number"
-                  :id="`${questionState.id}%${number}%${index}`"
+                  type="button"
                   :disabled="showResults"
+                  :aria-label="ui.isSwahili ? `Nafasi ya ${index + 1}, namba ${number}. Bonyeza kuiondoa.` : `Slot ${index + 1}, number ${number}. Press to remove it.`"
                   :class="
                     cn(
-                      'flex flex-1 items-center justify-center rounded-lg p-3 text-lg font-bold',
+                      'flex flex-1 items-center justify-center rounded-lg p-3 text-lg font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                       showResults && allAnswered
                         ? number === currentQuestion.correctOrder[index]
                           ? 'bg-green-100 text-green-700'
@@ -259,23 +277,23 @@ const handleResultsDialogChange = (open: boolean) => {
                         : 'cursor-move bg-lemon-100 text-lemon-700',
                     )
                   "
+                  @click="removeNumberFromSlot(index)"
                 >
                   {{ number }}
-                </Draggable>
+                </button>
 
-                <Droppable
+                <div
                   v-else
-                  :id="`${questionState.id}%${index}`"
+                  :aria-label="ui.isSwahili ? `Nafasi tupu ya ${index + 1}` : `Empty slot ${index + 1}`"
                   :class="
                     cn(
                       'min-h-12 flex-1 rounded-lg border-b border-dashed px-2 py-6',
                       showResults ? 'bg-gray-100' : 'bg-picton-blue-100',
                     )
                   "
-                  is-over-class-name="bg-lemon-100"
                 >
                   {{ questionState.answer[index] }}
-                </Droppable>
+                </div>
               </template>
             </div>
 
@@ -321,15 +339,14 @@ const handleResultsDialogChange = (open: boolean) => {
             <span v-else class="text-xs font-bold">{{ score }}</span>
           </div>
         </div>
-      </DNDContext>
-
-      <ActivityResults
-        v-if="showResults && !isGameMode"
-        :score="score"
-        :total="totalQuestions"
-        :on-restart="resetActivity"
-      />
-    </div>
+        <ActivityResults
+          v-if="showResults && !isGameMode"
+          :score="score"
+          :total="totalQuestions"
+          :on-restart="resetActivity"
+        />
+      </div>
+    </section>
 
     <ActivityResultsAlertDialog
       :score="score"

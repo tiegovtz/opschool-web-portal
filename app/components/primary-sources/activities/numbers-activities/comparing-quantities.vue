@@ -30,6 +30,8 @@ const showResults = ref(false);
 const allAnswered = ref(false);
 const questionAnswers = reactive<Record<number, "" | "First" | "Second">>({});
 const correctAnswers = ref<string[]>([]);
+const activityInstructionsId = "numbers-comparing-quantities-instructions";
+const ui = useActivityUiText();
 
 const { playSound } = useSoundEffects();
 
@@ -93,8 +95,22 @@ const renderQuantityImages = (count: number, image: string) => ({
 </script>
 
 <template>
-  <div class="h-full flex flex-col">
+  <section
+    class="h-full flex flex-col"
+    aria-labelledby="numbers-comparing-quantities-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="numbers-comparing-quantities-title" class="sr-only">
+      {{ props.questions.title }}
+    </h2>
     <ActivityTitle :title="props.questions.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila jozi ya picha. Chagua First au Second kwa enter au space."
+          : "Use Tab to move through each picture pair. Choose First or Second with Enter or Space."
+      }}
+    </p>
 
     <div class="flex-1 flex flex-col gap-6 overflow-y-auto p-4">
       <div class="space-y-6">
@@ -102,10 +118,17 @@ const renderQuantityImages = (count: number, image: string) => ({
           v-for="(question, index) in props.questions.questions"
           :key="index"
           class="bg-white rounded-lg p-6 mb-6"
+          :aria-labelledby="`comparing-quantities-question-${index}`"
         >
+          <h3 :id="`comparing-quantities-question-${index}`" class="sr-only">
+            {{ ui.isSwahili ? `Swali la ${index + 1}` : `Question ${index + 1}` }}
+          </h3>
           <div class="flex flex-col md:flex-row items-center justify-between gap-8">
             <div class="bg-gray-50 md:flex md:items-center gap-2 p-4 rounded-lg border border-gray-200 w-full">
-              <QuantityRenderer v-bind="renderQuantityImages(question.leftNumber, question.leftImage)" />
+              <QuantityRenderer
+                v-bind="renderQuantityImages(question.leftNumber, question.leftImage)"
+                :summary-label="ui.isSwahili ? `Kundi la kwanza lina vitu ${question.leftNumber}` : `First group has ${question.leftNumber} items`"
+              />
 
               <div class="relative w-fit ml-auto">
                 <AnswerDropZone
@@ -117,6 +140,7 @@ const renderQuantityImages = (count: number, image: string) => ({
                   placeholder="Select"
                   :onClickChange="() => handleAnswerClick(index, 'First')"
                   :isSelected="questionAnswers[index] === 'First'"
+                  :ariaLabel="ui.isSwahili ? `Swali la ${index + 1}, chagua kundi la kwanza` : `Question ${index + 1}, choose the first group`"
                   :className="
                     `min-w-[120px] ${
                       showResults && questionAnswers[index] === 'First'
@@ -153,6 +177,7 @@ const renderQuantityImages = (count: number, image: string) => ({
                   placeholder="Select"
                   :onClickChange="() => handleAnswerClick(index, 'Second')"
                   :isSelected="questionAnswers[index] === 'Second'"
+                  :ariaLabel="ui.isSwahili ? `Swali la ${index + 1}, chagua kundi la pili` : `Question ${index + 1}, choose the second group`"
                   :className="
                     `min-w-[120px] ${
                       showResults && questionAnswers[index] === 'Second'
@@ -177,7 +202,10 @@ const renderQuantityImages = (count: number, image: string) => ({
                 </div>
               </div>
 
-              <QuantityRenderer v-bind="renderQuantityImages(question.rightNumber, question.leftImage)" />
+              <QuantityRenderer
+                v-bind="renderQuantityImages(question.rightNumber, question.leftImage)"
+                :summary-label="ui.isSwahili ? `Kundi la pili lina vitu ${question.rightNumber}` : `Second group has ${question.rightNumber} items`"
+              />
             </div>
           </div>
         </div>
@@ -200,5 +228,5 @@ const renderQuantityImages = (count: number, image: string) => ({
         }"
       />
     </div>
-  </div>
+  </section>
 </template>

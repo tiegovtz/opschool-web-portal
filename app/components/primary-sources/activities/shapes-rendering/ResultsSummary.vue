@@ -17,7 +17,13 @@ const ui = useActivityUiText();
 </script>
 
 <template>
-  <div class="flex-1 flex flex-col items-center justify-between p-4 overflow-auto">
+  <section
+    class="flex-1 flex flex-col items-center justify-between p-4 overflow-auto"
+    aria-labelledby="shapes-results-summary-title"
+  >
+    <h2 id="shapes-results-summary-title" class="sr-only">
+      {{ ui.isSwahili ? "Muhtasari wa matokeo ya maumbo" : "Shapes results summary" }}
+    </h2>
     <div class="w-full space-y-4">
       <div
         v-for="(question, idx) in props.questions"
@@ -30,9 +36,10 @@ const ui = useActivityUiText();
               : 'border-red-300 bg-red-50',
           )
         "
+        :aria-labelledby="`shapes-results-question-${question.id}`"
       >
         <div class="flex items-center justify-between mb-2">
-          <p class="font-medium text-lg">{{ ui.formatQuestion(idx + 1) }}</p>
+          <p :id="`shapes-results-question-${question.id}`" class="font-medium text-lg">{{ ui.formatQuestion(idx + 1) }}</p>
           <div
             :class="
               cn(
@@ -70,6 +77,8 @@ const ui = useActivityUiText();
                 width="200"
                 height="200"
                 class="border border-green-300 rounded-md bg-white"
+                role="img"
+                :aria-label="question.shape.label || question.answer"
               />
               <span class="mt-2 font-medium text-green-700">
                 {{ question.answer }}
@@ -106,5 +115,5 @@ const ui = useActivityUiText();
         :onRestart="props.onRestart"
       />
     </div>
-  </div>
+  </section>
 </template>

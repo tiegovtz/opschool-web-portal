@@ -61,7 +61,12 @@ const contextMessage = computed(() =>
           icon="lucide:search"
           class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
         />
-        <Input v-model="searchTerm" placeholder="Search activity types..." class="pl-10" />
+        <Input
+          v-model="searchTerm"
+          placeholder="Search activity types..."
+          class="pl-10"
+          aria-label="Search activity types"
+        />
       </div>
     </div>
 
@@ -75,15 +80,18 @@ const contextMessage = computed(() =>
       v-if="filteredActivities.length > 0"
       class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
     >
-      <Card
+      <button
         v-for="activity in filteredActivities"
         :key="activity.type"
+        type="button"
         :class="[
-          'border-2 border-oceanBlue/10 bg-white transition-all duration-200 hover:border-oceanBlue/30 hover:shadow-lg',
+          'w-full rounded-xl border-2 border-oceanBlue/10 bg-white text-left transition-all duration-200 hover:border-oceanBlue/30 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2',
           activity.implemented ? 'cursor-pointer' : 'pointer-events-none cursor-not-allowed opacity-50',
         ]"
+        :aria-label="`${activity.title}. ${activity.description}`"
         @click="activity.implemented && props.onActivityTypeSelect(activity.type)"
       >
+        <Card class="border-0 shadow-none">
         <CardHeader class="pb-3">
           <div :class="`mb-3 flex h-12 w-12 items-center justify-center rounded-xl ${activity.bgColor}`">
             <DynamicIcon :name="activity.iconName" :class-name="`h-8 w-8 ${activity.color}`" />
@@ -106,7 +114,8 @@ const contextMessage = computed(() =>
             {{ activity.description }}
           </CardDescription>
         </CardContent>
-      </Card>
+        </Card>
+      </button>
     </div>
 
     <div v-else class="py-12 text-center">
@@ -119,6 +128,7 @@ const contextMessage = computed(() =>
         variant="outline-brand"
         size="sm"
         class="mt-4"
+        aria-label="Clear activity search"
         @click="searchTerm = ''"
       >
         Clear Filters

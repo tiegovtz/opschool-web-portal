@@ -194,6 +194,9 @@ const formatUserAnswer = (questionIndex: number) => {
   const userAnswers = getUserAnswers(questionIndex).filter((answer) => answer.trim() !== "");
   return userAnswers.length ? userAnswers.join(", ") : "(no answer)";
 };
+
+const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: string) =>
+  `Question ${questionIndex + 1}, blank ${blankIndex + 1}. ${questionText.replace(/___/g, "blank")}`;
 </script>
 
 <template>
@@ -226,6 +229,7 @@ const formatUserAnswer = (questionIndex: number) => {
           v-for="(option, optionIndex) in availableOptions"
           :key="`${option}-${optionIndex}`"
           tabindex="0"
+          :aria-label="`Answer choice ${option}`"
           class="rounded px-5 py-1 text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-200"
         >
           {{ option }}
@@ -284,7 +288,9 @@ const formatUserAnswer = (questionIndex: number) => {
                   type="text"
                   :model-value="getAnswerValue(i, segment.blankIndex || 0)"
                   :disabled="checkedItems.includes(i)"
-                  class="min-w-0 px-2 border-none bg-transparent text-center focus:outline-none"
+                  :aria-label="getBlankLabel(i, segment.blankIndex || 0, q.question)"
+                  :aria-describedby="availableOptions.length ? `${activityInstructionsId} ${activityOptionsId}` : activityInstructionsId"
+                  class="min-w-0 px-2 border-none bg-transparent text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
                   :style="{ maxWidth: `${(segment.calculatedWidth || 120) * 1.6}px` }"
                   @update:model-value="(value) => handleInputChange(i, segment.blankIndex || 0, value)"
                 />

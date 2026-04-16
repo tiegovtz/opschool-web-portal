@@ -153,7 +153,8 @@ const ui = useActivityUiText();
               v-for="(subject, index) in subjects"
               :key="subject.id"
               type="button"
-              class="group"
+              :aria-label="`Choose subject ${subject.subjectName}`"
+              class="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
               @click="handleSubjectSelect(subject.id)"
             >
               <div
@@ -207,7 +208,8 @@ const ui = useActivityUiText();
                   v-for="topic in topics"
                   :key="topic.id"
                   type="button"
-                  class="group"
+                  :aria-label="`Choose topic ${topic.topicName}`"
+                  class="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                   @click="handleTopicSelect(topic.id, String(selectedSubject || 1))"
                 >
                   <div class="relative flex h-36 items-center justify-center overflow-hidden rounded-2xl bg-white/95 p-3 shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl">

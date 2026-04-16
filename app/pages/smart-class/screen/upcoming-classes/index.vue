@@ -534,7 +534,6 @@ const minLength = min => v => (v && v.length >= min) || `Min ${min} characters`;
 // Form submit
 // Submit handler
 const submit = async () => {
-  console.log("Sdsfe");
   // if (!isValid.value) {
   //   showToast('Please fill the form correctly.', 'error');
   //   return;
@@ -565,7 +564,6 @@ const submit = async () => {
 
 
       const { access } = response.data;
-      console.log("adceds" + access);
 
       // Call API
       await postData(payload,access);
@@ -637,7 +635,6 @@ const joinClass = (selectedClassItem) => {
 
 
 const onCreate = () => {
-  console.log("Sdefdsdf");
   dialog.value = true;
 };
 

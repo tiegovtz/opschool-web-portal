@@ -121,6 +121,8 @@ function renderWords(questionId: string, question: string) {
         class={classes}
         disabled={showResults.value}
         aria-pressed={isSelected}
+        aria-label={`Word choice ${word}`}
+        aria-describedby={activityInstructionsId}
         onClick={() => !showResults.value && handleWordClick(questionId, word)}
       >
         {word}
@@ -159,7 +161,7 @@ function renderWords(questionId: string, question: string) {
         tabindex="0"
       >
         <p>
-          {{ i + 1 }}. <span v-for="w in renderWords(question.id, question.question)">{{ w }}</span>
+          {{ i + 1 }}. <span v-for="(w, wordIndex) in renderWords(question.id, question.question)" :key="`${question.id}-${wordIndex}`">{{ w }}</span>
         </p>
       </div>
     </div>

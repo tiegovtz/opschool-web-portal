@@ -49,6 +49,9 @@ const score = ref(0);
 const allAnswered = ref(false);
 const showResults = ref(false);
 const correctItems = ref<string[]>([]);
+const instructionsId = "dialog-differences-instructions";
+const keyboardStatusId = "dialog-differences-keyboard-status";
+const selectedKeyboardItemId = ref<string | null>(null);
 
 const getOppositeSide = (side: "left" | "right") => (side === "left" ? "right" : "left");
 
@@ -101,6 +104,7 @@ const initialize = () => {
   allAnswered.value = false;
   showResults.value = false;
   correctItems.value = [];
+  selectedKeyboardItemId.value = null;
 };
 
 watch(() => props.questions, initialize, { deep: true, immediate: true });
@@ -186,8 +190,63 @@ const handleDragEnd = (event: { active: { id: string }; over?: { id: string } })
   playSound("click");
 };
 
+const getItemLabel = (item: ListItem) => {
+  if (item.text?.trim()) return item.text.trim();
+  return item.image ? "Image card" : "Match item";
+};
+
+const getDropzoneLabel = (side: "left" | "right", index: number) =>
+  `${side === "left" ? props.questions.leftLabel : props.questions.rightLabel} answer space ${index + 1}`;
+
+const getFixedItemLabel = (item: ListItem, side: "left" | "right", index: number) =>
+  `${side === "left" ? props.questions.leftLabel : props.questions.rightLabel} item ${index + 1}: ${getItemLabel(item)}`;
+
+const pickKeyboardItem = (id: string) => {
+  if (showResults.value) return;
+  selectedKeyboardItemId.value = selectedKeyboardItemId.value === id ? null : id;
+};
+
+const clearKeyboardSelection = () => {
+  selectedKeyboardItemId.value = null;
+};
+
+const onDraggableKeydown = (event: KeyboardEvent, id: string) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    pickKeyboardItem(id);
+  }
+
+  if (event.key === "Escape") {
+    clearKeyboardSelection();
+  }
+};
+
+const onDroppableKeydown = (event: KeyboardEvent, side: "left" | "right", index: number) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    if (!selectedKeyboardItemId.value) return;
+
+    handleDragEnd({
+      active: { id: selectedKeyboardItemId.value },
+      over: { id: `${side}%${index}` },
+    });
+    selectedKeyboardItemId.value = null;
+  }
+
+  if (event.key === "Escape") {
+    clearKeyboardSelection();
+  }
+};
+
+const keyboardStatusMessage = computed(() =>
+  selectedKeyboardItemId.value
+    ? "Item selected. Tab to an empty answer space, then press Enter or Space to place it. Press Escape to cancel."
+    : "Tab to an item card and press Enter or Space to select it. Then tab to an empty answer space and press Enter or Space to place it.",
+);
+
 const onResultsOpenChange = (open: boolean) => {
   if (!open) {
+    selectedKeyboardItemId.value = null;
     if (props.feedback === "none") {
       resetActivity();
     } else {
@@ -210,10 +269,20 @@ const resetActivity = () => {
 <template>
   <div class="flex h-full flex-col">
     <ActivityTitle :title="props.questions.title" />
+    <p :id="instructionsId" class="sr-only">
+      Match the related items from the two sides. Drag with a pointer, or use the visible item cards
+      and answer areas with the keyboard. Press Enter or Space on an item card to select it, Tab to
+      an empty answer area, then press Enter or Space again to place it. Press Escape to cancel a
+      selection. Review the results after all spaces are filled.
+    </p>
+    <p :id="keyboardStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div
       class="flex flex-col gap-4"
       :style="{ fontSize: props.questions.fontSize ? `${props.questions.fontSize}px` : '20px' }"
+      :aria-describedby="instructionsId"
     >
       <DNDContext :onDragEnd="handleDragEnd">
         <div>
@@ -231,7 +300,11 @@ const resetActivity = () => {
                 <template v-for="(item, index) in listA" :key="index">
                   <div
                     v-if="props.questions.lockSide === 'left'"
-                    class="flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-white px-4 py-3"
+                    class="flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-white px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
+                    tabindex="0"
+                    role="group"
+                    :aria-label="item !== '' ? getFixedItemLabel(item, 'left', index) : getDropzoneLabel('left', index)"
+                    :aria-describedby="instructionsId"
                   >
                     <div v-if="item !== ''" class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
                       <img
@@ -250,6 +323,12 @@ const resetActivity = () => {
                     :id="`left%${index}`"
                     is-over-class-name="bg-lemon-100"
                     class="min-h-[135px] rounded border border-picton-blue-200 bg-white"
+                    tabindex="0"
+                    role="button"
+                    :aria-label="getDropzoneLabel('left', index)"
+                    :aria-describedby="`${instructionsId} ${keyboardStatusId}`"
+                    :aria-disabled="!selectedKeyboardItemId"
+                    @keydown="onDroppableKeydown($event, 'left', index)"
                   />
 
                   <div
@@ -278,7 +357,13 @@ const resetActivity = () => {
                   <Draggable
                     v-else
                     :id="`${item.id}%${index}%left`"
-                    class="relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-center text-base text-lemon-700 md:px-4 md:py-3 md:text-[length:inherit]"
+                    class="relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-center text-base text-lemon-700 outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2 md:px-4 md:py-3 md:text-[length:inherit]"
+                    tabindex="0"
+                    role="button"
+                    :aria-label="getItemLabel(item)"
+                    :aria-describedby="`${instructionsId} ${keyboardStatusId}`"
+                    :aria-pressed="selectedKeyboardItemId === `${item.id}%${index}%left`"
+                    @keydown="onDraggableKeydown($event, `${item.id}%${index}%left`)"
                   >
                     <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
                       <img
@@ -300,7 +385,11 @@ const resetActivity = () => {
                 <template v-for="(item, index) in listB" :key="index">
                   <div
                     v-if="props.questions.lockSide === 'right'"
-                    class="flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-white px-4 py-3"
+                    class="flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-white px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
+                    tabindex="0"
+                    role="group"
+                    :aria-label="item !== '' ? getFixedItemLabel(item, 'right', index) : getDropzoneLabel('right', index)"
+                    :aria-describedby="instructionsId"
                   >
                     <div v-if="item !== ''" class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
                       <img
@@ -319,6 +408,12 @@ const resetActivity = () => {
                     :id="`right%${index}`"
                     is-over-class-name="bg-lemon-100"
                     class="min-h-[135px] rounded border border-picton-blue-200 bg-white"
+                    tabindex="0"
+                    role="button"
+                    :aria-label="getDropzoneLabel('right', index)"
+                    :aria-describedby="`${instructionsId} ${keyboardStatusId}`"
+                    :aria-disabled="!selectedKeyboardItemId"
+                    @keydown="onDroppableKeydown($event, 'right', index)"
                   />
 
                   <div
@@ -347,7 +442,13 @@ const resetActivity = () => {
                   <Draggable
                     v-else
                     :id="`${item.id}%${index}%right`"
-                    class="relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-center text-base text-lemon-700 md:px-4 md:py-3 md:text-[length:inherit]"
+                    class="relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-center text-base text-lemon-700 outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2 md:px-4 md:py-3 md:text-[length:inherit]"
+                    tabindex="0"
+                    role="button"
+                    :aria-label="getItemLabel(item)"
+                    :aria-describedby="`${instructionsId} ${keyboardStatusId}`"
+                    :aria-pressed="selectedKeyboardItemId === `${item.id}%${index}%right`"
+                    @keydown="onDraggableKeydown($event, `${item.id}%${index}%right`)"
                   >
                     <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
                       <img
@@ -378,8 +479,14 @@ const resetActivity = () => {
               v-for="(item, index) in movableItems"
               :id="item.id"
               :key="item.id"
-              class="absolute flex h-[135px] w-1/2 items-center rounded border border-picton-blue-300 bg-picton-blue-200 px-4 py-2 text-base text-picton-blue-700 md:text-[length:inherit]"
+              class="absolute flex h-[135px] w-1/2 items-center rounded border border-picton-blue-300 bg-picton-blue-200 px-4 py-2 text-base text-picton-blue-700 outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2 md:text-[length:inherit]"
               :style="{ left: `${index * (width > 768 ? 50 : 30)}px` }"
+              tabindex="0"
+              role="button"
+              :aria-label="getItemLabel(item)"
+              :aria-describedby="`${instructionsId} ${keyboardStatusId}`"
+              :aria-pressed="selectedKeyboardItemId === item.id"
+              @keydown="onDraggableKeydown($event, item.id)"
             >
               <div
                 class="flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-3"

@@ -38,6 +38,7 @@ const checkedAnswers = ref(false);
 const feedbacks = ref<boolean[]>([]);
 const showResults = ref(false);
 const score = ref(0);
+const activityInstructionsId = "shapes-rendering-instructions";
 
 const initState = () => {
   const length = processedData.value.questions.length;
@@ -100,11 +101,30 @@ const handleCheckAllAnswers = () => {
   score.value = correctCount;
   checkedAnswers.value = true;
 };
+
+const getQuestionLabel = (question: ShapeQuestion, questionIndex: number) =>
+  question.shape.label
+    ? `${ui.formatQuestion(questionIndex + 1)}. ${question.shape.label}`
+    : ui.formatQuestion(questionIndex + 1);
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <section
+    class="flex flex-col h-full"
+    aria-labelledby="shapes-rendering-title"
+    :aria-describedby="activityInstructionsId"
+  >
+    <h2 id="shapes-rendering-title" class="sr-only">
+      {{ processedData.title }}
+    </h2>
     <ActivityTitle :title="processedData.title" />
+    <p :id="activityInstructionsId" class="sr-only">
+      {{
+        ui.isSwahili
+          ? "Tumia tab kusogea kwenye kila umbo na sehemu ya jibu. Chagua chaguo kwa enter au space, au andika jibu lako kwenye kisanduku."
+          : "Use Tab to move through each shape and answer control. Choose an option with Enter or Space, or type your answer into the input field."
+      }}
+    </p>
     <div class="flex-1 overflow-y-auto p-4">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
@@ -123,13 +143,18 @@ const handleCheckAllAnswers = () => {
               },
             )
           "
+          :aria-labelledby="`shape-question-${question.id}`"
         >
+          <h3 :id="`shape-question-${question.id}`" class="sr-only">
+            {{ getQuestionLabel(question, questionIndex) }}
+          </h3>
           <div class="w-full">
             <ShapeCanvas
               :question="question"
               :canvasIndex="questionIndex"
               :width="isMobile ? 200 : 300"
               :height="isMobile ? 200 : 300"
+              :aria-label="question.shape.label || `Shape for question ${questionIndex + 1}`"
               className="mx-auto"
             />
           </div>
@@ -147,10 +172,15 @@ const handleCheckAllAnswers = () => {
             <div
               v-if="question.options && question.options.length > 0"
               class="grid grid-cols-2 gap-2 mt-auto"
+              role="group"
+              :aria-label="ui.isSwahili ? `Chaguo za swali la ${questionIndex + 1}` : `Options for question ${questionIndex + 1}`"
             >
               <Button
                 v-for="(option, optionIndex) in shuffledOptions[questionIndex]"
                 :key="`option-${optionIndex}`"
+                type="button"
+                :aria-pressed="answers[questionIndex] === option"
+                :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, chaguo la ${optionIndex + 1}: ${option}` : `Question ${questionIndex + 1}, option ${optionIndex + 1}: ${option}`"
                 :variant="answers[questionIndex] === option ? 'brand' : 'outline-brand'"
                 :class="
                   cn(
@@ -186,11 +216,14 @@ const handleCheckAllAnswers = () => {
             <div
               v-else-if="question.answer && /^\d+\/\d+$/.test(question.answer)"
               class="flex flex-col items-center w-full"
+              role="group"
+              :aria-label="ui.isSwahili ? `Jibu la sehemu mbili kwa swali la ${questionIndex + 1}` : `Two-part answer for question ${questionIndex + 1}`"
             >
               <Input
                 type="text"
                 :value="(answers[questionIndex] || '').split('/')[0] || ''"
                 :disabled="checkedAnswers"
+                :aria-label="ui.isSwahili ? `Sehemu ya kwanza ya jibu la swali la ${questionIndex + 1}` : `First part of the answer for question ${questionIndex + 1}`"
                 :class="
                   cn(
                     'mb-2 text-center max-w-20 !text-2xl',
@@ -214,6 +247,7 @@ const handleCheckAllAnswers = () => {
                 type="text"
                 :value="(answers[questionIndex] || '').split('/')[1] || ''"
                 :disabled="checkedAnswers"
+                :aria-label="ui.isSwahili ? `Sehemu ya pili ya jibu la swali la ${questionIndex + 1}` : `Second part of the answer for question ${questionIndex + 1}`"
                 :class="
                   cn(
                     'text-center max-w-20 !text-2xl',
@@ -237,6 +271,7 @@ const handleCheckAllAnswers = () => {
                 placeholder="Enter your answer..."
                 :value="answers[questionIndex] || ''"
                 :disabled="checkedAnswers"
+                :aria-label="ui.isSwahili ? `Jibu la swali la ${questionIndex + 1}` : `Answer for question ${questionIndex + 1}`"
                 :class="
                   cn(
                     '!text-lg',
@@ -293,5 +328,5 @@ const handleCheckAllAnswers = () => {
       :open="checkedAnswers && !showResults"
       :onOpenChange="(open: boolean) => { if (!open) showResults = true }"
     />
-  </div>
+  </section>
 </template>

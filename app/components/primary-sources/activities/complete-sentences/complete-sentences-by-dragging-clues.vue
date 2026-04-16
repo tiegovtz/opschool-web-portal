@@ -42,6 +42,7 @@ const allAnswered = ref(false);
 const showResults = ref(false);
 const answers = ref<Record<number, { value: string; optionId: string; image?: string }>>({});
 const activityInstructionsId = "complete-sentences-dragging-clues-instructions";
+const selectedOptionId = ref<string | null>(null);
 
 // Shuffle options
 type UniqueOption = { id: string; value: string; image?: string; uniqueIndex: number };
@@ -122,6 +123,8 @@ function handleDragEnd({ active, over }: any) {
       0
     );
   }
+
+  selectedOptionId.value = null;
 }
 
 // Available options
@@ -138,6 +141,51 @@ function handleTryAgain() {
   score.value = 0;
   answers.value = {};
   shuffledOptions.value = shuffle([...initialOptions]);
+  selectedOptionId.value = null;
+}
+
+const selectedOption = computed(() =>
+  getAvailableOptions.value.find((option) => option.id === selectedOptionId.value) || null,
+);
+
+function placeSelectedOption(questionIndex: number) {
+  if (!selectedOption.value || showResults.value) return;
+
+  const nextAnswers = { ...answers.value };
+  const previousQuestionIndex = Object.entries(nextAnswers).find(
+    ([, answer]) => answer.optionId === selectedOption.value?.id,
+  )?.[0];
+
+  if (previousQuestionIndex) {
+    delete nextAnswers[Number(previousQuestionIndex)];
+  }
+
+  nextAnswers[questionIndex] = {
+    value: selectedOption.value.value,
+    optionId: selectedOption.value.id,
+    image: selectedOption.value.image,
+  };
+
+  answers.value = nextAnswers;
+  allAnswered.value = Object.keys(nextAnswers).length === props.questions.questions.length;
+
+  if (allAnswered.value) {
+    score.value = props.questions.questions.reduce(
+      (acc, question, idx) => acc + (nextAnswers[idx]?.value === question.answer ? 1 : 0),
+      0,
+    );
+  }
+
+  selectedOptionId.value = null;
+}
+
+function removeAnswer(questionIndex: number) {
+  if (showResults.value || !answers.value[questionIndex]) return;
+
+  const nextAnswers = { ...answers.value };
+  delete nextAnswers[questionIndex];
+  answers.value = nextAnswers;
+  allAnswered.value = false;
 }
 </script>
 
@@ -153,8 +201,8 @@ function handleTryAgain() {
     <ActivityTitle :title="props.questions.title" />
     <p :id="activityInstructionsId" class="sr-only">
       {{ ui.isSwahili
-        ? "Buruta kila kidokezo hadi kwenye nafasi inayolingana. Ukimaliza, dirisha la matokeo litaonekana na sehemu ya mwisho ya matokeo itaonyesha majibu yaliyokuwa sahihi au yasiyo sahihi."
-        : "Drag each clue into the matching blank. After you finish, the results dialog will appear and the final results section will show which answers were correct or incorrect." }}
+        ? "Buruta kila kidokezo hadi kwenye nafasi inayolingana, au tumia Tab kuchagua kidokezo kisha bonyeza nafasi husika kukiweka. Bonyeza jibu lililowekwa kuliondoa."
+        : "Drag each clue into the matching blank, or use Tab to select a clue and then activate the matching blank to place it. Activate a placed answer to remove it." }}
     </p>
 
     <div
@@ -164,11 +212,17 @@ function handleTryAgain() {
       <DNDContext :onDragEnd="handleDragEnd">
         <!-- Options pool -->
         <div class="flex flex-wrap gap-2 md:gap-4 mb-4 shrink-0">
-          <Draggable
+          <button
             v-for="option in getAvailableOptions"
             :key="option.id"
-            :id="`${option.id}%${option.value}`"
-            class="rounded flex min-w-32 border border-picton-blue-400 overflow-hidden items-center justify-center bg-picton-blue-200 h-12 p-2"
+            type="button"
+            :aria-describedby="activityInstructionsId"
+            :aria-pressed="selectedOptionId === option.id"
+            :class="[
+              'rounded flex min-w-32 border border-picton-blue-400 overflow-hidden items-center justify-center bg-picton-blue-200 h-12 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2',
+              selectedOptionId === option.id ? 'ring-2 ring-picton-blue-500 ring-offset-2' : '',
+            ]"
+            @click="selectedOptionId = selectedOptionId === option.id ? null : option.id"
           >
             <img
               v-if="questions.algorithm === ActivityType.CompleteSentencesByDraggingCluesPics "
@@ -177,7 +231,7 @@ function handleTryAgain() {
               class="w-full h-full object-contain"
             />
             <template v-else>{{ option.value }}</template>
-          </Draggable>
+          </button>
         </div>
 
         <!-- Questions -->
@@ -210,16 +264,30 @@ function handleTryAgain() {
                 </span>
 
                 <template v-if="idx < questionParts(question.question).length - 1">
-                  <Droppable
+                  <button
                     v-if="!answers[i]"
-                    :id="`${i}%blank-${idx}`"
-                    class="bg-picton-blue-100 min-w-32 rounded flex items-center justify-center h-12 border border-picton-blue-300"
-                  />
-                  <Draggable
+                    type="button"
+                    :aria-describedby="activityInstructionsId"
+                    :aria-label="
+                      selectedOption
+                        ? `Blank ${idx + 1} for question ${i + 1}. Activate to place ${selectedOption.value}.`
+                        : `Blank ${idx + 1} for question ${i + 1}. Select a clue first.`
+                    "
+                    class="bg-picton-blue-100 min-w-32 rounded flex items-center justify-center h-12 border border-picton-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+                    @click="placeSelectedOption(i)"
+                  >
+                    <span class="text-sm text-picton-blue-700">
+                      {{ selectedOption ? `Place ${selectedOption.value}` : "Blank" }}
+                    </span>
+                  </button>
+                  <button
                     v-else
-                    :id="`${i}%${answers[i].optionId}%blank-${idx}`"
-                    class="flex items-center min-w-32 border border-lemon-400 bg-lemon-100 text-lemon-700 h-12 p-2"
+                    type="button"
+                    :aria-describedby="activityInstructionsId"
+                    :aria-label="`Placed answer ${answers[i].value} for question ${i + 1}. Activate to remove it.`"
+                    class="flex items-center min-w-32 border border-lemon-400 bg-lemon-100 text-lemon-700 h-12 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
                     :disabled="showResults"
+                    @click="removeAnswer(i)"
                   >
                     <img
                       v-if="answers[i].image"
@@ -228,7 +296,7 @@ function handleTryAgain() {
                       class="w-full h-full object-contain"
                     />
                     <template v-else>{{ answers[i].value }}</template>
-                  </Draggable>
+                  </button>
 
                   <Icon
                     v-if="showResults"
