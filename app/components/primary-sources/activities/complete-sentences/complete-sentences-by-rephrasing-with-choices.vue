@@ -217,11 +217,11 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
 
     <div
       v-if="availableOptions.length"
-      class="mb-4 rounded-xl border border-picton-blue-200 bg-white/95 p-4 shadow-sm"
+      class="mb-4 w-full rounded-xl border border-picton-blue-200 bg-white/95 p-3 shadow-sm sm:p-4"
     >
       <div
         :id="activityOptionsId"
-        class="flex w-fit flex-wrap gap-4 rounded bg-picton-blue-200 p-3"
+        class="grid w-full grid-cols-2 gap-2 rounded bg-picton-blue-200 p-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 sm:gap-3"
         role="group"
         :aria-label="ui.availableAnswerChoices.value"
       >
@@ -230,7 +230,7 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
           :key="`${option}-${optionIndex}`"
           tabindex="0"
           :aria-label="`Answer choice ${option}`"
-          class="rounded px-5 py-1 text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-200"
+          class="min-w-0 rounded px-3 py-2 text-center text-base font-bold leading-snug text-picton-blue-800 sm:px-4 sm:py-2 sm:text-lg md:text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-200"
         >
           {{ option }}
         </div>
