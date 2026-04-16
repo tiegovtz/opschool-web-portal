@@ -393,9 +393,10 @@ const resultRows = computed(() =>
                 {{ activeQuestion + 1 }}. {{ currentQuestionData?.question }}
               </h3>
 
-              <div class="flex min-h-0 flex-1 flex-col gap-4">
+              <!-- Content-height stack: on wide screens avoid flex-1/mt-auto so the letter input sits under options, not at column bottom -->
+              <div class="flex shrink-0 flex-col gap-4">
                 <div
-                  class="flex min-h-0 flex-1 flex-col gap-2"
+                  class="flex flex-col gap-2"
                   role="list"
                   :id="getOptionsId(activeQuestion)"
                   :aria-label="ui.isSwahili ? `Chaguo za swali la ${activeQuestion + 1}` : `Answer choices for question ${activeQuestion + 1}`"
@@ -414,7 +415,7 @@ const resultRows = computed(() =>
                 </div>
 
                 <div
-                  class="mt-auto flex shrink-0 flex-col gap-3 border-t border-picton-blue-100 pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                  class="flex shrink-0 flex-col items-end gap-3 border-t border-picton-blue-100 pt-4 sm:flex-row sm:items-center sm:justify-end sm:gap-4"
                 >
                   <label :id="getInputLabelId(activeQuestion)" :for="getInputId(activeQuestion)" class="sr-only">
                     {{
@@ -423,7 +424,7 @@ const resultRows = computed(() =>
                         : `Answer for question ${activeQuestion + 1}`
                     }}
                   </label>
-                  <div class="flex flex-wrap items-center gap-3">
+                  <div class="flex flex-wrap items-center justify-end gap-3">
                     <Input
                       :id="getInputId(activeQuestion)"
                       ref="inputRef"
