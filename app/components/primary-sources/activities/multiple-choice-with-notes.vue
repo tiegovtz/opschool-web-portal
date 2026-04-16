@@ -355,88 +355,116 @@ const resultRows = computed(() =>
       </div>
     </div>
 
-    <div v-else-if="hasNotes" class="flex h-full flex-col gap-4">
-      <div class="flex h-[calc(100dvh-200px)] flex-col justify-between gap-4 md:flex-row">
-        <LeftNotesWithImages :notes="props.questions.notes" :image="props.questions.image" />
-
-        <div class="flex h-full w-full flex-col justify-between rounded-xl bg-white p-4 md:p-6">
+    <div v-else-if="hasNotes" class="flex min-h-0 flex-1 flex-col gap-4">
+      <!--
+        Mobile: full-length passage (no inner scroll) → questions → progress.
+        lg+: passage LEFT (inner scroll if long) | questions RIGHT. Progress full width below.
+      -->
+      <div
+        class="flex min-h-0 flex-1 flex-col gap-4 lg:min-h-[min(70vh,calc(100dvh-220px))] lg:flex-row lg:items-stretch lg:gap-6"
+      >
+        <!-- Passage / essay: left on lg; column max-height + inner scroll so long text does not stretch the page -->
+        <div
+          class="flex w-full min-w-0 flex-col lg:min-h-0 lg:flex-[1_1_50%] lg:max-h-[min(62vh,calc(100dvh-240px))] lg:overflow-hidden"
+        >
           <div
-            :class="
-              cn('flex h-full flex-col gap-4 overflow-auto', {
-                'md:max-h-[300px]': props.questions.image,
-              })
-            "
-            role="group"
-            :aria-labelledby="getQuestionId(activeQuestion)"
-            :aria-describedby="`${activityInstructionsId} ${getOptionsId(activeQuestion)} ${activityStatusId}`"
+            class="scrollbar-thin rounded-2xl border border-oceanBlue/15 bg-white p-4 shadow-sm sm:p-5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain"
           >
-            <h3 :id="getQuestionId(activeQuestion)" class="text-lg text-picton-blue-700">
-              {{ activeQuestion + 1 }}. {{ currentQuestionData?.question }}
-            </h3>
+            <LeftNotesWithImages
+              :notes="props.questions.notes"
+              :image="props.questions.image"
+              class-name="w-full min-h-0 border-0 bg-transparent p-0 shadow-none"
+            />
+          </div>
+        </div>
 
-            <div class="mt-4 flex items-center justify-between">
-              <div
-                class="flex flex-col gap-2"
-                role="list"
-                :id="getOptionsId(activeQuestion)"
-                :aria-label="ui.isSwahili ? `Chaguo za swali la ${activeQuestion + 1}` : `Answer choices for question ${activeQuestion + 1}`"
-              >
+        <!-- Active question: below passage on mobile; right column on wide screens -->
+        <div class="flex min-h-0 w-full min-w-0 flex-col lg:min-h-0 lg:flex-[1_1_50%] lg:self-stretch">
+          <div
+            class="flex min-h-0 flex-col rounded-xl border border-picton-blue-100 bg-white p-4 shadow-sm md:p-6 lg:h-full lg:min-h-0"
+          >
+            <div
+              class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain"
+              role="group"
+              :aria-labelledby="getQuestionId(activeQuestion)"
+              :aria-describedby="`${activityInstructionsId} ${getOptionsId(activeQuestion)} ${activityStatusId}`"
+            >
+              <h3 :id="getQuestionId(activeQuestion)" class="shrink-0 text-base text-picton-blue-700 sm:text-lg">
+                {{ activeQuestion + 1 }}. {{ currentQuestionData?.question }}
+              </h3>
+
+              <!-- Content-height stack: on wide screens avoid flex-1/mt-auto so the letter input sits under options, not at column bottom -->
+              <div class="flex shrink-0 flex-col gap-4">
                 <div
-                  v-for="(option, optionIndex) in currentQuestionData?.options || []"
-                  :key="optionIndex"
-                  role="listitem"
-                  :id="getOptionId(activeQuestion, option.id)"
-                  class="flex items-start gap-2 text-lg font-thin text-picton-blue-700"
-                  style="font-family: var(--font-shaky-hand-some-comic);"
+                  class="flex flex-col gap-2"
+                  role="list"
+                  :id="getOptionsId(activeQuestion)"
+                  :aria-label="ui.isSwahili ? `Chaguo za swali la ${activeQuestion + 1}` : `Answer choices for question ${activeQuestion + 1}`"
                 >
-                  <p>{{ option.id }})</p>
-                  <p>{{ option.text }}</p>
+                  <div
+                    v-for="(option, optionIndex) in currentQuestionData?.options || []"
+                    :key="optionIndex"
+                    role="listitem"
+                    :id="getOptionId(activeQuestion, option.id)"
+                    class="flex items-start gap-2 text-base font-thin text-picton-blue-700 sm:text-lg"
+                    style="font-family: var(--font-shaky-hand-some-comic);"
+                  >
+                    <p class="shrink-0">{{ option.id }})</p>
+                    <p class="min-w-0 flex-1 break-words">{{ option.text }}</p>
+                  </div>
                 </div>
-              </div>
 
-              <div class="flex flex-col items-center gap-2">
-                <label :id="getInputLabelId(activeQuestion)" :for="getInputId(activeQuestion)" class="sr-only">
-                  {{
-                    ui.isSwahili
-                      ? `Jibu la swali ${activeQuestion + 1}`
-                      : `Answer for question ${activeQuestion + 1}`
-                  }}
-                </label>
-                <Input
-                  :id="getInputId(activeQuestion)"
-                  ref="inputRef"
-                  :model-value="currentAnswer"
-                  type="text"
-                  maxlength="1"
-                  inputmode="text"
-                  autocapitalize="characters"
-                  :aria-labelledby="getInputLabelId(activeQuestion)"
-                  :aria-describedby="`${activityInstructionsId} ${getOptionsId(activeQuestion)} ${activityStatusId}`"
-                  :class="
-                    cn('h-12 w-12 rounded bg-picton-blue-200 text-center text-2xl', {
-                      'bg-lemon-200 text-lemon-700': currentAnswer,
-                    })
-                  "
-                  @update:model-value="(value) => handleInputChange(String(value ?? ''))"
-                />
-                <p
-                  v-if="attemptedQuestions[activeQuestion]"
-                  :id="getQuestionStatusId(activeQuestion)"
-                  role="status"
-                  class="text-sm font-medium"
-                  :class="attemptedQuestions[activeQuestion].isCorrect ? 'text-green-600' : 'text-red-600'"
+                <div
+                  class="flex shrink-0 flex-col items-end gap-3 border-t border-picton-blue-100 pt-4 sm:flex-row sm:items-center sm:justify-end sm:gap-4"
                 >
-                  {{ getQuestionResultText(activeQuestion) }}
-                </p>
+                  <label :id="getInputLabelId(activeQuestion)" :for="getInputId(activeQuestion)" class="sr-only">
+                    {{
+                      ui.isSwahili
+                        ? `Jibu la swali ${activeQuestion + 1}`
+                        : `Answer for question ${activeQuestion + 1}`
+                    }}
+                  </label>
+                  <div class="flex flex-wrap items-center justify-end gap-3">
+                    <Input
+                      :id="getInputId(activeQuestion)"
+                      ref="inputRef"
+                      :model-value="currentAnswer"
+                      type="text"
+                      maxlength="1"
+                      inputmode="text"
+                      autocapitalize="characters"
+                      :aria-labelledby="getInputLabelId(activeQuestion)"
+                      :aria-describedby="`${activityInstructionsId} ${getOptionsId(activeQuestion)} ${activityStatusId}`"
+                      :class="
+                        cn('h-12 w-12 shrink-0 rounded bg-picton-blue-200 text-center text-2xl', {
+                          'bg-lemon-200 text-lemon-700': currentAnswer,
+                        })
+                      "
+                      @update:model-value="(value) => handleInputChange(String(value ?? ''))"
+                    />
+                    <p
+                      v-if="attemptedQuestions[activeQuestion]"
+                      :id="getQuestionStatusId(activeQuestion)"
+                      role="status"
+                      class="text-sm font-medium"
+                      :class="attemptedQuestions[activeQuestion].isCorrect ? 'text-green-600' : 'text-red-600'"
+                    >
+                      {{ getQuestionResultText(activeQuestion) }}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="flex h-full items-center justify-between">
+      <!-- Answer progress: detached from scroll areas, full width -->
+      <div
+        class="shrink-0 rounded-xl border border-picton-blue-200 bg-picton-blue-50/90 px-3 py-3 sm:px-4 sm:py-4"
+      >
         <div
-          class="flex flex-wrap justify-center gap-4"
+          class="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4"
           role="list"
           :aria-label="ui.isSwahili ? 'Maendeleo ya maswali' : 'Question progress'"
         >
@@ -446,11 +474,14 @@ const resultRows = computed(() =>
             role="listitem"
             :aria-label="getProgressLabel(index)"
             :class="
-              cn('flex h-10 w-10 items-center justify-center rounded-lg', {
-                'bg-lemon-200': attemptedQuestions[index],
-                'bg-picton-blue-200': !attemptedQuestions[index],
-                'border-2 border-picton-blue-500': index === activeQuestion && !attemptedQuestions[index],
-              })
+              cn(
+                'flex h-9 w-9 items-center justify-center rounded-lg text-sm sm:h-10 sm:w-10 sm:text-base',
+                {
+                  'bg-lemon-200': attemptedQuestions[index],
+                  'bg-picton-blue-200': !attemptedQuestions[index],
+                  'border-2 border-picton-blue-500': index === activeQuestion && !attemptedQuestions[index],
+                },
+              )
             "
           >
             <template v-if="attemptedQuestions[index]">
