@@ -220,6 +220,14 @@ const switchTab = async (tab: string) => {
 
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params: any) => {
+  
+
+  if (userToken) {
+    let userId = (userToken.value as any)?._id;
+  params={...params,userId }
+  }
+
+
   try {
     status.value = "pending";
     const { data: response, status: fetchStatus } = await fetchAsyncData(`interactive-${educationLevel.value}-${tabLanguage.value}-${subjectId}`, () => $fetch(apiDocs.topics.getSubjectId.replace(
@@ -390,7 +398,7 @@ watch(selectedLevel, () => {
                       :topic-likes="topic.topic_likes ? topic.topic_likes : 100" :topic-views="topic.viewedBy?.length ? topic.viewedBy?.length
                         : topic.views ? topic.views : 0" :topic-level="level" :topic-standard="topic.level.name"
                       :subject-name="topic.subject.name" :topic-viewed="topic.isViewed"
-                      :topic-progress="topic.progressPercent" />
+                      :topic-progress="topic.avgProgress" />
                   </template>
                 </customGridTwo>
               </div>
