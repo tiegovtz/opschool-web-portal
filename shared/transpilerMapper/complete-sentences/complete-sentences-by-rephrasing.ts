@@ -73,14 +73,15 @@ export const completeSentencesByRephrasingPropsTranspiler = (
   const titleDescription = title.split("||")[0];
   const titleOptions = extractTitleOptions(title);
 
-  // Backend may send `cua(4)` (plain number) or `cua(11km,6dam,2m)` (metric compound).
-  // Unwrap only when the payload is digits-only so the UI can use CompoundUnitArithmeticInput for real cua().
+  // Backend may send `cua(4)` (plain number), `cua(0.006)` (decimal), or `cua(11km,6dam,2m)` (metric compound).
+  // Unwrap plain numeric/decimals so the UI uses a text field and matches what learners type.
   const normalizeAnswerToken = (value: string) => {
     const trimmed = (value ?? "").toString().trim();
     const match = trimmed.match(/^cua\s*\(\s*(.*?)\s*\)\s*$/i);
     if (!match) return trimmed;
     const inner = (match[1] ?? "").toString().trim();
     if (/^\d+$/.test(inner)) return inner;
+    if (/^\d+\.\d+$/.test(inner)) return inner;
     // Comparison blanks: backend uses cua(>) / cua(<); learners type > or <.
     if (/^[<>]$/.test(inner)) return inner;
     return trimmed;
