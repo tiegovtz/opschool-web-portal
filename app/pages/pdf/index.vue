@@ -1,5 +1,5 @@
 <script setup>
-import EbookFlipBook from '@/components/ebook/flipBook.vue'
+// import EbookFlipBook from '@/components/ebook/flipBook.vue'
 
 // Define meta info about page
 useHead({

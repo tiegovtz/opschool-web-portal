@@ -94,6 +94,9 @@ export default defineNuxtConfig({
         "embla-carousel-vue",
         'jwt-decode',
         '@vueuse/core',
+         'page-flip', // CJS
+        'pdfjs-dist',
+        'pdfjs-dist/build/pdf',
       ],
     },
     server: {
