@@ -20,6 +20,7 @@ import {
   texChunksForMathJaxInline,
   type QuestionSegment,
 } from "./question-renderer-utils";
+import { unwrapCuaComparisonSymbol } from "~/lib/utils/answer-checker";
 
 export type QuestionRendererMode = "activity" | "exam" | "results";
 
@@ -87,8 +88,12 @@ const segmentsWithBlankIndex = computed((): SegmentWithBlank[] => {
 
 function isBlankCorrect(blankIndex: number) {
   if (props.mode === "results") return props.isCorrect;
-  const ua = (props.userAnswers[blankIndex] || "").toLowerCase().trim();
-  const ca = (props.answers[blankIndex] || "").toLowerCase().trim();
+  const ua = unwrapCuaComparisonSymbol(props.userAnswers[blankIndex] || "")
+    .toLowerCase()
+    .trim();
+  const ca = unwrapCuaComparisonSymbol(props.answers[blankIndex] || "")
+    .toLowerCase()
+    .trim();
   return ua === ca;
 }
 
