@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { VideoInteraction } from '~/types/interactive-video.interface'
+import { useTextToSpeech } from '~/composables/useTextToSpeech'
 
 interface Props {
   quiz: VideoInteraction
@@ -23,6 +24,22 @@ const selectedAnswer = ref<string | null>(null)
 const showFeedback = ref(false)
 const feedbackMessage = ref('')
 const isCorrect = ref(false)
+const feedbackPanel = ref<HTMLElement | null>(null)
+const feedbackAnnouncementId = 'quiz-feedback-announcement'
+const { speak, stop } = useTextToSpeech()
+
+const feedbackCopy = {
+  correct: {
+    title: 'Congratulations, you did well.',
+    subtitle: 'Hongera, umefanya vizuri.',
+    button: 'Continue'
+  },
+  incorrect: {
+    title: 'That is not correct. Please try again.',
+    subtitle: 'Majibu si sahihi. Tafadhali jaribu tena.',
+    button: 'Repeat quiz'
+  }
+} as const
 
 const handleSelectAnswer = (answerId: string) => {
   selectedAnswer.value = answerId
@@ -89,9 +106,8 @@ const handleSubmit = () => {
   isCorrect.value = isAnswerCorrect(selectedAnswer.value, props.quiz)
 
   // Set feedback message
-  feedbackMessage.value = isCorrect.value
-    ? (props.quiz.feedback?.correct || 'Correct!')
-    : (props.quiz.feedback?.incorrect || 'Incorrect. Try again!')
+  const feedback = isCorrect.value ? feedbackCopy.correct : feedbackCopy.incorrect
+  feedbackMessage.value = `${feedback.title} ${feedback.subtitle}`
 
   // Show feedback
   showFeedback.value = true
@@ -101,6 +117,8 @@ const handleSubmit = () => {
 }
 
 const handleContinue = () => {
+  stop()
+
   // Store correctness before resetting
   const wasCorrect = isCorrect.value
 
@@ -118,6 +136,7 @@ const handleContinue = () => {
 }
 
 const handleClose = () => {
+  stop()
   selectedAnswer.value = null
   showFeedback.value = false
   feedbackMessage.value = ''
@@ -133,11 +152,23 @@ const handleKeyDown = (event: KeyboardEvent) => {
 
 watch(() => props.isOpen, (isOpen) => {
   if (!isOpen) {
+    stop()
     selectedAnswer.value = null
     showFeedback.value = false
     feedbackMessage.value = ''
     isCorrect.value = false
   }
+})
+
+watch(showFeedback, async (visible) => {
+  if (!visible) return
+
+  await nextTick()
+  feedbackPanel.value?.focus()
+  speak(feedbackMessage.value, {
+    lang: 'en-US',
+    rate: 0.9,
+  })
 })
 
 onMounted(() => {
@@ -178,6 +209,7 @@ onUnmounted(() => {
           role="dialog"
           aria-modal="true"
           aria-labelledby="quiz-question"
+          :aria-describedby="showFeedback ? feedbackAnnouncementId : undefined"
           style="box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3), inset 1px 0 0 rgba(255, 255, 255, 0.1);"
         >
           <!-- Question Header -->
@@ -189,9 +221,19 @@ onUnmounted(() => {
 
           <!-- Feedback Message (shown after submission) -->
           <div v-if="showFeedback" class="flex-1 px-4 sm:px-6 md:px-8 py-6 sm:py-8 flex items-center justify-center">
-            <div class="bg-white/95 backdrop-blur-sm rounded-lg p-4 sm:p-6 md:p-8 w-full">
-              <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-900 font-normal leading-relaxed text-center" role="status" aria-live="polite">
-                {{ feedbackMessage }}
+            <div
+              ref="feedbackPanel"
+              class="bg-white/95 backdrop-blur-sm rounded-lg p-4 sm:p-6 md:p-8 w-full focus:outline-none focus:ring-4 focus:ring-white/60"
+              tabindex="-1"
+              role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
+            >
+              <p id="quiz-feedback-announcement" class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-900 font-semibold leading-relaxed text-center">
+                {{ isCorrect ? feedbackCopy.correct.title : feedbackCopy.incorrect.title }}
+              </p>
+              <p class="mt-2 text-base sm:text-lg md:text-xl lg:text-2xl text-gray-800 font-normal leading-relaxed text-center">
+                {{ isCorrect ? feedbackCopy.correct.subtitle : feedbackCopy.incorrect.subtitle }}
               </p>
             </div>
           </div>
@@ -264,10 +306,10 @@ onUnmounted(() => {
             <button
               v-else
               class="w-full py-3 sm:py-4 px-6 rounded-lg font-semibold text-base sm:text-lg md:text-xl transition-all duration-200 backdrop-blur-sm border bg-white/95 text-gray-900 hover:bg-white border-white/30 shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#0a7ac8]/50"
-              aria-label="Continue watching video"
+              :aria-label="isCorrect ? 'Continue watching video' : 'Repeat quiz'"
               @click="handleContinue"
             >
-              Continue
+              {{ isCorrect ? feedbackCopy.correct.button : feedbackCopy.incorrect.button }}
             </button>
           </div>
         </div>
@@ -286,6 +328,7 @@ onUnmounted(() => {
           role="dialog"
           aria-modal="true"
           aria-labelledby="quiz-question"
+          :aria-describedby="showFeedback ? feedbackAnnouncementId : undefined"
           style="box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3), inset 1px 0 0 rgba(255, 255, 255, 0.1);"
         >
           <!-- Question Header -->
@@ -297,9 +340,19 @@ onUnmounted(() => {
 
           <!-- Feedback Message (shown after submission) -->
           <div v-if="showFeedback" class="flex-1 px-4 sm:px-6 md:px-8 py-6 sm:py-8 flex items-center justify-center">
-            <div class="bg-white/95 backdrop-blur-sm rounded-lg p-4 sm:p-6 md:p-8 w-full">
-              <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-900 font-normal leading-relaxed text-center" role="status" aria-live="polite">
-                {{ feedbackMessage }}
+            <div
+              ref="feedbackPanel"
+              class="bg-white/95 backdrop-blur-sm rounded-lg p-4 sm:p-6 md:p-8 w-full focus:outline-none focus:ring-4 focus:ring-white/60"
+              tabindex="-1"
+              role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
+            >
+              <p id="quiz-feedback-announcement" class="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-900 font-semibold leading-relaxed text-center">
+                {{ isCorrect ? feedbackCopy.correct.title : feedbackCopy.incorrect.title }}
+              </p>
+              <p class="mt-2 text-base sm:text-lg md:text-xl lg:text-2xl text-gray-800 font-normal leading-relaxed text-center">
+                {{ isCorrect ? feedbackCopy.correct.subtitle : feedbackCopy.incorrect.subtitle }}
               </p>
             </div>
           </div>
@@ -308,21 +361,21 @@ onUnmounted(() => {
           <div v-else class="flex-1 px-4 sm:px-6 md:px-8 space-y-2 sm:space-y-3 overflow-y-auto pb-3 sm:pb-4" role="radiogroup" aria-labelledby="quiz-question">
             <button
               v-for="(option, index) in quiz.options"
-              :key="option"
+              :key="getOptionValue(option) || index"
               :class="[
                 'w-full text-left bg-white/95 backdrop-blur-sm rounded-lg p-3 sm:p-4 transition-all duration-200',
                 'hover:shadow-md border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#0a7ac8]/50',
-                selectedAnswer === option
+                selectedAnswer === getOptionValue(option)
                   ? 'ring-2 ring-white/60 ring-offset-2 ring-offset-[#0a7ac8]/50 shadow-lg bg-white'
                   : '',
               ]"
-              :aria-label="`Option ${String.fromCharCode(65 + index)}: ${option.replace(/^[A-Z]\)\s*/, '')}`"
-              :aria-pressed="selectedAnswer === option"
+              :aria-label="`Option ${String.fromCharCode(65 + index)}: ${getOptionLabel(option).replace(/^[A-Z]\)\s*/, '')}`"
+              :aria-pressed="selectedAnswer === getOptionValue(option)"
               role="radio"
               :tabindex="0"
-              @click="handleSelectAnswer(option)"
-              @keydown.enter="handleSelectAnswer(option)"
-              @keydown.space.prevent="handleSelectAnswer(option)"
+              @click="handleSelectAnswer(getOptionValue(option))"
+              @keydown.enter="handleSelectAnswer(getOptionValue(option))"
+              @keydown.space.prevent="handleSelectAnswer(getOptionValue(option))"
             >
               <div class="flex items-center gap-2 sm:gap-3 md:gap-4">
                 <!-- Letter indicator (A, B, C, D) - Black text with colon -->
@@ -331,20 +384,20 @@ onUnmounted(() => {
                 </span>
                 
                 <!-- Option text -->
-                <span class="text-base sm:text-lg md:text-xl text-black flex-1 font-normal leading-tight sm:leading-normal">{{ option }}</span>
+                <span class="text-base sm:text-lg md:text-xl text-black flex-1 font-normal leading-tight sm:leading-normal">{{ getOptionLabel(option) }}</span>
                 
                 <!-- Radio button - Gray circle on right -->
                 <div class="flex-shrink-0">
                   <div
                     :class="[
                       'w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center',
-                      selectedAnswer === option
+                      selectedAnswer === getOptionValue(option)
                         ? 'border-gray-700 bg-gray-700'
                         : 'border-gray-400 bg-white'
                     ]"
                   >
                     <div
-                      v-if="selectedAnswer === option"
+                      v-if="selectedAnswer === getOptionValue(option)"
                       class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-white"
                     ></div>
                   </div>
@@ -372,10 +425,10 @@ onUnmounted(() => {
             <button
               v-else
               class="w-full py-3 sm:py-4 px-6 rounded-lg font-semibold text-base sm:text-lg md:text-xl transition-all duration-200 backdrop-blur-sm border bg-white/95 text-gray-900 hover:bg-white border-white/30 shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-[#0a7ac8]/50"
-              aria-label="Continue watching video"
+              :aria-label="isCorrect ? 'Continue watching video' : 'Repeat quiz'"
               @click="handleContinue"
             >
-              Continue
+              {{ isCorrect ? feedbackCopy.correct.button : feedbackCopy.incorrect.button }}
             </button>
           </div>
         </div>

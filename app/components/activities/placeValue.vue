@@ -2,6 +2,7 @@
 import { ref, computed } from "vue"
 import Cube from "./cube.vue"
 const ui = useActivityUiText()
+const { announce } = useActivityAriaLive()
 
 const maxNumber = 9999
 const totalQuestions = 10
@@ -10,19 +11,27 @@ const inputValue = ref("")
 const currentNumber = ref(0)
 const currentQuestion = ref(1)
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   const num = parseInt(inputValue.value)
   if (!isNaN(num) && num >= 0 && num <= maxNumber) {
     currentNumber.value = num
+    await announce(
+      "Place value",
+      ui.formatActivityUpdated("Place value", num),
+    )
   }
 }
 
-const handleNextQuestion = () => {
+const handleNextQuestion = async () => {
   const randomNum = Math.floor(Math.random() * (maxNumber + 1))
   currentNumber.value = randomNum
   inputValue.value = ""
   currentQuestion.value =
     currentQuestion.value < totalQuestions ? currentQuestion.value + 1 : 1
+  await announce(
+    "Place value",
+    `${ui.formatQuestion(currentQuestion.value)}. ${ui.formatActivityUpdated("Number", randomNum)}`,
+  )
 }
 
 const placeValues = computed(() => {

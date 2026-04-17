@@ -17,8 +17,10 @@ import CompoundUnitArithmeticInput, {
 import {
   parseQuestionSegments,
   calculateBlankWidth,
+  texChunksForMathJaxInline,
   type QuestionSegment,
 } from "./question-renderer-utils";
+import { unwrapCuaComparisonSymbol } from "~/lib/utils/answer-checker";
 
 export type QuestionRendererMode = "activity" | "exam" | "results";
 
@@ -86,8 +88,12 @@ const segmentsWithBlankIndex = computed((): SegmentWithBlank[] => {
 
 function isBlankCorrect(blankIndex: number) {
   if (props.mode === "results") return props.isCorrect;
-  const ua = (props.userAnswers[blankIndex] || "").toLowerCase().trim();
-  const ca = (props.answers[blankIndex] || "").toLowerCase().trim();
+  const ua = unwrapCuaComparisonSymbol(props.userAnswers[blankIndex] || "")
+    .toLowerCase()
+    .trim();
+  const ca = unwrapCuaComparisonSymbol(props.answers[blankIndex] || "")
+    .toLowerCase()
+    .trim();
   return ua === ca;
 }
 
@@ -234,7 +240,21 @@ const metricCompoundSplit = computed(() => {
               <span v-else>
                 <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
                   <span v-if="ks.type === 'text'">{{ ks.value }}</span>
-                  <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
+                  <span
+                    v-else
+                    class="inline-flex min-w-0 max-w-full flex-wrap items-baseline gap-x-1"
+                  >
+                    <template
+                      v-for="(chunk, mi) in texChunksForMathJaxInline(ks.value)"
+                      :key="`${ki}-${mi}`"
+                    >
+                      <span
+                        v-mathjax="mathJaxWrap(chunk)"
+                        class="inline-block min-w-0 max-w-full align-middle"
+                        >{{ mathJaxWrap(chunk) }}</span
+                      >
+                    </template>
+                  </span>
                 </template>
               </span>
             </span>
@@ -248,7 +268,21 @@ const metricCompoundSplit = computed(() => {
               <span v-else>
                 <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
                   <span v-if="ks.type === 'text'">{{ ks.value }}</span>
-                  <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
+                  <span
+                    v-else
+                    class="inline-flex min-w-0 max-w-full flex-wrap items-baseline gap-x-1"
+                  >
+                    <template
+                      v-for="(chunk, mi) in texChunksForMathJaxInline(ks.value)"
+                      :key="`${ki}-${mi}`"
+                    >
+                      <span
+                        v-mathjax="mathJaxWrap(chunk)"
+                        class="inline-block min-w-0 max-w-full align-middle"
+                        >{{ mathJaxWrap(chunk) }}</span
+                      >
+                    </template>
+                  </span>
                 </template>
               </span>
             </span>
@@ -393,7 +427,21 @@ const metricCompoundSplit = computed(() => {
       <span v-else>
         <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
           <span v-if="ks.type === 'text'">{{ ks.value }}</span>
-          <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
+          <span
+            v-else
+            class="inline-flex min-w-0 max-w-full flex-wrap items-baseline gap-x-1"
+          >
+            <template
+              v-for="(chunk, mi) in texChunksForMathJaxInline(ks.value)"
+              :key="`${ki}-${mi}`"
+            >
+              <span
+                v-mathjax="mathJaxWrap(chunk)"
+                class="inline-block min-w-0 max-w-full align-middle"
+                >{{ mathJaxWrap(chunk) }}</span
+              >
+            </template>
+          </span>
         </template>
       </span>
     </span>
@@ -409,7 +457,21 @@ const metricCompoundSplit = computed(() => {
       <span v-else>
         <template v-for="(ks, ki) in katexSegs(item.segment.content)" :key="ki">
           <span v-if="ks.type === 'text'">{{ ks.value }}</span>
-          <span v-else v-mathjax="ks.value">{{ mathJaxWrap(ks.value) }}</span>
+          <span
+            v-else
+            class="inline-flex min-w-0 max-w-full flex-wrap items-baseline gap-x-1"
+          >
+            <template
+              v-for="(chunk, mi) in texChunksForMathJaxInline(ks.value)"
+              :key="`${ki}-${mi}`"
+            >
+              <span
+                v-mathjax="mathJaxWrap(chunk)"
+                class="inline-block min-w-0 max-w-full align-middle"
+                >{{ mathJaxWrap(chunk) }}</span
+              >
+            </template>
+          </span>
         </template>
       </span>
     </span>
