@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { ref, computed } from "vue";
+import { ref, computed, unref } from "vue";
 import { Icon } from "@iconify/vue";
 
 // Local imports
@@ -155,6 +155,14 @@ const selectedOption = computed(() =>
   getAvailableOptions.value.find((option) => option.id === selectedOptionId.value) || null,
 );
 
+/** Short, stable chip text; full clue wording is only in aria-label (avoids huge labels in the blank). */
+const blankDropZoneLabel = computed(() => {
+  if (selectedOption.value) {
+    return unref(ui.isSwahili) ? "Bonyeza kuweka" : "Tap to place";
+  }
+  return unref(ui.isSwahili) ? "Weka jibu hapa" : "Blank";
+});
+
 function placeSelectedOption(questionIndex: number) {
   if (!selectedOption.value || showResults.value) return;
 
@@ -193,6 +201,18 @@ function removeAnswer(questionIndex: number) {
   delete nextAnswers[questionIndex];
   answers.value = nextAnswers;
   allAnswered.value = false;
+}
+
+function ariaBlankDrop(questionIndex: number, blankIndex: number) {
+  const sel = selectedOption.value;
+  if (unref(ui.isSwahili)) {
+    return sel
+      ? `Nafasi ${blankIndex + 1} kwa swali ${questionIndex + 1}. Bonyeza kuweka: ${sel.value}`
+      : `Nafasi ${blankIndex + 1} kwa swali ${questionIndex + 1}. Chagua kidokezo kwanza.`;
+  }
+  return sel
+    ? `Blank ${blankIndex + 1} for question ${questionIndex + 1}. Activate to place ${sel.value}.`
+    : `Blank ${blankIndex + 1} for question ${questionIndex + 1}. Select a clue first.`;
 }
 </script>
 
@@ -279,16 +299,12 @@ function removeAnswer(questionIndex: number) {
                     v-if="!answers[i]"
                     type="button"
                     :aria-describedby="activityInstructionsId"
-                    :aria-label="
-                      selectedOption
-                        ? `Blank ${idx + 1} for question ${i + 1}. Activate to place ${selectedOption.value}.`
-                        : `Blank ${idx + 1} for question ${i + 1}. Select a clue first.`
-                    "
+                    :aria-label="ariaBlankDrop(i, idx)"
                     class="flex min-h-[3rem] min-w-[6.5rem] max-w-[min(100%,12.5rem)] items-center justify-center rounded border border-picton-blue-300 bg-picton-blue-100 px-2 py-1.5 text-sm leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:min-h-[3.25rem] sm:min-w-[7.5rem] sm:max-w-[14rem] sm:text-base md:min-w-32 md:max-w-[17rem] md:text-lg"
                     @click="placeSelectedOption(i)"
                   >
-                    <span class="line-clamp-3 text-center text-picton-blue-700">
-                      {{ selectedOption ? `Place ${selectedOption.value}` : "Blank" }}
+                    <span class="line-clamp-2 text-center text-picton-blue-700">
+                      {{ blankDropZoneLabel }}
                     </span>
                   </button>
                   <button
