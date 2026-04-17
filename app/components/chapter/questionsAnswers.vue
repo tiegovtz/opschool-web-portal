@@ -634,7 +634,7 @@ const playDemoAnimation = async () => {
   <!-- drag and drop question and answer container -->
   <section v-else class="mt-6">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-      <p>{{ usedLanguage.toLowerCase().trim() === 'english' ? "Drag and drop the answers into the blanks." : "Buruta chaguo la jibu kwa nafasi tupu." }}</p>
+      <p>{{ usedLanguage.toLowerCase().trim() === 'english' ? "Drag and drop the answers into the blanks." : "Jaza nafasi zilizoachwa wazi kwa kuburuta jibu sahihi" }}</p>
       <button
         type="button"
         class="px-3 py-1 text-sm font-medium border rounded-md border-oceanBlue text-oceanBlue"
