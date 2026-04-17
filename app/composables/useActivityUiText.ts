@@ -87,6 +87,18 @@ export const useActivityUiText = () => {
   const resultEmojiAlt = computed(() =>
     isSwahili.value ? "Picha ya matokeo" : "Result emoji",
   );
+  const activityUpdates = computed(() =>
+    isSwahili.value ? "Sasisho za shughuli" : "Activity updates",
+  );
+  const selected = computed(() => (isSwahili.value ? "Imechaguliwa" : "Selected"));
+  const updated = computed(() => (isSwahili.value ? "Imesasishwa" : "Updated"));
+  const cleared = computed(() => (isSwahili.value ? "Imefutwa" : "Cleared"));
+  const activated = computed(() => (isSwahili.value ? "Imewashwa" : "Activated"));
+  const placed = computed(() => (isSwahili.value ? "Imewekwa" : "Placed"));
+  const removed = computed(() => (isSwahili.value ? "Imeondolewa" : "Removed"));
+  const resultsReady = computed(() =>
+    isSwahili.value ? "Matokeo yako yako tayari" : "Your results are ready",
+  );
 
   const formatQuestion = (index: number) => `${question.value} ${index}`;
   const formatCorrect = (value?: string | number | null) =>
@@ -107,6 +119,24 @@ export const useActivityUiText = () => {
     isSwahili.value
       ? `Swali la ${index} ${isCorrectResult ? "ni sahihi" : "si sahihi"}`
       : `Question ${index} ${isCorrectResult ? "correct" : "incorrect"}`;
+  const formatActivitySelected = (label: string, value?: string | number | null) =>
+    value == null || value === ""
+      ? `${label}. ${selected.value}.`
+      : `${label}. ${selected.value}: ${value}.`;
+  const formatActivityUpdated = (label: string, value?: string | number | null) =>
+    value == null || value === ""
+      ? `${label}. ${cleared.value}.`
+      : `${label}. ${updated.value}: ${value}.`;
+  const formatActivityActivated = (label: string) =>
+    `${label}. ${activated.value}.`;
+  const formatActivityPlaced = (label: string, value?: string | number | null) =>
+    value == null || value === ""
+      ? `${label}. ${placed.value}.`
+      : `${label}. ${placed.value}: ${value}.`;
+  const formatActivityRemoved = (label: string, value?: string | number | null) =>
+    value == null || value === ""
+      ? `${label}. ${removed.value}.`
+      : `${label}. ${removed.value}: ${value}.`;
 
   return {
     isSwahili,
@@ -138,10 +168,23 @@ export const useActivityUiText = () => {
     sentenceRearrangeResults,
     resultsByQuestion,
     resultEmojiAlt,
+    activityUpdates,
+    selected,
+    updated,
+    cleared,
+    activated,
+    placed,
+    removed,
+    resultsReady,
     formatQuestion,
     formatCorrect,
     formatCorrectAnswer,
     formatIncorrectAnswer,
     formatQuestionResult,
+    formatActivitySelected,
+    formatActivityUpdated,
+    formatActivityActivated,
+    formatActivityPlaced,
+    formatActivityRemoved,
   };
 };

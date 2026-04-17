@@ -8,6 +8,7 @@ const props = defineProps<{
   correctAnswers: number[]
 }>()
 const ui = useActivityUiText()
+const { announce } = useActivityAriaLive()
 
 const userAnswers = ref<Record<number, string>>({})
 const showResults = ref(false)
@@ -72,11 +73,18 @@ const numberToPixel = (num: number) => {
 }
 
 /* Logic */
-const checkAnswers = () => (showResults.value = true)
+const checkAnswers = async () => {
+  showResults.value = true
+  await announce(
+    ui.activityUpdates.value,
+    `${ui.answersChecked.value}. ${score.value.correct} / ${score.value.total}`,
+  )
+}
 
 const resetActivity = () => {
   userAnswers.value = {}
   showResults.value = false
+  announce(ui.activityUpdates.value, ui.formatActivityActivated("Number line reset"))
 }
 
 const isCorrect = (value: number) => {
