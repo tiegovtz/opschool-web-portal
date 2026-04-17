@@ -28,7 +28,8 @@ const completesentencesbydraggingcluesTranspiler = (
 
   return {
     title: titleDescription?.split("/")[0],
-    fontSize: title.split("||")[1] || 30,
+    // Only when authors set `Title||18` in the title; no default — layout uses responsive text in the UI.
+    fontSize: title.split("||")[1] || undefined,
     algorithm: params.algorithm,
     questions: shuffle(
       serverQuestions.map((q) => {
