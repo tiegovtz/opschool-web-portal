@@ -92,7 +92,8 @@ export default defineNuxtConfig({
         "crypto-js",
         "embla-carousel-autoplay",
         "embla-carousel-vue",
-        'jwt-decode'
+        'jwt-decode',
+        '@vueuse/core',
       ],
     },
     server: {
