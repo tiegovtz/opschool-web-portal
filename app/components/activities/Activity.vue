@@ -18,6 +18,7 @@ import {
   extractActivityFromPayload,
   normalizeActivity,
 } from "~/utilities/activitiesApi";
+import { getActivityAriaLiveBehavior } from "~/utilities/activityAriaLiveBehaviors";
 import { Icon } from "@iconify/vue";
 
 type ActivityCompletionPayload = {
@@ -43,6 +44,7 @@ const isMobile = useIsMobile()
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
 const ui = useActivityUiText();
+const { state: ariaLive, announce, clear } = useActivityAriaLive();
 const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
 const contentLanguage = computed(() =>
   resolveRouteLanguage(route, educationLevel.value, primaryContentLanguage.value),
@@ -113,6 +115,10 @@ const activityComponent = computed(() => activity.value && enhancedActivityCompo
 // transplier
 const transpiler = computed(() => activity.value && activityPropsTranspiler[activity.value.description])
 const transpiledQuestions = ref<Record<string, unknown> | null>(null);
+const activityAriaBehavior = computed(() =>
+  getActivityAriaLiveBehavior(activity.value?.description),
+);
+const lastSelectedAnnouncementValue = ref("");
 
 watchEffect(() => {
     if (!activity.value || !transpiler.value) {
@@ -167,12 +173,16 @@ const emitActivityCompleted = (payload?: Partial<ActivityCompletionPayload>) => 
   });
 };
 
-const handleActivityComplete = (
+const handleActivityComplete = async (
   score: number,
   totalQuestions: number,
   userAnswers: unknown[] = [],
   savedAnswers: unknown[] = [],
 ) => {
+  await announce(
+    ui.activityUpdates.value,
+    `${ui.answersChecked.value}. ${score} / ${totalQuestions}`,
+  );
   emitActivityCompleted({
     score,
     totalQuestions,
@@ -181,8 +191,290 @@ const handleActivityComplete = (
   });
 };
 
-const handleAnswerRecorded = () => {
+const handleAnswerRecorded = async (
+  questionIndex?: number,
+  answer?: unknown,
+  isCorrect?: boolean,
+) => {
+  const label =
+    typeof questionIndex === "number" && Number.isFinite(questionIndex)
+      ? ui.formatQuestion(questionIndex + 1)
+      : ui.activityUpdates.value;
+
+  const normalizedAnswer =
+    answer == null
+      ? ""
+      : typeof answer === "string"
+        ? answer.trim()
+        : String(answer).trim();
+
+  const message =
+    normalizedAnswer
+      ? ui.formatActivityUpdated(label, normalizedAnswer)
+      : typeof isCorrect === "boolean"
+        ? ui.formatQuestionResult(
+            typeof questionIndex === "number" ? questionIndex + 1 : 1,
+            isCorrect,
+          )
+        : ui.formatActivityActivated(label);
+
+  announce(label, message);
+  if (normalizedAnswer) {
+    lastSelectedAnnouncementValue.value = normalizedAnswer;
+  }
   emitActivityInteracted();
+};
+
+const getElementLabel = (element: HTMLElement) => {
+  const ariaLabel = element.getAttribute("aria-label")?.trim();
+  if (ariaLabel) return ariaLabel;
+
+  const labelledBy = element.getAttribute("aria-labelledby");
+  if (labelledBy) {
+    const text = labelledBy
+      .split(/\s+/)
+      .map((id) => document.getElementById(id)?.textContent?.trim() || "")
+      .filter(Boolean)
+      .join(" ");
+    if (text) return text;
+  }
+
+  if (element instanceof HTMLInputElement ||
+      element instanceof HTMLTextAreaElement ||
+      element instanceof HTMLSelectElement) {
+    const label =
+      element.labels?.[0]?.textContent?.trim() ||
+      element.placeholder?.trim() ||
+      element.name?.trim();
+    if (label) return label;
+  }
+
+  return element.getAttribute("title")?.trim() || element.textContent?.trim() || "";
+};
+
+const normalizeAnnouncementValue = (value?: string | null) =>
+  (value || "")
+    .replace(/\s+/g, " ")
+    .replace(/[.,;:!?]+$/g, "")
+    .trim();
+
+const extractValueAfterPhrase = (text: string, patterns: RegExp[]) => {
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match?.[1]) {
+      return normalizeAnnouncementValue(match[1]);
+    }
+  }
+
+  return "";
+};
+
+const getPressedState = (element: HTMLElement) =>
+  element.getAttribute("aria-pressed") === "true" ||
+  element.getAttribute("aria-selected") === "true" ||
+  element.getAttribute("aria-checked") === "true";
+
+const getInteractiveElementValue = (element: HTMLElement, fallbackLabel: string) => {
+  if (element instanceof HTMLInputElement) {
+    if (["checkbox", "radio"].includes(element.type)) {
+      return normalizeAnnouncementValue(element.value) || fallbackLabel;
+    }
+
+    return normalizeAnnouncementValue(element.value);
+  }
+
+  if (element instanceof HTMLTextAreaElement) {
+    return normalizeAnnouncementValue(element.value);
+  }
+
+  if (element instanceof HTMLSelectElement) {
+    return normalizeAnnouncementValue(
+      element.selectedOptions[0]?.textContent?.trim() || element.value,
+    );
+  }
+
+  return normalizeAnnouncementValue(
+    element.getAttribute("data-aria-live-message")?.trim() ||
+      element.textContent?.trim() ||
+      fallbackLabel,
+  );
+};
+
+const createButtonAnnouncement = (
+  element: HTMLElement,
+  label: string,
+  behavior: ReturnType<typeof getActivityAriaLiveBehavior>,
+) => {
+  const normalizedLabel = normalizeAnnouncementValue(label);
+  const lowerLabel = normalizedLabel.toLowerCase();
+  const value = getInteractiveElementValue(element, normalizedLabel);
+
+  if (
+    /(check answers|check answer|view results|play again|try again|next question|show blocks|show results|start|continue)/i
+      .test(lowerLabel)
+  ) {
+    return {
+      label: normalizedLabel || ui.activityUpdates.value,
+      message: ui.formatActivityActivated(normalizedLabel || ui.activityUpdates.value),
+    };
+  }
+
+  if (behavior === "abacus") {
+    const addValue = extractValueAfterPhrase(normalizedLabel, [
+      /add one bead to (.+?)(?:\.|$)/i,
+      /ongeza shanga moja kwenye (.+?)(?:\.|$)/i,
+    ]);
+    if (addValue) {
+      return {
+        label: normalizedLabel,
+        message: ui.formatActivityPlaced(normalizedLabel, addValue),
+      };
+    }
+
+    const removeValue = extractValueAfterPhrase(normalizedLabel, [
+      /remove one bead from (.+?)(?:\.|$)/i,
+      /ondoa shanga moja kutoka (.+?)(?:\.|$)/i,
+    ]);
+    if (removeValue) {
+      return {
+        label: normalizedLabel,
+        message: ui.formatActivityRemoved(normalizedLabel, removeValue),
+      };
+    }
+  }
+
+  if (behavior === "placement" || behavior === "matching") {
+    const removeValue =
+      extractValueAfterPhrase(normalizedLabel, [
+        /remove (.+?)(?: from .+|\.|$)/i,
+        /ondoa (.+?)(?: kutoka .+|\.|$)/i,
+      ]) || value;
+
+    if (/(remove|ondoa)/i.test(lowerLabel)) {
+      return {
+        label: normalizedLabel,
+        message: ui.formatActivityRemoved(normalizedLabel, removeValue),
+      };
+    }
+
+    const placeValue =
+      extractValueAfterPhrase(normalizedLabel, [
+        /place (.+?)(?: in .+| into .+| on .+|\.|$)/i,
+        /weka (.+?)(?: kwenye .+| ndani ya .+|\.|$)/i,
+        /match with (.+?)(?:\.|$)/i,
+      ]) || lastSelectedAnnouncementValue.value || value;
+
+    if (/(place|blank|slot|match|pair|connect|drop|weka|nafasi)/i.test(lowerLabel)) {
+      return {
+        label: normalizedLabel,
+        message: ui.formatActivityPlaced(normalizedLabel, placeValue),
+      };
+    }
+
+    if (/(choose|select|chagua)/i.test(lowerLabel) || getPressedState(element)) {
+      const selectedValue =
+        extractValueAfterPhrase(normalizedLabel, [
+          /choose (.+?)(?:\.|$)/i,
+          /select (.+?)(?:\.|$)/i,
+          /chagua (.+?)(?:\.|$)/i,
+        ]) || value;
+
+      if (selectedValue) {
+        lastSelectedAnnouncementValue.value = selectedValue;
+      }
+
+      return {
+        label: normalizedLabel,
+        message: ui.formatActivitySelected(normalizedLabel, selectedValue),
+      };
+    }
+  }
+
+  if (behavior === "selection" || behavior === "toggle-grid" || behavior === "hybrid") {
+    const message = getPressedState(element)
+      ? ui.formatActivitySelected(normalizedLabel, value)
+      : ui.formatActivityActivated(normalizedLabel || value || ui.activityUpdates.value);
+
+    if (value) {
+      lastSelectedAnnouncementValue.value = value;
+    }
+
+    return {
+      label: normalizedLabel || ui.activityUpdates.value,
+      message,
+    };
+  }
+
+  return {
+    label: normalizedLabel || ui.activityUpdates.value,
+    message: ui.formatActivityActivated(normalizedLabel || value || ui.activityUpdates.value),
+  };
+};
+
+const createInteractionAnnouncement = (event: Event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return null;
+
+  const element = target.closest(
+    "input, textarea, select, button, [role='button'], [contenteditable='true']",
+  );
+
+  if (!(element instanceof HTMLElement)) return null;
+
+  if (
+    event.type === "click" &&
+    (element instanceof HTMLInputElement ||
+      element instanceof HTMLTextAreaElement ||
+      element instanceof HTMLSelectElement)
+  ) {
+    return null;
+  }
+
+  const label = getElementLabel(element) || ui.activityUpdates.value;
+  const behavior = activityAriaBehavior.value;
+
+  if (element instanceof HTMLInputElement) {
+    if (element.type === "checkbox") {
+      return {
+        label,
+        message: element.checked
+          ? ui.formatActivitySelected(label, getInteractiveElementValue(element, label))
+          : ui.formatActivityRemoved(label, getInteractiveElementValue(element, label)),
+      };
+    }
+
+    if (element.type === "radio") {
+      const value = getInteractiveElementValue(element, label) || label;
+      lastSelectedAnnouncementValue.value = value;
+      return {
+        label,
+        message: ui.formatActivitySelected(label, value),
+      };
+    }
+
+    return {
+      label,
+      message: ui.formatActivityUpdated(label, element.value),
+    };
+  }
+
+  if (element instanceof HTMLTextAreaElement) {
+    return {
+      label,
+      message: ui.formatActivityUpdated(label, element.value),
+    };
+  }
+
+  if (element instanceof HTMLSelectElement) {
+    const selectedOption = element.selectedOptions[0]?.textContent?.trim() || element.value;
+    lastSelectedAnnouncementValue.value = normalizeAnnouncementValue(selectedOption);
+    return {
+      label,
+      message: ui.formatActivitySelected(label, selectedOption),
+    };
+  }
+
+  return createButtonAnnouncement(element, label, behavior);
 };
 
 const isInteractiveTarget = (target: EventTarget | null) =>
@@ -196,6 +488,7 @@ const isInteractiveTarget = (target: EventTarget | null) =>
 const detectResultsUi = () => {
   if (!activityRoot.value || hasReportedCompletion.value) return;
   if (activityRoot.value.querySelector("[data-activity-results]")) {
+    announce(ui.activityUpdates.value, ui.resultsReady.value);
     emitActivityCompleted();
   }
 };
@@ -213,6 +506,12 @@ const setupActivityTracking = async () => {
   const interactionHandler = (event: Event) => {
     if (!isInteractiveTarget(event.target)) return;
     emitActivityInteracted();
+  };
+
+  const announcementHandler = (event: Event) => {
+    const announcement = createInteractionAnnouncement(event);
+    if (!announcement) return;
+    announce(announcement.label, announcement.message);
   };
 
   const keyboardHandler = (event: Event) => {
@@ -241,6 +540,9 @@ const setupActivityTracking = async () => {
     ["drop", interactionHandler],
     ["dragend", interactionHandler],
     ["keydown", keyboardHandler],
+    ["change", announcementHandler],
+    ["click", announcementHandler],
+    ["drop", announcementHandler],
   ];
 
   listenerEntries.forEach(([eventName, handler]) => {
@@ -272,6 +574,7 @@ watch(
     teardownActivityTracking();
     hasReportedInteraction.value = false;
     hasReportedCompletion.value = false;
+    clear();
 
     if (nextStatus === "success") {
       await setupActivityTracking();
@@ -324,5 +627,14 @@ onBeforeUnmount(() => {
         </div>
         <div v-else-if="status == 'error'">{{ error }}</div>
         <div v-else>{{ ui.unknownIssue }}</div>
+        <div
+          :key="ariaLive.sequence"
+          class="sr-only"
+          :aria-label="ariaLive.label || ui.activityUpdates"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
+          {{ ariaLive.message }}
+        </div>
     </div>
 </template>
