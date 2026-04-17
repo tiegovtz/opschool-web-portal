@@ -17,7 +17,7 @@
     
     <!-- Combinations -->
      <div  v-if="route.path !== '/pdf'" class="fixed right-2 z-10 top-[55%] transform -rotate-90 origin-bottom-right bg-oceanBlue hover:bg-deepBlue transition-all duration-500 ease-in-out rounded-md cursor-pointer">
-      <NuxtLink v-if="educationLevel !=='primary'" to="/pdf" class="px-4 py-2 text-white">{{ language === 'english' ? 'Combinations of Subjects' : 'Muhtasari wa Mafunzo' }}</NuxtLink>
+      <NuxtLink v-if=" useHubEducationLevel().value =='lower secondary' ||  useHubEducationLevel().value =='secondary'" to="/pdf" class="px-4 py-2 text-white">{{ language === 'english' ? 'Combinations of Subjects' : 'Muhtasari wa Mafunzo' }}</NuxtLink>
      </div>
     
     <!-- 50 Years -->
