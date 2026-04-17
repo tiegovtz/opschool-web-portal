@@ -81,6 +81,8 @@ export const completeSentencesByRephrasingPropsTranspiler = (
     if (!match) return trimmed;
     const inner = (match[1] ?? "").toString().trim();
     if (/^\d+$/.test(inner)) return inner;
+    // Comparison blanks: backend uses cua(>) / cua(<); learners type > or <.
+    if (/^[<>]$/.test(inner)) return inner;
     return trimmed;
   };
 

@@ -119,8 +119,13 @@ export default defineComponent({
   },
 });
 
+/**
+ * True only for metric-style compound answers like `cua(11km,6dam,2m)` or `cua(4)`.
+ * Backend may wrap comparison answers as `cua(>)` / `cua(<)` — those are not compound
+ * unit inputs; treat them as plain text blanks so fill detection and inputs work.
+ */
 export const detectCompoundUnitArithmeticPattern = (answer: string) => {
-  const pattern = /^cua\((.*?)\)$/;
+  const pattern = /^cua\((.*?)\)$/i;
   const match = answer.match(pattern);
 
   if (!match) return { isCompoundUnitArithmetic: false, columnCount: 0 };
@@ -128,9 +133,21 @@ export const detectCompoundUnitArithmeticPattern = (answer: string) => {
   const separator = match[1]?.includes("|") ? "|" : ",";
   const parts = match[1]?.split(separator);
 
+  const isCompoundUnitArithmetic =
+    (parts?.length ?? 0) > 0 &&
+    parts!.every((part) => {
+      const p = part.trim();
+      if (!p) return false;
+      return /^\d+[a-zA-Z]*$/i.test(p);
+    });
+
+  if (!isCompoundUnitArithmetic) {
+    return { isCompoundUnitArithmetic: false, columnCount: 0 };
+  }
+
   return {
     isCompoundUnitArithmetic: true,
-    columnCount: parts?.length,
+    columnCount: parts?.length ?? 0,
   };
 };
 

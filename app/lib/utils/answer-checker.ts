@@ -34,6 +34,15 @@ const normalizeText = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+/** Map `cua(>)` / `cua(<)` to the symbol so checks match plain typed answers. */
+export const unwrapCuaComparisonSymbol = (value: string) => {
+  const m = value.trim().match(/^cua\s*\(\s*(.*?)\s*\)\s*$/i);
+  if (!m) return value;
+  const inner = (m[1] ?? "").trim();
+  if (/^[<>]$/.test(inner)) return inner;
+  return value;
+};
+
 const tokenize = (value: string) =>
   normalizeText(value)
     .split(/[^a-z0-9/.-]+/i)
@@ -78,9 +87,11 @@ export class AnswerChecker {
       };
     }
 
-    const normalizedAnswer = normalizeText(answer);
+    const normalizedAnswer = normalizeText(unwrapCuaComparisonSymbol(answer));
     const isCorrect = acceptedAnswers.some((acceptedAnswer) => {
-      const normalizedAccepted = normalizeText(acceptedAnswer);
+      const normalizedAccepted = normalizeText(
+        unwrapCuaComparisonSymbol(acceptedAnswer),
+      );
 
       if (normalizedAnswer === normalizedAccepted) {
         return true;
