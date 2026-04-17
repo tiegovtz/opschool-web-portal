@@ -1,5 +1,5 @@
 <script setup lang="tsx">
-import { ref, computed } from "vue";
+import { ref, computed, unref } from "vue";
 import { Icon } from "@iconify/vue";
 
 // Local imports
@@ -7,8 +7,6 @@ import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, { ActivityResultsAlertDialog } from "@/components/templates/results";
 import { shuffle } from "~/utilities/utils";
 import DNDContext from "~/components/layout/dnd-context";
-import Draggable from "~/components/ui/dnd/draggable";
-import Droppable from "~/components/ui/dnd/droppable";
 import { ActivityType } from "~/types/activity-types";
 
 // Props
@@ -35,6 +33,15 @@ type Props = {
 
 const props = defineProps<Props>();
 const ui = useActivityUiText();
+
+/** Optional CMS title override (`Title||18`); otherwise use responsive classes only. */
+const activityFontStyle = computed(() => {
+  const raw = props.questions.fontSize;
+  if (raw === undefined || raw === null || raw === "") return undefined;
+  const n = Number(String(raw).trim());
+  if (!Number.isFinite(n) || n <= 0) return undefined;
+  return { fontSize: `${n}px` };
+});
 
 // State
 const score = ref(0);
@@ -148,6 +155,14 @@ const selectedOption = computed(() =>
   getAvailableOptions.value.find((option) => option.id === selectedOptionId.value) || null,
 );
 
+/** Short, stable chip text; full clue wording is only in aria-label (avoids huge labels in the blank). */
+const blankDropZoneLabel = computed(() => {
+  if (selectedOption.value) {
+    return unref(ui.isSwahili) ? "Bonyeza kuweka" : "Tap to place";
+  }
+  return unref(ui.isSwahili) ? "Weka jibu hapa" : "Blank";
+});
+
 function placeSelectedOption(questionIndex: number) {
   if (!selectedOption.value || showResults.value) return;
 
@@ -187,6 +202,18 @@ function removeAnswer(questionIndex: number) {
   answers.value = nextAnswers;
   allAnswered.value = false;
 }
+
+function ariaBlankDrop(questionIndex: number, blankIndex: number) {
+  const sel = selectedOption.value;
+  if (unref(ui.isSwahili)) {
+    return sel
+      ? `Nafasi ${blankIndex + 1} kwa swali ${questionIndex + 1}. Bonyeza kuweka: ${sel.value}`
+      : `Nafasi ${blankIndex + 1} kwa swali ${questionIndex + 1}. Chagua kidokezo kwanza.`;
+  }
+  return sel
+    ? `Blank ${blankIndex + 1} for question ${questionIndex + 1}. Activate to place ${sel.value}.`
+    : `Blank ${blankIndex + 1} for question ${questionIndex + 1}. Select a clue first.`;
+}
 </script>
 
 <template>
@@ -206,12 +233,12 @@ function removeAnswer(questionIndex: number) {
     </p>
 
     <div
-      class="flex flex-col h-full bg-picton-blue-100 gap-2"
-      :style="{ fontSize: props.questions.fontSize ? props.questions.fontSize + 'px' : '20px' }"
+      class="flex h-full flex-col gap-2 bg-picton-blue-100 px-1.5 py-2 text-base leading-normal sm:gap-2.5 sm:px-0 sm:py-2 sm:text-lg md:text-xl md:leading-relaxed"
+      :style="activityFontStyle"
     >
       <DNDContext :onDragEnd="handleDragEnd">
         <!-- Options pool -->
-        <div class="flex flex-wrap gap-2 md:gap-4 mb-4 shrink-0">
+        <div class="mb-2 flex shrink-0 flex-wrap gap-2 sm:mb-3 sm:gap-2.5 md:gap-3">
           <button
             v-for="option in getAvailableOptions"
             :key="option.id"
@@ -219,7 +246,8 @@ function removeAnswer(questionIndex: number) {
             :aria-describedby="activityInstructionsId"
             :aria-pressed="selectedOptionId === option.id"
             :class="[
-              'rounded flex min-w-32 border border-picton-blue-400 overflow-hidden items-center justify-center bg-picton-blue-200 h-12 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2',
+              'flex min-h-[3rem] max-w-[min(100%,12.5rem)] items-center justify-center rounded border border-picton-blue-400 bg-picton-blue-200 px-2.5 py-2 text-left text-sm leading-snug break-words sm:min-h-[3.25rem] sm:max-w-[14rem] sm:text-base md:max-w-[17rem] md:text-lg',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2',
               selectedOptionId === option.id ? 'ring-2 ring-picton-blue-500 ring-offset-2' : '',
             ]"
             @click="selectedOptionId = selectedOptionId === option.id ? null : option.id"
@@ -238,7 +266,7 @@ function removeAnswer(questionIndex: number) {
         <div
           v-for="(question, i) in props.questions.questions"
           :key="i"
-          class="flex md:items-center rounded-md gap-2 md:gap-6 p-3 bg-picton-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+          class="flex gap-2 rounded-md bg-picton-blue-50 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:gap-2.5 sm:p-2.5 md:items-center md:gap-4 md:p-3"
           :class="showResults ? (answers[i]?.value === question.answer ? 'bg-green-100' : 'bg-red-100') : ''"
           role="group"
           tabindex="0"
@@ -250,16 +278,19 @@ function removeAnswer(questionIndex: number) {
               v-if="question.image"
               :src="question.image"
               alt="question"
-              class="min-w-24 h-20 object-cover rounded-md"
+              class="h-14 min-w-[4.5rem] rounded-md object-cover sm:h-16 sm:min-w-20 md:h-20 md:min-w-24"
             />
 
-            <div class="flex flex-wrap items-center gap-2 leading-relaxed">
-              <span :id="`complete-sentences-dragging-clues-question-${i}`" class="mr-1 font-bold text-picton-blue-700">
+            <div class="flex min-w-0 flex-wrap items-center gap-1.5 leading-snug sm:gap-2 sm:leading-normal">
+              <span
+                :id="`complete-sentences-dragging-clues-question-${i}`"
+                class="mr-0.5 shrink-0 text-base font-bold text-picton-blue-700 sm:text-lg md:text-xl"
+              >
                 {{ i + 1 }}.
               </span>
 
               <template v-for="(part, idx) in questionParts(question.question)" :key="idx">
-                <span v-if="part" class="whitespace-pre-wrap">
+                <span v-if="part" class="min-w-0 whitespace-pre-wrap text-picton-blue-950">
                   {{ part }}
                 </span>
 
@@ -268,16 +299,12 @@ function removeAnswer(questionIndex: number) {
                     v-if="!answers[i]"
                     type="button"
                     :aria-describedby="activityInstructionsId"
-                    :aria-label="
-                      selectedOption
-                        ? `Blank ${idx + 1} for question ${i + 1}. Activate to place ${selectedOption.value}.`
-                        : `Blank ${idx + 1} for question ${i + 1}. Select a clue first.`
-                    "
-                    class="bg-picton-blue-100 min-w-32 rounded flex items-center justify-center h-12 border border-picton-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+                    :aria-label="ariaBlankDrop(i, idx)"
+                    class="flex min-h-[3rem] min-w-[6.5rem] max-w-[min(100%,12.5rem)] items-center justify-center rounded border border-picton-blue-300 bg-picton-blue-100 px-2 py-1.5 text-sm leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:min-h-[3.25rem] sm:min-w-[7.5rem] sm:max-w-[14rem] sm:text-base md:min-w-32 md:max-w-[17rem] md:text-lg"
                     @click="placeSelectedOption(i)"
                   >
-                    <span class="text-sm text-picton-blue-700">
-                      {{ selectedOption ? `Place ${selectedOption.value}` : "Blank" }}
+                    <span class="line-clamp-2 text-center text-picton-blue-700">
+                      {{ blankDropZoneLabel }}
                     </span>
                   </button>
                   <button
@@ -285,7 +312,7 @@ function removeAnswer(questionIndex: number) {
                     type="button"
                     :aria-describedby="activityInstructionsId"
                     :aria-label="`Placed answer ${answers[i].value} for question ${i + 1}. Activate to remove it.`"
-                    class="flex items-center min-w-32 border border-lemon-400 bg-lemon-100 text-lemon-700 h-12 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
+                    class="flex min-h-[3rem] min-w-[6.5rem] max-w-[min(100%,12.5rem)] items-center border border-lemon-400 bg-lemon-100 p-2 text-sm leading-snug text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:min-h-[3.25rem] sm:min-w-[7.5rem] sm:max-w-[14rem] sm:text-base md:min-w-32 md:max-w-[17rem] md:text-lg"
                     :disabled="showResults"
                     @click="removeAnswer(i)"
                   >
@@ -295,15 +322,16 @@ function removeAnswer(questionIndex: number) {
                       :alt="answers[i].value"
                       class="w-full h-full object-contain"
                     />
-                    <template v-else>{{ answers[i].value }}</template>
+                    <span v-else class="line-clamp-4 w-full text-center break-words">{{ answers[i].value }}</span>
                   </button>
 
                   <Icon
                     v-if="showResults"
                     :icon="answers[i]?.value === question.answer ? 'mdi:check' : 'mdi:close'"
-                    :class="answers[i]?.value === question.answer ? 'text-green-600' : 'text-red-600'"
-                    width="20"
-                    height="20"
+                    :class="[
+                      'h-5 w-5 shrink-0 sm:h-6 sm:w-6',
+                      answers[i]?.value === question.answer ? 'text-green-600' : 'text-red-600',
+                    ]"
                     aria-hidden="true"
                   />
                 </template>
