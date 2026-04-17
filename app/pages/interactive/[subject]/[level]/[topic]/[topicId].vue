@@ -1120,9 +1120,12 @@ definePageMeta({
   <NuxtLayout name="home-layout" :language="contentLayoutLanguage" :education-level>
     <section v-if="experimrntUrl || activityPopupId" class="relative w-full center-height" id="experiment-container">
       <button
+        type="button"
         class="absolute top-0 right-0 flex items-center justify-center w-10 h-10 p-2 bg-red-500 rounded-full cursor-pointer"
+        aria-label="Close button. Kitufe cha kufunga."
+        title="Close button. Kitufe cha kufunga."
         @click="closeInteractivePopup">
-        <Icon name="formkit:close" size="24" class="font-bold text-white" />
+        <Icon name="formkit:close" size="24" class="font-bold text-white" aria-hidden="true" />
       </button>
       <iframe v-if="experimrntUrl" :src="experimrntUrl" frameborder="0" :class="[
         ' w-full  rounded-md !bg-white',
