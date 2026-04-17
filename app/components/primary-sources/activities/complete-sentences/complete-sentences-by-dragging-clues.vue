@@ -213,7 +213,7 @@ function removeAnswer(questionIndex: number) {
     </p>
 
     <div
-      class="flex h-full flex-col gap-2 bg-picton-blue-100 px-1.5 py-2 text-sm leading-normal sm:gap-2.5 sm:px-0 sm:py-2 sm:text-base md:text-lg md:leading-relaxed"
+      class="flex h-full flex-col gap-2 bg-picton-blue-100 px-1.5 py-2 text-base leading-normal sm:gap-2.5 sm:px-0 sm:py-2 sm:text-lg md:text-xl md:leading-relaxed"
       :style="activityFontStyle"
     >
       <DNDContext :onDragEnd="handleDragEnd">
@@ -226,7 +226,7 @@ function removeAnswer(questionIndex: number) {
             :aria-describedby="activityInstructionsId"
             :aria-pressed="selectedOptionId === option.id"
             :class="[
-              'flex min-h-[2.75rem] max-w-[min(100%,12rem)] items-center justify-center rounded border border-picton-blue-400 bg-picton-blue-200 px-2.5 py-2 text-left text-xs leading-snug break-words sm:min-h-[3rem] sm:max-w-[14rem] sm:text-sm md:max-w-[16rem] md:text-base',
+              'flex min-h-[3rem] max-w-[min(100%,12.5rem)] items-center justify-center rounded border border-picton-blue-400 bg-picton-blue-200 px-2.5 py-2 text-left text-sm leading-snug break-words sm:min-h-[3.25rem] sm:max-w-[14rem] sm:text-base md:max-w-[17rem] md:text-lg',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2',
               selectedOptionId === option.id ? 'ring-2 ring-picton-blue-500 ring-offset-2' : '',
             ]"
@@ -264,7 +264,7 @@ function removeAnswer(questionIndex: number) {
             <div class="flex min-w-0 flex-wrap items-center gap-1.5 leading-snug sm:gap-2 sm:leading-normal">
               <span
                 :id="`complete-sentences-dragging-clues-question-${i}`"
-                class="mr-0.5 shrink-0 text-sm font-bold text-picton-blue-700 sm:text-base md:text-lg"
+                class="mr-0.5 shrink-0 text-base font-bold text-picton-blue-700 sm:text-lg md:text-xl"
               >
                 {{ i + 1 }}.
               </span>
@@ -284,7 +284,7 @@ function removeAnswer(questionIndex: number) {
                         ? `Blank ${idx + 1} for question ${i + 1}. Activate to place ${selectedOption.value}.`
                         : `Blank ${idx + 1} for question ${i + 1}. Select a clue first.`
                     "
-                    class="flex min-h-[2.75rem] min-w-[6rem] max-w-[min(100%,12rem)] items-center justify-center rounded border border-picton-blue-300 bg-picton-blue-100 px-2 py-1.5 text-xs leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:min-h-[3rem] sm:min-w-[7rem] sm:max-w-[14rem] sm:text-sm md:min-w-32 md:max-w-[16rem] md:text-base"
+                    class="flex min-h-[3rem] min-w-[6.5rem] max-w-[min(100%,12.5rem)] items-center justify-center rounded border border-picton-blue-300 bg-picton-blue-100 px-2 py-1.5 text-sm leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:min-h-[3.25rem] sm:min-w-[7.5rem] sm:max-w-[14rem] sm:text-base md:min-w-32 md:max-w-[17rem] md:text-lg"
                     @click="placeSelectedOption(i)"
                   >
                     <span class="line-clamp-3 text-center text-picton-blue-700">
@@ -296,7 +296,7 @@ function removeAnswer(questionIndex: number) {
                     type="button"
                     :aria-describedby="activityInstructionsId"
                     :aria-label="`Placed answer ${answers[i].value} for question ${i + 1}. Activate to remove it.`"
-                    class="flex min-h-[2.75rem] min-w-[6rem] max-w-[min(100%,12rem)] items-center border border-lemon-400 bg-lemon-100 p-2 text-xs leading-snug text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:min-h-[3rem] sm:min-w-[7rem] sm:max-w-[14rem] sm:text-sm md:min-w-32 md:max-w-[16rem] md:text-base"
+                    class="flex min-h-[3rem] min-w-[6.5rem] max-w-[min(100%,12.5rem)] items-center border border-lemon-400 bg-lemon-100 p-2 text-sm leading-snug text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:min-h-[3.25rem] sm:min-w-[7.5rem] sm:max-w-[14rem] sm:text-base md:min-w-32 md:max-w-[17rem] md:text-lg"
                     :disabled="showResults"
                     @click="removeAnswer(i)"
                   >
@@ -313,7 +313,7 @@ function removeAnswer(questionIndex: number) {
                     v-if="showResults"
                     :icon="answers[i]?.value === question.answer ? 'mdi:check' : 'mdi:close'"
                     :class="[
-                      'h-4 w-4 shrink-0 sm:h-5 sm:w-5',
+                      'h-5 w-5 shrink-0 sm:h-6 sm:w-6',
                       answers[i]?.value === question.answer ? 'text-green-600' : 'text-red-600',
                     ]"
                     aria-hidden="true"
