@@ -6,8 +6,19 @@ export interface AuthResponse {
     user:User
 }
 
-export interface StudentPremLookupResponse {
-    premNumber: string | number;
+export interface StudentLookupApiRecord {
+    premNumber?: string | number | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    dob?: string | null;
+    sex?: string | null;
+    classLevel?: string | null;
+    schoolName?: string | null;
+    schoolRegNo?: string | null;
+}
+
+export interface StudentLookupRecord {
+    premNumber: string;
     firstName: string;
     lastName: string;
     dob: string;
@@ -16,3 +27,12 @@ export interface StudentPremLookupResponse {
     schoolName: string;
     schoolRegNo: string;
 }
+
+export interface StudentInfoLookupRequest {
+    schoolRegNo: string;
+    classLevel: string;
+    isPrimary: boolean;
+}
+
+export type StudentPremLookupResponse = StudentLookupApiRecord;
+export type StudentInfoLookupResponse = StudentLookupApiRecord | StudentLookupApiRecord[];
