@@ -135,7 +135,7 @@ const userToken = useCookie("signInUserToken");
 const status = ref("pending"); // Initial Status State
 const topic = ref([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
-const videoType = route.query?.type ? route.query?.type === 'conc' ? "Conceptual":'Other' :'Conceptual'; // Initial video type state
+const videoType = route.query?.type ? route.query?.type === 'conc' ? "Conceptual" : 'Other' : 'Conceptual'; // Initial video type state
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
@@ -167,28 +167,28 @@ const getPageSize = () => {
 // Then, update fetchVideos to call sliceData after data is loaded
 const fetchVideos = async (params) => {
 
-  if(!params){
+  if (!params) {
     params = {
       ...params,
-      videoType:videoType?videoType: 'Conceptual'
+      videoType: videoType ? videoType : 'Conceptual'
     }
 
     delete params?.type
   }
 
 
-// remove key type from params
-  if(params){
+  // remove key type from params
+  if (params) {
     delete params?.type
   }
 
   try {
     status.value = "pending";
     currentPage.value = 1;
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`videos-${educationLevel.value}-${language.value}-${subjectId}-${params?.toString()}`,()=>$fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
-        "{subjectId}",
-        subjectId
-      ), {
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${language.value}-${subjectId}-${params?.toString()}`, () => $fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
+      "{subjectId}",
+      subjectId
+    ), {
       params: {
         educationLevel: educationLevel.value,
         ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
@@ -269,11 +269,11 @@ watch(filters, (filters) => {
   });
 });
 
-watch (()=>route.query?.type,()=>{
+watch(() => route.query?.type, () => {
   activeTab.value = route.query?.type === "oth" ? "class-videos" : "video";
-  
+
   fetchVideos({
-    videoType: route.query?.type == 'conc'? 'Conceptual' : 'others'
+    videoType: route.query?.type == 'conc' ? 'Conceptual' : 'others'
   })
 })
 
@@ -288,32 +288,20 @@ const contentLayoutLanguage = useContentLayoutLanguage();
     ]">
       <HomeSearchbar v-if="userToken" appearance="rounded" :language :education-level="educationLevel" />
       <HeroSection v-else :language :education-level="educationLevel" />
-        <TabBar 
-          :is-logged-in="!!userToken"
-          :active-tab="activeTab"
-          @emit-active-tab="switchTab($event)"
-          :subject-title="subjectTitle"
-          :topic-id="subjectId"
-          :language
-          :education-level="educationLevel"
-          :tab-group="educationLevel"
-        />
-      <div
-        v-if="status === 'pending'"
-        class="flex flex-col items-center justify-center"
-      >
+      <TabBar :is-logged-in="!!userToken" :active-tab="activeTab" @emit-active-tab="switchTab($event)"
+        :subject-title="subjectTitle" :topic-id="subjectId" :language :education-level="educationLevel"
+        :tab-group="educationLevel" />
+      <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
         <LoadingIndicator :is-loading="true" />
       </div>
-     <!-- Status Error -->
-          <div
-            v-else-if="status === 'error'"
-            class="md:min-h-[342px] flex flex-col justify-center items-center">
-            <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
-            <p class="text-center">
-              Oops! Something went wrong.<br />
-              Try refreshing the page or check your internet connection.
-            </p>
-          </div>
+      <!-- Status Error -->
+      <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center">
+        <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
+        <p class="text-center">
+          Oops! Something went wrong.<br />
+          Try refreshing the page or check your internet connection.
+        </p>
+      </div>
 
       <!-- Status Success -->
       <div v-else-if="status == 'success'" class="">
@@ -323,25 +311,21 @@ const contentLayoutLanguage = useContentLayoutLanguage();
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
               <div class="flex flex-col items-start ">
-                 <customGridTwo>
+                <customGridTwo>
                   <template #data>
-                   <!-- Video Cards are in Grid -->
-              <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id" :video-name="video.name"
-                :is-deleted="video.isDeleted"
-                :video-thumbnail="video.thumbnail" :video-file-url="video.videoFileUrl"
-                :video-description="video.description" :video-subject="video.subject.name"
-                :video-type="video.videoType" />
+                    <!-- Video Cards are in Grid -->
+                    <VideoCard v-for="video in slicedData" :key="video._id" :video-id="video._id"
+                      :video-name="video.name" :is-deleted="video.isDeleted" :video-thumbnail="video.thumbnail"
+                      :video-file-url="video.videoFileUrl" :video-description="video.description"
+                      :video-subject="video.subject.name" :video-type="video.videoType" />
                   </template>
                 </customGridTwo>
               </div>
             </div>
 
-            <AppPagination
-              :current-page="currentPage"
-              :total-pages="totalPages"
-              class-name="my-5"
-              @change="goToPage"
-            />
+            <AppPagination :current-page="currentPage" :total-pages="totalPages" class-name="my-5"
+              :first-label="useContentLayoutLanguage().value == 'kiswahili' ? 'Mwanzo' : 'First'"
+              :last-label="useContentLayoutLanguage().value == 'kiswahili' ? 'Mwisho' : 'Last'" @change="goToPage" />
           </div>
         </ClientOnly>
         <MessageTopicNotFound v-else />

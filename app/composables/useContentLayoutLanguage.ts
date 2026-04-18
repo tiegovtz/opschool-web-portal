@@ -41,9 +41,14 @@ export function useContentLayoutLanguage(levelSource?: MaybeRefOrGetter<unknown>
         primaryContentLanguage.value,
       );
       if (inferred !== null) {
-        hub.value = inferred;
-        hubEducationLevel.value = isPrimaryContentRoute.value ? "primary" : "secondary";
-        if (isPrimaryContentRoute.value) {
+        const nextEducationLevel = isPrimaryContentRoute.value ? "primary" : "secondary";
+        if (hub.value !== inferred) {
+          hub.value = inferred;
+        }
+        if (hubEducationLevel.value !== nextEducationLevel) {
+          hubEducationLevel.value = nextEducationLevel;
+        }
+        if (isPrimaryContentRoute.value && primaryContentLanguage.value !== inferred) {
           primaryContentLanguage.value = inferred;
         }
       }

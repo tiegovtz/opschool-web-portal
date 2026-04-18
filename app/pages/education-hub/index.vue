@@ -1094,6 +1094,8 @@ const handleSubjectSelect = async (
               :current-page="currentPage"
               :total-pages="totalPages"
               class-name="my-5"
+                :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
               @change="goToPage"
             />
 
@@ -1175,7 +1177,10 @@ const handleSubjectSelect = async (
           class="mb-4 text-red-500"
           size="20"
         />
-        <p class="text-center">
+        <p v-if="currentLanguage==='kiswahili'" class="text-center">Kuna hitilafu! <br />
+        Jaribu kufuta cache ya kivinjari chako au angalia muunganisho wako wa intaneti.
+        </p>
+        <p v-else class="text-center">
           Oops! Something went wrong.<br />
           Try refreshing the page or check your internet connection.
         </p>
@@ -1245,6 +1250,8 @@ const handleSubjectSelect = async (
             <AppPagination
               :current-page="currentPage"
               :total-pages="totalPages"
+                :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
               class-name="my-5"
               @change="goToPage"
             />

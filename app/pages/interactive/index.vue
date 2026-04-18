@@ -310,102 +310,46 @@ watch(filters, (filters) => {
 </script>
 
 <template>
-  <NuxtLayout
-    name="home-layout"
-    :language="contentLayoutLanguage"
-    :education-level
-  >
+  <NuxtLayout name="home-layout" :language="contentLayoutLanguage" :education-level>
     <div :class="[' ', { ' animate-pulse': isLoading }]">
       <!-- User Token Available -->
-      <div
-        v-if="userToken"
-        class="flex flex-col items-center justify-center w-full gap-4 pt-4"
-      >
+      <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
         <HomeSearchbar appearance="rounded" :language :education-level="educationLevel" />
-        <TabBar
-          :is-logged-in="true"
-          :active-tab="activeTab"
-          @emit-active-tab="switchTab($event)"
-          :tab-group="educationLevel"
-          :language
-        />
+        <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)"
+          :tab-group="educationLevel" :language />
       </div>
 
       <!-- User Token Not Available -->
       <div v-else>
         <HeroSection :language />
-        <InputsSelection
-          @emit-level="level = $event"
-          @emit-standard="filters.level = $event"
-          @emit-subject="filters.subject = $event"
-          :education-level
-          :language
-        />
+        <InputsSelection @emit-level="level = $event" @emit-standard="filters.level = $event"
+          @emit-subject="filters.subject = $event" :education-level :language />
       </div>
 
-      <div
-        class="items-center justify-end hidden gap-2 md:flex"
-        role="group"
-        aria-label="Layout options"
-      >
-        <button
-          @click="layoutEffect = 'grid'"
-          :aria-pressed="layoutEffect === 'grid'"
-          aria-label="Grid layout"
-          :class="[
-            'cursor-pointer transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
-          ]"
-        >
-          <Icon
-            name="bxs:grid-alt"
-            size="1.5rem"
-            aria-hidden="true"
-          />
+      <div class="items-center justify-end hidden gap-2 md:flex" role="group" aria-label="Layout options">
+        <button @click="layoutEffect = 'grid'" :aria-pressed="layoutEffect === 'grid'" aria-label="Grid layout" :class="[
+          'cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]">
+          <Icon name="bxs:grid-alt" size="1.5rem" aria-hidden="true" />
         </button>
-        <button
-          @click="layoutEffect = 'list'"
-          :aria-pressed="layoutEffect === 'list'"
-          aria-label="List layout"
-          :class="[
-            'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
-            layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
-          ]"
-        >
-          <Icon
-            name="fa-solid:list"
-            size="1.5rem"
-            aria-hidden="true"
-          />
+        <button @click="layoutEffect = 'list'" :aria-pressed="layoutEffect === 'list'" aria-label="List layout" :class="[
+          'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
+          layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+        ]">
+          <Icon name="fa-solid:list" size="1.5rem" aria-hidden="true" />
         </button>
       </div>
 
-      <HomeTabContentShell
-        :active-tab="activeTab"
-        :language="language"
-        :education-level
-        :results-count="topic?.length || 0"
-        :filter-value="filterValue"
-        :show-filters="!!userToken"
-        @update-filter="filterValue = $event"
-        @reset-filter="filterValue = {}"
-      >
-        <div
-          v-if="status === 'pending'"
-          class="flex flex-col items-center justify-center"
-        >
+      <HomeTabContentShell :active-tab="activeTab" :language="language" :education-level
+        :results-count="topic?.length || 0" :filter-value="filterValue" :show-filters="!!userToken"
+        @update-filter="filterValue = $event" @reset-filter="filterValue = {}">
+        <div v-if="status === 'pending'" class="flex flex-col items-center justify-center">
           <LoadingIndicator :is-loading="true" />
         </div>
         <!-- Status Error -->
-        <div
-          v-else-if="status === 'error'"
-          class="md:min-h-[342px] flex flex-col justify-center items-center"
-        >
-          <Icon
-            name="codicon:errorr"
-            class="mb-4 text-red-500"
-            size="20"
-          />
+        <div v-else-if="status === 'error'" class="md:min-h-[342px] flex flex-col justify-center items-center">
+          <Icon name="codicon:errorr" class="mb-4 text-red-500" size="20" />
           <p class="text-center">
             Oops! Something went wrong.<br />
             Try refreshing the page or check your internet connection.
@@ -417,18 +361,13 @@ watch(filters, (filters) => {
           <!-- client only -->
           <ClientOnly v-if="slicedData?.length > 0">
             <div class="flex flex-col w-full">
-              <HomeCustomScrollView
-                :data="slicedData"
-                active-tab="interactive-contents"
-              />
+              <HomeCustomScrollView :data="slicedData" active-tab="interactive-contents" />
 
               <!-- pagination numbers based on data length greater to 9 -->
               <div class="flex justify-center">
-                <AppPagination
-                  :current-page="currentPage"
-                  :total-pages="totalPages"
-                  @change="goToPage"
-                />
+                <AppPagination :current-page="currentPage" :total-pages="totalPages"
+                  :first-label="useContentLayoutLanguage().value == 'kiswahili' ? 'Mwanzo' : 'First'"
+                  :last-label="useContentLayoutLanguage().value == 'kiswahili' ? 'Mwisho' : 'Last'" @change="goToPage" />
               </div>
             </div>
           </ClientOnly>
@@ -436,10 +375,7 @@ watch(filters, (filters) => {
         </div>
 
         <!-- Even Data was not success should be handle here -->
-        <div
-          class="flex flex-col w-full"
-          v-else
-        >
+        <div class="flex flex-col w-full" v-else>
           <div class="">Try to refresh the page, Something went Wrong</div>
         </div>
       </HomeTabContentShell>
