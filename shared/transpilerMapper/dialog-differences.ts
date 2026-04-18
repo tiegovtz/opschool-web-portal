@@ -43,9 +43,37 @@ const dialogDifferencesPropsTranspiler = (params: {
     // Don't fail closed — render best-effort so the activity doesn't go blank.
   }
 
+  const isOneSideFixed = algorithm === ActivityType.DialogOneSideFixed;
+  const primaryImagePath = (question: ServerQuestionType) =>
+    question.path ?? (question as any).image ?? null;
+  // External API: `text` → textOne (step title), `answer` → textTwo, first `images[]` → path.
+  // For Dialog one side fixed with images, the UI uses "image draggable" mode: the fixed column
+  // reads the opposite data side. Map answer + image onto data-left and step titles onto
+  // data-right so the fixed column shows titles and the bluish pool shows image + answer.
+  const osfSwapForImageLayout =
+    isOneSideFixed && serverQuestions.some((q) => Boolean(primaryImagePath(q)));
+
   let idCounter = 1;
   items = serverQuestions.map((question) => {
-    const leftPath = question.path ?? (question as any).image ?? null;
+    const leftPath = primaryImagePath(question);
+    const answerText = question.textTwo ?? (question as any).answer ?? "";
+
+    if (osfSwapForImageLayout) {
+      if (leftPath) {
+        return {
+          id: idCounter++,
+          text: answerText,
+          image: getImageUrl(rebaseUploadsUrl(leftPath)),
+          side: "left",
+        };
+      }
+      return {
+        id: idCounter++,
+        text: answerText,
+        side: "left",
+      };
+    }
+
     if (leftPath)
       return {
         id: idCounter++,
@@ -65,6 +93,22 @@ const dialogDifferencesPropsTranspiler = (params: {
     serverQuestions.map((question) => {
       const rightPath = question.pathTwo ?? (question as any).imageTwo ?? null;
       const rightText = question.textTwo ?? (question as any).answer ?? question.textOne ?? "";
+
+      if (osfSwapForImageLayout) {
+        if (rightPath)
+          return {
+            id: idCounter++,
+            text: question.textOne ?? "",
+            image: getImageUrl(rebaseUploadsUrl(rightPath)),
+            side: "right",
+          };
+        return {
+          id: idCounter++,
+          text: question.textOne ?? "",
+          side: "right",
+        };
+      }
+
       if (rightPath)
         return {
           id: idCounter++,
