@@ -386,7 +386,7 @@ watch(selectedLevel, () => {
                   <div class="w-64">
                     <!-- Custom Drop Down -->
                     <CustomDropDownList v-if="availableLevels.length > 1" class="px-2 cursor-pointer"
-                      v-model="selectedLevel" placeholder="select class level" :list="availableLevels" />
+                      v-model="selectedLevel" :placeholder="contentLayoutLanguage === 'kiswahili' ? 'Chagua darasa' : 'Select class level'" :list="availableLevels" />
                   </div>
                 </div>
 

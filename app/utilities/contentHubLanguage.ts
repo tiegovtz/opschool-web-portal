@@ -2,6 +2,7 @@ import type { RouteLocationNormalizedLoaded } from "vue-router";
 import type { LanguageSupport } from "~/types/language.interface";
 import {
   getHubLanguage,
+  normalizeEducationLevel,
   resolveEducationLevelFromRoute,
   normalizeLanguageSupport,
 } from "~/utilities/educationRoute";
@@ -28,7 +29,9 @@ export function inferHubLanguageFromContentRoute(
   const routeLanguage = typeof route.query.lang === "string"
     ? normalizeLanguageSupport(route.query.lang, primaryFallback)
     : null;
-  const resolvedEducationLevel = resolveEducationLevelFromRoute(route, "lower secondary");
+  const resolvedEducationLevel = levelParam !== undefined
+    ? normalizeEducationLevel(levelParam, resolveEducationLevelFromRoute(route, "lower secondary"))
+    : resolveEducationLevelFromRoute(route, "lower secondary");
   if (resolvedEducationLevel) {
     return getHubLanguage(resolvedEducationLevel, routeLanguage ?? primaryFallback);
   }

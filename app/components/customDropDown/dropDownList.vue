@@ -1,6 +1,8 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
+const contentLayoutLanguage = useContentLayoutLanguage();
+
 const props = defineProps({
   list: {
     type: Array,
@@ -12,7 +14,7 @@ const props = defineProps({
   },
   placeholder: {
     type: String,
-    default: 'Select an option'
+    default: ''
   },
   searchable: {
     type: Boolean,
@@ -20,7 +22,7 @@ const props = defineProps({
   },
   searchPlaceholder: {
     type: String,
-    default: 'Type to search...'
+    default: ''
   },
   disabled: {
     type: Boolean,
@@ -42,6 +44,14 @@ const searchQuery = ref('');
 const searchInputRef = ref(null);
 const openUp = ref(false);
 const instanceId = `ddl_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+const resolvedPlaceholder = computed(() =>
+  props.placeholder ||
+  (contentLayoutLanguage.value === 'kiswahili' ? 'Chagua chaguo' : 'Select an option')
+);
+const resolvedSearchPlaceholder = computed(() =>
+  props.searchPlaceholder ||
+  (contentLayoutLanguage.value === 'kiswahili' ? 'Andika ili kutafuta...' : 'Type to search...')
+);
 
 /** Match API rows (`_id`) and option shapes (`id`) plus plain `name` (case-insensitive). */
 function findListItem(list, rawVal) {
@@ -174,7 +184,7 @@ onBeforeUnmount(() => {
       <span :class="[
         selected ? 'text-md text-textGray' : 'text-md text-textGray text-opacity-40',
         'truncate whitespace-nowrap'
-      ]">{{ selected || placeholder }}</span>
+      ]">{{ selected || resolvedPlaceholder }}</span>
       <!-- Arrow Icon -->
       <Icon name="formkit:down"
         :class="['w-4 h-4 ml-2 transition-transform duration-500 ease-in-out text-textGray', { 'rotate-180': isOpen }]" />
@@ -194,7 +204,7 @@ onBeforeUnmount(() => {
             v-model="searchQuery"
             type="text"
             class="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-oceanBlue"
-            :placeholder="searchPlaceholder"
+            :placeholder="resolvedSearchPlaceholder"
             aria-label="Search options"
             @keydown.esc.prevent.stop="isOpen = false"
           />

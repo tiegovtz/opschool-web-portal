@@ -8,7 +8,7 @@ const hubHeaderLang = useHubHeaderLanguage();
 const ENGLISH_FEEDBACK_FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSecDe7azgD2sESzgwmWJNROSioBjrMEsFChY9QFLQT0kqrQqA/viewform?embedded=true";
 const KISWAHILI_FEEDBACK_FORM_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSecDe7azgD2sESzgwmWJNROSioBjrMEsFChY9QFLQT0kqrQqA/viewform?embedded=true";
+  "https://docs.google.com/forms/d/e/1FAIpQLScpKgdC-jcp1jvN1oA95lBjGJJgr5mtI34eEWwFSSzGPE7Tuw/viewform?embedded=true";
 
 watch(
   () => route.query.lang,
@@ -77,9 +77,9 @@ watch(
         <h1 class="text-2xl font-bold text-slate-900">
           {{ content.title }}
         </h1>
-        <p class="mt-2 text-sm text-slate-600">
+        <!-- <p class="mt-2 text-sm text-slate-600">
           {{ content.subtitle }}
-        </p>
+        </p> -->
       </div>
 
       <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
@@ -94,6 +94,8 @@ watch(
         >
           {{ content.loading }}
         </iframe>
+
+
       </div>
     </section>
   </NuxtLayout>

@@ -1,4 +1,6 @@
 <script setup>
+const contentLayoutLanguage = useContentLayoutLanguage();
+
 defineProps({
     isLoading:{
         type:Boolean,
@@ -9,6 +11,7 @@ defineProps({
         default:'physics'
     }
 })
+
 </script>
 
 <template>
@@ -22,7 +25,7 @@ defineProps({
       <div  class="inline-block w-2 h-2 mx-1 dot dot-animate"></div>
     </div>
     <div class="p-1 lowercase text text-oceanBlue fade-in">
-      {{ somo.toLowerCase() == "kiswahili " ? " .. Tafadhali subiri .." : ".. Please wait .." }}
+      {{ contentLayoutLanguage == "kiswahili" ? " .. Tafadhali subiri .." : ".. Please wait .." }}
     </div>
   </div>
 </template>
