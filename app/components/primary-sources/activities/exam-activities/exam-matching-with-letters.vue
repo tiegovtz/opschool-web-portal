@@ -11,6 +11,7 @@ import { useExamContext, type QuestionAnswer } from "~/shared/context/exam-conte
 type ExamMatchingWithLettersProps = {
   questions: {
     title: string;
+    passage?: string;
     mode?: "kweliSikweli";
     sharedImage?: string;
     questions: {
@@ -320,6 +321,14 @@ const handleDragEnd = (event: DragEndEvent) => {
       v-if="isKweliMode"
       class="flex flex-col gap-6 overflow-auto rounded-xl bg-white p-4 pb-2 md:max-h-[calc(100dvh-100px)]"
     >
+      <div
+        v-if="props.questions.passage"
+        class="mx-auto w-full max-w-4xl rounded-lg border border-picton-blue-100 bg-picton-blue-50/80 px-4 py-3 text-base leading-relaxed text-picton-blue-900 md:px-5 md:py-4"
+        role="region"
+        :aria-label="ui.isSwahili ? 'Kifungu cha kusoma' : 'Reading passage'"
+      >
+        <p class="whitespace-pre-wrap">{{ props.questions.passage }}</p>
+      </div>
       <div
         v-if="kweliActiveQuestion"
         class="flex flex-col gap-4 rounded-lg border border-picton-blue-100 bg-picton-blue-50/60 p-4"

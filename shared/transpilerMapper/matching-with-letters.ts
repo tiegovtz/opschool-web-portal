@@ -40,13 +40,17 @@ export const matchingWithLettersTranspiler = (
     }
 
     const rawTitle = (titleDescription || "").trim();
+    const titleParts = rawTitle.split("/");
     const title = rawTitle.includes("/")
-      ? rawTitle.split("/")[0].trim()
+      ? titleParts[0]?.trim() || rawTitle
       : rawTitle;
+    const passage =
+      titleParts.length > 1 ? titleParts.slice(1).join("/").trim() : undefined;
 
     return {
       mode: "kweliSikweli" as const,
       title: title || rawTitle,
+      passage: passage || undefined,
       sharedImage: sharedImage || undefined,
       questions: serverQuestions.map((question, i) => ({
         id: String(i + 1),
