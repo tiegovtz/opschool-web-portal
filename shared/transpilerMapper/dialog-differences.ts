@@ -24,19 +24,30 @@ const dialogDifferencesPropsTranspiler = (params: {
 
   // Each row must have something on the left and something on the right.
   // Left can be image-only (path) with empty text; right can be text-only (textTwo).
+  // External payloads often put prose in `text` (textOne), the picture in `images[0]` (path), and leave
+  // `answer` empty — that is still a complete row (explanation + illustration), not a format error.
   const hasNonEmptyText = (value: string | null | undefined) =>
     typeof value === "string" && value.trim().length > 0;
 
-  const isWrongFormat = serverQuestions.some((question) => {
-    const hasLeft = hasNonEmptyText(question.textOne) || Boolean(question.path) || Boolean((question as any).image);
-    const hasRight =
+  const isValidDialogQuestion = (question: ServerQuestionType) => {
+    const t1 = hasNonEmptyText(question.textOne);
+    const t2 =
       hasNonEmptyText(question.textTwo) ||
-      Boolean(question.pathTwo) ||
-      Boolean((question as any).imageTwo) ||
-      // For external payloads we often map answer -> textTwo; ensure we don't fail if answer is present.
       hasNonEmptyText((question as any).answer);
-    return !hasLeft || !hasRight;
-  });
+    const p1 = Boolean(question.path) || Boolean((question as any).image);
+    const p2 = Boolean(question.pathTwo) || Boolean((question as any).imageTwo);
+
+    const hasLeftLike = t1 || p1;
+    const hasRightLike = t2 || p2;
+    if (hasLeftLike && hasRightLike) return true;
+
+    // One text + one image only (no separate answer line from CMS)
+    if (t1 && p1 && !t2 && !p2) return true;
+
+    return false;
+  };
+
+  const isWrongFormat = serverQuestions.some((question) => !isValidDialogQuestion(question));
 
   if (isWrongFormat) {
     params.setWrongQuestionsFormat(true);
