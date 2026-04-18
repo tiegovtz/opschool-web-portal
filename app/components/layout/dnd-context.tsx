@@ -1,4 +1,8 @@
 import { defineComponent, provide, ref } from "vue";
+import {
+  startDragAutoScroll,
+  stopDragAutoScroll,
+} from "~/utilities/dragAutoScroll";
 
 export const dndContextKey = Symbol("dnd-context");
 
@@ -25,9 +29,11 @@ export default defineComponent({
 
     const beginDrag = (id: string) => {
       activeId.value = id;
+      startDragAutoScroll();
     };
 
     const endDrag = () => {
+      stopDragAutoScroll();
       activeId.value = null;
     };
 
@@ -39,6 +45,7 @@ export default defineComponent({
         active: { id },
         over: { id: overId },
       } satisfies DndDragEndEvent);
+      stopDragAutoScroll();
       activeId.value = null;
     };
 

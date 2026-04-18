@@ -259,7 +259,20 @@ const onResultsOpenChange = (open: boolean) => {
 const renderItemContent = (item: ListItem) => item;
 
 const isCorrect = (item: ListItem) => showResults.value && correctItems.value.includes(item.id);
-const shouldRenderImageOnly = (item: ListItem) => useImageDraggableMode.value && Boolean(item.image);
+// Only hide caption when matching pure image→text (no label on the card). If the draggable has both
+// image and text (e.g. Dialog one side fixed), show them side by side on the bluish cards.
+const shouldRenderImageOnly = (item: ListItem) =>
+  useImageDraggableMode.value && Boolean(item.image) && !item.text?.trim();
+
+/** Image first, caption beside ([image][text]), light bluish / lemon cards */
+const mediaRowClass =
+  "flex w-full min-w-0 flex-row items-center gap-3 text-start";
+const mediaImageClass =
+  "max-h-32 w-auto max-w-[42%] shrink-0 object-contain select-none sm:max-w-[12rem]";
+const bankImageClass =
+  "pointer-events-none max-h-[118px] w-auto max-w-[38%] shrink-0 object-contain select-none sm:max-w-44";
+const mediaCaptionClass =
+  "min-w-0 flex-1 text-start text-base leading-relaxed sm:text-lg sm:leading-snug";
 
 const resetActivity = () => {
   initialize();
@@ -291,7 +304,7 @@ const resetActivity = () => {
               <div
                 class="flex max-h-[707px] items-center justify-center overflow-hidden bg-picton-blue-200 md:rotate-180 md:p-6 md:[writing-mode:vertical-rl]"
               >
-                <span class="line-clamp-2 text-center text-ellipsis">{{
+                <span class="line-clamp-2 text-center text-ellipsis text-base sm:text-lg">{{
                   props.questions.leftLabel
                 }}</span>
               </div>
@@ -306,15 +319,15 @@ const resetActivity = () => {
                     :aria-label="item !== '' ? getFixedItemLabel(item, 'left', index) : getDropzoneLabel('left', index)"
                     :aria-describedby="instructionsId"
                   >
-                    <div v-if="item !== ''" class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
+                    <div v-if="item !== ''" :class="mediaRowClass">
                       <img
                         v-if="renderItemContent(item).image"
                         :src="renderItemContent(item).image"
                         :alt="renderItemContent(item).text || ''"
                         draggable="false"
-                        class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
+                        :class="mediaImageClass"
                       >
-                      <p class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</p>
+                      <p :class="mediaCaptionClass">{{ renderItemContent(item).text }}</p>
                     </div>
                   </div>
 
@@ -339,15 +352,15 @@ const resetActivity = () => {
                         : 'relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-red-200 px-2 pr-10 text-center text-red-700 md:px-4 md:py-3'
                     "
                   >
-                    <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
+                    <div :class="mediaRowClass">
                       <img
                         v-if="renderItemContent(item).image"
                         :src="renderItemContent(item).image"
                         :alt="renderItemContent(item).text || ''"
                         draggable="false"
-                        class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
+                        :class="mediaImageClass"
                       >
-                      <span class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</span>
+                      <span v-if="!shouldRenderImageOnly(item)" :class="mediaCaptionClass">{{ renderItemContent(item).text }}</span>
                     </div>
                     <span class="absolute right-2 top-2 text-2xl" :class="isCorrect(item) ? 'text-green-600' : 'text-red-600'">
                       {{ isCorrect(item) ? "✓" : "✕" }}
@@ -357,7 +370,7 @@ const resetActivity = () => {
                   <Draggable
                     v-else
                     :id="`${item.id}%${index}%left`"
-                    class="relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-center text-base text-lemon-700 outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2 md:px-4 md:py-3 md:text-[length:inherit]"
+                    class="relative flex min-h-[135px] items-center justify-start rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-start text-base text-lemon-700 outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2 md:px-4 md:py-3 md:text-[length:inherit]"
                     tabindex="0"
                     role="button"
                     :aria-label="getItemLabel(item)"
@@ -365,15 +378,15 @@ const resetActivity = () => {
                     :aria-pressed="selectedKeyboardItemId === `${item.id}%${index}%left`"
                     @keydown="onDraggableKeydown($event, `${item.id}%${index}%left`)"
                   >
-                    <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
+                    <div :class="mediaRowClass">
                       <img
                         v-if="item.image"
                         :src="item.image"
                         :alt="item.text || ''"
                         draggable="false"
-                        class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
+                        :class="mediaImageClass"
                       >
-                      <span v-if="!shouldRenderImageOnly(item)" class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ item.text }}</span>
+                      <span v-if="!shouldRenderImageOnly(item)" :class="mediaCaptionClass">{{ item.text }}</span>
                     </div>
                   </Draggable>
                 </template>
@@ -391,15 +404,15 @@ const resetActivity = () => {
                     :aria-label="item !== '' ? getFixedItemLabel(item, 'right', index) : getDropzoneLabel('right', index)"
                     :aria-describedby="instructionsId"
                   >
-                    <div v-if="item !== ''" class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
+                    <div v-if="item !== ''" :class="mediaRowClass">
                       <img
                         v-if="renderItemContent(item).image"
                         :src="renderItemContent(item).image"
                         :alt="renderItemContent(item).text || ''"
                         draggable="false"
-                        class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
+                        :class="mediaImageClass"
                       >
-                      <p class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</p>
+                      <p :class="mediaCaptionClass">{{ renderItemContent(item).text }}</p>
                     </div>
                   </div>
 
@@ -424,15 +437,15 @@ const resetActivity = () => {
                         : 'relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-red-200 px-2 pr-10 text-center text-red-700 md:px-4 md:py-3'
                     "
                   >
-                    <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
+                    <div :class="mediaRowClass">
                       <img
                         v-if="renderItemContent(item).image"
                         :src="renderItemContent(item).image"
                         :alt="renderItemContent(item).text || ''"
                         draggable="false"
-                        class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
+                        :class="mediaImageClass"
                       >
-                      <span v-if="!shouldRenderImageOnly(item)" class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ renderItemContent(item).text }}</span>
+                      <span v-if="!shouldRenderImageOnly(item)" :class="mediaCaptionClass">{{ renderItemContent(item).text }}</span>
                     </div>
                     <span class="absolute right-2 top-2 text-2xl" :class="isCorrect(item) ? 'text-green-600' : 'text-red-600'">
                       {{ isCorrect(item) ? "✓" : "✕" }}
@@ -442,7 +455,7 @@ const resetActivity = () => {
                   <Draggable
                     v-else
                     :id="`${item.id}%${index}%right`"
-                    class="relative flex min-h-[135px] items-center justify-center rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-center text-base text-lemon-700 outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2 md:px-4 md:py-3 md:text-[length:inherit]"
+                    class="relative flex min-h-[135px] items-center justify-start rounded border border-picton-blue-200 bg-lemon-200 px-2 py-2 text-start text-base text-lemon-700 outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2 md:px-4 md:py-3 md:text-[length:inherit]"
                     tabindex="0"
                     role="button"
                     :aria-label="getItemLabel(item)"
@@ -450,15 +463,15 @@ const resetActivity = () => {
                     :aria-pressed="selectedKeyboardItemId === `${item.id}%${index}%right`"
                     @keydown="onDraggableKeydown($event, `${item.id}%${index}%right`)"
                   >
-                    <div class="flex w-full min-w-0 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-4">
+                    <div :class="mediaRowClass">
                       <img
                         v-if="item.image"
                         :src="item.image"
                         :alt="item.text || ''"
                         draggable="false"
-                        class="max-h-32 w-full max-w-48 shrink-0 object-contain select-none"
+                        :class="mediaImageClass"
                       >
-                      <span v-if="!shouldRenderImageOnly(item)" class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ item.text }}</span>
+                      <span v-if="!shouldRenderImageOnly(item)" :class="mediaCaptionClass">{{ item.text }}</span>
                     </div>
                   </Draggable>
                 </template>
@@ -467,7 +480,7 @@ const resetActivity = () => {
               <div
                 class="flex max-h-[707px] items-center justify-center overflow-hidden bg-picton-blue-200 md:rotate-180 md:p-6 md:[writing-mode:vertical-rl]"
               >
-                <span class="line-clamp-2 text-center text-ellipsis">{{
+                <span class="line-clamp-2 text-center text-ellipsis text-base sm:text-lg">{{
                   props.questions.rightLabel
                 }}</span>
               </div>
@@ -479,7 +492,7 @@ const resetActivity = () => {
               v-for="(item, index) in movableItems"
               :id="item.id"
               :key="item.id"
-              class="absolute flex h-[135px] w-1/2 items-center rounded border border-picton-blue-300 bg-picton-blue-200 px-4 py-2 text-base text-picton-blue-700 outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2 md:text-[length:inherit]"
+              class="absolute flex h-[135px] w-1/2 items-center rounded border border-picton-blue-300 bg-picton-blue-200 px-3 py-2 text-start text-base text-picton-blue-800 outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2 md:text-[length:inherit]"
               :style="{ left: `${index * (width > 768 ? 50 : 30)}px` }"
               tabindex="0"
               role="button"
@@ -488,17 +501,15 @@ const resetActivity = () => {
               :aria-pressed="selectedKeyboardItemId === item.id"
               @keydown="onDraggableKeydown($event, item.id)"
             >
-              <div
-                class="flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-2 text-center md:flex-row md:items-center md:justify-center md:gap-3"
-              >
+              <div :class="[mediaRowClass, 'flex-1']">
                 <img
                   v-if="item.image"
                   :src="item.image"
                   :alt="item.text || ''"
                   draggable="false"
-                  class="pointer-events-none max-h-[120px] w-full max-w-48 shrink-0 object-contain select-none"
+                  :class="bankImageClass"
                 >
-                <span v-if="!shouldRenderImageOnly(item)" class="min-w-0 flex-1 break-words text-center text-sm leading-snug sm:text-base">{{ item.text }}</span>
+                <span v-if="!shouldRenderImageOnly(item)" :class="mediaCaptionClass">{{ item.text }}</span>
               </div>
             </Draggable>
           </div>

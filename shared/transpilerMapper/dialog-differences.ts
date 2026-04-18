@@ -24,28 +24,67 @@ const dialogDifferencesPropsTranspiler = (params: {
 
   // Each row must have something on the left and something on the right.
   // Left can be image-only (path) with empty text; right can be text-only (textTwo).
+  // External payloads often put prose in `text` (textOne), the picture in `images[0]` (path), and leave
+  // `answer` empty — that is still a complete row (explanation + illustration), not a format error.
   const hasNonEmptyText = (value: string | null | undefined) =>
     typeof value === "string" && value.trim().length > 0;
 
-  const isWrongFormat = serverQuestions.some((question) => {
-    const hasLeft = hasNonEmptyText(question.textOne) || Boolean(question.path) || Boolean((question as any).image);
-    const hasRight =
+  const isValidDialogQuestion = (question: ServerQuestionType) => {
+    const t1 = hasNonEmptyText(question.textOne);
+    const t2 =
       hasNonEmptyText(question.textTwo) ||
-      Boolean(question.pathTwo) ||
-      Boolean((question as any).imageTwo) ||
-      // For external payloads we often map answer -> textTwo; ensure we don't fail if answer is present.
       hasNonEmptyText((question as any).answer);
-    return !hasLeft || !hasRight;
-  });
+    const p1 = Boolean(question.path) || Boolean((question as any).image);
+    const p2 = Boolean(question.pathTwo) || Boolean((question as any).imageTwo);
+
+    const hasLeftLike = t1 || p1;
+    const hasRightLike = t2 || p2;
+    if (hasLeftLike && hasRightLike) return true;
+
+    // One text + one image only (no separate answer line from CMS)
+    if (t1 && p1 && !t2 && !p2) return true;
+
+    return false;
+  };
+
+  const isWrongFormat = serverQuestions.some((question) => !isValidDialogQuestion(question));
 
   if (isWrongFormat) {
     params.setWrongQuestionsFormat(true);
     // Don't fail closed — render best-effort so the activity doesn't go blank.
   }
 
+  const isOneSideFixed = algorithm === ActivityType.DialogOneSideFixed;
+  const primaryImagePath = (question: ServerQuestionType) =>
+    question.path ?? (question as any).image ?? null;
+  // External API: `text` → textOne (step title), `answer` → textTwo, first `images[]` → path.
+  // For Dialog one side fixed with images, the UI uses "image draggable" mode: the fixed column
+  // reads the opposite data side. Map answer + image onto data-left and step titles onto
+  // data-right so the fixed column shows titles and the bluish pool shows image + answer.
+  const osfSwapForImageLayout =
+    isOneSideFixed && serverQuestions.some((q) => Boolean(primaryImagePath(q)));
+
   let idCounter = 1;
   items = serverQuestions.map((question) => {
-    const leftPath = question.path ?? (question as any).image ?? null;
+    const leftPath = primaryImagePath(question);
+    const answerText = question.textTwo ?? (question as any).answer ?? "";
+
+    if (osfSwapForImageLayout) {
+      if (leftPath) {
+        return {
+          id: idCounter++,
+          text: answerText,
+          image: getImageUrl(rebaseUploadsUrl(leftPath)),
+          side: "left",
+        };
+      }
+      return {
+        id: idCounter++,
+        text: answerText,
+        side: "left",
+      };
+    }
+
     if (leftPath)
       return {
         id: idCounter++,
@@ -65,6 +104,22 @@ const dialogDifferencesPropsTranspiler = (params: {
     serverQuestions.map((question) => {
       const rightPath = question.pathTwo ?? (question as any).imageTwo ?? null;
       const rightText = question.textTwo ?? (question as any).answer ?? question.textOne ?? "";
+
+      if (osfSwapForImageLayout) {
+        if (rightPath)
+          return {
+            id: idCounter++,
+            text: question.textOne ?? "",
+            image: getImageUrl(rebaseUploadsUrl(rightPath)),
+            side: "right",
+          };
+        return {
+          id: idCounter++,
+          text: question.textOne ?? "",
+          side: "right",
+        };
+      }
+
       if (rightPath)
         return {
           id: idCounter++,
