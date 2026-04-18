@@ -161,6 +161,24 @@ const sliceData = (start: number, end: number) => {
 const currentPage = ref(1);
 const pageSize = ref(getPageSize());
 
+const totalPages = computed(() => {
+  if (topic.value && Array.isArray(topic.value)) {
+    return Math.ceil(topic.value.length / pageSize.value);
+  }
+  return 0;
+});
+
+const goToPage = (page: number) => {
+  const availablePages = Math.max(totalPages.value, 1);
+  const nextPageNumber = Math.min(Math.max(page, 1), availablePages);
+
+  currentPage.value = nextPageNumber;
+  sliceData(
+    (currentPage.value - 1) * pageSize.value,
+    currentPage.value * pageSize.value,
+  );
+};
+
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params?: any) => {
   const url = apiDocs.topics.filterTopics;
@@ -174,6 +192,7 @@ const fetchTopics = async (params?: any) => {
   }
   try {
     status.value = "pending";
+    currentPage.value = 1;
     const { data: response, status: fetchStatus } = await fetchAsyncData(
       `interactive-${educationLevel.value}-${language.value}`,
       () =>
@@ -185,11 +204,7 @@ const fetchTopics = async (params?: any) => {
     topic.value = buildTopicGroups(response.value ?? []);
     status.value = fetchStatus.value;
 
-    // Call sliceData after data is loaded
-    sliceData(
-      (currentPage.value - 1) * pageSize.value,
-      currentPage.value * pageSize.value,
-    );
+    goToPage(1);
   } catch (error) {
     status.value = "error";
     slicedData.value = [];
@@ -199,48 +214,26 @@ const fetchTopics = async (params?: any) => {
 // Call Fetch Topics function
 fetchTopics({});
 
-//  assigning page size based on screen sizes
-// total pages data
-const totalPages = computed(() => {
-  if (topic.value && Array.isArray(topic.value)) {
-    return Math.ceil(topic.value.length / pageSize.value);
-  }
-  return 0; // Default to 0 if no data
-});
-
 // Watch screen width and update page size accordingly
 watch(
   () => screenWidth.value,
   () => {
     pageSize.value = getPageSize();
-
-    // slice data per page size
-    sliceData(
-      (currentPage.value - 1) * pageSize.value,
-      currentPage.value * pageSize.value,
-    );
+    goToPage(currentPage.value);
   },
 );
 
-// once pages are more than 5, handle pagination
-const nextPage = () => {
-  currentPage.value++;
-  currentPage.value =
-    currentPage.value > totalPages.value ? totalPages.value : currentPage.value;
-  sliceData(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value,
-  );
-};
+watch(totalPages, (pages) => {
+  if (pages === 0) {
+    currentPage.value = 1;
+    slicedData.value = [];
+    return;
+  }
 
-const prevPage = () => {
-  currentPage.value--;
-  currentPage.value = currentPage.value < 1 ? 1 : currentPage.value;
-  sliceData(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value,
-  );
-};
+  if (currentPage.value > pages) {
+    goToPage(pages);
+  }
+});
 
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
@@ -430,62 +423,12 @@ watch(filters, (filters) => {
               />
 
               <!-- pagination numbers based on data length greater to 9 -->
-              <div
-                v-if="totalPages > 1"
-                class="flex justify-center my-10"
-              >
-                <div
-                  v-if="totalPages <= 5"
-                  class="flex justify-center gap-2"
-                >
-                  <PaginationBtn
-                    v-for="page in totalPages"
-                    :key="page"
-                    :page-number="page"
-                    :is-active="page === currentPage"
-                    :disabled="page === currentPage"
-                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                    @send-page-number="currentPage = $event"
-                  />
-                </div>
-                <div
-                  v-else
-                  class="flex justify-center gap-2"
-                >
-                  <!-- previous -->
-                  <div
-                    class="flex items-center justify-center"
-                    v-if="currentPage > 5"
-                  >
-                    <Icon
-                      name="iconamoon:arrow-left-2-fill"
-                      size="2rem"
-                      @click="prevPage"
-                    />
-                  </div>
-
-                  <PaginationBtn
-                    v-for="page in totalPages"
-                    :key="page"
-                    :page-number="page"
-                    :is-active="page === currentPage"
-                    :disabled="page === currentPage"
-                    @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                    @send-page-number="currentPage = $event"
-                  />
-
-                  <!-- next button -->
-                  <div
-                    class="flex items-center justify-center"
-                    v-if="currentPage > 4"
-                  >
-                    <Icon
-                      name="iconamoon:arrow-right-2-fill"
-                      size="2rem"
-                      @click="nextPage"
-                    />
-                  </div>
-                </div>
+              <div class="flex justify-center">
+                <AppPagination
+                  :current-page="currentPage"
+                  :total-pages="totalPages"
+                  @change="goToPage"
+                />
               </div>
             </div>
           </ClientOnly>
