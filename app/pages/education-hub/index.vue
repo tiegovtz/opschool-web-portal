@@ -569,47 +569,6 @@ const totalPages = computed(() => {
   return 0; // Default to 0 if no data
 });
 
-type PaginationItem =
-  | { type: "page"; value: number }
-  | { type: "ellipsis"; key: string };
-
-const paginationItems = computed<PaginationItem[]>(() => {
-  if (totalPages.value <= 0) return [];
-  if (totalPages.value <= 7) {
-    return Array.from({ length: totalPages.value }, (_, index) => ({
-      type: "page" as const,
-      value: index + 1,
-    }));
-  }
-
-  const pages = new Set<number>([1, totalPages.value]);
-  const windowStart = Math.max(2, currentPage.value - 1);
-  const windowEnd = Math.min(totalPages.value - 1, currentPage.value + 1);
-
-  for (let page = windowStart; page <= windowEnd; page += 1) {
-    pages.add(page);
-  }
-
-  const sortedPages = [...pages].sort((a, b) => a - b);
-  const items: PaginationItem[] = [];
-
-  sortedPages.forEach((page, index) => {
-    if (index > 0) {
-      const previousPage = sortedPages[index - 1]!;
-      if (page - previousPage > 1) {
-        items.push({
-          type: "ellipsis",
-          key: `ellipsis-${previousPage}-${page}`,
-        });
-      }
-    }
-
-    items.push({ type: "page", value: page });
-  });
-
-  return items;
-});
-
 const goToPage = (page: number) => {
   const nextPageNumber = Math.min(Math.max(page, 1), totalPages.value || 1);
   currentPage.value = nextPageNumber;
@@ -642,15 +601,6 @@ watch(
     );
   },
 );
-
-// once pages are more than 5, handle pagination
-const nextPage = () => {
-  goToPage(currentPage.value + 1);
-};
-
-const prevPage = () => {
-  goToPage(currentPage.value - 1);
-};
 
 const level = ref(); // Initial Level State
 
@@ -1140,67 +1090,13 @@ const handleSubjectSelect = async (
               </div>
             </ClientOnly>
 
-            <!-- pagination numbers based on data length greater to 9 -->
-            <div
-              v-if="totalPages > 1"
-              class="flex justify-center my-5"
-            >
-              <div
-                class="flex items-center gap-2"
-              >
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage > 1"
-                >
-                  <Icon
-                    name="iconamoon:arrow-left-2-fill"
-                    size="2rem"
-                    @click="prevPage"
-                  />
-                </div>
+            <AppPagination
+              :current-page="currentPage"
+              :total-pages="totalPages"
+              class-name="my-5"
+              @change="goToPage"
+            />
 
-                <div
-                  class="flex items-center justify-center gap-2"
-                >
-                  <template
-                    v-for="item in paginationItems"
-                    :key="item.type === 'page' ? item.value : item.key"
-                  >
-                    <PaginationBtn
-                      v-if="item.type === 'page'"
-                      :page-number="item.value"
-                      :is-active="item.value === currentPage"
-                      :disabled="item.value === currentPage"
-                      @send-page-number="goToPage"
-                    />
-                    <span
-                      v-else
-                      class="flex items-center justify-center w-10 h-10 text-gray-500"
-                      aria-hidden="true"
-                    >
-                      ...
-                    </span>
-                  </template>
-                </div>
-
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage < totalPages"
-                >
-                  <Icon
-                    name="iconamoon:arrow-right-2-fill"
-                    size="2rem"
-                    @click="nextPage"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <!-- <PaginationSliderBtn  v-if="totalPages > 1"
-                  :pages="totalPages" :current-page="currentPage"
-                  @send-slider-page-number="currentPage = $event"
-                  @sendSliderCurrentPageNumber="sliceData(($event - 1) * pageSize, $event * pageSize)"
-                /> -->
           </div>
 
           <!-- data sorted if no subject -->
@@ -1346,59 +1242,12 @@ const handleSubjectSelect = async (
               </template>
             </customGridTwo>
 
-            <!-- pagination numbers based on data length greater to 9 -->
-            <div
-              v-if="totalPages > 1"
-              class="flex justify-center my-5"
-            >
-              <div
-                class="flex justify-center gap-2"
-              >
-                <!-- previous -->
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage > 1"
-                >
-                  <Icon
-                    name="iconamoon:arrow-left-2-fill"
-                    size="2rem"
-                    @click="prevPage"
-                  />
-                </div>
-
-                <template
-                  v-for="item in paginationItems"
-                  :key="item.type === 'page' ? item.value : item.key"
-                >
-                  <PaginationBtn
-                    v-if="item.type === 'page'"
-                    :page-number="item.value"
-                    :is-active="item.value === currentPage"
-                    :disabled="item.value === currentPage"
-                    @send-page-number="goToPage"
-                  />
-                  <span
-                    v-else
-                    class="flex items-center justify-center w-10 h-10 text-gray-500"
-                    aria-hidden="true"
-                  >
-                    ...
-                  </span>
-                </template>
-
-                <!-- next button -->
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage < totalPages"
-                >
-                  <Icon
-                    name="iconamoon:arrow-right-2-fill"
-                    size="2rem"
-                    @click="nextPage"
-                  />
-                </div>
-              </div>
-            </div>
+            <AppPagination
+              :current-page="currentPage"
+              :total-pages="totalPages"
+              class-name="my-5"
+              @change="goToPage"
+            />
           </div>
         </ClientOnly>
         <MessageTopicNotFound v-else />

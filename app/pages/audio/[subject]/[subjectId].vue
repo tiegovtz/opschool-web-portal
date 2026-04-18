@@ -156,12 +156,19 @@ const sliceData = (start, end) => {
 // current page data
 const currentPage = ref(1);
 const pageSize = ref();
+const getPageSize = () => {
+  if (screenWidth.value >= 1280 || isGreaterToXL.value) return 12;
+  if (screenWidth.value >= 1024 || isGreaterToLG.value) return 9;
+  if (screenWidth.value >= 768 || isGreaterToMD.value) return 6;
+  return 4;
+};
 
 // Then, update fetchAudios to call sliceData after data is loaded
 const fetchAudios = async (params) => {
 
   try {
     status.value = "pending";
+    currentPage.value = 1;
     const {data:response,status:fetchStatus} = await fetchAsyncData(`audio-${educationLevel.value}-${language.value}-${subjectId}-${params?.toString()}`,()=>$fetch(apiDocs.audio.getPublicAudioBySubjectId.replace(
         "{subjectId}",
         subjectId
@@ -177,11 +184,7 @@ const fetchAudios = async (params) => {
     topic.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
     status.value = fetchStatus.value;
 
-    // Call sliceData after data is loaded
-    sliceData(
-      (currentPage.value - 1) * pageSize.value,
-      currentPage.value * pageSize.value
-    );
+    goToPage(1);
   } catch (error) {
     status.value = "error";
     slicedData.value = [];
@@ -192,15 +195,7 @@ const fetchAudios = async (params) => {
 fetchAudios();
 
 //  assigning page size based on screen sizes
-if (isGreaterToXL) {
-  pageSize.value = 12; // 12 topic cards
-} else if (isGreaterToLG) {
-  pageSize.value = 9; // 9 topic cards
-} else if (isGreaterToMD) {
-  pageSize.value = 6; // 6 topic cards per page
-} else {
-  pageSize.value = 4; // 4 topics card per page
-}
+pageSize.value = getPageSize();
 
 // total pages data
 const totalPages = computed(() => {
@@ -210,49 +205,35 @@ const totalPages = computed(() => {
   return 0; // Default to 0 if no data
 });
 
+const goToPage = (page) => {
+  const nextPageNumber = Math.min(Math.max(page, 1), Math.max(totalPages.value, 1));
+  currentPage.value = nextPageNumber;
+  sliceData(
+    (currentPage.value - 1) * pageSize.value,
+    currentPage.value * pageSize.value
+  );
+};
+
 // Watch screen width and update page size accordingly
 watch(
   () => screenWidth.value,
   () => {
-    if (screenWidth.value >= 1280) {
-      pageSize.value = 12;
-    } else if (screenWidth.value >= 1024 && screenWidth.value < 1280) {
-      pageSize.value = 9;
-    } else if (screenWidth.value >= 768 && screenWidth.value < 1024) {
-      pageSize.value = 6;
-    } else if (screenWidth.value >= 640 && screenWidth.value < 768) {
-      pageSize.value = 4;
-    } else {
-      pageSize.value = 4;
-    }
-
-    // slice data per page size
-    sliceData(
-      (currentPage.value - 1) * pageSize.value,
-      currentPage.value * pageSize.value
-    );
+    pageSize.value = getPageSize();
+    goToPage(currentPage.value);
   }
 );
 
-// once pages are more than 5, handle pagination
-const nextPage = () => {
-  currentPage.value++;
-  currentPage.value =
-    currentPage.value > totalPages.value ? totalPages.value : currentPage.value;
-  sliceData(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value
-  );
-};
+watch(totalPages, (pages) => {
+  if (pages === 0) {
+    currentPage.value = 1;
+    slicedData.value = [];
+    return;
+  }
 
-const prevPage = () => {
-  currentPage.value--;
-  currentPage.value = currentPage.value < 1 ? 1 : currentPage.value;
-  sliceData(
-    (currentPage.value - 1) * pageSize.value,
-    currentPage.value * pageSize.value
-  );
-};
+  if (currentPage.value > pages) {
+    goToPage(pages);
+  }
+});
 
 // loadoing indicator
 const { progress, isLoading } = useLoadingIndicator();
@@ -331,55 +312,12 @@ const contentLayoutLanguage = useContentLayoutLanguage();
               </div>
             </div>
 
-            <!-- pagination numbers based on data length greater to 9 -->
-            <div v-if="totalPages > 1" class="flex justify-center my-5">
-              <div v-if="totalPages <= 5" class="flex justify-center gap-2">
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
-              </div>
-              <div v-else class="flex justify-center gap-2">
-                <!-- previous -->
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage > 5"
-                >
-                  <Icon
-                    name="iconamoon:arrow-left-2-fill"
-                    size="2rem"
-                    @click="prevPage"
-                  />
-                </div>
-
-                <PaginationBtn
-                  v-for="page in totalPages"
-                  :key="page"
-                  :page-number="page"
-                  :is-active="page === currentPage"
-                  :disabled="page === currentPage"
-                  @click="sliceData((page - 1) * pageSize, page * pageSize)"
-                  @send-page-number="currentPage = $event"
-                />
-
-                <!-- next button -->
-                <div
-                  class="flex items-center justify-center"
-                  v-if="currentPage > 4"
-                >
-                  <Icon
-                    name="iconamoon:arrow-right-2-fill"
-                    size="2rem"
-                    @click="nextPage"
-                  />
-                </div>
-              </div>
-            </div>
+            <AppPagination
+              :current-page="currentPage"
+              :total-pages="totalPages"
+              class-name="my-5"
+              @change="goToPage"
+            />
           </div>
         </ClientOnly>
         <MessageTopicNotFound v-else />
