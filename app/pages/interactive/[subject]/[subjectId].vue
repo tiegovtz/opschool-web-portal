@@ -388,6 +388,8 @@ watch(selectedLevel, () => {
               :current-page="currentPage"
               :total-pages="totalPages"
               class-name="my-5"
+               :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
               @change="goToPage"
             />
           </div>

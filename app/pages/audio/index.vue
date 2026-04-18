@@ -304,6 +304,8 @@ const contentLayoutLanguage = useContentLayoutLanguage();
               <AppPagination
                 :current-page="currentPage"
                 :total-pages="totalPages"
+                :first-label="contentLayoutLanguage=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="contentLayoutLanguage=='kiswahili' ? 'Mwisho' :'Last'"
                 @change="goToPage"
               />
             </div>
