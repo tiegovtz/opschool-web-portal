@@ -15,6 +15,7 @@ import { useSoundEffects } from "~/composables/use-sound-effects";
 type Props = {
   questions: {
     title: string;
+    passage?: string;
     mode?: "kweliSikweli";
     sharedImage?: string;
     questions: {
@@ -266,6 +267,14 @@ const resetActivity = () => {
       {{ props.questions.title }}
     </h2>
     <ActivityTitle :title="props.questions.title" />
+    <div
+      v-if="isKweliMode && props.questions.passage"
+      class="mx-auto mb-4 max-w-4xl rounded-lg border border-picton-blue-100 bg-white/95 px-4 py-3 text-base leading-relaxed text-picton-blue-900 shadow-sm md:px-5 md:py-4"
+      role="region"
+      :aria-label="ui.isSwahili ? 'Kifungu cha kusoma' : 'Reading passage'"
+    >
+      <p class="whitespace-pre-wrap">{{ props.questions.passage }}</p>
+    </div>
     <p :id="activityInstructionsId" class="sr-only">
       {{
         ui.isSwahili
