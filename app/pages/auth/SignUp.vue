@@ -85,16 +85,25 @@ const content = computed(() => ({
   fetchStudentsByClass: isSwahili.value ? "Pata wanafunzi" : "Fetch students",
   fetchingStudentsByClass: isSwahili.value ? "Inatafuta wanafunzi..." : "Fetching students...",
   classLookupSuccess: isSwahili.value
-    ? "Wanafunzi wamepatikana. Chagua mwanafunzi anayesajiliwa."
-    : "Students found. Select the student to register.",
+    ? "Wanafunzi wamepatikana. Tafuta jina la mwanafunzi ili kuchagua anayesajiliwa."
+    : "Students found. Search the student's name to select the student being registered.",
   classLookupSingleSuccess: isSwahili.value
-    ? "Mwanafunzi mmoja amepatikana na kuchaguliwa moja kwa moja."
-    : "One student was found and selected automatically.",
+    ? "Mwanafunzi mmoja amepatikana. Tafuta jina lake ili kumchagua."
+    : "One student was found. Search the student's name to select the record.",
   classLookupEmpty: isSwahili.value
     ? "Hakuna mwanafunzi aliyepatikana kwa shule na darasa ulilochagua."
     : "No students were found for the selected school and class.",
-  studentSelectorLabel: isSwahili.value ? "Chagua mwanafunzi:" : "Select student:",
-  studentSelectorPlaceholder: isSwahili.value ? "Chagua mwanafunzi kwenye orodha" : "Choose a student from the list",
+  studentNameSearchLabel: isSwahili.value ? "Tafuta jina la mwanafunzi:" : "Search student name:",
+  studentNameSearchPlaceholder: isSwahili.value
+    ? "Andika angalau herufi 2 za jina"
+    : "Type at least 2 letters of the name",
+  studentNameSearchHelp: isSwahili.value
+    ? "Orodha itaonekana baada ya kuandika jina ili kulinda faragha ya wanafunzi."
+    : "Results appear only after typing a name to protect student privacy.",
+  studentNameNoMatches: isSwahili.value
+    ? "Hakuna jina linalofanana na ulichotafuta."
+    : "No student names match your search.",
+  studentSelectorLabel: isSwahili.value ? "Matokeo yanayofanana:" : "Matching results:",
   dobLabel: isSwahili.value ? "Tarehe ya kuzaliwa" : "Date of birth",
   schoolRegNoLabel: isSwahili.value ? "Namba ya usajili wa shule" : "School registration number",
   schoolRegNoPlaceholder: isSwahili.value ? "Mfano: S0101 au PS0101076" : "Eg: S0101 or PS0101076",
@@ -348,11 +357,13 @@ const studentClassLookup = reactive<{
   status: LookupStatus;
   feedback: string | null;
   records: StudentLookupRecord[];
+  searchTerm: string;
   selectedPremNumber: string;
 }>({
   status: "idle",
   feedback: null,
   records: [],
+  searchTerm: "",
   selectedPremNumber: "",
 });
 
@@ -418,12 +429,34 @@ const studentLookupDisplay = computed(() => {
   ];
 });
 
+const normalizedStudentClassSearchTerm = computed(() =>
+  studentClassLookup.searchTerm.trim().toLowerCase(),
+);
+
+const hasStudentClassSearchTerm = computed(() =>
+  normalizedStudentClassSearchTerm.value.length >= 2,
+);
+
+const filteredStudentClassLookupRecords = computed(() => {
+  if (!hasStudentClassSearchTerm.value) return [];
+
+  return studentClassLookup.records.filter((student) => {
+    const fullName = `${student.firstName} ${student.lastName}`.trim().toLowerCase();
+    return fullName.includes(normalizedStudentClassSearchTerm.value);
+  });
+});
+
 const studentClassLookupOptions = computed(() =>
-  studentClassLookup.records.map((student) => ({
+  filteredStudentClassLookupRecords.value.map((student) => ({
     id: student.premNumber,
-    name: `${student.firstName} ${student.lastName} (${student.premNumber})`.trim(),
+    name: `${student.firstName} ${student.lastName}`.trim(),
   })),
 );
+
+const selectStudentFromFilteredResult = (student: StudentLookupRecord) => {
+  handleClassLookupSelection(student.premNumber);
+  studentClassLookup.searchTerm = `${student.firstName} ${student.lastName}`.trim();
+};
 
 const clearStudentPrefilledDetails = (options?: { preserveSchool?: boolean; preserveClassLevel?: boolean }) => {
   usersignUp.fname = null;
@@ -459,6 +492,7 @@ const resetStudentClassLookup = () => {
   studentClassLookup.status = "idle";
   studentClassLookup.feedback = null;
   studentClassLookup.records = [];
+  studentClassLookup.searchTerm = "";
   studentClassLookup.selectedPremNumber = "";
   usersignUp.controller.errors.schoolRegNo = null;
   usersignUp.controller.errors.studentLookup = null;
@@ -709,6 +743,7 @@ const fetchStudentsByClass = async () => {
   studentClassLookup.status = "pending";
   studentClassLookup.feedback = null;
   studentClassLookup.records = [];
+  studentClassLookup.searchTerm = "";
   studentClassLookup.selectedPremNumber = "";
   studentPremLookup.data = null;
   studentPremLookup.status = "idle";
@@ -731,19 +766,16 @@ const fetchStudentsByClass = async () => {
       return;
     }
 
-    if (records.length === 1) {
-      studentClassLookup.feedback = content.value.classLookupSingleSuccess;
-      handleClassLookupSelection(records[0].premNumber);
-      return;
-    }
-
-    studentClassLookup.feedback = content.value.classLookupSuccess;
+    studentClassLookup.feedback = records.length === 1
+      ? content.value.classLookupSingleSuccess
+      : content.value.classLookupSuccess;
   } catch (error: unknown) {
     const fetchError = error as FetchError;
     const status = fetchError?.response?.status ?? fetchError?.status;
 
     studentClassLookup.status = "error";
     studentClassLookup.records = [];
+    studentClassLookup.searchTerm = "";
     studentClassLookup.selectedPremNumber = "";
     clearStudentPrefilledDetails({ preserveClassLevel: true });
 
@@ -1300,6 +1332,29 @@ watch(
   (premNumber) => {
     if (premNumber?.trim()) {
       usersignUp.controller.errors.studentLookup = null;
+    }
+  },
+);
+
+watch(
+  () => studentClassLookup.searchTerm,
+  () => {
+    if (!studentClassLookup.selectedPremNumber) return;
+
+    if (!hasStudentClassSearchTerm.value) {
+      studentClassLookup.selectedPremNumber = "";
+      clearStudentPrefilledDetails({ preserveClassLevel: true });
+      return;
+    }
+
+    const selectedStudent = selectedStudentFromClassLookup.value;
+    const selectedName = `${selectedStudent?.firstName ?? ""} ${selectedStudent?.lastName ?? ""}`
+      .trim()
+      .toLowerCase();
+
+    if (!selectedName.includes(normalizedStudentClassSearchTerm.value)) {
+      studentClassLookup.selectedPremNumber = "";
+      clearStudentPrefilledDetails({ preserveClassLevel: true });
     }
   },
 );
@@ -2025,8 +2080,8 @@ onMounted(async () => {
             ]"
           >
             <div class="flex items-center justify-between w-full gap-3">
-              <label for="studentClassLookup" class="font-semibold capitalize text-oceanBlue text-extraSmall">
-                {{ content.studentSelectorLabel }}
+              <label for="studentNameSearch" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+                {{ content.studentNameSearchLabel }}
               </label>
               <button
                 type="button"
@@ -2038,14 +2093,50 @@ onMounted(async () => {
               </button>
             </div>
 
-            <CustomDropDownList
-              id="studentClassLookup"
-              v-model="studentClassLookup.selectedPremNumber"
-              :list="studentClassLookupOptions"
-              :placeholder="content.studentSelectorPlaceholder"
+            <input
+              id="studentNameSearch"
+              v-model="studentClassLookup.searchTerm"
+              type="text"
+              name="studentNameSearch"
+              autocomplete="off"
+              class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
+              :placeholder="content.studentNameSearchPlaceholder"
               :disabled="!studentClassLookup.records.length || studentClassLookup.status === 'pending'"
-              @update-model-value="handleClassLookupSelection(String($event))"
             />
+
+            <small
+              v-if="studentClassLookup.records.length && !hasStudentClassSearchTerm"
+              aria-live="polite"
+              class="w-full text-textGray/60 text-smallest"
+            >
+              {{ content.studentNameSearchHelp }}
+            </small>
+            <small
+              v-else-if="hasStudentClassSearchTerm && studentClassLookup.records.length && !studentClassLookupOptions.length"
+              aria-live="polite"
+              class="w-full text-red-500 text-smallest"
+            >
+              {{ content.studentNameNoMatches }}
+            </small>
+
+            <label v-if="studentClassLookupOptions.length" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+              {{ content.studentSelectorLabel }}
+            </label>
+            <div
+              v-if="studentClassLookupOptions.length"
+              class="w-full overflow-hidden bg-white border border-slate-200 rounded-md shadow-sm"
+            >
+              <button
+                v-for="student in filteredStudentClassLookupRecords"
+                :key="student.premNumber"
+                type="button"
+                class="w-full px-4 py-3 text-left transition-colors border-b last:border-b-0 border-slate-100 hover:bg-oceanBlue/10 focus:outline-none focus:bg-oceanBlue/10"
+                :class="studentClassLookup.selectedPremNumber === student.premNumber ? 'bg-oceanBlue/10 text-oceanBlue font-semibold' : 'text-textGray'"
+                @click="selectStudentFromFilteredResult(student)"
+              >
+                {{ `${student.firstName} ${student.lastName}`.trim() }}
+              </button>
+            </div>
 
             <small
               v-if="usersignUp.controller.errors.studentLookup"
