@@ -68,18 +68,35 @@ const shouldUseImageDraggableMode = (questions: Questions) => {
   );
 };
 
+/** Picture-to-label rows: fixed column is image-only; opposite data side carries answer text for the bank. */
+const isImageOnlyFixedColumnMode = (questions: Questions) => {
+  if (!questions.lockSide || !shouldUseImageDraggableMode(questions)) return false;
+
+  const lockedItems = questions.items.filter((item) => item.side === questions.lockSide);
+  const oppositeItems = questions.items.filter((item) => item.side !== questions.lockSide);
+
+  return (
+    lockedItems.length > 0 &&
+    lockedItems.every((item) => Boolean(item.image) && !item.text?.trim()) &&
+    oppositeItems.some((item) => Boolean(item.text?.trim())) &&
+    oppositeItems.every((item) => !item.image)
+  );
+};
+
 const getFixedSourceSide = (questions: Questions) => {
   if (!questions.lockSide) return null;
-  return shouldUseImageDraggableMode(questions)
-    ? getOppositeSide(questions.lockSide)
-    : questions.lockSide;
+  if (!shouldUseImageDraggableMode(questions)) return questions.lockSide;
+  return isImageOnlyFixedColumnMode(questions)
+    ? questions.lockSide
+    : getOppositeSide(questions.lockSide);
 };
 
 const getDraggableSourceSide = (questions: Questions) => {
   if (!questions.lockSide) return null;
-  return shouldUseImageDraggableMode(questions)
-    ? questions.lockSide
-    : getOppositeSide(questions.lockSide);
+  if (!shouldUseImageDraggableMode(questions)) return getOppositeSide(questions.lockSide);
+  return isImageOnlyFixedColumnMode(questions)
+    ? getOppositeSide(questions.lockSide)
+    : questions.lockSide;
 };
 
 const fillList = (side: "left" | "right", questions: Questions) => {
@@ -327,7 +344,12 @@ const resetActivity = () => {
                         draggable="false"
                         :class="mediaImageClass"
                       >
-                      <p :class="mediaCaptionClass">{{ renderItemContent(item).text }}</p>
+                      <p
+                        v-if="renderItemContent(item).text?.trim()"
+                        :class="mediaCaptionClass"
+                      >
+                        {{ renderItemContent(item).text }}
+                      </p>
                     </div>
                   </div>
 
@@ -412,7 +434,12 @@ const resetActivity = () => {
                         draggable="false"
                         :class="mediaImageClass"
                       >
-                      <p :class="mediaCaptionClass">{{ renderItemContent(item).text }}</p>
+                      <p
+                        v-if="renderItemContent(item).text?.trim()"
+                        :class="mediaCaptionClass"
+                      >
+                        {{ renderItemContent(item).text }}
+                      </p>
                     </div>
                   </div>
 

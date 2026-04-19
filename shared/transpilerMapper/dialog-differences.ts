@@ -58,9 +58,11 @@ const dialogDifferencesPropsTranspiler = (params: {
   const primaryImagePath = (question: ServerQuestionType) =>
     question.path ?? (question as any).image ?? null;
   // External API: `text` → textOne (step title), `answer` → textTwo, first `images[]` → path.
-  // For Dialog one side fixed with images, the UI uses "image draggable" mode: the fixed column
-  // reads the opposite data side. Map answer + image onto data-left and step titles onto
-  // data-right so the fixed column shows titles and the bluish pool shows image + answer.
+  // For Dialog one side fixed with images, the UI uses "image draggable" mode.
+  // - When textOne is non-empty: map answer + image onto data-left and step titles onto data-right
+  //   so the fixed column shows titles and the pool shows image + answer together.
+  // - When textOne is empty (picture-to-label matching): map image-only onto data-left (text "")
+  //   and answers onto data-right so the fixed column shows pictures only and draggable cards show answers.
   const osfSwapForImageLayout =
     isOneSideFixed && serverQuestions.some((q) => Boolean(primaryImagePath(q)));
 
@@ -68,12 +70,13 @@ const dialogDifferencesPropsTranspiler = (params: {
   items = serverQuestions.map((question) => {
     const leftPath = primaryImagePath(question);
     const answerText = question.textTwo ?? (question as any).answer ?? "";
+    const hasStepTitle = hasNonEmptyText(question.textOne);
 
     if (osfSwapForImageLayout) {
       if (leftPath) {
         return {
           id: idCounter++,
-          text: answerText,
+          text: hasStepTitle ? answerText : "",
           image: getImageUrl(rebaseUploadsUrl(leftPath)),
           side: "left",
         };
@@ -104,6 +107,7 @@ const dialogDifferencesPropsTranspiler = (params: {
     serverQuestions.map((question) => {
       const rightPath = question.pathTwo ?? (question as any).imageTwo ?? null;
       const rightText = question.textTwo ?? (question as any).answer ?? question.textOne ?? "";
+      const answerText = question.textTwo ?? (question as any).answer ?? "";
 
       if (osfSwapForImageLayout) {
         if (rightPath)
@@ -115,7 +119,7 @@ const dialogDifferencesPropsTranspiler = (params: {
           };
         return {
           id: idCounter++,
-          text: question.textOne ?? "",
+          text: hasNonEmptyText(question.textOne) ? (question.textOne ?? "") : answerText,
           side: "right",
         };
       }
