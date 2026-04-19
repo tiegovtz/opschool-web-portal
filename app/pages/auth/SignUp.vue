@@ -5,12 +5,23 @@ import { generateRandomID } from "~/utilities/generateRandomNumber";
 import apiDocs from "~/utilities/apiDocs";
 import {
   educationLevelNameToLevelsApiQuery,
-  educationLevelNameToSchoolEducationQuery,
 } from "~/utilities/educationLevelApiMaps";
+import {
+  inferStudentAgeGroupFromDob,
+  normalizeLookupGender,
+  normalizeStudentLookupRecord,
+  resolveLevelValueFromLookup,
+  resolveLookupClassLevelValue,
+} from "~/utilities/studentLookup";
 import { CustomDropDownList } from "#components";
 import type { Level } from "~/types/level.interface";
 import type { educationLevel } from "~/types/educationlevel.interface";
-import type { StudentPremLookupResponse } from "~/types/auth.interface";
+import type {
+  StudentInfoLookupRequest,
+  StudentInfoLookupResponse,
+  StudentLookupRecord,
+  StudentPremLookupResponse,
+} from "~/types/auth.interface";
 import type { FetchError } from "ofetch";
 
 // input tabs control
@@ -40,26 +51,55 @@ const content = computed(() => ({
   studentRegistrationMethodLabel: isSwahili.value ? "Njia ya usajili wa mwanafunzi:" : "Student registration method:",
   studentRegistrationMethods: {
     manual: isSwahili.value ? "Weka taarifa mwenyewe" : "Enter details manually",
-    premNumber: isSwahili.value ? "Tumia Prem Number" : "Use Prem Number",
+    premNumber: isSwahili.value ? "Tumia taarifa za mwanafunzi" : "Use student records",
   },
   studentRegistrationHints: {
     manual: isSwahili.value
       ? "Jaza taarifa zote za mwanafunzi mwenyewe."
       : "Fill in all student details manually.",
     premNumber: isSwahili.value
-      ? "Weka Prem Number ili kupata taarifa za mwanafunzi, kisha ujaze taarifa zilizobaki."
-      : "Enter a Prem Number to load student details, then complete the remaining fields.",
+      ? "Tafuta taarifa za mwanafunzi kwa Prem Number au kwa namba ya usajili wa shule na darasa, kisha malizia taarifa zilizobaki."
+      : "Find the student record by Prem Number or by school registration number and class, then complete the remaining fields.",
+  },
+  studentLookupModeLabel: isSwahili.value
+    ? "Njia ya kutafuta taarifa za mwanafunzi:"
+    : "Student lookup method:",
+  studentLookupModes: {
+    premNumber: isSwahili.value ? "Ninajua Prem Number" : "I know the Prem Number",
+    classList: isSwahili.value ? "Sijui Prem Number" : "I don't know the Prem Number",
+  },
+  studentLookupModeHints: {
+    premNumber: isSwahili.value
+      ? "Weka Prem Number ya mwanafunzi ili kupata taarifa zake moja kwa moja."
+      : "Enter the student's Prem Number to fetch the record directly.",
+    classList: isSwahili.value
+      ? "Weka namba ya usajili wa shule na darasa ili kupata wanafunzi wote wa darasa husika, kisha chagua mwanafunzi anayesajiliwa."
+      : "Enter the school registration number and class to fetch all students in that class, then select the student being registered.",
   },
   premNumberLabel: isSwahili.value ? "Prem Number:" : "Prem Number:",
   premNumberPlaceholder: isSwahili.value ? "Mfano: 20190928782" : "Eg: 20190928782",
   fetchPremNumber: isSwahili.value ? "Pata taarifa" : "Fetch details",
   fetchingPremNumber: isSwahili.value ? "Inatafuta..." : "Fetching...",
   premLookupSuccess: isSwahili.value ? "Taarifa za mwanafunzi zimepatikana." : "Student details fetched successfully.",
-  premLookupDetailsTitle: isSwahili.value ? "Taarifa zilizopatikana" : "Fetched details",
+  premLookupDetailsTitle: isSwahili.value ? "Taarifa za mwanafunzi" : "Student details",
+  fetchStudentsByClass: isSwahili.value ? "Pata wanafunzi" : "Fetch students",
+  fetchingStudentsByClass: isSwahili.value ? "Inatafuta wanafunzi..." : "Fetching students...",
+  classLookupSuccess: isSwahili.value
+    ? "Wanafunzi wamepatikana. Chagua mwanafunzi anayesajiliwa."
+    : "Students found. Select the student to register.",
+  classLookupSingleSuccess: isSwahili.value
+    ? "Mwanafunzi mmoja amepatikana na kuchaguliwa moja kwa moja."
+    : "One student was found and selected automatically.",
+  classLookupEmpty: isSwahili.value
+    ? "Hakuna mwanafunzi aliyepatikana kwa shule na darasa ulilochagua."
+    : "No students were found for the selected school and class.",
+  studentSelectorLabel: isSwahili.value ? "Chagua mwanafunzi:" : "Select student:",
+  studentSelectorPlaceholder: isSwahili.value ? "Chagua mwanafunzi kwenye orodha" : "Choose a student from the list",
   dobLabel: isSwahili.value ? "Tarehe ya kuzaliwa" : "Date of birth",
   schoolRegNoLabel: isSwahili.value ? "Namba ya usajili wa shule" : "School registration number",
+  schoolRegNoPlaceholder: isSwahili.value ? "Mfano: S0101 au PS0101076" : "Eg: S0101 or PS0101076",
   classLevelLabel: isSwahili.value ? "Ngazi ya darasa:" : "Class Level:",
-  classLevelPlaceholder: isSwahili.value ? "(mfano: Darasa la Kwanza ...)" : "(eg: Baraa Secondary School ...)",
+  classLevelPlaceholder: isSwahili.value ? "(mfano: Darasa la Kwanza ...)" : "(eg: Class One ...)",
   sexLabel: isSwahili.value ? "Chagua jinsia:" : "Select Sex:",
   male: isSwahili.value ? "Mwanaume" : "Male",
   female: isSwahili.value ? "Mwanamke" : "Female",
@@ -71,7 +111,7 @@ const content = computed(() => ({
   ageOtherPlaceholder: isSwahili.value ? "Mfano: Vijana watu wazima (20 - 35)" : "Eg: YoungAdults(20 - 35)",
   emailPlaceholder: isSwahili.value ? "Barua pepe (mfano: example@email.com)" : "Email (eg: example@email.com)",
   phonePlaceholder: isSwahili.value ? "Namba ya simu (mfano: 0622***722 au +255622***722)" : "Phone Number (eg: 0622***722 or +255622***722)",
-  organizationPlaceholder: isSwahili.value ? "Taasisi/Shirika (mfano: Ekima Interactive Company)" : "Organization (eg: Ekima interctive company)",
+  organizationPlaceholder: isSwahili.value ? "Taasisi/Shirika (mfano: Taasisi ya Elimu)" : "Organization (eg: Tanzania Institute of Education)",
   organizationRoleLabel: isSwahili.value ? "Chagua jukumu lako katika taasisi:" : "Select role in your Organization:",
   organizationRolePlaceholder: isSwahili.value ? "Mfano: Meneja" : "Eg: ( Manager ) ...",
   otherRolePlaceholder: isSwahili.value ? "Tafadhali eleza jukumu lako katika taasisi" : "Please specify role in your organization",
@@ -131,6 +171,9 @@ const content = computed(() => ({
     nameSpecialChars: isSwahili.value ? "Jina lisitumie alama maalum au namba" : "Name should not contain special characters or numbers",
     nameRepeatedChars: isSwahili.value ? "Jina lisiwe na herufi tatu au zaidi zinazojirudia" : "Name should not have three or more repeating characters",
     school: isSwahili.value ? "Shule inahitajika" : "School is required",
+    schoolRegNo: isSwahili.value
+      ? "Namba ya usajili wa shule inahitajika"
+      : "School registration number is required",
     district: isSwahili.value ? "Wilaya inahitajika" : "District is required",
     premNumber: isSwahili.value ? "Prem Number inahitajika" : "Prem Number is required",
     premLookup: isSwahili.value
@@ -139,6 +182,9 @@ const content = computed(() => ({
     premLookupEducationLevel: isSwahili.value
       ? "Chagua kwanza ngazi ya elimu ya mwanafunzi."
       : "Select the student's education level first.",
+    studentLookup: isSwahili.value
+      ? "Pata na uchague kwanza mwanafunzi anayesajiliwa."
+      : "Fetch and select the student to register first.",
   },
   userTypes: {
     student: isSwahili.value ? "Mwanafunzi" : "Student",
@@ -169,6 +215,7 @@ const authRedirectQuery = computed(() =>
 
 type userType = 'Student' | 'Teacher' | 'EducationStakeholder';
 type StudentRegistrationMethod = "manual" | "premNumber";
+type StudentLookupMode = "premNumber" | "classList";
 type LookupStatus = "idle" | "pending" | "success" | "error";
 
 interface userSignUp {
@@ -210,8 +257,10 @@ interface userSignUp {
       educationLevel: string | null;
       classLevel: string | null;
       school: string | null;
+      schoolRegNo: string | null;
       district: string | null;
       premNumber: string | null;
+      studentLookup: string | null;
       organization: string | null;
       userOrgRole: string | null;
       otherRole: string | null;
@@ -269,8 +318,10 @@ const usersignUp = reactive<userSignUp>({
       educationLevel: null,
       classLevel: null,
       school: null,
+      schoolRegNo: null,
       district: null,
       premNumber: null,
+      studentLookup: null,
       organization: null,
       userOrgRole: null,
       otherRole: null,
@@ -280,16 +331,29 @@ const usersignUp = reactive<userSignUp>({
 });
 
 const studentRegistrationMethod = ref<StudentRegistrationMethod>("manual");
+const studentLookupMode = ref<StudentLookupMode>("premNumber");
+const studentLookupSchoolRegNo = ref("");
 const studentPremLookup = reactive<{
   premNumber: string;
   status: LookupStatus;
   feedback: string | null;
-  data: StudentPremLookupResponse | null;
+  data: StudentLookupRecord | null;
 }>({
   premNumber: "",
   status: "idle",
   feedback: null,
   data: null,
+});
+const studentClassLookup = reactive<{
+  status: LookupStatus;
+  feedback: string | null;
+  records: StudentLookupRecord[];
+  selectedPremNumber: string;
+}>({
+  status: "idle",
+  feedback: null,
+  records: [],
+  selectedPremNumber: "",
 });
 
 const selectedEducationLevelRecord = computed(() =>
@@ -315,138 +379,68 @@ const selectedStudentEducationBucket = computed(() => {
 const isStudentManualRegistration = computed(
   () => isStudent.value && studentRegistrationMethod.value === "manual",
 );
-const isStudentPremRegistration = computed(
+const isStudentLookupRegistration = computed(
   () => isStudent.value && studentRegistrationMethod.value === "premNumber",
 );
+const isStudentPremNumberLookup = computed(
+  () => isStudentLookupRegistration.value && studentLookupMode.value === "premNumber",
+);
+const isStudentClassLookup = computed(
+  () => isStudentLookupRegistration.value && studentLookupMode.value === "classList",
+);
 
-const studentPremLookupDisplay = computed(() => {
-  if (!studentPremLookup.data) return [];
+const selectedStudentFromClassLookup = computed(
+  () =>
+    studentClassLookup.records.find(
+      (student) => student.premNumber === studentClassLookup.selectedPremNumber,
+    ) || null,
+);
+
+const selectedStudentLookupRecord = computed(() =>
+  isStudentPremNumberLookup.value
+    ? studentPremLookup.data
+    : isStudentClassLookup.value
+      ? selectedStudentFromClassLookup.value
+      : null,
+);
+
+const studentLookupDisplay = computed(() => {
+  if (!selectedStudentLookupRecord.value) return [];
 
   return [
-    { label: content.value.firstNamePlaceholder, value: studentPremLookup.data.firstName },
-    { label: content.value.lastNamePlaceholder, value: studentPremLookup.data.lastName },
-    { label: content.value.dobLabel, value: studentPremLookup.data.dob },
-    { label: content.value.sexLabel, value: studentPremLookup.data.sex },
-    { label: content.value.classLevelLabel, value: studentPremLookup.data.classLevel },
-    { label: content.value.schoolLabel ?? "School", value: studentPremLookup.data.schoolName },
-    { label: content.value.schoolRegNoLabel, value: studentPremLookup.data.schoolRegNo },
+    { label: content.value.firstNamePlaceholder, value: selectedStudentLookupRecord.value.firstName },
+    { label: content.value.lastNamePlaceholder, value: selectedStudentLookupRecord.value.lastName },
+    { label: content.value.dobLabel, value: selectedStudentLookupRecord.value.dob },
+    { label: content.value.sexLabel, value: selectedStudentLookupRecord.value.sex },
+    { label: content.value.classLevelLabel, value: selectedStudentLookupRecord.value.classLevel },
+    { label: content.value.schoolLabel ?? "School", value: selectedStudentLookupRecord.value.schoolName },
+    { label: content.value.schoolRegNoLabel, value: selectedStudentLookupRecord.value.schoolRegNo },
   ];
 });
 
-const normalizeLookupGender = (sex: string | null | undefined) => {
-  const normalizedSex = (sex || "").trim().toUpperCase();
-  if (normalizedSex === "M") return "male";
-  if (normalizedSex === "F") return "female";
-  return "";
-};
+const studentClassLookupOptions = computed(() =>
+  studentClassLookup.records.map((student) => ({
+    id: student.premNumber,
+    name: `${student.firstName} ${student.lastName} (${student.premNumber})`.trim(),
+  })),
+);
 
-const inferStudentAgeGroupFromDob = (dob: string | null | undefined) => {
-  if (!dob) return "";
-
-  const birthDate = new Date(dob);
-  if (Number.isNaN(birthDate.getTime())) return "";
-
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const hasHadBirthdayThisYear =
-    today.getMonth() > birthDate.getMonth() ||
-    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate());
-
-  if (!hasHadBirthdayThisYear) {
-    age -= 1;
-  }
-
-  if (age <= 12) return "Child";
-  if (age <= 19) return "Teen";
-  return "YoungAdult";
-};
-
-const normalizeLevelLabel = (value: string | null | undefined) =>
-  (value || "")
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/\b(class|darasa|la|form|kidato|cha)\b/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-const levelAliasDictionary: Record<string, string[]> = {
-  "1": ["1", "i", "one", "first", "kwanza"],
-  "2": ["2", "ii", "two", "second", "pili"],
-  "3": ["3", "iii", "three", "third", "tatu"],
-  "4": ["4", "iv", "four", "fourth", "nne"],
-  "5": ["5", "v", "five", "fifth", "tano"],
-  "6": ["6", "vi", "six", "sixth", "sita"],
-  "7": ["7", "vii", "seven", "seventh", "saba"],
-};
-
-const findLevelAliasKey = (value: string | null | undefined) => {
-  const normalizedValue = normalizeLevelLabel(value);
-  if (!normalizedValue) return "";
-
-  return Object.entries(levelAliasDictionary).find(([, aliases]) =>
-    aliases.some((alias) => normalizedValue === alias || normalizedValue.includes(alias)),
-  )?.[0] || "";
-};
-
-const resolveLevelValueFromLookup = (levelName: string | null | undefined) => {
-  const normalizedLevelName = (levelName || "").trim().toLowerCase();
-  if (!normalizedLevelName) return "";
-
-  const idMatch = listLevel.value.find(
-    (level) => level._id?.trim().toLowerCase() === normalizedLevelName,
-  );
-
-  if (idMatch?._id) {
-    return idMatch._id;
-  }
-
-  const directMatch = listLevel.value.find(
-    (level) => level.name?.trim().toLowerCase() === normalizedLevelName,
-  );
-
-  if (directMatch?._id) {
-    return directMatch._id;
-  }
-
-  const normalizedLookupLabel = normalizeLevelLabel(levelName);
-  const lookupAliasKey = findLevelAliasKey(levelName);
-
-  const matchedLevel = listLevel.value.find((level) => {
-    const normalizedCandidate = normalizeLevelLabel(level.name);
-    const candidateAliasKey = findLevelAliasKey(level.name);
-
-    if (normalizedCandidate === normalizedLookupLabel) {
-      return true;
-    }
-
-    if (lookupAliasKey && candidateAliasKey && lookupAliasKey === candidateAliasKey) {
-      return true;
-    }
-
-    return Boolean(
-      normalizedCandidate &&
-      normalizedLookupLabel &&
-      (normalizedCandidate.includes(normalizedLookupLabel) ||
-        normalizedLookupLabel.includes(normalizedCandidate)),
-    );
-  });
-
-  return matchedLevel?._id || "";
-};
-
-const clearStudentPrefilledDetails = () => {
+const clearStudentPrefilledDetails = (options?: { preserveSchool?: boolean; preserveClassLevel?: boolean }) => {
   usersignUp.fname = null;
   usersignUp.lname = null;
   usersignUp.gender = null;
-  usersignUp.school = "";
-  classLevel.value = "";
+  if (!options?.preserveSchool) {
+    usersignUp.school = "";
+    usersignUp.controller.errors.school = null;
+  }
+  if (!options?.preserveClassLevel) {
+    classLevel.value = "";
+    usersignUp.controller.errors.classLevel = null;
+  }
   usersignUp.userName = null;
   usersignUp.controller.errors.fname = null;
   usersignUp.controller.errors.lname = null;
   usersignUp.controller.errors.gender = null;
-  usersignUp.controller.errors.school = null;
-  usersignUp.controller.errors.classLevel = null;
 };
 
 const resetStudentPremLookup = (options?: { preservePremNumber?: boolean }) => {
@@ -457,22 +451,45 @@ const resetStudentPremLookup = (options?: { preservePremNumber?: boolean }) => {
     studentPremLookup.premNumber = "";
   }
   usersignUp.controller.errors.premNumber = null;
+  usersignUp.controller.errors.studentLookup = null;
   clearStudentPrefilledDetails();
 };
 
-const applyStudentPremLookupData = (studentData: StudentPremLookupResponse) => {
-  usersignUp.fname = studentData.firstName?.trim() || null;
-  usersignUp.lname = studentData.lastName?.trim() || null;
+const resetStudentClassLookup = () => {
+  studentClassLookup.status = "idle";
+  studentClassLookup.feedback = null;
+  studentClassLookup.records = [];
+  studentClassLookup.selectedPremNumber = "";
+  usersignUp.controller.errors.schoolRegNo = null;
+  usersignUp.controller.errors.studentLookup = null;
+  clearStudentPrefilledDetails({ preserveClassLevel: true });
+};
+
+const applyStudentLookupData = (
+  studentData: StudentLookupRecord,
+  options?: { preserveSchool?: boolean; preserveClassLevel?: boolean },
+) => {
+  usersignUp.fname = studentData.firstName || null;
+  usersignUp.lname = studentData.lastName || null;
   usersignUp.gender = normalizeLookupGender(studentData.sex) || null;
-  usersignUp.school = studentData.schoolName?.trim() || "";
-  classLevel.value = resolveLevelValueFromLookup(studentData.classLevel);
+  if (!options?.preserveSchool) {
+    usersignUp.school = studentData.schoolName || "";
+  }
+  if (!options?.preserveClassLevel) {
+    classLevel.value = resolveLevelValueFromLookup(studentData.classLevel, listLevel.value);
+  }
   usersignUp.age = inferStudentAgeGroupFromDob(studentData.dob) || usersignUp.age;
   usersignUp.controller.errors.fname = null;
   usersignUp.controller.errors.lname = null;
   usersignUp.controller.errors.gender = null;
-  usersignUp.controller.errors.school = null;
-  usersignUp.controller.errors.classLevel = null;
+  if (!options?.preserveSchool) {
+    usersignUp.controller.errors.school = null;
+  }
+  if (!options?.preserveClassLevel) {
+    usersignUp.controller.errors.classLevel = null;
+  }
   usersignUp.controller.errors.premNumber = null;
+  usersignUp.controller.errors.studentLookup = null;
 };
 
 const getStudentPremLookupEndpoint = () => {
@@ -485,32 +502,32 @@ const getStudentPremLookupEndpoint = () => {
   return null;
 };
 
-const fetchSchoolsByRegionAndDistrict = async (region: string, district: string) => {
-  if (!region?.trim() || !district?.trim()) return [];
-
-  try {
-    const educationQuery = selectedEducationLevelRecord.value?.name
-      ? educationLevelNameToSchoolEducationQuery(selectedEducationLevelRecord.value.name)
-      : "";
-    const response = await $fetch<any[]>(apiDocs.school.get, {
-      query: {
-        region,
-        district,
-        ...(educationQuery ? { education: educationQuery } : {}),
-      },
-    });
-
-    return response ?? [];
-  } catch (error) {
-    console.error("Error fetching schools for signup:", error);
-    return [];
-  }
+const resolveStudentLevelValue = () => {
+  const resolvedLevelValue = resolveLevelValueFromLookup(classLevel.value, listLevel.value);
+  return resolvedLevelValue || null;
 };
 
+const resolveStudentLookupRequest = async (): Promise<StudentInfoLookupRequest | null> => {
+  const schoolRegNo = studentLookupSchoolRegNo.value.trim();
+  const normalizedClassLevel = resolveLookupClassLevelValue(classLevel.value, listLevel.value);
 
-const resolveStudentLevelValue = () => {
-  const resolvedLevelValue = resolveLevelValueFromLookup(classLevel.value);
-  return resolvedLevelValue || null;
+  if (!schoolRegNo || !normalizedClassLevel) {
+    return null;
+  }
+
+  return {
+    schoolRegNo,
+    classLevel: normalizedClassLevel,
+    isPrimary: selectedStudentEducationBucket.value === "primary",
+  };
+};
+
+const resolveStudentSchoolValue = async () => {
+  if (selectedStudentLookupRecord.value?.schoolName) {
+    return selectedStudentLookupRecord.value.schoolName.trim();
+  }
+
+  return usersignUp.school?.trim() || null;
 };
 
 const normalizeUserTypeKey = (type: string) => {
@@ -541,8 +558,11 @@ watch(
   async (id) => {
     usersignUp.school = "";
     classLevel.value = "";
-    if (isStudentPremRegistration.value) {
+    if (isStudentPremNumberLookup.value) {
       resetStudentPremLookup({ preservePremNumber: true });
+    }
+    if (isStudentClassLookup.value) {
+      resetStudentClassLookup();
     }
     const trimmed = (id || "").toString().trim();
     usersignUp.controller.errors.educationLevel = trimmed
@@ -613,9 +633,11 @@ const fetchStudentInfoByPremNumber = async () => {
   }
 
   usersignUp.controller.errors.premNumber = null;
+  usersignUp.controller.errors.studentLookup = null;
   studentPremLookup.status = "pending";
   studentPremLookup.feedback = null;
   studentPremLookup.data = null;
+  resetStudentClassLookup();
   clearStudentPrefilledDetails();
 
   try {
@@ -623,10 +645,10 @@ const fetchStudentInfoByPremNumber = async () => {
       method: "POST",
     });
 
-    studentPremLookup.data = response;
+    studentPremLookup.data = normalizeStudentLookupRecord(response);
     studentPremLookup.status = "success";
     studentPremLookup.feedback = content.value.premLookupSuccess;
-    applyStudentPremLookupData(response);
+    applyStudentLookupData(studentPremLookup.data);
   } catch (error: unknown) {
     const fetchError = error as FetchError;
     const status = fetchError?.response?.status ?? fetchError?.status;
@@ -647,7 +669,101 @@ const fetchStudentInfoByPremNumber = async () => {
   }
 };
 
+const handleClassLookupSelection = (premNumber: string) => {
+  studentClassLookup.selectedPremNumber = premNumber;
+  const selectedStudent = studentClassLookup.records.find((student) => student.premNumber === premNumber);
+
+  if (!selectedStudent) {
+    clearStudentPrefilledDetails({ preserveClassLevel: true });
+    return;
+  }
+
+  applyStudentLookupData(selectedStudent, { preserveClassLevel: true });
+};
+
+const fetchStudentsByClass = async () => {
+  if (!usersignUp.educationLevel?.trim()) {
+    usersignUp.controller.errors.educationLevel = content.value.errors.premLookupEducationLevel;
+    return;
+  }
+
+  if (!studentLookupSchoolRegNo.value.trim()) {
+    usersignUp.controller.errors.schoolRegNo = content.value.errors.schoolRegNo;
+    return;
+  }
+
+  if (!classLevel.value?.trim()) {
+    usersignUp.controller.errors.classLevel = content.value.errors.classLevel;
+    return;
+  }
+
+  const requestBody = await resolveStudentLookupRequest();
+  if (!requestBody) {
+    usersignUp.controller.errors.studentLookup = content.value.errors.studentLookup;
+    return;
+  }
+
+  usersignUp.controller.errors.schoolRegNo = null;
+  usersignUp.controller.errors.classLevel = null;
+  usersignUp.controller.errors.studentLookup = null;
+  studentClassLookup.status = "pending";
+  studentClassLookup.feedback = null;
+  studentClassLookup.records = [];
+  studentClassLookup.selectedPremNumber = "";
+  studentPremLookup.data = null;
+  studentPremLookup.status = "idle";
+  studentPremLookup.feedback = null;
+  clearStudentPrefilledDetails({ preserveClassLevel: true });
+
+  try {
+    const response = await $fetch<StudentInfoLookupResponse>(apiDocs.auth.studentInfo, {
+      method: "POST",
+      body: requestBody,
+    });
+
+    const responseItems = Array.isArray(response) ? response : response ? [response] : [];
+    const records = responseItems.map(normalizeStudentLookupRecord).filter((student) => student.premNumber);
+    studentClassLookup.records = records;
+    studentClassLookup.status = "success";
+
+    if (!records.length) {
+      studentClassLookup.feedback = content.value.classLookupEmpty;
+      return;
+    }
+
+    if (records.length === 1) {
+      studentClassLookup.feedback = content.value.classLookupSingleSuccess;
+      handleClassLookupSelection(records[0].premNumber);
+      return;
+    }
+
+    studentClassLookup.feedback = content.value.classLookupSuccess;
+  } catch (error: unknown) {
+    const fetchError = error as FetchError;
+    const status = fetchError?.response?.status ?? fetchError?.status;
+
+    studentClassLookup.status = "error";
+    studentClassLookup.records = [];
+    studentClassLookup.selectedPremNumber = "";
+    clearStudentPrefilledDetails({ preserveClassLevel: true });
+
+    if (status === 404) {
+      studentClassLookup.feedback = content.value.classLookupEmpty;
+    } else if (status === 400) {
+      studentClassLookup.feedback = content.value.feedback.badRequest;
+    } else if (status === 503) {
+      studentClassLookup.feedback = content.value.feedback.serviceUnavailable;
+    } else {
+      studentClassLookup.feedback = content.value.feedback.unexpected;
+    }
+  }
+};
+
 const signUp = async () => {
+  if (requiresClassLevel.value && !classLevel.value?.trim() && selectedStudentLookupRecord.value) {
+    classLevel.value = resolveLevelValueFromLookup(selectedStudentLookupRecord.value.classLevel, listLevel.value);
+  }
+
   const typeKey = normalizeUserTypeKey(usersignUp.type);
   const backendType = toBackendUserType(usersignUp.type);
   const hasBaseFields = Boolean(
@@ -666,9 +782,13 @@ const signUp = async () => {
   const hasSchoolFields = !requiresSchoolSelection.value || Boolean(usersignUp.school?.trim());
   const hasContactFields = !requiresContactInfo.value || Boolean(usersignUp.email?.trim() && usersignUp.phone?.trim());
   const hasStakeholderFields = !isStakeholder.value || Boolean(usersignUp.organization?.trim() && resolvedStakeholderRole.value);
-  const hasStudentLevel = !requiresClassLevel.value || Boolean(classLevel.value?.trim());
-  const hasPremLookupFields = !isStudentPremRegistration.value || Boolean(
-    studentPremLookup.premNumber.trim() && studentPremLookup.data,
+  const hasStudentLevel = !requiresClassLevel.value || Boolean(
+    classLevel.value?.trim() || selectedStudentLookupRecord.value?.classLevel,
+  );
+  const hasStudentLookupFields = !isStudentLookupRegistration.value || Boolean(
+    isStudentPremNumberLookup.value
+      ? studentPremLookup.premNumber.trim() && studentPremLookup.data
+      : selectedStudentLookupRecord.value,
   );
 
   if (
@@ -678,7 +798,7 @@ const signUp = async () => {
     hasContactFields &&
     hasStakeholderFields &&
     hasStudentLevel &&
-    hasPremLookupFields
+    hasStudentLookupFields
   ) {
 
     // 
@@ -688,8 +808,11 @@ const signUp = async () => {
 
     try {
       const studentLevelValue = resolveStudentLevelValue();
+      const studentSchoolValue = typeKey === 'Student'
+        ? await resolveStudentSchoolValue()
+        : (usersignUp.school?.trim() || null);
 
-      if (typeKey === 'Student' && isStudentPremRegistration.value && !usersignUp.school?.trim()) {
+      if (typeKey === 'Student' && isStudentPremNumberLookup.value && !studentSchoolValue) {
         usersignUp.controller.isSent = 'error';
         usersignUp.controller.feedback = content.value.feedback.premSchoolMappingFailed;
         return;
@@ -710,14 +833,16 @@ const signUp = async () => {
             type: backendType,
             gender: usersignUp.gender,
             region: usersignUp.region,
-            school: usersignUp.school,
+            school: studentSchoolValue,
             district: usersignUp.district,
             ageGroup: usersignUp.age,
             level: studentLevelValue,
             terms: true,
             roles: ['Student'],
             username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
-            premNumber: isStudentPremRegistration.value ? studentPremLookup.premNumber.trim() : null,
+            premNumber: isStudentLookupRegistration.value
+              ? (selectedStudentLookupRecord.value?.premNumber || null)
+              : null,
           }
           :
           typeKey == 'Teacher' ?
@@ -845,15 +970,15 @@ const signUp = async () => {
     if (requiresContactInfo.value && !usersignUp.email) {
       usersignUp.controller.errors.email = content.value.errors.invalidEmail;
     }
-    if (!usersignUp.fname && (!isStudentPremRegistration.value || Boolean(studentPremLookup.data))) {
+    if (!usersignUp.fname && (!isStudentLookupRegistration.value || Boolean(selectedStudentLookupRecord.value))) {
       usersignUp.controller.errors.fname = content.value.errors.firstName;
       switchTab("tabOne");
     }
-    if (!usersignUp.gender && (!isStudentPremRegistration.value || Boolean(studentPremLookup.data))) {
+    if (!usersignUp.gender && (!isStudentLookupRegistration.value || Boolean(selectedStudentLookupRecord.value))) {
       usersignUp.controller.errors.gender = content.value.errors.gender;
       switchTab("tabOne");
     }
-    if (!usersignUp.lname && (!isStudentPremRegistration.value || Boolean(studentPremLookup.data))) {
+    if (!usersignUp.lname && (!isStudentLookupRegistration.value || Boolean(selectedStudentLookupRecord.value))) {
       usersignUp.controller.errors.lname = content.value.errors.lastName;
       switchTab("tabOne");
     }
@@ -869,14 +994,20 @@ const signUp = async () => {
     if (!usersignUp.district) {
       usersignUp.controller.errors.district = content.value.errors.district;
     }
-    if (isStudentPremRegistration.value && !studentPremLookup.premNumber.trim()) {
+    if (isStudentPremNumberLookup.value && !studentPremLookup.premNumber.trim()) {
       usersignUp.controller.errors.premNumber = content.value.errors.premNumber;
       switchTab("tabOne");
-    } else if (isStudentPremRegistration.value && !studentPremLookup.data) {
+    } else if (isStudentPremNumberLookup.value && !studentPremLookup.data) {
       usersignUp.controller.errors.premNumber = content.value.errors.premLookup;
       switchTab("tabOne");
     } else {
       usersignUp.controller.errors.premNumber = null;
+    }
+    if (isStudentClassLookup.value && !selectedStudentLookupRecord.value) {
+      usersignUp.controller.errors.studentLookup = content.value.errors.studentLookup;
+      switchTab("tabOne");
+    } else {
+      usersignUp.controller.errors.studentLookup = null;
     }
     if (!usersignUp.type) {
       usersignUp.controller.errors.type = content.value.errors.userType;
@@ -899,8 +1030,9 @@ const signUp = async () => {
 
     if (
       requiresSchoolSelection.value &&
+      !isStudentClassLookup.value &&
       !usersignUp.school?.trim() &&
-      (!isStudentPremRegistration.value || Boolean(studentPremLookup.data))
+      (!isStudentLookupRegistration.value || Boolean(selectedStudentLookupRecord.value))
     ) {
       usersignUp.controller.errors.school = content.value.errors.school;
       switchTab("tabOne");
@@ -911,7 +1043,8 @@ const signUp = async () => {
     if (
       requiresClassLevel.value &&
       !classLevel.value?.trim() &&
-      (!isStudentPremRegistration.value || Boolean(studentPremLookup.data))
+      !selectedStudentLookupRecord.value?.classLevel &&
+      (!isStudentLookupRegistration.value || isStudentClassLookup.value || Boolean(selectedStudentLookupRecord.value))
     ) {
       usersignUp.controller.errors.classLevel = content.value.errors.classLevel;
       switchTab("tabOne");
@@ -1075,17 +1208,23 @@ watch(
     if (normalizeUserTypeKey(type) === "EducationStakeholder") {
       usersignUp.educationLevel = "";
       usersignUp.school = "";
+      studentLookupSchoolRegNo.value = "";
       classLevel.value = "";
       listLevel.value = [];
       resetStudentPremLookup();
+      resetStudentClassLookup();
       usersignUp.controller.errors.educationLevel = null;
       usersignUp.controller.errors.school = null;
+      usersignUp.controller.errors.schoolRegNo = null;
       usersignUp.controller.errors.classLevel = null;
     }
 
     if (normalizeUserTypeKey(type) !== "Student") {
       studentRegistrationMethod.value = "manual";
       resetStudentPremLookup();
+      resetStudentClassLookup();
+      studentLookupMode.value = "premNumber";
+      studentLookupSchoolRegNo.value = "";
       usersignUp.userName = null;
       classLevel.value = "";
       usersignUp.controller.errors.userName = null;
@@ -1103,17 +1242,37 @@ watch(
 
 watch(studentRegistrationMethod, (method) => {
   usersignUp.controller.errors.premNumber = null;
+  usersignUp.controller.errors.schoolRegNo = null;
+  usersignUp.controller.errors.studentLookup = null;
 
   if (method === "manual") {
     resetStudentPremLookup();
+    resetStudentClassLookup();
+    studentLookupMode.value = "premNumber";
+    studentLookupSchoolRegNo.value = "";
     return;
   }
 
   resetStudentPremLookup({ preservePremNumber: true });
+  resetStudentClassLookup();
   usersignUp.email = null;
   usersignUp.phone = null;
   usersignUp.controller.errors.email = null;
   usersignUp.controller.errors.phone = null;
+});
+
+watch(studentLookupMode, (mode) => {
+  usersignUp.controller.errors.premNumber = null;
+  usersignUp.controller.errors.schoolRegNo = null;
+  usersignUp.controller.errors.studentLookup = null;
+
+  if (mode === "premNumber") {
+    resetStudentClassLookup();
+    studentLookupSchoolRegNo.value = "";
+    return;
+  }
+
+  resetStudentPremLookup();
 });
 
 watch(
@@ -1135,6 +1294,25 @@ watch(
     }
   },
 );
+
+watch(
+  () => studentClassLookup.selectedPremNumber,
+  (premNumber) => {
+    if (premNumber?.trim()) {
+      usersignUp.controller.errors.studentLookup = null;
+    }
+  },
+);
+
+watch(studentLookupSchoolRegNo, (value) => {
+  if (value?.trim()) {
+    usersignUp.controller.errors.schoolRegNo = null;
+  } else if (isStudentClassLookup.value) {
+    usersignUp.controller.errors.schoolRegNo = content.value.errors.schoolRegNo;
+  } else {
+    usersignUp.controller.errors.schoolRegNo = null;
+  }
+});
 
 // Region watching
 watch(
@@ -1161,10 +1339,28 @@ watch(
 );
 
 watch(
+  [studentLookupSchoolRegNo, classLevel],
+  ([schoolRegNo, level], previousValues) => {
+    if (!isStudentClassLookup.value || !previousValues) {
+      return;
+    }
+
+    const [previousSchoolRegNo, previousLevel] = previousValues;
+    const hasCriteriaChanged =
+      schoolRegNo !== previousSchoolRegNo ||
+      level !== previousLevel;
+
+    if (hasCriteriaChanged && (studentClassLookup.records.length || selectedStudentLookupRecord.value)) {
+      resetStudentClassLookup();
+    }
+  },
+);
+
+watch(
   listLevel,
   () => {
-    if (studentPremLookup.data && isStudentPremRegistration.value) {
-      classLevel.value = resolveLevelValueFromLookup(studentPremLookup.data.classLevel);
+    if (studentPremLookup.data && isStudentPremNumberLookup.value) {
+      classLevel.value = resolveLevelValueFromLookup(studentPremLookup.data.classLevel, listLevel.value);
     }
   },
 );
@@ -1230,7 +1426,7 @@ watch(
 // School watching
 watch(
   () => usersignUp.school, (school) => {
-    if (!requiresSchoolSelection.value) {
+    if (!requiresSchoolSelection.value || isStudentClassLookup.value) {
       usersignUp.controller.errors.school = null;
     } else if (school) {
       usersignUp.controller.errors.school = null;
@@ -1352,13 +1548,18 @@ const switchTab = (tabName: string) => {
       return;
     }
 
-    if (isStudentPremRegistration.value && !studentPremLookup.premNumber.trim()) {
+    if (isStudentPremNumberLookup.value && !studentPremLookup.premNumber.trim()) {
       usersignUp.controller.errors.premNumber = content.value.errors.premNumber;
       return;
     }
 
-    if (isStudentPremRegistration.value && !studentPremLookup.data) {
+    if (isStudentPremNumberLookup.value && !studentPremLookup.data) {
       usersignUp.controller.errors.premNumber = content.value.errors.premLookup;
+      return;
+    }
+
+    if (isStudentClassLookup.value && !selectedStudentLookupRecord.value) {
+      usersignUp.controller.errors.studentLookup = content.value.errors.studentLookup;
       return;
     }
 
@@ -1373,15 +1574,29 @@ const switchTab = (tabName: string) => {
       usersignUp.controller.errors.gender = content.value.errors.gender;
     }
 
-    if (requiresSchoolSelection.value && (!usersignUp.school || usersignUp.school.trim() == " ")) {
+    if (isStudentClassLookup.value && !studentLookupSchoolRegNo.value.trim()) {
+      usersignUp.controller.errors.schoolRegNo = content.value.errors.schoolRegNo;
+      return;
+    }
+
+    if (!isStudentClassLookup.value && requiresSchoolSelection.value && (!usersignUp.school || usersignUp.school.trim() == " ")) {
       usersignUp.controller.errors.school = content.value.errors.school;
       return;
     }
 
-    if (requiresClassLevel.value && !classLevel.value.trim()) {
+    if (requiresClassLevel.value && !classLevel.value.trim() && isStudentPremNumberLookup.value && studentPremLookup.data) {
+      classLevel.value = resolveLevelValueFromLookup(studentPremLookup.data.classLevel, listLevel.value);
+    }
+
+    const hasClassLevelForStep = Boolean(
+      classLevel.value.trim() || selectedStudentLookupRecord.value?.classLevel,
+    );
+
+    if (requiresClassLevel.value && !hasClassLevelForStep) {
       usersignUp.controller.errors.classLevel = content.value.errors.classLevel;
       return;
     }
+    usersignUp.controller.errors.classLevel = null;
 
     if (
       usersignUp.type &&
@@ -1391,8 +1606,8 @@ const switchTab = (tabName: string) => {
       usersignUp.region &&
       usersignUp.district &&
       (!requiresEducationLevel.value || usersignUp.educationLevel) &&
-      (!requiresSchoolSelection.value || usersignUp.school) &&
-      (!requiresClassLevel.value || classLevel.value)
+      (!requiresSchoolSelection.value || isStudentClassLookup.value || usersignUp.school) &&
+      (!requiresClassLevel.value || hasClassLevelForStep)
     ) {
 
       // Validate first name
@@ -1562,9 +1777,36 @@ onMounted(async () => {
 
               <p class="text-textGray/70 text-smallest">
                 {{
-                  isStudentPremRegistration
+                  isStudentLookupRegistration
                     ? content.studentRegistrationHints.premNumber
                     : content.studentRegistrationHints.manual
+                }}
+              </p>
+            </div>
+          </div>
+
+          <div v-if="isStudentLookupRegistration" class="px-2 mb-4 border-b border-gray-300">
+            <div class="flex flex-col items-start gap-3 py-2">
+              <label class="font-semibold capitalize text-oceanBlue text-extraSmall">
+                {{ content.studentLookupModeLabel }}
+              </label>
+
+              <div class="flex flex-wrap gap-4">
+                <label class="inline-flex items-center gap-2 cursor-pointer">
+                  <input v-model="studentLookupMode" type="radio" value="premNumber" class="w-4 h-4 checked:bg-oceanBlue" />
+                  <span>{{ content.studentLookupModes.premNumber }}</span>
+                </label>
+                <label class="inline-flex items-center gap-2 cursor-pointer">
+                  <input v-model="studentLookupMode" type="radio" value="classList" class="w-4 h-4 checked:bg-oceanBlue" />
+                  <span>{{ content.studentLookupModes.classList }}</span>
+                </label>
+              </div>
+
+              <p class="text-textGray/70 text-smallest">
+                {{
+                  isStudentPremNumberLookup
+                    ? content.studentLookupModeHints.premNumber
+                    : content.studentLookupModeHints.classList
                 }}
               </p>
             </div>
@@ -1592,7 +1834,7 @@ onMounted(async () => {
             </small>
           </div>
 
-          <div v-if="isStudentPremRegistration" :class="[
+          <div v-if="isStudentPremNumberLookup" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -1641,22 +1883,8 @@ onMounted(async () => {
             </small>
           </div>
 
-          <div v-if="isStudentPremRegistration && studentPremLookup.data" class="p-3 mb-4 rounded-md bg-slate-50">
-            <p class="mb-3 font-semibold text-oceanBlue text-extraSmall">{{ content.premLookupDetailsTitle }}</p>
-            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <div
-                v-for="item in studentPremLookupDisplay"
-                :key="item.label"
-                class="p-2 bg-white border border-slate-200 rounded-md"
-              >
-                <p class="text-textGray/60 text-smallest">{{ item.label }}</p>
-                <p class="font-medium text-textGray">{{ item.value }}</p>
-              </div>
-            </div>
-          </div>
-
           <!-- First Name -->
-          <div v-if="!isStudentPremRegistration" :class="[
+          <div v-if="!isStudentLookupRegistration" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -1679,7 +1907,7 @@ onMounted(async () => {
           </div>
 
           <!-- Last Name -->
-          <div v-if="!isStudentPremRegistration" :class="[
+          <div v-if="!isStudentLookupRegistration" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -1727,7 +1955,7 @@ onMounted(async () => {
           </div>
 
           <!-- school -->
-          <div v-if="isStudentOrTeacher && !isStudentPremRegistration" :class="[
+          <div v-if="isStudentOrTeacher && !isStudentLookupRegistration" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
@@ -1741,7 +1969,40 @@ onMounted(async () => {
               :error="(usersignUp.controller.errors.school as string)" :language="authLanguage" />
           </div>
 
-          <div class="flex flex-col items-start w-full my-2" v-if="isStudentManualRegistration">
+          <div v-if="isStudentClassLookup" :class="[
+            'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+            {
+              'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                usersignUp.controller.errors.schoolRegNo,
+            }
+          ]">
+            <label for="schoolRegNo" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+              {{ content.schoolRegNoLabel }}
+            </label>
+
+            <div class="flex items-center w-full">
+              <input
+                id="schoolRegNo"
+                v-model="studentLookupSchoolRegNo"
+                type="text"
+                name="schoolRegNo"
+                autocomplete="off"
+                class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
+                :placeholder="content.schoolRegNoPlaceholder"
+              />
+            </div>
+
+            <small
+              v-if="usersignUp.controller.errors.schoolRegNo"
+              aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.schoolRegNo}`"
+              class="w-full text-red-500 text-smallest"
+            >
+              {{ usersignUp.controller.errors.schoolRegNo }}
+            </small>
+          </div>
+
+          <div class="flex flex-col items-start w-full my-2" v-if="isStudentManualRegistration || isStudentClassLookup">
             <label for="level" class="font-semibold capitalize text-oceanBlue text-extraSmall">
               {{ content.classLevelLabel }}</label>
             <!-- Use the Custom Dropdown instead of <select> -->
@@ -1753,8 +2014,73 @@ onMounted(async () => {
             </small>
           </div>
 
+          <div
+            v-if="isStudentClassLookup"
+            :class="[
+              'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
+              {
+                'focus-input-icon-warning border-red-500 focus-within:border-red-500':
+                  usersignUp.controller.errors.studentLookup || studentClassLookup.status === 'error',
+              }
+            ]"
+          >
+            <div class="flex items-center justify-between w-full gap-3">
+              <label for="studentClassLookup" class="font-semibold capitalize text-oceanBlue text-extraSmall">
+                {{ content.studentSelectorLabel }}
+              </label>
+              <button
+                type="button"
+                class="py-2 px-4 text-white transition-colors rounded-md bg-oceanBlue hover:bg-oceanBlue/80 disabled:cursor-not-allowed disabled:bg-oceanBlue/50"
+                :disabled="studentClassLookup.status === 'pending'"
+                @click="fetchStudentsByClass"
+              >
+                {{ studentClassLookup.status === 'pending' ? content.fetchingStudentsByClass : content.fetchStudentsByClass }}
+              </button>
+            </div>
+
+            <CustomDropDownList
+              id="studentClassLookup"
+              v-model="studentClassLookup.selectedPremNumber"
+              :list="studentClassLookupOptions"
+              :placeholder="content.studentSelectorPlaceholder"
+              :disabled="!studentClassLookup.records.length || studentClassLookup.status === 'pending'"
+              @update-model-value="handleClassLookupSelection(String($event))"
+            />
+
+            <small
+              v-if="usersignUp.controller.errors.studentLookup"
+              aria-live="assertive"
+              :aria-label="`${usersignUp.controller.errors.studentLookup}`"
+              class="w-full text-red-500 text-smallest"
+            >
+              {{ usersignUp.controller.errors.studentLookup }}
+            </small>
+            <small
+              v-else-if="studentClassLookup.feedback"
+              aria-live="polite"
+              class="w-full text-smallest"
+              :class="studentClassLookup.status === 'success' ? 'text-green-600' : 'text-red-500'"
+            >
+              {{ studentClassLookup.feedback }}
+            </small>
+          </div>
+
+          <div v-if="selectedStudentLookupRecord" class="p-3 mb-4 rounded-md bg-slate-50">
+            <p class="mb-3 font-semibold text-oceanBlue text-extraSmall">{{ content.premLookupDetailsTitle }}</p>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div
+                v-for="item in studentLookupDisplay"
+                :key="item.label"
+                class="p-2 bg-white border border-slate-200 rounded-md"
+              >
+                <p class="text-textGray/60 text-smallest">{{ item.label }}</p>
+                <p class="font-medium text-textGray">{{ item.value }}</p>
+              </div>
+            </div>
+          </div>
+
           <!-- gender input radio -->
-          <div v-if="!isStudentPremRegistration" :class="[
+          <div v-if="!isStudentLookupRegistration" :class="[
             'py-2 mb-4 border-b border-gray-300 focus-within:border-oceanBlue',
             {
               'focus-input-icon-warning border-red-500 focus-within:border-red-500':
