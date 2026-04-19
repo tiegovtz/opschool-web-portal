@@ -11,6 +11,7 @@ import { useObjects } from "@/hooks/useObjects";
 import GameModeWrapper from "@/components/ui/game-mode/game-mode-wrapper.vue";
 import type { GameStats } from "@/components/ui/game-mode/types";
 import { useSoundEffects } from "~/composables/use-sound-effects";
+import { applyDragAutoScrollAt } from "~/utilities/dragAutoScroll";
 
 interface MatchingItem {
   id: string;
@@ -51,8 +52,6 @@ const { width } = useWindowSize();
 const boardRef = ref<HTMLElement | null>(null);
 const instructionsId = "matching-items-picture-text-instructions";
 const statusId = "matching-items-picture-text-status";
-const SCROLL_EDGE_THRESHOLD = 72;
-const SCROLL_STEP = 28;
 const DRAG_START_THRESHOLD = 6;
 const completedObjectIds = ref<number[]>([]);
 const connections = ref<Connection[]>([]);
@@ -65,6 +64,9 @@ const hoverDropId = ref<string | null>(null);
 const dragStartClient = ref<Point | null>(null);
 const lastPointerClient = ref<Point | null>(null);
 const hasDragMoved = ref(false);
+/** After a real line-drag, ignore the synthetic click on the left item (toggle selection). */
+const suppressLeftClick = ref(false);
+const activeMatchPointerId = ref<number | null>(null);
 const score = ref(0);
 const allAnswered = ref(false);
 const showResults = ref(false);
@@ -291,6 +293,19 @@ const refreshConnectionPositions = () => {
 };
 
 const findHoveredRightTarget = (clientX: number, clientY: number) => {
+  try {
+    const stack = document.elementsFromPoint(clientX, clientY);
+    for (const node of stack) {
+      if (!(node instanceof HTMLElement)) continue;
+      const id = node.id;
+      if (id?.startsWith("right-")) {
+        return id;
+      }
+    }
+  } catch {
+    /* elementsFromPoint can fail at invalid coords */
+  }
+
   for (const item of shuffledRightItems.value) {
     const element = document.getElementById(`right-${item.id}`);
     if (!(element instanceof HTMLElement)) continue;
@@ -385,27 +400,24 @@ const runAutoScroll = () => {
   }
 
   const container = boardRef.value;
-  const rect = container.getBoundingClientRect();
   const { x, y } = lastPointerClient.value;
 
-  const nextScrollLeft = (() => {
-    if (x < rect.left + SCROLL_EDGE_THRESHOLD) return -SCROLL_STEP;
-    if (x > rect.right - SCROLL_EDGE_THRESHOLD) return SCROLL_STEP;
-    return 0;
-  })();
+  const winXBefore = window.scrollX;
+  const winYBefore = window.scrollY;
+  const boardLBefore = container.scrollLeft;
+  const boardTBefore = container.scrollTop;
 
-  const nextScrollTop = (() => {
-    if (y < rect.top + SCROLL_EDGE_THRESHOLD) return -SCROLL_STEP;
-    if (y > rect.bottom - SCROLL_EDGE_THRESHOLD) return SCROLL_STEP;
-    return 0;
-  })();
+  // Single scroll path only (shared util scrolls the board, ancestors, then the window).
+  // A second manual board scroll here caused jitter at edges.
+  applyDragAutoScrollAt(x, y);
 
-  if (nextScrollLeft || nextScrollTop) {
-    container.scrollBy({
-      left: nextScrollLeft,
-      top: nextScrollTop,
-      behavior: "auto",
-    });
+  const scrolled =
+    window.scrollX !== winXBefore
+    || window.scrollY !== winYBefore
+    || container.scrollLeft !== boardLBefore
+    || container.scrollTop !== boardTBefore;
+
+  if (scrolled) {
     updateDragFromClientPoint(x, y);
   }
 
@@ -417,24 +429,29 @@ const startAutoScroll = () => {
   autoScrollFrame = window.requestAnimationFrame(runAutoScroll);
 };
 
+const POINTER_OPTS_MOVE = { capture: true, passive: false } as const;
+const POINTER_OPTS_END = { capture: true } as const;
+
 const removePointerListeners = () => {
-  window.removeEventListener("pointermove", handleWindowPointerMove);
-  window.removeEventListener("pointerup", handleWindowPointerUp);
-  window.removeEventListener("pointercancel", handleWindowPointerCancel);
+  document.removeEventListener("pointermove", handleDocumentPointerMove, POINTER_OPTS_MOVE);
+  document.removeEventListener("pointerup", handleDocumentPointerUp, POINTER_OPTS_END);
+  document.removeEventListener("pointercancel", handleDocumentPointerCancel, POINTER_OPTS_END);
+  document.removeEventListener("lostpointercapture", handleLostPointerCapture, POINTER_OPTS_END);
 };
 
 const finishPointerInteraction = () => {
   removePointerListeners();
   stopAutoScroll();
   activeDragLeftId.value = null;
+  activeMatchPointerId.value = null;
   dragStartClient.value = null;
   lastPointerClient.value = null;
   hasDragMoved.value = false;
   clearDragPreview();
 };
 
-const handleWindowPointerMove = (event: PointerEvent) => {
-  if (!activeDragLeftId.value) return;
+const handleDocumentPointerMove = (event: PointerEvent) => {
+  if (!activeDragLeftId.value || event.pointerId !== activeMatchPointerId.value) return;
   if (event.cancelable) {
     event.preventDefault();
   }
@@ -453,12 +470,18 @@ const handleWindowPointerMove = (event: PointerEvent) => {
   startAutoScroll();
 };
 
-const handleWindowPointerUp = () => {
-  if (!activeDragLeftId.value) return;
+const handleDocumentPointerUp = (event: PointerEvent) => {
+  if (!activeDragLeftId.value || event.pointerId !== activeMatchPointerId.value) return;
 
   const leftId = activeDragLeftId.value;
+  updateDragFromClientPoint(event.clientX, event.clientY);
+
   const rightId = hoverDropId.value?.replace(/^right-/, "") || null;
   const moved = hasDragMoved.value;
+
+  if (moved) {
+    suppressLeftClick.value = true;
+  }
 
   if (rightId) {
     connectItems(leftId, rightId);
@@ -470,8 +493,16 @@ const handleWindowPointerUp = () => {
   finishPointerInteraction();
 };
 
-const handleWindowPointerCancel = () => {
+const handleDocumentPointerCancel = (event: PointerEvent) => {
+  if (event.pointerId !== activeMatchPointerId.value) return;
   finishPointerInteraction();
+};
+
+const handleLostPointerCapture = (event: PointerEvent) => {
+  if (event.pointerId !== activeMatchPointerId.value) return;
+  if (activeDragLeftId.value) {
+    finishPointerInteraction();
+  }
 };
 
 const handleLeftItemPointerDown = (event: PointerEvent, leftId: string) => {
@@ -483,7 +514,17 @@ const handleLeftItemPointerDown = (event: PointerEvent, leftId: string) => {
   removePointerListeners();
   stopAutoScroll();
 
+  const target = event.currentTarget;
+  if (target instanceof HTMLElement) {
+    try {
+      target.setPointerCapture(event.pointerId);
+    } catch {
+      /* ignore */
+    }
+  }
+
   activeDragLeftId.value = leftId;
+  activeMatchPointerId.value = event.pointerId;
   dragStartClient.value = { x: event.clientX, y: event.clientY };
   lastPointerClient.value = { x: event.clientX, y: event.clientY };
   hasDragMoved.value = false;
@@ -495,9 +536,10 @@ const handleLeftItemPointerDown = (event: PointerEvent, leftId: string) => {
   dragEnd.value = getRelativePoint(event.clientX, event.clientY) || dragStart.value;
   hoverDropId.value = findHoveredRightTarget(event.clientX, event.clientY);
 
-  window.addEventListener("pointermove", handleWindowPointerMove, { passive: false });
-  window.addEventListener("pointerup", handleWindowPointerUp);
-  window.addEventListener("pointercancel", handleWindowPointerCancel);
+  document.addEventListener("pointermove", handleDocumentPointerMove, POINTER_OPTS_MOVE);
+  document.addEventListener("pointerup", handleDocumentPointerUp, POINTER_OPTS_END);
+  document.addEventListener("pointercancel", handleDocumentPointerCancel, POINTER_OPTS_END);
+  document.addEventListener("lostpointercapture", handleLostPointerCapture, POINTER_OPTS_END);
   startAutoScroll();
 };
 
@@ -509,6 +551,10 @@ const handleRightItemSelect = (rightId: string) => {
 };
 
 const handleLeftItemActivate = (leftId: string) => {
+  if (suppressLeftClick.value) {
+    suppressLeftClick.value = false;
+    return;
+  }
   if (showResults.value || timeUp.value) return;
   selectedLeftId.value = selectedLeftId.value === leftId ? null : leftId;
 };
@@ -692,6 +738,7 @@ const liveDragLine = computed(() => {
       <div
         ref="boardRef"
         class="relative flex h-full justify-between overflow-scroll no-scrollbar md:p-4"
+        :class="{ 'touch-none': activeDragLeftId }"
         :style="{ fontSize: boardFontSize }"
         :aria-describedby="`${instructionsId} ${statusId}`"
       >

@@ -77,6 +77,10 @@ function scrollFromPoint(clientX: number, clientY: number): void {
   scrollWindow(clientX, clientY);
 }
 
+export function applyDragAutoScrollAt(clientX: number, clientY: number): void {
+  scrollFromPoint(clientX, clientY);
+}
+
 function scrollWindow(clientX: number, clientY: number): void {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
