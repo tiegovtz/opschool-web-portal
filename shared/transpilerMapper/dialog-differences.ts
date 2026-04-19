@@ -55,16 +55,18 @@ const dialogDifferencesPropsTranspiler = (params: {
   }
 
   const isOneSideFixed = algorithm === ActivityType.DialogOneSideFixed;
+  const isDialogDifferences = algorithm === ActivityType.DialogDifferences;
   const primaryImagePath = (question: ServerQuestionType) =>
     question.path ?? (question as any).image ?? null;
+  const hasAnyPrimaryImage = serverQuestions.some((q) => Boolean(primaryImagePath(q)));
   // External API: `text` → textOne (step title), `answer` → textTwo, first `images[]` → path.
-  // For Dialog one side fixed with images, the UI uses "image draggable" mode.
+  // For Dialog one side fixed OR Dialog Differences with images, the UI uses "image draggable" mode.
   // - When textOne is non-empty: map answer + image onto data-left and step titles onto data-right
   //   so the fixed column shows titles and the pool shows image + answer together.
   // - When textOne is empty (picture-to-label matching): map image-only onto data-left (text "")
   //   and answers onto data-right so the fixed column shows pictures only and draggable cards show answers.
   const osfSwapForImageLayout =
-    isOneSideFixed && serverQuestions.some((q) => Boolean(primaryImagePath(q)));
+    (isOneSideFixed || isDialogDifferences) && hasAnyPrimaryImage;
 
   let idCounter = 1;
   items = serverQuestions.map((question) => {
@@ -144,7 +146,8 @@ const dialogDifferencesPropsTranspiler = (params: {
     title: titleDescription.split("/")[0],
     leftLabel: titleDescription.split("/")[1],
     rightLabel: titleDescription.split("/")[2],
-    lockSide: algorithm === ActivityType.DialogOneSideFixed ? "left" : null,
+    lockSide:
+      isOneSideFixed || (isDialogDifferences && hasAnyPrimaryImage) ? "left" : null,
     fontSize: titleDescription.includes("||")
       ? parseInt(titleDescription.split("||")[1] ?? "20", 10) || 20
       : 20,
