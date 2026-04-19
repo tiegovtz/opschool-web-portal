@@ -332,7 +332,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
       <div class="flex items-center justify-end mb-2">
         <div class="flex items-center justify-center w-8 h-8 p-2 bg-red-500 rounded-full cursor-pointer"
           @click="changeChapter?.('R')">
-          <Icon name="formkit:close" size="24" class="font-bold text-white" />
+           <IconsClose :size="24" class="font-bold text-white" />
         </div>
       </div>
 
