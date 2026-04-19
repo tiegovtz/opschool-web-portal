@@ -17,7 +17,7 @@ const normalizeLevelLabel = (value: string | null | undefined) =>
     .toString()
     .trim()
     .toLowerCase()
-    .replace(/\b(class|darasa|la|form|kidato|cha)\b/g, " ")
+    .replace(/\b(class|darasa|la|form|kidato|cha|standard|std|grade)\b/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -35,8 +35,10 @@ const findLevelAliasKey = (value: string | null | undefined) => {
   const normalizedValue = normalizeLevelLabel(value);
   if (!normalizedValue) return "";
 
+  const tokens = normalizedValue.split(/\s+/).filter(Boolean);
+
   return Object.entries(levelAliasDictionary).find(([, aliases]) =>
-    aliases.some((alias) => normalizedValue === alias || normalizedValue.includes(alias)),
+    aliases.some((alias) => normalizedValue === alias || tokens.includes(alias)),
   )?.[0] || "";
 };
 

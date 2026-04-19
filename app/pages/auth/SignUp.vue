@@ -760,6 +760,10 @@ const fetchStudentsByClass = async () => {
 };
 
 const signUp = async () => {
+  if (requiresClassLevel.value && !classLevel.value?.trim() && selectedStudentLookupRecord.value) {
+    classLevel.value = resolveLevelValueFromLookup(selectedStudentLookupRecord.value.classLevel, listLevel.value);
+  }
+
   const typeKey = normalizeUserTypeKey(usersignUp.type);
   const backendType = toBackendUserType(usersignUp.type);
   const hasBaseFields = Boolean(
@@ -778,7 +782,9 @@ const signUp = async () => {
   const hasSchoolFields = !requiresSchoolSelection.value || Boolean(usersignUp.school?.trim());
   const hasContactFields = !requiresContactInfo.value || Boolean(usersignUp.email?.trim() && usersignUp.phone?.trim());
   const hasStakeholderFields = !isStakeholder.value || Boolean(usersignUp.organization?.trim() && resolvedStakeholderRole.value);
-  const hasStudentLevel = !requiresClassLevel.value || Boolean(classLevel.value?.trim());
+  const hasStudentLevel = !requiresClassLevel.value || Boolean(
+    classLevel.value?.trim() || selectedStudentLookupRecord.value?.classLevel,
+  );
   const hasStudentLookupFields = !isStudentLookupRegistration.value || Boolean(
     isStudentPremNumberLookup.value
       ? studentPremLookup.premNumber.trim() && studentPremLookup.data
@@ -1037,6 +1043,7 @@ const signUp = async () => {
     if (
       requiresClassLevel.value &&
       !classLevel.value?.trim() &&
+      !selectedStudentLookupRecord.value?.classLevel &&
       (!isStudentLookupRegistration.value || isStudentClassLookup.value || Boolean(selectedStudentLookupRecord.value))
     ) {
       usersignUp.controller.errors.classLevel = content.value.errors.classLevel;
@@ -1577,10 +1584,19 @@ const switchTab = (tabName: string) => {
       return;
     }
 
-    if (requiresClassLevel.value && !classLevel.value.trim()) {
+    if (requiresClassLevel.value && !classLevel.value.trim() && isStudentPremNumberLookup.value && studentPremLookup.data) {
+      classLevel.value = resolveLevelValueFromLookup(studentPremLookup.data.classLevel, listLevel.value);
+    }
+
+    const hasClassLevelForStep = Boolean(
+      classLevel.value.trim() || selectedStudentLookupRecord.value?.classLevel,
+    );
+
+    if (requiresClassLevel.value && !hasClassLevelForStep) {
       usersignUp.controller.errors.classLevel = content.value.errors.classLevel;
       return;
     }
+    usersignUp.controller.errors.classLevel = null;
 
     if (
       usersignUp.type &&
@@ -1591,7 +1607,7 @@ const switchTab = (tabName: string) => {
       usersignUp.district &&
       (!requiresEducationLevel.value || usersignUp.educationLevel) &&
       (!requiresSchoolSelection.value || isStudentClassLookup.value || usersignUp.school) &&
-      (!requiresClassLevel.value || classLevel.value)
+      (!requiresClassLevel.value || hasClassLevelForStep)
     ) {
 
       // Validate first name
