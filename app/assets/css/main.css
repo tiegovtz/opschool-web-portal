@@ -488,3 +488,21 @@ p:only-child > img:only-child {
     opacity: 0;
   }
 }
+
+/* List styles */
+.notes ul,
+.notes ol {
+  padding-inline-start: 40px;
+}
+
+.notes ul {
+  list-style-type: disc;
+}
+
+.notes ol {
+  list-style-type: decimal;
+}
+
+.notes li {
+  display: list-item;
+}
