@@ -94,7 +94,7 @@ export const completeSentencesByRephrasingPropsTranspiler = (
     questions: serverQuestions.map((q) => ({
       id: q.id.toString(),
       question: q.textOne,
-      image: q.path ? getImageUrl(q.path) : null,
+      image: q.path || q.image ? getImageUrl(q.path || q.image || "") : null,
       answer:
         algorithm === ActivityType.CompleteSentenceByRephrasingWithChoices
           ? (() => {
