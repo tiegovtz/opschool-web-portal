@@ -38,6 +38,33 @@ const resolveMessage = (score: number, total: number, isSwahili: boolean) => {
     : "Keep practicing and try again.";
 };
 
+const resolveAccessibleResultMessage = (
+  score: number,
+  total: number,
+  isSwahili: boolean,
+  isCompletionOnly: boolean,
+  completionMessage?: string,
+) => {
+  if (isCompletionOnly) {
+    return (
+      completionMessage ||
+      (isSwahili
+        ? "Hongera. Umefanikiwa kukamilisha shughuli hii."
+        : "Congratulations. You have completed this activity.")
+    );
+  }
+
+  if (!total) {
+    return isSwahili
+      ? "Matokeo yako yako tayari. Hakukuwa na maswali ya kupimwa."
+      : "Your results are ready. No questions were available for scoring.";
+  }
+
+  return isSwahili
+    ? `Matokeo yako yako tayari. Majibu yamekaguliwa. Umepata ${score} kati ya ${total}. ${resolveMessage(score, total, isSwahili)}`
+    : `Your results are ready. Answers checked. You scored ${score} out of ${total}. ${resolveMessage(score, total, isSwahili)}`;
+};
+
 const useIsSwahiliResultsUi = () => {
   const route = useRoute();
   const hubHeaderLang = useHubHeaderLanguage();
@@ -152,8 +179,12 @@ export const ActivityResultsAlertDialog = defineComponent({
   setup(props) {
     const isSwahili = useIsSwahiliResultsUi();
     const ui = useActivityUiText();
+    const { playSound } = useSoundEffects();
     const dialogRef = ref<HTMLElement | null>(null);
     const lastFocusedElement = ref<HTMLElement | null>(null);
+    const srAnnouncement = ref("");
+    const srAnnouncementSequence = ref(0);
+    const srAnnouncementTimeoutId = ref<number | null>(null);
     const close = () => props.onOpenChange?.(false);
     const dialogTitleId = `activity-results-dialog-title-${Math.random().toString(36).slice(2, 9)}`;
     const dialogDescriptionId = `activity-results-dialog-description-${Math.random().toString(36).slice(2, 9)}`;
@@ -247,10 +278,39 @@ export const ActivityResultsAlertDialog = defineComponent({
       }, 900);
     };
 
+    const accessibleResultMessage = computed(() =>
+      resolveAccessibleResultMessage(
+        props.score,
+        props.total,
+        isSwahili.value,
+        props.isCompletionOnly,
+        props.completionMessage,
+      ),
+    );
+
+    const announceForScreenReader = (message: string) => {
+      srAnnouncement.value = "";
+      srAnnouncementSequence.value += 1;
+
+      if (srAnnouncementTimeoutId.value !== null) {
+        window.clearTimeout(srAnnouncementTimeoutId.value);
+      }
+
+      srAnnouncementTimeoutId.value = window.setTimeout(() => {
+        srAnnouncement.value = message;
+        srAnnouncementSequence.value += 1;
+        srAnnouncementTimeoutId.value = null;
+      }, 60);
+    };
+
     watch(
       () => props.open,
       async (nextOpen) => {
         if (!nextOpen) {
+          if (srAnnouncementTimeoutId.value !== null) {
+            window.clearTimeout(srAnnouncementTimeoutId.value);
+            srAnnouncementTimeoutId.value = null;
+          }
           window.requestAnimationFrame(() => {
             lastFocusedElement.value?.focus?.();
           });
@@ -281,6 +341,8 @@ export const ActivityResultsAlertDialog = defineComponent({
         await nextTick();
         const firstFocusable = dialogRef.value?.querySelector<HTMLElement>("[data-results-primary-action]");
         firstFocusable?.focus?.();
+        announceForScreenReader(accessibleResultMessage.value);
+        playSound("success");
       },
     );
 
@@ -313,6 +375,9 @@ export const ActivityResultsAlertDialog = defineComponent({
     }
 
     onBeforeUnmount(() => {
+      if (srAnnouncementTimeoutId.value !== null) {
+        window.clearTimeout(srAnnouncementTimeoutId.value);
+      }
       if (typeof document !== "undefined") {
         document.removeEventListener("keydown", handleDialogKeyDown);
       }
@@ -343,7 +408,6 @@ export const ActivityResultsAlertDialog = defineComponent({
         <div
           role="dialog"
           aria-modal="true"
-          aria-live="polite"
           aria-labelledby={dialogTitleId}
           aria-describedby={dialogDescriptionId}
           data-activity-results="dialog"
@@ -389,6 +453,17 @@ export const ActivityResultsAlertDialog = defineComponent({
             </div>
 
             <div class="relative px-5 py-6 text-center md:px-8 md:py-8">
+              <div
+                key={srAnnouncementSequence.value}
+                class="sr-only"
+                aria-label={ui.activityUpdates.value}
+                aria-live="assertive"
+                aria-atomic="true"
+                role="status"
+              >
+                {srAnnouncement.value}
+              </div>
+
               <div class="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-sky-50 shadow-sm ring-1 ring-oceanBlue/10 md:h-28 md:w-28">
                 <img
                   src={emojiSrc.value}
@@ -427,7 +502,6 @@ export const ActivityResultsAlertDialog = defineComponent({
             </div>
 
             <div class="relative flex flex-col gap-3 px-5 pb-6 pt-0 md:flex-row md:items-center md:justify-center md:pb-8">
-
               <Button
                 variant="brand"
                 onClick={close}

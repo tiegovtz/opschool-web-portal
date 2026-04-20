@@ -291,7 +291,7 @@ const resetActivity = () => {
         v-if="!showResults && kweliActiveQuestion"
         class="flex flex-col gap-4 rounded-lg border border-picton-blue-100 bg-white/90 p-4 shadow-sm"
       >
-        <p class="text-lg font-medium text-picton-blue-800">
+        <p tabindex="0" class="text-lg font-medium text-picton-blue-800">
           {{ kweliDisplayIndex + 1 }}. {{ kweliActiveQuestion.text }}
         </p>
 
