@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const contentLayoutLanguage = useContentLayoutLanguage();
+
 definePageMeta({
 })
 
@@ -26,12 +28,10 @@ definePageMeta({
 // } catch (error) {
 //   console.error('Error navigating to last visited page:', error)
 // }
-
-
 </script>
 
 <template>
-  <NuxtLayout name="landing">
+  <NuxtLayout name="landing" :language="contentLayoutLanguage">
     <included-landing/>
   </NuxtLayout>
 </template>

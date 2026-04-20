@@ -2,13 +2,15 @@
 import apiDocs from '~/utilities/apiDocs';
 import type { IconType } from '../icons/stats.vue';
 import { setPostLoginHome } from '~/utilities/postLoginHome';
-import { getHubPath } from '~/utilities/educationRoute';
+import { getHubPath, resolveEducationLevelFromRoute } from '~/utilities/educationRoute';
+import LanguageSwitcher from '../ui/LanguageSwitcher.vue';
 
 const hubHeaderLang = useHubHeaderLanguage();
 const hubEducationLevel = useHubEducationLevel();
 const primaryContentLanguage = usePrimaryContentLanguage();
 const primaryHubPath = computed(() => getHubPath('primary'));
 const secondaryHubPath = computed(() => getHubPath('secondary'));
+const route = useRoute();
 
 function goToPrimary() {
     setPostLoginHome(primaryHubPath.value);
@@ -25,27 +27,27 @@ function goToSecondary() {
     useRouter().push(secondaryHubPath.value);
 }
 
-const stats = [
+const stats = computed(()=> [
     {
         value: "2,400+",
-        label: "Mada za Kujifunza",
-        detail: "Msingi na Sekondari",
+        label: primaryContentLanguage.value === "kiswahili" ? "Mada za Kujifunza" : "Topics",
+        detail: primaryContentLanguage.value === "kiswahili" ? "Msingi na Sekondari" : "Primary and Secondary",
         icon: "library",
         accent: "blue",
         data: 'topics'
     },
     {
         value: "860+",
-        label: "Video na Vielelezo",
-        detail: "Masomo ya kuona",
+        label: primaryContentLanguage.value === "kiswahili" ? "Video na Vielelezo" : "Videos and Resources",
+        detail: primaryContentLanguage.value === "kiswahili" ? "Masomo ya kuona" : "Visual Lessons",
         icon: "play",
         accent: "cyan",
         data: 'resources'
     },
     {
         value: "24/7",
-        label: "Upatikanaji",
-        detail: "Muda wote",
+        label: primaryContentLanguage.value === "kiswahili" ? "Upatikanaji" : "Availability",
+        detail: primaryContentLanguage.value === "kiswahili" ? "Muda wote" : "All the time",
         icon: "clock",
         accent: "blue",
         data: 'time'
@@ -57,7 +59,7 @@ const stats = [
     //   icon: "play",
     //   accent: "cyan",
     // },
-];
+]);
 
 function getAccentStyles(accent: string) {
     if (accent === "cyan") {
@@ -128,37 +130,78 @@ const fetchData = async () => {
 
     }
 }
-
+// define emmit for language switcher
+const emit = defineEmits(['update:modelValue', 'change']);
 
 onMounted(async () => {
     await fetchData()
 })
+
+
+// LANGUAGE SWITCHER 
+
+const matchesPath = (path: string) =>
+  route.path === path || route.path.startsWith(`${path}/`);
+
+const isSmartClassRoute = computed(() => matchesPath("/smart-class"));
+const isLearningStatisticsRoute = computed(() =>
+  matchesPath("/profile/learning-statistics"),
+);
+const isAccountRoute = computed(
+  () =>
+    route.path === "/profile" ||
+    (matchesPath("/profile") && !isLearningStatisticsRoute.value),
+);
+const isAccountSectionRoute = computed(
+  () => isAccountRoute.value || isLearningStatisticsRoute.value,
+);
+
+// content language mapping
+const contents = computed(() => {
+    let dictionary = {
+        header: primaryContentLanguage.value === "kiswahili" ? "Karibu!" : "Welcome!",
+        title: primaryContentLanguage.value === "kiswahili" ? "SHULE MTANDAO YA TET" : "TIE ONLINE SCHOOL",
+        summary: primaryContentLanguage.value === 'kiswahili' ?  `Kupitia jukwaa hili utajifunza kwa kutumia maudhui shirikishi ya picha,video,3D na animeshen kwa ngazi ya elimu ya msingi na sekondari.`:`Through this platform, you will learn using interactive content such as images, videos, 3D and animations for primary and secondary education levels.`,
+        guidance: primaryContentLanguage.value === "kiswahili" ? `Chagua ngazi ya elimu. Tumia kitufe cha Msingi kufungua maudhui ya elimu ya msingi, au kitufe cha Sekondari kufungua maudhui ya sekondari.` : `Choose an education level. Use the Primary button to access primary education content, or the Secondary button to access secondary education content.`,
+        level:{
+            primary: primaryContentLanguage.value === "kiswahili" ? "Msingi" : "Primary",
+            secondary: primaryContentLanguage.value === "kiswahili" ? "Sekondari" : "Secondary",
+        }
+    }
+    return dictionary
+})
+
 </script>
 
 <template>
-    <div
+ <div>
+    <div class="flex justify-end w-full"> 
+        <language-switcher v-model="primaryContentLanguage" />
+    </div>
+      <div
         class="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-12 py-4">
         <section class="max-w-screen-md mx-auto"
             aria-labelledby="landing-welcome landing-title" aria-describedby="landing-summary">
+            
             <h1 id="landing-welcome" tabindex="0"
                 class="text-left text-xl font-tahomabd font-bold text-oceanBlue rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2">
-                Karibu!
+                {{ contents.header }}
             </h1>
             <h1 id="landing-title" tabindex="0"
                 class="text-left text-3xl my-4 font-tahomabd font-bold text-[#f29253] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2">
-                SHULE MTANDAO YA TET
+                {{ contents.title }}
             </h1>
             <p id="landing-summary" tabindex="0"
                 class="text-justify mt-4 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2">
-                Kupitia jukwaa hili, utapata maudhui shirikishi ya ngazi ya Elimu  ya Msingi na Sekondari. Chagua ngazi husika ili kuanza kujifunza.
+                {{ contents.summary }}
             </p>
             <!-- buttons -->
             <div class="flex flex-wrap gap-5 pt-5" role="group" aria-labelledby="education-level-actions">
                 <p id="education-level-actions" class="sr-only">
-                    Chagua ngazi ya elimu. Tumia kitufe cha Msingi kufungua maudhui ya elimu ya msingi, au kitufe cha Sekondari kufungua maudhui ya sekondari.
+                    {{ contents.guidance }}
                 </p>
-                <UiButtonShineParticles @click="goToPrimary" label="Msingi" />
-                <UiButtonShineParticles @click="goToSecondary" label="Sekondari" />
+                <UiButtonShineParticles @click="goToPrimary" :label="contents.level.primary" />
+                <UiButtonShineParticles @click="goToSecondary" :label="contents.level.secondary" />
             </div>
 
             <!-- static -->
@@ -200,4 +243,5 @@ onMounted(async () => {
             <SliderShow variant="landing" />
         </section>
     </div>
+ </div>
 </template>
