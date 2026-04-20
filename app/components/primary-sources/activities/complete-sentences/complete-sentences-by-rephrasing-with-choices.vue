@@ -19,6 +19,8 @@ interface QuestionItem {
   id?: number | string;
   question: string;
   answer: string | string[];
+  /** Resolved asset URL from CMS `images[]` / `path` (see transpiler). */
+  image?: string | null;
 }
 
 interface QuestionsProps {
@@ -261,6 +263,9 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
           role="listitem"
           tabindex="0"
           :aria-labelledby="`complete-sentences-rephrasing-choices-question-${q.id ?? i}`"
+          :aria-describedby="
+            q.image ? `complete-sentences-rephrasing-choices-image-${q.id ?? i}` : undefined
+          "
         >
           <div class="flex flex-wrap items-center leading-loose">
             <span :id="`complete-sentences-rephrasing-choices-question-${q.id ?? i}`" class="mr-2 font-medium text-gray-600">{{ i + 1 }}.</span>
@@ -309,6 +314,22 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
             </template>
           </div>
 
+          <div
+            v-if="q.image"
+            :id="`complete-sentences-rephrasing-choices-image-${q.id ?? i}`"
+            class="mx-auto mt-4 w-fit max-w-full overflow-hidden rounded-2xl border border-picton-blue-300 bg-white p-4 shadow-sm sm:p-6"
+          >
+            <div
+              class="flex max-w-[720px] items-center justify-center rounded-xl bg-slate-50 p-4 md:max-w-[840px] md:p-5"
+            >
+              <img
+                :src="q.image"
+                :alt="q.question"
+                class="max-h-[560px] w-auto max-w-full rounded-lg object-contain md:max-h-[640px]"
+              >
+            </div>
+          </div>
+
           <div class="flex items-center gap-2 mt-4 ml-auto">
             <div
               v-if="checkedItems.includes(i)"
@@ -348,7 +369,7 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
               checkAnswer(idx) ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50',
             ]"
           >
-            <div class="mb-2 flex items-center justify-between gap-3">
+            <div class="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <p class="font-medium">{{ question.question }}</p>
               <div
                 :class="[
@@ -358,6 +379,17 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
               >
                 <Icon :icon="checkAnswer(idx) ? 'mdi:check' : 'mdi:close'" width="20" height="20" />
               </div>
+            </div>
+
+            <div
+              v-if="question.image"
+              class="mb-3 flex justify-center overflow-hidden rounded-lg border border-picton-blue-200 bg-white p-3"
+            >
+              <img
+                :src="question.image"
+                :alt="question.question"
+                class="max-h-[280px] w-auto max-w-full object-contain md:max-h-[360px]"
+              >
             </div>
 
             <div class="mt-2 grid grid-cols-2 gap-4">
