@@ -4,16 +4,11 @@ import { useWindowSize } from "@vueuse/core";
 import { Icon } from "@iconify/vue";
 import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, { ActivityResultsAlertDialog } from "@/components/templates/results";
-import Input from "@/components/ui/inputs/input.vue";
+import QuestionRenderer from "~/components/primary-sources/activity-helpers/question-renderer.vue";
 import { Button } from "~/components/ui/button";
 import { AnswerChecker } from "~/lib/utils/answer-checker";
 import { shuffle } from "~/utilities/utils";
-import { cn } from "~/lib/utils";
-import {
-  calculateBlankWidth,
-  parseQuestionSegments,
-  type QuestionSegment,
-} from "~/components/primary-sources/activity-helpers/question-renderer-utils";
+import { parseQuestionSegments } from "~/components/primary-sources/activity-helpers/question-renderer-utils";
 
 interface QuestionItem {
   id?: number | string;
@@ -113,33 +108,8 @@ const handleInputChange = (questionIndex: number, blankIndex: number, value: str
   };
 };
 
-type QuestionRenderSegment = QuestionSegment & {
-  calculatedWidth?: number;
-  blankIndex?: number;
-};
-
-const getQuestionSegments = (question: string): QuestionRenderSegment[] => {
-  let blankIndex = 0;
-  const sw = windowWidth.value ?? 1024;
-  const minBlank = sw <= 640 ? 72 : 120;
-
-  return parseQuestionSegments(question).map((segment) => {
-    if (segment.type !== "blank") {
-      return segment;
-    }
-
-    const { calculatedWidth } = calculateBlankWidth(segment.content.length, sw);
-
-    return {
-      ...segment,
-      blankIndex: blankIndex++,
-      calculatedWidth: Math.max(calculatedWidth, minBlank),
-    };
-  });
-};
-
 const getBlankCount = (question: string) =>
-  getQuestionSegments(question).filter((segment) => segment.type === "blank").length;
+  parseQuestionSegments(question).filter((segment) => segment.type === "blank").length;
 
 const checkAnswer = (questionIndex: number) => {
   const question = shuffledQuestions.value[questionIndex];
@@ -200,9 +170,6 @@ const formatUserAnswer = (questionIndex: number) => {
   const userAnswers = getUserAnswers(questionIndex).filter((answer) => answer.trim() !== "");
   return userAnswers.length ? userAnswers.join(", ") : "(no answer)";
 };
-
-const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: string) =>
-  `Question ${questionIndex + 1}, blank ${blankIndex + 1}. ${questionText.replace(/___/g, "blank")}`;
 </script>
 
 <template>
@@ -267,51 +234,28 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
             q.image ? `complete-sentences-rephrasing-choices-image-${q.id ?? i}` : undefined
           "
         >
-          <div class="flex flex-wrap items-center leading-loose">
-            <span :id="`complete-sentences-rephrasing-choices-question-${q.id ?? i}`" class="mr-2 font-medium text-gray-600">{{ i + 1 }}.</span>
-
-            <template
-              v-for="segment in getQuestionSegments(q.question)"
-              :key="`${q.id ?? i}-${segment.index}`"
+          <div class="flex items-start gap-3 md:gap-5 leading-loose">
+            <span
+              :id="`complete-sentences-rephrasing-choices-question-${q.id ?? i}`"
+              class="shrink-0 min-w-[2.25rem] pt-0.5 text-right text-base font-semibold tabular-nums text-gray-600 sm:min-w-[2.5rem] sm:text-lg md:text-xl"
             >
-              <span
-                v-if="segment.type === 'text'"
-                class="mx-1 whitespace-pre-line"
-              >
-                {{ segment.content }}
-              </span>
-
-              <span
-                v-else-if="segment.type === 'highlighted'"
-                class="inline-flex items-center mx-1 rounded bg-lemon-100 px-2 py-1 text-lemon-700"
-              >
-                {{ segment.content }}
-              </span>
-
-              <span
-                v-else
-                class="inline-flex flex-col mx-1"
-                :style="{ minWidth: `${segment.calculatedWidth}px` }"
-              >
-                <Input
-                  type="text"
-                  :model-value="getAnswerValue(i, segment.blankIndex || 0)"
-                  :disabled="checkedItems.includes(i)"
-                  :aria-label="getBlankLabel(i, segment.blankIndex || 0, q.question)"
-                  :aria-describedby="availableOptions.length ? `${activityInstructionsId} ${activityOptionsId}` : activityInstructionsId"
-                  class="min-w-0 px-2 border-none bg-transparent text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
-                  :style="{ maxWidth: `${(segment.calculatedWidth || 120) * 1.6}px` }"
-                  @update:model-value="(value) => handleInputChange(i, segment.blankIndex || 0, value)"
-                />
-                <div
-                  :class="
-                    cn('border-b border-dashed border-picton-blue-700', {
-                      'border-lemon-700': checkedItems.includes(i),
-                    })
-                  "
-                />
-              </span>
-            </template>
+              {{ i + 1 }}.
+            </span>
+            <div
+              class="min-w-0 flex-1 text-picton-blue-950"
+              :aria-describedby="availableOptions.length ? `${activityInstructionsId} ${activityOptionsId}` : activityInstructionsId"
+            >
+              <QuestionRenderer
+                :question="q.question"
+                :answers="getAcceptedAnswers(i)"
+                :user-answers="getUserAnswers(i)"
+                :screen-width="windowWidth ?? 1024"
+                :is-checked="checkedItems.includes(i)"
+                :is-correct="feedbacks[i] === true"
+                :disabled="checkedItems.includes(i)"
+                @blank-change="(bi, val) => handleInputChange(i, bi, val)"
+              />
+            </div>
           </div>
 
           <div
@@ -370,7 +314,17 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
             ]"
           >
             <div class="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <p class="font-medium">{{ question.question }}</p>
+              <div class="min-w-0 flex-1 font-medium">
+                <QuestionRenderer
+                  mode="results"
+                  :question="question.question"
+                  :answers="getAcceptedAnswers(idx)"
+                  :user-answers="getUserAnswers(idx)"
+                  :is-correct="checkAnswer(idx)"
+                  :disabled="true"
+                  :screen-width="windowWidth ?? 1024"
+                />
+              </div>
               <div
                 :class="[
                   'flex items-center justify-center rounded-full p-1',

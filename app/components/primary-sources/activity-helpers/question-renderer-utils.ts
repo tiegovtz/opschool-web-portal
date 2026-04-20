@@ -246,6 +246,10 @@ export function texChunksForMathJaxInline(latex: string): string[] {
   if (/\\begin\{/.test(processed)) {
     return [processed];
   }
+  // No long-\text rewrite: keep one MathJax run so numbers and \times stay together.
+  if (processed === latex) {
+    return [processed];
+  }
   const parts = splitTexAtTopLevelWhitespace(processed);
   return parts.length ? parts : [processed];
 }

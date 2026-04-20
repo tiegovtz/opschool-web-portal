@@ -227,7 +227,7 @@ const handleResetWithShuffle = () => {
                 <div class="flex items-start gap-4 md:gap-5">
                   <span
                     :id="`complete-sentence-question-${q.id}`"
-                    class="shrink-0 pt-0.5 text-xl font-semibold text-picton-blue-900 md:text-2xl"
+                    class="shrink-0 min-w-[2.25rem] pt-0.5 text-right text-xl font-semibold tabular-nums text-picton-blue-900 sm:min-w-[2.5rem] md:text-2xl"
                   >
                     {{ i + 1 }}.
                   </span>

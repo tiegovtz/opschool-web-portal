@@ -2,8 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { useWindowSize } from "@vueuse/core";
 import ActivityTitle from "~/components/templates/activity-title";
-import { Input } from "~/components/ui/input";
-import { calculateBlankWidth, parseQuestionSegments, type QuestionSegment } from "~/components/primary-sources/activity-helpers/question-renderer-utils";
+import QuestionRenderer from "~/components/primary-sources/activity-helpers/question-renderer.vue";
 import { AnswerChecker } from "~/lib/utils/answer-checker";
 import { ActivityType } from "~/types/activity-types";
 import { cn, toRoman } from "~/utilities/utils";
@@ -25,12 +24,6 @@ type ExamCompleteSentencesByRephrasingProps = {
   activityIndex: number;
   activityId: string;
   onStateUpdate?: (totalQuestions: number, answeredCount: number) => void;
-};
-
-type RenderSegment = QuestionSegment & {
-  blankIndex?: number;
-  calculatedWidth?: number;
-  isTwoUnderscores?: boolean;
 };
 
 const props = defineProps<ExamCompleteSentencesByRephrasingProps>();
@@ -100,31 +93,6 @@ const calculateScore = () => {
 
 const getCurrentAnswers = (questionId: string) =>
   (answers.value[questionId] || "").split("|");
-
-const buildSegments = (questionText: string): RenderSegment[] => {
-  let blankIndex = 0;
-
-  return parseQuestionSegments(questionText).map((segment) => {
-    if (segment.type !== "blank") {
-      return segment;
-    }
-
-    const { calculatedWidth, isTwoUnderscores } = calculateBlankWidth(
-      segment.content.length,
-      width.value || 1024,
-    );
-
-    const enrichedSegment: RenderSegment = {
-      ...segment,
-      blankIndex,
-      calculatedWidth,
-      isTwoUnderscores,
-    };
-
-    blankIndex++;
-    return enrichedSegment;
-  });
-};
 
 const handleInputChange = (questionId: string, blankIndex: number, value: string | number) => {
   if (props.questions.algorithm === ActivityType.CompleteSentenceByRephrasingWithChoices) {
@@ -229,12 +197,12 @@ watch(
           :aria-describedby="question.image ? `exam-complete-sentences-image-${question.id}` : undefined"
         >
           <div class="flex flex-col items-center justify-between md:flex-row md:gap-2">
-            <div>
+            <div class="flex min-w-0 flex-1 items-start gap-2 md:gap-3">
               <p
                 :id="`exam-complete-sentences-question-${question.id}`"
                 :class="
                   cn(
-                    'mr-1 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold md:h-8 md:w-8',
+                    'mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-bold md:h-8 md:w-8',
                     (answers[question.id] || '').trim() !== ''
                       ? 'bg-picton-blue-500 text-white'
                       : 'bg-gray-200 text-gray-600',
@@ -243,46 +211,14 @@ watch(
               >
                 {{ toRoman(questionIndex + 1) }}
               </p>
-              <div class="inline leading-loose">
-                <template
-                  v-for="segment in buildSegments(question.question)"
-                  :key="`${question.id}-${segment.index}`"
-                >
-                  <span
-                    v-if="segment.type === 'text'"
-                    class="mx-1 items-center leading-loose"
-                  >
-                    {{ segment.content }}
-                  </span>
-
-                  <span
-                    v-else-if="segment.type === 'highlighted'"
-                    class="mx-1 items-center rounded bg-lemon-100 px-2 leading-loose text-lemon-700"
-                  >
-                    {{ segment.content }}
-                  </span>
-
-                  <span
-                    v-else
-                    :class="cn('mx-1 inline-flex', { 'flex-col': !segment.isTwoUnderscores })"
-                    :style="{ width: `${segment.calculatedWidth}px` }"
-                  >
-                    <Input
-                      type="text"
-                      :model-value="getCurrentAnswers(question.id)[segment.blankIndex || 0] || ''"
-                      class="min-w-0 border-none bg-transparent px-2 text-center"
-                      :style="{ maxWidth: `${(segment.calculatedWidth || 0) * 1.6}px` }"
-                      :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, nafasi ya ${(segment.blankIndex || 0) + 1}` : `Question ${questionIndex + 1}, blank ${(segment.blankIndex || 0) + 1}`"
-                      @update:model-value="
-                        (value) => handleInputChange(question.id, segment.blankIndex || 0, value)
-                      "
-                    />
-                    <div
-                      v-if="!segment.isTwoUnderscores"
-                      class="border-b border-dashed border-picton-blue-700"
-                    />
-                  </span>
-                </template>
+              <div class="min-w-0 flex-1 leading-loose">
+                <QuestionRenderer
+                  :question="question.question"
+                  :answers="question.answer"
+                  :user-answers="getCurrentAnswers(question.id)"
+                  :screen-width="width ?? 1024"
+                  @blank-change="(bi, val) => handleInputChange(question.id, bi, val)"
+                />
               </div>
             </div>
 
