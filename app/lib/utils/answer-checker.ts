@@ -34,6 +34,47 @@ const normalizeText = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const UNICODE_SUP_TO_ASCII: Record<string, string> = {
+  "⁰": "^0",
+  "¹": "^1",
+  "²": "^2",
+  "³": "^3",
+  "⁴": "^4",
+  "⁵": "^5",
+  "⁶": "^6",
+  "⁷": "^7",
+  "⁸": "^8",
+  "⁹": "^9",
+};
+
+/** True when comparing with algebra-style normalization (LaTeX \\text, exponents, brace groups). */
+const needsAlgebraNormalization = (value: string) =>
+  /\\text\{|\\mathrm\{|\^[0-9]|[⁰¹²³⁴⁵⁶⁷⁸⁹]|[²³]|\{\s*\\/.test(value);
+
+/**
+ * Strip CMS LaTeX wrappers (e.g. `{\\text{b}^2}`) so learners can type `b^2` / `b²` and match.
+ * Only used when {@link needsAlgebraNormalization} is true for the learner or accepted answer.
+ */
+const normalizeAlgebraCompareForm = (value: string): string => {
+  let s = unwrapCuaComparisonSymbol(value).trim().toLowerCase();
+  s = s.replace(/[“”"']/g, "");
+  for (const [u, a] of Object.entries(UNICODE_SUP_TO_ASCII)) {
+    s = s.split(u).join(a);
+  }
+  s = s.replace(/²/g, "^2").replace(/³/g, "^3");
+  s = s.replace(/\\text\{([^}]*)\}/gi, "$1");
+  s = s.replace(/\\mathrm\{([^}]*)\}/gi, "$1");
+  if (!/\\frac\b|\\sqrt\b|\\binom\b/i.test(s)) {
+    let prev = "";
+    while (prev !== s) {
+      prev = s;
+      s = s.replace(/\{([^{}]*)\}/g, "$1");
+    }
+  }
+  s = s.replace(/\s+/g, "");
+  return s;
+};
+
 /** Map `cua(>)` / `cua(<)` to the symbol so checks match plain typed answers. */
 export const unwrapCuaComparisonSymbol = (value: string) => {
   const m = value.trim().match(/^cua\s*\(\s*(.*?)\s*\)\s*$/i);
@@ -87,14 +128,26 @@ export class AnswerChecker {
       };
     }
 
-    const normalizedAnswer = normalizeText(unwrapCuaComparisonSymbol(answer));
+    const unwrapped = unwrapCuaComparisonSymbol(answer);
+    const normalizedAnswer = normalizeText(unwrapped);
     const isCorrect = acceptedAnswers.some((acceptedAnswer) => {
-      const normalizedAccepted = normalizeText(
-        unwrapCuaComparisonSymbol(acceptedAnswer),
-      );
+      const accUnwrapped = unwrapCuaComparisonSymbol(acceptedAnswer);
+      const normalizedAccepted = normalizeText(accUnwrapped);
 
       if (normalizedAnswer === normalizedAccepted) {
         return true;
+      }
+
+      if (
+        needsAlgebraNormalization(acceptedAnswer) ||
+        needsAlgebraNormalization(answer)
+      ) {
+        if (
+          normalizeAlgebraCompareForm(answer) ===
+          normalizeAlgebraCompareForm(acceptedAnswer)
+        ) {
+          return true;
+        }
       }
 
       if (options.strictMode) {

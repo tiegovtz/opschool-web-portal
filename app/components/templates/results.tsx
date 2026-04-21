@@ -38,6 +38,33 @@ const resolveMessage = (score: number, total: number, isSwahili: boolean) => {
     : "Keep practicing and try again.";
 };
 
+const resolveAccessibleResultMessage = (
+  score: number,
+  total: number,
+  isSwahili: boolean,
+  isCompletionOnly: boolean,
+  completionMessage?: string,
+) => {
+  if (isCompletionOnly) {
+    return (
+      completionMessage ||
+      (isSwahili
+        ? "Hongera. Umefanikiwa kukamilisha shughuli hii."
+        : "Congratulations. You have completed this activity.")
+    );
+  }
+
+  if (!total) {
+    return isSwahili
+      ? "Matokeo yako yako tayari. Hakukuwa na maswali ya kupimwa."
+      : "Your results are ready. No questions were available for scoring.";
+  }
+
+  return isSwahili
+    ? `Matokeo yako yako tayari. Majibu yamekaguliwa. Umepata ${score} kati ya ${total}. ${resolveMessage(score, total, isSwahili)}`
+    : `Your results are ready. Answers checked. You scored ${score} out of ${total}. ${resolveMessage(score, total, isSwahili)}`;
+};
+
 const useIsSwahiliResultsUi = () => {
   const route = useRoute();
   const hubHeaderLang = useHubHeaderLanguage();
@@ -152,11 +179,16 @@ export const ActivityResultsAlertDialog = defineComponent({
   setup(props) {
     const isSwahili = useIsSwahiliResultsUi();
     const ui = useActivityUiText();
+    const { playSound } = useSoundEffects();
     const dialogRef = ref<HTMLElement | null>(null);
     const lastFocusedElement = ref<HTMLElement | null>(null);
+    const srAnnouncement = ref("");
+    const srAnnouncementSequence = ref(0);
+    const srAnnouncementTimeoutId = ref<number | null>(null);
     const close = () => props.onOpenChange?.(false);
     const dialogTitleId = `activity-results-dialog-title-${Math.random().toString(36).slice(2, 9)}`;
     const dialogDescriptionId = `activity-results-dialog-description-${Math.random().toString(36).slice(2, 9)}`;
+    const dialogSummaryId = `activity-results-dialog-summary-${Math.random().toString(36).slice(2, 9)}`;
 
     type ConfettiPiece = {
       leftPct: number;
@@ -247,10 +279,39 @@ export const ActivityResultsAlertDialog = defineComponent({
       }, 900);
     };
 
+    const accessibleResultMessage = computed(() =>
+      resolveAccessibleResultMessage(
+        props.score,
+        props.total,
+        isSwahili.value,
+        props.isCompletionOnly,
+        props.completionMessage,
+      ),
+    );
+
+    const announceForScreenReader = (message: string) => {
+      srAnnouncement.value = "";
+      srAnnouncementSequence.value += 1;
+
+      if (srAnnouncementTimeoutId.value !== null) {
+        window.clearTimeout(srAnnouncementTimeoutId.value);
+      }
+
+      srAnnouncementTimeoutId.value = window.setTimeout(() => {
+        srAnnouncement.value = message;
+        srAnnouncementSequence.value += 1;
+        srAnnouncementTimeoutId.value = null;
+      }, 60);
+    };
+
     watch(
       () => props.open,
       async (nextOpen) => {
         if (!nextOpen) {
+          if (srAnnouncementTimeoutId.value !== null) {
+            window.clearTimeout(srAnnouncementTimeoutId.value);
+            srAnnouncementTimeoutId.value = null;
+          }
           window.requestAnimationFrame(() => {
             lastFocusedElement.value?.focus?.();
           });
@@ -279,8 +340,9 @@ export const ActivityResultsAlertDialog = defineComponent({
         triggerCelebration();
 
         await nextTick();
-        const firstFocusable = dialogRef.value?.querySelector<HTMLElement>("[data-results-primary-action]");
-        firstFocusable?.focus?.();
+        dialogRef.value?.focus?.();
+        announceForScreenReader(accessibleResultMessage.value);
+        playSound("success");
       },
     );
 
@@ -313,15 +375,16 @@ export const ActivityResultsAlertDialog = defineComponent({
     }
 
     onBeforeUnmount(() => {
+      if (srAnnouncementTimeoutId.value !== null) {
+        window.clearTimeout(srAnnouncementTimeoutId.value);
+      }
       if (typeof document !== "undefined") {
         document.removeEventListener("keydown", handleDialogKeyDown);
       }
     });
 
     const modalTitle = computed(() =>
-      props.isCompletionOnly
-        ? ""
-        : props.title || (isSwahili.value ? "Matokeo" : "Results"),
+      props.title || (isSwahili.value ? "Matokeo" : "Results"),
     );
 
     const modalDescription = computed(() => {
@@ -338,14 +401,19 @@ export const ActivityResultsAlertDialog = defineComponent({
       );
     });
 
+    const modalAccessibleSummary = computed(() => {
+      if (props.isCompletionOnly) {
+        return `${modalTitle.value}. ${modalDescription.value}`;
+      }
+
+      return isSwahili.value
+        ? `${modalTitle.value}. Umepata ${props.score} kati ya ${props.total}. Asilimia ${scorePercentage.value}. ${modalDescription.value}`
+        : `${modalTitle.value}. You scored ${props.score} out of ${props.total}. ${scorePercentage.value} percent. ${modalDescription.value}`;
+    });
+
     return () =>
       props.open ? (
         <div
-          role="dialog"
-          aria-modal="true"
-          aria-live="polite"
-          aria-labelledby={dialogTitleId}
-          aria-describedby={dialogDescriptionId}
           data-activity-results="dialog"
           class="fixed inset-0 z-[130] flex items-center justify-center px-4 py-8"
         >
@@ -358,6 +426,11 @@ export const ActivityResultsAlertDialog = defineComponent({
           <div
             key={animationKey.value}
             ref={dialogRef}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby={dialogTitleId}
+            aria-describedby={`${dialogDescriptionId} ${dialogSummaryId}`}
+            tabindex={-1}
             class="relative w-full max-w-md overflow-hidden rounded-3xl border border-oceanBlue/15 bg-white/95 shadow-[0_30px_120px_-60px_rgba(1,61,96,0.7)] md:max-w-lg"
           >
             <div class="absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-amber-50 opacity-70" />
@@ -389,6 +462,21 @@ export const ActivityResultsAlertDialog = defineComponent({
             </div>
 
             <div class="relative px-5 py-6 text-center md:px-8 md:py-8">
+              <div
+                key={srAnnouncementSequence.value}
+                class="sr-only"
+                aria-label={ui.activityUpdates.value}
+                aria-live="assertive"
+                aria-atomic="true"
+                role="status"
+              >
+                {srAnnouncement.value}
+              </div>
+
+              <p id={dialogSummaryId} class="sr-only">
+                {modalAccessibleSummary.value}
+              </p>
+
               <div class="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl bg-sky-50 shadow-sm ring-1 ring-oceanBlue/10 md:h-28 md:w-28">
                 <img
                   src={emojiSrc.value}
@@ -403,31 +491,49 @@ export const ActivityResultsAlertDialog = defineComponent({
 
               {!props.isCompletionOnly ? (
                 <>
-                  <p id={dialogTitleId} class="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-oceanBlue/70">
+                  <h2 id={dialogTitleId} class="mt-4 text-sm font-semibold uppercase tracking-[0.22em] text-oceanBlue/70">
                     {modalTitle.value}
-                  </p>
+                  </h2>
 
-                  <div class="mt-2 text-4xl font-black text-oceanBlue md:text-5xl">
+                  <div
+                    class="mt-2 text-4xl font-black text-oceanBlue md:text-5xl"
+                    aria-label={
+                      isSwahili.value
+                        ? `Alama ${props.score} kati ya ${props.total}`
+                        : `Score ${props.score} out of ${props.total}`
+                    }
+                  >
                     {props.score}/{props.total}
                   </div>
 
-                  <div id={dialogDescriptionId} class="mt-2 text-xl font-semibold text-oceanBlue md:text-2xl">
+                  <p id={dialogDescriptionId} class="mt-2 text-xl font-semibold text-oceanBlue md:text-2xl">
                     {modalDescription.value}
-                  </div>
+                  </p>
 
-                  <div class="mt-4 inline-flex items-center justify-center rounded-full bg-sky-50 px-5 py-2 text-lg font-bold text-oceanBlue md:py-3 md:px-7 md:text-xl">
+                  <div
+                    class="mt-4 inline-flex items-center justify-center rounded-full bg-sky-50 px-5 py-2 text-lg font-bold text-oceanBlue md:py-3 md:px-7 md:text-xl"
+                    aria-label={
+                      isSwahili.value
+                        ? `Asilimia ${scorePercentage.value}`
+                        : `${scorePercentage.value} percent`
+                    }
+                  >
                     {scorePercentage.value}%
                   </div>
                 </>
               ) : (
-                <div id={dialogDescriptionId} class="mt-4 text-lg font-bold text-oceanBlue md:text-xl">
-                  {modalDescription.value}
-                </div>
+                <>
+                  <h2 id={dialogTitleId} class="sr-only">
+                    {modalTitle.value}
+                  </h2>
+                  <p id={dialogDescriptionId} class="mt-4 text-lg font-bold text-oceanBlue md:text-xl">
+                    {modalDescription.value}
+                  </p>
+                </>
               )}
             </div>
 
             <div class="relative flex flex-col gap-3 px-5 pb-6 pt-0 md:flex-row md:items-center md:justify-center md:pb-8">
-
               <Button
                 variant="brand"
                 onClick={close}

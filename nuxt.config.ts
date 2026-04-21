@@ -7,6 +7,23 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   debug: false,
   srcDir: "app/",
+
+  ignore: [
+    ".claude/**",
+    "Chunking/**",
+    "remotion-lessons/**",
+    ".playwright-mcp/**",
+  ],
+  watchers: {
+    chokidar: {
+      ignored: [
+        "**/.claude/**",
+        "**/Chunking/**",
+        "**/remotion-lessons/**",
+        "**/.playwright-mcp/**",
+      ],
+    },
+  },
   // Add Vuetify styles here along with your existing CSS
   css: ["~/assets/css/main.css"],
   postcss: {
