@@ -16,12 +16,10 @@ import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import {
-  getApiContentLanguage,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
   resolveRouteLanguage,
-  resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
 // Defin Route
@@ -45,7 +43,8 @@ const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
 const activeTab = ref("learn-activities");
 const subjectSlug = computed(() => (subjectTitle || "").toLowerCase().trim().replace(/\s+/g, "-"));
 const primaryContentLanguage = usePrimaryContentLanguage();
-const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const selectedEducationLevelName = useResolvedEducationLevelName();
+const educationLevel = computed(() => selectedEducationLevelName.value);
 const language = computed(() =>
   getHubLanguage(
     educationLevel.value,
@@ -54,9 +53,6 @@ const language = computed(() =>
 );
 const educationRouteQuery = computed(() =>
   getEducationRouteQuery(educationLevel.value, {}, language.value),
-);
-const apiLanguage = computed(() =>
-  getApiContentLanguage(educationLevel.value, language.value),
 );
 
 const buildTabTarget = (tab) => {
@@ -178,7 +174,6 @@ const fetchTopics = async (params) => {
     ), {
       params: {
         educationLevel: educationLevel.value,
-        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
         ...params,
       },
       headers: {

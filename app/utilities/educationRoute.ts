@@ -146,7 +146,7 @@ export const normalizeEducationLevel = (
 };
 
 export const getHubPath = (educationLevel: unknown): string =>
-  normalizeEducationLevel(educationLevel) === "primary"
+  getEducationHubBucket(educationLevel) === "primary"
     ? "/primary"
     : "/secondary";
 
@@ -164,7 +164,7 @@ export const getHubLanguage = (
   educationLevel: unknown,
   preferredLanguage?: unknown,
 ): LanguageSupport =>
-  normalizeEducationLevel(educationLevel) === "primary"
+  getEducationHubBucket(educationLevel) === "primary"
     ? normalizeLanguageSupport(preferredLanguage, "kiswahili")
     : "english";
 
@@ -178,7 +178,7 @@ export const getApiContentLanguage = (
   educationLevel: unknown,
   preferredLanguage?: unknown,
 ): "Kiswahili" | "English" | undefined => {
-  if (normalizeEducationLevel(educationLevel) !== "primary") return undefined;
+  if (getEducationHubBucket(educationLevel) !== "primary") return undefined;
   return getHubLanguage(educationLevel, preferredLanguage) === "kiswahili"
     ? "Kiswahili"
     : "English";

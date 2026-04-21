@@ -13,12 +13,10 @@ import type { tabs } from '~/types/types.data';
 import { layoutEffect } from '@/utilities/controlls';
 import InputsSelection from '~/components/home/InputsSelection.vue';
 import {
-  getApiContentLanguage,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
   resolveRouteLanguage,
-  resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
 useHead({
@@ -53,7 +51,8 @@ const audios = ref();         // Initial Audios State
 const slicedData = ref();    // Initial slice data to 9
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
-const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const selectedEducationLevelName = useResolvedEducationLevelName();
+const educationLevel = computed(() => selectedEducationLevelName.value);
 const language = computed(() =>
   getHubLanguage(
     educationLevel.value,
@@ -62,9 +61,6 @@ const language = computed(() =>
 );
 const educationRouteQuery = computed(() =>
   getEducationRouteQuery(educationLevel.value, {}, language.value),
-);
-const apiLanguage = computed(() =>
-  getApiContentLanguage(educationLevel.value, language.value),
 );
 
 // Define Cookie
@@ -123,7 +119,6 @@ const fetchAudios = async (param?: any) => {
       method: 'GET',
       params: {
         educationLevel: educationLevel.value,
-        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
         ...param
       },
     }));

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import apiDocs from "~/utilities/apiDocs";
+import type { educationLevel } from "~/types/educationlevel.interface";
 import { layoutEffect } from "~/utilities/controlls";
 import messages from "~/utilities/messages";
 import ConfirmationModal from "~/components/ai-teacher/ConfirmationModal.vue";
@@ -10,6 +11,7 @@ import {
   getHubLanguageCode,
   getHubPath,
   getEducationRouteQuery,
+  getEducationHubBucket,
   normalizeEducationLevel,
   normalizeLanguageSupport,
   resolveEducationLevelFromRoute,
@@ -32,6 +34,21 @@ const navigationStore = useNavigationStore();
 const hubEducationLevel = useHubEducationLevel();
 const primaryContentLanguage = usePrimaryContentLanguage();
 const hubHeaderLang = useHubHeaderLanguage();
+const selectedEducationLevel = useSelectedEducationLevel();
+const token = useCookie("signInAccessToken").value;
+const headers = token
+  ? ({
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    } as Record<string, string>)
+  : ({ "Content-Type": "application/json" } as Record<string, string>);
+const { data: educationLevels } = useFetch<educationLevel[]>(
+  apiDocs.educationLevel.getEducationLevels,
+  {
+    headers,
+    default: () => [],
+  },
+);
 
 const matchesPath = (path: string) =>
   route.path === path || route.path.startsWith(`${path}/`);
@@ -195,6 +212,12 @@ const currentEducationLevel = computed(() =>
     ? normalizeEducationLevel(props.educationLevel)
     : inferredRouteEducationLevel.value,
 );
+const currentHubBucket = computed(() =>
+  getEducationHubBucket(selectedEducationLevel.value?.name) ??
+  getEducationHubBucket(props.educationLevel) ??
+  getEducationHubBucket(route.params.educationLevel ?? route.path) ??
+  (currentEducationLevel.value === "primary" ? "primary" : "secondary"),
+);
 
 const accountRouteQuery = computed(() =>
   getEducationRouteQuery(
@@ -247,27 +270,20 @@ const languageSwitchContent = computed(() =>
 );
 
 const homeHubLabel = computed(() => {
-  if (currentEducationLevel.value === "primary") {
-    return props.language === "kiswahili" ? "Msingi" : "Primary";
-  }
-
-  if (currentEducationLevel.value === "lower secondary" || currentEducationLevel.value === "secondary") {
-    return props.language === "kiswahili" ? "Sekondari" : "Secondary";
-  }
-
-  return props.language === "kiswahili" ? "Nyumbani" : "Home";
+  return selectedEducationLevel.value?.name || (props.language === "kiswahili" ? "Nyumbani" : "Home");
 });
 
-const homeMenuItems = computed(() => [
-  {
-    educationLevel: "primary" as const,
-    label: props.language === "kiswahili" ? "Msingi" : "Primary",
-  },
-  {
-    educationLevel: "lower secondary" as EducationBucket,
-    label: props.language === "kiswahili" ? "Sekondari" : "Secondary",
-  },
-]);
+const homeMenuItems = computed(() =>
+  (educationLevels.value ?? [])
+    .filter(
+      (item) => getEducationHubBucket(item.name) === currentHubBucket.value,
+    )
+    .map((item) => ({
+      id: item._id,
+      name: item.name,
+      bucket: getEducationHubBucket(item.name) ?? "secondary",
+    })),
+);
 
 const setPrimaryLanguage = async (language: LanguageSupport) => {
   if (!showPrimaryLanguageSwitch.value) return;
@@ -307,15 +323,16 @@ const setPrimaryLanguageFromAccountMenu = async (language: LanguageSupport) => {
   closeAccountMenu();
 };
 
-const navigateToHomeHub = async (educationLevel: "primary" | "secondary") => {
-  hubEducationLevel.value = educationLevel;
+const navigateToHomeHub = async (educationLevel: { id: string; name: string; bucket: "primary" | "secondary" }) => {
+  selectedEducationLevel.value = { id: educationLevel.id, name: educationLevel.name };
+  hubEducationLevel.value = educationLevel.bucket;
   hubHeaderLang.value = getHubLanguage(
-    educationLevel,
-    educationLevel === "primary" ? primaryContentLanguage.value : "english",
+    educationLevel.name,
+    educationLevel.bucket === "primary" ? primaryContentLanguage.value : "english",
   );
   closeHomeMenu();
   closeAccountMenu();
-  await router.push(getHubPath(educationLevel));
+  await router.push(getHubPath(educationLevel.name));
 };
 
 const authReturnQuery = computed(() => {
@@ -447,19 +464,19 @@ onBeforeUnmount(() => {
               >
                 <button
                   v-for="item in homeMenuItems"
-                  :key="item.educationLevel"
+                  :key="item.id"
                   type="button"
                   class="flex items-center justify-between w-full gap-3 px-4 py-2.5 text-sm font-medium text-left transition-colors text-slate-700 hover:bg-slate-50"
                   :class="
-                    currentEducationLevel === item.educationLevel
+                    selectedEducationLevel?.name === item.name
                       ? 'bg-slate-50 text-deepBlue'
                       : ''
                   "
-                  @click="navigateToHomeHub(item.educationLevel =='primary' ? 'primary':'secondary')"
+                  @click="navigateToHomeHub(item)"
                 >
-                  <span>{{ item.label }}</span>
+                  <span>{{ item.name }}</span>
                   <Icon
-                    v-if="currentEducationLevel === item.educationLevel"
+                    v-if="selectedEducationLevel?.name === item.name"
                     name="heroicons:check-20-solid"
                     class="w-5 h-5"
                   />

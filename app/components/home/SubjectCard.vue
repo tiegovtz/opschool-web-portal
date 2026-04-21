@@ -3,7 +3,6 @@ import { layoutEffect } from "~/utilities/controlls";
 import { calculateTopicMetrics } from "~/utilities/topicMetrics.js";
 import {
   getEducationRouteQuery,
-  normalizeEducationLevel,
   resolveRouteLanguage,
   resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
@@ -29,19 +28,7 @@ const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
 const educationLevelBadge = computed(() => {
   if (!(props?.subjectEducationLevel as string)?.trim()) return "";
-
-  switch (normalizeEducationLevel(props.subjectEducationLevel, "primary")) {
-    case "pre-primary":
-      return primaryContentLanguage.value === 'english' ? "Pre-Primary" : "Elimu ya Awali";
-    case "primary":
-      return primaryContentLanguage.value === 'english' ? "Primary" : "Elimu ya Msingi";
-    case "lower secondary":
-      return "Lower Secondary";
-    case "upper secondary":
-      return "Upper Secondary";
-    default:
-      return props.subjectEducationLevel;
-  }
+  return props.subjectEducationLevel;
 });
 const subjectTarget = computed(() => ({
   path: `/interactive/${props.subjectName?.toLowerCase()}/${props.subjectId?.toLowerCase()}`,

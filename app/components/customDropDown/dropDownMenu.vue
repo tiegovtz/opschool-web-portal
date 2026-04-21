@@ -5,10 +5,7 @@ import type { educationLevel } from "~/types/educationlevel.interface";
 import type { ClassLevel } from "~/types/classlevel.interface";
 import type { Subjects } from "~/types/subject.interface";
 import {
-  getApiContentLanguage,
   isEducationLevelVisibleInHub,
-  normalizeEducationLevel,
-  resolveRouteLanguage,
   type EducationBucket,
 } from "~/utilities/educationRoute";
 import type { LanguageSupport } from "~/types/language.interface";
@@ -39,8 +36,6 @@ const headers = {
   "Content-Type": "application/json",
   Authorization: `Bearer ${token}`,
 };
-const route = useRoute();
-const primaryContentLanguage = usePrimaryContentLanguage();
 const isKiswahili = computed(() => props.language === "kiswahili");
 
 // Model
@@ -56,32 +51,16 @@ const isLoading = ref(true);
 // Server data
 const { data: educationLevels } = useFetch<educationLevel[]>(apiDocs.educationLevel.getEducationLevels, { headers });
 const { data: classes } = useFetch<ClassLevel[]>(apiDocs.levels.getLevels, { headers });
-const selectedEducationBucket = computed(() =>
-  selected.level?.trim() ? normalizeEducationLevel(selected.level) : null,
-);
-const selectedContentLanguage = computed(() =>
-  props.language ||
-  resolveRouteLanguage(route, selectedEducationBucket.value ?? undefined, primaryContentLanguage.value),
+const selectedEducationLevel = computed(() =>
+  selected.level?.trim() || null,
 );
 const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjects, {
   headers,
   query: computed(() =>{
     let q={}
-    q= selectedEducationBucket.value
+    q= selectedEducationLevel.value
       ? {
-          educationLevel: selectedEducationBucket.value,
-          ...(getApiContentLanguage(
-            selectedEducationBucket.value,
-            selectedContentLanguage.value,
-          )
-            ? {
-                language: getApiContentLanguage(
-                  selectedEducationBucket.value,
-                  selectedContentLanguage.value,
-                ),
-                ...q
-              }
-            : q),
+          educationLevel: selectedEducationLevel.value,
         }
       : {},
     q=  selected.class ? { level: selected.class,...q } : q
@@ -89,7 +68,7 @@ const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjec
       ...q, 
     }}
   ),
-  watch: [selectedEducationBucket, selectedContentLanguage,()=>selected.class],
+  watch: [selectedEducationLevel,()=>selected.class],
 });
 
 // Simulate skeleton time
@@ -157,7 +136,7 @@ const createDebounce = <T extends (...args: any[]) => void>(fn: T, delay = 100) 
 const emitUpdate = createDebounce(() => {
   const q: Record<string, any> = {};
 
-  if (selected.level) q.educationLevel = normalizeEducationLevel(selected.level);
+  if (selected.level) q.educationLevel = selected.level;
   if (selected.class) q.level = selected.class.toLowerCase();
   if (selected.subject) q.subject = selected.subject.toLowerCase();
 

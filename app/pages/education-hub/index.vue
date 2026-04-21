@@ -38,7 +38,6 @@ import {
   SUBJECT_QUERY_KEY,
 } from "~/utilities/homeSectionRouting";
 import {
-  getApiContentLanguage,
   getEducationHubBucket,
   getEducationRouteQuery,
   getHubLanguage,
@@ -106,21 +105,14 @@ const hubEducationLevelCookie = useHubEducationLevel();
 const primaryContentLanguage = usePrimaryContentLanguage();
 const route = useRoute();
 const router = useRouter();
-const currentEducationLevel = computed(() =>
-  resolveEducationLevelFromRoute(route),
-);
+const selectedEducationLevelName = useResolvedEducationLevelName();
+const currentEducationLevel = computed(() => selectedEducationLevelName.value);
 const currentHubBucket = computed<EducationHubBucket>(() =>
+  getEducationHubBucket(currentEducationLevel.value) ??
   getEducationHubBucket(route.params.educationLevel ?? route.path) ??
   (normalizeEducationLevel(currentEducationLevel.value) === "primary"
     ? "primary"
     : "secondary"),
-);
-const HUB_BUCKET_LEVELS: Record<EducationHubBucket, EducationBucket[]> = {
-  primary: ["pre-primary", "primary"],
-  secondary: ["lower secondary", "upper secondary"],
-};
-const hubEducationLevels = computed<EducationBucket[]>(
-  () => HUB_BUCKET_LEVELS[currentHubBucket.value],
 );
 const currentLanguage = computed(() =>
   getHubLanguage(
@@ -140,16 +132,13 @@ const currentHubQuery = computed(() =>
     currentLanguage.value,
   ),
 );
-const primaryApiLanguage = computed(() =>
-  getApiContentLanguage(currentEducationLevel.value, currentLanguage.value),
-);
 
 watch(
   currentLanguage,
   (language) => {
     hubHeaderLangCookie.value = language;
-    hubEducationLevelCookie.value = currentEducationLevel.value;
-    if (currentEducationLevel.value === "primary") {
+    hubEducationLevelCookie.value = currentHubBucket.value;
+    if (currentHubBucket.value === "primary") {
       primaryContentLanguage.value = language;
     }
   },
@@ -177,7 +166,7 @@ const filterValue = ref(); // Initial Filter Value State
 const subjectId = ref<string>(""); // Initial subjectId Value State
 const subjectSlug = ref<string>(""); // Initial subject slug Value State
 const subjectName = ref<string>(""); // Initial subject name Value State
-const subjectEducationLevel = ref<EducationBucket | "">("");
+const subjectEducationLevel = ref<string>("");
 const seeMoreDetails = ref<string | null>(null); // Initial See More
 const announcement = ref<string>();
 const subjectResolveState = ref({ slug: "", isLoading: false });
@@ -232,11 +221,12 @@ const normalizeQueryValue = (value: unknown) =>
 
 const getEducationLevelParam = () =>
   subjectEducationLevel.value ||
-  normalizeEducationLevel(
+  normalizeQueryValue(
     route.query.educationLevel ??
       route.query.edl ??
       currentEducationLevel.value,
-  );
+  ) ||
+  currentEducationLevel.value;
 
 const dedupeById = <T extends { _id?: string }>(items: T[]) => {
   const seen = new Set<string>();
@@ -261,15 +251,11 @@ const getRequestedEducationLevels = (params?: Record<string, any>) => {
   const explicitLevel = normalizeQueryValue(params?.educationLevel);
 
   if (explicitLevel) {
-    return [normalizeEducationLevel(explicitLevel)];
+    return [explicitLevel];
   }
 
   if (subjectEducationLevel.value) {
     return [subjectEducationLevel.value];
-  }
-
-  if (!subjectId.value && !subjectSlug.value) {
-    return hubEducationLevels.value;
   }
 
   return [getEducationLevelParam()];
@@ -294,9 +280,6 @@ const resolveSubjectIdFromSlug = async (slug: string) => {
         $fetch<Subjects[] | unknown>(apiDocs.subjects.getPublicSubjects, {
           params: {
             educationLevel,
-            ...(primaryApiLanguage.value
-              ? { language: primaryApiLanguage.value }
-              : {}),
           },
           headers: {
             Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
@@ -311,10 +294,10 @@ const resolveSubjectIdFromSlug = async (slug: string) => {
     if (match?._id) {
       subjectId.value = match._id;
       subjectName.value = match.name;
-      subjectEducationLevel.value = normalizeEducationLevel(
-        match.educationLevel,
-        getEducationLevelParam(),
-      );
+      subjectEducationLevel.value =
+        typeof match.educationLevel === "string" && match.educationLevel.trim()
+          ? match.educationLevel
+          : getEducationLevelParam();
     }
   } catch (error) {
     console.warn("Failed to resolve subject from slug:", error);
@@ -386,7 +369,6 @@ const fetchData = async (params?: any) => {
   const tab = displayTab.value;
   const requestedEducationLevels = getRequestedEducationLevels(params);
   const baseParams = {
-    ...(primaryApiLanguage.value ? { language: primaryApiLanguage.value } : {}),
     ...params,
   };
 

@@ -15,12 +15,10 @@ import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import {
-  getApiContentLanguage,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
   resolveRouteLanguage,
-  resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
 // Defin Route
@@ -42,8 +40,8 @@ const decodeParam = (value: unknown) => {
 const subjectId = String(route.params.subjectId ?? "");
 const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
 const primaryContentLanguage = usePrimaryContentLanguage();
-
-const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const selectedEducationLevelName = useResolvedEducationLevelName();
+const educationLevel = computed(() => selectedEducationLevelName.value);
 const tabLanguage = computed(() =>
   getHubLanguage(
     educationLevel.value,
@@ -52,9 +50,6 @@ const tabLanguage = computed(() =>
 );
 const educationRouteQuery = computed(() =>
   getEducationRouteQuery(educationLevel.value, {}, tabLanguage.value),
-);
-const apiLanguage = computed(() =>
-  getApiContentLanguage(educationLevel.value, tabLanguage.value),
 );
 
 // Define meta info about page
@@ -243,7 +238,6 @@ const fetchTopics = async (params: any) => {
     ), {
       params: {
         educationLevel: educationLevel.value,
-        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
         ...params,
       },
       headers: {

@@ -1,30 +1,55 @@
 <script lang="ts" setup>
 import apiDocs from '~/utilities/apiDocs';
+import type { educationLevel } from '~/types/educationlevel.interface';
 import type { IconType } from '../icons/stats.vue';
 import { setPostLoginHome } from '~/utilities/postLoginHome';
-import { getHubPath, resolveEducationLevelFromRoute } from '~/utilities/educationRoute';
+import { getEducationHubBucket, getHubPath } from '~/utilities/educationRoute';
 import LanguageSwitcher from '../ui/LanguageSwitcher.vue';
 
 const hubHeaderLang = useHubHeaderLanguage();
 const hubEducationLevel = useHubEducationLevel();
 const primaryContentLanguage = usePrimaryContentLanguage();
-const primaryHubPath = computed(() => getHubPath('primary'));
-const secondaryHubPath = computed(() => getHubPath('secondary'));
+const selectedEducationLevel = useSelectedEducationLevel();
 const route = useRoute();
+const router = useRouter();
+const token = useCookie("signInAccessToken").value;
+const headers = token
+  ? {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    }
+  : {
+      "Content-Type": "application/json",
+    };
 
-function goToPrimary() {
-    setPostLoginHome(primaryHubPath.value);
-    hubHeaderLang.value = 'kiswahili';
-    hubEducationLevel.value = 'primary';
-    primaryContentLanguage.value = 'kiswahili';
-    useRouter().push(primaryHubPath.value);
-}
+const { data: educationLevels, pending: educationLevelsPending } = useFetch<educationLevel[]>(
+  apiDocs.educationLevel.getEducationLevels,
+  {
+    headers,
+    default: () => [],
+  },
+);
 
-function goToSecondary() {
-    setPostLoginHome(secondaryHubPath.value);
-    hubHeaderLang.value = 'english';
-    hubEducationLevel.value = 'secondary';
-    useRouter().push(secondaryHubPath.value);
+const educationLevelActions = computed(() =>
+  (educationLevels.value ?? []).map((level) => ({
+    id: level._id,
+    name: level.name,
+    path: getHubPath(level.name),
+    bucket: getEducationHubBucket(level.name) ?? "secondary",
+  })),
+);
+
+const setEducationLevel = async (level: { id: string; name: string; path: string; bucket: "primary" | "secondary" }) => {
+    selectedEducationLevel.value = { id: level.id, name: level.name };
+    hubEducationLevel.value = level.bucket;
+    hubHeaderLang.value = level.bucket === "primary" ? primaryContentLanguage.value : "english";
+
+    if (level.bucket === "primary") {
+        primaryContentLanguage.value = primaryContentLanguage.value || "kiswahili";
+    }
+
+    setPostLoginHome(level.path);
+    await router.push(level.path);
 }
 
 const stats = computed(()=> [
@@ -164,8 +189,7 @@ const contents = computed(() => {
         summary: primaryContentLanguage.value === 'kiswahili' ?  `Kupitia jukwaa hili utajifunza kwa kutumia maudhui shirikishi ya picha,video,3D na animeshen kwa ngazi ya elimu ya msingi na sekondari.`:`Through this platform, you will learn using interactive content such as images, videos, 3D and animations for primary and secondary education levels.`,
         guidance: primaryContentLanguage.value === "kiswahili" ? `Chagua ngazi ya elimu. Tumia kitufe cha Msingi kufungua maudhui ya elimu ya msingi, au kitufe cha Sekondari kufungua maudhui ya sekondari.` : `Choose an education level. Use the Primary button to access primary education content, or the Secondary button to access secondary education content.`,
         level:{
-            primary: primaryContentLanguage.value === "kiswahili" ? "Msingi" : "Primary",
-            secondary: primaryContentLanguage.value === "kiswahili" ? "Sekondari" : "Secondary",
+            loading: primaryContentLanguage.value === "kiswahili" ? "Inapakia ngazi za elimu..." : "Loading education levels...",
         }
     }
     return dictionary
@@ -200,8 +224,19 @@ const contents = computed(() => {
                 <p id="education-level-actions" class="sr-only">
                     {{ contents.guidance }}
                 </p>
-                <UiButtonShineParticles @click="goToPrimary" :label="contents.level.primary" />
-                <UiButtonShineParticles @click="goToSecondary" :label="contents.level.secondary" />
+                <p
+                  v-if="educationLevelsPending"
+                  class="text-sm text-slate-500"
+                >
+                  {{ contents.level.loading }}
+                </p>
+                <UiButtonShineParticles
+                  v-for="level in educationLevelActions"
+                  v-else
+                  :key="level.id"
+                  @click="setEducationLevel(level)"
+                  :label="level.name"
+                />
             </div>
 
             <!-- static -->

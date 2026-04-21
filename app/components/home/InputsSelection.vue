@@ -5,9 +5,7 @@ import type { LanguageSupport } from "~/types/language.interface";
 import type { Subjects } from "~/types/subject.interface";
 import apiDocs from "~/utilities/apiDocs";
 import {
-  getApiContentLanguage,
   isEducationLevelVisibleInHub,
-  normalizeEducationLevel,
 } from "~/utilities/educationRoute";
 
 type DropdownOption = {
@@ -30,9 +28,6 @@ const emit = defineEmits<{
 
 const normalizeValue = (value?: string | null) =>
   value?.trim().toLowerCase() ?? "";
-
-const getEducationBucket = (value?: string | null) =>
-  value?.trim() ? normalizeEducationLevel(value) : null;
 const level = ref<string>("");
 const standard = ref<string>("");
 const subject = ref<string>("");
@@ -69,8 +64,7 @@ const matchesEducationLevel = (
 ) =>
   !!candidate &&
   !!selected &&
-  (normalizeValue(candidate) === normalizeValue(selected) ||
-    getEducationBucket(candidate) === getEducationBucket(selected));
+  normalizeValue(candidate) === normalizeValue(selected);
 
 const content = computed(() =>
   props.language === "kiswahili"
@@ -93,28 +87,6 @@ const content = computed(() =>
 );
 
 const getEducationLevelLabel = (educationLevelName: string) => {
-  const bucket = getEducationBucket(educationLevelName);
-
-  if (bucket === "pre-primary") {
-    return props.language === "kiswahili" ? "Elimu ya Awali" : "Pre-Primary";
-  }
-
-  if (bucket === "primary") {
-    return props.language === "kiswahili" ? "Elimu ya Msingi" : "Primary";
-  }
-
-  if (bucket === "lower secondary") {
-    return props.language === "kiswahili"
-      ? "Sekondari ya Chini"
-      : "Lower Secondary";
-  }
-
-  if (bucket === "upper secondary") {
-    return props.language === "kiswahili"
-      ? "Sekondari ya Juu"
-      : "Upper Secondary";
-  }
-
   return educationLevelName;
 };
 
@@ -178,19 +150,19 @@ const { data: educationLevels, pending: educationLevelsPending } = useFetch<
   default: () => [],
 });
 
-const selectedEducationBucket = computed(() => getEducationBucket(level.value));
+const selectedEducationLevel = computed(() => level.value.trim());
 
 const { data: classLevels, pending: classLevelsPending } = useFetch<
   ClassLevel[]
 >(apiDocs.levels.getLevels, {
   headers,
   query: computed(() =>
-    selectedEducationBucket.value
-      ? { educationLevel: selectedEducationBucket.value }
+    selectedEducationLevel.value
+      ? { educationLevel: selectedEducationLevel.value }
       : {},
   ),
   default: () => [],
-  watch: [selectedEducationBucket],
+  watch: [selectedEducationLevel],
 });
 
 const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
@@ -198,16 +170,10 @@ const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
 >(apiDocs.subjects.getPublicSubjects, {
   headers,
   query: computed(() => {
-    if (!selectedEducationBucket.value) return {};
-
-    const apiLanguage = getApiContentLanguage(
-      selectedEducationBucket.value,
-      props.language,
-    );
+    if (!selectedEducationLevel.value) return {};
 
     return {
-      educationLevel: selectedEducationBucket.value,
-      ...(apiLanguage ? { language: apiLanguage } : {}),
+      educationLevel: selectedEducationLevel.value,
       ...(standard.value ? { level: standard.value } : {}),
     };
   }),
@@ -243,7 +209,7 @@ const educationLevelOptions = computed<DropdownOption[]>(() => {
   return sortedEducationLevels.value
     .filter((e) => allowed.has(normalizeValue(e.name)))
     .map((educationLevelOption) => ({
-      id: normalizeValue(educationLevelOption.name),
+      id: educationLevelOption.name,
       name: getEducationLevelLabel(educationLevelOption.name),
     }))
 })
@@ -289,8 +255,9 @@ watch(
 
     if (matchedLevels.length === 1) {
       const nextLevel = normalizeValue(matchedLevels[0]?.name);
-      if (!nextLevel || level.value === nextLevel) return;
-      onLevelChange(nextLevel);
+      const exactLevel = matchedLevels[0]?.name ?? nextLevel;
+      if (!exactLevel || level.value === exactLevel) return;
+      onLevelChange(exactLevel);
       return;
     }
 

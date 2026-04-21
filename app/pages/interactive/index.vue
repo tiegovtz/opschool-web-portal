@@ -22,12 +22,10 @@ import type { tabs } from "~/types/types.data";
 import { layoutEffect } from "@/utilities/controlls";
 import InputsSelection from "~/components/home/InputsSelection.vue";
 import {
-  getApiContentLanguage,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
   resolveRouteLanguage,
-  resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 // Define meta info about page
 useHead({
@@ -78,9 +76,10 @@ useHead({
 const userToken = useCookie("signInUserToken");
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
+const selectedEducationLevelName = useResolvedEducationLevelName();
 
 // extract query params
-const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const educationLevel = computed(() => selectedEducationLevelName.value);
 const language = computed(() =>
   getHubLanguage(
     educationLevel.value,
@@ -89,9 +88,6 @@ const language = computed(() =>
 );
 const educationRouteQuery = computed(() =>
   getEducationRouteQuery(educationLevel.value, {}, language.value),
-);
-const apiLanguage = computed(() =>
-  getApiContentLanguage(educationLevel.value, language.value),
 );
 
 const contentLayoutLanguage = useContentLayoutLanguage();
@@ -184,7 +180,6 @@ const fetchTopics = async (params?: any) => {
   const url = apiDocs.topics.filterTopics;
   params = {
     educationLevel: educationLevel.value,
-    ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
     ...params,
   };
   if (userToken.value) {

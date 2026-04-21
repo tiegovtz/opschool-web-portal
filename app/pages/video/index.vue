@@ -13,12 +13,10 @@ import type { tabs } from "~/types/types.data";
 import { layoutEffect } from '@/utilities/controlls';
 import InputsSelection from '~/components/home/InputsSelection.vue';
 import {
-  getApiContentLanguage,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
   resolveRouteLanguage,
-  resolveEducationLevelFromRoute,
 } from "~/utilities/educationRoute";
 
 useHead({
@@ -53,7 +51,8 @@ const videos = ref();         // Initial videos State
 const slicedData = ref();    // Initial slice data to 9
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
-const educationLevel = computed(() => resolveEducationLevelFromRoute(route));
+const selectedEducationLevelName = useResolvedEducationLevelName();
+const educationLevel = computed(() => selectedEducationLevelName.value);
 const language = computed(() =>
   getHubLanguage(
     educationLevel.value,
@@ -62,9 +61,6 @@ const language = computed(() =>
 );
 const educationRouteQuery = computed(() =>
   getEducationRouteQuery(educationLevel.value, {}, language.value),
-);
-const apiLanguage = computed(() =>
-  getApiContentLanguage(educationLevel.value, language.value),
 );
 const videoType = computed<string>(() => {
   let type = route.query?.type as string;
@@ -129,7 +125,6 @@ const fetchVideos = async (param?: any) => {
     ...param,
     educationLevel: educationLevel.value,
     videoType: videoType.value,
-    ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
   }
 
   try {
