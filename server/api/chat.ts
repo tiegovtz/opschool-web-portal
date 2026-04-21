@@ -548,22 +548,14 @@ export default defineEventHandler(async (event) => {
 
   // initilaize data
   const { chapterName, subject, level, topic, chapterNo, authToken } = extractRequestContext(event, body);
-  
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat.ts:extractContext',message:'Request context for chat',data:{chapterName:chapterName||'',subject:subject||'',level:level||'',topic:topic||'',hasBody:!!body},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
 
   const validChapterName = chapterName && chapterName.trim() && chapterName !== "this competence"
-  ? chapterName.trim() 
+  ? chapterName.trim()
   : undefined;
-  
+
   const context = validChapterName
     ? { subject, level, topic, chapterNo }
     : undefined;
-  
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/8a567c1a-9db1-48ce-b2fd-fa63fd340bb4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'chat.ts:validContext',message:'Valid chapter and context',data:{validChapterName:validChapterName||null,hasContext:!!context,subject:subject||'',topic:topic||''},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
-  // #endregion
 
     let coreMessages = convertMessagesToCore(messages);
     let modelMessages = await convertChatMessagesToModel(messages);
