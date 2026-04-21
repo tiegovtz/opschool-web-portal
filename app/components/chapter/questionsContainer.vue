@@ -426,7 +426,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
             class="flex items-center justify-center px-4 py-1 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
             <span class="capitalize">
               {{
-                quizAttempt.scored === quizAttempt.totalQuestions
+                quizAttempt.scored >= (quizAttempt.totalQuestions/2)
                   ? topicLanguage.toLowerCase().trim() === 'english' ? 'Next quiz':'Zoezi lijalo'
                   : topicLanguage.toLowerCase().trim() === 'english' ? 'Read notes again' :' Soma maudhui tena'
               }}
