@@ -2,6 +2,27 @@ export type PaginationItem =
   | { type: "page"; value: number }
   | { type: "ellipsis"; key: string };
 
+export const buildPageWindow = (
+  totalPages: number,
+  currentPage: number,
+  visiblePages: number,
+): PaginationItem[] => {
+  if (totalPages <= 0 || visiblePages <= 0) return [];
+
+  const safeVisiblePages = Math.min(totalPages, visiblePages);
+  const halfWindow = Math.floor(safeVisiblePages / 2);
+  const maxStart = Math.max(totalPages - safeVisiblePages + 1, 1);
+  const start = Math.min(
+    Math.max(currentPage - halfWindow, 1),
+    maxStart,
+  );
+
+  return Array.from({ length: safeVisiblePages }, (_, index) => ({
+    type: "page" as const,
+    value: start + index,
+  }));
+};
+
 export const buildPaginationItems = (
   totalPages: number,
   currentPage: number,
