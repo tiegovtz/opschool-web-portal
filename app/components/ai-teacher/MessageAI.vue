@@ -7,22 +7,30 @@
 
       <div class="bg-white text-gray-800 px-5 py-3 rounded-2xl rounded-tl-sm shadow-md border border-gray-100">
         <div v-for="(part, idx) in message.parts" :key="idx" class="space-y-2">
-          <!-- Markdown Support with MathJax -->
-          <!-- :key forces re-render when shortcodes finish loading from API -->
-          <div 
-            v-if="part.type === 'text'" 
-            :key="`text-${idx}-${shortcodesLoaded}`"
-            ref="mathContainer" 
-            class="prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-semibold prose-h1:text-xl prose-h1:mt-4 prose-h1:mb-3 prose-h2:text-lg prose-h2:mt-3 prose-h2:mb-2 prose-h3:text-base prose-h3:mt-2 prose-h3:mb-1 prose-h4:text-sm prose-p:my-2 prose-p:leading-relaxed prose-ul:my-2 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-2 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-li:pl-1 prose-blockquote:border-l-4 prose-blockquote:border-gray-300 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-gray-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-gray-100 prose-pre:p-3 prose-pre:rounded-lg prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800 prose-strong:font-semibold prose-em:italic" 
-            role="log"
-            aria-live="polite" 
-            aria-relevant="additions" 
-            aria-atomic="false" 
-            v-html="processMathInText(part.text)"
-            @click="handleLinkClick"
-          >
-          </div>
-
+          <template v-if="part.type === 'text'">
+            <template v-for="(seg, sIdx) in splitIntoSegments(part.text)" :key="`${idx}-${sIdx}-${shortcodesLoaded}`">
+              <div
+                v-if="seg.kind === 'html'"
+                ref="mathContainer"
+                class="prose prose-sm max-w-none prose-headings:text-gray-800 prose-headings:font-semibold prose-h1:text-xl prose-h1:mt-4 prose-h1:mb-3 prose-h2:text-lg prose-h2:mt-3 prose-h2:mb-2 prose-h3:text-base prose-h3:mt-2 prose-h3:mb-1 prose-h4:text-sm prose-p:my-2 prose-p:leading-relaxed prose-ul:my-2 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-2 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-li:pl-1 prose-blockquote:border-l-4 prose-blockquote:border-gray-300 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-gray-600 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-gray-100 prose-pre:p-3 prose-pre:rounded-lg prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-800 prose-strong:font-semibold prose-em:italic"
+                role="log"
+                aria-live="polite"
+                aria-relevant="additions"
+                aria-atomic="false"
+                v-html="seg.html"
+                @click="handleLinkClick"
+              />
+              <GraphBlock v-else-if="seg.kind === 'graph' && seg.spec" :spec="seg.spec as any" />
+              <ChartBlock v-else-if="seg.kind === 'chart' && seg.spec" :spec="seg.spec as any" />
+              <GeometryBlock v-else-if="seg.kind === 'geometry' && seg.spec" :spec="seg.spec as any" />
+              <StepsBlock
+                v-else-if="seg.kind === 'steps' && seg.spec"
+                :steps="(seg.spec as any).steps || []"
+                :title="(seg.spec as any).title"
+                :final-latex="(seg.spec as any).finalLatex"
+              />
+            </template>
+          </template>
           <!-- Tool calls are hidden from the user - do not display them -->
         </div>
       </div>
@@ -35,6 +43,14 @@ import MarkdownIt from "markdown-it";
 import { ref, watch, nextTick, onMounted } from "vue";
 import { getImageFromShortcode, loadDynamicShortcodes } from "~/utilities/imageShortcodes";
 import { useRouter } from "vue-router";
+import GraphBlock from "./renderers/GraphBlock.vue";
+import ChartBlock from "./renderers/ChartBlock.vue";
+import GeometryBlock from "./renderers/GeometryBlock.vue";
+import StepsBlock from "./renderers/StepsBlock.vue";
+
+type Segment =
+  | { kind: "html"; html: string }
+  | { kind: "graph" | "chart" | "geometry" | "steps"; spec: Record<string, any> };
 
 const md = new MarkdownIt({ html: true, breaks: true, linkify: true });
 const props = defineProps<{ message: any }>();
@@ -286,6 +302,41 @@ const processMathInText = (text: string): string => {
   return rendered;
 };
 
+// Split text into segments: plain HTML blocks + render-block components.
+// Fenced blocks (```graph / ```chart / ```geometry / ```steps) become component segments;
+// everything else goes through markdown + math processing.
+const FENCED_RE = /```(graph|chart|geometry|steps)\s*\n([\s\S]*?)\n?```/g;
+
+const splitIntoSegments = (text: string): Segment[] => {
+  if (!text) return [];
+  const segments: Segment[] = [];
+  let lastIndex = 0;
+  let m: RegExpExecArray | null;
+  FENCED_RE.lastIndex = 0;
+  while ((m = FENCED_RE.exec(text)) !== null) {
+    const before = text.slice(lastIndex, m.index);
+    if (before.trim()) {
+      segments.push({ kind: "html", html: processMathInText(before) });
+    }
+    const kind = m[1] as "graph" | "chart" | "geometry" | "steps";
+    const raw = (m[2] || "").trim();
+    let spec: Record<string, any> | null = null;
+    try { spec = JSON.parse(raw); } catch { spec = null; }
+    if (spec) {
+      segments.push({ kind, spec });
+    } else {
+      // fall back to rendering as code block so user sees the issue
+      segments.push({ kind: "html", html: processMathInText("```\n" + raw + "\n```") });
+    }
+    lastIndex = m.index + m[0].length;
+  }
+  const rest = text.slice(lastIndex);
+  if (rest.trim() || segments.length === 0) {
+    segments.push({ kind: "html", html: processMathInText(rest) });
+  }
+  return segments;
+};
+
 // Render MathJax after content is updated
 const renderMathJax = async () => {
   if (import.meta.server) return;
@@ -311,15 +362,27 @@ const renderMathJax = async () => {
   }
 };
 
+// Debounce typesetting during streaming so each chunk doesn't trigger a full MathJax rerun
+// (unbounded MathJax calls during long streams blow renderer memory → tab crash).
+let mathJaxTimer: number | null = null;
+const scheduleMathJax = () => {
+  if (import.meta.server) return;
+  if (mathJaxTimer !== null) window.clearTimeout(mathJaxTimer);
+  mathJaxTimer = window.setTimeout(() => {
+    mathJaxTimer = null;
+    renderMathJax();
+  }, 120);
+};
+
 // Watch for message changes and render MathJax
 watch(() => props.message, () => {
-  renderMathJax();
+  scheduleMathJax();
 }, { deep: true });
 
 onMounted(async () => {
   // Pre-load dynamic shortcodes from API
   await loadDynamicShortcodes();
   shortcodesLoaded.value = true; // Trigger re-render
-  renderMathJax();
+  scheduleMathJax();
 });
 </script>
