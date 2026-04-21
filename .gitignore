@@ -70,3 +70,17 @@ tie-web-portal-main/
 
 # tie primary folder
 tie_open_school_primary_frontend
+
+# Claude Code local data (settings, scheduled tasks, session worktrees)
+.claude/
+
+# Playwright MCP scratch
+.playwright-mcp/
+
+# Nested/unrelated projects that end up in the repo tree locally
+/Chunking/
+/remotion-lessons/
+
+# Local screenshots and reviewer PDFs at repo root
+/*.png
+/*.pdf
