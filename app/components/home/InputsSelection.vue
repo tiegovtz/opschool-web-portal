@@ -208,10 +208,11 @@ const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
     return {
       educationLevel: selectedEducationBucket.value,
       ...(apiLanguage ? { language: apiLanguage } : {}),
+      ...(standard.value ? { level: standard.value } : {}),
     };
   }),
   default: () => [],
-  watch: [level],
+  watch: [level,standard],
 });
 
 const matchedEducationLevels = computed(() => {

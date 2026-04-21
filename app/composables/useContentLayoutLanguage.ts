@@ -33,12 +33,7 @@ export function useContentLayoutLanguage(levelSource?: MaybeRefOrGetter<unknown>
   });
 
   watch(
-    () =>
-      [
-        route.fullPath,
-        levelSource !== undefined ? toValue(levelSource) : null,
-        primaryContentLanguage.value,
-      ] as const,
+    () => [route.fullPath, levelSource !== undefined ? toValue(levelSource) : null] as const,
     () => {
       const inferred = inferHubLanguageFromContentRoute(
         route,

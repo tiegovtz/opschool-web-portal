@@ -65,8 +65,9 @@ const selectedContentLanguage = computed(() =>
 );
 const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjects, {
   headers,
-  query: computed(() =>
-    selectedEducationBucket.value
+  query: computed(() =>{
+    let q={}
+    q= selectedEducationBucket.value
       ? {
           educationLevel: selectedEducationBucket.value,
           ...(getApiContentLanguage(
@@ -78,10 +79,15 @@ const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjec
                   selectedEducationBucket.value,
                   selectedContentLanguage.value,
                 ),
+                ...q
               }
-            : {}),
+            : q),
         }
       : {},
+    q=  selected.class ? { level: selected.class,...q } : q
+    return {
+      ...q, 
+    }}
   ),
   watch: [selectedEducationBucket, selectedContentLanguage],
 });

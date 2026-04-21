@@ -47,6 +47,7 @@ const content = computed(() => ({
   lastNamePlaceholder: isSwahili.value ? "Jina la mwisho" : "Last Name",
   educationLevelLabel: isSwahili.value ? "Chagua ngazi ya elimu:" : "Select Education Level:",
   educationLevelPlaceholder: isSwahili.value ? "(mfano: Msingi, Sekondari ...)" : "(eg: Secondary, Primary ...)",
+  searchPlaceholder: isSwahili.value ? "Tafuta" : "Search",
   schoolLabel: isSwahili.value ? "Shule:" : "School:",
   studentRegistrationMethodLabel: isSwahili.value ? "Njia ya usajili wa mwanafunzi:" : "Student registration method:",
   studentRegistrationMethods: {
@@ -1880,7 +1881,7 @@ onMounted(async () => {
                 {{ content.educationLevelLabel }}</label>
 
               <CustomDropDownList id="educationLevel" v-model="usersignUp.educationLevel" :list="educationLevelLists"
-                :placeholder="content.educationLevelPlaceholder" @update-model-value="usersignUp.educationLevel = $event" />
+                :placeholder="content.educationLevelPlaceholder" @update-model-value="usersignUp.educationLevel = $event" :search-placeholder="content.searchPlaceholder" />
             </div>
 
             <small v-if="usersignUp.controller.errors.educationLevel" aria-live="assertive"
