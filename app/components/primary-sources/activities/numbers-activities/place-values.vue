@@ -10,6 +10,8 @@ const props = withDefaults(defineProps<PlaceValueBlocksProps>(), {
 });
 const ui = useActivityUiText();
 const activityInstructionsId = "numbers-place-values-instructions";
+const activityStatusId = "numbers-place-values-status";
+const keyboardStatusMessage = ref("");
 
 const inputValue = ref("");
 const currentNumber = ref(0);
@@ -29,6 +31,10 @@ const handleSubmit = () => {
   const num = Number.parseInt(inputValue.value, 10);
   if (!Number.isNaN(num) && num >= 0 && num <= props.maxNumber) {
     currentNumber.value = num;
+    keyboardStatusMessage.value = ui.formatActivityUpdated(
+      ui.isSwahili.value ? "Vitalu vya thamani ya nafasi" : "Place value blocks",
+      num,
+    );
   }
 };
 
@@ -37,6 +43,7 @@ const handleNextQuestion = () => {
   currentNumber.value = randomNum;
   inputValue.value = "";
   currentQuestion.value = currentQuestion.value < totalQuestions ? currentQuestion.value + 1 : 1;
+  keyboardStatusMessage.value = ui.formatActivityUpdated(ui.nextQuestion.value, randomNum);
 };
 
 const cubeWrapperStyle = (size: number) =>
@@ -95,6 +102,9 @@ const ONE = computed(() => renderCube(25, "#ef4444"));
           ? "Tumia tab kusogea kwenye kisanduku cha namba, kitufe cha kuonyesha vitalu, na kitufe cha swali linalofuata."
           : "Use Tab to move through the number field, the show blocks button, and the next question button."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="bg-white rounded-lg p-6 mb-6 shadow-inner">
@@ -183,12 +193,14 @@ const ONE = computed(() => renderCube(25, "#ef4444"));
           :value="inputValue"
           placeholder="Enter the number"
           :aria-label="ui.isSwahili ? 'Weka namba ya kuonyesha vitalu vya thamani ya nafasi' : 'Enter a number to display place value blocks'"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           class="px-4 py-2 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:border-blue-500 w-48"
           @input="(e) => (inputValue = (e.target as HTMLInputElement).value)"
           @keypress="(e) => (e.key === 'Enter' ? handleSubmit() : null)"
         />
         <button
           class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           @click="handleSubmit"
         >
           Show Blocks
@@ -199,6 +211,7 @@ const ONE = computed(() => renderCube(25, "#ef4444"));
         <p class="text-sm text-gray-600">{{ currentQuestion }} of {{ totalQuestions }} questions</p>
         <button
           class="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           @click="handleNextQuestion"
         >
           {{ ui.nextQuestion }}
@@ -210,6 +223,7 @@ const ONE = computed(() => renderCube(25, "#ef4444"));
           v-for="i in totalQuestions"
           :key="i"
           class="w-10 h-10 rounded-lg font-medium transition-colors"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           :class="
             currentQuestion === i
               ? 'bg-blue-500 text-white border-2 border-blue-600'

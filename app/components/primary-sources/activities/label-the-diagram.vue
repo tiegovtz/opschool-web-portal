@@ -42,6 +42,8 @@ const correctAnswers = ref<boolean[]>([]);
 const typedAnswers = ref<string[]>([]);
 const checkboxAnswers = ref<boolean[]>([]);
 const instructionsId = "label-the-diagram-instructions";
+const statusId = "label-the-diagram-status";
+const keyboardStatusMessage = ref("");
 
 const isCheckboxVariant = computed(() => props.questions.variant === "checkbox");
 
@@ -91,6 +93,7 @@ const handleCheckAnswer = () => {
   correctAnswers.value = nextCorrectAnswers;
   answersChecked.value = true;
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.questions.length}.`;
   playSound("success");
 };
 
@@ -101,6 +104,7 @@ const resetActivity = () => {
   allAnswered.value = false;
   correctAnswers.value = [];
   answersChecked.value = false;
+  keyboardStatusMessage.value = "";
 };
 </script>
 
@@ -110,6 +114,9 @@ const resetActivity = () => {
     <p :id="instructionsId" class="sr-only">
       Review the notes and image, then answer each prompt. Use the Tab key to move between the
       answer fields or checkboxes and activate the check answers button when you are done.
+    </p>
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="flex h-full flex-col gap-4">
@@ -133,7 +140,7 @@ const resetActivity = () => {
 
         <div
           class="flex w-full justify-between gap-4 rounded-xl bg-white p-4 text-lg md:p-6"
-          :aria-describedby="instructionsId"
+          :aria-describedby="`${instructionsId} ${statusId}`"
         >
           <div
             v-for="(group, groupIndex) in groupedQuestions"
@@ -184,7 +191,7 @@ const resetActivity = () => {
                         :model-value="typedAnswers[originalIndex] || ''"
                         :readonly="answersChecked"
                         :aria-label="getQuestionLabel(question, originalIndex)"
-                        :aria-describedby="instructionsId"
+                        :aria-describedby="`${instructionsId} ${statusId}`"
                         :class="
                           cn(
                             'max-w-48 rounded-none border-none bg-transparent text-center !text-lg text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
@@ -197,6 +204,7 @@ const resetActivity = () => {
                             const nextAnswers = [...typedAnswers];
                             nextAnswers[originalIndex] = String(value ?? '');
                             typedAnswers = nextAnswers;
+                            keyboardStatusMessage = ui.formatActivityUpdated(getQuestionLabel(question, originalIndex), value);
                           }
                         "
                       />
@@ -236,7 +244,7 @@ const resetActivity = () => {
       <div v-else class="flex items-center justify-end gap-4">
         <Button
           :disabled="!areAllRequiredInputsFilled || answersChecked"
-          :aria-describedby="instructionsId"
+          :aria-describedby="`${instructionsId} ${statusId}`"
           @click="handleCheckAnswer"
         >
           {{ ui.checkAnswer }}

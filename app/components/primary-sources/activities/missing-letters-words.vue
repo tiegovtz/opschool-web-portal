@@ -44,6 +44,8 @@ const feedbacks = ref<Record<number, boolean>>({});
 const allAnswered = ref(false);
 const score = ref(0);
 const instructionsId = "missing-letters-words-instructions";
+const statusId = "missing-letters-words-status";
+const keyboardStatusMessage = ref("");
 
 const blankGroups = (text: string) => text.match(/_+/g) || [];
 const splitQuestionParts = (text: string) =>
@@ -74,6 +76,10 @@ const handleInputChange = (questionIndex: number, blankIndex: number, value: str
       [blankIndex]: nextValue,
     },
   };
+  keyboardStatusMessage.value = ui.formatActivityUpdated(
+    ui.formatQuestion(questionIndex + 1),
+    nextValue,
+  );
 };
 
 const checkWordAnswer = (questionIndex: number) => {
@@ -114,6 +120,7 @@ const handleCheckAllAnswers = () => {
   feedbacks.value = nextFeedbacks;
   checkedItems.value = nextCheckedItems;
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${nextScore} / ${props.questions.questions.length}.`;
   playSound(nextScore === props.questions.questions.length ? "success" : "failure");
 };
 
@@ -124,6 +131,7 @@ const handleReset = () => {
   allAnswered.value = false;
   score.value = 0;
   showResults.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 const blankPartIndex = (parts: string[], partIndex: number) =>
@@ -139,6 +147,9 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
     <p :id="instructionsId" class="sr-only">
       Fill in the missing letters for each word. Use the Tab key to move between the blanks, then
       activate the check answers button when all blanks are filled.
+    </p>
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div
@@ -178,7 +189,7 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
           v-for="(question, questionIndex) in props.questions.questions"
           :key="`question-${questionIndex}`"
           class="rounded-xl bg-picton-blue-50 p-4 shadow-sm"
-          :aria-describedby="instructionsId"
+          :aria-describedby="`${instructionsId} ${statusId}`"
         >
           <div class="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex min-w-0 items-start gap-4">
@@ -205,7 +216,7 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
                       :placeholder="part.length > 1 ? 'silabi' : ''"
                       :disabled="allAnswered || checkedItems.includes(questionIndex)"
                       :aria-label="getBlankLabel(questionIndex, blankPartIndex(splitQuestionParts(question.textOne), partIndex), question.textOne)"
-                      :aria-describedby="instructionsId"
+                      :aria-describedby="`${instructionsId} ${statusId}`"
                       :style="{ width: `${Math.max((userAnswers[questionIndex]?.[blankPartIndex(splitQuestionParts(question.textOne), partIndex)] || '').length, part.length, 2) * 1.3 + 1.8}rem` }"
                       :class="
                         cn(
@@ -286,7 +297,7 @@ const getBlankLabel = (questionIndex: number, blankIndex: number, questionText: 
         size="lg"
         class="ml-auto w-fit"
         :disabled="!allQuestionsAnswered || allAnswered"
-        :aria-describedby="instructionsId"
+        :aria-describedby="`${instructionsId} ${statusId}`"
         @click="handleCheckAllAnswers"
       >
         {{ allAnswered ? ui.answersChecked : ui.checkAllAnswers }}

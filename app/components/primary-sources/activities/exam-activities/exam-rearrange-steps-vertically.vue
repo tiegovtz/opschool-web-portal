@@ -24,6 +24,8 @@ const props = defineProps<ExamRearrangeStepsVerticallyProps>();
 const ui = useActivityUiText();
 const order = ref<Record<string, string>>({});
 const activityInstructionsId = "exam-rearrange-steps-instructions";
+const activityStatusId = "exam-rearrange-steps-status";
+const keyboardStatusMessage = ref("");
 
 const { collectAnswers, updateActivityScore } = useExamContext();
 
@@ -86,6 +88,7 @@ const handleChange = (questionId: string, value: string) => {
       ...order.value,
       [questionId]: "",
     };
+    keyboardStatusMessage.value = ui.formatActivityRemoved(questionId);
     return;
   }
 
@@ -94,6 +97,7 @@ const handleChange = (questionId: string, value: string) => {
       ...order.value,
       [questionId]: value,
     };
+    keyboardStatusMessage.value = ui.formatActivityUpdated(questionId, value);
   }
 };
 </script>
@@ -102,7 +106,7 @@ const handleChange = (questionId: string, value: string) => {
   <section
     class="flex h-full flex-col rounded-xl bg-white shadow-sm"
     aria-labelledby="exam-rearrange-steps-title"
-    :aria-describedby="activityInstructionsId"
+    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
   >
     <h2 id="exam-rearrange-steps-title" class="sr-only">
       {{ props.questions.title }}
@@ -114,6 +118,9 @@ const handleChange = (questionId: string, value: string) => {
           ? "Tumia tab kusogea kwenye kila hatua na andika namba ya mpangilio sahihi."
           : "Use Tab to move through each step and enter its correct order number."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
     <div class="flex-1 overflow-y-auto p-4">
       <div class="space-y-4" role="list" :aria-label="ui.sentenceRearrangeQuestions.value">
@@ -133,6 +140,7 @@ const handleChange = (questionId: string, value: string) => {
                 :model-value="order[question.id] || ''"
                 placeholder=""
                 :aria-label="ui.isSwahili ? `Mpangilio wa hatua: ${question.text}` : `Step order for: ${question.text}`"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 :class="
                   cn(
                     'h-16 w-16 text-center text-2xl font-bold border-2',

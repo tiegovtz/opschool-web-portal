@@ -54,6 +54,8 @@ const showCorrectAnswers = ref(false);
 const shuffledQuestions = ref<TableQuestion[]>([]);
 const activityInstructionsId = "single-check-table-instructions";
 const ui = useActivityUiText();
+const activityStatusId = "single-check-table-status";
+const keyboardStatusMessage = ref("");
 
 const initializeAnswers = () => {
   answers.value = props.questions.questions.flatMap((question) =>
@@ -67,6 +69,7 @@ const initializeAnswers = () => {
   showResults.value = false;
   showCorrectAnswers.value = false;
   allAnswered.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 watch(() => props.questions.questions, initializeAnswers, { deep: true, immediate: true });
@@ -79,6 +82,12 @@ const toggleAnswer = (questionId: number, columnIndex: number) => {
     }
     return { ...answer, isChecked: false };
   });
+  const questionIndex = shuffledQuestions.value.findIndex((question) => question.id === questionId);
+  const optionLabel = shuffledQuestions.value[questionIndex]?.options[columnIndex]?.text;
+  const selected = answerFor(questionId, columnIndex)?.isChecked;
+  keyboardStatusMessage.value = selected
+    ? ui.formatActivitySelected(ui.formatQuestion(questionIndex + 1), optionLabel)
+    : ui.formatActivityRemoved(ui.formatQuestion(questionIndex + 1), optionLabel);
   playSound("click");
 };
 
@@ -103,6 +112,7 @@ const checkAnswers = () => {
 
   score.value = { correct: correctCount, total: props.questions.questions.length };
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value.correct} / ${score.value.total}.`;
   playSound("success");
 };
 
@@ -146,6 +156,9 @@ const resetActivity = () => {
           ? "Tumia tab kusogea kwenye kila kisanduku cha jedwali. Tumia enter au space kuchagua jibu moja kwa kila mstari."
           : "Use Tab to move through each table cell. Use Enter or Space to choose one answer for each row."
       }}
+    </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="flex-1 rounded-lg bg-picton-blue-100 p-4">
@@ -216,6 +229,7 @@ const resetActivity = () => {
                   :disabled="showResults"
                   :aria-pressed="answerFor(question.id, colIndex)?.isChecked"
                   :aria-label="ui.isSwahili ? `${question.question}, ${option.text}` : `${question.question}, ${option.text}`"
+                  :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                   class="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
                   @click="!showResults && toggleAnswer(question.id, colIndex)"
                 >

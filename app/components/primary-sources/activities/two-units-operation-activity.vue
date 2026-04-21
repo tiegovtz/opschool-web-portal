@@ -41,6 +41,8 @@ const userAnswers = ref<CurrencyAnswer[]>(emptyAnswers());
 const submitted = ref(false);
 const showResults = ref(false);
 const instructionsId = "two-units-operation-activity-instructions";
+const statusId = "two-units-operation-activity-status";
+const keyboardStatusMessage = ref("");
 
 const parseOperation = (question: string) => {
   const match = question.match(
@@ -87,16 +89,22 @@ const updateAnswer = (index: number, value: CurrencyAnswer) => {
   const nextAnswers = [...userAnswers.value];
   nextAnswers[index] = value;
   userAnswers.value = nextAnswers;
+  keyboardStatusMessage.value = ui.formatActivityUpdated(
+    ui.formatQuestion(index + 1),
+    `${value.shs} ${value.cts}`.trim(),
+  );
 };
 
 const resetActivity = () => {
   submitted.value = false;
   showResults.value = false;
   userAnswers.value = emptyAnswers();
+  keyboardStatusMessage.value = "";
 };
 
 const handleSubmit = () => {
   submitted.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.length}.`;
   props.onActivityComplete?.(score.value, props.questions.length, userAnswers.value);
 };
 </script>
@@ -107,6 +115,9 @@ const handleSubmit = () => {
       Solve each money operation by entering the shillings and cents parts of the answer. Use the
       Tab key to move between the two answer fields for each question, then activate the check
       answers button when all questions are filled.
+    </p>
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
     <div class="flex flex-1 gap-4">
       <div class="flex h-full w-full flex-col gap-4">
@@ -150,7 +161,7 @@ const handleSubmit = () => {
                   <Input
                     :model-value="userAnswers[index].shs"
                     :aria-label="`Question ${index + 1} shillings`"
-                    :aria-describedby="instructionsId"
+                    :aria-describedby="`${instructionsId} ${statusId}`"
                     class="w-16 rounded-none border-x-0 border-b-2 border-t-0 border-dashed border-picton-blue-700 bg-transparent px-1 text-right focus-visible:ring-transparent"
                     :disabled="submitted"
                     @update:model-value="
@@ -163,7 +174,7 @@ const handleSubmit = () => {
                   <Input
                     :model-value="userAnswers[index].cts"
                     :aria-label="`Question ${index + 1} cents`"
-                    :aria-describedby="instructionsId"
+                    :aria-describedby="`${instructionsId} ${statusId}`"
                     class="w-12 rounded-none border-x-0 border-b-2 border-t-0 border-dashed border-picton-blue-700 bg-transparent px-1 text-right focus-visible:ring-transparent"
                     :disabled="submitted"
                     @update:model-value="
@@ -206,7 +217,7 @@ const handleSubmit = () => {
         <Button
           v-if="!submitted && allAnswered"
           class="ml-auto w-fit group gap-2"
-          :aria-describedby="instructionsId"
+          :aria-describedby="`${instructionsId} ${statusId}`"
           @click="handleSubmit"
         >
           <Icon

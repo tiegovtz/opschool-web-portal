@@ -60,6 +60,8 @@ const feedbacks = ref<Record<number, boolean>>({});
 const showResults = ref(false);
 const isAnswerChecked = ref(false);
 const activityInstructionsId = "numbers-counting-objects-instructions";
+const activityStatusId = "numbers-counting-objects-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -88,6 +90,7 @@ watch(
     feedbacks.value = {};
     showResults.value = false;
     isAnswerChecked.value = false;
+    keyboardStatusMessage.value = "";
   },
 );
 
@@ -166,6 +169,9 @@ const checkCurrentAnswer = () => {
   feedbacks.value = { ...feedbacks.value, [currentQuestionIndex.value]: ok };
   answers.value = { ...answers.value, [currentQuestionIndex.value]: userAnswer.value };
   isAnswerChecked.value = true;
+  keyboardStatusMessage.value = ok
+    ? ui.formatActivityUpdated(ui.formatQuestion(currentQuestionIndex.value + 1), userAnswer.value)
+    : ui.formatIncorrectAnswer(currentQuestion.value?.number);
 
   if (ok) {
     score.value += 1;
@@ -182,6 +188,7 @@ const checkCurrentAnswer = () => {
       userAnswer.value = "";
     } else {
       allAnswered.value = true;
+      keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value + (ok ? 1 : 0)} / ${shuffledQuestions.value.length}.`;
     }
   }, 1500);
 };
@@ -196,6 +203,7 @@ const handleResetWithShuffle = () => {
   feedbacks.value = {};
   showResults.value = false;
   isAnswerChecked.value = false;
+  keyboardStatusMessage.value = "";
 };
 </script>
 
@@ -215,6 +223,9 @@ const handleResetWithShuffle = () => {
           ? "Tumia tab kusogea kwenye maonyesho ya thamani za nafasi, sehemu ya kuandika jibu, na kitufe cha kukagua."
           : "Use Tab to move through the place value displays, the answer field, and the check answer button."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div v-if="!showResults" class="flex flex-col h-full bg-picton-blue-100">

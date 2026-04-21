@@ -42,6 +42,8 @@ const answerRecords = ref<AnswerRecord[]>([]);
 const showResults = ref(false);
 const validationError = ref<string | null>(null);
 const instructionsId = "reverse-abacus-activity-instructions";
+const statusId = "reverse-abacus-activity-status";
+const keyboardStatusMessage = ref("");
 
 const currentQuestion = computed(() => props.questions.questions[currentQuestionIndex.value]);
 const totalQuestions = computed(() => props.questions.questions.length);
@@ -134,6 +136,7 @@ watch(() => props.questions.questions, () => {
   showResults.value = false;
   showResultsDialog.value = false;
   validationError.value = null;
+  keyboardStatusMessage.value = "";
   initializeQuestionState();
 }, { deep: true });
 
@@ -141,6 +144,7 @@ const handleAddBead = (placeValue: string) => {
   const count = beadCounts.value[placeValue] || 0;
   if (count >= 9) {
     validationError.value = "Maximum of 9 beads per column reached";
+    keyboardStatusMessage.value = validationError.value;
     setTimeout(() => {
       validationError.value = null;
     }, 2000);
@@ -151,6 +155,7 @@ const handleAddBead = (placeValue: string) => {
     ...beadCounts.value,
     [placeValue]: count + 1,
   };
+  keyboardStatusMessage.value = ui.formatActivityPlaced(placeValue, beadCounts.value[placeValue]);
   playSound("click");
 };
 
@@ -159,6 +164,7 @@ const handleRemoveBead = (placeValue: string) => {
     ...beadCounts.value,
     [placeValue]: Math.max(0, (beadCounts.value[placeValue] || 0) - 1),
   };
+  keyboardStatusMessage.value = ui.formatActivityRemoved(placeValue, beadCounts.value[placeValue]);
 };
 
 const checkAnswers = () => {
@@ -185,6 +191,7 @@ const checkAnswers = () => {
   if (props.feedback !== "none") {
     showFeedback.value = true;
   }
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value + (isCorrect ? 1 : 0)} / ${totalQuestions.value}.`;
 
   if (currentQuestionIndex.value === totalQuestions.value - 1) {
     if (props.feedback === "none") {
@@ -207,6 +214,7 @@ const resetActivity = () => {
   showResults.value = false;
   showResultsDialog.value = false;
   validationError.value = null;
+  keyboardStatusMessage.value = "";
   initializeQuestionState();
 };
 </script>
@@ -218,6 +226,9 @@ const resetActivity = () => {
       Represent the shown number on the abacus. Use the Tab key to move between columns. Activate a
       large bead button to add a bead to that place value, and activate an existing bead to remove
       it.
+    </p>
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div
@@ -281,7 +292,7 @@ const resetActivity = () => {
               v-for="placeValue in placeValues"
               :key="placeValue"
               class="flex w-24 flex-shrink-0 flex-col items-center rounded-lg"
-              :aria-describedby="instructionsId"
+              :aria-describedby="`${instructionsId} ${statusId}`"
             >
               <h3 class="my-4 px-1 text-center text-sm font-bold leading-tight text-picton-blue-700">
                 {{ placeValue }}
@@ -295,7 +306,7 @@ const resetActivity = () => {
                   :key="`${placeValue}-${beadIndex}`"
                   type="button"
                   :aria-label="`Remove one bead from ${placeValue}. Current count ${beadCounts[placeValue] || 0}.`"
-                  :aria-describedby="instructionsId"
+                  :aria-describedby="`${instructionsId} ${statusId}`"
                   :class="[
                     'absolute left-1/2 h-[25px] w-[50px] -translate-x-1/2 rounded-[20px] border border-black/30 shadow-[0_2px_4px_rgba(0,0,0,0.2),inset_0_-2px_4px_rgba(0,0,0,0.2),inset_0_2px_4px_rgba(255,255,255,0.5)]',
                     getBeadColor(placeValue),
@@ -312,7 +323,7 @@ const resetActivity = () => {
                   type="button"
                   :disabled="(beadCounts[placeValue] || 0) >= 9 || showFeedback"
                   :aria-label="`Add one bead to ${placeValue}. Current count ${beadCounts[placeValue] || 0}.`"
-                  :aria-describedby="instructionsId"
+                  :aria-describedby="`${instructionsId} ${statusId}`"
                   :class="[
                     'relative h-[50px] w-[50px] rounded-full border border-black/30 shadow-[0_2px_4px_rgba(0,0,0,0.2),inset_0_-2px_4px_rgba(0,0,0,0.2),inset_0_2px_4px_rgba(255,255,255,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
                     getBeadColor(placeValue),
@@ -364,7 +375,7 @@ const resetActivity = () => {
           </div>
         </div>
 
-        <Button variant="brand-lemon" class="w-fit" :aria-describedby="instructionsId" @click="checkAnswers">
+        <Button variant="brand-lemon" class="w-fit" :aria-describedby="`${instructionsId} ${statusId}`" @click="checkAnswers">
           {{ ui.checkAnswer }}
         </Button>
       </div>

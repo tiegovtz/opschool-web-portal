@@ -32,6 +32,8 @@ const theQuestions = ref<Question[]>([...props.questions.questions]);
 const order = ref<string[]>(Array(props.questions.questions.length).fill(""));
 const activityInstructionsId = "rearrange-steps-vertically-instructions";
 const ui = useActivityUiText();
+const activityStatusId = "rearrange-steps-vertically-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -44,6 +46,7 @@ watch(
       return Number(current) === theQuestions.value[index].order ? acc + 1 : acc;
     }, 0);
     allAnswered.value = true;
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${theQuestions.value.length}.`;
     playSound("success");
   },
   { deep: true },
@@ -52,6 +55,7 @@ watch(
 const handleChange = (index: number, value: string) => {
   if (value === "") {
     order.value = order.value.map((item, currentIndex) => (currentIndex === index ? "" : item));
+    keyboardStatusMessage.value = ui.formatActivityRemoved(ui.formatQuestion(index + 1));
     return;
   }
 
@@ -59,6 +63,7 @@ const handleChange = (index: number, value: string) => {
     const nextOrder = [...order.value];
     nextOrder[index] = value;
     order.value = nextOrder;
+    keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(index + 1), value);
   }
 };
 
@@ -68,6 +73,7 @@ const resetActivity = () => {
   score.value = 0;
   order.value = Array(theQuestions.value.length).fill("");
   theQuestions.value = shuffle([...props.questions.questions]);
+  keyboardStatusMessage.value = "";
 };
 
 const isAnswerCorrect = (index: number) => Number(order.value[index]) === theQuestions.value[index].order;
@@ -102,6 +108,9 @@ const handleDialogChange = (open: boolean) => {
           : "Use Tab to move through each step and enter its correct order number."
       }}
     </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <ul class="mt-4 flex flex-col justify-between gap-1">
       <li
@@ -116,6 +125,7 @@ const handleDialogChange = (open: boolean) => {
             :value="order[index]"
             :disabled="showFeedback"
             :aria-label="ui.isSwahili ? `Mpangilio wa hatua: ${question.text}` : `Step order for: ${question.text}`"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :class="[
               'h-16 w-16 text-center text-2xl no-number-input-arrows text-black rounded border-2 transition-colors duration-300',
               showFeedback

@@ -14,6 +14,7 @@ type Props = {
 const props = defineProps<Props>();
 
 const { playSound } = useSoundEffects();
+const ui = useActivityUiText();
 const contentLayoutLanguage = useContentLayoutLanguage();
 const completionMessage = computed(() =>
   contentLayoutLanguage.value === "kiswahili"
@@ -58,6 +59,8 @@ const isIncorrect = ref(false);
 const showDialog = ref(false);
 const isTransitioning = ref(false);
 const activityInstructionsId = "alphabet-filling-instructions";
+const activityStatusId = "alphabet-filling-status";
+const keyboardStatusMessage = ref("");
 
 const currentWord = computed(() => props.questions.targetWords[currentWordIndex.value] || "");
 
@@ -77,6 +80,7 @@ const resetActivity = () => {
     { length: props.questions.targetWords[0]?.length || 0 },
     () => "",
   );
+  keyboardStatusMessage.value = "";
 };
 
 watch(
@@ -107,7 +111,9 @@ watch(isCorrect, (value) => {
         currentWordIndex.value += 1;
         isCorrect.value = false;
         isTransitioning.value = false;
+        keyboardStatusMessage.value = "";
       } else {
+        keyboardStatusMessage.value = completionMessage.value;
         showDialog.value = true;
       }
     }, 500);
@@ -123,15 +129,24 @@ const handleLetterClick = (letter: string) => {
   const nextLetters = [...placedLetters.value];
   nextLetters[emptyIndex] = letter;
   placedLetters.value = nextLetters;
+  keyboardStatusMessage.value = `${
+    contentLayoutLanguage.value === "kiswahili" ? "Imewekwa" : "Placed"
+  }: ${letter.toUpperCase()}.`;
 
   if (!nextLetters.includes("")) {
     const wordIsCorrect = nextLetters.join("") === currentWord.value;
 
     if (wordIsCorrect) {
       isCorrect.value = true;
+      keyboardStatusMessage.value = contentLayoutLanguage.value === "kiswahili"
+        ? `Neno limekamilika kwa usahihi: ${currentWord.toUpperCase()}.`
+        : `Word completed correctly: ${currentWord.value.toUpperCase()}.`;
       playSound("success");
     } else {
       isIncorrect.value = true;
+      keyboardStatusMessage.value = contentLayoutLanguage.value === "kiswahili"
+        ? "Mpangilio wa herufi si sahihi. Jaribu tena."
+        : "The letter order is incorrect. Try again.";
       playSound("failure");
     }
     return;
@@ -143,10 +158,14 @@ const handleLetterClick = (letter: string) => {
 const handleRemoveLetter = (index: number) => {
   if (isTransitioning.value) return;
 
+  const removedLetter = placedLetters.value[index];
   const nextLetters = [...placedLetters.value];
   nextLetters[index] = "";
   placedLetters.value = nextLetters;
   isCorrect.value = false;
+  keyboardStatusMessage.value = `${
+    contentLayoutLanguage.value === "kiswahili" ? "Imeondolewa" : "Removed"
+  }: ${removedLetter?.toUpperCase()}.`;
 };
 </script>
 
@@ -167,6 +186,9 @@ const handleRemoveLetter = (index: number) => {
           : "Use Tab to move through the letters. Press Enter or Space to place a letter in the next empty slot. Use Tab to reach a placed letter and press Enter or Space to remove it."
       }}
     </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div class="flex h-full flex-col items-center justify-between">
       <div
@@ -181,6 +203,7 @@ const handleRemoveLetter = (index: number) => {
           type="button"
           :disabled="isTransitioning"
           :aria-label="contentLayoutLanguage === 'kiswahili' ? `Chagua herufi ${letter.toUpperCase()}` : `Choose letter ${letter.toUpperCase()}`"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           :class="['select-none rounded text-6xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2 disabled:opacity-50', alphabetColors[letter]]"
           @click="handleLetterClick(letter)"
         >
@@ -219,6 +242,7 @@ const handleRemoveLetter = (index: number) => {
               v-if="placedLetters[index]"
               type="button"
               :aria-label="contentLayoutLanguage === 'kiswahili' ? `Ondoa herufi ${placedLetters[index]?.toUpperCase()} kutoka nafasi ya ${index + 1}` : `Remove letter ${placedLetters[index]?.toUpperCase()} from slot ${index + 1}`"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               class="flex h-full w-full cursor-pointer items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
               @click="handleRemoveLetter(index)"
             >

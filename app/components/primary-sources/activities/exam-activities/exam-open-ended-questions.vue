@@ -59,6 +59,8 @@ const answers = ref<Record<string, string>>({});
 const isCalculatingScore = ref(false);
 const debouncedAnswers = refDebounced(answers, 500);
 const activityInstructionsId = "exam-open-ended-instructions";
+const activityStatusId = "exam-open-ended-status";
+const keyboardStatusMessage = ref("");
 
 const totalQuestions = computed(() =>
   props.questions.questions.reduce(
@@ -86,6 +88,7 @@ const handleInputChange = (questionId: string, value: string | number) => {
     ...answers.value,
     [questionId]: String(value ?? ""),
   };
+  keyboardStatusMessage.value = ui.formatActivityUpdated(questionId, value);
 };
 
 const calculateScore = async () => {
@@ -294,7 +297,7 @@ watch(
   <section
     class="flex h-full flex-col rounded-b-xl bg-white shadow-sm"
     aria-labelledby="exam-open-ended-title"
-    :aria-describedby="activityInstructionsId"
+    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
     :style="{ fontSize: props.questions.fontSize ? `${props.questions.fontSize}px` : '18px' }"
   >
     <h2 id="exam-open-ended-title" class="sr-only">
@@ -307,6 +310,9 @@ watch(
           ? "Tumia tab kusogea kwenye kila swali na sehemu ya kuandika jibu. Andika majibu yako katika nafasi zilizotolewa."
           : "Use Tab to move through each question and answer field. Type your responses in the spaces provided."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
     <div class="flex-1 overflow-y-auto p-2 md:p-6">
       <div class="space-y-8" role="list" :aria-label="ui.question.value">
@@ -353,6 +359,7 @@ watch(
                   :model-value="answerValue(`${question.id}-answer`)"
                   class="min-h-[40px] bg-white focus:border-picton-blue-500"
                   :aria-label="ui.isSwahili ? `Jibu la swali ${question.questionNumber}` : `Answer for question ${question.questionNumber}`"
+                  :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                   :class="
                     cn({
                       'border-picton-blue-400 bg-picton-blue-50/30':
@@ -395,6 +402,7 @@ watch(
                       :model-value="answerValue(`${part.id}-answer`)"
                       class="min-h-[40px] bg-white focus:border-picton-blue-500"
                       :aria-label="ui.isSwahili ? `Jibu la sehemu ${part.partLabel}` : `Answer for part ${part.partLabel}`"
+                      :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                       :class="
                         cn({
                           'border-picton-blue-400 bg-picton-blue-50/30':
@@ -436,6 +444,7 @@ watch(
                             :model-value="answerValue(subQuestion.id)"
                             class="min-h-[40px] bg-white focus:border-picton-blue-500"
                             :aria-label="ui.isSwahili ? `Jibu la ${subQuestion.subLabel}` : `Answer for ${subQuestion.subLabel}`"
+                            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                             :class="
                               cn({
                                 'border-picton-blue-400 bg-picton-blue-50/30':

@@ -36,6 +36,8 @@ type DragEndEvent = {
 const props = defineProps<Props>();
 const ui = useActivityUiText();
 const activityInstructionsId = "matching-with-letters-instructions";
+const activityStatusId = "matching-with-letters-status";
+const keyboardStatusMessage = ref("");
 const { playSound } = useSoundEffects();
 
 const isKweliMode = computed(() => props.questions.mode === "kweliSikweli");
@@ -142,6 +144,7 @@ watch(
     score.value = 0;
     allAnswered.value = false;
     showResults.value = false;
+    keyboardStatusMessage.value = "";
     if (isKweliMode.value) {
       resetKweliFlow();
     }
@@ -165,6 +168,10 @@ const pickKweli = (choice: "T" | "F") => {
   if (!q) return;
 
   const isCorrect = choice === q.correctAnswer;
+  keyboardStatusMessage.value = ui.formatActivitySelected(
+    ui.formatQuestion(i + 1),
+    choice === "T" ? "Kweli" : "Si Kweli",
+  );
 
   const boxes = [...kweliBoxStatus.value];
   boxes[i] = isCorrect ? "correct" : "wrong";
@@ -239,6 +246,10 @@ const handleDragEnd = (event: DragEndEvent) => {
 
   nextAnswers[Number.parseInt(dropQuestion.id, 10) - 1] = draggedId;
   answers.value = nextAnswers;
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    ui.formatQuestion(Number.parseInt(dropQuestion.id, 10)),
+    draggedId,
+  );
   playSound("click");
 };
 
@@ -282,6 +293,9 @@ const resetActivity = () => {
           : "Use Tab to move through each question and answer choices. Select a letter with Enter or Space, then place it in the question slot."
       }}
     </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div
       v-if="isKweliMode"
@@ -308,6 +322,7 @@ const resetActivity = () => {
                 'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
               )
             "
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             @click="pickKweli('T')"
           >
             Kweli
@@ -321,6 +336,7 @@ const resetActivity = () => {
                 'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
               )
             "
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             @click="pickKweli('F')"
           >
             Si Kweli

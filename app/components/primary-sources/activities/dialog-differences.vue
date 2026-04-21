@@ -258,7 +258,9 @@ const onDroppableKeydown = (event: KeyboardEvent, side: "left" | "right", index:
 const keyboardStatusMessage = computed(() =>
   selectedKeyboardItemId.value
     ? "Item selected. Tab to an empty answer space, then press Enter or Space to place it. Press Escape to cancel."
-    : "Tab to an item card and press Enter or Space to select it. Then tab to an empty answer space and press Enter or Space to place it.",
+    : allAnswered.value
+      ? `${ui.resultsReady.value}. ${score.value} / ${props.questions.items.length / 2}.`
+      : "Tab to an item card and press Enter or Space to select it. Then tab to an empty answer space and press Enter or Space to place it.",
 );
 
 const onResultsOpenChange = (open: boolean) => {

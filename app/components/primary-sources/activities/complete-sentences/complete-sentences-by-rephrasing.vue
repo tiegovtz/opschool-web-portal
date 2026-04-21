@@ -51,6 +51,8 @@ const feedbacks = ref<Record<number, boolean>>({});
 const showResults = ref(false);
 const activityInstructionsId = "complete-sentences-instructions";
 const activityOptionsId = "complete-sentences-options";
+const activityStatusId = "complete-sentences-status";
+const keyboardStatusMessage = ref("");
 
 const shuffleQuestions = () => {
   shuffledQuestions.value = shuffle([...props.questions.questions]);
@@ -66,6 +68,7 @@ watch(
     answers.value = {};
     feedbacks.value = {};
     showResults.value = false;
+    keyboardStatusMessage.value = "";
   },
   { immediate: true, deep: true },
 );
@@ -147,6 +150,7 @@ const handleCheckAllAnswers = () => {
   feedbacks.value = newFeedbacks;
   checkedItems.value = newCheckedItems;
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${newScore} / ${shuffledQuestions.value.length}.`;
   playSound(newScore === shuffledQuestions.value.length ? "success" : "failure");
 };
 
@@ -158,6 +162,7 @@ const handleResetWithShuffle = () => {
   answers.value = {};
   feedbacks.value = {};
   showResults.value = false;
+  keyboardStatusMessage.value = "";
 };
 </script>
 
@@ -176,6 +181,9 @@ const handleResetWithShuffle = () => {
         ? "Kamilisha kila sentensi kwa kutumia kitufe cha Tab kupita kwenye sehemu za kuandika. Baada ya kujaza nafasi zote wazi, tumia kitufe cha Kagua Majibu kuona matokeo yako."
         : "Complete each sentence by moving through the input fields with the Tab key. After all blanks are filled, use the Check Answers button to review your results." }}
     </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div
       class="flex h-full flex-col gap-3 bg-picton-blue-100 text-lg"
@@ -193,6 +201,7 @@ const handleResetWithShuffle = () => {
           :key="index"
           tabindex="0"
           :aria-label="`Answer choice ${option}`"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           class="text-base sm:text-lg text-picton-blue-700 leading-snug px-2 sm:px-3 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-200"
         >
           {{ option }}
@@ -240,7 +249,7 @@ const handleResetWithShuffle = () => {
                       :is-checked="checkedItems.includes(i)"
                       :is-correct="feedbacks[i] === true"
                       :disabled="checkedItems.includes(i)"
-                      @blank-change="(bi, val) => handleInputChange(i, bi, val)"
+                      @blank-change="(bi, val) => { handleInputChange(i, bi, val); keyboardStatusMessage = ui.formatActivityUpdated(ui.formatQuestion(i + 1), val); }"
                     />
                   </div>
                 </div>

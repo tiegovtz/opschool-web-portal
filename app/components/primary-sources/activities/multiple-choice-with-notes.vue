@@ -52,6 +52,7 @@ const answersChecked = ref(false);
 const isAdvancingQuestion = ref(false);
 const activityInstructionsId = "multiple-choice-with-notes-instructions";
 const activityStatusId = "multiple-choice-with-notes-status";
+const keyboardStatusMessage = ref("");
 
 const hasNotes = computed(() => !!props.questions.notes?.trim());
 const currentQuestionData = computed(
@@ -103,6 +104,10 @@ const normalizeAnswer = (value: string, question: MultipleChoiceQuestion | undef
 };
 
 const activityStatusMessage = computed(() => {
+  if (keyboardStatusMessage.value) {
+    return keyboardStatusMessage.value;
+  }
+
   if (showResults.value) {
     return ui.isSwahili
       ? `Matokeo yanaonyeshwa. Umepata ${score.value} kati ya ${shuffledQuestions.value.length}.`
@@ -138,6 +143,7 @@ const initialize = () => {
   allAnswers.value = {};
   answersChecked.value = false;
   isAdvancingQuestion.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 watch(() => props.questions, initialize, { deep: true, immediate: true });
@@ -172,11 +178,20 @@ const checkAnswer = (answer: string) => {
     isCorrect,
     text: question.options.find((option) => option.id === answer.toUpperCase())?.text || "",
   };
+  const questionLabel = ui.formatQuestion(activeQuestion.value + 1);
 
   attemptedQuestions.value = {
     ...attemptedQuestions.value,
     [activeQuestion.value]: nextAttempt,
   };
+
+  keyboardStatusMessage.value = isCorrect
+    ? ui.isSwahili
+      ? `${questionLabel} limejibiwa kwa usahihi.`
+      : `${questionLabel} answered correctly.`
+    : ui.isSwahili
+      ? `${questionLabel} limejibiwa vibaya.`
+      : `${questionLabel} answered incorrectly.`;
 
   playSound(isCorrect ? "correct" : "failure");
 
@@ -200,15 +215,24 @@ const checkAnswer = (answer: string) => {
   );
   allAnswered.value = true;
   isAdvancingQuestion.value = false;
+  keyboardStatusMessage.value = ui.isSwahili
+    ? `Majibu yamekamilika. Umepata ${score.value} kati ya ${shuffledQuestions.value.length}.`
+    : `Answers completed. You scored ${score.value} out of ${shuffledQuestions.value.length}.`;
 };
 
 const handleInputChange = (value: string) => {
   const normalizedValue = normalizeAnswer(value, currentQuestionData.value);
   if (normalizedValue === null) {
+    keyboardStatusMessage.value = ui.isSwahili
+      ? "Ingiza herufi halali ya chaguo."
+      : "Enter a valid answer letter.";
     return;
   }
 
   currentAnswer.value = normalizedValue;
+  keyboardStatusMessage.value = normalizedValue === ""
+    ? ""
+    : ui.formatActivityUpdated(ui.formatQuestion(activeQuestion.value + 1), normalizedValue);
   if (normalizedValue !== "") {
     checkAnswer(normalizedValue);
   }
@@ -217,6 +241,9 @@ const handleInputChange = (value: string) => {
 const handleAllAtOnceInputChange = (questionIndex: number, value: string) => {
   const normalizedValue = normalizeAnswer(value, shuffledQuestions.value[questionIndex]);
   if (normalizedValue === null) {
+    keyboardStatusMessage.value = ui.isSwahili
+      ? "Ingiza herufi halali ya chaguo."
+      : "Enter a valid answer letter.";
     return;
   }
 
@@ -224,6 +251,10 @@ const handleAllAtOnceInputChange = (questionIndex: number, value: string) => {
     ...allAnswers.value,
     [questionIndex]: normalizedValue,
   };
+
+  keyboardStatusMessage.value = normalizedValue === ""
+    ? ""
+    : ui.formatActivityUpdated(ui.formatQuestion(questionIndex + 1), normalizedValue);
 };
 
 const checkAllAnswers = () => {
@@ -255,6 +286,9 @@ const checkAllAnswers = () => {
   }
 
   allAnswered.value = true;
+  keyboardStatusMessage.value = ui.isSwahili
+    ? `Majibu yamekaguliwa. Umepata ${score.value} kati ya ${shuffledQuestions.value.length}.`
+    : `Answers checked. You scored ${score.value} out of ${shuffledQuestions.value.length}.`;
 };
 
 const resetActivity = () => {

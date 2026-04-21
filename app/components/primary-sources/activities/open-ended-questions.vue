@@ -79,6 +79,8 @@ const showResults = ref(false);
 const finalScore = ref(0);
 const aiResults = ref<Record<string, ScoredAnswer>>({});
 const activityInstructionsId = "open-ended-questions-instructions";
+const activityStatusId = "open-ended-questions-status";
+const keyboardStatusMessage = ref("");
 
 const totalMarks = computed(() =>
   props.questions.questions.reduce(
@@ -103,6 +105,7 @@ const handleInputChange = (questionId: string, value: string | number) => {
     ...answers.value,
     [questionId]: String(value ?? ""),
   };
+  keyboardStatusMessage.value = ui.formatActivityUpdated(questionId, value);
 };
 
 const getAcceptedAnswerText = (acceptedAnswers?: string[], hint?: string) =>
@@ -224,6 +227,7 @@ const handleSubmit = async () => {
   const { score } = await calculateScore();
   finalScore.value = score;
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score} / ${totalMarks.value}.`;
 
   const percentage = totalMarks.value > 0 ? (score / totalMarks.value) * 100 : 0;
   playSound(percentage >= 70 ? "correct" : "failure");
@@ -236,6 +240,7 @@ const resetActivity = () => {
   allAnswered.value = false;
   showResults.value = false;
   isCalculatingScore.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 const getQuestionResult = (questionId: string) => aiResults.value[questionId];
@@ -262,6 +267,9 @@ const resultCardClass = (isCorrect?: boolean) =>
           ? "Tumia tab kusogea kwenye kila swali na sehemu ya kuandika jibu. Andika majibu yako katika nafasi zilizotolewa."
           : "Use Tab to move through each question and answer field. Type your responses in the spaces provided."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div
@@ -418,6 +426,7 @@ const resultCardClass = (isCorrect?: boolean) =>
               class="min-h-[80px] bg-white"
               placeholder="Type your answer"
               :aria-label="ui.isSwahili ? `Jibu la swali ${question.questionNumber}` : `Answer for question ${question.questionNumber}`"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               @update:model-value="(value) => handleInputChange(`${question.id}-answer`, value)"
             />
 
@@ -442,6 +451,7 @@ const resultCardClass = (isCorrect?: boolean) =>
                   class="min-h-[80px] bg-white md:ml-4"
                   placeholder="Type your answer"
                   :aria-label="ui.isSwahili ? `Jibu la sehemu ${part.partLabel}` : `Answer for part ${part.partLabel}`"
+                  :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                   @update:model-value="(value) => handleInputChange(`${part.id}-answer`, value)"
                 />
 
@@ -464,6 +474,7 @@ const resultCardClass = (isCorrect?: boolean) =>
                       class="min-h-[72px] bg-white"
                       placeholder="Type your answer"
                       :aria-label="ui.isSwahili ? `Jibu la ${subQuestion.subLabel}` : `Answer for ${subQuestion.subLabel}`"
+                      :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                       @update:model-value="(value) => handleInputChange(subQuestion.id, value)"
                     />
                   </div>
@@ -478,6 +489,7 @@ const resultCardClass = (isCorrect?: boolean) =>
         <Button
           :disabled="isCalculatingScore || !Object.keys(answers).length"
           @click="handleSubmit"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           class="group gap-2"
         >
           <Icon

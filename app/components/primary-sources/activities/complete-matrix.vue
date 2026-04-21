@@ -39,6 +39,7 @@ const props = withDefaults(defineProps<Props>(), {
   feedback: "none",
 });
 
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const droppedItems = ref<Record<string, string[]>>({});
@@ -49,6 +50,8 @@ const showFeedback = ref(false);
 const showCorrectAnswers = ref(false);
 const selectedOption = ref<string | null>(null);
 const instructionsId = "complete-matrix-instructions";
+const statusId = "complete-matrix-status";
+const keyboardStatusMessage = ref("");
 
 const initialize = () => {
   droppedItems.value = props.questions.questions.reduce((acc, question) => {
@@ -61,6 +64,7 @@ const initialize = () => {
   showFeedback.value = false;
   showCorrectAnswers.value = false;
   selectedOption.value = null;
+  keyboardStatusMessage.value = "";
 };
 
 watch(() => props.questions, initialize, { deep: true, immediate: true });
@@ -76,6 +80,7 @@ watch([availableOptions, droppedItems], () => {
   }, 0);
 
   score.value = { correct: correctCount, total: props.questions.options.length };
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value.correct} / ${score.value.total}.`;
   playSound("success");
   allAnswered.value = true;
 }, { deep: true });
@@ -117,6 +122,11 @@ const handleDragEnd = (event: DragEndEvent) => {
     [droppableId]: updatedItems,
   };
 
+  const targetQuestion = props.questions.questions.find((question) => question.id === droppableId);
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    targetQuestion?.name || props.questions.title,
+    activeId,
+  );
   selectedOption.value = null;
   playSound("click");
 };
@@ -157,6 +167,11 @@ const assignOptionToSlot = (questionId: string, slotIndex: number, option: strin
     ...droppedItems.value,
     [questionId]: updatedItems,
   };
+  const targetQuestion = props.questions.questions.find((question) => question.id === questionId);
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    targetQuestion?.name || props.questions.title,
+    option,
+  );
   selectedOption.value = null;
   playSound("click");
 };
@@ -173,12 +188,22 @@ const handleSlotActivate = (questionId: string, slotIndex: number) => {
       [questionId]: updatedItems,
     };
     availableOptions.value = shuffle([...availableOptions.value, existingOption]);
+    const targetQuestion = props.questions.questions.find((question) => question.id === questionId);
+    keyboardStatusMessage.value = ui.formatActivityRemoved(
+      targetQuestion?.name || props.questions.title,
+      existingOption,
+    );
     return;
   }
 
   if (selectedOption.value) {
     assignOptionToSlot(questionId, slotIndex, selectedOption.value);
+    return;
   }
+
+  keyboardStatusMessage.value = ui.isSwahili.value
+    ? "Chagua chaguo kwanza kabla ya kuweka kwenye nafasi."
+    : "Select an option first before placing it in a slot.";
 };
 
 const isCorrectAnswer = (questionId: string, option: string) =>
@@ -207,11 +232,14 @@ const resetActivity = () => {
       pointer, or use the Tab key to select an option and then activate an empty answer slot to
       place it. Activate a filled slot with no option selected to remove it.
     </p>
+    <p :id="statusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div>
       <div class="mb-6">
         <DNDContext :onDragEnd="handleDragEnd">
-          <div class="rounded-lg bg-white" :aria-describedby="instructionsId">
+          <div class="rounded-lg bg-white" :aria-describedby="`${instructionsId} ${statusId}`">
             <div class="grid grid-cols-12 gap-4 rounded-t-lg bg-picton-blue-200 p-2 font-bold text-picton-blue-700">
               <div class="col-span-3 text-center">{{ props.questions.titles[0] }}</div>
               <div class="col-span-4 text-center">{{ props.questions.titles[1] }}</div>
@@ -262,7 +290,7 @@ const resetActivity = () => {
                           v-if="droppedItems[question.id]?.[optionIndex]"
                           type="button"
                           :disabled="showFeedback"
-                          :aria-describedby="instructionsId"
+                          :aria-describedby="`${instructionsId} ${statusId}`"
                           :aria-label="`Placed option ${droppedItems[question.id][optionIndex]} in ${question.name}, slot ${optionIndex + 1}. Activate to remove it.`"
                           :class="[
                             'flex min-h-10 w-full items-center rounded-lg px-4 text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
@@ -298,7 +326,7 @@ const resetActivity = () => {
                         <button
                           v-else
                           type="button"
-                          :aria-describedby="instructionsId"
+                          :aria-describedby="`${instructionsId} ${statusId}`"
                           :aria-label="
                             selectedOption
                               ? `Empty slot ${optionIndex + 1} for ${question.name}. Activate to place ${selectedOption}.`
@@ -330,13 +358,21 @@ const resetActivity = () => {
               >
                 <button
                   type="button"
-                  :aria-describedby="instructionsId"
+                  :aria-describedby="`${instructionsId} ${statusId}`"
                   :aria-pressed="selectedOption === option"
                   :class="[
                     'flex min-h-10 min-w-36 items-center gap-4 rounded bg-picton-blue-200 px-4 text-center text-lg text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
                     selectedOption === option ? 'ring-2 ring-picton-blue-500 ring-offset-2' : '',
                   ]"
-                  @click="selectedOption = selectedOption === option ? null : option"
+                  @click="
+                    () => {
+                      const isSelected = selectedOption === option;
+                      selectedOption = isSelected ? null : option;
+                      keyboardStatusMessage = isSelected
+                        ? ui.formatActivityRemoved(ui.availableAnswerChoices.value, option)
+                        : ui.formatActivitySelected(ui.availableAnswerChoices.value, option);
+                    }
+                  "
                 >
                   <span>{{ option }}</span>
                 </button>

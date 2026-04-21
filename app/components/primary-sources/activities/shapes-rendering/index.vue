@@ -39,6 +39,8 @@ const feedbacks = ref<boolean[]>([]);
 const showResults = ref(false);
 const score = ref(0);
 const activityInstructionsId = "shapes-rendering-instructions";
+const activityStatusId = "shapes-rendering-status";
+const keyboardStatusMessage = ref("");
 
 const initState = () => {
   const length = processedData.value.questions.length;
@@ -63,6 +65,7 @@ const handleCustomReset = () => {
   feedbacks.value = new Array(length).fill(false);
   showResults.value = false;
   score.value = 0;
+  keyboardStatusMessage.value = "";
 
   Object.keys(shuffledOptions).forEach((key) => delete shuffledOptions[Number(key)]);
   processedData.value.questions.forEach((question: ShapeQuestion, idx: number) => {
@@ -76,6 +79,7 @@ const handleTextInputChange = (questionIndex: number, value: string) => {
   const newAnswers = [...answers.value];
   newAnswers[questionIndex] = value;
   answers.value = newAnswers;
+  keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(questionIndex + 1), value);
 };
 
 const handleOptionSelect = (questionIndex: number, option: string) => {
@@ -83,6 +87,7 @@ const handleOptionSelect = (questionIndex: number, option: string) => {
   const newAnswers = [...answers.value];
   newAnswers[questionIndex] = option;
   answers.value = newAnswers;
+  keyboardStatusMessage.value = ui.formatActivitySelected(ui.formatQuestion(questionIndex + 1), option);
 };
 
 const handleCheckAllAnswers = () => {
@@ -100,6 +105,7 @@ const handleCheckAllAnswers = () => {
   feedbacks.value = newFeedbacks;
   score.value = correctCount;
   checkedAnswers.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${correctCount} / ${processedData.value.questions.length}.`;
 };
 
 const getQuestionLabel = (question: ShapeQuestion, questionIndex: number) =>
@@ -124,6 +130,9 @@ const getQuestionLabel = (question: ShapeQuestion, questionIndex: number) =>
           ? "Tumia tab kusogea kwenye kila umbo na sehemu ya jibu. Chagua chaguo kwa enter au space, au andika jibu lako kwenye kisanduku."
           : "Use Tab to move through each shape and answer control. Choose an option with Enter or Space, or type your answer into the input field."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
     <div class="flex-1 overflow-y-auto p-4">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -181,6 +190,7 @@ const getQuestionLabel = (question: ShapeQuestion, questionIndex: number) =>
                 type="button"
                 :aria-pressed="answers[questionIndex] === option"
                 :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, chaguo la ${optionIndex + 1}: ${option}` : `Question ${questionIndex + 1}, option ${optionIndex + 1}: ${option}`"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 :variant="answers[questionIndex] === option ? 'brand' : 'outline-brand'"
                 :class="
                   cn(
@@ -224,6 +234,7 @@ const getQuestionLabel = (question: ShapeQuestion, questionIndex: number) =>
                 :value="(answers[questionIndex] || '').split('/')[0] || ''"
                 :disabled="checkedAnswers"
                 :aria-label="ui.isSwahili ? `Sehemu ya kwanza ya jibu la swali la ${questionIndex + 1}` : `First part of the answer for question ${questionIndex + 1}`"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 :class="
                   cn(
                     'mb-2 text-center max-w-20 !text-2xl',
@@ -248,6 +259,7 @@ const getQuestionLabel = (question: ShapeQuestion, questionIndex: number) =>
                 :value="(answers[questionIndex] || '').split('/')[1] || ''"
                 :disabled="checkedAnswers"
                 :aria-label="ui.isSwahili ? `Sehemu ya pili ya jibu la swali la ${questionIndex + 1}` : `Second part of the answer for question ${questionIndex + 1}`"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 :class="
                   cn(
                     'text-center max-w-20 !text-2xl',
@@ -272,6 +284,7 @@ const getQuestionLabel = (question: ShapeQuestion, questionIndex: number) =>
                 :value="answers[questionIndex] || ''"
                 :disabled="checkedAnswers"
                 :aria-label="ui.isSwahili ? `Jibu la swali la ${questionIndex + 1}` : `Answer for question ${questionIndex + 1}`"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 :class="
                   cn(
                     '!text-lg',
@@ -308,6 +321,7 @@ const getQuestionLabel = (question: ShapeQuestion, questionIndex: number) =>
           :onClick="handleCheckAllAnswers"
           :disabled="answers.every((answer) => !answer.trim())"
           variant="brand-lemon"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
         >
           {{ ui.checkAllAnswers }}
         </Button>

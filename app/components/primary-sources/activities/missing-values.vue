@@ -37,6 +37,8 @@ const isCompleted = ref(false);
 const score = ref(0);
 const showResultsDialog = ref(false);
 const activityInstructionsId = "missing-values-instructions";
+const activityStatusId = "missing-values-status";
+const keyboardStatusMessage = ref("");
 
 watch(
   () => props.questions.questions,
@@ -48,6 +50,7 @@ watch(
     isCompleted.value = false;
     score.value = 0;
     showResultsDialog.value = false;
+    keyboardStatusMessage.value = "";
   },
   { deep: true },
 );
@@ -63,6 +66,10 @@ const handleInputChange = (questionId: string, blankIndex: number, value: string
     ...answers.value,
     [answerKey(questionId, blankIndex)]: value,
   };
+  keyboardStatusMessage.value = ui.formatActivityUpdated(
+    ui.formatQuestion(questions.value.findIndex((question) => question.id === questionId) + 1),
+    value,
+  );
 };
 
 const checkAnswers = () => {
@@ -90,6 +97,7 @@ const checkAnswers = () => {
   validations.value = nextValidations;
   score.value = correctCount;
   showResultsDialog.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${correctCount} / ${totalBlanks.value}.`;
 };
 
 const resetActivity = () => {
@@ -141,6 +149,9 @@ const getInputClass = (key: string) => {
           : "Use Tab to move through each blank in the sequence and type the correct value."
       }}
     </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div class="space-y-4">
       <div
@@ -166,6 +177,7 @@ const getInputClass = (key: string) => {
                 "
                 :disabled="showFeedback"
                 :aria-label="ui.isSwahili ? `Jibu la swali ${questionIndex + 1}, pengo la ${question.blankIndices.indexOf(index) + 1}` : `Answer for question ${questionIndex + 1}, blank ${question.blankIndices.indexOf(index) + 1}`"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 :class="[
                   'h-12 w-[90px] rounded border-2 bg-transparent text-center !text-2xl font-semibold',
                   getInputClass(answerKey(question.id, index)),
@@ -181,6 +193,7 @@ const getInputClass = (key: string) => {
       v-if="!showFeedback"
       variant="brand-lemon"
       class="mx-auto mt-4 w-fit group gap-2"
+      :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
       @click="checkAnswers"
     >
       <Icon

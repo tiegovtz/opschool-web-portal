@@ -45,6 +45,8 @@ const score = ref(0);
 const resultsDialogOpen = ref(false);
 const rowResults = ref<boolean[]>([]);
 const activityInstructionsId = "table-check-boxes-instructions";
+const activityStatusId = "table-check-boxes-status";
+const keyboardStatusMessage = ref("");
 
 const initializeCells = () => {
   const cells: CellState[] = [];
@@ -59,6 +61,7 @@ const initializeCells = () => {
     });
   });
   cellStates.value = cells;
+  keyboardStatusMessage.value = "";
 };
 
 watch(
@@ -85,6 +88,10 @@ const handleCellClick = (rowIndex: number, cellIndex: number) => {
       ? { ...cell, isChecked: !cell.isChecked }
       : cell,
   );
+  const cell = getCellState(rowIndex, cellIndex);
+  keyboardStatusMessage.value = (cell?.isChecked ?? false)
+    ? ui.formatActivityRemoved(ui.formatQuestion(rowIndex + 1), props.questions.columnQuestions[cellIndex]?.text)
+    : ui.formatActivitySelected(ui.formatQuestion(rowIndex + 1), props.questions.columnQuestions[cellIndex]?.text);
   playSound("click");
 };
 
@@ -97,6 +104,7 @@ const checkAnswers = () => {
   const results = props.questions.rowQuestions.map((_, rowIndex) => isRowCorrect(rowIndex));
   rowResults.value = results;
   score.value = results.filter(Boolean).length;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.rowQuestions.length}.`;
   playSound("success");
   resultsDialogOpen.value = true;
 };
@@ -110,6 +118,7 @@ const resetActivity = () => {
   showResults.value = false;
   score.value = 0;
   resultsDialogOpen.value = false;
+  keyboardStatusMessage.value = "";
 };
 </script>
 
@@ -129,6 +138,9 @@ const resetActivity = () => {
           ? "Tumia tab kusogea kwenye kila kisanduku cha jedwali. Tumia enter au space kuweka au kuondoa alama ya tiki."
           : "Use Tab to move through each table checkbox. Use Enter or Space to check or uncheck it."
       }}
+    </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="flex h-full flex-col gap-4">
@@ -197,6 +209,7 @@ const resetActivity = () => {
                     :disabled="showResults"
                     :aria-pressed="getCellState(rowIndex, cellIndex)?.isChecked"
                     :aria-label="ui.isSwahili ? `${row.text}, ${column.text}` : `${row.text}, ${column.text}`"
+                    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                     class="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
                     @click="!showResults && handleCellClick(rowIndex, cellIndex)"
                   >

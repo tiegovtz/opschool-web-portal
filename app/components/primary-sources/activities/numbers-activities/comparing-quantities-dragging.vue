@@ -40,6 +40,8 @@ const questionAnswers = reactive<Record<number, { left: string; right: string }>
 const questionAvailableAnswers = reactive<Record<number, string[]>>({});
 const correctAnswers = ref<string[]>([]);
 const activityInstructionsId = "numbers-comparing-quantities-dragging-instructions";
+const activityStatusId = "numbers-comparing-quantities-dragging-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -53,6 +55,7 @@ const init = () => {
     questionAnswers[index] = { left: "", right: "" };
     questionAvailableAnswers[index] = shuffle(answers);
   });
+  keyboardStatusMessage.value = "";
 };
 
 onMounted(init);
@@ -83,6 +86,7 @@ watch(
     score.value = totalScore;
     correctAnswers.value = correct;
     allAnswered.value = true;
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${totalScore} / ${totalQuestions.value}.`;
     playSound("success");
   },
   { deep: true },
@@ -120,6 +124,10 @@ const assignAnswer = (questionIndex: number, side: "left" | "right", answer: str
     };
   }
 
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    ui.formatQuestion(questionIndex + 1),
+    `${side}: ${answer}`,
+  );
   playSound("click");
 };
 
@@ -133,6 +141,10 @@ const clearAssignedAnswer = (questionIndex: number, side: "left" | "right") => {
     ...current,
     [side]: "",
   };
+  keyboardStatusMessage.value = ui.formatActivityRemoved(
+    ui.formatQuestion(questionIndex + 1),
+    `${side}: ${answer}`,
+  );
   playSound("click");
 };
 
@@ -218,6 +230,10 @@ const handleDragEnd = (event: DndDragEndEvent) => {
     [side]: answer,
   };
 
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    ui.formatQuestion(targetQuestionIndex + 1),
+    `${side}: ${answer}`,
+  );
   playSound("click");
 };
 
@@ -246,6 +262,9 @@ const resetActivity = () => {
           ? "Tumia tab kufikia majibu yaliyo wazi. Bonyeza enter au space kulipeleka kushoto au kulia. Unaweza pia kutumia kuburuta. Tumia tab kufikia jibu lililowekwa na ubonyeze enter au space kuliondoa."
           : "Use Tab to reach the available answers. Press Enter or Space to send an answer to the left or right side. You can also drag it. Use Tab to reach a placed answer and press Enter or Space to remove it."
       }}
+    </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="flex-1 flex flex-col gap-6 overflow-y-auto p-4">
@@ -302,6 +321,7 @@ const resetActivity = () => {
                     type="button"
                     class="mt-2 w-full rounded border border-picton-blue-300 bg-white px-2 py-1 text-xs text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
                     :aria-label="ui.isSwahili ? `Ondoa jibu la kushoto kwa swali la ${index + 1}` : `Remove left answer for question ${index + 1}`"
+                    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                     @click="clearAssignedAnswer(index, 'left')"
                   >
                     {{ ui.isSwahili ? "Ondoa" : "Remove" }}
@@ -341,6 +361,7 @@ const resetActivity = () => {
                         type="button"
                         class="rounded border border-picton-blue-300 bg-white px-2 py-1 text-xs text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
                         :aria-label="ui.isSwahili ? `Weka ${answer} kushoto` : `Place ${answer} on the left`"
+                        :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                         @click="assignAnswer(index, 'left', answer)"
                       >
                         {{ ui.isSwahili ? "Kushoto" : "Left" }}
@@ -349,6 +370,7 @@ const resetActivity = () => {
                         type="button"
                         class="rounded border border-picton-blue-300 bg-white px-2 py-1 text-xs text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
                         :aria-label="ui.isSwahili ? `Weka ${answer} kulia` : `Place ${answer} on the right`"
+                        :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                         @click="assignAnswer(index, 'right', answer)"
                       >
                         {{ ui.isSwahili ? "Kulia" : "Right" }}
@@ -397,6 +419,7 @@ const resetActivity = () => {
                     type="button"
                     class="mt-2 w-full rounded border border-picton-blue-300 bg-white px-2 py-1 text-xs text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
                     :aria-label="ui.isSwahili ? `Ondoa jibu la kulia kwa swali la ${index + 1}` : `Remove right answer for question ${index + 1}`"
+                    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                     @click="clearAssignedAnswer(index, 'right')"
                   >
                     {{ ui.isSwahili ? "Ondoa" : "Remove" }}

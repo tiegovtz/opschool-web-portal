@@ -44,6 +44,8 @@ const cellStates = ref<CellState[]>(
   ),
 );
 const activityInstructionsId = "exam-table-checkboxes-instructions";
+const activityStatusId = "exam-table-checkboxes-status";
+const keyboardStatusMessage = ref("");
 
 const { collectAnswers, updateActivityScore } = useExamContext();
 
@@ -125,6 +127,12 @@ const handleCellClick = (rowId: string, columnId: string) => {
       ? { ...cell, isChecked: !cell.isChecked }
       : cell,
   );
+  const rowIndex = props.questions.rowQuestions.findIndex((row) => row.id === rowId);
+  const columnIndex = props.questions.columnQuestions.findIndex((column) => column.id === columnId);
+  const selected = getCellState(rowId, columnId)?.isChecked;
+  keyboardStatusMessage.value = selected
+    ? ui.formatActivitySelected(ui.formatQuestion(rowIndex + 1), props.questions.columnQuestions[columnIndex]?.text)
+    : ui.formatActivityRemoved(ui.formatQuestion(rowIndex + 1), props.questions.columnQuestions[columnIndex]?.text);
 };
 
 const getCellState = (rowId: string, columnId: string) =>
@@ -150,6 +158,9 @@ const hasRowAnswers = (rowId: string) =>
           ? "Tumia tab kusogea kwenye kila kisanduku cha jedwali. Tumia enter au space kuweka au kuondoa alama ya tiki."
           : "Use Tab to move through each table checkbox. Use Enter or Space to check or uncheck it."
       }}
+    </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
     <div class="flex-1 overflow-y-auto p-4">
       <div class="space-y-4">
@@ -220,6 +231,7 @@ const hasRowAnswers = (rowId: string) =>
                       type="button"
                       :aria-pressed="getCellState(row.id, column.id)?.isChecked"
                       :aria-label="ui.isSwahili ? `${row.text}, ${column.text}` : `${row.text}, ${column.text}`"
+                      :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                       class="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
                       @click="handleCellClick(row.id, column.id)"
                     >

@@ -24,6 +24,8 @@ const configurationText = ref("{}");
 const parseError = ref("");
 const isSubmitting = ref(false);
 const instructionsId = "activity-form-renderer-instructions";
+const statusId = "activity-form-renderer-status";
+const keyboardStatusMessage = ref("");
 
 const config = computed(() =>
   props.activityType ? getActivityTypeConfig(props.activityType as ActivityType) : null,
@@ -80,8 +82,10 @@ const handleSubmit = async () => {
 
     await props.onSubmit?.(payload);
     props.onSubmitSuccess?.(payload);
+    keyboardStatusMessage.value = "Activity form saved.";
   } catch (error) {
     parseError.value = error instanceof Error ? error.message : "Invalid JSON configuration.";
+    keyboardStatusMessage.value = parseError.value;
   } finally {
     isSubmitting.value = false;
   }
@@ -102,6 +106,9 @@ const handleSubmit = async () => {
     <p :id="instructionsId" class="sr-only">
       Edit the activity metadata and raw JSON configuration. Use the Tab key to move through the
       form fields, then choose save when you are ready.
+    </p>
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <ActivityMetadataForm
@@ -128,7 +135,7 @@ const handleSubmit = async () => {
         <Textarea
           v-model="configurationText"
           class="min-h-[420px] font-mono text-sm"
-          :aria-describedby="instructionsId"
+          :aria-describedby="`${instructionsId} ${statusId}`"
           aria-label="Activity JSON configuration"
           placeholder="{&#10;  &quot;title&quot;: &quot;My Activity&quot;,&#10;  &quot;questions&quot;: []&#10;}"
         />
@@ -142,7 +149,7 @@ const handleSubmit = async () => {
           <Button v-if="props.onCancel" variant="outline-brand" @click="props.onCancel">
             Cancel
           </Button>
-          <Button :disabled="isSubmitting" :aria-describedby="instructionsId" @click="handleSubmit">
+          <Button :disabled="isSubmitting" :aria-describedby="`${instructionsId} ${statusId}`" @click="handleSubmit">
             {{ isSubmitting ? "Saving..." : "Save Activity Form" }}
           </Button>
         </div>

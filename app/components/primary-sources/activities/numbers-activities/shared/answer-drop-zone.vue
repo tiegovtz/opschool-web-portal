@@ -20,6 +20,7 @@ type AnswerDropZoneProps = {
   dragId?: string;
   isSelected?: boolean;
   ariaLabel?: string;
+  ariaDescribedby?: string;
 };
 
 const props = withDefaults(defineProps<AnswerDropZoneProps>(), {
@@ -30,6 +31,7 @@ const props = withDefaults(defineProps<AnswerDropZoneProps>(), {
   isDraggable: false,
   isSelected: false,
 });
+const statusId = "answer-drop-zone-status";
 
 const slots = useSlots();
 
@@ -95,6 +97,7 @@ const renderTextContent = computed(() => {
         :disabled="props.showResults"
         :placeholder="props.placeholder"
         :aria-label="props.ariaLabel"
+        :aria-describedby="props.ariaDescribedby"
         :class="
           cn(
             'text-center border-none font-medium !text-3xl bg-transparent focus-visible:ring-offset-0',
@@ -127,6 +130,7 @@ const renderTextContent = computed(() => {
     <button
       type="button"
       :aria-label="props.ariaLabel"
+      :aria-describedby="props.ariaDescribedby"
       :aria-pressed="props.isSelected"
       :disabled="props.showResults"
       :class="`transition-colors

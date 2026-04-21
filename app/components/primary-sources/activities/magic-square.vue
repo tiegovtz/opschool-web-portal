@@ -36,6 +36,8 @@ const completedQuestions = ref(new Set<number>());
 const incorrectQuestions = ref(new Set<number>());
 const isComplete = ref(false);
 const instructionsId = "magic-square-instructions";
+const statusId = "magic-square-status";
+const keyboardStatusMessage = ref("");
 
 const initializeAnswers = () => {
   const initialAnswers: Record<number, string[][]> = {};
@@ -88,9 +90,13 @@ const handleInputChange = (questionId: number, row: number, col: number, value: 
     [questionId]: userAnswers.value[questionId].map((currentRow, rowIndex) =>
       rowIndex === row
         ? currentRow.map((cell, colIndex) => (colIndex === col ? value : cell))
-        : currentRow,
+      : currentRow,
     ),
   };
+  keyboardStatusMessage.value = ui.formatActivityUpdated(
+    ui.formatQuestion(questionId),
+    value,
+  );
 };
 
 const handleSubmit = () => {
@@ -110,6 +116,7 @@ const handleSubmit = () => {
   incorrectQuestions.value = nextIncorrect;
   showResults.value = true;
   isComplete.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${nextCompleted.size} / ${props.questions.questions.length}.`;
 };
 
 const handleRestart = () => {
@@ -119,6 +126,7 @@ const handleRestart = () => {
   completedQuestions.value = new Set();
   incorrectQuestions.value = new Set();
   isComplete.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 const score = computed(() => ({
@@ -147,6 +155,9 @@ const allCellsFilled = computed(() =>
       Complete each magic square so every row, column, and diagonal matches the target sum. Use the
       Tab key to move between the empty cells, then activate the check answers button when all
       required cells are filled.
+    </p>
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="grid grid-cols-1 gap-4 xl:grid-cols-3">
@@ -187,7 +198,7 @@ const allCellsFilled = computed(() =>
               'grid w-fit gap-1 rounded-lg border-2 border-neutral-400 bg-white p-1 sm:p-2',
               (question.gridSize || question.grid.length) === 3 ? 'grid-cols-3' : 'grid-cols-4',
             ]"
-            :aria-describedby="instructionsId"
+            :aria-describedby="`${instructionsId} ${statusId}`"
           >
             <template
               v-for="(row, rowIndex) in (userAnswers[question.id] || question.grid)"
@@ -201,7 +212,7 @@ const allCellsFilled = computed(() =>
                 removeArrows
                 :disabled="question.grid[rowIndex][colIndex] !== '_' || showResults"
                 :aria-label="`Magic square ${question.id}, row ${rowIndex + 1}, column ${colIndex + 1}`"
-                :aria-describedby="instructionsId"
+                :aria-describedby="`${instructionsId} ${statusId}`"
                 :class="
                   cn(
                     'rounded-lg border-2 text-center font-semibold !text-2xl !opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
@@ -232,7 +243,7 @@ const allCellsFilled = computed(() =>
         :disabled="!allCellsFilled"
         variant="brand-lemon"
         @click="handleSubmit"
-        :aria-describedby="instructionsId"
+        :aria-describedby="`${instructionsId} ${statusId}`"
         class="group gap-2"
       >
         <Icon

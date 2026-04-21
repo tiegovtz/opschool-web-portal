@@ -35,6 +35,8 @@ const checkedQuestions = ref<number[]>([]);
 const feedbacks = ref<Record<number, boolean>>({});
 const showResults = ref(false);
 const activityInstructionsId = "complete-sentences-rearrange-instructions";
+const activityStatusId = "complete-sentences-rearrange-status";
+const keyboardStatusMessage = ref("");
 const getWordCount = (questionIndex: number) =>
   shuffledQuestions.value[questionIndex]?.answer.split(" ").length || 0;
 
@@ -76,6 +78,10 @@ function handleWordClick(questionIndex: number, wordIndex: number) {
     ...selectedWordIndices.value,
     [questionIndex]: updated,
   };
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    ui.formatQuestion(questionIndex + 1),
+    (shuffledQuestions.value as any[])[questionIndex].options[wordIndex],
+  );
 
   if (updated.length === getWordCount(questionIndex)) {
     setTimeout(() => {
@@ -110,6 +116,7 @@ function handleWordClick(questionIndex: number, wordIndex: number) {
         checkedQuestions.value.length + 1 ===
         shuffledQuestions.value.length
       ) {
+        keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value + (isCorrect ? 1 : 0)} / ${shuffledQuestions.value.length}.`;
         playSound("success");
       }
     }, 100);
@@ -127,6 +134,7 @@ function handleRemoveWord(questionIndex: number, selectedIndex: number) {
     ...selectedWordIndices.value,
     [questionIndex]: updated,
   };
+  keyboardStatusMessage.value = ui.formatActivityRemoved(ui.formatQuestion(questionIndex + 1));
 }
 
 // RESET
@@ -137,6 +145,7 @@ function resetGame() {
   checkedQuestions.value = [];
   feedbacks.value = {};
   showResults.value = false;
+  keyboardStatusMessage.value = "";
 }
 </script>
 
@@ -154,6 +163,9 @@ function resetGame() {
       {{ ui.isSwahili
         ? "Tumia kitufe cha Tab kupita kwenye vitufe vya maneno. Bonyeza Enter au Space kujenga sentensi kwenye sehemu ya jibu. Maswali yote yakikamilika, fungua mwonekano wa matokeo kuona alama yako."
         : "Use the Tab key to move between word buttons. Press Enter or Space to build the sentence in the answer area. When all questions are complete, open the results view to review your score." }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <!-- GAME -->
@@ -183,7 +195,7 @@ function resetGame() {
               :key="optionIndex"
               class="px-3 py-1 text-lg rounded border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
               :aria-label="ui.isSwahili ? `Swali la ${index + 1}, neno la ${optionIndex + 1}: ${word}` : `Question ${index + 1} word ${optionIndex + 1}: ${word}`"
-              :aria-describedby="activityInstructionsId"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               :class="{
                 'opacity-50 pointer-events-none':
                   (selectedWordIndices[index] || []).includes(optionIndex) ||
@@ -209,7 +221,7 @@ function resetGame() {
               :key="i"
               type="button"
               class="px-3 py-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
-              :aria-describedby="activityInstructionsId"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               :aria-label="ui.isSwahili ? `Ondoa neno ${word} kutoka swali la ${index + 1}` : `Remove word ${word} from question ${index + 1}`"
               :class="{
                 'pointer-events-none':
@@ -244,7 +256,7 @@ function resetGame() {
         <Button
           variant="brand-lemon"
           class="w-full"
-          :aria-describedby="activityInstructionsId"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           @click="showResults = true"
         >
           {{ ui.viewResults }}
@@ -295,7 +307,7 @@ function resetGame() {
         <Button
           variant="brand"
           class="mt-4"
-          :aria-describedby="activityInstructionsId"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           @click="resetGame"
         >
           Restart
