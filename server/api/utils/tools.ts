@@ -1,6 +1,13 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { tool } from "ai";
 import { z } from "zod";
+import {
+  parse as mathParse,
+  simplify as mathSimplify,
+  derivative as mathDerivative,
+  rationalize as mathRationalize,
+  evaluate as mathEvaluate,
+} from "mathjs";
 import { fetchCombinedRAGContext } from "../../utils/rag";
 import apiDocs from "~/utilities/apiDocs";
 import type { Syllabus } from "~/types/syllabus.interface";
@@ -702,17 +709,289 @@ export const studentTools = {
 
   // getSubjectTopics removed: topic endpoint coverage is limited; rely on RAG + model knowledge instead.
 
-  math: tool({
-    description: "Evaluate basic math expressions",
-    inputSchema: z.object({ expression: z.string() }),
-    execute: async ({ expression }) => {
+  solveMath: tool({
+    description: `Do symbolic or numeric math with a CAS — safe replacement for any manual calculation. ALWAYS use this before stating a non-trivial algebraic result so your shown work is correct.
+
+**MANDATORY RENDERING:** after calling this tool, you MUST embed the returned \`steps\` in a fenced \`\`\`steps block in your reply — do NOT retype the steps as markdown prose. Format:
+\`\`\`steps
+{"title":"<short title>","steps":<the steps array from the tool result>,"finalLatex":"<the latex field from the tool result>"}
+\`\`\`
+Do this for differentiate, solve, simplify, factor, expand, and evaluate — any time the tool returned steps. The frontend renders this as an interactive step block.
+
+
+Operations:
+- "evaluate": compute a numeric value (e.g. 2+3*sin(pi/4)).
+- "simplify": algebraically simplify an expression (e.g. (x^2-1)/(x-1) → x+1).
+- "expand": expand products/powers (e.g. (x+1)^2 → x^2+2x+1). Implemented via simplify rules.
+- "factor": factor a polynomial where possible (via rationalize + simplify).
+- "differentiate": derivative w.r.t. variable (default x). Supports higher order via 'order'.
+- "solve": solve a linear or simple polynomial equation in one variable for its roots. For systems, send one equation per call is not supported — keep to single-variable.
+
+Always pass the raw math expression (no $ or \\( delimiters). Use '*' for multiplication, '^' for power. The tool returns { result, latex, steps[] } where steps has { description, expression, latex } — prefer to render the steps to the student as a ${''}\`\`\`steps ... \`\`\` fenced block.`,
+    inputSchema: z.object({
+      operation: z.enum([
+        "evaluate",
+        "simplify",
+        "expand",
+        "factor",
+        "differentiate",
+        "solve",
+      ]),
+      expression: z.string().describe("Math expression, e.g. 'x^2 + 2*x + 1' or '2+3*4'. For 'solve', an equation like 'x^2 - 5*x + 6 = 0'."),
+      variable: z.string().optional().describe("Variable for differentiate/solve. Default: 'x'."),
+      order: z.number().int().min(1).max(5).optional().describe("Derivative order (default 1)."),
+    }),
+    execute: async ({ operation, expression, variable, order }) => {
+      const v = (variable || "x").trim() || "x";
+      const steps: Array<{ description: string; expression: string; latex: string }> = [];
+      const toLatex = (node: any): string => {
+        try {
+          return typeof node?.toTex === "function" ? node.toTex({ parenthesis: "auto", implicit: "hide" }) : String(node);
+        } catch {
+          return String(node);
+        }
+      };
       try {
-        const result = eval(expression);
-        return { result };
-      } catch {
-        return { result: "Invalid expression" };
+        if (operation === "evaluate") {
+          const parsed = mathParse(expression);
+          steps.push({ description: "Expression", expression, latex: toLatex(parsed) });
+          const value = mathEvaluate(expression);
+          const resultStr = typeof value === "number" ? String(value) : String(value);
+          steps.push({ description: "Numeric value", expression: resultStr, latex: resultStr });
+          return { ok: true, operation, input: expression, result: resultStr, latex: toLatex(parsed) + " = " + resultStr, steps, renderInstruction: "Embed these steps as a ```steps fenced block in your reply. Do not retype them in prose." };
+        }
+        if (operation === "simplify" || operation === "expand" || operation === "factor") {
+          const parsed = mathParse(expression);
+          steps.push({ description: "Input", expression, latex: toLatex(parsed) });
+          // First pass: rationalize (reduces rational expressions like (x^2-1)/(x-1) → x+1)
+          let working: any = parsed;
+          try {
+            const rat = mathRationalize(parsed, {}, true) as any;
+            const candidate = rat?.expression ?? rat;
+            if (candidate && String(candidate) !== String(parsed)) {
+              working = candidate;
+              steps.push({ description: "Rationalized", expression: String(working), latex: toLatex(working) });
+            }
+          } catch { /* rationalize can fail on non-rational exprs */ }
+          const final = mathSimplify(working);
+          const label = operation === "expand" ? "Expanded" : operation === "factor" ? "Factored/simplified" : "Simplified";
+          steps.push({ description: label, expression: String(final), latex: toLatex(final) });
+          return { ok: true, operation, input: expression, result: String(final), latex: toLatex(final), steps, renderInstruction: "Embed these steps as a ```steps fenced block in your reply. Do not retype them in prose." };
+        }
+        if (operation === "differentiate") {
+          const parsed = mathParse(expression);
+          steps.push({ description: `f(${v}) =`, expression, latex: toLatex(parsed) });
+          let current: any = parsed;
+          const n = order ?? 1;
+          for (let i = 0; i < n; i++) {
+            current = mathDerivative(current, v);
+            const simp = mathSimplify(current);
+            current = simp;
+            steps.push({ description: `Derivative (order ${i + 1})`, expression: String(simp), latex: toLatex(simp) });
+          }
+          return { ok: true, operation, input: expression, result: String(current), latex: toLatex(current), steps, renderInstruction: "Embed these steps as a ```steps fenced block. Example: \\n```steps\\n{\"title\":\"Differentiation\",\"steps\":[...returned steps...],\"finalLatex\":\"...the latex field...\"}\\n```" };
+        }
+        if (operation === "solve") {
+          // Accept "lhs = rhs" or a single expression (treated as = 0)
+          const parts = expression.split("=");
+          const lhsRaw = parts[0] ?? "0";
+          const rhsRaw = parts.length > 1 ? parts.slice(1).join("=") : "0";
+          const normalized = `(${lhsRaw}) - (${rhsRaw})`;
+          const parsed = mathParse(normalized);
+          steps.push({ description: "Move all terms to one side", expression: `${normalized} = 0`, latex: toLatex(parsed) + " = 0" });
+          const simp = mathSimplify(parsed);
+          steps.push({ description: "Simplified", expression: String(simp) + " = 0", latex: toLatex(simp) + " = 0" });
+          // Try to coerce to polynomial coefficients in variable v
+          let coeffs: number[] | null = null;
+          try {
+            const rat = mathRationalize(simp, {}, true) as any;
+            const poly = rat?.expression ?? rat;
+            // Collect coefficients by evaluating at integer points (Lagrange-like) — safe for low degree.
+            // Degree detection: try up to 4
+            const maxDeg = 4;
+            const points: Array<{ x: number; y: number }> = [];
+            for (let x = 0; x <= maxDeg; x++) {
+              const scope: any = {}; scope[v] = x;
+              const y = mathEvaluate(String(poly), scope);
+              if (typeof y !== "number" || !isFinite(y)) { coeffs = null; break; }
+              points.push({ x, y });
+            }
+            if (points.length === maxDeg + 1) {
+              // Fit via finite differences to find lowest degree
+              // Build Vandermonde and solve (gaussian elimination)
+              const A: number[][] = points.map(p => Array.from({ length: maxDeg + 1 }, (_, i) => p.x ** i));
+              const b = points.map(p => p.y);
+              // Gauss-Jordan
+              const N = maxDeg + 1;
+              for (let i = 0; i < N; i++) {
+                let pivot = i;
+                for (let k = i + 1; k < N; k++) if (Math.abs(A[k]![i]!) > Math.abs(A[pivot]![i]!)) pivot = k;
+                [A[i], A[pivot]] = [A[pivot]!, A[i]!];
+                [b[i], b[pivot]] = [b[pivot]!, b[i]!];
+                const div = A[i]![i]!;
+                if (Math.abs(div) < 1e-12) continue;
+                for (let j = i; j < N; j++) A[i]![j]! /= div;
+                b[i]! /= div;
+                for (let k = 0; k < N; k++) {
+                  if (k === i) continue;
+                  const factor = A[k]![i]!;
+                  for (let j = i; j < N; j++) A[k]![j]! -= factor * A[i]![j]!;
+                  b[k]! -= factor * b[i]!;
+                }
+              }
+              coeffs = b.map(x => Math.abs(x) < 1e-10 ? 0 : x);
+              while (coeffs.length > 1 && Math.abs(coeffs[coeffs.length - 1]!) < 1e-10) coeffs.pop();
+            }
+          } catch { coeffs = null; }
+
+          const roots: Array<{ real: number; imag?: number } | string> = [];
+          if (coeffs && coeffs.length <= 3) {
+            if (coeffs.length === 2) {
+              // a + b*x = 0
+              const a = coeffs[0]!, b = coeffs[1]!;
+              if (Math.abs(b) < 1e-12) {
+                steps.push({ description: "No solution (0 = constant)", expression: "", latex: "\\text{no solution}" });
+              } else {
+                const r = -a / b;
+                roots.push({ real: r });
+                steps.push({ description: `Linear: ${v} = -a/b`, expression: `${v} = ${r}`, latex: `${v} = ${r}` });
+              }
+            } else if (coeffs.length === 3) {
+              const c = coeffs[0]!, b = coeffs[1]!, a = coeffs[2]!;
+              const disc = b * b - 4 * a * c;
+              steps.push({ description: "Quadratic discriminant Δ = b² − 4ac", expression: `Δ = ${disc}`, latex: `\\Delta = ${disc}` });
+              if (disc >= 0) {
+                const s = Math.sqrt(disc);
+                const r1 = (-b + s) / (2 * a);
+                const r2 = (-b - s) / (2 * a);
+                roots.push({ real: r1 }, { real: r2 });
+                steps.push({ description: "Roots via quadratic formula", expression: `${v} = ${r1}, ${r2}`, latex: `${v} = ${r1},\\ ${r2}` });
+              } else {
+                const s = Math.sqrt(-disc);
+                const re = -b / (2 * a), im = s / (2 * a);
+                roots.push({ real: re, imag: im }, { real: re, imag: -im });
+                steps.push({ description: "Complex roots", expression: `${v} = ${re} ± ${im}i`, latex: `${v} = ${re} \\pm ${im}i` });
+              }
+            }
+          } else {
+            steps.push({ description: "Equation is not a supported polynomial (degree ≤ 2) — returning simplified form for inspection.", expression: String(simp) + " = 0", latex: toLatex(simp) + " = 0" });
+          }
+
+          const resultStr = roots.length
+            ? roots.map(r => typeof r === "string" ? r : (r.imag ? `${r.real}${r.imag >= 0 ? "+" : ""}${r.imag}i` : String(r.real))).join(", ")
+            : String(simp) + " = 0";
+
+          return { ok: true, operation, input: expression, variable: v, result: resultStr, roots, latex: resultStr, steps, renderInstruction: "Embed these steps as a ```steps fenced block in your reply." };
+        }
+      } catch (err: any) {
+        return { ok: false, operation, input: expression, error: err?.message || String(err), steps };
       }
+      return { ok: false, operation, input: expression, error: "Unsupported operation" };
     },
+    // NOTE: wrapping the successful return is done inline above; frontend expects a ```steps block.
+  }),
+
+  plotFunction: tool({
+    description: `Produce a 2D plot of one or more functions of x. Use whenever a graph helps the student (parabolas, trig, linear, exponential, intersections). The tool returns a JSON spec; YOU MUST then emit a fenced block exactly like:
+
+\`\`\`graph
+{"expressions":["x^2","2*x+1"],"xRange":[-5,5],"title":"Parabola and line","annotations":[{"x":2,"y":4,"label":"(2,4)"}]}
+\`\`\`
+
+Rules: use '*' for multiplication and '^' for power; no LaTeX inside expressions; each expression is the right-hand side only (write "x-1", NOT "y=x-1" or "f(x)=x-1"). Keep xRange reasonable (usually 5–20 wide). The frontend renders the plot with function-plot.`,
+    inputSchema: z.object({
+      expressions: z.array(z.string()).min(1).max(4).describe("Functions of x, e.g. ['x^2', '2*x+1']."),
+      xRange: z.array(z.number()).min(2).max(2).describe("[xMin, xMax] — two numbers"),
+      yRange: z.array(z.number()).min(2).max(2).optional().describe("[yMin, yMax] — two numbers (optional)"),
+      title: z.string().optional(),
+      xLabel: z.string().optional(),
+      yLabel: z.string().optional(),
+      annotations: z
+        .array(z.object({ x: z.number(), y: z.number(), label: z.string().optional() }))
+        .optional(),
+    }),
+    execute: async (spec) => {
+      // Strip common LHS prefixes the model sometimes produces: "y=...", "f(x)=...", "g(x)=...", "y ="
+      spec.expressions = spec.expressions.map((e) =>
+        e.replace(/^\s*(?:y|[a-z]\s*\(\s*x\s*\))\s*=\s*/i, "").trim()
+      );
+      const invalid: string[] = [];
+      for (const expr of spec.expressions) {
+        if (expr.includes("=")) { invalid.push(expr); continue; }
+        try { mathParse(expr); } catch { invalid.push(expr); }
+      }
+      if (invalid.length) {
+        return { ok: false, error: `Invalid expressions: ${invalid.join(", ")}. Use '*' for multiplication and '^' for power, right-hand side only (no 'y=' or '='). No LaTeX.` };
+      }
+      return {
+        ok: true,
+        spec,
+        instruction:
+          "Now include the plot in your reply as a ```graph fenced block with this JSON on one line: " +
+          JSON.stringify(spec) +
+          ". Then continue teaching with a competence-check question.",
+      };
+    },
+  }),
+
+  plotDataset: tool({
+    description: `Produce a dataset chart (bar, line, pie, or scatter). Use for statistics, comparisons, populations, frequencies, trends. Returns a JSON spec that you MUST embed as:
+
+\`\`\`chart
+{"chartType":"bar","labels":["Jan","Feb","Mar"],"datasets":[{"label":"Rainfall (mm)","data":[120,80,150]}],"title":"Dar rainfall"}
+\`\`\``,
+    inputSchema: z.object({
+      chartType: z.enum(["bar", "line", "pie", "scatter"]),
+      labels: z.array(z.string()).optional(),
+      datasets: z.array(
+        z.object({
+          label: z.string().optional(),
+          data: z.array(z.union([z.number(), z.object({ x: z.number(), y: z.number() })])),
+        })
+      ).min(1),
+      title: z.string().optional(),
+      xLabel: z.string().optional(),
+      yLabel: z.string().optional(),
+    }),
+    execute: async (spec) => ({
+      ok: true,
+      spec,
+      instruction: "Embed the chart in your reply as a ```chart fenced block: " + JSON.stringify(spec),
+    }),
+  }),
+
+  drawGeometry: tool({
+    description: `Draw a labeled geometric figure (triangles, circles, lines, angles, points). Use for geometry chapters — triangles, Pythagoras, circles, angles. Returns a spec you MUST embed as:
+
+\`\`\`geometry
+{"width":320,"height":240,"shapes":[{"type":"triangle","points":[[40,200],[40,40],[280,200]],"labels":["A","B","C"],"sides":["3","4","5"],"rightAngleAt":0}]}
+\`\`\`
+
+Coordinates are in SVG pixel space (origin top-left). Keep within the declared width/height.`,
+    inputSchema: z.object({
+      width: z.number().default(320),
+      height: z.number().default(240),
+      title: z.string().optional(),
+      shapes: z.array(
+        z.object({
+          type: z.enum(["triangle", "circle", "line", "point", "polygon", "angle", "rect"]),
+          points: z.array(z.array(z.number()).min(2).max(2)).optional().describe("Array of [x,y] pairs"),
+          center: z.array(z.number()).min(2).max(2).optional().describe("[cx, cy]"),
+          radius: z.number().optional(),
+          labels: z.array(z.string()).optional(),
+          sides: z.array(z.string()).optional(),
+          angle: z.string().optional(),
+          rightAngleAt: z.number().optional().describe("Index of vertex with a right-angle mark."),
+          stroke: z.string().optional(),
+          fill: z.string().optional(),
+        })
+      ).min(1),
+    }),
+    execute: async (spec) => ({
+      ok: true,
+      spec,
+      instruction: "Embed the drawing in your reply as a ```geometry fenced block: " + JSON.stringify(spec),
+    }),
   }),
 
   searchTextbooks: tool({
