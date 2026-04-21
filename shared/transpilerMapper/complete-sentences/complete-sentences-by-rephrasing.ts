@@ -4,6 +4,17 @@ import { ActivityType } from "@/lib/types/activity-types";
 import type { ActivityTranspilerProps } from "..";
 
 const hasBlank = (value: string | null | undefined) => /_{1,}/.test(value ?? "");
+
+/**
+ * Some CMS saves omit `___` after a LaTeX `{array}` block; the transpiler requires at least one `_` in textOne.
+ */
+const ensureStemHasBlank = (question: ActivityTranspilerProps["serverQuestions"][number]) => {
+  const t = question.textOne ?? "";
+  if (hasBlank(t) || !t.trim()) return question;
+  if (!/\\end\{array\}/.test(t)) return question;
+  return { ...question, textOne: `${t.trimEnd()} ___` };
+};
+
 const splitValues = (value: string | null | undefined) =>
   (value ?? "")
     .split(/[/,;|\n]+/)
@@ -58,7 +69,9 @@ export const completeSentencesByRephrasingPropsTranspiler = (
   } = params;
   let isWrongFormat = false;
 
-  serverQuestions.some((question) => {
+  const serverQuestionsNormalized = serverQuestions.map(ensureStemHasBlank);
+
+  serverQuestionsNormalized.some((question) => {
     if (!hasBlank(question.textOne) || !question.textTwo) {
       isWrongFormat = true;
       return true;
@@ -79,19 +92,22 @@ export const completeSentencesByRephrasingPropsTranspiler = (
     const trimmed = (value ?? "").toString().trim();
     const match = trimmed.match(/^cua\s*\(\s*(.*?)\s*\)\s*$/i);
     if (!match) return trimmed;
-    const inner = (match[1] ?? "").toString().trim();
+    const innerRaw = (match[1] ?? "").toString().trim();
+    // Metric compound typo: comma written as dot between parts (e.g. cua(48L.96mL) → cua(48L,96mL)).
+    const dotCompound = innerRaw.match(/^(\d+[a-zA-Z]+)\.(\d+[a-zA-Z]+)$/i);
+    const inner = dotCompound ? `${dotCompound[1]},${dotCompound[2]}` : innerRaw;
     if (/^\d+$/.test(inner)) return inner;
     if (/^\d+\.\d+$/.test(inner)) return inner;
     // Comparison blanks: backend uses cua(>) / cua(<); learners type > or <.
     if (/^[<>]$/.test(inner)) return inner;
-    return trimmed;
+    return inner !== innerRaw ? `cua(${inner})` : trimmed;
   };
 
   return {
     title: titleDescription?.split("//")[0],
     fontSize: title.split("||")[1],
     algorithm,
-    questions: serverQuestions.map((q) => ({
+    questions: serverQuestionsNormalized.map((q) => ({
       id: q.id.toString(),
       question: q.textOne,
       image: q.path || q.image ? getImageUrl(q.path || q.image || "") : null,
@@ -128,7 +144,7 @@ export const completeSentencesByRephrasingPropsTranspiler = (
           options:
             algorithm === ActivityType.CompleteSentenceByRephrasingWithChoices
               ? (() => {
-                  const serverOptions = extractServerOptions(serverQuestions);
+                  const serverOptions = extractServerOptions(serverQuestionsNormalized);
                   // Do not fall back to correct answers (textTwo); that leaks solutions in the word bank.
                   const options =
                     serverOptions.length > 0
@@ -140,7 +156,7 @@ export const completeSentencesByRephrasingPropsTranspiler = (
                     ? shuffle(options.map((option: string) => option.toLowerCase().trim()))
                     : shuffle(options);
                 })()
-              : shuffle((serverQuestions as any[]).map((q) => q.textTwo || [])),
+              : shuffle((serverQuestionsNormalized as any[]).map((q) => q.textTwo || [])),
         }
       : {}),
   };
