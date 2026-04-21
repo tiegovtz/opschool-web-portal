@@ -367,6 +367,7 @@ onBeforeUnmount(() => {
 
       <div class="flex items-center gap-2">
         <button
+          v-if="false"
           type="button"
           class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="isBusy"
