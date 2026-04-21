@@ -30,7 +30,7 @@ function goToSecondary() {
 const stats = computed(()=> [
     {
         value: "2,400+",
-        label: primaryContentLanguage.value === "kiswahili" ? "Mada za Kujifunza" : "Topics",
+        label: primaryContentLanguage.value === "kiswahili" ? "Idadi ya Maudhui" : "Total Contents",
         detail: primaryContentLanguage.value === "kiswahili" ? "Msingi na Sekondari" : "Primary and Secondary",
         icon: "library",
         accent: "blue",

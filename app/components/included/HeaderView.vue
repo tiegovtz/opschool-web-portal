@@ -512,7 +512,7 @@ onBeforeUnmount(() => {
               to="/"
             >
               <p
-                class="block px-4 tex2.5-center lg:text-large text-medium text-shadow whitespace-nowrap uppercase"
+                class="block px-4 tex2.5-center lg:text-large text-medium text-shadow whitespace-nowrap uppercase font-bold"
               >
                 {{
                   language === "english"
