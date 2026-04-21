@@ -89,7 +89,7 @@ const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjec
       ...q, 
     }}
   ),
-  watch: [selectedEducationBucket, selectedContentLanguage],
+  watch: [selectedEducationBucket, selectedContentLanguage,()=>selected.class],
 });
 
 // Simulate skeleton time
