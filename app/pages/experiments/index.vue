@@ -19,7 +19,7 @@ import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
 import { layoutEffect } from '@/utilities/controlls';
 import InputsSelection from "~/components/home/InputsSelection.vue";
 import {
-  getApiContentLanguage,
+  getApiEducationLevelName,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
@@ -38,9 +38,6 @@ const language = computed(() =>
 );
 const educationRouteQuery = computed(() =>
   getEducationRouteQuery(educationLevel.value, {}, language.value),
-);
-const apiLanguage = computed(() =>
-  getApiContentLanguage(educationLevel.value, language.value),
 );
 const experimentId = route.fullPath.split("/").pop();
 const experimentTitle = String(route.fullPath.split("/")[4])
@@ -164,8 +161,7 @@ const fetchExperiments = async (param?: any) => {
     const { data: response, status: fetchStatus } = await fetchAsyncData(`experiments-${educationLevel.value}-${language.value}`, () => $fetch(apiDocs.experiments.getPublicExperiments, {
       method: "GET",
       params: {
-        educationLevel: educationLevel.value,
-        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
+        educationLevel: getApiEducationLevelName(educationLevel.value),
         ...param,
       }
     }));

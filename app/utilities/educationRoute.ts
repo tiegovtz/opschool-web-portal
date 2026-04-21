@@ -3,6 +3,12 @@ import type { LanguageSupport } from "~/types/language.interface";
 
 export type EducationBucket = "primary" |"pre-primary" | "lower secondary"| "upper secondary" | "secondary";
 export type EducationHubBucket = "primary" | "secondary";
+export type ApiEducationLevelName =
+  | "elimu ya awali"
+  | "elimu ya msingi"
+  | "lower secondary"
+  | "upper secondary"
+  | "secondary";
 
 const PRIMARY_ALIASES = new Set([
   "primary",
@@ -149,6 +155,20 @@ export const getHubPath = (educationLevel: unknown): string =>
   normalizeEducationLevel(educationLevel) === "primary"
     ? "/primary"
     : "/secondary";
+
+export const getApiEducationLevelName = (
+  value: unknown,
+  fallback: EducationBucket = "lower secondary",
+): ApiEducationLevelName => {
+  const normalized = normalizeEducationLevel(value, fallback);
+
+  if (normalized === "pre-primary") return "elimu ya awali";
+  if (normalized === "primary") return "elimu ya msingi";
+  if (normalized === "upper secondary") return "upper secondary";
+  if (normalized === "secondary") return "secondary";
+
+  return "lower secondary";
+};
 
 export const normalizeLanguageSupport = (
   value: unknown,

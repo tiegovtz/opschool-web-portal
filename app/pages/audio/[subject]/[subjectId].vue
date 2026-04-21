@@ -16,7 +16,7 @@ import AudioCard from "~/components/audio/audioCard.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import {
-  getApiContentLanguage,
+  getApiEducationLevelName,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
@@ -50,9 +50,6 @@ const language = computed(() =>
 );
 const educationRouteQuery = computed(() =>
   getEducationRouteQuery(educationLevel.value, {}, language.value),
-);
-const apiLanguage = computed(() =>
-  getApiContentLanguage(educationLevel.value, language.value),
 );
 
 const buildTabTarget = (tab) => {
@@ -174,8 +171,7 @@ const fetchAudios = async (params) => {
         subjectId
       ), {
       params: {
-        educationLevel: educationLevel.value,
-        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
+        educationLevel: getApiEducationLevelName(educationLevel.value),
         ...params,
       },
     }));

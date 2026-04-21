@@ -22,7 +22,7 @@ import type { tabs } from "~/types/types.data";
 import { layoutEffect } from "@/utilities/controlls";
 import InputsSelection from "~/components/home/InputsSelection.vue";
 import {
-  getApiContentLanguage,
+  getApiEducationLevelName,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
@@ -89,9 +89,6 @@ const language = computed(() =>
 );
 const educationRouteQuery = computed(() =>
   getEducationRouteQuery(educationLevel.value, {}, language.value),
-);
-const apiLanguage = computed(() =>
-  getApiContentLanguage(educationLevel.value, language.value),
 );
 
 const contentLayoutLanguage = useContentLayoutLanguage();
@@ -183,8 +180,7 @@ const goToPage = (page: number) => {
 const fetchTopics = async (params?: any) => {
   const url = apiDocs.topics.filterTopics;
   params = {
-    educationLevel: educationLevel.value,
-    ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
+    educationLevel: getApiEducationLevelName(educationLevel.value),
     ...params,
   };
   if (userToken.value) {

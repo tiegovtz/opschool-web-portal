@@ -38,7 +38,7 @@ import {
   SUBJECT_QUERY_KEY,
 } from "~/utilities/homeSectionRouting";
 import {
-  getApiContentLanguage,
+  getApiEducationLevelName,
   getEducationHubBucket,
   getEducationRouteQuery,
   getHubLanguage,
@@ -139,9 +139,6 @@ const currentHubQuery = computed(() =>
     {},
     currentLanguage.value,
   ),
-);
-const primaryApiLanguage = computed(() =>
-  getApiContentLanguage(currentEducationLevel.value, currentLanguage.value),
 );
 
 watch(
@@ -293,10 +290,7 @@ const resolveSubjectIdFromSlug = async (slug: string) => {
       getRequestedEducationLevels().map((educationLevel) =>
         $fetch<Subjects[] | unknown>(apiDocs.subjects.getPublicSubjects, {
           params: {
-            educationLevel,
-            ...(primaryApiLanguage.value
-              ? { language: primaryApiLanguage.value }
-              : {}),
+            educationLevel: getApiEducationLevelName(educationLevel),
           },
           headers: {
             Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
@@ -386,7 +380,6 @@ const fetchData = async (params?: any) => {
   const tab = displayTab.value;
   const requestedEducationLevels = getRequestedEducationLevels(params);
   const baseParams = {
-    ...(primaryApiLanguage.value ? { language: primaryApiLanguage.value } : {}),
     ...params,
   };
 
@@ -489,7 +482,9 @@ const fetchData = async (params?: any) => {
             $fetch(url, {
               params: {
                 ...params,
-                ...(!subjectId.value ? { educationLevel: level } : {}),
+                ...(!subjectId.value
+                  ? { educationLevel: getApiEducationLevelName(level) }
+                  : {}),
               },
               headers: {
                 Authorization: `Bearer ${useCookie("signInAccessToken").value}`,

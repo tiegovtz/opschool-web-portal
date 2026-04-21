@@ -15,7 +15,7 @@ import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
 import {
-  getApiContentLanguage,
+  getApiEducationLevelName,
   getEducationRouteQuery,
   getHubLanguage,
   getHubPath,
@@ -52,9 +52,6 @@ const tabLanguage = computed(() =>
 );
 const educationRouteQuery = computed(() =>
   getEducationRouteQuery(educationLevel.value, {}, tabLanguage.value),
-);
-const apiLanguage = computed(() =>
-  getApiContentLanguage(educationLevel.value, tabLanguage.value),
 );
 
 // Define meta info about page
@@ -242,8 +239,7 @@ const fetchTopics = async (params: any) => {
       subjectId
     ), {
       params: {
-        educationLevel: educationLevel.value,
-        ...(apiLanguage.value ? { language: apiLanguage.value } : {}),
+        educationLevel: getApiEducationLevelName(educationLevel.value),
         ...params,
       },
       headers: {
