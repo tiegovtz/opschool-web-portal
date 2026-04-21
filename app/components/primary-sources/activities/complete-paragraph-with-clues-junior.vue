@@ -185,8 +185,8 @@ const resetActivity = () => {
                     class="mx-2 inline-flex h-8 w-36 items-center justify-center bg-picton-blue-100 align-middle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
                     @click="placeOptionInBlank(index)"
                   >
-                    <span class="text-sm text-picton-blue-700">
-                      {{ selectedOption ? `Place ${selectedOption}` : "Blank" }}
+                    <span class="text-sm text-picton-blue-700 opacity-50 ">
+                      {{ selectedOption ? `Weka ${selectedOption}` : "Wazi" }}
                     </span>
                   </button>
                 </template>
