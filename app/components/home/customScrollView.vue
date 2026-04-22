@@ -25,7 +25,6 @@ const props = defineProps<{
   data: any[];
   activeTab: tabs;
   seeMoreDetails?: string;
-  shuffleSubject?: Function;
   educationLevel?: string;
   language?: LanguageSupport;
 }>();
@@ -98,7 +97,7 @@ const setLevel = (key: string, lvl: string) => {
       <customGridOne active-tab="subjects" v-if="activeTab === 'subjects'">
         <template #data>
           <!-- Subject Cards are in Grid -->
-          <SubjectCard v-for="subject in shuffleSubject?.(data)" :key="subject._id" :subject-id="subject._id"
+          <SubjectCard v-for="subject in data" :key="subject._id" :subject-id="subject._id"
             :subject-name="subject.name" :subject-image="subject.thumbnail" :subject-description="subject.description"
             :subject-education-level="(subject.educationLevel as any)?.name || subject.educationLevel"
             :total-views="subject.views ?? 0" :alt-text="subject.alt"

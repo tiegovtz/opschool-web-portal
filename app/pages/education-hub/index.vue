@@ -545,6 +545,22 @@ const shuffleSubject = (subjects: Subjects[]) => {
   return shuffled;
 };
 
+const shuffledSlicedSubjects = computed(() => {
+  if (displayTab.value !== "subjects" || !Array.isArray(slicedData.value)) {
+    return slicedData.value;
+  }
+
+  return shuffleSubject(slicedData.value as Subjects[]);
+});
+
+const shuffledSubjectsData = computed(() => {
+  if (displayTab.value !== "subjects" || !Array.isArray(data.value)) {
+    return data.value;
+  }
+
+  return shuffleSubject(data.value as Subjects[]);
+});
+
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
   pageSize.value = 12; // 12 topic cards
@@ -966,7 +982,7 @@ const handleSubjectSelect = async (
                 <template #data>
                   <!-- Subject Cards are in Grid -->
                   <SubjectCard
-                    v-for="subject in shuffleSubject(slicedData)"
+                    v-for="subject in shuffledSlicedSubjects"
                     :key="subject._id"
                     :subject-id="subject._id"
                     :subject-name="subject.name"
@@ -1104,9 +1120,8 @@ const handleSubjectSelect = async (
           >
             <ClientOnly>
               <HomeCustomScrollView
-                :shuffle-subject="shuffleSubject"
                 :see-more-details="seeMoreDetails?.toString()"
-                :data="data"
+                :data="(shuffledSubjectsData as any[])"
                 :active-tab="displayTab"
                 :education-level="currentEducationLevel"
                 :language="currentLanguage"
@@ -1229,7 +1244,7 @@ const handleSubjectSelect = async (
               <template #data>
                 <!-- Subject Cards are in Grid -->
                 <SubjectCard
-                  v-for="subject in shuffleSubject(slicedData)"
+                  v-for="subject in shuffledSlicedSubjects"
                   :key="subject._id"
                   :subject-id="subject._id"
                   :subject-name="subject.name"

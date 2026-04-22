@@ -10,6 +10,7 @@ const pageLanguage = useHubPageLanguage();
 
 const authAccessToken = useCookie('signInAccessToken');
 const authUserToken = useCookie('signInUserToken');
+const token = computed(() => String(authAccessToken.value || '').trim());
 const handleUnauthorized = (error) => {
   const status = error?.status || (error?.response?.status ?? null);
   if (status === 401) {
@@ -19,11 +20,10 @@ const handleUnauthorized = (error) => {
   }
 };
 const userToken = useCookie("signInUserToken");
-const token = useCookie('signInAccessToken').value;
 const headers = {
   'Content-Type': 'application/json',
   'accept': '*/*',
-  'Authorization': `Bearer ${token}`,
+  ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
 };
 
 // Import your composable

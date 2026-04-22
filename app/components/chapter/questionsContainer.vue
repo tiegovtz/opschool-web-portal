@@ -384,7 +384,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
                 ? 'text-normalGreener'
                 : 'text-red-600'
                 ">
-                <b class="text-black">  {{ topicLanguage.toLowerCase().trim() === 'english' ?'Your choice':'Chaguao lako'}}:
+                <b class="text-black">  {{ topicLanguage.toLowerCase().trim() === 'english' ?'Your choice':'Chaguo lako'}}:
                 </b>
                 <template v-if="question.questionType === 'drag_and_drop'">
                   <span v-for="(answerPart, blankIndex) in getDragAnswerParts(quizAttempt.clickedAnswer[index] ?? '')"

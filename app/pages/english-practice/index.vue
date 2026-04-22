@@ -251,6 +251,12 @@ const currentWordIndex = ref(0); // Track current position in script words
 const mode = ref<PracticeMode>('multi-user'); // Can be changed based on user detection
 const route = useRoute();
 const router = useRouter();
+const authAccessTokenCookie = useCookie('signInAccessToken');
+const authHeaders = computed(() =>
+  authAccessTokenCookie.value
+    ? { Authorization: `Bearer ${authAccessTokenCookie.value}` }
+    : {}
+);
 const practiceTitle = computed(() =>
   String(route.query.language || '').trim().toLowerCase() === 'sw'
     ? 'Mazoezi ya Kiswahili'
@@ -829,6 +835,7 @@ const getPiperAudioForText = async (
   });
   const response = await $fetch('/api/conversation/tts', {
     method: 'POST',
+    headers: authHeaders.value,
     body: {
       text,
       voiceType,
@@ -1450,12 +1457,16 @@ const loadConversationScript = async () => {
       query.identifier = identifier;
     }
     const [response, constantAudio] = await Promise.all([
-      $fetch('/api/conversation/engage', { query }),
+      $fetch('/api/conversation/engage', {
+        query,
+        headers: authHeaders.value,
+      }),
       $fetch('/api/conversation/constant-audio', {
         query: {
           chapterId,
           identifier,
         },
+        headers: authHeaders.value,
       }).catch(() => ({ items: [] })),
     ]);
     logTtsDebug('loadConversationScript fetched sources', {
@@ -1546,6 +1557,7 @@ const loadConversationScript = async () => {
     if (typeof window !== 'undefined' && aiLinesMissingAudio.length) {
       const batchResponse = await $fetch('/api/conversation/tts-batch', {
         method: 'POST',
+        headers: authHeaders.value,
         body: {
           voiceType: 'female',
           chunks: aiLinesMissingAudio.map((line) => ({
