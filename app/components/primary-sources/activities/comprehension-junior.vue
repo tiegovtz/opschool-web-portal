@@ -56,6 +56,8 @@ const correctAnswers = ref<Record<number, boolean>>({});
 const isCheckingAnswers = ref(false);
 const allUserAnswers = ref<Record<number, string[]>>({});
 const instructionsId = "comprehension-junior-instructions";
+const statusId = "comprehension-junior-status";
+const keyboardStatusMessage = ref("");
 
 const shouldUseBatchAI = computed(
   () =>
@@ -108,6 +110,7 @@ const initializeActivity = () => {
         () => "",
       )
     : [];
+  keyboardStatusMessage.value = "";
 };
 
 watch(() => props.questions, initializeActivity, {
@@ -119,6 +122,10 @@ const setAnswer = (answerIndex: number, value: string | number) => {
   const nextAnswers = [...currentAnswers.value];
   nextAnswers[answerIndex] = String(value ?? "");
   currentAnswers.value = nextAnswers;
+  keyboardStatusMessage.value = ui.formatActivityUpdated(
+    ui.formatQuestion(activeQuestion.value + 1),
+    value,
+  );
 };
 
 const isQuestionCorrect = async (
@@ -315,6 +322,7 @@ const handleCheckAnswers = async () => {
       correctAnswers.value = nextCorrectAnswers;
       score.value = Object.values(nextCorrectAnswers).filter(Boolean).length;
       allAnswered.value = true;
+      keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${shuffledIndexes.value.length}.`;
     } catch {
       const nextCorrectAnswers: Record<number, boolean> = {};
 
@@ -330,6 +338,7 @@ const handleCheckAnswers = async () => {
       correctAnswers.value = nextCorrectAnswers;
       score.value = Object.values(nextCorrectAnswers).filter(Boolean).length;
       allAnswered.value = true;
+      keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${shuffledIndexes.value.length}.`;
     } finally {
       isCheckingAnswers.value = false;
     }
@@ -345,12 +354,16 @@ const handleCheckAnswers = async () => {
   }).filter(Boolean).length;
 
   if (activeQuestion.value < shuffledIndexes.value.length - 1) {
+    keyboardStatusMessage.value = ui.formatActivityActivated(
+      ui.isSwahili ? "Swali linalofuata" : "Next question",
+    );
     advanceToNextQuestion();
     isCheckingAnswers.value = false;
     return;
   }
 
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${shuffledIndexes.value.length}.`;
   isCheckingAnswers.value = false;
 };
 
@@ -396,6 +409,9 @@ const getInputLabel = (questionText: string, answerIndex: number) =>
     <p :id="instructionsId" class="sr-only">
       Read the notes, then answer each question. Use the Tab key to move between the answer fields
       and the next or check answer button.
+    </p>
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div
@@ -586,7 +602,7 @@ const getInputLabel = (questionText: string, answerIndex: number) =>
 
         <div
           class="flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm md:p-6"
-          :aria-describedby="instructionsId"
+          :aria-describedby="`${instructionsId} ${statusId}`"
         >
           <div
             v-if="currentQuestion"
@@ -618,7 +634,7 @@ const getInputLabel = (questionText: string, answerIndex: number) =>
                       <Input
                         :model-value="currentAnswers[partIndex] || ''"
                         :aria-label="getInputLabel(currentQuestion.question, partIndex)"
-                        :aria-describedby="instructionsId"
+                        :aria-describedby="`${instructionsId} ${statusId}`"
                         class="rounded-none border-none bg-transparent px-0 text-center text-lg text-picton-blue-700 shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
                         @update:model-value="
                           (value) => setAnswer(partIndex, value)
@@ -641,7 +657,7 @@ const getInputLabel = (questionText: string, answerIndex: number) =>
                     <Input
                       :model-value="currentAnswers[0] || ''"
                       :aria-label="getInputLabel(currentQuestion.question, 0)"
-                      :aria-describedby="instructionsId"
+                      :aria-describedby="`${instructionsId} ${statusId}`"
                       class="rounded-none border-none bg-transparent px-0 text-center text-lg text-picton-blue-700 shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
                       @update:model-value="(value) => setAnswer(0, value)"
                     />
@@ -711,7 +727,7 @@ const getInputLabel = (questionText: string, answerIndex: number) =>
             isCheckingAnswers
           "
           class="group gap-2"
-          :aria-describedby="instructionsId"
+          :aria-describedby="`${instructionsId} ${statusId}`"
           @click="
             shouldUseBatchAI && activeQuestion < shuffledIndexes.length - 1
               ? handleNextQuestion()

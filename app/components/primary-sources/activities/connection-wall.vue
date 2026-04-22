@@ -31,6 +31,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 
 const completedObjectIds = ref<number[]>([]);
@@ -63,6 +64,8 @@ const isResetting = ref(false);
 const completedGroups = ref(new Set<number>());
 const incorrectAttempts = ref(new Set<number>());
 const instructionsId = "connection-wall-instructions";
+const statusId = "connection-wall-status";
+const keyboardStatusMessage = ref("");
 
 const numItemsPerGroup = computed(() =>
   props.questions.algorithm === ActivityType.ConnectionWallThreeRows ? 3 : 4,
@@ -83,6 +86,7 @@ const initializeActivity = () => {
   incorrectAttempts.value = new Set();
   showCategories.value = false;
   remainingItems.value = shuffle([...gameItems.value]);
+  keyboardStatusMessage.value = "";
 };
 
 watch([gameItems, loading], ([items, isLoading]) => {
@@ -93,6 +97,7 @@ watch([gameItems, loading], ([items, isLoading]) => {
 watch(remainingItems, (value) => {
   if (!value.length && matchedGroups.value.length > 0 && !allAnswered.value) {
     allAnswered.value = true;
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${total.value}.`;
     playSound("success");
     completedGroups.value = new Set(Array.from({ length: matchedGroups.value.length }, (_, index) => index));
   }
@@ -103,6 +108,7 @@ const handleItemClick = (item: TItem) => {
 
   if (selectedItems.value.find((current) => current.id === item.id)) {
     selectedItems.value = selectedItems.value.filter((current) => current.id !== item.id);
+    keyboardStatusMessage.value = ui.formatActivityRemoved(props.questions.title, item.name);
     return;
   }
 
@@ -110,6 +116,7 @@ const handleItemClick = (item: TItem) => {
   selectedItems.value = nextSelected;
 
   if (nextSelected.length < numItemsPerGroup.value) {
+    keyboardStatusMessage.value = ui.formatActivitySelected(props.questions.title, item.name);
     playSound("click");
     return;
   }
@@ -130,12 +137,18 @@ const handleItemClick = (item: TItem) => {
       (current) => !matchedItems.some((matched) => matched.id === current.id),
     );
     selectedItems.value = [];
+    keyboardStatusMessage.value = ui.isSwahili.value
+      ? `Kundi limekamilika: ${matchingCategory}.`
+      : `Completed group: ${matchingCategory}.`;
     playSound("correct");
     return;
   }
 
   incorrectItems.value = nextSelected.map((current) => current.id);
   incorrectAttempts.value = new Set([...incorrectAttempts.value, Date.now()]);
+  keyboardStatusMessage.value = ui.isSwahili.value
+    ? "Hivyo si vitu vya kundi moja. Jaribu tena."
+    : "Those items do not make a matching group. Try again.";
   playSound("failure");
 
   setTimeout(() => {
@@ -148,6 +161,7 @@ const handleGameTimeUp = () => {
   if (!allAnswered.value && !timeUp.value) {
     timeUp.value = true;
     allAnswered.value = true;
+    keyboardStatusMessage.value = ui.timesUp.value;
     playSound("failure");
   }
 };
@@ -219,6 +233,9 @@ const handlePlayAgain = async () => {
         items to select or unselect them. When the correct number of related items is selected, they
         will be grouped automatically.
       </p>
+      <p :id="statusId" aria-live="polite" class="sr-only">
+        {{ keyboardStatusMessage }}
+      </p>
 
       <div class="rounded-2xl bg-picton-blue-50 p-4">
         <div
@@ -256,7 +273,7 @@ const handlePlayAgain = async () => {
           <button
             v-for="item in remainingItems"
             :key="item.id"
-            :aria-describedby="instructionsId"
+            :aria-describedby="`${instructionsId} ${statusId}`"
             :aria-pressed="selectedItems.some((current) => current.id === item.id)"
             :aria-label="`Item ${item.name}`"
             :class="

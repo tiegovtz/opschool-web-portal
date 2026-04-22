@@ -57,6 +57,8 @@ const allAnswered = ref(false);
 const isDialogOpen = ref(false);
 const activityInstructionsId = "complete-sentences-selecting-clues-instructions";
 const activityOptionsId = "complete-sentences-selecting-clues-options";
+const activityStatusId = "complete-sentences-selecting-clues-status";
+const keyboardStatusMessage = ref("");
 const getInputLabel = (index: number, questionText: string) =>
   `Question ${index + 1}. ${questionText}`;
 
@@ -72,6 +74,7 @@ const resetActivity = () => {
   score.value = 0;
   allAnswered.value = false;
   isDialogOpen.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 watch(
@@ -94,6 +97,10 @@ const handleInputChange = (questionId: number | string, value: string) => {
   questionsState.value = questionsState.value.map((q) =>
     q.id === questionId ? { ...q, userAnswer: value } : q,
   );
+  const questionIndex = questionsState.value.findIndex((q) => q.id === questionId);
+  if (questionIndex !== -1) {
+    keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(questionIndex + 1), value);
+  }
 };
 
 const checkAnswers = () => {
@@ -104,6 +111,7 @@ const checkAnswers = () => {
     return { ...q, isCorrect };
   });
   score.value = correctCount;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${correctCount} / ${questionsState.value.length}.`;
   playSound("success");
   isDialogOpen.value = true;
 };
@@ -125,6 +133,9 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
       {{ ui.isSwahili
         ? "Tumia kitufe cha Tab kupita kwenye kila sehemu ya jibu na kitufe cha Kagua Majibu. Maneno ya vidokezo yanaonyeshwa chini ya maswali kama rejea."
         : "Use the Tab key to move between each answer field and the Check Answers button. The clue words are shown below the questions for reference." }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="space-y-4 overflow-y-auto flex-1 p-2" role="list" :aria-label="ui.completeSentenceQuestions.value">
@@ -148,7 +159,7 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
             :model-value="q.userAnswer"
             :disabled="showResults"
             :aria-label="getInputLabel(index, q.question)"
-            :aria-describedby="selectableWords.length ? `${activityInstructionsId} ${activityOptionsId}` : activityInstructionsId"
+            :aria-describedby="selectableWords.length ? `${activityInstructionsId} ${activityOptionsId} ${activityStatusId}` : `${activityInstructionsId} ${activityStatusId}`"
             class="flex-1 min-w-32 ml-4"
             placeholder="Type answer here"
             @update:modelValue="(v: string | number) => handleInputChange(q.id, String(v ?? ''))"
@@ -184,6 +195,7 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
         v-for="(word, i) in selectableWords"
         :key="i"
         tabindex="0"
+        :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
         class="px-2 py-1 rounded bg-picton-blue-100 text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
       >
         {{ word }}
@@ -200,7 +212,7 @@ const selectableWords = computed(() => (props.questions.options || []).filter((w
       <Button
         :onClick="checkAnswers"
         :disabled="!allAnswered"
-        :aria-describedby="selectableWords.length ? activityOptionsId : activityInstructionsId"
+        :aria-describedby="selectableWords.length ? `${activityInstructionsId} ${activityOptionsId} ${activityStatusId}` : `${activityInstructionsId} ${activityStatusId}`"
       >
         {{ ui.checkAnswers }}
       </Button>

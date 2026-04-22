@@ -25,6 +25,8 @@ const props = defineProps<NurseryFlowProps>();
 const router = useRouter();
 const route = useRoute();
 const topicsRef = ref<HTMLElement | null>(null);
+const statusId = "nursery-flow-status";
+const keyboardStatusMessage = ref("");
 
 const subjectIcons = {
   1: Book,
@@ -109,14 +111,17 @@ const updateQuery = async (nextQuery: Record<string, string | undefined>) => {
 
 const handleSubjectSelect = async (subjectId: number) => {
   if (selectedSubject.value === subjectId) {
+    keyboardStatusMessage.value = "Subject cleared.";
     await updateQuery({ subject: undefined, topic: undefined });
     return;
   }
 
+  keyboardStatusMessage.value = `Selected subject ${subjectId}.`;
   await updateQuery({ subject: String(subjectId), topic: undefined });
 };
 
 const handleTopicSelect = (topicId: number, subjectId: string) => {
+  keyboardStatusMessage.value = `Selected topic ${topicId}.`;
   props.onTopicSelect(topicId, subjectId);
 };
 
@@ -128,6 +133,9 @@ const ui = useActivityUiText();
 
 <template>
   <div class="min-h-screen">
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
     <div class="mb-6 flex flex-col gap-5 py-6 md:flex-row md:items-center md:gap-0">
       <Button :href="backHref" class="w-fit">
         <ArrowLeft :size="16" class="mr-1" />
@@ -154,6 +162,7 @@ const ui = useActivityUiText();
               :key="subject.id"
               type="button"
               :aria-label="`Choose subject ${subject.subjectName}`"
+              :aria-describedby="statusId"
               class="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
               @click="handleSubjectSelect(subject.id)"
             >
@@ -209,6 +218,7 @@ const ui = useActivityUiText();
                   :key="topic.id"
                   type="button"
                   :aria-label="`Choose topic ${topic.topicName}`"
+                  :aria-describedby="statusId"
                   class="group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
                   @click="handleTopicSelect(topic.id, String(selectedSubject || 1))"
                 >

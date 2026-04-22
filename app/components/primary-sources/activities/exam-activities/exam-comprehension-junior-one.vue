@@ -39,6 +39,8 @@ const allUserAnswers = ref<Record<number, string[]>>({});
 const isCheckingAnswers = ref(false);
 const totalQuestions = computed(() => props.questions.questions.length);
 const activityInstructionsId = "exam-comprehension-instructions";
+const activityStatusId = "exam-comprehension-status";
+const keyboardStatusMessage = ref("");
 
 const answeredCount = computed(() =>
   Object.values(allUserAnswers.value).reduce(
@@ -130,6 +132,7 @@ const handleInputChange = (questionIndex: number, answerIndex: number, value: st
     ...allUserAnswers.value,
     [questionIndex]: nextQuestionAnswers,
   };
+  keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(questionIndex + 1), value);
 };
 
 watch(answeredCount, (value) => {
@@ -169,6 +172,9 @@ watch(
           ? "Soma kifungu kwanza, kisha tumia tab kusogea kwenye maswali na sehemu za majibu."
           : "Read the passage first, then use Tab to move through the questions and answer fields."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
     <div class="flex h-full gap-2">
       <div
@@ -216,6 +222,7 @@ watch(
                           rows="1"
                           :disabled="isCheckingAnswers"
                           :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, nafasi ya ${partIndex + 1}` : `Question ${questionIndex + 1}, blank ${partIndex + 1}`"
+                          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                           @update:model-value="
                             (value) => handleInputChange(questionIndex, partIndex, value)
                           "
@@ -232,6 +239,7 @@ watch(
                       rows="1"
                       :disabled="isCheckingAnswers"
                       :aria-label="ui.isSwahili ? `Jibu la swali la ${questionIndex + 1}` : `Answer for question ${questionIndex + 1}`"
+                      :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                       @update:model-value="
                         (value) => handleInputChange(questionIndex, 0, value)
                       "

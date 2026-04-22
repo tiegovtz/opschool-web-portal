@@ -53,6 +53,8 @@ const showResults = ref(false);
 const validationError = ref<string | null>(null);
 const questionsData = ref(props.questions);
 const instructionsId = "place-values-matrix-instructions";
+const statusId = "place-values-matrix-status";
+const keyboardStatusMessage = ref("");
 
 const getExtendedPlaceValueNames = (numDigits: number) => {
   const baseNames = [
@@ -124,6 +126,7 @@ watch(() => props.questions, () => {
   answerRecords.value = [];
   showResults.value = false;
   validationError.value = null;
+  keyboardStatusMessage.value = "";
   initializeAnswers();
 }, { deep: true, immediate: true });
 
@@ -143,6 +146,10 @@ const handlePlaceValueInput = (questionIndex: number, placeValue: string, value:
         [placeValue]: text,
       },
     };
+    keyboardStatusMessage.value = ui.formatActivityUpdated(
+      ui.formatQuestion(questionIndex + 1),
+      `${placeValue}: ${text}`,
+    );
   }
 };
 
@@ -160,6 +167,7 @@ const checkAnswers = () => {
 
   if (!allInputsFilled) {
     validationError.value = "Please fill in all answers before checking.";
+    keyboardStatusMessage.value = validationError.value;
     setTimeout(() => {
       validationError.value = null;
     }, 4000);
@@ -197,6 +205,7 @@ const checkAnswers = () => {
   }
 
   showResultsDialog.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${correctCount} / ${questionsData.value.questions.length}.`;
 };
 
 const resetActivity = () => {
@@ -219,6 +228,7 @@ const resetActivity = () => {
   answerRecords.value = [];
   showResults.value = false;
   validationError.value = null;
+  keyboardStatusMessage.value = "";
   initializeAnswers();
 };
 
@@ -246,6 +256,9 @@ const getRowClassName = (questionIndex: number) => {
       Enter the correct digit for each place value in the table. Use the Tab key to move through
       the cells, then activate the check answers button when all cells are filled.
     </p>
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div
       v-if="validationError"
@@ -256,7 +269,7 @@ const getRowClassName = (questionIndex: number) => {
 
     <div class="flex flex-1 flex-col justify-center">
       <div class="h-full w-full pb-4">
-        <Table :aria-describedby="instructionsId">
+        <Table :aria-describedby="`${instructionsId} ${statusId}`">
           <TableHeader>
             <TableRow class="bg-picton-blue-50">
               <TableHead class="whitespace-nowrap text-center font-bold text-picton-blue-800">Number</TableHead>
@@ -303,7 +316,7 @@ const getRowClassName = (questionIndex: number) => {
                   maxlength="1"
                   :disabled="showFeedback"
                   :aria-label="`Question ${questionIndex + 1}, ${placeValue} digit for ${question.number}`"
-                  :aria-describedby="instructionsId"
+                  :aria-describedby="`${instructionsId} ${statusId}`"
                   class="mx-auto w-20 text-center !text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
                   @update:model-value="
                     (value) => handlePlaceValueInput(questionIndex, placeValue, String(value ?? ''))
@@ -350,7 +363,7 @@ const getRowClassName = (questionIndex: number) => {
     <div v-else-if="!showFeedback" class="mb-4 flex justify-center">
       <Button
         variant="brand-lemon"
-        :aria-describedby="instructionsId"
+        :aria-describedby="`${instructionsId} ${statusId}`"
         @click="checkAnswers"
         class="group gap-2"
       >

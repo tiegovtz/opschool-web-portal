@@ -48,6 +48,8 @@ const allAnswered = ref(false);
 const showFeedback = ref(false);
 const activityInstructionsId = "strike-out-odd-one-instructions";
 const ui = useActivityUiText();
+const activityStatusId = "strike-out-odd-one-status";
+const keyboardStatusMessage = ref("");
 
 const initializeQuestions = (): InternalQuestion[] =>
   props.questions.questions.map((question) => ({
@@ -71,6 +73,7 @@ watch(
     showResultsDialog.value = false;
     allAnswered.value = false;
     showFeedback.value = false;
+    keyboardStatusMessage.value = "";
   },
   { deep: true, immediate: true },
 );
@@ -87,6 +90,7 @@ watch(
     ) {
       allAnswered.value = true;
       showResultsDialog.value = true;
+      keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${total.value}.`;
       playSound("success");
     }
   },
@@ -97,6 +101,9 @@ const score = computed(() => currentQuestions.value.filter((question) => questio
 const total = computed(() => currentQuestions.value.length);
 
 const handleWordClick = (questionId: number, wordId: number) => {
+  const selectedWord = currentQuestions.value
+    .find((question) => question.id === questionId)
+    ?.words.find((word) => word.id === wordId);
   currentQuestions.value = currentQuestions.value.map((question) => {
     if (question.id !== questionId) return question;
 
@@ -126,6 +133,9 @@ const handleWordClick = (questionId: number, wordId: number) => {
     };
   });
 
+  keyboardStatusMessage.value = selectedWord
+    ? ui.formatActivitySelected(ui.formatQuestion(currentQuestions.value.findIndex((q) => q.id === questionId) + 1), selectedWord.text)
+    : "";
   playSound("click");
 };
 
@@ -134,6 +144,7 @@ const handlePlayAgain = () => {
   showResultsDialog.value = false;
   allAnswered.value = false;
   showFeedback.value = false;
+  keyboardStatusMessage.value = "";
 };
 </script>
 
@@ -153,6 +164,9 @@ const handlePlayAgain = () => {
           ? "Tumia tab kusogea kwenye kila kundi la maneno. Tumia enter au space kuchagua neno lisilofaa."
           : "Use Tab to move through each word group. Use Enter or Space to choose the odd word out."
       }}
+    </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div
@@ -180,6 +194,7 @@ const handlePlayAgain = () => {
               type="button"
               :aria-pressed="word.userSelected"
               :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, ${word.text}` : `Question ${questionIndex + 1}, ${word.text}`"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               :class="
                 cn(
                   'relative grow cursor-pointer rounded-lg bg-picton-blue-100 p-4 text-center font-medium shadow-md transition-all duration-300 hover:bg-picton-blue-200 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',

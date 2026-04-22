@@ -69,6 +69,8 @@ const answers = ref<{
   third: [],
 });
 const activityInstructionsId = "in-which-box-instructions";
+const activityStatusId = "in-which-box-status";
+const keyboardStatusMessage = ref("");
 
 const currentQuestion = computed(() => props.questions);
 
@@ -111,6 +113,20 @@ const selectedOption = computed(
   () => remainingOptions.value.find((option) => option.id === selectedOptionId.value) || null,
 );
 
+const optionText = (option?: OptionWithIndex | null) => {
+  if (!option) return "";
+  return typeof option.content === "string" ? option.content : option.content.title || option.id;
+};
+
+const boxTitle = (boxKey: BoxKey) => {
+  if (boxKey === "first") return currentQuestion.value.firstOption.title;
+  if (boxKey === "second") return currentQuestion.value.secondOption.title;
+  return currentQuestion.value.thirdOption?.title || "";
+};
+
+const slotLabel = (boxKey: BoxKey, slotIndex: number) =>
+  `${boxTitle(boxKey)} ${ui.question.value.toLowerCase()} ${slotIndex + 1}`;
+
 const totalPlaced = computed(
   () =>
     answers.value.first.filter(Boolean).length +
@@ -134,6 +150,7 @@ watch(totalPlaced, (placedCount) => {
 
   score.value = nextScore;
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${currentQuestion.value.questions.length}.`;
   playSound("success");
 }, { deep: true });
 
@@ -151,7 +168,14 @@ const answerPlacement = (optionId: string) => {
 };
 
 const placeSelectedOption = (boxKey: BoxKey, slotIndex: number) => {
-  if (!selectedOption.value || showResults.value || answers.value[boxKey][slotIndex]) return;
+  if (showResults.value || answers.value[boxKey][slotIndex]) return;
+
+  if (!selectedOption.value) {
+    keyboardStatusMessage.value = ui.isSwahili.value
+      ? "Chagua kipengee kwanza kabla ya kuweka kwenye kisanduku."
+      : "Select an item first before placing it in a box.";
+    return;
+  }
 
   answers.value = {
     ...answers.value,
@@ -160,6 +184,10 @@ const placeSelectedOption = (boxKey: BoxKey, slotIndex: number) => {
     ),
   };
   remainingOptions.value = remainingOptions.value.filter((option) => option.id !== selectedOption.value?.id);
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    slotLabel(boxKey, slotIndex),
+    optionText(selectedOption.value),
+  );
   selectedOptionId.value = null;
   playSound("click");
 };
@@ -175,6 +203,10 @@ const returnOption = (boxKey: BoxKey, slotIndex: number) => {
     [boxKey]: answers.value[boxKey].map((item, index) => (index === slotIndex ? null : item)),
   };
   remainingOptions.value = shuffle([...remainingOptions.value, answer]);
+  keyboardStatusMessage.value = ui.formatActivityRemoved(
+    slotLabel(boxKey, slotIndex),
+    optionText(answer),
+  );
   playSound("click");
 };
 
@@ -190,6 +222,7 @@ const isCorrectInBox = (answer: OptionWithIndex | null, boxKey: BoxKey) =>
 
 const resetActivity = () => {
   initializeAnswers();
+  keyboardStatusMessage.value = "";
 };
 </script>
 
@@ -209,6 +242,9 @@ const resetActivity = () => {
           ? "Tumia tab kusogea kwenye chaguo na visanduku. Chagua kipengee kwa enter au space, kisha chagua kisanduku cha kukiweka."
           : "Use Tab to move through the options and boxes. Select an item with Enter or Space, then choose the box where you want to place it."
       }}
+    </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div
@@ -231,6 +267,7 @@ const resetActivity = () => {
           type="button"
           :aria-pressed="selectedOptionId === option.id"
           :aria-label="ui.isSwahili ? `Chagua ${typeof option.content === 'string' ? option.content : option.content.title || option.id}` : `Choose ${typeof option.content === 'string' ? option.content : option.content.title || option.id}`"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           :class="
             cn(
               'flex flex-col items-center justify-center rounded-md border text-center text-gray-900 shadow-sm transition select-none',
@@ -250,7 +287,15 @@ const resetActivity = () => {
                   ],
             )
           "
-          @click="selectedOptionId = selectedOptionId === option.id ? null : option.id"
+          @click="
+            () => {
+              const isSelected = selectedOptionId === option.id;
+              selectedOptionId = isSelected ? null : option.id;
+              keyboardStatusMessage = isSelected
+                ? ui.formatActivityRemoved(ui.availableAnswerChoices.value, optionText(option))
+                : ui.formatActivitySelected(ui.availableAnswerChoices.value, optionText(option));
+            }
+          "
         >
           <span
             v-if="typeof option.content === 'string'"
@@ -300,6 +345,7 @@ const resetActivity = () => {
             :key="`first-${index}`"
             type="button"
             :aria-label="answer ? `${currentQuestion.firstOption.title}: ${typeof answer.content === 'string' ? answer.content : answer.content.title || answer.id}` : `${currentQuestion.firstOption.title} empty slot ${index + 1}`"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :class="
               cn(
                 'relative flex h-32 flex-col items-center justify-center rounded-xl border-2 border-dashed p-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
@@ -343,6 +389,7 @@ const resetActivity = () => {
             :key="`second-${index}`"
             type="button"
             :aria-label="answer ? `${currentQuestion.secondOption.title}: ${typeof answer.content === 'string' ? answer.content : answer.content.title || answer.id}` : `${currentQuestion.secondOption.title} empty slot ${index + 1}`"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :class="
               cn(
                 'relative flex h-32 flex-col items-center justify-center rounded-xl border-2 border-dashed p-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
@@ -386,6 +433,7 @@ const resetActivity = () => {
             :key="`third-${index}`"
             type="button"
             :aria-label="answer ? `${currentQuestion.thirdOption.title}: ${typeof answer.content === 'string' ? answer.content : answer.content.title || answer.id}` : `${currentQuestion.thirdOption.title} empty slot ${index + 1}`"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :class="
               cn(
                 'relative flex h-32 flex-col items-center justify-center rounded-xl border-2 border-dashed p-3 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',

@@ -61,6 +61,8 @@ const showResultsDialog = ref(false);
 const answerFeedback = ref<"correct" | "incorrect" | null>(null);
 const completedObjectIds = ref<number[]>([]);
 const activityInstructionsId = "game-missing-definitions-instructions";
+const activityStatusId = "game-missing-definitions-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -134,6 +136,9 @@ const handleAnswerSelect = (definition: string) => {
 
   answerFeedback.value = isCorrect ? "correct" : "incorrect";
   showFeedback.value = true;
+  keyboardStatusMessage.value = isCorrect
+    ? ui.formatActivitySelected(ui.formatQuestion(currentQuestionIndex.value + 1), definition)
+    : `${ui.formatActivitySelected(ui.formatQuestion(currentQuestionIndex.value + 1), definition)} ${ui.correctDefinition}: ${currentQuestion.value.definition}`;
   playSound(isCorrect ? "correct" : "failure");
 
   setTimeout(() => {
@@ -160,6 +165,7 @@ const resetActivity = async () => {
   showResults.value = false;
   showResultsDialog.value = false;
   answerFeedback.value = null;
+  keyboardStatusMessage.value = "";
 
   if (props.questions.isGameMode) {
     const currentObjectIds = objects.value.map((item) => item.id);
@@ -229,6 +235,9 @@ const handleResultsDialogChange = (open: boolean) => {
             : "Use Tab to move between the word and its definition choices. Use Enter or Space to choose an answer."
         }}
       </p>
+      <p :id="activityStatusId" class="sr-only" aria-live="polite">
+        {{ keyboardStatusMessage }}
+      </p>
 
       <template v-if="!showResults && !gameComplete">
         <div
@@ -254,6 +263,7 @@ const handleResultsDialogChange = (open: boolean) => {
                   type="button"
                   :disabled="showFeedback"
                   :aria-pressed="selectedAnswer === option"
+                  :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                   :aria-label="ui.isSwahili ? `Chaguo la ${index + 1}: ${option}` : `Option ${index + 1}: ${option}`"
                   :class="
                     cn(

@@ -24,6 +24,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const searchTerm = ref("");
+const statusId = "activity-type-grid-status";
+const keyboardStatusMessage = ref("");
 
 const filteredActivities = computed<ActivityTypeConfig[]>(() =>
   ACTIVITY_TYPES_CONFIG.filter((activity) => {
@@ -50,6 +52,9 @@ const contextMessage = computed(() =>
 
 <template>
   <div class="space-y-6">
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
     <div>
       <Heading>Choose Activity Type</Heading>
       <p class="mt-1 text-slate-500">Select the type of activity you want to create.</p>
@@ -66,6 +71,7 @@ const contextMessage = computed(() =>
           placeholder="Search activity types..."
           class="pl-10"
           aria-label="Search activity types"
+          :aria-describedby="statusId"
         />
       </div>
     </div>
@@ -89,7 +95,8 @@ const contextMessage = computed(() =>
           activity.implemented ? 'cursor-pointer' : 'pointer-events-none cursor-not-allowed opacity-50',
         ]"
         :aria-label="`${activity.title}. ${activity.description}`"
-        @click="activity.implemented && props.onActivityTypeSelect(activity.type)"
+        :aria-describedby="statusId"
+        @click="() => { if (activity.implemented) { keyboardStatusMessage = `Selected: ${activity.title}.`; props.onActivityTypeSelect(activity.type); } }"
       >
         <Card class="border-0 shadow-none">
         <CardHeader class="pb-3">

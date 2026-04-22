@@ -40,6 +40,8 @@ const questionAnswers = reactive<
 >({});
 const correctAnswers = ref<string[]>([]);
 const activityInstructionsId = "numbers-addition-subtraction-instructions";
+const activityStatusId = "numbers-addition-subtraction-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -101,6 +103,7 @@ const handleSubmit = () => {
   score.value = totalScore;
   correctAnswers.value = correct;
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${totalScore} / ${totalQuestions.value}.`;
   playSound("success");
 };
 
@@ -118,6 +121,7 @@ const handleInputChange = (
     ...currentAnswer,
     [field]: value,
   };
+  keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(questionIndex + 1), value);
 };
 
 const resetActivity = () => {
@@ -127,6 +131,7 @@ const resetActivity = () => {
   canSubmit.value = false;
   correctAnswers.value = [];
   initAnswers();
+  keyboardStatusMessage.value = "";
 };
 
 const isFieldCorrect = (questionIndex: number, field: string) =>
@@ -149,6 +154,9 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
           ? "Tumia tab kusogea kwenye vikundi vya vitu na sehemu za majibu. Andika hesabu zako kwenye visanduku vilivyotolewa."
           : "Use Tab to move through each group of objects and answer field. Type your counts and final answers in the provided inputs."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="flex-1 flex flex-col gap-4 p-4">
@@ -181,6 +189,7 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
                   placeholder="Count"
                   :onInputChange="(v: string) => handleInputChange(index, 'left', v)"
                   :ariaLabel="ui.isSwahili ? `Hesabu ya kundi la kwanza kwa swali la ${index + 1}` : `First count for question ${index + 1}`"
+                  :ariaDescribedby="`${activityInstructionsId} ${activityStatusId}`"
                   :className="cn('w-[100px] rounded-lg p-2', showResults ? 'border-none' : 'border border-picton-blue-500')"
                 />
                 <div v-if="showResults && (questionAnswers[index]?.left || '')" class="absolute -top-2 -right-2 z-10">
@@ -219,6 +228,7 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
                   placeholder="Count"
                   :onInputChange="(v: string) => handleInputChange(index, 'right', v)"
                   :ariaLabel="ui.isSwahili ? `Hesabu ya kundi la pili kwa swali la ${index + 1}` : `Second count for question ${index + 1}`"
+                  :ariaDescribedby="`${activityInstructionsId} ${activityStatusId}`"
                   :className="cn('w-[100px] rounded-lg p-2', showResults ? 'border-none' : 'border border-picton-blue-500')"
                 />
                 <div v-if="showResults && (questionAnswers[index]?.right || '')" class="absolute -top-2 -right-2 z-10">
@@ -246,6 +256,7 @@ const isFieldCorrect = (questionIndex: number, field: string) =>
                 placeholder="Answer"
                 :onInputChange="(v: string) => handleInputChange(index, 'result', v)"
                 :ariaLabel="ui.isSwahili ? `Jibu la mwisho kwa swali la ${index + 1}` : `Final answer for question ${index + 1}`"
+                :ariaDescribedby="`${activityInstructionsId} ${activityStatusId}`"
                 :className="cn('w-[120px] rounded-lg p-2', showResults ? 'border-none' : 'border border-picton-blue-500')"
               />
               <div v-if="showResults && (questionAnswers[index]?.result || '')" class="absolute -top-2 -right-2 z-10">

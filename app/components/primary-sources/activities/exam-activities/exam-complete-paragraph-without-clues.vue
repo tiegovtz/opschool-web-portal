@@ -32,6 +32,8 @@ const totalQuestions = computed(() => props.questions.answers.length);
 const paragraphParts = computed(() => props.questions.paragraph.split("___"));
 const activityInstructionsId = "exam-complete-paragraph-instructions";
 const activityOptionsId = "exam-complete-paragraph-options";
+const activityStatusId = "exam-complete-paragraph-status";
+const keyboardStatusMessage = ref("");
 
 const calculateScore = () => {
   let score = 0;
@@ -89,6 +91,7 @@ const handleInputChange = (index: number, value: string | number) => {
   const nextAnswers = [...userAnswers.value];
   nextAnswers[index] = String(value ?? "");
   userAnswers.value = nextAnswers;
+  keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(index + 1), value);
 };
 </script>
 
@@ -108,6 +111,9 @@ const handleInputChange = (index: number, value: string | number) => {
           ? "Tumia tab kusogea kwenye nafasi za aya na uandike jibu katika kila nafasi."
           : "Use Tab to move through the paragraph blanks and type an answer in each blank."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
     <div class="h-full min-h-[400px] md:grid md:grid-cols-3">
       <div
@@ -130,6 +136,7 @@ const handleInputChange = (index: number, value: string | number) => {
               :key="option"
               class="px-3 text-base leading-4 text-picton-blue-700"
               tabindex="0"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             >
               {{ option }}
             </span>
@@ -139,7 +146,7 @@ const handleInputChange = (index: number, value: string | number) => {
         <div
           class="text-lg leading-loose"
           role="group"
-          :aria-describedby="props.questions.withClues && props.questions.options?.length ? activityOptionsId : activityInstructionsId"
+          :aria-describedby="props.questions.withClues && props.questions.options?.length ? `${activityInstructionsId} ${activityOptionsId} ${activityStatusId}` : `${activityInstructionsId} ${activityStatusId}`"
         >
           <template v-for="(part, index) in paragraphParts" :key="`${index}-${part}`">
             <span>{{ part }}</span>
@@ -152,6 +159,7 @@ const handleInputChange = (index: number, value: string | number) => {
                 :model-value="userAnswers[index]"
                 class="max-w-40 rounded-none border-none bg-transparent text-center !text-lg text-picton-blue-700 focus:bg-picton-blue-50"
                 :aria-label="ui.isSwahili ? `Nafasi ya ${index + 1}` : `Blank ${index + 1}`"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 @update:model-value="(value) => handleInputChange(index, value)"
               />
               <div class="border-b border-dashed border-picton-blue-700" />

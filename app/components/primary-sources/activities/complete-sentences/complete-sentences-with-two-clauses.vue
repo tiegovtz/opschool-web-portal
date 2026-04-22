@@ -35,6 +35,8 @@ const answers = ref<Record<number, string>>({});
 const feedbacks = ref<Record<number, boolean>>({});
 const showResults = ref(false);
 const activityInstructionsId = "complete-sentences-two-clauses-instructions";
+const activityStatusId = "complete-sentences-two-clauses-status";
+const keyboardStatusMessage = ref("");
 
 const normalize = (value: string) => value.trim().toLowerCase();
 const compareAnswersLocal = (userAnswer: string, expected: string | string[]) => {
@@ -59,6 +61,7 @@ watch(
     answers.value = {};
     feedbacks.value = {};
     showResults.value = false;
+    keyboardStatusMessage.value = "";
   },
   { immediate: true, deep: true },
 );
@@ -85,6 +88,7 @@ const handleCheckAll = () => {
   feedbacks.value = newFeedbacks;
   score.value = correctCount;
   allChecked.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${correctCount} / ${shuffledQuestions.value.length}.`;
 
   const percentage = shuffledQuestions.value.length
     ? (correctCount / shuffledQuestions.value.length) * 100
@@ -99,6 +103,7 @@ const handleInputChange = (index: number, value: string) => {
     ...answers.value,
     [index]: value,
   };
+  keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(index + 1), value);
 };
 
 const resetGame = () => {
@@ -109,6 +114,7 @@ const resetGame = () => {
   answers.value = {};
   feedbacks.value = {};
   showResults.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 const contentStyle = computed(() => ({
@@ -134,6 +140,9 @@ const getInputLabel = (index: number, word: string) =>
         ? "Jaza kila sehemu ya jibu kwa kutumia kitufe cha Tab kupita kwenye shughuli. Baada ya kukagua majibu yako, tumia kitufe cha Tazama Matokeo kuona muhtasari."
         : "Fill in each answer field using the Tab key to move through the activity. After checking your answers, use the View Results button to see the summary." }}
     </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div v-if="!showResults" class="flex flex-col h-full bg-picton-blue-100" :style="contentStyle">
       <div class="grid grid-cols-2 gap-4 py-4 flex-1 overflow-y-auto" role="list" :aria-label="ui.completeSentenceQuestions.value">
@@ -158,7 +167,7 @@ const getInputLabel = (index: number, word: string) =>
                 :model-value="answers[index] || ''"
                 :disabled="allChecked"
                 :aria-label="getInputLabel(index, question.word)"
-                :aria-describedby="activityInstructionsId"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 class="px-2 border-none bg-transparent text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
                 @update:modelValue="(v: string | number) => handleInputChange(index, String(v ?? ''))"
               />
@@ -192,7 +201,7 @@ const getInputLabel = (index: number, word: string) =>
         :disabled="!allAnswered"
         variant="brand-lemon"
         class="ml-auto text-lg py-3"
-        :aria-describedby="activityInstructionsId"
+        :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
       >
         {{ ui.checkAnswers }}
       </Button>
@@ -202,7 +211,7 @@ const getInputLabel = (index: number, word: string) =>
           :onClick="() => { showResults = true; }"
           variant="brand-lemon"
           class="w-full text-lg py-3"
-          :aria-describedby="activityInstructionsId"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
         >
           {{ ui.viewResults }}
         </Button>

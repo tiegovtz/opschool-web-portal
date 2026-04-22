@@ -44,6 +44,8 @@ const answerRecords = ref<AnswerRecord[]>([]);
 const showResults = ref(false);
 const validationError = ref<string | null>(null);
 const activityInstructionsId = "abacus-activity-instructions";
+const activityStatusId = "abacus-activity-status";
+const keyboardStatusMessage = ref("");
 
 const currentQuestion = computed(() => props.questions.questions[currentQuestionIndex.value]);
 const totalQuestions = computed(() => props.questions.questions.length);
@@ -141,6 +143,7 @@ watch(() => props.questions.questions, () => {
   showResults.value = false;
   showResultsDialog.value = false;
   validationError.value = null;
+  keyboardStatusMessage.value = "";
   initializeQuestionState();
 }, { deep: true });
 
@@ -155,6 +158,7 @@ const checkAnswers = () => {
 
   if (!allInputsFilled) {
     validationError.value = "Please fill in all text fields.";
+    keyboardStatusMessage.value = validationError.value;
     setTimeout(() => {
       validationError.value = null;
     }, 4000);
@@ -163,6 +167,7 @@ const checkAnswers = () => {
 
   if (!validateDigitsMatchWholeNumber()) {
     validationError.value = "The individual place value digits don't match the whole number.";
+    keyboardStatusMessage.value = validationError.value;
     setTimeout(() => {
       validationError.value = null;
     }, 4000);
@@ -190,6 +195,7 @@ const checkAnswers = () => {
   if (props.feedback !== "none") {
     showFeedback.value = true;
   }
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value + (isCorrect ? 1 : 0)} / ${totalQuestions.value}.`;
 
   if (currentQuestionIndex.value === totalQuestions.value - 1) {
     if (props.feedback === "none") {
@@ -212,6 +218,7 @@ const resetActivity = () => {
   showResults.value = false;
   showResultsDialog.value = false;
   validationError.value = null;
+  keyboardStatusMessage.value = "";
   initializeQuestionState();
 };
 </script>
@@ -232,6 +239,9 @@ const resetActivity = () => {
           ? "Tumia tab kusogea kwenye kila thamani ya nafasi, sehemu zake za jibu, na kisanduku cha namba kamili."
           : "Use Tab to move through each place value, its answer field, and the whole number answer field."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div
@@ -323,12 +333,14 @@ const resetActivity = () => {
                 maxlength="1"
                 :disabled="showFeedback"
                 :aria-label="ui.isSwahili ? `Namba ya ${placeValue}` : `${placeValue} digit`"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 class="w-full text-center !text-xl"
                 @update:model-value="
                   (value) => {
                     const text = String(value ?? '');
                     if (text === '' || /^\\d+$/.test(text)) {
                       userAnswers = { ...userAnswers, [placeValue]: text };
+                      keyboardStatusMessage = ui.formatActivityUpdated(placeValue, text);
                     }
                   }
                 "
@@ -343,6 +355,7 @@ const resetActivity = () => {
               type="text"
               :disabled="showFeedback"
               :aria-label="ui.isSwahili ? 'Namba kamili' : 'Whole number answer'"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               :class="
                 cn('mx-auto min-w-32 text-center !text-xl', {
                   'border-green-500 bg-green-100 text-green-700':
@@ -356,6 +369,7 @@ const resetActivity = () => {
                   const text = String(value ?? '');
                   if (text === '' || /^\\d+$/.test(text)) {
                     wholeNumberAnswer = text;
+                    keyboardStatusMessage = ui.formatActivityUpdated(ui.yourAnswer.value, text);
                   }
                 }
               "
@@ -386,7 +400,7 @@ const resetActivity = () => {
           </div>
         </div>
 
-        <Button variant="brand-lemon" class="w-fit" @click="checkAnswers">
+        <Button variant="brand-lemon" class="w-fit" :aria-describedby="`${activityInstructionsId} ${activityStatusId}`" @click="checkAnswers">
           {{ ui.checkAnswer }}
         </Button>
       </div>

@@ -65,6 +65,8 @@ const showResults = ref(false);
 const score = ref(0);
 const resultsDialogOpen = ref(false);
 const activityInstructionsId = "complete-sentences-three-clauses-instructions";
+const activityStatusId = "complete-sentences-three-clauses-status";
+const keyboardStatusMessage = ref("");
 
 watch(
   () => props.questions,
@@ -73,6 +75,7 @@ watch(
     showResults.value = false;
     score.value = 0;
     resultsDialogOpen.value = false;
+    keyboardStatusMessage.value = "";
   },
   { immediate: true, deep: true },
 );
@@ -86,6 +89,10 @@ const handleInputChange = (questionId: number | string, answerIndex: number, val
         }
       : q,
   );
+  const questionIndex = questionsState.value.findIndex((q) => q.id === questionId);
+  if (questionIndex !== -1) {
+    keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(questionIndex), value);
+  }
 };
 
 const isQuestionCorrect = (question: QuestionState) =>
@@ -107,6 +114,7 @@ const checkAnswers = () => {
     if (isQuestionCorrect(q)) correctQuestions++;
   });
   score.value = correctQuestions;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${correctQuestions} / ${Math.max(questionsState.value.length - 1, 0)}.`;
   playSound("success");
   resultsDialogOpen.value = true;
 };
@@ -116,6 +124,7 @@ const resetActivity = () => {
   showResults.value = false;
   score.value = 0;
   resultsDialogOpen.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 const getClauseInputLabel = (questionIndex: number, answerIndex: number, questionText: string) =>
@@ -136,6 +145,9 @@ const getClauseInputLabel = (questionIndex: number, answerIndex: number, questio
       {{ ui.isSwahili
         ? "Tumia kitufe cha Tab kupita kwenye kila sehemu ya jibu, jaza vifungu vyote vinavyohitajika, kisha tumia kitufe cha Kagua Majibu kuona alama yako."
         : "Move through each answer field with the Tab key, fill all required clauses, then use the Check Answers button to review your score." }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div
@@ -188,7 +200,7 @@ const getClauseInputLabel = (questionIndex: number, answerIndex: number, questio
               :model-value="answer"
               :disabled="showResults"
               :aria-label="getClauseInputLabel(questionIndex, idx, q.question)"
-              :aria-describedby="activityInstructionsId"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               class="p-2 bg-transparent text-center border-none rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
               @update:modelValue="(v: string | number) => handleInputChange(q.id, idx, String(v ?? ''))"
             />
@@ -208,7 +220,7 @@ const getClauseInputLabel = (questionIndex: number, answerIndex: number, questio
         variant="brand-lemon"
         :style="{ opacity: allFillableAnswered ? 1 : 0, transition: 'opacity 0.3s ease' }"
         :disabled="!allFillableAnswered"
-        :aria-describedby="activityInstructionsId"
+        :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
       >
         {{ ui.checkAnswers }}
       </Button>

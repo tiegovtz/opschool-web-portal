@@ -44,6 +44,8 @@ const showResults = ref(false);
 const score = ref(0);
 const activityInstructionsId = "complete-sentences-rephrasing-choices-instructions";
 const activityOptionsId = "complete-sentences-rephrasing-choices-options";
+const activityStatusId = "complete-sentences-rephrasing-choices-status";
+const keyboardStatusMessage = ref("");
 
 const availableOptions = computed(() =>
   (props.questions.options || []).map((option) => option.trim()).filter(Boolean),
@@ -57,6 +59,7 @@ const resetState = () => {
   allAnswered.value = false;
   showResults.value = false;
   score.value = 0;
+  keyboardStatusMessage.value = "";
 };
 
 watch(
@@ -155,6 +158,7 @@ const handleCheckAllAnswers = () => {
   checkedItems.value = nextCheckedItems;
   score.value = nextScore;
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${nextScore} / ${shuffledQuestions.value.length}.`;
 };
 
 const allQuestionsAnswered = computed(() =>
@@ -187,6 +191,9 @@ const formatUserAnswer = (questionIndex: number) => {
         ? "Tumia kitufe cha Tab kupita kwenye kila sentensi, jaza kila nafasi wazi, kisha tumia kitufe cha Kagua Majibu kuona matokeo ya kila swali."
         : "Move through each sentence with the Tab key, fill in every blank, then use the Check Answers button to review the result for each question." }}
     </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div
       v-if="availableOptions.length"
@@ -203,6 +210,7 @@ const formatUserAnswer = (questionIndex: number) => {
           :key="`${option}-${optionIndex}`"
           tabindex="0"
           :aria-label="`Answer choice ${option}`"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           class="min-w-0 rounded px-3 py-2 text-center text-base font-bold leading-snug text-picton-blue-800 sm:px-4 sm:py-2 sm:text-lg md:text-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 focus-visible:ring-offset-picton-blue-200"
         >
           {{ option }}
@@ -253,7 +261,7 @@ const formatUserAnswer = (questionIndex: number) => {
                 :is-checked="checkedItems.includes(i)"
                 :is-correct="feedbacks[i] === true"
                 :disabled="checkedItems.includes(i)"
-                @blank-change="(bi, val) => handleInputChange(i, bi, val)"
+                @blank-change="(bi, val) => { handleInputChange(i, bi, val); keyboardStatusMessage = ui.formatActivityUpdated(ui.formatQuestion(i + 1), val); }"
               />
             </div>
           </div>
@@ -296,7 +304,7 @@ const formatUserAnswer = (questionIndex: number) => {
         variant="brand-lemon"
         class="w-fit ml-auto"
         size="lg"
-        :aria-describedby="availableOptions.length ? activityOptionsId : activityInstructionsId"
+        :aria-describedby="availableOptions.length ? `${activityInstructionsId} ${activityOptionsId} ${activityStatusId}` : `${activityInstructionsId} ${activityStatusId}`"
       >
         {{ allAnswered ? ui.answersChecked : ui.checkAllAnswers }}
       </Button>

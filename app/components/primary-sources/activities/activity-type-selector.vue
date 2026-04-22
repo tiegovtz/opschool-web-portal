@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { Icon } from "@iconify/vue";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,8 @@ const route = useRoute();
 const ui = useActivityUiText();
 
 const curriculum = computed(() => String(route.query.curc || "").trim());
+const statusId = "activity-type-selector-status";
+const keyboardStatusMessage = ref("");
 
 const activityTypes = [
   {
@@ -58,12 +60,16 @@ const handleSelect = async (type: string) => {
     params.set("type", type);
   }
 
+  keyboardStatusMessage.value = ui.formatActivityActivated(type);
   await navigateTo(`/${type}${params.toString() ? `?${params.toString()}` : ""}`);
 };
 </script>
 
 <template>
   <div class="container mx-auto px-0 py-6 md:py-20">
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
     <div class="mb-12">
       <div class="mb-4 flex items-center justify-between">
         <Button :href="backHref" class="w-fit xl:hidden">
@@ -96,6 +102,7 @@ const handleSelect = async (type: string) => {
         :key="activity.type"
         type="button"
         :aria-label="`${activity.label}. ${activity.description}`"
+        :aria-describedby="statusId"
         :class="
           cn(
             'group relative overflow-hidden rounded-2xl border-2 bg-white p-8 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2',

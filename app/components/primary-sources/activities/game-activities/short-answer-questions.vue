@@ -54,6 +54,8 @@ const completedQuestions = ref(new Set<number>());
 const incorrectQuestions = ref(new Set<number>());
 const completedObjectIds = ref<number[]>([]);
 const activityInstructionsId = "game-short-answer-instructions";
+const activityStatusId = "game-short-answer-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -104,6 +106,7 @@ const handleResetWithShuffle = async () => {
   gameComplete.value = false;
   completedQuestions.value = new Set();
   incorrectQuestions.value = new Set();
+  keyboardStatusMessage.value = "";
 
   if (props.questions.isGameMode) {
     const currentObjectIds = objects.value.map((item) => item.id);
@@ -148,6 +151,7 @@ const handleCheckAllAnswers = () => {
   incorrectQuestions.value = nextIncorrectQuestions;
   allAnswered.value = true;
   gameComplete.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${nextScore} / ${gameQuestions.value.length}.`;
 
   playSound(nextScore === gameQuestions.value.length ? "success" : "failure");
 };
@@ -159,6 +163,7 @@ const handleInputChange = (index: number, value: string) => {
     ...answers.value,
     [index]: value,
   };
+  keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(index + 1), value);
 
   debouncedCheckAndSave();
 };
@@ -224,6 +229,9 @@ const handleResultsDialogChange = (open: boolean) => {
             : "Use Tab to move through each question and answer field. Type your answer, then use Tab to reach the check answers button."
         }}
       </p>
+      <p :id="activityStatusId" class="sr-only" aria-live="polite">
+        {{ keyboardStatusMessage }}
+      </p>
 
       <div class="flex h-full flex-col gap-2 bg-picton-blue-100">
         <div
@@ -267,6 +275,7 @@ const handleResultsDialogChange = (open: boolean) => {
                       class="min-w-0 border-none bg-transparent px-2 text-center focus:outline-none"
                       :style="{ maxWidth: '320px' }"
                       :aria-label="ui.isSwahili ? `Jibu la swali ${index + 1}: ${question.question}` : `Answer for question ${index + 1}: ${question.question}`"
+                      :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                       @update:model-value="handleInputUpdate(index, $event)"
                     />
                     <div
@@ -324,6 +333,7 @@ const handleResultsDialogChange = (open: boolean) => {
             size="lg"
             :disabled="!allQuestionsAnswered || allAnswered"
             @click="handleCheckAllAnswers"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             class="gap-2"
           >
             <Icon

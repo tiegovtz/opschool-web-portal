@@ -38,6 +38,8 @@ const attemptedQuestions = ref<Record<number, "T" | "F" | "">>({});
 const answerFeedback = ref<"correct" | "incorrect" | null>(null);
 const showResults = ref(false);
 const instructionsId = "picture-story-true-false-instructions";
+const statusId = "picture-story-true-false-status";
+const keyboardStatusMessage = ref("");
 
 const initialize = () => {
   shuffledIndexes.value = shuffle(
@@ -51,6 +53,7 @@ const initialize = () => {
   activeQuestion.value = 0;
   answerFeedback.value = null;
   showResults.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 watch(() => props.questions.questions, initialize, { deep: true, immediate: true });
@@ -74,6 +77,7 @@ watch(
         return total + (answer === props.questions.questions[questionIndex].answer ? 1 : 0);
       }, 0);
       allAnswered.value = true;
+      keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.questions.length}.`;
       playSound("success");
     }
   },
@@ -86,6 +90,10 @@ const handleAnswerSelection = (questionIndex: number, answer: "T" | "F") => {
   const originalIndex = shuffledIndexes.value[questionIndex];
   const correct = answer === props.questions.questions[originalIndex].answer;
   answerFeedback.value = correct ? "correct" : "incorrect";
+  keyboardStatusMessage.value = ui.formatActivitySelected(
+    ui.formatQuestion(questionIndex + 1),
+    answer === "T" ? "True" : "False",
+  );
   playSound(correct ? "correct" : "failure");
 
   attemptedQuestions.value = {
@@ -97,6 +105,7 @@ const handleAnswerSelection = (questionIndex: number, answer: "T" | "F") => {
     answerFeedback.value = null;
     if (questionIndex < shuffledIndexes.value.length - 1) {
       activeQuestion.value = questionIndex + 1;
+      keyboardStatusMessage.value = "";
     }
   }, 1000);
 };
@@ -125,6 +134,9 @@ const resultRows = computed(() =>
     <p :id="instructionsId" class="sr-only">
       Read the notes or story, then answer each question by choosing true or false. Use the Tab key
       to move between the answer choices and the question navigation buttons.
+    </p>
+    <p :id="statusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div
@@ -195,7 +207,7 @@ const resultRows = computed(() =>
                   <Button
                     :variant="attemptedQuestions[activeQuestion] === 'T' ? 'default' : 'outline'"
                     :disabled="!!attemptedQuestions[activeQuestion]"
-                    :aria-describedby="instructionsId"
+                    :aria-describedby="`${instructionsId} ${statusId}`"
                     :aria-label="`Question ${activeQuestion + 1}, choose true`"
                     :class="
                       cn('h-14 w-20 text-xl md:h-16 md:w-24', {
@@ -213,7 +225,7 @@ const resultRows = computed(() =>
                   <Button
                     :variant="attemptedQuestions[activeQuestion] === 'F' ? 'default' : 'outline'"
                     :disabled="!!attemptedQuestions[activeQuestion]"
-                    :aria-describedby="instructionsId"
+                    :aria-describedby="`${instructionsId} ${statusId}`"
                     :aria-label="`Question ${activeQuestion + 1}, choose false`"
                     :class="
                       cn('h-14 w-20 text-xl md:h-16 md:w-24', {
@@ -265,7 +277,7 @@ const resultRows = computed(() =>
             v-for="(originalIndex, index) in shuffledIndexes"
             :key="index"
             type="button"
-            :aria-describedby="instructionsId"
+            :aria-describedby="`${instructionsId} ${statusId}`"
             :aria-label="`Go to question ${index + 1}`"
             :class="
               cn(

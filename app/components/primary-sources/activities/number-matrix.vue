@@ -37,6 +37,8 @@ const isCompleted = ref(false);
 const score = ref(0);
 const showResultsDialog = ref(false);
 const instructionsId = "number-matrix-instructions";
+const statusId = "number-matrix-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -50,6 +52,7 @@ watch(
     isCompleted.value = false;
     score.value = 0;
     showResultsDialog.value = false;
+    keyboardStatusMessage.value = "";
   },
   { deep: true },
 );
@@ -69,6 +72,10 @@ const handleInputChange = (questionId: number, patternIndex: number, value: stri
     ...answers.value,
     [getAnswerKey(questionId, patternIndex)]: value,
   };
+  keyboardStatusMessage.value = ui.formatActivityUpdated(
+    `Sequence ${questionId}`,
+    value,
+  );
 };
 
 const checkAnswers = () => {
@@ -96,6 +103,7 @@ const checkAnswers = () => {
   validations.value = nextValidations;
   score.value = correctCount;
   showResultsDialog.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${correctCount} / ${totalPatterns.value}.`;
   playSound("success");
 };
 
@@ -128,8 +136,11 @@ const handleResultsDialogClose = (open: boolean) => {
       Fill in the missing numbers in each sequence. Use the Tab key to move through the missing
       cells, then activate the check answers button when all blanks are filled.
     </p>
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
 
-    <div class="overflow-x-auto rounded-lg bg-picton-blue-50 md:overflow-auto" :aria-describedby="instructionsId">
+    <div class="overflow-x-auto rounded-lg bg-picton-blue-50 md:overflow-auto" :aria-describedby="`${instructionsId} ${statusId}`">
       <div v-for="question in questions" :key="question.id" class="p-1">
         <div class="flex items-center gap-2">
           <template v-for="(item, index) in question.sequence" :key="`q${question.id}-${index}`">
@@ -148,6 +159,7 @@ const handleResultsDialogClose = (open: boolean) => {
                 :value="answers[getAnswerKey(question.id, index)] || ''"
                 :onChange="(value) => handleInputChange(question.id, index, value)"
                 :aria-label="`Missing number in sequence ${question.id}, position ${index + 1}`"
+                :aria-describedby="`${instructionsId} ${statusId}`"
                 noBorder
                 :disabled="showFeedback"
                 :isCorrect="showFeedback ? validations[getAnswerKey(question.id, index)] : undefined"
@@ -182,7 +194,7 @@ const handleResultsDialogClose = (open: boolean) => {
       v-if="!showFeedback"
       variant="brand-lemon"
       class="ml-auto mt-4 w-fit group gap-2"
-      :aria-describedby="instructionsId"
+      :aria-describedby="`${instructionsId} ${statusId}`"
       @click="checkAnswers"
     >
       <Icon

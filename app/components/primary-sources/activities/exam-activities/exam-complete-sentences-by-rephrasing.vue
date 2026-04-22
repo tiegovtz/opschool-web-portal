@@ -37,6 +37,8 @@ const answers = ref<Record<string, string>>({});
 const totalQuestions = computed(() => props.questions.questions.length);
 const activityInstructionsId = "exam-complete-sentences-rephrasing-instructions";
 const activityOptionsId = "exam-complete-sentences-rephrasing-options";
+const activityStatusId = "exam-complete-sentences-rephrasing-status";
+const keyboardStatusMessage = ref("");
 const fontSizeStyle = computed(() => ({
   fontSize: props.questions.fontSize ? `${props.questions.fontSize}px` : "20px",
 }));
@@ -100,6 +102,10 @@ const handleInputChange = (questionId: string, blankIndex: number, value: string
       ...answers.value,
       [questionId]: String(value ?? ""),
     };
+    const questionIndex = props.questions.questions.findIndex((question) => question.id === questionId);
+    if (questionIndex !== -1) {
+      keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(questionIndex + 1), value);
+    }
     return;
   }
 
@@ -114,6 +120,10 @@ const handleInputChange = (questionId: string, blankIndex: number, value: string
     ...answers.value,
     [questionId]: currentAnswers.join("|"),
   };
+  const questionIndex = props.questions.questions.findIndex((question) => question.id === questionId);
+  if (questionIndex !== -1) {
+    keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(questionIndex + 1), value);
+  }
 };
 
 watch(
@@ -161,6 +171,9 @@ watch(
           : "Use Tab to move to the answer choices and blanks. Type your answer in each blank."
       }}
     </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
     <div
       v-if="
         props.questions.options?.length &&
@@ -179,6 +192,7 @@ watch(
           :key="option"
           class="px-3 leading-4 text-picton-blue-700"
           tabindex="0"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
         >
           {{ option }}
         </div>
@@ -254,6 +268,7 @@ watch(
           :key="option"
           class="px-3 leading-4 text-picton-blue-700"
           tabindex="0"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
         >
           {{ option }}
         </div>

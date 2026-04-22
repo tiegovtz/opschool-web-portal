@@ -35,6 +35,8 @@ type DragEndEvent = {
 const props = defineProps<ExamMatchingWithLettersProps>();
 const ui = useActivityUiText();
 const activityInstructionsId = "exam-matching-letters-instructions";
+const activityStatusId = "exam-matching-letters-status";
+const keyboardStatusMessage = ref("");
 
 const isKweliMode = computed(() => props.questions.mode === "kweliSikweli");
 
@@ -291,6 +293,7 @@ const handleDragEnd = (event: DragEndEvent) => {
   if (Number.isNaN(targetQuestionIndex)) return;
 
   playSound("click");
+  keyboardStatusMessage.value = ui.formatActivityPlaced(ui.formatQuestion(targetQuestionIndex + 1), draggedItemLetter);
 
   const nextAnswers = [...answers.value];
   const currentIndex = nextAnswers.findIndex((answer) => answer === draggedItemLetter);
@@ -317,6 +320,9 @@ const handleDragEnd = (event: DragEndEvent) => {
 
 <template>
   <div class="flex h-full flex-col">
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
     <div
       v-if="isKweliMode"
       class="flex flex-col gap-6 overflow-auto rounded-xl bg-white p-4 pb-2 md:max-h-[calc(100dvh-100px)]"
@@ -344,6 +350,7 @@ const handleDragEnd = (event: DragEndEvent) => {
           <Button
             type="button"
             variant="outline"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :class="
               cn(
                 'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
@@ -356,6 +363,7 @@ const handleDragEnd = (event: DragEndEvent) => {
           <Button
             type="button"
             variant="outline"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :class="
               cn(
                 'h-12 min-w-[6.5rem] text-base font-semibold sm:h-14 sm:min-w-[7.5rem] sm:text-lg',
@@ -424,6 +432,7 @@ const handleDragEnd = (event: DragEndEvent) => {
               role="listitem"
               tabindex="0"
               :aria-labelledby="`exam-matching-question-${question.id}`"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             >
               <p>{{ toRoman(index + 1) }}.</p>
               <div class="flex w-full items-center justify-between gap-4">
@@ -441,6 +450,7 @@ const handleDragEnd = (event: DragEndEvent) => {
                     v-if="answers[index]"
                     :id="answers[index]!"
                     class="flex h-10 w-14 cursor-move items-center justify-center rounded bg-lemon-200 text-xl font-semibold text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
+                    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                   >
                     {{ answers[index] }}
                   </Draggable>
@@ -448,6 +458,7 @@ const handleDragEnd = (event: DragEndEvent) => {
                     v-else
                     :id="`q-${index}`"
                     class="h-10 w-14 rounded bg-picton-blue-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
+                    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                     isOverClassName="bg-lemon-200"
                   />
                 </div>
@@ -463,6 +474,7 @@ const handleDragEnd = (event: DragEndEvent) => {
                 :key="answer.letter"
                 :id="(answer.letter as string)"
                 class="flex h-10 w-14 cursor-move items-center justify-center rounded bg-lemon-200 text-xl font-semibold text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               >
                 <span>{{ answer.letter }}</span>
               </Draggable>

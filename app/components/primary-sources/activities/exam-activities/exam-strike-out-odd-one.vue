@@ -40,6 +40,8 @@ const userSelections = ref<UserSelection[]>(
   })),
 );
 const activityInstructionsId = "exam-strike-out-instructions";
+const activityStatusId = "exam-strike-out-status";
+const keyboardStatusMessage = ref("");
 
 const { collectAnswers, updateActivityScore } = useExamContext();
 
@@ -96,6 +98,13 @@ const handleWordClick = (questionId: string, wordId: string) => {
       selectedWordId: selection.selectedWordId === wordId ? null : wordId,
     };
   });
+
+  const questionIndex = props.questions.questions.findIndex((question) => question.id === questionId);
+  const word = props.questions.questions[questionIndex]?.words.find((item) => item.id === wordId);
+  const isSelected = userSelections.value.find((selection) => selection.questionId === questionId)?.selectedWordId === wordId;
+  keyboardStatusMessage.value = isSelected
+    ? ui.formatActivitySelected(ui.formatQuestion(questionIndex + 1), word?.text)
+    : ui.formatActivityRemoved(ui.formatQuestion(questionIndex + 1), word?.text);
 };
 
 const getUserSelection = (questionId: string) =>
@@ -132,6 +141,9 @@ const gridClass = (wordCount: number) => {
           ? "Tumia tab kusogea kwenye kila kundi la maneno. Tumia enter au space kuchagua neno lisilofaa."
           : "Use Tab to move through each word group. Use Enter or Space to choose the odd word out."
       }}
+    </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
     <div class="flex-1 overflow-y-auto p-6">
       <div class="space-y-6" role="list" :aria-label="ui.question.value">
@@ -174,6 +186,7 @@ const gridClass = (wordCount: number) => {
               type="button"
               :aria-pressed="isWordSelected(question.id, word.id)"
               :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, neno la ${wordIndex + 1}: ${word.text}` : `Question ${questionIndex + 1}, word ${wordIndex + 1}: ${word.text}`"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               :class="
                 cn(
                   'relative flex min-h-[60px] items-center justify-center rounded-lg border p-4 text-center font-medium shadow-sm transition-all duration-300 hover:shadow-md',
