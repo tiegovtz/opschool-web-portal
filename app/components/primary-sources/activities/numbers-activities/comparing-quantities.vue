@@ -32,6 +32,8 @@ const questionAnswers = reactive<Record<number, "" | "First" | "Second">>({});
 const correctAnswers = ref<string[]>([]);
 const activityInstructionsId = "numbers-comparing-quantities-instructions";
 const ui = useActivityUiText();
+const activityStatusId = "numbers-comparing-quantities-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -65,6 +67,7 @@ watch(
     score.value = totalScore;
     correctAnswers.value = correct;
     allAnswered.value = true;
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${totalScore} / ${totalQuestions.value}.`;
     playSound("success");
   },
   { deep: true },
@@ -72,6 +75,7 @@ watch(
 
 const handleAnswerClick = (questionIndex: number, side: "First" | "Second") => {
   questionAnswers[questionIndex] = side;
+  keyboardStatusMessage.value = ui.formatActivitySelected(ui.formatQuestion(questionIndex + 1), side);
   playSound("click");
 };
 
@@ -81,6 +85,7 @@ const resetActivity = () => {
   allAnswered.value = false;
   correctAnswers.value = [];
   initAnswers();
+  keyboardStatusMessage.value = "";
 };
 
 const isCorrect = (questionIndex: number) =>
@@ -110,6 +115,9 @@ const renderQuantityImages = (count: number, image: string) => ({
           ? "Tumia tab kusogea kwenye kila jozi ya picha. Chagua First au Second kwa enter au space."
           : "Use Tab to move through each picture pair. Choose First or Second with Enter or Space."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="flex-1 flex flex-col gap-6 overflow-y-auto p-4">
@@ -141,6 +149,7 @@ const renderQuantityImages = (count: number, image: string) => ({
                   :onClickChange="() => handleAnswerClick(index, 'First')"
                   :isSelected="questionAnswers[index] === 'First'"
                   :ariaLabel="ui.isSwahili ? `Swali la ${index + 1}, chagua kundi la kwanza` : `Question ${index + 1}, choose the first group`"
+                  :ariaDescribedby="`${activityInstructionsId} ${activityStatusId}`"
                   :className="
                     `min-w-[120px] ${
                       showResults && questionAnswers[index] === 'First'
@@ -178,6 +187,7 @@ const renderQuantityImages = (count: number, image: string) => ({
                   :onClickChange="() => handleAnswerClick(index, 'Second')"
                   :isSelected="questionAnswers[index] === 'Second'"
                   :ariaLabel="ui.isSwahili ? `Swali la ${index + 1}, chagua kundi la pili` : `Question ${index + 1}, choose the second group`"
+                  :ariaDescribedby="`${activityInstructionsId} ${activityStatusId}`"
                   :className="
                     `min-w-[120px] ${
                       showResults && questionAnswers[index] === 'Second'

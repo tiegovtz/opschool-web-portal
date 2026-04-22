@@ -30,6 +30,8 @@ const serverQuestions: Question[] = [
 const { playSound } = useSoundEffects();
 const ui = useActivityUiText();
 const activityInstructionsId = "comparing-quantity-with-text-instructions";
+const activityStatusId = "comparing-quantity-with-text-status";
+const keyboardStatusMessage = ref("");
 
 const questions = ref(serverQuestions.map((question) => ({ ...question, answer: "" })));
 const score = ref(0);
@@ -52,12 +54,18 @@ const handleDragEnd = (event: DragEndEvent) => {
   };
 
   questions.value = nextQuestions;
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    ui.formatQuestion(questionIndex + 1),
+    option,
+  );
 
   if (nextQuestions.every((question) => question.answer !== "")) {
-    score.value = nextQuestions.filter(
+    const nextScore = nextQuestions.filter(
       (question, index) => question.answer === serverQuestions[index]?.answer,
     ).length;
+    score.value = nextScore;
     allAnswered.value = true;
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${nextScore} / ${nextQuestions.length}.`;
     playSound("success");
   }
 };
@@ -67,6 +75,7 @@ const resetActivity = () => {
   score.value = 0;
   allAnswered.value = false;
   showResults.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 const assignOption = (questionIndex: number, option: string) => {
@@ -76,12 +85,18 @@ const assignOption = (questionIndex: number, option: string) => {
     answer: option,
   };
   questions.value = nextQuestions;
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    ui.formatQuestion(questionIndex + 1),
+    option,
+  );
 
   if (nextQuestions.every((question) => question.answer !== "")) {
-    score.value = nextQuestions.filter(
+    const nextScore = nextQuestions.filter(
       (question, index) => question.answer === serverQuestions[index]?.answer,
     ).length;
+    score.value = nextScore;
     allAnswered.value = true;
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${nextScore} / ${nextQuestions.length}.`;
     playSound("success");
     return;
   }
@@ -96,6 +111,7 @@ const clearOption = (questionIndex: number) => {
     answer: "",
   };
   questions.value = nextQuestions;
+  keyboardStatusMessage.value = ui.formatActivityRemoved(ui.formatQuestion(questionIndex + 1));
   playSound("click");
 };
 </script>
@@ -117,6 +133,9 @@ const clearOption = (questionIndex: number) => {
             : "Use Tab to move through the choices and sentences. Select a choice with Enter or Space and apply it to the correct sentence."
         }}
       </p>
+      <p :id="activityStatusId" aria-live="polite" class="sr-only">
+        {{ keyboardStatusMessage }}
+      </p>
 
       <div v-if="!showResults" class="flex h-full flex-col justify-between gap-4">
         <div
@@ -133,6 +152,7 @@ const clearOption = (questionIndex: number) => {
                   type="button"
                   class="flex h-12 w-40 items-center justify-center rounded-xl bg-picton-blue-200 px-2 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
                   :aria-label="question.answer ? `${question.answer}` : `Select relation for question ${questionIndex + 1}`"
+                  :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                   @click="question.answer ? clearOption(questionIndex) : undefined"
                 >
                   <span
@@ -158,6 +178,7 @@ const clearOption = (questionIndex: number) => {
                 type="button"
                 :disabled="question.answer === option"
                 :aria-pressed="question.answer === option"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 :class="[
                   'flex items-center justify-center rounded-xl bg-picton-blue-200 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
                   question.answer === option && 'cursor-not-allowed opacity-50',
@@ -229,8 +250,6 @@ const clearOption = (questionIndex: number) => {
           <ActivityResults :score="score" :total="questions.length" :onRestart="resetActivity" />
         </div>
       </div>
-    </div>
-
     <ActivityResultsAlertDialog
       :score="score"
       :total="questions.length"

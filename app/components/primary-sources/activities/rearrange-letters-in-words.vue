@@ -32,6 +32,7 @@ type WordState = {
 };
 
 const props = defineProps<RearrangeLettersInWordsProps>();
+const ui = useActivityUiText();
 
 const scrambleWord = (word: string) => {
   const letters = word.split("");
@@ -70,6 +71,8 @@ const showResults = ref(false);
 const timeUp = ref(false);
 const completedObjectIds = ref<number[]>([]);
 const instructionsId = "rearrange-letters-in-words-instructions";
+const statusId = "rearrange-letters-in-words-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -95,6 +98,7 @@ const initializeWords = () => {
   showResultsDialog.value = false;
   showResults.value = false;
   timeUp.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 watch([gameQuestions, loading], ([questions, isLoading]) => {
@@ -138,6 +142,7 @@ const finalizeWord = (wordIndex: number) => {
     playSound("correct");
 
     if (nextCompleted.size === scrambledWords.value.length) {
+      keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value + 1} / ${scrambledWords.value.length}.`;
       showResultsDialog.value = true;
     }
     return;
@@ -168,6 +173,7 @@ const handleLetterClick = (wordIndex: number, letterIndex: number) => {
       ? slots.map((slot, slotIndex) => (slotIndex === nextSlotIndex ? letter : slot))
       : slots,
   );
+  keyboardStatusMessage.value = `Placed: ${letter.toUpperCase()}.`;
 
   scrambledWords.value = scrambledWords.value.map((item, index) =>
     index === wordIndex
@@ -203,6 +209,7 @@ const handleSlotClick = (wordIndex: number, slotIndex: number) => {
   currentAnswer.value = currentAnswer.value.map((slots, index) =>
     index === wordIndex ? slots.map((value, indexValue) => (indexValue === slotIndex ? "" : value)) : slots,
   );
+  keyboardStatusMessage.value = `Removed: ${letter.toUpperCase()}.`;
 };
 
 const handleTimeUp = () => {
@@ -255,13 +262,16 @@ const getWordPromptLabel = (word: WordState) => word.word.toUpperCase();
       letter to place it into the next empty slot. Activate a filled slot to return that letter to
       the scrambled letter list.
     </p>
+    <p :id="statusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div class="flex flex-1 flex-col gap-4 overflow-auto">
       <div
         v-for="(word, wordIndex) in scrambledWords"
         :key="`${word.word}-${wordIndex}`"
         class="rounded-2xl bg-picton-blue-50 p-4"
-        :aria-describedby="instructionsId"
+        :aria-describedby="`${instructionsId} ${statusId}`"
       >
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div class="space-y-3">
@@ -276,7 +286,7 @@ const getWordPromptLabel = (word: WordState) => word.word.toUpperCase();
                   )
                 "
                 :disabled="!letter || isActivityDisabled || completedWords.has(wordIndex)"
-                :aria-describedby="instructionsId"
+                :aria-describedby="`${instructionsId} ${statusId}`"
                 :aria-label="`Letter ${letter.toUpperCase()} for ${getWordPromptLabel(word)}`"
                 @click="handleLetterClick(wordIndex, letterIndex)"
               >
@@ -299,7 +309,7 @@ const getWordPromptLabel = (word: WordState) => word.word.toUpperCase();
                   )
                 "
                 :disabled="isActivityDisabled || completedWords.has(wordIndex)"
-                :aria-describedby="instructionsId"
+                :aria-describedby="`${instructionsId} ${statusId}`"
                 :aria-label="
                   letter
                     ? `Filled slot ${slotIndex + 1} for ${getWordPromptLabel(word)} containing letter ${letter.toUpperCase()}. Activate to remove it.`

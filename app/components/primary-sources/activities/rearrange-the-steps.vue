@@ -48,6 +48,8 @@ const score = ref(0);
 const feedbacks = ref<Record<number, boolean>>({});
 const showAlertDialog = ref(false);
 const activityInstructionsId = "rearrange-the-steps-instructions";
+const activityStatusId = "rearrange-the-steps-status";
+const keyboardStatusMessage = ref("");
 
 const initializeActivity = () => {
   const items = props.questions.questions.map((question, index) => ({
@@ -64,6 +66,7 @@ const initializeActivity = () => {
   feedbacks.value = {};
   showAlertDialog.value = false;
   score.value = 0;
+  keyboardStatusMessage.value = "";
 };
 
 watch(() => props.questions, initializeActivity, { deep: true, immediate: true });
@@ -86,6 +89,7 @@ const calculateScore = (itemsToScore = placedItems.value) => {
   feedbacks.value = nextFeedbacks;
   isComplete.value = true;
   showAlertDialog.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${correct} / ${props.questions.questions.length}.`;
   playSound("success");
 };
 
@@ -110,6 +114,7 @@ const handleDragEnd = (event: DragEndEvent) => {
 
   placedItems.value = nextPlacedItems;
   availableItems.value = availableItems.value.filter((item) => item.id !== activeId);
+  keyboardStatusMessage.value = ui.formatActivityPlaced(ui.formatQuestion(dropPosition + 1), activeItem.question);
 
   if (nextPlacedItems.filter(Boolean).length === props.questions.questions.length) {
     window.setTimeout(() => calculateScore(nextPlacedItems), 100);
@@ -135,6 +140,7 @@ const placeItem = (slotIndex: number, item: StepItem) => {
   nextPlacedItems[slotIndex] = item;
   placedItems.value = nextPlacedItems;
   availableItems.value = availableItems.value.filter((available) => available.id !== item.id);
+  keyboardStatusMessage.value = ui.formatActivityPlaced(ui.formatQuestion(slotIndex + 1), item.question);
 
   if (nextPlacedItems.filter(Boolean).length === props.questions.questions.length) {
     window.setTimeout(() => calculateScore(nextPlacedItems), 100);
@@ -147,6 +153,7 @@ const removePlacedItem = (slotIndex: number) => {
   if (!item || showResults.value) return;
   placedItems.value = placedItems.value.map((placed, index) => (index === slotIndex ? undefined : placed));
   availableItems.value = [...availableItems.value, item];
+  keyboardStatusMessage.value = ui.formatActivityRemoved(ui.formatQuestion(slotIndex + 1), item.question);
   playSound("click");
 };
 </script>
@@ -168,6 +175,9 @@ const removePlacedItem = (slotIndex: number) => {
           : "Use Tab to move through the available steps and empty slots. Select a step with Enter or Space, then choose the slot where you want to place it."
       }}
     </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <template v-if="!showResults">
         <div
@@ -181,6 +191,7 @@ const removePlacedItem = (slotIndex: number) => {
               type="button"
               class="flex min-h-72 flex-col items-center justify-between rounded border border-picton-blue-200 bg-picton-blue-50 p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
               :aria-label="ui.isSwahili ? `Chagua hatua ${item.question}` : `Choose step ${item.question}`"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               @click="placeItem(placedItems.findIndex((placed) => !placed), item)"
             >
               <p v-if="!props.questions.hideWords" class="mb-2 text-center">{{ item.question }}</p>
@@ -204,6 +215,7 @@ const removePlacedItem = (slotIndex: number) => {
               type="button"
               class="flex min-h-72 items-center justify-center rounded-md border border-picton-blue-300 bg-picton-blue-200 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
               :aria-label="ui.isSwahili ? `${props.questions.type} ${index + 1}, nafasi tupu` : `${props.questions.type} ${index + 1}, empty slot`"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             >
               <span>{{ props.questions.type }} {{ index + 1 }}</span>
             </button>
@@ -222,6 +234,7 @@ const removePlacedItem = (slotIndex: number) => {
                 )
               "
               :aria-label="ui.isSwahili ? `Ondoa hatua ${placedItems[index]!.question}` : `Remove step ${placedItems[index]!.question}`"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               @click="removePlacedItem(index)"
             >
               <p v-if="!props.questions.hideWords" class="mb-2 text-center">{{ placedItems[index]!.question }}</p>

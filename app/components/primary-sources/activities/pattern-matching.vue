@@ -28,6 +28,8 @@ const showResults = ref(false);
 const selectedItem = ref<string | null>(null);
 const activityInstructionsId = "pattern-matching-instructions";
 const ui = useActivityUiText();
+const activityStatusId = "pattern-matching-status";
+const keyboardStatusMessage = ref("");
 
 const initializeActivity = () => {
   answers.value = Array(props.questions.patterns.length).fill(null);
@@ -35,6 +37,7 @@ const initializeActivity = () => {
   allAnswered.value = false;
   showResults.value = false;
   selectedItem.value = null;
+  keyboardStatusMessage.value = "";
 };
 
 watch(() => props.questions, initializeActivity, { deep: true, immediate: true });
@@ -55,6 +58,7 @@ watch(answers, (nextAnswers) => {
 
   score.value = finalScore;
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${finalScore} / ${props.questions.patterns.length}.`;
   playSound("success");
   props.onActivityComplete?.(finalScore, props.questions.patterns.length, nextAnswers);
 }, { deep: true });
@@ -65,11 +69,17 @@ const getItemImage = (item: string) => {
 };
 
 const placeSelectedItem = (rowIndex: number) => {
-  if (!selectedItem.value) return;
+  if (!selectedItem.value) {
+    keyboardStatusMessage.value = ui.isSwahili.value
+      ? "Chagua kipengee kwanza kabla ya kukiweka kwenye nafasi."
+      : "Select an item first before placing it in a slot.";
+    return;
+  }
 
   const nextAnswers = [...answers.value];
   nextAnswers[rowIndex] = selectedItem.value;
   answers.value = nextAnswers;
+  keyboardStatusMessage.value = ui.formatActivityPlaced(ui.formatQuestion(rowIndex + 1), selectedItem.value);
 
   const isCorrect = selectedItem.value === props.questions.patternAnswers[rowIndex];
   props.onAnswerRecorded?.(rowIndex, selectedItem.value, isCorrect);
@@ -78,9 +88,13 @@ const placeSelectedItem = (rowIndex: number) => {
 };
 
 const clearAnswer = (rowIndex: number) => {
+  const removedItem = answers.value[rowIndex];
   const nextAnswers = [...answers.value];
   nextAnswers[rowIndex] = null;
   answers.value = nextAnswers;
+  if (removedItem) {
+    keyboardStatusMessage.value = ui.formatActivityRemoved(ui.formatQuestion(rowIndex + 1), removedItem);
+  }
   playSound("click");
 };
 
@@ -105,6 +119,9 @@ const resetActivity = () => {
           ? "Tumia tab kusogea kwenye chaguo na nafasi zilizo wazi. Chagua kipengee kwa enter au space, kisha chagua nafasi ya kukiweka."
           : "Use Tab to move through the options and empty slots. Select an item with Enter or Space, then choose the slot where you want to place it."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="flex flex-1 flex-col justify-between gap-6">
@@ -131,6 +148,7 @@ const resetActivity = () => {
 
           <button
             type="button"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :aria-label="
               answers[rowIndex]
                 ? ui.isSwahili
@@ -189,6 +207,7 @@ const resetActivity = () => {
             :key="item"
             type="button"
             :aria-pressed="selectedItem === item"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :aria-label="ui.isSwahili ? `Chagua ${item}` : `Choose ${item}`"
             :class="
               cn(
@@ -196,7 +215,7 @@ const resetActivity = () => {
                 selectedItem === item ? 'ring-2 ring-picton-blue-600' : 'hover:bg-picton-blue-50',
               )
             "
-            @click="selectedItem = selectedItem === item ? null : item"
+            @click="() => { const isRemoving = selectedItem === item; selectedItem = isRemoving ? null : item; keyboardStatusMessage = isRemoving ? ui.formatActivityRemoved(ui.availableAnswerChoices.value, item) : ui.formatActivitySelected(ui.availableAnswerChoices.value, item); }"
           >
             <img :src="getItemImage(item)" :alt="item" class="h-full w-full object-contain">
           </button>

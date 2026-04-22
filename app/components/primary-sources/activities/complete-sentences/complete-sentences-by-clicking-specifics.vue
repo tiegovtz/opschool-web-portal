@@ -34,6 +34,8 @@ const showResults = ref(false);
 const selectedWords = ref<Record<string, string[]>>({});
 const shuffledQuestions = ref<Question[]>(shuffle([...props.questions.questions]));
 const activityInstructionsId = "complete-sentences-clicking-specifics-instructions";
+const activityStatusId = "complete-sentences-clicking-specifics-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -46,8 +48,10 @@ function handleWordClick(questionId: string, word: string) {
   const current = selectedWords.value[questionId] || [];
   if (current.includes(word)) {
     selectedWords.value[questionId] = current.filter((w) => w !== word);
+    keyboardStatusMessage.value = ui.formatActivityRemoved(questionId, word);
   } else {
     selectedWords.value[questionId] = [...current, word];
+    keyboardStatusMessage.value = ui.formatActivitySelected(questionId, word);
   }
 }
 
@@ -69,6 +73,7 @@ function checkAnswers() {
 
   score.value = correctCount;
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${shuffledQuestions.value.length}.`;
   playSound("success");
 }
 
@@ -79,6 +84,7 @@ function handleTryAgain() {
   score.value = 0;
   selectedWords.value = {};
   shuffledQuestions.value = shuffle([...props.questions.questions]);
+  keyboardStatusMessage.value = "";
 }
 
 // Render words with proper classes
@@ -122,7 +128,7 @@ function renderWords(questionId: string, question: string) {
         disabled={showResults.value}
         aria-pressed={isSelected}
         aria-label={`Word choice ${word}`}
-        aria-describedby={activityInstructionsId}
+        aria-describedby={`${activityInstructionsId} ${activityStatusId}`}
         onClick={() => !showResults.value && handleWordClick(questionId, word)}
       >
         {word}
@@ -147,6 +153,9 @@ function renderWords(questionId: string, question: string) {
         ? "Tumia kitufe cha Tab kupita kwenye chaguo za maneno yaliyoangaziwa. Bonyeza Enter au Space kuchagua au kuondoa neno, kisha kagua majibu yako ukimaliza."
         : "Use the Tab key to move between highlighted word choices. Press Enter or Space to select or remove a word, then check your answers when you are done." }}
     </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div
       class="flex flex-col gap-2"
@@ -167,7 +176,7 @@ function renderWords(questionId: string, question: string) {
     </div>
 
     <div v-if="!showResults" class="mt-4 flex justify-end">
-      <Button variant="brand-lemon" :onClick="checkAnswers" :aria-describedby="activityInstructionsId">
+      <Button variant="brand-lemon" :onClick="checkAnswers" :aria-describedby="`${activityInstructionsId} ${activityStatusId}`">
         {{ ui.checkAnswers }}
       </Button>
     </div>

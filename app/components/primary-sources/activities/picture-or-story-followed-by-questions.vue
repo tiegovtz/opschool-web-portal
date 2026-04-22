@@ -39,6 +39,8 @@ const answerFeedback = ref<"correct" | "incorrect" | null>(null);
 const shuffledOptions = ref<string[]>([]);
 const showResults = ref(false);
 const instructionsId = "picture-or-story-followed-by-questions-instructions";
+const statusId = "picture-or-story-followed-by-questions-status";
+const keyboardStatusMessage = ref("");
 
 const initialize = () => {
   shuffledQuestions.value = shuffle([...props.questions.questions]);
@@ -51,6 +53,7 @@ const initialize = () => {
   activeQuestion.value = 0;
   answerFeedback.value = null;
   showResults.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 watch(
@@ -72,6 +75,7 @@ watch(
         0,
       );
       allAnswered.value = true;
+      keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${shuffledQuestions.value.length}.`;
       playSound("success");
     }
   },
@@ -81,6 +85,7 @@ watch(
 const handleAnswerSelection = (questionIndex: number, answer: string) => {
   const correct = answer === shuffledQuestions.value[questionIndex]?.answer;
   answerFeedback.value = correct ? "correct" : "incorrect";
+  keyboardStatusMessage.value = ui.formatActivitySelected(ui.formatQuestion(questionIndex + 1), answer);
   playSound(correct ? "correct" : "failure");
 
   attemptedQuestions.value = {
@@ -93,6 +98,7 @@ const handleAnswerSelection = (questionIndex: number, answer: string) => {
     if (questionIndex < shuffledQuestions.value.length - 1) {
       activeQuestion.value = questionIndex + 1;
       shuffledOptions.value = shuffle([...props.questions.options]);
+      keyboardStatusMessage.value = "";
     }
   }, 1000);
 };
@@ -119,6 +125,9 @@ const resultRows = computed(() =>
     <p :id="instructionsId" class="sr-only">
       Read the notes or story, then answer each question by selecting one option. Use the Tab key to
       move between the answer choices and the question navigation buttons.
+    </p>
+    <p :id="statusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div
@@ -187,7 +196,7 @@ const resultRows = computed(() =>
                     :key="optionIndex"
                     :variant="attemptedQuestions[activeQuestion] === option ? 'default' : 'outline'"
                     :disabled="!!attemptedQuestions[activeQuestion]"
-                    :aria-describedby="instructionsId"
+                    :aria-describedby="`${instructionsId} ${statusId}`"
                     :aria-label="`Question ${activeQuestion + 1}, option ${optionIndex + 1}: ${option}`"
                     :class="
                       cn('w-full justify-start px-4 py-4 text-left', {
@@ -228,7 +237,7 @@ const resultRows = computed(() =>
             v-for="(question, index) in shuffledQuestions"
             :key="index"
             type="button"
-            :aria-describedby="instructionsId"
+            :aria-describedby="`${instructionsId} ${statusId}`"
             :aria-label="`Go to question ${index + 1}`"
             :class="
               cn(

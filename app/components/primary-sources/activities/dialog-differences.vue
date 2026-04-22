@@ -258,7 +258,9 @@ const onDroppableKeydown = (event: KeyboardEvent, side: "left" | "right", index:
 const keyboardStatusMessage = computed(() =>
   selectedKeyboardItemId.value
     ? "Item selected. Tab to an empty answer space, then press Enter or Space to place it. Press Escape to cancel."
-    : "Tab to an item card and press Enter or Space to select it. Then tab to an empty answer space and press Enter or Space to place it.",
+    : allAnswered.value
+      ? `${ui.resultsReady.value}. ${score.value} / ${props.questions.items.length / 2}.`
+      : "Tab to an item card and press Enter or Space to select it. Then tab to an empty answer space and press Enter or Space to place it.",
 );
 
 const onResultsOpenChange = (open: boolean) => {
@@ -283,13 +285,13 @@ const shouldRenderImageOnly = (item: ListItem) =>
 
 /** Image first, caption beside ([image][text]), light bluish / lemon cards */
 const mediaRowClass =
-  "flex w-full min-w-0 flex-row items-center gap-3 text-start";
+  "flex w-full min-w-0 flex-row items-center gap-2 p-2 text-start sm:gap-3 sm:p-0";
 const mediaImageClass =
   "max-h-32 w-auto max-w-[42%] shrink-0 object-contain select-none sm:max-w-[12rem]";
 const bankImageClass =
   "pointer-events-none max-h-[118px] w-auto max-w-[38%] shrink-0 object-contain select-none sm:max-w-44";
 const mediaCaptionClass =
-  "min-w-0 flex-1 text-start text-base leading-relaxed sm:text-lg sm:leading-snug";
+  "min-w-0 flex-1 text-start text-[0.85rem] leading-6 [overflow-wrap:anywhere] sm:text-base sm:leading-relaxed md:text-lg md:leading-snug";
 
 const resetActivity = () => {
   initialize();

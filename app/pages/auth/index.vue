@@ -32,11 +32,11 @@ const content = computed(() => ({
     ? "Nembo ya Taasisi ya Elimu Tanzania. Bango la juu lenye ukingo wa bluu lina maandishi 'Taasisi ya Elimu Tanzania.' Katikati kuna mwenge mweusi wenye mwali mwekundu na wa manjano. Chini ya mwenge kuna kitabu kilichofunguliwa chenye mistari ya bluu na dira mbili nyeusi chini yake. Upande wa kushoto wa nembo kuna jembe la rangi ya machungwa, na upande wa kulia kuna shoka la rangi ya machungwa, yote yakiwa yameelekezwa kuelekea ndani. Nembo imezungukwa na mabango ya utepe yaliyopinda yenye ukingo wa bluu. Bango la chini, pia lenye ukingo wa bluu, lina maandishi 'Elimu ni Kazi.'"
     : "An image logo representing the Tanzania Institute of Education. The top banner, outlined in blue, contains the text 'Taasisi ya Elimu Tanzania.' At the center is a black torch with a bright red and yellow flame. Below the torch is an open book with blue lines and two black compasses beneath it. On the left side of the emblem is an orange hoe, and on the right side is an orange axe, both angled inward. Surrounding the emblem are curved ribbon banners outlined in blue. The bottom banner, also outlined in blue, contains the text 'Elimu ni Kazi.'",
   usernameLabel: isSwahili.value
-    ? "Jina la mtumiaji, mfano barua pepe, simu, au jina la mwanafunzi"
-    : "Username (e.g., email, phone, or student name)",
+    ? "Jina la kuingia, mfano barua pepe, simu, Prem Number, au jina la mtumiaji"
+    : "Sign-in ID (e.g., email, phone, Prem Number, or username)",
   usernamePlaceholder: isSwahili.value
-    ? "(mfano: example@email.com / 0622***722 / Student.Name)"
-    : "(e.g. example@email.com / 0622***722 / Student.Name)",
+    ? "(mfano: example@email.com / 0622***722 / 20190928782 / Student.Name)"
+    : "(e.g. example@email.com / 0622***722 / 20190928782 / Student.Name)",
   passwordLabel: isSwahili.value ? "Nenosiri" : "Password",
   passwordPlaceholder: isSwahili.value ? "Nenosiri" : "Password",
   showPassword: isSwahili.value ? "Onyesha nenosiri" : "Show password",
@@ -64,8 +64,8 @@ const content = computed(() => ({
     : "Visit the registration page if you do not have an account",
   errors: {
     usernameInvalid: isSwahili.value
-      ? "Jina la mtumiaji si sahihi. Tumia barua pepe, namba ya simu au jina la mtumiaji."
-      : "Username is not valid (use email or phone number or username)",
+      ? "Taarifa ya kuingia si sahihi. Tumia barua pepe, namba ya simu, Prem Number ya mwanafunzi, au jina la mtumiaji."
+      : "Sign-in ID is not valid (use email, phone number, Prem Number, or username)",
     passwordRequired: isSwahili.value ? "Nenosiri linahitajika" : "Password is required",
     invalidCredentials: isSwahili.value ? "Jina la mtumiaji au nenosiri si sahihi" : "Invalid username or password",
   },

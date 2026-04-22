@@ -32,6 +32,8 @@ type Props = {
 const props = defineProps<Props>();
 const ui = useActivityUiText();
 const activityInstructionsId = "game-ascending-order-instructions";
+const activityStatusId = "game-ascending-order-status";
+const keyboardStatusMessage = ref("");
 
 const currentQuestionIndex = ref(0);
 const score = ref(0);
@@ -94,6 +96,11 @@ watch(
       score.value += 1;
     }
 
+    keyboardStatusMessage.value = isCorrect
+      ? `${ui.resultsReady.value}. ${score.value} / ${totalQuestions.value}.`
+      : ui.isSwahili.value
+        ? `Swali la ${currentQuestionIndex.value + 1} si sahihi.`
+        : `Question ${currentQuestionIndex.value + 1} is incorrect.`;
     playSound(isCorrect ? "success" : "failure");
 
     setTimeout(() => {
@@ -123,6 +130,10 @@ const placeNumberInNextSlot = (number: number) => {
       return item;
     }),
   };
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    ui.formatQuestion(currentQuestionIndex.value + 1),
+    number,
+  );
 };
 
 const removeNumberFromSlot = (slotIndex: number) => {
@@ -143,17 +154,23 @@ const removeNumberFromSlot = (slotIndex: number) => {
     availableNumbers: nextAvailableNumbers,
     answer: questionState.value.answer.map((item, index) => (index === slotIndex ? "" : item)),
   };
+  keyboardStatusMessage.value = ui.formatActivityRemoved(
+    ui.formatQuestion(currentQuestionIndex.value + 1),
+    slotValue,
+  );
 };
 
 const handleTimeUp = () => {
   if (!gameComplete.value) {
     gameComplete.value = true;
+    keyboardStatusMessage.value = ui.timesUp.value;
     showResults.value = true;
   }
 };
 
 const handleGameComplete = (_stats: GameStats) => {
   gameComplete.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${totalQuestions.value}.`;
   showResults.value = true;
 };
 
@@ -165,6 +182,7 @@ const resetActivity = () => {
   gameComplete.value = false;
   completedQuestions.value = new Set();
   incorrectQuestions.value = new Set();
+  keyboardStatusMessage.value = "";
 };
 
 const handleResultsDialogChange = (open: boolean) => {
@@ -209,6 +227,9 @@ const handleResultsDialogChange = (open: boolean) => {
             : "Use Tab to choose a number from the available choices. Press Enter or Space to place it in the next empty slot. Use Tab to reach a filled slot and press Enter or Space to remove the number."
         }}
       </p>
+      <p :id="activityStatusId" aria-live="polite" class="sr-only">
+        {{ keyboardStatusMessage }}
+      </p>
 
       <div class="h-full">
         <div
@@ -241,6 +262,7 @@ const handleResultsDialogChange = (open: boolean) => {
                   type="button"
                   :disabled="showResults"
                   :aria-label="ui.isSwahili ? `Weka namba ${number}` : `Place number ${number}`"
+                  :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                   :class="
                     cn(
                       'min-h-12 flex-1 rounded-lg p-3 text-center text-lg font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
@@ -267,6 +289,7 @@ const handleResultsDialogChange = (open: boolean) => {
                   type="button"
                   :disabled="showResults"
                   :aria-label="ui.isSwahili ? `Nafasi ya ${index + 1}, namba ${number}. Bonyeza kuiondoa.` : `Slot ${index + 1}, number ${number}. Press to remove it.`"
+                  :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                   :class="
                     cn(
                       'flex flex-1 items-center justify-center rounded-lg p-3 text-lg font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',

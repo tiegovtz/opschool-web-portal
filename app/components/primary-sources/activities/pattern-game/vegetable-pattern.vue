@@ -5,6 +5,7 @@ type Vegetable = "broccoli" | "pepper" | "onion" | "tomato" | "cucumber" | "cabb
 
 const ui = useActivityUiText();
 const activityInstructionsId = "vegetable-pattern-instructions";
+const activityStatusId = "vegetable-pattern-status";
 
 const patterns: Vegetable[][] = [
   ["broccoli", "pepper", "onion", "broccoli", "pepper", "onion", "broccoli", "pepper", "onion"],
@@ -23,6 +24,7 @@ const score = ref(0);
 const allAnswered = ref(false);
 const selectedVegetable = ref<Vegetable | null>(null);
 const showResults = ref(false);
+const keyboardStatusMessage = ref("");
 
 watch(
   answers,
@@ -37,6 +39,7 @@ watch(
       0,
     );
     allAnswered.value = true;
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${patterns.length}.`;
   },
   { deep: true },
 );
@@ -49,16 +52,30 @@ const getVegetableImage = (vegetable: Vegetable | null) =>
   vegetable ? `/assets/${vegetable}.png` : "";
 
 const placeSelectedVegetable = (rowIndex: number) => {
-  if (!selectedVegetable.value) return;
+  if (!selectedVegetable.value) {
+    keyboardStatusMessage.value = ui.isSwahili.value
+      ? "Chagua mboga kwanza kabla ya kuiweka."
+      : "Select a vegetable first before placing it.";
+    return;
+  }
 
   answers.value = answers.value.map((answer, index) =>
     index === rowIndex ? selectedVegetable.value : answer,
+  );
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    ui.formatQuestion(rowIndex + 1),
+    selectedVegetable.value,
   );
   selectedVegetable.value = null;
 };
 
 const clearAnswer = (rowIndex: number) => {
+  const removedAnswer = answers.value[rowIndex];
   answers.value = answers.value.map((answer, index) => (index === rowIndex ? null : answer));
+  keyboardStatusMessage.value = ui.formatActivityRemoved(
+    ui.formatQuestion(rowIndex + 1),
+    removedAnswer,
+  );
 };
 
 const resetGame = () => {
@@ -67,6 +84,7 @@ const resetGame = () => {
   allAnswered.value = false;
   showResults.value = false;
   selectedVegetable.value = null;
+  keyboardStatusMessage.value = "";
 };
 </script>
 
@@ -85,6 +103,9 @@ const resetGame = () => {
           ? "Tumia tab kusogea kwenye nafasi zilizo wazi na mboga zilizopo. Chagua mboga kwa enter au space, kisha chagua nafasi ya kuiweka."
           : "Use Tab to move through the empty slots and available vegetables. Select a vegetable with Enter or Space, then choose the slot where you want to place it."
       }}
+    </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="flex flex-1 flex-col justify-between gap-6">
@@ -118,6 +139,7 @@ const resetGame = () => {
 
           <button
             type="button"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :aria-label="
               answers[rowIndex]
                 ? ui.isSwahili
@@ -178,12 +200,21 @@ const resetGame = () => {
             :key="vegetable"
             type="button"
             :aria-pressed="selectedVegetable === vegetable"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :aria-label="ui.isSwahili ? `Chagua ${vegetable}` : `Choose ${vegetable}`"
             :class="[
               'flex h-16 w-24 items-center justify-center rounded-xl bg-white p-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
               selectedVegetable === vegetable ? 'ring-2 ring-picton-blue-600' : 'hover:bg-picton-blue-50',
             ]"
-            @click="selectedVegetable = selectedVegetable === vegetable ? null : vegetable"
+            @click="
+              () => {
+                const isSelected = selectedVegetable === vegetable;
+                selectedVegetable = isSelected ? null : vegetable;
+                keyboardStatusMessage = isSelected
+                  ? ui.formatActivityRemoved(ui.availableAnswerChoices.value, vegetable)
+                  : ui.formatActivitySelected(ui.availableAnswerChoices.value, vegetable);
+              }
+            "
           >
             <img :src="getVegetableImage(vegetable)" :alt="vegetable" class="h-full w-full object-contain">
           </button>
@@ -207,16 +238,6 @@ const resetGame = () => {
           {{ ui.isSwahili ? "Cheza Tena" : "Play Again" }}
         </button>
       </div>
-    </div>
-
-    <div class="sr-only" aria-live="polite">
-      {{
-        selectedVegetable
-          ? ui.isSwahili
-            ? `${selectedVegetable} imechaguliwa. Chagua nafasi ya kuiweka.`
-            : `${selectedVegetable} selected. Choose a slot to place it.`
-          : ""
-      }}
     </div>
 
     <div v-if="allAnswered && !showResults" class="mt-4 text-center">

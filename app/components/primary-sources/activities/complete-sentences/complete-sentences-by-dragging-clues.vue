@@ -49,7 +49,9 @@ const allAnswered = ref(false);
 const showResults = ref(false);
 const answers = ref<Record<number, { value: string; optionId: string; image?: string }>>({});
 const activityInstructionsId = "complete-sentences-dragging-clues-instructions";
+const activityStatusId = "complete-sentences-dragging-clues-status";
 const selectedOptionId = ref<string | null>(null);
+const keyboardStatusMessage = ref("");
 
 // Shuffle options
 type UniqueOption = { id: string; value: string; image?: string; uniqueIndex: number };
@@ -119,6 +121,10 @@ function handleDragEnd({ active, over }: any) {
     image: activeOptionImage,
   };
   answers.value = newAnswers;
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    ui.formatQuestion(dropQuestionIndex + 1),
+    activeOptionValue,
+  );
 
   // Update status
   allAnswered.value = Object.keys(newAnswers).length === props.questions.questions.length;
@@ -129,6 +135,7 @@ function handleDragEnd({ active, over }: any) {
       (acc, q, idx) => acc + (newAnswers[idx]?.value === q.answer ? 1 : 0),
       0
     );
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.questions.length}.`;
   }
 
   selectedOptionId.value = null;
@@ -149,6 +156,7 @@ function handleTryAgain() {
   answers.value = {};
   shuffledOptions.value = shuffle([...initialOptions]);
   selectedOptionId.value = null;
+  keyboardStatusMessage.value = "";
 }
 
 const selectedOption = computed(() =>
@@ -164,7 +172,13 @@ const blankDropZoneLabel = computed(() => {
 });
 
 function placeSelectedOption(questionIndex: number) {
-  if (!selectedOption.value || showResults.value) return;
+  if (showResults.value) return;
+  if (!selectedOption.value) {
+    keyboardStatusMessage.value = ui.isSwahili.value
+      ? "Chagua chaguo kwanza kabla ya kuweka kwenye pengo."
+      : "Select an option first before placing it in a blank.";
+    return;
+  }
 
   const nextAnswers = { ...answers.value };
   const previousQuestionIndex = Object.entries(nextAnswers).find(
@@ -183,12 +197,17 @@ function placeSelectedOption(questionIndex: number) {
 
   answers.value = nextAnswers;
   allAnswered.value = Object.keys(nextAnswers).length === props.questions.questions.length;
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    ui.formatQuestion(questionIndex + 1),
+    selectedOption.value.value,
+  );
 
   if (allAnswered.value) {
     score.value = props.questions.questions.reduce(
       (acc, question, idx) => acc + (nextAnswers[idx]?.value === question.answer ? 1 : 0),
       0,
     );
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.questions.length}.`;
   }
 
   selectedOptionId.value = null;
@@ -197,10 +216,15 @@ function placeSelectedOption(questionIndex: number) {
 function removeAnswer(questionIndex: number) {
   if (showResults.value || !answers.value[questionIndex]) return;
 
+  const removedAnswer = answers.value[questionIndex];
   const nextAnswers = { ...answers.value };
   delete nextAnswers[questionIndex];
   answers.value = nextAnswers;
   allAnswered.value = false;
+  keyboardStatusMessage.value = ui.formatActivityRemoved(
+    ui.formatQuestion(questionIndex + 1),
+    removedAnswer.value,
+  );
 }
 
 function ariaBlankDrop(questionIndex: number, blankIndex: number) {
@@ -231,6 +255,9 @@ function ariaBlankDrop(questionIndex: number, blankIndex: number) {
         ? "Buruta kila kidokezo hadi kwenye nafasi inayolingana, au tumia Tab kuchagua kidokezo kisha bonyeza nafasi husika kukiweka. Bonyeza jibu lililowekwa kuliondoa."
         : "Drag each clue into the matching blank, or use Tab to select a clue and then activate the matching blank to place it. Activate a placed answer to remove it." }}
     </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div
       class="flex h-full flex-col gap-2 bg-picton-blue-100 px-1.5 py-2 text-base leading-normal sm:gap-2.5 sm:px-0 sm:py-2 sm:text-lg md:text-xl md:leading-relaxed"
@@ -243,7 +270,7 @@ function ariaBlankDrop(questionIndex: number, blankIndex: number) {
             v-for="option in getAvailableOptions"
             :key="option.id"
             type="button"
-            :aria-describedby="activityInstructionsId"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :aria-pressed="selectedOptionId === option.id"
             :class="[
               'flex min-h-[3rem] max-w-[min(100%,12.5rem)] items-center justify-center rounded border border-picton-blue-400 bg-picton-blue-200 px-2.5 py-2 text-left text-sm leading-snug break-words sm:min-h-[3.25rem] sm:max-w-[14rem] sm:text-base md:max-w-[17rem] md:text-lg',
@@ -298,7 +325,7 @@ function ariaBlankDrop(questionIndex: number, blankIndex: number) {
                   <button
                     v-if="!answers[i]"
                     type="button"
-                    :aria-describedby="activityInstructionsId"
+                    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                     :aria-label="ariaBlankDrop(i, idx)"
                     class="flex min-h-[3rem] min-w-[6.5rem] max-w-[min(100%,12.5rem)] items-center justify-center rounded border border-picton-blue-300 bg-picton-blue-100 px-2 py-1.5 text-sm leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:min-h-[3.25rem] sm:min-w-[7.5rem] sm:max-w-[14rem] sm:text-base md:min-w-32 md:max-w-[17rem] md:text-lg"
                     @click="placeSelectedOption(i)"
@@ -310,7 +337,7 @@ function ariaBlankDrop(questionIndex: number, blankIndex: number) {
                   <button
                     v-else
                     type="button"
-                    :aria-describedby="activityInstructionsId"
+                    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                     :aria-label="`Placed answer ${answers[i].value} for question ${i + 1}. Activate to remove it.`"
                     class="flex min-h-[3rem] min-w-[6.5rem] max-w-[min(100%,12.5rem)] items-center border border-lemon-400 bg-lemon-100 p-2 text-sm leading-snug text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:min-h-[3.25rem] sm:min-w-[7.5rem] sm:max-w-[14rem] sm:text-base md:min-w-32 md:max-w-[17rem] md:text-lg"
                     :disabled="showResults"

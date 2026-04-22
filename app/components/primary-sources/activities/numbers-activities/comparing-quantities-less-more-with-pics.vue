@@ -42,6 +42,8 @@ const questionAnswers = reactive<
 >({});
 const correctAnswers = ref<string[]>([]);
 const activityInstructionsId = "numbers-less-more-pics-instructions";
+const activityStatusId = "numbers-less-more-pics-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -93,6 +95,7 @@ const handleSubmit = () => {
   score.value = totalScore;
   correctAnswers.value = correct;
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${totalScore} / ${totalQuestions.value}.`;
   playSound("success");
 };
 
@@ -102,6 +105,7 @@ const handleInputChange = (questionIndex: number, field: "left" | "right", value
     ...current,
     [field]: value,
   };
+  keyboardStatusMessage.value = ui.formatActivityUpdated(ui.formatQuestion(questionIndex + 1), value);
 };
 
 const handleDragEnd = (event: DndDragEndEvent) => {
@@ -119,6 +123,7 @@ const handleDragEnd = (event: DndDragEndEvent) => {
     right: currentAnswer.right || "",
     operator: operatorValue,
   };
+  keyboardStatusMessage.value = ui.formatActivityPlaced(ui.formatQuestion(questionIndex + 1), operatorValue);
   playSound("click");
 };
 
@@ -129,6 +134,7 @@ const resetActivity = () => {
   canSubmit.value = false;
   correctAnswers.value = [];
   initAnswers();
+  keyboardStatusMessage.value = "";
 };
 
 const isFieldCorrect = (questionIndex: number, field: string) =>
@@ -149,6 +155,7 @@ const selectOperator = (questionIndex: number, operator: string) => {
     right: currentAnswer.right || "",
     operator,
   };
+  keyboardStatusMessage.value = ui.formatActivitySelected(ui.formatQuestion(questionIndex + 1), operator);
   playSound("click");
 };
 </script>
@@ -169,6 +176,9 @@ const selectOperator = (questionIndex: number, operator: string) => {
           ? "Tumia tab kusogea kwenye visanduku vya kuhesabu na chaguo za alama. Unaweza kuburuta alama au kuchagua kwa enter au space."
           : "Use Tab to move through the counting fields and operator choices. You can drag an operator or choose it with Enter or Space."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <DNDContext :onDragEnd="handleDragEnd">
@@ -259,6 +269,7 @@ const selectOperator = (questionIndex: number, operator: string) => {
                     :key="`${index}-${op}`"
                     type="button"
                     :aria-pressed="questionAnswers[index]?.operator === op"
+                    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                     :class="cn('rounded border px-2 py-1 text-lg font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500', questionAnswers[index]?.operator === op ? 'border-picton-blue-500 bg-picton-blue-100 text-picton-blue-700' : 'border-gray-300 bg-white text-gray-700')"
                     @click="selectOperator(index, op)"
                   >
@@ -310,7 +321,7 @@ const selectOperator = (questionIndex: number, operator: string) => {
         </div>
 
         <div v-if="!showResults" class="flex justify-end">
-          <Button :onClick="handleSubmit" :disabled="!canSubmit">{{ ui.checkAnswers }}</Button>
+          <Button :onClick="handleSubmit" :disabled="!canSubmit" :aria-describedby="`${activityInstructionsId} ${activityStatusId}`">{{ ui.checkAnswers }}</Button>
         </div>
 
         <div v-if="showResults" class="mt-4">

@@ -46,6 +46,7 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const ui = useActivityUiText();
 const { playSound } = useSoundEffects();
 const { width } = useWindowSize();
 
@@ -75,6 +76,7 @@ const isResetting = ref(false);
 const completedPairs = ref(new Set<number>());
 const incorrectAttempts = ref(new Set<number>());
 const shuffledRightItems = ref<MatchingItem[]>([]);
+const keyboardStatusMessage = ref("");
 
 const { objects, loading, error, refetch } = useObjects({
   type: props.questions.isGameMode ? props.questions.type || null : null,
@@ -136,6 +138,7 @@ const resetRoundState = () => {
   timeUp.value = false;
   completedPairs.value = new Set();
   incorrectAttempts.value = new Set();
+  keyboardStatusMessage.value = "";
 };
 
 watch(
@@ -163,6 +166,8 @@ watch(
       value.forEach((_, index) => completedSet.add(index));
       completedPairs.value = completedSet;
     }
+
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${leftItems.value.length}.`;
   },
   { deep: true },
 );
@@ -350,6 +355,8 @@ const connectItems = (leftId: string, rightId: string) => {
   const leftItem = leftItems.value.find((item) => String(item.id) === leftId);
   const rightItem = rightItems.value.find((item) => String(item.id) === rightId);
   const isCorrect = leftItem?.id === rightItem?.id;
+  const leftLabel = getItemLabel(leftItem);
+  const rightLabel = getItemLabel(rightItem);
 
   connections.value = [
     ...connections.value.filter(
@@ -372,6 +379,12 @@ const connectItems = (leftId: string, rightId: string) => {
       Date.now() + Math.random(),
     ]);
   }
+
+  keyboardStatusMessage.value = isCorrect
+    ? ui.formatActivityPlaced(leftLabel, rightLabel)
+    : ui.isSwahili.value
+      ? `${leftLabel} imeunganishwa na ${rightLabel}. Angalia matokeo kuona kama ni sahihi.`
+      : `${leftLabel} matched with ${rightLabel}. Check the results to confirm whether it is correct.`;
 };
 
 let autoScrollFrame: number | null = null;
@@ -544,7 +557,13 @@ const handleLeftItemPointerDown = (event: PointerEvent, leftId: string) => {
 };
 
 const handleRightItemSelect = (rightId: string) => {
-  if (showResults.value || timeUp.value || !selectedLeftId.value) return;
+  if (showResults.value || timeUp.value) return;
+  if (!selectedLeftId.value) {
+    keyboardStatusMessage.value = ui.isSwahili.value
+      ? "Chagua kipengee kutoka safu ya kushoto kwanza."
+      : "Select an item from the left column first.";
+    return;
+  }
 
   connectItems(selectedLeftId.value, rightId);
   selectedLeftId.value = null;
@@ -556,7 +575,12 @@ const handleLeftItemActivate = (leftId: string) => {
     return;
   }
   if (showResults.value || timeUp.value) return;
-  selectedLeftId.value = selectedLeftId.value === leftId ? null : leftId;
+  const item = leftItems.value.find((candidate) => candidate.id === leftId);
+  const nextSelectedId = selectedLeftId.value === leftId ? null : leftId;
+  selectedLeftId.value = nextSelectedId;
+  keyboardStatusMessage.value = nextSelectedId
+    ? ui.formatActivitySelected(ui.availableAnswerChoices.value, getItemLabel(item))
+    : ui.formatActivityRemoved(ui.availableAnswerChoices.value, getItemLabel(item));
 };
 
 onBeforeUnmount(() => {
@@ -577,6 +601,7 @@ const handleGameTimeUp = () => {
     timeUp.value = true;
     allAnswered.value = true;
     playSound("failure");
+    keyboardStatusMessage.value = ui.isSwahili.value ? "Muda umeisha." : "Time is up.";
   }
 };
 
@@ -729,9 +754,10 @@ const liveDragLine = computed(() => {
       </p>
       <p :id="statusId" class="sr-only" aria-live="polite">
         {{
-          selectedLeftId
-            ? `${getItemLabel(leftItems.find((item) => item.id === selectedLeftId))} selected. Choose a matching item from the right column.`
-            : "No item selected."
+          keyboardStatusMessage
+            || (selectedLeftId
+              ? `${getItemLabel(leftItems.find((item) => item.id === selectedLeftId))} selected. Choose a matching item from the right column.`
+              : "No item selected.")
         }}
       </p>
 
@@ -770,7 +796,7 @@ const liveDragLine = computed(() => {
               )
             "
             :disabled="showResults || timeUp"
-            :aria-describedby="instructionsId"
+            :aria-describedby="`${instructionsId} ${statusId}`"
             :aria-label="getLeftItemAriaLabel(item)"
             :aria-pressed="selectedLeftId === item.id"
             @pointerdown="handleLeftItemPointerDown($event, item.id)"
@@ -822,7 +848,7 @@ const liveDragLine = computed(() => {
               )
             "
             :disabled="showResults || timeUp"
-            :aria-describedby="instructionsId"
+            :aria-describedby="`${instructionsId} ${statusId}`"
             :aria-label="getRightItemAriaLabel(item)"
             @click="handleRightItemSelect(item.id)"
           >

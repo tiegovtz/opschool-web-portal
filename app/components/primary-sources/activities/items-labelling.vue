@@ -64,6 +64,8 @@ const isResetting = ref(false);
 const completedQuestions = ref(new Set<number>());
 const incorrectQuestions = ref(new Set<number>());
 const activityInstructionsId = "items-labelling-instructions";
+const activityStatusId = "items-labelling-status";
+const keyboardStatusMessage = ref("");
 
 const isGameMode = computed(() => !!props.questions.isGameMode);
 const isDragMode = computed(
@@ -121,6 +123,13 @@ const selectedOption = computed(
   () => shuffledOptions.value.find((option) => option.id === selectedOptionId.value) || null,
 );
 
+const optionLabel = (option?: AnswerOption | null) => option?.value || "";
+
+const imageSlotLabel = (questionIndex: number) =>
+  ui.isSwahili.value
+    ? `Picha ya ${questionIndex + 1}`
+    : `Image ${questionIndex + 1}`;
+
 const getAvailableOptions = () => {
   const usedOptionIds = Object.values(placedAnswers.value).map((answer) => answer.id);
   return shuffledOptions.value.filter((option) => !usedOptionIds.includes(option.id));
@@ -134,7 +143,14 @@ const setTextAnswer = (index: number, value: string | number) => {
 };
 
 const placeSelectedOption = (questionIndex: number) => {
-  if (!selectedOption.value || isComplete.value || timeUp.value) return;
+  if (isComplete.value || timeUp.value) return;
+
+  if (!selectedOption.value) {
+    keyboardStatusMessage.value = ui.isSwahili.value
+      ? "Chagua lebo kwanza kabla ya kuiweka."
+      : "Select a label first before placing it.";
+    return;
+  }
 
   const nextAnswers = { ...placedAnswers.value };
 
@@ -146,6 +162,10 @@ const placeSelectedOption = (questionIndex: number) => {
 
   nextAnswers[questionIndex] = selectedOption.value;
   placedAnswers.value = nextAnswers;
+  keyboardStatusMessage.value = ui.formatActivityPlaced(
+    imageSlotLabel(questionIndex),
+    optionLabel(selectedOption.value),
+  );
   selectedOptionId.value = null;
   playSound("click");
 };
@@ -153,8 +173,13 @@ const placeSelectedOption = (questionIndex: number) => {
 const clearPlacedOption = (questionIndex: number) => {
   if (isComplete.value || timeUp.value) return;
   const nextAnswers = { ...placedAnswers.value };
+  const removedAnswer = nextAnswers[questionIndex];
   delete nextAnswers[questionIndex];
   placedAnswers.value = nextAnswers;
+  keyboardStatusMessage.value = ui.formatActivityRemoved(
+    imageSlotLabel(questionIndex),
+    optionLabel(removedAnswer),
+  );
   playSound("click");
 };
 
@@ -182,10 +207,12 @@ const handleSubmit = () => {
     }
   });
 
+  const nextScore = Object.values(nextFeedbacks).filter(Boolean).length;
   feedbacks.value = nextFeedbacks;
   completedQuestions.value = nextCompletedQuestions;
   incorrectQuestions.value = nextIncorrectQuestions;
   isComplete.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${nextScore} / ${currentQuestions.value.length}.`;
   playSound("success");
 };
 
@@ -203,6 +230,8 @@ const handleRestart = async () => {
   setTimeout(() => {
     isResetting.value = false;
   }, 100);
+
+  keyboardStatusMessage.value = "";
 };
 
 const handleGameTimeUp = () => {
@@ -259,6 +288,9 @@ const handleGameComplete = () => {
             : "Use Tab to move through the images, answer areas, and available labels. Select a label with Enter or Space, then choose where to place it."
         }}
       </p>
+      <p :id="activityStatusId" aria-live="polite" class="sr-only">
+        {{ keyboardStatusMessage }}
+      </p>
 
       <div class="flex flex-1 flex-col gap-4">
         <div class="rounded-2xl bg-picton-blue-50 p-4">
@@ -283,6 +315,7 @@ const handleGameComplete = () => {
                 <button
                   type="button"
                   :aria-label="placedAnswers[index] ? `${ui.yourAnswer}: ${placedAnswers[index]?.value}` : (ui.isSwahili ? `Weka lebo kwa picha ya ${question.answer}` : `Place a label for image ${question.answer}`)"
+                  :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                   :class="
                     cn(
                       'flex min-h-[44px] w-full items-center justify-center rounded-lg border border-dashed px-3 py-2 text-center text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
@@ -337,6 +370,7 @@ const handleGameComplete = () => {
               type="button"
               :aria-pressed="selectedOptionId === option.id"
               :aria-label="ui.isSwahili ? `Chagua lebo ${option.value}` : `Choose label ${option.value}`"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               :class="
                 cn(
                   'rounded-lg px-3 py-2 text-center transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2',
@@ -345,7 +379,15 @@ const handleGameComplete = () => {
                     : 'bg-picton-blue-100 text-picton-blue-700 hover:bg-picton-blue-200',
                 )
               "
-              @click="selectedOptionId = selectedOptionId === option.id ? null : option.id"
+              @click="
+                () => {
+                  const isSelected = selectedOptionId === option.id;
+                  selectedOptionId = isSelected ? null : option.id;
+                  keyboardStatusMessage = isSelected
+                    ? ui.formatActivityRemoved(ui.availableAnswerChoices.value, option.value)
+                    : ui.formatActivitySelected(ui.availableAnswerChoices.value, option.value);
+                }
+              "
             >
               {{ option.value }}
             </button>

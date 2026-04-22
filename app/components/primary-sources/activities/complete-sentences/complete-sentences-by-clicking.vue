@@ -30,6 +30,8 @@ const crossedOptions = ref<Record<number, string[]>>({});
 const showResults = ref(false);
 const isSubmitted = ref(false);
 const activityInstructionsId = "complete-sentences-clicking-instructions";
+const activityStatusId = "complete-sentences-clicking-status";
+const keyboardStatusMessage = ref("");
 
 // Shuffle questions initially
 function shuffleQuestions() {
@@ -63,11 +65,13 @@ function handleResetWithShuffle() {
   crossedOptions.value = {};
   showResults.value = false;
   isSubmitted.value = false;
+  keyboardStatusMessage.value = "";
 }
 
 // Submit answers
 function handleCheckAnswers() {
   isSubmitted.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${shuffledQuestions.value.length}.`;
 }
 
 // Handle option click
@@ -84,8 +88,10 @@ function handleOptionClick(questionIndex: number, option: string) {
 
   if (isCrossed) {
     crossedOptions.value[questionIndex] = current.filter((o) => o !== option);
+    keyboardStatusMessage.value = ui.formatActivityRemoved(ui.formatQuestion(questionIndex + 1), option);
   } else if (uncrossedCount > 1) {
     crossedOptions.value[questionIndex] = [...current, option];
+    keyboardStatusMessage.value = ui.formatActivitySelected(ui.formatQuestion(questionIndex + 1), option);
   }
 }
 
@@ -130,6 +136,7 @@ function renderQuestion(question: Question, questionIndex: number) {
                   onClick={() => handleOptionClick(questionIndex, option)}
                   disabled={showResults.value}
                   aria-pressed={isCrossed}
+                  aria-describedby={`${activityInstructionsId} ${activityStatusId}`}
                   class={cn(
                     "px-1 py-1 rounded transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2",
                     {
@@ -175,6 +182,9 @@ function renderQuestion(question: Question, questionIndex: number) {
         ? "Tumia kitufe cha Tab kupita kwenye chaguo za majibu. Bonyeza Enter au Space kufuta au kurejesha neno. Kila swali likibaki na jibu moja, tumia kitufe cha Kagua Majibu."
         : "Use the Tab key to move between answer choices. Press Enter or Space to cross out or restore a word. When each question has one answer left, use the Check Answers button." }}
     </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div
       class="flex flex-col gap-2 h-full bg-picton-blue-100 text-[20px]"
@@ -194,7 +204,7 @@ function renderQuestion(question: Question, questionIndex: number) {
         />
 
         <div v-if="allAnswered && !showResults" class="ml-auto w-fit">
-          <Button variant="brand-lemon" :onClick="handleCheckAnswers" :aria-describedby="activityInstructionsId">
+          <Button variant="brand-lemon" :onClick="handleCheckAnswers" :aria-describedby="`${activityInstructionsId} ${activityStatusId}`">
             {{ ui.checkAnswers }}
           </Button>
         </div>

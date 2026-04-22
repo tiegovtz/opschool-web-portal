@@ -44,6 +44,8 @@ const sequenceResults = ref<boolean[]>([]);
 const showResults = ref(false);
 const score = ref(0);
 const activityInstructionsId = "missing-values-junior-instructions";
+const activityStatusId = "missing-values-junior-status";
+const keyboardStatusMessage = ref("");
 
 const currentSequenceData = computed(
   () => props.questions.sequences[currentSequenceIndex.value] || { sequence: [], answers: [] },
@@ -100,6 +102,7 @@ const resetActivity = () => {
   score.value = 0;
   sequenceResults.value = Array.from({ length: props.questions.sequences.length }, () => false);
   setCurrentTargets();
+  keyboardStatusMessage.value = "";
 };
 
 const moveToNextSequence = (sequenceCorrect: boolean) => {
@@ -115,9 +118,11 @@ const moveToNextSequence = (sequenceCorrect: boolean) => {
       isCorrect.value = false;
       isIncorrect.value = false;
       isTransitioning.value = false;
+      keyboardStatusMessage.value = "";
       return;
     }
 
+    keyboardStatusMessage.value = completionMessage.value;
     showDialog.value = true;
   }, 500);
 };
@@ -131,14 +136,23 @@ const handleNumberClick = (number: number) => {
   const nextNumbers = [...placedNumbers.value];
   nextNumbers[emptyIndex] = String(number);
   placedNumbers.value = nextNumbers;
+  keyboardStatusMessage.value = `${
+    contentLayoutLanguage.value === "kiswahili" ? "Imewekwa" : "Placed"
+  }: ${number}.`;
 
   if (!nextNumbers.includes("")) {
     const allCorrect = nextNumbers.every((value, index) => value === correctAnswers.value[index]);
     if (allCorrect) {
       isCorrect.value = true;
+      keyboardStatusMessage.value = contentLayoutLanguage.value === "kiswahili"
+        ? `Mpangilio wa ${currentSequenceIndex.value + 1} ni sahihi.`
+        : `Sequence ${currentSequenceIndex.value + 1} is correct.`;
       playSound("success");
     } else {
       isIncorrect.value = true;
+      keyboardStatusMessage.value = contentLayoutLanguage.value === "kiswahili"
+        ? "Mpangilio wa namba si sahihi. Jaribu tena."
+        : "The number sequence is incorrect. Try again.";
       playSound("failure");
     }
     return;
@@ -150,10 +164,14 @@ const handleNumberClick = (number: number) => {
 const handleRemoveNumber = (index: number) => {
   if (isTransitioning.value) return;
 
+  const removedNumber = placedNumbers.value[index];
   const nextNumbers = [...placedNumbers.value];
   nextNumbers[index] = "";
   placedNumbers.value = nextNumbers;
   isCorrect.value = false;
+  keyboardStatusMessage.value = `${
+    contentLayoutLanguage.value === "kiswahili" ? "Imeondolewa" : "Removed"
+  }: ${removedNumber}.`;
 };
 
 const renderedResults = computed(() =>
@@ -180,6 +198,9 @@ const renderedResults = computed(() =>
           ? "Tumia tab kusogea kwenye namba zilizopo. Bonyeza enter au space kuweka namba kwenye nafasi inayofuata. Tumia tab kufikia namba uliyoweka na bonyeza enter au space kuiondoa."
           : "Use Tab to move through the available numbers. Press Enter or Space to place a number in the next empty slot. Use Tab to reach a placed number and press Enter or Space to remove it."
       }}
+    </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div v-if="showResults && props.feedback !== 'none'" class="w-full space-y-6">
@@ -237,6 +258,7 @@ const renderedResults = computed(() =>
           :key="number"
           type="button"
           :aria-label="contentLayoutLanguage === 'kiswahili' ? `Chagua namba ${number}` : `Choose number ${number}`"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           class="flex h-10 w-10 items-center justify-center rounded-md bg-picton-blue-200 text-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2 md:h-14 md:w-14 md:text-3xl"
           @click="handleNumberClick(number)"
         >
@@ -279,6 +301,7 @@ const renderedResults = computed(() =>
                 v-if="placedNumbers[currentSequence.slice(0, index).filter((value) => value === '_').length - 1]"
                 type="button"
                 :aria-label="contentLayoutLanguage === 'kiswahili' ? `Ondoa namba kutoka nafasi ya ${currentSequence.slice(0, index).filter((value) => value === '_').length}` : `Remove number from slot ${currentSequence.slice(0, index).filter((value) => value === '_').length}`"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 class="flex h-full w-full cursor-pointer items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
                 @click="handleRemoveNumber(currentSequence.slice(0, index).filter((value) => value === '_').length - 1)"
               >

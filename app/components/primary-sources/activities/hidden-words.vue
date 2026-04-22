@@ -65,6 +65,8 @@ const incorrectWords = ref(new Set<number>());
 const wordColors = ref<Map<string, (typeof WORD_COLORS)[number]>>(new Map());
 const activityInstructionsId = "hidden-words-instructions";
 const ui = useActivityUiText();
+const activityStatusId = "hidden-words-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 
@@ -176,6 +178,7 @@ const initializeGrid = () => {
       completedWords.value = new Set();
       incorrectWords.value = new Set();
       wordColors.value = new Map();
+      keyboardStatusMessage.value = "";
       return;
     }
 
@@ -260,6 +263,7 @@ const handleCellClick = (row: number, col: number) => {
   wordColors.value = nextColors;
   foundWords.value = [...foundWords.value, foundWord];
   selectedCells.value = [];
+  keyboardStatusMessage.value = ui.formatActivitySelected(ui.availableAnswerChoices.value, foundWord);
   playSound("correct");
 };
 
@@ -285,17 +289,20 @@ const getCellColor = (row: number, col: number) => {
 const handleGameTimeUp = () => {
   timeUp.value = true;
   showResultsDialog.value = true;
+  keyboardStatusMessage.value = ui.timesUp.value;
   playSound("failure");
 };
 
 const handleGameComplete = () => {
   showResultsDialog.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${foundWords.value.length} / ${gameWords.value.length}.`;
 };
 
 const handlePlayAgain = async () => {
   showResultsDialog.value = false;
   showResults.value = false;
   timeUp.value = false;
+  keyboardStatusMessage.value = "";
 
   if (isGameMode.value) {
     const updatedIds = [...new Set([...completedObjectIds.value, ...objects.value.map((item) => item.id)])];
@@ -348,6 +355,9 @@ const handlePlayAgain = async () => {
             : "Use Tab to move through the letter cells. Press Enter or Space to select letters and build a hidden word."
         }}
       </p>
+      <p :id="activityStatusId" class="sr-only" aria-live="polite">
+        {{ keyboardStatusMessage }}
+      </p>
 
     <div class="flex flex-1 flex-col gap-4 md:flex-row">
       <div class="rounded-2xl bg-picton-blue-50 p-4 md:w-72">
@@ -382,6 +392,7 @@ const handlePlayAgain = async () => {
               :key="`${rowIndex}-${colIndex}`"
               type="button"
               :aria-pressed="selectedCells.some((selected) => selected.row === rowIndex && selected.col === colIndex)"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               :aria-label="ui.isSwahili ? `Herufi ${cell}, mstari ${rowIndex + 1}, safu ${colIndex + 1}` : `Letter ${cell}, row ${rowIndex + 1}, column ${colIndex + 1}`"
               :class="
                 cn(

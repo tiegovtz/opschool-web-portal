@@ -26,6 +26,8 @@ const props = defineProps<ExamMultipleChoiceProps>();
 const ui = useActivityUiText();
 const selectedAnswers = ref<Record<string, string>>({});
 const activityInstructionsId = "exam-multiple-choice-instructions";
+const activityStatusId = "exam-multiple-choice-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 const { collectAnswers, updateActivityScore } = useExamContext();
@@ -87,6 +89,11 @@ const handleAnswerSelect = (questionId: string, answer: string) => {
     ...selectedAnswers.value,
     [questionId]: answer,
   };
+  const questionIndex = props.questions.questions.findIndex((question) => question.id === questionId);
+  keyboardStatusMessage.value = ui.formatActivitySelected(
+    ui.formatQuestion(questionIndex + 1),
+    answer,
+  );
   playSound("click");
 };
 </script>
@@ -107,6 +114,9 @@ const handleAnswerSelect = (questionId: string, answer: string) => {
           ? "Tumia tab kusogea kwenye maswali na chaguo zake. Tumia enter au space kuchagua jibu."
           : "Use Tab to move through the questions and options. Use Enter or Space to choose an answer."
       }}
+    </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
     <div class="flex-1 overflow-y-auto p-2 md:p-4">
       <div class="space-y-8" role="list" :aria-label="ui.question.value">
@@ -156,6 +166,7 @@ const handleAnswerSelect = (questionId: string, answer: string) => {
                   role="radio"
                   :aria-checked="selectedAnswers[question.id] === option"
                   :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, chaguo la ${optionIndex + 1}: ${option}` : `Question ${questionIndex + 1}, option ${optionIndex + 1}: ${option}`"
+                  :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                   :variant="selectedAnswers[question.id] === option ? 'default' : 'outline'"
                   :class="
                     cn(

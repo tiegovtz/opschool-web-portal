@@ -30,6 +30,8 @@ const ui = useActivityUiText();
 const userAnswers = ref<string[]>(Array.from({ length: props.questions.length }, () => ""));
 const submitted = ref(false);
 const instructionsId = "fraction-operation-activity-instructions";
+const statusId = "fraction-operation-activity-status";
+const keyboardStatusMessage = ref("");
 
 const parseQuestionParts = (question: string) =>
   question.split(/(\s+)/).map((part, index) => {
@@ -103,10 +105,15 @@ const updateAnswerPart = (
     next.denominator || part === "denominator"
       ? `${next.numerator}/${next.denominator}`
       : next.numerator;
+  keyboardStatusMessage.value = ui.formatActivityUpdated(
+    ui.formatQuestion(index + 1),
+    userAnswers.value[index],
+  );
 };
 
 const handleSubmit = () => {
   submitted.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.length}.`;
   props.onActivityComplete?.(score.value, props.questions.length, userAnswers.value);
 };
 </script>
@@ -117,6 +124,9 @@ const handleSubmit = () => {
       Solve each fraction operation by entering a numerator and denominator. Use the Tab key to
       move through the numerator and denominator fields, then activate the check answers button when
       all questions are complete.
+    </p>
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
     <div class="flex flex-1 gap-4">
       <div class="flex h-full w-full flex-col gap-4">
@@ -153,7 +163,7 @@ const handleSubmit = () => {
                   :disabled="submitted"
                   inputmode="numeric"
                   :aria-label="`Question ${index + 1} numerator`"
-                  :aria-describedby="instructionsId"
+                  :aria-describedby="`${instructionsId} ${statusId}`"
                   class="h-10 w-full border-none text-center text-2xl font-medium outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600"
                   @input="updateAnswerPart(index, 'numerator', ($event.target as HTMLInputElement).value)"
                 >
@@ -163,7 +173,7 @@ const handleSubmit = () => {
                   :disabled="submitted"
                   inputmode="numeric"
                   :aria-label="`Question ${index + 1} denominator`"
-                  :aria-describedby="instructionsId"
+                  :aria-describedby="`${instructionsId} ${statusId}`"
                   class="h-10 w-full border-none text-center text-2xl font-medium outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600"
                   @input="updateAnswerPart(index, 'denominator', ($event.target as HTMLInputElement).value)"
                 >
@@ -202,7 +212,7 @@ const handleSubmit = () => {
           <Button
             @click="handleSubmit"
             class="group gap-2"
-            :aria-describedby="instructionsId"
+            :aria-describedby="`${instructionsId} ${statusId}`"
           >
             <Icon
               icon="heroicons:sparkles"

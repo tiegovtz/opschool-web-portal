@@ -30,6 +30,8 @@ const showResults = ref(false);
 const answers = ref<Record<number, number>>({});
 const resultsDialogOpen = ref(false);
 const activityInstructionsId = "complete-sentences-select-correct-instructions";
+const activityStatusId = "complete-sentences-select-correct-status";
+const keyboardStatusMessage = ref("");
 
 watch(
   () => props.questions,
@@ -39,6 +41,7 @@ watch(
     showResults.value = false;
     answers.value = {};
     resultsDialogOpen.value = false;
+    keyboardStatusMessage.value = "";
   },
   { deep: true },
 );
@@ -49,6 +52,10 @@ const handleCheck = (questionIndex: number, answerIndex: number) => {
     [questionIndex]: answerIndex,
   };
   allAnswered.value = Object.keys(answers.value).length === props.questions.questions.length;
+  keyboardStatusMessage.value = ui.formatActivitySelected(
+    ui.formatQuestion(questionIndex + 1),
+    props.questions.questions[questionIndex]?.question?.[answerIndex],
+  );
 };
 
 const isQuestionCorrect = (questionIndex: number) =>
@@ -70,6 +77,7 @@ const checkAnswers = () => {
     }
   });
   score.value = correctCount;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${correctCount} / ${props.questions.questions.length}.`;
   playSound("success");
   resultsDialogOpen.value = true;
 };
@@ -80,6 +88,7 @@ const resetActivity = () => {
   score.value = 0;
   answers.value = {};
   resultsDialogOpen.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 const containerStyle = computed(() => ({
@@ -101,6 +110,9 @@ const containerStyle = computed(() => ({
       {{ ui.isSwahili
         ? "Tumia kitufe cha Tab kupita kwenye kila chaguo la sentensi na bonyeza Enter au Space kuchagua lililo sahihi kwa kila swali. Baada ya kujibu maswali yote, tumia kitufe cha Kagua Majibu."
         : "Move through each sentence option with the Tab key and press Enter or Space to choose the correct one for each question. After all questions are answered, use the Check Answers button." }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
     <div class="flex flex-col h-full gap-4 sm:p-4 overflow-auto" :style="containerStyle">
       <div
@@ -145,7 +157,7 @@ const containerStyle = computed(() => ({
             class="w-6 h-6 rounded border-2 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
             role="radio"
             :aria-checked="answers[questionIndex] === sentenceIndex"
-            :aria-describedby="activityInstructionsId"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :aria-label="ui.isSwahili ? `Swali la ${questionIndex + 1}, chaguo la ${sentenceIndex + 1}: ${sentence}` : `Question ${questionIndex + 1}, option ${sentenceIndex + 1}: ${sentence}`"
             :class="
               cn({
@@ -165,7 +177,7 @@ const containerStyle = computed(() => ({
     </div>
 
     <div v-if="!showResults && allAnswered" class="p-4 flex justify-end">
-      <Button :onClick="checkAnswers" variant="brand-lemon" :aria-describedby="activityInstructionsId">{{ ui.checkAnswers }}</Button>
+      <Button :onClick="checkAnswers" variant="brand-lemon" :aria-describedby="`${activityInstructionsId} ${activityStatusId}`">{{ ui.checkAnswers }}</Button>
     </div>
 
     <div v-if="showResults" class="p-4">

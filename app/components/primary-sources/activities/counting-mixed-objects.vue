@@ -44,6 +44,8 @@ const isCompleted = ref(false);
 const isResultsDialogOpen = ref(false);
 const score = ref(0);
 const instructionsId = "counting-mixed-objects-instructions";
+const statusId = "counting-mixed-objects-status";
+const keyboardStatusMessage = ref("");
 
 const initializeCounts = () => {
   userCounts.value = props.questions.questions.reduce((acc, question) => {
@@ -61,6 +63,7 @@ watch(
     isCompleted.value = false;
     isResultsDialogOpen.value = false;
     score.value = 0;
+    keyboardStatusMessage.value = "";
   },
   { deep: true, immediate: true },
 );
@@ -75,6 +78,7 @@ const handleComplete = () => {
   score.value = checkAnswers();
   isCompleted.value = true;
   isResultsDialogOpen.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.questions.length}.`;
   playSound("success");
 };
 
@@ -83,6 +87,7 @@ const handleRestart = () => {
   initializeCounts();
   items.value = generateItems();
   questionsState.value = shuffle([...props.questions.questions]);
+  keyboardStatusMessage.value = "";
 };
 
 const handleCountChange = (type: string, value: string) => {
@@ -91,6 +96,7 @@ const handleCountChange = (type: string, value: string) => {
       ...userCounts.value,
       [type]: value,
     };
+    keyboardStatusMessage.value = ui.formatActivityUpdated(type, value);
   }
 };
 </script>
@@ -101,6 +107,9 @@ const handleCountChange = (type: string, value: string) => {
     <p :id="instructionsId" class="sr-only">
       Count each type of object in the picture area, then enter the total for each type. Use the
       Tab key to move between the answer fields and the check answers button.
+    </p>
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="flex h-full flex-col gap-4">
@@ -151,7 +160,7 @@ const handleCountChange = (type: string, value: string) => {
                   maxlength="2"
                   :disabled="isCompleted"
                   :aria-label="`Count for ${question.type}`"
-                  :aria-describedby="instructionsId"
+                  :aria-describedby="`${instructionsId} ${statusId}`"
                   :class="
                     isCompleted
                       ? userCounts[question.type] === question.count
@@ -208,7 +217,7 @@ const handleCountChange = (type: string, value: string) => {
             <Button
               variant="brand-lemon"
               :disabled="Object.values(userCounts).some((value) => value === '')"
-              :aria-describedby="instructionsId"
+              :aria-describedby="`${instructionsId} ${statusId}`"
               @click="handleComplete"
             >
               {{ ui.checkAnswers }}

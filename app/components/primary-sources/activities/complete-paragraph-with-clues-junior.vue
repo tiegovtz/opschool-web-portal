@@ -29,6 +29,7 @@ type DragEndEvent = {
 
 const props = defineProps<Props>();
 const { playSound } = useSoundEffects();
+const ui = useActivityUiText();
 
 const score = ref(0);
 const allAnswered = ref(false);
@@ -37,6 +38,8 @@ const userAnswers = ref<string[]>([]);
 const remainingOptions = ref<string[]>([]);
 const selectedOption = ref<string | null>(null);
 const instructionsId = "complete-paragraph-with-clues-junior-instructions";
+const statusId = "complete-paragraph-with-clues-junior-status";
+const keyboardStatusMessage = ref("");
 
 const initialize = () => {
   score.value = 0;
@@ -45,6 +48,7 @@ const initialize = () => {
   userAnswers.value = Array.from({ length: props.questions.answers.length }, () => "");
   remainingOptions.value = shuffle([...props.questions.options]);
   selectedOption.value = null;
+  keyboardStatusMessage.value = "";
 };
 
 watch(() => props.questions, initialize, { deep: true, immediate: true });
@@ -57,6 +61,7 @@ watch(userAnswers, (value) => {
     0,
   );
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.answers.length}.`;
   playSound("success");
 }, { deep: true });
 
@@ -76,12 +81,19 @@ const handleDragEnd = (event: DragEndEvent) => {
 
   userAnswers.value = nextAnswers;
   remainingOptions.value = remainingOptions.value.filter((option) => option !== activeId);
+  keyboardStatusMessage.value = ui.formatActivityPlaced(ui.formatQuestion(blankIndex + 1), activeId);
   selectedOption.value = null;
   playSound("click");
 };
 
 const placeOptionInBlank = (blankIndex: number) => {
-  if (showingFeedback.value || !selectedOption.value) return;
+  if (showingFeedback.value) return;
+  if (!selectedOption.value) {
+    keyboardStatusMessage.value = ui.isSwahili.value
+      ? "Chagua chaguo kwanza kabla ya kuweka kwenye pengo."
+      : "Select an option first before placing it in a blank.";
+    return;
+  }
 
   const nextAnswers = [...userAnswers.value];
   const existingAnswer = nextAnswers[blankIndex];
@@ -93,6 +105,7 @@ const placeOptionInBlank = (blankIndex: number) => {
   nextAnswers[blankIndex] = selectedOption.value;
   userAnswers.value = nextAnswers;
   remainingOptions.value = remainingOptions.value.filter((option) => option !== selectedOption.value);
+  keyboardStatusMessage.value = ui.formatActivityPlaced(ui.formatQuestion(blankIndex + 1), selectedOption.value);
   selectedOption.value = null;
   playSound("click");
 };
@@ -107,6 +120,7 @@ const removeAnswerFromBlank = (blankIndex: number) => {
   nextAnswers[blankIndex] = "";
   userAnswers.value = nextAnswers;
   remainingOptions.value = shuffle([...remainingOptions.value, existingAnswer]);
+  keyboardStatusMessage.value = ui.formatActivityRemoved(ui.formatQuestion(blankIndex + 1), existingAnswer);
   selectedOption.value = null;
 };
 
@@ -123,13 +137,16 @@ const resetActivity = () => {
       use the Tab key to move through the options and blanks. Activate an option to select it, then
       activate a blank to place it.
     </p>
+    <p :id="statusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <DNDContext :onDragEnd="handleDragEnd">
       <div class="flex h-full flex-col gap-4">
         <div class="flex h-full flex-col gap-4 md:flex-row">
           <div
             class="flex h-full w-full flex-col justify-between overflow-auto rounded-xl bg-picton-blue-50 p-4"
-            :aria-describedby="instructionsId"
+            :aria-describedby="`${instructionsId} ${statusId}`"
           >
             <div class="text-lg leading-loose md:p-4">
               <template
@@ -165,7 +182,7 @@ const resetActivity = () => {
                   <button
                     v-else-if="userAnswers[index]"
                     type="button"
-                    :aria-describedby="instructionsId"
+                    :aria-describedby="`${instructionsId} ${statusId}`"
                     :aria-label="`Placed answer ${userAnswers[index]} in blank ${index + 1}. Activate to remove it.`"
                     class="mx-2 inline-flex h-8 w-36 items-center justify-center bg-lemon-200 text-center align-middle text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
                     @click="removeAnswerFromBlank(index)"
@@ -176,7 +193,7 @@ const resetActivity = () => {
                   <button
                     v-else
                     type="button"
-                    :aria-describedby="instructionsId"
+                    :aria-describedby="`${instructionsId} ${statusId}`"
                     :aria-label="
                       selectedOption
                         ? `Blank ${index + 1}. Activate to place ${selectedOption}.`
@@ -218,14 +235,22 @@ const resetActivity = () => {
               v-for="(answer, index) in remainingOptions"
               :key="index"
               type="button"
-              :aria-describedby="instructionsId"
+              :aria-describedby="`${instructionsId} ${statusId}`"
               :aria-pressed="selectedOption === answer"
               :aria-label="`Option ${answer}. Activate to select it for a blank.`"
               :class="[
                 'flex h-10 min-w-36 items-center justify-center gap-4 rounded bg-picton-blue-200 px-4 text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2',
                 selectedOption === answer ? 'ring-2 ring-picton-blue-500 ring-offset-2' : '',
               ]"
-              @click="selectedOption = selectedOption === answer ? null : answer"
+              @click="
+                () => {
+                  const isSelected = selectedOption === answer;
+                  selectedOption = isSelected ? null : answer;
+                  keyboardStatusMessage = isSelected
+                    ? ui.formatActivityRemoved(ui.availableAnswerChoices.value, answer)
+                    : ui.formatActivitySelected(ui.availableAnswerChoices.value, answer);
+                }
+              "
             >
               <span>{{ answer }}</span>
             </button>

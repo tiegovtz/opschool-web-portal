@@ -46,6 +46,8 @@ const showHint = ref(false);
 const completedQuestions = ref(new Set<number>());
 const incorrectQuestions = ref(new Set<number>());
 const activityInstructionsId = "game-arrange-alphabet-instructions";
+const activityStatusId = "game-arrange-alphabet-status";
+const keyboardStatusMessage = ref("");
 
 const { playSound } = useSoundEffects();
 const { width } = useWindowSize();
@@ -153,6 +155,7 @@ const resetActivity = async () => {
   isCorrect.value = false;
   isIncorrect.value = false;
   showDialog.value = false;
+  keyboardStatusMessage.value = "";
 
   if (objects.value[0]?.name) {
     placedLetters.value = Array(objects.value[0].name.length).fill("");
@@ -171,12 +174,14 @@ const handleDialogChange = (open: boolean) => {
 const handleTimeUp = () => {
   if (!gameComplete.value) {
     gameComplete.value = true;
+    keyboardStatusMessage.value = ui.timesUp.value;
     showDialog.value = true;
   }
 };
 
 const handleGameComplete = (_stats: GameStats) => {
   gameComplete.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${totalWords.value}.`;
   showDialog.value = true;
 };
 
@@ -194,10 +199,12 @@ const moveToNextWord = () => {
       isTransitioning.value = false;
       wrongAttempts.value = 0;
       showHint.value = false;
+      keyboardStatusMessage.value = "";
       return;
     }
 
     gameComplete.value = true;
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${totalWords.value}.`;
     showDialog.value = true;
   }, 500);
 };
@@ -211,6 +218,7 @@ const handleLetterClick = (letter: string) => {
   const nextPlacedLetters = [...placedLetters.value];
   nextPlacedLetters[emptyIndex] = letter;
   placedLetters.value = nextPlacedLetters;
+  keyboardStatusMessage.value = `Placed: ${letter.toUpperCase()}.`;
 
   if (nextPlacedLetters.includes("")) {
     playSound("correct");
@@ -221,12 +229,14 @@ const handleLetterClick = (letter: string) => {
 
   if (wordIsCorrect) {
     isCorrect.value = true;
+    keyboardStatusMessage.value = `Word completed correctly: ${currentWord.value.toUpperCase()}.`;
     playSound("success");
     return;
   }
 
   isIncorrect.value = true;
   wrongAttempts.value += 1;
+  keyboardStatusMessage.value = "The letter order is incorrect. Try again.";
   const nextIncorrectQuestions = new Set(incorrectQuestions.value);
   nextIncorrectQuestions.add(currentWordIndex.value);
   incorrectQuestions.value = nextIncorrectQuestions;
@@ -237,10 +247,12 @@ const handleRemoveLetter = (index: number) => {
   if (isTransitioning.value || !currentWord.value || isCorrect.value) return;
 
   const nextPlacedLetters = [...placedLetters.value];
+  const removedLetter = nextPlacedLetters[index];
   nextPlacedLetters[index] = "";
   placedLetters.value = nextPlacedLetters;
   isCorrect.value = false;
   isIncorrect.value = false;
+  keyboardStatusMessage.value = `Removed: ${removedLetter?.toUpperCase()}.`;
 };
 </script>
 
@@ -298,6 +310,9 @@ const handleRemoveLetter = (index: number) => {
             : "Use Tab to move through the letters. Press Enter or Space to place a letter in the next empty slot. Use Tab to reach a placed letter and press Enter or Space to remove it."
         }}
       </p>
+      <p :id="activityStatusId" aria-live="polite" class="sr-only">
+        {{ keyboardStatusMessage }}
+      </p>
 
       <div class="flex h-full flex-1 flex-col items-center justify-between gap-10">
         <div
@@ -314,6 +329,7 @@ const handleRemoveLetter = (index: number) => {
             type="button"
             :disabled="isTransitioning || !currentWord || isCorrect || isIncorrect"
             :aria-label="ui.isSwahili ? `Chagua herufi ${letter.toUpperCase()}` : `Choose letter ${letter.toUpperCase()}`"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :class="`cursor-pointer select-none rounded text-4xl transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-6xl ${alphabetColors[letter]}`"
             @click="handleLetterClick(letter)"
           >
@@ -380,6 +396,7 @@ const handleRemoveLetter = (index: number) => {
                 v-if="placedLetters[index]"
                 type="button"
                 :aria-label="ui.isSwahili ? `Ondoa herufi ${placedLetters[index]?.toUpperCase()} kutoka nafasi ya ${index + 1}` : `Remove letter ${placedLetters[index]?.toUpperCase()} from slot ${index + 1}`"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 class="flex h-full w-full items-center justify-center rounded hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
                 @click="handleRemoveLetter(index)"
               >

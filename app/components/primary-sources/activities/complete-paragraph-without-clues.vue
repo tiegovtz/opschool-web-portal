@@ -36,6 +36,8 @@ const showResults = ref(false);
 const userAnswers = ref<string[]>([]);
 const isCorrectAnswers = ref<boolean[]>([]);
 const instructionsId = "complete-paragraph-without-clues-instructions";
+const statusId = "complete-paragraph-without-clues-status";
+const keyboardStatusMessage = ref("");
 
 const initialize = () => {
   score.value = 0;
@@ -43,6 +45,7 @@ const initialize = () => {
   showResults.value = false;
   userAnswers.value = Array.from({ length: props.questions?.answers?.length }, () => "");
   isCorrectAnswers.value = Array.from({ length: props?.questions?.answers?.length }, () => false);
+  keyboardStatusMessage.value = "";
 };
 
 watch(() => props.questions, initialize, { deep: true, immediate: true });
@@ -61,6 +64,7 @@ const checkAnswers = () => {
   score.value = correctness.reduce((total, value) => total + (value ? 1 : 0), 0);
   isCorrectAnswers.value = correctness;
   allAnswered.value = true;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.answers.length}.`;
   playSound(score.value === props.questions.answers.length ? "success" : "failure");
 };
 
@@ -75,6 +79,9 @@ const resetActivity = () => {
     <p :id="instructionsId" class="sr-only">
       Complete the paragraph by filling in the missing words. Use the Tab key to move between the
       blanks, then activate the check answers button when all blanks are filled.
+    </p>
+    <p :id="statusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
     </p>
 
     <template v-if="showResults">
@@ -171,7 +178,7 @@ const resetActivity = () => {
                   :model-value="userAnswers[index]"
                   type="text"
                   :aria-label="`Blank ${index + 1} in paragraph`"
-                  :aria-describedby="instructionsId"
+                  :aria-describedby="`${instructionsId} ${statusId}`"
                   class="max-w-40 rounded-none border-none bg-transparent text-center !text-lg text-picton-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-600 focus-visible:ring-offset-2"
                   :disabled="showResults"
                   @update:model-value="
@@ -179,6 +186,7 @@ const resetActivity = () => {
                       const nextAnswers = [...userAnswers];
                       nextAnswers[index] = String(value ?? '');
                       userAnswers = nextAnswers;
+                      keyboardStatusMessage = ui.formatActivityUpdated(ui.formatQuestion(index + 1), String(value ?? ''));
                     }
                   "
                 />
@@ -203,7 +211,7 @@ const resetActivity = () => {
       <div class="flex justify-end">
         <Button
           :disabled="!allAnswersFilled"
-          :aria-describedby="instructionsId"
+          :aria-describedby="`${instructionsId} ${statusId}`"
           @click="checkAnswers"
           class="group gap-2 px-6 py-2"
         >

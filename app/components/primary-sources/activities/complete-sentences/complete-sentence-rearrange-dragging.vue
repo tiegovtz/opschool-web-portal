@@ -45,7 +45,9 @@ const score = ref(0);
 const allAnswered = ref(false);
 const showResults = ref(false);
 const activityInstructionsId = "complete-sentences-rearrange-dragging-instructions";
+const activityStatusId = "complete-sentences-rearrange-dragging-status";
 const selectedWord = ref<{ questionId: string; word: string } | null>(null);
+const keyboardStatusMessage = ref("");
 
 // ✅ Watch instead of useEffect
 watch(
@@ -70,6 +72,7 @@ watch(
 
         return acc + (correct ? 1 : 0);
       }, 0);
+      keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questionsList.questions.length}.`;
     }
   },
   { deep: true }
@@ -96,18 +99,27 @@ function handleDrop(questionId: string, index: number, word: string) {
       answer: newAnswer,
     };
   });
+  keyboardStatusMessage.value = ui.formatActivityPlaced(ui.formatQuestion(index + 1), word);
 }
 
 function handleWordSelect(questionId: string, word: string) {
   if (showResults.value || !word) return;
-  selectedWord.value =
-    selectedWord.value?.questionId === questionId && selectedWord.value.word === word
-      ? null
-      : { questionId, word };
+  const isRemoving =
+    selectedWord.value?.questionId === questionId && selectedWord.value.word === word;
+  selectedWord.value = isRemoving ? null : { questionId, word };
+  keyboardStatusMessage.value = isRemoving
+    ? ui.formatActivityRemoved(ui.availableClueWords.value, word)
+    : ui.formatActivitySelected(ui.availableClueWords.value, word);
 }
 
 function placeSelectedWord(questionId: string, index: number) {
-  if (!selectedWord.value || showResults.value) return;
+  if (showResults.value) return;
+  if (!selectedWord.value) {
+    keyboardStatusMessage.value = ui.isSwahili.value
+      ? "Chagua neno kwanza kabla ya kuliweka kwenye nafasi."
+      : "Select a word first before placing it in a slot.";
+    return;
+  }
   handleDrop(questionId, index, selectedWord.value.word);
   selectedWord.value = null;
 }
@@ -127,6 +139,7 @@ function removePlacedWord(questionId: string, index: number, word: string) {
   });
 
   allAnswered.value = false;
+  keyboardStatusMessage.value = ui.formatActivityRemoved(ui.formatQuestion(index + 1), word);
 }
 
 function resetActivity() {
@@ -140,6 +153,7 @@ function resetActivity() {
     answer: Array(q.answer.length).fill(""),
   }));
   selectedWord.value = null;
+  keyboardStatusMessage.value = "";
 }
 </script>
 
@@ -157,6 +171,9 @@ function resetActivity() {
       {{ ui.isSwahili
         ? "Panga maneno kwa mpangilio sahihi. Unaweza kuburuta, au kutumia Tab kuchagua neno kisha kubonyeza nafasi inayofaa kuliweka. Bonyeza neno lililowekwa kuliondoa."
         : "Rearrange the words into the correct order. You can drag, or use Tab to select a word and then activate the matching blank to place it. Activate a placed word to remove it." }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <!-- DND Provider -->
@@ -178,7 +195,7 @@ function resetActivity() {
               v-for="(word, index) in question.question"
               :key="index"
               type="button"
-              :aria-describedby="activityInstructionsId"
+              :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
               :aria-pressed="selectedWord?.questionId === question.id && selectedWord?.word === word"
               :class="[
                 'rounded border border-picton-blue-400 bg-picton-blue-200 px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2',
@@ -196,7 +213,7 @@ function resetActivity() {
               <button
                 v-if="slot"
                 type="button"
-                :aria-describedby="activityInstructionsId"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 :aria-label="ui.isSwahili ? `Neno ${slot} limewekwa kwenye nafasi ya ${index + 1}. Bonyeza kuliondoa.` : `Placed word ${slot} in slot ${index + 1}. Activate to remove it.`"
                 class="rounded border border-lemon-400 bg-lemon-100 px-3 py-2 text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
                 :disabled="showResults"
@@ -208,7 +225,7 @@ function resetActivity() {
               <button
                 v-else
                 type="button"
-                :aria-describedby="activityInstructionsId"
+                :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                 :aria-label="
                   selectedWord
                     ? `Empty slot ${index + 1}. Activate to place ${selectedWord.word}.`
@@ -226,7 +243,7 @@ function resetActivity() {
         </div>
 
         <div v-if="allAnswered" class="flex justify-end">
-          <Button variant="brand-lemon" :aria-describedby="activityInstructionsId" @click="showResults = true">
+          <Button variant="brand-lemon" :aria-describedby="`${activityInstructionsId} ${activityStatusId}`" @click="showResults = true">
             {{ ui.viewResults }}
           </Button>
         </div>

@@ -51,6 +51,8 @@ const showResults = ref(false);
 const score = ref(0);
 const resultsDialogOpen = ref(false);
 const activityInstructionsId = "table-checkbox-filling-instructions";
+const activityStatusId = "table-checkbox-filling-status";
+const keyboardStatusMessage = ref("");
 
 const hasBlank = (cell: string) => cell.includes("_");
 
@@ -80,6 +82,7 @@ const initializeCells = () => {
 watch(() => props.questions.questions, () => {
   shuffledQuestions.value = props.questions.questions;
   initializeCells();
+  keyboardStatusMessage.value = "";
 }, { deep: true, immediate: true });
 
 const allAnswered = computed(() => inputCells.value.every((cell) => cell.value.trim() !== ""));
@@ -92,6 +95,10 @@ const handleInputChange = (rowIndex: number, cellIndex: number, value: string) =
     cell.rowIndex === rowIndex && cell.cellIndex === cellIndex
       ? { ...cell, value }
       : cell,
+  );
+  keyboardStatusMessage.value = ui.formatActivityUpdated(
+    ui.formatQuestion(rowIndex + 1),
+    value,
   );
 };
 
@@ -115,6 +122,7 @@ const checkAnswers = () => {
   });
 
   score.value = correctCount;
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${correctCount} / ${inputCells.value.length}.`;
   playSound("success");
   resultsDialogOpen.value = true;
 };
@@ -129,6 +137,7 @@ const resetActivity = () => {
   showResults.value = false;
   score.value = 0;
   resultsDialogOpen.value = false;
+  keyboardStatusMessage.value = "";
 };
 </script>
 
@@ -148,6 +157,9 @@ const resetActivity = () => {
           ? "Tumia tab kusogea kwenye kila kisanduku cha kujaza kwenye jedwali na andika jibu sahihi."
           : "Use Tab to move through each fill-in table cell and type the correct answer."
       }}
+    </p>
+    <p :id="activityStatusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
     </p>
 
     <div class="flex h-full flex-col gap-4">
@@ -263,6 +275,7 @@ const resetActivity = () => {
                     :disabled="showResults"
                     :placeholder="'andika hapa'"
                     :aria-label="ui.isSwahili ? `Jibu la mstari ${rowIndex + 1}, safu ${cellIndex + 1}` : `Answer for row ${rowIndex + 1}, column ${cellIndex + 1}`"
+                    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                     :style="{ width: getInputWidth(getInputCell(rowIndex, cellIndex)?.correctAnswer) }"
                     :class="
                       cn(
@@ -327,6 +340,7 @@ const resetActivity = () => {
           :disabled="!allAnswered"
           :style="{ opacity: allAnswered ? 1 : 0, transition: 'opacity 0.3s ease' }"
           class="group gap-2"
+          :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
           @click="checkAnswers"
         >
           <Icon

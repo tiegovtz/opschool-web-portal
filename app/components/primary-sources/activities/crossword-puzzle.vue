@@ -102,6 +102,8 @@ const activeInputRef = ref<HTMLInputElement | null>(null);
 const inputValue = ref("");
 const isTouchDevice = ref(false);
 const instructionsId = "crossword-puzzle-instructions";
+const statusId = "crossword-puzzle-status";
+const keyboardStatusMessage = ref("");
 
 const isActivityDisabled = computed(
   () => allAnswered.value || timeUp.value || gameComplete.value,
@@ -745,12 +747,14 @@ const resetCrossword = () => {
   completedQuestions.value = new Set();
   incorrectQuestions.value = new Set();
   correctWords.value = 0;
+  keyboardStatusMessage.value = "";
 };
 
 const handleGameTimeUp = () => {
   if (!allAnswered.value && !timeUp.value) {
     timeUp.value = true;
     allAnswered.value = true;
+    keyboardStatusMessage.value = ui.timesUp.value;
     playSound("failure");
   }
 };
@@ -758,6 +762,7 @@ const handleGameTimeUp = () => {
 const handleGameComplete = () => {
   if (!allAnswered.value && !timeUp.value) {
     allAnswered.value = true;
+    keyboardStatusMessage.value = `${ui.resultsReady.value}. ${correctWords.value} / ${totalWords.value}.`;
   }
 };
 
@@ -781,6 +786,7 @@ const handlePlayAgain = async () => {
   incorrectQuestions.value = new Set();
   selectedCell.value = null;
   selectedWordId.value = null;
+  keyboardStatusMessage.value = "";
 
   if (props.questions.isGameMode) {
     const updatedIds = [...new Set([...completedObjectIds.value, ...objects.value.map((item) => item.id)])];
@@ -867,6 +873,9 @@ const downWords = computed(() =>
         Select a crossword cell or clue, then type letters to fill the word. Use Backspace to erase.
         Use the Tab key to move between the puzzle grid and the clue buttons.
       </p>
+      <p :id="statusId" class="sr-only" aria-live="polite">
+        {{ keyboardStatusMessage }}
+      </p>
 
       <div class="flex flex-col justify-center gap-6 p-4 2xl:flex-row">
         <div class="relative flex-1">
@@ -888,7 +897,7 @@ const downWords = computed(() =>
                 ? `Crossword cell row ${selectedCell.row + 1}, column ${selectedCell.col + 1}`
                 : 'Crossword input'
             "
-            :aria-describedby="instructionsId"
+            :aria-describedby="`${instructionsId} ${statusId}`"
             @input="handleInputChange"
           >
 
@@ -901,7 +910,7 @@ const downWords = computed(() =>
           <div
             tabindex="0"
             class="mx-auto w-fit outline-none"
-            :aria-describedby="instructionsId"
+            :aria-describedby="`${instructionsId} ${statusId}`"
             role="grid"
             aria-label="Crossword puzzle grid"
             :style="{
@@ -970,7 +979,7 @@ const downWords = computed(() =>
                 v-for="word in acrossWords"
                 :key="`across-${word.id}`"
                 type="button"
-                :aria-describedby="instructionsId"
+                :aria-describedby="`${instructionsId} ${statusId}`"
                 :aria-label="`Across clue ${word.clueNumber}: ${word.clue}`"
                 :class="
                   cn(
@@ -1002,7 +1011,7 @@ const downWords = computed(() =>
                 v-for="word in downWords"
                 :key="`down-${word.id}`"
                 type="button"
-                :aria-describedby="instructionsId"
+                :aria-describedby="`${instructionsId} ${statusId}`"
                 :aria-label="`Down clue ${word.clueNumber}: ${word.clue}`"
                 :class="
                   cn(

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { Icon } from "@iconify/vue";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,8 @@ type Props = {
 };
 
 const props = defineProps<Props>();
+const statusId = "breadcrumb-status";
+const keyboardStatusMessage = ref("");
 </script>
 
 <template>
@@ -21,6 +24,9 @@ const props = defineProps<Props>();
     :class="cn('flex items-center space-x-2 text-sm', props.className)"
     aria-label="Breadcrumb navigation"
   >
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
     <div class="flex items-center space-x-1 rounded-full bg-white/60 px-3 py-1.5 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
       <Icon icon="lucide:house" width="14" height="14" class="text-picton-blue-600" />
     </div>
@@ -36,6 +42,7 @@ const props = defineProps<Props>();
         v-if="item.onClick"
         type="button"
         :aria-current="item.active ? 'page' : undefined"
+        :aria-describedby="statusId"
         :class="
           cn(
             'rounded-full px-3 py-1.5 font-medium transition-all duration-200',
@@ -44,7 +51,7 @@ const props = defineProps<Props>();
               : 'text-gray-600 backdrop-blur-sm hover:bg-white/40 hover:text-picton-blue-700',
           )
         "
-        @click="item.onClick()"
+        @click="() => { keyboardStatusMessage = `Navigate to ${item.label}.`; item.onClick?.(); }"
       >
         {{ item.label }}
       </button>

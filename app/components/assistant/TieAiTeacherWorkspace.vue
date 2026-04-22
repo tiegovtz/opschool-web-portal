@@ -463,7 +463,7 @@ onBeforeUnmount(() => {
       >
         <div
           v-if="isHistoryOpen"
-          class="absolute -left-80 top-0 bottom-0 z-30 w-80 max-w-[90%] rounded-l-lg border border-gray-200 bg-white shadow-xl pointer-events-auto"
+          class="absolute -left-80 top-0 bottom-0 z-30 w-80 max-w-[90%] min-h-0 pointer-events-auto"
         >
           <AiTeacherChatHistorySidebar
             :is-open="true"
@@ -487,7 +487,10 @@ onBeforeUnmount(() => {
       @session-selected="handleSessionSelected"
     />
 
-    <div class="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
+    <div
+      class="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden"
+      :class="shouldUseCompactOverlaySidebar ? 'rounded-lg' : ''"
+    >
       <AiTeacherHeader @toggle-sidebar="toggleHistory" />
 
       <div

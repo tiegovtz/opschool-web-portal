@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import { Icon } from "@iconify/vue";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ const props = defineProps<Props>();
 const ui = useActivityUiText();
 const route = useRoute();
 const curriculum = computed(() => String(route.query.curc || "").trim());
+const statusId = "category-selection-status";
+const keyboardStatusMessage = ref("");
 
 const categories = [
   {
@@ -48,6 +51,9 @@ const categories = [
 
 <template>
   <div class="container mx-auto px-0 py-6 md:px-4 md:py-12">
+    <p :id="statusId" class="sr-only" aria-live="polite">
+      {{ keyboardStatusMessage }}
+    </p>
     <div class="mb-16 space-y-4">
       <div class="mb-4 flex items-center justify-between">
         <Button href="/" class="w-fit xl:hidden">
@@ -80,8 +86,9 @@ const categories = [
         :key="category.id"
         type="button"
         :aria-label="`${category.title}. ${category.description}`"
+        :aria-describedby="statusId"
         class="group cursor-pointer text-left transition-transform duration-300 hover:-translate-y-2 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2"
-        @click="props.onCategorySelect(category.id)"
+        @click="() => { keyboardStatusMessage = `Selected: ${category.title}.`; props.onCategorySelect(category.id); }"
       >
         <div class="relative h-96 overflow-hidden rounded-3xl shadow-2xl transition-all duration-500 group-hover:shadow-[0_25px_60px_rgba(15,76,129,0.18)]">
           <div class="absolute inset-0 opacity-70">

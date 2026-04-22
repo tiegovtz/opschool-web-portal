@@ -46,6 +46,8 @@ const steps = ref<Step[]>([]);
 const arrangedSteps = ref<Array<Step | "">>([]);
 const activityInstructionsId = "arrange-steps-instructions";
 const ui = useActivityUiText();
+const activityStatusId = "arrange-steps-status";
+const keyboardStatusMessage = ref("");
 
 const initializeActivity = () => {
   steps.value = shuffle([...props.questions.steps]);
@@ -53,6 +55,7 @@ const initializeActivity = () => {
   score.value = 0;
   allAnswered.value = false;
   showResults.value = false;
+  keyboardStatusMessage.value = "";
 };
 
 watch(() => props.questions, initializeActivity, { deep: true, immediate: true });
@@ -67,6 +70,7 @@ watch(arrangedSteps, (value) => {
     (total, step, index) => total + (step !== null && step.id === props.questions.steps[index]?.id ? 1 : 0),
     0,
   );
+  keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.steps.length}.`;
   playSound("success");
   allAnswered.value = true;
 }, { deep: true });
@@ -90,6 +94,7 @@ const handleDragEnd = (event: DragEndEvent) => {
 
   arrangedSteps.value = nextSteps;
   steps.value = steps.value.filter((step) => step.id !== activeId);
+  keyboardStatusMessage.value = ui.formatActivityPlaced(ui.formatQuestion(overIndex + 1), activeStep.text);
   playSound("click");
 };
 
@@ -103,6 +108,7 @@ const placeStep = (slotIndex: number, step: Step) => {
   nextArranged[slotIndex] = step;
   arrangedSteps.value = nextArranged;
   steps.value = steps.value.filter((item) => item.id !== step.id);
+  keyboardStatusMessage.value = ui.formatActivityPlaced(ui.formatQuestion(slotIndex + 1), step.text);
   playSound("click");
 };
 
@@ -111,6 +117,7 @@ const removePlacedStep = (slotIndex: number) => {
   if (!step || step === "") return;
   arrangedSteps.value = arrangedSteps.value.map((item, index) => (index === slotIndex ? "" : item));
   steps.value = [...steps.value, step];
+  keyboardStatusMessage.value = ui.formatActivityRemoved(ui.formatQuestion(slotIndex + 1), step.text);
   playSound("click");
 };
 
@@ -139,6 +146,9 @@ const isCorrect = (step: Step, index: number) =>
           : "Use Tab to move through the available steps and empty slots. Select a step with Enter or Space, then choose the slot where you want to place it."
       }}
     </p>
+    <p :id="activityStatusId" aria-live="polite" class="sr-only">
+      {{ keyboardStatusMessage }}
+    </p>
 
     <div class="flex flex-col gap-4">
       <DNDContext :onDragEnd="handleDragEnd">
@@ -164,6 +174,7 @@ const isCorrect = (step: Step, index: number) =>
                     type="button"
                     class="flex h-full w-full items-center justify-center rounded border border-picton-blue-200 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
                     :aria-label="ui.isSwahili ? `Nafasi tupu ya hatua ya ${index + 1}` : `Empty slot for step ${index + 1}`"
+                    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                   >
                     {{ ui.isSwahili ? "Weka hapa" : "Place here" }}
                   </button>
@@ -199,6 +210,7 @@ const isCorrect = (step: Step, index: number) =>
                     type="button"
                     class="relative flex h-full w-full items-center border border-picton-blue-200 bg-lemon-200 px-4 py-2 text-left text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
                     :aria-label="ui.isSwahili ? `Ondoa hatua ${step.text}` : `Remove step ${step.text}`"
+                    :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                     @click="!showResults && removePlacedStep(index)"
                   >
                     <div class="flex items-center gap-2">
@@ -223,6 +235,7 @@ const isCorrect = (step: Step, index: number) =>
             class="absolute flex h-full w-1/2 flex-grow items-center rounded border border-lemon-300 bg-lemon-100 px-4 py-2 text-left text-lg text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-picton-blue-500 focus-visible:ring-offset-2"
             :style="{ left: `${index * 50}px` }"
             :aria-label="ui.isSwahili ? `Chagua hatua ${step.text}` : `Choose step ${step.text}`"
+            :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             @click="placeStep(arrangedSteps.findIndex((item) => item === ''), step)"
           >
             <div v-if="step.image" class="w-fit h-full flex items-center gap-4">
