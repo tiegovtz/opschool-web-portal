@@ -9,7 +9,11 @@ const emit = defineEmits(['emitChapterId'])
 </script>
 
 <template>
-    <div role="listitem" aria-label="activities list" class="flex flex-col gap-3 md:pl-4">
+    <div
+        role="listitem"
+        aria-label="activities list"
+        class="flex max-h-[calc(100dvh-9rem)] flex-col gap-3 overflow-y-auto pr-1 md:pl-4 lg:max-h-none"
+    >
         <button type="button" v-for="(chapter, index) in chapters" :key="index"
             :aria-label="`press to switch to ${chapter?.name}`" tabindex="0"
             @click="emit('emitChapterId', chapter?._id)" :title="chapter?.name"
