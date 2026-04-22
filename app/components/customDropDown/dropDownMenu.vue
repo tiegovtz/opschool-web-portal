@@ -59,11 +59,22 @@ const { data: classes } = useFetch<ClassLevel[]>(apiDocs.levels.getLevels, { hea
 const selectedEducationBucket = computed(() =>
   selected.level?.trim() ? normalizeEducationLevel(selected.level) : null,
 );
+const normalizeValue = (value?: string | null) =>
+  value?.trim().toLowerCase() ?? "";
+const matchesEducationLevel = (
+  candidate?: string | null,
+  selectedValue?: string | null,
+) =>
+  !!candidate &&
+  !!selectedValue &&
+  (normalizeValue(candidate) === normalizeValue(selectedValue) ||
+    normalizeEducationLevel(candidate) === normalizeEducationLevel(selectedValue));
+
 const selectedContentLanguage = computed(() =>
   props.language ||
   resolveRouteLanguage(route, selectedEducationBucket.value ?? undefined, primaryContentLanguage.value),
 );
-const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjects, {
+const { data: subjects, pending: subjectsPending } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjects, {
   headers,
   query: computed(() =>{
     let q={}
@@ -77,7 +88,8 @@ const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjec
       ...q, 
     }}
   ),
-  watch: [selectedEducationBucket, selectedContentLanguage,()=>selected.class],
+  default: () => [],
+  watch: [selectedEducationBucket,()=>selected.class],
 });
 
 // Simulate skeleton time
@@ -90,7 +102,7 @@ const openMenus = ref<number[]>([0]);
 
 const liveMessage = ref("");
 const isClassDisabled = computed(() => selected.level?.trim() === "");
-const isSubjectDisabled = computed(() => selected.class?.trim() === "");
+const isSubjectDisabled = computed(() => selected.class?.trim() === "" || subjectsPending.value);
 
 // Emits
 const emit = defineEmits(["emitUpdateFilterValue"]);
@@ -171,6 +183,16 @@ const sortedEducationLevelNames = computed(() => {
   });
 });
 
+const subjectItems = computed(() => {
+  if (!selected.level?.trim() || !selected.class?.trim() || subjectsPending.value) {
+    return [];
+  }
+
+  return [...(subjects.value || []).map((s: Subjects) => s.name)].sort((a, b) =>
+    a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }),
+  );
+});
+
 // Build available filters
 const filterGroups = computed(() => {
   if (isLoading.value) return [];
@@ -192,7 +214,7 @@ const filterGroups = computed(() => {
         ? classes.value
             .filter((cls) => {
               const lvl = (cls as any).educationLevel?.name;
-              return lvl?.toLowerCase() === selected.level?.toLowerCase();
+              return matchesEducationLevel(lvl, selected.level);
             })
             .map((cls) => cls.name)
         : [];
@@ -210,9 +232,7 @@ const filterGroups = computed(() => {
     groups.push({
       name: "subject",
       inputType: "radio",
-      items: [...subjects.value.map((s: Subjects) => s.name)].sort((a, b) =>
-        a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }),
-      ),
+      items: subjectItems.value,
       disabled: isSubjectDisabled.value,
     });
   }

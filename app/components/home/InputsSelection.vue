@@ -92,32 +92,6 @@ const content = computed(() =>
       },
 );
 
-const getEducationLevelLabel = (educationLevelName: string) => {
-  const bucket = getEducationBucket(educationLevelName);
-
-  if (bucket === "pre-primary") {
-    return props.language === "kiswahili" ? "Elimu ya Awali" : "Pre-Primary";
-  }
-
-  if (bucket === "primary") {
-    return props.language === "kiswahili" ? "Elimu ya Msingi" : "Primary";
-  }
-
-  if (bucket === "lower secondary") {
-    return props.language === "kiswahili"
-      ? "Sekondari ya Chini"
-      : "Lower Secondary";
-  }
-
-  if (bucket === "upper secondary") {
-    return props.language === "kiswahili"
-      ? "Sekondari ya Juu"
-      : "Upper Secondary";
-  }
-
-  return educationLevelName;
-};
-
 const dropdownButtonClass =
   "h-10 w-full rounded-none border-b border-gray-300 px-2 py-2 text-left text-sm text-gray-700 shadow-none focus:border-oceanBlue disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500";
 
@@ -226,10 +200,6 @@ const filteredEducationLevels = computed(() =>
     : educationLevels.value,
 );
 
-const isEducationLevelLocked = computed(
-  () => matchedEducationLevels.value.length === 1,
-);
-
 const educationLevelOptions = computed<DropdownOption[]>(() => {
   const allowed = new Set(
     filteredEducationLevels.value.map((e) => normalizeValue(e.name)),
@@ -237,8 +207,8 @@ const educationLevelOptions = computed<DropdownOption[]>(() => {
   return sortedEducationLevels.value
     .filter((e) => allowed.has(normalizeValue(e.name)))
     .map((educationLevelOption) => ({
-      id: normalizeValue(educationLevelOption.name),
-      name: getEducationLevelLabel(educationLevelOption.name),
+      id: educationLevelOption.name,
+      name: educationLevelOption.name,
     }))
 })
 
@@ -273,7 +243,7 @@ const isClassesLoading = computed(() => classLevelsPending.value);
 const isSubjectsLoading = computed(() => publicSubjectsPending.value);
 
 const showEducationLevelDropdown = computed(
-  () => educationLevelOptions.value.length > 1,
+  () => educationLevelOptions.value.length > 0,
 );
 
 watch(
@@ -281,15 +251,8 @@ watch(
   (matchedLevels) => {
     if (!matchedLevels.length) return;
 
-    if (matchedLevels.length === 1) {
-      const nextLevel = normalizeValue(matchedLevels[0]?.name);
-      if (!nextLevel || level.value === nextLevel) return;
-      onLevelChange(nextLevel);
-      return;
-    }
-
     const currentLevelStillVisible = matchedLevels.some(
-      (matchedLevel) => normalizeValue(matchedLevel.name) === level.value,
+      (matchedLevel) => matchedLevel.name === level.value,
     );
 
     if (!currentLevelStillVisible && level.value) {
@@ -316,7 +279,7 @@ watch(
         :placeholder="
           educationLevelsPending ? content.loading : content.selectLevel
         "
-        :disabled="isEducationLevelLocked"
+        :disabled="educationLevelsPending"
         :button-class="dropdownButtonClass"
         @update-model-value="onLevelChange"
       />

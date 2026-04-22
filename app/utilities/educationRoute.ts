@@ -28,6 +28,7 @@ const PRE_PRIMARY_ALIASES = new Set([
 const PRIMARY_HUB_LEVEL_ALIASES = new Set([
   "pre-primary",
   "pre primary",
+  "elimu ya awali",
   "primary",
   "primary education",
   "elimu ya msingi",
