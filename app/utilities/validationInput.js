@@ -14,6 +14,7 @@ const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const tanzaniaPhoneRegex = /^(?:\+255|0)(6[1-9]|7[1-9]|9[1-9])\d{7}$/;
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 const usernameRegex = /^[A-Za-z0-9]+\.[A-Za-z0-9]+$/;
+const premNumberRegex = /^\d{11}$/;
 
 /**
  * Authentication Utility
@@ -41,6 +42,14 @@ const auth = {
      * console.log(auth.isValidPhone("+255622660722")); // true
      */
     isValidPhone: (phone) => tanzaniaPhoneRegex.test(phone),
+
+    /**
+     * Validates a student Prem Number in the expected 11-digit format.
+     *
+     * @param {string} premNumber - The Prem Number to validate.
+     * @returns {boolean} True if valid, false otherwise.
+     */
+    isValidPremNumber: (premNumber) => premNumberRegex.test(premNumber),
 
     /**
      * Checks if a password meets security criteria.
@@ -81,7 +90,8 @@ const auth = {
     },
 
   /**
- * Validates whether the input is a valid email, Tanzanian phone number, or username in the format "Example.Example".
+ * Validates whether the input is a valid email, Tanzanian phone number, 11-digit Prem Number,
+ * or username in the format "Example.Example".
  * 
  * @param {string} userInput - The email, phone number, or username to validate.
  * @returns {boolean} True if valid, false otherwise.
@@ -89,13 +99,17 @@ const auth = {
  * @example
  * console.log(auth.checkEmailPhoneOrUsername("example@email.com")); // true (valid email)
  * console.log(auth.checkEmailPhoneOrUsername("+255622660722")); // true (valid Tanzanian phone number)
+ * console.log(auth.checkEmailPhoneOrUsername("20190928782")); // true (valid Prem Number)
  * console.log(auth.checkEmailPhoneOrUsername("John.Doe")); // true (valid username)
  * console.log(auth.checkEmailPhoneOrUsername("invalid@com")); // false (invalid email)
  * console.log(auth.checkEmailPhoneOrUsername("12345")); // false (invalid phone number)
  * console.log(auth.checkEmailPhoneOrUsername("JohnDoe")); // false (missing dot in username)
  */
 checkEmailPhoneOrUsername: (userInput) => {
-    return emailPattern.test(userInput) || tanzaniaPhoneRegex.test(userInput) || usernameRegex.test(userInput);
+    return emailPattern.test(userInput)
+        || tanzaniaPhoneRegex.test(userInput)
+        || premNumberRegex.test(userInput)
+        || usernameRegex.test(userInput);
 },
 
     /**
