@@ -1200,7 +1200,7 @@ definePageMeta({
         <!-- Notes loaded successfully -->
         <div id="main-container" tabindex="-1" aria-live="polite" aria-label="compitence content loaded successfully"
           ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
-          class="w-full py-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
+          class="relative z-0 w-full py-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex w-full min-w-0 items-center justify-between gap-2">
             <div class="flex min-w-0 flex-1 items-center gap-2">
@@ -1283,7 +1283,7 @@ definePageMeta({
 
         <!-- Sidebar w-1/4 -->
         <div tabindex="0"
-          class="sidebar transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2 lg:static bg-white lg:scroll-height lg:overflow-y-scroll">
+          class="sidebar z-30 transition-all duration-700 ease-in-out absolute -right-[500%] lg:right-0 top-0 md:w-[400px] w-full lg:w-1/4 h-full p-2 lg:static bg-white lg:scroll-height lg:overflow-y-scroll">
           <div class="flex items-center justify-between mb-4">
             <h1 aria-label="Activity list" class="pt-5 pl-4 font-medium  text-medium">{{ pageUi.learningContents }}</h1>
             <!-- toggle menu -->
