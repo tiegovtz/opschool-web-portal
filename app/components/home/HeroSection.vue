@@ -68,7 +68,7 @@ const toggleReadMore = async () => {
       <div class="flex flex-col items-center justify-center h-full">
         <SliderShow
           :language
-          :variant="language === 'kiswahili' ? 'primary' : 'secondary'"
+          :variant="educationLevel === 'primary' ? 'primary' : 'secondary'"
         />
       </div>
 
