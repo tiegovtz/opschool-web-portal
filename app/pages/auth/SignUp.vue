@@ -52,7 +52,7 @@ const content = computed(() => ({
   studentRegistrationMethodLabel: isSwahili.value ? "Njia ya usajili wa mwanafunzi:" : "Student registration method:",
   studentRegistrationMethods: {
     manual: isSwahili.value ? "Weka taarifa mwenyewe" : "Enter details manually",
-    premNumber: isSwahili.value ? "Tumia taarifa za mwanafunzi" : "Use student records",
+    premNumber: isSwahili.value ? "Tumia Prem Number yako" : "Use your Prem Number",
   },
   studentRegistrationHints: {
     manual: isSwahili.value
@@ -66,7 +66,7 @@ const content = computed(() => ({
     ? "Njia ya kutafuta taarifa za mwanafunzi:"
     : "Student lookup method:",
   studentLookupModes: {
-    premNumber: isSwahili.value ? "Ninajua Prem Number" : "I know the Prem Number",
+    premNumber: isSwahili.value ? "Tumia Prem Number yako" : "Use your Prem Number",
     classList: isSwahili.value ? "Sijui Prem Number" : "I don't know the Prem Number",
   },
   studentLookupModeHints: {
@@ -934,13 +934,32 @@ const signUp = async () => {
     } catch (error: unknown) {
       const fetchError = error as FetchError;
       usersignUp.controller.isSent = 'error';
-      const errorMessage = JSON.stringify(fetchError?.response?._data?.errors ?? fetchError?.data?.errors);
-      const status = fetchError?.response?.status ?? fetchError?.status;
+      const responseData = fetchError?.response?._data as Record<string, unknown> | undefined;
+      const directData = fetchError?.data as Record<string, unknown> | undefined;
+      const nestedResponseData = responseData?.data as Record<string, unknown> | undefined;
+      const nestedDirectData = directData?.data as Record<string, unknown> | undefined;
+      const backendErrors =
+        (responseData?.errors as Record<string, unknown> | undefined) ??
+        (nestedResponseData?.errors as Record<string, unknown> | undefined) ??
+        (directData?.errors as Record<string, unknown> | undefined) ??
+        (nestedDirectData?.errors as Record<string, unknown> | undefined);
+      const errorMessage = JSON.stringify(backendErrors ?? {});
+      const status =
+        fetchError?.response?.status ??
+        fetchError?.status ??
+        (responseData?.statusCode as number | undefined) ??
+        (nestedResponseData?.statusCode as number | undefined) ??
+        (directData?.statusCode as number | undefined) ??
+        (nestedDirectData?.statusCode as number | undefined);
       const backendMessage =
-        fetchError?.response?._data?.message ??
-        fetchError?.response?._data?.error ??
-        fetchError?.data?.message ??
-        fetchError?.data?.error;
+        (responseData?.message as string | undefined) ??
+        (responseData?.error as string | undefined) ??
+        (nestedResponseData?.message as string | undefined) ??
+        (nestedResponseData?.error as string | undefined) ??
+        (directData?.message as string | undefined) ??
+        (directData?.error as string | undefined) ??
+        (nestedDirectData?.message as string | undefined) ??
+        (nestedDirectData?.error as string | undefined);
       if (status) {
         // The request was made, but the server responded with a status code
         switch (status) {
@@ -958,10 +977,13 @@ const signUp = async () => {
             break;
           case 422:
             if (errorMessage.includes('email')) {
+              usersignUp.controller.errors.email = content.value.feedback.emailExists;
               usersignUp.controller.feedback = content.value.feedback.emailExists;
             } else if (errorMessage.includes('phone')) {
+              usersignUp.controller.errors.phone = content.value.feedback.phoneExists;
               usersignUp.controller.feedback = content.value.feedback.phoneExists;
             } else if (errorMessage.includes('username')) {
+              usersignUp.controller.errors.userName = content.value.feedback.usernameTaken;
               usersignUp.controller.feedback = content.value.feedback.usernameTaken;
             } else {
               usersignUp.controller.feedback = backendMessage || content.value.feedback.unexpected;
@@ -1841,7 +1863,9 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div v-if="isStudentLookupRegistration" class="px-2 mb-4 border-b border-gray-300">
+          <!-- Kept for future use; class-list lookup for student without the prem number -->
+
+          <!-- <div v-if="isStudentLookupRegistration" class="px-2 mb-4 border-b border-gray-300">
             <div class="flex flex-col items-start gap-3 py-2">
               <label class="font-semibold capitalize text-oceanBlue text-extraSmall">
                 {{ content.studentLookupModeLabel }}
@@ -1852,21 +1876,20 @@ onMounted(async () => {
                   <input v-model="studentLookupMode" type="radio" value="premNumber" class="w-4 h-4 checked:bg-oceanBlue" />
                   <span>{{ content.studentLookupModes.premNumber }}</span>
                 </label>
+                 Kept for future use: allow lookup when student does not know the Prem Number. 
+                
                 <label class="inline-flex items-center gap-2 cursor-pointer">
                   <input v-model="studentLookupMode" type="radio" value="classList" class="w-4 h-4 checked:bg-oceanBlue" />
                   <span>{{ content.studentLookupModes.classList }}</span>
                 </label>
+               
               </div>
 
               <p class="text-textGray/70 text-smallest">
-                {{
-                  isStudentPremNumberLookup
-                    ? content.studentLookupModeHints.premNumber
-                    : content.studentLookupModeHints.classList
-                }}
+                {{ content.studentLookupModeHints.premNumber }}
               </p>
             </div>
-          </div>
+          </div> -->
 
           <!-- education level -->
           <div v-if="isStudentOrTeacher" :class="[
@@ -2025,6 +2048,8 @@ onMounted(async () => {
               :error="(usersignUp.controller.errors.school as string)" :language="authLanguage" />
           </div>
 
+          <!-- Kept for future use: class-list lookup for students without a Prem Number. -->
+<!--           
           <div v-if="isStudentClassLookup" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
@@ -2057,6 +2082,7 @@ onMounted(async () => {
               {{ usersignUp.controller.errors.schoolRegNo }}
             </small>
           </div>
+          -->
 
           <div class="flex flex-col items-start w-full my-2" v-if="isStudentManualRegistration || isStudentClassLookup">
             <label for="level" class="font-semibold capitalize text-oceanBlue text-extraSmall">
@@ -2070,6 +2096,8 @@ onMounted(async () => {
             </small>
           </div>
 
+          <!-- Kept for future use: class-list lookup search and student picker. -->
+          <!--
           <div
             v-if="isStudentClassLookup"
             :class="[
@@ -2156,6 +2184,7 @@ onMounted(async () => {
               {{ studentClassLookup.feedback }}
             </small>
           </div>
+          -->
 
           <div v-if="selectedStudentLookupRecord" class="p-3 mb-4 rounded-md bg-slate-50">
             <p class="mb-3 font-semibold text-oceanBlue text-extraSmall">{{ content.premLookupDetailsTitle }}</p>
