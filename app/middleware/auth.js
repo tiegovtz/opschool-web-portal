@@ -7,7 +7,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   const navigationStore = useNavigationStore();
   const redirectTarget = to.fullPath || to.path;
 
-  if (!user.value) {
+  if (!user.value && !userAccessToken.value) {
     navigationStore.resetRememberedRoutes();
     return navigateTo({
       path: "/auth",

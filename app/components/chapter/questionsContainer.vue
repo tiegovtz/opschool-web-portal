@@ -384,7 +384,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
                 ? 'text-normalGreener'
                 : 'text-red-600'
                 ">
-                <b class="text-black">  {{ topicLanguage.toLowerCase().trim() === 'english' ?'Your choice':'Chaguao lako'}}:
+                <b class="text-black">  {{ topicLanguage.toLowerCase().trim() === 'english' ?'Your choice':'Chaguo lako'}}:
                 </b>
                 <template v-if="question.questionType === 'drag_and_drop'">
                   <span v-for="(answerPart, blankIndex) in getDragAnswerParts(quizAttempt.clickedAnswer[index] ?? '')"
@@ -421,7 +421,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
         <div class="flex items-center justify-end w-full gap-2">
           <small>{{ topicLanguage.toLowerCase().trim() === 'english' ? 'Recommendation:' : 'Pendekezo:' }}</small>
           <button v-if="quizAttempt.quizCompleted" @click="changeChapter?.(
-            quizAttempt.scored === quizAttempt.totalQuestions ? 'N' : 'R'
+            quizAttempt.scored >= (quizAttempt.totalQuestions/2) ? 'N' : 'R'
           )"
             class="flex items-center justify-center px-4 py-1 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
             <span class="capitalize">

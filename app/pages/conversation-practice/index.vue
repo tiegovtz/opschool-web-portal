@@ -288,6 +288,12 @@ definePageMeta({
 
 const router = useRouter()
 const route = useRoute()
+const authAccessTokenCookie = useCookie('signInAccessToken')
+const authHeaders = computed(() =>
+  authAccessTokenCookie.value
+    ? { Authorization: `Bearer ${authAccessTokenCookie.value}` }
+    : {}
+)
 const practiceTitle = computed(() =>
   String(route.query.language || '').trim().toLowerCase() === 'sw'
     ? 'Mazoezi ya Mazungumzo'
@@ -677,6 +683,7 @@ const detectSpeakerGenderFromAllPieces = async () => {
     ).trim()
     const voiceDetection = await $fetch('/api/conversation/detect-voice', {
       method: 'POST',
+      headers: authHeaders.value,
       body: {
         text: allPiecesText,
         conversationHistory: '',
@@ -702,7 +709,10 @@ const loadConversationPieces = async () => {
     const query = {}
     if (chapterId) query.chapterId = chapterId
     if (identifier) query.identifier = identifier
-    const response = await $fetch('/api/conversation/engage', { query })
+    const response = await $fetch('/api/conversation/engage', {
+      query,
+      headers: authHeaders.value,
+    })
     const pieces = Array.isArray(response?.pieces) ? response.pieces : []
     const entries = Array.isArray(response?.entries) ? response.entries : []
     conversationMeta.value = {
@@ -825,6 +835,7 @@ const playCurrentPiece = async () => {
     try {
       const voiceDetection = await $fetch('/api/conversation/detect-voice', {
         method: 'POST',
+        headers: authHeaders.value,
         body: {
           text: currentConversationPiece.value,
           conversationHistory: conversationHistory.value,
@@ -844,6 +855,7 @@ const playCurrentPiece = async () => {
     // Generate TTS
     const response = await $fetch('/api/conversation/tts', {
       method: 'POST',
+      headers: authHeaders.value,
       body: {
         text: currentConversationPiece.value,
         voiceType: voiceType.value,
@@ -971,6 +983,7 @@ const validateAnswer = async (answer) => {
     // Send compact state instead of full history
     const response = await $fetch('/api/conversation/validate', {
       method: 'POST',
+      headers: authHeaders.value,
       body: {
         conversationContext: conversationPieces.value,
         currentPiece: currentConversationPiece.value,

@@ -9,6 +9,7 @@ const route = useRoute();
 const pageLanguage = useHubPageLanguage();
 const authAccessToken = useCookie('signInAccessToken');
 const authUserToken = useCookie('signInUserToken');
+const token = computed(() => String(authAccessToken.value || '').trim());
 
 const handleUnauthorized = (error) => {
   const status = error?.status || (error?.response?.status ?? null);
@@ -20,10 +21,9 @@ const handleUnauthorized = (error) => {
 };
 const userToken = useCookie("signInUserToken");
 
-const token = useCookie('signInAccessToken').value;
 const headers = {
   'Content-Type': 'application/json',
-  'Authorization': `Bearer ${token}`,
+  ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
 };
 
 function getDuration(start, end) {

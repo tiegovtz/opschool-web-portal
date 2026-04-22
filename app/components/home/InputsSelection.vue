@@ -5,7 +5,7 @@ import type { LanguageSupport } from "~/types/language.interface";
 import type { Subjects } from "~/types/subject.interface";
 import apiDocs from "~/utilities/apiDocs";
 import {
-  getApiContentLanguage,
+  getApiEducationLevelName,
   isEducationLevelVisibleInHub,
   normalizeEducationLevel,
 } from "~/utilities/educationRoute";
@@ -186,7 +186,7 @@ const { data: classLevels, pending: classLevelsPending } = useFetch<
   headers,
   query: computed(() =>
     selectedEducationBucket.value
-      ? { educationLevel: selectedEducationBucket.value }
+      ? { educationLevel: getApiEducationLevelName(selectedEducationBucket.value) }
       : {},
   ),
   default: () => [],
@@ -200,14 +200,8 @@ const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
   query: computed(() => {
     if (!selectedEducationBucket.value) return {};
 
-    const apiLanguage = getApiContentLanguage(
-      selectedEducationBucket.value,
-      props.language,
-    );
-
     return {
-      educationLevel: selectedEducationBucket.value,
-      ...(apiLanguage ? { language: apiLanguage } : {}),
+      educationLevel: getApiEducationLevelName(selectedEducationBucket.value),
       ...(standard.value ? { level: standard.value } : {}),
     };
   }),

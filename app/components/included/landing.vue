@@ -161,7 +161,7 @@ const contents = computed(() => {
     let dictionary = {
         header: primaryContentLanguage.value === "kiswahili" ? "Karibu!" : "Welcome!",
         title: primaryContentLanguage.value === "kiswahili" ? "SHULE MTANDAO YA TET" : "TIE ONLINE SCHOOL",
-        summary: primaryContentLanguage.value === 'kiswahili' ?  `Kupitia jukwaa hili utajifunza kwa kutumia maudhui shirikishi ya picha,video,3D na animeshen kwa ngazi ya elimu ya msingi na sekondari.`:`Through this platform, you will learn using interactive content such as images, videos, 3D and animations for primary and secondary education levels.`,
+        summary: primaryContentLanguage.value === 'kiswahili' ?  `Kupitia jukwaa hili utajifunza kwa kutumia maudhui shirikishi ya picha,video,3D na animeshen kwa ngazi ya elimu ya msingi na sekondari.Chagua ngazi husika ili kuanza kujifunza`:`Through this platform, you will learn using interactive content such as images, videos, 3D and animations for primary and secondary education levels. Select the appropriate level to start learning.`,
         guidance: primaryContentLanguage.value === "kiswahili" ? `Chagua ngazi ya elimu. Tumia kitufe cha Msingi kufungua maudhui ya elimu ya msingi, au kitufe cha Sekondari kufungua maudhui ya sekondari.` : `Choose an education level. Use the Primary button to access primary education content, or the Secondary button to access secondary education content.`,
         level:{
             primary: primaryContentLanguage.value === "kiswahili" ? "Msingi" : "Primary",

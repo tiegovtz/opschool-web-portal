@@ -5,7 +5,7 @@ import type { educationLevel } from "~/types/educationlevel.interface";
 import type { ClassLevel } from "~/types/classlevel.interface";
 import type { Subjects } from "~/types/subject.interface";
 import {
-  getApiContentLanguage,
+  getApiEducationLevelName,
   isEducationLevelVisibleInHub,
   normalizeEducationLevel,
   resolveRouteLanguage,
@@ -69,19 +69,7 @@ const { data: subjects } = useFetch<Subjects[]>(apiDocs.subjects.getPublicSubjec
     let q={}
     q= selectedEducationBucket.value
       ? {
-          educationLevel: selectedEducationBucket.value,
-          ...(getApiContentLanguage(
-            selectedEducationBucket.value,
-            selectedContentLanguage.value,
-          )
-            ? {
-                language: getApiContentLanguage(
-                  selectedEducationBucket.value,
-                  selectedContentLanguage.value,
-                ),
-                ...q
-              }
-            : q),
+          educationLevel: getApiEducationLevelName(selectedEducationBucket.value),
         }
       : {},
     q=  selected.class ? { level: selected.class,...q } : q
@@ -157,7 +145,7 @@ const createDebounce = <T extends (...args: any[]) => void>(fn: T, delay = 100) 
 const emitUpdate = createDebounce(() => {
   const q: Record<string, any> = {};
 
-  if (selected.level) q.educationLevel = normalizeEducationLevel(selected.level);
+  if (selected.level) q.educationLevel = getApiEducationLevelName(selected.level);
   if (selected.class) q.level = selected.class.toLowerCase();
   if (selected.subject) q.subject = selected.subject.toLowerCase();
 

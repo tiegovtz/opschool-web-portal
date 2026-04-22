@@ -38,7 +38,7 @@ import {
   SUBJECT_QUERY_KEY,
 } from "~/utilities/homeSectionRouting";
 import {
-  getApiContentLanguage,
+  getApiEducationLevelName,
   getEducationHubBucket,
   getEducationRouteQuery,
   getHubLanguage,
@@ -139,9 +139,6 @@ const currentHubQuery = computed(() =>
     {},
     currentLanguage.value,
   ),
-);
-const primaryApiLanguage = computed(() =>
-  getApiContentLanguage(currentEducationLevel.value, currentLanguage.value),
 );
 
 watch(
@@ -293,10 +290,7 @@ const resolveSubjectIdFromSlug = async (slug: string) => {
       getRequestedEducationLevels().map((educationLevel) =>
         $fetch<Subjects[] | unknown>(apiDocs.subjects.getPublicSubjects, {
           params: {
-            educationLevel,
-            ...(primaryApiLanguage.value
-              ? { language: primaryApiLanguage.value }
-              : {}),
+            educationLevel: getApiEducationLevelName(educationLevel),
           },
           headers: {
             Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
@@ -386,7 +380,6 @@ const fetchData = async (params?: any) => {
   const tab = displayTab.value;
   const requestedEducationLevels = getRequestedEducationLevels(params);
   const baseParams = {
-    ...(primaryApiLanguage.value ? { language: primaryApiLanguage.value } : {}),
     ...params,
   };
 
@@ -489,7 +482,9 @@ const fetchData = async (params?: any) => {
             $fetch(url, {
               params: {
                 ...params,
-                ...(!subjectId.value ? { educationLevel: level } : {}),
+                ...(!subjectId.value
+                  ? { educationLevel: getApiEducationLevelName(level) }
+                  : {}),
               },
               headers: {
                 Authorization: `Bearer ${useCookie("signInAccessToken").value}`,
@@ -549,6 +544,22 @@ const shuffleSubject = (subjects: Subjects[]) => {
 
   return shuffled;
 };
+
+const shuffledSlicedSubjects = computed(() => {
+  if (displayTab.value !== "subjects" || !Array.isArray(slicedData.value)) {
+    return slicedData.value;
+  }
+
+  return shuffleSubject(slicedData.value as Subjects[]);
+});
+
+const shuffledSubjectsData = computed(() => {
+  if (displayTab.value !== "subjects" || !Array.isArray(data.value)) {
+    return data.value;
+  }
+
+  return shuffleSubject(data.value as Subjects[]);
+});
 
 //  assigning page size based on screen sizes
 if (isGreaterToXL) {
@@ -971,7 +982,7 @@ const handleSubjectSelect = async (
                 <template #data>
                   <!-- Subject Cards are in Grid -->
                   <SubjectCard
-                    v-for="subject in shuffleSubject(slicedData)"
+                    v-for="subject in shuffledSlicedSubjects"
                     :key="subject._id"
                     :subject-id="subject._id"
                     :subject-name="subject.name"
@@ -1109,9 +1120,8 @@ const handleSubjectSelect = async (
           >
             <ClientOnly>
               <HomeCustomScrollView
-                :shuffle-subject="shuffleSubject"
                 :see-more-details="seeMoreDetails?.toString()"
-                :data="data"
+                :data="(shuffledSubjectsData as any[])"
                 :active-tab="displayTab"
                 :education-level="currentEducationLevel"
                 :language="currentLanguage"
@@ -1234,7 +1244,7 @@ const handleSubjectSelect = async (
               <template #data>
                 <!-- Subject Cards are in Grid -->
                 <SubjectCard
-                  v-for="subject in shuffleSubject(slicedData)"
+                  v-for="subject in shuffledSlicedSubjects"
                   :key="subject._id"
                   :subject-id="subject._id"
                   :subject-name="subject.name"

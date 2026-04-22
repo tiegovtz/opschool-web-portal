@@ -4,7 +4,10 @@
  * - GET /v1/schools?education=<UPPER>       (e.g. PRIMARY, LOWER SECONDARY)
  */
 export function educationLevelNameToLevelsApiQuery(name: string): string {
-  return (name || "").trim().toLowerCase().replace(/\s+/g, " ");
+  const normalized = (name || "").trim().toLowerCase().replace(/\s+/g, " ");
+  if (normalized === "pre-primary") return "elimu ya awali";
+  if (normalized === "primary") return "elimu ya msingi";
+  return normalized;
 }
 
 export function educationLevelNameToSchoolEducationQuery(name: string): string {

@@ -42,17 +42,18 @@
 
 
 <script setup>
-import { onMounted, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, ref, watch, nextTick } from 'vue'
 import VidstackPlayer from '~/components/video-player/VidstackPlayer.vue'
 import apiDocs from '~/utilities/apiDocs'
 
 const route = useRoute()
 const pageLanguage = useHubPageLanguage()
 
-const token = useCookie('signInAccessToken').value
+const authAccessTokenCookie = useCookie('signInAccessToken')
+const token = computed(() => String(authAccessTokenCookie.value || '').trim())
 const headers = {
   accept: 'application/json',
-  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
 };
 
 const fallbackStream = 'https://tv.somakwanza.tz/hls/stream.m3u8'

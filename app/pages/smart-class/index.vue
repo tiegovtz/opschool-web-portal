@@ -141,7 +141,7 @@ type SessionCard = {
 
 const authAccessTokenCookie =  useCookie("signInAccessToken");
 const authUserTokenCookie = useCookie("signInUserToken");
-const accessToken = route.query.token || authAccessTokenCookie.value;
+const accessToken = computed(() => String(authAccessTokenCookie.value || "").trim());
 const currentUser = computed(() => authUserTokenCookie.value as Record<string, any> | null);
 const isTeacherAdmin = computed(() => currentUser.value?.roles?.includes("TeacherAdmin"));
 
@@ -183,10 +183,10 @@ const clearSessionAndRedirect = async () => {
   await redirectToAuth();
 };
 
-const streamHeaders = {
+const streamHeaders = computed(() => ({
   accept: "application/json",
-  ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-};
+  ...(accessToken.value ? { Authorization: `Bearer ${accessToken.value}` } : {}),
+}));
 
 const somakwanzaStreamUrl = ref("https://tv.somakwanza.tz");
 const somakwanzaStreamMeta = ref({
@@ -213,8 +213,8 @@ const getHeaders = () => {
     accept: "application/json",
   };
 
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
+  if (accessToken.value) {
+    headers.Authorization = `Bearer ${accessToken.value}`;
   }
 
   return headers;
@@ -486,7 +486,7 @@ const loadSomaStream = async (options?: { silent?: boolean }) => {
       somakwanzaReady.value = false;
     }
     const response: any = await $fetch(`${apiDocs.liveClassrooms.streamingLinks}`, {
-      headers: streamHeaders,
+      headers: streamHeaders.value,
     });
 
     const streamItems = Array.isArray(response) ? response : response?.items ?? response?.data ?? [];
@@ -658,7 +658,7 @@ const mapTopicOptions = (items: any[]): TopicOption[] =>
     .filter((item) => item.id && item.name);
 
 const fetchCreateOptions = async () => {
-  if (!accessToken) return;
+  if (!accessToken.value) return;
   createOptionsLoading.value = true;
   try {
     const headers = getHeaders();
