@@ -638,7 +638,7 @@ onBeforeUnmount(() => {
 
                 <div
                   v-if="isAccountMenuOpen"
-                  class="absolute right-0 z-30 w-56 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-lg border-slate-200"
+                  class="absolute right-0 z-50 w-56 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-lg border-slate-200"
                 >
                   <NuxtLink
                     aria-label="Go to learning statistics page"
@@ -969,7 +969,7 @@ onBeforeUnmount(() => {
         v-if="showLogoutToast"
         role="status"
         aria-live="polite"
-        class="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 px-5 py-3 rounded-lg bg-deepBlue text-white text-center shadow-lg max-w-[90vw]"
+        class="fixed top-6 left-1/2 z-[100] -translate-x-1/2 px-5 py-3 rounded-lg bg-deepBlue text-white text-center shadow-lg max-w-[90vw]"
       >
         {{ messages.success.auth.loggedOut }}
       </div>

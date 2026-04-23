@@ -263,13 +263,13 @@ export const ActivityResultsAlertDialog = defineComponent({
 
     const emojiSrc = computed(() => {
       if (props.isCompletionOnly) {
-        return "/images/activities/result-modal/perfect.png";
+        return "/images/activities/result-modal/perfect-compressed.webp";
       }
 
-      if (scorePercentage.value === 100) return "/images/activities/result-modal/perfect.png";
-      if (scorePercentage.value >= 50) return "/images/activities/result-modal/good.png";
-      if (scorePercentage.value > 0) return "/images/activities/result-modal/ok.png";
-      return "/images/activities/result-modal/bad.png";
+      if (scorePercentage.value === 100) return "/images/activities/result-modal/perfect-compressed.webp";
+      if (scorePercentage.value >= 50) return "/images/activities/result-modal/good-compressed.webp";
+      if (scorePercentage.value > 0) return "/images/activities/result-modal/ok-compressed.webp";
+      return "/images/activities/result-modal/bad-compressed.webp";
     });
 
     const triggerCelebration = () => {
