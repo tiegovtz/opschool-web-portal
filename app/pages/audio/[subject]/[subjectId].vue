@@ -171,7 +171,6 @@ const fetchAudios = async (params) => {
         subjectId
       ), {
       params: {
-        educationLevel: getApiEducationLevelName(educationLevel.value),
         ...params,
       },
     }));

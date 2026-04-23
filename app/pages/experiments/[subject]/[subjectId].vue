@@ -174,7 +174,6 @@ const fetchTopics = async (params) => {
       subjectId
     ), {
       params: {
-        educationLevel: getApiEducationLevelName(educationLevel.value),
         ...params,
       },
       headers: {
