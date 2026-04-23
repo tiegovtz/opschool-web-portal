@@ -93,17 +93,6 @@ const userDisplayName = computed(() => {
     .replace(/\s+/g, " ");
   if (fullName) return fullName;
 
-  const composedName = [user.fname, user.lname]
-    .map((value) => String(value ?? "").trim())
-    .filter(Boolean)
-    .join(" ");
-  if (composedName) return composedName;
-
-  const fallbackName = String(
-    user.username ?? user.userName ?? user.email ?? user.phoneNumber ?? "",
-  ).trim();
-  if (fallbackName) return fallbackName;
-
   return isKiswahili.value ? "Akaunti" : "Account";
 });
 
@@ -626,9 +615,9 @@ onBeforeUnmount(() => {
                     <IconsProfileCircle :size="20" />
                   </div>
                   <p
-                    class="hidden capitalize lg:flex text-medium line-clamp-1 max-w-40"
+                    class="hidden capitalize lg:flex text-medium line-clamp-1 max-w-40 ellipsis"
                   >
-                    {{ userDisplayName }}
+                    {{ userDisplayName.split(' ')[0] }}
                   </p>
                   <Icon
                     name="heroicons:chevron-down-20-solid"
@@ -638,7 +627,7 @@ onBeforeUnmount(() => {
 
                 <div
                   v-if="isAccountMenuOpen"
-                  class="absolute right-0 z-30 w-56 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-lg border-slate-200"
+                  class="absolute right-0 z-50 w-56 mt-2 overflow-hidden bg-white border shadow-xl top-full rounded-lg border-slate-200"
                 >
                   <NuxtLink
                     aria-label="Go to learning statistics page"
@@ -969,7 +958,7 @@ onBeforeUnmount(() => {
         v-if="showLogoutToast"
         role="status"
         aria-live="polite"
-        class="fixed bottom-6 left-1/2 z-[100] -translate-x-1/2 px-5 py-3 rounded-lg bg-deepBlue text-white text-center shadow-lg max-w-[90vw]"
+        class="fixed top-6 left-1/2 z-[100] -translate-x-1/2 px-5 py-3 rounded-lg bg-deepBlue text-white text-center shadow-lg max-w-[90vw]"
       >
         {{ messages.success.auth.loggedOut }}
       </div>
