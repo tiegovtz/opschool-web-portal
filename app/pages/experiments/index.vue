@@ -161,6 +161,7 @@ const fetchExperiments = async (param?: any) => {
     const { data: response, status: fetchStatus } = await fetchAsyncData(`experiments-${educationLevel.value}-${language.value}`, () => $fetch(apiDocs.experiments.getPublicExperiments, {
       method: "GET",
       params: {
+        educationLevel: getApiEducationLevelName(educationLevel.value),
         ...param,
       }
     }));

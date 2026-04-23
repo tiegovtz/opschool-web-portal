@@ -124,6 +124,7 @@ const switchTab = async (tab: string) => {
 const fetchVideos = async (param?: any) => {
   param = {
     ...param,
+    educationLevel: getApiEducationLevelName(educationLevel.value),
     videoType: videoType.value,
   }
 
