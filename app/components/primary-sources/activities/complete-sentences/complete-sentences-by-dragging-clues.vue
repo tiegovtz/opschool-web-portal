@@ -7,6 +7,8 @@ import ActivityTitle from "@/components/templates/activity-title";
 import ActivityResults, { ActivityResultsAlertDialog } from "@/components/templates/results";
 import { shuffle } from "~/utilities/utils";
 import DNDContext from "~/components/layout/dnd-context";
+import Draggable from "~/components/ui/dnd/draggable";
+import Droppable from "~/components/ui/dnd/droppable";
 import { ActivityType } from "~/types/activity-types";
 
 // Props
@@ -66,6 +68,39 @@ const shuffledOptions = ref<UniqueOption[]>(shuffle([...initialOptions]));
 
 const questionParts = (question: string) => String(question ?? "").split("___");
 
+const normalizeMarkingValue = (value: unknown) =>
+  String(value ?? "")
+    .normalize("NFKC")
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+const getMarkingAnswers = (answer: unknown) => {
+  const normalized = normalizeMarkingValue(answer);
+  if (!normalized) return [];
+
+  const alternatives = normalized
+    .split(/\s*(?:\/|,|;|\|)\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return alternatives.length > 1 ? alternatives : [normalized];
+};
+
+const isCorrectAnswer = (selected: unknown, expected: unknown) => {
+  const selectedAnswer = normalizeMarkingValue(selected);
+  return selectedAnswer !== "" && getMarkingAnswers(expected).includes(selectedAnswer);
+};
+
+const calculateScore = (nextAnswers: Record<number, { value: string; optionId: string; image?: string }>) =>
+  props.questions.questions.reduce(
+    (acc, question, idx) => acc + (isCorrectAnswer(nextAnswers[idx]?.value, question.answer) ? 1 : 0),
+    0,
+  );
+
 function handleDragEnd({ active, over }: any) {
   if (!over) return;
 
@@ -90,8 +125,8 @@ function handleDragEnd({ active, over }: any) {
     }
   } else {
     activeOptionUniqueId = activeIdParts[0];
-    activeOptionValue = activeIdParts[1];
     const option = shuffledOptions.value.find((opt) => opt.id === activeOptionUniqueId);
+    activeOptionValue = option?.value ?? activeIdParts.slice(1).join("%");
     activeOptionImage = option?.image;
   }
 
@@ -126,18 +161,15 @@ function handleDragEnd({ active, over }: any) {
     activeOptionValue,
   );
 
-  // Update status
-  allAnswered.value = Object.keys(newAnswers).length === props.questions.questions.length;
+  const isComplete = Object.keys(newAnswers).length === props.questions.questions.length;
 
-  // Calculate score if complete
-  if (allAnswered.value) {
-    score.value = props.questions.questions.reduce(
-      (acc, q, idx) => acc + (newAnswers[idx]?.value === q.answer ? 1 : 0),
-      0
-    );
+  // Calculate the score before opening the results dialog.
+  if (isComplete) {
+    score.value = calculateScore(newAnswers);
     keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.questions.length}.`;
   }
 
+  allAnswered.value = isComplete;
   selectedOptionId.value = null;
 }
 
@@ -196,20 +228,19 @@ function placeSelectedOption(questionIndex: number) {
   };
 
   answers.value = nextAnswers;
-  allAnswered.value = Object.keys(nextAnswers).length === props.questions.questions.length;
+  const isComplete = Object.keys(nextAnswers).length === props.questions.questions.length;
   keyboardStatusMessage.value = ui.formatActivityPlaced(
     ui.formatQuestion(questionIndex + 1),
     selectedOption.value.value,
   );
 
-  if (allAnswered.value) {
-    score.value = props.questions.questions.reduce(
-      (acc, question, idx) => acc + (nextAnswers[idx]?.value === question.answer ? 1 : 0),
-      0,
-    );
+  // Calculate the score before opening the results dialog.
+  if (isComplete) {
+    score.value = calculateScore(nextAnswers);
     keyboardStatusMessage.value = `${ui.resultsReady.value}. ${score.value} / ${props.questions.questions.length}.`;
   }
 
+  allAnswered.value = isComplete;
   selectedOptionId.value = null;
 }
 
@@ -266,18 +297,22 @@ function ariaBlankDrop(questionIndex: number, blankIndex: number) {
       <DNDContext :onDragEnd="handleDragEnd">
         <!-- Options pool -->
         <div class="mb-2 flex shrink-0 flex-wrap gap-2 sm:mb-3 sm:gap-2.5 md:gap-3">
-          <button
+          <Draggable
             v-for="option in getAvailableOptions"
             :key="option.id"
-            type="button"
+            :id="option.id"
             :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
             :aria-pressed="selectedOptionId === option.id"
+            role="button"
+            tabindex="0"
             :class="[
               'flex min-h-[3rem] max-w-[min(100%,12.5rem)] items-center justify-center rounded border border-picton-blue-400 bg-picton-blue-200 px-2.5 py-2 text-left text-sm leading-snug break-words sm:min-h-[3.25rem] sm:max-w-[14rem] sm:text-base md:max-w-[17rem] md:text-lg',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2',
               selectedOptionId === option.id ? 'ring-2 ring-picton-blue-500 ring-offset-2' : '',
             ]"
             @click="selectedOptionId = selectedOptionId === option.id ? null : option.id"
+            @keydown.enter.prevent="selectedOptionId = selectedOptionId === option.id ? null : option.id"
+            @keydown.space.prevent="selectedOptionId = selectedOptionId === option.id ? null : option.id"
           >
             <img
               v-if="questions.algorithm === ActivityType.CompleteSentencesByDraggingCluesPics "
@@ -286,7 +321,7 @@ function ariaBlankDrop(questionIndex: number, blankIndex: number) {
               class="w-full h-full object-contain"
             />
             <template v-else>{{ option.value }}</template>
-          </button>
+          </Draggable>
         </div>
 
         <!-- Questions -->
@@ -294,7 +329,7 @@ function ariaBlankDrop(questionIndex: number, blankIndex: number) {
           v-for="(question, i) in props.questions.questions"
           :key="i"
           class="flex gap-2 rounded-md bg-picton-blue-50 p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:gap-2.5 sm:p-2.5 md:items-center md:gap-4 md:p-3"
-          :class="showResults ? (answers[i]?.value === question.answer ? 'bg-green-100' : 'bg-red-100') : ''"
+          :class="showResults ? (isCorrectAnswer(answers[i]?.value, question.answer) ? 'bg-green-100' : 'bg-red-100') : ''"
           role="group"
           tabindex="0"
           :aria-labelledby="`complete-sentences-dragging-clues-question-${i}`"
@@ -322,26 +357,34 @@ function ariaBlankDrop(questionIndex: number, blankIndex: number) {
                 </span>
 
                 <template v-if="idx < questionParts(question.question).length - 1">
-                  <button
+                  <Droppable
                     v-if="!answers[i]"
-                    type="button"
+                    :id="`${i}%blank-${idx}`"
                     :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                     :aria-label="ariaBlankDrop(i, idx)"
+                    role="button"
+                    tabindex="0"
                     class="flex min-h-[3rem] min-w-[6.5rem] max-w-[min(100%,12.5rem)] items-center justify-center rounded border border-picton-blue-300 bg-picton-blue-100 px-2 py-1.5 text-sm leading-snug focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:min-h-[3.25rem] sm:min-w-[7.5rem] sm:max-w-[14rem] sm:text-base md:min-w-32 md:max-w-[17rem] md:text-lg"
                     @click="placeSelectedOption(i)"
+                    @keydown.enter.prevent="placeSelectedOption(i)"
+                    @keydown.space.prevent="placeSelectedOption(i)"
                   >
                     <span class="line-clamp-2 text-center text-picton-blue-700">
                       {{ blankDropZoneLabel }}
                     </span>
-                  </button>
-                  <button
+                  </Droppable>
+                  <Draggable
                     v-else
-                    type="button"
+                    :id="`${i}%${answers[i].optionId}%blank-${idx}`"
                     :aria-describedby="`${activityInstructionsId} ${activityStatusId}`"
                     :aria-label="`Placed answer ${answers[i].value} for question ${i + 1}. Activate to remove it.`"
+                    role="button"
+                    tabindex="0"
                     class="flex min-h-[3rem] min-w-[6.5rem] max-w-[min(100%,12.5rem)] items-center border border-lemon-400 bg-lemon-100 p-2 text-sm leading-snug text-lemon-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 sm:min-h-[3.25rem] sm:min-w-[7.5rem] sm:max-w-[14rem] sm:text-base md:min-w-32 md:max-w-[17rem] md:text-lg"
                     :disabled="showResults"
                     @click="removeAnswer(i)"
+                    @keydown.enter.prevent="removeAnswer(i)"
+                    @keydown.space.prevent="removeAnswer(i)"
                   >
                     <img
                       v-if="answers[i].image"
@@ -350,14 +393,14 @@ function ariaBlankDrop(questionIndex: number, blankIndex: number) {
                       class="w-full h-full object-contain"
                     />
                     <span v-else class="line-clamp-4 w-full text-center break-words">{{ answers[i].value }}</span>
-                  </button>
+                  </Draggable>
 
                   <Icon
                     v-if="showResults"
-                    :icon="answers[i]?.value === question.answer ? 'mdi:check' : 'mdi:close'"
+                    :icon="isCorrectAnswer(answers[i]?.value, question.answer) ? 'mdi:check' : 'mdi:close'"
                     :class="[
                       'h-5 w-5 shrink-0 sm:h-6 sm:w-6',
-                      answers[i]?.value === question.answer ? 'text-green-600' : 'text-red-600',
+                      isCorrectAnswer(answers[i]?.value, question.answer) ? 'text-green-600' : 'text-red-600',
                     ]"
                     aria-hidden="true"
                   />
@@ -369,9 +412,9 @@ function ariaBlankDrop(questionIndex: number, blankIndex: number) {
             v-if="showResults"
             :id="`complete-sentences-dragging-clues-result-${i}`"
             class="sr-only"
-            role="status"
-          >
-            {{ ui.formatQuestionResult(i + 1, answers[i]?.value === question.answer) }}
+          role="status"
+        >
+            {{ ui.formatQuestionResult(i + 1, isCorrectAnswer(answers[i]?.value, question.answer)) }}
           </span>
         </div>
       </DNDContext>
