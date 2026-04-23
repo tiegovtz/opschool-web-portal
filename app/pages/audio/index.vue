@@ -119,7 +119,6 @@ const fetchAudios = async (param?: any) => {
     const { data: response, status: fetchStatus } = await fetchAsyncData(`audios-${educationLevel.value}-${language.value}-${param?.toString()}`, () => $fetch(apiDocs.audio.getPublicAudio, {
       method: 'GET',
       params: {
-        educationLevel: getApiEducationLevelName(educationLevel.value),
         ...param
       },
     }));

@@ -180,7 +180,6 @@ const goToPage = (page: number) => {
 const fetchTopics = async (params?: any) => {
   const url = apiDocs.topics.filterTopics;
   params = {
-    educationLevel: getApiEducationLevelName(educationLevel.value),
     ...params,
   };
   if (userToken.value) {
