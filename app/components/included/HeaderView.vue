@@ -93,17 +93,6 @@ const userDisplayName = computed(() => {
     .replace(/\s+/g, " ");
   if (fullName) return fullName;
 
-  const composedName = [user.fname, user.lname]
-    .map((value) => String(value ?? "").trim())
-    .filter(Boolean)
-    .join(" ");
-  if (composedName) return composedName;
-
-  const fallbackName = String(
-    user.username ?? user.userName ?? user.email ?? user.phoneNumber ?? "",
-  ).trim();
-  if (fallbackName) return fallbackName;
-
   return isKiswahili.value ? "Akaunti" : "Account";
 });
 
@@ -626,9 +615,9 @@ onBeforeUnmount(() => {
                     <IconsProfileCircle :size="20" />
                   </div>
                   <p
-                    class="hidden capitalize lg:flex text-medium line-clamp-1 max-w-40"
+                    class="hidden capitalize lg:flex text-medium line-clamp-1 max-w-40 ellipsis"
                   >
-                    {{ userDisplayName }}
+                    {{ userDisplayName.split(' ')[0] }}
                   </p>
                   <Icon
                     name="heroicons:chevron-down-20-solid"
