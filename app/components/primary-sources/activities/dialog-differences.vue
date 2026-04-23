@@ -40,6 +40,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const { width } = useWindowSize();
 const { playSound } = useSoundEffects();
+const ui = useActivityUiText();
 const useImageDraggableMode = computed(() => shouldUseImageDraggableMode(props.questions));
 
 const movableItems = ref<ListItem[]>([]);
