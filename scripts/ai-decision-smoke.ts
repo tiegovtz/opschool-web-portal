@@ -63,4 +63,3 @@ cases.forEach((testCase, index) => {
   });
 });
 
-console.log(`[ai-decision-smoke] ${cases.length} checks passed`);

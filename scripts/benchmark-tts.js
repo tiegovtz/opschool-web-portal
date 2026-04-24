@@ -72,11 +72,6 @@ async function benchmarkTTS(testCase) {
 }
 
 async function runBenchmarks() {
-  console.log('='.repeat(60))
-  console.log('TTS Endpoint Benchmark')
-  console.log('='.repeat(60))
-  console.log(`Base URL: ${BASE_URL}\n`)
-
   const results = []
 
   for (const testCase of testCases) {

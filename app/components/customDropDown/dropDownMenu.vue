@@ -14,7 +14,6 @@ import {
 import type { LanguageSupport } from "~/types/language.interface";
 
 
-
 const props = withDefaults(
   defineProps<{educationLevel?:EducationBucket,language?:LanguageSupport,activeTab?:string}>(),{
     language:'english',
@@ -56,19 +55,12 @@ const isLoading = ref(true);
 // Server data
 const { data: educationLevels } = useFetch<educationLevel[]>(apiDocs.educationLevel.getEducationLevels, { headers });
 const { data: classes } = useFetch<ClassLevel[]>(apiDocs.levels.getLevels, { headers });
+
 const selectedEducationBucket = computed(() =>
   selected.level?.trim() ? normalizeEducationLevel(selected.level) : null,
 );
 const normalizeValue = (value?: string | null) =>
   value?.trim().toLowerCase() ?? "";
-const matchesEducationLevel = (
-  candidate?: string | null,
-  selectedValue?: string | null,
-) =>
-  !!candidate &&
-  !!selectedValue &&
-  (normalizeValue(candidate) === normalizeValue(selectedValue) ||
-    normalizeEducationLevel(candidate) === normalizeEducationLevel(selectedValue));
 
 const selectedContentLanguage = computed(() =>
   props.language ||
@@ -213,12 +205,12 @@ const filterGroups = computed(() => {
       selected.level?.trim() !== ""
         ? classes.value
             .filter((cls) => {
-              const lvl = (cls as any).educationLevel?.name;
-              return matchesEducationLevel(lvl, selected.level);
+              const lvl = (cls as any).educationLevel?.name as string;
+              return normalizeValue(lvl) === normalizeValue(selected.level);
             })
             .map((cls) => cls.name)
         : [];
-
+    
     groups.push({
       name: "class",
       inputType: "radio",
@@ -226,7 +218,7 @@ const filterGroups = computed(() => {
       disabled: isClassDisabled.value,
     });
   }
-
+  
   // Subject
   if (subjects.value) {
     groups.push({

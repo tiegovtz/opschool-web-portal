@@ -215,7 +215,6 @@ export const useConversationStore = defineStore('conversation', {
         ...this.memoryState,
         ...enrichedState,
       }
-      console.log('[Store] State updated:', this.memoryState)
     },
     
     /**
