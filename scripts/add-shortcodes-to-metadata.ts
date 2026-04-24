@@ -55,7 +55,6 @@ function similarityScore(str1: string, str2: string): number {
 
 async function addShortcodesToMetadata() {
   try {
-    console.log('[add-shortcodes] Starting to add shortcodes to figure-metadata.json...');
     
     // Load figure-metadata.json
     const metadataPath = join(process.cwd(), 'server', 'data', 'figure-metadata.json');
@@ -68,8 +67,8 @@ async function addShortcodesToMetadata() {
     const shortcodesData = JSON.parse(shortcodesContent);
     const shortcodes = shortcodesData.shortcodes || {};
     
-    console.log(`[add-shortcodes] Loaded ${metadata.images.length} figures from figure-metadata.json`);
-    console.log(`[add-shortcodes] Loaded ${Object.keys(shortcodes).length} shortcodes from image-shortcodes.json`);
+    // console.log(`[add-shortcodes] Loaded ${metadata.images.length} figures from figure-metadata.json`);
+    // console.log(`[add-shortcodes] Loaded ${Object.keys(shortcodes).length} shortcodes from image-shortcodes.json`);
     
     let matchedCount = 0;
     let generatedCount = 0;
@@ -157,28 +156,28 @@ async function addShortcodesToMetadata() {
       if (matchedShortcode) {
         image.shortcode = matchedShortcode.shortcode;
         matchedCount++;
-        console.log(`[add-shortcodes] ✅ Matched: ${image.figure_number} → ${matchedShortcode.shortcode}`);
+        // console.log(`[add-shortcodes] ✅ Matched: ${image.figure_number} → ${matchedShortcode.shortcode}`);
       } else {
         // Generate new shortcode if no match found
         image.shortcode = generateShortcodeFromFigure(image.figure_number, image.caption);
         generatedCount++;
         unmatched.push(`${image.figure_number} (${image.caption.substring(0, 40)}...)`);
-        console.log(`[add-shortcodes] ⚠️ Generated shortcode: ${image.figure_number} → ${image.shortcode}`);
+        // console.log(`[add-shortcodes] ⚠️ Generated shortcode: ${image.figure_number} → ${image.shortcode}`);
       }
     }
     
-    console.log(`[add-shortcodes] ✅ Matched ${matchedCount} figures to existing shortcodes`);
-    console.log(`[add-shortcodes] ⚠️ Generated ${generatedCount} new shortcodes for unmatched figures`);
+    // console.log(`[add-shortcodes] ✅ Matched ${matchedCount} figures to existing shortcodes`);
+    // console.log(`[add-shortcodes] ⚠️ Generated ${generatedCount} new shortcodes for unmatched figures`);
     
     if (unmatched.length > 0) {
-      console.log(`[add-shortcodes] ⚠️ Unmatched figures (generated shortcodes):`, unmatched.slice(0, 5));
+      // console.log(`[add-shortcodes] ⚠️ Unmatched figures (generated shortcodes):`, unmatched.slice(0, 5));
     }
     
     // Save updated figure-metadata.json
     await writeFile(metadataPath, JSON.stringify(metadata, null, 2), 'utf-8');
     
-    console.log(`[add-shortcodes] ✅ Successfully updated figure-metadata.json`);
-    console.log(`[add-shortcodes] File saved to: ${metadataPath}`);
+    // console.log(`[add-shortcodes] ✅ Successfully updated figure-metadata.json`);
+    // console.log(`[add-shortcodes] File saved to: ${metadataPath}`);
     
   } catch (error: any) {
     console.error('[add-shortcodes] Error:', error);

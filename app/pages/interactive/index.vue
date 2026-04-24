@@ -179,7 +179,6 @@ const goToPage = (page: number) => {
 // Then, update fetchTopics to call sliceData after data is loaded
 const fetchTopics = async (params?: any) => {
   const url = apiDocs.topics.filterTopics;
-  console.log(educationLevel.value);
   
   params = {
     educationLevel: getApiEducationLevelName(educationLevel.value),
