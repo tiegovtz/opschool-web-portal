@@ -82,7 +82,7 @@ const toggleReadMore = async () => {
 
         <!-- Description container controlled by the button -->
         <div id="hero-description" tabindex="-1" role="region" aria-live="polite" aria-atomic="true"
-          class="mt-2 text-xl text-justify text-black text-medium text-opacity-80" v-html="isExpanded ? fullText : shortText">
+          class="my-2 text-xl text-justify text-black text-medium text-opacity-80" v-html="isExpanded ? fullText : shortText">
         </div>
 
         <!-- Read more / Show less toggle -->
