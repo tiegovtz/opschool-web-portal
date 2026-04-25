@@ -44,6 +44,14 @@ type UserLevelContext = {
   name: string | null;
 };
 
+type RecommendationLanguage = "english" | "kiswahili";
+
+function normalizeRecommendationLanguage(
+  value: unknown
+): RecommendationLanguage {
+  return value === "kiswahili" ? "kiswahili" : "english";
+}
+
 function createUnauthorizedError(): never {
   throw createError({
     statusCode: 401,
@@ -986,10 +994,13 @@ function buildOverview(
 function buildFallbackSummary(
   overview: LearnerAnalysisOverview,
   subjectBreakdown: SubjectLearningAnalysis[],
-  recommendations: RankedRecommendation[]
+  recommendations: RankedRecommendation[],
+  language: RecommendationLanguage
 ): string {
   if (overview.totalTopics === 0) {
-    return "No learner progress data is available yet for this student.";
+    return language === "kiswahili"
+      ? "Bado hakuna taarifa za maendeleo ya ujifunzaji za mwanafunzi huyu."
+      : "No learner progress data is available yet for this student.";
   }
 
   const weakSubjects = subjectBreakdown
@@ -1008,10 +1019,40 @@ function buildFallbackSummary(
             .join(" and ")}.`
         : "";
 
+  if (language === "kiswahili") {
+    const subjectLineSw =
+      weakSubjects.length > 0
+        ? ` Anza kwanza na ${weakSubjects.join(" na ")}.`
+        : recommendations.length > 0
+          ? ` Anza kwanza na ${recommendations
+              .map((item) => item.topicName)
+              .slice(0, 2)
+              .join(" na ")}.`
+          : "";
+
+    return `Umefunika mada ${overview.coveredTopics} kati ya ${overview.totalTopics} hadi sasa. Mada ${overview.inProgressTopics} bado zinaendelea, ${overview.openedTopics} zilifunguliwa lakini hazikuendelezwa vya kutosha, na ${overview.notStartedTopics} bado hazijaanzwa.${subjectLineSw}`;
+  }
+
   return `You have covered ${overview.coveredTopics} of ${overview.totalTopics} topics so far. ${overview.inProgressTopics} are still in progress, ${overview.openedTopics} were opened but not meaningfully advanced, and ${overview.notStartedTopics} have not been started yet.${subjectLine}`;
 }
 
-function buildFallbackExplanation(recommendation: RankedRecommendation): string {
+function buildFallbackExplanation(
+  recommendation: RankedRecommendation,
+  language: RecommendationLanguage
+): string {
+  if (language === "kiswahili") {
+    if (recommendation.recommendedAction === "start_topic") {
+      return `Bado hujapiga hatua za kutosha kwenye ${recommendation.topicName}. Anza mada hii sasa ili isibaki pengo kwenye ufunikaji wa silabasi yako.`;
+    }
+    if (recommendation.recommendedAction === "rewatch_video") {
+      return `Maendeleo yako kwenye ${recommendation.topicName} bado ni madogo, hivyo kurudia somo kuanzia mwanzo kutakusaidia kujenga msingi kabla ya kuendelea.`;
+    }
+    if (recommendation.recommendedAction === "practice_quiz") {
+      return `Umeshajihusisha na ${recommendation.topicName}, lakini matokeo yako ya tathmini bado yanaonyesha eneo dhaifu linalohitaji mazoezi ya kulenga zaidi.`;
+    }
+    return `Umeshaanza ${recommendation.topicName}. Kupitia maelezo ya mada kwa umakini kutakusaidia kuziba mapengo yaliyobaki na kuboresha ukumbukaji.`;
+  }
+
   if (recommendation.recommendedAction === "start_topic") {
     return `You have not yet made enough progress in ${recommendation.topicName}. Start this topic now so it does not remain a gap in your syllabus coverage.`;
   }
@@ -1025,8 +1066,22 @@ function buildFallbackExplanation(recommendation: RankedRecommendation): string 
 }
 
 function buildFallbackAttainmentFocus(
-  recommendation: RankedRecommendation
+  recommendation: RankedRecommendation,
+  language: RecommendationLanguage
 ): string {
+  if (language === "kiswahili") {
+    if (recommendation.recommendedAction === "start_topic") {
+      return "Anza na mawazo makuu pamoja na mifano, kisha hakikisha unaweza kueleza dhana kuu kwa maneno yako mwenyewe kabla ya kuendelea.";
+    }
+    if (recommendation.recommendedAction === "rewatch_video") {
+      return "Unaporudia mada hii, lenga kuelewa mawazo ya msingi tangu mwanzo na uweze kueleza dhana kuu kwa maneno yako mwenyewe kabla ya kuendelea.";
+    }
+    if (recommendation.recommendedAction === "practice_quiz") {
+      return "Lenga sehemu zinazotokea kwenye maswali na hakikisha unaweza kujibu maswali mafupi ya zoezi kwa usahihi bila kubahatisha.";
+    }
+    return "Lenga maelezo na mifano muhimu, kisha hakikisha unakumbuka hoja kuu vizuri kiasi cha kuzitumia kwenye kazi ya darasani au marejeo.";
+  }
+
   if (recommendation.recommendedAction === "start_topic") {
     return "Begin with the main ideas and examples, then make sure you can explain the core concept in your own words before moving forward.";
   }
@@ -1039,14 +1094,25 @@ function buildFallbackAttainmentFocus(
   return "Focus on the key notes and examples and aim to remember the main points well enough to apply them in classwork or revision.";
 }
 
-function buildFallbackSeedPrompt(recommendation: RankedRecommendation): string {
+function buildFallbackSeedPrompt(
+  recommendation: RankedRecommendation,
+  language: RecommendationLanguage
+): string {
   const levelPart = recommendation.levelName
-    ? ` for ${recommendation.levelName}`
+    ? language === "kiswahili"
+      ? ` kwa ${recommendation.levelName}`
+      : ` for ${recommendation.levelName}`
     : "";
   const scorePart =
     recommendation.assessmentScore !== null
-      ? ` My latest assessment score is ${recommendation.assessmentScore}%.`
+      ? language === "kiswahili"
+        ? ` Alama yangu ya hivi karibuni ya tathmini ni ${recommendation.assessmentScore}%.`
+        : ` My latest assessment score is ${recommendation.assessmentScore}%.`
       : "";
+
+  if (language === "kiswahili") {
+    return `Nisaidie kuboresha ${recommendation.topicName} katika ${recommendation.subjectName}${levelPart}. Maendeleo yangu ya sasa ni ${recommendation.progressPercent}%.${scorePart} Nipe mpango mfupi wa kujifunza, eleza mawazo muhimu ninayopaswa kupitia kwanza, kisha malizia na maswali machache ya mazoezi.`;
+  }
 
   return `Help me improve in ${recommendation.topicName} in ${recommendation.subjectName}${levelPart}. My current progress is ${recommendation.progressPercent}%.${scorePart} Give me a short study plan, explain the key ideas I should review first, and finish with a few practice questions.`;
 }
@@ -1074,15 +1140,16 @@ function extractJsonObject(text: string): any | null {
 async function explainRecommendations(
   overview: LearnerAnalysisOverview,
   subjectBreakdown: SubjectLearningAnalysis[],
-  recommendations: RankedRecommendation[]
+  recommendations: RankedRecommendation[],
+  language: RecommendationLanguage
 ): Promise<Pick<PersonalizedRecommendationsResponse, "summary" | "recommendations">> {
   const fallback = {
-    summary: buildFallbackSummary(overview, subjectBreakdown, recommendations),
+    summary: buildFallbackSummary(overview, subjectBreakdown, recommendations, language),
     recommendations: recommendations.map((recommendation) => ({
       ...recommendation,
-      explanation: buildFallbackExplanation(recommendation),
-      attainmentFocus: buildFallbackAttainmentFocus(recommendation),
-      seedPrompt: buildFallbackSeedPrompt(recommendation),
+      explanation: buildFallbackExplanation(recommendation, language),
+      attainmentFocus: buildFallbackAttainmentFocus(recommendation, language),
+      seedPrompt: buildFallbackSeedPrompt(recommendation, language),
     })),
   };
 
@@ -1125,7 +1192,9 @@ async function explainRecommendations(
         "You must not add, remove, or rename topics.",
         "Return valid JSON only with this shape:",
         '{"summary":"string","recommendations":[{"topicId":"string","explanation":"string","attainmentFocus":"string","seedPrompt":"string"}]}',
-        "Use English only.",
+        language === "kiswahili"
+          ? "Use Kiswahili only."
+          : "Use English only.",
         "The summary must explain overall learner coverage, progress gaps, and what the student should focus on next.",
         "Explanation must be 1 to 2 sentences.",
         "Attainment focus must be 1 sentence that tells the student what to look for and what they should attain when revisiting the topic.",
@@ -1160,15 +1229,15 @@ async function explainRecommendations(
           ...recommendation,
           explanation: getStringValue(
             aiItem?.explanation,
-            buildFallbackExplanation(recommendation)
+            buildFallbackExplanation(recommendation, language)
           ),
           attainmentFocus: getStringValue(
             aiItem?.attainmentFocus,
-            buildFallbackAttainmentFocus(recommendation)
+            buildFallbackAttainmentFocus(recommendation, language)
           ),
           seedPrompt: getStringValue(
             aiItem?.seedPrompt,
-            buildFallbackSeedPrompt(recommendation)
+            buildFallbackSeedPrompt(recommendation, language)
           ),
         };
       }),
@@ -1184,10 +1253,14 @@ export default defineEventHandler(async (event) => {
     createUnauthorizedError();
   }
 
+  const language = normalizeRecommendationLanguage(
+    getQuery(event).language
+  );
+
   const userCookie = parseUserCookie(getCookie(event, "signInUserToken"));
   const cachedUserId = getStringValue(userCookie?._id || userCookie?.id);
   if (cachedUserId) {
-    const cached = getCachedRecommendations(cachedUserId);
+    const cached = getCachedRecommendations(cachedUserId, language);
     if (cached) return cached;
   }
 
@@ -1207,7 +1280,7 @@ export default defineEventHandler(async (event) => {
   );
 
   if (userId) {
-    const cached = getCachedRecommendations(userId);
+    const cached = getCachedRecommendations(userId, language);
     if (cached) return cached;
   }
 
@@ -1288,7 +1361,8 @@ export default defineEventHandler(async (event) => {
   const explained = await explainRecommendations(
     overview,
     subjectBreakdown,
-    rankedRecommendations
+    rankedRecommendations,
+    language
   );
 
   const response: PersonalizedRecommendationsResponse = {
@@ -1301,7 +1375,7 @@ export default defineEventHandler(async (event) => {
   };
 
   if (userId) {
-    setCachedRecommendations(userId, response);
+    setCachedRecommendations(userId, language, response);
   }
 
   return response;
