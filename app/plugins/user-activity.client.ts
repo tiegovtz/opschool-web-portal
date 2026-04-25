@@ -1,5 +1,6 @@
 import apiDocs from '~/utilities/apiDocs'
 import { webVisitor } from '~/utilities/platform'
+import { isTokenExpiringSoon, refreshToken } from '~/utilities/jwToken'
 
 export default defineNuxtPlugin(() => {
   const userToken = useCookie('signInUserToken')
@@ -16,6 +17,15 @@ export default defineNuxtPlugin(() => {
     if (!userToken.value || userTimeSpent.value <= 0) return
 
     try {
+      if (!accessToken.value) return
+
+      if (isTokenExpiringSoon(accessToken.value, 60)) {
+        const refreshed = await refreshToken()
+        if (!refreshed?.access_token && !accessToken.value) {
+          return
+        }
+      }
+
       await $fetch(apiDocs.auth.updateTimeSpent, {
         method: 'PATCH',
         body: { duration: userTimeSpent.value },
