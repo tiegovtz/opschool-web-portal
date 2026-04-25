@@ -56,6 +56,12 @@ const {
   error: recommendationError,
 } = await useFetch<PersonalizedRecommendationsResponse>(
   "/api/recommendations/personalized",
+  {
+    query: computed(() => ({
+      language: pageLanguage.value,
+    })),
+    watch: [pageLanguage],
+  },
 );
 
 const recommendationCards = computed(
