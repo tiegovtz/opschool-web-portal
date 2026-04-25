@@ -813,7 +813,7 @@ const playDemoAnimation = async () => {
           <p :class="[
             'max-w-2xl text-oceanBlue text-sm transition-all duration-500 ease-in-out',
           ]">
-            {{ usedLanguage.toLowerCase().trim() === 'english' ? 'Drag each answer choice into the blank space. In manual mode, learners can undo, clear, submit, and then move with the next button.' : 'Jaza nafasi zilizoachwa wazi kwa kuburuta jibu sahihi. Katika modi ya mwenyewe, wanafunzi wanaweza kufuta, kufuta, kuwasilisha na kisha kuendelea kwa kitufe cha inayofuata.' }}
+            {{ usedLanguage.toLowerCase().trim() === 'english' ? 'Drag each answer choice into the blank space. In manual mode, learners can undo, clear, submit, and then move with the next button.' : 'Jaza nafasi zilizoachwa wazi kwa kuburuta jibu sahihi. Katika modi ya mwenyewe, wanafunzi wanaweza kufuta, kuwasilisha na kisha kuendelea kwa kitufe cha inayofuata.' }}
           </p>
         </div>
       </div>
