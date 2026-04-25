@@ -652,9 +652,18 @@ try {
 } catch (error) {
   chapters.status = "error";
   chapters.error = error;
-  signInAccessToken.value = null;
-  userToken.value = null;
-  redirectToAuth();
+  console.error('[fail to load topic info]:',error);
+
+  const statusCode = Number(
+    (error as any)?.statusCode ??
+    (error as any)?.response?.status ??
+    (error as any)?.status ??
+    0,
+  );
+
+  if (statusCode === 401 || statusCode === 403) {
+    redirectToAuth();
+  }
 }
 
 // Call Submit Topic Viewed Read
@@ -663,13 +672,17 @@ if (!userViewedTopic.value) {
 }
 
 watch(
-  () => userToken.value,
-  (token) => {
-    // Get the router instance
-    if (!token) {
+  () => [userToken.value, signInAccessToken.value],
+  async ([nextUserToken, nextAccessToken]) => {
+    if (nextUserToken || nextAccessToken) {
+      return;
+    }
+
+    const refreshed = await refreshToken().catch(() => null);
+    if (!refreshed) {
       redirectToAuth();
     }
-  }
+  },
 );
 
 onMounted(async () => {
