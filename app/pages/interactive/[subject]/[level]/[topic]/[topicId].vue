@@ -686,19 +686,42 @@ watch(
 );
 
 onMounted(async () => {
-  // Trigger MathJax rendering (guard for environments without typeset)
-  const mathJax = (window as any).MathJax;
-  if (mathJax && typeof mathJax.typeset === 'function') {
-    mathJax.typeset();
-  } else if (mathJax && typeof mathJax.typesetPromise === 'function') {
-    mathJax.typesetPromise();
-  } else if ((window as any).mathJaxLoaded && (window as any).MathJaxRender) {
-    (window as any).MathJaxRender([document.body]);
-  }
+  await renderMathContent();
 
   // Call functin for set Pic Center
   setPicCenter();
 });
+
+const renderMathContent = async (elements?: Element[]) => {
+  if (!import.meta.client) return;
+
+  const mathJax = (window as any).MathJax;
+  const mathJaxRender = (window as any).MathJaxRender;
+  const loadedPromise = (window as any).mathJaxLoaded;
+  const targets = Array.isArray(elements) && elements.length > 0 ? elements : [document.body];
+
+  if (loadedPromise && typeof loadedPromise.then === "function") {
+    try {
+      await loadedPromise;
+    } catch {
+      return;
+    }
+  }
+
+  if (typeof mathJaxRender === "function") {
+    await mathJaxRender(targets);
+    return;
+  }
+
+  if (mathJax && typeof mathJax.typesetPromise === "function") {
+    await mathJax.typesetPromise(targets);
+    return;
+  }
+
+  if (mathJax && typeof mathJax.typeset === "function") {
+    mathJax.typeset(targets);
+  }
+};
 
 const updateInteractiveVideoLinks = async () => {
   if (!import.meta.client || !notesContainer.value) return;
@@ -764,6 +787,9 @@ watch(
   async (newNotes) => {
     if (newNotes) {
       await nextTick();
+      if (notesContainer.value) {
+        await renderMathContent([notesContainer.value as Element]);
+      }
       setPicCenter();
       await updateInteractiveVideoLinks();
       // Update localStorage context when notes change
@@ -1103,9 +1129,14 @@ watch(scrollPercent, async (newPercent) => {
 
 // Watch Quiz
 watch(() => chapters.isAttemptingQuizes, async (newAttemptingQuizes) => {
-  if (!newAttemptingQuizes) {
-    await nextTick();
+  await nextTick();
 
+  if (newAttemptingQuizes) {
+    await renderMathContent();
+    return;
+  }
+
+  if (!newAttemptingQuizes) {
     // Call Function
     setPicCenter();
     observerContent();
@@ -1172,7 +1203,7 @@ definePageMeta({
     <!-- bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat -->
     <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
       <!-- Chapter Questions -->
-      <QuestionsContainer v-mathjax :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
+      <QuestionsContainer :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
         :chapter-id="chapters.notes?._id ?? chapters.currentChapterId" :change-chapter="changeChapter"
         :topic-id="chapters.notes?.topic?._id ?? topicId" :subject-id="chapters.notes?.subject?._id ?? null"
         :level-id="chapters.notes?.level?._id ?? ((userToken as any)?.value?.level?._id ?? null)"
@@ -1238,7 +1269,7 @@ definePageMeta({
           <div class="relative flex flex-col justify-center w-full gap-2 py-3 content-view">
 
             <!-- Chapter Notes -->
-            <div v-mathjax class="mx-auto notes md:px-4 w-full max-w-7xl flex-1" aria-label="Compitencies notes"
+            <div class="mx-auto notes md:px-4 w-full max-w-7xl flex-1" aria-label="Compitencies notes"
               aria-details="notes-extra-details" role="region"
               v-html="enhanceAccessibility(conversationParser(activityParser(experimentParser(modelParser(mediaParser(chapters.notes?.content))))))">
             </div>

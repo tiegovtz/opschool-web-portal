@@ -2,44 +2,54 @@ import apiDocs from "~/utilities/apiDocs";
 
 export default defineEventHandler(async (event) => {
   const auth_token = getCookie(event, "signInAccessToken");
-  let progress = getCookie(event, "chapterProgress");
-  progress = JSON.parse(progress);
+  const progressCookie = getCookie(event, "chapterProgress");
+
+  let progress = null;
+
+  if (progressCookie) {
+    try {
+      progress = JSON.parse(progressCookie);
+    } catch (error) {
+      throw createError({
+        statusCode: 400,
+        message: "Invalid chapter progress cookie payload",
+      });
+    }
+  }
 
   if (!auth_token) {
-    return createError({
+    throw createError({
       statusCode: 401,
       message: "No authorization token provided",
     });
   }
 
-  if (!progress) {
-    return createError({
+  if (!progress?.chapterId) {
+    throw createError({
       statusCode: 400,
-      message: "Bad request: No request body provided",
+      message: "Bad request: No chapter progress provided",
     });
   }
 
-  await $fetch(
-    apiDocs.progressTracking.putProgresschapterId.replaceAll(
-      "{chapterId}",
-      progress.chapterId
-    ),
-    {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${auth_token}`,
-        "Content-Type": "application/json",
+  try {
+    return await $fetch(
+      apiDocs.progressTracking.putProgresschapterId.replaceAll(
+        "{chapterId}",
+        progress.chapterId,
+      ),
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${auth_token}`,
+          "Content-Type": "application/json",
+        },
+        body: progress,
       },
-      body: progress,
-    }
-  )
-    .then((response) => {
-      return response;
-    })
-    .catch((error) => {
-      return createError({
-        statusCode: 500,
-        message: error.message || "Internal server error",
-      });
+    );
+  } catch (error) {
+    throw createError({
+      statusCode: Number(error?.statusCode || error?.status || 500),
+      message: error?.message || "Internal server error",
     });
+  }
 });
