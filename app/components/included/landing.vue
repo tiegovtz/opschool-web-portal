@@ -179,8 +179,8 @@ const contents = computed(() => {
         <language-switcher v-model="primaryContentLanguage" />
     </div>
       <div
-        class="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-12 py-4">
-        <section class="max-w-screen-md mx-auto"
+        class="landing-hero grid grid-cols-1 items-center gap-6 py-3 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-8 lg:py-2 xl:gap-10">
+        <section class="landing-copy max-w-screen-md mx-auto"
             aria-labelledby="landing-welcome landing-title" aria-describedby="landing-summary">
             
             <h1 id="landing-welcome" tabindex="0"
@@ -196,7 +196,7 @@ const contents = computed(() => {
                 {{ contents.summary }}
             </p>
             <!-- buttons -->
-            <div class="flex flex-wrap gap-5 pt-5" role="group" aria-labelledby="education-level-actions">
+            <div class="landing-actions flex flex-wrap gap-4 pt-4" role="group" aria-labelledby="education-level-actions">
                 <p id="education-level-actions" class="sr-only">
                     {{ contents.guidance }}
                 </p>
@@ -205,7 +205,7 @@ const contents = computed(() => {
             </div>
 
             <!-- static -->
-            <div class="flex flex-wrap lg:grid gap-4 pt-15 xl:grid-cols-2 mt-4 md:mt-8 lg:mt-16">
+            <div class="landing-stats flex flex-wrap gap-4 pt-6 mt-3 md:mt-6 lg:mt-8 xl:grid xl:grid-cols-2">
                 <div v-for="(stat, idx) in stats" :key="`${idx}-${stat.label}`" tabindex="0"
                     class="group relative overflow-hidden rounded-[2rem] border border-[#e4edf5] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(247,251,255,0.98)_100%)] px-5 py-4 shadow-[0px_18px_40px_rgba(18,79,134,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0px_24px_48px_rgba(18,79,134,0.14)] w-full md:max-w-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/50 focus-visible:ring-offset-2"
                     role="group" :aria-label="`${stat.label}: ${stat.data === 'topics' ? `${allTopics}+` : stat.data == 'resources' ? `${allContent}+` : stat.value}. ${stat.detail}`">
@@ -239,9 +239,116 @@ const contents = computed(() => {
 
         </section>
         <!-- slides -->
-        <section class="w-full overflow-hidden rounded-3xl">
+        <section class="landing-slider-shell w-full overflow-hidden rounded-3xl">
             <SliderShow variant="landing" />
         </section>
     </div>
  </div>
 </template>
+
+<style scoped>
+.landing-hero {
+    min-height: min(68vh, 780px);
+}
+
+.landing-slider-shell {
+    min-height: clamp(260px, 34vh, 400px);
+}
+
+@media (min-width: 1024px) {
+    .landing-hero {
+        min-height: min(60vh, 700px);
+    }
+
+    .landing-slider-shell {
+        min-height: min(50vh, 560px);
+    }
+}
+
+@media (min-width: 1440px) {
+    .landing-hero {
+        min-height: min(64vh, 760px);
+    }
+
+    .landing-slider-shell {
+        min-height: min(54vh, 620px);
+    }
+}
+
+@media (max-height: 900px) and (min-width: 1024px) {
+    .landing-hero {
+        min-height: min(52vh, 620px);
+        gap: 1.5rem;
+    }
+
+    .landing-copy :deep(#landing-title) {
+        margin-top: 0.75rem;
+        margin-bottom: 0.75rem;
+        font-size: 1.875rem;
+        line-height: 2.25rem;
+    }
+
+    .landing-stats {
+        padding-top: 1.5rem;
+        margin-top: 1rem;
+    }
+
+    .landing-slider-shell {
+        min-height: min(42vh, 440px);
+    }
+}
+
+@media (max-height: 760px) and (min-width: 1024px) {
+    .landing-hero {
+        min-height: min(46vh, 540px);
+        gap: 1rem;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+
+    .landing-copy :deep(#landing-welcome) {
+        font-size: 1rem;
+        line-height: 1.5rem;
+    }
+
+    .landing-copy :deep(#landing-summary) {
+        margin-top: 0.5rem;
+        font-size: 0.95rem;
+        line-height: 1.5rem;
+    }
+
+    .landing-actions {
+        padding-top: 0.75rem;
+        gap: 0.75rem;
+    }
+
+    .landing-stats {
+        padding-top: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .landing-slider-shell {
+        min-height: min(36vh, 360px);
+    }
+}
+
+@media (max-height: 680px) and (min-width: 1024px) {
+    .landing-hero {
+        min-height: min(42vh, 480px);
+    }
+
+    .landing-copy :deep(#landing-title) {
+        font-size: 1.625rem;
+        line-height: 2rem;
+    }
+
+    .landing-stats {
+        padding-top: 0.75rem;
+        gap: 0.75rem;
+    }
+
+    .landing-slider-shell {
+        min-height: min(32vh, 320px);
+    }
+}
+</style>
