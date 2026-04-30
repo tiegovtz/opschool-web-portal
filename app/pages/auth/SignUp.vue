@@ -2045,6 +2045,7 @@ onMounted(async () => {
             <!-- select school -->
             <SelectionSchoolSelection :district="usersignUp.district" :region="usersignUp.region"
               :school="usersignUp.school" @update-school="usersignUp.school = $event"
+              :education-level="educationLevelLists.find(level => level.id === usersignUp.educationLevel)?.name"
               :error="(usersignUp.controller.errors.school as string)" :language="authLanguage" />
           </div>
 
