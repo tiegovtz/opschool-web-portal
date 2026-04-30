@@ -2,6 +2,7 @@
 import { CustomDropDownList } from "#components";
 import { reactive, ref, watch, computed, type PropType } from "vue";
 import apiDocs from "~/utilities/apiDocs";
+import { educationLevelNameToSchoolEducationQuery } from "~/utilities/educationLevelApiMaps";
 import type { LanguageSupport } from "~/types/language.interface";
 
 const props = defineProps({
@@ -9,6 +10,7 @@ const props = defineProps({
   district: String,
   error: String,   // validation error from parent
   school: String,  // currently selected school id (optional)
+  educationLevel: String, // education level (optional)
   language: {
     type: String as PropType<LanguageSupport>,
     default: "english",
@@ -68,6 +70,9 @@ const fetchSchools = async (region: string, district: string) => {
         query: {
           region,
           district,
+          education: props.educationLevel
+            ? educationLevelNameToSchoolEducationQuery(props.educationLevel)
+            : undefined,
         }
       }
     );
@@ -109,6 +114,21 @@ watch(
   (region) => {
     if (region) {
       fetchSchools(region, props.district as any);
+    } else {
+      data.status = "idle";
+      data.schools = [];
+    }
+  }
+);
+
+watch(
+  () => props.educationLevel,
+  () => {
+    selectedSchool.value = null;
+    emit("updateSchool", null);
+
+    if (props.region && props.district) {
+      fetchSchools(props.region, props.district);
     } else {
       data.status = "idle";
       data.schools = [];
