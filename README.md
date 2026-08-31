@@ -1,5 +1,15 @@
 # Nuxt Minimal Starter
 
+## Image processing
+
+Nuxt Image uses IPX to serve optimized images through `/_ipx/`. The `ipx>sharp`
+pnpm override pins its native image processor to the working Sharp 0.34.5 version
+already used by this project. This avoids IPX's older Sharp 0.32 dependency failing
+with a missing native binary and returning HTTP 500 for images across the site.
+Keep optional dependencies enabled when installing Sharp ([installation guidance](https://sharp.pixelplumbing.com/install/)).
+After dependency changes, restart the development server. Run `pnpm test:images`
+to verify the actual Nuxt Image → IPX → Sharp pipeline against local image files.
+
 ## Work modality (development workflow)
 
 Follow this workflow when working on the project:
@@ -65,6 +75,9 @@ bun install
 ```
 
 ## Development Server
+
+For the ADT book catalogue, API key setup, read grants, and sample previews, see
+[ADT integration](docs/adt-integration.md).
 
 Start the development server on `http://localhost:3000`:
 

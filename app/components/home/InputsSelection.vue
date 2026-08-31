@@ -4,6 +4,7 @@ import type { educationLevel } from "~/types/educationlevel.interface";
 import type { LanguageSupport } from "~/types/language.interface";
 import type { Subjects } from "~/types/subject.interface";
 import apiDocs from "~/utilities/apiDocs";
+import { adtClassOptions, adtSubjectOptions, type AdtClassifications } from '~~/shared/adt/catalogue';
 import {
   getApiEducationLevelName,
   isEducationLevelVisibleInHub,
@@ -16,7 +17,7 @@ type DropdownOption = {
 };
 
 const props = withDefaults(
-  defineProps<{ educationLevel?: string; language?: LanguageSupport }>(),
+  defineProps<{ educationLevel?: string; language?: LanguageSupport; classifications?: AdtClassifications; disabled?: boolean }>(),
   {
     language: "english",
   },
@@ -26,6 +27,7 @@ const emit = defineEmits<{
   (event: "emitLevel", value: string): void;
   (event: "emitStandard", value: string): void;
   (event: "emitSubject", value: string): void;
+  (event: "emitSearch", value: string): void;
 }>();
 
 const normalizeValue = (value?: string | null) =>
@@ -148,6 +150,7 @@ const headers = {
 const { data: educationLevels, pending: educationLevelsPending } = useFetch<
   educationLevel[]
 >(apiDocs.educationLevel.getEducationLevels, {
+  immediate: !props.classifications,
   headers,
   default: () => [],
 });
@@ -157,6 +160,7 @@ const selectedEducationBucket = computed(() => getEducationBucket(level.value));
 const { data: classLevels, pending: classLevelsPending } = useFetch<
   ClassLevel[]
 >(apiDocs.levels.getLevels, {
+  immediate: !props.classifications,
   headers,
   query: computed(() =>
     selectedEducationBucket.value
@@ -164,12 +168,13 @@ const { data: classLevels, pending: classLevelsPending } = useFetch<
       : {},
   ),
   default: () => [],
-  watch: [selectedEducationBucket],
+  watch: props.classifications ? false : [selectedEducationBucket],
 });
 
 const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
   Subjects[]
 >(apiDocs.subjects.getPublicSubjects, {
+  immediate: !props.classifications,
   headers,
   query: computed(() => {
     if (!selectedEducationBucket.value) return {};
@@ -180,7 +185,7 @@ const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
     };
   }),
   default: () => [],
-  watch: [level,standard],
+  watch: props.classifications ? false : [level,standard],
 });
 
 const matchedEducationLevels = computed(() => {
@@ -201,6 +206,7 @@ const filteredEducationLevels = computed(() =>
 );
 
 const educationLevelOptions = computed<DropdownOption[]>(() => {
+  if (props.classifications) return props.classifications.levels;
   const allowed = new Set(
     filteredEducationLevels.value.map((e) => normalizeValue(e.name)),
   )
@@ -213,6 +219,7 @@ const educationLevelOptions = computed<DropdownOption[]>(() => {
 })
 
 const classOptions = computed<DropdownOption[]>(() => {
+  if (props.classifications) return adtClassOptions(props.classifications, level.value);
   if (!level.value.trim()) return [];
 
   return sortOptionsByNameAsc(
@@ -228,6 +235,7 @@ const classOptions = computed<DropdownOption[]>(() => {
 });
 
 const subjectOptions = computed<DropdownOption[]>(() => {
+  if (props.classifications) return adtSubjectOptions(props.classifications, level.value, standard.value);
   if (!level.value.trim() || !standard.value.trim()) return [];
 
   return sortOptionsByNameAsc(
@@ -238,9 +246,9 @@ const subjectOptions = computed<DropdownOption[]>(() => {
   );
 });
 
-const isClassesLoading = computed(() => classLevelsPending.value);
+const isClassesLoading = computed(() => props.classifications ? props.disabled : classLevelsPending.value);
 
-const isSubjectsLoading = computed(() => publicSubjectsPending.value);
+const isSubjectsLoading = computed(() => props.classifications ? props.disabled : publicSubjectsPending.value);
 
 const showEducationLevelDropdown = computed(
   () => educationLevelOptions.value.length > 0,
@@ -249,6 +257,7 @@ const showEducationLevelDropdown = computed(
 watch(
   matchedEducationLevels,
   (matchedLevels) => {
+    if (props.classifications) return;
     if (!matchedLevels.length) return;
 
     const currentLevelStillVisible = matchedLevels.some(
@@ -274,50 +283,54 @@ watch(
       <CustomDropDownList
         v-if="showEducationLevelDropdown"
         id="home-education-level"
+        :aria-label="content.selectLevel"
         :model-value="level"
         :list="educationLevelOptions"
         :placeholder="
-          educationLevelsPending ? content.loading : content.selectLevel
+          (props.classifications ? props.disabled : educationLevelsPending) ? content.loading : content.selectLevel
         "
-        :disabled="educationLevelsPending"
+        :disabled="props.classifications ? props.disabled : educationLevelsPending"
         :button-class="dropdownButtonClass"
         @update-model-value="onLevelChange"
       />
 
       <CustomDropDownList
         id="home-class-level"
+        :aria-label="content.selectClass"
         :model-value="standard"
         :list="classOptions"
         :placeholder="
-          level.trim()
+          props.classifications || level.trim()
             ? isClassesLoading
               ? content.loading
               : content.selectClass
             : content.selectLevelFirst
         "
-        :disabled="!level.trim() || !classOptions.length"
+        :disabled="props.disabled || (!props.classifications && !level.trim()) || !classOptions.length"
         :button-class="dropdownButtonClass"
         @update-model-value="onStandardChange"
       />
 
       <CustomDropDownList
         id="home-subject"
+        :aria-label="content.selectSubject"
         :model-value="subject"
         :list="subjectOptions"
         :placeholder="
-          level.trim() && standard.trim()
+          (props.classifications || level.trim()) && standard.trim()
             ? isSubjectsLoading
               ? content.loading
               : content.selectSubject
             : content.selectClassFirst
         "
-        :disabled="!level.trim() || !standard.trim() || !subjectOptions.length"
+        :disabled="props.disabled || (!props.classifications && !level.trim()) || !standard.trim() || !subjectOptions.length"
         :button-class="dropdownButtonClass"
         @update-model-value="onSubjectChange"
       />
     </form>
 
     <HomeSearchbar
+      :search-handler="props.classifications ? (value: string) => emit('emitSearch', value) : undefined"
       :language="props.language"
       :education-level="props.educationLevel"
     />

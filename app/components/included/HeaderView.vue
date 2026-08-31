@@ -304,7 +304,12 @@ const navigateToHomeHub = async (educationLevel: "primary" | "secondary") => {
   );
   closeHomeMenu();
   closeAccountMenu();
-  await router.push(getHubPath(educationLevel));
+  await router.push({
+    path: getHubPath(educationLevel),
+    query: route.query.section === 'adt' || route.query.section === 'interactive-content'
+      ? { section: route.query.section }
+      : {},
+  });
 };
 
 const authReturnQuery = computed(() => {
@@ -732,7 +737,7 @@ onBeforeUnmount(() => {
               </div>
 
               <!-- TIE Library Books -->
-              <a
+                <a
                 aria-label="Visit TIE online library"
                 href="https://ol.tie.go.tz/index.php"
                 target="_blank"

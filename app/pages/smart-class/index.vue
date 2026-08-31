@@ -1581,7 +1581,7 @@ const prepareNavigation = () => {
   >
     <main ref="pageRoot" id="main-container" tabindex="-1" class="min-h-screen bg-white font-sans text-gray-900">
       <p class="sr-only" aria-live="assertive" aria-atomic="true">{{ srAnnouncement }}</p>
-      <div class="mx-auto w-full max-w-none px-0 sm:px-2 lg:max-w-7xl lg:px-4 py-8 sm:py-10">
+      <div class="w-full py-8 sm:py-10">
         <!-- Back -->
         <NuxtLink v-if="canGoBack" to="/"
           class="mb-6 inline-flex items-center gap-2 rounded-full border border-primary bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm hover:bg-gray-50">
@@ -1650,7 +1650,7 @@ const prepareNavigation = () => {
           <!-- Content -->
           <div class="p-4 sm:p-6">
             <!-- Loading -->
-            <div v-if="isLoadingCards && activeTab !== 'live-tv'" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div v-if="isLoadingCards && activeTab !== 'live-tv'" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <div v-for="n in 6" :key="n" class="animate-pulse rounded-2xl border border-gray-200 bg-white shadow-sm">
                 <div class="h-44 w-full rounded-t-2xl bg-gray-100" />
                 <div class="p-4 space-y-3">
@@ -1771,7 +1771,7 @@ const prepareNavigation = () => {
                   :description="currentEmptyStateMessage?.description" />
               </div>
 
-              <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="list">
+              <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" role="list">
                 <article v-for="card in activeCards" :key="card.id ?? card.title"
                   class="group rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
                   role="listitem" tabindex="0" @keydown.enter.prevent="openSessionModal(card)"

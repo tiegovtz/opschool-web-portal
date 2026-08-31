@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import HeroSection from "~/components/home/HeroSection.vue";
 import TopicCard from "~/components/home/TopicCard.vue";
-import TabBar from "~/components/home/TabBar.vue";
 import LoadingIndicator from "~/components/loading/loadingIndicator.vue";
 import { ref, computed, watch, reactive } from "vue";
 import {
@@ -18,7 +17,6 @@ import {
 } from "~/utilities/filterJson";
 import customGridOne from "~/components/home/customGridOne.vue";
 import customGridTwo from "~/components/home/customGridTwo.vue";
-import DropDownMenu from "~/components/customDropDown/dropDownMenu.vue";
 import SubjectCard from "~/components/home/SubjectCard.vue";
 import { layoutEffect } from "~/utilities/controlls";
 import { fetchAsyncData } from "~/composables/useAsyncFetch";
@@ -52,6 +50,7 @@ import {
 
 definePageMeta({
   path: "/:educationLevel(primary|secondary)",
+  key: route => String(route.params.educationLevel),
 });
 
 // Define meta info about page
@@ -106,6 +105,15 @@ const hubEducationLevelCookie = useHubEducationLevel();
 const primaryContentLanguage = usePrimaryContentLanguage();
 const route = useRoute();
 const router = useRouter();
+// Retire old design-preview links; ADT always uses the configured Store now.
+if (route.query.section === 'adt' && route.query.preview !== undefined) {
+  await navigateTo({ path: route.path, query: { ...route.query, preview: undefined } }, { replace: true });
+}
+const hubSection = computed(() => route.query.section === 'adt' ? 'adt' : route.query.section === 'interactive-content' ? 'interactive-content' : 'subjects');
+const isAdtSection = computed(() => hubSection.value === 'adt');
+function selectHubSection(section: string) {
+  return router.push({ path: route.path, query: { ...route.query, section, subject: undefined, subjectId: undefined } });
+}
 const currentEducationLevel = computed(() =>
   resolveEducationLevelFromRoute(route),
 );
@@ -168,7 +176,6 @@ const data = ref<
   | GroupedData<Topic>[]
 >(); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
-const hideFilter = ref(false); // Initial Hide Filters
 const activeTab = ref<tabs>("subjects"); // Initial Active Tab State
 const filterValue = ref(); // Initial Filter Value State
 const subjectId = ref<string>(""); // Initial subjectId Value State
@@ -333,6 +340,11 @@ watch(
   () => route.query,
   (query) => {
     const section = query[SECTION_QUERY_KEY] ?? query.tab;
+    if (!section) activeTab.value = "subjects";
+    if (section === 'adt' || section === 'interactive-content' || (section === 'subjects' && !query[SUBJECT_QUERY_KEY] && !query[SUBJECT_ID_QUERY_KEY])) {
+      activeTab.value = section === 'interactive-content' ? 'interactive-contents' : 'subjects';
+      return;
+    }
     const subjectParam = normalizeQueryValue(query[SUBJECT_QUERY_KEY]);
     const subjectIdParam = normalizeQueryValue(query[SUBJECT_ID_QUERY_KEY]);
     if (section) {
@@ -373,6 +385,7 @@ const sliceData = (start: number, end: number) => {
 
 // Then, update fetchData to call sliceData after data is loaded
 const fetchData = async (params?: any) => {
+  if (isAdtSection.value) return;
   let url: string;
   data.value = [];
   status.value = "pending";
@@ -463,7 +476,7 @@ const fetchData = async (params?: any) => {
       }
     }
   } else {
-    if (params) {
+    if (tab === 'interactive-contents') {
       url = apiDocs.topics.filterTopics;
       params = { ...baseParams };
     } else {
@@ -619,15 +632,14 @@ const level = ref(); // Initial Level State
 watch(
   () => [filters.level, filters.subject, level.value] as const,
   ([classLevel, subjectName]) => {
-    if (!classLevel || !subjectName) return;
     const educationLevelParam =
       typeof level.value === "string" && level.value.trim()
         ? level.value.trim().toLowerCase()
         : undefined;
     fetchData({
       ...(educationLevelParam ? { educationLevel: educationLevelParam } : {}),
-      level: String(classLevel),
-      subject: String(subjectName),
+      ...(classLevel ? { level: String(classLevel) } : {}),
+      ...(subjectName ? { subject: String(subjectName) } : {}),
     });
   },
 );
@@ -696,6 +708,20 @@ watch(
   },
   { immediate: true },
 );
+
+watch(hubSection, () => {
+  filters.level = null;
+  filters.subject = null;
+  level.value = '';
+  subjectId.value = '';
+  subjectSlug.value = '';
+  subjectName.value = '';
+  subjectEducationLevel.value = '';
+  currentPage.value = 1;
+});
+
+// Watch User Token
+watch(isAdtSection, (adt) => { if (!adt) fetchData(); });
 
 // Watch User Token
 watch(
@@ -792,82 +818,15 @@ const handleSubjectSelect = async (
     :language="currentLanguage"
     :education-level="currentEducationLevel"
   >
+    <HeroSection v-if="!userToken" :language="currentLanguage" :education-level="currentEducationLevel" />
+    <HomeContentTabs :active="hubSection" :language="currentLanguage" @select="selectHubSection" />
+    <div id="hub-content-panel" role="tabpanel" :aria-labelledby="`hub-tab-${hubSection}`">
+    <AdtCatalogue v-if="isAdtSection" :key="currentHubBucket" :hub="currentHubBucket" :language="currentLanguage" />
     <!-- User Has a Token -->
-    <section v-if="userToken">
-      <HomeSearchbar
-        appearance="rounded"
-        :language="currentLanguage"
-        :education-level="currentEducationLevel"
-      />
-      <TabBar
-        :is-logged-in="true"
-        @emit-active-tab="switchTab($event)"
-        :active-tab="activeTab"
-        :tab-group="currentEducationLevel"
-        :language="currentLanguage"
-        :education-level="currentEducationLevel"
-      />
+    <section v-else-if="userToken">
+      <InputsSelection :key="hubSection" :language="currentLanguage" :education-level="currentEducationLevel"
+        @emit-level="level = $event" @emit-standard="filters.level = $event" @emit-subject="filters.subject = $event" />
 
-      <!-- container filter Mobile -->
-      <div class="flex items-center justify-between py-2 xl:hidden">
-        <ClientOnly>
-          <p
-            class="font-medium text-small"
-            aria-live="polite"
-          >
-            Viewing {{ data?.length || 0 }} Results
-          </p>
-        </ClientOnly>
-        <button
-          class="flex items-center gap-2 cursor-pointer text-deepBlue"
-          @click="hideFilter = !hideFilter"
-          :aria-expanded="hideFilter"
-          aria-label="Toggle filters"
-        >
-          <Icon
-            name="mage:filter-fill"
-            size="24"
-            class=""
-            aria-hidden="true"
-          />
-          <p class="text-medium">Filters</p>
-        </button>
-
-        <!-- Side Bar Container Filter For Mobile View Only -->
-        <div
-          v-if="displayTab !== 'subjects'"
-          :class="[
-            'fixed top-0 left-0 h-full w-full flex flex-col items-start justify-center transition-all duration-700 ease-in-out bg-black/40',
-            hideFilter ? 'z-30' : '-z-30',
-          ]"
-        >
-          <div class="w-full h-full bg-white md:w-80">
-            <!-- Close Button -->
-            <div class="flex items-center justify-end">
-              <button
-                class="flex items-center justify-center w-10 h-10 p-2 cursor-pointer rounded-bl-md bg-deepBlue"
-                @click="hideFilter = !hideFilter"
-                aria-label="Close filters"
-              >
-                <Icon
-                  name="formkit:close"
-                  size="24"
-                  class="font-bold text-white"
-                  aria-hidden="true"
-                />
-              </button>
-            </div>
-
-            <div class="flex flex-col gap-4 mt-10">
-              <!-- Home Drop Down Menu -->
-              <DropDownMenu
-                :active-tab="displayTab"
-                @emit-update-filter-value="filterValue = $event"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
       <!-- LayoutEffect  -->
       <div
         class="items-center justify-end hidden gap-2 md:flex"
@@ -906,26 +865,9 @@ const handleSubjectSelect = async (
         </button>
       </div>
       <div class="flex items-center justify-center w-full gap-4 xl:items-start">
-        <!-- container filter Desktop -->
-        <div
-          v-if="displayTab !== 'subjects'"
-          aria-label="Filters"
-          role="group"
-          class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow"
-        >
-          <!-- Home Drop Down Menu -->
-          <DropDownMenu
-            @emit-update-filter-value="filterValue = $event"
-            :active-tab="displayTab"
-            :filter-value="[]"
-          />
-
-          <!-- <HomeDropFilters :filter-data="keys" @emit-update-filter-value="filterValue = $event" /> -->
-        </div>
-
         <!-- data are in Grid -->
         <div
-          :class="['w-full ', displayTab !== 'subjects' ? 'xl:w-3/4' : '']"
+          class="w-full"
           id="main-container"
           aria-label="content list"
           role="region"
@@ -1154,21 +1096,13 @@ const handleSubjectSelect = async (
       v-else
       :class="[' ', { ' animate-pulse': isLoading }]"
     >
-      <HeroSection
-        :language="currentLanguage"
-        :education-level="currentEducationLevel"
-      />
       <InputsSelection
+        :key="hubSection"
         :language="currentLanguage"
         :education-level="currentEducationLevel"
         @emit-level="level = $event"
         @emit-standard="filters.level = $event"
         @emit-subject="filters.subject = $event"
-      />
-      <TabBar
-        :language="currentLanguage"
-        :education-level="currentEducationLevel"
-        :tab-group="currentEducationLevel"
       />
 
       <div
@@ -1209,7 +1143,7 @@ const handleSubjectSelect = async (
             class="flex flex-col w-full"
           >
             <customGridTwo
-              v-if="filters.level !== null && filters.subject !== null && filters.level !== '' && filters.subject !== ''"
+              v-if="displayTab === 'interactive-contents'"
             >
               <template #data>
                 <!-- Topic Cards -->
@@ -1281,6 +1215,7 @@ const handleSubjectSelect = async (
       </div>
     </section>
 
+    </div>
     <!-- announcement -->
     <!-- screen reader notifier -->
     <!-- <div class="sr-only" aria-live="assertive" aria-atomic role="status">

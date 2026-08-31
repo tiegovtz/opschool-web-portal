@@ -21,7 +21,7 @@ const emit = defineEmits<{
         <span class="tie-cta-points" aria-hidden="true">
              <span v-for="(_,index) in Array.from({ length: 10 })" :key="`${index}-${props.label.toLowerCase().split('').join('-')}`" class="tie-cta-point" />
         </span>
-        <span class="tie-cta-inner">{{ props.label }}</span>
+        <span class="tie-cta-inner"><slot>{{ props.label }}</slot></span>
     </button>
 </template>
 

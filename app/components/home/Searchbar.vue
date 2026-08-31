@@ -23,6 +23,7 @@ const props = withDefaults(
     appearance?: string;
     educationLevel?: string;
     language?: LanguageSupport;
+    searchHandler?: (query: string) => void;
   }>(),
   {
     appearance: "normal",
@@ -204,6 +205,10 @@ const relatedContent = ref<{
 const announcement = ref<string>("");
 
 const handleSearch = async () => {
+  if (props.searchHandler) {
+    props.searchHandler(searchReactive.search.trim());
+    return;
+  }
   if (!searchReactive.search || !searchReactive.search.trim()) return;
 
   // Always run traditional search first to show results immediately

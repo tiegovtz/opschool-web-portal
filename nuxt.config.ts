@@ -40,6 +40,8 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    adtStoreBaseUrl: "",
+    adtStoreApiKey: "",
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY || "",
     ragApiBaseUrl:
