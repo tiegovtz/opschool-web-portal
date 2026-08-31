@@ -4,7 +4,7 @@ const emit = defineEmits<{ select: [section: string] }>();
 const items = computed(() => [
   { id: 'subjects', label: props.language === 'kiswahili' ? 'Masomo' : 'Subjects', icon: 'mdi:school-outline' },
   { id: 'interactive-content', label: props.language === 'kiswahili' ? 'Maudhui Shirikishi' : 'Interactive content', icon: 'mdi:briefcase-outline' },
-  { id: 'adt', label: 'ADT', icon: 'mdi:book-open-page-variant-outline' },
+  { id: 'adt', label: props.language === 'kiswahili' ? 'KKD' : 'ADT', icon: 'mdi:book-open-page-variant-outline' },
 ]);
 function navigateTabs(event: KeyboardEvent, index: number) {
   const count = items.value.length;
