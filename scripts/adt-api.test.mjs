@@ -20,6 +20,12 @@ test('production ADT proxy contract with a mock upstream', async t => {
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=', 'base64');
   const upstream = createServer((req, res) => {
     requests.push({ path: req.url, auth: req.headers.authorization });
+    if (req.url.startsWith('/api/library/')) {
+      assert.equal(req.headers.authorization, undefined);
+      assert.equal(req.headers.cookie, undefined);
+      res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Security-Policy': "frame-ancestors http://127.0.0.1" });
+      return res.end('<!doctype html><title>Signed ADT reader</title>');
+    }
     if (mode === 'forbidden' || req.headers.authorization !== `Bearer ${dummyKey}`) {
       res.writeHead(403, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: `Forbidden ${dummyKey}` }));
@@ -42,7 +48,7 @@ test('production ADT proxy contract with a mock upstream', async t => {
       assert.ok(embedOrigin?.startsWith('http://127.0.0.1:'));
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ data: {
-        url: mode === 'reader-invalid' ? 'javascript:alert(1)' : `https://content.example/api/library/${readerId}/preview/reader.test/index.html`,
+        url: mode === 'reader-invalid' ? 'javascript:alert(1)' : `https://content.example/api/library/${readerId}/preview/reader.1999999999.aHR0cDovLzEyNy4wLjAuMQ.signature/index.html`,
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
       } }));
     }
@@ -122,9 +128,14 @@ test('production ADT proxy contract with a mock upstream', async t => {
     assert.equal(data.book.id, 'p-science');
     assert.equal(data.preview, false);
     assert.equal(data.readerAvailable, true);
-    assert.ok(data.reader.url.startsWith('https://content.example/api/library/p-science/preview/reader.'));
+    assert.ok(data.reader.url.startsWith(`${base}/api/library/p-science/preview/reader.`));
     assert.ok(!JSON.stringify(data).includes(dummyKey));
     assert.ok(!JSON.stringify(data).includes('Internal reviewer'));
+    const publication = await fetch(data.reader.url);
+    assert.equal(publication.status, 200);
+    assert.equal(publication.headers.get('content-type'), 'text/html');
+    assert.match(await publication.text(), /Signed ADT reader/);
+    assert.equal((await fetch(`${base}/api/library/not-a-reader/file.txt`)).status, 404);
     assert.equal((await readerFetch('/api/adt/books/p-science?educationLevel=secondary')).status, 404);
     assert.equal((await readerFetch('/api/adt/books/draft?educationLevel=primary')).status, 404);
     assert.equal((await readerFetch('/api/adt/books/failed?educationLevel=primary')).status, 404);

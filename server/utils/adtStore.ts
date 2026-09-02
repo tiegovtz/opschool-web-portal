@@ -31,6 +31,18 @@ export function emptyAdtCatalogue(): AdtCatalogue {
 
 export function adtRequestOptions(path: string) {
   const config = useRuntimeConfig();
+  const base = adtStoreBaseUrl();
+  return {
+    url: `${base.toString().replace(/\/$/, '')}${path}`,
+    options: {
+      headers: { Authorization: `Bearer ${config.adtStoreApiKey}` },
+      timeout: 10000, retry: 0, redirect: 'error' as const,
+    },
+  };
+}
+
+export function adtStoreBaseUrl() {
+  const config = useRuntimeConfig();
   if (!adtConfigured()) throw createError({ statusCode: 503, statusMessage: 'ADT Store is not configured.' });
   let base: URL;
   try {
@@ -41,13 +53,7 @@ export function adtRequestOptions(path: string) {
   } catch {
     throw createError({ statusCode: 503, statusMessage: 'ADT Store configuration is invalid.' });
   }
-  return {
-    url: `${base.toString().replace(/\/$/, '')}${path}`,
-    options: {
-      headers: { Authorization: `Bearer ${config.adtStoreApiKey}` },
-      timeout: 10000, retry: 0, redirect: 'error' as const,
-    },
-  };
+  return base;
 }
 
 export async function adtFetch<T>(path: string, schema: z.ZodType<T>, forbiddenMessage?: string): Promise<T> {

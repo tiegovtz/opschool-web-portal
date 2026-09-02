@@ -30,5 +30,11 @@ export default defineEventHandler(async (event): Promise<AdtReaderBook> => {
     }),
     expiresAt: z.string().datetime(),
   }), 'ADT Store reader permission is not enabled.');
+  // Publication content may live on an HTTP-only ADT Store. Keep that private
+  // server-to-server hop behind this HTTPS origin so browsers do not block the
+  // reader as mixed content. The signed path remains unchanged and is still
+  // validated by ADT Store on every request.
+  const upstreamReaderUrl = new URL(reader.url);
+  reader.url = `${origin}${upstreamReaderUrl.pathname}`;
   return { book: toLearnerAdtBook(book), preview: false, readerAvailable: true, reader };
 });
