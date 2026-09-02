@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AdtHub, AdtReaderBook } from '~~/shared/adt/catalogue';
 
-definePageMeta({ path: '/:educationLevel(primary|secondary)/adt/:bookId', key: route => route.fullPath });
+definePageMeta({ path: '/:educationLevel(primary|secondary)/adt/:bookId', key: route => route.fullPath, middleware: 'auth' });
 const route = useRoute();
 const hub = computed<AdtHub>(() => route.params.educationLevel === 'primary' ? 'primary' : 'secondary');
 const language = useHubPageLanguage();

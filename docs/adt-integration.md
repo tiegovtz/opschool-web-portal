@@ -5,6 +5,7 @@
 - `/primary?section=adt`: Primary and Pre-primary ADT content within the primary hub.
 - `/secondary?section=adt`: Ordinary Secondary and Advanced Secondary ADT content within the secondary hub.
 - `/:educationLevel/adt/:bookId`: dedicated reader page, opened from the cover-preview modal.
+- The catalogue and cover-preview modal are public. Reading requires an OpSchool login; guests are sent to `/auth` with the reader URL preserved for return after sign-in. The server refuses to issue a signed Store reader URL when the access-token cookie is absent.
 - `/primary` and `/secondary` have Subjects, Interactive content, and ADT tabs above the shared filters. Changing hubs preserves the ADT selection and scopes its catalogue to the destination hub.
 - There is no ADT top-navigation or landing-page shortcut. Legacy `/primary/adt` and `/secondary/adt` URLs redirect to the corresponding hub's ADT tab and remove obsolete sample-mode parameters.
 - Catalogue configuration errors, fetch errors, empty collections, and no-match results share the dashed, centered `AdtStatePanel` presentation. The reader uses it for missing books, configuration/fetch errors, and unavailable reading. Catalogue loading continues to use shimmering skeleton cards.

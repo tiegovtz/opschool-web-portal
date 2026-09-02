@@ -4,6 +4,10 @@ import { adtBookSchema, adtClassificationSchemas, adtFetch, adtIdSchema, isPubli
 
 export default defineEventHandler(async (event): Promise<AdtReaderBook> => {
   setHeader(event, 'Cache-Control', 'private, no-store');
+  const accessToken = getCookie(event, 'signInAccessToken')?.trim();
+  if (!accessToken) {
+    throw createError({ statusCode: 401, statusMessage: 'Sign in to read this book.' });
+  }
   const input = z.object({
     id: adtIdSchema,
     educationLevel: z.enum(['primary', 'secondary']),

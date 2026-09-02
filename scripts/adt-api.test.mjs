@@ -77,6 +77,7 @@ test('production ADT proxy contract with a mock upstream', async t => {
   app.stdout.on('data', chunk => { output += chunk; });
   app.stderr.on('data', chunk => { output += chunk; });
   const base = `http://127.0.0.1:${port}`;
+  const readerFetch = (path) => fetch(`${base}${path}`, { headers: { Cookie: 'signInAccessToken=test-access-token' } });
   let ready = false;
   for (let attempt = 0; attempt < 80; attempt++) {
     try { await fetch(`${base}/api/adt/catalogue`); ready = true; break; } catch { await delay(100); }
@@ -112,7 +113,10 @@ test('production ADT proxy contract with a mock upstream', async t => {
     assert.ok(!requests.some(request => request.path === '/api/v1/books/draft/cover'));
   });
   await t.test('reader detail only exposes eligible books in the correct category', async () => {
-    const response = await fetch(`${base}/api/adt/books/p-science?educationLevel=primary&preview=1`);
+    const unauthenticatedRequestCount = requests.length;
+    assert.equal((await fetch(`${base}/api/adt/books/p-science?educationLevel=primary`)).status, 401);
+    assert.equal(requests.length, unauthenticatedRequestCount);
+    const response = await readerFetch('/api/adt/books/p-science?educationLevel=primary&preview=1');
     assert.equal(response.status, 200);
     const data = await response.json();
     assert.equal(data.book.id, 'p-science');
@@ -121,11 +125,11 @@ test('production ADT proxy contract with a mock upstream', async t => {
     assert.ok(data.reader.url.startsWith('https://content.example/api/library/p-science/preview/reader.'));
     assert.ok(!JSON.stringify(data).includes(dummyKey));
     assert.ok(!JSON.stringify(data).includes('Internal reviewer'));
-    assert.equal((await fetch(`${base}/api/adt/books/p-science?educationLevel=secondary`)).status, 404);
-    assert.equal((await fetch(`${base}/api/adt/books/draft?educationLevel=primary`)).status, 404);
-    assert.equal((await fetch(`${base}/api/adt/books/failed?educationLevel=primary`)).status, 404);
-    assert.equal((await fetch(`${base}/api/adt/books/missing?educationLevel=primary`)).status, 404);
-    assert.equal((await fetch(`${base}/api/adt/books/p-science?educationLevel=invalid`)).status, 400);
+    assert.equal((await readerFetch('/api/adt/books/p-science?educationLevel=secondary')).status, 404);
+    assert.equal((await readerFetch('/api/adt/books/draft?educationLevel=primary')).status, 404);
+    assert.equal((await readerFetch('/api/adt/books/failed?educationLevel=primary')).status, 404);
+    assert.equal((await readerFetch('/api/adt/books/missing?educationLevel=primary')).status, 404);
+    assert.equal((await readerFetch('/api/adt/books/p-science?educationLevel=invalid')).status, 400);
     assert.ok(!requests.some(request => /books\/(draft|failed)\/reader/.test(request.path)));
   });
   await t.test('masks upstream authorization failures', async () => {
@@ -136,9 +140,9 @@ test('production ADT proxy contract with a mock upstream', async t => {
   });
   await t.test('reader rejects unsafe URLs and reports missing grants without leaking the key', async () => {
     mode = 'reader-invalid';
-    assert.equal((await fetch(`${base}/api/adt/books/p-science?educationLevel=primary`)).status, 502);
+    assert.equal((await readerFetch('/api/adt/books/p-science?educationLevel=primary')).status, 502);
     mode = 'reader-forbidden';
-    const response = await fetch(`${base}/api/adt/books/p-science?educationLevel=primary`);
+    const response = await readerFetch('/api/adt/books/p-science?educationLevel=primary');
     assert.equal(response.status, 403);
     assert.ok(!(await response.text()).includes(dummyKey));
     mode = 'success';

@@ -6,7 +6,11 @@ const dialog = ref<HTMLDialogElement | null>(null);
 const titleId = useId();
 const descriptionId = useId();
 let previousOverflow = '';
-const readerLink = computed(() => ({ path: `/${props.hub}/adt/${encodeURIComponent(props.book.id)}` }));
+const accessToken = useCookie<string | null>('signInAccessToken');
+const readerPath = computed(() => `/${props.hub}/adt/${encodeURIComponent(props.book.id)}`);
+const readerLink = computed(() => accessToken.value
+  ? { path: readerPath.value }
+  : { path: '/auth', query: { redirect: readerPath.value } });
 const classNames = computed(() => props.classifications.classes.filter(item => props.book.classIds.includes(item.id)).map(item => item.name).join(', '));
 const subjectNames = computed(() => props.classifications.subjects.filter(item => props.book.subjectIds.includes(item.id)).map(item => item.name).join(', '));
 onMounted(() => {
@@ -50,7 +54,7 @@ function close() { dialog.value?.close(); }
       <footer class="sticky bottom-0 flex flex-wrap justify-end gap-3 border-t border-gray-100 bg-white px-5 py-4 sm:px-7">
         <button type="button" class="rounded-xl border border-gray-300 px-5 py-3 text-sm font-semibold hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-oceanBlue" @click="close">{{ kiswahili ? 'Funga' : 'Close' }}</button>
         <NuxtLink :to="readerLink" class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-oceanBlue" @click="close">
-          <Icon name="mdi:book-open-page-variant-outline" class="h-5 w-5" aria-hidden="true" />{{ kiswahili ? 'Soma kitabu' : 'Read book' }}
+          <Icon name="mdi:book-open-page-variant-outline" class="h-5 w-5" aria-hidden="true" />{{ accessToken ? (kiswahili ? 'Soma kitabu' : 'Read book') : (kiswahili ? 'Ingia ili kusoma' : 'Sign in to read') }}
         </NuxtLink>
       </footer>
     </dialog>
