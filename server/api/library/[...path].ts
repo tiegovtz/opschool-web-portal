@@ -2,9 +2,9 @@ import { adtStoreBaseUrl } from '../../utils/adtStore';
 
 const readerPath = /^([A-Za-z0-9_-]{1,128})\/preview\/(reader\.\d+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)\/(.+)$/;
 const forwardedResponseHeaders = [
-  'accept-ranges', 'cache-control', 'content-disposition', 'content-language',
+  'accept-ranges', 'access-control-allow-origin', 'cache-control', 'content-disposition', 'content-language',
   'content-range', 'content-security-policy', 'content-type',
-  'cross-origin-resource-policy', 'etag', 'last-modified', 'x-content-type-options',
+  'cross-origin-resource-policy', 'etag', 'last-modified', 'referrer-policy', 'x-content-type-options',
 ];
 
 export default defineEventHandler(async (event) => {
@@ -36,8 +36,15 @@ export default defineEventHandler(async (event) => {
   }
 
   setResponseStatus(event, response.status, response.statusText);
+  const publicOrigin = getRequestURL(event).origin;
   for (const name of forwardedResponseHeaders) {
-    const value = response.headers.get(name);
+    let value = response.headers.get(name);
+    // ADT Store builds its publication CSP from CONTENT_PREVIEW_ORIGIN. When
+    // that origin is HTTP-only, all relative assets now resolve through this
+    // HTTPS proxy and the policy must describe the browser-visible origin.
+    if (name === 'content-security-policy' && value) {
+      value = value.split(base.origin).join(publicOrigin);
+    }
     if (value) setHeader(event, name, value);
   }
   // fetch() decodes compressed upstream bodies, so forwarding an upstream

@@ -23,7 +23,11 @@ test('production ADT proxy contract with a mock upstream', async t => {
     if (req.url.startsWith('/api/library/')) {
       assert.equal(req.headers.authorization, undefined);
       assert.equal(req.headers.cookie, undefined);
-      res.writeHead(200, { 'Content-Type': 'text/html', 'Content-Security-Policy': "frame-ancestors http://127.0.0.1" });
+      res.writeHead(200, {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'text/html',
+        'Content-Security-Policy': `default-src 'none'; style-src http://${req.headers.host}/api/library/; frame-ancestors http://127.0.0.1`,
+      });
       return res.end('<!doctype html><title>Signed ADT reader</title>');
     }
     if (mode === 'forbidden' || req.headers.authorization !== `Bearer ${dummyKey}`) {
@@ -134,6 +138,9 @@ test('production ADT proxy contract with a mock upstream', async t => {
     const publication = await fetch(data.reader.url);
     assert.equal(publication.status, 200);
     assert.equal(publication.headers.get('content-type'), 'text/html');
+    assert.equal(publication.headers.get('access-control-allow-origin'), '*');
+    assert.match(publication.headers.get('content-security-policy'), new RegExp(`style-src ${base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/api/library/`));
+    assert.ok(!publication.headers.get('content-security-policy').includes(`http://127.0.0.1:${upstream.address().port}`));
     assert.match(await publication.text(), /Signed ADT reader/);
     assert.equal((await fetch(`${base}/api/library/not-a-reader/file.txt`)).status, 404);
     assert.equal((await readerFetch('/api/adt/books/p-science?educationLevel=secondary')).status, 404);
