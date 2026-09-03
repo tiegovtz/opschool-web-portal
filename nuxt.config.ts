@@ -56,7 +56,49 @@ export default defineNuxtConfig({
     { src: "~/plugins/init-chapter-progress.client.js", mode: "client" },
   ],
 
-  modules: ["@nuxtjs/google-fonts", "@nuxt/image", "@nuxt/icon"],
+  modules: ["@nuxtjs/google-fonts", "@nuxt/image", "@nuxt/icon", "@vite-pwa/nuxt"],
+
+  pwa: {
+    registerType: "autoUpdate",
+    includeAssets: ["favicon.ico", "apple-touch-icon.png"],
+    manifest: {
+      name: "TIE OpSchool",
+      short_name: "OpSchool",
+      description: "Tanzania Institute of Education online learning platform",
+      theme_color: "#0a7ac8",
+      background_color: "#ffffff",
+      display: "standalone",
+      orientation: "any",
+      scope: "/",
+      start_url: "/",
+      lang: "sw",
+      categories: ["education"],
+      icons: [
+        { src: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
+        { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+        { src: "/pwa-maskable-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      ],
+    },
+    workbox: {
+      cleanupOutdatedCaches: true,
+      clientsClaim: true,
+      skipWaiting: true,
+      globPatterns: ["**/_nuxt/**/*.{js,css,woff2}", "pwa-*.png", "apple-touch-icon.png", "favicon.ico"],
+      navigateFallback: undefined,
+      runtimeCaching: [
+        {
+          urlPattern: ({ request }: { request: Request }) => request.destination === "image",
+          handler: "StaleWhileRevalidate",
+          options: {
+            cacheName: "opschool-images",
+            expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+      ],
+    },
+    devOptions: { enabled: false },
+  },
 
   image: {
     quality: 80,
@@ -127,7 +169,17 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      meta: [{ name: "generator", content: "" }],
+      meta: [
+        { name: "generator", content: "" },
+        { name: "theme-color", content: "#0a7ac8" },
+        { name: "mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-capable", content: "yes" },
+        { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+        { name: "apple-mobile-web-app-title", content: "OpSchool" },
+      ],
+      link: [
+        { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+      ],
     },
   },
 });
