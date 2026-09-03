@@ -37,13 +37,21 @@ export default defineEventHandler(async (event) => {
 
   setResponseStatus(event, response.status, response.statusText);
   const publicOrigin = getRequestURL(event).origin;
+  const signedAssetPath = `/api/library/${encodeURIComponent(match[1])}/preview/${encodeURIComponent(match[2])}/`;
   for (const name of forwardedResponseHeaders) {
     let value = response.headers.get(name);
     // ADT Store builds its publication CSP from CONTENT_PREVIEW_ORIGIN. When
     // that origin is HTTP-only, all relative assets now resolve through this
     // HTTPS proxy and the policy must describe the browser-visible origin.
     if (name === 'content-security-policy' && value) {
-      value = value.split(base.origin).join(publicOrigin);
+      value = value.replace(/https?:\/\/[^\s;]+/g, source => {
+        try {
+          const url = new URL(source);
+          return url.pathname === signedAssetPath ? `${publicOrigin}${signedAssetPath}` : source;
+        } catch {
+          return source;
+        }
+      });
     }
     if (value) setHeader(event, name, value);
   }
