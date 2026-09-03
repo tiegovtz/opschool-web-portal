@@ -87,12 +87,69 @@ export default defineNuxtConfig({
       navigateFallback: undefined,
       runtimeCaching: [
         {
-          urlPattern: ({ request }: { request: Request }) => request.destination === "image",
+          urlPattern: ({ url }: { url: URL }) => url.origin === location.origin
+            && /^\/api\/(?:auth|profile|chat|progress|recommendations)(?:\/|$)/.test(url.pathname),
+          handler: "NetworkOnly",
+        },
+        {
+          urlPattern: ({ url, request }: { url: URL; request: Request }) => request.method === "GET"
+            && url.origin === location.origin && url.pathname.startsWith("/api/library/"),
+          handler: "CacheFirst",
+          options: {
+            cacheName: "opschool-adt-publications",
+            expiration: { maxEntries: 1500, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            cacheableResponse: { statuses: [200] },
+          },
+        },
+        {
+          urlPattern: ({ url, request }: { url: URL; request: Request }) => request.method === "GET"
+            && url.origin === location.origin && url.pathname.startsWith("/api/adt/"),
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "opschool-adt-catalogue",
+            networkTimeoutSeconds: 5,
+            expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            cacheableResponse: { statuses: [200] },
+          },
+        },
+        {
+          urlPattern: ({ url, request }: { url: URL; request: Request }) => request.mode === "navigate"
+            && url.origin === location.origin,
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "opschool-pages",
+            networkTimeoutSeconds: 5,
+            expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 14 },
+            cacheableResponse: { statuses: [200] },
+          },
+        },
+        {
+          urlPattern: ({ request }: { request: Request }) => ["script", "style", "worker", "font"].includes(request.destination),
+          handler: "CacheFirst",
+          options: {
+            cacheName: "opschool-static-resources",
+            expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+        {
+          urlPattern: ({ request }: { request: Request }) => ["image", "audio", "video"].includes(request.destination),
           handler: "StaleWhileRevalidate",
           options: {
-            cacheName: "opschool-images",
-            expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            cacheName: "opschool-media",
+            expiration: { maxEntries: 750, maxAgeSeconds: 60 * 60 * 24 * 30 },
             cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+        {
+          urlPattern: ({ url, request }: { url: URL; request: Request }) => request.method === "GET"
+            && url.origin === location.origin,
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "opschool-accessed-content",
+            networkTimeoutSeconds: 5,
+            expiration: { maxEntries: 750, maxAgeSeconds: 60 * 60 * 24 * 14 },
+            cacheableResponse: { statuses: [200] },
           },
         },
       ],
