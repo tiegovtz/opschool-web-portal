@@ -4,7 +4,7 @@ import type { educationLevel } from "~/types/educationlevel.interface";
 import type { LanguageSupport } from "~/types/language.interface";
 import type { Subjects } from "~/types/subject.interface";
 import apiDocs from "~/utilities/apiDocs";
-import { adtClassOptions, adtSubjectOptions, type AdtClassifications } from '~~/shared/adt/catalogue';
+import { adtClassOptions, adtSubjectOptions, adtDisplayName, type AdtOption, type AdtClassifications } from '~~/shared/adt/catalogue';
 import {
   getApiEducationLevelName,
   isEducationLevelVisibleInHub,
@@ -206,7 +206,7 @@ const filteredEducationLevels = computed(() =>
 );
 
 const educationLevelOptions = computed<DropdownOption[]>(() => {
-  if (props.classifications) return props.classifications.levels;
+  if (props.classifications) return localizedAdtOptions(props.classifications.levels);
   const allowed = new Set(
     filteredEducationLevels.value.map((e) => normalizeValue(e.name)),
   )
@@ -219,7 +219,7 @@ const educationLevelOptions = computed<DropdownOption[]>(() => {
 })
 
 const classOptions = computed<DropdownOption[]>(() => {
-  if (props.classifications) return adtClassOptions(props.classifications, level.value);
+  if (props.classifications) return localizedAdtOptions(adtClassOptions(props.classifications, level.value));
   if (!level.value.trim()) return [];
 
   return sortOptionsByNameAsc(
@@ -235,7 +235,7 @@ const classOptions = computed<DropdownOption[]>(() => {
 });
 
 const subjectOptions = computed<DropdownOption[]>(() => {
-  if (props.classifications) return adtSubjectOptions(props.classifications, level.value, standard.value);
+  if (props.classifications) return localizedAdtOptions(adtSubjectOptions(props.classifications, level.value, standard.value));
   if (!level.value.trim() || !standard.value.trim()) return [];
 
   return sortOptionsByNameAsc(
@@ -245,6 +245,10 @@ const subjectOptions = computed<DropdownOption[]>(() => {
     })),
   );
 });
+
+function localizedAdtOptions(options: AdtOption[]): DropdownOption[] {
+  return options.map(item => ({ id: item.id, name: adtDisplayName(item, props.language === 'kiswahili') }));
+}
 
 const isClassesLoading = computed(() => props.classifications ? props.disabled : classLevelsPending.value);
 

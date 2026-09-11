@@ -3,7 +3,15 @@ import type { AdtBook, AdtCatalogue } from '../../shared/adt/catalogue';
 
 export const adtIdSchema = z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/);
 const ids = z.array(adtIdSchema);
-const option = z.object({ id: adtIdSchema, name: z.string() });
+const option = z.object({ id: adtIdSchema, name: z.string(), swName: z.string().nullish() });
+// Optional previews must not break the catalogue when absent or malformed.
+const coverPreview = z.object({
+  url: z.string(), mimeType: z.string(),
+  blurDataUrl: z.string().max(32768).regex(/^data:image\/(?:png|jpeg|webp|avif|gif);base64,[A-Za-z0-9+/]+={0,2}$/),
+  width: z.number().int().positive().max(480),
+  height: z.number().int().positive().max(640),
+  version: z.string().min(1).max(128).regex(/^[a-zA-Z0-9_-]+$/),
+}).nullish().catch(null);
 export const adtBookSchema = z.object({
   id: adtIdSchema, title: z.string(), isbn: z.string().optional(),
   levelIds: ids, classIds: ids, subjectIds: ids, curriculumIds: ids,
@@ -11,6 +19,7 @@ export const adtBookSchema = z.object({
   features: z.array(z.string()), pages: z.number().nonnegative().optional(),
   status: z.string(), approvalStatusValue: z.string(),
   coverThumbnail: z.object({ url: z.string(), mimeType: z.string() }).nullable(),
+  coverPreview,
 });
 export const adtClassificationSchemas = {
   levels: z.array(option.extend({ classIds: ids, subjectIds: ids })),
@@ -81,12 +90,19 @@ export function isPublishedAdtBook(book: z.infer<typeof adtBookSchema>) {
 }
 
 export function toLearnerAdtBook(book: z.infer<typeof adtBookSchema>): AdtBook {
+  const coverUrl = book.coverThumbnail ? `/api/adt/books/${encodeURIComponent(book.id)}/cover` : null;
+  const preview = coverUrl && book.coverPreview;
   return {
     id: book.id, title: book.title, isbn: book.isbn,
     levelIds: book.levelIds, classIds: book.classIds, subjectIds: book.subjectIds,
     curriculumIds: book.curriculumIds, languageId: book.languageId,
     language: book.language, features: book.features, pages: book.pages,
     // Never follow an upstream-supplied URL or reveal the integration key to an <img>.
-    coverUrl: book.coverThumbnail ? `/api/adt/books/${encodeURIComponent(book.id)}/cover` : null,
+    coverUrl,
+    coverPreview: preview ? {
+      // Preserve the Store's version while keeping all image requests on our proxy.
+      url: `${coverUrl}?variant=thumbnail&v=${encodeURIComponent(preview.version)}`,
+      blurDataUrl: preview.blurDataUrl, width: preview.width, height: preview.height, version: preview.version,
+    } : null,
   };
 }

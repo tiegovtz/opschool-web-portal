@@ -42,7 +42,7 @@ const text = computed(() => sw.value ? {
   noBooks: 'Vitabu vinakuja hivi karibuni', noBooksHelp: 'Vitabu vya ADT vilivyoidhinishwa vitaonekana hapa vinapopatikana.',
   unavailable: 'Vitabu havipatikani kwa sasa', errorHelp: 'Hatukuweza kuunganisha na ADT Store. Tafadhali jaribu tena.', retry: 'Jaribu tena',
   notConnected: 'Maktaba ya ADT bado haijaunganishwa', setup: 'Muunganisho wa ADT Store ukiwekwa, vitabu vilivyoidhinishwa vitaonekana hapa.',
-  previous: 'Iliyotangulia', next: 'Inayofuata', page: 'Ukurasa', of: 'kati ya', loading: 'Inapakia vitabu...',
+  first: 'Mwanzo', last: 'Mwisho', loading: 'Inapakia vitabu...',
 } : {
   home: 'Home', category: hub.value === 'primary' ? 'Primary' : 'Secondary', title: 'ADT books',
   intro: 'Explore accessible digital textbooks. Find your next book by education level, class and subject.',
@@ -55,10 +55,11 @@ const text = computed(() => sw.value ? {
   noBooks: 'Books are on their way', noBooksHelp: 'Approved ADT books will appear here when they are available.',
   unavailable: 'Books are temporarily unavailable', errorHelp: 'We could not connect to ADT Store. Please try again.', retry: 'Try again',
   notConnected: 'The ADT library is not connected yet', setup: 'Once the ADT Store connection is configured, approved books will appear here.',
-  previous: 'Previous', next: 'Next', page: 'Page', of: 'of', loading: 'Loading books...',
+  first: 'First', last: 'Last', loading: 'Loading books...',
 });
-function changePage(next: number) {
-  page.value = next;
+async function changePage(next: number) {
+  page.value = Math.min(Math.max(next, 1), pageCount.value);
+  await nextTick();
   document.getElementById('adt-results')?.focus();
 }
 </script>
@@ -89,11 +90,8 @@ function changePage(next: number) {
           <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <AdtBookCard v-for="book in visibleBooks" :key="book.id" :book="book" :classifications="catalogue" :hub="hub" :kiswahili="sw" />
           </div>
-          <nav v-if="pageCount > 1" :aria-label="text.page" class="mt-7 flex flex-wrap items-center justify-center gap-4 text-sm">
-            <button type="button" :disabled="page === 1" class="rounded-lg border px-4 py-2 disabled:opacity-40" @click="changePage(page - 1)">{{ text.previous }}</button>
-            <span>{{ text.page }} {{ page }} {{ text.of }} {{ pageCount }}</span>
-            <button type="button" :disabled="page === pageCount" class="rounded-lg border px-4 py-2 disabled:opacity-40" @click="changePage(page + 1)">{{ text.next }}</button>
-          </nav>
+          <AppPagination v-if="pageCount > 1" :current-page="page" :total-pages="pageCount" :language="language"
+            :first-label="text.first" :last-label="text.last" class-name="my-5" @change="changePage" />
         </template>
       </section>
     </div>

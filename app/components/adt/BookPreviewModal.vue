@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AdtBook, AdtClassifications, AdtHub } from '~~/shared/adt/catalogue';
+import { adtDisplayName, type AdtBook, type AdtClassifications, type AdtHub } from '~~/shared/adt/catalogue';
 const props = defineProps<{ book: AdtBook; classifications: AdtClassifications; hub: AdtHub; kiswahili: boolean }>();
 const emit = defineEmits<{ close: [] }>();
 const dialog = ref<HTMLDialogElement | null>(null);
@@ -11,8 +11,8 @@ const readerPath = computed(() => `/${props.hub}/adt/${encodeURIComponent(props.
 const readerLink = computed(() => accessToken.value
   ? { path: readerPath.value }
   : { path: '/auth', query: { redirect: readerPath.value } });
-const classNames = computed(() => props.classifications.classes.filter(item => props.book.classIds.includes(item.id)).map(item => item.name).join(', '));
-const subjectNames = computed(() => props.classifications.subjects.filter(item => props.book.subjectIds.includes(item.id)).map(item => item.name).join(', '));
+const classNames = computed(() => props.classifications.classes.filter(item => props.book.classIds.includes(item.id)).map(item => adtDisplayName(item, props.kiswahili)).join(', '));
+const subjectNames = computed(() => props.classifications.subjects.filter(item => props.book.subjectIds.includes(item.id)).map(item => adtDisplayName(item, props.kiswahili)).join(', '));
 onMounted(() => {
   previousOverflow = document.body.style.overflow;
   document.body.style.overflow = 'hidden';
@@ -39,7 +39,7 @@ function close() { dialog.value?.close(); }
       </header>
       <div class="grid gap-6 p-5 sm:grid-cols-2 sm:gap-8 sm:p-8">
         <div class="flex h-72 items-center justify-center rounded-xl border border-gray-100 bg-gray-50 p-6 sm:h-[28rem]">
-          <AdtBookCover :src="book.coverUrl" :title="book.title" loading="eager" class="h-full" />
+          <AdtBookCover :src="book.coverUrl" :preview="book.coverPreview" :title="book.title" loading="eager" class="h-full w-full" />
         </div>
         <div class="flex flex-col justify-center gap-4">
           <p :id="descriptionId" class="text-sm leading-relaxed text-gray-500">{{ kiswahili ? 'Hakikisho la jalada la kitabu. Fungua ukurasa wa kusoma ili kuendelea.' : 'A preview of the book cover. Open the dedicated reading page to continue.' }}</p>

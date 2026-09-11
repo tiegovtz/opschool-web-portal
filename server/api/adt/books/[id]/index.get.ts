@@ -15,7 +15,7 @@ export default defineEventHandler(async (event): Promise<AdtReaderBook> => {
   if (!input.success) throw createError({ statusCode: 400, statusMessage: 'Invalid book or education level.' });
   const { id, educationLevel } = input.data;
   const [book, levels] = await Promise.all([
-    adtFetch(`/api/v1/books/${encodeURIComponent(id)}`, adtBookSchema),
+    adtFetch(`/api/v1/books/${encodeURIComponent(id)}?include=coverPreview`, adtBookSchema),
     adtFetch('/api/v1/data/levels', adtClassificationSchemas.levels),
   ]);
   if (book.id !== id || !isPublishedAdtBook(book) || !levels.some(level => book.levelIds.includes(level.id) && adtLevelHub(level.name) === educationLevel)) {

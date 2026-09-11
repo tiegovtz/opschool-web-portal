@@ -10,16 +10,20 @@ test('production ADT proxy contract with a mock upstream', async t => {
   const dummyKey = 'adt_test_not_a_real_secret';
   let mode = 'success';
   const requests = [];
+  const blurDataUrl = 'data:image/png;base64,aGVsbG8=';
   const books = adtPreviewCatalogue.books.map(book => ({
     ...book, status: 'Ready', approvalStatusValue: 'final_approved',
     coverThumbnail: { url: 'https://do-not-fetch.example/cover', mimeType: 'image/png' },
+    coverPreview: { url: 'https://do-not-fetch.example/preview?variant=thumbnail&v=v2', mimeType: 'image/webp',
+      blurDataUrl, width: 480, height: 640, version: 'v2' },
     currentApprovalTarget: 'Internal reviewer', checksum: 'internal-checksum',
   }));
   books.push({ ...books[0], id: 'draft', approvalStatusValue: 'draft' });
   books.push({ ...books[0], id: 'failed', status: 'Failed' });
   const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=', 'base64');
   const upstream = createServer((req, res) => {
-    requests.push({ path: req.url, auth: req.headers.authorization });
+    requests.push({ path: req.url, auth: req.headers.authorization, etag: req.headers['if-none-match'] });
+    const requestUrl = new URL(req.url, 'http://test');
     if (req.url.startsWith('/api/library/')) {
       assert.equal(req.headers.authorization, undefined);
       assert.equal(req.headers.cookie, undefined);
@@ -38,8 +42,17 @@ test('production ADT proxy contract with a mock upstream', async t => {
       res.writeHead(302, { Location: '/should-not-follow' });
       return res.end();
     }
-    if (req.url.endsWith('/cover')) {
-      res.writeHead(200, { 'Content-Type': 'image/png' });
+    if (requestUrl.pathname.endsWith('/cover')) {
+      if (mode === 'cover-forbidden') {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        return res.end(JSON.stringify({ error: `Forbidden ${dummyKey}` }));
+      }
+      if (req.headers['if-none-match'] === '"cover-v2"') {
+        res.writeHead(304, { ETag: '"cover-v2"' });
+        return res.end();
+      }
+      const thumbnail = requestUrl.searchParams.get('variant') === 'thumbnail';
+      res.writeHead(200, { 'Content-Type': mode === 'cover-invalid' ? 'text/html' : thumbnail && mode !== 'preview-pending' ? 'image/webp' : 'image/png', ETag: '"cover-v2"' });
       return res.end(png);
     }
     if (req.url.includes('/reader?')) {
@@ -56,9 +69,9 @@ test('production ADT proxy contract with a mock upstream', async t => {
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
       } }));
     }
-    const bookId = req.url.match(/^\/api\/v1\/books\/([^/]+)$/)?.[1];
-    const resource = req.url.match(/^\/api\/v1\/data\/(\w+)$/)?.[1];
-    const data = bookId ? books.find(book => book.id === bookId) : resource ? adtPreviewCatalogue[resource] : books;
+    const bookId = requestUrl.pathname.match(/^\/api\/v1\/books\/([^/]+)$/)?.[1];
+    const resource = requestUrl.pathname.match(/^\/api\/v1\/data\/(\w+)$/)?.[1];
+    const data = bookId ? books.find(book => book.id === bookId) : resource ? adtPreviewCatalogue[resource].map(item => ({ ...item, swName: item.id === 'science' ? 'Sayansi' : '' })) : books;
     if (bookId && !data) {
       res.writeHead(404, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: 'Book not found.' }));
@@ -108,6 +121,10 @@ test('production ADT proxy contract with a mock upstream', async t => {
     assert.ok(!JSON.stringify(data).includes('do-not-fetch'));
     assert.ok(requests.every(request => request.auth === `Bearer ${dummyKey}`));
     assert.ok(requests.some(request => request.path === '/api/v1/data/curricula'));
+    assert.ok(requests.some(request => request.path === '/api/v1/books?include=coverPreview'));
+    assert.equal(data.subjects.find(item => item.id === 'science').swName, 'Sayansi');
+    assert.equal(data.books[0].coverPreview.url, '/api/adt/books/p-science/cover?variant=thumbnail&v=v2');
+    assert.equal(data.books[0].coverPreview.blurDataUrl, blurDataUrl);
   });
   await t.test('rejects unknown hubs before querying upstream', async () => {
     const count = requests.length;
@@ -121,6 +138,42 @@ test('production ADT proxy contract with a mock upstream', async t => {
     assert.deepEqual(Buffer.from(await response.arrayBuffer()), png);
     assert.equal((await fetch(`${base}/api/adt/books/draft/cover`)).status, 404);
     assert.ok(!requests.some(request => request.path === '/api/v1/books/draft/cover'));
+  });
+  await t.test('proxies versioned thumbnails and authenticates private ETag revalidation', async () => {
+    const path = '/api/adt/books/p-science/cover?variant=thumbnail&v=v2';
+    const response = await fetch(`${base}${path}`);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-type'), 'image/webp');
+    assert.equal(response.headers.get('cache-control'), 'private, no-cache');
+    assert.equal(response.headers.get('etag'), '"cover-v2"');
+    const start = requests.length;
+    const revalidated = await fetch(`${base}${path}`, { headers: { 'If-None-Match': response.headers.get('etag') } });
+    assert.equal(revalidated.status, 304);
+    assert.equal((await revalidated.arrayBuffer()).byteLength, 0);
+    assert.equal(revalidated.headers.get('cache-control'), 'private, no-cache');
+    assert.deepEqual(requests.slice(start).map(item => item.path), ['/api/v1/books/p-science', '/api/v1/books/p-science/cover?variant=thumbnail&v=v2']);
+    assert.ok(requests.slice(start).every(item => item.auth === `Bearer ${dummyKey}`));
+    assert.equal(requests.at(-1).etag, '"cover-v2"');
+    mode = 'cover-forbidden';
+    const denied = await fetch(`${base}${path}`, { headers: { 'If-None-Match': '"cover-v2"' } });
+    assert.equal(denied.status, 502);
+    assert.equal(denied.headers.get('cache-control'), 'private, no-store');
+    assert.ok(!(await denied.text()).includes(dummyKey));
+    mode = 'success';
+    assert.equal((await fetch(`${base}/api/adt/books/draft/cover?variant=thumbnail&v=v2`, { headers: { 'If-None-Match': '"cover-v2"' } })).status, 404);
+  });
+  await t.test('accepts original images while previews are pending and rejects non-image responses and invalid variants', async () => {
+    mode = 'preview-pending';
+    const response = await fetch(`${base}/api/adt/books/p-science/cover?variant=thumbnail&v=old`);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-type'), 'image/png');
+    mode = 'cover-invalid';
+    assert.equal((await fetch(`${base}/api/adt/books/p-science/cover?variant=thumbnail`)).status, 502);
+    mode = 'success';
+    const count = requests.length;
+    assert.equal((await fetch(`${base}/api/adt/books/p-science/cover?variant=unsafe`)).status, 400);
+    assert.equal((await fetch(`${base}/api/adt/books/p-science/cover?v=..%2Funsafe`)).status, 400);
+    assert.equal(requests.length, count);
   });
   await t.test('reader detail only exposes eligible books in the correct category', async () => {
     const unauthenticatedRequestCount = requests.length;

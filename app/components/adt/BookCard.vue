@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import type { AdtBook, AdtClassifications, AdtHub } from '~~/shared/adt/catalogue';
+import { adtDisplayName, type AdtBook, type AdtClassifications, type AdtHub } from '~~/shared/adt/catalogue';
 const props = defineProps<{ book: AdtBook; classifications: AdtClassifications; hub: AdtHub; kiswahili: boolean }>();
 const previewOpen = ref(false);
-const classNames = computed(() => props.classifications.classes.filter(item => props.book.classIds.includes(item.id)).map(item => item.name).join(', '));
-const subjectNames = computed(() => props.classifications.subjects.filter(item => props.book.subjectIds.includes(item.id)).map(item => item.name).join(', '));
+const classNames = computed(() => props.classifications.classes.filter(item => props.book.classIds.includes(item.id)).map(item => adtDisplayName(item, props.kiswahili)).join(', '));
+const subjectNames = computed(() => props.classifications.subjects.filter(item => props.book.subjectIds.includes(item.id)).map(item => adtDisplayName(item, props.kiswahili)).join(', '));
 </script>
 
 <template>
   <article class="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
     <div class="flex h-56 items-center justify-center bg-sky-50 p-5">
-      <AdtBookCover :src="book.coverUrl" :title="book.title" class="h-full" />
+      <AdtBookCover :src="book.coverUrl" :preview="book.coverPreview" :title="book.title" class="h-full w-full" />
     </div>
     <div class="flex flex-1 flex-col gap-3 p-5">
       <p class="text-xs font-semibold uppercase tracking-wide text-oceanBlue">{{ classNames || (kiswahili ? 'Kitabu cha ADT' : 'ADT book') }}</p>
