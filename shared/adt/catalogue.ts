@@ -1,5 +1,12 @@
 export type AdtHub = 'primary' | 'secondary';
-export type AdtOption = { id: string; name: string };
+export type AdtOption = { id: string; name: string; swName?: string | null };
+export type AdtCoverPreview = {
+  url: string;
+  blurDataUrl: string;
+  width: number;
+  height: number;
+  version: string;
+};
 export type AdtLevel = AdtOption & { classIds: string[]; subjectIds: string[] };
 export type AdtClass = AdtOption & { levelIds: string[]; subjectIds: string[] };
 export type AdtSubject = AdtOption & { levelIds: string[]; classIds: string[] };
@@ -23,6 +30,7 @@ export type AdtBook = {
   features: string[];
   pages?: number;
   coverUrl: string | null;
+  coverPreview?: AdtCoverPreview | null;
 };
 export type AdtReaderBook = { book: AdtBook; preview: boolean; readerAvailable: true; reader: { url: string; expiresAt: string } };
 export type AdtCatalogue = AdtClassifications & {
@@ -54,6 +62,11 @@ export function adtLevelHub(name: string): AdtHub | null {
 export const sortAdtOptions = <T extends AdtOption>(items: T[]): T[] =>
   [...items].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 
+// Classification values are owned by the Store, never translated or generated locally.
+export function adtDisplayName(item: AdtOption, kiswahili: boolean): string {
+  return kiswahili ? item.swName?.trim() || item.name : item.name;
+}
+
 export function scopeAdtCatalogue(catalogue: AdtCatalogue, hub: AdtHub): AdtCatalogue {
   const levels = sortAdtOptions(catalogue.levels.filter(level => adtLevelHub(level.name) === hub));
   const levelIds = new Set(levels.map(level => level.id));
@@ -82,7 +95,7 @@ export function adtSubjectOptions(catalogue: AdtClassifications, level: string, 
 export function filterAdtBooks(catalogue: AdtCatalogue, filters: AdtFilters): AdtBook[] {
   const names = new Map([
     ...catalogue.levels, ...catalogue.classes, ...catalogue.subjects, ...catalogue.curricula,
-  ].map(item => [item.id, item.name]));
+  ].map(item => [item.id, [item.name, adtDisplayName(item, true)].join(' ')]));
   const terms = filters.search.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   return catalogue.books.filter(book => {
     if (filters.level && !book.levelIds.includes(filters.level)) return false;

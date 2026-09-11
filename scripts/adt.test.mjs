@@ -1,8 +1,71 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { adtLevelHub, adtClassOptions, adtSubjectOptions, scopeAdtCatalogue, filterAdtBooks, emptyAdtFilters, sortAdtOptions } from '../shared/adt/catalogue.ts';
+import { adtDisplayName, adtLevelHub, adtClassOptions, adtSubjectOptions, scopeAdtCatalogue, filterAdtBooks, emptyAdtFilters, sortAdtOptions } from '../shared/adt/catalogue.ts';
 import { adtPreviewCatalogue } from '../server/utils/adtPreview.ts';
-import { adtBookSchema, adtRequestOptions, isPublishedAdtBook, toLearnerAdtBook } from '../server/utils/adtStore.ts';
+import { adtBookSchema, adtClassificationSchemas, adtRequestOptions, isPublishedAdtBook, toLearnerAdtBook } from '../server/utils/adtStore.ts';
+
+test('uses only endpoint names in either website language and preserves IDs', () => {
+  const [subject] = adtClassificationSchemas.subjects.parse([
+    { id: 'science', name: 'Science', swName: ' Sayansi na Teknolojia ', levelIds: ['primary'], classIds: ['p3'] },
+  ]);
+  assert.equal(adtDisplayName(subject, true), 'Sayansi na Teknolojia');
+  assert.equal(adtDisplayName(subject, false), 'Science');
+  assert.equal(subject.id, 'science');
+  for (const swName of ['', '  ', null, undefined]) {
+    for (const name of ['Primary', 'Pre-primary Class', 'Standard 3', 'Science', 'Arithmetic', 'Mathematics', 'Swahili', 'Custom subject']) {
+      assert.equal(adtDisplayName({ id: 'store-id', name, swName }, true), name);
+    }
+  }
+  assert.equal(adtDisplayName({ id: 'arithmetic', name: 'Arithmetic', swName: 'Kuhesabu' }, true), 'Kuhesabu');
+  assert.equal(adtDisplayName({ id: 'p3', name: 'Standard 3', swName: 'Darasa lililosasishwa' }, true), 'Darasa lililosasishwa');
+});
+
+test('preserves endpoint-provided translations across every classification collection', () => {
+  for (const [resource, schema] of Object.entries(adtClassificationSchemas)) {
+    const [item] = schema.parse([{ id: `store-${resource}`, name: `English ${resource}`, swName: `Lebo ya ${resource}`,
+      levelIds: [], classIds: [], subjectIds: [] }]);
+    assert.equal(adtDisplayName(item, true), `Lebo ya ${resource}`);
+    assert.equal(adtDisplayName(item, false), `English ${resource}`);
+    assert.equal(item.id, `store-${resource}`);
+  }
+});
+
+test('search matches both translated and English classification names on the same books', () => {
+  const catalogue = {
+    ...adtPreviewCatalogue,
+    subjects: adtPreviewCatalogue.subjects.map(item => ({ ...item,
+      swName: item.id === 'science' ? 'Sayansi na Teknolojia' : item.id === 'math' ? 'Hisabati' : undefined,
+    })),
+  };
+  for (const search of ['Science', 'Sayansi na Teknolojia']) {
+    assert.deepEqual(filterAdtBooks(catalogue, { ...emptyAdtFilters(), class: 'f1', search }).map(book => book.id), ['s-science']);
+  }
+  assert.deepEqual(filterAdtBooks(catalogue, { ...emptyAdtFilters(), class: 'f2', search: 'Hisabati' }).map(book => book.id), ['s-math']);
+  // The unlocalized endpoint fixture must not gain an invented Swahili search alias.
+  assert.deepEqual(filterAdtBooks(adtPreviewCatalogue, { ...emptyAdtFilters(), class: 'f2', search: 'Hisabati' }), []);
+  const renamed = { ...catalogue, subjects: catalogue.subjects.map(item => item.id === 'math' ? { ...item, swName: 'Jina jipya' } : item) };
+  assert.deepEqual(filterAdtBooks(renamed, { ...emptyAdtFilters(), class: 'f2', search: 'Jina jipya' }).map(book => book.id), ['s-math']);
+  assert.deepEqual(filterAdtBooks(renamed, { ...emptyAdtFilters(), class: 'f2', search: 'Hisabati' }), []);
+});
+
+test('maps versioned previews to the local proxy and degrades invalid/absent previews to originals', () => {
+  const metadata = { ...adtPreviewCatalogue.books[0], status: 'Ready', approvalStatusValue: 'final_approved',
+    coverThumbnail: { url: 'https://untrusted.example/cover', mimeType: 'image/png' } };
+  const preview = { url: 'https://untrusted.example/preview', mimeType: 'image/webp',
+    blurDataUrl: 'data:image/png;base64,aGVsbG8=', width: 480, height: 640, version: 'cover-v2' };
+  const learner = toLearnerAdtBook(adtBookSchema.parse({ ...metadata, coverPreview: preview }));
+  assert.equal(learner.coverPreview.url, `/api/adt/books/${metadata.id}/cover?variant=thumbnail&v=cover-v2`);
+  assert.equal(learner.coverPreview.blurDataUrl, preview.blurDataUrl);
+  assert.equal(learner.coverPreview.width, 480);
+  assert.ok(!JSON.stringify(learner).includes('untrusted.example'));
+  for (const coverPreview of [null, undefined, { ...preview, blurDataUrl: 'https://untrusted.example/blur' },
+    { ...preview, blurDataUrl: 'data:image/svg+xml;base64,aGVsbG8=' }, { ...preview, width: 0 }, { ...preview, version: '../bad' }]) {
+    const result = toLearnerAdtBook(adtBookSchema.parse({ ...metadata, coverPreview }));
+    assert.equal(result.coverPreview, null);
+    assert.equal(result.coverUrl, `/api/adt/books/${metadata.id}/cover`);
+  }
+  assert.equal(toLearnerAdtBook(adtBookSchema.parse({ ...metadata, coverThumbnail: null, coverPreview: preview })).coverPreview, null);
+});
 
 test('accepts Store origins and API base URLs without duplicating the API prefix', () => {
   const previous = globalThis.useRuntimeConfig;

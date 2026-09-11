@@ -8,11 +8,13 @@ const props = withDefaults(
     totalPages: number;
     firstLabel?: string;
     lastLabel?: string;
+    language?: 'english' | 'kiswahili';
     className?: string;
   }>(),
   {
     firstLabel: "First",
     lastLabel: "Last",
+    language: "english",
     className: "",
   },
 );
@@ -20,7 +22,14 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: "change", page: number): void;
 }>();
-const message = ref<string>();
+const labels = computed(() => props.language === 'kiswahili' ? {
+  navigation: 'Ukurasa', info: 'Taarifa za ukurasa', previous: 'Ukurasa uliotangulia', next: 'Ukurasa unaofuata', page: 'Ukurasa', of: 'kati ya',
+} : {
+  navigation: 'Pagination', info: 'Pagination info', previous: 'Previous page', next: 'Next page', page: 'Page', of: 'of',
+});
+const hasNavigated = ref(false);
+const pageSummary = (page: number) => `${labels.value.page} ${page} ${labels.value.of} ${props.totalPages}`;
+const message = computed(() => hasNavigated.value ? pageSummary(props.currentPage) : '');
 
 const paginationItems = computed(() => {
   if (props.totalPages <= 0) return [];
@@ -43,7 +52,7 @@ const mobilePaginationItems = computed(() => {
 
 const goToPage = (page: number) => {
   const nextPageNumber = Math.min(Math.max(page, 1), Math.max(props.totalPages, 1));
-  message.value = `Page ${nextPageNumber} of ${props.totalPages}`;
+  hasNavigated.value = true;
   emit("change", nextPageNumber);
 };
 </script>
@@ -52,9 +61,9 @@ const goToPage = (page: number) => {
   <nav
     v-if="totalPages > 0"
     :class="['flex justify-center px-3 my-10', className]"
-    aria-label="Pagination"
+    :aria-label="labels.navigation"
   >
-    <div class="sr-only" aria-atomic="true" aria-label="pagination info" aria-live="assertive">{{ message }}</div>
+    <div class="sr-only" aria-atomic="true" :aria-label="labels.info" aria-live="assertive">{{ message }}</div>
     <div class="flex w-full justify-center">
       <div class="flex w-full max-w-max flex-col items-center gap-3 text-xs text-slate-500">
         <div class="flex items-center justify-center gap-2 sm:hidden">
@@ -62,6 +71,7 @@ const goToPage = (page: number) => {
             type="button"
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-sky-100 bg-sky-50 text-sky-600 transition-colors duration-200 hover:bg-sky-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300"
             :disabled="currentPage === 1"
+            :aria-label="labels.previous"
             @click="goToPage(currentPage - 1)"
           >
             <Icon
@@ -92,6 +102,7 @@ const goToPage = (page: number) => {
             type="button"
             class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-sky-100 bg-sky-50 text-sky-600 transition-colors duration-200 hover:bg-sky-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300"
             :disabled="currentPage === totalPages"
+            :aria-label="labels.next"
             @click="goToPage(currentPage + 1)"
           >
             <Icon
@@ -102,7 +113,7 @@ const goToPage = (page: number) => {
         </div>
 
         <div class="rounded-full border border-slate-200 bg-white/90 px-4 py-1.5 text-[11px] font-medium text-slate-500 sm:hidden">
-          Page {{ currentPage }} of {{ totalPages }}
+          {{ pageSummary(currentPage) }}
         </div>
 
         <div class="hidden items-center justify-center gap-2 sm:flex">
@@ -119,6 +130,7 @@ const goToPage = (page: number) => {
             type="button"
             class="flex items-center justify-center w-8 h-8 transition-colors duration-200 border rounded-full border-sky-100 bg-sky-50 text-sky-600 hover:bg-sky-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300"
             :disabled="currentPage === 1"
+            :aria-label="labels.previous"
             @click="goToPage(currentPage - 1)"
           >
             <Icon
@@ -160,6 +172,7 @@ const goToPage = (page: number) => {
             type="button"
             class="flex items-center justify-center w-8 h-8 transition-colors duration-200 border rounded-full border-sky-100 bg-sky-50 text-sky-600 hover:bg-sky-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300"
             :disabled="currentPage === totalPages"
+            :aria-label="labels.next"
             @click="goToPage(currentPage + 1)"
           >
             <Icon

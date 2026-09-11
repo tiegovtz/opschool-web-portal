@@ -8,7 +8,7 @@ export default defineEventHandler(async event => {
   if (!query.success) throw createError({ statusCode: 400, statusMessage: 'Select primary or secondary education.' });
   if (!adtConfigured()) return emptyAdtCatalogue();
   const [books, levels, classes, subjects, languages, curricula] = await Promise.all([
-    adtFetch('/api/v1/books', z.array(adtBookSchema)),
+    adtFetch('/api/v1/books?include=coverPreview', z.array(adtBookSchema)),
     adtFetch('/api/v1/data/levels', adtClassificationSchemas.levels),
     adtFetch('/api/v1/data/classes', adtClassificationSchemas.classes),
     adtFetch('/api/v1/data/subjects', adtClassificationSchemas.subjects),
