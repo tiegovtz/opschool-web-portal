@@ -6,7 +6,7 @@ The server checkout is owned by `root:sudo`, and the `saidi` account cannot use 
 
 ## One-time GitHub setup
 
-Create an Actions environment called `development`, restricted to branch `develop`. Add:
+Use the existing Actions environment called `DEPLOY_HOST`, restricted to branch `develop`. Add these entries to that environment:
 
 | Name | Type | Value |
 | --- | --- | --- |
