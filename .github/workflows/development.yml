@@ -81,7 +81,7 @@ jobs:
             exit 1
           fi
           if [[ "$base_sha" != "$GITHUB_SHA" ]]; then
-            git bundle create portal-deploy.bundle "$GITHUB_SHA" "^$base_sha"
+            git bundle create portal-deploy.bundle HEAD "^$base_sha"
             printf -v prepare_command 'mkdir -p -- %q' "$incoming"
             ssh "${ssh_options[@]}" "$target" "$prepare_command"
             scp "${ssh_options[@]}" portal-deploy.bundle "$target:$incoming/${GITHUB_SHA}.bundle"
