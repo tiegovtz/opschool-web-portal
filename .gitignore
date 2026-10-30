@@ -49,6 +49,9 @@ server/data/vector-store.json
 *.md
 !README.md
 !docs/adt-integration.md
+!docs/development-deployment.md
+.deploy/
+
 
 # Next.js migration package (separate project)
 nextjs-migration-package/

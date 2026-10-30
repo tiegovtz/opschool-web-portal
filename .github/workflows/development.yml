@@ -1,0 +1,90 @@
+name: Development CI/CD
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: development-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:adt
+      - run: pnpm test:images
+      - run: pnpm build
+      - run: pnpm test:adt:api
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: development
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_HEALTH_URL: ${{ vars.DEPLOY_HEALTH_URL }}
+        run: |
+          set -euo pipefail
+          for value in DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS DEPLOY_HOST DEPLOY_USER DEPLOY_HEALTH_URL; do
+            if [[ -z "${!value}" ]]; then
+              echo "Missing development environment configuration: $value" >&2
+              exit 1
+            fi
+          done
+          if [[ ! "$DEPLOY_HOST" =~ ^[A-Za-z0-9.-]+$ || ! "$DEPLOY_USER" =~ ^[A-Za-z0-9_-]+$ || ! "$DEPLOY_HEALTH_URL" =~ ^http://127\.0\.0\.1:[0-9]+/ ]]; then
+            echo 'Invalid SSH host, user, or health URL' >&2
+            exit 1
+          fi
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+      - name: Deploy and verify release
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ vars.DEPLOY_USER }}
+          DEPLOY_HEALTH_URL: ${{ vars.DEPLOY_HEALTH_URL }}
+        run: |
+          set -euo pipefail
+          ssh_options=(-o BatchMode=yes -o StrictHostKeyChecking=yes)
+          target="${DEPLOY_USER}@${DEPLOY_HOST}"
+          repo=/var/www/OPSchool/opschool-web-portal
+          incoming=/var/www/OPSchool/opschool-web-portal/.deploy/incoming
+          printf -v base_command 'git -c safe.directory=%q -C %q rev-parse HEAD' "$repo" "$repo"
+          base_sha=$(ssh "${ssh_options[@]}" "$target" "$base_command")
+          if [[ ! "$base_sha" =~ ^[a-f0-9]{40}$ ]] || ! git merge-base --is-ancestor "$base_sha" "$GITHUB_SHA"; then
+            echo 'Server revision is not an ancestor of this develop commit' >&2
+            exit 1
+          fi
+          if [[ "$base_sha" != "$GITHUB_SHA" ]]; then
+            git bundle create portal-deploy.bundle "$GITHUB_SHA" "^$base_sha"
+            printf -v prepare_command 'mkdir -p -- %q' "$incoming"
+            ssh "${ssh_options[@]}" "$target" "$prepare_command"
+            scp "${ssh_options[@]}" portal-deploy.bundle "$target:$incoming/${GITHUB_SHA}.bundle"
+          fi
+          printf -v deploy_command 'bash -s -- %q %q %q' "$GITHUB_SHA" "$base_sha" "$DEPLOY_HEALTH_URL"
+          ssh "${ssh_options[@]}" "$target" "$deploy_command" < scripts/deploy-development.sh

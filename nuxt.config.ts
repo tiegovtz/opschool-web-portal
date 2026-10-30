@@ -215,6 +215,9 @@ export default defineNuxtConfig({
          'page-flip', // CJS
         'pdfjs-dist',
         'pdfjs-dist/build/pdf',
+        " @vue/devtools-core",
+         "@vue/devtools-kit",
+         "@iconify/vue"
       ],
     },
     server: {
