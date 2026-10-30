@@ -5,7 +5,7 @@ The workflow in `.github/workflows/development.yml` checks pull requests into `d
 
 ## One-time GitHub setup
 
-Create an Actions environment called `development`, restricted to branch `develop`. Add:
+Use the existing Actions environment called `DEPLOY_HOST`, restricted to branch `develop`. Add these entries to that environment:
 
 | Name | Type | Value |
 | --- | --- | --- |
