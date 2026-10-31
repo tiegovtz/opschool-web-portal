@@ -68,7 +68,7 @@ export async function loadDynamicShortcodes(forceReload: boolean = false): Promi
         // Uses $fetch (not the native fetch) so the request respects the app's
         // base path when deployed under a sub-path (e.g. /portal) - a bare
         // fetch('/api/...') resolves against the domain root and 404s there.
-        const data = await $fetch('/api/image-list');
+        const data = await $fetch<{ success?: boolean; images?: Array<Record<string, any>> }>('/api/image-list');
 
         if (data.success && data.images && data.images.length > 0) {
           // Convert to cache format - supports both single and multi-image figures.
