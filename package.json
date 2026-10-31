@@ -12,6 +12,7 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
+    "typecheck": "vue-tsc --noEmit",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare && node scripts/patch-nuxt-vite-builder.mjs",
     "migrate-figures-to-api": "npx tsx scripts/migrate-figures-to-api.ts",
@@ -107,7 +108,8 @@
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.3",
     "unplugin-vue-components": "^28.4.1",
-    "vite": "^6.4.1"
+    "vite": "^6.4.1",
+    "vue-tsc": "^3.3.14"
   },
   "version": "1.1.3"
 }

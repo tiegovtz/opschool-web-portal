@@ -6,7 +6,9 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   debug: false,
   srcDir: "app/",
-
+  typescript: {
+    typeCheck:true
+  },
   ignore: [
     ".claude/**",
     "Chunking/**",
