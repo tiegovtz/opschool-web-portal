@@ -41,6 +41,7 @@ const isHomeRoute = computed(
     route.path === "/" || matchesPath("/secondary") || matchesPath("/primary"),
 );
 const isSmartClassRoute = computed(() => matchesPath("/smart-class"));
+const isAiTeacherRoute = computed(() => matchesPath("/tie-ai-teacher"));
 const isLearningStatisticsRoute = computed(() =>
   matchesPath("/profile/learning-statistics"),
 );
@@ -54,10 +55,11 @@ const isAccountSectionRoute = computed(
 );
 
 const desktopNavItemClass =
-  "flex items-center gap-2 rounded-[6px] px-3 py-1 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
+  "inline-flex items-center gap-2 rounded-md border border-white/40 bg-white/10 px-3 py-1 text-center text-sm font-medium text-white whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70";
 const mobileNavItemClass =
   "flex items-center justify-center gap-2 rounded-[6px] px-3 py-1 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
 const activeNavItemClass = "bg-deepBlue text-white shadow-sm";
+const desktopInactiveNavItemClass = "hover:bg-white/20";
 const inactiveNavItemClass = "hover:bg-deepBlue/85 hover:shadow-sm";
 
 const PROTECTED_RETURN_PREFIXES = [
@@ -406,7 +408,7 @@ onBeforeUnmount(() => {
       <div class="w-full">
         <!-- Media Screen -->
         <div
-          class="hidden w-full items-center gap-4 text-white md:grid md:grid-cols-[1fr_auto_1fr] bg-oceanBlue rounded-xs wrapper-container"
+          class="hidden w-full items-center gap-4 text-white md:grid md:grid-cols-[minmax(0,1fr)_auto] min-[1441px]:grid-cols-[1fr_auto_1fr] bg-oceanBlue rounded-xs wrapper-container"
         >
           <div class="flex items-center gap-2 justify-self-start">
             <div
@@ -421,7 +423,7 @@ onBeforeUnmount(() => {
                   desktopNavItemClass,
                   isHomeRoute || isHomeMenuOpen
                     ? activeNavItemClass
-                    : inactiveNavItemClass,
+                    : desktopInactiveNavItemClass,
                 ]"
                 @click="toggleHomeMenu"
               >
@@ -467,7 +469,7 @@ onBeforeUnmount(() => {
               href="https://ol.tie.go.tz/index.php"
               target="_blank"
               rel="noopener noreferrer"
-              :class="[desktopNavItemClass, inactiveNavItemClass]"
+              :class="[desktopNavItemClass, desktopInactiveNavItemClass]"
             >
               <div class="flex items-center justify-center">
                 <IconsTieLibrary :size="20" />
@@ -484,7 +486,9 @@ onBeforeUnmount(() => {
               :aria-current="isSmartClassRoute ? 'page' : undefined"
               :class="[
                 desktopNavItemClass,
-                isSmartClassRoute ? activeNavItemClass : inactiveNavItemClass,
+                isSmartClassRoute
+                  ? activeNavItemClass
+                  : desktopInactiveNavItemClass,
               ]"
             >
               <div class="flex items-center justify-center">
@@ -494,11 +498,29 @@ onBeforeUnmount(() => {
                 {{ language === "english" ? `Smart class` : `Darasa janja` }}
               </p>
             </NuxtLink>
+
+            <!-- AI Teacher -->
+            <NuxtLink
+              to="/tie-ai-teacher"
+              aria-label="Go to AI Teacher"
+              :aria-current="isAiTeacherRoute ? 'page' : undefined"
+              :class="[
+                desktopNavItemClass,
+                isAiTeacherRoute
+                  ? activeNavItemClass
+                  : desktopInactiveNavItemClass,
+              ]"
+            >
+              <IconsRobotAi :size="20" />
+              <p class="hidden capitalize lg:flex">
+                {{ language === "english" ? `AI Teacher` : `Mwalimu wa AI` }}
+              </p>
+            </NuxtLink>
           </div>
 
           <!-- title (TIE online public school) -->
           <div
-            class="min-w-0 justify-self-center"
+            class="hidden min-w-0 justify-self-center min-[1441px]:block"
             role="navigation"
           >
             <NuxtLink
@@ -554,14 +576,15 @@ onBeforeUnmount(() => {
 
             <div class="subInfo">
               <div
-                class="flex items-center gap-4 p-2"
+                class="flex items-center gap-2 p-1"
                 v-if="!userToken"
               >
                 <NuxtLink
                   aria-label="go to sign in page"
                   :to="authSignInTo"
                   title="Sign in"
-                  class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
+                  class="h-8 justify-center"
+                  :class="[desktopNavItemClass, desktopInactiveNavItemClass]"
                 >
                   <IconsSignIn :size="20" />
                   <p class="hidden capitalize lg:flex">
@@ -573,7 +596,8 @@ onBeforeUnmount(() => {
                   aria-label="Go to sign up page"
                   :to="authSignUpTo"
                   title="Sign Up"
-                  class="flex items-center h-6 gap-2 px-1 text-white border-white rounded-md cursor-pointer border-1 md:h-8"
+                  class="h-8 justify-center"
+                  :class="[desktopNavItemClass, desktopInactiveNavItemClass]"
                 >
                   <IconsProfileCircle :size="24" />
                   <p class="hidden capitalize lg:flex">
@@ -594,7 +618,7 @@ onBeforeUnmount(() => {
                     desktopNavItemClass,
                     isAccountSectionRoute || isAccountMenuOpen
                       ? activeNavItemClass
-                      : inactiveNavItemClass,
+                      : desktopInactiveNavItemClass,
                   ]"
                   @click="toggleAccountMenu"
                 >

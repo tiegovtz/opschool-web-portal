@@ -1,9 +1,8 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import { fileURLToPath } from "node:url";
 import { vite as vidstack } from "vidstack/plugins";
 
 export default defineNuxtConfig({
-  compatibilityDate: "2024-11-01",
+  compatibilityDate: '2026-10-31',
   devtools: { enabled: true },
   debug: false,
   srcDir: "app/",
