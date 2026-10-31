@@ -378,7 +378,7 @@ const onDocumentKeydown = (event: KeyboardEvent) => {
 };
 
 onMounted(() => {
-  if (!process.client) return;
+  if (!import.meta.client) return;
 
   document.addEventListener("pointerdown", onDocumentPointerDown);
   document.addEventListener("keydown", onDocumentKeydown);
@@ -386,7 +386,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (logoutToastTimeout.value) clearTimeout(logoutToastTimeout.value);
-  if (!process.client) return;
+  if (!import.meta.client) return;
 
   document.removeEventListener("pointerdown", onDocumentPointerDown);
   document.removeEventListener("keydown", onDocumentKeydown);
