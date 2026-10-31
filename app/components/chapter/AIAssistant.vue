@@ -1,12 +1,20 @@
 <script setup>
 import { ref, watch, nextTick, onUnmounted, onMounted, computed } from "vue";
 import { Chat } from "@ai-sdk/vue";
+import { DefaultChatTransport } from "ai";
 import apiDocs from "~/utilities/apiDocs";
 import { normalizeLanguageSupport } from "~/utilities/educationRoute";
 import { tr } from "zod/v4/locales";
 
 // Development mode flag for conditional logging
 const isDev = import.meta.dev;
+
+// Base path the app is deployed under (e.g. "/portal" on dev). A bare "/api/chat"
+// resolves against the domain root and 404s once the app is served from a sub-path -
+// the Chat SDK and our fetch interceptor below use native fetch, not Nuxt's $fetch,
+// so they don't pick up app.baseURL automatically.
+const apiBasePath = useRuntimeConfig().app.baseURL.replace(/\/$/, "");
+const chatApiPath = `${apiBasePath}/api/chat`;
 
 const isHtml = (str) => /<\/?[a-z][\s\S]*>/i.test(str?.trim());
 
@@ -497,7 +505,7 @@ const originalFetch = window.fetch;
 // Override fetch to add context
 window.fetch = async function(url, options = {}) {
   // Only intercept calls to our API endpoint
-  if (typeof url === 'string' && url.includes('/api/chat')) {
+  if (typeof url === 'string' && url.includes(chatApiPath)) {
     const context = effectiveContext.value;
     const chapterNameValue = context.chapterName;
     
@@ -581,7 +589,7 @@ window.fetch = async function(url, options = {}) {
 // Initialize Chat component AFTER fetch interceptor is set up
 // This ensures Chat uses our intercepted fetch
 const chat = new Chat({
-  api: "/api/chat",
+  transport: new DefaultChatTransport({ api: chatApiPath }),
 });
 
 
