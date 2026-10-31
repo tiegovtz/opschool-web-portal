@@ -8,7 +8,7 @@ const activityParser = (query: string): string => {
     const safeIdentifier = String(identifier || "").trim();
     const attributes = Object.fromEntries(
       Array.from(String(rawAttributes || "").matchAll(/,\s*([a-zA-Z]+)="([^"]*)"/g)).map(
-        ([, key, value]) => [key.toLowerCase(), value]
+        ([, key, value]) => [(key ?? "").toLowerCase(), value]
       )
     );
 

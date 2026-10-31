@@ -380,7 +380,7 @@ const startMicLevel = async () => {
       micAnalyser.getByteTimeDomainData(data);
       let sum = 0;
       for (let i = 0; i < data.length; i += 1) {
-        const v = (data[i] - 128) / 128;
+        const v = ((data[i] ?? 128) - 128) / 128;
         sum += v * v;
       }
       const rms = Math.sqrt(sum / data.length);
@@ -479,7 +479,7 @@ const normalizeWords = (text: string) => {
 const toSoundex = (word: string) => {
   const normalized = String(word || '').toLowerCase().replace(/[^a-z]/g, '');
   if (!normalized) return '';
-  const first = normalized[0].toUpperCase();
+  const first = (normalized[0] ?? '').toUpperCase();
   const map: Record<string, string> = {
     b: '1',
     f: '1',
@@ -503,7 +503,7 @@ const toSoundex = (word: string) => {
   let lastCode = '';
   let result = first;
   for (let i = 1; i < normalized.length; i += 1) {
-    const code = map[normalized[i]] || '0';
+    const code = map[normalized[i] ?? ''] || '0';
     if (code !== '0' && code !== lastCode) {
       result += code;
     }

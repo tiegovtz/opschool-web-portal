@@ -187,7 +187,7 @@ const getInputLabel = (index: number, word: string) =>
               class="flex items-center justify-center rounded-full p-1"
               :class="feedbacks[index] ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
               role="status"
-              :aria-label="ui.formatQuestionResult(index + 1, feedbacks[index])"
+              :aria-label="ui.formatQuestionResult(index + 1, feedbacks[index] ?? false)"
             >
               <Icon :icon="feedbacks[index] ? 'mdi:check' : 'mdi:close'" class="h-6 w-6" aria-hidden="true" />
             </div>

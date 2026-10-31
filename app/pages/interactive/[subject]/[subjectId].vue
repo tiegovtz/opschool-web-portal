@@ -218,6 +218,7 @@ const switchTab = async (tab: string) => {
   if (!tab) return;
   activeTab.value = tab as tabs;
   const target = buildTabTarget(tab);
+  if (!target) return;
   await router.push(target);
 };
 

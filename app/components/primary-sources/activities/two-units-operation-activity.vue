@@ -54,22 +54,22 @@ const parseOperation = (question: string) => {
   }
 
   return {
-    firstNumber: { shs: match[1], cts: match[2] },
-    operator: match[3],
-    secondNumber: { shs: match[4], cts: match[5] },
+    firstNumber: { shs: match[1] ?? "", cts: match[2] ?? "" },
+    operator: match[3] ?? "",
+    secondNumber: { shs: match[4] ?? "", cts: match[5] ?? "" },
   };
 };
 
 const parseAnswer = (answer: string) => {
   const match = answer.match(/shs\s+(\d+)\s+(\d+)\s+cts/);
-  return match ? { shs: match[1], cts: match[2] } : { shs: "", cts: "" };
+  return match ? { shs: match[1] ?? "", cts: match[2] ?? "" } : { shs: "", cts: "" };
 };
 
-const checkAnswer = (userAnswer: CurrencyAnswer, correctAnswer: string) => {
+const checkAnswer = (userAnswer: CurrencyAnswer | undefined, correctAnswer: string) => {
   const correct = parseAnswer(correctAnswer);
   return (
-    userAnswer.shs.trim() === correct.shs &&
-    userAnswer.cts.trim() === correct.cts
+    userAnswer?.shs.trim() === correct.shs &&
+    userAnswer?.cts.trim() === correct.cts
   );
 };
 
@@ -159,26 +159,26 @@ const handleSubmit = () => {
                 <div class="flex w-full max-w-[200px] items-center justify-center gap-1">
                   <span class="mr-2 text-gray-600">shs</span>
                   <Input
-                    :model-value="userAnswers[index].shs"
+                    :model-value="userAnswers[index]?.shs ?? ''"
                     :aria-label="`Question ${index + 1} shillings`"
                     :aria-describedby="`${instructionsId} ${statusId}`"
                     class="w-16 rounded-none border-x-0 border-b-2 border-t-0 border-dashed border-picton-blue-700 bg-transparent px-1 text-right focus-visible:ring-transparent"
                     :disabled="submitted"
                     @update:model-value="
-                      (value) => updateAnswer(index, { ...userAnswers[index], shs: String(value ?? '') })
+                      (value) => updateAnswer(index, { ...(userAnswers[index] ?? { shs: '', cts: '' }), shs: String(value ?? '') })
                     "
                   />
                 </div>
 
                 <div class="flex w-full max-w-[200px] items-center justify-center gap-1">
                   <Input
-                    :model-value="userAnswers[index].cts"
+                    :model-value="userAnswers[index]?.cts ?? ''"
                     :aria-label="`Question ${index + 1} cents`"
                     :aria-describedby="`${instructionsId} ${statusId}`"
                     class="w-12 rounded-none border-x-0 border-b-2 border-t-0 border-dashed border-picton-blue-700 bg-transparent px-1 text-right focus-visible:ring-transparent"
                     :disabled="submitted"
                     @update:model-value="
-                      (value) => updateAnswer(index, { ...userAnswers[index], cts: String(value ?? '') })
+                      (value) => updateAnswer(index, { ...(userAnswers[index] ?? { shs: '', cts: '' }), cts: String(value ?? '') })
                     "
                   />
                   <span class="ml-2 text-gray-600">cts</span>

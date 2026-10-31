@@ -5,8 +5,7 @@
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "types": ["vidstack/vue"],
-    "noUncheckedIndexedAccess": false
+    "types": ["vidstack/vue"]
   },
   "vueCompilerOptions": {
     "strictTemplates": true,

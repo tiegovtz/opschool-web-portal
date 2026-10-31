@@ -10,7 +10,7 @@ const splitValues = (value: string | null | undefined) =>
 
 const extractTitleOptions = (titleDescription: string) =>
   titleDescription
-    .split("||")[0]
+    .split("||")[0]!
     .split("//")
     .slice(1)
     .flatMap((segment) => {
@@ -37,7 +37,7 @@ const completeSentencesBySelectingCluesTranspiler = (
   }
 
   return {
-    title: titleDescription.split("//")[0].split("||")[0],
+    title: titleDescription.split("//")[0]!.split("||")[0] ?? "",
     options: shuffle(
       Array.from(
         new Set([

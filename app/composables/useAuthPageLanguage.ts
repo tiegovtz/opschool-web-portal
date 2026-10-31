@@ -10,7 +10,7 @@ export function useAuthPageLanguage() {
   return computed<LanguageSupport>(() => {
     const redirectTarget =
       typeof route.query.redirect === "string" ? route.query.redirect : "";
-    const [redirectPath, redirectQuery = ""] = redirectTarget.split("?");
+    const [redirectPath = "", redirectQuery = ""] = redirectTarget.split("?");
     const redirectSearchParams = new URLSearchParams(redirectQuery);
 
     const educationLevel = redirectPath.startsWith("/primary")

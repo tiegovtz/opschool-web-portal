@@ -18,10 +18,10 @@
         <!-- Rect -->
         <rect
           v-else-if="shape.type === 'rect' && shape.points && shape.points.length >= 2"
-          :x="Math.min(shape.points[0][0], shape.points[1][0])"
-          :y="Math.min(shape.points[0][1], shape.points[1][1])"
-          :width="Math.abs(shape.points[1][0] - shape.points[0][0])"
-          :height="Math.abs(shape.points[1][1] - shape.points[0][1])"
+          :x="Math.min(shape.points[0]![0], shape.points[1]![0])"
+          :y="Math.min(shape.points[0]![1], shape.points[1]![1])"
+          :width="Math.abs(shape.points[1]![0] - shape.points[0]![0])"
+          :height="Math.abs(shape.points[1]![1] - shape.points[0]![1])"
           :stroke="shape.stroke || '#1d4ed8'"
           :fill="shape.fill || 'rgba(29,78,216,0.08)'"
           stroke-width="2"
@@ -39,18 +39,18 @@
         <!-- Line -->
         <line
           v-else-if="shape.type === 'line' && shape.points && shape.points.length >= 2"
-          :x1="shape.points[0][0]"
-          :y1="shape.points[0][1]"
-          :x2="shape.points[1][0]"
-          :y2="shape.points[1][1]"
+          :x1="shape.points[0]![0]"
+          :y1="shape.points[0]![1]"
+          :x2="shape.points[1]![0]"
+          :y2="shape.points[1]![1]"
           :stroke="shape.stroke || '#1d4ed8'"
           stroke-width="2"
         />
         <!-- Point -->
         <circle
           v-else-if="shape.type === 'point' && shape.points && shape.points[0]"
-          :cx="shape.points[0][0]"
-          :cy="shape.points[0][1]"
+          :cx="shape.points[0]![0]"
+          :cy="shape.points[0]![1]"
           r="3"
           :fill="shape.fill || '#111827'"
         />
@@ -99,8 +99,8 @@
 <script setup lang="ts">
 interface Shape {
   type: string;
-  points?: number[][];
-  center?: number[];
+  points?: [number, number][];
+  center?: [number, number];
   radius?: number;
   labels?: string[];
   sides?: string[];

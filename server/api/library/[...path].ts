@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
 
   const path = getRouterParam(event, 'path') ?? '';
   const match = readerPath.exec(path);
-  if (!match || path.includes('\\') || path.split('/').some(segment => segment === '.' || segment === '..')) {
+  if (!match?.[1] || !match[2] || path.includes('\\') || path.split('/').some(segment => segment === '.' || segment === '..')) {
     throw createError({ statusCode: 404, statusMessage: 'Publication asset not found.' });
   }
 

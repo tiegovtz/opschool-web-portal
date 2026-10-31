@@ -221,7 +221,7 @@ export function splitTexAtTopLevelWhitespace(tex: string): string[] {
       buf += ch;
       continue;
     }
-    if (depth === 0 && /\s/.test(ch)) {
+    if (depth === 0 && /\s/.test(ch ?? "")) {
       if (buf.trim()) chunks.push(buf.trim());
       buf = "";
       while (i + 1 < s.length && /\s/.test(s[i + 1] ?? "")) i++;
@@ -323,6 +323,6 @@ export function isCompoundCuaAnswerFilled(value: string): boolean {
   if (nonEmpty.length === 0) return false;
   return nonEmpty.every((part) => {
     const vm = part.match(/^(\d+)([a-zA-Z]*)$/);
-    return vm != null && vm[1].length > 0;
+    return vm != null && (vm[1]?.length ?? 0) > 0;
   });
 }

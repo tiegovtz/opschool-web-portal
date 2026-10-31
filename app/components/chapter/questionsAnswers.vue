@@ -350,11 +350,11 @@ const orderedQuestionBlocks = computed<OrderedQuestionBlock[] | null>(() => {
 
   matches.forEach((match, index) => {
     const markerStart = match.index ?? 0;
-    const markerText = match[0];
+    const markerText = match[0] ?? "";
     const contentStart = markerStart + markerText.length;
     const nextMarkerStart =
       index + 1 < matches.length
-        ? (matches[index + 1].index ?? rawQuestion.length)
+        ? (matches[index + 1]?.index ?? rawQuestion.length)
         : rawQuestion.length;
 
     if (index === 0) {
@@ -375,8 +375,8 @@ const orderedQuestionBlocks = computed<OrderedQuestionBlock[] | null>(() => {
     let trailingText = "";
 
     if (trailingBreakMatch) {
-      itemText = trailingBreakMatch[1];
-      trailingText = trailingBreakMatch[2];
+      itemText = trailingBreakMatch[1] ?? "";
+      trailingText = trailingBreakMatch[2] ?? "";
     }
 
     const parsed = splitSegmentsWithBlanks(itemText, blankIndex);

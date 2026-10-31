@@ -273,7 +273,7 @@ const handleResetWithShuffle = () => {
               v-if="checkedItems.includes(i)"
               class="flex shrink-0 items-center gap-2 pt-1"
               role="status"
-              :aria-label="ui.formatQuestionResult(i + 1, feedbacks[i])"
+              :aria-label="ui.formatQuestionResult(i + 1, feedbacks[i] ?? false)"
             >
               <div
                 class="flex items-center justify-center rounded-full p-1"
