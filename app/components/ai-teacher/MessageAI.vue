@@ -8,7 +8,7 @@
       <div class="bg-white text-gray-800 px-5 py-3 rounded-2xl rounded-tl-sm shadow-md border border-gray-100">
         <div v-for="(part, idx) in message.parts" :key="idx" class="space-y-2">
           <template v-if="part.type === 'text'">
-            <template v-for="(seg, sIdx) in splitIntoSegments(part.text)" :key="`${idx}-${sIdx}-${shortcodesLoaded}`">
+            <template v-for="(seg, sIdx) in splitIntoSegments(part.text)" :key="`${idx}-${sIdx}-${shortcodesLoaded}-${shortcodesVersion}`">
               <div
                 v-if="seg.kind === 'html'"
                 ref="mathContainer"
@@ -41,7 +41,7 @@
 <script setup lang="ts">
 import MarkdownIt from "markdown-it";
 import { ref, watch, nextTick, onMounted } from "vue";
-import { getImageFromShortcode, loadDynamicShortcodes } from "~/utilities/imageShortcodes";
+import { getImageFromShortcode, loadDynamicShortcodes, shortcodesVersion } from "~/utilities/imageShortcodes";
 import { useRouter } from "vue-router";
 import GraphBlock from "./renderers/GraphBlock.vue";
 import ChartBlock from "./renderers/ChartBlock.vue";
@@ -307,6 +307,28 @@ const processMathInText = (text: string): string => {
 // everything else goes through markdown + math processing.
 const FENCED_RE = /```(graph|chart|geometry|steps)\s*\n([\s\S]*?)\n?```/g;
 
+// The model embeds raw LaTeX (e.g. \text{...}, \cdot, \Delta) inside these JSON blocks.
+// A bare backslash is only valid JSON right before ", \, /, b, f, n, r, t or a \uXXXX escape -
+// any other LaTeX command backslash makes JSON.parse throw (or, worse, silently corrupts the
+// string for the few letters that coincide with real escapes, like \t becoming a tab).
+// Double every backslash that isn't already part of a legitimate escape so LaTeX survives intact.
+const parseLenientJson = (raw: string): Record<string, any> | null => {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    try {
+      // The model doesn't always double-escape every LaTeX backslash consistently - some
+      // commands come through already-correct ("\\cos", a real escaped backslash) and others
+      // as a bare backslash ("\cdot", invalid JSON). Consume already-valid pairs/escapes first
+      // so they're left alone, and only double a backslash that's genuinely unescaped.
+      const escaped = raw.replace(/\\\\|\\(?=["\\/bfnrt]|u[0-9a-fA-F]{4})|\\/g, (m) => (m.length === 2 ? m : "\\\\"));
+      return JSON.parse(escaped);
+    } catch {
+      return null;
+    }
+  }
+};
+
 const splitIntoSegments = (text: string): Segment[] => {
   if (!text) return [];
   const segments: Segment[] = [];
@@ -320,8 +342,7 @@ const splitIntoSegments = (text: string): Segment[] => {
     }
     const kind = m[1] as "graph" | "chart" | "geometry" | "steps";
     const raw = (m[2] || "").trim();
-    let spec: Record<string, any> | null = null;
-    try { spec = JSON.parse(raw); } catch { spec = null; }
+    const spec = parseLenientJson(raw);
     if (spec) {
       segments.push({ kind, spec });
     } else {
