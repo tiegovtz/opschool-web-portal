@@ -1,7 +1,19 @@
 <script setup lang="ts">
+import SupportInbox from "~/components/support/SupportInbox.vue";
 import type { LanguageSupport } from "~/types/language.interface";
 import { normalizeLanguageSupport } from "~/utilities/educationRoute";
 
+definePageMeta({ middleware: 'auth' });
+
+const supportVisited = ref(false);
+const activeTab = ref<"feedback" | "support">("feedback");
+watch(activeTab, tab => { if (tab === "support") supportVisited.value = true; });
+function onInboxTabKey(event: KeyboardEvent) {
+  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  activeTab.value = event.key === "Home" ? "feedback" : event.key === "End" ? "support" : activeTab.value === "feedback" ? "support" : "feedback";
+  nextTick(() => document.getElementById(`${activeTab.value}-tab`)?.focus());
+}
 const route = useRoute();
 const router = useRouter();
 const hubHeaderLang = useHubHeaderLanguage();
@@ -22,7 +34,7 @@ watch(
 );
 
 const selectedLanguage = computed<LanguageSupport>(() =>
-  normalizeLanguageSupport(hubHeaderLang.value || route.query.lang, "english"),
+  normalizeLanguageSupport(route.query.lang || hubHeaderLang.value, "english"),
 );
 
 const content = computed(() =>
@@ -73,8 +85,13 @@ watch(
 <template>
   <NuxtLayout name="home-layout" :language="selectedLanguage">
     <section id="main-container" tabindex="-1" class="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-6">
-      <div class="rounded-2xl bg-slate-50 p-5 shadow-sm ring-1 ring-slate-200">
-        <h1 class="text-2xl font-bold text-slate-900">
+      <div role="tablist" @keydown="onInboxTabKey" :aria-label="selectedLanguage === 'kiswahili' ? 'Maoni na msaada' : 'Feedback and support'" class="flex gap-2 border-b border-slate-200 pb-3">
+        <button id="feedback-tab" :tabindex="activeTab === 'feedback' ? 0 : -1" type="button" role="tab" :aria-selected="activeTab === 'feedback'" aria-controls="feedback-panel" :class="['rounded-lg px-5 py-3 text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue', activeTab === 'feedback' ? 'bg-deepBlue text-white' : 'bg-grayLight text-textGray']" @click="activeTab = 'feedback'">{{ selectedLanguage === 'kiswahili' ? 'Maoni' : 'Feedback' }}</button>
+        <button id="support-tab" :tabindex="activeTab === 'support' ? 0 : -1" type="button" role="tab" :aria-selected="activeTab === 'support'" aria-controls="support-panel" :class="['rounded-lg px-5 py-3 text-sm font-normal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue', activeTab === 'support' ? 'bg-deepBlue text-white' : 'bg-grayLight text-textGray']" @click="activeTab = 'support'">{{ selectedLanguage === 'kiswahili' ? 'Msaada na changamoto' : 'Support & Issues' }}</button>
+      </div>
+      <div v-show="activeTab === 'feedback'" id="feedback-panel" role="tabpanel" aria-labelledby="feedback-tab" class="space-y-6">
+      <div class="rounded-2xl bg-gray-50 p-5 shadow-sm ring-1 ring-slate-200">
+        <h1 class="text-2xl font-semibold text-darkBlue">
           {{ content.title }}
         </h1>
         <!-- <p class="mt-2 text-sm text-slate-600">
@@ -96,6 +113,10 @@ watch(
         </iframe>
 
 
+      </div>
+      </div>
+      <div v-show="activeTab === 'support'" id="support-panel" role="tabpanel" aria-labelledby="support-tab">
+        <SupportInbox v-if="supportVisited" :language="selectedLanguage" />
       </div>
     </section>
   </NuxtLayout>

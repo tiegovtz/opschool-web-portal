@@ -11,6 +11,23 @@ const primaryContentLanguage = usePrimaryContentLanguage();
 const primaryHubPath = computed(() => getHubPath('primary'));
 const secondaryHubPath = computed(() => getHubPath('secondary'));
 const route = useRoute();
+const feedbackUser = useCookie('signInUserToken');
+const feedbackAccessToken = useCookie('signInAccessToken');
+const feedbackNeedsSignIn = computed(() => !feedbackUser.value && !feedbackAccessToken.value);
+const feedbackPath = computed(() =>
+    `/feedback?lang=${primaryContentLanguage.value === 'kiswahili' ? 'sw' : 'en'}`,
+);
+const feedbackContent = computed(() => primaryContentLanguage.value === 'kiswahili' ? {
+    title: 'Tusaidie kuboresha Shule Mtandao',
+    description: 'Tuambie kuhusu uzoefu wako, changamoto au mapendekezo yako.',
+    action: 'Toa maoni',
+    hint: 'Ingia kwenye akaunti yako ili kutuma maoni.',
+} : {
+    title: 'Help us improve the Online School',
+    description: 'Tell us about your experience, any challenges, or your suggestions.',
+    action: 'Give feedback',
+    hint: 'Sign in to your account to share your feedback.',
+});
 
 function goToPrimary() {
     setPostLoginHome(primaryHubPath.value);
@@ -243,6 +260,29 @@ const contents = computed(() => {
             <SliderShow variant="landing" />
         </section>
     </div>
+    <section aria-labelledby="landing-feedback-title"
+        class="relative mt-6 mb-2 flex flex-col gap-5 rounded-2xl border border-oceanBlue/30 bg-oceanBlue/10 p-5 sm:flex-row sm:items-center sm:justify-between md:p-6">
+        <div class="flex items-start gap-4">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-deepBlue" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" class="h-6 w-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-2 2V11.5A8.5 8.5 0 0 1 10.5 3h2a8.5 8.5 0 0 1 8.5 8.5Z" />
+                    <path stroke-linecap="round" d="M7 9h9M7 13h6" />
+                </svg>
+            </span>
+            <div>
+                <h2 id="landing-feedback-title" class="text-base font-medium text-deepBlue">{{ feedbackContent.title }}</h2>
+                <p class="mt-1 text-sm leading-6 text-textGray">{{ feedbackContent.description }}</p>
+            </div>
+        </div>
+        <div class="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+            <NuxtLink :to="feedbackPath" :aria-describedby="feedbackNeedsSignIn ? 'landing-feedback-hint' : undefined"
+                class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-oceanBlue px-5 py-3 text-sm font-normal text-white transition-colors hover:bg-deepBlue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue focus-visible:ring-offset-2">
+                {{ feedbackContent.action }}
+                <span aria-hidden="true">→</span>
+            </NuxtLink>
+            <p v-if="feedbackNeedsSignIn" id="landing-feedback-hint" class="max-w-64 text-xs leading-5 text-textGray">{{ feedbackContent.hint }}</p>
+        </div>
+    </section>
  </div>
 </template>
 
