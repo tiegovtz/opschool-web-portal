@@ -198,7 +198,7 @@ const fetchTopics = async (params?: any) => {
         }),
     );
 
-    topic.value = buildTopicGroups(response.value ?? []);
+    topic.value = buildTopicGroups(Array.isArray(response.value) ? response.value : []);
     status.value = fetchStatus.value;
 
     goToPage(1);
@@ -363,8 +363,8 @@ watch(filters, (filters) => {
               <!-- pagination numbers based on data length greater to 9 -->
               <div class="flex justify-center">
                 <AppPagination :current-page="currentPage" :total-pages="totalPages"
-                  :first-label="useContentLayoutLanguage().value == 'kiswahili' ? 'Mwanzo' : 'First'"
-                  :last-label="useContentLayoutLanguage().value == 'kiswahili' ? 'Mwisho' : 'Last'" @change="goToPage" />
+                  :first-label="contentLayoutLanguage == 'kiswahili' ? 'Mwanzo' : 'First'"
+                  :last-label="contentLayoutLanguage == 'kiswahili' ? 'Mwisho' : 'Last'" @change="goToPage" />
               </div>
             </div>
           </ClientOnly>

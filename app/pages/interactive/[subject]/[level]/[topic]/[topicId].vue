@@ -630,12 +630,15 @@ try {
     })
   );
 
-  if (response) {
+  const topicData = response.value && typeof response.value === "object"
+    ? response.value as { chapters?: any[]; languageData?: any[] }
+    : null;
+  if (topicData) {
     chapters.status = status.value;
-    chapters.list = (response.value.chapters as any[]) || [];
+    chapters.list = topicData.chapters || [];
     const firstChapterId = chapters.list[0]?._id;
     chapters.currentChapterId = firstChapterId || null;
-    topicLanguageData.value = (response.value.languageData as any[])?.[0] || { name: contentLayoutLanguage.value, _id: "" };
+    topicLanguageData.value = topicData.languageData?.[0] || { name: contentLayoutLanguage.value, _id: "" };
 
     if (firstChapterId && chapters.list.length) {
       const firstChapter = chapters.list[0];

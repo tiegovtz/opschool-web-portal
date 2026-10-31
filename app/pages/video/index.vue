@@ -140,7 +140,7 @@ const fetchVideos = async (param?: any) => {
 
 
     // Call State Define above
-    videos.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
+    videos.value = removeDataFromArrayOfJson(Array.isArray(response.value) ? response.value : [], 'isDeleted', true);
     // remove type
     // videos.value = videoType === 'conc' ? removeDataFromArrayOfJson( videos.value, 'videoType','Others' ):removeDataFromArrayOfJson( videos.value, 'videoType', 'Conceptual');
     videos.value = educationLevel.value !== "primary"
@@ -309,8 +309,8 @@ const contentLayoutLanguage = useContentLayoutLanguage();
               <AppPagination
                 :current-page="currentPage"
                 :total-pages="totalPages"
-                 :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
-                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
+                 :first-label="contentLayoutLanguage=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="contentLayoutLanguage=='kiswahili' ? 'Mwisho' :'Last'"
                 @change="goToPage"
               />
             </div>

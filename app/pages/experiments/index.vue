@@ -167,7 +167,7 @@ const fetchExperiments = async (param?: any) => {
     }));
 
     // Call State Define above
-    experiments.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+    experiments.value = removeDataFromArrayOfJson(Array.isArray(response.value) ? response.value : [], "isDeleted", true);
     experiments.value = educationLevel.value !== "primary"
       ? filterKeyDataFromArrayOfJson(experiments.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
       : experiments.value;
@@ -362,8 +362,8 @@ const contentLayoutLanguage = useContentLayoutLanguage();
               <AppPagination
                 :current-page="currentPage"
                 :total-pages="totalPages"
-                 :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
-                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
+                 :first-label="contentLayoutLanguage=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="contentLayoutLanguage=='kiswahili' ? 'Mwisho' :'Last'"
                 @change="goToPage"
               />
             </div>

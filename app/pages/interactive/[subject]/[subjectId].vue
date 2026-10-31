@@ -135,7 +135,7 @@ const filteredTopics = computed(() => {
 
 // Define Ref State
 const status = ref("pending"); // Initial Status State
-const topic = ref([]); // Initial Topics State
+const topic = ref<any[]>([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
 const activeTab = ref<tabs>("subjects");
 
@@ -248,7 +248,7 @@ const fetchTopics = async (params: any) => {
     }))
 
     // Call State Define above
-    topic.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+    topic.value = removeDataFromArrayOfJson(Array.isArray(response.value) ? response.value : [], "isDeleted", true);
     status.value = fetchStatus.value;
 
     goToPage(1);
@@ -384,8 +384,8 @@ watch(selectedLevel, () => {
               :current-page="currentPage"
               :total-pages="totalPages"
               class-name="my-5"
-               :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
-                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
+               :first-label="contentLayoutLanguage=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="contentLayoutLanguage=='kiswahili' ? 'Mwisho' :'Last'"
               @change="goToPage"
             />
           </div>

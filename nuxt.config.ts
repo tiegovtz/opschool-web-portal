@@ -59,6 +59,18 @@ export default defineNuxtConfig({
 
   modules: ["@nuxtjs/google-fonts", "@nuxt/image", "@nuxt/icon", "@vite-pwa/nuxt"],
 
+  hooks: {
+    'imports:extend'(imports) {
+      for (let index = imports.length - 1; index >= 0; index--) {
+        const entry = imports[index]
+        if (entry?.from.endsWith('/types/interactive-video.interface.ts') &&
+            (entry.name === 'QuizOption' || entry.name === 'VideoInteraction')) {
+          imports.splice(index, 1)
+        }
+      }
+    },
+  },
+
   pwa: {
     registerType: "autoUpdate",
     includeAssets: ["favicon.ico", "apple-touch-icon.png"],

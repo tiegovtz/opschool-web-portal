@@ -510,13 +510,14 @@ const fetchData = async (params?: any) => {
       },
     );
 
+    const responseItems = Array.isArray(response.value) ? response.value : [];
     // Call State Define above
     if (subjectId.value) {
-      data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(responseItems, "isDeleted", true);
     } else if (!subjectId.value && tab !== "subjects") {
-      data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(responseItems, "isDeleted", true);
     } else {
-      data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(responseItems, "isDeleted", true);
       // remove some audio
       data.value = removeDataFromArrayOfJson(
         data.value,
@@ -533,7 +534,7 @@ const fetchData = async (params?: any) => {
       currentPage.value * pageSize.value,
     );
 
-    announcement.value = ` ${response.value?.length} ${getTabLabel(tab)} found ready for preview`;
+    announcement.value = ` ${responseItems.length} ${getTabLabel(tab)} found ready for preview`;
   } catch (err) {
     status.value = "error";
     error.value = err;
@@ -1045,8 +1046,8 @@ const handleSubjectSelect = async (
               :current-page="currentPage"
               :total-pages="totalPages"
               class-name="my-5"
-                :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
-                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
+                :first-label="currentLanguage=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="currentLanguage=='kiswahili' ? 'Mwisho' :'Last'"
               @change="goToPage"
             />
 
@@ -1192,8 +1193,8 @@ const handleSubjectSelect = async (
             <AppPagination
               :current-page="currentPage"
               :total-pages="totalPages"
-                :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
-                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
+                :first-label="currentLanguage=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="currentLanguage=='kiswahili' ? 'Mwisho' :'Last'"
               class-name="my-5"
               @change="goToPage"
             />

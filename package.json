@@ -38,7 +38,7 @@
     "@langchain/community": "^1.1.23",
     "@langchain/core": "^1.1.32",
     "@nuxt/icon": "^1.10.3",
-    "@nuxt/image": "^1.9.0",
+    "@nuxt/image": "1.11.0",
     "@nuxtjs/google-fonts": "^3.2.0",
     "@paralleldrive/cuid2": "^3.0.4",
     "@pinia/nuxt": "^0.11.3",
