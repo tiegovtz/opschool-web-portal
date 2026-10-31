@@ -37,6 +37,7 @@ useHead({
 
 // Video source - fetch from the interactive topic route
 const route = useRoute()
+const router = useRouter()
 const authRedirectTarget = computed(() => route.fullPath)
 const { snapshotId: activeRecommendationSnapshotId } =
   useRecommendationSnapshot()
@@ -483,7 +484,7 @@ definePageMeta({
           <!-- Header -->
           <div class="text-center mb-8">
             <div class="flex items-center">
-              <button type="button" @click="$router.back()" aria-label="press link tp go back"
+              <button type="button" @click="router.back()" aria-label="press link tp go back"
                 class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
                 <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
               </button>

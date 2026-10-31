@@ -1576,8 +1576,8 @@ const prepareNavigation = () => {
 
 <template>
     <NuxtLayout
-    :name="$router.currentRoute.value.fullPath.includes('header-less') ? ('normal' as any) : ('home-layout' as any)"
-    v-bind="{ language: $router.currentRoute.value.fullPath.includes('header-less') ? undefined : pageLanguage }"
+    :name="router.currentRoute.value.fullPath.includes('header-less') ? ('normal' as any) : ('home-layout' as any)"
+    v-bind="{ language: router.currentRoute.value.fullPath.includes('header-less') ? undefined : pageLanguage }"
   >
     <main ref="pageRoot" id="main-container" tabindex="-1" class="min-h-screen bg-white font-sans text-gray-900">
       <p class="sr-only" aria-live="assertive" aria-atomic="true">{{ srAnnouncement }}</p>

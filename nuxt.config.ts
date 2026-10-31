@@ -231,6 +231,8 @@ export default defineNuxtConfig({
          'page-flip', // CJS
         'pdfjs-dist',
         'pdfjs-dist/build/pdf',
+        'chart.js/auto',
+        'function-plot'
       ],
     },
     server: {
