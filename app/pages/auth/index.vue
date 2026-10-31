@@ -18,6 +18,9 @@ const authRedirectQuery = computed(() =>
     ? { redirect: route.query.redirect }
     : {}
 );
+const isFeedbackSignIn = computed(() =>
+  typeof route.query.redirect === "string" && /^\/feedback(?:[?#]|$)/.test(route.query.redirect),
+);
 const authLanguage = useAuthPageLanguage();
 const isSwahili = computed(() => authLanguage.value === "kiswahili");
 const content = computed(() => ({
@@ -310,6 +313,12 @@ watch(
         <img tabindex="0" src="/logo/logo_tie.gif" class="object-contain w-full h-full"
           :alt="content.logoAlt" />
       </NuxtLink>
+
+      <p v-if="isFeedbackSignIn" role="status" class="mx-4 mb-5 rounded-lg bg-blue-50 p-3 text-center text-sm text-[#174f80]">
+        {{ isSwahili
+          ? 'Ingia ili kutoa maoni. Baada ya kuingia utaelekezwa kwenye fomu ya maoni.'
+          : 'Sign in to give feedback. After signing in, you will go directly to the feedback form.' }}
+      </p>
 
       <!-- Sign in form -->
       <form v-if="userSignIn.controller.attemps < 3" @submit.prevent="signIn" autocomplete="off"

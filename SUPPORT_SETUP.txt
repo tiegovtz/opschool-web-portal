@@ -1,0 +1,57 @@
+# Feedback & Support integration
+
+The four admin cards share the existing User Feedback navigation entry. Feedback is still connected through the existing Google Sheets adapter until the requested feedback backend arrives. Feedback review statuses are only New and Reviewed. Historical Action needed/Resolved sheet reviews display as Reviewed.
+
+Technical Issues, Feature Requests, and Support Requests use a separate support API. No sample tickets are loaded, and no message is marked sent without a successful API response. Missing configuration displays an explicit unavailable state.
+
+Configuration
+- Admin: SUPPORT_API_BASE_URL=https://your-backend.example/v1
+- Portal: NUXT_SUPPORT_API_BASE_URL=https://your-backend.example/v1
+These are server-only settings. Restart the apps after changing them.
+
+Proposed backend contract (pending confirmation with the backend developer)
+GET /support/tickets?category=technical&status=new&search=&page=1&limit=10
+GET /support/tickets/{id}
+POST /support/tickets
+POST /support/tickets/{id}/messages
+GET /admin/support/tickets?educationLevel=primary&category=technical&status=new&search=&page=1&limit=10
+GET /admin/support/tickets/{id}
+POST /admin/support/tickets/{id}/messages
+PATCH /admin/support/tickets/{id}/review
+
+All operations require Authorization: Bearer <existing access token>.
+The backend MUST enforce administrator roles for /admin endpoints and authenticated ownership for every learner list, detail, and message endpoint. Learner lists must contain ONLY that user's requests; do not accept a browser-supplied userId. Replies are visible in the authenticated support conversation. Email notifications are not implemented or assumed by the UI.
+
+Creation body:
+{"category":"technical","educationLevel":"primary","language":"sw","subject":"Video does not load","body":"Describe the issue here."}
+- category: technical | feature | support
+- educationLevel: primary | secondary
+- language: en | sw (language never determines education category)
+- subject: trimmed, 1–150 characters
+- body: trimmed, 1–5,000 characters
+Backend derives user identity, creation time, initial new status, and student education category from the registered account. For teachers or accounts without a known level, accept the explicit selection. Reject conflicting student education categories. Store that category on the ticket permanently.
+
+Ticket shape (detail, create, reply, and review endpoints return the complete updated ticket):
+{"id":"ticket-id","category":"technical","educationLevel":"primary","language":"sw","subject":"Video does not load","body":"Description","status":"new","createdAt":"2026-10-31T10:00:00Z","messages":[{"id":"message-id","body":"Our reply","sender":"admin","createdAt":"2026-10-31T10:05:00Z"}]}
+All dates must be ISO 8601 with Z or a time-zone offset. The UI displays EAT.
+Admin tickets additionally include sender: {name, role?, email?} and internalNote: string.
+Initial ticket body is separate from messages; do not duplicate it in messages.
+
+List response:
+{"items":[],"total":0,"counts":{"technical":{"total":0,"new":0},"feature":{"total":0,"new":0},"support":{"total":0,"new":0}}}
+- total is the count after category/search/status filters, before pagination.
+- counts are all categories, independent of category/search/status/page filters.
+- Learner counts are scoped to the authenticated user; admin counts to educationLevel.
+- Use stable descending creation order and enforce page/limit bounds.
+
+Reply body: {"body":"Reply text"}; backend derives sender and timestamp.
+Admin review body: {"status":"in_review","internalNote":"Private context"}
+Support statuses: new | in_review | resolved. Feedback statuses remain new | reviewed.
+Internal notes must never be included in learner responses. The portal proxy also strips unrecognized fields as a second safeguard. Notes are saved separately from public replies.
+Return JSON errors with appropriate HTTP status codes. A successful mutation must return the complete saved ticket so clients can update the conversation without inventing data. If the backend contract differs, adapt the server proxy rather than exposing credentials in client code.
+
+The reference HTML is a staff inbox demonstration. The portal adapts its category cards and split message view for the current user's own tickets. Its demonstration people, counts, trends, and simulated email confirmations are not used.
+
+Feedback Subject and Sent by columns show supplied values where available, or an explicit fallback when the current Google response sheet lacks those fields. The requested feedback backend should supply subject and sender metadata.
+
+Portal request choices: Technical Support (technical) and Feature Request (feature). Selecting Technical Support shows the create-ticket form immediately; the request type comes from the selected card. General support remains available to the admin API for existing records. Admin education tabs are labeled Primary and Secondary without associating a language.

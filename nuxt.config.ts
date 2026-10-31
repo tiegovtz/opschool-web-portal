@@ -41,6 +41,7 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    supportApiBaseUrl: "",
     adtStoreBaseUrl: "",
     adtStoreApiKey: "",
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
