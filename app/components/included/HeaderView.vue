@@ -57,10 +57,10 @@ const isAccountSectionRoute = computed(
 const desktopNavItemClass =
   "inline-flex items-center gap-2 rounded-md border border-white/40 bg-white/10 px-3 py-1 text-center text-sm font-medium text-white whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70";
 const mobileNavItemClass =
-  "flex items-center justify-center gap-2 rounded-[6px] px-3 py-1 text-center text-white text-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-oceanBlue";
+  "inline-flex min-h-9 min-w-9 items-center justify-center gap-2 rounded-md border border-white/40 bg-white/10 px-2 text-center text-sm font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70";
 const activeNavItemClass = "bg-deepBlue text-white shadow-sm";
 const desktopInactiveNavItemClass = "hover:bg-white/20";
-const inactiveNavItemClass = "hover:bg-deepBlue/85 hover:shadow-sm";
+const inactiveNavItemClass = "hover:bg-white/20";
 
 const PROTECTED_RETURN_PREFIXES = [
   "/interactive/",
@@ -474,7 +474,7 @@ onBeforeUnmount(() => {
               <div class="flex items-center justify-center">
                 <IconsTieLibrary :size="20" />
               </div>
-              <p class="hidden capitalize lg:flex">
+              <p class="hidden capitalize md:flex">
                 {{ language === "english" ? `TIE Library` : `Maktaba` }}
               </p>
             </a>
@@ -494,7 +494,7 @@ onBeforeUnmount(() => {
               <div class="flex items-center justify-center">
                 <IconsSmartClassHub :size="20" />
               </div>
-              <p class="hidden capitalize lg:flex">
+              <p class="hidden capitalize md:flex">
                 {{ language === "english" ? `Smart class` : `Darasa janja` }}
               </p>
             </NuxtLink>
@@ -512,8 +512,8 @@ onBeforeUnmount(() => {
               ]"
             >
               <IconsRobotAi :size="20" />
-              <p class="hidden capitalize lg:flex">
-                {{ language === "english" ? `AI Teacher` : `Mwalimu wa AI` }}
+              <p class="hidden capitalize md:flex">
+                {{ language === "english" ? `AI Teacher` : `Mwalimu AI` }}
               </p>
             </NuxtLink>
           </div>
@@ -600,7 +600,7 @@ onBeforeUnmount(() => {
                   :class="[desktopNavItemClass, desktopInactiveNavItemClass]"
                 >
                   <IconsProfileCircle :size="24" />
-                  <p class="hidden capitalize lg:flex">
+                  <p class="hidden capitalize md:flex">
                     {{ language === "english" ? `Create Account` : `Jisajili` }}
                   </p>
                 </NuxtLink>
@@ -708,11 +708,10 @@ onBeforeUnmount(() => {
 
         <!-- Mobile Menu -->
         <div
-          class="flex flex-col items-center w-full text-white md:hidden md:flex-row bg-oceanBlue rounded-b-md"
+          class="w-full text-white md:hidden bg-oceanBlue rounded-b-md"
         >
-          <!-- Profile and Sign Up and Home -->
-          <div class="grid w-full grid-cols-[1fr_auto_1fr] items-center">
-            <div class="flex items-center justify-self-start">
+          <div class="flex w-full items-center justify-between gap-2 px-2 py-1 sm:px-4">
+            <div class="flex items-center gap-1">
               <div
                 class="relative"
                 data-home-menu-root
@@ -761,7 +760,7 @@ onBeforeUnmount(() => {
               </div>
 
               <!-- TIE Library Books -->
-                <a
+              <a
                 aria-label="Visit TIE online library"
                 href="https://ol.tie.go.tz/index.php"
                 target="_blank"
@@ -785,26 +784,22 @@ onBeforeUnmount(() => {
                   <IconsSmartClassHub :size="20" />
                 </div>
               </NuxtLink>
+
+              <NuxtLink
+                to="/tie-ai-teacher"
+                aria-label="Go to AI Teacher"
+                :aria-current="isAiTeacherRoute ? 'page' : undefined"
+                :class="[
+                  mobileNavItemClass,
+                  isAiTeacherRoute ? activeNavItemClass : inactiveNavItemClass,
+                ]"
+              >
+                <IconsRobotAi :size="20" />
+              </NuxtLink>
             </div>
 
-            <!-- Paragraph Text -->
-            <NuxtLink
-              to="/"
-              class="min-w-0 justify-self-center"
-            >
-              <p
-                class="block max-w-[45vw] truncate px-2 text-center uppercase lg:text-large text-[14px] text-shadow sm:max-w-none"
-              >
-                {{
-                  language === "english"
-                    ? `TIE Online School`
-                    : `Shule Mtandao ya TET`
-                }}
-              </p>
-            </NuxtLink>
-
             <!-- Account and Sign in -->
-            <div class="relative flex items-center justify-self-end">
+            <div class="relative flex items-center gap-1">
               <div
                 v-if="userToken"
                 data-account-menu-root
@@ -933,12 +928,13 @@ onBeforeUnmount(() => {
 
               <div
                 v-else
-                class="flex items-center"
+                class="flex items-center gap-1"
               >
                 <NuxtLink
                   :to="authSignUpTo"
+                  aria-label="Go to sign up page"
                   title="Sign Up"
-                  class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8"
+                  :class="[mobileNavItemClass, inactiveNavItemClass]"
                 >
                   <IconsProfileCircle :size="20" />
                 </NuxtLink>
@@ -947,12 +943,9 @@ onBeforeUnmount(() => {
                   aria-label="go to sign in page"
                   :to="authSignInTo"
                   title="Sign in"
-                  class="flex items-center h-6 gap-2 px-1 cursor-pointer md:h-8"
+                  :class="[mobileNavItemClass, inactiveNavItemClass]"
                 >
-                  <IconsSignIn
-                    :size="20"
-                    class=""
-                  />
+                  <IconsSignIn :size="20" />
                 </NuxtLink>
               </div>
             </div>
