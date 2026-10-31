@@ -9,6 +9,10 @@ export default defineNuxtConfig({
   typescript: {
     typeCheck:true
   },
+  experimental: {
+    // Bundling Vue avoids a recursive peer-dependency symlink tree in Nitro's output.
+    externalVue: false,
+  },
   ignore: [
     ".claude/**",
     "Chunking/**",

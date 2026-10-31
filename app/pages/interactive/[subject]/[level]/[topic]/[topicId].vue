@@ -1203,7 +1203,6 @@ definePageMeta({
     </section>
 
     <!-- quiz -->
-    <!-- bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat -->
     <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
       <!-- Chapter Questions -->
       <QuestionsContainer :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"

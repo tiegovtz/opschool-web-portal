@@ -184,7 +184,7 @@ const fetchVideoFromTopic = async () => {
     }
 
     // Fetch chapter content
-    const { data: chapterData, error: chapterError } = await useFetch(`/api/topics/chapters/${chapterId}`, {
+    const { data: chapterData, error: chapterError } = await useFetch<{ content?: string }>(`/api/topics/chapters/${chapterId}`, {
       headers: {
         Authorization: `Bearer ${signInAccessToken.value}`
       }

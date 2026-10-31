@@ -1320,6 +1320,27 @@ type RawConversationEntry = {
   speaker?: string;
 };
 
+type ConversationResponse = {
+  identifier: string;
+  name: string;
+  entries: RawConversationEntry[];
+  pieces: string[];
+  speakerNames: string[];
+};
+
+type ConstantAudioResponse = {
+  items: Array<{ order: number; audioFile: string }>;
+};
+
+type TtsBatchResponse = {
+  chunks: Array<{
+    id: string;
+    success: boolean;
+    audioBase64?: string;
+    contentType?: string;
+  }>;
+};
+
 const convertPiecesToScript = (
   pieces: Array<string | RawConversationEntry>,
   identifier?: string,
@@ -1445,11 +1466,11 @@ const loadConversationScript = async () => {
       query.identifier = identifier;
     }
     const [response, constantAudio] = await Promise.all([
-      $fetch('/api/conversation/engage', {
+      $fetch<ConversationResponse>('/api/conversation/engage', {
         query,
         headers: authHeaders.value,
       }),
-      $fetch('/api/conversation/constant-audio', {
+      $fetch<ConstantAudioResponse>('/api/conversation/constant-audio', {
         query: {
           chapterId,
           identifier,
@@ -1543,7 +1564,7 @@ const loadConversationScript = async () => {
           : line.speaker === aiSpeakerId.value) && !nextLineAudioMap[line.id]
     );
     if (typeof window !== 'undefined' && aiLinesMissingAudio.length) {
-      const batchResponse = await $fetch('/api/conversation/tts-batch', {
+      const batchResponse = await $fetch<TtsBatchResponse>('/api/conversation/tts-batch', {
         method: 'POST',
         headers: authHeaders.value,
         body: {
