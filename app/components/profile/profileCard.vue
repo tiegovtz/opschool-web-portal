@@ -549,7 +549,7 @@ const discardChanges = () => {
         <div
           class="relative overflow-hidden transition-all duration-500 ease-in-out rounded-full cursor-pointer w-36 h-36 group"
         >
-          <NuxtImg
+          <img
             :src="
               profile.profilePic && profile.profilePic.trim() !== ''
                 ? uploadedPic

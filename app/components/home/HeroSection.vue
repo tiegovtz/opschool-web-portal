@@ -97,8 +97,8 @@ const toggleReadMore = async () => {
           'overflow-hidden rounded-md my-auto transition-all duration-500 ease-in-out bg-gradient-to-b',
           isExpanded ? 'h-0' : 'h-auto'
         ]">
-          <NuxtImg src="/images/4.banner_miaka_50_transparent.gif"
-            alt="Animated white banner on a stage backdrop celebrating ‘Miaka 50 ya Taasisi ya Elimu Tanzania (TET)’ (50 years of the Tanzania Institute of Education). At the top left is the TET/TIE emblem. Across the left side in yellow text is the hashtag ‘#KitabuKimojaMwanafunziMmoja’. Below it on the left is a yellow phone number ‘994040118259’, and near the bottom center-right is another yellow phone number ‘0758460508’. On the right side is a black-and-white cartoon of a smiling student with arms raised, holding an open book above their head. Curving around the illustration in blue is the slogan ‘Kitabu Kimoja Mwanafunzi Mmoja’."
+          <img src="/images/4.banner_miaka_50_transparent.gif"
+            :alt="'Animated white banner on a stage backdrop celebrating ‘Miaka 50 ya Taasisi ya Elimu Tanzania (TET)’ (50 years of the Tanzania Institute of Education). At the top left is the TET/TIE emblem. Across the left side in yellow text is the hashtag ‘#KitabuKimojaMwanafunziMmoja’. Below it on the left is a yellow phone number ‘994040118259’, and near the bottom center-right is another yellow phone number ‘0758460508’. On the right side is a black-and-white cartoon of a smiling student with arms raised, holding an open book above their head. Curving around the illustration in blue is the slogan ‘Kitabu Kimoja Mwanafunzi Mmoja’.'"
             class="object-contain w-full h-full" />
         </div>
       </div>

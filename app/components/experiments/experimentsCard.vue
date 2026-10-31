@@ -10,7 +10,7 @@ const navigationStore = useNavigationStore()
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
 
-const props = withDefaults( 
+const props = withDefaults(
     defineProps<{
     experimentId:string|any,
     experimentName:string|any,
@@ -68,7 +68,7 @@ const setExperimentUrl =()=>{
 
 <template>
     <NuxtLink
-        :to="experimentTarget" 
+        :to="experimentTarget"
         @click="setExperimentUrl()"
         :aria-label="`View ${experimentName} experiment with experiment description ${experimentDescription}`"
         :class="[
@@ -78,11 +78,11 @@ const setExperimentUrl =()=>{
         >
         <!-- Thumbnail section -->
          <!--    layoutEffect == 'grid' ? 'aspect-video' : 'h-full w-full max-w-[200px]'  -->
-        <div :class="[
+        <div tabindex="0" :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
           layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
-            <NuxtImg :src="experimentThumbnail" tabindex="0" :alt="altText??experimentName"
+            <img :src="experimentThumbnail" :alt="altText??experimentName"
                 class="object-cover w-full h-full transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-black bg-opacity-70 to-transparent opacity-70" aria-hidden="true"></div>
 

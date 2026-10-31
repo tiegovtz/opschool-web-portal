@@ -79,7 +79,7 @@ const userToken = useCookie('signInUserToken')
     :to="topicTarget">
     <!-- profile view -->
     <div class="relative shrink-0 overflow-hidden rounded-full size-10 aspect-square">
-      <NuxtImg
+      <img
         :src="topicImage"
         tabindex="0"
         :alt="altText ?? topicTitle"
@@ -108,7 +108,7 @@ const userToken = useCookie('signInUserToken')
       layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-full max-w-[200px]',
       { 'md:h-20 !h-full max-w-[80px]': modelType === 'search', },
     ]">
-      <NuxtImg :src="topicImage" tabindex="0" loading="lazy" :alt="altText ?? `Image of ${topicTitle}`" :class="[
+      <img :src="topicImage" tabindex="0" loading="lazy" :alt="altText ?? `Image of ${topicTitle}`" :class="[
         'object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110',
         { 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' },
       ]" />

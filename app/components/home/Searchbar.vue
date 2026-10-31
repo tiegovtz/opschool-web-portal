@@ -1044,7 +1044,7 @@ const mouseOut = () => {
               :aria-label="`${localizedContent.goToRelatedTopic} ${topic.name}`"
             >
               <div class="flex-shrink-0 w-12 h-12 overflow-hidden rounded-md">
-                <NuxtImg
+                <img
                   :src="topic.thumbnail || '/images/background2.webp'"
                   :alt="topic.name"
                   class="object-cover w-full h-full"

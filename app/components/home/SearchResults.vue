@@ -9,7 +9,7 @@ import {
 // Define Stores
 const navigationStore = useNavigationStore()
 
-// Define Props 
+// Define Props
 const props = withDefaults(defineProps<{
     id:string,
     title:string,
@@ -95,7 +95,7 @@ const setPageToView = () => {
         :to="pageTarget"
         class="flex items-center p-4 transition-shadow duration-500 ease-in-out bg-white rounded-lg shadow-md hover:shadow-lg">
         <div class="max-w-[100px] h-20 mb-4 overflow-hidden rounded-md" tabindex="0">
-            <NuxtImg :src="thumbnail" loading="lazy" :alt="'Image of ' + subject + ' for ' + title"
+            <img :src="thumbnail" :alt="'Image of ' + subject + ' for ' + title"
                 class="object-cover w-full h-full" />
         </div>
         <div class="flex flex-col justify-between flex-1 ml-4">

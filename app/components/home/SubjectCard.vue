@@ -75,7 +75,7 @@ const setSubjectToView = () => {
       'relative overflow-hidden transition-all duration-500 ease-in-out',
       layoutEffect == 'grid' ? 'h-[280px]' : 'w-full max-w-[200px] h-32'
     ]">
-      <NuxtImg :src="subjectImage" loading="lazy" tabindex="0" :alt="altText ?? `Image for ${subjectName} subject`"
+      <img :src="subjectImage" loading="lazy" tabindex="0" :alt="altText ?? `Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110" />
 
       <div class="absolute right-0 -bottom-0">
@@ -135,7 +135,7 @@ const setSubjectToView = () => {
       'relative overflow-hidden transition-all duration-500 ease-in-out',
       layoutEffect == 'grid' ? 'h-56' : 'w-24 h-24'
     ]">
-      <NuxtImg :src="subjectImage" loading="lazy" tabindex="0" :alt="`Image for ${subjectName} subject`"
+      <img :src="subjectImage" loading="lazy" tabindex="0" :alt="`Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110" />
 
         <div class="absolute right-0 -bottom-0">

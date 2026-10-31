@@ -245,7 +245,7 @@ onBeforeUnmount(() => {
                   getSlideVisualClass(idx),
                 ]"
               >
-              <NuxtImg
+              <img
                 :src="slide.image"
                 :alt="slide.alt"
                 :class="[
