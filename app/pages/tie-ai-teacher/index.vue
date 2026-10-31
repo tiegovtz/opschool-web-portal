@@ -715,7 +715,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
+  <NuxtLayout name="home-layout" v-bind="{ language: contentLayoutLanguage }">
     <div
       class="relative flex min-h-0 overflow-hidden"
       :style="{

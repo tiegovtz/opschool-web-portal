@@ -103,7 +103,7 @@ useHead({
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :education-level="hub" :language="language">
+  <NuxtLayout name="home-layout" v-bind="{ language: language, educationLevel: hub }">
     <div class="w-full py-6 sm:py-8">
       <NuxtLink
         :to="catalogueLink"

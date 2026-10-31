@@ -256,7 +256,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
+  <NuxtLayout name="home-layout" v-bind="{ language: contentLayoutLanguage }">
     <section :class="[
       ' ',
       { ' animate-pulse': isLoading }

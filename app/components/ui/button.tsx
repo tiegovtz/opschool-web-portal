@@ -49,6 +49,7 @@ export interface ButtonProps extends VariantProps<typeof buttonVariants> {
   rel?: string;
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
+  role?: string;
   class?: string;
   className?: string;
   onClick?: (event: MouseEvent) => void;
@@ -64,6 +65,7 @@ const Button = defineComponent({
     target: String,
     rel: String,
     disabled: Boolean,
+    role: String,
     type: {
       type: String as PropType<ButtonProps["type"]>,
       default: "button",
@@ -131,6 +133,7 @@ const Button = defineComponent({
 
       const sharedProps = {
         ...attrs,
+        role: props.role,
         class: className,
         target:
           props.target ??

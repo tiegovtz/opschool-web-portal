@@ -65,11 +65,11 @@ export function adtStoreBaseUrl() {
   return base;
 }
 
-export async function adtFetch<T>(path: string, schema: z.ZodType<T>, forbiddenMessage?: string): Promise<T> {
+export async function adtFetch<S extends z.ZodTypeAny>(path: string, schema: S, forbiddenMessage?: string): Promise<z.output<S>> {
   const { url, options } = adtRequestOptions(path);
   try {
     const result = await $fetch<unknown>(url, options);
-    return z.object({ data: schema }).parse(result).data as T;
+    return z.object({ data: schema }).parse(result).data as z.output<S>;
   } catch (error) {
     // Do not serialize upstream errors: they may include Authorization headers or staff metadata.
     if (error instanceof z.ZodError) {

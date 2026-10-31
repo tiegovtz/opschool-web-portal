@@ -21,7 +21,7 @@ export default defineNuxtPlugin(() => {
 
       if (isTokenExpiringSoon(accessToken.value, 60)) {
         const refreshed = await refreshToken()
-        if (!refreshed?.access_token && !accessToken.value) {
+        if ((!refreshed || !('access_token' in refreshed)) && !accessToken.value) {
           return
         }
       }

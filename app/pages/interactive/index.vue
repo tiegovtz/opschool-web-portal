@@ -307,7 +307,7 @@ watch(filters, (filters) => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage" :education-level>
+  <NuxtLayout name="home-layout" v-bind="{ language: contentLayoutLanguage, educationLevel: educationLevel }">
     <div :class="[' ', { ' animate-pulse': isLoading }]">
       <!-- User Token Available -->
       <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">

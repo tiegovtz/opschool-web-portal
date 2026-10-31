@@ -328,7 +328,7 @@ watch(selectedLevel, () => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage" :education-level>
+  <NuxtLayout name="home-layout" v-bind="{ language: contentLayoutLanguage, educationLevel: educationLevel }">
     <div class="" :class="{ ' animate-pulse': isLoading }">
       <div class="flex flex-col gap-4">
         <!-- Keep hero-style search visible for both logged-in and logged-out -->

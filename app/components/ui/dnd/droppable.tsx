@@ -1,4 +1,4 @@
-import { computed, defineComponent, inject } from "vue";
+import { computed, defineComponent, inject, type PropType } from "vue";
 import { cn } from "~/utilities/utils";
 import { dndContextKey, type DndContextValue } from "~/components/layout/dnd-context";
 
@@ -21,6 +21,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    role: String,
+    tabindex: [String, Number],
+    onClick: Function as PropType<(event: MouseEvent) => void>,
+    onKeydown: Function as PropType<(event: KeyboardEvent) => void>,
   },
   setup(props, { slots, attrs }) {
     const dndContext = inject<DndContextValue | null>(dndContextKey, null);
@@ -55,6 +59,10 @@ export default defineComponent({
       <div
         {...attrs}
         id={droppableId.value}
+        role={props.role}
+        tabindex={props.tabindex}
+        onClick={props.onClick}
+        onKeydown={props.onKeydown}
         class={className.value}
         onDragover={handleDragOver}
         onDrop={handleDrop}

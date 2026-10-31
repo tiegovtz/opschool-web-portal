@@ -246,7 +246,7 @@ const getTopicComparison = (topicId: string) =>
 
 const getRecommendationOutcomeLabel = (status: string) =>
   recommendationOutcomeLabels.value[
-    status as keyof typeof recommendationOutcomeLabels
+    status as keyof typeof recommendationOutcomeLabels.value
   ] ?? status.replaceAll("_", " ");
 
 const getRecommendationOutcomeClass = (status: string) => {

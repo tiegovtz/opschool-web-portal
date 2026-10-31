@@ -31,7 +31,7 @@ definePageMeta({
 </script>
 
 <template>
-  <NuxtLayout name="landing" :language="contentLayoutLanguage">
+  <NuxtLayout name="landing" v-bind="{ language: contentLayoutLanguage }">
     <included-landing/>
   </NuxtLayout>
 </template>

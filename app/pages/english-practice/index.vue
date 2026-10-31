@@ -131,9 +131,6 @@
               :highlighted-word="highlightedWord"
               :current-transcript="currentTranscript"
               :mode="mode"
-              :is-ai-speaking="mode === 'single-user'
-                ? turnManager.currentTurn.value !== primarySpeakerId && (isAiAudioLoading || isPlayingAiAudio)
-                : turnManager.currentTurn.value === aiSpeakerId && (isAiAudioLoading || isPlayingAiAudio)"
               :current-word-index="currentWordIndex"
               :participants="participants"
               :ui-language="uiLanguage"
@@ -188,16 +185,6 @@
         >
           <WaveGlowBottom class="w-full h-full" :active="speechRecognition.isListening.value" :audio-level="audioLevel" />
         </div>
-        <!-- Hidden Audio Element -->
-        <audio
-          ref="audioRef"
-          @ended="onAudioEnded"
-          @error="onAudioError"
-          @timeupdate="onAudioTimeUpdate"
-          class="absolute w-0 h-0 overflow-hidden"
-          :volume="1.0"
-        ></audio>
-
         <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
           <div
             v-for="toast in toasts"
@@ -252,11 +239,12 @@ const mode = ref<PracticeMode>('multi-user'); // Can be changed based on user de
 const route = useRoute();
 const router = useRouter();
 const authAccessTokenCookie = useCookie('signInAccessToken');
-const authHeaders = computed(() =>
-  authAccessTokenCookie.value
-    ? { Authorization: `Bearer ${authAccessTokenCookie.value}` }
-    : {}
-);
+const authHeaders = computed<Record<string, string>>(() => {
+  const token = authAccessTokenCookie.value;
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+});
 const practiceTitle = computed(() =>
   String(route.query.language || '').trim().toLowerCase() === 'sw'
     ? 'Mazoezi ya Kiswahili'

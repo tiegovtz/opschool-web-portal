@@ -34,6 +34,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@dnd-kit/vue": "^0.3.2",
     "@google/model-viewer": "^4.0.0",
+    "@iconify/vue": "^5.0.4",
     "@langchain/community": "^1.1.23",
     "@langchain/core": "^1.1.32",
     "@nuxt/icon": "^1.10.3",

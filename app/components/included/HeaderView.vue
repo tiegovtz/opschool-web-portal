@@ -694,7 +694,6 @@ onBeforeUnmount(() => {
                   >
                     <IconsLogout
                       :size="20"
-                      title="Sign out"
                     />
                     <span>{{
                       language === "english" ? `Logout` : `Ondoka`
@@ -917,7 +916,6 @@ onBeforeUnmount(() => {
                   >
                     <IconsLogout
                       :size="20"
-                      title="Sign out"
                     />
                     <span>{{
                       language === "english" ? `Logout` : `Ondoka`

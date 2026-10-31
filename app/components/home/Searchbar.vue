@@ -205,6 +205,7 @@ const relatedContent = ref<{
 const announcement = ref<string>("");
 
 const handleSearch = async () => {
+  if (!searchReactive.search) return;
   if (props.searchHandler) {
     props.searchHandler(searchReactive.search.trim());
     return;
@@ -897,7 +898,7 @@ const mouseOut = () => {
               result.level ||
               localizedContent.defaultLevel
             "
-            :topic-subject="
+            :subject-name="
               result.subject?.name ||
               result.subject ||
               localizedContent.notAvailable

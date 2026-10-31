@@ -1,7 +1,7 @@
 <template>
   <NuxtLayout
     :name="route.fullPath.includes('header-less') ? 'normal' : 'home-layout'"
-    :language="route.fullPath.includes('header-less') ? undefined : pageLanguage"
+    v-bind="{ language: route.fullPath.includes('header-less') ? undefined : pageLanguage }"
   >
 
   <div class="iframe-screen">

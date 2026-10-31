@@ -71,7 +71,7 @@ watch(
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="selectedLanguage">
+  <NuxtLayout name="home-layout" v-bind="{ language: selectedLanguage }">
     <section id="main-container" tabindex="-1" class="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-6">
       <div class="rounded-2xl bg-slate-50 p-5 shadow-sm ring-1 ring-slate-200">
         <h1 class="text-2xl font-bold text-slate-900">

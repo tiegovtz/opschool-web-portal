@@ -11,7 +11,7 @@ export default defineEventHandler(async (event): Promise<AdtReaderBook> => {
   const input = z.object({
     id: adtIdSchema,
     educationLevel: z.enum(['primary', 'secondary']),
-  }).safeParse({ ...getQuery(event), id: getRouterParam(event, 'id') });
+  }).safeParse({ educationLevel: getQuery(event).educationLevel, id: getRouterParam(event, 'id') });
   if (!input.success) throw createError({ statusCode: 400, statusMessage: 'Invalid book or education level.' });
   const { id, educationLevel } = input.data;
   const [book, levels] = await Promise.all([

@@ -1,7 +1,7 @@
 // components/CustomInput.tsx
 import { defineComponent, type PropType } from "vue";
 import { Icon } from "@iconify/vue"; // using Iconify
-import Input from "./input";
+import { Input } from "../input";
 import { cn } from "~/utilities/utils";
 
 export default defineComponent({

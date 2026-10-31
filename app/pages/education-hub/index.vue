@@ -815,8 +815,7 @@ const handleSubjectSelect = async (
 <template>
   <NuxtLayout
     name="home-layout"
-    :language="currentLanguage"
-    :education-level="currentEducationLevel"
+    v-bind="{ language: currentLanguage, educationLevel: currentEducationLevel }"
   >
     <HeroSection v-if="!userToken" :language="currentLanguage" :education-level="currentEducationLevel" />
     <HomeContentTabs :active="hubSection" :language="currentLanguage" @select="selectHubSection" />
@@ -998,7 +997,6 @@ const handleSubjectSelect = async (
                     :key="experiment._id"
                     :experiment-id="experiment._id"
                     :experiment-thumbnail="experiment.thumbnail"
-                    :experiment-title="experiment.title"
                     :experiment-description="experiment.description"
                     :experiment-type="experiment.category"
                     :experiment-subject="experiment.subject?.name"

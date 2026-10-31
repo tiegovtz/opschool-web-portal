@@ -199,7 +199,7 @@ function renderQuestion(question: Question, questionIndex: number) {
           v-if="showResults"
           :score="score"
           :total="shuffledQuestions.length"
-          @onRestart="handleResetWithShuffle"
+          :on-restart="handleResetWithShuffle"
           class="mt-6"
         />
 
@@ -215,7 +215,7 @@ function renderQuestion(question: Question, questionIndex: number) {
       :score="score"
       :total="shuffledQuestions.length"
       :open="isSubmitted && !showResults"
-      @onOpenChange="(open:any) => { if (!open) showResults = true }"
+      :on-open-change="(open:any) => { if (!open) showResults = true }"
     />
   </section>
 </template>

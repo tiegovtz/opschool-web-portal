@@ -2,7 +2,7 @@ import type { BaseEntity } from "./base.interface";
 import type { Language } from "./language.interface";
 import type { Subjects } from "./subject.interface";
 
-export interface Audios extends BaseEntity {
+export interface Audios extends Omit<BaseEntity, "language"> {
   audioType: string;
   language: Language;
   subject: Subjects;

@@ -87,7 +87,7 @@ const handleReset = () => {
     <div class="flex items-center justify-center w-full gap-4 xl:items-start">
       <div v-if="showFilters && !isSubjectsTab" aria-label="Filters" role="group"
         class="sticky flex-col items-start hidden w-1/4 p-2 pb-4 my-5 bg-white rounded-md xl:flex top-10 custom-box-shadow">
-        <DropDownMenu :active-tab="activeTab" :language="language" :filter-value="[]" :education-level @emit-update-filter-value="handleFilterUpdate" />
+        <DropDownMenu :active-tab="activeTab" :language="language" :education-level @emit-update-filter-value="handleFilterUpdate" />
         <!-- <button v-if="hasActiveFilter" type="button" class="px-2 pt-2 cursor-pointer text-oceanBlue"
           @click="handleReset">
           Reset filters

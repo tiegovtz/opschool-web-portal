@@ -13,6 +13,9 @@ const Input = defineComponent({
     value: [String, Number],
     disabled: Boolean,
     placeholder: String,
+    maxlength: [String, Number],
+    min: [String, Number],
+    max: [String, Number],
     class: String,
     className: String,
     onChange: Function as PropType<(event: Event) => void>,
@@ -33,6 +36,9 @@ const Input = defineComponent({
         type={props.type}
         disabled={props.disabled}
         placeholder={props.placeholder}
+        maxlength={props.maxlength}
+        min={props.min}
+        max={props.max}
         value={props.modelValue ?? props.value ?? ""}
         onInput={handleInput}
         class={cn(

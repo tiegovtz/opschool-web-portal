@@ -114,7 +114,7 @@ const placeStep = (slotIndex: number, step: Step) => {
 
 const removePlacedStep = (slotIndex: number) => {
   const step = arrangedSteps.value[slotIndex];
-  if (!step || step === "") return;
+  if (!step) return;
   arrangedSteps.value = arrangedSteps.value.map((item, index) => (index === slotIndex ? "" : item));
   steps.value = [...steps.value, step];
   keyboardStatusMessage.value = ui.formatActivityRemoved(ui.formatQuestion(slotIndex + 1), step.text);

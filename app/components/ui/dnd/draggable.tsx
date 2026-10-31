@@ -1,4 +1,4 @@
-import { computed, defineComponent, inject } from "vue";
+import { computed, defineComponent, inject, type CSSProperties, type PropType } from "vue";
 import { cn } from "~/utilities/utils";
 import { dndContextKey, type DndContextValue } from "~/components/layout/dnd-context";
 
@@ -21,6 +21,10 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    role: String,
+    tabindex: [String, Number],
+    onClick: Function as PropType<(event: MouseEvent) => void>,
+    onKeydown: Function as PropType<(event: KeyboardEvent) => void>,
   },
   setup(props, { slots, attrs }) {
     const dndContext = inject<DndContextValue | null>(dndContextKey, null);
@@ -33,7 +37,7 @@ export default defineComponent({
         (attrs as { className?: string }).className,
       )
     );
-    const style = computed(() => ({
+    const style = computed<CSSProperties>(() => ({
       touchAction: props.disabled ? "auto" : "none",
       ...(props.disabled
         ? {}
@@ -70,6 +74,10 @@ export default defineComponent({
         {...attrs}
         id={dragId.value}
         draggable={!props.disabled}
+        role={props.role}
+        tabindex={props.tabindex}
+        onClick={props.onClick}
+        onKeydown={props.onKeydown}
         onDragstart={handleDragStart}
         onDragend={handleDragEnd}
         style={style.value}

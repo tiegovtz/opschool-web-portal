@@ -110,11 +110,11 @@ const setPageToView = () => {
                             type.toLocaleLowerCase() === 'video' ? 'fluent:video-24-filled' :
                                 type.toLocaleLowerCase() === 'audio' ? 'famicons:headset-sharp' : 'icon-park-solid:blackboard'"
                     class="text-gray-500 transition-transform duration-300 ease-in-out transform hover:translate-x-1"
-                    tabindex="0" :aria-label="type.toLocaleLowerCase() === 'topic' ? 'note book and pen icon' :
+                    :aria-label="type.toLocaleLowerCase() === 'topic' ? 'note book and pen icon' :
                         type.toLocaleLowerCase() === 'activity' ? 'conical flask icon' :
                             type.toLocaleLowerCase() === 'video' ? 'video icon' :
                                 type.toLocaleLowerCase() === 'audio' ? 'headset icon' : 'blackboard icon'" aria-hidden="true"
-                    focusable="false" />
+                    />
             </div>
         </div>
     </NuxtLink>

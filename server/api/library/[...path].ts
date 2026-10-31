@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
   // content-encoding or its compressed content-length would corrupt the asset.
   if (!response.headers.has('content-encoding')) {
     const contentLength = response.headers.get('content-length');
-    if (contentLength) setHeader(event, 'content-length', contentLength);
+    if (contentLength) setHeader(event, 'content-length', Number(contentLength));
   }
   if (event.method === 'HEAD' || !response.body) return null;
   return sendStream(event, response.body);

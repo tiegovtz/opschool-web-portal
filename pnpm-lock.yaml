@@ -27,6 +27,9 @@ importers:
       '@google/model-viewer':
         specifier: ^4.0.0
         version: 4.2.0(three@0.182.0)
+      '@iconify/vue':
+        specifier: ^5.0.4
+        version: 5.0.4(vue@3.5.30(typescript@5.9.3))
       '@langchain/community':
         specifier: ^1.1.23
         version: 1.1.27(@browserbasehq/sdk@2.10.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.59.1)(deepmerge@4.3.1)(dotenv@17.4.2)(openai@4.104.0(ws@8.20.0)(zod@3.25.76))(zod@3.25.76))(@ibm-cloud/watsonx-ai@1.7.11(typescript@5.9.3))(@langchain/core@1.1.40(@opentelemetry/api@1.9.0)(openai@4.104.0(ws@8.20.0)(zod@3.25.76))(ws@8.20.0))(@opentelemetry/api@1.9.0)(crypto-js@4.2.0)(ibm-cloud-sdk-core@5.4.11)(ignore@7.0.5)(ioredis@5.10.1)(jsonwebtoken@9.0.3)(lodash@4.18.1)(openai@4.104.0(ws@8.20.0)(zod@3.25.76))(pdf-parse@2.4.5)(playwright@1.59.1)(redis@5.12.1(@opentelemetry/api@1.9.0))(ws@8.20.0)
@@ -1506,10 +1509,10 @@ packages:
   '@iconify/utils@2.3.0':
     resolution: {integrity: sha512-GmQ78prtwYW6EtzXRU1rY+KwOKfz32PD7iJh6Iyqw68GiKuoZ2A6pRtzWONz5VQJbp50mEjXh/7NkumtrAgRKA==}
 
-  '@iconify/vue@5.0.0':
-    resolution: {integrity: sha512-C+KuEWIF5nSBrobFJhT//JS87OZ++QDORB6f2q2Wm6fl2mueSTpFBeBsveK0KW9hWiZ4mNiPjsh6Zs4jjdROSg==}
+  '@iconify/vue@5.0.4':
+    resolution: {integrity: sha512-9yP5PjOv5G9vStHfyPtQ69Ay1CSNAC3AZTRDJ4LX3UMX7nEH0GO8OKhc3qhcrXp1KS2GnlLufGbFCwD+U4Fi5A==}
     peerDependencies:
-      vue: '>=3'
+      vue: '>=3.0.0'
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -8844,7 +8847,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@iconify/vue@5.0.0(vue@3.5.30(typescript@5.9.3))':
+  '@iconify/vue@5.0.4(vue@3.5.30(typescript@5.9.3))':
     dependencies:
       '@iconify/types': 2.0.0
       vue: 3.5.30(typescript@5.9.3)
@@ -9400,7 +9403,7 @@ snapshots:
       '@iconify/collections': 1.0.674
       '@iconify/types': 2.0.0
       '@iconify/utils': 2.3.0
-      '@iconify/vue': 5.0.0(vue@3.5.30(typescript@5.9.3))
+      '@iconify/vue': 5.0.4(vue@3.5.30(typescript@5.9.3))
       '@nuxt/devtools-kit': 2.7.0(magicast@0.5.2)(vite@6.4.2(@types/node@18.19.130)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3))
       '@nuxt/kit': 3.21.2(magicast@0.5.2)
       consola: 3.4.2

@@ -139,7 +139,7 @@ const handleLetterClick = (letter: string) => {
     if (wordIsCorrect) {
       isCorrect.value = true;
       keyboardStatusMessage.value = contentLayoutLanguage.value === "kiswahili"
-        ? `Neno limekamilika kwa usahihi: ${currentWord.toUpperCase()}.`
+        ? `Neno limekamilika kwa usahihi: ${currentWord.value.toUpperCase()}.`
         : `Word completed correctly: ${currentWord.value.toUpperCase()}.`;
       playSound("success");
     } else {

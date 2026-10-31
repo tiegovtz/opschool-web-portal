@@ -2445,8 +2445,10 @@ onMounted(async () => {
                 name="password" autocomplete="off"
                 class="w-full p-1 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 :placeholder="content.passwordPlaceholder" />
-              <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
-                class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
+              <button type="button" aria-label="Toggle password visibility" @click="togglePassword">
+                <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
+                  class="w-5 h-5 text-textGray" />
+              </button>
             </div>
             <!-- Password error message -->
             <small v-if="usersignUp.controller.errors.password" class="w-full text-red-500 text-smallest">
@@ -2462,8 +2464,10 @@ onMounted(async () => {
                 v-model="usersignUp.confirm_password" name="confirm_password" autocomplete="off"
                 class="w-full p-1 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 :placeholder="content.confirmPasswordPlaceholder" />
-              <Icon :name="showConfirmPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
-                class="w-5 h-5 cursor-pointer text-textGray" @click="toggleConfirmPassword" />
+              <button type="button" aria-label="Toggle confirm password visibility" @click="toggleConfirmPassword">
+                <Icon :name="showConfirmPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
+                  class="w-5 h-5 text-textGray" />
+              </button>
             </div>
             <!-- Password error message -->
             <small v-if="usersignUp.controller.errors.confirm_password" aria-live="assertive"

@@ -1161,7 +1161,7 @@ definePageMeta({
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage" :education-level>
+  <NuxtLayout name="home-layout" v-bind="{ language: contentLayoutLanguage, educationLevel: educationLevel }">
     <section v-if="experimrntUrl || activityPopupId" class="relative w-full center-height" id="experiment-container">
       <button
         type="button"
@@ -1209,7 +1209,7 @@ definePageMeta({
         :level-id="chapters.notes?.level?._id ?? ((userToken as any)?.value?.level?._id ?? null)"
         :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
         :topic-language="topicLanguageData?.name"
-        @emit-quiz-score="updateChapterProgress" />
+        />
     </div>
 
     <section v-else class="relative inline-flex w-full h-full overflow-hidden center-height">

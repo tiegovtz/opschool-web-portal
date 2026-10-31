@@ -9,6 +9,8 @@
     "noUncheckedIndexedAccess": false
   },
   "vueCompilerOptions": {
-    "strictTemplates": true
+    "strictTemplates": true,
+    "fallthroughAttributes": true,
+    "dataAttributes": ["aria-*", "data-*"]
   }
 }

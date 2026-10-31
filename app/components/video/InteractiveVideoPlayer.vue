@@ -25,24 +25,14 @@
     </video>
 
     <!-- Quiz Overlay - Absolutely positioned within container -->
-    <Transition name="quiz-overlay">
-      <div
-        v-if="activeQuiz"
-        class="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="quiz-question"
-        @click.self="handleOverlayClick"
-      >
-        <VideoQuizContent
-          :quiz="activeQuiz"
-          :required="activeQuiz.required"
-          @submit="handleQuizSubmit"
-          @close="handleQuizClose"
-          @continue="handleQuizContinue"
-        />
-      </div>
-    </Transition>
+    <VideoQuizOverlay
+      v-if="activeQuiz"
+      :quiz="activeQuiz"
+      :required="activeQuiz.required"
+      @submit="handleQuizSubmit"
+      @close="handleQuizClose"
+      @continue="handleQuizContinue"
+    />
 
     <!-- Quiz Timeline Markers (Optional) -->
     <div
@@ -65,7 +55,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import type { VideoQuiz } from '~/types/video-quiz.interface';
 import { useVideoQuiz } from '~/composables/useVideoQuiz';
-import VideoQuizContent from './VideoQuizContent.vue';
+import VideoQuizOverlay from './VideoQuizOverlay.vue';
 
 interface Props {
   src: string;
