@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Chat } from "@ai-sdk/vue";
+import { DefaultChatTransport } from "ai";
 import { computed, ref, watch, onMounted, onBeforeUnmount, defineAsyncComponent } from "vue";
 import { useChatStore } from "~/stores/chatStore";
 import type { ChatMessage } from "~/types/chat.interface";
@@ -28,7 +29,13 @@ const AiTeacherInput = defineAsyncComponent(
   () => import("~/components/ai-teacher/Input.vue")
 );
 
-const chat = new Chat({});
+// Chat's default transport posts to "/api/chat", which resolves against the domain
+// root and 404s once the app is deployed under a sub-path (e.g. /portal). Prefix it
+// with the app's own base path so the request reaches this app's own Nitro route.
+const apiBasePath = useRuntimeConfig().app.baseURL.replace(/\/$/, "");
+const chat = new Chat({
+  transport: new DefaultChatTransport({ api: `${apiBasePath}/api/chat` }),
+});
 const isTyping = ref(false);
 const sidebarStateKey = "tie-ai-teacher-sidebar-open";
 const isHistoryOpen = ref(true);
