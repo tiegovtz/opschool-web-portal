@@ -59,7 +59,7 @@ const tieLogoAlt = computed(() =>
                     </p>
                 </div>
                 <NuxtLink to="/" class="flex items-center justify-center h-full p-2 cursor-pointer">
-                    <img src="/logo/logo_tie.gif" class="w-16 h-16"
+                    <img src="/logo/logo_tie.webp" class="w-16 h-16" width="64" height="64"
                         :alt="tieLogoAlt" />
                 </NuxtLink>
             </div>
