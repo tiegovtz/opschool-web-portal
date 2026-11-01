@@ -64,14 +64,13 @@ export async function loadDynamicShortcodes(forceReload: boolean = false): Promi
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
-        // Load all shortcodes from our server endpoint (handles auth internally)
-        const response = await fetch('/api/image-list');
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
+        // Load all shortcodes from our server endpoint (handles auth internally).
+        // $fetch does NOT automatically respect app.baseURL for a plain '/api/...'
+        // path - it resolves against the domain root exactly like native fetch, so
+        // this 404s once the app is deployed under a sub-path (e.g. /portal). Build
+        // the URL from the app's own configured base path instead.
+        const apiBasePath = useRuntimeConfig().app.baseURL.replace(/\/$/, '');
+        const data = await $fetch<{ success?: boolean; images?: Array<Record<string, any>> }>(`${apiBasePath}/api/image-list`);
 
         if (data.success && data.images && data.images.length > 0) {
           // Convert to cache format - supports both single and multi-image figures.
