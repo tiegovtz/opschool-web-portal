@@ -2,7 +2,7 @@
   "name": "tie-web-portal",
   "private": true,
   "type": "module",
-  "version": "1.1.12",
+  "version": "1.1.13",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
