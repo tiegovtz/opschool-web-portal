@@ -110,7 +110,7 @@ const buildAnonymousTarget = (
   query: {
     ...getEducationRouteQuery(
       anonymousEducationLevel.value,
-      {},
+      typeof route.query.sublevel === "string" ? { sublevel: route.query.sublevel } : {},
       resolveRouteLanguage(route, anonymousEducationLevel.value, primaryContentLanguage.value),
     ),
     ...extraQuery,

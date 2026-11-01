@@ -17,7 +17,7 @@ type DropdownOption = {
 };
 
 const props = withDefaults(
-  defineProps<{ educationLevel?: string; language?: LanguageSupport; classifications?: AdtClassifications; disabled?: boolean }>(),
+  defineProps<{ educationLevel?: string; selectedSublevel?: string; language?: LanguageSupport; classifications?: AdtClassifications; disabled?: boolean }>(),
   {
     language: "english",
   },
@@ -34,7 +34,7 @@ const normalizeValue = (value?: string | null) =>
   value?.trim().toLowerCase() ?? "";
 
 const getEducationBucket = (value?: string | null) =>
-  value?.trim() ? normalizeEducationLevel(value) : null;
+  value?.trim() && value !== "all" ? normalizeEducationLevel(value) : null;
 const level = ref<string>("");
 const standard = ref<string>("");
 const subject = ref<string>("");
@@ -199,6 +199,18 @@ const matchedEducationLevels = computed(() => {
   );
 });
 
+watch(
+  [() => props.selectedSublevel, matchedEducationLevels],
+  ([selectedSublevel, options]) => {
+    if (!options.length) return;
+    const matching = selectedSublevel
+      ? options.find((option) => normalizeEducationLevel(option.name) === normalizeEducationLevel(selectedSublevel))
+      : undefined;
+    onLevelChange(matching?.name ?? "all");
+  },
+  { immediate: true },
+);
+
 const filteredEducationLevels = computed(() =>
   matchedEducationLevels.value.length
     ? matchedEducationLevels.value
@@ -210,12 +222,17 @@ const educationLevelOptions = computed<DropdownOption[]>(() => {
   const allowed = new Set(
     filteredEducationLevels.value.map((e) => normalizeValue(e.name)),
   )
-  return sortedEducationLevels.value
+  const sublevels = sortedEducationLevels.value
     .filter((e) => allowed.has(normalizeValue(e.name)))
     .map((educationLevelOption) => ({
       id: educationLevelOption.name,
       name: educationLevelOption.name,
     }))
+  return sublevels.length
+    ? [{ id: "all", name: props.educationLevel === "primary"
+      ? (props.language === "kiswahili" ? "Msingi wote" : "All Primary")
+      : (props.language === "kiswahili" ? "Sekondari yote" : "All Secondary") }, ...sublevels]
+    : sublevels;
 })
 
 const classOptions = computed<DropdownOption[]>(() => {
@@ -268,7 +285,7 @@ watch(
       (matchedLevel) => matchedLevel.name === level.value,
     );
 
-    if (!currentLevelStillVisible && level.value) {
+    if (!currentLevelStillVisible && level.value && level.value !== "all") {
       onLevelChange("");
     }
   },

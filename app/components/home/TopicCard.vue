@@ -46,7 +46,7 @@ const topicTarget = computed(() => ({
   path: `/interactive/${props.topicStandard}/${props.subjectName}/${props.topicTitle}/${props.topicId}`,
   query: getEducationRouteQuery(
     resolveEducationLevelFromRoute(route),
-    {},
+    typeof route.query.sublevel === "string" ? { sublevel: route.query.sublevel } : {},
     resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
   ),
 }));
