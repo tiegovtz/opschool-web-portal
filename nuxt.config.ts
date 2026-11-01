@@ -45,6 +45,8 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    public: { localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true" },
+    backendApiBaseUrl: process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1",
     supportApiBaseUrl: "",
     adtStoreBaseUrl: "",
     adtStoreApiKey: "",

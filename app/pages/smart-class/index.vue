@@ -272,7 +272,7 @@ const normalizeList = (payload: any) => {
 const buildAssetUrl = (path?: string | null) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
-  return `${apiDocs.baseURL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  return `${apiDocs.requestBaseURL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 };
 
 const buildGradient = (subject?: string | null) => {

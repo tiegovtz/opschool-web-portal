@@ -1,0 +1,19 @@
+Portal backend proxy
+
+Browser API calls now use /api/backend/v1 on the portal's own origin. The portal server forwards them to the configured backend, so localhost, LAN addresses, and shared preview addresses do not need to be added to the backend's browser CORS list.
+
+Configuration:
+- VITE_API_BASE_URL remains the existing API root (default https://opschool.tie.go.tz:5001/v1).
+- NUXT_BACKEND_API_BASE_URL optionally overrides the proxy's upstream API root at server runtime. Keep it consistent with VITE_API_BASE_URL when also using direct server-side integrations.
+- The local /v1 namespace maps to the entire configured upstream base path, including a custom version prefix.
+- Restart Nuxt after changing environment settings.
+
+Authentication is unchanged: browser calls supply their existing Authorization header, and the backend validates users and roles. No administrator credential or API secret is injected. Portal cookies and browser Origin/Host headers are not forwarded. The proxy accepts only requests from its own origin when an Origin header is present. Keep the portal server reachable on the address being shared; exposing the server to a LAN or tunnel is a separate run/deployment setting.
+
+Only the configured destination is reachable. Path traversal and arbitrary destination URLs are rejected, upstream redirects are not followed, and responses are never cached. Backend status codes and bodies pass through so invalid credentials remain 401 rather than becoming a generic error. Multipart upload content types and byte-range request/response headers are preserved. Media responses stream without a fixed total playback timeout.
+
+apiDocs.baseURL retains its historical upstream value for profile images and other asset URL resolution. API calls built manually must use apiDocs.requestBaseURL; named apiDocs endpoints already do so. Server-side utilities continue to call the upstream directly. Existing dedicated /api/support and /api/library integrations remain unchanged.
+
+Validation:
+node --experimental-strip-types --test scripts/backend-proxy.test.mjs
+A credential-free POST with {} to the local login proxy returned the real backend's 401 JSON response, proving that browser requests reached the authentication API without CORS preflight errors. Full successful login still requires the user's valid account details.

@@ -7,7 +7,7 @@ import type {
 import apiDocs from '~/utilities/apiDocs';
 
 export const useChatHistory = () => {
-  const baseURL = apiDocs.baseURL;
+  const baseURL = apiDocs.requestBaseURL;
   const token = useCookie('signInAccessToken').value;
 
   const getAuthHeaders = () => ({
