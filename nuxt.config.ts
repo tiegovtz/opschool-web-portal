@@ -1,6 +1,17 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { vite as vidstack } from "vidstack/plugins";
 
+const imageDomains = [
+  process.env.VITE_API_BASE_URL,
+  "https://opschool.tie.go.tz:5001/v1",
+].flatMap((value) => {
+  try {
+    return value ? [new URL(value).host] : [];
+  } catch {
+    return [];
+  }
+});
+
 export default defineNuxtConfig({
   compatibilityDate: '2026-10-31',
   devtools: { enabled: true },
@@ -176,6 +187,7 @@ export default defineNuxtConfig({
   },
 
   image: {
+    domains: [...new Set(imageDomains)],
     quality: 80,
     format: ["webp"],
     densities: [1],

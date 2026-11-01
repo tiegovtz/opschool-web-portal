@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { layoutEffect } from "~/utilities/controlls";
 import { calculateTopicMetrics } from "~/utilities/topicMetrics.js";
+import CardImage from "~/components/home/CardImage.vue";
 import {
   getEducationRouteQuery,
   resolveRouteLanguage,
@@ -75,7 +76,7 @@ const setSubjectToView = () => {
       'relative overflow-hidden transition-all duration-500 ease-in-out',
       layoutEffect == 'grid' ? 'h-[280px]' : 'w-full max-w-[200px] h-32'
     ]">
-      <img :src="subjectImage" loading="lazy" tabindex="0" :alt="altText ?? `Image for ${subjectName} subject`"
+      <CardImage :src="subjectImage" tabindex="0" :alt="altText ?? `Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110" />
 
       <div class="absolute right-0 -bottom-0">
@@ -135,7 +136,7 @@ const setSubjectToView = () => {
       'relative overflow-hidden transition-all duration-500 ease-in-out',
       layoutEffect == 'grid' ? 'h-56' : 'w-24 h-24'
     ]">
-      <img :src="subjectImage" loading="lazy" tabindex="0" :alt="`Image for ${subjectName} subject`"
+      <CardImage :src="subjectImage" tabindex="0" :alt="altText ?? `Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110" />
 
         <div class="absolute right-0 -bottom-0">

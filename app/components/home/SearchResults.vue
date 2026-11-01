@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CardImage from "~/components/home/CardImage.vue";
 import { useNavigationStore } from "~/stores/navigationStore";
 import type { LanguageSupport } from "~/types/language.interface";
 import {
@@ -95,7 +96,7 @@ const setPageToView = () => {
         :to="pageTarget"
         class="flex items-center p-4 transition-shadow duration-500 ease-in-out bg-white rounded-lg shadow-md hover:shadow-lg">
         <div class="max-w-[100px] h-20 mb-4 overflow-hidden rounded-md" tabindex="0">
-            <img :src="thumbnail" :alt="'Image of ' + subject + ' for ' + title"
+            <CardImage :src="thumbnail" :alt="'Image of ' + subject + ' for ' + title" width="200" height="160"
                 class="object-cover w-full h-full" />
         </div>
         <div class="flex flex-col justify-between flex-1 ml-4">
