@@ -3,7 +3,8 @@ import { vite as vidstack } from "vidstack/plugins";
 
 const imageDomains = [
   process.env.VITE_API_BASE_URL,
-  "https://opschool.tie.go.tz:5001/v1",
+  "http://41.59.251.166",
+  "https://opschool.tie.go.tz",
 ].flatMap((value) => {
   try {
     return value ? [new URL(value).host] : [];
