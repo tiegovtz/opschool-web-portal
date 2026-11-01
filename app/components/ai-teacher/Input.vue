@@ -26,7 +26,18 @@ const emit = defineEmits<{
   sendMessage: [payload: { message: string; files?: FileList }];
 }>();
 
-const isBusy = computed(() => props.chat?.status !== "ready");
+// Only "submitted"/"streaming" should lock the input. Treating "error" as busy too
+// used to permanently disable the chat after any failed request (e.g. a dropped
+// connection) - the AI SDK already recovers to a real "error" status on failure
+// (see ai/dist/index.mjs's makeRequest catch block), it's just that nothing here
+// ever surfaced a way out of it.
+const isBusy = computed(
+  () => props.chat?.status === "submitted" || props.chat?.status === "streaming",
+);
+const isChatError = computed(() => props.chat?.status === "error");
+const retryLastMessage = () => {
+  props.chat?.regenerate?.();
+};
 const selectedFiles = computed(() =>
   files.value ? Array.from(files.value) : [],
 );
@@ -47,6 +58,10 @@ const labels = computed(() => ({
   questionHelp: isSwahili.value
     ? "Bonyeza Enter kutuma swali lako. Bonyeza Shift Enter kuanza mstari mpya. Unaweza pia kuambatisha faili za PDF, maandishi, JSON, markdown, au picha."
     : "Press Enter to submit your question. Press Shift Enter to start a new line. You can also attach PDF, text, JSON, markdown, or image files.",
+  chatErrorMessage: isSwahili.value
+    ? "Jibu halikukamilika, huenda kwa sababu ya mtandao. Jaribu tena."
+    : "The response didn't go through, possibly a connection issue. Try again.",
+  retry: isSwahili.value ? "Jaribu tena" : "Try again",
 }));
 
 const inferSelectedFileMediaType = (file: Pick<File, "name" | "type">): string => {
@@ -315,6 +330,21 @@ onBeforeUnmount(() => {
     >
       {{ validationError }}
     </p>
+
+    <div
+      v-if="isChatError"
+      class="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-600 shadow-sm"
+      role="alert"
+    >
+      <span>{{ labels.chatErrorMessage }}</span>
+      <button
+        type="button"
+        class="shrink-0 rounded-full border border-red-300 bg-white px-3 py-1 font-medium text-red-600 transition hover:bg-red-100"
+        @click="retryLastMessage"
+      >
+        {{ labels.retry }}
+      </button>
+    </div>
 
     <div class="rounded-[2rem] border border-slate-200/90 bg-white px-3 py-2 shadow-[0_10px_28px_rgba(15,23,42,0.08)] sm:px-4 sm:py-2.5">
       <label for="question-input" class="sr-only">
