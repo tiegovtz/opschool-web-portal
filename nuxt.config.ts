@@ -12,6 +12,14 @@ export default defineNuxtConfig({
   experimental: {
     // Bundling Vue avoids a recursive peer-dependency symlink tree in Nitro's output.
     externalVue: false,
+    ssrStreaming: true,
+  },
+  // Trial SSR streaming on the landing page and two public education hubs.
+  routeRules: {
+    '/**': { streaming: false },
+    '/': { streaming: true },
+    '/primary': { streaming: true },
+    '/secondary': { streaming: true },
   },
   ignore: [
     ".claude/**",

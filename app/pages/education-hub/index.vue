@@ -51,6 +51,7 @@ import {
 definePageMeta({
   path: "/:educationLevel(primary|secondary)",
   key: route => String(route.params.educationLevel),
+  middleware: "sync-hub-cookies",
 });
 
 // Define meta info about page
