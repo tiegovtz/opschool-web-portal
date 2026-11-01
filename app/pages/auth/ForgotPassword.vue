@@ -27,6 +27,8 @@ const userForgotPassword = reactive({
 })
 
 const forgotPassword = async () => {
+    userForgotPassword.controller.feedback = null;
+    userForgotPassword.controller.isSucces = false;
     // reset error messages first
     userForgotPassword.controller.errors.email = '';
     userForgotPassword.controller.errors.type = '';
@@ -83,14 +85,12 @@ const forgotPassword = async () => {
             userForgotPassword.controller.feedback = messages.success.auth.studentPasswordChanged;
             setTimeout(() => {
                 route.replace(`/auth/reset-password?token=${response?.token}`)
-                userForgotPassword.controller.feedback = null;
             }, 3000)
 
         } else {
-            if (response?.message) {
-                userForgotPassword.controller.feedback = messages.success.auth.checkEmail;
-                userForgotPassword.controller.isSucces = true;
-            }
+            userForgotPassword.controller.feedback = messages.success.auth.checkEmail;
+            userForgotPassword.controller.isSucces = true;
+            userForgotPassword.controller.isDisabled = false;
         }
 
     } catch (error) {
@@ -98,14 +98,6 @@ const forgotPassword = async () => {
         userForgotPassword.controller.isSucces = false;
         userForgotPassword.controller.isDisabled = false;
         console.error('Error sending forgot password request:', error);
-    }
-    finally{
-                // clear all error message feedback
-        setTimeout(() => {
-            userForgotPassword.controller.feedback = null;
-            userForgotPassword.controller.isSucces = false;
-            userForgotPassword.controller.isDisabled = false;
-        }, 1000) 
     }
 };
 
