@@ -5,6 +5,7 @@ import { normalizeLanguageSupport } from "~/utilities/educationRoute";
 
 definePageMeta({ middleware: 'auth' });
 
+const { data: demoFeedback } = await useFetch<{ demo: boolean; examples: { id: string; subject: string; educationLevel: string; language: string; status: string; body: string }[] }>("/api/feedback");
 const supportVisited = ref(false);
 const activeTab = ref<"feedback" | "support">("feedback");
 watch(activeTab, tab => { if (tab === "support") supportVisited.value = true; });
@@ -99,6 +100,11 @@ watch(
         </p> -->
       </div>
 
+      <details v-if="demoFeedback?.demo" class="rounded-lg border border-slate-200 p-4 text-sm text-textGray">
+        <summary class="cursor-pointer font-medium">{{ selectedLanguage === 'kiswahili' ? 'Mifano ya maoni ya majaribio' : 'Demo feedback examples' }}</summary>
+        <p class="mt-3 text-xs">{{ selectedLanguage === 'kiswahili' ? 'Mifano hii inaonekana pia kwenye upande wa admin. Fomu ya Google hapa chini haijabadilishwa.' : 'These fictional examples also appear in the admin inbox. The Google Form below is unchanged.' }}</p>
+        <ul class="mt-3 divide-y divide-slate-100"><li v-for="item in demoFeedback.examples" :key="item.id" class="py-3"><p class="font-medium">{{ item.subject }}</p><p class="mt-1 text-xs capitalize">{{ item.educationLevel }} · {{ item.language === 'sw' ? 'Kiswahili' : 'English' }} · {{ item.status }}</p><p class="mt-2">{{ item.body }}</p></li></ul>
+      </details>
       <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
         <iframe
           :key="selectedLanguage"

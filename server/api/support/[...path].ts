@@ -1,3 +1,4 @@
+import { localInboxEnabled, authenticateDemoUser, createEntry, readInbox, listTickets, updateEntry } from '../../utils/localInboxStore';
 import { createSupportSchema, supportReplySchema, supportListSchema, supportTicketSchema, supportQuerySchema } from '../../../shared/support/contracts';
 
 export default defineEventHandler(async event => {
@@ -12,7 +13,7 @@ export default defineEventHandler(async event => {
     throw createError({ statusCode: 404, statusMessage: 'Unknown support operation.' });
   }
   const base = String(useRuntimeConfig(event).supportApiBaseUrl || '').replace(/\/+$/, '');
-  if (!base) throw createError({ statusCode: 503, statusMessage: 'Support is not connected yet. Please try again later.', data: { setupRequired: true } });
+  if (!base && !localInboxEnabled()) throw createError({ statusCode: 503, statusMessage: 'Support is not connected yet. Please try again later.', data: { setupRequired: true } });
   let body;
   const query = supportQuerySchema.safeParse(getQuery(event));
   if (method === 'GET' && !id && !query.success) throw createError({ statusCode: 400, statusMessage: 'Invalid support filters.' });
@@ -20,6 +21,16 @@ export default defineEventHandler(async event => {
     const input = (id ? supportReplySchema : createSupportSchema).safeParse(await readBody(event));
     if (!input.success) throw createError({ statusCode: 400, statusMessage: 'Check your subject, message and education level.' });
     body = input.data;
+  }
+  if (localInboxEnabled()) {
+    const actor = await authenticateDemoUser(accessToken, String(useRuntimeConfig(event).backendApiBaseUrl));
+    if (!actor) throw createError({ statusCode: 401, statusMessage: 'Please sign in again.' });
+    if (method === 'GET' && !id && query.success) return supportListSchema.parse(listTickets(await readInbox(), { ...query.data, userId: actor.id }));
+    const entry = id ? (await readInbox()).find(item => item.id === id && (item.userId === actor.id || item.userId === 'demo-sample') && item.category !== 'feedback') : undefined;
+    if (id && !entry) throw createError({ statusCode: 404, statusMessage: 'Request not found.' });
+    const result = method === 'GET' ? entry : id ? await updateEntry(id, actor, { message: (body as { body: string }).body }) : await createEntry(actor, body as Parameters<typeof createEntry>[1]);
+    if (method === 'POST') setResponseStatus(event, id ? 200 : 201);
+    return supportTicketSchema.parse(result);
   }
   try {
     const suffix = id ? `/${encodeURIComponent(id)}${action ? '/messages' : ''}` : '';

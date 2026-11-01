@@ -1,0 +1,13 @@
+Local demo dataset
+
+Auth pages and cookie encoding/decoding are restored to the prior code. The previously authorized server proxy remains in place. No new authentication bypass is installed.
+
+Feedback remains the existing English/Kiswahili Google Form. There is no native feedback submission endpoint or custom replacement form. A collapsible Demo feedback examples preview shows fictional records also present in the admin inbox. Google Form submissions are not copied into the local demo dataset.
+
+Nine fictional examples are stored in the admin repo at lib/inbox-demo/examples.json: four feedback responses across Primary/Secondary and English/Kiswahili, two technical tickets, two feature requests and one general support example. The working dataset is admin/.local-demo/inbox.json (excluded from Git); both apps point at this same file through INBOX_DEMO_FILE. The working copy retains local status/note/reply changes. It is separate from Google Sheets and future live APIs.
+
+INBOX_DEMO_ENABLED=true is enabled in both local .env files. Set it false in both apps and restart to return to the live adapters. Production always disables this mode. The portal's demo support inbox shows shared fictional examples plus any requests created by its authenticated account; it never exposes another real account's own submissions. Internal admin notes are excluded from portal responses.
+
+Use normal login in each app. Open Feedback and expand Demo feedback examples to see sample feedback; use Support and Issues to see the sample tickets and requests. In the admin, select Primary or Secondary, then a category card. Local review/reply actions affect only the working demo dataset.
+
+The identical store files are admin/lib/inbox-demo/store.ts and portal/server/utils/localInboxStore.ts. Keep these in sync. Integration tests exercise the support handler path with mocked profile authentication and temporary data files; no real credentials or live records are used.
