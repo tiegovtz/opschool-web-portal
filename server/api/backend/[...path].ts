@@ -1,4 +1,4 @@
-import { backendProxyTarget, backendRequestHeaders, backendResponseHeaders } from '../../../shared/backend/proxy';
+import { backendProxyBaseUrl, backendProxyTarget, backendRequestHeaders, backendResponseHeaders } from '../../../shared/backend/proxy';
 
 export default defineEventHandler(async event => {
   const method = getMethod(event);
@@ -6,11 +6,22 @@ export default defineEventHandler(async event => {
   const url = getRequestURL(event);
   const origin = getHeader(event, 'origin');
   if (origin && origin !== url.origin) throw createError({ statusCode: 403, statusMessage: 'Use the portal origin for API requests.' });
+  const configuredUrl = useRuntimeConfig(event).backendApiBaseUrl;
+  let baseUrl: string;
+  try {
+    baseUrl = backendProxyBaseUrl(
+      process.env.NUXT_BACKEND_API_BASE_URL,
+      process.env.VITE_API_BASE_URL,
+      typeof configuredUrl === 'string' ? configuredUrl : undefined,
+    );
+  } catch {
+    throw createError({ statusCode: 503, statusMessage: 'Backend API URL is missing or invalid. Check NUXT_BACKEND_API_BASE_URL and VITE_API_BASE_URL.' });
+  }
   let target: URL;
   try {
-    target = backendProxyTarget(String(useRuntimeConfig(event).backendApiBaseUrl), getRouterParam(event, 'path') || '', url.search);
+    target = backendProxyTarget(baseUrl, getRouterParam(event, 'path') || '', url.search);
   } catch {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid backend request path or configuration.' });
+    throw createError({ statusCode: 400, statusMessage: 'Invalid backend request path.' });
   }
   const headers = backendRequestHeaders(new Headers(getRequestHeaders(event) as Record<string, string>));
   const rawBody = !['GET', 'HEAD'].includes(method) ? await readRawBody(event, false) : undefined;

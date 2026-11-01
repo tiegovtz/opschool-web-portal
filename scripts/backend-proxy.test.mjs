@@ -1,6 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { backendProxyTarget, backendRequestHeaders, backendResponseHeaders } from '../shared/backend/proxy.ts';
+import { backendProxyBaseUrl, backendProxyTarget, backendRequestHeaders, backendResponseHeaders } from '../shared/backend/proxy.ts';
+
+test('proxy ignores empty deployment overrides and uses the server API URL', () => {
+  assert.equal(backendProxyBaseUrl('', 'https://backend.example/api/v1', 'https://build.example/v1'), 'https://backend.example/api/v1');
+  assert.equal(backendProxyBaseUrl('https://deploy.example/v1', 'https://backend.example/v1', undefined), 'https://deploy.example/v1');
+  assert.throws(() => backendProxyBaseUrl('not-a-url', 'https://backend.example/v1', undefined));
+  assert.throws(() => backendProxyBaseUrl('', '', ''));
+});
 
 test('proxy resolves only against the configured API and preserves query parameters', () => {
   const target = backendProxyTarget('https://backend.example/custom/v2', 'v1/auth/login', '?lang=sw&term=a%20b');
