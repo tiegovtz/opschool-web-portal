@@ -146,7 +146,10 @@ const loadSession = async (sessionId: string) => {
       savedMessageIds.value = new Set(
         session.messages.map((m: ChatMessage) => m.id)
       );
-      hasTitleBeenSet.value = !!session.title;
+      // A session can come back from the server with its title defaulted to a
+      // placeholder like "New Conversation" - that's not a "real" title, so don't
+      // let it lock out generateTitleFromMessage from ever running for this session.
+      hasTitleBeenSet.value = !!session.title && session.title !== defaultConversationTitle.value;
     } else {
       // @ts-ignore
       chat.messages.splice(0, chat.messages.length);
