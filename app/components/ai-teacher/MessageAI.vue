@@ -191,12 +191,26 @@ const processMathInText = (text: string): string => {
         placeholder,
         replacement: imageHtml
       });
-    } else {
-      // Return a visible placeholder that will be replaced on re-render when cache loads
+    } else if (!shortcodesLoaded.value) {
+      // Shortcodes haven't finished loading yet - show a pending placeholder that will
+      // be replaced on re-render once the cache loads (shortcodesLoaded/shortcodesVersion
+      // bump the :key above).
       const placeholder = `IMAGE_PENDING_${counter}_END`;
       imagePlaceholders.push({
         placeholder,
         replacement: `<div class="my-4 p-4 bg-gray-100 rounded-lg text-center text-gray-500 animate-pulse" data-shortcode="${shortcodeName.trim()}">Loading image: ${shortcodeName.trim()}...</div>`
+      });
+      counter++;
+      return placeholder;
+    } else {
+      // Shortcodes have finished loading and this one genuinely isn't in the dataset
+      // (the model sometimes emits a bare figure number like "2.1" instead of the real
+      // shortcode) - showing "Loading image..." forever here would be misleading, since
+      // it will never resolve. Say so instead of leaving a permanent loading spinner.
+      const placeholder = `IMAGE_MISSING_${counter}_END`;
+      imagePlaceholders.push({
+        placeholder,
+        replacement: `<div class="my-4 p-3 bg-gray-50 rounded-lg text-center text-gray-400 italic text-sm" data-shortcode="${shortcodeName.trim()}">Image not available</div>`
       });
       counter++;
       return placeholder;

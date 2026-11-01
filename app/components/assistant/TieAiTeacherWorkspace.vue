@@ -192,10 +192,18 @@ const extractMessageContent = (message: any): string => {
   return textPart?.text || "";
 };
 
+// Bare greetings/acknowledgements carry no topic to summarize - titling a chat "Hi"
+// and locking it there (like the old behavior) is worse than waiting for the next,
+// substantive message, the way Claude/Codex name a conversation from its actual topic
+// rather than its opening pleasantry.
+const greetingOnlyPattern =
+  /^(hi+|hey+|hello+|yo+|sup|howdy|good\s*(morning|afternoon|evening|day)|habari(\s*(za\s*)?(asubuhi|mchana|jioni))?|mambo|vipi|niaje|salamu|hodi|karibu|thanks?|thank\s*you|ok(ay)?|asante)[.!?,\s]*$/i;
+
 const generateTitleFromMessage = (message: string): string => {
   const cleaned = message.trim();
 
   if (!cleaned) return defaultConversationTitle.value;
+  if (greetingOnlyPattern.test(cleaned)) return defaultConversationTitle.value;
 
   const prefixes = [
     /^explain\s+/i,
