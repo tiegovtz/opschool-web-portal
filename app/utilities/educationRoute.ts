@@ -59,6 +59,10 @@ const SECONDARY_HUB_LEVEL_ALIASES = new Set([
   "secondary education",
   "lower secondary",
   "upper secondary",
+  "elimu ya sekondari ya chini",
+  "elimu ya sekondari ya juu",
+  "sekondari ya chini",
+  "sekondari ya juu",
   "elimu ya sekondari",
   "sekondari",
 ]);
@@ -67,7 +71,9 @@ const ENGLISH_ALIASES = new Set(["english", "en"]);
 const KISWAHILI_ALIASES = new Set(["kiswahili", "swahili", "sw"]);
 
 const normalizeEducationAlias = (value: unknown) =>
-  typeof value === "string" ? value.trim().toLowerCase() : "";
+  typeof value === "string"
+    ? value.trim().toLowerCase().replace(/[-_]+/g, " ").replace(/\s+/g, " ")
+    : "";
 
 const decodeRouteSegment = (value: unknown) => {
   const raw = typeof value === "string" ? value : "";
@@ -148,12 +154,12 @@ export const normalizeEducationLevel = (
   if (PRE_PRIMARY_ALIASES.has(normalized)) return "pre-primary";
   if (UPPER_SECONDARY_ALIASES.has(normalized)) return "upper secondary";
   if (LOWER_SECONDARY_ALIASES.has(normalized)) return "lower secondary";
-  if (SECONDARY_ALIASES.has(normalized)) return "lower secondary";
+  if (SECONDARY_ALIASES.has(normalized)) return "secondary";
   return fallback;
 };
 
 export const getHubPath = (educationLevel: unknown): string =>
-  normalizeEducationLevel(educationLevel) === "primary"
+  getEducationHubBucket(educationLevel) === "primary"
     ? "/primary"
     : "/secondary";
 
@@ -185,7 +191,7 @@ export const getHubLanguage = (
   educationLevel: unknown,
   preferredLanguage?: unknown,
 ): LanguageSupport =>
-  normalizeEducationLevel(educationLevel) === "primary"
+  getEducationHubBucket(educationLevel) === "primary"
     ? normalizeLanguageSupport(preferredLanguage, "kiswahili")
     : "english";
 
@@ -199,7 +205,7 @@ export const getApiContentLanguage = (
   educationLevel: unknown,
   preferredLanguage?: unknown,
 ): "Kiswahili" | "English" | undefined => {
-  if (normalizeEducationLevel(educationLevel) !== "primary") return undefined;
+  if (getEducationHubBucket(educationLevel) !== "primary") return undefined;
   return getHubLanguage(educationLevel, preferredLanguage) === "kiswahili"
     ? "Kiswahili"
     : "English";
@@ -224,6 +230,9 @@ export const getEducationRouteQuery = (
   return {
     educationLevel: normalized,
     edl: normalized,
+    ...(normalized !== "primary" && normalized !== "secondary"
+      ? { sublevel: normalized }
+      : {}),
     lang: getHubLanguageCode(normalized, preferredLanguage),
     ...extra,
   };
@@ -233,9 +242,22 @@ export const resolveEducationLevelFromRoute = (
   route: Pick<RouteLocationNormalizedLoaded, "path" | "query" | "params">,
   fallback: EducationBucket ="lower secondary",
 ): EducationBucket => {
+  const routeHub = route.path === "/primary" || route.path.startsWith("/primary/")
+    ? "primary"
+    : route.path === "/secondary" || route.path.startsWith("/secondary/")
+      ? "secondary"
+      : null;
+  const querySublevel = route.query.sublevel;
+  if (typeof querySublevel === "string" && getEducationHubBucket(querySublevel)) {
+    const sublevel = normalizeEducationLevel(querySublevel, routeHub ?? fallback);
+    if ((!routeHub || getEducationHubBucket(sublevel) === routeHub) &&
+        sublevel !== "secondary") return sublevel;
+  }
+
   const queryEducationLevel = route.query.educationLevel ?? route.query.edl;
-  if (queryEducationLevel) {
-    return normalizeEducationLevel(queryEducationLevel, fallback);
+  if (typeof queryEducationLevel === "string") {
+    const level = normalizeEducationLevel(queryEducationLevel, routeHub ?? fallback);
+    if (!routeHub || getEducationHubBucket(level) === routeHub) return level;
   }
 
   if (
@@ -249,7 +271,7 @@ export const resolveEducationLevelFromRoute = (
     route.path === "/secondary" ||
     route.path.startsWith("/secondary/")
   ) {
-    return "lower secondary";
+    return "secondary";
   }
 
   return inferEducationLevelFromRouteParams(route.params) ?? fallback;

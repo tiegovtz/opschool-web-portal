@@ -119,10 +119,33 @@ const currentEducationLevel = computed(() =>
 );
 const currentHubBucket = computed<EducationHubBucket>(() =>
   getEducationHubBucket(route.params.educationLevel ?? route.path) ??
-  (normalizeEducationLevel(currentEducationLevel.value) === "primary"
-    ? "primary"
-    : "secondary"),
+  getEducationHubBucket(currentEducationLevel.value) ?? "secondary",
 );
+const selectedHubSublevel = computed(() =>
+  typeof route.query.sublevel === "string"
+    ? route.query.sublevel
+    : currentEducationLevel.value !== currentHubBucket.value
+      ? currentEducationLevel.value
+      : undefined,
+);
+
+const onHubLevelChange = (selected: string) => {
+  level.value = selected === "all" ? "" : selected;
+  const sublevel = level.value ? normalizeEducationLevel(level.value) : undefined;
+  const nextSublevel = sublevel && getEducationHubBucket(sublevel) === currentHubBucket.value
+    ? sublevel.replaceAll(" ", "-")
+    : undefined;
+  if (nextSublevel === route.query.sublevel && !route.query.educationLevel && !route.query.edl) return;
+  void router.replace({
+    path: route.path,
+    query: {
+      ...route.query,
+      educationLevel: undefined,
+      edl: undefined,
+      sublevel: nextSublevel,
+    },
+  });
+};
 const HUB_BUCKET_LEVELS: Record<EducationHubBucket, EducationBucket[]> = {
   primary: ["pre-primary", "primary"],
   secondary: ["lower secondary", "upper secondary"],
@@ -144,7 +167,7 @@ const currentHubPath = computed(() => getHubPath(currentEducationLevel.value));
 const currentHubQuery = computed(() =>
   getEducationRouteQuery(
     currentEducationLevel.value,
-    {},
+    selectedHubSublevel.value ? { sublevel: selectedHubSublevel.value } : {},
     currentLanguage.value,
   ),
 );
@@ -153,8 +176,10 @@ watch(
   currentLanguage,
   (language) => {
     hubHeaderLangCookie.value = language;
-    hubEducationLevelCookie.value = currentEducationLevel.value;
-    if (currentEducationLevel.value === "primary") {
+    if (hubEducationLevelCookie.value !== currentHubBucket.value) {
+      hubEducationLevelCookie.value = currentHubBucket.value;
+    }
+    if (currentHubBucket.value === "primary") {
       primaryContentLanguage.value = language;
     }
   },
@@ -262,10 +287,20 @@ const mergeFetchedCollections = <T extends { _id?: string }>(responses: unknown[
   );
 
 const getRequestedEducationLevels = (params?: Record<string, any>) => {
-  const explicitLevel = normalizeQueryValue(params?.educationLevel);
+  const explicitSublevel = normalizeQueryValue(params?.sublevel ?? route.query.sublevel);
+  if (explicitSublevel && getEducationHubBucket(explicitSublevel) === currentHubBucket.value) {
+    const normalized = normalizeEducationLevel(explicitSublevel);
+    if (getEducationHubBucket(normalized) === currentHubBucket.value && normalized !== "secondary") {
+      return [normalized];
+    }
+  }
+  const explicitLevel = normalizeQueryValue(params?.educationLevel ?? route.query.educationLevel ?? route.query.edl);
 
-  if (explicitLevel) {
-    return [normalizeEducationLevel(explicitLevel)];
+  if (explicitLevel && getEducationHubBucket(explicitLevel) === currentHubBucket.value) {
+    const normalized = normalizeEducationLevel(explicitLevel);
+    if (normalized !== currentHubBucket.value && getEducationHubBucket(normalized) === currentHubBucket.value) {
+      return [normalized];
+    }
   }
 
   if (subjectEducationLevel.value) {
@@ -276,7 +311,8 @@ const getRequestedEducationLevels = (params?: Record<string, any>) => {
     return hubEducationLevels.value;
   }
 
-  return [getEducationLevelParam()];
+  const level = getEducationLevelParam();
+  return level === currentHubBucket.value ? hubEducationLevels.value : [level];
 };
 
 const resolveSubjectIdFromSlug = async (slug: string) => {
@@ -824,8 +860,8 @@ const handleSubjectSelect = async (
     <AdtCatalogue v-if="isAdtSection" :key="currentHubBucket" :hub="currentHubBucket" :language="currentLanguage" />
     <!-- User Has a Token -->
     <section v-else-if="userToken">
-      <InputsSelection :key="hubSection" :language="currentLanguage" :education-level="currentEducationLevel"
-        @emit-level="level = $event" @emit-standard="filters.level = $event" @emit-subject="filters.subject = $event" />
+      <InputsSelection :key="hubSection" :language="currentLanguage" :education-level="currentHubBucket" :selected-sublevel="selectedHubSublevel"
+        @emit-level="onHubLevelChange" @emit-standard="filters.level = $event" @emit-subject="filters.subject = $event" />
 
       <!-- LayoutEffect  -->
       <div

@@ -4,6 +4,7 @@ import { layoutEffect } from "~/utilities/controlls";
 import messages from "~/utilities/messages";
 import ConfirmationModal from "~/components/ai-teacher/ConfirmationModal.vue";
 import { useNavigationStore } from "~/stores/navigationStore";
+import LanguageSwitcher from '../ui/LanguageSwitcher.vue';
 import type { LanguageSupport } from "~/types/language.interface";
 import {
   getHubLanguage,
@@ -544,34 +545,12 @@ onBeforeUnmount(() => {
               v-if="showPrimaryLanguageSwitch"
               class="flex items-center gap-2 px-2"
             >
-              <div
-                class="flex overflow-hidden border rounded-full border-white/35 bg-white/10"
-              >
-                <button
-                  type="button"
-                  class="px-3 py-1 text-xs font-medium transition-colors"
-                  :class="
-                    activePrimaryLanguage === 'english'
-                      ? 'bg-white text-deepBlue'
-                      : 'text-white hover:bg-white/10'
-                  "
-                  @click="setPrimaryLanguage('english')"
-                >
-                  {{ languageSwitchContent.english }}
-                </button>
-                <button
-                  type="button"
-                  class="px-3 py-1 text-xs font-medium transition-colors"
-                  :class="
-                    activePrimaryLanguage === 'kiswahili'
-                      ? 'bg-white text-deepBlue'
-                      : 'text-white hover:bg-white/10'
-                  "
-                  @click="setPrimaryLanguage('kiswahili')"
-                >
-                  {{ languageSwitchContent.kiswahili }}
-                </button>
-              </div>
+              <LanguageSwitcher
+                :active="activePrimaryLanguage"
+                :language-switch-content="languageSwitchContent"
+                appearance="desktop-nav"
+                @change="setPrimaryLanguage"
+              />
             </div>
 
             <div class="subInfo">

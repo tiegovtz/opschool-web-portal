@@ -12,6 +12,7 @@ const props = withDefaults(defineProps<{
     label?: string,
     options?: LanguageOption[],
     active?: LanguageSupport,
+    appearance?: 'default' | 'desktop-nav',
     languageSwitchContent?: Record<LanguageSupport, string>,
     switcher?: (language: LanguageSupport) => void
 }>(), 
@@ -20,6 +21,7 @@ const props = withDefaults(defineProps<{
     label: 'Language',
     options: undefined,
     active: 'english',
+    appearance: 'default',
     languageSwitchContent: () => ({
         english: 'English',
         kiswahili: 'Kiswahili',
@@ -92,10 +94,12 @@ onBeforeUnmount(() => {
 });
 </script>
 <template>
-    <div ref="dropdownRef" class="relative inline-block min-w-36 text-left">
+    <div ref="dropdownRef" :class="['relative inline-block text-left', appearance === 'desktop-nav' ? '' : 'min-w-36']">
         <button
             type="button"
-            class="relative flex w-full items-center justify-center gap-2 rounded-md bg-transparent px-9 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-deepBlue/40"
+            :class="appearance === 'desktop-nav'
+                ? 'inline-flex items-center gap-2 rounded-md border border-white/40 bg-white/10 px-3 py-1 text-center text-sm font-medium text-white whitespace-nowrap transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70'
+                : 'relative flex w-full items-center justify-center gap-2 rounded-md bg-transparent px-9 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-deepBlue/40'"
             aria-haspopup="listbox"
             :aria-expanded="isOpen ? 'true' : 'false'"
             @click.stop="toggleDropdown"
@@ -103,7 +107,7 @@ onBeforeUnmount(() => {
         >
             <Icon
                 name="lucide:globe"
-                class="absolute left-3 h-4 w-4 text-slate-600"
+                :class="appearance === 'desktop-nav' ? 'h-4 w-4 text-white' : 'absolute left-3 h-4 w-4 text-slate-600'"
                 aria-hidden="true"
             />
             <span class="max-w-28 truncate text-center">
@@ -112,7 +116,9 @@ onBeforeUnmount(() => {
             <Icon
                 name="lucide:chevron-down"
                 :class="[
-                    'absolute right-3 h-4 w-4 text-slate-600 transition-transform duration-200',
+                    appearance === 'desktop-nav'
+                        ? 'h-4 w-4 text-white transition-transform duration-200'
+                        : 'absolute right-3 h-4 w-4 text-slate-600 transition-transform duration-200',
                     { 'rotate-180': isOpen }
                 ]"
                 aria-hidden="true"

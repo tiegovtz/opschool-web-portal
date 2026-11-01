@@ -939,11 +939,11 @@ const signUp = async () => {
       const nestedResponseData = responseData?.data as Record<string, unknown> | undefined;
       const nestedDirectData = directData?.data as Record<string, unknown> | undefined;
       const backendErrors =
-        (responseData?.errors as Record<string, unknown> | undefined) ??
         (nestedResponseData?.errors as Record<string, unknown> | undefined) ??
-        (directData?.errors as Record<string, unknown> | undefined) ??
-        (nestedDirectData?.errors as Record<string, unknown> | undefined);
-      const errorMessage = JSON.stringify(backendErrors ?? {});
+        (nestedDirectData?.errors as Record<string, unknown> | undefined) ??
+        (responseData?.errors as Record<string, unknown> | undefined) ??
+        (directData?.errors as Record<string, unknown> | undefined);
+      const errorMessage = JSON.stringify(backendErrors ?? {}).toLowerCase();
       const status =
         fetchError?.response?.status ??
         fetchError?.status ??
@@ -951,15 +951,20 @@ const signUp = async () => {
         (nestedResponseData?.statusCode as number | undefined) ??
         (directData?.statusCode as number | undefined) ??
         (nestedDirectData?.statusCode as number | undefined);
-      const backendMessage =
-        (responseData?.message as string | undefined) ??
-        (responseData?.error as string | undefined) ??
-        (nestedResponseData?.message as string | undefined) ??
-        (nestedResponseData?.error as string | undefined) ??
-        (directData?.message as string | undefined) ??
-        (directData?.error as string | undefined) ??
-        (nestedDirectData?.message as string | undefined) ??
-        (nestedDirectData?.error as string | undefined);
+      // Nuxt wraps the upstream response in `data`; its top-level message is often generic.
+      const backendMessage = [
+        nestedResponseData?.message,
+        nestedResponseData?.error,
+        nestedDirectData?.message,
+        nestedDirectData?.error,
+        responseData?.message,
+        responseData?.error,
+        directData?.message,
+        directData?.error,
+      ].find((message): message is string =>
+        typeof message === 'string' && message.trim().length > 0 &&
+        !/^internal server error$/i.test(message.trim()),
+      );
       if (status) {
         // The request was made, but the server responded with a status code
         switch (status) {
@@ -1005,12 +1010,6 @@ const signUp = async () => {
         // Something else went wrong in setting up the request
         usersignUp.controller.feedback = content.value.feedback.requestFailed;
       }
-    }
-
-    // Keep success feedback while we redirect to /auth; clear only for non-success flows
-    if (usersignUp.controller.isSent !== 'success') {
-      usersignUp.controller.isSent = null;
-      usersignUp.controller.feedback = null;
     }
 
   } else {

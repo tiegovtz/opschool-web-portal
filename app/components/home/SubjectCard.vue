@@ -34,7 +34,7 @@ const subjectTarget = computed(() => ({
   path: `/interactive/${props.subjectName?.toLowerCase()}/${props.subjectId?.toLowerCase()}`,
   query: getEducationRouteQuery(
     resolveEducationLevelFromRoute(route),
-    {},
+    typeof route.query.sublevel === "string" ? { sublevel: route.query.sublevel } : {},
     resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
   ),
 }));

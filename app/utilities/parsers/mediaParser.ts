@@ -14,13 +14,13 @@ const videoParser = (query: string): string => {
 
     return `
             <div class="video-container-wrapper my-4">
-                <video id='video-player' ${videoAttrs} controls controlslist="nodownload" oncontextmenu="return false;" preload="auto" aria-label="Educational video content">
+                <video id='video-player' ${videoAttrs} controls controlslist="nodownload" oncontextmenu="return false;" aria-label="Educational video content">
               <source src="${`/api/video/` + sourceSrc}" type="video/mp4">
               Your browser does not support the video tag.
             </video>
                 <div class="flex items-center justify-end mt-3">
-                    <a 
-                        href="/interactive-video?videoId=${videoId}" 
+                    <a
+                        href="/interactive-video?videoId=${videoId}"
                         class="interactive-video-link hidden items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         data-interactive-video-link="true"
                         data-video-id="${videoId}"
@@ -58,7 +58,7 @@ const audioParser = (html: string): string => {
     wrapper.className = "audio-canvas-wrapper inline-block";
     wrapper.innerHTML = `
       <div class="inline-flex items-center rounded-b-xl h-10 w-36 relative">
-        <button 
+        <button
           class="play-btn bg-oceanBlue py-1 wave-glow text-white rounded-full h-12 w-12 flex items-center justify-center"
           data-audio-src="${src}"
           aria-label="Play audio"
@@ -66,9 +66,9 @@ const audioParser = (html: string): string => {
             <svg class="" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M19.105 11.446a2.34 2.34 0 0 1-.21 1c-.15.332-.38.62-.67.84l-9.65 7.51a2.3 2.3 0 0 1-1.17.46h-.23a2.2 2.2 0 0 1-1-.24a2.29 2.29 0 0 1-1.28-2v-14a2.2 2.2 0 0 1 .33-1.17a2.27 2.27 0 0 1 2.05-1.1c.412.02.812.148 1.16.37l9.66 6.44c.294.204.54.47.72.78c.19.34.29.721.29 1.11"/></svg>
         </button>
 
-        <canvas 
-          width="40" 
-          height="48" 
+        <canvas
+          width="40"
+          height="48"
           class="audio-wave-canvas flex-1 rounded-xl h-full"
           data-audio-src="${src}"
         ></canvas>
