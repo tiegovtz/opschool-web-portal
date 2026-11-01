@@ -2,7 +2,6 @@
 const contentLayoutLanguage = useContentLayoutLanguage();
 
 definePageMeta({
-  middleware: "sync-hub-cookies",
 })
 
 // load prevously used navigation for prevously visited pages education
