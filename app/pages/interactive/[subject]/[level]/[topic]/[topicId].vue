@@ -179,6 +179,9 @@ const chapters = reactive<{
 
 // notes container reference
 const notesContainer = ref(null);
+const chapterSections = ref<{ id: string; title: string }[]>([]);
+const activeSectionId = ref<string | null>(null);
+const sectionTargets = new Map<string, HTMLElement>();
 const scrollTop = ref(0);
 const scrollHeight = ref(0);
 const clientHeight = ref(0);
@@ -249,6 +252,75 @@ const toggleSidebar = () => {
     sidebar?.classList.toggle("right-0");
   }
 };
+
+const closeMobileSidebar = () => {
+  if (import.meta.client && window.innerWidth < 1024) {
+    document.querySelector(".sidebar")?.classList.remove("right-0");
+  }
+};
+
+const selectChapter = (chapterId: string) => {
+  closeMobileSidebar();
+  getChapter(chapterId);
+};
+
+const selectSection = (sectionId: string) => {
+  const target = sectionTargets.get(sectionId);
+  if (!target) return;
+  activeSectionId.value = sectionId;
+  closeMobileSidebar();
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+const updateActiveSection = () => {
+  const container = notesContainer.value as HTMLElement | null;
+  if (!container || !chapterSections.value.length) return;
+
+  const readingLine = Math.max(container.getBoundingClientRect().top, 0) + 120;
+  let currentId = chapterSections.value[0]!.id;
+  for (const section of chapterSections.value) {
+    const target = sectionTargets.get(section.id);
+    if (target && target.getBoundingClientRect().top <= readingLine) {
+      currentId = section.id;
+    }
+  }
+  activeSectionId.value = currentId;
+};
+
+const updateChapterSections = () => {
+  const notes = (notesContainer.value as HTMLElement | null)?.querySelector(".notes");
+  sectionTargets.clear();
+  if (!notes) {
+    chapterSections.value = [];
+    activeSectionId.value = null;
+    return;
+  }
+
+  notes.querySelectorAll<HTMLElement>("[id]").forEach((element) => {
+    sectionTargets.set(element.id, element);
+  });
+  const seen = new Set<string>();
+  chapterSections.value = Array.from(notes.querySelectorAll<HTMLAnchorElement>('nav a[href^="#"]'))
+    .map((link) => {
+      const fragment = link.getAttribute("href")?.slice(1) ?? "";
+      let id = fragment;
+      try {
+        id = decodeURIComponent(fragment);
+      } catch {
+        // Keep the original fragment if it is not valid URI encoding.
+      }
+      return { id, title: link.textContent?.trim() ?? "" };
+    })
+    .filter(({ id, title }) => {
+      if (!id || !title || !sectionTargets.has(id) || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  updateActiveSection();
+};
+
+onMounted(() => window.addEventListener("scroll", updateActiveSection, { passive: true }));
+onUnmounted(() => window.removeEventListener("scroll", updateActiveSection));
 
 // Helper functions 
 const ensureAccessTokenValid = async () => {
@@ -529,6 +601,9 @@ const getChapter = async (chapterId: string) => {
   }
   chapters.notesStatus = "pending";
   chapters.notes = null;
+  chapterSections.value = [];
+  activeSectionId.value = null;
+  sectionTargets.clear();
   chapters.questions = null;
   chapters.isAttemptingQuizes = false; //close quiz
   chapters.currentChapterId = chapterId;
@@ -790,6 +865,7 @@ watch(
   async (newNotes) => {
     if (newNotes) {
       await nextTick();
+      updateChapterSections();
       if (notesContainer.value) {
         await renderMathContent([notesContainer.value as Element]);
       }
@@ -1246,6 +1322,7 @@ definePageMeta({
         <!-- Notes loaded successfully -->
         <div id="main-container" tabindex="-1" aria-live="polite" aria-label="compitence content loaded successfully"
           ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
+          @scroll.passive="updateActiveSection"
           class="relative z-0 w-full py-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex w-full min-w-0 items-center justify-between gap-2">
@@ -1341,8 +1418,9 @@ definePageMeta({
             </div>
           </div>
           <!-- UL list of chapters -->
-          <ChapterContainer :chapters="chapters?.list" @emit-chapter-id="getChapter($event)"
-            :active-chapter-id="chapters.notes?._id ?? chapters.currentChapterId" @click="toggleSidebar" />
+          <ChapterContainer :chapters="chapters?.list" :sections="chapterSections" :active-section-id="activeSectionId"
+            @emit-chapter-id="selectChapter" @emit-section-id="selectSection"
+            :active-chapter-id="chapters.notes?._id ?? chapters.currentChapterId" />
         </div>
       </div>
 
