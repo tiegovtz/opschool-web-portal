@@ -1,13 +1,11 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { vite as vidstack } from "vidstack/plugins";
 
-const internalImageOrigin = process.env.NUXT_IMAGE_INTERNAL_ORIGIN?.replace(/\/+$/, "")
-  || (process.env.VITE_API_BASE_URL?.startsWith("/api/") ? "http://gateway" : undefined);
 const imageDomains = [
   process.env.VITE_API_BASE_URL,
   "http://41.59.251.166",
   "https://opschool.tie.go.tz",
-  internalImageOrigin,
+  "http://gateway",
 ].flatMap((value) => {
   try {
     return value ? [new URL(value).host] : [];
@@ -60,7 +58,11 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    public: { localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true" },
+    public: {
+      localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true",
+      imageFetchOrigin: process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN
+        || (process.env.VITE_API_BASE_URL?.startsWith("/api/") ? "http://gateway" : ""),
+    },
     backendApiBaseUrl: process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1",
     supportApiBaseUrl: "",
     adtStoreBaseUrl: "",
@@ -194,14 +196,6 @@ export default defineNuxtConfig({
 
   image: {
     domains: [...new Set(imageDomains)],
-    // The public IP cannot be reached from the portal container. IPX fetches
-    // through the gateway on Docker's internal network; browser URLs stay public.
-    ipx: {
-      // @ts-expect-error @nuxt/image forwards this option but omits it from IPXOptions.
-      alias: internalImageOrigin
-        ? { "http://41.59.251.166/api/uploads": `${internalImageOrigin}/api/uploads` }
-        : {},
-    },
     quality: 80,
     format: ["webp"],
     densities: [1],
