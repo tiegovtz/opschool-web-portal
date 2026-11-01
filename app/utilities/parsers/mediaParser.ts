@@ -11,10 +11,11 @@ const videoParser = (query: string): string => {
   return query.replace(regex, (match, videoAttrs, sourceSrc) => {
     // Extract video ID from sourceSrc (it might already be just the ID or a full path)
     const videoId = sourceSrc.split("/").pop() || sourceSrc;
+    const attrsWithoutPreload = videoAttrs.replace(/\s+preload(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, "");
 
     return `
             <div class="video-container-wrapper my-4">
-                <video id='video-player' ${videoAttrs} controls controlslist="nodownload" oncontextmenu="return false;" aria-label="Educational video content">
+                <video id='video-player' ${attrsWithoutPreload} controls preload="none" controlslist="nodownload" oncontextmenu="return false;" aria-label="Educational video content">
               <source src="${`/api/video/` + sourceSrc}" type="video/mp4">
               Your browser does not support the video tag.
             </video>
