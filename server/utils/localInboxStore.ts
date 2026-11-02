@@ -8,6 +8,8 @@ export interface DemoEntry {
   educationLevel: 'primary' | 'secondary'; language: 'en' | 'sw'; subject: string; body: string;
   status: 'new' | 'reviewed' | 'in_review' | 'resolved'; internalNote: string; createdAt: string;
   answers: { question: string; answer: string }[];
+  contact?: { name: string; email: string; phone: string };
+  attachments?: { name: string; type: 'image/png' | 'image/jpeg' | 'image/webp'; data: string }[];
   messages: { id: string; sender: 'user' | 'admin'; body: string; createdAt: string }[];
 }
 export function localInboxEnabled() { return process.env.NODE_ENV !== 'production' && process.env.INBOX_DEMO_ENABLED === 'true'; }
@@ -30,9 +32,9 @@ async function changeInbox<T>(operation: (items: DemoEntry[]) => T): Promise<T> 
   try { const items = await readInbox(); const result = operation(items); await writeFile(temporary, JSON.stringify({ version: 1, items }, null, 2), { mode: 0o600 }); await rename(temporary, path); return result; }
   finally { await rm(temporary, { force: true }); await rm(lock, { recursive: true, force: true }); }
 }
-export async function createEntry(actor: DemoActor, input: Pick<DemoEntry, 'category' | 'educationLevel' | 'language' | 'subject' | 'body'> & { answers?: DemoEntry['answers'] }) {
+export async function createEntry(actor: DemoActor, input: Pick<DemoEntry, 'category' | 'educationLevel' | 'language' | 'subject' | 'body'> & { answers?: DemoEntry['answers']; contact?: DemoEntry['contact']; attachments?: DemoEntry['attachments'] }) {
   return changeInbox(items => {
-    const entry: DemoEntry = { ...input, educationLevel: actor.educationLevel || input.educationLevel, id: `demo-${randomUUID()}`, userId: actor.id, sender: actor, createdAt: new Date().toISOString(), status: 'new', internalNote: '', answers: input.answers || [], messages: [] };
+    const entry: DemoEntry = { ...input, educationLevel: actor.educationLevel || input.educationLevel, id: `request-${randomUUID()}`, userId: actor.id, sender: actor, createdAt: new Date().toISOString(), status: 'new', internalNote: '', answers: input.answers || [], messages: [] };
     items.unshift(entry); return entry;
   });
 }

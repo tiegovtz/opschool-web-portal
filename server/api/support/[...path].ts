@@ -1,13 +1,17 @@
+import { protectSubmission, submissionActor } from '../../utils/inboxSubmission';
 import { localInboxEnabled, authenticateDemoUser, createEntry, readInbox, listTickets, updateEntry } from '../../utils/localInboxStore';
 import { createSupportSchema, supportReplySchema, supportListSchema, supportTicketSchema, supportQuerySchema } from '../../../shared/support/contracts';
 
 export default defineEventHandler(async event => {
   setHeader(event, 'Cache-Control', 'private, no-store');
   const accessToken = getCookie(event, 'signInAccessToken')?.trim();
-  if (!accessToken) throw createError({ statusCode: 401, statusMessage: 'Sign in to access support.' });
+
   const path = (getRouterParam(event, 'path') || '').split('/');
   const [resource, id, action] = path;
   const method = getMethod(event);
+  const publicCreate = method === 'POST' && path.length === 1 && resource === 'tickets';
+  if (!publicCreate && !accessToken) throw createError({ statusCode: 401, statusMessage: 'Sign in to access your requests.' });
+  if (method === 'POST') protectSubmission(event);
   if (id && !/^[A-Za-z0-9_-]{1,128}$/.test(id)) throw createError({ statusCode: 400, statusMessage: 'Invalid request ID.' });
   if (resource !== 'tickets' || path.length > 3 || !(method === 'GET' && path.length <= 2 || method === 'POST' && (path.length === 1 || path.length === 3 && action === 'messages'))) {
     throw createError({ statusCode: 404, statusMessage: 'Unknown support operation.' });
@@ -23,12 +27,12 @@ export default defineEventHandler(async event => {
     body = input.data;
   }
   if (localInboxEnabled()) {
-    const actor = await authenticateDemoUser(accessToken, String(useRuntimeConfig(event).backendApiBaseUrl));
+    const actor = publicCreate ? await submissionActor(event) : await authenticateDemoUser(accessToken!, String(useRuntimeConfig(event).backendApiBaseUrl));
     if (!actor) throw createError({ statusCode: 401, statusMessage: 'Please sign in again.' });
-    if (method === 'GET' && !id && query.success) return supportListSchema.parse(listTickets(await readInbox(), { ...query.data, userId: actor.id }));
-    const entry = id ? (await readInbox()).find(item => item.id === id && (item.userId === actor.id || item.userId === 'demo-sample') && item.category !== 'feedback') : undefined;
+    if (method === 'GET' && !id && query.success) return supportListSchema.parse(listTickets((await readInbox()).filter(item => item.userId === actor.id), { ...query.data, userId: actor.id }));
+    const entry = id ? (await readInbox()).find(item => item.id === id && item.userId === actor.id && item.category !== 'feedback') : undefined;
     if (id && !entry) throw createError({ statusCode: 404, statusMessage: 'Request not found.' });
-    const result = method === 'GET' ? entry : id ? await updateEntry(id, actor, { message: (body as { body: string }).body }) : await createEntry(actor, body as Parameters<typeof createEntry>[1]);
+    const result = method === 'GET' ? entry : id ? await updateEntry(id, actor, { message: (body as { body: string }).body }) : await createEntry({ ...actor, educationLevel: undefined }, body as Parameters<typeof createEntry>[1]);
     if (method === 'POST') setResponseStatus(event, id ? 200 : 201);
     return supportTicketSchema.parse(result);
   }
@@ -37,7 +41,7 @@ export default defineEventHandler(async event => {
     // This upstream endpoint MUST enforce account ownership using the access token.
     // Never pass a user ID or admin-controlled status from the browser.
     const response = await $fetch(`${base}/support/tickets${suffix}`, {
-      method: method as 'GET' | 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body,
+      method: method as 'GET' | 'POST', headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}, body,
       query: method === 'GET' && !id && query.success ? query.data : undefined, timeout: 20000, redirect: 'error',
     });
     const parsed = (method === 'GET' && !id ? supportListSchema : supportTicketSchema).safeParse(response);

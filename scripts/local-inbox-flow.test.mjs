@@ -6,52 +6,49 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
-import * as portalStore from '../server/utils/localInboxStore.ts';
-import * as adminStore from '../../opschool-web-admin/lib/inbox-demo/store.ts';
+import * as store from '../server/utils/localInboxStore.ts';
+import * as supportContracts from '../shared/support/contracts.ts';
+import { feedbackQuestions } from '../shared/feedback/questions.ts';
+import * as feedbackContracts from '../shared/feedback/contracts.ts';
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
-const contracts = await import('../shared/support/contracts.ts');
 function load(file, modules, globals) {
   const module = { exports: {} };
   const source = ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
-  vm.runInNewContext(source, { module, exports: module.exports, require: name => name in modules ? modules[name] : require(name), process, fetch: (...args) => globalThis.fetch(...args), AbortSignal, URLSearchParams, ...globals });
-  return module.exports;
+  vm.runInNewContext(source, { module, exports: module.exports, require: name => modules[name] ?? require(name), process, ...globals });
+  return module.exports.default;
 }
-test('demo feedback review and portal/admin support conversations use the same saved data', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'opschool-flow-test-'));
-  const old = { ...process.env }; const fetchBefore = globalThis.fetch;
-  process.env.INBOX_DEMO_ENABLED = 'true'; process.env.INBOX_DEMO_FILE = join(dir, 'inbox.json'); process.env.NODE_ENV = 'test'; process.env.NEXT_PUBLIC_API_ENDPOINT = 'https://auth.test/v1';
-  const student = { id: 'student-one', name: 'Test Student', type: 'Student', roles: ['Student'], educationLevel: 'primary' };
-  globalThis.fetch = async (_url, init) => ({ ok: true, json: async () => init.headers.Authorization === 'Bearer admin-test' ? { id: 'admin-one', name: 'Test Admin', roles: ['SuperAdmin'] } : student });
-  const globals = { defineEventHandler: fn => fn, setHeader: () => {}, setResponseStatus: () => {}, getCookie: event => event.token, getMethod: event => event.method, getRouterParam: event => event.path, readBody: async event => event.body, getQuery: event => event.query || {}, useRuntimeConfig: () => ({ backendApiBaseUrl: 'https://auth.test/v1' }), createError: ({ statusCode, statusMessage }) => Object.assign(new Error(statusMessage), { statusCode }) };
-  const jsonResponse = { NextResponse: { json: (data, options = {}) => ({ data, status: options.status || 200 }) } };
-  const adminReq = (method, body, form = 'primary') => ({ method, headers: { get: () => 'Bearer admin-test' }, cookies: { get: () => undefined }, nextUrl: { searchParams: new URLSearchParams({ form, educationLevel: form }) }, json: async () => body });
+test('public submissions save contact and screenshots, while requests remain private to their owner', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'portal-submissions-'));
+  const before = { ...process.env };
+  process.env.INBOX_DEMO_ENABLED = 'true'; process.env.NODE_ENV = 'test'; process.env.INBOX_DEMO_FILE = join(dir,'inbox.json');
+  const guest = { id: 'guest-one', name: 'Guest', role: 'Guest' };
+  const member = { id: 'member-one', name: 'Member', role: 'Student' };
+  const globals = { defineEventHandler: fn => fn, setHeader() {}, setResponseStatus() {}, getMethod: event => event.method, getCookie: event => event.token, getRouterParam: event => event.path, getQuery: event => event.query || {}, readBody: async event => event.body, useRuntimeConfig: () => ({ backendApiBaseUrl: 'https://auth.example/v1' }), createError: value => Object.assign(new Error(value.statusMessage),value) };
+  const modules = { '../../utils/localInboxStore': { ...store, authenticateDemoUser: async token => token === 'member' ? member : null }, '../../utils/inboxSubmission': { protectSubmission() {}, submissionActor: async event => event.token === 'member' ? member : guest }, '../../../shared/support/contracts': supportContracts, '../../../shared/feedback/contracts': feedbackContracts };
   try {
-    const feedback = load('server/api/feedback/index.ts', { '../../utils/localInboxStore': portalStore }, globals).default;
-    const support = load('server/api/support/[...path].ts', { '../../utils/localInboxStore': portalStore, '../../../shared/support/contracts': contracts }, globals).default;
-    const adminFeedback = load('../opschool-web-admin/app/api/feedback/route.ts', { 'next/server': jsonResponse, '@/lib/inbox-demo/store': adminStore, '@/lib/feedback/types': { feedbackStatuses: ['New', 'Reviewed'] }, '@/lib/feedback/sheets': { FeedbackSetupError: class extends Error {} } }, {});
-    const adminSupport = load('../opschool-web-admin/app/api/support/[...path]/route.ts', { 'next/server': jsonResponse, '@/lib/inbox-demo/store': adminStore }, {});
-    const sent = await adminStore.createEntry({ id: 'demo-sample', name: 'Demo Learner', role: 'Student' }, { category: 'feedback', subject: 'Test feedback', body: 'Helpful learning materials.', educationLevel: 'primary', language: 'en', answers: [{ question: 'Satisfaction', answer: '5' }] });
-    assert.equal((await feedback({ method: 'GET' })).examples[0].id, sent.id);
-    await assert.rejects(() => feedback({ method: 'POST' }), error => error.statusCode === 405);
-    const inbox = await adminFeedback.GET(adminReq('GET'));
-    assert.equal(inbox.data.responses[0].id, sent.id); assert.equal(inbox.data.responses[0].status, 'New');
-    assert.equal((await adminFeedback.PATCH(adminReq('PATCH', { id: sent.id, status: 'Reviewed', note: 'Private review' }))).status, 200);
-    assert.equal((await adminFeedback.GET(adminReq('GET'))).data.responses[0].status, 'Reviewed');
-    const ticket = await support({ method: 'POST', path: 'tickets', token: 'student-test', body: { category: 'technical', educationLevel: 'secondary', language: 'en', subject: 'Test video', body: 'Video does not load.' } });
-    assert.equal(ticket.educationLevel, 'primary');
-    const context = action => ({ params: Promise.resolve({ path: ['tickets', ticket.id, action] }) });
-    await adminSupport.PATCH(adminReq('PATCH', { status: 'in_review', internalNote: 'Staff context' }), context('review'));
-    await adminSupport.POST(adminReq('POST', { body: 'Please try again.' }), context('messages'));
-    const thread = await support({ method: 'GET', path: `tickets/${ticket.id}`, token: 'student-test' });
-    assert.equal(thread.status, 'in_review'); assert.equal(thread.messages[0].body, 'Please try again.'); assert.equal('internalNote' in thread, false);
-    await support({ method: 'POST', path: `tickets/${ticket.id}/messages`, token: 'student-test', body: { body: 'It works now.' } });
-    const adminDetail = await adminSupport.GET(adminReq('GET'), { params: Promise.resolve({ path: ['tickets', ticket.id] }) });
-    assert.equal(adminDetail.data.messages[1].body, 'It works now.');
-    await assert.rejects(() => support({ method: 'GET', path: 'tickets', token: undefined }), error => error.statusCode === 401);
-  } finally {
-    globalThis.fetch = fetchBefore;
-    for (const key of ['INBOX_DEMO_ENABLED', 'INBOX_DEMO_FILE', 'NODE_ENV', 'NEXT_PUBLIC_API_ENDPOINT']) { if (old[key] === undefined) delete process.env[key]; else process.env[key] = old[key]; }
-    await rm(dir, { recursive: true, force: true });
-  }
+    const feedback = load('server/api/feedback/index.ts', modules, globals);
+    const support = load('server/api/support/[...path].ts', modules, globals);
+    const contact = { name: 'Example', email: 'example@example.com', phone: '+255 700 000 000' };
+    await feedback({ method: 'POST', body: { language: 'en', educationLevel: 'primary', contact, answers: feedbackQuestions.en.slice(0,9).map(question => ({ question: question.label, answer: question.options[0] || 'Answer' })) } });
+    const screenshot = { name: 'screen.png', type: 'image/png', data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==' };
+    const body = { category: 'technical', educationLevel: 'secondary', language: 'en', subject: 'Cannot login', body: 'Please help', contact, attachments: [screenshot] };
+    const ticket = await support({ method: 'POST', path: 'tickets', body });
+    assert.equal(ticket.attachments.length,1);
+    assert.equal('contact' in ticket,false);
+    await assert.rejects(support({ method: 'GET', path: 'tickets' }), { statusCode: 401 });
+    await assert.rejects(support({ method: 'GET', path: `tickets/${ticket.id}`, token: 'member' }), { statusCode: 404 });
+    const owned = await support({ method: 'POST', path: 'tickets', token: 'member', body });
+    const list = await support({ method: 'GET', path: 'tickets', token: 'member' });
+    assert.deepEqual(Array.from(list.items, item => item.id), [owned.id]);
+    const saved = await store.readInbox();
+    assert.equal(saved.length,3); assert.deepEqual(saved[0].contact,contact); assert.deepEqual(saved[1].attachments,[screenshot]);
+    assert.equal(saved[2].category,'feedback'); assert.equal(saved[2].answers.length,10);
+    assert.equal(saved.every(item => item.status === 'new'),true);
+  } finally { for (const key of ['INBOX_DEMO_ENABLED','NODE_ENV','INBOX_DEMO_FILE']) before[key] === undefined ? delete process.env[key] : process.env[key] = before[key]; await rm(dir,{recursive:true,force:true}); }
+});
+test('screenshots and optional contact fields reject invalid input', () => {
+  assert.equal(feedbackContracts.contactSchema.safeParse({email:'invalid'}).success,false);
+  assert.equal(feedbackContracts.attachmentSchema.safeParse({name:'x.svg',type:'image/svg+xml',data:'<svg/>'}).success,false);
+  assert.equal(feedbackContracts.attachmentSchema.safeParse({name:'x.png',type:'image/png',data:'data:image/png;base64,SGVsbG8='}).success,false);
 });

@@ -1,13 +1,17 @@
-Local demo dataset
+Local inbox setup
 
-Auth pages and cookie encoding/decoding are restored to the prior code. The previously authorized server proxy remains in place. No new authentication bypass is installed.
+The feedback page now uses the existing survey questions within the portal in English and Kiswahili. Feedback and technical support submissions are public. My Requests requires a valid login and includes only tickets belonging to that account. Guest tickets are not automatically claimed by a later login. Optional contact details let the support team contact a guest.
 
-Feedback remains the existing English/Kiswahili Google Form. There is no native feedback submission endpoint or custom replacement form. A collapsible Demo feedback examples preview shows fictional records also present in the admin inbox. Google Form submissions are not copied into the local demo dataset.
+The existing INBOX_DEMO_ENABLED=true and absolute INBOX_DEMO_FILE settings continue to save submissions in the shared local file used by the admin. Production always disables this adapter. The portal does not display sample records or test labels. Admin authentication, portal auth pages, and cookie helpers are unchanged.
 
-Nine fictional examples are stored in the admin repo at lib/inbox-demo/examples.json: four feedback responses across Primary/Secondary and English/Kiswahili, two technical tickets, two feature requests and one general support example. The working dataset is admin/.local-demo/inbox.json (excluded from Git); both apps point at this same file through INBOX_DEMO_FILE. The working copy retains local status/note/reply changes. It is separate from Google Sheets and future live APIs.
+New feedback starts new and stores all answers and optional contact details. Technical tickets store contact fields and up to three screenshots (PNG, JPEG or WebP, 2 MB each), with validation on both sides. Screenshots use data URLs in the local adapter; the production backend should store them privately and provide authenticated download URLs. The admin screenshot viewer will require a separate admin update; this change only edits the portal.
 
-INBOX_DEMO_ENABLED=true is enabled in both local .env files. Set it false in both apps and restart to return to the live adapters. Production always disables this mode. The portal's demo support inbox shows shared fictional examples plus any requests created by its authenticated account; it never exposes another real account's own submissions. Internal admin notes are excluded from portal responses.
+When INBOX_DEMO_ENABLED is false, supportApiBaseUrl supplies the service base for POST /feedback and /support/tickets. Both creation endpoints must allow anonymous submissions. Read/reply endpoints require the bearer token and must enforce ownership. Never accept browser-provided user IDs or status. Preserve the selected educationLevel independently of language.
 
-Use normal login in each app. Open Feedback and expand Demo feedback examples to see sample feedback; use Support and Issues to see the sample tickets and requests. In the admin, select Primary or Secondary, then a category card. Local review/reply actions affect only the working demo dataset.
+Feedback payload: { language: "en" | "sw", educationLevel: "primary" | "secondary", answers: [{question, answer}] (nine English or ten Kiswahili survey answers), contact: {name, email, phone} }. Return {id}. Survey choice answers contain their displayed text.
+Support payload: { category: "technical", educationLevel, language, subject, body, contact: {name,email,phone}, attachments: [{name,type,data}] }. Contact fields can be empty. The backend must validate, scan and privately store attachments, rate-limit public creation, and return the ticket in the shared/support/contracts.ts shape. For production use a dedicated upload endpoint and private attachment URLs rather than embedding images in list responses.
 
-The identical store files are admin/lib/inbox-demo/store.ts and portal/server/utils/localInboxStore.ts. Keep these in sync. Integration tests exercise the support handler path with mocked profile authentication and temporary data files; no real credentials or live records are used.
+My Requests counts: Submitted = total requests, Pending = new + in_review, Solved = resolved, across the signed-in account's requests. List filters do not change the summary counts. Feedback is separate and does not appear as a support ticket.
+
+Run: node --experimental-strip-types --test scripts/backend-proxy.test.mjs scripts/local-inbox.test.mjs scripts/local-inbox-flow.test.mjs scripts/support.test.mjs
+Tests use temporary files and mocked profiles, not real account data.

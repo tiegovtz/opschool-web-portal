@@ -11,9 +11,6 @@ const primaryContentLanguage = usePrimaryContentLanguage();
 const primaryHubPath = computed(() => getHubPath('primary'));
 const secondaryHubPath = computed(() => getHubPath('secondary'));
 const route = useRoute();
-const feedbackUser = useCookie('signInUserToken');
-const feedbackAccessToken = useCookie('signInAccessToken');
-const feedbackNeedsSignIn = computed(() => !feedbackUser.value && !feedbackAccessToken.value);
 const feedbackPath = computed(() =>
     `/feedback?lang=${primaryContentLanguage.value === 'kiswahili' ? 'sw' : 'en'}`,
 );
@@ -21,12 +18,10 @@ const feedbackContent = computed(() => primaryContentLanguage.value === 'kiswahi
     title: 'Tusaidie kuboresha Shule Mtandao',
     description: 'Tuambie kuhusu uzoefu wako, changamoto au mapendekezo yako.',
     action: 'Toa maoni',
-    hint: 'Ingia kwenye akaunti yako ili kutuma maoni.',
 } : {
     title: 'Help us improve the Online School',
     description: 'Tell us about your experience, any challenges, or your suggestions.',
     action: 'Give feedback',
-    hint: 'Sign in to your account to share your feedback.',
 });
 
 function goToPrimary() {
@@ -155,7 +150,7 @@ onMounted(async () => {
 })
 
 
-// LANGUAGE SWITCHER 
+// LANGUAGE SWITCHER
 
 const matchesPath = (path: string) =>
   route.path === path || route.path.startsWith(`${path}/`);
@@ -199,7 +194,7 @@ const contents = computed(() => {
         class="landing-hero grid grid-cols-1 items-center gap-6 py-3 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-8 lg:py-2 xl:gap-10">
         <section class="landing-copy max-w-screen-md mx-auto"
             aria-labelledby="landing-welcome landing-title" aria-describedby="landing-summary">
-            
+
             <h1 id="landing-welcome" tabindex="0"
                 class="text-left text-xl font-tahomabd font-bold text-oceanBlue rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2">
                 {{ contents.header }}
@@ -275,12 +270,11 @@ const contents = computed(() => {
             </div>
         </div>
         <div class="flex shrink-0 flex-col items-start gap-2 sm:items-end">
-            <NuxtLink :to="feedbackPath" :aria-describedby="feedbackNeedsSignIn ? 'landing-feedback-hint' : undefined"
+            <NuxtLink :to="feedbackPath"
                 class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-oceanBlue px-5 py-3 text-sm font-normal text-white transition-colors hover:bg-deepBlue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue focus-visible:ring-offset-2">
                 {{ feedbackContent.action }}
                 <span aria-hidden="true">→</span>
             </NuxtLink>
-            <p v-if="feedbackNeedsSignIn" id="landing-feedback-hint" class="max-w-64 text-xs leading-5 text-textGray">{{ feedbackContent.hint }}</p>
         </div>
     </section>
  </div>
