@@ -63,6 +63,7 @@ fi
 cd "$repo"
 backup=$(mktemp -d "$repo/.deploy/rollback.XXXXXX")
 had_output=false
+restart_attempted=false
 image_headers=
 if [[ -d .output ]]; then
   cp -a .output "$backup/output"
@@ -78,7 +79,9 @@ rollback() {
         mv .output "$backup/failed-output"
       fi
       mv "$backup/output" .output
-      pm2 restart "$pm2_app" || true
+      if [[ "$restart_attempted" == true ]]; then
+        pm2 restart "$pm2_app" || true
+      fi
     fi
   fi
   if [[ -n "$image_headers" ]]; then rm -f "$image_headers"; fi
@@ -87,10 +90,11 @@ rollback() {
 }
 trap rollback EXIT
 
-pnpm install --frozen-lockfile
+CI=true pnpm install --frozen-lockfile
 pnpm test:images
 pnpm build
 
+restart_attempted=true
 pm2 restart "$pm2_app"
 
 for attempt in {1..30}; do
