@@ -1,3 +1,5 @@
+packages:
+  - '.'
 allowBuilds:
   '@parcel/watcher@2.5.6': true
   core-js: true

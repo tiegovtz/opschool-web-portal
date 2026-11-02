@@ -18,7 +18,7 @@ const source = computed(() => {
 });
 watch(source, () => { failedOptimization.value = false; });
 const optimizedSource = computed(() => {
-  // IPX runs inside Docker, where the public IP times out; the gateway is reachable.
+  // Use a configured server-reachable origin for backend uploads when needed.
   const origin = config.public.imageFetchOrigin?.trim().replace(/\/+$/, "");
   const publicUploads = "http://41.59.251.166/api/uploads/";
   return origin && source.value.startsWith(publicUploads)

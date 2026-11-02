@@ -3,9 +3,9 @@ import { vite as vidstack } from "vidstack/plugins";
 
 const imageDomains = [
   process.env.VITE_API_BASE_URL,
+  process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN,
   "http://41.59.251.166",
   "https://opschool.tie.go.tz",
-  "http://gateway",
 ].flatMap((value) => {
   try {
     return value ? [new URL(value).host] : [];
@@ -60,8 +60,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true",
-      imageFetchOrigin: process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN
-        || (process.env.VITE_API_BASE_URL?.startsWith("/api/") ? "http://gateway" : ""),
+      imageFetchOrigin: process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN || "",
     },
     backendApiBaseUrl: process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1",
     supportApiBaseUrl: "",

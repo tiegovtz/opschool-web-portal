@@ -68,12 +68,13 @@ jobs:
           DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
           DEPLOY_USER: ${{ vars.DEPLOY_USER }}
           DEPLOY_HEALTH_URL: ${{ vars.DEPLOY_HEALTH_URL }}
+          DEPLOY_PM2_APP: ${{ vars.DEPLOY_PM2_APP }}
         run: |
           set -euo pipefail
           ssh_options=(-o BatchMode=yes -o StrictHostKeyChecking=yes)
           target="${DEPLOY_USER}@${DEPLOY_HOST}"
-          repo=/var/www/OPSchool/opschool-web-portal
-          incoming=/var/www/OPSchool/opschool-web-portal/.deploy/incoming
+          repo=/var/www/OPSchool/opschool-web-portal-build
+          incoming=/var/www/OPSchool/opschool-web-portal-build/.deploy/incoming
           printf -v base_command 'git -c safe.directory=%q -C %q rev-parse HEAD' "$repo" "$repo"
           base_sha=$(ssh "${ssh_options[@]}" "$target" "$base_command")
           if [[ ! "$base_sha" =~ ^[a-f0-9]{40}$ ]] || ! git merge-base --is-ancestor "$base_sha" "$GITHUB_SHA"; then
@@ -86,5 +87,5 @@ jobs:
             ssh "${ssh_options[@]}" "$target" "$prepare_command"
             scp "${ssh_options[@]}" portal-deploy.bundle "$target:$incoming/${GITHUB_SHA}.bundle"
           fi
-          printf -v deploy_command 'bash -s -- %q %q %q' "$GITHUB_SHA" "$base_sha" "$DEPLOY_HEALTH_URL"
+          printf -v deploy_command 'bash -s -- %q %q %q %q' "$GITHUB_SHA" "$base_sha" "$DEPLOY_HEALTH_URL" "$DEPLOY_PM2_APP"
           ssh "${ssh_options[@]}" "$target" "$deploy_command" < scripts/deploy-development.sh
