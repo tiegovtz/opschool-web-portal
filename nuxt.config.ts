@@ -229,8 +229,8 @@ export default defineNuxtConfig({
     },
     plugins: [vidstack()],
     optimizeDeps: {
-      force: true, // Force re-optimization of dependencies
       include: [
+        "ai",
         "pinia",
         "pinia-plugin-persistedstate",
         "@google/model-viewer",

@@ -79,8 +79,6 @@ const content = computed(() => ({
 }));
 const userRememberMe = useCookie("userRememberMe");
 const pass = userRememberMe?.value?.password?.length > 0 ? dataDecrypt(userRememberMe?.value?.password) : null
-useCookie("signInUserToken").value ? useCookie("signInUserToken").value = null : '';
-useCookie("signInAccessToken").value ? useCookie("signInAccessToken").value = null : '';
 
 // User Sign In Function
 const userSignIn = reactive({
@@ -177,15 +175,6 @@ const signIn = async () => {
         maxAge: 60 * 60 * 2,          // 2 hours
         sameSite: "strict",
         path: "/",
-        default: () => ({}),
-        encode: (value) => JSON.stringify(value),
-        decode: (value) => {
-          try {
-            return JSON.parse(value);
-          } catch (e) {
-            return {};
-          }
-        },
       });
 
       // create user remember me cookie
@@ -196,14 +185,6 @@ const signIn = async () => {
         sameSite: "strict",
         path: "/",
         default: () => null,
-        encode: (value) => JSON.stringify(value),
-        decode: (value) => {
-          try {
-            return JSON.parse(value);
-          } catch (e) {
-            return null;
-          }
-        },
       });
 
       if (userSignIn.rememberMe) {

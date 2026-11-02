@@ -1216,6 +1216,9 @@ watch(() => chapters.isAttemptingQuizes, async (newAttemptingQuizes) => {
   }
 
   if (!newAttemptingQuizes) {
+    if (notesContainer.value) {
+      await renderMathContent([notesContainer.value as Element]);
+    }
     // Call Function
     setPicCenter();
     observerContent();

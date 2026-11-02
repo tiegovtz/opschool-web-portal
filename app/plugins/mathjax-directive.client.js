@@ -17,11 +17,16 @@ function shouldSkipTypeset(el, key) {
 function runTypeset(el, binding) {
   const key = mjStableKey(el, binding);
   nextTick(() => {
-    if (!window.mathJaxLoaded || !window.MathJaxRender) return;
+    if (!window.mathJaxLoaded) return;
     window.mathJaxLoaded
-      .then(() => window.MathJaxRender([el]))
-      .then(() => {
-        if (key) el.setAttribute("data-mj-key", key);
+      .then(async () => {
+        await window.MathJax?.startup?.promise;
+        if (typeof window.MathJaxRender !== "function") return false;
+        await window.MathJaxRender([el]);
+        return true;
+      })
+      .then((rendered) => {
+        if (rendered && key) el.setAttribute("data-mj-key", key);
       })
       .catch(() => {
         /* avoid blocking UI if MathJax fails */

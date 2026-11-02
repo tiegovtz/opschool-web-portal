@@ -71,6 +71,10 @@ const shuffleList = <T>(items: T[]) =>
     .map(({ item }) => item);
 const route = useRoute();
 const shuffledQuestions = ref<Question[]>([]);
+const resultMathKey = computed(() => JSON.stringify({
+  questions: shuffledQuestions.value.map((question) => question.question),
+  answers: quizAttempt.clickedAnswer,
+}));
 const isSecondaryQuiz = computed(
   () => resolveEducationLevelFromRoute(route) !== "primary",
 );
@@ -356,7 +360,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
       </p> -->
 
       <!-- Outputs or results or Marks -->
-      <div v-if="quizAttempt.quizCompleted && quizAttempt.isAttempting" class="w-full">
+      <div v-if="quizAttempt.quizCompleted && quizAttempt.isAttempting" v-mathjax="resultMathKey" class="w-full">
         <!-- Scores -->
         <div class="flex flex-col items-center w-full mb-4">
           <p>
