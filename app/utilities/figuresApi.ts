@@ -6,11 +6,12 @@
  */
 
 import type { ApiFigure, MappedFigure, GetFiguresOptions } from '~/types/figures.interface';
-import { Config } from '~/constants/config';
+import apiDocs from '~/utilities/apiDocs';
 
-const API_BASE_URL =
-  (Config as typeof Config & { FIGURES_API_BASE_URL?: string })
-    .FIGURES_API_BASE_URL || "https://apitie.ekima.africa/v1";
+// Always go through the portal's own backend proxy (apiDocs.requestBaseURL), not a
+// hardcoded external host - Config.FIGURES_API_BASE_URL was never actually set, so this
+// was silently falling back to a dead domain unrelated to any real deployment.
+const API_BASE_URL = apiDocs.requestBaseURL;
 
 // Cache for API responses
 const figureCache: Map<string, { data: MappedFigure | MappedFigure[]; timestamp: number }> = new Map();
@@ -18,10 +19,11 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Get authentication token
- * Tries to get from auth store, environment variable, or returns empty string
+ * Tries the auth store, then the signInAccessToken cookie (the store is only ever
+ * populated right after login and isn't re-hydrated on later page loads, so the cookie
+ * is the reliable source most of the time), then an environment variable server-side.
  */
 async function getAuthToken(): Promise<string> {
-  // Try to get from auth store (client-side)
   if (process.client) {
     try {
       const { useAuthStore } = await import('~/stores/auth');
@@ -32,8 +34,13 @@ async function getAuthToken(): Promise<string> {
     } catch (error) {
       // Auth store not available, continue
     }
+
+    const cookieToken = useCookie('signInAccessToken').value;
+    if (cookieToken) {
+      return cookieToken;
+    }
   }
-  
+
   // Try environment variable (server-side)
   if (process.server) {
     return process.env.FIGURES_API_TOKEN || '';
