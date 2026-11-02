@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DropDown from '~/components/customDropDown/dropDownList.vue';
 import Input from '~/components/ui/inputs/input.vue';
-import { feedbackQuestions } from '../../../shared/feedback/questions';
+import { feedbackQuestions } from '~~/shared/feedback/questions';
 import type { LanguageSupport } from '~/types/language.interface';
 const props = defineProps<{ language: LanguageSupport; educationLevel: 'primary' | 'secondary' }>();
 const sw = computed(() => props.language === 'kiswahili');
