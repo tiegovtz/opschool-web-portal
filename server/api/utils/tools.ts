@@ -545,14 +545,20 @@ export const studentTools = {
         };
 
         // Step 1: Try topic param vs img.topic first (if topic provided)
+        const hasSpecificTopic =
+          !!topic && !!topic.trim() && topic.trim().toLowerCase() !== "all";
         let filtered: any[] = [];
-        if (topic && topic.trim() && topic.trim().toLowerCase() !== "all") {
+        if (hasSpecificTopic) {
           filtered = images.filter((img: any) => matchesTopicAgainst(img, topic));
           filtered = applySubjectFilter(filtered);
         }
 
-        // Step 2: If no match, try chapter vs img.topic
-        if (filtered.length === 0) {
+        // Step 2: If no match AND the student didn't ask about anything specific,
+        // fall back to the broader chapter. Skip this fallback when a specific
+        // topic was given and genuinely had no match - otherwise this substitutes
+        // an unrelated, generic chapter-level image (e.g. a campfire photo for an
+        // "inertia" question) instead of correctly showing no image at all.
+        if (filtered.length === 0 && !hasSpecificTopic) {
           filtered = images.filter((img: any) => matchesTopicAgainst(img, chapter));
           filtered = applySubjectFilter(filtered);
         }
