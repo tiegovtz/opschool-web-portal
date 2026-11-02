@@ -522,10 +522,14 @@ export const studentTools = {
           if (!normalizedAgainst) return false;
           const imgTopic = normalize(img.topic || "");
           const imgChapter = normalize(img.chapter || "");
+          // A blank topic/chapter on the figure must never match: "x".includes("") is
+          // always true in JS, which was letting every figure with missing metadata
+          // match every query (unrelated images showing up for every chapter/topic).
           const check = (field: string) =>
-            field === normalizedAgainst ||
-            field.includes(normalizedAgainst) ||
-            normalizedAgainst.includes(field);
+            field.length > 0 &&
+            (field === normalizedAgainst ||
+              field.includes(normalizedAgainst) ||
+              normalizedAgainst.includes(field));
           return check(imgTopic) || check(imgChapter);
         };
 
