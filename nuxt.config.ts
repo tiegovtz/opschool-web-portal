@@ -1,6 +1,19 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import { vite as vidstack } from "vidstack/plugins";
 
+const imageDomains = [
+  process.env.VITE_API_BASE_URL,
+  process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN,
+  "http://41.59.251.166",
+  "https://opschool.tie.go.tz",
+].flatMap((value) => {
+  try {
+    return value ? [new URL(value).host] : [];
+  } catch {
+    return [];
+  }
+});
+
 export default defineNuxtConfig({
   compatibilityDate: '2026-10-31',
   devtools: { enabled: true },
@@ -45,7 +58,10 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    public: { localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true" },
+    public: {
+      localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true",
+      imageFetchOrigin: process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN || "",
+    },
     backendApiBaseUrl: process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1",
     supportApiBaseUrl: "",
     adtStoreBaseUrl: "",
@@ -178,6 +194,7 @@ export default defineNuxtConfig({
   },
 
   image: {
+    domains: [...new Set(imageDomains)],
     quality: 80,
     format: ["webp"],
     densities: [1],
@@ -211,8 +228,8 @@ export default defineNuxtConfig({
     },
     plugins: [vidstack()],
     optimizeDeps: {
-      force: true, // Force re-optimization of dependencies
       include: [
+        "ai",
         "pinia",
         "pinia-plugin-persistedstate",
         "@google/model-viewer",

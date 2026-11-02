@@ -45,8 +45,13 @@ export function clearShortcodesCache(): void {
 /**
  * Pre-load all dynamic shortcodes from API (call this on app init or component mount)
  * @param forceReload - If true, clears cache and reloads even if already loaded
+ * @param apiBasePath - The app's configured base path (e.g. "/portal" on dev), from
+ *   useRuntimeConfig().app.baseURL in the calling component. This module is a plain
+ *   .ts utility, not a component - calling useRuntimeConfig() directly from in here
+ *   (inside a nested async callback, one level removed from any component's setup
+ *   context) is not reliable, so the caller passes it in instead.
  */
-export async function loadDynamicShortcodes(forceReload: boolean = false): Promise<void> {
+export async function loadDynamicShortcodes(forceReload: boolean = false, apiBasePath: string = ''): Promise<void> {
   // Clear cache if force reload is requested
   if (forceReload) {
     clearShortcodesCache();
@@ -67,10 +72,10 @@ export async function loadDynamicShortcodes(forceReload: boolean = false): Promi
         // Load all shortcodes from our server endpoint (handles auth internally).
         // $fetch does NOT automatically respect app.baseURL for a plain '/api/...'
         // path - it resolves against the domain root exactly like native fetch, so
-        // this 404s once the app is deployed under a sub-path (e.g. /portal). Build
-        // the URL from the app's own configured base path instead.
-        const apiBasePath = useRuntimeConfig().app.baseURL.replace(/\/$/, '');
-        const data = await $fetch<{ success?: boolean; images?: Array<Record<string, any>> }>(`${apiBasePath}/api/image-list`);
+        // this 404s once the app is deployed under a sub-path (e.g. /portal). The
+        // caller passes the base path in (see apiBasePath param above).
+        const normalizedBasePath = apiBasePath.replace(/\/$/, '');
+        const data = await $fetch<{ success?: boolean; images?: Array<Record<string, any>> }>(`${normalizedBasePath}/api/image-list`);
 
         if (data.success && data.images && data.images.length > 0) {
           // Convert to cache format - supports both single and multi-image figures.

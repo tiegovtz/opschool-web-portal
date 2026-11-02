@@ -8,6 +8,9 @@ const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
 
 const messagesContainer = ref<HTMLElement | null>(null);
 const shouldAutoScroll = ref(true);
+// Computed at setup time (not inside the onMounted callback) so it's reliably
+// available - see the apiBasePath param note in imageShortcodes.ts.
+const imageListBasePath = useRuntimeConfig().app.baseURL;
 
 // Smooth scroll function
 const scrollToBottom = (smooth = true) => {
@@ -61,7 +64,7 @@ watch(() => props.isTyping, (newVal) => {
 
 // Scroll to bottom on mount if there are messages; preload image shortcodes so visual aids resolve reliably
 onMounted(() => {
-  loadDynamicShortcodes();
+  loadDynamicShortcodes(false, imageListBasePath);
   if (props.messages.length > 0) {
     nextTick(() => {
       scrollToBottom(false);

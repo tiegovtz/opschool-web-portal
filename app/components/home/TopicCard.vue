@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { calculateTopicMetrics } from '@/utilities/topicMetrics'
+import CardImage from "~/components/home/CardImage.vue";
 import { layoutEffect } from '~/utilities/controlls'
 import { useNavigationStore } from "~/stores/navigationStore";
 import {
@@ -79,12 +80,12 @@ const userToken = useCookie('signInUserToken')
     :to="topicTarget">
     <!-- profile view -->
     <div class="relative shrink-0 overflow-hidden rounded-full size-10 aspect-square">
-      <img
+      <CardImage
         :src="topicImage"
         tabindex="0"
         :alt="altText ?? topicTitle"
-        width="40"
-        height="40"
+        width="80"
+        height="80"
         class="block object-cover w-full h-full"
       />
     </div>
@@ -108,7 +109,7 @@ const userToken = useCookie('signInUserToken')
       layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-full max-w-[200px]',
       { 'md:h-20 !h-full max-w-[80px]': modelType === 'search', },
     ]">
-      <img :src="topicImage" tabindex="0" loading="lazy" :alt="altText ?? `Image of ${topicTitle}`" :class="[
+      <CardImage :src="topicImage" tabindex="0" :alt="altText ?? `Image of ${topicTitle}`" :class="[
         'object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110',
         { 'rounded-t-md': modelType === 'card', 'rounded-md': modelType === 'search' },
       ]" />

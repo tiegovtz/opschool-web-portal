@@ -1,6 +1,17 @@
 const requestHeaders = ['accept', 'authorization', 'content-type', 'range', 'if-range', 'if-none-match', 'if-modified-since', 'x-requested-with'];
 const responseHeaders = ['content-type', 'content-disposition', 'content-range', 'accept-ranges', 'etag', 'last-modified', 'retry-after', 'www-authenticate'];
 
+/** Prefer deployment settings, then the current server environment, then the build default. */
+export function backendProxyBaseUrl(deploymentUrl: string | undefined, serverUrl: string | undefined, buildUrl: string | undefined) {
+  const baseUrl = deploymentUrl?.trim() || serverUrl?.trim() || buildUrl?.trim();
+  if (!baseUrl) throw new Error('Backend API URL is missing.');
+  const base = new URL(baseUrl);
+  if (!['http:', 'https:'].includes(base.protocol) || base.username || base.password || base.search || base.hash) {
+    throw new Error('Backend API URL must be an absolute HTTP(S) API root without credentials, query, or fragment.');
+  }
+  return baseUrl;
+}
+
 /** The caller supplies a path, never a destination host or URL. */
 export function backendProxyTarget(baseUrl: string, path: string, search: string) {
   const base = new URL(baseUrl);

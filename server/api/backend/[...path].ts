@@ -1,4 +1,4 @@
-import { backendProxyTarget, backendRequestHeaders, backendResponseHeaders } from '../../../shared/backend/proxy';
+import { backendProxyBaseUrl, backendProxyTarget, backendRequestHeaders, backendResponseHeaders } from '../../../shared/backend/proxy';
 
 export default defineEventHandler(async event => {
   const method = getMethod(event);
@@ -6,11 +6,22 @@ export default defineEventHandler(async event => {
   const url = getRequestURL(event);
   const origin = getHeader(event, 'origin');
   if (origin && origin !== url.origin) throw createError({ statusCode: 403, statusMessage: 'Use the portal origin for API requests.' });
+  const configuredUrl = useRuntimeConfig(event).backendApiBaseUrl;
+  let baseUrl: string;
+  try {
+    baseUrl = backendProxyBaseUrl(
+      process.env.NUXT_BACKEND_API_BASE_URL,
+      process.env.VITE_API_BASE_URL,
+      typeof configuredUrl === 'string' ? configuredUrl : undefined,
+    );
+  } catch {
+    throw createError({ statusCode: 503, statusMessage: 'Backend API URL is missing or invalid. Check NUXT_BACKEND_API_BASE_URL and VITE_API_BASE_URL.' });
+  }
   let target: URL;
   try {
-    target = backendProxyTarget(String(useRuntimeConfig(event).backendApiBaseUrl), getRouterParam(event, 'path') || '', url.search);
+    target = backendProxyTarget(baseUrl, getRouterParam(event, 'path') || '', url.search);
   } catch {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid backend request path or configuration.' });
+    throw createError({ statusCode: 400, statusMessage: 'Invalid backend request path.' });
   }
   const headers = backendRequestHeaders(new Headers(getRequestHeaders(event) as Record<string, string>));
   const rawBody = !['GET', 'HEAD'].includes(method) ? await readRawBody(event, false) : undefined;
@@ -18,6 +29,23 @@ export default defineEventHandler(async event => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);
   try {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      const csrfUrl = backendProxyTarget(baseUrl, 'v1/auth/csrf-token', '');
+      const csrfResponse = await fetch(csrfUrl, {
+        headers: { accept: 'application/json' },
+        signal: controller.signal,
+      });
+      if (!csrfResponse.ok) {
+        throw new Error(`Backend CSRF token request failed: ${csrfResponse.status}`);
+      }
+      const csrfData = await csrfResponse.json() as { csrfToken?: unknown };
+      const csrfToken = csrfData.csrfToken;
+      if (typeof csrfToken !== 'string' || !csrfToken || /[\r\n;]/.test(csrfToken)) {
+        throw new Error('Backend returned an invalid CSRF token.');
+      }
+      headers.set('x-csrf-token', csrfToken);
+      headers.set('cookie', `XSRF-TOKEN=${encodeURIComponent(csrfToken)}`);
+    }
     response = await fetch(target, { method, headers, body: rawBody ? new Uint8Array(rawBody) : undefined, redirect: 'manual', signal: controller.signal });
   } catch {
     throw createError({ statusCode: 502, statusMessage: 'The backend could not be reached. Please try again.' });

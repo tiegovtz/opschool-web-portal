@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CardImage from "~/components/home/CardImage.vue";
 import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
 import {
@@ -81,7 +82,7 @@ const setAudioToListen = () => {
             'relative overflow-hidden transition-all duration-500 ease-in-out',
             layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
         ]">
-            <img :src="audioThumbnail" :alt="audioName.toLowerCase()" :class="[
+            <CardImage :src="audioThumbnail" :alt="audioName.toLowerCase()" :class="[
                 'object-cover w-full h-full transition-transform duration-500',
             ]" />
 

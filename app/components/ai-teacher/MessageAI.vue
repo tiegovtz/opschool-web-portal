@@ -414,9 +414,13 @@ watch(() => props.message, () => {
   scheduleMathJax();
 }, { deep: true });
 
+// Computed at setup time (not inside the async onMounted callback) so it's reliably
+// available - see the apiBasePath param note in imageShortcodes.ts.
+const imageListBasePath = useRuntimeConfig().app.baseURL;
+
 onMounted(async () => {
   // Pre-load dynamic shortcodes from API
-  await loadDynamicShortcodes();
+  await loadDynamicShortcodes(false, imageListBasePath);
   shortcodesLoaded.value = true; // Trigger re-render
   scheduleMathJax();
 });

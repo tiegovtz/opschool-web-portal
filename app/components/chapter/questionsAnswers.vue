@@ -423,6 +423,12 @@ const renderQuestionWithBlanks = computed(() => {
   });
 });
 
+const mathRenderKey = computed(() => [
+  questionProps.question,
+  ...shuffledChoices.value.map((choice) => choice.value),
+  ...dropZoneAnswers.value,
+].join("|"));
+
 // playDemoAnimation and flyToTarget Function
 const flyToTarget = (sourceEl: HTMLElement, targetEl: HTMLElement) => {
   const clone = sourceEl.cloneNode(true) as HTMLElement;
@@ -508,7 +514,7 @@ const playDemoAnimation = async () => {
 </script>
 
 <template>
-  <section class="flex flex-col" v-if="questionType.toLowerCase() === 'multiple_choice'">
+  <section v-if="questionType.toLowerCase() === 'multiple_choice'" v-mathjax="mathRenderKey" class="flex flex-col">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <p>{{ usedLanguage.toLowerCase().trim() === 'english' ? 'Choose the most correct answer.' : 'Chagua jibu sahihi zaidi.' }}</p>
       <button
@@ -632,7 +638,7 @@ const playDemoAnimation = async () => {
   </section>
 
   <!-- drag and drop question and answer container -->
-  <section v-else class="mt-6">
+  <section v-else v-mathjax="mathRenderKey" class="mt-6">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <p>{{ usedLanguage.toLowerCase().trim() === 'english' ? "Drag and drop the answers into the blanks." : "Jaza nafasi zilizoachwa wazi kwa kuburuta jibu sahihi" }}</p>
       <button

@@ -4,16 +4,35 @@ set -euo pipefail
 revision=$1
 expected_base=$2
 health_url=$3
+requested_pm2_app=${4:-}
 project_root=/var/www/OPSchool
-repo="$project_root/opschool-web-portal"
-compose_file="$project_root/deployment/compose.yml"
+repo="$project_root/opschool-web-portal-build"
 bundle="$repo/.deploy/incoming/$revision.bundle"
+pm2_app=${requested_pm2_app:-portal}
 
 if [[ ! "$revision" =~ ^[a-f0-9]{40}$ || ! "$expected_base" =~ ^[a-f0-9]{40}$ || ! "$health_url" =~ ^http://127\.0\.0\.1:[0-9]+/ ]]; then
   echo 'Invalid deployment arguments' >&2
   exit 1
 fi
-test -f "$compose_file"
+if [[ ! "$pm2_app" =~ ^[A-Za-z0-9_-]+$ ]]; then
+  echo 'Invalid PM2 application name' >&2
+  exit 1
+fi
+command -v pnpm >/dev/null
+command -v pm2 >/dev/null
+port=${health_url#http://127.0.0.1:}
+port=${port%%/*}
+PM2_APP="$pm2_app" PM2_REPO="$repo" PM2_PORT="$port" node -e '
+  const app = JSON.parse(require("node:fs").readFileSync(0, "utf8"))
+    .find((entry) => entry.name === process.env.PM2_APP);
+  const env = app?.pm2_env;
+  if (!env || env.pm_cwd !== process.env.PM2_REPO ||
+      env.pm_exec_path !== `${process.env.PM2_REPO}/.output/server/index.mjs` ||
+      String(env.NITRO_PORT) !== process.env.PM2_PORT) {
+    console.error("Existing PM2 portal does not match the deployment checkout and port");
+    process.exit(1);
+  }
+' < <(pm2 jlist)
 
 git_in_repo() { git -c safe.directory="$repo" -C "$repo" "$@"; }
 if [[ $(git_in_repo branch --show-current) != develop ]]; then
@@ -41,34 +60,53 @@ if [[ "$revision" != "$expected_base" ]]; then
   rm -f "$bundle"
 fi
 
-compose=(docker compose --project-directory "$project_root" -f "$compose_file")
-old_image=$(docker inspect -f '{{.Image}}' opschool-dev-portal-1 2>/dev/null || true)
-switched=false
+cd "$repo"
+backup=$(mktemp -d "$repo/.deploy/rollback.XXXXXX")
+had_output=false
+image_headers=
+if [[ -d .output ]]; then
+  cp -a .output "$backup/output"
+  had_output=true
+fi
 rollback() {
-  echo 'Portal deployment failed; restoring previous image' >&2
-  if [[ "$switched" == true && -n "$old_image" ]]; then
-    docker image tag "$old_image" opschool-dev-portal:latest
-    "${compose[@]}" up -d --no-build --no-deps --force-recreate portal
+  status=$?
+  trap - EXIT
+  if (( status != 0 )); then
+    echo 'Portal deployment failed; restoring previous build' >&2
+    if [[ "$had_output" == true ]]; then
+      if [[ -d .output ]]; then
+        mv .output "$backup/failed-output"
+      fi
+      mv "$backup/output" .output
+      pm2 restart "$pm2_app" || true
+    fi
   fi
+  if [[ -n "$image_headers" ]]; then rm -f "$image_headers"; fi
+  rm -rf "$backup"
+  exit "$status"
 }
+trap rollback EXIT
 
-if ! "${compose[@]}" build portal; then
-  rollback
-  exit 1
-fi
-switched=true
-if ! "${compose[@]}" up -d --no-build --no-deps portal; then
-  rollback
-  exit 1
-fi
+pnpm install --frozen-lockfile
+pnpm test:images
+pnpm build
+
+pm2 restart "$pm2_app"
 
 for attempt in {1..30}; do
   if curl --fail --silent --max-time 3 --output /dev/null "$health_url"; then
-    echo "Deployed portal revision $revision"
-    exit 0
+    break
   fi
   sleep 2
 done
 
-rollback
-exit 1
+curl --fail --silent --max-time 5 --output /dev/null "$health_url"
+image_url="http://127.0.0.1:$port/_ipx/w_120,f_webp/logo/logo_tie.jpg"
+image_headers=$(mktemp "$repo/.deploy/image-headers.XXXXXX")
+curl --fail --silent --show-error --max-time 15 --dump-header "$image_headers" --output /dev/null "$image_url"
+if ! grep -qi '^content-type: image/webp' "$image_headers"; then
+  echo "Image optimization returned an unexpected content type: $image_url" >&2
+  exit 1
+fi
+pm2 save
+echo "Deployed portal revision $revision; IPX image optimization returned WebP"
