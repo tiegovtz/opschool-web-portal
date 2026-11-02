@@ -78,6 +78,10 @@ tie_open_school_primary_frontend
 
 # Claude Code local data (settings, scheduled tasks, session worktrees)
 .claude/
+CLAUDE.md
+AGENTS.md
+.cursor/
+.windsurf/
 
 # Playwright MCP scratch
 .playwright-mcp/
