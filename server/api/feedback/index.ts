@@ -1,9 +1,21 @@
-import { localInboxEnabled, readInbox } from '../../utils/localInboxStore';
-// Read-only fictional examples for presentation. The feedback form stays in Google Forms.
+import { feedbackSchema } from '../../../shared/feedback/contracts';
+import { localInboxEnabled, createEntry } from '../../utils/localInboxStore';
+import { protectSubmission, submissionActor } from '../../utils/inboxSubmission';
 export default defineEventHandler(async event => {
   setHeader(event, 'Cache-Control', 'private, no-store');
-  if (getMethod(event) !== 'GET') throw createError({ statusCode: 405, statusMessage: 'Method not allowed.' });
-  if (!localInboxEnabled()) return { demo: false, examples: [] };
-  const examples = (await readInbox()).filter(item => item.userId === 'demo-sample' && item.category === 'feedback').map(item => ({ id: item.id, subject: item.subject, educationLevel: item.educationLevel, language: item.language, status: item.status, body: item.body }));
-  return { demo: true, examples };
+  if (getMethod(event) !== 'POST') throw createError({ statusCode: 405, statusMessage: 'Method not allowed.' });
+  protectSubmission(event);
+  const result = feedbackSchema.safeParse(await readBody(event));
+  if (!result.success) throw createError({ statusCode: 400, statusMessage: 'Check your answers and contact details.' });
+  const input = result.data;
+  if (localInboxEnabled()) {
+    const actor = await submissionActor(event);
+    const entry = await createEntry({ ...actor, educationLevel: undefined }, { ...input, category: 'feedback', subject: input.language === 'sw' ? 'Maoni kuhusu jukwaa' : 'Platform feedback', body: input.answers.map(answer => `${answer.question}\n${answer.answer}`).join('\n\n'), answers: [...input.answers, { question: 'Contact', answer: [input.contact.name, input.contact.email, input.contact.phone].filter(Boolean).join(' · ') }] });
+    setResponseStatus(event, 201); return { id: entry.id };
+  }
+  const base = String(useRuntimeConfig(event).supportApiBaseUrl || '').replace(/\/+$/, '');
+  if (!base) throw createError({ statusCode: 503, statusMessage: 'Feedback is temporarily unavailable. Please try again later.' });
+  const token = getCookie(event, 'signInAccessToken');
+  const response = await $fetch<{ id: string }>(`${base}/feedback`, { method: 'POST', body: input, headers: token ? { Authorization: `Bearer ${token}` } : {}, timeout: 20000, redirect: 'error' });
+  setResponseStatus(event, 201); return { id: response.id };
 });

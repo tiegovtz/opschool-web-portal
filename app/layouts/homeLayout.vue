@@ -1,32 +1,27 @@
 <template>
-  <div class="bg-white" @contextmenu.prevent >
+  <div :class="['bg-white', isFeedbackPage ? 'flex h-dvh flex-col overflow-hidden' : '']" @contextmenu.prevent >
     <!-- Header -->
-    <HeaderView :language :education-level />
+    <div class="shrink-0"><HeaderView :language :education-level /></div>
 
     <!-- Main content -->
-    <main class="wrapper-container" tabindex="-1" role="main">
-     <div class="md:shadow-2xl md:p-4 p-2 bg-white !center-height">
+    <main :class="['wrapper-container', isFeedbackPage ? '!h-auto min-h-0 flex-1' : '']" tabindex="-1" role="main">
+     <div :class="['bg-white p-2 md:p-4 md:shadow-2xl', isFeedbackPage ? 'h-full min-h-0' : '!center-height']">
       <slot />
      </div>
     </main>
     
-    <!-- Feedback -->
-    <div v-if="route.path !== '/feedback'" class="fixed right-2 z-10 top-[40%] transform -rotate-90 origin-bottom-right bg-oceanBlue hover:bg-deepBlue transition-all duration-500 ease-in-out rounded-md cursor-pointer">
-      <NuxtLink :to="feedbackLink" class="px-4 py-2 text-white">{{ language === 'english' ? 'Feedback' : 'Maoni' }}</NuxtLink>
-    </div>
-    
-    <!-- Combinations -->
-     <div  v-if="route.path !== '/pdf'" class="fixed right-2 z-10 top-[55%] transform -rotate-90 origin-bottom-right bg-oceanBlue hover:bg-deepBlue transition-all duration-500 ease-in-out rounded-md cursor-pointer">
-      <NuxtLink v-if="showCombinations" to="/pdf" class="px-4 py-2 text-white">{{ language === 'english' ? 'Combinations of Subjects' : 'Muhtasari wa Mafunzo' }}</NuxtLink>
-     </div>
-    
+    <nav aria-label="Quick links" class="fixed right-1 top-1/2 z-10 flex max-h-[80dvh] -translate-y-1/2 flex-col items-end gap-3 overflow-y-auto sm:right-2">
+      <NuxtLink v-if="!isFeedbackPage" :to="feedbackLink" class="rotate-180 whitespace-nowrap rounded-md bg-oceanBlue px-2 py-3 text-xs text-white transition-colors [writing-mode:vertical-rl] hover:bg-deepBlue sm:text-sm">{{ language === 'english' ? 'Feedback and Support' : 'Maoni na Msaada' }}</NuxtLink>
+      <NuxtLink v-if="route.path !== '/pdf' && showCombinations" to="/pdf" class="rotate-180 whitespace-nowrap rounded-md bg-oceanBlue px-2 py-3 text-xs text-white transition-colors [writing-mode:vertical-rl] hover:bg-deepBlue sm:text-sm">{{ language === 'english' ? 'Combinations of Subjects' : 'Muhtasari wa Mafunzo' }}</NuxtLink>
+    </nav>
+
     <!-- 50 Years -->
     <!-- <div class="fixed z-10 w-16 h-2w-16 bottom-20 right-6 animate-bounce">
       <NuxtImg src="/images/2.KitabuKimoja.webp" alt="KITABU KIMOJA MWANAFUNZI MMOJA" class="object-contain w-full h-full" />
     </div>  -->
     
     <!-- Footer -->
-    <FooterView  :language :education-level />
+    <div class="shrink-0"><FooterView :language :education-level /></div>
   </div>
 </template>
 
@@ -36,6 +31,7 @@ import HeaderView from '~/components/included/HeaderView.vue'
 import type { LanguageSupport } from '~/types/language.interface';
 import type { EducationBucket } from '~/utilities/educationRoute';
 const route = useRoute()
+const isFeedbackPage = computed(() => route.path === '/feedback');
 const props = withDefaults(
   defineProps<{educationLevel?:EducationBucket,language?:LanguageSupport}>(),{
     language:'english',

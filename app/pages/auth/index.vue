@@ -297,8 +297,8 @@ watch(
 
       <p v-if="isFeedbackSignIn" role="status" class="mx-4 mb-5 rounded-lg bg-blue-50 p-3 text-center text-sm text-[#174f80]">
         {{ isSwahili
-          ? 'Ingia ili kutoa maoni. Baada ya kuingia utaelekezwa kwenye fomu ya maoni.'
-          : 'Sign in to give feedback. After signing in, you will go directly to the feedback form.' }}
+          ? 'Ingia ili kuona na kufuatilia maombi yako ya msaada.'
+          : 'Sign in to view and follow up on your support requests.' }}
       </p>
 
       <!-- Sign in form -->
