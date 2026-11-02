@@ -105,7 +105,7 @@ for attempt in {1..30}; do
 done
 
 curl --fail --silent --max-time 5 --output /dev/null "$health_url"
-image_url="http://127.0.0.1:$port/_ipx/w_120,f_webp/logo/logo_tie.jpg"
+image_url="${health_url%/}/_ipx/w_120,f_webp/logo/logo_tie.jpg"
 image_headers=$(mktemp "$repo/.deploy/image-headers.XXXXXX")
 curl --fail --silent --show-error --max-time 15 --dump-header "$image_headers" --output /dev/null "$image_url"
 if ! grep -qi '^content-type: image/webp' "$image_headers"; then
