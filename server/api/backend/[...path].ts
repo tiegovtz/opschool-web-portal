@@ -29,6 +29,23 @@ export default defineEventHandler(async event => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);
   try {
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+      const csrfUrl = backendProxyTarget(baseUrl, 'v1/auth/csrf-token', '');
+      const csrfResponse = await fetch(csrfUrl, {
+        headers: { accept: 'application/json' },
+        signal: controller.signal,
+      });
+      if (!csrfResponse.ok) {
+        throw new Error(`Backend CSRF token request failed: ${csrfResponse.status}`);
+      }
+      const csrfData = await csrfResponse.json() as { csrfToken?: unknown };
+      const csrfToken = csrfData.csrfToken;
+      if (typeof csrfToken !== 'string' || !csrfToken || /[\r\n;]/.test(csrfToken)) {
+        throw new Error('Backend returned an invalid CSRF token.');
+      }
+      headers.set('x-csrf-token', csrfToken);
+      headers.set('cookie', `XSRF-TOKEN=${encodeURIComponent(csrfToken)}`);
+    }
     response = await fetch(target, { method, headers, body: rawBody ? new Uint8Array(rawBody) : undefined, redirect: 'manual', signal: controller.signal });
   } catch {
     throw createError({ statusCode: 502, statusMessage: 'The backend could not be reached. Please try again.' });
