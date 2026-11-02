@@ -75,6 +75,15 @@ jobs:
           target="${DEPLOY_USER}@${DEPLOY_HOST}"
           repo=/var/www/OPSchool/opschool-web-portal-build
           incoming=/var/www/OPSchool/opschool-web-portal-build/.deploy/incoming
+          if ! ssh "${ssh_options[@]}" "$target" "bash -lc 'command -v pm2 >/dev/null && command -v pnpm >/dev/null'"; then
+            echo 'Deployment account needs PM2 and pnpm in its login PATH' >&2
+            exit 1
+          fi
+          printf -v access_command 'test -w %q && test -w %q' "$repo" "$incoming"
+          if ! ssh "${ssh_options[@]}" "$target" "$access_command"; then
+            echo 'Deployment account needs write access to the live checkout and bundle directory' >&2
+            exit 1
+          fi
           printf -v base_command 'git -c safe.directory=%q -C %q rev-parse HEAD' "$repo" "$repo"
           base_sha=$(ssh "${ssh_options[@]}" "$target" "$base_command")
           if [[ ! "$base_sha" =~ ^[a-f0-9]{40}$ ]] || ! git merge-base --is-ancestor "$base_sha" "$GITHUB_SHA"; then
@@ -83,9 +92,7 @@ jobs:
           fi
           if [[ "$base_sha" != "$GITHUB_SHA" ]]; then
             git bundle create portal-deploy.bundle HEAD "^$base_sha"
-            printf -v prepare_command 'mkdir -p -- %q' "$incoming"
-            ssh "${ssh_options[@]}" "$target" "$prepare_command"
             scp "${ssh_options[@]}" portal-deploy.bundle "$target:$incoming/${GITHUB_SHA}.bundle"
           fi
-          printf -v deploy_command 'bash -s -- %q %q %q %q' "$GITHUB_SHA" "$base_sha" "$DEPLOY_HEALTH_URL" "$DEPLOY_PM2_APP"
+          printf -v deploy_command 'bash -l -s -- %q %q %q %q' "$GITHUB_SHA" "$base_sha" "$DEPLOY_HEALTH_URL" "$DEPLOY_PM2_APP"
           ssh "${ssh_options[@]}" "$target" "$deploy_command" < scripts/deploy-development.sh
