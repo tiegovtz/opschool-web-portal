@@ -501,7 +501,7 @@ onBeforeUnmount(() => {
             </NuxtLink>
 
             <!-- AI Teacher -->
-            <NuxtLink
+            <!-- <NuxtLink
               to="/tie-ai-teacher"
               aria-label="Go to AI Teacher"
               :aria-current="isAiTeacherRoute ? 'page' : undefined"
@@ -516,7 +516,7 @@ onBeforeUnmount(() => {
               <p class="hidden capitalize md:flex">
                 {{ language === "english" ? `AI Teacher` : `Mwalimu AI` }}
               </p>
-            </NuxtLink>
+            </NuxtLink> -->
           </div>
 
           <!-- title (TIE online public school) -->

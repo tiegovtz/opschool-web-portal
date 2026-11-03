@@ -124,7 +124,10 @@ export default defineEventHandler(async (event) => {
     // Fetch CSRF token for state-changing requests
     // ------------------------------------------------
 
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    if (
+      process.env.NUXT_CSRF_ENABLED?.trim().toLowerCase() === 'true' &&
+      ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
+    ) {
       const csrfUrl = backendProxyTarget(
         baseUrl,
         'v1/auth/csrf-token',
