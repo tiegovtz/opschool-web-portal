@@ -834,7 +834,7 @@ const signUp = async () => {
     hasStudentLookupFields
   ) {
 
-    // 
+    //
     usersignUp.controller.isSent = 'pending';
     usersignUp.controller.isSubmitted = true;
     // user role other,
@@ -873,9 +873,9 @@ const signUp = async () => {
             terms: true,
             roles: ['Student'],
             username: usersignUp.userName && usersignUp.userName.trim() !== '' ? usersignUp.userName : null,
-            premNumber: isStudentLookupRegistration.value
-              ? (selectedStudentLookupRecord.value?.premNumber || null)
-              : null,
+            ...( isStudentLookupRegistration.value
+            ? {premNumber: selectedStudentLookupRecord.value?.premNumber }
+                : {}),
           }
           :
           typeKey == 'Teacher' ?
@@ -1875,13 +1875,13 @@ onMounted(async () => {
                   <input v-model="studentLookupMode" type="radio" value="premNumber" class="w-4 h-4 checked:bg-oceanBlue" />
                   <span>{{ content.studentLookupModes.premNumber }}</span>
                 </label>
-                 Kept for future use: allow lookup when student does not know the Prem Number. 
-                
+                 Kept for future use: allow lookup when student does not know the Prem Number.
+
                 <label class="inline-flex items-center gap-2 cursor-pointer">
                   <input v-model="studentLookupMode" type="radio" value="classList" class="w-4 h-4 checked:bg-oceanBlue" />
                   <span>{{ content.studentLookupModes.classList }}</span>
                 </label>
-               
+
               </div>
 
               <p class="text-textGray/70 text-smallest">
@@ -2049,7 +2049,7 @@ onMounted(async () => {
           </div>
 
           <!-- Kept for future use: class-list lookup for students without a Prem Number. -->
-<!--           
+<!--
           <div v-if="isStudentClassLookup" :class="[
             'flex flex-col items-start justify-start gap-2 px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
             {
