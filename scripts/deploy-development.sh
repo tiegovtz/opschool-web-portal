@@ -92,7 +92,21 @@ trap rollback EXIT
 
 CI=true pnpm install --frozen-lockfile
 pnpm test:images
+
+# Bare-metal dev needs a few source adjustments that Docker's own ephemeral build
+# context used to apply (basePath under /portal/, direct backend URL instead of a
+# Docker service name, etc.) - see deployment/docker/patch-source.cjs. Apply them,
+# build, then revert so the checkout is clean again for the next deploy's tracked-
+# changes check. The build output (.output) and .env are both gitignored, so the
+# revert below never touches them.
+if [[ -f .env ]]; then
+  set -a
+  source .env
+  set +a
+fi
+node /var/www/OPSchool/deployment/docker/patch-source.cjs portal
 pnpm build
+git -c safe.directory="$repo" -C "$repo" checkout -- .
 
 restart_attempted=true
 pm2 restart "$pm2_app"

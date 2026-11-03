@@ -522,10 +522,14 @@ export const studentTools = {
           if (!normalizedAgainst) return false;
           const imgTopic = normalize(img.topic || "");
           const imgChapter = normalize(img.chapter || "");
+          // A blank topic/chapter on the figure must never match: "x".includes("") is
+          // always true in JS, which was letting every figure with missing metadata
+          // match every query (unrelated images showing up for every chapter/topic).
           const check = (field: string) =>
-            field === normalizedAgainst ||
-            field.includes(normalizedAgainst) ||
-            normalizedAgainst.includes(field);
+            field.length > 0 &&
+            (field === normalizedAgainst ||
+              field.includes(normalizedAgainst) ||
+              normalizedAgainst.includes(field));
           return check(imgTopic) || check(imgChapter);
         };
 
@@ -541,14 +545,20 @@ export const studentTools = {
         };
 
         // Step 1: Try topic param vs img.topic first (if topic provided)
+        const hasSpecificTopic =
+          !!topic && !!topic.trim() && topic.trim().toLowerCase() !== "all";
         let filtered: any[] = [];
-        if (topic && topic.trim() && topic.trim().toLowerCase() !== "all") {
+        if (hasSpecificTopic) {
           filtered = images.filter((img: any) => matchesTopicAgainst(img, topic));
           filtered = applySubjectFilter(filtered);
         }
 
-        // Step 2: If no match, try chapter vs img.topic
-        if (filtered.length === 0) {
+        // Step 2: If no match AND the student didn't ask about anything specific,
+        // fall back to the broader chapter. Skip this fallback when a specific
+        // topic was given and genuinely had no match - otherwise this substitutes
+        // an unrelated, generic chapter-level image (e.g. a campfire photo for an
+        // "inertia" question) instead of correctly showing no image at all.
+        if (filtered.length === 0 && !hasSpecificTopic) {
           filtered = images.filter((img: any) => matchesTopicAgainst(img, chapter));
           filtered = applySubjectFilter(filtered);
         }
