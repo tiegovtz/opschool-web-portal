@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   const url = getRequestURL(event);
 
   // --------------------------------------------------
-  //  Validate HTTP method
+  // Validate HTTP method
   // --------------------------------------------------
 
   if (!ALLOWED_METHODS.includes(method)) {
@@ -63,7 +63,10 @@ export default defineEventHandler(async (event) => {
         : undefined,
     );
   } catch (error) {
-    console.error('[Backend Proxy] Invalid backend configuration:', error);
+    console.error(
+      '[Backend Proxy] Invalid backend configuration:',
+      error,
+    );
 
     throw createError({
       statusCode: 503,
@@ -72,7 +75,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // --------------------------------------------------
-  //  Resolve backend target
+  // Resolve backend target
   // --------------------------------------------------
 
   let target: URL;
@@ -84,7 +87,10 @@ export default defineEventHandler(async (event) => {
       url.search,
     );
   } catch (error) {
-    console.error('[Backend Proxy] Invalid request path:', error);
+    console.error(
+      '[Backend Proxy] Invalid request path:',
+      error,
+    );
 
     throw createError({
       statusCode: 400,
@@ -120,9 +126,18 @@ export default defineEventHandler(async (event) => {
 
   try {
     // ------------------------------------------------
-    // Fetch CSRF token for state-changing requests
+    // CSRF TOKEN INTEGRATION (TEMPORARILY DISABLED)
+    //
+    // The NestJS endpoint:
+    // GET v1/auth/csrf-token
+    //
+    // was removed from the backend API.
+    //
+    // Keep this implementation for future restoration
+    // when the backend CSRF endpoint becomes available.
     // ------------------------------------------------
 
+    /*
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
       const csrfUrl = backendProxyTarget(
         baseUrl,
@@ -140,7 +155,10 @@ export default defineEventHandler(async (event) => {
           signal: controller.signal,
         });
       } catch (error) {
-        console.error('[Backend Proxy] CSRF connection failed:', error);
+        console.error(
+          '[Backend Proxy] CSRF connection failed:',
+          error,
+        );
 
         throw createError({
           statusCode: 502,
@@ -151,11 +169,14 @@ export default defineEventHandler(async (event) => {
       if (!csrfResponse.ok) {
         const csrfBody = await csrfResponse.text();
 
-        console.error('[Backend Proxy] CSRF endpoint returned an error:', {
-          status: csrfResponse.status,
-          statusText: csrfResponse.statusText,
-          body: csrfBody,
-        });
+        console.error(
+          '[Backend Proxy] CSRF endpoint returned an error:',
+          {
+            status: csrfResponse.status,
+            statusText: csrfResponse.statusText,
+            body: csrfBody,
+          },
+        );
 
         throw createError({
           statusCode: 502,
@@ -173,7 +194,10 @@ export default defineEventHandler(async (event) => {
       try {
         csrfData = await csrfResponse.json();
       } catch (error) {
-        console.error('[Backend Proxy] Invalid CSRF response:', error);
+        console.error(
+          '[Backend Proxy] Invalid CSRF response:',
+          error,
+        );
 
         throw createError({
           statusCode: 502,
@@ -201,53 +225,33 @@ export default defineEventHandler(async (event) => {
         `XSRF-TOKEN=${encodeURIComponent(csrfToken)}`,
       );
     }
+    */
 
     // ------------------------------------------------
     // Forward original request to backend
     // ------------------------------------------------
-
-    console.info('[Backend Proxy] Forwarding request:', {
+    response = await fetch(target, {
       method,
-      target: target.toString(),
+      headers,
+      body: rawBody
+        ? new Uint8Array(rawBody)
+        : undefined,
+      redirect: 'manual',
+      signal: controller.signal,
     });
 
-    try {
-      response = await fetch(target, {
-        method,
-        headers,
-        body: rawBody
-          ? new Uint8Array(rawBody)
-          : undefined,
-        redirect: 'manual',
-        signal: controller.signal,
-      });
-    } catch (error) {
-      console.error('[Backend Proxy] Backend request failed:', error);
-
-      throw createError({
-        statusCode: 502,
-        statusMessage: 'Backend connection failed.',
-        cause: error,
-      });
-    }
+  } catch (error) {
+    throw createError({
+      statusCode: 502,
+      statusMessage: 'Backend connection failed.',
+      cause: error,
+    });
 
   } finally {
     clearTimeout(timeout);
   }
-
   // --------------------------------------------------
-  // Log backend response
-  // --------------------------------------------------
-
-  console.info('[Backend Proxy] Backend response:', {
-    method,
-    status: response.status,
-    statusText: response.statusText,
-    target: target.toString(),
-  });
-
-  // --------------------------------------------------
-  //  Prevent unexpected redirects
+  // Prevent unexpected redirects
   // --------------------------------------------------
 
   if (
@@ -258,11 +262,6 @@ export default defineEventHandler(async (event) => {
     const redirectLocation = response.headers.get('location');
 
     await response.body?.cancel();
-
-    console.error('[Backend Proxy] Unexpected backend redirect:', {
-      status: response.status,
-      location: redirectLocation,
-    });
 
     throw createError({
       statusCode: 502,
@@ -291,7 +290,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // --------------------------------------------------
-  //  Stream backend response without transformation
+  // Stream backend response without transformation
   // --------------------------------------------------
 
   return sendStream(event, response.body);
