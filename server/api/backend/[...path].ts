@@ -228,7 +228,6 @@ export default defineEventHandler(async (event) => {
         `XSRF-TOKEN=${encodeURIComponent(csrfToken)}`,
       );
     }
-    */
 
     // ------------------------------------------------
     // Forward original request to backend
