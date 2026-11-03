@@ -65,7 +65,7 @@ const refreshToken = async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken.value}`,
+        ...(accessToken.value ? { Authorization: `Bearer ${accessToken.value}` } : {}),
       },
       body: JSON.stringify({ refresh_token: refreshTokenCookie.value }),
     });

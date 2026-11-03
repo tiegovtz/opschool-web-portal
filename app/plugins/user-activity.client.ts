@@ -1,6 +1,6 @@
 import apiDocs from '~/utilities/apiDocs'
 import { webVisitor } from '~/utilities/platform'
-import { isTokenExpiringSoon, refreshToken } from '~/utilities/jwToken'
+import { isTokenExpiringSoon } from '~/utilities/jwToken'
 import { resilientFetch } from '~/utilities/resilientFetch'
 
 export default defineNuxtPlugin(() => {
@@ -20,12 +20,7 @@ export default defineNuxtPlugin(() => {
     try {
       if (!accessToken.value) return
 
-      if (isTokenExpiringSoon(accessToken.value, 60)) {
-        const refreshed = await refreshToken()
-        if ((!refreshed || !('access_token' in refreshed)) && !accessToken.value) {
-          return
-        }
-      }
+      if (isTokenExpiringSoon(accessToken.value, 60)) return
 
       await resilientFetch(apiDocs.auth.updateTimeSpent, {
         method: 'PATCH',

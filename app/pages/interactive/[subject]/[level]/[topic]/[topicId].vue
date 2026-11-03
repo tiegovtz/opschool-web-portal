@@ -9,7 +9,7 @@ import conversationParser from "~/utilities/parsers/conversationParser";
 import { activityPopupId, currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import AIAssistant from "~/components/chapter/AIAssistant.vue";
-import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
+import { isTokenExpiringSoon } from "~/utilities/jwToken";
 import apiDocs from "~/utilities/apiDocs";
 import { updateChapterProgress } from "~/utilities/progress";
 import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
@@ -325,14 +325,10 @@ onUnmounted(() => window.removeEventListener("scroll", updateActiveSection));
 // Helper functions 
 const ensureAccessTokenValid = async () => {
   if (isTokenExpiringSoon(signInAccessToken.value as string, 60)) {
-    const response = await refreshToken().catch(() => null);
-
-    if (response && 'access_token' in response) {
-      signInAccessToken.value = (response as { access_token: string }).access_token;
-    } else {
-      redirectToAuth();
-    }
+    await redirectToAuth();
+    return false;
   }
+  return true;
 };
 
 type ActivityCompletionPayload = {
@@ -611,7 +607,10 @@ const getChapter = async (chapterId: string) => {
   experimrntUrl.value = null;
   isFullscreen.value = false;
   handleAudio(); // Pause any playing audio when chapter changes
-  await ensureAccessTokenValid();
+  if (!await ensureAccessTokenValid()) {
+    chapters.notesStatus = "error";
+    return;
+  }
   announcement.value = `Loading activity of ${chapters.list?.find(c => c._id === chapterId)?.name} content please wait`;
   try {
     const response = await $fetch(
@@ -696,7 +695,7 @@ const getQNTopicChapter = async (chapterId: string) => {
 
 // Fetch topic information
 try {
-  const { data: response, status } = await fetchAsyncData(
+  const { data: response, status, error: fetchError } = await fetchAsyncData(
     `chapters-${topicId}`,
     () => $fetch(apiDocs.topics.getTopicId.replaceAll(':id', topicId as string), {
       headers: {
@@ -708,7 +707,20 @@ try {
   const topicData = response.value && typeof response.value === "object"
     ? response.value as { chapters?: any[]; languageData?: any[] }
     : null;
-  if (topicData) {
+  if (status.value === 'error' || !topicData) {
+    chapters.status = 'error';
+    chapters.error = fetchError.value || new Error('Topic data is unavailable.');
+
+    const statusCode = Number(
+      (fetchError.value as any)?.statusCode ??
+      (fetchError.value as any)?.response?.status ??
+      (fetchError.value as any)?.status ??
+      0,
+    );
+    if (statusCode === 401 || statusCode === 403) {
+      await redirectToAuth();
+    }
+  } else {
     chapters.status = status.value;
     chapters.list = topicData.chapters || [];
     const firstChapterId = chapters.list[0]?._id;
@@ -740,26 +752,23 @@ try {
   );
 
   if (statusCode === 401 || statusCode === 403) {
-    redirectToAuth();
+    await redirectToAuth();
   }
 }
 
 // Call Submit Topic Viewed Read
-if (!userViewedTopic.value) {
-  topicViewedRead(topicId as string);
+if (chapters.status === 'success' && !userViewedTopic.value) {
+  try {
+    await topicViewedRead(topicId);
+  } catch (error) {
+    console.error('[fail to mark topic as read]:', error);
+  }
 }
 
 watch(
-  () => [userToken.value, signInAccessToken.value],
-  async ([nextUserToken, nextAccessToken]) => {
-    if (nextUserToken || nextAccessToken) {
-      return;
-    }
-
-    const refreshed = await refreshToken().catch(() => null);
-    if (!refreshed) {
-      redirectToAuth();
-    }
+  () => signInAccessToken.value,
+  (nextAccessToken) => {
+    if (!nextAccessToken) redirectToAuth();
   },
 );
 
@@ -814,7 +823,7 @@ const updateInteractiveVideoLinks = async () => {
 
   if (links.length === 0) return;
 
-  await ensureAccessTokenValid();
+  if (!await ensureAccessTokenValid()) return;
 
   const videoIds = Array.from(
     new Set(

@@ -145,6 +145,12 @@ const signIn = async () => {
         }
       );
 
+      const issuedAccessToken = response?.accessToken ?? response?.access_token;
+      const issuedRefreshToken = response?.refreshToken ?? response?.refresh_token;
+      if (typeof issuedAccessToken !== 'string' || !issuedAccessToken.trim()) {
+        throw new Error('Sign-in response is missing an access token.');
+      }
+
       userSignIn.controller.feedback = content.value.feedback.authenticated;
 
       // unlock button
@@ -197,8 +203,8 @@ const signIn = async () => {
         userRememberMe.value = null;      // Clear the cookie
       }
 
-      accessToken.value = response.access_token;
-      refreshToken.value = response.refresh_token;
+      accessToken.value = issuedAccessToken;
+      refreshToken.value = typeof issuedRefreshToken === 'string' ? issuedRefreshToken : null;
       userToken.value = response.user;
       useAuthStore().setToken(accessToken.value);
       

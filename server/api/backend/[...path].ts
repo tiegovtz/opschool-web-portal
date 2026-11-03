@@ -98,6 +98,7 @@ export default defineEventHandler(async (event) => {
 
   const headers = backendRequestHeaders(
     new Headers(getRequestHeaders(event) as Record<string, string>),
+    getCookie(event, 'signInAccessToken'),
   );
 
   const rawBody = !['GET', 'HEAD'].includes(method)
