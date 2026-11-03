@@ -104,6 +104,7 @@ export default defineEventHandler(async (event) => {
 
   const headers = backendRequestHeaders(
     new Headers(getRequestHeaders(event) as Record<string, string>),
+    getCookie(event, 'signInAccessToken'),
   );
 
   const rawBody = !['GET', 'HEAD'].includes(method)
@@ -137,8 +138,10 @@ export default defineEventHandler(async (event) => {
     // when the backend CSRF endpoint becomes available.
     // ------------------------------------------------
 
-    /*
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    if (
+      process.env.NUXT_CSRF_ENABLED?.trim().toLowerCase() === 'true' &&
+      ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
+    ) {
       const csrfUrl = backendProxyTarget(
         baseUrl,
         'v1/auth/csrf-token',

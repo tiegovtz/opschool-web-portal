@@ -5,7 +5,7 @@ import type {
   QuizAttemptPayload,
   QuizAttemptSessionPayload,
 } from '~/types/recommendation.interface'
-import { isTokenExpiringSoon, refreshToken } from '~/utilities/jwToken'
+import { isTokenExpiringSoon } from '~/utilities/jwToken'
 import { useVideoInteractions } from '~/composables/useVideoInteractions'
 import { buildVideoQuizId } from '~/utilities/learnerProgressHistory'
 
@@ -94,18 +94,13 @@ const fetchVideo = async () => {
       return
     }
 
-    // Ensure token is valid and refresh if needed
+    // Sign in again when the access token is expiring.
     if (isTokenExpiringSoon(signInAccessToken.value, 60)) {
-      const newToken = await refreshToken()
-      if (newToken && 'access_token' in newToken && typeof newToken.access_token === 'string') {
-        signInAccessToken.value = newToken.access_token
-      } else {
-        await navigateTo({
-          path: '/auth',
-          query: { redirect: authRedirectTarget.value },
-        })
-        return
-      }
+      await navigateTo({
+        path: '/auth',
+        query: { redirect: authRedirectTarget.value },
+      })
+      return
     }
 
     // If video ID is provided directly, use it

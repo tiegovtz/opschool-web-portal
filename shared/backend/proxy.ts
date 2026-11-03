@@ -34,9 +34,16 @@ export function backendProxyTarget(baseUrl: string, path: string, search: string
   target.search = search;
   return target;
 }
-export function backendRequestHeaders(source: Headers) {
+export function backendRequestHeaders(source: Headers, accessToken?: string) {
   const target = new Headers();
   for (const key of requestHeaders) { const value = source.get(key); if (value) target.set(key, value); }
+  const authorization = target.get('authorization')?.trim();
+  // Some callers interpolate an absent cookie into the header. Use the actual
+  // access-token cookie in that case, without replacing a real bearer token.
+  const unusableBearer = /^Bearer\s+(?:undefined|null)$/i.test(authorization || '') || /^Bearer\s*$/i.test(authorization || '');
+  if ((!authorization || unusableBearer) && accessToken?.trim()) {
+    target.set('authorization', `Bearer ${accessToken.trim()}`);
+  }
   return target;
 }
 export function backendResponseHeaders(source: Headers) {

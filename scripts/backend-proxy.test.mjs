@@ -22,6 +22,20 @@ test('proxy forwards user authentication and multipart/range headers without bro
   assert.equal(headers.get('range'), 'bytes=0-99');
   for (const key of ['cookie', 'origin', 'host', 'x-api-key']) assert.equal(headers.has(key), false);
 });
+test('proxy uses the access-token cookie when no usable authorization header is provided', () => {
+  const cookieOnly = backendRequestHeaders(new Headers({ cookie: 'signInAccessToken=secret' }), 'cookie-token');
+  assert.equal(cookieOnly.get('authorization'), 'Bearer cookie-token');
+  assert.equal(cookieOnly.has('cookie'), false);
+
+  for (const value of ['Bearer undefined', 'Bearer null', 'Bearer ']) {
+    const headers = backendRequestHeaders(new Headers({ authorization: value }), 'cookie-token');
+    assert.equal(headers.get('authorization'), 'Bearer cookie-token');
+  }
+
+  const explicit = backendRequestHeaders(new Headers({ authorization: 'Bearer explicit-token' }), 'cookie-token');
+  assert.equal(explicit.get('authorization'), 'Bearer explicit-token');
+  assert.equal(backendRequestHeaders(new Headers()).has('authorization'), false);
+});
 test('proxy disables caching and strips compression, length and upstream cookie headers', () => {
   const headers = backendResponseHeaders(new Headers({ 'cache-control': 'public, max-age=3600', 'content-type': 'application/json', 'content-length': '50', 'content-encoding': 'gzip', 'set-cookie': 'server=secret', 'content-range': 'bytes 0-99/500' }));
   assert.equal(headers.get('cache-control'), 'private, no-store');
