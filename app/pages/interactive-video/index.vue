@@ -8,6 +8,7 @@ import type {
 import { isTokenExpiringSoon } from '~/utilities/jwToken'
 import { useVideoInteractions } from '~/composables/useVideoInteractions'
 import { buildVideoQuizId } from '~/utilities/learnerProgressHistory'
+import { getVideoPlaybackError } from '~/utilities/videoPlaybackError'
 
 // Define meta info about page
 useHead({
@@ -44,6 +45,9 @@ const { snapshotId: activeRecommendationSnapshotId } =
 const videoSrc = ref<string>('/videos/TestVideo.mp4')
 const isLoading = ref(true)
 const error = ref<string | null>(null)
+const handlePlaybackError = async () => {
+  error.value = await getVideoPlaybackError(videoSrc.value)
+}
 
 // Extract video ID or topic URL from query parameters
 const videoId = computed(() => route.query.videoId as string | undefined)
@@ -523,7 +527,7 @@ definePageMeta({
               </div>
 
               <!-- Retry button for other errors -->
-              <button v-else @click="fetchVideoFromTopic"
+              <button v-else @click="fetchVideo"
                 class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors">
                 Retry
               </button>
@@ -538,7 +542,7 @@ definePageMeta({
               <p class="text-sm text-gray-500">Video source: {{ videoSrc }}</p>
             </div>
             <InteractiveVideo v-else ref="videoPlayerRef" :video-src="videoSrc" :interactions="interactions"
-              @quiz-submit="handleQuizSubmit" @selection-submit="handleSelectionSubmit" />
+              @quiz-submit="handleQuizSubmit" @selection-submit="handleSelectionSubmit" @video-error="handlePlaybackError" />
             <div v-if="isLoadingInteractions"
               class="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
               <div class="text-center text-white">

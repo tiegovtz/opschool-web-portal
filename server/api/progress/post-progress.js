@@ -1,6 +1,7 @@
 export default defineEventHandler(async (event) => {
 
-    const auth_token = getCookie(event, "signInAccessToken");
+    const bearerToken = getHeader(event, "authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
+    const auth_token = bearerToken || getCookie(event, "signInAccessToken");
     const body = await readBody(event);
 
     if (!auth_token) {

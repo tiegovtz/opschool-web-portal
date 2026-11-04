@@ -57,6 +57,8 @@ const redirectToAuth = () =>
 
 // tokens cookies
 const signInAccessToken = useCookie("signInAccessToken");
+const updateProgress = (progress: any) =>
+  updateChapterProgress(progress, signInAccessToken.value);
 const userToken = useCookie("signInUserToken");
 // search anouncement to screen reders
 const announcement = ref();
@@ -445,7 +447,7 @@ const syncChapterActivityMetrics = () => {
 
 const persistActivityProgressUpdate = async () => {
   syncChapterActivityMetrics();
-  await updateChapterProgress(chapterProgress.value);
+  await updateProgress(chapterProgress.value);
 };
 
 const markActivityAttempted = async (activityId: string) => {
@@ -506,6 +508,7 @@ const postInitialProgressIfNeeded = async (
   try {
     await $fetch("/api/progress/post-progress", {
       method: "POST",
+      headers: { Authorization: `Bearer ${signInAccessToken.value}` },
       body: createChapterProgressPayload(chapterId, totalExperiments),
     });
   } catch (error) {
@@ -644,7 +647,7 @@ const getChapter = async (chapterId: string) => {
         (chapterProgress.value as any)?.userId === (userToken.value as any)?._id &&
         (chapterProgress.value as any)?.chapterId === chapterId
       ) {
-        tasks.push(updateChapterProgress(chapterProgress.value));
+        tasks.push(updateProgress(chapterProgress.value));
       }
 
       await Promise.allSettled(tasks);
@@ -1034,16 +1037,16 @@ const observerContent = () => {
         // update progress
         switch (progress) {
           case 25:
-            updateChapterProgress(chapterProgress.value);
+            updateProgress(chapterProgress.value);
             break;
           case 50:
-            updateChapterProgress(chapterProgress.value);
+            updateProgress(chapterProgress.value);
             break;
           case 75:
-            updateChapterProgress(chapterProgress.value);
+            updateProgress(chapterProgress.value);
             break;
           case 100:
-            updateChapterProgress(chapterProgress.value);
+            updateProgress(chapterProgress.value);
             break;
           default:
             break;
@@ -1199,16 +1202,16 @@ watch(scrollPercent, async (newPercent) => {
 
   switch (newPercent) {
     case 25:
-      updateChapterProgress(chapterProgress.value);
+      updateProgress(chapterProgress.value);
       break;
     case 50:
-      updateChapterProgress(chapterProgress.value);
+      updateProgress(chapterProgress.value);
       break;
     case 75:
-      updateChapterProgress(chapterProgress.value);
+      updateProgress(chapterProgress.value);
       break;
     case 100:
-      updateChapterProgress(chapterProgress.value);
+      updateProgress(chapterProgress.value);
       break;
     default:
       break;

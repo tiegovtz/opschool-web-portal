@@ -15,10 +15,15 @@ const videoParser = (query: string): string => {
 
     return `
             <div class="video-container-wrapper my-4">
-                <video id='video-player' ${attrsWithoutPreload} controls preload="none" controlslist="nodownload" oncontextmenu="return false;" aria-label="Educational video content">
+                <video id='video-player' data-stream-video ${attrsWithoutPreload} controls preload="none" controlslist="nodownload" oncontextmenu="return false;" aria-label="Educational video content">
               <source src="${`/api/video/` + sourceSrc}" type="video/mp4">
               Your browser does not support the video tag.
             </video>
+                <div data-video-error role="alert" hidden class="rounded-md border border-red-200 bg-red-50 p-6 text-center">
+                    <p class="font-medium text-red-700">Unable to play video</p>
+                    <p data-video-error-message class="mt-2 text-sm text-gray-700"></p>
+                    <button data-video-retry type="button" class="mt-4 rounded-md bg-oceanBlue px-4 py-2 text-white hover:bg-deepBlue">Try again</button>
+                </div>
                 <div class="flex items-center justify-end mt-3">
                     <a
                         href="/interactive-video?videoId=${videoId}"
