@@ -2,6 +2,7 @@
 import { sanitize } from "~/utilities/sanitizeInput";
 import { auth } from "~/utilities/validationInput";
 import { generateRandomID } from "~/utilities/generateRandomNumber";
+import { getNewPasswordChecks, getNewPasswordIssue } from "~/utilities/newPasswordPolicy";
 import apiDocs from "~/utilities/apiDocs";
 import {
   educationLevelNameToLevelsApiQuery,
@@ -167,7 +168,14 @@ const content = computed(() => ({
     firstName: isSwahili.value ? "Jina la kwanza linapaswa kuwa na angalau herufi tatu" : "First Name should have at least three characters",
     gender: isSwahili.value ? "Jinsia ya mtumiaji inahitajika" : "User gender is required",
     lastName: isSwahili.value ? "Jina la mwisho linapaswa kuwa na angalau herufi tatu" : "Last Name should have at least three characters",
-    passwordMinLength: isSwahili.value ? "Angalau herufi 6" : "At least 6 characters",
+    passwordRequired: isSwahili.value ? "Nenosiri linahitajika" : "Password is required",
+    passwordMinLength: isSwahili.value ? "Angalau herufi 8" : "At least 8 characters",
+    passwordTrailingSpace: isSwahili.value ? "Nenosiri lisiishie na nafasi" : "Password cannot end with a space",
+    passwordMixedCase: isSwahili.value ? "Tumia herufi kubwa na ndogo" : "Use uppercase and lowercase letters",
+    passwordNumber: isSwahili.value ? "Weka angalau namba moja" : "Include at least one number",
+    passwordSpecialCharacter: isSwahili.value ? "Weka angalau alama maalum moja" : "Include at least one special character",
+    requirementMet: isSwahili.value ? "Imetimizwa" : "Met",
+    requirementNotMet: isSwahili.value ? "Haijatimizwa" : "Not met",
     invalidPhone: isSwahili.value ? "Tafadhali weka namba sahihi ya simu" : "Please enter a valid phone number",
     region: isSwahili.value ? "Mkoa unahitajika" : "Region is required",
     userType: isSwahili.value ? "Aina ya mtumiaji inahitajika" : "User role is required",
@@ -793,6 +801,9 @@ const fetchStudentsByClass = async () => {
 };
 
 const signUp = async () => {
+  if (usersignUp.controller.isSent === 'pending') return;
+
+  const passwordIssue = getNewPasswordIssue(usersignUp.password);
   if (requiresClassLevel.value && !classLevel.value?.trim() && selectedStudentLookupRecord.value) {
     classLevel.value = resolveLevelValueFromLookup(selectedStudentLookupRecord.value.classLevel, listLevel.value);
   }
@@ -805,7 +816,7 @@ const signUp = async () => {
     usersignUp.fname?.trim() &&
     usersignUp.lname?.trim() &&
     usersignUp.gender?.trim() &&
-    usersignUp.password?.trim() &&
+    !passwordIssue &&
     usersignUp.password === usersignUp.confirm_password &&
     usersignUp.region?.trim() &&
     usersignUp.type?.trim() &&
@@ -1018,7 +1029,7 @@ const signUp = async () => {
     if (!usersignUp.age) {
       usersignUp.controller.errors.age = content.value.errors.age;
     }
-    if (!usersignUp.confirm_password) {
+    if (!usersignUp.confirm_password || usersignUp.confirm_password !== usersignUp.password) {
       usersignUp.controller.errors.confirm_password = content.value.errors.confirmPassword;
     }
     if (requiresContactInfo.value && !usersignUp.email) {
@@ -1036,9 +1047,7 @@ const signUp = async () => {
       usersignUp.controller.errors.lname = content.value.errors.lastName;
       switchTab("tabOne");
     }
-    if (!usersignUp.password) {
-      usersignUp.controller.errors.password = content.value.errors.passwordMinLength;
-    }
+    usersignUp.controller.errors.password = passwordIssue ? passwordIssueMessage(passwordIssue) : null;
     if (requiresContactInfo.value && !usersignUp.phone) {
       usersignUp.controller.errors.phone = content.value.errors.invalidPhone;
     }
@@ -1560,26 +1569,45 @@ watch(
 );
 
 // password watching
+const passwordChecklist = computed(() => {
+  const checks = getNewPasswordChecks(usersignUp.password);
+  const errors = content.value.errors;
+  return [
+    { label: errors.passwordMinLength, met: checks.minLength },
+    { label: errors.passwordMixedCase, met: checks.mixedCase },
+    { label: errors.passwordNumber, met: checks.number },
+    { label: errors.passwordSpecialCharacter, met: checks.specialCharacter },
+    { label: errors.passwordTrailingSpace, met: checks.noTrailingSpace },
+  ];
+});
+
+const passwordIssueMessage = (issue: string) => {
+  const errors = content.value.errors;
+  const messages: Record<string, string> = {
+    required: errors.passwordRequired,
+    tooShort: errors.passwordMinLength,
+    trailingSpace: errors.passwordTrailingSpace,
+    mixedCase: errors.passwordMixedCase,
+    number: errors.passwordNumber,
+    specialCharacter: errors.passwordSpecialCharacter,
+  };
+  return messages[issue] ?? null;
+};
+
 watch(
   () => usersignUp.password,
   (password) => {
-    // Validate Password
-    if (password) {
-      if (password.length < 6) {
-        usersignUp.controller.errors.password = content.value.errors.passwordMinLength;
-      } else {
-        usersignUp.controller.errors.password = null;
-      }
-    } else {
-      usersignUp.controller.errors.password = null;
-    }
+    const issue = getNewPasswordIssue(password);
+    usersignUp.controller.errors.password = issue && issue !== 'required'
+      ? passwordIssueMessage(issue)
+      : null;
   }
 );
 
 // confirm password watching
 watch(
-  () => usersignUp.confirm_password,
-  (confirmPassword) => {
+  [() => usersignUp.password, () => usersignUp.confirm_password],
+  ([, confirmPassword]) => {
     if (confirmPassword) {
       if (usersignUp.confirm_password !== usersignUp.password) {
         usersignUp.controller.errors.confirm_password = content.value.errors.confirmPassword;
@@ -2441,7 +2469,9 @@ onMounted(async () => {
           ]">
             <div class="flex items-center w-full">
               <input :type="showPassword ? 'text' : 'password'" id="password" v-model="usersignUp.password"
-                name="password" autocomplete="off"
+                name="password" autocomplete="new-password"
+                aria-describedby="signup-password-requirements signup-password-error"
+                :aria-invalid="!!usersignUp.controller.errors.password"
                 class="w-full p-1 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 :placeholder="content.passwordPlaceholder" />
               <button type="button" aria-label="Toggle password visibility" @click="togglePassword">
@@ -2449,8 +2479,17 @@ onMounted(async () => {
                   class="w-5 h-5 text-textGray" />
               </button>
             </div>
+            <ul id="signup-password-requirements" class="w-full space-y-1 text-smallest">
+              <li v-for="item in passwordChecklist" :key="item.label" class="flex items-start gap-2"
+                :class="item.met ? 'text-green-700' : 'text-textGray/70'">
+                <span aria-hidden="true">{{ item.met ? '✓' : '○' }}</span>
+                <span class="sr-only">{{ item.met ? content.errors.requirementMet : content.errors.requirementNotMet }}:</span>
+                <span>{{ item.label }}</span>
+              </li>
+            </ul>
             <!-- Password error message -->
-            <small v-if="usersignUp.controller.errors.password" class="w-full text-red-500 text-smallest">
+            <small v-if="usersignUp.controller.errors.password" id="signup-password-error"
+              class="w-full text-red-500 text-smallest">
               {{ usersignUp.controller.errors.password }}
             </small>
           </div>
@@ -2460,7 +2499,7 @@ onMounted(async () => {
             class="flex flex-col items-center gap-2 mb-3 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue">
             <div class="flex items-center justify-between w-full">
               <input :type="showConfirmPassword ? 'text' : 'password'" id="confirm_password"
-                v-model="usersignUp.confirm_password" name="confirm_password" autocomplete="off"
+                v-model="usersignUp.confirm_password" name="confirm_password" autocomplete="new-password"
                 class="w-full p-1 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                 :placeholder="content.confirmPasswordPlaceholder" />
               <button type="button" aria-label="Toggle confirm password visibility" @click="toggleConfirmPassword">
@@ -2477,8 +2516,9 @@ onMounted(async () => {
           </div>
 
           <!-- Sign Up Button -->
-          <button type="submit" :aria-busy="usersignUp.controller.isSent === 'pending' ? 'true' : 'false'"
-            class="w-full p-2 text-white transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80">
+          <button type="submit" :disabled="usersignUp.controller.isSent === 'pending'"
+            :aria-busy="usersignUp.controller.isSent === 'pending' ? 'true' : 'false'"
+            class="w-full p-2 text-white transition-all duration-500 rounded-md cursor-pointer bg-oceanBlue hover:bg-oceanBlue/80 disabled:cursor-not-allowed disabled:opacity-70">
             <!-- submited successful -->
             <div class="flex items-center justify-center gap-2"
               v-if="usersignUp.controller.isSent === 'success' && usersignUp.controller.isSubmitted">
@@ -2487,8 +2527,8 @@ onMounted(async () => {
             </div>
             <div class="flex items-center justify-center gap-2"
               v-else-if="usersignUp.controller.isSent === 'pending' && usersignUp.controller.isSubmitted">
+              <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></span>
               {{ content.signingUp }}
-              <Icon name="eos-icons:loading" class="w-5 h-5 text-white cursor-pointer" size="16" aria-hidden="true" />
             </div>
 
             <div class="flex items-center justify-center gap-2"

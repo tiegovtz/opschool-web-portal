@@ -63,7 +63,11 @@ const messages = {
         hasLowercase: "At least one lowercase letter",
         hasNumber: "At least one number",
         hasSpecialChar: "At least one special character",
-        hasMinLength: "At least 6 characters",
+        hasMinLength: "At least 8 characters",
+        noTrailingSpace: "Password cannot end with a space",
+        mixedCase: "Use uppercase and lowercase letters",
+        number: "Include at least one number",
+        specialCharacter: "Include at least one special character",
       },
       
       // Form validation error messages

@@ -102,6 +102,8 @@ const userSignIn = reactive({
 
 // Sign In Function
 const signIn = async () => {
+  if (isDisable.value || userSignIn.controller.attemps >= 3) return;
+
   // Reset error messages first
   userSignIn.controller.errors.username = "";
   userSignIn.controller.errors.password = "";
@@ -123,9 +125,6 @@ const signIn = async () => {
   if (isValid) {
     // Form is valid, proceed with submission
     isDisable.value = true;
-    if (userSignIn.controller.attemps == 3) {
-      return;
-    }
 
     // send data
     try {
@@ -152,9 +151,6 @@ const signIn = async () => {
       }
 
       userSignIn.controller.feedback = content.value.feedback.authenticated;
-
-      // unlock button
-      isDisable.value = false;
 
       userSignIn.controller.feedback = content.value.feedback.authenticated;
       userSignIn.controller.isSucces = true;
@@ -216,7 +212,8 @@ const signIn = async () => {
           : returnPath.value;
       const landingChoiceHome = consumePostLoginHome();
       const fallbackHubPath = getHubPath(hubEducationLevel.value);
-      router.replace(redirectPath || landingChoiceHome || fallbackHubPath || "/secondary");
+      await router.replace(redirectPath || landingChoiceHome || fallbackHubPath || "/secondary");
+      isDisable.value = false;
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = content.value.errors.invalidCredentials;
@@ -399,9 +396,13 @@ watch(
 
         <!-- Sign in button -->
         <button type="submit" :disabled="isDisable" :aria-disabled="isDisable ? 'true' : 'false'"
+          :aria-busy="isDisable ? 'true' : 'false'"
           class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
           <span v-if="!isDisable">{{ content.signIn }}</span>
-          <span v-else>{{ content.signingIn }}</span>
+          <template v-else>
+            <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></span>
+            <span>{{ content.signingIn }}</span>
+          </template>
         </button>
 
         <p class="sr-only" role="status" aria-live="assertive" aria-atomic="true">
