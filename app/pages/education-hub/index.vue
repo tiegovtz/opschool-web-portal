@@ -875,7 +875,7 @@ const handleSubjectSelect = async (
           aria-label="Grid layout"
           :class="[
             'cursor-pointer transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+            layoutEffect == 'grid' ? '!text-oceanBlue':'text-darkBlue',
           ]"
         >
           <Icon
@@ -890,7 +890,7 @@ const handleSubjectSelect = async (
           aria-label="List layout"
           :class="[
             'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
-            layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+            layoutEffect === 'list' ? '!text-oceanBlue':'text-darkBlue',
           ]"
         >
           <Icon
