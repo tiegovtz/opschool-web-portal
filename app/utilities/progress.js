@@ -1,9 +1,10 @@
-export const updateChapterProgress = async () => {
+export const updateChapterProgress = async (progress) => {
     await $fetch("/api/progress/update-progress",{
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
         },
+        body: progress,
     }).then((response) => {
         return response;
     }).catch((error) => {

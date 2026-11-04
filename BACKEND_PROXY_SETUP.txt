@@ -7,7 +7,7 @@ Configuration:
 - NUXT_BACKEND_API_BASE_URL optionally overrides the proxy's upstream API root at server runtime. Keep it consistent with VITE_API_BASE_URL when also using direct server-side integrations.
 - Empty runtime overrides are ignored. The proxy uses NUXT_BACKEND_API_BASE_URL, then the server's VITE_API_BASE_URL, then the build-time default. The selected URL must be an absolute HTTP(S) API root with no query or fragment.
 - The local /v1 namespace maps to the entire configured upstream base path, including a custom version prefix.
-- NUXT_CSRF_ENABLED is false by default. Set it to true to fetch /auth/csrf-token before proxied POST/PUT/PATCH/DELETE requests and send its token as x-csrf-token with an XSRF-TOKEN cookie. Enable it only when that backend endpoint is available.
+- NUXT_CSRF_ENABLED is true by default. Before proxied POST/PUT/PATCH/DELETE requests, the portal fetches /auth/csrf-token and forwards its token as x-csrf-token with the backend-issued csrf_token cookie. Set it to false only for a backend that does not require CSRF.
 - Restart Nuxt after changing environment settings.
 - A 503 from /api/backend/v1 means the selected backend URL is missing or malformed; a 400 means the request path was rejected.
 

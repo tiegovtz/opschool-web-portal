@@ -46,6 +46,14 @@ export function backendRequestHeaders(source: Headers, accessToken?: string) {
   }
   return target;
 }
+
+/** Forward only the CSRF cookie issued with this token, never portal cookies. */
+export function backendCsrfCookie(headers: Headers) {
+  const csrfCookie = headers.getSetCookie().find(cookie => /^csrf_token=/i.test(cookie));
+  const pair = csrfCookie?.split(';', 1)[0];
+  if (!pair || /[\r\n]/.test(pair)) throw new Error('Backend did not issue a valid CSRF cookie.');
+  return pair;
+}
 export function backendResponseHeaders(source: Headers) {
   const target = new Headers({ 'cache-control': 'private, no-store' });
   for (const key of responseHeaders) { const value = source.get(key); if (value) target.set(key, value); }

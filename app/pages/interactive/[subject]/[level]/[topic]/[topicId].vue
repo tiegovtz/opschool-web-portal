@@ -445,7 +445,7 @@ const syncChapterActivityMetrics = () => {
 
 const persistActivityProgressUpdate = async () => {
   syncChapterActivityMetrics();
-  await updateChapterProgress();
+  await updateChapterProgress(chapterProgress.value);
 };
 
 const markActivityAttempted = async (activityId: string) => {
@@ -644,7 +644,7 @@ const getChapter = async (chapterId: string) => {
         (chapterProgress.value as any)?.userId === (userToken.value as any)?._id &&
         (chapterProgress.value as any)?.chapterId === chapterId
       ) {
-        tasks.push(updateChapterProgress());
+        tasks.push(updateChapterProgress(chapterProgress.value));
       }
 
       await Promise.allSettled(tasks);
@@ -1034,16 +1034,16 @@ const observerContent = () => {
         // update progress
         switch (progress) {
           case 25:
-            updateChapterProgress();
+            updateChapterProgress(chapterProgress.value);
             break;
           case 50:
-            updateChapterProgress();
+            updateChapterProgress(chapterProgress.value);
             break;
           case 75:
-            updateChapterProgress();
+            updateChapterProgress(chapterProgress.value);
             break;
           case 100:
-            updateChapterProgress();
+            updateChapterProgress(chapterProgress.value);
             break;
           default:
             break;
@@ -1199,16 +1199,16 @@ watch(scrollPercent, async (newPercent) => {
 
   switch (newPercent) {
     case 25:
-      updateChapterProgress();
+      updateChapterProgress(chapterProgress.value);
       break;
     case 50:
-      updateChapterProgress();
+      updateChapterProgress(chapterProgress.value);
       break;
     case 75:
-      updateChapterProgress();
+      updateChapterProgress(chapterProgress.value);
       break;
     case 100:
-      updateChapterProgress();
+      updateChapterProgress(chapterProgress.value);
       break;
     default:
       break;

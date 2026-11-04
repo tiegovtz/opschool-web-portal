@@ -51,19 +51,33 @@ export const proxyLearnerProgressJson = async <T>(
   options: ProxyJsonOptions = {},
 ): Promise<T> => {
   const authToken = getLearnerProgressAuthToken(event);
-  const response = await fetch(buildLearnerProgressUrl(url, options.query), {
+  const upstream = new URL(buildLearnerProgressUrl(url, options.query));
+  const apiBase = new URL(apiDocs.requestBaseURL);
+  const basePath = apiBase.pathname.replace(/\/+$/, "");
+  if (upstream.origin !== apiBase.origin || !upstream.pathname.startsWith(`${basePath}/`)) {
+    throw createError({ statusCode: 500, message: "Invalid learner progress API URL" });
+  }
+  const proxyUrl = `/api/backend/v1${upstream.pathname.slice(basePath.length)}${upstream.search}`;
+  const response = await $fetch.raw(proxyUrl, {
     method: options.method ?? "GET",
     headers: {
       Authorization: `Bearer ${authToken}`,
       "Content-Type": "application/json",
     },
-    body:
-      options.body === undefined ? undefined : JSON.stringify(options.body),
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    ignoreResponseError: true,
   });
 
-  if (!response.ok) {
-    const message =
-      (await response.text().catch(() => "")) || response.statusText;
+  if (response.status >= 400) {
+    const data = response._data;
+    const backendMessage = typeof data === "object" && data !== null && "message" in data
+      ? data.message
+      : undefined;
+    const message = typeof data === "string"
+      ? data
+      : typeof backendMessage === "string"
+        ? backendMessage
+        : response.statusText;
 
     throw createError({
       statusCode: response.status,
@@ -75,7 +89,7 @@ export const proxyLearnerProgressJson = async <T>(
     return null as T;
   }
 
-  return (await response.json()) as T;
+  return response._data as T;
 };
 
 export { apiDocs };

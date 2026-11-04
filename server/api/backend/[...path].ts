@@ -3,6 +3,7 @@ import {
   backendProxyBaseUrl,
   backendProxyTarget,
   backendRequestHeaders,
+  backendCsrfCookie,
   backendResponseHeaders,
 } from '../../../shared/backend/proxy';
 
@@ -124,22 +125,14 @@ export default defineEventHandler(async (event) => {
   }, REQUEST_TIMEOUT);
 
   let response: Response;
-
   try {
     // ------------------------------------------------
-    // CSRF TOKEN INTEGRATION (TEMPORARILY DISABLED)
-    //
-    // The NestJS endpoint:
-    // GET v1/auth/csrf-token
-    //
-    // was removed from the backend API.
-    //
-    // Keep this implementation for future restoration
-    // when the backend CSRF endpoint becomes available.
+    // Obtain a token and its matching cookie from the backend for each
+    // state-changing request. The proxy does not forward browser cookies.
     // ------------------------------------------------
 
     if (
-      process.env.NUXT_CSRF_ENABLED?.trim().toLowerCase() === 'true' &&
+      process.env.NUXT_CSRF_ENABLED?.trim().toLowerCase() !== 'false' &&
       ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
     ) {
       const csrfUrl = backendProxyTarget(
@@ -209,7 +202,6 @@ export default defineEventHandler(async (event) => {
       }
 
       const csrfToken = csrfData.csrfToken;
-
       if (
         typeof csrfToken !== 'string' ||
         !csrfToken ||
@@ -222,11 +214,7 @@ export default defineEventHandler(async (event) => {
       }
 
       headers.set('x-csrf-token', csrfToken);
-
-      headers.set(
-        'cookie',
-        `XSRF-TOKEN=${encodeURIComponent(csrfToken)}`,
-      );
+      headers.set('cookie', backendCsrfCookie(csrfResponse.headers));
     }
 
     // ------------------------------------------------
@@ -241,7 +229,6 @@ export default defineEventHandler(async (event) => {
       redirect: 'manual',
       signal: controller.signal,
     });
-
   } catch (error) {
     throw createError({
       statusCode: 502,

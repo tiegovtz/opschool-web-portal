@@ -1,21 +1,6 @@
-import apiDocs from "~/utilities/apiDocs";
-
 export default defineEventHandler(async (event) => {
   const auth_token = getCookie(event, "signInAccessToken");
-  const progressCookie = getCookie(event, "chapterProgress");
-
-  let progress = null;
-
-  if (progressCookie) {
-    try {
-      progress = JSON.parse(progressCookie);
-    } catch (error) {
-      throw createError({
-        statusCode: 400,
-        message: "Invalid chapter progress cookie payload",
-      });
-    }
-  }
+  const progress = await readBody(event);
 
   if (!auth_token) {
     throw createError({
@@ -24,19 +9,16 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (!progress?.chapterId) {
+  if (!progress || typeof progress !== "object" || !progress.chapterId) {
     throw createError({
       statusCode: 400,
-      message: "Bad request: No chapter progress provided",
+      message: "Bad request: No chapter progress provided in request body",
     });
   }
 
   try {
     return await $fetch(
-      apiDocs.progressTracking.putProgresschapterId.replaceAll(
-        "{chapterId}",
-        progress.chapterId,
-      ),
+      `/api/backend/v1/progress/chapters/${encodeURIComponent(String(progress.chapterId))}`,
       {
         method: "PUT",
         headers: {

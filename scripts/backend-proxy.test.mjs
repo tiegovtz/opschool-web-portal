@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { backendProxyBaseUrl, backendProxyTarget, backendRequestHeaders, backendResponseHeaders } from '../shared/backend/proxy.ts';
+import { backendProxyBaseUrl, backendProxyTarget, backendRequestHeaders, backendCsrfCookie, backendResponseHeaders } from '../shared/backend/proxy.ts';
 
 test('proxy ignores empty deployment overrides and uses the server API URL', () => {
   assert.equal(backendProxyBaseUrl('', 'https://backend.example/api/v1', 'https://build.example/v1'), 'https://backend.example/api/v1');
@@ -35,6 +35,13 @@ test('proxy uses the access-token cookie when no usable authorization header is 
   const explicit = backendRequestHeaders(new Headers({ authorization: 'Bearer explicit-token' }), 'cookie-token');
   assert.equal(explicit.get('authorization'), 'Bearer explicit-token');
   assert.equal(backendRequestHeaders(new Headers()).has('authorization'), false);
+});
+test('proxy forwards the backend-issued CSRF cookie without its attributes or other cookies', () => {
+  const headers = new Headers();
+  headers.append('set-cookie', 'session=secret; Path=/; HttpOnly');
+  headers.append('set-cookie', 'csrf_token=signed-token; Path=/; SameSite=Strict');
+  assert.equal(backendCsrfCookie(headers), 'csrf_token=signed-token');
+  assert.throws(() => backendCsrfCookie(new Headers({ 'set-cookie': 'XSRF-TOKEN=wrong-name' })));
 });
 test('proxy disables caching and strips compression, length and upstream cookie headers', () => {
   const headers = backendResponseHeaders(new Headers({ 'cache-control': 'public, max-age=3600', 'content-type': 'application/json', 'content-length': '50', 'content-encoding': 'gzip', 'set-cookie': 'server=secret', 'content-range': 'bytes 0-99/500' }));
