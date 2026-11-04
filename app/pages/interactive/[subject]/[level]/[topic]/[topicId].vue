@@ -736,7 +736,7 @@ try {
         name: firstChapter.name,
         chapterNo: firstChapter.chapterNo,
       });
-      getChapter(firstChapterId);
+      if (import.meta.client) getChapter(firstChapterId);
     } else {
       chapters.notesStatus = "empty";
       announcement.value = "No content available for this topic";
@@ -760,7 +760,7 @@ try {
 }
 
 // Call Submit Topic Viewed Read
-if (chapters.status === 'success' && !userViewedTopic.value) {
+if (import.meta.client && chapters.status === 'success' && !userViewedTopic.value) {
   try {
     await topicViewedRead(topicId);
   } catch (error) {
