@@ -8,6 +8,7 @@ import {
   rationalize as mathRationalize,
   evaluate as mathEvaluate,
 } from "mathjs";
+import { buildTextbookContext } from "../../utils/textbookContext";
 import { fetchCombinedRAGContext } from "../../utils/rag";
 import apiDocs from "~/utilities/apiDocs";
 import type { Syllabus } from "~/types/syllabus.interface";
@@ -1064,35 +1065,7 @@ IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "
           };
         }
 
-        // Prioritize "content" chunks over "exercise" chunks, build context from parentContent
-        const sorted = [...results].sort((a, b) => {
-          if (a.chunkType === "content" && b.chunkType !== "content") return -1;
-          if (a.chunkType !== "content" && b.chunkType === "content") return 1;
-          return (b.score || 0) - (a.score || 0);
-        });
-
-        const contextParts: string[] = [];
-        let totalChars = 0;
-        const maxChars = 5000;
-
-        for (const result of sorted) {
-          // Use parentContent (richer context) when available, fall back to content
-          const text = result.parentContent || result.content || "";
-          if (!text.trim()) continue;
-
-          const citation = result.citation || result.parentCitation || "Unknown source";
-          const source = result.source || "";
-          const score = result.score ? `Relevance: ${result.score.toFixed(2)}` : "";
-
-          const header = [source, citation, score].filter(Boolean).join(" | ");
-          const chunk = `[${header}]\n${text.trim()}`;
-
-          if (totalChars + chunk.length > maxChars) break;
-          contextParts.push(chunk);
-          totalChars += chunk.length;
-        }
-
-        const context = contextParts.join("\n\n---\n\n");
+        const context = buildTextbookContext(results, rawQuery);
 
         if (!context.trim()) {
           return {
