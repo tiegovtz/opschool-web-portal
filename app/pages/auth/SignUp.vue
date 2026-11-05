@@ -868,7 +868,7 @@ const signUp = async () => {
         return;
       }
 
-      const response = await $fetch.raw('/api/auth/sign-up', {
+      const response = await $fetch.raw(apiDocs.auth.signUp, {
         method: "POST",
         body: typeKey == 'Student' ?
           {

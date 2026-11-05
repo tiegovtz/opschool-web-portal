@@ -1,3 +1,5 @@
+import { fetchBackendWithCsrf } from './fetchBackendWithCsrf';
+
 /**
  * Machine Learning Books API Client
  *
@@ -122,7 +124,7 @@ async function request<T>(
   }
   let response: Response;
   try {
-    response = await fetch(fullUrl, init);
+    response = await fetchBackendWithCsrf(base, fullUrl, init);
   } catch (err: unknown) {
     const timeoutMsg = `request timed out after ${REQUEST_TIMEOUT_MS / 1000}s`;
     const isAbort =
@@ -237,7 +239,7 @@ export async function createBook(formData: FormData, accessToken: string): Promi
   const signal = createTimeoutSignal(REQUEST_TIMEOUT_MS);
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetchBackendWithCsrf(base, url, {
       method: "POST",
       headers,
       body: formData,

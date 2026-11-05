@@ -1,34 +1,20 @@
-import apiDocs from "~/utilities/apiDocs";
-
 export default defineEventHandler(async (event) => {
-    try {
-         
-        // Parse request body
-        const body = await readBody(event);
-        const url = apiDocs.auth.login;  
-
-        // Make the request to the external API
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" }, // Ensure proper headers
-            body: JSON.stringify(body), // Stringify body properly
-        });
-
-        if (!response.ok) {
-            throw createError({
-                statusCode: response.status,
-                statusMessage: `HTTP error! Status: ${response.status}`
-            });
-        }
-
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error("API Error:", error);
-
+    const response = await $fetch.raw('/api/backend/v1/auth/login', {
+        method: 'POST',
+        body: await readBody(event),
+        ignoreResponseError: true,
+    });
+    if (response.status >= 400) {
+        const data = response._data;
         throw createError({
-            statusCode: 500,
-            statusMessage: "Internal Server Error"
+            statusCode: response.status,
+            statusMessage: typeof data?.message === 'string'
+                ? data.message
+                : typeof data?.error === 'string'
+                    ? data.error
+                    : response.statusText,
+            data,
         });
     }
+    return response._data;
 });
