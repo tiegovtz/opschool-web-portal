@@ -4,7 +4,7 @@ import {
   stepCountIs,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { studentTools, setAuthTokenForTools, runWithUsedFigureShortcodes } from "./utils/tools";
+import { studentTools, createTextbookSearchTool, setAuthTokenForTools, runWithUsedFigureShortcodes } from "./utils/tools";
 import {
   convertChatMessagesToModel,
   extractAttachmentTextContent,
@@ -94,10 +94,10 @@ You may ONLY answer questions that are directly about this chapter: "${chapterNa
 
 CRITICAL RULES - Chapter Scope:
 0. Form Level & Cultural Appropriateness (NON-NEGOTIABLE):
-   - You MUST ONLY support Form 1 and Form 2 questions based on the TIE syllabus.
-   - If the student is Form 3+ or asks about other levels, respond: "I can only help with Form 1 and Form 2 topics based on the TIE syllabus. Which one are you studying?"
-   - If the level is unclear: when the user has asked a direct question (e.g. about a topic, concept, or subject), do NOT ask what level they are in—infer subject and level from the question where possible (try getSyllabus for the relevant subject at Form 1 or Form 2 as appropriate) and answer directly. Only ask for subject/level when they have NOT asked a direct content question (e.g. greeting, "I need help", or vague request). When you do ask, do NOT say "which form are you in?" or give "Form 1" or "Form 2" as examples.
-   - Respect Tanzanian taboos and culture at all times. Do NOT discuss sexual content, romantic relationships, sexual orientation (e.g., homosexuality/gay topics), or other inappropriate topics for students. If asked, politely refuse and redirect to appropriate Form 1/2 learning topics.
+   - Support the selected class level when matching uploaded textbook material is available.
+   - Use searchTextbooks with the subject and class level. If the tool needs clarification, ask for it; never silently use another level.
+   - If the selected lesson has no class level, use an explicitly stated level from the question; otherwise ask for the class level before teaching.
+   - Respect Tanzanian taboos and culture at all times. Do NOT discuss sexual content, romantic relationships, sexual orientation (e.g., homosexuality/gay topics), or other inappropriate topics for students. If asked, politely refuse and redirect to appropriate curriculum learning topics.
 1. STRICT CHAPTER BOUNDARIES (NON-NEGOTIABLE):
    - You MUST ONLY answer questions that are directly related to "${chapterName}". Do NOT answer questions about a different subject (e.g. "What is biology?" when this chapter is Physics), a different chapter, or any topic outside this chapter.
    - If the question is off-topic: do NOT give the answer. Politely redirect with a warm, encouraging tone. Example: "That's a great question! Right now I'm here to help you with ${chapterName}, so I'll focus on that so we can get the most out of this chapter. Is there something from ${chapterName} you'd like to go over?"
@@ -226,13 +226,13 @@ How to decide: check the student's message AND the searchTextbooks results. If e
 - Always mention the book title (e.g. "According to Biology Form 1...") but do NOT mention chapter numbers or page numbers.
 
 *** CRITICAL - DIRECT QUESTIONS (DO THIS FIRST) ***
-- When the student asks a direct question (e.g. "What is photosynthesis?", "Explain Newton's laws"): call searchTextbooks IMMEDIATELY with the question. Do NOT ask what level or form they are in. Just search and teach from the results.
-- NEVER say "Which form are you in?", "Are you Form 1 or Form 2?". Just search the textbooks and answer.
+- When the student asks a direct question (e.g. "What is photosynthesis?", "Explain Newton's laws"): call searchTextbooks IMMEDIATELY with the question. Use the selected subject/class or the level stated in their question. If scope is missing, ask a short clarification before teaching.
+- Ask for subject/class only when missing or ambiguous; never silently search across class levels.
 - Always respond to the LATEST user message. If the latest message is only a name, random word, typo, or unclear fragment, do NOT continue the previous lesson automatically. Ask a short clarification question instead.
 
 **SUPPORTED LEVELS & CULTURAL APPROPRIATENESS (NON-NEGOTIABLE):**
-- You MUST ONLY support Form 1 and Form 2 topics based on the TIE curriculum.
-- If a student asks about Form 3+ or other levels, respond: "I can only help with Form 1 and Form 2 topics based on the TIE curriculum. Which subject are you studying?"
+- Support class levels in the catalog for which matching uploaded textbook material is available.
+- Always pass subject and class level to searchTextbooks. Ask for missing scope when the tool requests it. Do not infer an arbitrary class level.
 - Respect Tanzanian taboos and culture at all times. Do NOT discuss sexual content, romantic relationships, sexual orientation, or other inappropriate topics for students. If asked, politely refuse and redirect to appropriate learning topics.
 
 **CORE TEACHING PHILOSOPHY:**
@@ -259,9 +259,9 @@ How to decide: check the student's message AND the searchTextbooks results. If e
 5. Competence-based check question (REQUIRED): tests whether the student can apply/explain/give an example—never yes/no
 
 **When students ask questions - YOUR WORKFLOW:**
-1. Call searchTextbooks with the student's question immediately. Do NOT ask for level or subject first.
+1. Call searchTextbooks with the student's question and selected subject/class. If the tool requests missing scope, ask a short clarification.
 2. If searchTextbooks returns results (found: true): Teach ONLY from that content. Mention the book title but no chapter/page numbers. You may add Tanzanian examples and simplify the language, but do not add facts beyond what the textbook says.
-3. If searchTextbooks returns NO results (found: false): Tell the student honestly that you don't have information about that topic in your textbooks. Suggest they rephrase or ask about a different topic. Do NOT answer from your own knowledge.
+3. If searchTextbooks returns found: false, follow its message/instruction: ask for missing scope, explain a temporary search failure, or state that no matching textbook material was found. Do NOT answer from your own knowledge.
 4. Call getChapterFigures if appropriate to include images.
 
 **When students start without a question:**
@@ -348,7 +348,7 @@ Math computation and diagram generation are mechanical — they don't come from 
 **1. searchTextbooks** (MANDATORY — call for every student question)
    - CALL THIS FIRST for every student message
    - WHEN RESULTS FOUND (found: true): Teach ONLY from the returned textbook content. Mention the book title but no chapter/page numbers.
-   - WHEN NO RESULTS (found: false): Tell the student honestly: "I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic." Do NOT answer from your own knowledge.
+   - WHEN found: false: follow the tool instruction for missing scope, temporary search failure, or no matching material. Do NOT answer from your own knowledge.
 
 **2. getChapterFigures** - Get images/diagrams for a chapter/topic
    - Call when teaching to include relevant images
@@ -363,7 +363,7 @@ Math computation and diagram generation are mechanical — they don't come from 
 - Call searchTextbooks FIRST for every message, then teach from results. Call getChapterFigures for images if relevant.
 - Student asks about available subjects → Call getSubjects
 - searchTextbooks returns found: true → Teach from textbook content ONLY. Cite sources.
-- searchTextbooks returns found: false → Tell the student the topic is not in your textbooks. Do NOT answer from your own knowledge.
+- searchTextbooks returns found: false → Follow its instruction for clarification, retry, or missing material. Do NOT answer from your own knowledge.
 
 **NON-ENGLISH QUESTIONS:**
 - If the student writes in Kiswahili or another language, still call searchTextbooks — translate the key topic to English for the search query.
@@ -384,10 +384,10 @@ MANDATORY TOOL USAGE (Subject Teacher - no figures)
 You have access to these tools. Use them APPROPRIATELY. You do NOT have access to image/figure tools—teach with text only.
 
 **SUPPORTED LEVELS (NON-NEGOTIABLE):**
-- You MUST ONLY answer Form 1 and Form 2 questions based on the TIE syllabus.
-- If a student asks about Form 3+ or other levels, respond: "I can only help with Form 1 and Form 2 topics based on the TIE syllabus. Which one are you studying?"
-- Direct question → answer immediately; never ask "Form 1 or Form 2?". Only when they did not ask a content question, ask for subject/year in neutral words.
-- Respect Tanzanian taboos and culture at all times. Do NOT discuss sexual content, romantic relationships, sexual orientation (e.g., homosexuality/gay topics), or other inappropriate topics for students. If asked, politely refuse and redirect to appropriate Form 1/2 learning topics.
+- Answer from uploaded textbooks for the selected subject and class level.
+- If matching textbooks are unavailable, explain that the library has no supporting material for that subject/class yet.
+- Direct question → retrieve supporting textbook passages for the selected subject/class before answering. Ask for missing subject/class if needed.
+- Respect Tanzanian taboos and culture at all times. Do NOT discuss sexual content, romantic relationships, sexual orientation (e.g., homosexuality/gay topics), or other inappropriate topics for students. If asked, politely refuse and redirect to appropriate curriculum learning topics.
 
 **1. searchTextbooks** - Search uploaded textbooks for information
    - CALL THIS for every student message
@@ -578,7 +578,7 @@ export default defineEventHandler(async (event) => {
 
   const openai = getOpenAIClient(apiKey);
 
-  const toolsForRequest = { ...studentTools } as typeof studentTools;
+  const toolsForRequest = { ...studentTools, searchTextbooks: createTextbookSearchTool({ subject, level }, authToken) } as typeof studentTools;
 
   if (validChapterName) {
     // Subject teacher (chapter-scoped): no figures tool

@@ -9,7 +9,7 @@ import {
   evaluate as mathEvaluate,
 } from "mathjs";
 import { buildTextbookContext } from "../../utils/textbookContext";
-import { fetchCombinedRAGContext } from "../../utils/rag";
+import { loadTextbookCatalog, resolveTextbookScope, type TextbookScope } from "../../utils/textbookScope";
 import apiDocs from "~/utilities/apiDocs";
 import type { Syllabus } from "~/types/syllabus.interface";
 
@@ -976,7 +976,12 @@ Coordinates are in SVG pixel space (origin top-left). Keep within the declared w
     }),
   }),
 
-  searchTextbooks: tool({
+  searchTextbooks: createTextbookSearchTool(),
+};
+
+
+export function createTextbookSearchTool(selectedScope: TextbookScope = {}, authToken?: string) {
+  return tool({
     description: `Search uploaded textbooks (external RAG) for factual information about a topic.
 
 WHEN TO USE THIS TOOL:
@@ -1006,6 +1011,15 @@ IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "
         };
       }
 
+      let filters: { classLevel: string; subject: string };
+      try {
+        const catalog = await loadTextbookCatalog(apiDocs.baseURL, authToken);
+        filters = resolveTextbookScope({ subject, level }, selectedScope, catalog);
+      } catch (error: any) {
+        return { found: false, context: "", message: error.message,
+          instruction: "Ask the student to clarify the subject/class if needed, or retry if the catalog is unavailable. Do not answer from other levels or general knowledge." };
+      }
+
       try {
         const config = useRuntimeConfig();
         const ragApiBaseUrl = config.ragApiBaseUrl || "http://opschool.tie.go.tz:5002";
@@ -1016,6 +1030,7 @@ IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "
         // Call the advanced RAG search endpoint (POST /rag/query)
         const ragRequestBody: Record<string, any> = {
           query: rawQuery,
+          ...filters,
           topK: 5,
           useQueryExpansion: true,
           useMultiQuery: true,
@@ -1024,14 +1039,6 @@ IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "
           returnParent: true,
         };
 
-        // Note: subject/classLevel filters are NOT passed to the RAG API
-        // because the tool receives text names (e.g. "physics") while the RAG
-        // API expects database IDs. The query expansion and hybrid search
-        // already find the right content without explicit filters.
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
         const ragResponse = await fetch(`${ragApiBaseUrl}/rag/query`, {
           method: "POST",
           headers: {
@@ -1039,10 +1046,8 @@ IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "
             "X-API-Key": insightsApiKey,
           },
           body: JSON.stringify(ragRequestBody),
-          signal: controller.signal,
+          signal: AbortSignal.timeout(15000),
         });
-
-        clearTimeout(timeoutId);
 
         if (!ragResponse.ok) {
           const errorText = await ragResponse.text().catch(() => "");
@@ -1089,37 +1094,6 @@ IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "
             "You MUST use the context above to answer. Mention the book title (e.g. 'According to [Book Title]...') but do NOT mention chapter numbers or page numbers. Do NOT use information outside this context.",
         };
       } catch (error: any) {
-        // If RAG API fails, fall back to the old external RAG
-        try {
-          const queryContext =
-            subject || level
-              ? { subject: subject || undefined, level: level || undefined }
-              : undefined;
-
-          const ragResult = await fetchCombinedRAGContext(query.trim(), currentAuthToken, queryContext, {
-            useLocal: false,
-            useExternal: true,
-            preferExternal: true,
-          });
-
-          if (ragResult.context && ragResult.context.trim().length > 0) {
-            let context = ragResult.context;
-            if (context.length > 3500) {
-              context = context.slice(0, 3500).trimEnd() + "...";
-            }
-            return {
-              found: true,
-              query: query,
-              source: ragResult.source,
-              context: context,
-              instruction:
-                "You MUST use the context above to answer. Mention the book title (e.g. 'According to [Book Title]...') but do NOT mention chapter numbers or page numbers. Do NOT use information outside this context.",
-            };
-          }
-        } catch {
-          // Both failed
-        }
-
         return {
           found: false,
           query: query,
@@ -1127,8 +1101,9 @@ IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "
           message:
             "An error occurred while searching textbooks. Please try again.",
           context: "",
+          instruction: "Textbook search is unavailable. Ask the student to retry; do not substitute unsupported textbook content.",
         };
       }
     },
-  }),
-};
+  });
+}
