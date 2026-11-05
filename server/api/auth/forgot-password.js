@@ -4,10 +4,11 @@ export default defineEventHandler(async (event) => {
         body: await readBody(event),
         ignoreResponseError: true,
     });
-    if (response.status >= 400) {
-        const data = response._data;
+    const data = response._data;
+    const bodyStatus = Number(data?.statusCode);
+    if (response.status >= 400 || (bodyStatus >= 400 && bodyStatus < 600)) {
         throw createError({
-            statusCode: response.status,
+            statusCode: response.status >= 400 ? response.status : bodyStatus,
             statusMessage: typeof data?.message === 'string'
                 ? data.message
                 : typeof data?.error === 'string'
