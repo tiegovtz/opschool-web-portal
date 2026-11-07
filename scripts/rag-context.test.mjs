@@ -92,3 +92,15 @@ test('retrieval query: curriculum questions yes, greetings and math no, follow-u
   );
   assert.equal(buildRetrievalQuery([user('hi')]), null);
 });
+
+test('a short message with its own topic is not joined to the previous question', async () => {
+  const { buildRetrievalQuery } = await import('../server/utils/chatRetrieval.ts');
+  const history = (latest) => [
+    { role: 'user', content: 'At what time does the kiboko leaf close its stomata?' },
+    { role: 'assistant', content: 'At 4 PM.' },
+    { role: 'user', content: latest },
+  ];
+  assert.equal(buildRetrievalQuery(history('Explain how volcanoes form')), 'Explain how volcanoes form');
+  assert.match(buildRetrievalQuery(history('explain more')), /kiboko leaf.*explain more/);
+  assert.match(buildRetrievalQuery(history('kwa nini?')), /kiboko leaf.*kwa nini/);
+});
