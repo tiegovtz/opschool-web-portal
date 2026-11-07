@@ -1,10 +1,15 @@
-import { defineEventHandler, readBody, getCookie, setHeader } from "h3";
+import { defineEventHandler, readBody, createError } from "h3";
 import {
   streamText,
   stepCountIs,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { studentTools, setAuthTokenForTools, runWithUsedFigureShortcodes } from "./utils/tools";
+import { createStudentTools, runWithUsedFigureShortcodes } from "./utils/tools";
+import { searchTextbookPassages, normalizeFilterId, type TextbookSearchOutcome } from "../utils/textbookSearch";
+import { buildRetrievalQuery, looksLikeNoMatchAnswer } from "../utils/chatRetrieval";
+import type { RagCitation } from "../utils/ragContext";
+import { readSessionToken } from "../utils/sessionAuth";
+import { CHAT_ERROR_PREFIX, classifyChatError, logChatError } from "../utils/chatErrors";
 import {
   convertChatMessagesToModel,
   extractAttachmentTextContent,
@@ -352,6 +357,7 @@ Math computation and diagram generation are mechanical — they don't come from 
 
 **2. getChapterFigures** - Get images/diagrams for a chapter/topic
    - Call when teaching to include relevant images
+   - ALWAYS pass \`query\` = the student's own words for what they want to see (e.g. "hand lens"). Figures are found by meaning, so "hand lens" finds "A simple microscope" even though the words differ. Never refuse a figure request just because the book uses another name.
    - IF FIGURES RETURNED (found: true): Include at least one [image:shortcode] from the figures array
    - IF NO FIGURES (found: false): Do NOT mention images at all
    - FORMAT: [image:<exact shortcode>] — no markdown image syntax
@@ -366,7 +372,8 @@ Math computation and diagram generation are mechanical — they don't come from 
 - searchTextbooks returns found: false → Tell the student the topic is not in your textbooks. Do NOT answer from your own knowledge.
 
 **NON-ENGLISH QUESTIONS:**
-- If the student writes in Kiswahili or another language, still call searchTextbooks — translate the key topic to English for the search query.
+- If the student writes in Kiswahili or another language, still call searchTextbooks with the student's own words first (Kiswahili and Historia books are written in Kiswahili).
+- If that finds nothing and the subject is not Kiswahili or Historia, search once more with the key topic in English.
 - NEVER skip searchTextbooks because of language.
 
 **CRITICAL:**
@@ -404,7 +411,8 @@ You have access to these tools. Use them APPROPRIATELY. You do NOT have access t
 - Teaching this chapter → Teach with text only; do NOT use or mention images/figures/diagrams.
 
 **NON-ENGLISH QUESTIONS:**
-- If the student writes in Kiswahili or another language, still call searchTextbooks — translate the key topic to English for the search query.
+- If the student writes in Kiswahili or another language, still call searchTextbooks with the student's own words first (Kiswahili and Historia books are written in Kiswahili).
+- If that finds nothing and the subject is not Kiswahili or Historia, search once more with the key topic in English.
 - NEVER skip searchTextbooks because of language.
 
 **IMPORTANT:**
@@ -487,18 +495,51 @@ function extractRequestContext(event: any, body: any) {
     event.headers.get("X-Topic") ||
     body?.topic || "";
   
+  // Insights filters need IDs. Accept explicit ID fields, or subject/level values
+  // that already are IDs; display names are ignored by normalizeFilterId.
+  const classLevelId = normalizeFilterId(
+    body?.classLevelId || event.headers.get("x-class-level-id") || level,
+  );
+  const subjectId = normalizeFilterId(
+    body?.subjectId || event.headers.get("x-subject-id") || subject,
+  );
+
   const chapterNoHeader = event.headers.get("x-chapter-no") || event.headers.get("X-Chapter-No");
   const chapterNo = chapterNoHeader ? parseInt(chapterNoHeader) : body?.chapterNo ?? null;
   
-  const authToken = getCookie(event, "signInAccessToken") ||
-    event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
-    event.headers.get("Authorization")?.replace("Bearer ", "").trim() ||
-    body?.authToken || undefined;
+  // Same token the ai-auth middleware validated (cookie, else Bearer header).
+  const authToken = readSessionToken(event);
   
-  return { chapterName, subject, level, topic, chapterNo, authToken };
+  return { chapterName, subject, level, topic, chapterNo, authToken, classLevelId, subjectId };
 }
 
-// Decision logic moved to server/utils/aiDecision.ts
+const SEARCH_FAILURE_INSTRUCTIONS = `
+
+*** TEXTBOOK SEARCH FAILURES (OVERRIDES THE "NOT IN MY TEXTBOOKS" RULES) ***
+- If searchTextbooks returns searchError: true, or the TEXTBOOK PASSAGES section says textbook search is unavailable, the search itself failed. This says NOTHING about whether the topic is in the textbooks.
+- In that case tell the student: "Textbook search is unavailable right now. Please try again in a few minutes." (Kiswahili: "Utafutaji wa vitabu haupatikani kwa sasa. Tafadhali jaribu tena baada ya dakika chache.")
+- NEVER say "I don't have information about that topic in my textbooks" after a search error, and never present an answer as coming from the textbooks when the search failed.`;
+
+function formatPreRetrieval(outcome: TextbookSearchOutcome): string {
+  if (outcome.status === "found") {
+    return `
+
+================================================================================
+TEXTBOOK PASSAGES (already retrieved for the student's latest message)
+================================================================================
+${outcome.context}
+
+These passages count as a searchTextbooks call for the latest message: teach from them and mention the book title. Only call searchTextbooks again if you need a different topic than these passages cover.`;
+  }
+  if (outcome.status === "not_found") {
+    return `
+
+TEXTBOOK PASSAGES: a textbook search for the student's latest message found nothing. You may call searchTextbooks once with a better query; if that also finds nothing, follow the found: false rules.`;
+  }
+  return `
+
+TEXTBOOK PASSAGES: textbook search is unavailable right now (technical error). Follow the TEXTBOOK SEARCH FAILURES rules.`;
+}
 
 function buildFinalPrompt(basePrompt: string, chapterName: string | undefined): string {
   let prompt = basePrompt;
@@ -521,6 +562,8 @@ function buildFinalPrompt(basePrompt: string, chapterName: string | undefined): 
     prompt += TOOL_USAGE_INSTRUCTIONS;
   }
 
+  prompt += SEARCH_FAILURE_INSTRUCTIONS;
+
   return prompt;
 }
 
@@ -534,6 +577,14 @@ export default defineEventHandler(async (event) => {
     messages.push({ role: "user", content: body.question });
   }
 
+  if (messages.length === 0) {
+    throw createError({
+      statusCode: 400,
+      message: "No message to answer.",
+      data: { code: "validation", reason: "empty_message" },
+    });
+  }
+
   validateMessageAttachments(messages, {
     maxImageBytes: 5 * 1024 * 1024,
     maxPdfBytes: 10 * 1024 * 1024,
@@ -543,11 +594,17 @@ export default defineEventHandler(async (event) => {
 
   const apiKey = useRuntimeConfig().openaiApiKey;
   if (!apiKey) {
-    throw new Error("Missing OpenAI API key");
+    console.error("[chat] OPENAI_API_KEY is not configured");
+    throw createError({
+      statusCode: 503,
+      message: "The AI service is not configured.",
+      data: { code: "provider" },
+    });
   }
 
   // initilaize data
-  const { chapterName, subject, level, topic, chapterNo, authToken } = extractRequestContext(event, body);
+  const { chapterName, subject, level, topic, chapterNo, authToken, classLevelId, subjectId } =
+    extractRequestContext(event, body);
 
   const validChapterName = chapterName && chapterName.trim() && chapterName !== "this competence"
   ? chapterName.trim()
@@ -573,12 +630,34 @@ export default defineEventHandler(async (event) => {
     
     const basePrompt = getCachedSystemPrompt(validChapterName, context);
     let systemPrompt = buildFinalPrompt(basePrompt, chapterName);
-    
-    setAuthTokenForTools(authToken);
 
   const openai = getOpenAIClient(apiKey);
 
-  const toolsForRequest = { ...studentTools } as typeof studentTools;
+  const ragFilters = { classLevel: classLevelId, subject: subjectId };
+
+  // Server-side retrieval: search the textbooks for curriculum questions before
+  // the model runs, so grounding does not depend on the model choosing the tool.
+  const retrievalQuery = buildRetrievalQuery(messages);
+  const preRetrieval: TextbookSearchOutcome | null = retrievalQuery
+    ? await searchTextbookPassages(retrievalQuery, { ...ragFilters, caller: "chat" })
+    : null;
+  if (preRetrieval) systemPrompt += formatPreRetrieval(preRetrieval);
+
+  // Citations from the pre-retrieval and from any follow-up tool searches.
+  const citations = new Map<string, RagCitation>();
+  const addCitations = (items: RagCitation[]) => {
+    for (const item of items) {
+      const key = `${item.book}\u0000${item.chapter}`.toLowerCase();
+      if (!citations.has(key)) citations.set(key, item);
+    }
+  };
+  if (preRetrieval?.status === "found") addCitations(preRetrieval.citations);
+
+  // Built per request so the student's token never leaks into another chat.
+  const toolsForRequest = createStudentTools(authToken, {
+    ragFilters,
+    onCitations: addCitations,
+  });
 
   if (validChapterName) {
     // Subject teacher (chapter-scoped): no figures tool
@@ -617,8 +696,34 @@ export default defineEventHandler(async (event) => {
     },
   };
 
+  let answerText = "";
+
   return runWithUsedFigureShortcodes(usedFigureShortcodes, () => {
-    const result = streamText(modelInput as any);
-    return result.toUIMessageStreamResponse();
+    const result = streamText({
+      ...(modelInput as any),
+      onError: ({ error }: { error: unknown }) => {
+        logChatError("chat", error, {
+          mode: validChapterName ? "chapter" : "general",
+          retrieval: preRetrieval?.status ?? "skipped",
+        });
+      },
+    });
+    return result.toUIMessageStreamResponse({
+      // The client maps this code to a specific, localized message.
+      onError: (error) => `${CHAT_ERROR_PREFIX}${classifyChatError(error)}`,
+      // Sent with the finish event, after any tool searches have run.
+      messageMetadata: ({ part }) => {
+        // Collect the answer text so sources are only listed when the answer
+        // actually used the textbooks (not for "I don't have information…").
+        if (part.type === "text-delta") {
+          answerText += String((part as any).text ?? (part as any).delta ?? "");
+          return undefined;
+        }
+        if (part.type === "finish" && citations.size > 0 && !looksLikeNoMatchAnswer(answerText)) {
+          return { citations: [...citations.values()].slice(0, 6) };
+        }
+        return undefined;
+      },
+    });
   });
 });

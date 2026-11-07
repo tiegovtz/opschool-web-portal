@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
+import { describeChatError, isRetryableChatError } from "~/utilities/chatErrorMessage";
 const contentLayoutLanguage = useContentLayoutLanguage();
 const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
 
@@ -35,6 +36,7 @@ const isBusy = computed(
   () => props.chat?.status === "submitted" || props.chat?.status === "streaming",
 );
 const isChatError = computed(() => props.chat?.status === "error");
+const canRetryChatError = computed(() => isRetryableChatError(props.chat?.error));
 const retryLastMessage = () => {
   props.chat?.regenerate?.();
 };
@@ -58,9 +60,7 @@ const labels = computed(() => ({
   questionHelp: isSwahili.value
     ? "Bonyeza Enter kutuma swali lako. Bonyeza Shift Enter kuanza mstari mpya. Unaweza pia kuambatisha faili za PDF, maandishi, JSON, markdown, au picha."
     : "Press Enter to submit your question. Press Shift Enter to start a new line. You can also attach PDF, text, JSON, markdown, or image files.",
-  chatErrorMessage: isSwahili.value
-    ? "Jibu halikukamilika, huenda kwa sababu ya mtandao. Jaribu tena."
-    : "The response didn't go through, possibly a connection issue. Try again.",
+  chatErrorMessage: describeChatError(props.chat?.error, isSwahili.value),
   retry: isSwahili.value ? "Jaribu tena" : "Try again",
 }));
 
@@ -338,6 +338,7 @@ onBeforeUnmount(() => {
     >
       <span>{{ labels.chatErrorMessage }}</span>
       <button
+        v-if="canRetryChatError"
         type="button"
         class="shrink-0 rounded-full border border-red-300 bg-white px-3 py-1 font-medium text-red-600 transition hover:bg-red-100"
         @click="retryLastMessage"

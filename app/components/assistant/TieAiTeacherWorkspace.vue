@@ -184,6 +184,7 @@ const convertToChatMessage = (msg: ChatMessage) => ({
   role: msg.role,
   parts: msg.parts || [{ type: "text", text: msg.content }],
   content: msg.content,
+  metadata: msg.metadata,
 });
 
 const getTargetSessionId = () =>
@@ -281,7 +282,9 @@ const saveMessage = async (sessionId: string, message: any) => {
       role: message.role as "user" | "assistant" | "system",
       content,
       parts: message.parts,
-      metadata: { messageId: message.id },
+      metadata: Array.isArray(message.metadata?.citations)
+        ? { messageId: message.id, citations: message.metadata.citations }
+        : { messageId: message.id },
     }, sessionId);
     savedMessageIds.value.add(message.id);
   } catch (error) {

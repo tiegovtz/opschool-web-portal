@@ -1,11 +1,11 @@
 const MALE_NAME_HINTS = new Set([
-  "Kipeto",
-  "Anande",
-  "Mfwimi",
-  "Balongage",
-  "Jontwa",
-  "Shedanga",
-  "Gulila",
+  "kipeto",
+  "anande",
+  "mfwimi",
+  "balongage",
+  "jontwa",
+  "shedanga",
+  "gulila",
   "hakeem",
   "hakim",
   "john",
@@ -26,8 +26,8 @@ const MALE_NAME_HINTS = new Set([
   "frank",
   "brian",
   "george",
-  "Jamal",
-  "Manjana",
+  "jamal",
+  "manjana",
 ]);
 
 const FEMALE_NAME_HINTS = new Set([
@@ -51,13 +51,14 @@ const FEMALE_NAME_HINTS = new Set([
   "sophia",
   "mary",
   "rose",
-  "Libe",
-  "Shamimu",
-  "Sesi",
-  "Fati",
-  "Nyenza",
+  "libe",
+  "shamimu",
+  "sesi",
+  "fati",
+  "nyenza",
 ]);
 
+// Hints are compared against a lowercased name, so they must be lowercase.
 export const inferVoiceTypeByName = (name: string): "male" | "female" => {
   const normalized = String(name || "")
     .trim()

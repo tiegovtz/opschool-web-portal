@@ -410,6 +410,7 @@ export function validateMessageAttachments(
       throw createError({
         statusCode: 400,
         message: `You can attach up to ${options.maxFilesPerMessage} files in a single message.`,
+        data: { code: "validation", reason: "too_many_files" },
       });
     }
 
@@ -423,6 +424,7 @@ export function validateMessageAttachments(
         throw createError({
           statusCode: 400,
           message: "Only PDF, TXT, MD, JSON, JPG, PNG, and WEBP files are supported.",
+          data: { code: "validation", reason: "unsupported_type" },
         });
       }
 
@@ -433,6 +435,7 @@ export function validateMessageAttachments(
         throw createError({
           statusCode: 400,
           message: "Each image must be 5MB or smaller.",
+          data: { code: "validation", reason: "image_too_large" },
         });
       }
 
@@ -440,6 +443,7 @@ export function validateMessageAttachments(
         throw createError({
           statusCode: 400,
           message: "Each PDF must be 10MB or smaller.",
+          data: { code: "validation", reason: "pdf_too_large" },
         });
       }
 
@@ -447,6 +451,7 @@ export function validateMessageAttachments(
         throw createError({
           statusCode: 400,
           message: "Each text document must be 1MB or smaller.",
+          data: { code: "validation", reason: "text_too_large" },
         });
       }
     }
