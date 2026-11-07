@@ -83,3 +83,15 @@ export function buildRetrievalQuery(messages: any[], maxChars = 500): string | n
   if (!isLikelyCurriculumQuestion(latest)) return null;
   return latest.slice(0, maxChars);
 }
+
+const NO_MATCH_RE =
+  /(don'?t|do not|doesn'?t|does not) have (any )?(information|details|content)|not (in|covered in) my textbooks|sina (taarifa|habari|maelezo)|sijapata (taarifa|habari)|haipo katika vitabu/i;
+
+/**
+ * True when the answer says the textbooks do not cover the question. Sources
+ * are not shown for such an answer: the passages that were retrieved turned
+ * out not to answer it, so listing them would suggest they did.
+ */
+export function looksLikeNoMatchAnswer(text: string): boolean {
+  return NO_MATCH_RE.test((text || '').slice(0, 400));
+}

@@ -104,3 +104,10 @@ test('a short message with its own topic is not joined to the previous question'
   assert.match(buildRetrievalQuery(history('explain more')), /kiboko leaf.*explain more/);
   assert.match(buildRetrievalQuery(history('kwa nini?')), /kiboko leaf.*kwa nini/);
 });
+
+test('sources are hidden when the answer says the textbooks do not cover it', async () => {
+  const { looksLikeNoMatchAnswer } = await import('../server/utils/chatRetrieval.ts');
+  assert.equal(looksLikeNoMatchAnswer("I don't have information about that topic in my textbooks yet."), true);
+  assert.equal(looksLikeNoMatchAnswer('Sina taarifa kuhusu mada hiyo katika vitabu vyangu.'), true);
+  assert.equal(looksLikeNoMatchAnswer('According to the Kiboko Test Book, the leaf closes at 4 PM.'), false);
+});

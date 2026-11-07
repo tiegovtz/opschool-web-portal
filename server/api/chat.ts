@@ -6,7 +6,7 @@ import {
 import { createOpenAI } from "@ai-sdk/openai";
 import { createStudentTools, runWithUsedFigureShortcodes } from "./utils/tools";
 import { searchTextbookPassages, normalizeFilterId, type TextbookSearchOutcome } from "../utils/textbookSearch";
-import { buildRetrievalQuery } from "../utils/chatRetrieval";
+import { buildRetrievalQuery, looksLikeNoMatchAnswer } from "../utils/chatRetrieval";
 import type { RagCitation } from "../utils/ragContext";
 import { readSessionToken } from "../utils/sessionAuth";
 import { CHAT_ERROR_PREFIX, classifyChatError, logChatError } from "../utils/chatErrors";
@@ -696,6 +696,8 @@ export default defineEventHandler(async (event) => {
     },
   };
 
+  let answerText = "";
+
   return runWithUsedFigureShortcodes(usedFigureShortcodes, () => {
     const result = streamText({
       ...(modelInput as any),
@@ -710,10 +712,18 @@ export default defineEventHandler(async (event) => {
       // The client maps this code to a specific, localized message.
       onError: (error) => `${CHAT_ERROR_PREFIX}${classifyChatError(error)}`,
       // Sent with the finish event, after any tool searches have run.
-      messageMetadata: ({ part }) =>
-        part.type === "finish" && citations.size > 0
-          ? { citations: [...citations.values()].slice(0, 6) }
-          : undefined,
+      messageMetadata: ({ part }) => {
+        // Collect the answer text so sources are only listed when the answer
+        // actually used the textbooks (not for "I don't have information…").
+        if (part.type === "text-delta") {
+          answerText += String((part as any).text ?? (part as any).delta ?? "");
+          return undefined;
+        }
+        if (part.type === "finish" && citations.size > 0 && !looksLikeNoMatchAnswer(answerText)) {
+          return { citations: [...citations.values()].slice(0, 6) };
+        }
+        return undefined;
+      },
     });
   });
 });
