@@ -18,6 +18,7 @@ import {
   getCachedRecommendations,
   setCachedRecommendations,
 } from "../../utils/recommendationCache";
+import { validateSessionToken } from "../../utils/sessionAuth";
 
 type TopicCandidate = TopicLearningAnalysis;
 
@@ -1257,12 +1258,24 @@ export default defineEventHandler(async (event) => {
     getQuery(event).language
   );
 
-  const userCookie = parseUserCookie(getCookie(event, "signInUserToken"));
-  const cachedUserId = getStringValue(userCookie?._id || userCookie?.id);
-  if (cachedUserId) {
-    const cached = getCachedRecommendations(cachedUserId, language);
-    if (cached) return cached;
+  // Validate the token before touching the cache, and key the cache by the
+  // validated user, not by the client-controlled signInUserToken cookie.
+  const session = await validateSessionToken(authToken);
+  if (session.status === "invalid") createUnauthorizedError();
+  if (session.status === "unavailable") {
+    console.error("[recommendations] could not verify session", { message: session.message });
+    throw createError({
+      statusCode: 503,
+      message: "Your session could not be verified right now. Please try again shortly.",
+    });
   }
+  const validatedUserId = session.user.userId;
+
+  const cached = getCachedRecommendations(validatedUserId, language);
+  if (cached) return cached;
+
+  // Only used for level hints, never for identity.
+  const userCookie = parseUserCookie(getCookie(event, "signInUserToken"));
 
   const profile = await fetchJson<Record<string, any>>(
     apiDocs.auth.profile,
@@ -1275,14 +1288,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const userId = getStringValue(
-    profile._id || profile.id || profile.userId || userCookie?._id || userCookie?.id
-  );
-
-  if (userId) {
-    const cached = getCachedRecommendations(userId, language);
-    if (cached) return cached;
-  }
+  const userId = validatedUserId;
 
   const averageScore = normalizeNullablePercent(
     getFirstNumber(profile, [["questionStats", "averageScore"]])
