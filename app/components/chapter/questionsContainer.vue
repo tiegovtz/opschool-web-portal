@@ -13,6 +13,7 @@ import {
 } from "~/utilities/learnerProgressHistory";
 import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
 import { generateSuggestion } from "~/utilities/linkfy.helper";
+import { parseOrderedQuestionBlocks } from "~/utilities/orderedQuestionBlocks";
 
 // define Props
 const props = defineProps({
@@ -71,6 +72,11 @@ const shuffleList = <T>(items: T[]) =>
     .map(({ item }) => item);
 const route = useRoute();
 const shuffledQuestions = ref<Question[]>([]);
+const resultQuestionBlocks = computed(() =>
+  shuffledQuestions.value.map((question) =>
+    parseOrderedQuestionBlocks(String(question.question ?? "")),
+  ),
+);
 const resultMathKey = computed(() => JSON.stringify({
   questions: shuffledQuestions.value.map((question) => question.question),
   answers: quizAttempt.clickedAnswer,
@@ -377,7 +383,26 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
             <span class="flex rounded-full bg-[#2b7efe] text-white h-6 w-6 p-2 items-center justify-center text-sm">{{
               index + 1 }}</span>
             <div class="pl-4 text-justify flex-1">
-              <p class="mb-2">
+              <div v-if="resultQuestionBlocks[index]" class="mb-2 space-y-3">
+                <template v-for="block in resultQuestionBlocks[index]" :key="block.key">
+                  <p v-if="block.type === 'paragraph'" class="leading-relaxed">
+                    <template v-for="segment in block.segments" :key="segment.key">
+                      <span v-if="segment.type === 'text'">{{ segment.text }}</span>
+                      <span v-else class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle">&nbsp;</span>
+                    </template>
+                  </p>
+                  <div v-else class="flex items-start gap-3 leading-relaxed">
+                    <span class="shrink-0 font-medium">{{ block.marker }}</span>
+                    <div class="flex-1">
+                      <template v-for="segment in block.segments" :key="segment.key">
+                        <span v-if="segment.type === 'text'">{{ segment.text }}</span>
+                        <span v-else class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle">&nbsp;</span>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+              </div>
+              <p v-else class="mb-2">
                 {{
                   isDragAndDropQuestion(question.questionType)
                     ? question.question.replace(/(_\$blank)/g, ' __________ ')
