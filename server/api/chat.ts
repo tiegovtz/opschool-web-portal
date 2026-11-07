@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, getCookie, setHeader } from "h3";
+import { defineEventHandler, readBody, getCookie, createError } from "h3";
 import {
   streamText,
   stepCountIs,
@@ -8,6 +8,7 @@ import { createStudentTools, runWithUsedFigureShortcodes } from "./utils/tools";
 import { searchTextbookPassages, normalizeFilterId, type TextbookSearchOutcome } from "../utils/textbookSearch";
 import { buildRetrievalQuery } from "../utils/chatRetrieval";
 import type { RagCitation } from "../utils/ragContext";
+import { CHAT_ERROR_PREFIX, classifyChatError, logChatError } from "../utils/chatErrors";
 import {
   convertChatMessagesToModel,
   extractAttachmentTextContent,
@@ -578,6 +579,14 @@ export default defineEventHandler(async (event) => {
     messages.push({ role: "user", content: body.question });
   }
 
+  if (messages.length === 0) {
+    throw createError({
+      statusCode: 400,
+      message: "No message to answer.",
+      data: { code: "validation", reason: "empty_message" },
+    });
+  }
+
   validateMessageAttachments(messages, {
     maxImageBytes: 5 * 1024 * 1024,
     maxPdfBytes: 10 * 1024 * 1024,
@@ -587,7 +596,12 @@ export default defineEventHandler(async (event) => {
 
   const apiKey = useRuntimeConfig().openaiApiKey;
   if (!apiKey) {
-    throw new Error("Missing OpenAI API key");
+    console.error("[chat] OPENAI_API_KEY is not configured");
+    throw createError({
+      statusCode: 503,
+      message: "The AI service is not configured.",
+      data: { code: "provider" },
+    });
   }
 
   // initilaize data
@@ -685,8 +699,18 @@ export default defineEventHandler(async (event) => {
   };
 
   return runWithUsedFigureShortcodes(usedFigureShortcodes, () => {
-    const result = streamText(modelInput as any);
+    const result = streamText({
+      ...(modelInput as any),
+      onError: ({ error }: { error: unknown }) => {
+        logChatError("chat", error, {
+          mode: validChapterName ? "chapter" : "general",
+          retrieval: preRetrieval?.status ?? "skipped",
+        });
+      },
+    });
     return result.toUIMessageStreamResponse({
+      // The client maps this code to a specific, localized message.
+      onError: (error) => `${CHAT_ERROR_PREFIX}${classifyChatError(error)}`,
       // Sent with the finish event, after any tool searches have run.
       messageMetadata: ({ part }) =>
         part.type === "finish" && citations.size > 0
