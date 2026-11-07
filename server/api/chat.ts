@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, getCookie, createError } from "h3";
+import { defineEventHandler, readBody, createError } from "h3";
 import {
   streamText,
   stepCountIs,
@@ -8,6 +8,7 @@ import { createStudentTools, runWithUsedFigureShortcodes } from "./utils/tools";
 import { searchTextbookPassages, normalizeFilterId, type TextbookSearchOutcome } from "../utils/textbookSearch";
 import { buildRetrievalQuery } from "../utils/chatRetrieval";
 import type { RagCitation } from "../utils/ragContext";
+import { readSessionToken } from "../utils/sessionAuth";
 import { CHAT_ERROR_PREFIX, classifyChatError, logChatError } from "../utils/chatErrors";
 import {
   convertChatMessagesToModel,
@@ -505,10 +506,8 @@ function extractRequestContext(event: any, body: any) {
   const chapterNoHeader = event.headers.get("x-chapter-no") || event.headers.get("X-Chapter-No");
   const chapterNo = chapterNoHeader ? parseInt(chapterNoHeader) : body?.chapterNo ?? null;
   
-  const authToken = getCookie(event, "signInAccessToken") ||
-    event.headers.get("authorization")?.replace("Bearer ", "").trim() ||
-    event.headers.get("Authorization")?.replace("Bearer ", "").trim() ||
-    body?.authToken || undefined;
+  // Same token the ai-auth middleware validated (cookie, else Bearer header).
+  const authToken = readSessionToken(event);
   
   return { chapterName, subject, level, topic, chapterNo, authToken, classLevelId, subjectId };
 }
