@@ -366,7 +366,8 @@ Math computation and diagram generation are mechanical — they don't come from 
 - searchTextbooks returns found: false → Tell the student the topic is not in your textbooks. Do NOT answer from your own knowledge.
 
 **NON-ENGLISH QUESTIONS:**
-- If the student writes in Kiswahili or another language, still call searchTextbooks — translate the key topic to English for the search query.
+- If the student writes in Kiswahili or another language, still call searchTextbooks with the student's own words first (Kiswahili and Historia books are written in Kiswahili).
+- If that finds nothing and the subject is not Kiswahili or Historia, search once more with the key topic in English.
 - NEVER skip searchTextbooks because of language.
 
 **CRITICAL:**
@@ -404,7 +405,8 @@ You have access to these tools. Use them APPROPRIATELY. You do NOT have access t
 - Teaching this chapter → Teach with text only; do NOT use or mention images/figures/diagrams.
 
 **NON-ENGLISH QUESTIONS:**
-- If the student writes in Kiswahili or another language, still call searchTextbooks — translate the key topic to English for the search query.
+- If the student writes in Kiswahili or another language, still call searchTextbooks with the student's own words first (Kiswahili and Historia books are written in Kiswahili).
+- If that finds nothing and the subject is not Kiswahili or Historia, search once more with the key topic in English.
 - NEVER skip searchTextbooks because of language.
 
 **IMPORTANT:**
@@ -500,6 +502,13 @@ function extractRequestContext(event: any, body: any) {
 
 // Decision logic moved to server/utils/aiDecision.ts
 
+const SEARCH_FAILURE_INSTRUCTIONS = `
+
+*** TEXTBOOK SEARCH FAILURES (OVERRIDES THE "NOT IN MY TEXTBOOKS" RULES) ***
+- If searchTextbooks returns searchError: true, or the TEXTBOOK PASSAGES section says textbook search is unavailable, the search itself failed. This says NOTHING about whether the topic is in the textbooks.
+- In that case tell the student: "Textbook search is unavailable right now. Please try again in a few minutes." (Kiswahili: "Utafutaji wa vitabu haupatikani kwa sasa. Tafadhali jaribu tena baada ya dakika chache.")
+- NEVER say "I don't have information about that topic in my textbooks" after a search error, and never present an answer as coming from the textbooks when the search failed.`;
+
 function buildFinalPrompt(basePrompt: string, chapterName: string | undefined): string {
   let prompt = basePrompt;
 
@@ -520,6 +529,8 @@ function buildFinalPrompt(basePrompt: string, chapterName: string | undefined): 
   } else {
     prompt += TOOL_USAGE_INSTRUCTIONS;
   }
+
+  prompt += SEARCH_FAILURE_INSTRUCTIONS;
 
   return prompt;
 }

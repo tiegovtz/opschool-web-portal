@@ -8,8 +8,8 @@ import {
   rationalize as mathRationalize,
   evaluate as mathEvaluate,
 } from "mathjs";
-import { fetchCombinedRAGContext } from "../../utils/rag";
-import { buildRagContext, truncateAtBoundary, DEFAULT_RAG_CONTEXT_MAX_CHARS } from "../../utils/ragContext";
+import { searchTextbookPassages, type TextbookSearchFilters } from "../../utils/textbookSearch";
+import type { RagCitation } from "../../utils/ragContext";
 import apiDocs from "~/utilities/apiDocs";
 import type { Syllabus } from "~/types/syllabus.interface";
 
@@ -281,7 +281,17 @@ async function fetchSubjectsFromApi(authToken: string | undefined): Promise<any[
  * Build the tool set for one request. The student's token is captured in this
  * closure, so concurrent chats never share (or swap) credentials.
  */
-export function createStudentTools(authToken: string | undefined) {
+export type StudentToolsOptions = {
+  /** Class level / subject IDs from the request, passed to Insights as filters. */
+  ragFilters?: TextbookSearchFilters;
+  /** Called with the book/chapter citations of every successful search. */
+  onCitations?: (citations: RagCitation[]) => void;
+};
+
+export function createStudentTools(
+  authToken: string | undefined,
+  options: StudentToolsOptions = {},
+) {
   return {
   getSyllabus: tool({
     description:
@@ -988,27 +998,30 @@ Coordinates are in SVG pixel space (origin top-left). Keep within the declared w
   }),
 
   searchTextbooks: tool({
-    description: `Search uploaded textbooks (external RAG) for factual information about a topic.
+    description: `Search uploaded textbooks (Insights RAG) for factual information about a topic.
 
 WHEN TO USE THIS TOOL:
 - When a student asks a FACTUAL question about curriculum content (e.g., "What is photosynthesis?", "Explain Newton's laws")
-- When you need ACCURATE information from official textbooks
+- For follow-up questions that need textbook passages not already provided in the TEXTBOOK PASSAGES section of your instructions
 
 WHEN NOT TO USE THIS TOOL:
 - For getting images (use getChapterFigures instead)
 - For listing subjects (use getSubjects instead)
 
-IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "According to [Book Title]..."). Do NOT mention chapter numbers or page numbers.`,
+RESULTS:
+- found: true → teach from "context" and mention the book title.
+- found: false → the textbooks have nothing on this topic.
+- searchError: true → the search itself failed; this says NOTHING about whether the topic is in the textbooks.`,
     inputSchema: z.object({
       query: z
         .string()
         .describe(
-          "The search query - be specific and include the topic/concept you need information about.",
+          "The search query - be specific and include the topic/concept you need information about. Keep the student's language (Kiswahili questions stay in Kiswahili).",
         ),
       subject: z.string().optional().describe("Optional: The subject area."),
       level: z.string().optional().describe("Optional: The education level."),
     }),
-    execute: async ({ query, subject, level }) => {
+    execute: async ({ query }) => {
       if (!query?.trim()) {
         return {
           found: false,
@@ -1017,127 +1030,47 @@ IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "
         };
       }
 
-      try {
-        const config = useRuntimeConfig();
-        const ragApiBaseUrl = config.ragApiBaseUrl || "http://opschool.tie.go.tz:5002";
-        const insightsApiKey = config.insightsApiKey || "";
+      const outcome = await searchTextbookPassages(query, {
+        ...options.ragFilters,
+        caller: "chat-tool",
+      });
 
-        const rawQuery = query.trim();
-
-        // Call the advanced RAG search endpoint (POST /rag/query)
-        const ragRequestBody: Record<string, any> = {
-          query: rawQuery,
-          topK: 5,
-          useQueryExpansion: true,
-          useMultiQuery: true,
-          useHybrid: true,
-          useReranking: false,
-          returnParent: true,
-        };
-
-        // Note: subject/classLevel filters are NOT passed to the RAG API
-        // because the tool receives text names (e.g. "physics") while the RAG
-        // API expects database IDs. The query expansion and hybrid search
-        // already find the right content without explicit filters.
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-        const ragResponse = await fetch(`${ragApiBaseUrl}/rag/query`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-API-Key": insightsApiKey,
-          },
-          body: JSON.stringify(ragRequestBody),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!ragResponse.ok) {
-          const errorText = await ragResponse.text().catch(() => "");
-          throw new Error(
-            `RAG API error ${ragResponse.status}: ${errorText || ragResponse.statusText}`
-          );
-        }
-
-        const ragData = await ragResponse.json();
-        const results: any[] = ragData?.results || [];
-
-        if (results.length === 0) {
-          return {
-            found: false,
-            query: query,
-            message: "No relevant textbook content found for this topic.",
-            context: "",
-            instruction:
-              "Tell the student honestly: 'I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic.' Do NOT answer from your own knowledge.",
-          };
-        }
-
-        // Content chunks first; oversized passages are truncated, never dropped.
-        const { context } = buildRagContext(results);
-
-        if (!context.trim()) {
-          return {
-            found: false,
-            query: query,
-            message: "No relevant textbook content found for this topic.",
-            context: "",
-            instruction:
-              "Tell the student honestly: 'I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic.' Do NOT answer from your own knowledge.",
-          };
-        }
-
-        return {
-          found: true,
-          query: query,
-          source: "rag-api",
-          context: context,
-          queriesUsed: ragData.queriesUsed || [rawQuery],
-          methods: ragData.methods || [],
-          instruction:
-            "You MUST use the context above to answer. Mention the book title (e.g. 'According to [Book Title]...') but do NOT mention chapter numbers or page numbers. Do NOT use information outside this context.",
-        };
-      } catch (error: any) {
-        // If RAG API fails, fall back to the old external RAG
-        try {
-          const queryContext =
-            subject || level
-              ? { subject: subject || undefined, level: level || undefined }
-              : undefined;
-
-          const ragResult = await fetchCombinedRAGContext(query.trim(), authToken, queryContext, {
-            useLocal: false,
-            useExternal: true,
-            preferExternal: true,
-          });
-
-          if (ragResult.context && ragResult.context.trim().length > 0) {
-            const context = truncateAtBoundary(ragResult.context, DEFAULT_RAG_CONTEXT_MAX_CHARS);
-            return {
-              found: true,
-              query: query,
-              source: ragResult.source,
-              context: context,
-              instruction:
-                "You MUST use the context above to answer. Mention the book title (e.g. 'According to [Book Title]...') but do NOT mention chapter numbers or page numbers. Do NOT use information outside this context.",
-            };
-          }
-        } catch {
-          // Both failed
-        }
-
+      if (outcome.status === "error") {
         return {
           found: false,
-          query: query,
-          error: error?.message || "Search failed",
-          message:
-            "An error occurred while searching textbooks. Please try again.",
+          searchError: true,
+          errorCode: outcome.code,
+          query,
           context: "",
+          message: "Textbook search is unavailable right now.",
+          instruction:
+            "Textbook search failed for technical reasons. Tell the student: 'Textbook search is unavailable right now, please try again in a few minutes.' Do NOT say the topic is missing from the textbooks, and do NOT present an answer as coming from the textbooks.",
         };
       }
+
+      if (outcome.status === "not_found") {
+        return {
+          found: false,
+          query,
+          message: "No relevant textbook content found for this topic.",
+          context: "",
+          instruction:
+            "Tell the student honestly: 'I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic.' Do NOT answer from your own knowledge.",
+        };
+      }
+
+      options.onCitations?.(outcome.citations);
+      return {
+        found: true,
+        query,
+        source: "rag-api",
+        context: outcome.context,
+        citations: outcome.citations,
+        queriesUsed: outcome.queriesUsed,
+        methods: outcome.methods,
+        instruction:
+          "You MUST use the context above to answer. Mention the book title (e.g. 'According to [Book Title]...'). Do NOT use information outside this context.",
+      };
     },
   }),
   };
