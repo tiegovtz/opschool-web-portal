@@ -512,8 +512,6 @@ function extractRequestContext(event: any, body: any) {
   return { chapterName, subject, level, topic, chapterNo, authToken, classLevelId, subjectId };
 }
 
-// Decision logic moved to server/utils/aiDecision.ts
-
 const SEARCH_FAILURE_INSTRUCTIONS = `
 
 *** TEXTBOOK SEARCH FAILURES (OVERRIDES THE "NOT IN MY TEXTBOOKS" RULES) ***
