@@ -111,3 +111,12 @@ export function isRetryableChatError(error: unknown): boolean {
   const { kind } = classifyChatClientError(error);
   return kind !== "auth" && kind !== "validation";
 }
+
+/** Localized message for an error code sent in an HTTP error's `data.code`. */
+export function messageForChatErrorCode(code: string, isSwahili: boolean, reason?: string): string {
+  const lang: Lang = isSwahili ? "kiswahili" : "english";
+  if (code === "validation" && reason && VALIDATION_REASONS[reason]) {
+    return VALIDATION_REASONS[reason][lang];
+  }
+  return (MESSAGES[code] ?? MESSAGES.unknown)![lang];
+}
