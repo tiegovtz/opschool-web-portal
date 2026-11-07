@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import axios from "axios";
 import MarkdownIt from "markdown-it";
+import { messageForChatErrorCode } from "~/utilities/chatErrorMessage";
 import { computed, ref, reactive, watch, nextTick } from "vue";
 import TopicCard from "./TopicCard.vue";
 import apiDocs from "~/utilities/apiDocs";
@@ -67,8 +68,6 @@ const localizedContent = computed(() =>
         noResults: "Hakuna matokeo yaliyopatikana kwa",
         searchFailed: "Utafutaji umeshindikana.",
         aiFailed: "Samahani, sikuweza kushughulikia swali lako kwa sasa.",
-        aiErrorPrefix:
-          "Samahani, hitilafu imetokea wakati wa kutengeneza jibu la AI:",
         goToRelatedTopic: "Fungua mada inayohusiana:",
         goToRelatedVideo: "Fungua video inayohusiana:",
         goToRelatedAudio: "Fungua sauti inayohusiana:",
@@ -110,7 +109,6 @@ const localizedContent = computed(() =>
         noResults: "No results found for",
         searchFailed: "Search failed.",
         aiFailed: "Sorry, I couldn't process your question right now.",
-        aiErrorPrefix: "Sorry, I encountered an error generating an AI answer:",
         goToRelatedTopic: "Go to related topic:",
         goToRelatedVideo: "Go to related video:",
         goToRelatedAudio: "Go to related audio:",
@@ -162,6 +160,7 @@ const searchReactive = reactive<{
 // AI search state
 const aiSearchMode = ref(false);
 const aiAnswer = ref("");
+const aiCitations = ref<Array<{ book: string; chapter?: string }>>([]);
 const isLoadingAI = ref(false);
 const isLoadingTraditional = ref(false);
 const showFeedback = ref(false);
@@ -348,6 +347,7 @@ const performAISearch = async () => {
   // Don't clear search results - they may already be displayed from traditional search
   // Only clear AI-specific state
   aiAnswer.value = "";
+  aiCitations.value = [];
   feedbackGiven.value = false;
   showFeedback.value = false;
   // Don't clear relatedContent immediately - will be updated when AI response arrives
@@ -357,15 +357,28 @@ const performAISearch = async () => {
 
     const data = await $fetch<any>(apiDocs.search.aiSearch, {
       method: "POST",
-      body: { query: searchReactive.search && searchReactive.search.trim() },
+      body: {
+        query: searchReactive.search && searchReactive.search.trim(),
+        language: props.language === "kiswahili" ? "kiswahili" : "english",
+      },
       headers: {
         Authorization: `Bearer ${useCookie("signInAccessToken").value || ""}`,
       },
     });
 
-    if (data && data.success && data.answer) {
-      aiAnswer.value = data.answer;
-      showFeedback.value = true;
+    aiCitations.value = Array.isArray(data?.citations) ? data.citations : [];
+
+    if (data && data.success && (data.answer || data.answerError)) {
+      if (data.answer) {
+        aiAnswer.value = data.answer;
+        showFeedback.value = true;
+      } else {
+        aiAnswer.value = messageForChatErrorCode(
+          String(data.answerError?.code || "provider"),
+          props.language === "kiswahili",
+        );
+        showFeedback.value = false;
+      }
 
       // Store related content if available
       if (data.relatedContent) {
@@ -419,15 +432,19 @@ const performAISearch = async () => {
           searchReactive.search as string,
         );
       }
-    } else if (data && data.error) {
-      // Show error message but don't block - traditional results may already be shown
-      aiAnswer.value = `${localizedContent.value.aiErrorPrefix} ${data.error}.`;
+    } else {
+      aiAnswer.value = localizedContent.value.aiFailed;
       showFeedback.value = false;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("[AI Search Frontend] Error:", error);
-    // Show user-friendly error but don't block - traditional results may already be shown
-    aiAnswer.value = localizedContent.value.aiFailed;
+    // Specific, localized message; traditional results may already be shown.
+    const errorCode = error?.data?.data?.code;
+    aiAnswer.value =
+      typeof errorCode === "string"
+        ? messageForChatErrorCode(errorCode, props.language === "kiswahili", error?.data?.data?.reason)
+        : localizedContent.value.aiFailed;
+    aiCitations.value = [];
     showFeedback.value = false;
   } finally {
     isLoadingAI.value = false;
@@ -761,6 +778,12 @@ const mouseOut = () => {
               class="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
               v-html="renderAIAnswer(aiAnswer)"
             ></div>
+            <div v-if="aiCitations.length > 0" class="mt-2 text-xs text-gray-500">
+              <span class="font-medium text-gray-600">{{ props.language === "kiswahili" ? "Vyanzo:" : "Sources:" }}</span>
+              <span v-for="(citation, cIdx) in aiCitations" :key="`${citation.book}-${cIdx}`">
+                {{ cIdx > 0 ? "; " : " " }}{{ citation.book }}<template v-if="citation.chapter"> · {{ citation.chapter }}</template>
+              </span>
+            </div>
 
             <!-- Feedback Section -->
             <div
