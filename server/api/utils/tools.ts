@@ -13,8 +13,6 @@ import { buildRagContext, truncateAtBoundary, DEFAULT_RAG_CONTEXT_MAX_CHARS } fr
 import apiDocs from "~/utilities/apiDocs";
 import type { Syllabus } from "~/types/syllabus.interface";
 
-let currentAuthToken: string | undefined = undefined;
-
 const figureShortcodesStorage = new AsyncLocalStorage<{ usedShortcodes: Set<string> }>();
 
 export function runWithUsedFigureShortcodes<T>(usedShortcodes: Set<string>, fn: () => T): T {
@@ -60,10 +58,6 @@ const SYLLABUS_LEVELS: Array<{
   { _id: "692ff09ae621c5077be40231", name: "Diploma in Pysical Education", educationLevel: { _id: "681afdc3b6583d2ea309f850", name: "Teacher Education" } },
 ];
 
-export function setAuthTokenForTools(token: string | undefined): void {
-  currentAuthToken = token as string;
-}
-
 const resolveApiUrl = (docUrl: string, fallbackPath: string) => {
   const baseUrl = apiDocs.baseURL;
   if (docUrl && !docUrl.includes("undefined")) {
@@ -94,12 +88,13 @@ function resolveLevelNameToIds(levelName: string): { levelId: string; educationL
 async function fetchSyllabusFromApi(
   subjectId: string,
   levelId: string,
-  educationLevelId: string
+  educationLevelId: string,
+  authToken: string | undefined,
 ): Promise<any | null> {
   const url = `${apiDocs.syllabus.getSyllabus}?subject=${encodeURIComponent(subjectId)}&level=${encodeURIComponent(levelId)}&educationLevel=${encodeURIComponent(educationLevelId)}`;
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (currentAuthToken?.trim()) {
-    headers.Authorization = `Bearer ${currentAuthToken.trim()}`;
+  if (authToken?.trim()) {
+    headers.Authorization = `Bearer ${authToken.trim()}`;
   }
   try {
     const res = await fetch(url, { method: "GET", headers });
@@ -238,7 +233,7 @@ function parseSyllabusResponse(rawData: any): {
   return { syllabus: "", competences: [], chapters: [], found: false };
 }
 
-async function fetchSubjectsFromApi(): Promise<any[]> {
+async function fetchSubjectsFromApi(authToken: string | undefined): Promise<any[]> {
   const url = resolveApiUrl(apiDocs.subjects.getSubjects, "/subjects");
   const publicUrl = resolveApiUrl(
     apiDocs.subjects.getPublicSubjects,
@@ -248,8 +243,8 @@ async function fetchSubjectsFromApi(): Promise<any[]> {
     "Content-Type": "application/json",
   };
 
-  if (currentAuthToken?.trim()) {
-    headers.Authorization = `Bearer ${currentAuthToken.trim()}`;
+  if (authToken?.trim()) {
+    headers.Authorization = `Bearer ${authToken.trim()}`;
   }
 
   const extractList = (data: any) => {
@@ -282,7 +277,12 @@ async function fetchSubjectsFromApi(): Promise<any[]> {
   );
 }
 
-export const studentTools = {
+/**
+ * Build the tool set for one request. The student's token is captured in this
+ * closure, so concurrent chats never share (or swap) credentials.
+ */
+export function createStudentTools(authToken: string | undefined) {
+  return {
   getSyllabus: tool({
     description:
       "Fetch the syllabus (competences, chapters, learning activities) for a subject and level. Use when you need to know which chapters exist so you can map the user's question to the right chapter, then call getChapterFigures with that chapter name. Inputs are names only (e.g. biology, Form 2).",
@@ -352,7 +352,8 @@ export const studentTools = {
       const rawData = await fetchSyllabusFromApi(
         subjectId,
         levelIds.levelId,
-        levelIds.educationLevelId
+        levelIds.educationLevelId,
+        authToken,
       );
       if (!rawData) {
         return {
@@ -417,7 +418,7 @@ export const studentTools = {
         let querySubject = subject?.toLowerCase().trim() || null;
         if (!querySubject) {
           try {
-            const subjects = await fetchSubjectsFromApi();
+            const subjects = await fetchSubjectsFromApi(authToken);
             const chapterLower = chapter.toLowerCase();
             const subjectNames = subjects
               .map(
@@ -441,7 +442,7 @@ export const studentTools = {
         }
 
         // Check if authentication token is available
-        if (!currentAuthToken || !currentAuthToken.trim()) {
+        if (!authToken || !authToken.trim()) {
           return {
             found: false,
             error:
@@ -460,10 +461,10 @@ export const studentTools = {
             filterOptions.category = querySubject;
           }
 
-          let figures = await getFigures(filterOptions, currentAuthToken);
+          let figures = await getFigures(filterOptions, authToken);
 
           if (figures.length === 0 && querySubject) {
-            figures = await getFigures({}, currentAuthToken);
+            figures = await getFigures({}, authToken);
           }
 
           images = figures.map((fig: any) => ({
@@ -638,7 +639,7 @@ export const studentTools = {
     }),
     execute: async ({ includeLevels }) => {
       try {
-        const subjects = await fetchSubjectsFromApi();
+        const subjects = await fetchSubjectsFromApi(authToken);
         const normalized = subjects
           .map((subject: any) => ({
             id:
@@ -1107,7 +1108,7 @@ IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "
               ? { subject: subject || undefined, level: level || undefined }
               : undefined;
 
-          const ragResult = await fetchCombinedRAGContext(query.trim(), currentAuthToken, queryContext, {
+          const ragResult = await fetchCombinedRAGContext(query.trim(), authToken, queryContext, {
             useLocal: false,
             useExternal: true,
             preferExternal: true,
@@ -1139,4 +1140,7 @@ IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "
       }
     },
   }),
-};
+  };
+}
+
+export type StudentTools = ReturnType<typeof createStudentTools>;

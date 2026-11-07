@@ -4,7 +4,7 @@ import {
   stepCountIs,
 } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { studentTools, setAuthTokenForTools, runWithUsedFigureShortcodes } from "./utils/tools";
+import { createStudentTools, runWithUsedFigureShortcodes } from "./utils/tools";
 import {
   convertChatMessagesToModel,
   extractAttachmentTextContent,
@@ -573,12 +573,11 @@ export default defineEventHandler(async (event) => {
     
     const basePrompt = getCachedSystemPrompt(validChapterName, context);
     let systemPrompt = buildFinalPrompt(basePrompt, chapterName);
-    
-    setAuthTokenForTools(authToken);
 
   const openai = getOpenAIClient(apiKey);
 
-  const toolsForRequest = { ...studentTools } as typeof studentTools;
+  // Built per request so the student's token never leaks into another chat.
+  const toolsForRequest = createStudentTools(authToken);
 
   if (validChapterName) {
     // Subject teacher (chapter-scoped): no figures tool
