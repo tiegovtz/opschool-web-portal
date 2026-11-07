@@ -68,8 +68,10 @@ export default defineNuxtConfig({
     adtStoreApiKey: "",
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY || "",
-    ragApiBaseUrl:
-      process.env.RAG_API_BASE_URL || "http://opschool.tie.go.tz:5002",
+    // Insights (textbook RAG). No default: an unset URL is reported as
+    // "textbook search unavailable" instead of silently using plain HTTP.
+    // Can also be set at runtime with NUXT_RAG_API_BASE_URL / NUXT_INSIGHTS_API_KEY.
+    ragApiBaseUrl: process.env.RAG_API_BASE_URL || "",
     insightsApiKey: process.env.INSIGHTS_API_KEY || "",
   },
 
