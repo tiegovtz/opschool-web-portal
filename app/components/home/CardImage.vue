@@ -19,7 +19,7 @@ const source = computed(() => {
 watch(source, () => { failedOptimization.value = false; });
 const optimizedSource = computed(() => {
   // Use a configured server-reachable origin for backend uploads when needed.
-  const origin = config.public.imageFetchOrigin?.trim().replace(/\/+$/, "");
+  const origin = String(config.public.imageFetchOrigin || "").trim().replace(/\/+$/, "");
   const publicUploads = "http://41.59.251.166/api/uploads/";
   return origin && source.value.startsWith(publicUploads)
     ? `${origin}/api/uploads/${source.value.slice(publicUploads.length)}`

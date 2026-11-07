@@ -3,6 +3,7 @@ import { ref, watch, nextTick, onUnmounted, onMounted, computed } from "vue";
 import { Chat } from "@ai-sdk/vue";
 import { DefaultChatTransport } from "ai";
 import apiDocs from "~/utilities/apiDocs";
+import { messageForChatErrorCode } from "~/utilities/chatErrorMessage";
 import { normalizeLanguageSupport } from "~/utilities/educationRoute";
 import { tr } from "zod/v4/locales";
 
@@ -1231,12 +1232,18 @@ const askQuestion = async (
       console.warn("Request aborted");
     } else {
       console.error("[AI Subject Teacher] Error:", error);
+      // Never show raw fetch text. "chapter" errors carry a localized message
+      // from /api/ai-assistant/ask; other codes are mapped here (EN/SW).
+      const errorCode = error?.data?.data?.code;
+      const content =
+        errorCode === "chapter" && typeof error?.data?.message === "string"
+          ? error.data.message
+          : typeof errorCode === "string"
+            ? messageForChatErrorCode(errorCode, isSwahili.value, error?.data?.data?.reason)
+            : subjectUi.value.genericError;
       messages.value.push({
         role: "assistant",
-        content:
-          error?.data?.message ||
-          error?.message ||
-          subjectUi.value.genericError,
+        content,
         timestamp: new Date().toLocaleTimeString(),
       });
     }
