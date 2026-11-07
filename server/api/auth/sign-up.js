@@ -1,50 +1,23 @@
-import apiDocs from "~/utilities/apiDocs";
-
 export default defineEventHandler(async (event) => {
-    try {
-         
-        // Parse request body
-        const body = await readBody(event);
-        const url = apiDocs.auth.signUp;  
+    // Keep the older endpoint working through the same CSRF-aware backend proxy.
+    const response = await $fetch.raw('/api/backend/v1/auth/sign-up', {
+        method: 'POST',
+        body: await readBody(event),
+        ignoreResponseError: true,
+    });
 
-        // Make the request to the external API
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" }, // Ensure proper headers
-            body: JSON.stringify(body), // Stringify body properly
-        });
-
-        const responseText = await response.text();
-        let parsedBody = null;
-
-        try {
-            parsedBody = responseText ? JSON.parse(responseText) : null;
-        } catch {
-            parsedBody = responseText || null;
-        }
-
-        if (!response.ok) {
-            throw createError({
-                statusCode: response.status,
-                statusMessage:
-                    parsedBody?.message ||
-                    parsedBody?.error ||
-                    `HTTP error! Status: ${response.status}`,
-                data: parsedBody,
-            });
-        }
-
-        return parsedBody;
-    } catch (error) {
-        console.error("API Error:", error);
-
-        if (error?.statusCode) {
-            throw error;
-        }
-
+    if (response.status >= 400) {
+        const data = response._data;
         throw createError({
-            statusCode: 500,
-            statusMessage: "Internal Server Error"
+            statusCode: response.status,
+            statusMessage: typeof data?.message === 'string'
+                ? data.message
+                : typeof data?.error === 'string'
+                    ? data.error
+                    : response.statusText,
+            data,
         });
     }
+
+    return response._data;
 });

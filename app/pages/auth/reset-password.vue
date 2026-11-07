@@ -1,6 +1,7 @@
 <script setup>
 import messages from "~/utilities/messages";
 import apiDocs from "~/utilities/apiDocs";
+import { getNewPasswordChecks, getNewPasswordIssue } from "~/utilities/newPasswordPolicy";
 
 
 const route = useRoute();
@@ -22,15 +23,39 @@ const userResetPassword = reactive({
     }
 })
 
-const resetPassword = async () => {
+const passwordChecklist = computed(() => {
+    const checks = getNewPasswordChecks(userResetPassword.password);
+    const strength = messages.error.passwordStrength;
+    return [
+        { label: strength.hasMinLength, met: checks.minLength },
+        { label: strength.mixedCase, met: checks.mixedCase },
+        { label: strength.number, met: checks.number },
+        { label: strength.specialCharacter, met: checks.specialCharacter },
+        { label: strength.noTrailingSpace, met: checks.noTrailingSpace },
+    ];
+});
 
-    // check password input is empty
-    if (!userResetPassword.password || userResetPassword.password.trim() == '') {
-        userResetPassword.controller.errors.password = messages.error.form.passwordRequired;
+const passwordIssueMessage = (issue) => {
+    const strength = messages.error.passwordStrength;
+    const issueMessages = {
+        required: messages.error.form.passwordRequired,
+        tooShort: strength.hasMinLength,
+        trailingSpace: strength.noTrailingSpace,
+        mixedCase: strength.mixedCase,
+        number: strength.number,
+        specialCharacter: strength.specialCharacter,
+    };
+    return issueMessages[issue] ?? null;
+};
+
+const resetPassword = async () => {
+    const passwordIssue = getNewPasswordIssue(userResetPassword.password);
+    if (passwordIssue) {
+        userResetPassword.controller.errors.password = passwordIssueMessage(passwordIssue);
         return;
     }
-    // check confirm password input is empty
-    if (!userResetPassword.confirmPassword || userResetPassword.confirmPassword.trim() == '') {
+
+    if (!userResetPassword.confirmPassword || userResetPassword.confirmPassword !== userResetPassword.password) {
         userResetPassword.controller.errors.confirmPassword = messages.error.form.confirmPassword;
         return;
     }
@@ -96,24 +121,17 @@ const resetPassword = async () => {
 watch(
     () => userResetPassword.password,
     (password) => {
-        // Validate Password
-        if (password) {
-            if (password.length < 6) {
-                userResetPassword.controller.errors.password =
-                    messages.error.passwordStrength.hasMinLength;
-            } else {
-                userResetPassword.controller.errors.password = null;
-            }
-        } else {
-            userResetPassword.controller.errors.password = null;
-        }
+        const issue = getNewPasswordIssue(password);
+        userResetPassword.controller.errors.password = issue && issue !== 'required'
+            ? passwordIssueMessage(issue)
+            : null;
     }
 );
 
 // confirm password watching
 watch(
-    () => userResetPassword.confirmPassword,
-    (confirmPassword) => {
+    [() => userResetPassword.password, () => userResetPassword.confirmPassword],
+    ([, confirmPassword]) => {
         if (confirmPassword) {
             if (userResetPassword.confirmPassword !== userResetPassword.password) {
                 userResetPassword.controller.errors.confirmPassword =
@@ -167,7 +185,7 @@ const toggleConfirmPassword = () => {
             </NuxtLink>
             
             <form @submit.prevent="resetPassword"
-                class="px-4 md:h-[200px] h-dvh text-textGray overflow-hidden text-extraSmall">
+                class="px-4 md:min-h-[200px] h-dvh md:h-auto text-textGray overflow-y-auto text-extraSmall">
                 <!-- New Password -->
                 <div :class="[
                     'flex flex-col items-start justify-between px-2 mb-4 border-b border-gray-300 focus-input-icon focus-within:border-oceanBlue',
@@ -175,15 +193,25 @@ const toggleConfirmPassword = () => {
                 ]">
                     <div class="flex items-center w-full">
                         <input :type="showPassword ? 'text' : 'password'" id="password"
-                            v-model="userResetPassword.password" name="password"
+                            v-model="userResetPassword.password" name="password" autocomplete="new-password"
+                            aria-describedby="reset-password-requirements reset-password-error"
+                            :aria-invalid="!!userResetPassword.controller.errors.password"
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                             placeholder="New Password ">
                         <Icon :name="showPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"
                             class="w-5 h-5 cursor-pointer text-textGray" @click="togglePassword" />
                     </div>
+                    <ul id="reset-password-requirements" class="w-full space-y-1 text-smallest">
+                        <li v-for="item in passwordChecklist" :key="item.label" class="flex items-start gap-2"
+                            :class="item.met ? 'text-green-700' : 'text-textGray/70'">
+                            <span aria-hidden="true">{{ item.met ? '✓' : '○' }}</span>
+                            <span class="sr-only">{{ item.met ? 'Met' : 'Not met' }}:</span>
+                            <span>{{ item.label }}</span>
+                        </li>
+                    </ul>
 
                     <!-- New Password error message -->
-                    <small v-if="userResetPassword.controller.errors.password"
+                    <small v-if="userResetPassword.controller.errors.password" id="reset-password-error"
                         class="w-full text-red-500 text-smallest">
                         {{ userResetPassword.controller.errors.password }}
                     </small>
@@ -196,7 +224,7 @@ const toggleConfirmPassword = () => {
                 ]">
                     <div class="flex items-center w-full">
                         <input :type="showConfirmPassword ? 'text' : 'password'" id="password"
-                            v-model="userResetPassword.confirmPassword" name="password"
+                            v-model="userResetPassword.confirmPassword" name="password" autocomplete="new-password"
                             class="w-full py-2 focus:outline-none focus:ring-0 placeholder:text-textGray/40 placeholder:text-xs"
                             placeholder="Confirm Password ">
                         <Icon :name="showConfirmPassword ? 'iconamoon:eye-off-light' : 'iconamoon:eye-thin'"

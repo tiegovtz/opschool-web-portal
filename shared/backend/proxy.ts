@@ -34,10 +34,25 @@ export function backendProxyTarget(baseUrl: string, path: string, search: string
   target.search = search;
   return target;
 }
-export function backendRequestHeaders(source: Headers) {
+export function backendRequestHeaders(source: Headers, accessToken?: string) {
   const target = new Headers();
   for (const key of requestHeaders) { const value = source.get(key); if (value) target.set(key, value); }
+  const authorization = target.get('authorization')?.trim();
+  // Some callers interpolate an absent cookie into the header. Use the actual
+  // access-token cookie in that case, without replacing a real bearer token.
+  const unusableBearer = /^Bearer\s+(?:undefined|null)$/i.test(authorization || '') || /^Bearer\s*$/i.test(authorization || '');
+  if ((!authorization || unusableBearer) && accessToken?.trim()) {
+    target.set('authorization', `Bearer ${accessToken.trim()}`);
+  }
   return target;
+}
+
+/** Forward only the CSRF cookie issued with this token, never portal cookies. */
+export function backendCsrfCookie(headers: Headers) {
+  const csrfCookie = headers.getSetCookie().find(cookie => /^csrf_token=/i.test(cookie));
+  const pair = csrfCookie?.split(';', 1)[0];
+  if (!pair || /[\r\n]/.test(pair)) throw new Error('Backend did not issue a valid CSRF cookie.');
+  return pair;
 }
 export function backendResponseHeaders(source: Headers) {
   const target = new Headers({ 'cache-control': 'private, no-store' });

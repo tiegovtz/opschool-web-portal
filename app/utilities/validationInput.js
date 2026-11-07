@@ -1,3 +1,5 @@
+import { getNewPasswordIssue } from './newPasswordPolicy.js';
+
 /**
  * JavaScript Validation Module
  * 
@@ -12,7 +14,6 @@
 // Validation patterns
 const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const tanzaniaPhoneRegex = /^(?:\+255|0)(6[1-9]|7[1-9]|9[1-9])\d{7}$/;
-const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 const usernameRegex = /^[A-Za-z0-9]+\.[A-Za-z0-9]+$/;
 const premNumberRegex = /^\d{11}$/;
 
@@ -60,7 +61,7 @@ const auth = {
      * @example
      * console.log(auth.isValidPassword("StrongP@ss1")); // true
      */
-    isValidPassword: (password) => passwordPattern.test(password),
+    isValidPassword: (password) => getNewPasswordIssue(password) === null,
 
     /**
      * Analyzes password strength and returns an object indicating which constraints it meets.
@@ -81,11 +82,12 @@ const auth = {
      */
     checkPasswordStrength: (password) => {
         return {
-            hasLowercase: /[a-z]/.test(password),  // At least one lowercase letter
-            hasUppercase: /[A-Z]/.test(password),  // At least one uppercase letter
-            hasNumber: /\d/.test(password),       // At least one number
-            hasSpecialChar: /[@$!%*?&]/.test(password), // At least one special character
-            hasMinLength: password.length >= 8    // At least 8 characters
+            hasLowercase: /\p{Ll}/u.test(password),
+            hasUppercase: /\p{Lu}/u.test(password),
+            hasNumber: /\p{N}/u.test(password),
+            hasSpecialChar: /[^\p{L}\p{N}\s]/u.test(password),
+            hasMinLength: Array.from(password).length >= 8,
+            hasNoTrailingSpace: !password.endsWith(' ')
         };
     },
 

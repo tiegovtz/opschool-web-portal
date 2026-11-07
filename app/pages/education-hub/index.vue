@@ -210,6 +210,7 @@ const subjectEducationLevel = ref<EducationBucket | "">("");
 const seeMoreDetails = ref<string | null>(null); // Initial See More
 const announcement = ref<string>();
 const subjectResolveState = ref({ slug: "", isLoading: false });
+let resettingFilterForTabChange = false;
 const TAB_TO_ROUTE = computed<
   Record<tabs, { path: string; query?: Record<string, any> }>
 >(() => ({
@@ -741,7 +742,9 @@ watch(
     }
 
     // clear filter value on tab change
+    resettingFilterForTabChange = true;
     filterValue.value = {};
+    resettingFilterForTabChange = false;
   },
   { immediate: true },
 );
@@ -785,6 +788,7 @@ watch(
 watch(
   () => filterValue.value,
   (newfilterValue) => {
+    if (resettingFilterForTabChange) return;
     if (Object.keys(newfilterValue).length > 0) {
       // Remove empty or falsy values
       const filteredParams = Object.fromEntries(
@@ -797,6 +801,7 @@ watch(
       fetchData();
     }
   },
+  { flush: "sync" },
 );
 
 // switch tabs
@@ -875,7 +880,7 @@ const handleSubjectSelect = async (
           aria-label="Grid layout"
           :class="[
             'cursor-pointer transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+            layoutEffect == 'grid' ? '!text-oceanBlue':'text-darkBlue',
           ]"
         >
           <Icon
@@ -890,7 +895,7 @@ const handleSubjectSelect = async (
           aria-label="List layout"
           :class="[
             'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
-            layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+            layoutEffect === 'list' ? '!text-oceanBlue':'text-darkBlue',
           ]"
         >
           <Icon
