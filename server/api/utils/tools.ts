@@ -10,6 +10,7 @@ import {
 } from "mathjs";
 import { searchTextbookPassages, type TextbookSearchFilters } from "../../utils/textbookSearch";
 import type { RagCitation } from "../../utils/ragContext";
+import { openAiEmbedder, searchFigures } from "../../utils/figureSearch";
 import apiDocs from "~/utilities/apiDocs";
 import type { Syllabus } from "~/types/syllabus.interface";
 
@@ -422,8 +423,12 @@ export function createStudentTools(
         .string()
         .optional()
         .describe("Subject name to filter figures (e.g. physics, biology, chemistry). Always pass when the conversation is about a specific subject so images match—e.g. biology question → only biology images."),
+      query: z
+        .string()
+        .optional()
+        .describe("The student's own words for what they want to see (e.g. 'hand lens', 'how the heart pumps blood'). Figures are found by meaning, so the student does not need to use the book's exact name (a 'hand lens' finds 'A simple microscope')."),
     }),
-    execute: async ({ chapter, topic, subject }) => {
+    execute: async ({ chapter, topic, subject, query }) => {
       try {
         let querySubject = subject?.toLowerCase().trim() || null;
         if (!querySubject) {
@@ -523,6 +528,49 @@ export function createStudentTools(
           };
         }
 
+        // Find figures by meaning first: match the student's words against every
+        // figure's description, caption, topic and chapter. Exact topic or chapter
+        // names are only the fallback below.
+        let semanticMatches: any[] | null = null;
+        const studentWords = (query || topic || "").trim();
+        if (studentWords) {
+          try {
+            const { getFigures: getAllFigures } = await import("../../utils/figuresApi");
+            const everyFigure = (await getAllFigures({}, authToken)).map((fig: any) => ({
+              figure_number: fig.figure_number || "",
+              caption: fig.alt || "",
+              description: fig.description || "",
+              shortcode: fig.shortcode || "",
+              page_number: fig.page_number || null,
+              chapter: fig.chapterName || "",
+              topic: fig.topicName || "",
+              subject: fig.subjectName || "",
+              path: fig.path || "",
+              paths: fig.paths || [],
+              category: fig.category || "",
+            }));
+            let apiKey = process.env.OPENAI_API_KEY || "";
+            try {
+              apiKey = String((useRuntimeConfig() as any).openaiApiKey || apiKey);
+            } catch {
+              /* outside a request: use the environment value */
+            }
+            const ranked = await searchFigures(studentWords, everyFigure, {
+              limit: 6,
+              embed: apiKey ? openAiEmbedder(apiKey) : undefined,
+            });
+            // Prefer the conversation's subject, but do not hide a better match
+            // from another subject (a hand lens is physics and biology).
+            const preferred = querySubject
+              ? ranked.filter((m) => (m.figure.subject || m.figure.category || "").toLowerCase() === querySubject)
+              : ranked;
+            const best = preferred.length > 0 ? preferred : ranked;
+            if (best.length > 0) semanticMatches = best.map((m) => m.figure);
+          } catch (error: any) {
+            console.warn("[getChapterFigures] semantic figure search failed:", error?.message || error);
+          }
+        }
+
         // Syllabus chapter maps to figures topic (Option 1). Filter by topic only.
         const normalize = (s: string) =>
           (s || "").toLowerCase().trim().replace(/\s+/g, " ");
@@ -560,7 +608,9 @@ export function createStudentTools(
         const hasSpecificTopic =
           !!topic && !!topic.trim() && topic.trim().toLowerCase() !== "all";
         let filtered: any[] = [];
-        if (hasSpecificTopic) {
+        if (semanticMatches) {
+          filtered = semanticMatches;
+        } else if (hasSpecificTopic) {
           filtered = images.filter((img: any) => matchesTopicAgainst(img, topic));
           filtered = applySubjectFilter(filtered);
         }
@@ -570,7 +620,7 @@ export function createStudentTools(
         // topic was given and genuinely had no match - otherwise this substitutes
         // an unrelated, generic chapter-level image (e.g. a campfire photo for an
         // "inertia" question) instead of correctly showing no image at all.
-        if (filtered.length === 0 && !hasSpecificTopic) {
+        if (filtered.length === 0 && !hasSpecificTopic && !semanticMatches) {
           filtered = images.filter((img: any) => matchesTopicAgainst(img, chapter));
           filtered = applySubjectFilter(filtered);
         }

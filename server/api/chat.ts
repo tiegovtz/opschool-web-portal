@@ -357,6 +357,7 @@ Math computation and diagram generation are mechanical — they don't come from 
 
 **2. getChapterFigures** - Get images/diagrams for a chapter/topic
    - Call when teaching to include relevant images
+   - ALWAYS pass \`query\` = the student's own words for what they want to see (e.g. "hand lens"). Figures are found by meaning, so "hand lens" finds "A simple microscope" even though the words differ. Never refuse a figure request just because the book uses another name.
    - IF FIGURES RETURNED (found: true): Include at least one [image:shortcode] from the figures array
    - IF NO FIGURES (found: false): Do NOT mention images at all
    - FORMAT: [image:<exact shortcode>] — no markdown image syntax
