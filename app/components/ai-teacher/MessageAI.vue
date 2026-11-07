@@ -33,6 +33,24 @@
           </template>
           <!-- Tool calls are hidden from the user - do not display them -->
         </div>
+        <div
+          v-if="citations.length > 0"
+          class="mt-3 border-t border-gray-100 pt-2 text-xs text-gray-500"
+        >
+          <p class="font-medium text-gray-600">{{ isSwahili ? "Vyanzo" : "Sources" }}</p>
+          <ul class="mt-1 space-y-0.5">
+            <li
+              v-for="(citation, cIdx) in citations"
+              :key="`${citation.book}-${citation.chapter}-${cIdx}`"
+              class="flex items-start gap-1"
+            >
+              <Icon name="heroicons:book-open" class="mt-0.5 h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+              <span>
+                {{ citation.book }}<template v-if="citation.chapter"> · {{ citation.chapter }}</template>
+              </span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -40,7 +58,7 @@
 
 <script setup lang="ts">
 import MarkdownIt from "markdown-it";
-import { ref, watch, nextTick, onMounted } from "vue";
+import { ref, watch, nextTick, onMounted, computed } from "vue";
 import { getImageFromShortcode, loadDynamicShortcodes, shortcodesVersion } from "~/utilities/imageShortcodes";
 import { useRouter } from "vue-router";
 import GraphBlock from "./renderers/GraphBlock.vue";
@@ -54,6 +72,36 @@ type Segment =
 
 const md = new MarkdownIt({ html: true, breaks: true, linkify: true });
 const props = defineProps<{ message: any }>();
+const contentLayoutLanguage = useContentLayoutLanguage();
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+
+type Citation = { book: string; chapter: string };
+
+// Book/chapter sources: sent as message metadata by /api/chat, and also present
+// in the output of any searchTextbooks tool call in this message.
+const citations = computed<Citation[]>(() => {
+  const collected: Citation[] = [];
+  const add = (items: unknown) => {
+    if (!Array.isArray(items)) return;
+    for (const item of items as any[]) {
+      if (typeof item?.book !== "string" || !item.book.trim()) continue;
+      collected.push({ book: item.book.trim(), chapter: typeof item.chapter === "string" ? item.chapter.trim() : "" });
+    }
+  };
+  add(props.message?.metadata?.citations);
+  for (const part of props.message?.parts || []) {
+    if (part?.type === "tool-searchTextbooks" && part.state === "output-available") {
+      add(part.output?.citations);
+    }
+  }
+  const seen = new Set<string>();
+  return collected.filter((citation) => {
+    const key = `${citation.book}|${citation.chapter}`.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 6);
+});
 const mathContainer = ref<HTMLElement[]>([]);
 const router = useRouter();
 const shortcodesLoaded = ref(false); // Flag to force re-render when shortcodes are loaded

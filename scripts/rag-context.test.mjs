@@ -76,3 +76,19 @@ test('collectRagCitations strips page suffixes and dedupes', () => {
   ]);
   assert.deepEqual(citations, [{ book: 'Geo F1', chapter: 'Chapter 1, Maps' }]);
 });
+
+test('retrieval query: curriculum questions yes, greetings and math no, follow-ups combined', async () => {
+  const { buildRetrievalQuery, isLikelyCurriculumQuestion } = await import('../server/utils/chatRetrieval.ts');
+  assert.equal(isLikelyCurriculumQuestion('What is osmosis?'), true);
+  assert.equal(isLikelyCurriculumQuestion('Usanisinuru ni nini?'), true);
+  assert.equal(isLikelyCurriculumQuestion('hello'), false);
+  assert.equal(isLikelyCurriculumQuestion('asante sana'), false);
+  assert.equal(isLikelyCurriculumQuestion('plot y = x^2'), false);
+  assert.equal(isLikelyCurriculumQuestion('solve 2x + 3 = 7'), false);
+  const user = (text) => ({ role: 'user', parts: [{ type: 'text', text }] });
+  assert.equal(
+    buildRetrievalQuery([user('What is photosynthesis?'), { role: 'assistant', content: '...' }, user('explain more')]),
+    'What is photosynthesis? explain more',
+  );
+  assert.equal(buildRetrievalQuery([user('hi')]), null);
+});
