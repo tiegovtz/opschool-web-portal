@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import axios from "axios";
 import MarkdownIt from "markdown-it";
+import { sanitizeAiHtml } from "~/utilities/sanitizeHtml";
 import { messageForChatErrorCode } from "~/utilities/chatErrorMessage";
 import { computed, ref, reactive, watch, nextTick } from "vue";
 import TopicCard from "./TopicCard.vue";
@@ -311,7 +312,7 @@ const processMathInText = (text: string) => {
 const aiAnswerContainer = ref(null);
 const renderAIAnswer = (text: string) => {
   if (!text) return "";
-  return processMathInText(text);
+  return sanitizeAiHtml(processMathInText(text));
 };
 
 // Render MathJax after AI answer is updated

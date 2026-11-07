@@ -19,6 +19,7 @@
                 aria-atomic="false"
                 v-html="seg.html"
                 @click="handleLinkClick"
+                @error.capture="hideBrokenAiImage"
               />
               <GraphBlock v-else-if="seg.kind === 'graph' && seg.spec" :spec="seg.spec as any" />
               <ChartBlock v-else-if="seg.kind === 'chart' && seg.spec" :spec="seg.spec as any" />
@@ -58,6 +59,7 @@
 
 <script setup lang="ts">
 import MarkdownIt from "markdown-it";
+import { sanitizeAiHtml, hideBrokenAiImage } from "~/utilities/sanitizeHtml";
 import { ref, watch, nextTick, onMounted, computed } from "vue";
 import { getImageFromShortcode, loadDynamicShortcodes, shortcodesVersion } from "~/utilities/imageShortcodes";
 import { useRouter } from "vue-router";
@@ -400,7 +402,7 @@ const splitIntoSegments = (text: string): Segment[] => {
   while ((m = FENCED_RE.exec(text)) !== null) {
     const before = text.slice(lastIndex, m.index);
     if (before.trim()) {
-      segments.push({ kind: "html", html: processMathInText(before) });
+      segments.push({ kind: "html", html: sanitizeAiHtml(processMathInText(before)) });
     }
     const kind = m[1] as "graph" | "chart" | "geometry" | "steps";
     const raw = (m[2] || "").trim();
@@ -409,13 +411,13 @@ const splitIntoSegments = (text: string): Segment[] => {
       segments.push({ kind, spec });
     } else {
       // fall back to rendering as code block so user sees the issue
-      segments.push({ kind: "html", html: processMathInText("```\n" + raw + "\n```") });
+      segments.push({ kind: "html", html: sanitizeAiHtml(processMathInText("```\n" + raw + "\n```")) });
     }
     lastIndex = m.index + m[0].length;
   }
   const rest = text.slice(lastIndex);
   if (rest.trim() || segments.length === 0) {
-    segments.push({ kind: "html", html: processMathInText(rest) });
+    segments.push({ kind: "html", html: sanitizeAiHtml(processMathInText(rest)) });
   }
   return segments;
 };

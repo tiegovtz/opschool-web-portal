@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from "vue";
+import { sanitizeAiHtml } from "~/utilities/sanitizeHtml";
 
 interface Step { description?: string; expression?: string; latex?: string }
 const props = defineProps<{
@@ -37,7 +38,7 @@ const finalRef = ref<HTMLElement | null>(null);
 
 const renderLatex = (latex: string) => {
   // Wrap for MathJax to pick up inline math
-  return `\\(${latex}\\)`;
+  return sanitizeAiHtml(`\\(${latex}\\)`);
 };
 
 const runMath = async () => {
