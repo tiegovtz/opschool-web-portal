@@ -81,7 +81,7 @@ const setExperimentUrl =()=>{
          <!--    layoutEffect == 'grid' ? 'aspect-video' : 'h-full w-full max-w-[200px]'  -->
         <div tabindex="0" :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
-          layoutEffect == 'grid' ? 'h-32 shrink-0 md:h-[280px]' : 'h-full w-full max-w-[200px]'
+          layoutEffect == 'grid' ? 'h-32 shrink-0 md:h-44' : 'h-full w-full max-w-[200px]'
         ]">
             <CardImage :src="experimentThumbnail" :alt="altText??experimentName"
                 class="object-cover w-full h-full transition-transform duration-500" />
@@ -106,7 +106,7 @@ const setExperimentUrl =()=>{
                 {{ experimentName }}
             </p>
             <p
-                class="mb-2 break-words text-xs text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2 md:text-[1rem]">
+                class="content-card-summary mb-2 break-words text-xs leading-5 text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white md:text-sm">
                 {{ experimentDescription }}
             </p>
 

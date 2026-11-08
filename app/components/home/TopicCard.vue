@@ -99,7 +99,7 @@ const userToken = useCookie('signInUserToken')
   <NuxtLink  v-else :to="topicTarget"
     @click="setTopicToView()" :class="[
       'relative flex min-w-0 overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out md:min-w-[300px]',
-      layoutEffect == 'grid' && modelType === 'card' ? 'flex-col lg:pb-4' : 'flex-col md:flex-row md:h-32',
+      layoutEffect == 'grid' && modelType === 'card' ? 'flex-col h-[300px] md:h-[350px]' : 'flex-col md:flex-row md:h-32',
       { 'cursor-pointer flex-row my-2 pb-0 md:h-20 !max-h-14 ': modelType === 'search' },
     ]"
     :aria-label="`Visit this page to learn more about topic of ${topicTitle}`"
@@ -107,7 +107,7 @@ const userToken = useCookie('signInUserToken')
     <!-- topic image -->
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
-      layoutEffect == 'grid' && modelType === 'card' ? 'h-28 md:h-56' : 'h-28 md:h-auto md:w-full md:max-w-[200px]',
+      layoutEffect == 'grid' && modelType === 'card' ? 'h-28 shrink-0 md:h-44' : 'h-28 md:h-auto md:w-full md:max-w-[200px]',
       { 'md:h-20 !h-full max-w-[80px]': modelType === 'search', },
     ]">
       <CardImage :src="topicImage" tabindex="0" :alt="altText ?? `Image of ${topicTitle}`" :class="[
@@ -125,7 +125,7 @@ const userToken = useCookie('signInUserToken')
 
     <!-- topic information -->
     <div
-      class="min-w-0 flex-1 px-2 transition-all duration-500 ease-in-out bg-white group-hover:bg-deepBlue group-hover:text-white md:px-4">
+      class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white px-2 transition-all duration-500 ease-in-out group-hover:bg-deepBlue group-hover:text-white md:px-4">
       <!-- topic progress bar -->
       <div v-if="userToken && modelType === 'card' && layoutEffect === 'grid'"
         class="flex items-center w-full max-w-full gap-2 mt-2">
@@ -146,14 +146,14 @@ const userToken = useCookie('signInUserToken')
         ]">
           {{ topicTitle }}
         </p>
-        <p v-if="modelType === 'card'" class="hidden text-[1rem] text-black/80 group-hover:text-white line-clamp-2 md:block">
+        <p v-if="modelType === 'card'" class="content-card-summary topic-card-summary text-sm leading-5 text-black/80 group-hover:text-white">
           {{ topicDescription }}
         </p>
       </div>
 
       <!-- topic subject name and metrics -->
       <div v-if="modelType === 'card'"
-        class="flex min-w-0 items-center justify-between gap-1 pt-2 pb-2 text-[10px] text-oceanBlue group-hover:text-white md:text-extraSmall lg:pb-0">
+        class="mt-auto flex min-w-0 items-center justify-between gap-1 pt-2 pb-2 text-[10px] text-oceanBlue group-hover:text-white md:text-extraSmall lg:pb-1">
         <div class="flex min-w-0 items-center gap-1 md:gap-2">
           <IconsMenuBook class="shrink-0" :size="16"/>
           <p class="truncate capitalize">{{ subjectName }}</p>

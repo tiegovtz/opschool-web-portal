@@ -37,6 +37,23 @@
 }
 
 @layer components {
+  .content-card-summary {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+
+  .topic-card-summary {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .topic-card-summary {
+      display: -webkit-box;
+    }
+  }
+
   /* Learn Statistics */
   .stat-card {
     @apply flex flex-col items-center gap-2 p-3 transition-all duration-500 bg-white rounded-md cursor-pointer md:flex-row hover:bg-gray-50 md:gap-0;

@@ -82,7 +82,7 @@ const setVideoToView = () => {
         <!-- Thumbnail section -->
         <div :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? 'h-32 shrink-0 md:h-[280px]' : 'h-full w-full max-w-[200px]'
+            layoutEffect == 'grid' ? 'h-32 shrink-0 md:h-44' : 'h-full w-full max-w-[200px]'
         ]">
             <CardImage :src="videoThumbnail" tabindex="0" :alt="altText ?? videoName.toLowerCase()"
                 :class="[
@@ -110,7 +110,7 @@ const setVideoToView = () => {
                 {{ videoName }}
             </h3>
             <p
-                class="mb-2 line-clamp-2 break-words text-xs text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white md:mb-4 md:text-[1rem]">
+                class="content-card-summary mb-2 break-words text-xs leading-5 text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white md:text-sm">
                 {{ videoDescription }}
             </p>
 
