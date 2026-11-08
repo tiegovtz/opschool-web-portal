@@ -4,10 +4,6 @@ import TopicCard from "~/components/home/TopicCard.vue";
 import LoadingIndicator from "~/components/loading/loadingIndicator.vue";
 import { ref, computed, watch, reactive, nextTick } from "vue";
 import {
-  isGreaterToXL,
-  isGreaterToLG,
-  isGreaterToMD,
-  isGreaterToSM,
   screenWidth,
 } from "@/utilities/controlls";
 import InputsSelection from "~/components/home/InputsSelection.vue";
@@ -192,7 +188,8 @@ watch(
 );
 // current page data
 const currentPage = ref<number>(1);
-const pageSize = ref<number>(12);
+const getPageSize = (width: number) => width >= 1280 ? 12 : width >= 1024 ? 9 : 6;
+const pageSize = ref<number>(getPageSize(screenWidth.value));
 
 // Define Ref state
 const error = ref(); // Initial Error State
@@ -628,17 +625,6 @@ const shuffledSubjectsData = computed(() => {
   return shuffleSubject(data.value as Subjects[]);
 });
 
-//  assigning page size based on screen sizes
-if (isGreaterToXL) {
-  pageSize.value = 12; // 12 topic cards
-} else if (isGreaterToLG) {
-  pageSize.value = 9; // 9 topic cards
-} else if (isGreaterToMD) {
-  pageSize.value = 6; // 6 topic cards per page
-} else {
-  pageSize.value = 4; // 4 topics card per page
-}
-
 // total pages data
 const totalPages = computed(() => {
   if (data && Array.isArray(data.value)) {
@@ -659,19 +645,8 @@ const goToPage = (page: number) => {
 // Watch screen width and update page size accordingly
 watch(
   () => screenWidth.value,
-  () => {
-    if (screenWidth.value >= 1280) {
-      pageSize.value = 12;
-    } else if (screenWidth.value >= 1024 && screenWidth.value < 1280) {
-      pageSize.value = 9;
-    } else if (screenWidth.value >= 768 && screenWidth.value < 1024) {
-      pageSize.value = 6;
-    } else if (screenWidth.value >= 640 && screenWidth.value < 768) {
-      pageSize.value = 4;
-    } else {
-      pageSize.value = 4;
-    }
-
+  (width) => {
+    pageSize.value = getPageSize(width);
     // slice data per page size
     sliceData(
       (currentPage.value - 1) * pageSize.value,
