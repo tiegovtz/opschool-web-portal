@@ -17,7 +17,7 @@ type DropdownOption = {
 };
 
 const props = withDefaults(
-  defineProps<{ educationLevel?: string; selectedSublevel?: string; language?: LanguageSupport; classifications?: AdtClassifications; disabled?: boolean }>(),
+  defineProps<{ educationLevel?: string; selectedSublevel?: string; language?: LanguageSupport; classifications?: AdtClassifications; disabled?: boolean; hideSearch?: boolean; showLabels?: boolean }>(),
   {
     language: "english",
   },
@@ -83,6 +83,9 @@ const content = computed(() =>
         selectSubject: "Chagua somo",
         selectClassFirst: "Chagua somo",
         loading: "Inapakia...",
+        levelLabel: "Ngazi ya elimu",
+        classLabel: "Darasa",
+        subjectLabel: "Somo",
       }
     : {
         selectLevel: "Select education level",
@@ -91,11 +94,16 @@ const content = computed(() =>
         selectSubject: "Select subject",
         selectClassFirst: "Select subject",
         loading: "Loading...",
+        levelLabel: "Education level",
+        classLabel: "Class",
+        subjectLabel: "Subject",
       },
 );
 
 const dropdownButtonClass =
   "h-10 w-full rounded-none border-b border-gray-300 px-2 py-2 text-left text-sm text-gray-700 shadow-none focus:border-oceanBlue disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500";
+const popupDropdownButtonClass =
+  "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-900 shadow-sm focus:border-oceanBlue disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
 
 const emitSelection = () => {
   emit("emitLevel", level.value);
@@ -299,10 +307,11 @@ watch(
   >
     <form
       action=""
-      class="flex flex-col items-center justify-center w-full gap-4 my-5 md:flex-row"
+      class="my-5 flex w-full flex-col items-center justify-center gap-4 md:flex-row"
     >
+      <div v-if="showEducationLevelDropdown" class="w-full">
+      <p v-if="showLabels" class="mb-1 text-xs font-semibold text-slate-700 md:sr-only">{{ content.levelLabel }}</p>
       <CustomDropDownList
-        v-if="showEducationLevelDropdown"
         id="home-education-level"
         :aria-label="content.selectLevel"
         :model-value="level"
@@ -311,10 +320,13 @@ watch(
           (props.classifications ? props.disabled : educationLevelsPending) ? content.loading : content.selectLevel
         "
         :disabled="props.classifications ? props.disabled : educationLevelsPending"
-        :button-class="dropdownButtonClass"
+        :button-class="showLabels ? popupDropdownButtonClass : dropdownButtonClass"
         @update-model-value="onLevelChange"
       />
+      </div>
 
+      <div class="w-full">
+      <p v-if="showLabels" class="mb-1 text-xs font-semibold text-slate-700 md:sr-only">{{ content.classLabel }}</p>
       <CustomDropDownList
         id="home-class-level"
         :aria-label="content.selectClass"
@@ -328,10 +340,13 @@ watch(
             : content.selectLevelFirst
         "
         :disabled="props.disabled || (!props.classifications && !level.trim()) || !classOptions.length"
-        :button-class="dropdownButtonClass"
+        :button-class="showLabels ? popupDropdownButtonClass : dropdownButtonClass"
         @update-model-value="onStandardChange"
       />
+      </div>
 
+      <div class="w-full">
+      <p v-if="showLabels" class="mb-1 text-xs font-semibold text-slate-700 md:sr-only">{{ content.subjectLabel }}</p>
       <CustomDropDownList
         id="home-subject"
         :aria-label="content.selectSubject"
@@ -345,12 +360,14 @@ watch(
             : content.selectClassFirst
         "
         :disabled="props.disabled || (!props.classifications && !level.trim()) || !standard.trim() || !subjectOptions.length"
-        :button-class="dropdownButtonClass"
+        :button-class="showLabels ? popupDropdownButtonClass : dropdownButtonClass"
         @update-model-value="onSubjectChange"
       />
+      </div>
     </form>
 
     <HomeSearchbar
+      v-if="!hideSearch"
       :search-handler="props.classifications ? (value: string) => emit('emitSearch', value) : undefined"
       :language="props.language"
       :education-level="props.educationLevel"

@@ -19,6 +19,7 @@ declare global {
 }
 
 const userToken = useCookie("signInUserToken");
+const searchInputId = `search-input-${useId()}`;
 
 const props = withDefaults(
   defineProps<{
@@ -614,13 +615,13 @@ const mouseOut = () => {
 
               <!-- Search Input -->
               <label
-                for="search-normal"
+                :for="searchInputId"
                 class="sr-only"
                 >{{ localizedContent.searchLabel }}</label
               >
               <input
                 type="text"
-                id="search-normal"
+                :id="searchInputId"
                 @input="inputSearch"
                 v-model="searchReactive.search"
                 :placeholder="
@@ -710,13 +711,13 @@ const mouseOut = () => {
 
               <!-- Search Input -->
               <label
-                for="search-large"
+                :for="searchInputId"
                 class="sr-only"
                 >{{ localizedContent.searchLabel }}</label
               >
               <input
                 type="text"
-                id="search-large"
+                :id="searchInputId"
                 @input="inputSearch"
                 v-model="searchReactive.search"
                 :placeholder="

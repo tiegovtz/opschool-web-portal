@@ -6,7 +6,8 @@ defineProps<{ activeTab?: tabs }>()
 
 <template>
     <div :class="[
-        'grid grid-cols-1 gap-4 my-5 transition-all duration-500 ease-in-out ',
+        'grid gap-3 my-5 transition-all duration-500 ease-in-out md:gap-4',
+        activeTab === 'subjects' || activeTab === 'interactive-contents' ? 'grid-cols-2' : 'grid-cols-1',
         layoutEffect == 'grid' ? ` md:grid-cols-2  xl:grid-cols-3 2xl:grid-cols-4` : '',
     ]">
         <slot name="data" />

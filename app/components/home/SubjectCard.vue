@@ -74,7 +74,7 @@ const setSubjectToView = () => {
     <!-- image -->
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
-      layoutEffect == 'grid' ? 'h-[280px]' : 'w-full max-w-[200px] h-32'
+      layoutEffect == 'grid' ? 'h-32 md:h-[280px]' : 'w-full max-w-[200px] h-32'
     ]">
       <CardImage :src="subjectImage" tabindex="0" :alt="altText ?? `Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110" />
@@ -99,14 +99,14 @@ const setSubjectToView = () => {
       ]">
         <div class="flex min-w-0 flex-col gap-2">
           <p
-            class="text-left text-[1.1rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out">
+            class="text-left text-sm font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out md:text-[1.1rem]">
             {{ subjectName }}
           </p>
         </div>
       </div>
 
       <!-- description -->
-      <p class="text-start text-[1rem] text-black/80 group-hover:text-white line-clamp-2">
+      <p class="hidden text-start text-[1rem] text-black/80 group-hover:text-white line-clamp-2 sm:block">
         {{ subjectDescription }}
       </p>
 
@@ -121,7 +121,7 @@ const setSubjectToView = () => {
         <!-- Total Views -->
         <small class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white">
           <Icon name="flowbite:users-outline" class="text-medium" aria-hidden="true" />
-          <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
+          <p class="text-xs sm:text-sm">{{ calculateTopicMetrics(totalViews) }} Views</p>
         </small>
       </div>
     </div>
@@ -134,7 +134,7 @@ const setSubjectToView = () => {
     <!-- image -->
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
-      layoutEffect == 'grid' ? 'h-56' : 'w-24 h-24'
+      layoutEffect == 'grid' ? 'h-32 md:h-56' : 'w-24 h-24'
     ]">
       <CardImage :src="subjectImage" tabindex="0" :alt="altText ?? `Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110" />
@@ -155,13 +155,13 @@ const setSubjectToView = () => {
       <!-- title & description -->
       <div class="flex items-center justify-between w-full">
         <p
-          class="flex text-[1.1rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out">
+          class="flex min-w-0 text-sm font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out md:text-[1.1rem]">
           {{ subjectName }}
         </p>
 
-        <small class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white">
+        <small class="flex shrink-0 items-center justify-end gap-1 p-1 text-[10px] text-oceanBlue group-hover:text-white md:gap-2 md:p-2">
           <Icon name="flowbite:users-outline" class="text-medium" aria-hidden="true" />
-          <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
+          <p>{{ calculateTopicMetrics(totalViews) }}</p>
         </small>
 
       </div>
