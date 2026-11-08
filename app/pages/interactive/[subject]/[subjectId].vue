@@ -51,7 +51,7 @@ const tabLanguage = computed(() =>
   ),
 );
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value, {}, tabLanguage.value),
+  getEducationRouteQuery(educationLevel.value, typeof route.query.level === "string" ? { level: route.query.level } : {}, tabLanguage.value),
 );
 
 // Define meta info about page
@@ -112,7 +112,7 @@ const getLevels = (data: any[]) => {
 };
 const levelFilterKey = computed(() => subjectSlug.value || "topics");
 const selectedLevel = computed({
-  get: () => currentLevel.value[levelFilterKey.value] || "",
+  get: () => currentLevel.value[levelFilterKey.value] || (typeof route.query.level === "string" ? route.query.level : ""),
   set: (value: string) => {
     currentLevel.value[levelFilterKey.value] = value;
   },
@@ -137,7 +137,7 @@ const filteredTopics = computed(() => {
 const status = ref("pending"); // Initial Status State
 const topic = ref<any[]>([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
-const activeTab = ref<tabs>("subjects");
+const activeTab = ref<tabs>("interactive-contents");
 
 // First, fix the sliceData function
 const sliceData = (start: number, end: number) => {
@@ -333,7 +333,8 @@ watch(selectedLevel, () => {
     <div class="" :class="{ ' animate-pulse': isLoading }">
       <div class="flex flex-col gap-4">
         <!-- Keep hero-style search visible for both logged-in and logged-out -->
-        <HomeSearchbar appearance="not-normal" :language="contentLayoutLanguage" />
+        <div class="hidden md:block"><HomeSearchbar appearance="not-normal" :language="contentLayoutLanguage" /></div>
+        <HomeMobileSubjectContentTools :active-tab="activeTab" :language="tabLanguage" :education-level="educationLevel" @update:selected-level="selectedLevel = $event" @select-tab="switchTab" />
         <TabBar :is-logged-in="isLoggedIn" :active-tab="activeTab" @emit-active-tab="switchTab($event)"
           :subject-title="subjectTitle" :topic-id="subjectId" :tab-group="educationLevel" :language="tabLanguage" />
       </div>
@@ -358,7 +359,7 @@ watch(selectedLevel, () => {
               <!-- Topic Cards are in Grid -->
               <div class="flex flex-col w-full">
 
-                <div class="flex items-center justify-end w-full">
+                <div class="hidden items-center justify-end w-full md:flex">
                   <div class="w-64">
                     <!-- Custom Drop Down -->
                     <CustomDropDownList v-if="availableLevels.length > 1" class="px-2 cursor-pointer"

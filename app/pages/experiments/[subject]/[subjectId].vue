@@ -53,7 +53,7 @@ const language = computed(() =>
   ),
 );
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value, {}, language.value),
+  getEducationRouteQuery(educationLevel.value, typeof route.query.level === "string" ? { level: route.query.level } : {}, language.value),
 );
 
 const buildTabTarget = (tab) => {
@@ -169,7 +169,7 @@ const fetchTopics = async (params) => {
   try {
     status.value = "pending";
     currentPage.value = 1;
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`experiments-${language.value}-${subjectId}`, () => $fetch(apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`experiments-${language.value}-${subjectId}-${JSON.stringify(params ?? {})}`, () => $fetch(apiDocs.experiments.getPublicExperimentsBySubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
@@ -194,7 +194,7 @@ const fetchTopics = async (params) => {
 };
 
 // Call Fetch Topics function
-fetchTopics({});
+fetchTopics({ level: typeof route.query.level === "string" ? route.query.level : undefined });
 
 //  assigning page size based on screen sizes
 pageSize.value = getPageSize();
@@ -241,14 +241,18 @@ watch(totalPages, (pages) => {
 const { progress, isLoading } = useLoadingIndicator();
 
 const contentLayoutLanguage = useContentLayoutLanguage();
+const applyClassFilter = (value) => fetchTopics({ level: value || undefined });
 
 </script>
 
 <template>
   <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
     <main class="" :class="{ ' animate-pulse': isLoading }"  aria-busy="isLoading ? 'true' : 'false'">
-      <HomeSearchbar v-if="userToken" appearance="rounded" :language :education-level="educationLevel" />
-      <HeroSection v-else :language :education-level="educationLevel" />
+      <div class="hidden md:block">
+        <HomeSearchbar v-if="userToken" appearance="rounded" :language :education-level="educationLevel" />
+        <HeroSection v-else :language :education-level="educationLevel" />
+      </div>
+      <HomeMobileSubjectContentTools :active-tab="activeTab" :language="language" :education-level="educationLevel" @update:selected-level="applyClassFilter" @select-tab="switchTab" />
       <!-- Tabs -->
       <nav aria-label="Subject tabs">
       <TabBar :is-logged-in="!!userToken" :active-tab="activeTab" @emit-active-tab="switchTab($event)" :subject-title="subjectTitle" :topic-id="subjectId" :language :education-level="educationLevel" :tab-group="educationLevel" />
@@ -276,7 +280,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
           <div class="flex flex-col w-full">
             <div class="flex items-center gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class="flex flex-col items-start ">
+              <div class="flex w-full min-w-0 flex-col items-start">
                 <customGridTwo>
                   <template #data>
                     <ExperimentsCard 

@@ -49,7 +49,7 @@ const language = computed(() =>
   ),
 );
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value, {}, language.value),
+  getEducationRouteQuery(educationLevel.value, typeof route.query.level === "string" ? { level: route.query.level } : {}, language.value),
 );
 
 const buildTabTarget = (tab) => {
@@ -182,7 +182,7 @@ const fetchVideos = async (params) => {
   try {
     status.value = "pending";
     currentPage.value = 1;
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${language.value}-${subjectId}-${params?.toString()}`, () => $fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${language.value}-${subjectId}-${JSON.stringify(params ?? {})}`, () => $fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
@@ -203,7 +203,7 @@ const fetchVideos = async (params) => {
 };
 
 // Call Fetch Topics function
-fetchVideos();
+fetchVideos({ level: typeof route.query.level === "string" ? route.query.level : undefined, videoType });
 
 //  assigning page size based on screen sizes
 pageSize.value = getPageSize();
@@ -268,11 +268,16 @@ watch(() => route.query?.type, () => {
   activeTab.value = route.query?.type === "oth" ? "class-videos" : "video";
 
   fetchVideos({
-    videoType: route.query?.type == 'conc' ? 'Conceptual' : 'others'
+    videoType: route.query?.type == 'conc' ? 'Conceptual' : 'others',
+    level: typeof route.query.level === "string" ? route.query.level : undefined,
   })
 })
 
 const contentLayoutLanguage = useContentLayoutLanguage();
+const applyClassFilter = (value) => fetchVideos({
+  level: value || undefined,
+  videoType: activeTab.value === 'class-videos' ? 'others' : 'Conceptual',
+});
 </script>
 
 <template>
@@ -281,8 +286,11 @@ const contentLayoutLanguage = useContentLayoutLanguage();
       ' ',
       { ' animate-pulse': isLoading }
     ]">
-      <HomeSearchbar v-if="userToken" appearance="rounded" :language :education-level="educationLevel" />
-      <HeroSection v-else :language :education-level="educationLevel" />
+      <div class="hidden md:block">
+        <HomeSearchbar v-if="userToken" appearance="rounded" :language :education-level="educationLevel" />
+        <HeroSection v-else :language :education-level="educationLevel" />
+      </div>
+      <HomeMobileSubjectContentTools :active-tab="activeTab" :language="language" :education-level="educationLevel" @update:selected-level="applyClassFilter" @select-tab="switchTab" />
       <TabBar :is-logged-in="!!userToken" :active-tab="activeTab" @emit-active-tab="switchTab($event)"
         :subject-title="subjectTitle" :topic-id="subjectId" :language :education-level="educationLevel"
         :tab-group="educationLevel" />
@@ -305,7 +313,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
           <div class="flex flex-col w-full">
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class="flex flex-col items-start ">
+              <div class="flex w-full min-w-0 flex-col items-start">
                 <customGridTwo>
                   <template #data>
                     <!-- Video Cards are in Grid -->
