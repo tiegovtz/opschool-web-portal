@@ -1,5 +1,5 @@
 <template>
-  <div :class="['bg-white', isFeedbackPage ? 'flex h-dvh flex-col overflow-hidden' : 'pb-20 md:pb-0']" @contextmenu.prevent >
+  <div :class="['bg-white', isFeedbackPage ? 'flex h-dvh flex-col overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0' : 'pb-20 md:pb-0']" @contextmenu.prevent >
     <!-- Header -->
     <div class="shrink-0"><HeaderView :language :education-level /></div>
 
@@ -22,7 +22,7 @@
     
     <!-- Footer -->
     <div class="hidden shrink-0 md:block"><FooterView :language :education-level /></div>
-    <MobileBottomNav v-if="!isFeedbackPage" :language :education-level />
+    <MobileBottomNav :language :education-level />
   </div>
 </template>
 

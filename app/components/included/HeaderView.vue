@@ -399,7 +399,7 @@ onBeforeUnmount(() => {
 <template>
   <!-- Header -->
   <header
-    class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat rounded-b-xl lg:rounded-none overflow-y-hidden"
+    class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat rounded-b-xl lg:rounded-none"
     role="navigation"
   >
     <nav class="flex flex-col items-center bg-white bg-opacity-75">

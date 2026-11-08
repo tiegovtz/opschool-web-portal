@@ -29,6 +29,7 @@ const hubQuery = computed(() => getEducationRouteQuery(
   level.value === "primary" ? primaryLanguage.value : "english",
 ));
 const isKiswahili = computed(() => props.language === "kiswahili");
+const showCombinations = computed(() => hubPath.value === "/secondary");
 const isContentRoute = computed(() =>
   ["/interactive", "/video", "/audio", "/experiments", "/adt"].some(
     path => route.path === path || route.path.startsWith(`${path}/`),
@@ -106,7 +107,7 @@ onBeforeUnmount(() => {
         <button
           type="button"
           class="flex min-h-16 w-full flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-2 text-center text-[11px] font-medium leading-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue"
-          :class="moreMenuOpen || route.path.startsWith('/profile') ? 'text-[#0879bd]' : 'text-slate-500 hover:text-deepBlue'"
+          :class="moreMenuOpen || route.path.startsWith('/profile') || route.path === '/pdf' || route.path === '/feedback' ? 'text-[#0879bd]' : 'text-slate-500 hover:text-deepBlue'"
           :aria-expanded="moreMenuOpen"
           aria-controls="mobile-more-menu"
           aria-haspopup="menu"
@@ -115,7 +116,17 @@ onBeforeUnmount(() => {
           <Icon name="mdi:dots-horizontal-circle-outline" size="24" aria-hidden="true" />
           <span>{{ isKiswahili ? 'Zaidi' : 'More' }}</span>
         </button>
-        <div v-if="moreMenuOpen" id="mobile-more-menu" class="absolute bottom-[calc(100%+8px)] right-0 z-50 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white py-1 shadow-xl" role="menu" :aria-label="isKiswahili ? 'Zaidi' : 'More'">
+        <div v-if="moreMenuOpen" id="mobile-more-menu" class="absolute bottom-[calc(100%+8px)] right-0 z-50 max-h-[calc(100dvh-6rem)] w-56 overflow-y-auto rounded-2xl border border-slate-200 bg-white py-1 shadow-xl" role="menu" :aria-label="isKiswahili ? 'Zaidi' : 'More'">
+          <div class="border-b border-slate-100 pb-1">
+            <NuxtLink v-if="showCombinations" :to="{ path: '/pdf', query: hubQuery }" role="menuitem" class="flex min-h-11 items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50" @click="closeMoreMenu">
+              <Icon name="mdi:book-open-page-variant-outline" size="20" aria-hidden="true" />
+              <span>{{ isKiswahili ? 'Muhtasari wa Mafunzo' : 'Combinations of Subjects' }}</span>
+            </NuxtLink>
+            <NuxtLink :to="{ path: '/feedback', query: hubQuery }" role="menuitem" class="flex min-h-11 items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50" @click="closeMoreMenu">
+              <Icon name="mdi:message-text-outline" size="20" aria-hidden="true" />
+              <span>{{ isKiswahili ? 'Maoni na Msaada' : 'Feedback and Support' }}</span>
+            </NuxtLink>
+          </div>
           <template v-if="userToken">
             <NuxtLink :to="{ path: '/profile/learning-statistics', query: hubQuery }" role="menuitem" class="flex min-h-11 items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50" @click="closeMoreMenu">
               <Icon name="heroicons:chart-bar-square-20-solid" size="20" aria-hidden="true" />
