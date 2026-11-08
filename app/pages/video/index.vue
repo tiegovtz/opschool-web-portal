@@ -269,7 +269,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
         <TabBar :active-tab="activeTab" :language :education-level="educationLevel" :tab-group="educationLevel" />
       </div>
       <div v-else class="flex flex-col items-center justify-center w-full gap-4 pt-4">
-        <HomeSearchbar appearance="rounded" :language :education-level="educationLevel" />
+        <div class="hidden md:block"><HomeSearchbar appearance="rounded" :language :education-level="educationLevel" /></div>
         <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" :language :education-level="educationLevel" :tab-group="educationLevel" />
       </div>
       <div class="items-center justify-end hidden gap-2 md:flex" role="group" aria-label="Layout options">

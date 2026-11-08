@@ -377,11 +377,12 @@ watch(
       </div>
     </form>
 
-    <HomeSearchbar
-      v-if="!hideSearch"
-      :search-handler="props.classifications ? (value: string) => emit('emitSearch', value) : undefined"
-      :language="props.language"
-      :education-level="props.educationLevel"
-    />
+    <div v-if="!hideSearch" class="hidden w-full md:block">
+      <HomeSearchbar
+        :search-handler="props.classifications ? (value: string) => emit('emitSearch', value) : undefined"
+        :language="props.language"
+        :education-level="props.educationLevel"
+      />
+    </div>
   </div>
 </template>

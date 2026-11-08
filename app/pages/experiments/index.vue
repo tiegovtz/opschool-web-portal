@@ -294,7 +294,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
     <section :class="[' ', { ' animate-pulse': isLoading }]" :aria-busy="isLoading ? 'true' : 'false'">
       <!-- User Token Available -->
       <section v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
-        <HomeSearchbar appearance="rounded" aria-label="Search experiments" :language :education-level="educationLevel" />
+        <div class="hidden md:block"><HomeSearchbar appearance="rounded" aria-label="Search experiments" :language :education-level="educationLevel" /></div>
         <nav aria-label="Content categories">
           <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" :language :education-level="educationLevel" :tab-group="educationLevel" />
         </nav>

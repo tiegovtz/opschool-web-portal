@@ -62,7 +62,7 @@ const toggleReadMore = async () => {
 
 <template>
   <!-- Hero landmark -->
-  <section class="flex justify-center my-2 hero-section" aria-label="Ekima interactive learning introduction">
+  <section class="hidden justify-center my-2 hero-section md:flex" aria-label="Ekima interactive learning introduction">
     <div class="grid grid-cols-1 xl:grid-cols-2 md:gap-2">
       <!-- Slider -->
       <div class="flex flex-col items-center justify-center h-full">
