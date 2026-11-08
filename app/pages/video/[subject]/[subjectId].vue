@@ -3,13 +3,7 @@
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import { ref, computed, onMounted, watch } from "vue";
-import {
-  isGreaterToXL,
-  isGreaterToLG,
-  isGreaterToMD,
-  isGreaterToSM,
-  screenWidth,
-} from "@/utilities/controlls";
+import { screenWidth } from "@/utilities/controlls";
 import apiDocs from "~/utilities/apiDocs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import VideoCard from "~/components/video/videoCard.vue";
@@ -38,6 +32,7 @@ const decodeParam = (value) => {
 };
 const subjectId = String(route.params.subjectId ?? "");
 const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
+const subjectQueryName = subjectTitle.replace(/\b\w/g, (letter) => letter.toUpperCase());
 const activeTab = ref(route.query?.type === "oth" ? "class-videos" : "video");
 const subjectSlug = computed(() => (subjectTitle || "").toLowerCase().trim().replace(/\s+/g, "-"));
 const primaryContentLanguage = usePrimaryContentLanguage();
@@ -132,7 +127,7 @@ const userToken = useCookie("signInUserToken");
 const status = ref("pending"); // Initial Status State
 const topic = ref([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
-const videoType = route.query?.type ? route.query?.type === 'conc' ? "Conceptual" : 'Other' : 'Conceptual'; // Initial video type state
+const videoType = route.query?.type === 'oth' ? 'Others' : 'Conceptual'; // Initial video type state
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
@@ -155,10 +150,9 @@ const sliceData = (start, end) => {
 const currentPage = ref(1);
 const pageSize = ref();
 const getPageSize = () => {
-  if (screenWidth.value >= 1280 || isGreaterToXL.value) return 12;
-  if (screenWidth.value >= 1024 || isGreaterToLG.value) return 9;
-  if (screenWidth.value >= 768 || isGreaterToMD.value) return 6;
-  return 4;
+  if (screenWidth.value >= 1280) return 12;
+  if (screenWidth.value >= 1024) return 9;
+  return 6;
 };
 
 // Then, update fetchVideos to call sliceData after data is loaded
@@ -188,6 +182,7 @@ const fetchVideos = async (params) => {
     ), {
       params: {
         ...params,
+        subject: subjectQueryName,
       },
     }));
 
@@ -268,7 +263,7 @@ watch(() => route.query?.type, () => {
   activeTab.value = route.query?.type === "oth" ? "class-videos" : "video";
 
   fetchVideos({
-    videoType: route.query?.type == 'conc' ? 'Conceptual' : 'others',
+    videoType: route.query?.type === 'oth' ? 'Others' : 'Conceptual',
     level: typeof route.query.level === "string" ? route.query.level : undefined,
   })
 })
@@ -276,7 +271,7 @@ watch(() => route.query?.type, () => {
 const contentLayoutLanguage = useContentLayoutLanguage();
 const applyClassFilter = (value) => fetchVideos({
   level: value || undefined,
-  videoType: activeTab.value === 'class-videos' ? 'others' : 'Conceptual',
+  videoType: activeTab.value === 'class-videos' ? 'Others' : 'Conceptual',
 });
 </script>
 

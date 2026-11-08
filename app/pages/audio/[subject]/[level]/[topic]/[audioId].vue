@@ -120,8 +120,8 @@ const startVisualizer = () => {
             // Create vertical gradient for each bar
             const gradient = ctx.createLinearGradient(0, canvas.height - barHeight, 0, canvas.height);
             gradient.addColorStop(0.5, '#56ade8');
-            gradient.addColorStop(0, '#e5563799');  
-            gradient.addColorStop(1, '#28293833');    
+            gradient.addColorStop(0, '#e5563799');
+            gradient.addColorStop(1, '#28293833');
 
 
             ctx.fillStyle = gradient;
@@ -217,7 +217,7 @@ const goBack = () => {
 
                     <!-- Prev/Next Buttons -->
                     <div :class="[
-                        'flex items-center w-full',
+                        'flex items-center w-full gap-8',
                         audioInfo?.previous && audioInfo?.next ? 'justify-between' :
                             !audioInfo?.previous && audioInfo?.next ? 'justify-end' :
                                 !audioInfo?.next && audioInfo?.previous ? 'justify-start' : '',

@@ -391,16 +391,26 @@ watch(
   (query) => {
     const section = query[SECTION_QUERY_KEY] ?? query.tab;
     if (!section) activeTab.value = "subjects";
-    if (section === 'adt' || section === 'interactive-content' || (section === 'subjects' && !query[SUBJECT_QUERY_KEY] && !query[SUBJECT_ID_QUERY_KEY])) {
+    const subjectParam = normalizeQueryValue(query[SUBJECT_QUERY_KEY]);
+    const subjectIdParam = normalizeQueryValue(query[SUBJECT_ID_QUERY_KEY]);
+    if (section === 'adt' || (section === 'interactive-content' && !subjectIdParam) || (section === 'subjects' && !subjectParam && !subjectIdParam)) {
       activeTab.value = section === 'interactive-content' ? 'interactive-contents' : 'subjects';
       return;
     }
-    const subjectParam = normalizeQueryValue(query[SUBJECT_QUERY_KEY]);
-    const subjectIdParam = normalizeQueryValue(query[SUBJECT_ID_QUERY_KEY]);
     if (section) {
       const tab = getTabFromSection(section);
       const target = tab ? TAB_TO_ROUTE.value[tab] : null;
       if (target) {
+        const subjectRoutePaths: Partial<Record<tabs, string>> = {
+          "interactive-contents": "/interactive",
+          "learn-activities": "/experiments",
+          video: "/video",
+          "class-videos": "/video",
+          audio: "/audio",
+        };
+        const subjectRoute = subjectIdParam && tab
+          ? subjectRoutePaths[tab]
+          : undefined;
         const targetQuery =
           tab === "subjects" && (subjectParam || subjectIdParam)
             ? {
@@ -408,8 +418,15 @@ watch(
                 subject: subjectParam || undefined,
                 subjectId: subjectIdParam || undefined,
               }
-            : target.query;
-        router.replace({ path: target.path, query: targetQuery });
+            : subjectRoute && typeof query.level === "string"
+              ? { ...target.query, level: query.level }
+              : target.query;
+        router.replace({
+          path: subjectRoute
+            ? `${subjectRoute}/${encodeURIComponent(slugifySubject(subjectParam || subjectIdParam))}/${encodeURIComponent(subjectIdParam)}`
+            : target.path,
+          query: targetQuery,
+        });
       }
     }
   },
@@ -497,6 +514,7 @@ const fetchData = async (params?: any) => {
         params = {
           ...baseParams,
           videoType: "Conceptual",
+          subject: subjectName.value || subjectSlug.value.replaceAll("-", " ") || undefined,
         };
       } else if (tab === "class-videos") {
         url = apiDocs.videos.getPublicVideoBySubjectId.replace(
@@ -507,6 +525,7 @@ const fetchData = async (params?: any) => {
         params = {
           ...baseParams,
           videoType: "Others",
+          subject: subjectName.value || subjectSlug.value.replaceAll("-", " ") || undefined,
         };
       } else if (tab === "interactive-contents") {
         url = apiDocs.topics.getSubjectId.replace(
@@ -527,7 +546,9 @@ const fetchData = async (params?: any) => {
     }
   } else {
     if (tab === 'interactive-contents') {
-      url = apiDocs.topics.filterTopics;
+      url = subjectId.value
+        ? apiDocs.topics.getSubjectId.replace("{subjectId}", subjectId.value)
+        : apiDocs.topics.filterTopics;
       params = { ...baseParams };
     } else {
       url = apiDocs.subjects.getPublicSubjects;
@@ -584,7 +605,7 @@ const fetchData = async (params?: any) => {
       currentPage.value * pageSize.value,
     );
 
-    announcement.value = ` ${responseItems.length} ${getTabLabel(tab)} found ready for preview`;
+    announcement.value = ` ${data.value.length} ${getTabLabel(tab)} found ready for preview`;
   } catch (err) {
     status.value = "error";
     error.value = err;
@@ -881,7 +902,7 @@ const handleSubjectSelect = async (
         <p class="mb-1 text-xs font-semibold text-slate-700">{{ currentLanguage === 'kiswahili' ? 'Aina ya maudhui' : 'Content type' }}</p>
         <CustomDropDownList id="mobile-content-type" :aria-label="currentLanguage === 'kiswahili' ? 'Aina ya maudhui' : 'Content type'" :model-value="hubSection" :list="mobileContentTypes" :searchable="false" button-class="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm" @update-model-value="selectMobileHubSection" />
       </div>
-      <InputsSelection v-if="!isAdtSection" :key="hubSection" :language="currentLanguage" :education-level="userToken ? currentHubBucket : currentEducationLevel" :selected-sublevel="userToken ? selectedHubSublevel : undefined" hide-search show-labels
+      <InputsSelection v-if="!isAdtSection" :key="hubSection" :language="currentLanguage" :education-level="userToken ? currentHubBucket : currentEducationLevel" :selected-sublevel="userToken ? selectedHubSublevel : undefined" :hide-search="true" show-labels
         @emit-level="onSelectionLevelChange" @emit-standard="filters.level = $event" @emit-subject="filters.subject = $event" />
       <button type="button" class="mt-2 flex min-h-11 w-full items-center justify-center rounded-lg bg-oceanBlue px-4 text-sm font-semibold text-white md:hidden" @click="closeMobilePanel">{{ currentLanguage === 'kiswahili' ? 'Onyesha matokeo' : 'Show results' }}</button>
     </div>
