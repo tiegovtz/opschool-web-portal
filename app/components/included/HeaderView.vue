@@ -411,7 +411,7 @@ onBeforeUnmount(() => {
       <div class="w-full">
         <!-- Media Screen -->
         <div
-          class="hidden w-full items-center gap-4 text-white md:grid md:grid-cols-[minmax(0,1fr)_auto] min-[1441px]:grid-cols-[1fr_auto_1fr] bg-oceanBlue rounded-xs wrapper-container"
+          class="app-header-desktop-nav hidden w-full items-center gap-4 text-white md:grid md:grid-cols-[minmax(0,1fr)_auto] min-[1441px]:grid-cols-[1fr_auto_1fr] bg-oceanBlue rounded-xs wrapper-container"
         >
           <div class="flex items-center gap-2 justify-self-start">
             <div
@@ -688,7 +688,7 @@ onBeforeUnmount(() => {
 
         <!-- Mobile Menu -->
         <div
-          class="w-full rounded-b-md bg-oceanBlue text-white md:hidden"
+          class="app-header-mobile-nav w-full rounded-b-md bg-oceanBlue text-white md:hidden"
         >
           <div class="flex w-full items-center justify-between gap-2 px-4 py-1">
             <div class="flex items-center gap-1">

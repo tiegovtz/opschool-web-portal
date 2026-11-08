@@ -1,5 +1,5 @@
 <template>
-  <div :class="['bg-white', isFeedbackPage ? 'flex h-dvh flex-col overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0' : 'pb-20 md:pb-0']" @contextmenu.prevent >
+  <div :data-landscape-nav-side="landscapeNavSide" :class="['home-layout-shell min-h-dvh bg-white', isFeedbackPage ? 'flex h-dvh flex-col overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0' : 'pb-20 md:pb-0']" @contextmenu.prevent >
     <!-- Header -->
     <div class="shrink-0"><HeaderView :language :education-level /></div>
 
@@ -10,7 +10,7 @@
      </div>
     </main>
     
-    <nav aria-label="Quick links" class="fixed right-1 top-1/2 z-10 hidden max-h-[80dvh] -translate-y-1/2 flex-col items-end gap-3 overflow-y-auto md:flex sm:right-2">
+    <nav aria-label="Quick links" class="home-layout-quick-links fixed right-1 top-1/2 z-10 hidden max-h-[80dvh] -translate-y-1/2 flex-col items-end gap-3 overflow-y-auto md:flex sm:right-2">
       <NuxtLink v-if="!isFeedbackPage" :to="feedbackLink" class="rotate-180 whitespace-nowrap rounded-md bg-oceanBlue px-2 py-3 text-xs text-white transition-colors [writing-mode:vertical-rl] hover:bg-deepBlue sm:text-sm">{{ language === 'english' ? 'Feedback and Support' : 'Maoni na Msaada' }}</NuxtLink>
       <NuxtLink v-if="route.path !== '/pdf' && showCombinations" to="/pdf" class="rotate-180 whitespace-nowrap rounded-md bg-oceanBlue px-2 py-3 text-xs text-white transition-colors [writing-mode:vertical-rl] hover:bg-deepBlue sm:text-sm">{{ language === 'english' ? 'Combinations of Subjects' : 'Muhtasari wa Mafunzo' }}</NuxtLink>
     </nav>
@@ -21,7 +21,7 @@
     </div>  -->
     
     <!-- Footer -->
-    <div class="hidden shrink-0 md:block"><FooterView :language :education-level /></div>
+    <div class="home-layout-footer hidden shrink-0 md:block"><FooterView :language :education-level /></div>
     <MobileBottomNav :language :education-level />
   </div>
 </template>
@@ -34,6 +34,7 @@ import type { LanguageSupport } from '~/types/language.interface';
 import type { EducationBucket } from '~/utilities/educationRoute';
 const route = useRoute()
 const isFeedbackPage = computed(() => route.path === '/feedback');
+const landscapeNavSide = useState<'left' | 'right'>('landscape-nav-side', () => 'left');
 const props = withDefaults(
   defineProps<{educationLevel?:EducationBucket,language?:LanguageSupport}>(),{
     language:'english',
