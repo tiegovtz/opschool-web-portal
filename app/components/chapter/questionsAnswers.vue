@@ -2,6 +2,7 @@
 import { reactive, ref, computed, watch } from "vue";
 import { ANSWER_SEPARATOR, type Question } from "~/types/question.interface";
 import { parseOrderedQuestionBlocks } from "~/utilities/orderedQuestionBlocks";
+import QuizMathText from "./QuizMathText.vue";
 
 
 // Define State
@@ -318,12 +319,6 @@ const renderQuestionWithBlanks = computed(() => {
   });
 });
 
-const mathRenderKey = computed(() => [
-  questionProps.question,
-  ...shuffledChoices.value.map((choice) => choice.value),
-  ...dropZoneAnswers.value,
-].join("|"));
-
 // playDemoAnimation and flyToTarget Function
 const flyToTarget = (sourceEl: HTMLElement, targetEl: HTMLElement) => {
   const clone = sourceEl.cloneNode(true) as HTMLElement;
@@ -409,7 +404,7 @@ const playDemoAnimation = async () => {
 </script>
 
 <template>
-  <section v-if="questionType.toLowerCase() === 'multiple_choice'" v-mathjax="mathRenderKey" class="flex flex-col">
+  <section v-if="questionType.toLowerCase() === 'multiple_choice'" class="flex flex-col min-w-0">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <p>{{ usedLanguage.toLowerCase().trim() === 'english' ? 'Choose the most correct answer.' : 'Chagua jibu sahihi zaidi.' }}</p>
       <button
@@ -420,9 +415,9 @@ const playDemoAnimation = async () => {
         {{ usedLanguage.toLowerCase().trim() === 'english' ? questionAnswer.isManualMode ? "Switch to auto" : "Switch to manual" : questionAnswer.isManualMode ? "Badilisha hadi auto" : "Badilisha hadi mwenyewe" }}
       </button>
     </div>
-    <div class="inline-flex">
+    <div class="inline-flex min-w-0">
       <p class="pr-4">{{ number + ". " }}</p>
-      <div class="flex flex-wrap items-center w-full">
+      <div class="flex flex-wrap items-center w-full min-w-0">
         <div
           v-if="orderedQuestionBlocks"
           class="w-full mb-4 space-y-3 text-justify"
@@ -430,7 +425,7 @@ const playDemoAnimation = async () => {
           <template v-for="block in orderedQuestionBlocks" :key="block.key">
             <p v-if="block.type === 'paragraph'" class="leading-relaxed">
               <template v-for="segment in block.segments" :key="segment.key">
-                <span v-if="segment.type === 'text'">{{ segment.text }}</span>
+                <QuizMathText v-if="segment.type === 'text'" :text="segment.text" />
                 <span
                   v-else
                   class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle"
@@ -443,7 +438,7 @@ const playDemoAnimation = async () => {
               <span class="shrink-0 font-medium">{{ block.marker }}</span>
               <div class="flex-1">
                 <template v-for="segment in block.segments" :key="segment.key">
-                  <span v-if="segment.type === 'text'">{{ segment.text }}</span>
+                  <QuizMathText v-if="segment.type === 'text'" :text="segment.text" />
                   <span
                     v-else
                     class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle"
@@ -455,8 +450,8 @@ const playDemoAnimation = async () => {
             </div>
           </template>
         </div>
-        <p v-else class="mb-4 text-justify">
-          {{ question }}
+        <p v-else class="mb-4 text-justify min-w-0 w-full">
+          <QuizMathText :text="question" />
         </p>
         <!-- <p
           v-if="thumbnail"
@@ -477,7 +472,7 @@ const playDemoAnimation = async () => {
                 choice.value === questionAnswer.clickedChoice,
               'cursor-not-allowed': questionAnswer.disableAnswer,
             }" @click="markQuestion(choice.value)">
-            <span>{{ indexToAlpha(index) + ") " + choice.value }}</span>
+            <span class="min-w-0"><span>{{ indexToAlpha(index) + ") " }}</span><QuizMathText :text="choice.value" /></span>
           </li>
         </ol>
         <div
@@ -533,7 +528,7 @@ const playDemoAnimation = async () => {
   </section>
 
   <!-- drag and drop question and answer container -->
-  <section v-else v-mathjax="mathRenderKey" class="mt-6">
+  <section v-else class="mt-6 min-w-0">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <p>{{ usedLanguage.toLowerCase().trim() === 'english' ? "Drag and drop the answers into the blanks." : "Jaza nafasi zilizoachwa wazi kwa kuburuta jibu sahihi" }}</p>
       <button
@@ -558,7 +553,7 @@ const playDemoAnimation = async () => {
               class="flex flex-wrap items-center justify-start gap-2 leading-relaxed"
             >
               <template v-for="segment in block.segments" :key="segment.key">
-                <span v-if="segment.type === 'text'">{{ segment.text }}</span>
+                <QuizMathText v-if="segment.type === 'text'" :text="segment.text" />
                 <span
                   v-else
                   :class="[
@@ -584,7 +579,7 @@ const playDemoAnimation = async () => {
               <span class="shrink-0 font-medium">{{ block.marker }}</span>
               <div class="flex flex-wrap items-center justify-start flex-1 gap-2">
                 <template v-for="segment in block.segments" :key="segment.key">
-                  <span v-if="segment.type === 'text'">{{ segment.text }}</span>
+                  <QuizMathText v-if="segment.type === 'text'" :text="segment.text" />
                   <span
                     v-else
                     :class="[
@@ -611,7 +606,7 @@ const playDemoAnimation = async () => {
         </div>
         <p v-else class="flex flex-wrap items-center justify-start gap-2 text-justify">
           <template v-for="(part, i) in renderQuestionWithBlanks">
-            <span v-if="!part.isBlank" :key="part.key">{{ part.text }}</span>
+            <QuizMathText v-if="!part.isBlank" :key="part.key" :text="part.text ?? ''" />
             <span v-else :key="part.key + i"
               :class="[
                 'drag-zone inline-flex min-w-[100px] items-center justify-center gap-2 px-2 py-1 border-b border-dashed text-center text-sm rounded-sm transition-colors duration-300',
@@ -649,7 +644,7 @@ const playDemoAnimation = async () => {
             'opacity-40 cursor-not-allowed': questionAnswer.disableAnswer,
           }"
           draggable="true" @dragstart="(e) => (e as DragEvent).dataTransfer?.setData('text', choice.value)">
-          {{ choice.value }}
+          <QuizMathText :text="choice.value" />
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-3 pl-6">
