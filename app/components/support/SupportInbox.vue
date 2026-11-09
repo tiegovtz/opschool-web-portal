@@ -87,16 +87,16 @@ function showError(value: any) {
   if (!active) return;
   setupRequired.value = !!(value?.data?.data?.setupRequired || value?.data?.setupRequired);
   authRequired.value = value?.statusCode === 401 || value?.status === 401;
-  error.value = text.value.failed;
+  error.value = authRequired.value ? (sw.value ? 'Huduma inahitaji uingie. Ujumbe wako haujatumwa.' : 'The service requires sign-in. Your message has not been submitted.') : text.value.failed;
 }
 async function load() {
   if (!accessToken.value || props.view !== 'requests') { loading.value = false; return; }
   controller?.abort(); controller = new AbortController(); const current = controller;
   loading.value = true; error.value = ''; authRequired.value = false;
   try {
-    const data = await $fetch<{ items: SupportTicket[]; total: number; counts: typeof counts.value }>('/api/support/tickets', { query: { status: status.value || undefined, search: debouncedSearch.value || undefined, page: page.value, limit: 10 }, signal: current.signal });
+    const data = await $fetch<{ items: SupportTicket[]; total: number; counts: typeof counts.value; summary?: typeof requestCounts.value }>('/api/support/tickets', { query: { status: status.value || undefined, search: debouncedSearch.value || undefined, page: page.value, limit: 10 }, signal: current.signal });
     if (current.signal.aborted || !active) return;
-    await loadCounts();
+    if (data.summary) requestCounts.value = data.summary; else await loadCounts();
     if (current.signal.aborted || !active) return;
     items.value = data.items; total.value = data.total; counts.value = data.counts; setupRequired.value = false;
   } catch (value: any) {
@@ -169,7 +169,7 @@ onBeforeUnmount(() => { active = false; controller?.abort(); clearTimeout(search
           <template v-if="selected">
             <div class="flex items-center justify-between gap-3"><span class="rounded-full bg-oceanBlue/10 px-3 py-1 text-xs font-semibold text-deepBlue">{{ text[selected.status] }}</span><button type="button" :disabled="busy" :class="secondaryClass" @click="selected = null">{{ text.close }}</button></div>
             <p class="mt-5 break-all text-xs text-textGray">{{ selected.id }}</p><h3 class="mt-2 break-words text-xl font-semibold text-darkBlue">{{ selected.subject }}</h3><p class="mt-2 text-xs text-textGray">{{ date(selected.createdAt) }} EAT</p><p class="my-6 whitespace-pre-wrap break-words text-sm leading-7">{{ selected.body }}</p>
-            <div v-if="selected.attachments.length" class="mb-5 flex flex-wrap gap-3"><a v-for="file in selected.attachments" :key="file.name" :href="file.data" :download="file.name" class="rounded-lg border p-2"><img :src="file.data" :alt="file.name" class="h-28 w-40 object-contain" /><span class="text-xs">{{ file.name }}</span></a></div>
+            <div v-if="selected.attachments.length" class="mb-5 flex flex-wrap gap-3"><a v-for="file in selected.attachments" :key="file.name" :href="file.data" :download="file.name" class="rounded-lg border p-2"><img v-if="file.data" :src="file.data" :alt="file.name" class="h-28 w-40 object-contain" /><span class="text-xs">{{ file.name }}</span></a></div>
             <div class="space-y-3"><div v-for="message in selected.messages" :key="message.id" :class="['rounded-xl p-4', message.sender === 'admin' ? 'bg-oceanBlue/10' : 'bg-gray-50']"><p class="mb-2 text-xs font-semibold text-textGray">{{ message.sender === 'admin' ? text.team : text.you }} · {{ date(message.createdAt) }} EAT</p><p class="whitespace-pre-wrap break-words text-sm leading-6">{{ message.body }}</p></div></div>
             <form class="mt-6 border-t border-slate-100 pt-5" @submit.prevent="sendReply"><label :class="labelClass">{{ text.reply }}<textarea v-model="reply" required maxlength="5000" rows="4" :disabled="busy" :class="fieldClass" /></label><button type="submit" :disabled="busy || !reply.trim() || authRequired" :class="[primaryClass, 'mt-3']">{{ busy ? text.sending : text.sendReply }}</button></form>
           </template>

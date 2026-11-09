@@ -18,7 +18,7 @@ async function submit() {
     await $fetch('/api/feedback', { method: 'POST', body: { language: sw.value ? 'sw' : 'en', educationLevel: props.educationLevel, contact, answers: questions.value.map((question,i) => ({ question: i === questions.value.length - 1 ? (sw.value ? 'Ungependa nini kiboreshwe?' : 'What would you like improved?') : question.label, answer: question.options.length ? question.options[Number(answers.value[i])-1] || answers.value[i] || '' : answers.value[i] || '' })) } });
     success.value = sw.value ? 'Asante. Maoni yako yametumwa.' : 'Thank you. Your feedback has been submitted.';
     answers.value = Array<string>(10).fill(''); Object.assign(contact, { name: '', email: '', phone: '' });
-  } catch { error.value = sw.value ? 'Maoni hayajatumwa. Tafadhali jaribu tena.' : 'Your feedback could not be submitted. Please try again.'; }
+  } catch (value: any) { error.value = value?.statusCode === 401 || value?.status === 401 ? (sw.value ? 'Huduma inahitaji uingie ili kutuma maoni. Majibu yako yamehifadhiwa kwenye fomu hii.' : 'The service requires sign-in to submit feedback. Your answers are still in this form.') : sw.value ? 'Maoni hayajatumwa. Tafadhali jaribu tena.' : 'Your feedback could not be submitted. Please try again.'; }
   finally { busy.value = false; }
 }
 </script>

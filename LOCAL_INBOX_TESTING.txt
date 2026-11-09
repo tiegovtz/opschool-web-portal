@@ -1,3 +1,5 @@
+Live integration is now active. See SUPPORT_SETUP.txt for the Swagger contract and confirmed backend limitations. The following describes the optional local test adapter only; INBOX_DEMO_ENABLED is disabled in the current local environment.
+
 Local inbox setup
 
 The feedback page now uses the existing survey questions within the portal in English and Kiswahili. Feedback and technical support submissions are public. My Requests requires a valid login and includes only tickets belonging to that account. Guest tickets are not automatically claimed by a later login. Optional contact details let the support team contact a guest.

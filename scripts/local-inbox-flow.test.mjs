@@ -25,7 +25,7 @@ test('public submissions save contact and screenshots, while requests remain pri
   const guest = { id: 'guest-one', name: 'Guest', role: 'Guest' };
   const member = { id: 'member-one', name: 'Member', role: 'Student' };
   const globals = { defineEventHandler: fn => fn, setHeader() {}, setResponseStatus() {}, getMethod: event => event.method, getCookie: event => event.token, getRouterParam: event => event.path, getQuery: event => event.query || {}, readBody: async event => event.body, useRuntimeConfig: () => ({ backendApiBaseUrl: 'https://auth.example/v1' }), createError: value => Object.assign(new Error(value.statusMessage),value) };
-  const modules = { '../../utils/localInboxStore': { ...store, authenticateDemoUser: async token => token === 'member' ? member : null }, '../../utils/inboxSubmission': { protectSubmission() {}, submissionActor: async event => event.token === 'member' ? member : guest }, '../../../shared/support/contracts': supportContracts, '../../../shared/feedback/contracts': feedbackContracts };
+  const modules = { '../../utils/localInboxStore': { ...store, authenticateDemoUser: async token => token === 'member' ? member : null }, '../../utils/inboxBackend': { inboxBackendBase: () => 'https://backend.test/v1' }, '../../utils/ownedSupportTickets': {}, '../../utils/inboxSubmission': { protectSubmission() {}, submissionActor: async event => event.token === 'member' ? member : guest }, '../../../shared/support/contracts': supportContracts, '../../../shared/feedback/contracts': feedbackContracts };
   try {
     const feedback = load('server/api/feedback/index.ts', modules, globals);
     const support = load('server/api/support/[...path].ts', modules, globals);

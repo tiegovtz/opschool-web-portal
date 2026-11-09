@@ -1,3 +1,5 @@
+import { inboxBackendBase, inboxBackendRequest } from '../../utils/inboxBackend';
+import { ownedSupportTickets, filterOwnedSupportTickets } from '../../utils/ownedSupportTickets';
 import { protectSubmission, submissionActor } from '../../utils/inboxSubmission';
 import { localInboxEnabled, authenticateDemoUser, createEntry, readInbox, listTickets, updateEntry } from '../../utils/localInboxStore';
 import { createSupportSchema, supportReplySchema, supportListSchema, supportTicketSchema, supportQuerySchema } from '../../../shared/support/contracts';
@@ -16,7 +18,7 @@ export default defineEventHandler(async event => {
   if (resource !== 'tickets' || path.length > 3 || !(method === 'GET' && path.length <= 2 || method === 'POST' && (path.length === 1 || path.length === 3 && action === 'messages'))) {
     throw createError({ statusCode: 404, statusMessage: 'Unknown support operation.' });
   }
-  const base = String(useRuntimeConfig(event).supportApiBaseUrl || '').replace(/\/+$/, '');
+  const base = inboxBackendBase(event);
   if (!base && !localInboxEnabled()) throw createError({ statusCode: 503, statusMessage: 'Support is not connected yet. Please try again later.', data: { setupRequired: true } });
   let body;
   const query = supportQuerySchema.safeParse(getQuery(event));
@@ -37,19 +39,18 @@ export default defineEventHandler(async event => {
     return supportTicketSchema.parse(result);
   }
   try {
+    if (method === 'GET' && !id && query.success) {
+      const items = await ownedSupportTickets(page => inboxBackendRequest(event, `/support/tickets?page=${page}&limit=50`));
+      return supportListSchema.parse(filterOwnedSupportTickets(items, query.data));
+    }
     const suffix = id ? `/${encodeURIComponent(id)}${action ? '/messages' : ''}` : '';
-    // This upstream endpoint MUST enforce account ownership using the access token.
-    // Never pass a user ID or admin-controlled status from the browser.
-    const response = await $fetch(`${base}/support/tickets${suffix}`, {
-      method: method as 'GET' | 'POST', headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {}, body,
-      query: method === 'GET' && !id && query.success ? query.data : undefined, timeout: 20000, redirect: 'error',
-    });
-    const parsed = (method === 'GET' && !id ? supportListSchema : supportTicketSchema).safeParse(response);
+    const response = await inboxBackendRequest(event, `/support/tickets${suffix}`, method, body);
+    const parsed = supportTicketSchema.safeParse(response);
     if (!parsed.success) throw createError({ statusCode: 502, statusMessage: 'The support service returned an unexpected response.' });
     if (method === 'POST') setResponseStatus(event, id ? 200 : 201);
     return parsed.data;
   } catch (error: any) {
-    const status = error?.statusCode || error?.response?.status;
-    throw createError({ statusCode: [400, 401, 403, 404, 409, 422, 429, 502, 503].includes(status) ? status : 502, statusMessage: status === 401 ? 'Your session has expired. Please sign in again.' : status === 403 || status === 404 ? 'This request is not available to your account.' : status === 422 ? 'Check the education level and required fields.' : 'Unable to reach support. Your message has not been confirmed; please try again.' });
+    if (error.statusCode) throw error;
+    throw createError({ statusCode: 502, statusMessage: 'Unable to load your requests. Please try again.' });
   }
 });
