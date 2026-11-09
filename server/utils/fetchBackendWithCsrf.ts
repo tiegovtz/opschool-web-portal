@@ -21,8 +21,11 @@ export async function fetchBackendWithCsrf(
     throw new Error('Backend request is outside the configured API root.');
   }
 
+  const csrfHeaders = new Headers({ accept: 'application/json' });
+  const authorization = new Headers(init.headers).get('authorization');
+  if (authorization) csrfHeaders.set('authorization', authorization);
   const csrfResponse = await fetch(`${base.origin}${basePath}/auth/csrf-token`, {
-    headers: { accept: 'application/json' },
+    headers: csrfHeaders,
     redirect: 'manual',
     signal: init.signal,
   });
