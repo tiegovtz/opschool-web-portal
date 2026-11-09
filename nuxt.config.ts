@@ -58,6 +58,9 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Preserve the build-time .env value in production; NUXT_CSRF_ENABLED can
+    // still override it in the running server's environment.
+    csrfEnabled: process.env.NUXT_CSRF_ENABLED?.trim().toLowerCase() !== "false",
     public: {
       localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true",
       imageFetchOrigin: process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN || "",
@@ -211,10 +214,10 @@ export default defineNuxtConfig({
     },
   },
 
-  // devServer: {
-  //   // host: "192.168.0.147",
-  //   port: 3010,
-  // },
+  devServer: {
+    host: "192.168.0.42",
+    port: 3010,
+  },
 
   build: {
     transpile: ["vuetify"],
