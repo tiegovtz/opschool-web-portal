@@ -938,7 +938,7 @@ const signUp = async () => {
 
         // Navigate to auth page
         const router = useRouter()
-        router.push({ path: '/auth', query: { ...authRedirectQuery.value, registered: '1' } });
+        await router.push({ path: '/auth', query: { ...authRedirectQuery.value, registered: '1' } });
 
       } else {
         usersignUp.controller.isSent = 'failed';
