@@ -33,6 +33,12 @@
           </template>
           <!-- Tool calls are hidden from the user - do not display them -->
         </div>
+        <AiResponseCopyButton
+          v-if="message.role === 'assistant'"
+          :text="copyText"
+          :language="language"
+          :disabled="isStreaming"
+        />
       </div>
     </div>
   </div>
@@ -47,13 +53,19 @@ import GraphBlock from "./renderers/GraphBlock.vue";
 import ChartBlock from "./renderers/ChartBlock.vue";
 import GeometryBlock from "./renderers/GeometryBlock.vue";
 import StepsBlock from "./renderers/StepsBlock.vue";
+import { computed } from "vue";
+import type { LanguageSupport } from "~/types/language.interface";
 
 type Segment =
   | { kind: "html"; html: string }
   | { kind: "graph" | "chart" | "geometry" | "steps"; spec: Record<string, any> };
 
 const md = new MarkdownIt({ html: true, breaks: true, linkify: true });
-const props = defineProps<{ message: any }>();
+const props = defineProps<{ message: any; language?: LanguageSupport; isStreaming?: boolean }>();
+const copyText = computed(() => (props.message.parts || [])
+  .filter((part: { type: string; text?: string }) => part.type === "text" && typeof part.text === "string")
+  .map((part: { text: string }) => part.text)
+  .join("\n\n"));
 const mathContainer = ref<HTMLElement[]>([]);
 const router = useRouter();
 const shortcodesLoaded = ref(false); // Flag to force re-render when shortcodes are loaded

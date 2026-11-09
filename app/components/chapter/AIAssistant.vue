@@ -1746,6 +1746,13 @@ onUnmounted(() => {
             :class="message.role === 'user' ? 'text-white' : 'text-gray-800'"
             v-html="formatMessage(message.content)"
           ></div>
+          <AiResponseCopyButton
+            v-if="message.role === 'assistant'"
+            :text="message.content"
+            :html="isHtml(message.content)"
+            :language="uiLanguage"
+            :disabled="isLoading && index === messages.length - 1"
+          />
           <p
             class="mt-3 text-xs font-medium opacity-60"
             :class="message.role === 'user' ? 'text-blue-100' : 'text-gray-500'"

@@ -100,7 +100,8 @@ onMounted(() => {
     <ul v-else role="list" class="space-y-4 sm:space-y-5">
       <li v-for="(m, index) in messages" :key="m.id ? m.id : index" role="listitem">
         <AiTeacherMessageUser v-if="m.role === 'user'" :message="m" />
-        <AiTeacherMessageAI v-else :message="m" />
+        <AiTeacherMessageAI v-else :message="m" :language="contentLayoutLanguage"
+          :is-streaming="isTyping && index === messages.length - 1" />
       </li>
     </ul>
 
