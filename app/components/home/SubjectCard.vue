@@ -89,7 +89,7 @@ const setSubjectToView = () => {
 
     <!-- content -->
     <div :class="[
-      'flex px-2 pt-1 transition-all duration-500 ease-in-out group-hover:text-white',
+      'flex min-w-0 flex-1 px-2 pt-1 transition-all duration-500 ease-in-out group-hover:text-white',
       layoutEffect == 'grid' ? 'flex-col' : 'flex-col flex-1'
     ]">
 
@@ -106,12 +106,12 @@ const setSubjectToView = () => {
       </div>
 
       <!-- description -->
-      <p class="hidden text-start text-[1rem] text-black/80 group-hover:text-white line-clamp-2 sm:block">
+      <p class="subject-card-summary text-start text-[1rem] text-black/80 group-hover:text-white">
         {{ subjectDescription }}
       </p>
 
       <!-- metrics  and level-->
-      <div class="flex items-center justify-end w-full whitespace-nowrap text-oceanBlue group-hover:text-white">
+      <div class="mt-auto flex items-center justify-end w-full whitespace-nowrap text-oceanBlue group-hover:text-white">
         <!-- Education Level -->
         <!-- <small v-if="educationLevelBadge"
           class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white">
