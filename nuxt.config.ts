@@ -214,11 +214,6 @@ export default defineNuxtConfig({
     },
   },
 
-  devServer: {
-    host: "192.168.0.42",
-    port: 3010,
-  },
-
   build: {
     transpile: ["vuetify"],
   },
