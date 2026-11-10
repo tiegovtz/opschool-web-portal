@@ -10,12 +10,14 @@ export function resolveTextbookScope(input: TextbookScope, selected: TextbookSco
   const subject = selected.subject?.trim() || input.subject?.trim();
   if (!level || !subject) throw new Error('Please specify the subject and class level for this question.');
   const levels = catalog.levels.filter(item => item._id === level || normalize(item.name) === normalize(level));
-  if (levels.length !== 1) throw new Error('Please select a valid, unambiguous class level.');
-  const area = areaId(levels[0]);
+  const selectedLevel = levels[0];
+  if (levels.length !== 1 || !selectedLevel) throw new Error('Please select a valid, unambiguous class level.');
+  const area = areaId(selectedLevel);
   const subjects = catalog.subjects.filter(item =>
     (item._id === subject || normalize(item.name) === normalize(subject)) && area && areaId(item) === area);
-  if (subjects.length !== 1) throw new Error('Please select a subject available for that class level.');
-  return { classLevel: levels[0]._id, subject: subjects[0]._id };
+  const selectedSubject = subjects[0];
+  if (subjects.length !== 1 || !selectedSubject) throw new Error('Please select a subject available for that class level.');
+  return { classLevel: selectedLevel._id, subject: selectedSubject._id };
 }
 
 export async function loadTextbookCatalog(base: string, token?: string): Promise<TextbookCatalog> {

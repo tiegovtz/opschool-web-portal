@@ -73,7 +73,6 @@ import GraphBlock from "./renderers/GraphBlock.vue";
 import ChartBlock from "./renderers/ChartBlock.vue";
 import GeometryBlock from "./renderers/GeometryBlock.vue";
 import StepsBlock from "./renderers/StepsBlock.vue";
-import { computed } from "vue";
 import type { LanguageSupport } from "~/types/language.interface";
 
 type Segment =
