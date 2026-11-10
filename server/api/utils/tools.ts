@@ -12,7 +12,7 @@ import { loadTextbookCatalog, resolveTextbookScope, type TextbookScope } from ".
 import { normalizeFilterId, searchTextbookPassages, type TextbookSearchFilters } from "../../utils/textbookSearch";
 import type { RagCitation } from "../../utils/ragContext";
 import { openAiEmbedder, searchFigures } from "../../utils/figureSearch";
-import apiDocs from "~/utilities/apiDocs";
+import apiDocs from "~~/server/utils/backendApiDocs";
 import type { Syllabus } from "~/types/syllabus.interface";
 
 const figureShortcodesStorage = new AsyncLocalStorage<{ usedShortcodes: Set<string> }>();
