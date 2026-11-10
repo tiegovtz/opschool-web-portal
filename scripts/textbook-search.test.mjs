@@ -12,7 +12,7 @@ const hooks = registerHooks({ resolve(specifier, context, nextResolve) {
     throw error;
   }
 }});
-const {createTextbookSearchTool} = await import('../server/api/utils/tools.ts');
+const {createTextbookSearchTool, createStudentTools, resolveTextbookSearchScope} = await import('../server/api/utils/tools.ts');
 hooks.deregister();
 const catalog = {
   subjects:[{_id:'100000000000000000000001',name:'Biology',educationLevel:'lower'},{_id:'100000000000000000000005',name:'Biology',educationLevel:'upper'}],
@@ -49,4 +49,33 @@ test('missing scope and upstream errors never fall back to an unfiltered corpus'
   assert.equal(searches,0);
   assert.equal((await createTextbookSearchTool({subject:'Biology',level:'Form 1'}).execute({query:'photosynthesis'},{})).found,false);
   assert.equal(searches,1);
+});
+
+
+test('merged request tools retain selected scope and publish source citations', async t => {
+  const citations=[];
+  globalThis.useRuntimeConfig=() => ({ragApiBaseUrl:'http://rag.test',insightsApiKey:'test-only'});
+  t.mock.method(globalThis,'fetch',async (url,init) => {
+    if (url.endsWith('/subjects') || url.endsWith('/levels')) {
+      assert.equal(init.headers.Authorization,'Bearer lesson-token');
+      return Response.json(url.endsWith('/subjects') ? catalog.subjects : catalog.levels);
+    }
+    const body=JSON.parse(init.body);
+    assert.equal(body.subject,catalog.subjects[0]._id);
+    assert.equal(body.classLevel,catalog.levels[0]._id);
+    return Response.json({results:[{content:'Plants use light.',source:'Biology Form 1',citation:'Biology Form 1 - Photosynthesis'}]});
+  });
+  const tools=createStudentTools('lesson-token', {
+    textbookScope:{subject:'Biology',level:'Form 1'}, onCitations:items => citations.push(...items),
+  });
+  const result=await tools.searchTextbooks.execute({query:'photosynthesis',subject:'Biology',level:'Form 5'},{});
+  assert.equal(result.found,true);
+  assert.deepEqual(citations,[{book:'Biology Form 1',chapter:'Photosynthesis'}]);
+});
+
+test('pre-retrieval scope resolver rejects noncanonical catalog IDs', async t => {
+  t.mock.method(globalThis,'fetch',async url => Response.json(url.endsWith('/subjects')
+    ? [{_id:'legacy-subject',name:'Biology',educationLevel:'lower'}]
+    : catalog.levels));
+  await assert.rejects(resolveTextbookSearchScope({}, {subject:'Biology',level:'Form 1'}));
 });
