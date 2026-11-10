@@ -11,6 +11,18 @@ const primaryContentLanguage = usePrimaryContentLanguage();
 const primaryHubPath = computed(() => getHubPath('primary'));
 const secondaryHubPath = computed(() => getHubPath('secondary'));
 const route = useRoute();
+const feedbackPath = computed(() =>
+    `/feedback?lang=${primaryContentLanguage.value === 'kiswahili' ? 'sw' : 'en'}`,
+);
+const feedbackContent = computed(() => primaryContentLanguage.value === 'kiswahili' ? {
+    title: 'Tusaidie kuboresha Shule Mtandao',
+    description: 'Tuambie kuhusu uzoefu wako, changamoto au mapendekezo yako.',
+    action: 'Toa maoni',
+} : {
+    title: 'Help us improve the Online School',
+    description: 'Tell us about your experience, any challenges, or your suggestions.',
+    action: 'Give feedback',
+});
 
 function goToPrimary() {
     setPostLoginHome(primaryHubPath.value);
@@ -138,7 +150,7 @@ onMounted(async () => {
 })
 
 
-// LANGUAGE SWITCHER 
+// LANGUAGE SWITCHER
 
 const matchesPath = (path: string) =>
   route.path === path || route.path.startsWith(`${path}/`);
@@ -161,7 +173,7 @@ const contents = computed(() => {
     let dictionary = {
         header: primaryContentLanguage.value === "kiswahili" ? "Karibu!" : "Welcome!",
         title: primaryContentLanguage.value === "kiswahili" ? "SHULE MTANDAO YA TET" : "TIE ONLINE SCHOOL",
-        summary: primaryContentLanguage.value === 'kiswahili' ?  `Kupitia jukwaa hili utajifunza kwa kutumia maudhui shirikishi ya picha,video,3D na animeshen kwa ngazi ya elimu ya msingi na sekondari.Chagua ngazi husika ili kuanza kujifunza`:`Through this platform, you will learn using interactive content such as images, videos, 3D and animations for primary and secondary education levels. Select the appropriate level to start learning.`,
+        summary: primaryContentLanguage.value === 'kiswahili' ?  `Kupitia jukwaa hili utajifunza kwa kutumia maudhui shirikishi ya picha, video, 3D na animeshen kwa ngazi ya elimu ya msingi na sekondari. Chagua ngazi husika ili kuanza kujifunza.`:`Through this platform, you will learn using interactive content such as images, videos, 3D and animations for primary and secondary education levels. Select the appropriate level to start learning.`,
         guidance: primaryContentLanguage.value === "kiswahili" ? `Chagua ngazi ya elimu kuvinjari maudhui ya OpSchool.` : `Choose an education level to explore OpSchool content.`,
         level:{
             primary: primaryContentLanguage.value === "kiswahili" ? "Msingi" : "Primary",
@@ -182,21 +194,24 @@ const contents = computed(() => {
         class="landing-hero grid grid-cols-1 items-center gap-6 py-3 lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:gap-8 lg:py-2 xl:gap-10">
         <section class="landing-copy max-w-screen-md mx-auto"
             aria-labelledby="landing-welcome landing-title" aria-describedby="landing-summary">
-            
+
             <h1 id="landing-welcome" tabindex="0"
-                class="text-left text-xl font-tahomabd font-bold text-oceanBlue rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2">
+                class="text-center text-xl font-tahomabd font-bold text-oceanBlue rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 lg:text-left">
                 {{ contents.header }}
             </h1>
             <h1 id="landing-title" tabindex="0"
-                class="text-left text-3xl my-4 font-tahomabd font-bold text-[#f29253] rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2">
+                class="my-2 text-center text-2xl font-tahomabd font-bold text-slate-900 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 lg:my-4 lg:text-left lg:text-3xl lg:text-[#f29253]">
                 {{ contents.title }}
             </h1>
             <p id="landing-summary" tabindex="0"
-                class="text-justify mt-4 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2">
+                class="mt-2 text-center text-base leading-7 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/60 focus-visible:ring-offset-2 lg:mt-4 lg:text-justify">
                 {{ contents.summary }}
             </p>
+            <section class="landing-slider-shell my-6 w-full overflow-hidden rounded-2xl lg:hidden" aria-label="Learning photos">
+                <SliderShow variant="landing" />
+            </section>
             <!-- buttons -->
-            <div class="landing-actions flex flex-wrap gap-4 pt-4" role="group" aria-labelledby="education-level-actions">
+            <div class="landing-actions grid grid-cols-2 gap-3 pt-1 lg:flex lg:flex-wrap lg:gap-4 lg:pt-4" role="group" aria-labelledby="education-level-actions">
                 <p id="education-level-actions" class="sr-only">
                     {{ contents.guidance }}
                 </p>
@@ -205,14 +220,14 @@ const contents = computed(() => {
             </div>
 
             <!-- static -->
-            <div class="landing-stats flex flex-wrap gap-4 pt-6 mt-3 md:mt-6 lg:mt-8 xl:grid xl:grid-cols-2">
+            <div class="landing-stats flex flex-wrap gap-3 pt-6 mt-3 md:mt-6 lg:mt-8 xl:grid xl:grid-cols-2">
                 <div v-for="(stat, idx) in stats" :key="`${idx}-${stat.label}`" tabindex="0"
-                    class="group relative overflow-hidden rounded-[2rem] border border-[#e4edf5] bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(247,251,255,0.98)_100%)] px-5 py-4 shadow-[0px_18px_40px_rgba(18,79,134,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0px_24px_48px_rgba(18,79,134,0.14)] w-full md:max-w-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/50 focus-visible:ring-offset-2"
+                    class="group relative overflow-hidden rounded-2xl border border-[#e4edf5] bg-white px-5 py-4 shadow-[0px_10px_26px_rgba(18,79,134,0.1)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0px_24px_48px_rgba(18,79,134,0.14)] w-full md:max-w-60 lg:rounded-[2rem] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue/50 focus-visible:ring-offset-2"
                     role="group" :aria-label="`${stat.label}: ${stat.data === 'topics' ? `${allTopics}+` : stat.data == 'resources' ? `${allContent}+` : stat.value}. ${stat.detail}`">
                     <div
                         class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(108,180,229,0.08),transparent_42%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <div class="relative flex items-center gap-4">
-                        <div :class="`hidden lg:flex lg:h-10 lg:w-10 h-9 w-9 shrink-0 items-center justify-center rounded-lg
+                        <div :class="`flex h-12 w-12 lg:h-10 lg:w-10 shrink-0 items-center justify-center rounded-xl
                         text-white shadow-[0px_12px_22px_rgba(31,111,178,0.2)] ${getAccentStyles(stat.accent).tile}`">
                             <IconsStats :type="(stat.icon as IconType)" />
                         </div>
@@ -239,10 +254,32 @@ const contents = computed(() => {
 
         </section>
         <!-- slides -->
-        <section class="landing-slider-shell w-full overflow-hidden rounded-3xl">
+        <section class="landing-slider-shell hidden w-full overflow-hidden rounded-3xl lg:block">
             <SliderShow variant="landing" />
         </section>
     </div>
+    <section aria-labelledby="landing-feedback-title"
+        class="relative mt-6 mb-2 flex flex-col gap-5 rounded-2xl border border-oceanBlue/30 bg-oceanBlue/10 p-5 sm:flex-row sm:items-center sm:justify-between md:p-6">
+        <div class="flex items-start gap-4">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-deepBlue" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" class="h-6 w-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-2 2V11.5A8.5 8.5 0 0 1 10.5 3h2a8.5 8.5 0 0 1 8.5 8.5Z" />
+                    <path stroke-linecap="round" d="M7 9h9M7 13h6" />
+                </svg>
+            </span>
+            <div>
+                <h2 id="landing-feedback-title" class="text-base font-medium text-deepBlue">{{ feedbackContent.title }}</h2>
+                <p class="mt-1 text-sm leading-6 text-textGray">{{ feedbackContent.description }}</p>
+            </div>
+        </div>
+        <div class="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+            <NuxtLink :to="feedbackPath"
+                class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-oceanBlue px-5 py-3 text-sm font-normal text-white transition-colors hover:bg-deepBlue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue focus-visible:ring-offset-2">
+                {{ feedbackContent.action }}
+                <span aria-hidden="true">→</span>
+            </NuxtLink>
+        </div>
+    </section>
  </div>
 </template>
 
@@ -253,6 +290,24 @@ const contents = computed(() => {
 
 .landing-slider-shell {
     min-height: clamp(260px, 34vh, 400px);
+}
+
+@media (max-width: 1023px) {
+    .landing-hero {
+        min-height: 0;
+    }
+
+    .landing-slider-shell {
+        min-height: 0;
+        aspect-ratio: 1 / 1;
+    }
+
+    .landing-actions :deep(.tie-cta-button) {
+        width: 100%;
+        justify-content: center;
+        border-radius: 12px;
+        padding: 14px 8px;
+    }
 }
 
 @media (min-width: 1024px) {

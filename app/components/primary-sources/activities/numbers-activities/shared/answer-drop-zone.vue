@@ -2,7 +2,7 @@
 import { computed, useSlots } from "vue";
 import Droppable from "~/components/ui/dnd/droppable";
 import Draggable from "~/components/ui/dnd/draggable";
-// import Input from "~/components/ui/inputs/input";
+import Input from "~/components/ui/inputs/input.vue";
 import { cn } from "~/utilities/utils";
 import type { AnswerType } from "./answer-drop-zone.types";
 

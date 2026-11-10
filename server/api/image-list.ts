@@ -103,10 +103,13 @@ function generateImagesFromShortcodes(shortcodes: Record<string, any>): Array<{
 
 export default defineEventHandler(async (event) => {
   try {
-    // Set cache-control headers to prevent browser caching
-    setHeader(event, 'Cache-Control', 'no-cache, no-store, must-revalidate');
-    setHeader(event, 'Pragma', 'no-cache');
-    setHeader(event, 'Expires', '0');
+    // Allow short-lived browser caching. This payload can be several MB (all figures
+    // with metadata), so forcing a full re-fetch on every page/chat load makes the
+    // app fragile on slow/unreliable connections - a single failed fetch used to
+    // permanently break all image rendering for that session. A short max-age lets
+    // repeat loads within the same browsing session reuse the response instead of
+    // re-downloading it every time, without serving badly stale data.
+    setHeader(event, 'Cache-Control', 'private, max-age=300, stale-while-revalidate=60');
     
     // Get query parameters
     const query = getQuery(event);

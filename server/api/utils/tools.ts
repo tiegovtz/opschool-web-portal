@@ -8,12 +8,12 @@ import {
   rationalize as mathRationalize,
   evaluate as mathEvaluate,
 } from "mathjs";
-import { buildTextbookContext } from "../../utils/textbookContext";
 import { loadTextbookCatalog, resolveTextbookScope, type TextbookScope } from "../../utils/textbookScope";
+import { normalizeFilterId, searchTextbookPassages, type TextbookSearchFilters } from "../../utils/textbookSearch";
+import type { RagCitation } from "../../utils/ragContext";
+import { openAiEmbedder, searchFigures } from "../../utils/figureSearch";
 import apiDocs from "~/utilities/apiDocs";
 import type { Syllabus } from "~/types/syllabus.interface";
-
-let currentAuthToken: string | undefined = undefined;
 
 const figureShortcodesStorage = new AsyncLocalStorage<{ usedShortcodes: Set<string> }>();
 
@@ -60,10 +60,6 @@ const SYLLABUS_LEVELS: Array<{
   { _id: "692ff09ae621c5077be40231", name: "Diploma in Pysical Education", educationLevel: { _id: "681afdc3b6583d2ea309f850", name: "Teacher Education" } },
 ];
 
-export function setAuthTokenForTools(token: string | undefined): void {
-  currentAuthToken = token as string;
-}
-
 const resolveApiUrl = (docUrl: string, fallbackPath: string) => {
   const baseUrl = apiDocs.baseURL;
   if (docUrl && !docUrl.includes("undefined")) {
@@ -94,12 +90,13 @@ function resolveLevelNameToIds(levelName: string): { levelId: string; educationL
 async function fetchSyllabusFromApi(
   subjectId: string,
   levelId: string,
-  educationLevelId: string
+  educationLevelId: string,
+  authToken: string | undefined,
 ): Promise<any | null> {
   const url = `${apiDocs.syllabus.getSyllabus}?subject=${encodeURIComponent(subjectId)}&level=${encodeURIComponent(levelId)}&educationLevel=${encodeURIComponent(educationLevelId)}`;
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (currentAuthToken?.trim()) {
-    headers.Authorization = `Bearer ${currentAuthToken.trim()}`;
+  if (authToken?.trim()) {
+    headers.Authorization = `Bearer ${authToken.trim()}`;
   }
   try {
     const res = await fetch(url, { method: "GET", headers });
@@ -238,7 +235,7 @@ function parseSyllabusResponse(rawData: any): {
   return { syllabus: "", competences: [], chapters: [], found: false };
 }
 
-async function fetchSubjectsFromApi(): Promise<any[]> {
+async function fetchSubjectsFromApi(authToken: string | undefined): Promise<any[]> {
   const url = resolveApiUrl(apiDocs.subjects.getSubjects, "/subjects");
   const publicUrl = resolveApiUrl(
     apiDocs.subjects.getPublicSubjects,
@@ -248,8 +245,8 @@ async function fetchSubjectsFromApi(): Promise<any[]> {
     "Content-Type": "application/json",
   };
 
-  if (currentAuthToken?.trim()) {
-    headers.Authorization = `Bearer ${currentAuthToken.trim()}`;
+  if (authToken?.trim()) {
+    headers.Authorization = `Bearer ${authToken.trim()}`;
   }
 
   const extractList = (data: any) => {
@@ -282,7 +279,24 @@ async function fetchSubjectsFromApi(): Promise<any[]> {
   );
 }
 
-export const studentTools = {
+/**
+ * Build the tool set for one request. The student's token is captured in this
+ * closure, so concurrent chats never share (or swap) credentials.
+ */
+export type StudentToolsOptions = {
+  /** Class level / subject IDs from the request, passed to Insights as filters. */
+  ragFilters?: TextbookSearchFilters;
+  /** Selected lesson names or IDs take precedence over model arguments. */
+  textbookScope?: TextbookScope;
+  /** Called with the book/chapter citations of every successful search. */
+  onCitations?: (citations: RagCitation[]) => void;
+};
+
+export function createStudentTools(
+  authToken: string | undefined,
+  options: StudentToolsOptions = {},
+) {
+  return {
   getSyllabus: tool({
     description:
       "Fetch the syllabus (competences, chapters, learning activities) for a subject and level. Use when you need to know which chapters exist so you can map the user's question to the right chapter, then call getChapterFigures with that chapter name. Inputs are names only (e.g. biology, Form 2).",
@@ -352,7 +366,8 @@ export const studentTools = {
       const rawData = await fetchSyllabusFromApi(
         subjectId,
         levelIds.levelId,
-        levelIds.educationLevelId
+        levelIds.educationLevelId,
+        authToken,
       );
       if (!rawData) {
         return {
@@ -411,13 +426,17 @@ export const studentTools = {
         .string()
         .optional()
         .describe("Subject name to filter figures (e.g. physics, biology, chemistry). Always pass when the conversation is about a specific subject so images match—e.g. biology question → only biology images."),
+      query: z
+        .string()
+        .optional()
+        .describe("The student's own words for what they want to see (e.g. 'hand lens', 'how the heart pumps blood'). Figures are found by meaning, so the student does not need to use the book's exact name (a 'hand lens' finds 'A simple microscope')."),
     }),
-    execute: async ({ chapter, topic, subject }) => {
+    execute: async ({ chapter, topic, subject, query }) => {
       try {
         let querySubject = subject?.toLowerCase().trim() || null;
         if (!querySubject) {
           try {
-            const subjects = await fetchSubjectsFromApi();
+            const subjects = await fetchSubjectsFromApi(authToken);
             const chapterLower = chapter.toLowerCase();
             const subjectNames = subjects
               .map(
@@ -441,7 +460,7 @@ export const studentTools = {
         }
 
         // Check if authentication token is available
-        if (!currentAuthToken || !currentAuthToken.trim()) {
+        if (!authToken || !authToken.trim()) {
           return {
             found: false,
             error:
@@ -460,10 +479,10 @@ export const studentTools = {
             filterOptions.category = querySubject;
           }
 
-          let figures = await getFigures(filterOptions, currentAuthToken);
+          let figures = await getFigures(filterOptions, authToken);
 
           if (figures.length === 0 && querySubject) {
-            figures = await getFigures({}, currentAuthToken);
+            figures = await getFigures({}, authToken);
           }
 
           images = figures.map((fig: any) => ({
@@ -512,6 +531,49 @@ export const studentTools = {
           };
         }
 
+        // Find figures by meaning first: match the student's words against every
+        // figure's description, caption, topic and chapter. Exact topic or chapter
+        // names are only the fallback below.
+        let semanticMatches: any[] | null = null;
+        const studentWords = (query || topic || "").trim();
+        if (studentWords) {
+          try {
+            const { getFigures: getAllFigures } = await import("../../utils/figuresApi");
+            const everyFigure = (await getAllFigures({}, authToken)).map((fig: any) => ({
+              figure_number: fig.figure_number || "",
+              caption: fig.alt || "",
+              description: fig.description || "",
+              shortcode: fig.shortcode || "",
+              page_number: fig.page_number || null,
+              chapter: fig.chapterName || "",
+              topic: fig.topicName || "",
+              subject: fig.subjectName || "",
+              path: fig.path || "",
+              paths: fig.paths || [],
+              category: fig.category || "",
+            }));
+            let apiKey = process.env.OPENAI_API_KEY || "";
+            try {
+              apiKey = String((useRuntimeConfig() as any).openaiApiKey || apiKey);
+            } catch {
+              /* outside a request: use the environment value */
+            }
+            const ranked = await searchFigures(studentWords, everyFigure, {
+              limit: 6,
+              embed: apiKey ? openAiEmbedder(apiKey) : undefined,
+            });
+            // Prefer the conversation's subject, but do not hide a better match
+            // from another subject (a hand lens is physics and biology).
+            const preferred = querySubject
+              ? ranked.filter((m) => (m.figure.subject || m.figure.category || "").toLowerCase() === querySubject)
+              : ranked;
+            const best = preferred.length > 0 ? preferred : ranked;
+            if (best.length > 0) semanticMatches = best.map((m) => m.figure);
+          } catch (error: any) {
+            console.warn("[getChapterFigures] semantic figure search failed:", error?.message || error);
+          }
+        }
+
         // Syllabus chapter maps to figures topic (Option 1). Filter by topic only.
         const normalize = (s: string) =>
           (s || "").toLowerCase().trim().replace(/\s+/g, " ");
@@ -523,10 +585,14 @@ export const studentTools = {
           if (!normalizedAgainst) return false;
           const imgTopic = normalize(img.topic || "");
           const imgChapter = normalize(img.chapter || "");
+          // A blank topic/chapter on the figure must never match: "x".includes("") is
+          // always true in JS, which was letting every figure with missing metadata
+          // match every query (unrelated images showing up for every chapter/topic).
           const check = (field: string) =>
-            field === normalizedAgainst ||
-            field.includes(normalizedAgainst) ||
-            normalizedAgainst.includes(field);
+            field.length > 0 &&
+            (field === normalizedAgainst ||
+              field.includes(normalizedAgainst) ||
+              normalizedAgainst.includes(field));
           return check(imgTopic) || check(imgChapter);
         };
 
@@ -542,14 +608,22 @@ export const studentTools = {
         };
 
         // Step 1: Try topic param vs img.topic first (if topic provided)
+        const hasSpecificTopic =
+          !!topic && !!topic.trim() && topic.trim().toLowerCase() !== "all";
         let filtered: any[] = [];
-        if (topic && topic.trim() && topic.trim().toLowerCase() !== "all") {
+        if (semanticMatches) {
+          filtered = semanticMatches;
+        } else if (hasSpecificTopic) {
           filtered = images.filter((img: any) => matchesTopicAgainst(img, topic));
           filtered = applySubjectFilter(filtered);
         }
 
-        // Step 2: If no match, try chapter vs img.topic
-        if (filtered.length === 0) {
+        // Step 2: If no match AND the student didn't ask about anything specific,
+        // fall back to the broader chapter. Skip this fallback when a specific
+        // topic was given and genuinely had no match - otherwise this substitutes
+        // an unrelated, generic chapter-level image (e.g. a campfire photo for an
+        // "inertia" question) instead of correctly showing no image at all.
+        if (filtered.length === 0 && !hasSpecificTopic && !semanticMatches) {
           filtered = images.filter((img: any) => matchesTopicAgainst(img, chapter));
           filtered = applySubjectFilter(filtered);
         }
@@ -628,7 +702,7 @@ export const studentTools = {
     }),
     execute: async ({ includeLevels }) => {
       try {
-        const subjects = await fetchSubjectsFromApi();
+        const subjects = await fetchSubjectsFromApi(authToken);
         const normalized = subjects
           .map((subject: any) => ({
             id:
@@ -976,28 +1050,52 @@ Coordinates are in SVG pixel space (origin top-left). Keep within the declared w
     }),
   }),
 
-  searchTextbooks: createTextbookSearchTool(),
-};
+  searchTextbooks: createTextbookSearchTool(options.textbookScope ?? {
+    subject: options.ragFilters?.subject,
+    level: options.ragFilters?.classLevel,
+  }, authToken, options),
+  };
+}
 
+export async function resolveTextbookSearchScope(
+  input: TextbookScope,
+  selected: TextbookScope,
+  authToken?: string,
+) {
+  const catalog = await loadTextbookCatalog(apiDocs.baseURL, authToken);
+  const filters = resolveTextbookScope(input, selected, catalog);
+  // Insights silently drops non-ID filters, so reject them before retrieval.
+  if (!normalizeFilterId(filters.subject) || !normalizeFilterId(filters.classLevel)) {
+    throw new Error("Please select a valid subject and class level.");
+  }
+  return filters;
+}
 
-export function createTextbookSearchTool(selectedScope: TextbookScope = {}, authToken?: string) {
+export function createTextbookSearchTool(
+  selectedScope: TextbookScope = {},
+  authToken?: string,
+  options: StudentToolsOptions = {},
+) {
   return tool({
-    description: `Search uploaded textbooks (external RAG) for factual information about a topic.
+    description: `Search uploaded textbooks (Insights RAG) for factual information about a topic.
 
 WHEN TO USE THIS TOOL:
 - When a student asks a FACTUAL question about curriculum content (e.g., "What is photosynthesis?", "Explain Newton's laws")
-- When you need ACCURATE information from official textbooks
+- For follow-up questions that need textbook passages not already provided in the TEXTBOOK PASSAGES section of your instructions
 
 WHEN NOT TO USE THIS TOOL:
 - For getting images (use getChapterFigures instead)
 - For listing subjects (use getSubjects instead)
 
-IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "According to [Book Title]..."). Do NOT mention chapter numbers or page numbers.`,
+RESULTS:
+- found: true → teach from "context" and mention the book title.
+- found: false → the textbooks have nothing on this topic.
+- searchError: true → the search itself failed; this says NOTHING about whether the topic is in the textbooks.`,
     inputSchema: z.object({
       query: z
         .string()
         .describe(
-          "The search query - be specific and include the topic/concept you need information about.",
+          "The search query - be specific and include the topic/concept you need information about. Keep the student's language (Kiswahili questions stay in Kiswahili).",
         ),
       subject: z.string().optional().describe("Optional: The subject area."),
       level: z.string().optional().describe("Optional: The education level."),
@@ -1013,97 +1111,59 @@ IMPORTANT: If this tool returns results, you MUST mention the book title (e.g. "
 
       let filters: { classLevel: string; subject: string };
       try {
-        const catalog = await loadTextbookCatalog(apiDocs.baseURL, authToken);
-        filters = resolveTextbookScope({ subject, level }, selectedScope, catalog);
-      } catch (error: any) {
-        return { found: false, context: "", message: error.message,
-          instruction: "Ask the student to clarify the subject/class if needed, or retry if the catalog is unavailable. Do not answer from other levels or general knowledge." };
-      }
-
-      try {
-        const config = useRuntimeConfig();
-        const ragApiBaseUrl = config.ragApiBaseUrl || "http://opschool.tie.go.tz:5002";
-        const insightsApiKey = config.insightsApiKey || "";
-
-        const rawQuery = query.trim();
-
-        // Call the advanced RAG search endpoint (POST /rag/query)
-        const ragRequestBody: Record<string, any> = {
-          query: rawQuery,
-          ...filters,
-          topK: 5,
-          useQueryExpansion: true,
-          useMultiQuery: true,
-          useHybrid: true,
-          useReranking: false,
-          returnParent: true,
-        };
-
-        const ragResponse = await fetch(`${ragApiBaseUrl}/rag/query`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-API-Key": insightsApiKey,
-          },
-          body: JSON.stringify(ragRequestBody),
-          signal: AbortSignal.timeout(15000),
-        });
-
-        if (!ragResponse.ok) {
-          const errorText = await ragResponse.text().catch(() => "");
-          throw new Error(
-            `RAG API error ${ragResponse.status}: ${errorText || ragResponse.statusText}`
-          );
-        }
-
-        const ragData = await ragResponse.json();
-        const results: any[] = ragData?.results || [];
-
-        if (results.length === 0) {
-          return {
-            found: false,
-            query: query,
-            message: "No relevant textbook content found for this topic.",
-            context: "",
-            instruction:
-              "Tell the student honestly: 'I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic.' Do NOT answer from your own knowledge.",
-          };
-        }
-
-        const context = buildTextbookContext(results, rawQuery);
-
-        if (!context.trim()) {
-          return {
-            found: false,
-            query: query,
-            message: "No relevant textbook content found for this topic.",
-            context: "",
-            instruction:
-              "Tell the student honestly: 'I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic.' Do NOT answer from your own knowledge.",
-          };
-        }
-
-        return {
-          found: true,
-          query: query,
-          source: "rag-api",
-          context: context,
-          queriesUsed: ragData.queriesUsed || [rawQuery],
-          methods: ragData.methods || [],
-          instruction:
-            "You MUST use the context above to answer. Mention the book title (e.g. 'According to [Book Title]...') but do NOT mention chapter numbers or page numbers. Do NOT use information outside this context.",
-        };
+        filters = await resolveTextbookSearchScope({ subject, level }, selectedScope, authToken);
       } catch (error: any) {
         return {
           found: false,
-          query: query,
-          error: error?.message || "Search failed",
-          message:
-            "An error occurred while searching textbooks. Please try again.",
           context: "",
-          instruction: "Textbook search is unavailable. Ask the student to retry; do not substitute unsupported textbook content.",
+          message: error.message,
+          instruction: "Ask the student to clarify the subject/class if needed, or retry if the catalog is unavailable. Do not answer from other levels or general knowledge.",
         };
       }
+
+      const outcome = await searchTextbookPassages(query, {
+        ...filters,
+        caller: "chat-tool",
+      });
+
+      if (outcome.status === "error") {
+        return {
+          found: false,
+          searchError: true,
+          errorCode: outcome.code,
+          query,
+          context: "",
+          message: "Textbook search is unavailable right now.",
+          instruction:
+            "Textbook search failed for technical reasons. Tell the student: 'Textbook search is unavailable right now, please try again in a few minutes.' Do NOT say the topic is missing from the textbooks, and do NOT present an answer as coming from the textbooks.",
+        };
+      }
+
+      if (outcome.status === "not_found") {
+        return {
+          found: false,
+          query,
+          message: "No relevant textbook content found for this topic.",
+          context: "",
+          instruction:
+            "Tell the student honestly: 'I don't have information about that topic in my textbooks yet. Please try rephrasing your question or asking about a different topic.' Do NOT answer from your own knowledge.",
+        };
+      }
+
+      options.onCitations?.(outcome.citations);
+      return {
+        found: true,
+        query,
+        source: "rag-api",
+        context: outcome.context,
+        citations: outcome.citations,
+        queriesUsed: outcome.queriesUsed,
+        methods: outcome.methods,
+        instruction:
+          "You MUST use the context above to answer. Mention the book title (e.g. 'According to [Book Title]...'). Do NOT use information outside this context.",
+      };
     },
   });
 }
+
+export type StudentTools = ReturnType<typeof createStudentTools>;

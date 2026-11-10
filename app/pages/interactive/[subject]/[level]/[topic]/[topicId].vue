@@ -9,7 +9,7 @@ import conversationParser from "~/utilities/parsers/conversationParser";
 import { activityPopupId, currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
 import AIAssistant from "~/components/chapter/AIAssistant.vue";
-import { isTokenExpiringSoon, refreshToken } from "~/utilities/jwToken";
+import { isTokenExpiringSoon } from "~/utilities/jwToken";
 import apiDocs from "~/utilities/apiDocs";
 import { updateChapterProgress } from "~/utilities/progress";
 import { enhanceAccessibility } from "~/utilities/parsers/html.readable";
@@ -57,6 +57,8 @@ const redirectToAuth = () =>
 
 // tokens cookies
 const signInAccessToken = useCookie("signInAccessToken");
+const updateProgress = (progress: any) =>
+  updateChapterProgress(progress, signInAccessToken.value);
 const userToken = useCookie("signInUserToken");
 // search anouncement to screen reders
 const announcement = ref();
@@ -179,6 +181,9 @@ const chapters = reactive<{
 
 // notes container reference
 const notesContainer = ref(null);
+const chapterSections = ref<{ id: string; title: string }[]>([]);
+const activeSectionId = ref<string | null>(null);
+const sectionTargets = new Map<string, HTMLElement>();
 const scrollTop = ref(0);
 const scrollHeight = ref(0);
 const clientHeight = ref(0);
@@ -250,17 +255,82 @@ const toggleSidebar = () => {
   }
 };
 
+const closeMobileSidebar = () => {
+  if (import.meta.client && window.innerWidth < 1024) {
+    document.querySelector(".sidebar")?.classList.remove("right-0");
+  }
+};
+
+const selectChapter = (chapterId: string) => {
+  closeMobileSidebar();
+  getChapter(chapterId);
+};
+
+const selectSection = (sectionId: string) => {
+  const target = sectionTargets.get(sectionId);
+  if (!target) return;
+  activeSectionId.value = sectionId;
+  closeMobileSidebar();
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+};
+
+const updateActiveSection = () => {
+  const container = notesContainer.value as HTMLElement | null;
+  if (!container || !chapterSections.value.length) return;
+
+  const readingLine = Math.max(container.getBoundingClientRect().top, 0) + 120;
+  let currentId = chapterSections.value[0]!.id;
+  for (const section of chapterSections.value) {
+    const target = sectionTargets.get(section.id);
+    if (target && target.getBoundingClientRect().top <= readingLine) {
+      currentId = section.id;
+    }
+  }
+  activeSectionId.value = currentId;
+};
+
+const updateChapterSections = () => {
+  const notes = (notesContainer.value as HTMLElement | null)?.querySelector(".notes");
+  sectionTargets.clear();
+  if (!notes) {
+    chapterSections.value = [];
+    activeSectionId.value = null;
+    return;
+  }
+
+  notes.querySelectorAll<HTMLElement>("[id]").forEach((element) => {
+    sectionTargets.set(element.id, element);
+  });
+  const seen = new Set<string>();
+  chapterSections.value = Array.from(notes.querySelectorAll<HTMLAnchorElement>('nav a[href^="#"]'))
+    .map((link) => {
+      const fragment = link.getAttribute("href")?.slice(1) ?? "";
+      let id = fragment;
+      try {
+        id = decodeURIComponent(fragment);
+      } catch {
+        // Keep the original fragment if it is not valid URI encoding.
+      }
+      return { id, title: link.textContent?.trim() ?? "" };
+    })
+    .filter(({ id, title }) => {
+      if (!id || !title || !sectionTargets.has(id) || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  updateActiveSection();
+};
+
+onMounted(() => window.addEventListener("scroll", updateActiveSection, { passive: true }));
+onUnmounted(() => window.removeEventListener("scroll", updateActiveSection));
+
 // Helper functions 
 const ensureAccessTokenValid = async () => {
   if (isTokenExpiringSoon(signInAccessToken.value as string, 60)) {
-    const response = await refreshToken().catch(() => null);
-
-    if (response && 'access_token' in response) {
-      signInAccessToken.value = (response as { access_token: string }).access_token;
-    } else {
-      redirectToAuth();
-    }
+    await redirectToAuth();
+    return false;
   }
+  return true;
 };
 
 type ActivityCompletionPayload = {
@@ -377,7 +447,7 @@ const syncChapterActivityMetrics = () => {
 
 const persistActivityProgressUpdate = async () => {
   syncChapterActivityMetrics();
-  await updateChapterProgress();
+  await updateProgress(chapterProgress.value);
 };
 
 const markActivityAttempted = async (activityId: string) => {
@@ -438,6 +508,7 @@ const postInitialProgressIfNeeded = async (
   try {
     await $fetch("/api/progress/post-progress", {
       method: "POST",
+      headers: { Authorization: `Bearer ${signInAccessToken.value}` },
       body: createChapterProgressPayload(chapterId, totalExperiments),
     });
   } catch (error) {
@@ -529,6 +600,9 @@ const getChapter = async (chapterId: string) => {
   }
   chapters.notesStatus = "pending";
   chapters.notes = null;
+  chapterSections.value = [];
+  activeSectionId.value = null;
+  sectionTargets.clear();
   chapters.questions = null;
   chapters.isAttemptingQuizes = false; //close quiz
   chapters.currentChapterId = chapterId;
@@ -536,7 +610,10 @@ const getChapter = async (chapterId: string) => {
   experimrntUrl.value = null;
   isFullscreen.value = false;
   handleAudio(); // Pause any playing audio when chapter changes
-  await ensureAccessTokenValid();
+  if (!await ensureAccessTokenValid()) {
+    chapters.notesStatus = "error";
+    return;
+  }
   announcement.value = `Loading activity of ${chapters.list?.find(c => c._id === chapterId)?.name} content please wait`;
   try {
     const response = await $fetch(
@@ -570,7 +647,7 @@ const getChapter = async (chapterId: string) => {
         (chapterProgress.value as any)?.userId === (userToken.value as any)?._id &&
         (chapterProgress.value as any)?.chapterId === chapterId
       ) {
-        tasks.push(updateChapterProgress());
+        tasks.push(updateProgress(chapterProgress.value));
       }
 
       await Promise.allSettled(tasks);
@@ -621,7 +698,7 @@ const getQNTopicChapter = async (chapterId: string) => {
 
 // Fetch topic information
 try {
-  const { data: response, status } = await fetchAsyncData(
+  const { data: response, status, error: fetchError } = await fetchAsyncData(
     `chapters-${topicId}`,
     () => $fetch(apiDocs.topics.getTopicId.replaceAll(':id', topicId as string), {
       headers: {
@@ -630,12 +707,28 @@ try {
     })
   );
 
-  if (response) {
+  const topicData = response.value && typeof response.value === "object"
+    ? response.value as { chapters?: any[]; languageData?: any[] }
+    : null;
+  if (status.value === 'error' || !topicData) {
+    chapters.status = 'error';
+    chapters.error = fetchError.value || new Error('Topic data is unavailable.');
+
+    const statusCode = Number(
+      (fetchError.value as any)?.statusCode ??
+      (fetchError.value as any)?.response?.status ??
+      (fetchError.value as any)?.status ??
+      0,
+    );
+    if (statusCode === 401 || statusCode === 403) {
+      await redirectToAuth();
+    }
+  } else {
     chapters.status = status.value;
-    chapters.list = (response.value.chapters as any[]) || [];
+    chapters.list = topicData.chapters || [];
     const firstChapterId = chapters.list[0]?._id;
     chapters.currentChapterId = firstChapterId || null;
-    topicLanguageData.value = (response.value.languageData as any[])?.[0] || { name: contentLayoutLanguage.value, _id: "" };
+    topicLanguageData.value = topicData.languageData?.[0] || { name: contentLayoutLanguage.value, _id: "" };
 
     if (firstChapterId && chapters.list.length) {
       const firstChapter = chapters.list[0];
@@ -643,7 +736,7 @@ try {
         name: firstChapter.name,
         chapterNo: firstChapter.chapterNo,
       });
-      getChapter(firstChapterId);
+      if (import.meta.client) getChapter(firstChapterId);
     } else {
       chapters.notesStatus = "empty";
       announcement.value = "No content available for this topic";
@@ -662,26 +755,23 @@ try {
   );
 
   if (statusCode === 401 || statusCode === 403) {
-    redirectToAuth();
+    await redirectToAuth();
   }
 }
 
 // Call Submit Topic Viewed Read
-if (!userViewedTopic.value) {
-  topicViewedRead(topicId as string);
+if (import.meta.client && chapters.status === 'success' && !userViewedTopic.value) {
+  try {
+    await topicViewedRead(topicId);
+  } catch (error) {
+    console.error('[fail to mark topic as read]:', error);
+  }
 }
 
 watch(
-  () => [userToken.value, signInAccessToken.value],
-  async ([nextUserToken, nextAccessToken]) => {
-    if (nextUserToken || nextAccessToken) {
-      return;
-    }
-
-    const refreshed = await refreshToken().catch(() => null);
-    if (!refreshed) {
-      redirectToAuth();
-    }
+  () => signInAccessToken.value,
+  (nextAccessToken) => {
+    if (!nextAccessToken) redirectToAuth();
   },
 );
 
@@ -736,7 +826,7 @@ const updateInteractiveVideoLinks = async () => {
 
   if (links.length === 0) return;
 
-  await ensureAccessTokenValid();
+  if (!await ensureAccessTokenValid()) return;
 
   const videoIds = Array.from(
     new Set(
@@ -787,6 +877,7 @@ watch(
   async (newNotes) => {
     if (newNotes) {
       await nextTick();
+      updateChapterSections();
       if (notesContainer.value) {
         await renderMathContent([notesContainer.value as Element]);
       }
@@ -946,16 +1037,16 @@ const observerContent = () => {
         // update progress
         switch (progress) {
           case 25:
-            updateChapterProgress();
+            updateProgress(chapterProgress.value);
             break;
           case 50:
-            updateChapterProgress();
+            updateProgress(chapterProgress.value);
             break;
           case 75:
-            updateChapterProgress();
+            updateProgress(chapterProgress.value);
             break;
           case 100:
-            updateChapterProgress();
+            updateProgress(chapterProgress.value);
             break;
           default:
             break;
@@ -1111,16 +1202,16 @@ watch(scrollPercent, async (newPercent) => {
 
   switch (newPercent) {
     case 25:
-      updateChapterProgress();
+      updateProgress(chapterProgress.value);
       break;
     case 50:
-      updateChapterProgress();
+      updateProgress(chapterProgress.value);
       break;
     case 75:
-      updateChapterProgress();
+      updateProgress(chapterProgress.value);
       break;
     case 100:
-      updateChapterProgress();
+      updateProgress(chapterProgress.value);
       break;
     default:
       break;
@@ -1137,6 +1228,9 @@ watch(() => chapters.isAttemptingQuizes, async (newAttemptingQuizes) => {
   }
 
   if (!newAttemptingQuizes) {
+    if (notesContainer.value) {
+      await renderMathContent([notesContainer.value as Element]);
+    }
     // Call Function
     setPicCenter();
     observerContent();
@@ -1161,7 +1255,7 @@ definePageMeta({
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage" :education-level>
+  <NuxtLayout name="home-layout" v-bind="{ language: contentLayoutLanguage, educationLevel: educationLevel }">
     <section v-if="experimrntUrl || activityPopupId" class="relative w-full center-height" id="experiment-container">
       <button
         type="button"
@@ -1200,7 +1294,6 @@ definePageMeta({
     </section>
 
     <!-- quiz -->
-    <!-- bg-[url('/public/images/background2.webp')] bg-cover bg-center bg-no-repeat -->
     <div v-else-if="chapters.questions && chapters.isAttemptingQuizes" class="relative flex flex-col justify-center">
       <!-- Chapter Questions -->
       <QuestionsContainer :questions="chapters?.questions" :is-attempting-quiz="chapters.isAttemptingQuizes"
@@ -1209,7 +1302,7 @@ definePageMeta({
         :level-id="chapters.notes?.level?._id ?? ((userToken as any)?.value?.level?._id ?? null)"
         :chapters-list="chapters.list?.length" :chapters-number="chapters?.number"
         :topic-language="topicLanguageData?.name"
-        @emit-quiz-score="updateChapterProgress" />
+        />
     </div>
 
     <section v-else class="relative inline-flex w-full h-full overflow-hidden center-height">
@@ -1244,6 +1337,7 @@ definePageMeta({
         <!-- Notes loaded successfully -->
         <div id="main-container" tabindex="-1" aria-live="polite" aria-label="compitence content loaded successfully"
           ref="notesContainer" v-else-if="chapters.notesStatus == 'success'"
+          @scroll.passive="updateActiveSection"
           class="relative z-0 w-full py-5 lg:w-3/4 lg:scroll-height lg:overflow-y-scroll lg:px-5 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           <!-- Topic Level Standard and Subject Indicator -->
           <div class="flex w-full min-w-0 items-center justify-between gap-2">
@@ -1339,8 +1433,9 @@ definePageMeta({
             </div>
           </div>
           <!-- UL list of chapters -->
-          <ChapterContainer :chapters="chapters?.list" @emit-chapter-id="getChapter($event)"
-            :active-chapter-id="chapters.notes?._id ?? chapters.currentChapterId" @click="toggleSidebar" />
+          <ChapterContainer :chapters="chapters?.list" :sections="chapterSections" :active-section-id="activeSectionId"
+            @emit-chapter-id="selectChapter" @emit-section-id="selectSection"
+            :active-chapter-id="chapters.notes?._id ?? chapters.currentChapterId" />
         </div>
       </div>
 

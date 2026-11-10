@@ -3,12 +3,7 @@ import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import { ref, computed, watch } from "vue";
-import {
-  isGreaterToXL,
-  isGreaterToLG,
-  isGreaterToMD,
-  screenWidth,
-} from "@/utilities/controlls";
+import { screenWidth } from "@/utilities/controlls";
 import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
 import apiDocs from "~/utilities/apiDocs";
 import { HomeCustomScrollView } from "#components";
@@ -102,10 +97,9 @@ const TOPIC_SUBJECT_ORDER = [
 ];
 
 const getPageSize = () => {
-  if (screenWidth.value >= 1280 || isGreaterToXL.value) return 12;
-  if (screenWidth.value >= 1024 || isGreaterToLG.value) return 9;
-  if (screenWidth.value >= 768 || isGreaterToMD.value) return 6;
-  return 4;
+  if (screenWidth.value >= 1280) return 12;
+  if (screenWidth.value >= 1024) return 9;
+  return 6;
 };
 
 const normalizeTopicCollection = (items: any[] = []) =>
@@ -198,7 +192,7 @@ const fetchTopics = async (params?: any) => {
         }),
     );
 
-    topic.value = buildTopicGroups(response.value ?? []);
+    topic.value = buildTopicGroups(Array.isArray(response.value) ? response.value : []);
     status.value = fetchStatus.value;
 
     goToPage(1);
@@ -307,11 +301,11 @@ watch(filters, (filters) => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage" :education-level>
+  <NuxtLayout name="home-layout" v-bind="{ language: contentLayoutLanguage, educationLevel: educationLevel }">
     <div :class="[' ', { ' animate-pulse': isLoading }]">
       <!-- User Token Available -->
       <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
-        <HomeSearchbar appearance="rounded" :language :education-level="educationLevel" />
+        <div class="hidden md:block"><HomeSearchbar appearance="rounded" :language :education-level="educationLevel" /></div>
         <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)"
           :tab-group="educationLevel" :language />
       </div>
@@ -363,8 +357,8 @@ watch(filters, (filters) => {
               <!-- pagination numbers based on data length greater to 9 -->
               <div class="flex justify-center">
                 <AppPagination :current-page="currentPage" :total-pages="totalPages"
-                  :first-label="useContentLayoutLanguage().value == 'kiswahili' ? 'Mwanzo' : 'First'"
-                  :last-label="useContentLayoutLanguage().value == 'kiswahili' ? 'Mwisho' : 'Last'" @change="goToPage" />
+                  :first-label="contentLayoutLanguage == 'kiswahili' ? 'Mwanzo' : 'First'"
+                  :last-label="contentLayoutLanguage == 'kiswahili' ? 'Mwisho' : 'Last'" @change="goToPage" />
               </div>
             </div>
           </ClientOnly>

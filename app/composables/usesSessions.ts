@@ -6,7 +6,7 @@ export function useSessionsSetup() {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  const baseUrl = apiDocs.baseURL;
+  const baseUrl = apiDocs.requestBaseURL;
 const token = useCookie('signInAccessToken').value;
   // POST create session
   const postData = async (payload: any,endpoint:string) => {

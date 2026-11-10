@@ -62,7 +62,7 @@ const toggleReadMore = async () => {
 
 <template>
   <!-- Hero landmark -->
-  <section class="flex justify-center my-2 hero-section" aria-label="Ekima interactive learning introduction">
+  <section class="hidden justify-center my-2 hero-section md:flex" aria-label="Ekima interactive learning introduction">
     <div class="grid grid-cols-1 xl:grid-cols-2 md:gap-2">
       <!-- Slider -->
       <div class="flex flex-col items-center justify-center h-full">
@@ -82,7 +82,7 @@ const toggleReadMore = async () => {
 
         <!-- Description container controlled by the button -->
         <div id="hero-description" tabindex="-1" role="region" aria-live="polite" aria-atomic="true"
-          class="my-2 text-xl text-justify text-black text-medium text-opacity-80" v-html="isExpanded ? fullText : shortText">
+          class="my-2 text-base leading-7 text-left text-black text-opacity-80 md:text-xl md:text-justify" v-html="isExpanded ? fullText : shortText">
         </div>
 
         <!-- Read more / Show less toggle -->
@@ -97,8 +97,8 @@ const toggleReadMore = async () => {
           'overflow-hidden rounded-md my-auto transition-all duration-500 ease-in-out bg-gradient-to-b',
           isExpanded ? 'h-0' : 'h-auto'
         ]">
-          <NuxtImg src="/images/4.banner_miaka_50_transparent.gif"
-            alt="Animated white banner on a stage backdrop celebrating ‘Miaka 50 ya Taasisi ya Elimu Tanzania (TET)’ (50 years of the Tanzania Institute of Education). At the top left is the TET/TIE emblem. Across the left side in yellow text is the hashtag ‘#KitabuKimojaMwanafunziMmoja’. Below it on the left is a yellow phone number ‘994040118259’, and near the bottom center-right is another yellow phone number ‘0758460508’. On the right side is a black-and-white cartoon of a smiling student with arms raised, holding an open book above their head. Curving around the illustration in blue is the slogan ‘Kitabu Kimoja Mwanafunzi Mmoja’."
+          <img src="/images/4.banner_miaka_50_transparent.gif"
+            :alt="'Animated white banner on a stage backdrop celebrating ‘Miaka 50 ya Taasisi ya Elimu Tanzania (TET)’ (50 years of the Tanzania Institute of Education). At the top left is the TET/TIE emblem. Across the left side in yellow text is the hashtag ‘#KitabuKimojaMwanafunziMmoja’. Below it on the left is a yellow phone number ‘994040118259’, and near the bottom center-right is another yellow phone number ‘0758460508’. On the right side is a black-and-white cartoon of a smiling student with arms raised, holding an open book above their head. Curving around the illustration in blue is the slogan ‘Kitabu Kimoja Mwanafunzi Mmoja’.'"
             class="object-contain w-full h-full" />
         </div>
       </div>

@@ -3,13 +3,7 @@ import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import { ref, computed, onMounted, watch } from "vue";
-import {
-  isGreaterToXL,
-  isGreaterToLG,
-  isGreaterToMD,
-  isGreaterToSM,
-  screenWidth,
-} from "@/utilities/controlls";
+import { screenWidth } from "@/utilities/controlls";
 import apiDocs from "~/utilities/apiDocs";
 import { HomeCustomScrollView } from "#components";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
@@ -119,10 +113,9 @@ const switchTab = async (tab: string) => {
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(12);
 const getPageSize = () => {
-  if (screenWidth.value >= 1280 || isGreaterToXL.value) return 12;
-  if (screenWidth.value >= 1024 || isGreaterToLG.value) return 9;
-  if (screenWidth.value >= 768 || isGreaterToMD.value) return 6;
-  return 4;
+  if (screenWidth.value >= 1280) return 12;
+  if (screenWidth.value >= 1024) return 9;
+  return 6;
 };
 
 // Define Cookie
@@ -167,7 +160,7 @@ const fetchExperiments = async (param?: any) => {
     }));
 
     // Call State Define above
-    experiments.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+    experiments.value = removeDataFromArrayOfJson(Array.isArray(response.value) ? response.value : [], "isDeleted", true);
     experiments.value = educationLevel.value !== "primary"
       ? filterKeyDataFromArrayOfJson(experiments.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
       : experiments.value;
@@ -290,11 +283,11 @@ const contentLayoutLanguage = useContentLayoutLanguage();
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
+  <NuxtLayout name="home-layout" v-bind="{ language: contentLayoutLanguage }">
     <section :class="[' ', { ' animate-pulse': isLoading }]" :aria-busy="isLoading ? 'true' : 'false'">
       <!-- User Token Available -->
       <section v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
-        <HomeSearchbar appearance="rounded" aria-label="Search experiments" :language :education-level="educationLevel" />
+        <div class="hidden md:block"><HomeSearchbar appearance="rounded" aria-label="Search experiments" :language :education-level="educationLevel" /></div>
         <nav aria-label="Content categories">
           <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" :language :education-level="educationLevel" :tab-group="educationLevel" />
         </nav>
@@ -362,8 +355,8 @@ const contentLayoutLanguage = useContentLayoutLanguage();
               <AppPagination
                 :current-page="currentPage"
                 :total-pages="totalPages"
-                 :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
-                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
+                 :first-label="contentLayoutLanguage=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="contentLayoutLanguage=='kiswahili' ? 'Mwisho' :'Last'"
                 @change="goToPage"
               />
             </div>

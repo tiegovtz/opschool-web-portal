@@ -15,8 +15,8 @@ const hooks = registerHooks({ resolve(specifier, context, nextResolve) {
 const {createTextbookSearchTool} = await import('../server/api/utils/tools.ts');
 hooks.deregister();
 const catalog = {
-  subjects:[{_id:'bio1',name:'Biology',educationLevel:'lower'},{_id:'bio5',name:'Biology',educationLevel:'upper'}],
-  levels:[{_id:'f1',name:'Form 1',educationLevel:'lower'},{_id:'f5',name:'Form 5',educationLevel:'upper'}],
+  subjects:[{_id:'100000000000000000000001',name:'Biology',educationLevel:'lower'},{_id:'100000000000000000000005',name:'Biology',educationLevel:'upper'}],
+  levels:[{_id:'200000000000000000000001',name:'Form 1',educationLevel:'lower'},{_id:'200000000000000000000005',name:'Form 5',educationLevel:'upper'}],
 };
 
 test('student tool sends canonical scope, keeps long-chapter evidence, and isolates concurrent lessons', async t => {
@@ -30,15 +30,15 @@ test('student tool sends canonical scope, keeps long-chapter evidence, and isola
     return Response.json({results:[{content:`Evidence for ${body.classLevel}`,parentContent:'Chapter '.repeat(3000),source:'Book'}]});
   });
   const results=await Promise.all(['Form 1','Form 5'].map(level => createTextbookSearchTool({subject:'Biology',level},'test-token').execute({query:'photosynthesis',subject:'wrong'}, {})));
-  assert.deepEqual(requests.map(r=>[r.subject,r.classLevel]).sort(),[['bio1','f1'],['bio5','f5']]);
+  assert.deepEqual(requests.map(r=>[r.subject,r.classLevel]).sort(),[['100000000000000000000001','200000000000000000000001'],['100000000000000000000005','200000000000000000000005']]);
   assert.ok(results.every(result=>result.found));
-  assert.match(results[0].context,/Evidence for f1/);
-  assert.match(results[1].context,/Evidence for f5/);
+  assert.match(results[0].context,/Evidence for 200000000000000000000001/);
+  assert.match(results[1].context,/Evidence for 200000000000000000000005/);
 });
 
 test('missing scope and upstream errors never fall back to an unfiltered corpus', async t => {
   let searches=0;
-  globalThis.useRuntimeConfig=() => ({ragApiBaseUrl:'http://rag.test'});
+  globalThis.useRuntimeConfig=() => ({ragApiBaseUrl:'http://rag.test',insightsApiKey:'test-only'});
   t.mock.method(globalThis,'fetch',async (url) => {
     if (url.endsWith('/subjects')) return Response.json(catalog.subjects);
     if (url.endsWith('/levels')) return Response.json(catalog.levels);

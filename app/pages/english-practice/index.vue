@@ -131,9 +131,6 @@
               :highlighted-word="highlightedWord"
               :current-transcript="currentTranscript"
               :mode="mode"
-              :is-ai-speaking="mode === 'single-user'
-                ? turnManager.currentTurn.value !== primarySpeakerId && (isAiAudioLoading || isPlayingAiAudio)
-                : turnManager.currentTurn.value === aiSpeakerId && (isAiAudioLoading || isPlayingAiAudio)"
               :current-word-index="currentWordIndex"
               :participants="participants"
               :ui-language="uiLanguage"
@@ -188,16 +185,6 @@
         >
           <WaveGlowBottom class="w-full h-full" :active="speechRecognition.isListening.value" :audio-level="audioLevel" />
         </div>
-        <!-- Hidden Audio Element -->
-        <audio
-          ref="audioRef"
-          @ended="onAudioEnded"
-          @error="onAudioError"
-          @timeupdate="onAudioTimeUpdate"
-          class="absolute w-0 h-0 overflow-hidden"
-          :volume="1.0"
-        ></audio>
-
         <div class="toast-container" role="status" aria-live="polite" aria-atomic="true">
           <div
             v-for="toast in toasts"
@@ -252,11 +239,12 @@ const mode = ref<PracticeMode>('multi-user'); // Can be changed based on user de
 const route = useRoute();
 const router = useRouter();
 const authAccessTokenCookie = useCookie('signInAccessToken');
-const authHeaders = computed(() =>
-  authAccessTokenCookie.value
-    ? { Authorization: `Bearer ${authAccessTokenCookie.value}` }
-    : {}
-);
+const authHeaders = computed<Record<string, string>>(() => {
+  const token = authAccessTokenCookie.value;
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+});
 const practiceTitle = computed(() =>
   String(route.query.language || '').trim().toLowerCase() === 'sw'
     ? 'Mazoezi ya Kiswahili'
@@ -392,7 +380,7 @@ const startMicLevel = async () => {
       micAnalyser.getByteTimeDomainData(data);
       let sum = 0;
       for (let i = 0; i < data.length; i += 1) {
-        const v = (data[i] - 128) / 128;
+        const v = ((data[i] ?? 128) - 128) / 128;
         sum += v * v;
       }
       const rms = Math.sqrt(sum / data.length);
@@ -491,7 +479,7 @@ const normalizeWords = (text: string) => {
 const toSoundex = (word: string) => {
   const normalized = String(word || '').toLowerCase().replace(/[^a-z]/g, '');
   if (!normalized) return '';
-  const first = normalized[0].toUpperCase();
+  const first = (normalized[0] ?? '').toUpperCase();
   const map: Record<string, string> = {
     b: '1',
     f: '1',
@@ -515,7 +503,7 @@ const toSoundex = (word: string) => {
   let lastCode = '';
   let result = first;
   for (let i = 1; i < normalized.length; i += 1) {
-    const code = map[normalized[i]] || '0';
+    const code = map[normalized[i] ?? ''] || '0';
     if (code !== '0' && code !== lastCode) {
       result += code;
     }
@@ -1332,6 +1320,27 @@ type RawConversationEntry = {
   speaker?: string;
 };
 
+type ConversationResponse = {
+  identifier: string;
+  name: string;
+  entries: RawConversationEntry[];
+  pieces: string[];
+  speakerNames: string[];
+};
+
+type ConstantAudioResponse = {
+  items: Array<{ order: number; audioFile: string }>;
+};
+
+type TtsBatchResponse = {
+  chunks: Array<{
+    id: string;
+    success: boolean;
+    audioBase64?: string;
+    contentType?: string;
+  }>;
+};
+
 const convertPiecesToScript = (
   pieces: Array<string | RawConversationEntry>,
   identifier?: string,
@@ -1457,11 +1466,11 @@ const loadConversationScript = async () => {
       query.identifier = identifier;
     }
     const [response, constantAudio] = await Promise.all([
-      $fetch('/api/conversation/engage', {
+      $fetch<ConversationResponse>('/api/conversation/engage', {
         query,
         headers: authHeaders.value,
       }),
-      $fetch('/api/conversation/constant-audio', {
+      $fetch<ConstantAudioResponse>('/api/conversation/constant-audio', {
         query: {
           chapterId,
           identifier,
@@ -1555,7 +1564,7 @@ const loadConversationScript = async () => {
           : line.speaker === aiSpeakerId.value) && !nextLineAudioMap[line.id]
     );
     if (typeof window !== 'undefined' && aiLinesMissingAudio.length) {
-      const batchResponse = await $fetch('/api/conversation/tts-batch', {
+      const batchResponse = await $fetch<TtsBatchResponse>('/api/conversation/tts-batch', {
         method: 'POST',
         headers: authHeaders.value,
         body: {

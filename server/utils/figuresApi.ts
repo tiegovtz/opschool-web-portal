@@ -7,6 +7,7 @@
 
 import type { ApiFigure, MappedFigure } from '~/types/figures.interface';
 import { trackFiguresApiError, categorizeHttpError } from './errorTracking';
+import { fetchBackendWithCsrf } from './fetchBackendWithCsrf';
 import { 
   getCachedFigures, 
   setCachedFigures, 
@@ -108,7 +109,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}, token?
       throw new Error(errorMessage);
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetchBackendWithCsrf(API_BASE_URL, `${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
     });
@@ -331,7 +332,7 @@ export async function createFigure(data: {
       'Authorization': `Bearer ${authToken}`,
     };
 
-    const response = await fetch(`${API_BASE_URL}/figures`, {
+    const response = await fetchBackendWithCsrf(API_BASE_URL, `${API_BASE_URL}/figures`, {
       method: 'POST',
       headers,
       body: JSON.stringify(apiData),
@@ -421,14 +422,14 @@ export async function updateFigure(shortcode: string, data: {
       'Authorization': `Bearer ${authToken}`,
     };
 
-    let response = await fetch(`${API_BASE_URL}/figures/shortcode/${shortcode}`, {
+    let response = await fetchBackendWithCsrf(API_BASE_URL, `${API_BASE_URL}/figures/shortcode/${shortcode}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(apiData),
     });
 
     if (!response.ok && response.status !== 404) {
-      response = await fetch(`${API_BASE_URL}/figures/shortcode/${shortcode}`, {
+      response = await fetchBackendWithCsrf(API_BASE_URL, `${API_BASE_URL}/figures/shortcode/${shortcode}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify(apiData),
@@ -494,7 +495,7 @@ export async function deleteFigure(shortcode: string, token?: string): Promise<b
       throw new Error(`Figure with shortcode "${shortcode}" has no _id`);
     }
 
-    const deleteResponse = await fetch(`${API_BASE_URL}/figures/${figureId}`, {
+    const deleteResponse = await fetchBackendWithCsrf(API_BASE_URL, `${API_BASE_URL}/figures/${figureId}`, {
       method: 'DELETE',
       headers: { 
         'Authorization': `Bearer ${authToken}`,

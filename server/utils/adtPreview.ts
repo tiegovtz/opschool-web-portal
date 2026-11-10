@@ -25,7 +25,7 @@ export const adtPreviewCatalogue: AdtCatalogue = {
   ],
   languages: [{ id: 'sw', name: 'Kiswahili' }, { id: 'en', name: 'English' }],
   curricula: [{ id: '2023', name: '2023 Curriculum' }],
-  books: [
+  books: ([
     ['p-science', 'Sayansi na Teknolojia', 'primary', 'p3', 'science', 'sw'],
     ['p-math', 'Hisabati', 'primary', 'p4', 'math', 'sw'],
     ['p-language', 'Kusoma na Kuandika', 'primary', 'p3', 'sw', 'sw'],
@@ -34,7 +34,7 @@ export const adtPreviewCatalogue: AdtCatalogue = {
     ['s-math', 'Basic Mathematics', 'ordinary', 'f2', 'math', 'en'],
     ['s-english', 'English for Secondary Schools', 'ordinary', 'f1', 'english', 'en'],
     ['s-advanced', 'Advanced Science', 'advanced', 'f5', 'science', 'en'],
-  ].map(([id, title, level, classId, subject, languageId]) => ({
+  ] as [string, string, string, string, string, string][]).map(([id, title, level, classId, subject, languageId]) => ({
     id, title, levelIds: [level], classIds: [classId], subjectIds: [subject],
     curriculumIds: ['2023'], languageId, language: languageId === 'sw' ? 'Kiswahili' : 'English',
     coverUrl: null, features: ['Audio', 'Interactive activities'], pages: 64,

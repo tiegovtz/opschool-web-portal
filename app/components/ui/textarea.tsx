@@ -26,6 +26,9 @@ export interface TextareaProps extends VariantProps<typeof textareaVariants> {
   class?: string;
   className?: string;
   disabled?: boolean;
+  id?: string;
+  placeholder?: string;
+  rows?: string | number;
   onChange?: (event: Event) => void;
   onInput?: (event: Event) => void;
 }
@@ -41,6 +44,9 @@ const Textarea = defineComponent({
       default: "default",
     },
     disabled: Boolean,
+    id: String,
+    placeholder: String,
+    rows: [String, Number],
     class: String,
     className: String,
     onChange: Function as PropType<TextareaProps["onChange"]>,
@@ -66,6 +72,9 @@ const Textarea = defineComponent({
           (attrs as { className?: string }).className,
         )}
         disabled={props.disabled}
+        id={props.id}
+        placeholder={props.placeholder}
+        rows={props.rows}
         value={props.modelValue ?? props.value ?? ""}
         onInput={handleInput}
         spellcheck={false}

@@ -1,101 +1,31 @@
 <script setup lang="ts">
-import type { LanguageSupport } from "~/types/language.interface";
-import { normalizeLanguageSupport } from "~/utilities/educationRoute";
-
+import SupportInbox from '~/components/support/SupportInbox.vue';
+import FeedbackForm from '~/components/support/FeedbackForm.vue';
+import { normalizeLanguageSupport, getEducationHubBucket } from '~/utilities/educationRoute';
 const route = useRoute();
-const router = useRouter();
-const hubHeaderLang = useHubHeaderLanguage();
-const ENGLISH_FEEDBACK_FORM_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSecDe7azgD2sESzgwmWJNROSioBjrMEsFChY9QFLQT0kqrQqA/viewform?embedded=true";
-const KISWAHILI_FEEDBACK_FORM_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLScpKgdC-jcp1jvN1oA95lBjGJJgr5mtI34eEWwFSSzGPE7Tuw/viewform?embedded=true";
-
-watch(
-  () => route.query.lang,
-  (lang) => {
-    hubHeaderLang.value = normalizeLanguageSupport(
-      lang,
-      hubHeaderLang.value || "english",
-    );
-  },
-  { immediate: true },
-);
-
-const selectedLanguage = computed<LanguageSupport>(() =>
-  normalizeLanguageSupport(hubHeaderLang.value || route.query.lang, "english"),
-);
-
-const content = computed(() =>
-  selectedLanguage.value === "kiswahili"
-    ? {
-        title: "Tuma maoni yako",
-        subtitle:
-          "Chagua lugha unayotaka kutumia kuandika maoni yako kabla ya kujaza fomu.",
-        english: "Kiingereza",
-        kiswahili: "Kiswahili",
-        frameTitle: "Fomu ya maoni",
-        loading: "Inapakia...",
-      }
-    : {
-        title: "Share your feedback",
-        subtitle:
-          "Choose the language you want to use for your feedback before filling in the form.",
-        english: "English",
-        kiswahili: "Kiswahili",
-        frameTitle: "Feedback form",
-        loading: "Loading...",
-      },
-);
-
-const feedbackFormSrc = computed(() =>
-  selectedLanguage.value === "kiswahili"
-    ? KISWAHILI_FEEDBACK_FORM_URL
-    : ENGLISH_FEEDBACK_FORM_URL,
-);
-
-watch(
-  selectedLanguage,
-  async (language) => {
-    const nextLang = language === "kiswahili" ? "sw" : "en";
-    if (route.query.lang === nextLang) return;
-
-    await router.replace({
-      query: {
-        ...route.query,
-        lang: nextLang,
-      },
-    });
-  },
-  { immediate: true },
-);
+const token = useCookie('signInAccessToken');
+const hub = useHubEducationLevel();
+const headerLanguage = useHubHeaderLanguage();
+const language = computed(() => normalizeLanguageSupport(route.query.lang || headerLanguage.value, 'english'));
+const educationLevel = computed(() => getEducationHubBucket(route.query.educationLevel || route.query.edl) || hub.value);
+const activeTab = ref('feedback');
+const contentScroller = ref<HTMLElement | null>(null);
+watch(activeTab, () => nextTick(() => contentScroller.value?.scrollTo({ top: 0 })));
+const tabs = computed(() => [{ id: 'feedback', label: language.value === 'kiswahili' ? 'Maoni' : 'Feedback' }, { id: 'support', label: language.value === 'kiswahili' ? 'Msaada wa kiufundi' : 'Technical Support' }, { id: 'requests', label: language.value === 'kiswahili' ? 'Maombi yangu' : 'My Requests' }]);
+onMounted(() => { if (route.query.tab === 'requests' && token.value) activeTab.value = 'requests'; });
+watch(token, value => { if (!value && activeTab.value === 'requests') activeTab.value = 'feedback'; });
+function choose(id: string) { if (id === 'requests' && !token.value) { navigateTo({ path: '/auth', query: { redirect: `/feedback?${new URLSearchParams({ lang: language.value === 'kiswahili' ? 'sw' : 'en', tab: 'requests', educationLevel: educationLevel.value })}` } }); return; } activeTab.value = id; }
+function onKey(event: KeyboardEvent) { const keys = ['ArrowLeft','ArrowRight','Home','End']; if (!keys.includes(event.key)) return; event.preventDefault(); const index = tabs.value.findIndex(tab => tab.id === activeTab.value); const next = event.key === 'Home' ? 0 : event.key === 'End' ? 2 : (index + (event.key === 'ArrowRight' ? 1 : 2)) % 3; choose(tabs.value[next]!.id); nextTick(() => document.getElementById(`${tabs.value[next]!.id}-tab`)?.focus()); }
 </script>
-
 <template>
-  <NuxtLayout name="home-layout" :language="selectedLanguage">
-    <section id="main-container" tabindex="-1" class="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 md:p-6">
-      <div class="rounded-2xl bg-slate-50 p-5 shadow-sm ring-1 ring-slate-200">
-        <h1 class="text-2xl font-bold text-slate-900">
-          {{ content.title }}
-        </h1>
-        <!-- <p class="mt-2 text-sm text-slate-600">
-          {{ content.subtitle }}
-        </p> -->
+  <NuxtLayout name="home-layout" v-bind="{ language, educationLevel }">
+    <section id="main-container" tabindex="-1" class="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col gap-4 p-2 pr-8 md:p-6 md:pr-8">
+      <div role="tablist" aria-label="Feedback and support" class="z-10 flex shrink-0 gap-2 overflow-x-auto border-b border-gray-200 bg-white" @keydown="onKey">
+        <button v-for="tab in tabs" :id="`${tab.id}-tab`" :key="tab.id" type="button" role="tab" :aria-controls="`${tab.id}-panel`" :aria-selected="activeTab === tab.id" :tabindex="activeTab === tab.id ? 0 : -1" :class="['inline-flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-5 py-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-oceanBlue', activeTab === tab.id ? 'border-oceanBlue bg-sky-50 text-deepBlue' : 'border-transparent text-gray-600 hover:bg-gray-50']" @click="choose(tab.id)">{{ tab.label }}<span v-if="tab.id === 'requests' && !token" class="ml-2 text-xs">{{ language === 'kiswahili' ? '(Ingia)' : '(Sign in)' }}</span></button>
       </div>
-
-      <div class="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-        <iframe
-          :key="selectedLanguage"
-          :title="content.frameTitle"
-          :src="feedbackFormSrc"
-          frameborder="0"
-          marginheight="0"
-          marginwidth="0"
-          class="min-h-[1200px] w-full"
-        >
-          {{ content.loading }}
-        </iframe>
-
-
+      <div ref="contentScroller" class="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue" tabindex="0" :aria-label="tabs.find(tab => tab.id === activeTab)?.label">
+      <div v-show="activeTab === 'feedback'" id="feedback-panel" role="tabpanel" aria-labelledby="feedback-tab"><FeedbackForm :language="language" :education-level="educationLevel" /></div>
+      <SupportInbox :language="language" :education-level="educationLevel" :view="activeTab" />
       </div>
     </section>
   </NuxtLayout>

@@ -26,6 +26,12 @@ export function enhanceAccessibility(htmlString: string): string {
         if (!el.hasAttribute("alt")) {
           el.setAttribute("alt", "Image");
         }
+        if (!el.hasAttribute("loading")) {
+          el.setAttribute("loading", "lazy");
+        }
+        if (!el.hasAttribute("decoding")) {
+          el.setAttribute("decoding", "async");
+        }
       }
 
       if (el.tagName.toLowerCase() === "table") {

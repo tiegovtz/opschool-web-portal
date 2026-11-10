@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { layoutEffect } from "~/utilities/controlls";
 import { calculateTopicMetrics } from "~/utilities/topicMetrics.js";
+import CardImage from "~/components/home/CardImage.vue";
 import {
   getEducationRouteQuery,
   resolveRouteLanguage,
@@ -34,7 +35,7 @@ const subjectTarget = computed(() => ({
   path: `/interactive/${props.subjectName?.toLowerCase()}/${props.subjectId?.toLowerCase()}`,
   query: getEducationRouteQuery(
     resolveEducationLevelFromRoute(route),
-    {},
+    typeof route.query.sublevel === "string" ? { sublevel: route.query.sublevel } : {},
     resolveRouteLanguage(route, undefined, primaryContentLanguage.value),
   ),
 }));
@@ -73,9 +74,9 @@ const setSubjectToView = () => {
     <!-- image -->
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
-      layoutEffect == 'grid' ? 'h-[280px]' : 'w-full max-w-[200px] h-32'
+      layoutEffect == 'grid' ? 'h-32 md:h-[280px]' : 'w-full max-w-[200px] h-32'
     ]">
-      <NuxtImg :src="subjectImage" loading="lazy" tabindex="0" :alt="altText ?? `Image for ${subjectName} subject`"
+      <CardImage :src="subjectImage" tabindex="0" :alt="altText ?? `Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110" />
 
       <div class="absolute right-0 -bottom-0">
@@ -88,7 +89,7 @@ const setSubjectToView = () => {
 
     <!-- content -->
     <div :class="[
-      'flex px-2 pt-1 transition-all duration-500 ease-in-out group-hover:text-white',
+      'flex min-w-0 flex-1 px-2 pt-1 transition-all duration-500 ease-in-out group-hover:text-white',
       layoutEffect == 'grid' ? 'flex-col' : 'flex-col flex-1'
     ]">
 
@@ -98,19 +99,19 @@ const setSubjectToView = () => {
       ]">
         <div class="flex min-w-0 flex-col gap-2">
           <p
-            class="text-left text-[1.1rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out">
+            class="text-left text-sm font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out md:text-[1.1rem]">
             {{ subjectName }}
           </p>
         </div>
       </div>
 
       <!-- description -->
-      <p class="text-start text-[1rem] text-black/80 group-hover:text-white line-clamp-2">
+      <p class="subject-card-summary text-start text-[1rem] text-black/80 group-hover:text-white">
         {{ subjectDescription }}
       </p>
 
       <!-- metrics  and level-->
-      <div class="flex items-center justify-end w-full whitespace-nowrap text-oceanBlue group-hover:text-white">
+      <div class="mt-auto flex items-center justify-end w-full whitespace-nowrap text-oceanBlue group-hover:text-white">
         <!-- Education Level -->
         <!-- <small v-if="educationLevelBadge"
           class="inline-flex w-fit rounded-full bg-sky-100 px-2 py-1 text-[0.68rem] font-semibold tracking-[0.08em] text-sky-700 transition-all duration-500 ease-in-out group-hover:bg-white/15 group-hover:text-white">
@@ -120,7 +121,7 @@ const setSubjectToView = () => {
         <!-- Total Views -->
         <small class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white">
           <Icon name="flowbite:users-outline" class="text-medium" aria-hidden="true" />
-          <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
+          <p class="text-xs sm:text-sm">{{ calculateTopicMetrics(totalViews) }} Views</p>
         </small>
       </div>
     </div>
@@ -133,9 +134,9 @@ const setSubjectToView = () => {
     <!-- image -->
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
-      layoutEffect == 'grid' ? 'h-56' : 'w-24 h-24'
+      layoutEffect == 'grid' ? 'h-32 md:h-56' : 'w-24 h-24'
     ]">
-      <NuxtImg :src="subjectImage" loading="lazy" tabindex="0" :alt="`Image for ${subjectName} subject`"
+      <CardImage :src="subjectImage" tabindex="0" :alt="altText ?? `Image for ${subjectName} subject`"
         class="object-cover w-full h-full duration-1000 ease-in-out transform group-hover:scale-110" />
 
         <div class="absolute right-0 -bottom-0">
@@ -154,13 +155,13 @@ const setSubjectToView = () => {
       <!-- title & description -->
       <div class="flex items-center justify-between w-full">
         <p
-          class="flex text-[1.1rem] font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out">
+          class="flex min-w-0 text-sm font-bold text-gray-800 group-hover:text-white transition-all duration-500 ease-in-out md:text-[1.1rem]">
           {{ subjectName }}
         </p>
 
-        <small class="flex items-center justify-end gap-2 p-2 text-oceanBlue group-hover:text-white">
+        <small class="flex shrink-0 items-center justify-end gap-1 p-1 text-[10px] text-oceanBlue group-hover:text-white md:gap-2 md:p-2">
           <Icon name="flowbite:users-outline" class="text-medium" aria-hidden="true" />
-          <p>{{ calculateTopicMetrics(totalViews) }} Views</p>
+          <p>{{ calculateTopicMetrics(totalViews) }}</p>
         </small>
 
       </div>

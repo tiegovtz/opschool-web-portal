@@ -6,7 +6,7 @@ const conversationParser = (query: string): string => {
     const safeChapterId = String(chapterId || '').trim();
     const attributes = Object.fromEntries(
       Array.from(String(rawAttributes || '').matchAll(/,([a-zA-Z]+)="([^"]*)"/g)).map(
-        ([, key, value]) => [key.toLowerCase(), value]
+        ([, key, value]) => [(key ?? "").toLowerCase(), value]
       )
     );
     const safeType = String(attributes.type || '').trim();

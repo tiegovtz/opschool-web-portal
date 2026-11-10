@@ -37,6 +37,36 @@
 }
 
 @layer components {
+  .content-card-summary {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+
+  .subject-card-summary {
+    display: none;
+  }
+
+  @media (min-width: 640px) {
+    .subject-card-summary {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+    }
+  }
+
+  .topic-card-summary {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .topic-card-summary {
+      display: -webkit-box;
+    }
+  }
+
   /* Learn Statistics */
   .stat-card {
     @apply flex flex-col items-center gap-2 p-3 transition-all duration-500 bg-white rounded-md cursor-pointer md:flex-row hover:bg-gray-50 md:gap-0;
@@ -505,4 +535,146 @@ p:only-child > img:only-child {
 
 .notes li {
   display: list-item;
+}
+
+.mobile-app-drag-handle {
+  display: none;
+}
+
+/* A phone held sideways has desktop-like width but very little height. */
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 600px) and (max-width: 1200px) {
+  .home-layout-shell {
+    min-height: 100dvh;
+    padding-left: calc(74px + env(safe-area-inset-left)) !important;
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: 0 !important;
+  }
+
+  .home-layout-shell[data-landscape-nav-side="right"] {
+    padding-left: env(safe-area-inset-left) !important;
+    padding-right: calc(74px + env(safe-area-inset-right)) !important;
+  }
+
+  .home-layout-shell .wrapper-container {
+    padding-inline: 12px;
+  }
+
+  .home-layout-shell .upper-header-content {
+    height: 56px !important;
+    padding-top: 0 !important;
+  }
+
+  .home-layout-shell .upper-header-content a {
+    max-width: 44px;
+  }
+
+  .home-layout-shell .upper-header-content img {
+    max-width: 44px;
+    max-height: 44px;
+  }
+
+  .home-layout-shell .upper-header-content [role="region"] p:first-child {
+    font-size: 10px;
+    line-height: 12px;
+  }
+
+  .home-layout-shell .upper-header-content [role="region"] p:last-child {
+    font-size: 13px;
+    line-height: 16px;
+  }
+
+  .home-layout-shell .app-header-desktop-nav,
+  .home-layout-shell .home-layout-quick-links,
+  .home-layout-shell .home-layout-footer {
+    display: none !important;
+  }
+
+  .home-layout-shell .app-header-mobile-nav {
+    display: block !important;
+  }
+
+  .home-layout-shell header,
+  .home-layout-shell .app-header-mobile-nav {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+
+  .mobile-app-nav {
+    display: flex !important;
+    flex-direction: column;
+    inset: 0 auto 0 0;
+    width: calc(74px + env(safe-area-inset-left));
+    height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    border-top: 0;
+    border-right: 1px solid #e2e8f0;
+    border-radius: 0;
+    box-shadow: 8px 0 24px rgba(18, 79, 134, 0.08);
+  }
+
+  .mobile-app-nav[data-landscape-nav-side="right"] {
+    inset: 0 0 0 auto;
+    width: calc(74px + env(safe-area-inset-right));
+    padding-right: env(safe-area-inset-right);
+    padding-left: 0;
+    border-right: 0;
+    border-left: 1px solid #e2e8f0;
+    box-shadow: -8px 0 24px rgba(18, 79, 134, 0.08);
+  }
+
+  .mobile-app-drag-handle {
+    display: flex;
+    width: 74px;
+    height: 24px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .mobile-app-drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .mobile-app-nav-items {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    width: 74px;
+    min-height: 0;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+  }
+
+  .mobile-app-nav-link {
+    min-height: 60px;
+    flex-shrink: 0;
+    padding: 4px 2px;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .mobile-app-nav-more {
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .mobile-app-more-menu {
+    position: fixed;
+    right: auto;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: calc(74px + env(safe-area-inset-left) + 8px);
+    max-height: calc(100dvh - 16px);
+  }
+
+  .mobile-app-nav[data-landscape-nav-side="right"] .mobile-app-more-menu {
+    right: calc(74px + env(safe-area-inset-right) + 8px);
+    left: auto;
+  }
 }

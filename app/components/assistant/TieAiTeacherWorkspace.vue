@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Chat } from "@ai-sdk/vue";
+import { DefaultChatTransport } from "ai";
 import { computed, ref, watch, onMounted, onBeforeUnmount, defineAsyncComponent } from "vue";
 import { useChatStore } from "~/stores/chatStore";
 import type { ChatMessage } from "~/types/chat.interface";
@@ -28,7 +29,13 @@ const AiTeacherInput = defineAsyncComponent(
   () => import("~/components/ai-teacher/Input.vue")
 );
 
-const chat = new Chat({});
+// Chat's default transport posts to "/api/chat", which resolves against the domain
+// root and 404s once the app is deployed under a sub-path (e.g. /portal). Prefix it
+// with the app's own base path so the request reaches this app's own Nitro route.
+const apiBasePath = useRuntimeConfig().app.baseURL.replace(/\/$/, "");
+const chat = new Chat({
+  transport: new DefaultChatTransport({ api: `${apiBasePath}/api/chat` }),
+});
 const isTyping = ref(false);
 const sidebarStateKey = "tie-ai-teacher-sidebar-open";
 const isHistoryOpen = ref(true);
@@ -139,7 +146,10 @@ const loadSession = async (sessionId: string) => {
       savedMessageIds.value = new Set(
         session.messages.map((m: ChatMessage) => m.id)
       );
-      hasTitleBeenSet.value = !!session.title;
+      // A session can come back from the server with its title defaulted to a
+      // placeholder like "New Conversation" - that's not a "real" title, so don't
+      // let it lock out generateTitleFromMessage from ever running for this session.
+      hasTitleBeenSet.value = !!session.title && session.title !== defaultConversationTitle.value;
     } else {
       // @ts-ignore
       chat.messages.splice(0, chat.messages.length);
@@ -174,6 +184,7 @@ const convertToChatMessage = (msg: ChatMessage) => ({
   role: msg.role,
   parts: msg.parts || [{ type: "text", text: msg.content }],
   content: msg.content,
+  metadata: msg.metadata,
 });
 
 const getTargetSessionId = () =>
@@ -185,10 +196,18 @@ const extractMessageContent = (message: any): string => {
   return textPart?.text || "";
 };
 
+// Bare greetings/acknowledgements carry no topic to summarize - titling a chat "Hi"
+// and locking it there (like the old behavior) is worse than waiting for the next,
+// substantive message, the way Claude/Codex name a conversation from its actual topic
+// rather than its opening pleasantry.
+const greetingOnlyPattern =
+  /^(hi+|hey+|hello+|yo+|sup|howdy|good\s*(morning|afternoon|evening|day)|habari(\s*(za\s*)?(asubuhi|mchana|jioni))?|mambo|vipi|niaje|salamu|hodi|karibu|thanks?|thank\s*you|ok(ay)?|asante)[.!?,\s]*$/i;
+
 const generateTitleFromMessage = (message: string): string => {
   const cleaned = message.trim();
 
   if (!cleaned) return defaultConversationTitle.value;
+  if (greetingOnlyPattern.test(cleaned)) return defaultConversationTitle.value;
 
   const prefixes = [
     /^explain\s+/i,
@@ -263,7 +282,9 @@ const saveMessage = async (sessionId: string, message: any) => {
       role: message.role as "user" | "assistant" | "system",
       content,
       parts: message.parts,
-      metadata: { messageId: message.id },
+      metadata: Array.isArray(message.metadata?.citations)
+        ? { messageId: message.id, citations: message.metadata.citations }
+        : { messageId: message.id },
     }, sessionId);
     savedMessageIds.value.add(message.id);
   } catch (error) {

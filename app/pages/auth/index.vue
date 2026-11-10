@@ -18,6 +18,9 @@ const authRedirectQuery = computed(() =>
     ? { redirect: route.query.redirect }
     : {}
 );
+const isFeedbackSignIn = computed(() =>
+  typeof route.query.redirect === "string" && /^\/feedback(?:[?#]|$)/.test(route.query.redirect),
+);
 const authLanguage = useAuthPageLanguage();
 const isSwahili = computed(() => authLanguage.value === "kiswahili");
 const content = computed(() => ({
@@ -76,8 +79,6 @@ const content = computed(() => ({
 }));
 const userRememberMe = useCookie("userRememberMe");
 const pass = userRememberMe?.value?.password?.length > 0 ? dataDecrypt(userRememberMe?.value?.password) : null
-useCookie("signInUserToken").value ? useCookie("signInUserToken").value = null : '';
-useCookie("signInAccessToken").value ? useCookie("signInAccessToken").value = null : '';
 
 // User Sign In Function
 const userSignIn = reactive({
@@ -101,6 +102,8 @@ const userSignIn = reactive({
 
 // Sign In Function
 const signIn = async () => {
+  if (isDisable.value || userSignIn.controller.attemps >= 3) return;
+
   // Reset error messages first
   userSignIn.controller.errors.username = "";
   userSignIn.controller.errors.password = "";
@@ -122,9 +125,6 @@ const signIn = async () => {
   if (isValid) {
     // Form is valid, proceed with submission
     isDisable.value = true;
-    if (userSignIn.controller.attemps == 3) {
-      return;
-    }
 
     // send data
     try {
@@ -144,17 +144,22 @@ const signIn = async () => {
         }
       );
 
-      userSignIn.controller.feedback = content.value.feedback.authenticated;
-
-      // unlock button
-      isDisable.value = false;
+      const issuedAccessToken = response?.accessToken ?? response?.access_token;
+      const issuedRefreshToken = response?.refreshToken ?? response?.refresh_token;
+      if (typeof issuedAccessToken !== 'string' || !issuedAccessToken.trim()) {
+        throw new Error('Sign-in response is missing an access token.');
+      }
 
       userSignIn.controller.feedback = content.value.feedback.authenticated;
       userSignIn.controller.isSucces = true;
 
+      // Production builds are also previewed over plain HTTP. Secure cookies
+      // cannot be stored there, so use the actual browser protocol.
+      const secureCookie = import.meta.client && window.location.protocol === "https:";
+
       const accessToken = useCookie("signInAccessToken", {
         httpOnly: false,              // Accessible in browser
-        secure: import.meta.env.PROD, // uses Nuxt's client env detection
+        secure: secureCookie,
         maxAge: 60 * 60 * 2,          // 2 hours
         sameSite: "strict",
         path: "/",
@@ -162,7 +167,7 @@ const signIn = async () => {
 
       const refreshToken = useCookie("signInRefreshToken", {
         httpOnly: false,              // Accessible in browser
-        secure: import.meta.env.PROD,
+        secure: secureCookie,
         maxAge: 60 * 60 * 2,          // 2 hours
         sameSite: "strict",
         path: "/",
@@ -170,37 +175,20 @@ const signIn = async () => {
 
       const userToken = useCookie("signInUserToken", {
         httpOnly: false,              // Accessible in browser
-        secure: import.meta.env.PROD,
+        secure: secureCookie,
         maxAge: 60 * 60 * 2,          // 2 hours
         sameSite: "strict",
         path: "/",
-        default: () => ({}),
-        encode: (value) => JSON.stringify(value),
-        decode: (value) => {
-          try {
-            return JSON.parse(value);
-          } catch (e) {
-            return {};
-          }
-        },
       });
 
       // create user remember me cookie
       const userRememberMe = useCookie("userRememberMe", {
         httpOnly: false,                  // Accessible in browser
-        secure: import.meta.env.PROD,
+        secure: secureCookie,
         maxAge: 60 * 60 * 24 * 7,         // 1 week
         sameSite: "strict",
         path: "/",
         default: () => null,
-        encode: (value) => JSON.stringify(value),
-        decode: (value) => {
-          try {
-            return JSON.parse(value);
-          } catch (e) {
-            return null;
-          }
-        },
       });
 
       if (userSignIn.rememberMe) {
@@ -213,8 +201,8 @@ const signIn = async () => {
         userRememberMe.value = null;      // Clear the cookie
       }
 
-      accessToken.value = response.access_token;
-      refreshToken.value = response.refresh_token;
+      accessToken.value = issuedAccessToken;
+      refreshToken.value = typeof issuedRefreshToken === 'string' ? issuedRefreshToken : null;
       userToken.value = response.user;
       useAuthStore().setToken(accessToken.value);
       
@@ -226,7 +214,8 @@ const signIn = async () => {
           : returnPath.value;
       const landingChoiceHome = consumePostLoginHome();
       const fallbackHubPath = getHubPath(hubEducationLevel.value);
-      router.replace(redirectPath || landingChoiceHome || fallbackHubPath || "/secondary");
+      await router.replace(redirectPath || landingChoiceHome || fallbackHubPath || "/secondary");
+      isDisable.value = false;
     } catch (error) {
       userSignIn.controller.attemps++;
       userSignIn.controller.feedback = content.value.errors.invalidCredentials;
@@ -310,6 +299,12 @@ watch(
         <img tabindex="0" src="/logo/logo_tie.gif" class="object-contain w-full h-full"
           :alt="content.logoAlt" />
       </NuxtLink>
+
+      <p v-if="isFeedbackSignIn" role="status" class="mx-4 mb-5 rounded-lg bg-blue-50 p-3 text-center text-sm text-[#174f80]">
+        {{ isSwahili
+          ? 'Ingia ili kuona na kufuatilia maombi yako ya msaada.'
+          : 'Sign in to view and follow up on your support requests.' }}
+      </p>
 
       <!-- Sign in form -->
       <form v-if="userSignIn.controller.attemps < 3" @submit.prevent="signIn" autocomplete="off"
@@ -403,9 +398,13 @@ watch(
 
         <!-- Sign in button -->
         <button type="submit" :disabled="isDisable" :aria-disabled="isDisable ? 'true' : 'false'"
+          :aria-busy="isDisable ? 'true' : 'false'"
           class="flex items-center justify-center w-full gap-3 p-2 text-white capitalize transition-all duration-500 rounded-md bg-oceanBlue disabled:bg-gray-500/40 disabled:cursor-not-allowed hover:bg-oceanBlue/80">
           <span v-if="!isDisable">{{ content.signIn }}</span>
-          <span v-else>{{ content.signingIn }}</span>
+          <template v-else>
+            <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" aria-hidden="true"></span>
+            <span>{{ content.signingIn }}</span>
+          </template>
         </button>
 
         <p class="sr-only" role="status" aria-live="assertive" aria-atomic="true">

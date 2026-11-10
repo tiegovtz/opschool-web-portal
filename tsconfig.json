@@ -2,10 +2,14 @@
   // https://nuxt.com/docs/guide/concepts/typescript
   "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
-    "types": ["vidstack/vue"],
-    "noUncheckedIndexedAccess": false
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "types": ["vidstack/vue"]
   },
   "vueCompilerOptions": {
-    "strictTemplates": false
+    "strictTemplates": true,
+    "fallthroughAttributes": true,
+    "dataAttributes": ["aria-*", "data-*"]
   }
 }

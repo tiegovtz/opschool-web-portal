@@ -5,7 +5,7 @@ import clsx from "clsx";
 
 // Local imports
 import { cn } from "~/utilities/utils";
-import Input from "./input";
+import { Input } from "../input";
 import { Button } from "../button";
 
 export default defineComponent({

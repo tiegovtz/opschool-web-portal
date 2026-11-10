@@ -92,7 +92,7 @@ const categories = [
       >
         <div class="relative h-96 overflow-hidden rounded-3xl shadow-2xl transition-all duration-500 group-hover:shadow-[0_25px_60px_rgba(15,76,129,0.18)]">
           <div class="absolute inset-0 opacity-70">
-            <NuxtImg
+            <img
               :src="curriculum === 'Cambridge' ? category.cambridgeImage : category.backgroundImage"
               :alt="category.title"
               class="h-full w-full object-cover object-center"

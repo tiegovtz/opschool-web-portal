@@ -1,12 +1,21 @@
 <script setup>
 import { ref, watch, nextTick, onUnmounted, onMounted, computed } from "vue";
 import { Chat } from "@ai-sdk/vue";
+import { DefaultChatTransport } from "ai";
 import apiDocs from "~/utilities/apiDocs";
+import { messageForChatErrorCode } from "~/utilities/chatErrorMessage";
 import { normalizeLanguageSupport } from "~/utilities/educationRoute";
 import { tr } from "zod/v4/locales";
 
 // Development mode flag for conditional logging
 const isDev = import.meta.dev;
+
+// Base path the app is deployed under (e.g. "/portal" on dev). A bare "/api/chat"
+// resolves against the domain root and 404s once the app is served from a sub-path -
+// the Chat SDK and our fetch interceptor below use native fetch, not Nuxt's $fetch,
+// so they don't pick up app.baseURL automatically.
+const apiBasePath = useRuntimeConfig().app.baseURL.replace(/\/$/, "");
+const chatApiPath = `${apiBasePath}/api/chat`;
 
 const isHtml = (str) => /<\/?[a-z][\s\S]*>/i.test(str?.trim());
 
@@ -497,7 +506,7 @@ const originalFetch = window.fetch;
 // Override fetch to add context
 window.fetch = async function(url, options = {}) {
   // Only intercept calls to our API endpoint
-  if (typeof url === 'string' && url.includes('/api/chat')) {
+  if (typeof url === 'string' && url.includes(chatApiPath)) {
     const context = effectiveContext.value;
     const chapterNameValue = context.chapterName;
     
@@ -581,7 +590,7 @@ window.fetch = async function(url, options = {}) {
 // Initialize Chat component AFTER fetch interceptor is set up
 // This ensures Chat uses our intercepted fetch
 const chat = new Chat({
-  api: "/api/chat",
+  transport: new DefaultChatTransport({ api: chatApiPath }),
 });
 
 
@@ -1223,12 +1232,18 @@ const askQuestion = async (
       console.warn("Request aborted");
     } else {
       console.error("[AI Subject Teacher] Error:", error);
+      // Never show raw fetch text. "chapter" errors carry a localized message
+      // from /api/ai-assistant/ask; other codes are mapped here (EN/SW).
+      const errorCode = error?.data?.data?.code;
+      const content =
+        errorCode === "chapter" && typeof error?.data?.message === "string"
+          ? error.data.message
+          : typeof errorCode === "string"
+            ? messageForChatErrorCode(errorCode, isSwahili.value, error?.data?.data?.reason)
+            : subjectUi.value.genericError;
       messages.value.push({
         role: "assistant",
-        content:
-          error?.data?.message ||
-          error?.message ||
-          subjectUi.value.genericError,
+        content,
         timestamp: new Date().toLocaleTimeString(),
       });
     }

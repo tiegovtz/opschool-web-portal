@@ -135,6 +135,7 @@ const shouldUseHeaderRow = (
   }
 
   const [firstRow, ...otherRows] = rows;
+  if (!firstRow) return false;
   const firstRowHasNoBlanks = !hasBlankCell(firstRow.question);
   const otherRowsHaveBlanks = otherRows.some((row) => hasBlankCell(row.question));
 

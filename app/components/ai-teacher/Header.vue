@@ -2,7 +2,7 @@
   <header class="border-b border-gray-100 bg-white px-4 py-4 sm:px-8 sm:py-6">
     <div class="flex items-center gap-3">
       <button
-        @click="$emit('toggle-sidebar')"
+        @click="onToggleSidebar?.()"
         class="flex items-center justify-center w-10 h-10 transition-all rounded-full shadow-md cursor-pointer sm:h-12 sm:w-12 hover:shadow-lg active:scale-95"
         :aria-label="isSwahili ? 'Onyesha au ficha historia ya mazungumzo' : 'Toggle chat history'"
       >
@@ -35,7 +35,5 @@
 const contentLayoutLanguage = useContentLayoutLanguage();
 const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
 
-defineEmits<{
-  "toggle-sidebar": [];
-}>();
+defineProps<{ onToggleSidebar?: () => void }>();
 </script>

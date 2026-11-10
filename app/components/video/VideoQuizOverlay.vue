@@ -337,8 +337,9 @@ watch(() => props.quiz?.timeLimit, (limit) => {
       } else {
         if (timeRemaining.value === 0 && !answerSubmitted.value) {
           // Time's up - auto-submit with empty answer or first option
-          if (props.quiz?.type === 'multiple_choice' && props.quiz.options && props.quiz.options.length > 0) {
-            handleOptionSelect(props.quiz.options[0]);
+          const firstOption = props.quiz?.options?.[0];
+          if (props.quiz?.type === 'multiple_choice' && firstOption) {
+            handleOptionSelect(firstOption);
           } else {
             submitAnswer(null);
           }

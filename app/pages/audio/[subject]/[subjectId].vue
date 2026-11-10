@@ -3,13 +3,7 @@
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import { ref, computed, onMounted, watch } from "vue";
-import {
-  isGreaterToXL,
-  isGreaterToLG,
-  isGreaterToMD,
-  isGreaterToSM,
-  screenWidth,
-} from "@/utilities/controlls";
+import { screenWidth } from "@/utilities/controlls";
 import apiDocs from "~/utilities/apiDocs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import AudioCard from "~/components/audio/audioCard.vue";
@@ -49,7 +43,7 @@ const language = computed(() =>
   ),
 );
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value, {}, language.value),
+  getEducationRouteQuery(educationLevel.value, typeof route.query.level === "string" ? { level: route.query.level } : {}, language.value),
 );
 
 const buildTabTarget = (tab) => {
@@ -154,10 +148,9 @@ const sliceData = (start, end) => {
 const currentPage = ref(1);
 const pageSize = ref();
 const getPageSize = () => {
-  if (screenWidth.value >= 1280 || isGreaterToXL.value) return 12;
-  if (screenWidth.value >= 1024 || isGreaterToLG.value) return 9;
-  if (screenWidth.value >= 768 || isGreaterToMD.value) return 6;
-  return 4;
+  if (screenWidth.value >= 1280) return 12;
+  if (screenWidth.value >= 1024) return 9;
+  return 6;
 };
 
 // Then, update fetchAudios to call sliceData after data is loaded
@@ -166,7 +159,7 @@ const fetchAudios = async (params) => {
   try {
     status.value = "pending";
     currentPage.value = 1;
-    const {data:response,status:fetchStatus} = await fetchAsyncData(`audio-${educationLevel.value}-${language.value}-${subjectId}-${params?.toString()}`,()=>$fetch(apiDocs.audio.getPublicAudioBySubjectId.replace(
+    const {data:response,status:fetchStatus} = await fetchAsyncData(`audio-${educationLevel.value}-${language.value}-${subjectId}-${JSON.stringify(params ?? {})}`,()=>$fetch(apiDocs.audio.getPublicAudioBySubjectId.replace(
         "{subjectId}",
         subjectId
       ), {
@@ -187,7 +180,7 @@ const fetchAudios = async (params) => {
 };
 
 // Call Fetch Topics function
-fetchAudios();
+fetchAudios({ level: typeof route.query.level === "string" ? route.query.level : undefined });
 
 //  assigning page size based on screen sizes
 pageSize.value = getPageSize();
@@ -249,6 +242,7 @@ watch(filters, (filters) => {
 });
 
 const contentLayoutLanguage = useContentLayoutLanguage();
+const applyClassFilter = (value) => fetchAudios({ level: value || undefined });
 </script>
 
 <template>
@@ -257,8 +251,11 @@ const contentLayoutLanguage = useContentLayoutLanguage();
       ' ',
       { ' animate-pulse': isLoading }
     ]">
-      <HomeSearchbar v-if="userToken" appearance="rounded" :language :education-level="educationLevel" />
-      <HeroSection v-else :language :education-level="educationLevel" />
+      <div class="hidden md:block">
+        <HomeSearchbar v-if="userToken" appearance="rounded" :language :education-level="educationLevel" />
+        <HeroSection v-else :language :education-level="educationLevel" />
+      </div>
+      <HomeMobileSubjectContentTools :active-tab="activeTab" :language="language" :education-level="educationLevel" @update:selected-level="applyClassFilter" @select-tab="switchTab" />
         <TabBar 
           :is-logged-in="!!userToken"
           :active-tab="activeTab"
@@ -293,7 +290,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
           <div class="flex flex-col w-full">
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class="flex flex-col items-start ">
+              <div class="flex w-full min-w-0 flex-col items-start">
                  <customGridTwo>
                   <template #data>
                    <!-- Audio Cards are in Grid -->

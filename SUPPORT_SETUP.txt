@@ -1,0 +1,32 @@
+Feedback and support — live API integration
+
+Source contract: http://41.59.251.166/api/v1/docs (checked 9 November 2026).
+Both local apps now use the live backend. INBOX_DEMO_ENABLED=false is set in their local .env files; test data is not sent or migrated to the backend.
+
+Portal: the feedback/support server adapters default to runtimeConfig.backendApiBaseUrl, which is already configured for the portal login API. NUXT_BACKEND_API_BASE_URL overrides that API at runtime. NUXT_SUPPORT_API_BASE_URL is an optional dedicated inbox API override. Admin uses NEXT_PUBLIC_API_ENDPOINT and its existing server-only BACKEND_API_BASE_URL override. Restart apps after changing configuration.
+
+Endpoints:
+POST /feedback — educationLevel, language, answers [{question,answer}], contact {name,email,phone}; returns a feedback response with id.
+GET /admin/feedback?form=primary|secondary — returns {responses}.
+PATCH /admin/feedback?form=primary|secondary — {id,status:"New"|"Reviewed",note}; returns {saved,response}.
+POST /support/tickets — category, educationLevel, language, subject, body, contact and optional attachments [{name,type,data}].
+GET /support/tickets?page=1&limit=50 — authenticated user's tickets.
+GET /support/tickets/{id} — owned ticket detail.
+POST /support/tickets/{id}/messages — {body}; returns updated ticket.
+GET /admin/support/tickets — category, educationLevel, status, search, page and limit.
+GET /admin/support/tickets/{id} — admin detail including contact, attachments and internalNote.
+PATCH /admin/support/tickets/{id}/review — {status,internalNote}.
+POST /admin/support/tickets/{id}/messages — {body}.
+Support statuses: new, in_review, resolved. Feedback statuses: New, Reviewed.
+
+All live writes obtain a fresh GET /auth/csrf-token token/cookie pair on the server and send X-CSRF-Token with its matching csrf_token cookie and the existing bearer identity. No backend cookies or tokens are returned to the browser. Do not disable CSRF for these operations.
+
+The user list endpoint documents only pagination. The portal adapter loads the signed-in user's pages and applies its search/status filters and summary counts before paginating the display. Private sender/contact/internal notes are excluded from portal ticket output. Read and reply operations require the existing session and backend ownership enforcement.
+
+The Swagger response allows attachment metadata without data in list results and up to five attachments. The portal accepts those responses, shows image data when supplied, and retains its existing three-image submission limit. Unsafe image data URLs are omitted from portal responses.
+
+Backend gaps confirmed on 9 November 2026:
+- POST /feedback and POST /support/tickets return 401 without a bearer token, even with a valid CSRF token/cookie. This prevents the requested before-login submission flow. Backend must allow anonymous creation on these two endpoints; authenticated reads/replies and all admin endpoints must remain protected.
+- Student support submissions are documented as constrained to the profile education level. If the product should use the level switched in the top navigation, backend must accept that selected level rather than reject it.
+
+Verification uses contract fixtures and mocked authentication. Real unauthenticated read/empty-payload checks confirm live reachability and authentication errors without creating records. A full authenticated create/review/reply smoke test still requires a user and admin session.

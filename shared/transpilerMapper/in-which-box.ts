@@ -19,51 +19,51 @@ const imagePathBasedOnQuestion = (
   if (side === "1") {
     switch (index) {
       case 0:
-        return serverQuestions[0].path;
+        return serverQuestions[0]?.path;
       case 1:
-        return serverQuestions[0].pathTwo;
+        return serverQuestions[0]?.pathTwo;
       case 2:
-        return serverQuestions[0].pathThree;
+        return serverQuestions[0]?.pathThree;
       case 3:
-        return serverQuestions[0].pathFour;
+        return serverQuestions[0]?.pathFour;
       case 4:
-        return serverQuestions[2].path;
+        return serverQuestions[2]?.path;
       case 5:
-        return serverQuestions[2].pathTwo;
+        return serverQuestions[2]?.pathTwo;
       default:
         return "";
     }
   } else if (side === "2") {
     switch (index) {
       case 0:
-        return serverQuestions[1].path;
+        return serverQuestions[1]?.path;
       case 1:
-        return serverQuestions[1].pathTwo;
+        return serverQuestions[1]?.pathTwo;
       case 2:
-        return serverQuestions[1].pathThree;
+        return serverQuestions[1]?.pathThree;
       case 3:
-        return serverQuestions[1].pathFour;
+        return serverQuestions[1]?.pathFour;
       case 4:
-        return serverQuestions[2].pathThree;
+        return serverQuestions[2]?.pathThree;
       case 5:
-        return serverQuestions[2].pathFour;
+        return serverQuestions[2]?.pathFour;
       default:
         return "";
     }
   } else {
     switch (index) {
       case 0:
-        return serverQuestions[2].path;
+        return serverQuestions[2]?.path;
       case 1:
-        return serverQuestions[2].pathTwo;
+        return serverQuestions[2]?.pathTwo;
       case 2:
-        return serverQuestions[2].pathThree;
+        return serverQuestions[2]?.pathThree;
       case 3:
-        return serverQuestions[2].pathFour;
+        return serverQuestions[2]?.pathFour;
       case 4:
-        return serverQuestions[2].path;
+        return serverQuestions[2]?.path;
       case 5:
-        return serverQuestions[2].pathTwo;
+        return serverQuestions[2]?.pathTwo;
       default:
         return "";
     }
@@ -77,6 +77,10 @@ export const inWhichBoxPropsTranspiler = (params: ActivityTranspilerProps) => {
   //   Check if all questions have the correct format
   //   Take the first question and check if textOne and textTwo are not null
   const question = serverQuestions[0];
+  if (!question || (algorithm === "In Which Box Two Boxes" && !serverQuestions[1])) {
+    params.setWrongQuestionsFormat(true);
+    return null;
+  }
   if (
     algorithm.includes("Six Items") &&
     (question.textOne?.split(",").length !== 8 ||
@@ -122,7 +126,7 @@ export const inWhichBoxPropsTranspiler = (params: ActivityTranspilerProps) => {
   const textTwoQuestions = shuffle(
     splitValues(
       algorithm === "In Which Box Two Boxes"
-        ? serverQuestions[1].textTwo
+        ? serverQuestions[1]?.textTwo
         : question.textTwo,
       algorithm === "In Which Box Two Boxes" ? "/" : ",",
     )
@@ -173,7 +177,7 @@ export const inWhichBoxPropsTranspiler = (params: ActivityTranspilerProps) => {
       id: "2",
       title:
         algorithm === "In Which Box Two Boxes"
-          ? serverQuestions[1].textOne
+          ? serverQuestions[1]?.textOne
           : question.textTwo?.split(",")[
               algorithm.includes("Six Items") ? 6 : 4
             ] || "",
@@ -195,6 +199,10 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     textThreeQuestions = [];
   let isWrongFormat = false;
   const question = serverQuestions[0];
+  if (!question || serverQuestions.length < 3) {
+    params.setWrongQuestionsFormat(true);
+    return null;
+  }
 
   if (
     algorithm.toLowerCase().includes("mixed") ||
@@ -262,7 +270,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     }
 
     textOneQuestions = shuffle(
-      splitValues(serverQuestions[0].textTwo, "/")
+      splitValues(serverQuestions[0]?.textTwo, "/")
         .slice(0, 6)
         .map((content, i) => ({
           id: content.toLowerCase(),
@@ -272,7 +280,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     );
 
     textTwoQuestions = shuffle(
-      splitValues(serverQuestions[1].textTwo, "/")
+      splitValues(serverQuestions[1]?.textTwo, "/")
         .slice(0, 6)
         .map((content, i) => ({
           id: content.toLowerCase(),
@@ -282,7 +290,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
     );
 
     textThreeQuestions = shuffle(
-      splitValues(serverQuestions[2].textTwo, "/")
+      splitValues(serverQuestions[2]?.textTwo, "/")
         .slice(0, 6)
         .map((content, i) => ({
           id: content.toLowerCase(),
@@ -310,7 +318,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
       id: "1",
       title:
         algorithm.toLowerCase() === "in which box"
-          ? serverQuestions[0].textOne
+          ? serverQuestions[0]?.textOne
           : question.textOne?.split(",")[4] || "",
       noOfAnswers: textOneQuestions.length,
     },
@@ -318,7 +326,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
       id: "2",
       title:
         algorithm.toLowerCase() === "in which box"
-          ? serverQuestions[1].textOne
+          ? serverQuestions[1]?.textOne
           : question.textTwo?.split(",")[4] || "",
       noOfAnswers: textTwoQuestions.length,
     },
@@ -326,7 +334,7 @@ export const inWhichBoxThreeBoxesPropsTranspiler = (params: {
       id: "3",
       title:
         algorithm.toLowerCase() === "in which box"
-          ? serverQuestions[2].textOne
+          ? serverQuestions[2]?.textOne
           : question.textThree?.split(",")[4] || "",
       noOfAnswers: textThreeQuestions.length,
     },

@@ -272,7 +272,7 @@ const normalizeList = (payload: any) => {
 const buildAssetUrl = (path?: string | null) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
-  return `${apiDocs.baseURL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+  return `${apiDocs.requestBaseURL.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 };
 
 const buildGradient = (subject?: string | null) => {
@@ -1576,8 +1576,8 @@ const prepareNavigation = () => {
 
 <template>
     <NuxtLayout
-    :name="$router.currentRoute.value.fullPath.includes('header-less') ? ('normal' as any) : ('home-layout' as any)"
-    :language="$router.currentRoute.value.fullPath.includes('header-less') ? undefined : pageLanguage"
+    :name="router.currentRoute.value.fullPath.includes('header-less') ? ('normal' as any) : ('home-layout' as any)"
+    v-bind="{ language: router.currentRoute.value.fullPath.includes('header-less') ? undefined : pageLanguage }"
   >
     <main ref="pageRoot" id="main-container" tabindex="-1" class="min-h-screen bg-white font-sans text-gray-900">
       <p class="sr-only" aria-live="assertive" aria-atomic="true">{{ srAnnouncement }}</p>
@@ -1926,12 +1926,12 @@ const prepareNavigation = () => {
 
                 <div>
                   <label class="mb-1 block text-sm font-medium text-gray-700">Start time</label>
-                  <CustomDate v-model="createForm.startTime" placeholder="Select start date & time" required />
+                  <CustomDate v-model="createForm.startTime" placeholder="Select start date & time" />
                 </div>
 
                 <div>
                   <label class="mb-1 block text-sm font-medium text-gray-700">End time</label>
-                  <CustomDate v-model="createForm.endTime" placeholder="Select end date & time" required />
+                  <CustomDate v-model="createForm.endTime" placeholder="Select end date & time" />
                 </div>
 
                 <div>
@@ -2090,7 +2090,7 @@ const prepareNavigation = () => {
 
                   <iframe v-else-if="playableUrl" :src="playableUrl"
                     :class="meetingReady ? 'h-[420px] w-full rounded-xl bg-black' : 'h-0 w-0 opacity-0 pointer-events-none'"
-                    controls autoplay playsinline loading="lazy" @load="handleMeetingReady" />
+                    loading="lazy" @load="handleMeetingReady" />
 
                   <iframe v-else :src="meetingEmbedUrl"
                     :class="meetingReady ? 'h-[420px] w-full rounded-xl bg-black' : 'h-0 w-0 opacity-0 pointer-events-none'"

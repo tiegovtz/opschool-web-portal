@@ -1014,7 +1014,7 @@ loadClasses();
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('../../../../public/images/background3.webp') center/cover;
+  background: url('/images/background3.webp') center/cover;
   opacity: 0.3;
   z-index: 1;
 }

@@ -2,12 +2,8 @@
 import HeroSection from "~/components/home/HeroSection.vue";
 import TopicCard from "~/components/home/TopicCard.vue";
 import LoadingIndicator from "~/components/loading/loadingIndicator.vue";
-import { ref, computed, watch, reactive } from "vue";
+import { ref, computed, watch, reactive, nextTick } from "vue";
 import {
-  isGreaterToXL,
-  isGreaterToLG,
-  isGreaterToMD,
-  isGreaterToSM,
   screenWidth,
 } from "@/utilities/controlls";
 import InputsSelection from "~/components/home/InputsSelection.vue";
@@ -119,10 +115,33 @@ const currentEducationLevel = computed(() =>
 );
 const currentHubBucket = computed<EducationHubBucket>(() =>
   getEducationHubBucket(route.params.educationLevel ?? route.path) ??
-  (normalizeEducationLevel(currentEducationLevel.value) === "primary"
-    ? "primary"
-    : "secondary"),
+  getEducationHubBucket(currentEducationLevel.value) ?? "secondary",
 );
+const selectedHubSublevel = computed(() =>
+  typeof route.query.sublevel === "string"
+    ? route.query.sublevel
+    : currentEducationLevel.value !== currentHubBucket.value
+      ? currentEducationLevel.value
+      : undefined,
+);
+
+const onHubLevelChange = (selected: string) => {
+  level.value = selected === "all" ? "" : selected;
+  const sublevel = level.value ? normalizeEducationLevel(level.value) : undefined;
+  const nextSublevel = sublevel && getEducationHubBucket(sublevel) === currentHubBucket.value
+    ? sublevel.replaceAll(" ", "-")
+    : undefined;
+  if (nextSublevel === route.query.sublevel && !route.query.educationLevel && !route.query.edl) return;
+  void router.replace({
+    path: route.path,
+    query: {
+      ...route.query,
+      educationLevel: undefined,
+      edl: undefined,
+      sublevel: nextSublevel,
+    },
+  });
+};
 const HUB_BUCKET_LEVELS: Record<EducationHubBucket, EducationBucket[]> = {
   primary: ["pre-primary", "primary"],
   secondary: ["lower secondary", "upper secondary"],
@@ -140,11 +159,16 @@ const currentLanguage = computed(() =>
     ),
   ),
 );
+const mobileContentTypes = computed(() => [
+  { id: "subjects", name: currentLanguage.value === "kiswahili" ? "Masomo" : "Subjects" },
+  { id: "interactive-content", name: currentLanguage.value === "kiswahili" ? "Maudhui Shirikishi" : "Interactive content" },
+  { id: "adt", name: currentLanguage.value === "kiswahili" ? "Vitabu vya KKD" : "ADT books" },
+]);
 const currentHubPath = computed(() => getHubPath(currentEducationLevel.value));
 const currentHubQuery = computed(() =>
   getEducationRouteQuery(
     currentEducationLevel.value,
-    {},
+    selectedHubSublevel.value ? { sublevel: selectedHubSublevel.value } : {},
     currentLanguage.value,
   ),
 );
@@ -153,8 +177,10 @@ watch(
   currentLanguage,
   (language) => {
     hubHeaderLangCookie.value = language;
-    hubEducationLevelCookie.value = currentEducationLevel.value;
-    if (currentEducationLevel.value === "primary") {
+    if (hubEducationLevelCookie.value !== currentHubBucket.value) {
+      hubEducationLevelCookie.value = currentHubBucket.value;
+    }
+    if (currentHubBucket.value === "primary") {
       primaryContentLanguage.value = language;
     }
   },
@@ -162,7 +188,8 @@ watch(
 );
 // current page data
 const currentPage = ref<number>(1);
-const pageSize = ref<number>(12);
+const getPageSize = (width: number) => width >= 1280 ? 12 : width >= 1024 ? 9 : 6;
+const pageSize = ref<number>(getPageSize(screenWidth.value));
 
 // Define Ref state
 const error = ref(); // Initial Error State
@@ -178,6 +205,17 @@ const data = ref<
 const slicedData = ref(); // Initial slice data to 9
 const activeTab = ref<tabs>("subjects"); // Initial Active Tab State
 const filterValue = ref(); // Initial Filter Value State
+const mobilePanel = ref<"filters" | "search" | null>(null);
+const mobileFilterButton = ref<HTMLButtonElement | null>(null);
+const mobileSearchButton = ref<HTMLButtonElement | null>(null);
+const closeMobilePanel = async (event?: Event) => {
+  const previousPanel = mobilePanel.value;
+  mobilePanel.value = null;
+  if (event instanceof KeyboardEvent || event instanceof MouseEvent && event.detail === 0) {
+    await nextTick();
+    (previousPanel === "filters" ? mobileFilterButton.value : mobileSearchButton.value)?.focus();
+  }
+};
 const subjectId = ref<string>(""); // Initial subjectId Value State
 const subjectSlug = ref<string>(""); // Initial subject slug Value State
 const subjectName = ref<string>(""); // Initial subject name Value State
@@ -185,6 +223,7 @@ const subjectEducationLevel = ref<EducationBucket | "">("");
 const seeMoreDetails = ref<string | null>(null); // Initial See More
 const announcement = ref<string>();
 const subjectResolveState = ref({ slug: "", isLoading: false });
+let resettingFilterForTabChange = false;
 const TAB_TO_ROUTE = computed<
   Record<tabs, { path: string; query?: Record<string, any> }>
 >(() => ({
@@ -262,10 +301,20 @@ const mergeFetchedCollections = <T extends { _id?: string }>(responses: unknown[
   );
 
 const getRequestedEducationLevels = (params?: Record<string, any>) => {
-  const explicitLevel = normalizeQueryValue(params?.educationLevel);
+  const explicitSublevel = normalizeQueryValue(params?.sublevel ?? route.query.sublevel);
+  if (explicitSublevel && getEducationHubBucket(explicitSublevel) === currentHubBucket.value) {
+    const normalized = normalizeEducationLevel(explicitSublevel);
+    if (getEducationHubBucket(normalized) === currentHubBucket.value && normalized !== "secondary") {
+      return [normalized];
+    }
+  }
+  const explicitLevel = normalizeQueryValue(params?.educationLevel ?? route.query.educationLevel ?? route.query.edl);
 
-  if (explicitLevel) {
-    return [normalizeEducationLevel(explicitLevel)];
+  if (explicitLevel && getEducationHubBucket(explicitLevel) === currentHubBucket.value) {
+    const normalized = normalizeEducationLevel(explicitLevel);
+    if (normalized !== currentHubBucket.value && getEducationHubBucket(normalized) === currentHubBucket.value) {
+      return [normalized];
+    }
   }
 
   if (subjectEducationLevel.value) {
@@ -276,7 +325,8 @@ const getRequestedEducationLevels = (params?: Record<string, any>) => {
     return hubEducationLevels.value;
   }
 
-  return [getEducationLevelParam()];
+  const level = getEducationLevelParam();
+  return level === currentHubBucket.value ? hubEducationLevels.value : [level];
 };
 
 const resolveSubjectIdFromSlug = async (slug: string) => {
@@ -341,16 +391,26 @@ watch(
   (query) => {
     const section = query[SECTION_QUERY_KEY] ?? query.tab;
     if (!section) activeTab.value = "subjects";
-    if (section === 'adt' || section === 'interactive-content' || (section === 'subjects' && !query[SUBJECT_QUERY_KEY] && !query[SUBJECT_ID_QUERY_KEY])) {
+    const subjectParam = normalizeQueryValue(query[SUBJECT_QUERY_KEY]);
+    const subjectIdParam = normalizeQueryValue(query[SUBJECT_ID_QUERY_KEY]);
+    if (section === 'adt' || (section === 'interactive-content' && !subjectIdParam) || (section === 'subjects' && !subjectParam && !subjectIdParam)) {
       activeTab.value = section === 'interactive-content' ? 'interactive-contents' : 'subjects';
       return;
     }
-    const subjectParam = normalizeQueryValue(query[SUBJECT_QUERY_KEY]);
-    const subjectIdParam = normalizeQueryValue(query[SUBJECT_ID_QUERY_KEY]);
     if (section) {
       const tab = getTabFromSection(section);
       const target = tab ? TAB_TO_ROUTE.value[tab] : null;
       if (target) {
+        const subjectRoutePaths: Partial<Record<tabs, string>> = {
+          "interactive-contents": "/interactive",
+          "learn-activities": "/experiments",
+          video: "/video",
+          "class-videos": "/video",
+          audio: "/audio",
+        };
+        const subjectRoute = subjectIdParam && tab
+          ? subjectRoutePaths[tab]
+          : undefined;
         const targetQuery =
           tab === "subjects" && (subjectParam || subjectIdParam)
             ? {
@@ -358,8 +418,15 @@ watch(
                 subject: subjectParam || undefined,
                 subjectId: subjectIdParam || undefined,
               }
-            : target.query;
-        router.replace({ path: target.path, query: targetQuery });
+            : subjectRoute && typeof query.level === "string"
+              ? { ...target.query, level: query.level }
+              : target.query;
+        router.replace({
+          path: subjectRoute
+            ? `${subjectRoute}/${encodeURIComponent(slugifySubject(subjectParam || subjectIdParam))}/${encodeURIComponent(subjectIdParam)}`
+            : target.path,
+          query: targetQuery,
+        });
       }
     }
   },
@@ -447,6 +514,7 @@ const fetchData = async (params?: any) => {
         params = {
           ...baseParams,
           videoType: "Conceptual",
+          subject: subjectName.value || subjectSlug.value.replaceAll("-", " ") || undefined,
         };
       } else if (tab === "class-videos") {
         url = apiDocs.videos.getPublicVideoBySubjectId.replace(
@@ -457,6 +525,7 @@ const fetchData = async (params?: any) => {
         params = {
           ...baseParams,
           videoType: "Others",
+          subject: subjectName.value || subjectSlug.value.replaceAll("-", " ") || undefined,
         };
       } else if (tab === "interactive-contents") {
         url = apiDocs.topics.getSubjectId.replace(
@@ -477,7 +546,9 @@ const fetchData = async (params?: any) => {
     }
   } else {
     if (tab === 'interactive-contents') {
-      url = apiDocs.topics.filterTopics;
+      url = subjectId.value
+        ? apiDocs.topics.getSubjectId.replace("{subjectId}", subjectId.value)
+        : apiDocs.topics.filterTopics;
       params = { ...baseParams };
     } else {
       url = apiDocs.subjects.getPublicSubjects;
@@ -510,13 +581,14 @@ const fetchData = async (params?: any) => {
       },
     );
 
+    const responseItems = Array.isArray(response.value) ? response.value : [];
     // Call State Define above
     if (subjectId.value) {
-      data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(responseItems, "isDeleted", true);
     } else if (!subjectId.value && tab !== "subjects") {
-      data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(responseItems, "isDeleted", true);
     } else {
-      data.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+      data.value = removeDataFromArrayOfJson(responseItems, "isDeleted", true);
       // remove some audio
       data.value = removeDataFromArrayOfJson(
         data.value,
@@ -533,7 +605,7 @@ const fetchData = async (params?: any) => {
       currentPage.value * pageSize.value,
     );
 
-    announcement.value = ` ${response.value?.length} ${getTabLabel(tab)} found ready for preview`;
+    announcement.value = ` ${data.value.length} ${getTabLabel(tab)} found ready for preview`;
   } catch (err) {
     status.value = "error";
     error.value = err;
@@ -574,17 +646,6 @@ const shuffledSubjectsData = computed(() => {
   return shuffleSubject(data.value as Subjects[]);
 });
 
-//  assigning page size based on screen sizes
-if (isGreaterToXL) {
-  pageSize.value = 12; // 12 topic cards
-} else if (isGreaterToLG) {
-  pageSize.value = 9; // 9 topic cards
-} else if (isGreaterToMD) {
-  pageSize.value = 6; // 6 topic cards per page
-} else {
-  pageSize.value = 4; // 4 topics card per page
-}
-
 // total pages data
 const totalPages = computed(() => {
   if (data && Array.isArray(data.value)) {
@@ -605,19 +666,8 @@ const goToPage = (page: number) => {
 // Watch screen width and update page size accordingly
 watch(
   () => screenWidth.value,
-  () => {
-    if (screenWidth.value >= 1280) {
-      pageSize.value = 12;
-    } else if (screenWidth.value >= 1024 && screenWidth.value < 1280) {
-      pageSize.value = 9;
-    } else if (screenWidth.value >= 768 && screenWidth.value < 1024) {
-      pageSize.value = 6;
-    } else if (screenWidth.value >= 640 && screenWidth.value < 768) {
-      pageSize.value = 4;
-    } else {
-      pageSize.value = 4;
-    }
-
+  (width) => {
+    pageSize.value = getPageSize(width);
     // slice data per page size
     sliceData(
       (currentPage.value - 1) * pageSize.value,
@@ -704,7 +754,9 @@ watch(
     }
 
     // clear filter value on tab change
+    resettingFilterForTabChange = true;
     filterValue.value = {};
+    resettingFilterForTabChange = false;
   },
   { immediate: true },
 );
@@ -748,6 +800,7 @@ watch(
 watch(
   () => filterValue.value,
   (newfilterValue) => {
+    if (resettingFilterForTabChange) return;
     if (Object.keys(newfilterValue).length > 0) {
       // Remove empty or falsy values
       const filteredParams = Object.fromEntries(
@@ -760,6 +813,7 @@ watch(
       fetchData();
     }
   },
+  { flush: "sync" },
 );
 
 // switch tabs
@@ -777,6 +831,15 @@ const switchTab = async (tab: tabs) => {
 
   const target = TAB_TO_ROUTE.value[tab] ?? { path: currentHubPath.value };
   await router.push(target);
+};
+
+const onSelectionLevelChange = (selected: string) => {
+  if (userToken.value) onHubLevelChange(selected);
+  else level.value = selected;
+};
+
+const selectMobileHubSection = (section: string | number | null) => {
+  void selectHubSection(String(section ?? "subjects"));
 };
 
 const clearSubjectDetail = () => {
@@ -815,18 +878,48 @@ const handleSubjectSelect = async (
 <template>
   <NuxtLayout
     name="home-layout"
-    :language="currentLanguage"
-    :education-level="currentEducationLevel"
+    v-bind="{ language: currentLanguage, educationLevel: currentEducationLevel }"
   >
     <HeroSection v-if="!userToken" :language="currentLanguage" :education-level="currentEducationLevel" />
-    <HomeContentTabs :active="hubSection" :language="currentLanguage" @select="selectHubSection" />
+    <div class="hidden md:block">
+      <HomeContentTabs :active="hubSection" :language="currentLanguage" @select="selectHubSection" />
+    </div>
+    <div class="mt-4 grid grid-cols-2 gap-3 md:hidden" role="group" :aria-label="currentLanguage === 'kiswahili' ? 'Zana za maudhui' : 'Content tools'">
+      <button ref="mobileFilterButton" type="button" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border bg-white px-4 text-sm font-semibold text-slate-900 shadow-[0_3px_12px_rgba(15,23,42,0.12)] transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue" :class="mobilePanel === 'filters' ? 'border-oceanBlue' : 'border-transparent'" :aria-expanded="mobilePanel === 'filters'" aria-controls="mobile-hub-filters" @click="mobilePanel = 'filters'">
+        <Icon name="mdi:tune-variant" size="20" aria-hidden="true" />{{ currentLanguage === 'kiswahili' ? 'Vichujio' : 'Filters' }}
+      </button>
+      <button ref="mobileSearchButton" type="button" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border bg-white px-4 text-sm font-semibold text-slate-900 shadow-[0_3px_12px_rgba(15,23,42,0.12)] transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue" :class="mobilePanel === 'search' ? 'border-oceanBlue' : 'border-transparent'" :aria-expanded="mobilePanel === 'search'" aria-controls="mobile-hub-search" @click="mobilePanel = 'search'">
+        <Icon name="mdi:magnify" size="20" aria-hidden="true" />{{ currentLanguage === 'kiswahili' ? 'Tafuta' : 'Search' }}
+      </button>
+    </div>
+    <div v-if="mobilePanel" class="fixed inset-0 z-[70] bg-slate-950/50 md:hidden" @click="closeMobilePanel" />
+    <div id="mobile-hub-filters" :class="mobilePanel === 'filters' ? 'fixed inset-x-4 top-4 z-[71] max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl' : 'hidden'" class="md:static md:block md:max-h-none md:overflow-visible md:rounded-none md:bg-transparent md:p-0 md:shadow-none" :role="mobilePanel === 'filters' ? 'dialog' : undefined" :aria-modal="mobilePanel === 'filters' ? 'true' : undefined" :aria-label="currentLanguage === 'kiswahili' ? 'Vichujio na aina za maudhui' : 'Filters and content types'" @keydown.esc.stop="closeMobilePanel">
+      <div class="flex items-center justify-between md:hidden">
+        <h2 class="text-lg font-bold text-slate-900">{{ currentLanguage === 'kiswahili' ? 'Vichujio' : 'Filters' }}</h2>
+        <button type="button" class="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue" :aria-label="currentLanguage === 'kiswahili' ? 'Funga vichujio' : 'Close filters'" @click="closeMobilePanel"><Icon name="mdi:close" size="24" aria-hidden="true" /></button>
+      </div>
+      <div class="mt-5 md:hidden">
+        <p class="mb-1 text-xs font-semibold text-slate-700">{{ currentLanguage === 'kiswahili' ? 'Aina ya maudhui' : 'Content type' }}</p>
+        <CustomDropDownList id="mobile-content-type" :aria-label="currentLanguage === 'kiswahili' ? 'Aina ya maudhui' : 'Content type'" :model-value="hubSection" :list="mobileContentTypes" :searchable="false" button-class="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-sm" @update-model-value="selectMobileHubSection" />
+      </div>
+      <InputsSelection v-if="!isAdtSection" :key="hubSection" :language="currentLanguage" :education-level="userToken ? currentHubBucket : currentEducationLevel" :selected-sublevel="userToken ? selectedHubSublevel : undefined" :hide-search="true" show-labels
+        @emit-level="onSelectionLevelChange" @emit-standard="filters.level = $event" @emit-subject="filters.subject = $event" />
+      <button type="button" class="mt-2 flex min-h-11 w-full items-center justify-center rounded-lg bg-oceanBlue px-4 text-sm font-semibold text-white md:hidden" @click="closeMobilePanel">{{ currentLanguage === 'kiswahili' ? 'Onyesha matokeo' : 'Show results' }}</button>
+    </div>
+    <div v-if="!isAdtSection" class="hidden px-4 md:block">
+      <HomeSearchbar :language="currentLanguage" :education-level="currentEducationLevel" />
+    </div>
+    <div v-if="mobilePanel === 'search'" id="mobile-hub-search" class="fixed inset-x-4 top-4 z-[71] rounded-2xl bg-white p-4 shadow-2xl md:hidden" role="dialog" aria-modal="true" :aria-label="currentLanguage === 'kiswahili' ? 'Tafuta maudhui' : 'Search content'" @keydown.esc.stop="closeMobilePanel">
+      <div class="mb-3 flex items-center justify-between">
+        <h2 class="text-lg font-bold text-slate-900">{{ currentLanguage === 'kiswahili' ? 'Tafuta' : 'Search' }}</h2>
+        <button type="button" class="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oceanBlue" :aria-label="currentLanguage === 'kiswahili' ? 'Funga utafutaji' : 'Close search'" @click="closeMobilePanel"><Icon name="mdi:close" size="24" aria-hidden="true" /></button>
+      </div>
+      <HomeSearchbar :language="currentLanguage" :education-level="currentEducationLevel" />
+    </div>
     <div id="hub-content-panel" role="tabpanel" :aria-labelledby="`hub-tab-${hubSection}`">
     <AdtCatalogue v-if="isAdtSection" :key="currentHubBucket" :hub="currentHubBucket" :language="currentLanguage" />
     <!-- User Has a Token -->
     <section v-else-if="userToken">
-      <InputsSelection :key="hubSection" :language="currentLanguage" :education-level="currentEducationLevel"
-        @emit-level="level = $event" @emit-standard="filters.level = $event" @emit-subject="filters.subject = $event" />
-
       <!-- LayoutEffect  -->
       <div
         class="items-center justify-end hidden gap-2 md:flex"
@@ -839,7 +932,7 @@ const handleSubjectSelect = async (
           aria-label="Grid layout"
           :class="[
             'cursor-pointer transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? '!text-darkBlue' : 'text-oceanBlue',
+            layoutEffect == 'grid' ? '!text-oceanBlue':'text-darkBlue',
           ]"
         >
           <Icon
@@ -854,7 +947,7 @@ const handleSubjectSelect = async (
           aria-label="List layout"
           :class="[
             'text-oceanBlue cursor-pointer transition-all duration-500 ease-in-out',
-            layoutEffect == 'list' ? '!text-darkBlue' : 'text-oceanBlue',
+            layoutEffect === 'list' ? '!text-oceanBlue':'text-darkBlue',
           ]"
         >
           <Icon
@@ -875,7 +968,7 @@ const handleSubjectSelect = async (
         >
           <div
             v-if="status === 'pending'"
-            class="flex flex-col items-center justify-center"
+            class="flex min-h-[calc(100dvh-16rem)] flex-col items-center justify-center md:min-h-0"
           >
             <LoadingIndicator :is-loading="true" />
           </div>
@@ -959,7 +1052,7 @@ const handleSubjectSelect = async (
                 </template>
               </customGridOne>
 
-              <customGridOne v-else-if="displayTab === 'interactive-contents'">
+              <customGridOne v-else-if="displayTab === 'interactive-contents'" active-tab="interactive-contents">
                 <template #data>
                   <!-- Topic Cards are in Grid -->
                   <TopicCard
@@ -998,7 +1091,6 @@ const handleSubjectSelect = async (
                     :key="experiment._id"
                     :experiment-id="experiment._id"
                     :experiment-thumbnail="experiment.thumbnail"
-                    :experiment-title="experiment.title"
                     :experiment-description="experiment.description"
                     :experiment-type="experiment.category"
                     :experiment-subject="experiment.subject?.name"
@@ -1047,8 +1139,8 @@ const handleSubjectSelect = async (
               :current-page="currentPage"
               :total-pages="totalPages"
               class-name="my-5"
-                :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
-                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
+                :first-label="currentLanguage=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="currentLanguage=='kiswahili' ? 'Mwisho' :'Last'"
               @change="goToPage"
             />
 
@@ -1096,18 +1188,9 @@ const handleSubjectSelect = async (
       v-else
       :class="[' ', { ' animate-pulse': isLoading }]"
     >
-      <InputsSelection
-        :key="hubSection"
-        :language="currentLanguage"
-        :education-level="currentEducationLevel"
-        @emit-level="level = $event"
-        @emit-standard="filters.level = $event"
-        @emit-subject="filters.subject = $event"
-      />
-
       <div
         v-if="status === 'pending'"
-        class="flex flex-col items-center justify-center"
+        class="flex min-h-[calc(100dvh-16rem)] flex-col items-center justify-center md:min-h-0"
       >
         <LoadingIndicator :is-loading="true" />
       </div>
@@ -1194,8 +1277,8 @@ const handleSubjectSelect = async (
             <AppPagination
               :current-page="currentPage"
               :total-pages="totalPages"
-                :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
-                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
+                :first-label="currentLanguage=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="currentLanguage=='kiswahili' ? 'Mwisho' :'Last'"
               class-name="my-5"
               @change="goToPage"
             />

@@ -1,6 +1,7 @@
 import apiDocs from '~/utilities/apiDocs'
 import { webVisitor } from '~/utilities/platform'
-import { isTokenExpiringSoon, refreshToken } from '~/utilities/jwToken'
+import { isTokenExpiringSoon } from '~/utilities/jwToken'
+import { resilientFetch } from '~/utilities/resilientFetch'
 
 export default defineNuxtPlugin(() => {
   const userToken = useCookie('signInUserToken')
@@ -19,14 +20,9 @@ export default defineNuxtPlugin(() => {
     try {
       if (!accessToken.value) return
 
-      if (isTokenExpiringSoon(accessToken.value, 60)) {
-        const refreshed = await refreshToken()
-        if (!refreshed?.access_token && !accessToken.value) {
-          return
-        }
-      }
+      if (isTokenExpiringSoon(accessToken.value, 60)) return
 
-      await $fetch(apiDocs.auth.updateTimeSpent, {
+      await resilientFetch(apiDocs.auth.updateTimeSpent, {
         method: 'PATCH',
         body: { duration: userTimeSpent.value },
         headers: {

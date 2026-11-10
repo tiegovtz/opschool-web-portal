@@ -3,13 +3,7 @@ import TopicCard from "@/components/home/TopicCard.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import { ref, computed, watch } from "vue";
 import type { tabs } from "~/types/types.data";
-import {
-  isGreaterToXL,
-  isGreaterToLG,
-  isGreaterToMD,
-  isGreaterToSM,
-  screenWidth,
-} from "@/utilities/controlls";
+import { screenWidth } from "@/utilities/controlls";
 import apiDocs from "~/utilities/apiDocs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import { removeDataFromArrayOfJson } from "~/utilities/filterJson";
@@ -51,7 +45,7 @@ const tabLanguage = computed(() =>
   ),
 );
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value, {}, tabLanguage.value),
+  getEducationRouteQuery(educationLevel.value, typeof route.query.level === "string" ? { level: route.query.level } : {}, tabLanguage.value),
 );
 
 // Define meta info about page
@@ -112,7 +106,7 @@ const getLevels = (data: any[]) => {
 };
 const levelFilterKey = computed(() => subjectSlug.value || "topics");
 const selectedLevel = computed({
-  get: () => currentLevel.value[levelFilterKey.value] || "",
+  get: () => currentLevel.value[levelFilterKey.value] || (typeof route.query.level === "string" ? route.query.level : ""),
   set: (value: string) => {
     currentLevel.value[levelFilterKey.value] = value;
   },
@@ -135,9 +129,9 @@ const filteredTopics = computed(() => {
 
 // Define Ref State
 const status = ref("pending"); // Initial Status State
-const topic = ref([]); // Initial Topics State
+const topic = ref<any[]>([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
-const activeTab = ref<tabs>("subjects");
+const activeTab = ref<tabs>("interactive-contents");
 
 // First, fix the sliceData function
 const sliceData = (start: number, end: number) => {
@@ -160,10 +154,9 @@ const sliceData = (start: number, end: number) => {
 const currentPage = ref(1);
 const pageSize = ref();
 const getPageSize = () => {
-  if (screenWidth.value >= 1280 || isGreaterToXL.value) return 12;
-  if (screenWidth.value >= 1024 || isGreaterToLG.value) return 9;
-  if (screenWidth.value >= 768 || isGreaterToMD.value) return 6;
-  return 4;
+  if (screenWidth.value >= 1280) return 12;
+  if (screenWidth.value >= 1024) return 9;
+  return 6;
 };
 const TAB_TO_ROUTE: Record<string, { path: string; query?: Record<string, any> }> = {
   "interactive-contents": { path: "/interactive", query: educationRouteQuery.value },
@@ -218,6 +211,7 @@ const switchTab = async (tab: string) => {
   if (!tab) return;
   activeTab.value = tab as tabs;
   const target = buildTabTarget(tab);
+  if (!target) return;
   await router.push(target);
 };
 
@@ -247,7 +241,7 @@ const fetchTopics = async (params: any) => {
     }))
 
     // Call State Define above
-    topic.value = removeDataFromArrayOfJson(response.value, "isDeleted", true);
+    topic.value = removeDataFromArrayOfJson(Array.isArray(response.value) ? response.value : [], "isDeleted", true);
     status.value = fetchStatus.value;
 
     goToPage(1);
@@ -328,11 +322,12 @@ watch(selectedLevel, () => {
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage" :education-level>
+  <NuxtLayout name="home-layout" v-bind="{ language: contentLayoutLanguage, educationLevel: educationLevel }">
     <div class="" :class="{ ' animate-pulse': isLoading }">
       <div class="flex flex-col gap-4">
         <!-- Keep hero-style search visible for both logged-in and logged-out -->
-        <HomeSearchbar appearance="not-normal" :language="contentLayoutLanguage" />
+        <div class="hidden md:block"><HomeSearchbar appearance="not-normal" :language="contentLayoutLanguage" /></div>
+        <HomeMobileSubjectContentTools :active-tab="activeTab" :language="tabLanguage" :education-level="educationLevel" @update:selected-level="selectedLevel = $event" @select-tab="switchTab" />
         <TabBar :is-logged-in="isLoggedIn" :active-tab="activeTab" @emit-active-tab="switchTab($event)"
           :subject-title="subjectTitle" :topic-id="subjectId" :tab-group="educationLevel" :language="tabLanguage" />
       </div>
@@ -357,7 +352,7 @@ watch(selectedLevel, () => {
               <!-- Topic Cards are in Grid -->
               <div class="flex flex-col w-full">
 
-                <div class="flex items-center justify-end w-full">
+                <div class="hidden items-center justify-end w-full md:flex">
                   <div class="w-64">
                     <!-- Custom Drop Down -->
                     <CustomDropDownList v-if="availableLevels.length > 1" class="px-2 cursor-pointer"
@@ -383,8 +378,8 @@ watch(selectedLevel, () => {
               :current-page="currentPage"
               :total-pages="totalPages"
               class-name="my-5"
-               :first-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwanzo' :'First'"
-                :last-label="useContentLayoutLanguage().value=='kiswahili' ? 'Mwisho' :'Last'"
+               :first-label="contentLayoutLanguage=='kiswahili' ? 'Mwanzo' :'First'"
+                :last-label="contentLayoutLanguage=='kiswahili' ? 'Mwisho' :'Last'"
               @change="goToPage"
             />
           </div>

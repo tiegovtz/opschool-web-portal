@@ -185,7 +185,7 @@ function renderWords(questionId: string, question: string) {
       <ActivityResults
         :score="score"
         :total="props.questions.questions.length"
-        @onRestart="handleTryAgain"
+        :on-restart="handleTryAgain"
       />
     </div>
 
@@ -193,7 +193,7 @@ function renderWords(questionId: string, question: string) {
       :score="score"
       :total="props.questions.questions.length"
       :open="allAnswered"
-      @onOpenChange="(open:any) => { allAnswered = open; if (!open) showResults = true }"
+      :on-open-change="(open:any) => { allAnswered = open; if (!open) showResults = true }"
     />
   </section>
 </template>

@@ -1,13 +1,31 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import { fileURLToPath } from "node:url";
 import { vite as vidstack } from "vidstack/plugins";
 
+const imageDomains = [
+  process.env.VITE_API_BASE_URL,
+  process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN,
+  "http://41.59.251.166",
+  "https://opschool.tie.go.tz",
+].flatMap((value) => {
+  try {
+    return value ? [new URL(value).host] : [];
+  } catch {
+    return [];
+  }
+});
+
 export default defineNuxtConfig({
-  compatibilityDate: "2024-11-01",
+  compatibilityDate: '2026-10-31',
   devtools: { enabled: true },
   debug: false,
   srcDir: "app/",
-
+  typescript: {
+    typeCheck:true
+  },
+  experimental: {
+    // Bundling Vue avoids a recursive peer-dependency symlink tree in Nitro's output.
+    externalVue: false,
+  },
   ignore: [
     ".claude/**",
     "Chunking/**",
@@ -40,12 +58,23 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Preserve the build-time .env value in production; NUXT_CSRF_ENABLED can
+    // still override it in the running server's environment.
+    csrfEnabled: process.env.NUXT_CSRF_ENABLED?.trim().toLowerCase() !== "false",
+    public: {
+      localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true",
+      imageFetchOrigin: process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN || "",
+    },
+    backendApiBaseUrl: process.env.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1",
+    supportApiBaseUrl: "",
     adtStoreBaseUrl: "",
     adtStoreApiKey: "",
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY || "",
-    ragApiBaseUrl:
-      process.env.RAG_API_BASE_URL || "http://opschool.tie.go.tz:5002",
+    // Insights (textbook RAG). No default: an unset URL is reported as
+    // "textbook search unavailable" instead of silently using plain HTTP.
+    // Can also be set at runtime with NUXT_RAG_API_BASE_URL / NUXT_INSIGHTS_API_KEY.
+    ragApiBaseUrl: process.env.RAG_API_BASE_URL || "",
     insightsApiKey: process.env.INSIGHTS_API_KEY || "",
   },
 
@@ -57,6 +86,18 @@ export default defineNuxtConfig({
   ],
 
   modules: ["@nuxtjs/google-fonts", "@nuxt/image", "@nuxt/icon", "@vite-pwa/nuxt"],
+
+  hooks: {
+    'imports:extend'(imports) {
+      for (let index = imports.length - 1; index >= 0; index--) {
+        const entry = imports[index]
+        if (entry?.from.endsWith('/types/interactive-video.interface.ts') &&
+            (entry.name === 'QuizOption' || entry.name === 'VideoInteraction')) {
+          imports.splice(index, 1)
+        }
+      }
+    },
+  },
 
   pwa: {
     registerType: "autoUpdate",
@@ -158,6 +199,7 @@ export default defineNuxtConfig({
   },
 
   image: {
+    domains: [...new Set(imageDomains)],
     quality: 80,
     format: ["webp"],
     densities: [1],
@@ -171,11 +213,6 @@ export default defineNuxtConfig({
       "2xl": 2560,
     },
   },
-
-  // devServer: {
-  //   // host: "192.168.0.147",
-  //   port: 3010,
-  // },
 
   build: {
     transpile: ["vuetify"],
@@ -191,12 +228,10 @@ export default defineNuxtConfig({
     },
     plugins: [vidstack()],
     optimizeDeps: {
-      force: true, // Force re-optimization of dependencies
       include: [
+        "ai",
         "pinia",
         "pinia-plugin-persistedstate",
-        "@vue/devtools-core",
-        "@vue/devtools-kit",
         "@google/model-viewer",
         "@ai-sdk/vue",
         "bowser",
@@ -215,6 +250,8 @@ export default defineNuxtConfig({
          'page-flip', // CJS
         'pdfjs-dist',
         'pdfjs-dist/build/pdf',
+        'chart.js/auto',
+        'function-plot'
       ],
     },
     server: {
@@ -228,6 +265,7 @@ export default defineNuxtConfig({
     head: {
       meta: [
         { name: "generator", content: "" },
+        { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
         { name: "theme-color", content: "#0a7ac8" },
         { name: "mobile-web-app-capable", content: "yes" },
         { name: "apple-mobile-web-app-capable", content: "yes" },

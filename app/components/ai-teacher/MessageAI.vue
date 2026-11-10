@@ -8,7 +8,7 @@
       <div class="bg-white text-gray-800 px-5 py-3 rounded-2xl rounded-tl-sm shadow-md border border-gray-100">
         <div v-for="(part, idx) in message.parts" :key="idx" class="space-y-2">
           <template v-if="part.type === 'text'">
-            <template v-for="(seg, sIdx) in splitIntoSegments(part.text)" :key="`${idx}-${sIdx}-${shortcodesLoaded}`">
+            <template v-for="(seg, sIdx) in splitIntoSegments(part.text)" :key="`${idx}-${sIdx}-${shortcodesLoaded}-${shortcodesVersion}`">
               <div
                 v-if="seg.kind === 'html'"
                 ref="mathContainer"
@@ -19,6 +19,7 @@
                 aria-atomic="false"
                 v-html="seg.html"
                 @click="handleLinkClick"
+                @error.capture="hideBrokenAiImage"
               />
               <GraphBlock v-else-if="seg.kind === 'graph' && seg.spec" :spec="seg.spec as any" />
               <ChartBlock v-else-if="seg.kind === 'chart' && seg.spec" :spec="seg.spec as any" />
@@ -39,6 +40,24 @@
           :language="language"
           :disabled="isStreaming"
         />
+        <div
+          v-if="citations.length > 0"
+          class="mt-3 border-t border-gray-100 pt-2 text-xs text-gray-500"
+        >
+          <p class="font-medium text-gray-600">{{ isSwahili ? "Vyanzo" : "Sources" }}</p>
+          <ul class="mt-1 space-y-0.5">
+            <li
+              v-for="(citation, cIdx) in citations"
+              :key="`${citation.book}-${citation.chapter}-${cIdx}`"
+              class="flex items-start gap-1"
+            >
+              <Icon name="heroicons:book-open" class="mt-0.5 h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+              <span>
+                {{ citation.book }}<template v-if="citation.chapter"> · {{ citation.chapter }}</template>
+              </span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -46,8 +65,9 @@
 
 <script setup lang="ts">
 import MarkdownIt from "markdown-it";
-import { ref, watch, nextTick, onMounted } from "vue";
-import { getImageFromShortcode, loadDynamicShortcodes } from "~/utilities/imageShortcodes";
+import { sanitizeAiHtml, hideBrokenAiImage } from "~/utilities/sanitizeHtml";
+import { ref, watch, nextTick, onMounted, computed } from "vue";
+import { getImageFromShortcode, loadDynamicShortcodes, shortcodesVersion } from "~/utilities/imageShortcodes";
 import { useRouter } from "vue-router";
 import GraphBlock from "./renderers/GraphBlock.vue";
 import ChartBlock from "./renderers/ChartBlock.vue";
@@ -66,6 +86,36 @@ const copyText = computed(() => (props.message.parts || [])
   .filter((part: { type: string; text?: string }) => part.type === "text" && typeof part.text === "string")
   .map((part: { text: string }) => part.text)
   .join("\n\n"));
+const contentLayoutLanguage = useContentLayoutLanguage();
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+
+type Citation = { book: string; chapter: string };
+
+// Book/chapter sources: sent as message metadata by /api/chat, and also present
+// in the output of any searchTextbooks tool call in this message.
+const citations = computed<Citation[]>(() => {
+  const collected: Citation[] = [];
+  const add = (items: unknown) => {
+    if (!Array.isArray(items)) return;
+    for (const item of items as any[]) {
+      if (typeof item?.book !== "string" || !item.book.trim()) continue;
+      collected.push({ book: item.book.trim(), chapter: typeof item.chapter === "string" ? item.chapter.trim() : "" });
+    }
+  };
+  add(props.message?.metadata?.citations);
+  for (const part of props.message?.parts || []) {
+    if (part?.type === "tool-searchTextbooks" && part.state === "output-available") {
+      add(part.output?.citations);
+    }
+  }
+  const seen = new Set<string>();
+  return collected.filter((citation) => {
+    const key = `${citation.book}|${citation.chapter}`.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 6);
+});
 const mathContainer = ref<HTMLElement[]>([]);
 const router = useRouter();
 const shortcodesLoaded = ref(false); // Flag to force re-render when shortcodes are loaded
@@ -203,12 +253,26 @@ const processMathInText = (text: string): string => {
         placeholder,
         replacement: imageHtml
       });
-    } else {
-      // Return a visible placeholder that will be replaced on re-render when cache loads
+    } else if (!shortcodesLoaded.value) {
+      // Shortcodes haven't finished loading yet - show a pending placeholder that will
+      // be replaced on re-render once the cache loads (shortcodesLoaded/shortcodesVersion
+      // bump the :key above).
       const placeholder = `IMAGE_PENDING_${counter}_END`;
       imagePlaceholders.push({
         placeholder,
         replacement: `<div class="my-4 p-4 bg-gray-100 rounded-lg text-center text-gray-500 animate-pulse" data-shortcode="${shortcodeName.trim()}">Loading image: ${shortcodeName.trim()}...</div>`
+      });
+      counter++;
+      return placeholder;
+    } else {
+      // Shortcodes have finished loading and this one genuinely isn't in the dataset
+      // (the model sometimes emits a bare figure number like "2.1" instead of the real
+      // shortcode) - showing "Loading image..." forever here would be misleading, since
+      // it will never resolve. Say so instead of leaving a permanent loading spinner.
+      const placeholder = `IMAGE_MISSING_${counter}_END`;
+      imagePlaceholders.push({
+        placeholder,
+        replacement: `<div class="my-4 p-3 bg-gray-50 rounded-lg text-center text-gray-400 italic text-sm" data-shortcode="${shortcodeName.trim()}">Image not available</div>`
       });
       counter++;
       return placeholder;
@@ -319,6 +383,28 @@ const processMathInText = (text: string): string => {
 // everything else goes through markdown + math processing.
 const FENCED_RE = /```(graph|chart|geometry|steps)\s*\n([\s\S]*?)\n?```/g;
 
+// The model embeds raw LaTeX (e.g. \text{...}, \cdot, \Delta) inside these JSON blocks.
+// A bare backslash is only valid JSON right before ", \, /, b, f, n, r, t or a \uXXXX escape -
+// any other LaTeX command backslash makes JSON.parse throw (or, worse, silently corrupts the
+// string for the few letters that coincide with real escapes, like \t becoming a tab).
+// Double every backslash that isn't already part of a legitimate escape so LaTeX survives intact.
+const parseLenientJson = (raw: string): Record<string, any> | null => {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    try {
+      // The model doesn't always double-escape every LaTeX backslash consistently - some
+      // commands come through already-correct ("\\cos", a real escaped backslash) and others
+      // as a bare backslash ("\cdot", invalid JSON). Consume already-valid pairs/escapes first
+      // so they're left alone, and only double a backslash that's genuinely unescaped.
+      const escaped = raw.replace(/\\\\|\\(?=["\\/bfnrt]|u[0-9a-fA-F]{4})|\\/g, (m) => (m.length === 2 ? m : "\\\\"));
+      return JSON.parse(escaped);
+    } catch {
+      return null;
+    }
+  }
+};
+
 const splitIntoSegments = (text: string): Segment[] => {
   if (!text) return [];
   const segments: Segment[] = [];
@@ -328,23 +414,22 @@ const splitIntoSegments = (text: string): Segment[] => {
   while ((m = FENCED_RE.exec(text)) !== null) {
     const before = text.slice(lastIndex, m.index);
     if (before.trim()) {
-      segments.push({ kind: "html", html: processMathInText(before) });
+      segments.push({ kind: "html", html: sanitizeAiHtml(processMathInText(before)) });
     }
     const kind = m[1] as "graph" | "chart" | "geometry" | "steps";
     const raw = (m[2] || "").trim();
-    let spec: Record<string, any> | null = null;
-    try { spec = JSON.parse(raw); } catch { spec = null; }
+    const spec = parseLenientJson(raw);
     if (spec) {
       segments.push({ kind, spec });
     } else {
       // fall back to rendering as code block so user sees the issue
-      segments.push({ kind: "html", html: processMathInText("```\n" + raw + "\n```") });
+      segments.push({ kind: "html", html: sanitizeAiHtml(processMathInText("```\n" + raw + "\n```")) });
     }
     lastIndex = m.index + m[0].length;
   }
   const rest = text.slice(lastIndex);
   if (rest.trim() || segments.length === 0) {
-    segments.push({ kind: "html", html: processMathInText(rest) });
+    segments.push({ kind: "html", html: sanitizeAiHtml(processMathInText(rest)) });
   }
   return segments;
 };
@@ -391,9 +476,13 @@ watch(() => props.message, () => {
   scheduleMathJax();
 }, { deep: true });
 
+// Computed at setup time (not inside the async onMounted callback) so it's reliably
+// available - see the apiBasePath param note in imageShortcodes.ts.
+const imageListBasePath = useRuntimeConfig().app.baseURL;
+
 onMounted(async () => {
   // Pre-load dynamic shortcodes from API
-  await loadDynamicShortcodes();
+  await loadDynamicShortcodes(false, imageListBasePath);
   shortcodesLoaded.value = true; // Trigger re-render
   scheduleMathJax();
 });

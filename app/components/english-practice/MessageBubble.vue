@@ -54,7 +54,7 @@ interface Props {
   transcript?: string;
   highlightedWord?: string;
   position: 'left' | 'right';
-  type: 'student1' | 'student2' | 'ai';
+  type: string;
 }
 
 const props = defineProps<Props>();

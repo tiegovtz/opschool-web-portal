@@ -240,7 +240,7 @@ function resetGame() {
               v-if="checkedQuestions.includes(index)"
               :id="`complete-sentences-rearrange-result-${index}`"
               role="status"
-              :aria-label="ui.formatQuestionResult(index + 1, feedbacks[index])"
+              :aria-label="ui.formatQuestionResult(index + 1, feedbacks[index] ?? false)"
             >
               {{ feedbacks[index] ? "✅" : "❌" }}
             </span>

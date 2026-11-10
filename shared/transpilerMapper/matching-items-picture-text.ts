@@ -128,8 +128,8 @@ const groupedSingleImagePairs = (
     .map(([id, items]) => {
       return {
         id,
-        left: { id, content: items[0].content },
-        right: { id, content: items[1].content },
+        left: { id, content: items[0]!.content },
+        right: { id, content: items[1]!.content },
       };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);

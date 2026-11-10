@@ -18,5 +18,6 @@ export interface ConversationScript {
   participants?: ConversationParticipant[];
 }
 
-export type SpeakerType = 'ai' | 'student1' | 'student2';
+// Participant IDs are supplied by the conversation and can vary per script.
+export type SpeakerType = string;
 export type PracticeMode = 'multi-user' | 'single-user';

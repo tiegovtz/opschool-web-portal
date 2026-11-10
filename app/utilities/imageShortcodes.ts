@@ -7,6 +7,8 @@
  * Supports both single images (path) and multi-image figures (paths array)
  */
 
+import { ref } from 'vue';
+
 export interface ImageMetadata {
   path?: string;           // Single image URL (for single-image figures)
   paths?: string[];        // Multiple image URLs (for multi-image figures like Figure 1.1 with a,b,c,d)
@@ -18,6 +20,13 @@ export interface ImageMetadata {
 // Cache for dynamic shortcodes loaded from API
 let dynamicShortcodesCache: Record<string, ImageMetadata> = {};
 let cacheLoadPromise: Promise<void> | null = null;
+
+// Reactive version counter, bumped every time the cache is successfully (re)populated.
+// Components render shortcodes from a plain object (not itself reactive), so they need
+// something reactive to key off to re-render once data arrives or changes - this lets
+// EVERY currently-mounted message bubble pick up a late/retried load, not just the one
+// that happened to trigger it.
+export const shortcodesVersion = ref(0);
 
 /**
  * Clear the shortcodes cache
@@ -36,8 +45,13 @@ export function clearShortcodesCache(): void {
 /**
  * Pre-load all dynamic shortcodes from API (call this on app init or component mount)
  * @param forceReload - If true, clears cache and reloads even if already loaded
+ * @param apiBasePath - The app's configured base path (e.g. "/portal" on dev), from
+ *   useRuntimeConfig().app.baseURL in the calling component. This module is a plain
+ *   .ts utility, not a component - calling useRuntimeConfig() directly from in here
+ *   (inside a nested async callback, one level removed from any component's setup
+ *   context) is not reliable, so the caller passes it in instead.
  */
-export async function loadDynamicShortcodes(forceReload: boolean = false): Promise<void> {
+export async function loadDynamicShortcodes(forceReload: boolean = false, apiBasePath: string = ''): Promise<void> {
   // Clear cache if force reload is requested
   if (forceReload) {
     clearShortcodesCache();
@@ -48,48 +62,68 @@ export async function loadDynamicShortcodes(forceReload: boolean = false): Promi
     return cacheLoadPromise;
   }
 
+  const MAX_ATTEMPTS = 3;
+
   cacheLoadPromise = (async () => {
-    try {
-      // Load all shortcodes from our server endpoint (handles auth internally)
-      const response = await fetch('/api/image-list');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success && data.images && data.images.length > 0) {
-        // Convert to cache format - supports both single and multi-image figures.
-        // Include parent entries (paths only) so [image:parent_shortcode] resolves reliably.
-        for (const figure of data.images) {
-          const metadata: ImageMetadata = {
-            alt: figure.alt || '',
-            category: (figure.category as ImageMetadata['category']) || 'general'
-          };
-          
-          // Handle single image path
-          if (figure.path) {
-            metadata.path = figure.path;
+    let lastError: unknown = null;
+
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        // Load all shortcodes from our server endpoint (handles auth internally).
+        // $fetch does NOT automatically respect app.baseURL for a plain '/api/...'
+        // path - it resolves against the domain root exactly like native fetch, so
+        // this 404s once the app is deployed under a sub-path (e.g. /portal). The
+        // caller passes the base path in (see apiBasePath param above).
+        const normalizedBasePath = apiBasePath.replace(/\/$/, '');
+        const data = await $fetch<{ success?: boolean; images?: Array<Record<string, any>> }>(`${normalizedBasePath}/api/image-list`);
+
+        if (data.success && data.images && data.images.length > 0) {
+          // Convert to cache format - supports both single and multi-image figures.
+          // Include parent entries (paths only) so [image:parent_shortcode] resolves reliably.
+          for (const figure of data.images) {
+            const metadata: ImageMetadata = {
+              alt: figure.alt || '',
+              category: (figure.category as ImageMetadata['category']) || 'general'
+            };
+
+            // Handle single image path
+            if (figure.path) {
+              metadata.path = figure.path;
+            }
+
+            // Handle multi-image figures (paths array) – keep parent shortcodes with paths only
+            if (figure.paths && figure.paths.length > 0) {
+              metadata.paths = figure.paths;
+              metadata.alts = figure.alts || [];
+            }
+
+            if (figure.shortcode) {
+              dynamicShortcodesCache[figure.shortcode] = metadata;
+            }
           }
-          
-          // Handle multi-image figures (paths array) – keep parent shortcodes with paths only
-          if (figure.paths && figure.paths.length > 0) {
-            metadata.paths = figure.paths;
-            metadata.alts = figure.alts || [];
-          }
-          
-          if (figure.shortcode) {
-            dynamicShortcodesCache[figure.shortcode] = metadata;
-          }
+        } else {
+          console.warn('[imageShortcodes] No figures returned from server:', data);
         }
-      } else {
-        console.warn('[imageShortcodes] No figures returned from server:', data);
+
+        // Success - notify any already-mounted message bubbles that new data arrived
+        // so they can re-render, even if THEY triggered an earlier, now-abandoned load.
+        shortcodesVersion.value++;
+        return;
+      } catch (error) {
+        lastError = error;
+        console.warn(`[imageShortcodes] Failed to load dynamic shortcodes (attempt ${attempt}/${MAX_ATTEMPTS}):`, error);
+        if (attempt < MAX_ATTEMPTS) {
+          // Short backoff before retrying - handles transient/slow-network failures
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        }
       }
-    } catch (error) {
-      console.warn('[imageShortcodes] Failed to load dynamic shortcodes:', error);
-      // Silently fail - direct paths will still work as fallback
     }
+
+    // All attempts failed - clear the cached promise so a later call (e.g. a
+    // subsequent message mounting, or an explicit forceReload) can retry instead
+    // of permanently treating this page session as having no images.
+    cacheLoadPromise = null;
+    console.error('[imageShortcodes] Giving up loading dynamic shortcodes after', MAX_ATTEMPTS, 'attempts:', lastError);
   })();
 
   return cacheLoadPromise;

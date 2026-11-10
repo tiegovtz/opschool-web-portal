@@ -1,6 +1,6 @@
 import { computed } from "vue";
 import type { LanguageSupport } from "~/types/language.interface";
-import { getHubLanguage, normalizeEducationLevel } from "~/utilities/educationRoute";
+import { getHubLanguage, normalizeEducationLevel, normalizeLanguageSupport } from "~/utilities/educationRoute";
 
 export function useAuthPageLanguage() {
   const route = useRoute();
@@ -10,7 +10,7 @@ export function useAuthPageLanguage() {
   return computed<LanguageSupport>(() => {
     const redirectTarget =
       typeof route.query.redirect === "string" ? route.query.redirect : "";
-    const [redirectPath, redirectQuery = ""] = redirectTarget.split("?");
+    const [redirectPath = "", redirectQuery = ""] = redirectTarget.split("?");
     const redirectSearchParams = new URLSearchParams(redirectQuery);
 
     const educationLevel = redirectPath.startsWith("/primary")
@@ -24,6 +24,9 @@ export function useAuthPageLanguage() {
       (typeof route.query.lang === "string" ? route.query.lang : null) ??
       primaryContentLanguage.value;
 
+    if (redirectPath === "/feedback") {
+      return normalizeLanguageSupport(preferredLanguage, "english");
+    }
     return getHubLanguage(educationLevel, preferredLanguage);
   });
 }

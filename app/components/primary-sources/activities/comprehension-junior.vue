@@ -268,6 +268,7 @@ const handleCheckAnswers = async () => {
 
       shuffledIndexes.value.forEach((originalIndex, questionIndex) => {
         const question = props.questions.questions[originalIndex];
+        if (!question) return;
         const userAnswers = nextAllUserAnswers[questionIndex] || [];
 
         userAnswers.forEach((answer, answerIndex) => {

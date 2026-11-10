@@ -178,7 +178,7 @@ const setLevel = (key: string, lvl: string) => {
         </div>
 
         <div v-if="hasMultipleGroups">
-          <customGridOne v-if="
+          <customGridOne active-tab="interactive-contents" v-if="
             seeMoreDetails &&
             seeMoreDetails === (topics?.dataOfKey as any)?.toLowerCase()
           ">
@@ -203,8 +203,8 @@ const setLevel = (key: string, lvl: string) => {
           </customGridOne>
 
           <div v-else-if="!seeMoreDetails" :class="[
-            'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
-            layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+            'grid grid-cols-2 gap-3 py-2 md:gap-4',
+            layoutEffect == 'list' ? 'md:flex md:flex-col' : 'md:flex md:flex-row md:overflow-x-auto md:scroll-view',
           ]">
             <!-- Topic Cards  -->
             <TopicCard v-for="topic in (() => {
@@ -225,7 +225,7 @@ const setLevel = (key: string, lvl: string) => {
           </div>
         </div>
 
-        <customGridOne v-else>
+        <customGridOne v-else active-tab="interactive-contents">
           <template #data>
             <!-- Topic Cards  -->
             <TopicCard v-for="topic in (() => {
@@ -685,8 +685,8 @@ const setLevel = (key: string, lvl: string) => {
           </customGridTwo>
 
           <div v-else-if="!seeMoreDetails" :class="[
-            'flex gap-4 overflow-x-scroll scrollbar-none py-2 ',
-            layoutEffect == 'list' ? 'flex-col' : 'flex-row scroll-view',
+            'grid grid-cols-2 gap-3 py-2 md:gap-4',
+            layoutEffect == 'list' ? 'md:flex md:flex-col' : 'md:flex md:flex-row md:overflow-x-auto md:scroll-view',
           ]">
             <!-- Topic Cards  -->
             <TopicCard v-for="topic in (() => {

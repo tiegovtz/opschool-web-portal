@@ -1,6 +1,7 @@
 import { computed, watch } from "vue";
 import type { LanguageSupport } from "~/types/language.interface";
 import {
+  getEducationHubBucket,
   normalizeEducationLevel,
   normalizeLanguageSupport,
   resolveEducationLevelFromRoute,
@@ -20,7 +21,7 @@ export function useHubPageLanguage() {
   );
 
   const pageLanguage = computed<LanguageSupport>(() =>
-    pageEducationLevel.value === "primary"
+    getEducationHubBucket(pageEducationLevel.value) === "primary"
       ? normalizeLanguageSupport(primaryContentLanguage.value, "kiswahili")
       : "english",
   );
@@ -28,10 +29,10 @@ export function useHubPageLanguage() {
   watch(
     [pageLanguage, pageEducationLevel],
     ([language, educationLevel]) => {
-      hubEducationLevel.value =
-        educationLevel === "primary" ? "primary" : "secondary";
+      const hub = getEducationHubBucket(educationLevel) ?? "secondary";
+      if (hubEducationLevel.value !== hub) hubEducationLevel.value = hub;
       hubHeaderLang.value = language;
-      if (educationLevel === "primary") {
+      if (hub === "primary") {
         primaryContentLanguage.value = language;
       }
     },

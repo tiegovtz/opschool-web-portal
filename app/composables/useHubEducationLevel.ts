@@ -1,9 +1,9 @@
-import type { EducationBucket } from "~/utilities/educationRoute";
+import type { EducationHubBucket } from "~/utilities/educationRoute";
 
 const COOKIE_NAME = "tie-hub-education-level";
 
 export function useHubEducationLevel() {
-  return useCookie<EducationBucket>(COOKIE_NAME, {
+  return useCookie<EducationHubBucket>(COOKIE_NAME, {
     default: () => "secondary",
     maxAge: 60 * 60 * 24 * 180,
     path: "/",

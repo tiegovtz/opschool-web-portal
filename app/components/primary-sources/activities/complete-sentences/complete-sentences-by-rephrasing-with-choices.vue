@@ -290,7 +290,7 @@ const formatUserAnswer = (questionIndex: number) => {
                 feedbacks[i] ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600',
               ]"
               role="status"
-              :aria-label="ui.formatQuestionResult(i + 1, feedbacks[i])"
+              :aria-label="ui.formatQuestionResult(i + 1, feedbacks[i] ?? false)"
             >
               <Icon :icon="feedbacks[i] ? 'mdi:check' : 'mdi:close'" width="20" height="20" aria-hidden="true" />
             </div>

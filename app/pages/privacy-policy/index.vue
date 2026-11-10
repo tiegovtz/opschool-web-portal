@@ -3,10 +3,12 @@ definePageMeta({
     title: 'Privacy Policy - EduAudio',
     description: 'Learn about our commitment to protecting your privacy and how we handle your data at EduAudio.',
 })
+
+const router = useRouter();
 </script>
 
 <template>
-    <nuxt-layout :name="$router.currentRoute.value.fullPath.includes('header-less') ? 'normal' : 'home-layout'">
+    <nuxt-layout :name="router.currentRoute.value.fullPath.includes('header-less') ? 'normal' : 'home-layout'">
         <section id="main-container" tabindex="-1" class="flex w-full justify-center px-4 py-8 md:px-8">
             <div class="w-full max-w-5xl">
                 <header class="mb-8">

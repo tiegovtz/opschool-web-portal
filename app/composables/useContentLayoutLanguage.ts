@@ -1,7 +1,7 @@
 import { computed, watch, toValue, type MaybeRefOrGetter } from "vue";
 import type { LanguageSupport } from "~/types/language.interface";
 import { inferHubLanguageFromContentRoute } from "~/utilities/contentHubLanguage";
-import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
+import { getEducationHubBucket, resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
 
 /**
  * Header/footer language for `home-layout` on content routes: Primary → kiswahili, Secondary → english.
@@ -19,7 +19,7 @@ export function useContentLayoutLanguage(levelSource?: MaybeRefOrGetter<unknown>
   };
 
   const isPrimaryContentRoute = computed(() => {
-    return resolveEducationLevelFromRoute(route) === "primary";
+    return getEducationHubBucket(resolveEducationLevelFromRoute(route)) === "primary";
   });
 
   const layoutLanguage = computed<LanguageSupport>(() => {

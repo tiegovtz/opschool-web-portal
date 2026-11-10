@@ -5,9 +5,10 @@ import type {
   AddMessageRequest 
 } from '~/types/chat.interface';
 import apiDocs from '~/utilities/apiDocs';
+import { resilientFetch } from '~/utilities/resilientFetch';
 
 export const useChatHistory = () => {
-  const baseURL = apiDocs.baseURL;
+  const baseURL = apiDocs.requestBaseURL;
   const token = useCookie('signInAccessToken').value;
 
   const getAuthHeaders = () => ({
@@ -18,7 +19,7 @@ export const useChatHistory = () => {
   // Create a new chat session
   const createSession = async (request: CreateSessionRequest): Promise<ChatSession> => {
     try {
-      const response = await $fetch<ChatSession>(
+      const response = await resilientFetch<ChatSession>(
         apiDocs.chat.createSession,
         {
           method: 'POST',
@@ -36,7 +37,7 @@ export const useChatHistory = () => {
   // Get all sessions for the current user
   const getSessions = async (): Promise<ChatSession[]> => {
     try {
-      const response = await $fetch<ChatSession[]>(
+      const response = await resilientFetch<ChatSession[]>(
         apiDocs.chat.getSessions,
         {
           method: 'GET',
@@ -54,7 +55,7 @@ export const useChatHistory = () => {
   const getSession = async (sessionId: string): Promise<ChatSession & { messages?: ChatMessage[] }> => {
     try {
       const url = apiDocs.chat.getSession.replace(':id', sessionId);
-      const response = await $fetch<ChatSession & { messages?: ChatMessage[] }>(
+      const response = await resilientFetch<ChatSession & { messages?: ChatMessage[] }>(
         url,
         {
           method: 'GET',
@@ -75,7 +76,7 @@ export const useChatHistory = () => {
   ): Promise<ChatSession> => {
     try {
       const url = apiDocs.chat.updateSession.replace(':id', sessionId);
-      const response = await $fetch<ChatSession>(
+      const response = await resilientFetch<ChatSession>(
         url,
         {
           method: 'PUT',
@@ -94,7 +95,7 @@ export const useChatHistory = () => {
   const deleteSession = async (sessionId: string): Promise<void> => {
     try {
       const url = apiDocs.chat.deleteSession.replace(':id', sessionId);
-      await $fetch(
+      await resilientFetch(
         url,
         {
           method: 'DELETE',
@@ -114,7 +115,7 @@ export const useChatHistory = () => {
   ): Promise<ChatMessage> => {
     try {
       const url = apiDocs.chat.addMessage.replace(':id', sessionId);
-      const response = await $fetch<ChatMessage>(
+      const response = await resilientFetch<ChatMessage>(
         url,
         {
           method: 'POST',
@@ -144,7 +145,7 @@ export const useChatHistory = () => {
         ? `${url}?${queryParams.toString()}` 
         : url;
       
-      const response = await $fetch<ChatMessage[]>(
+      const response = await resilientFetch<ChatMessage[]>(
         fullUrl,
         {
           method: 'GET',
@@ -161,7 +162,7 @@ export const useChatHistory = () => {
   // Enforce retention policy
   const enforceRetention = async (request: { userId: string; maxSessions?: number }): Promise<{ success: boolean; deletedCount: number; maxSessions: number }> => {
     try {
-      const response = await $fetch<{ success: boolean; deletedCount: number; maxSessions: number }>(
+      const response = await resilientFetch<{ success: boolean; deletedCount: number; maxSessions: number }>(
         apiDocs.chat.enforceRetention,
         {
           method: 'POST',

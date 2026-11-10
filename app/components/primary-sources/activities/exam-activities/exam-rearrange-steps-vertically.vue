@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import ActivityTitle from "~/components/templates/activity-title";
-// import Input from "~/components/ui/inputs/input";
+import Input from "~/components/ui/inputs/input.vue";
 import { cn } from "~/utilities/utils";
 import { useExamContext, type QuestionAnswer } from "~/shared/context/exam-context";
 

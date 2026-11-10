@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CardImage from "~/components/home/CardImage.vue";
 import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
 import {
@@ -71,8 +72,8 @@ const setVideoToView = () => {
         v-if="!isDeleted"
         :to="videoTarget" @click="setVideoToView()"
         :class="[
-            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
-            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32',
+            'relative flex min-w-0 w-full overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group md:min-w-[300px]',
+            layoutEffect == 'grid' ? 'flex-col h-[270px] md:h-[350px]' : 'flex-row h-32',
             
         ]" 
         :aria-label="`View ${videoName} video with video description ${videoDescription}`"
@@ -81,9 +82,9 @@ const setVideoToView = () => {
         <!-- Thumbnail section -->
         <div :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
+            layoutEffect == 'grid' ? 'h-32 shrink-0 md:h-44' : 'h-full w-full max-w-[200px]'
         ]">
-            <NuxtImg :src="videoThumbnail" tabindex="0" :alt="altText ?? videoName.toLowerCase()"
+            <CardImage :src="videoThumbnail" tabindex="0" :alt="altText ?? videoName.toLowerCase()"
                 :class="[
                     'object-cover w-full h-full transition-transform duration-500',
                 ]" />
@@ -101,15 +102,15 @@ const setVideoToView = () => {
         </div>
         <!-- Content section -->
         <div :class="[
-            'flex flex-col',
-            layoutEffect == 'grid' ? 'p-4' : 'px-2'
+            'flex min-w-0 flex-col overflow-hidden',
+            layoutEffect == 'grid' ? 'p-2 md:p-4' : 'px-2'
         ]">
             <h3
-                class="mb-2 text-[1.2rem] font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white">
+                class="mb-1 line-clamp-2 break-words text-sm font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white md:mb-2 md:text-[1.2rem]">
                 {{ videoName }}
             </h3>
             <p
-                class="mb-4 text-[1rem] text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
+                class="content-card-summary mb-2 break-words text-xs leading-5 text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white md:text-sm">
                 {{ videoDescription }}
             </p>
 

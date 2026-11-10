@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CardImage from "~/components/home/CardImage.vue";
 import { useNavigationStore } from "~/stores/navigationStore";
 import type { LanguageSupport } from "~/types/language.interface";
 import {
@@ -9,7 +10,7 @@ import {
 // Define Stores
 const navigationStore = useNavigationStore()
 
-// Define Props 
+// Define Props
 const props = withDefaults(defineProps<{
     id:string,
     title:string,
@@ -95,7 +96,7 @@ const setPageToView = () => {
         :to="pageTarget"
         class="flex items-center p-4 transition-shadow duration-500 ease-in-out bg-white rounded-lg shadow-md hover:shadow-lg">
         <div class="max-w-[100px] h-20 mb-4 overflow-hidden rounded-md" tabindex="0">
-            <NuxtImg :src="thumbnail" loading="lazy" :alt="'Image of ' + subject + ' for ' + title"
+            <CardImage :src="thumbnail" :alt="'Image of ' + subject + ' for ' + title" width="200" height="160"
                 class="object-cover w-full h-full" />
         </div>
         <div class="flex flex-col justify-between flex-1 ml-4">
@@ -110,11 +111,11 @@ const setPageToView = () => {
                             type.toLocaleLowerCase() === 'video' ? 'fluent:video-24-filled' :
                                 type.toLocaleLowerCase() === 'audio' ? 'famicons:headset-sharp' : 'icon-park-solid:blackboard'"
                     class="text-gray-500 transition-transform duration-300 ease-in-out transform hover:translate-x-1"
-                    tabindex="0" :aria-label="type.toLocaleLowerCase() === 'topic' ? 'note book and pen icon' :
+                    :aria-label="type.toLocaleLowerCase() === 'topic' ? 'note book and pen icon' :
                         type.toLocaleLowerCase() === 'activity' ? 'conical flask icon' :
                             type.toLocaleLowerCase() === 'video' ? 'video icon' :
                                 type.toLocaleLowerCase() === 'audio' ? 'headset icon' : 'blackboard icon'" aria-hidden="true"
-                    focusable="false" />
+                    />
             </div>
         </div>
     </NuxtLink>

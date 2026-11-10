@@ -13,6 +13,8 @@ const props = withDefaults(
   },
 )
 
+const $img = useImage()
+
 const slides = computed(() => {
   if (props.variant === 'secondary') {
     return [
@@ -245,9 +247,13 @@ onBeforeUnmount(() => {
                   getSlideVisualClass(idx),
                 ]"
               >
-              <NuxtImg
-                :src="slide.image"
+              <img
+                :src="$img(slide.image, { width: 900, format: 'webp', quality: 70 })"
                 :alt="slide.alt"
+                width="900"
+                :loading="idx === 0 ? 'eager' : 'lazy'"
+                :fetchpriority="idx === 0 ? 'high' : 'low'"
+                decoding="async"
                 :class="[
                   'object-cover w-full h-full',
                   variant === 'landing' ? 'rounded-3xl' : 'rounded-md',

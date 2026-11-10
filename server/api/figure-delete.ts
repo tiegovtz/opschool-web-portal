@@ -4,18 +4,24 @@ import { deleteFigure } from "../utils/figuresApi";
 /**
  * API endpoint to delete a figure by its shortcode
  * DELETE /api/figure-delete?shortcode=xxx
- * or POST /api/figure-delete with body { shortcode: 'xxx' }
+ *
+ * Only DELETE is accepted, so a GET (link, image tag, prefetch) can never
+ * delete a figure.
  */
 export default defineEventHandler(async (event) => {
+  if (event.method !== "DELETE") {
+    setResponseHeader(event, "Allow", "DELETE");
+    throw createError({ statusCode: 405, message: "Method Not Allowed. Use DELETE." });
+  }
+
   try {
-    // Get shortcode from query or body
+    // Get shortcode from query (or a JSON body)
     const query = getQuery(event);
-    let shortcode = query.shortcode as string | undefined;
-    
-    // If not in query, try body (for POST requests)
+    let shortcode = typeof query.shortcode === "string" ? query.shortcode : undefined;
+
     if (!shortcode) {
       const body = await readBody(event).catch(() => ({}));
-      shortcode = body?.shortcode;
+      shortcode = typeof body?.shortcode === "string" ? body.shortcode : undefined;
     }
 
     if (!shortcode) {

@@ -17,7 +17,7 @@ withDefaults(
         <section class="rounded-3xl overflow-hidden bg-white w-full max-w-[1600px] m-auto z-50">
             <!-- Header -->
             <div class="bg-white">
-                <included-upper-header :language />
+                <included-upper-header :language variant="landing" />
             </div>
             <!-- content -->
             <main class="px-4 overflow-hidden">

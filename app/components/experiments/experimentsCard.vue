@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CardImage from "~/components/home/CardImage.vue";
 import { layoutEffect } from "~/utilities/controlls";
 import { useNavigationStore } from "~/stores/navigationStore";
 import {
@@ -10,7 +11,7 @@ const navigationStore = useNavigationStore()
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
 
-const props = withDefaults( 
+const props = withDefaults(
     defineProps<{
     experimentId:string|any,
     experimentName:string|any,
@@ -68,21 +69,21 @@ const setExperimentUrl =()=>{
 
 <template>
     <NuxtLink
-        :to="experimentTarget" 
+        :to="experimentTarget"
         @click="setExperimentUrl()"
         :aria-label="`View ${experimentName} experiment with experiment description ${experimentDescription}`"
         :class="[
-            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
-            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32'
+            'relative flex min-w-0 w-full overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group md:min-w-[300px]',
+            layoutEffect == 'grid' ? 'flex-col h-[270px] md:h-[350px]' : 'flex-row h-32'
         ]"
         >
         <!-- Thumbnail section -->
          <!--    layoutEffect == 'grid' ? 'aspect-video' : 'h-full w-full max-w-[200px]'  -->
-        <div :class="[
+        <div tabindex="0" :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
-          layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
+          layoutEffect == 'grid' ? 'h-32 shrink-0 md:h-44' : 'h-full w-full max-w-[200px]'
         ]">
-            <NuxtImg :src="experimentThumbnail" tabindex="0" :alt="altText??experimentName"
+            <CardImage :src="experimentThumbnail" :alt="altText??experimentName"
                 class="object-cover w-full h-full transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-black bg-opacity-70 to-transparent opacity-70" aria-hidden="true"></div>
 
@@ -99,13 +100,13 @@ const setExperimentUrl =()=>{
         </div>
 
         <!-- Content section -->
-        <div class="flex flex-col flex-grow p-4">
+        <div class="flex min-w-0 flex-col flex-grow overflow-hidden p-2 md:p-4">
             <p
-                class="mb-2 text-[1.2rem] font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
+                class="mb-1 break-words text-sm font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2 md:mb-2 md:text-[1.2rem]">
                 {{ experimentName }}
             </p>
             <p
-                class="mb-2 text-[1rem] text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
+                class="content-card-summary mb-2 break-words text-xs leading-5 text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white md:text-sm">
                 {{ experimentDescription }}
             </p>
 

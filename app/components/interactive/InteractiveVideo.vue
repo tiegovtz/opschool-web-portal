@@ -16,6 +16,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   quizSubmit: [interaction: VideoInteraction, answer: string]
   selectionSubmit: [interaction: VideoInteraction, answers: Record<string, string>]
+  videoError: []
 }>()
 
 const videoRef = ref<HTMLVideoElement | null>(null)
@@ -177,6 +178,7 @@ const handleLoadStart = () => {
 }
 
 const handleVideoError = (event: Event) => {
+  emit('videoError')
   const video = event.target as HTMLVideoElement
   const error = video.error
   console.error('Video error:', {

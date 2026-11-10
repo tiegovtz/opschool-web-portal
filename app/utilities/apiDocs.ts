@@ -1,8 +1,12 @@
-const baseURL =
+const upstreamBaseURL =
   import.meta.env?.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
 
+// Server utilities call the backend directly; browsers use the portal origin.
+const baseURL = import.meta.client ? "/api/backend/v1" : upstreamBaseURL;
+
 const apiDocs = {
-  baseURL: baseURL, // You can include it here for reference
+  baseURL: upstreamBaseURL, // Keep existing asset URL resolution unchanged.
+  requestBaseURL: baseURL,
 
   // AUTH API
   auth: {

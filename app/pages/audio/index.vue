@@ -3,7 +3,7 @@ import HeroSection from '@/components/home/HeroSection.vue'
 import TabBar from '@/components/home/TabBar.vue'
 import LoadingIndicator from "@/components/loading/loadingIndicator.vue";
 import { ref, computed, watch } from 'vue';
-import { isGreaterToXL, isGreaterToLG, isGreaterToMD, isGreaterToSM, screenWidth } from '@/utilities/controlls';
+import { screenWidth } from '@/utilities/controlls';
 import apiDocs from "~/utilities/apiDocs";
 import HomeTabContentShell from "~/components/home/HomeTabContentShell.vue";
 import { filterKeyDataFromArrayOfJson, removeDataFromArrayOfJson } from '~/utilities/filterJson';
@@ -89,10 +89,9 @@ const sliceData = (start: number, end: number) => {
 const currentPage = ref<number>(1);
 const pageSize = ref<number>(12);
 const getPageSize = () => {
-  if (screenWidth.value >= 1280 || isGreaterToXL.value) return 12;
-  if (screenWidth.value >= 1024 || isGreaterToLG.value) return 9;
-  if (screenWidth.value >= 768 || isGreaterToMD.value) return 6;
-  return 4;
+  if (screenWidth.value >= 1280) return 12;
+  if (screenWidth.value >= 1024) return 9;
+  return 6;
 };
 const activeTab = ref<tabs>("audio")
 const TAB_TO_ROUTE = computed<Record<string, { path: string; query?: Record<string, any> }>>(() => ({
@@ -125,7 +124,7 @@ const fetchAudios = async (param?: any) => {
     }));
 
     // Call State Define above
-    audios.value = removeDataFromArrayOfJson(response.value, 'isDeleted', true);
+    audios.value = removeDataFromArrayOfJson(Array.isArray(response.value) ? response.value : [], 'isDeleted', true);
     audios.value = removeDataFromArrayOfJson(audios.value, 'audioType', 'NARRATION');
     audios.value = educationLevel.value !== "primary"
       ? filterKeyDataFromArrayOfJson(audios.value, "subject.name", ['physics', 'chemistry', 'mathematics', 'biology', 'geography'])
@@ -236,7 +235,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
 </script>
 
 <template>
-  <NuxtLayout name="home-layout" :language="contentLayoutLanguage">
+  <NuxtLayout name="home-layout" v-bind="{ language: contentLayoutLanguage }">
     <section :class="[
       ' ',
       { ' animate-pulse': isLoading }
@@ -244,7 +243,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
 
       <!-- User Token Available -->
       <div v-if="userToken" class="flex flex-col items-center justify-center w-full gap-4 pt-4">
-        <HomeSearchbar appearance="rounded" :language :education-level="educationLevel" />
+        <div class="hidden md:block"><HomeSearchbar appearance="rounded" :language :education-level="educationLevel" /></div>
         <TabBar :is-logged-in="true" :active-tab="activeTab" @emit-active-tab="switchTab($event)" :language :education-level="educationLevel" :tab-group="educationLevel" />
       </div>
 

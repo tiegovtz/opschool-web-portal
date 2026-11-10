@@ -5,9 +5,10 @@ import type {
   QuizAttemptPayload,
   QuizAttemptSessionPayload,
 } from '~/types/recommendation.interface'
-import { isTokenExpiringSoon, refreshToken } from '~/utilities/jwToken'
+import { isTokenExpiringSoon } from '~/utilities/jwToken'
 import { useVideoInteractions } from '~/composables/useVideoInteractions'
 import { buildVideoQuizId } from '~/utilities/learnerProgressHistory'
+import { getVideoPlaybackError } from '~/utilities/videoPlaybackError'
 
 // Define meta info about page
 useHead({
@@ -37,12 +38,16 @@ useHead({
 
 // Video source - fetch from the interactive topic route
 const route = useRoute()
+const router = useRouter()
 const authRedirectTarget = computed(() => route.fullPath)
 const { snapshotId: activeRecommendationSnapshotId } =
   useRecommendationSnapshot()
 const videoSrc = ref<string>('/videos/TestVideo.mp4')
 const isLoading = ref(true)
 const error = ref<string | null>(null)
+const handlePlaybackError = async () => {
+  error.value = await getVideoPlaybackError(videoSrc.value)
+}
 
 // Extract video ID or topic URL from query parameters
 const videoId = computed(() => route.query.videoId as string | undefined)
@@ -93,18 +98,13 @@ const fetchVideo = async () => {
       return
     }
 
-    // Ensure token is valid and refresh if needed
+    // Sign in again when the access token is expiring.
     if (isTokenExpiringSoon(signInAccessToken.value, 60)) {
-      const newToken = await refreshToken()
-      if (newToken && 'access_token' in newToken && typeof newToken.access_token === 'string') {
-        signInAccessToken.value = newToken.access_token
-      } else {
-        await navigateTo({
-          path: '/auth',
-          query: { redirect: authRedirectTarget.value },
-        })
-        return
-      }
+      await navigateTo({
+        path: '/auth',
+        query: { redirect: authRedirectTarget.value },
+      })
+      return
     }
 
     // If video ID is provided directly, use it
@@ -184,7 +184,7 @@ const fetchVideoFromTopic = async () => {
     }
 
     // Fetch chapter content
-    const { data: chapterData, error: chapterError } = await useFetch(`/api/topics/chapters/${chapterId}`, {
+    const { data: chapterData, error: chapterError } = await useFetch<{ content?: string }>(`/api/topics/chapters/${chapterId}`, {
       headers: {
         Authorization: `Bearer ${signInAccessToken.value}`
       }
@@ -483,7 +483,7 @@ definePageMeta({
           <!-- Header -->
           <div class="text-center mb-8">
             <div class="flex items-center">
-              <button type="button" @click="$router.back()" aria-label="press link tp go back"
+              <button type="button" @click="router.back()" aria-label="press link tp go back"
                 class="items-center hidden gap-2 p-1 capitalize border-2 rounded-full text-oceanBlue text-small md:flex border-oceanBlue">
                 <Icon name="vaadin:arrow-backward" size="26" class="text-oceanBlue" />
               </button>
@@ -527,7 +527,7 @@ definePageMeta({
               </div>
 
               <!-- Retry button for other errors -->
-              <button v-else @click="fetchVideoFromTopic"
+              <button v-else @click="fetchVideo"
                 class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors">
                 Retry
               </button>
@@ -542,7 +542,7 @@ definePageMeta({
               <p class="text-sm text-gray-500">Video source: {{ videoSrc }}</p>
             </div>
             <InteractiveVideo v-else ref="videoPlayerRef" :video-src="videoSrc" :interactions="interactions"
-              @quiz-submit="handleQuizSubmit" @selection-submit="handleSelectionSubmit" />
+              @quiz-submit="handleQuizSubmit" @selection-submit="handleSelectionSubmit" @video-error="handlePlaybackError" />
             <div v-if="isLoadingInteractions"
               class="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
               <div class="text-center text-white">

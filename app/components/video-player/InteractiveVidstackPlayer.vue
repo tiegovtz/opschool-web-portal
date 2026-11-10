@@ -18,25 +18,21 @@
           <media-provider />
           <media-video-layout />
           
-          <!-- Quiz markers on progress bar (custom) -->
-          <media-progress>
-            <media-progress-track>
-              <media-progress-bar />
-              <!-- Quiz markers -->
-              <div
-                v-for="quiz in quizzes"
-                :key="quiz.id"
-                :style="{ left: `${(quiz.timestamp / videoDuration) * 100}%` }"
-                :class="[
-                  'absolute top-0 w-1 h-full bg-yellow-400 transform -translate-x-1/2 cursor-pointer hover:bg-yellow-500 transition-colors',
-                  isQuizAnswered(quiz.id) ? 'bg-green-500' : '',
-                ]"
-                :title="`Quiz at ${formatTime(quiz.timestamp)}`"
-                @click="seekToTimestamp(quiz.timestamp)"
-              />
-            </media-progress-track>
-          </media-progress>
         </media-player>
+
+        <!-- Quiz markers over the player's progress area. -->
+        <div v-if="videoDuration > 0" class="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-2">
+          <button
+            v-for="quiz in quizzes"
+            :key="quiz.id"
+            type="button"
+            class="pointer-events-auto absolute top-0 h-full w-1 -translate-x-1/2 bg-yellow-400 hover:bg-yellow-500"
+            :class="isQuizAnswered(quiz.id) ? 'bg-green-500' : ''"
+            :style="{ left: `${(quiz.timestamp / videoDuration) * 100}%` }"
+            :title="`Quiz at ${formatTime(quiz.timestamp)}`"
+            @click="seekToTimestamp(quiz.timestamp)"
+          />
+        </div>
 
         <!-- Quiz Overlay -->
         <VideoQuizOverlay
@@ -70,6 +66,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import type { VideoQuiz, BranchResult, QuizResult } from '~/types/video-quiz.interface';
 import { useVideoQuiz } from '~/composables/useVideoQuiz';
 import { useVideoBranching } from '~/composables/useVideoBranching';
+import BranchingPathIndicator from '~/components/video/BranchingPathIndicator.vue';
 
 interface Props {
   src: string;
@@ -290,6 +287,7 @@ const formatTime = (seconds: number): string => {
 // Initialize Vidstack on mount
 onMounted(async () => {
   try {
+    // @ts-expect-error Vidstack's bundle declaration is side-effect only.
     await import('vidstack/bundle');
   } catch (err: any) {
     error.value = 'Failed to load video player. Please try again later.';

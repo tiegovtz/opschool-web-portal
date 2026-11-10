@@ -1,0 +1,19 @@
+Live integration is now active. See SUPPORT_SETUP.txt for the Swagger contract and confirmed backend limitations. The following describes the optional local test adapter only; INBOX_DEMO_ENABLED is disabled in the current local environment.
+
+Local inbox setup
+
+The feedback page now uses the existing survey questions within the portal in English and Kiswahili. Feedback and technical support submissions are public. My Requests requires a valid login and includes only tickets belonging to that account. Guest tickets are not automatically claimed by a later login. Optional contact details let the support team contact a guest.
+
+The existing INBOX_DEMO_ENABLED=true and absolute INBOX_DEMO_FILE settings continue to save submissions in the shared local file used by the admin. Production always disables this adapter. The portal does not display sample records or test labels. Admin authentication, portal auth pages, and cookie helpers are unchanged.
+
+New feedback starts new and stores all answers and optional contact details. Technical tickets store contact fields and up to three screenshots (PNG, JPEG or WebP, 2 MB each), with validation on both sides. Screenshots use data URLs in the local adapter; the production backend should store them privately and provide authenticated download URLs. The admin screenshot viewer will require a separate admin update; this change only edits the portal.
+
+When INBOX_DEMO_ENABLED is false, supportApiBaseUrl supplies the service base for POST /feedback and /support/tickets. Both creation endpoints must allow anonymous submissions. Read/reply endpoints require the bearer token and must enforce ownership. Never accept browser-provided user IDs or status. Preserve the selected educationLevel independently of language.
+
+Feedback payload: { language: "en" | "sw", educationLevel: "primary" | "secondary", answers: [{question, answer}] (nine English or ten Kiswahili survey answers), contact: {name, email, phone} }. Return {id}. Survey choice answers contain their displayed text.
+Support payload: { category: "technical", educationLevel, language, subject, body, contact: {name,email,phone}, attachments: [{name,type,data}] }. Contact fields can be empty. The backend must validate, scan and privately store attachments, rate-limit public creation, and return the ticket in the shared/support/contracts.ts shape. For production use a dedicated upload endpoint and private attachment URLs rather than embedding images in list responses.
+
+My Requests counts: Submitted = total requests, Pending = new + in_review, Solved = resolved, across the signed-in account's requests. List filters do not change the summary counts. Feedback is separate and does not appear as a support ticket.
+
+Run: node --experimental-strip-types --test scripts/backend-proxy.test.mjs scripts/local-inbox.test.mjs scripts/local-inbox-flow.test.mjs scripts/support.test.mjs
+Tests use temporary files and mocked profiles, not real account data.

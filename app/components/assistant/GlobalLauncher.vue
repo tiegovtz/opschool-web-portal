@@ -184,7 +184,7 @@ onBeforeUnmount(() => {
     <client-only>
       <div
         v-if="showLauncher"
-        class="fixed z-[80]"
+        class="fixed z-[80] hidden md:block"
         :class="
           isSmallScreen
             ? 'right-3 bottom-[calc(12px+env(safe-area-inset-bottom))]'

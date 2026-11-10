@@ -1,5 +1,6 @@
 <script setup>
 import apiDocs from "~/utilities/apiDocs";
+import { getVideoPlaybackError } from "~/utilities/videoPlaybackError";
 
 const route = useRoute();
 const router = useRouter();
@@ -15,6 +16,17 @@ const videoSubject = String(route.fullPath.split("/")[3])
     .toString()
     .replaceAll("%20", " ");
 const videoUrl = `/api/video/${videoId}`
+const playbackError = ref(null);
+const playerKey = ref(0);
+
+const handleVideoError = async () => {
+    playbackError.value = await getVideoPlaybackError(videoUrl);
+};
+
+const retryVideo = () => {
+    playbackError.value = null;
+    playerKey.value += 1;
+};
 
 // Header
 useHead({
@@ -84,9 +96,9 @@ const fetchVideoById = async () => {
         videoInfo.value = response;
         status.value = 'success';
 
-    } catch (error) {
+    } catch (fetchError) {
         status.value = 'error';
-        error.value = error
+        error.value = fetchError;
     }
 }
 
@@ -149,7 +161,12 @@ const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level)
 
                 <!-- Description -->
                 <div class=" md:px-4 notes">
-                    <video id="main-container" tabindex="-1" preload="auto" controls @contextmenu.prevent class="mx-auto rounded-md">
+                    <div v-if="playbackError" role="alert" class="rounded-md border border-red-200 bg-red-50 p-6 text-center">
+                        <p class="font-medium text-red-700">Unable to play video</p>
+                        <p class="mt-2 text-sm text-gray-700">{{ playbackError }}</p>
+                        <button type="button" class="mt-4 rounded-md bg-oceanBlue px-4 py-2 text-white hover:bg-deepBlue" @click="retryVideo">Try again</button>
+                    </div>
+                    <video v-else :key="playerKey" id="main-container" tabindex="-1" preload="auto" controls @error="handleVideoError" @contextmenu.prevent class="mx-auto rounded-md">
                         <source :src="videoUrl" type="video/mp4">
                     </video>
 
@@ -171,7 +188,7 @@ const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level)
 
                     <!-- Next and Prev BUTTON -->
                     <div :class="[
-                        'flex items-center w-full',
+                        'flex items-center w-full gap-8',
                         videoInfo?.previous && videoInfo?.next ? 'justify-between'
                             : !videoInfo?.previous && videoInfo?.next ? 'justify-end'
                                 : !videoInfo?.next && videoInfo?.previous ? 'justify-start' : '',

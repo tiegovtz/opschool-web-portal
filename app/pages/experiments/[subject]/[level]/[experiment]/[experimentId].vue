@@ -257,7 +257,7 @@ onMounted(() => {
 
                     <!-- Next and Previous BUTTON -->
                     <div :class="[
-                        'flex items-center w-full',
+                        'flex items-center w-full gap-8',
                         experimentInfo?.previous && experimentInfo?.next ? 'justify-between'
                             : !experimentInfo?.previous && experimentInfo?.next ? 'justify-end'
                                 : !experimentInfo?.next && experimentInfo?.previous ? 'justify-start' : '',
