@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
+defineOptions({ inheritAttrs: false });
 const contentLayoutLanguage = useContentLayoutLanguage();
 
 const props = defineProps({
@@ -28,6 +29,7 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  optionClass: { type: String, default: '' },
   buttonClass: {
     type: String,
     default: ''
@@ -43,7 +45,7 @@ const selectedLabel = ref('');
 const searchQuery = ref('');
 const searchInputRef = ref(null);
 const openUp = ref(false);
-const instanceId = `ddl_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+const instanceId = `ddl_${useId()}`;
 const resolvedPlaceholder = computed(() =>
   props.placeholder ||
   (contentLayoutLanguage.value === 'kiswahili' ? 'Chagua chaguo' : 'Select an option')
@@ -99,6 +101,27 @@ const toggleOpen = () => {
   }
 };
 
+function closeAndFocus() {
+  isOpen.value = false;
+  nextTick(() => dropdownRef.value?.querySelector('[role="combobox"]')?.focus());
+}
+async function onDropdownKey(event) {
+  if (props.disabled) return;
+  if (event.key === 'Escape' && isOpen.value) { event.preventDefault(); event.stopPropagation(); closeAndFocus(); return; }
+  if (!['ArrowDown','ArrowUp','Home','End'].includes(event.key)) return;
+  if (event.target?.tagName === 'INPUT' && ['Home','End'].includes(event.key)) return;
+  event.preventDefault();
+  if (!isOpen.value) { isOpen.value = true; await nextTick(); }
+  const options = Array.from(dropdownRef.value?.querySelectorAll('[role="option"]') || []);
+  if (!options.length) return;
+  const current = options.indexOf(document.activeElement);
+  const index = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : event.key === 'ArrowDown' ? (current + 1) % options.length : current <= 0 ? options.length - 1 : current - 1;
+  options[index]?.focus();
+}
+function onDropdownFocusOut(event) {
+  if (!dropdownRef.value?.contains(event.relatedTarget)) isOpen.value = false;
+}
+
 function updateOpenDirection() {
   const el = dropdownRef.value;
   if (!el) return;
@@ -149,7 +172,7 @@ const selectItem = (item) => {
   emit('updateModelValue', out);
   emit('update:modelValue', out);
 
-  isOpen.value = false;
+  closeAndFocus();
 };
 // Close when clicked outside
 const handleClickOutside = (e) => {
@@ -172,14 +195,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="dropdownRef" class="relative w-full text-left">
+  <div ref="dropdownRef" class="relative w-full text-left" :class="$attrs.class" @keydown="onDropdownKey" @focusout="onDropdownFocusOut">
     <!-- Dropdown button -->
-    <button type="button" :class="[
+    <button :id="$attrs.id || `${instanceId}-button`" type="button" :class="[
        'flex items-center justify-between w-full h-full px-4 py-2 text-gray-700 rounded-md shadow-sm focus:outline-none',
       buttonClass
     ]" @click.stop="toggleOpen" role="combobox" aria-haspopup="listbox"
       :aria-expanded="(!disabled && isOpen) ? 'true' : 'false'"
-      :aria-controls="$attrs.id ? `${$attrs.id}-listbox` : 'dropdown-listbox'" :disabled="disabled"
+      :aria-controls="$attrs.id ? `${$attrs.id}-listbox` : `${instanceId}-listbox`" :disabled="disabled"
       :aria-disabled="disabled ? 'true' : 'false'" v-bind="$attrs">
       <span :class="[
         selected ? 'text-md text-textGray' : 'text-md text-slate-600',
@@ -197,7 +220,7 @@ onBeforeUnmount(() => {
           'absolute z-10 w-full overflow-y-auto text-sm bg-white border border-gray-200 rounded-md shadow-lg scrollbar-none max-h-48',
           openUp ? 'bottom-full mb-1' : 'top-full mt-1'
         ]"
-        :id="$attrs.id ? `${$attrs.id}-listbox` : 'dropdown-listbox'" role="listbox">
+        :id="$attrs.id ? `${$attrs.id}-listbox` : `${instanceId}-listbox`" role="listbox">
         <li v-if="searchable" class="sticky top-0 z-10 p-2 bg-white border-b border-gray-100">
           <input
             ref="searchInputRef"
@@ -206,7 +229,7 @@ onBeforeUnmount(() => {
             class="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-oceanBlue"
             :placeholder="resolvedSearchPlaceholder"
             aria-label="Search options"
-            @keydown.esc.prevent.stop="isOpen = false"
+            @keydown.esc.prevent.stop="closeAndFocus"
           />
         </li>
 
@@ -215,9 +238,9 @@ onBeforeUnmount(() => {
         </li>
 
         <li v-for="(item, index) in filteredList" :key="index" role="option"
-          :aria-selected="selectedLabel === item.name ? 'true' : 'false'" tabindex="0" @click="selectItem(item)"
+          :aria-selected="selectedLabel === item.name ? 'true' : 'false'" tabindex="-1" @click="selectItem(item)"
           @keydown.enter.prevent.stop="selectItem(item)" @keydown.space.prevent.stop="selectItem(item)"
-          class="w-full px-4 py-2 text-gray-700 transition-colors duration-500 ease-in-out cursor-pointer hover:bg-opacity-10 hover:bg-textGray">
+          :class="optionClass" class="w-full min-h-11 px-4 py-2 text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-deepBlue transition-colors duration-500 ease-in-out cursor-pointer hover:bg-opacity-10 hover:bg-textGray">
           <!-- {{ item?.name }} -->
           {{item?.name?.split(" ").map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(" ")
           }}
