@@ -1,3 +1,27 @@
+// Feedback and support endpoints share the API's v1 root, even when a
+// deployment config supplies only the origin or the /api prefix.
+export function feedbackSupportBaseURL(value: string) {
+  const base = value.trim().replace(/\/+$/, '');
+  return base && !base.endsWith('/v1') ? `${base}/v1` : base;
+}
+export const feedbackSupportPaths = {
+  feedback: '/feedback',
+  tickets: '/support/tickets',
+  ticket: (id: string) => `/support/tickets/${encodeURIComponent(id)}`,
+  messages: (id: string) => `/support/tickets/${encodeURIComponent(id)}/messages`,
+};
+export function feedbackSupportApiURLs(value: string) {
+  const base = feedbackSupportBaseURL(value);
+  return {
+    feedback: { submit: `${base}${feedbackSupportPaths.feedback}` },
+    support: {
+      tickets: `${base}${feedbackSupportPaths.tickets}`,
+      ticket: (id: string) => `${base}${feedbackSupportPaths.ticket(id)}`,
+      messages: (id: string) => `${base}${feedbackSupportPaths.messages(id)}`,
+    },
+  };
+}
+
 const upstreamBaseURL =
   import.meta.env?.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
 
@@ -7,6 +31,8 @@ const baseURL = import.meta.client ? "/api/backend/v1" : upstreamBaseURL;
 const apiDocs = {
   baseURL: upstreamBaseURL, // Keep existing asset URL resolution unchanged.
   requestBaseURL: baseURL,
+
+  ...feedbackSupportApiURLs(baseURL),
 
   // AUTH API
   auth: {

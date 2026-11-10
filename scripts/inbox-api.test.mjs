@@ -1,3 +1,4 @@
+import * as apiDocs from '../app/utilities/apiDocs.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -34,7 +35,7 @@ test('live writes send matching CSRF cookie/token and bearer identity, and prese
     return new Response(JSON.stringify(status === 201 ? { id:'saved-id' } : {message:'Unauthorized'}), {status});
   };
   const csrf = load('server/utils/fetchBackendWithCsrf.ts', {'../../shared/backend/proxy.ts':{backendCsrfCookie}}, {fetch:backendFetch});
-  const backend = load('server/utils/inboxBackend.ts', {'./fetchBackendWithCsrf':csrf}, globals);
+  const backend = load('server/utils/inboxBackend.ts', {'./fetchBackendWithCsrf':csrf, '../../app/utilities/apiDocs':apiDocs}, globals);
   const saved = await backend.inboxBackendRequest({token:'member-token'},'/feedback','POST',{answers:[]});
   assert.equal(saved.id,'saved-id'); assert.equal(calls.length,2);
   assert.equal(calls[0].init.headers.get('authorization'),'Bearer member-token');
@@ -64,7 +65,7 @@ test('Swagger user pagination is aggregated before filtering and counts; private
 test('live feedback and support handlers forward forms, sanitize outputs, and keep read access authenticated', async () => {
   const calls = [];
   const api = { inboxBackendBase: () => 'https://backend.test/api/v1', inboxBackendRequest: async (event,path,method,body) => { calls.push({event,path,method,body}); return path === '/feedback' ? {id:'feedback-id',note:'Private'} : ticket(1); } };
-  const modules = { '../../utils/localInboxStore': {localInboxEnabled:() => false}, '../../utils/inboxSubmission': {protectSubmission() {}}, '../../utils/inboxBackend':api, '../../utils/ownedSupportTickets':owned, '../../../shared/support/contracts':contracts, '../../../shared/feedback/contracts':feedback };
+  const modules = { '../../../app/utilities/apiDocs': apiDocs, '../../utils/localInboxStore': {localInboxEnabled:() => false}, '../../utils/inboxSubmission': {protectSubmission() {}}, '../../utils/inboxBackend':api, '../../utils/ownedSupportTickets':owned, '../../../shared/support/contracts':contracts, '../../../shared/feedback/contracts':feedback };
   const submitFeedback = load('server/api/feedback/index.ts',modules,globals).default;
   const answers = feedbackQuestions.en.slice(0,9).map(question => ({question:question.label,answer:question.options[0] || 'More practice'}));
   answers[4].answer = ''; // The conditional technical description is optional.
@@ -78,4 +79,16 @@ test('live feedback and support handlers forward forms, sanitize outputs, and ke
   await assert.rejects(support({method:'GET',path:'tickets'}),error => error.statusCode === 401);
   await support({method:'POST',path:`tickets/${ticket(1).id}/messages`,token:'member-token',body:{body:'Thanks',sender:'admin'}});
   assert.equal(calls[2].path,`/support/tickets/${ticket(1).id}/messages`); assert.deepEqual(Object.keys(calls[2].body),['body']);
+});
+
+test('central portal definitions include v1 exactly once for all inbox endpoints', () => {
+  for (const base of ['https://api.test/api','https://api.test/api/','https://api.test/api/v1','https://api.test/api/v1/']) {
+    const urls = apiDocs.feedbackSupportApiURLs(base);
+    assert.equal(urls.feedback.submit,'https://api.test/api/v1/feedback');
+    assert.equal(urls.support.tickets,'https://api.test/api/v1/support/tickets');
+    assert.equal(urls.support.ticket('one/two'),'https://api.test/api/v1/support/tickets/one%2Ftwo');
+    assert.equal(urls.support.messages('id'),'https://api.test/api/v1/support/tickets/id/messages');
+    const backend = load('server/utils/inboxBackend.ts', {'./fetchBackendWithCsrf':{}, '../../app/utilities/apiDocs':apiDocs}, {...globals, useRuntimeConfig: () => ({backendApiBaseUrl:base})});
+    assert.equal(backend.inboxBackendBase({}),'https://api.test/api/v1');
+  }
 });
