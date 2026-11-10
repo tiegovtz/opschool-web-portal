@@ -34,7 +34,7 @@ test('live writes send matching CSRF cookie/token and bearer identity, and prese
     if (url.endsWith('/auth/csrf-token')) return new Response(JSON.stringify({csrfToken:'fresh-token'}), {status:200, headers:{'set-cookie':'csrf_token=fresh-cookie; HttpOnly; Path=/'}});
     return new Response(JSON.stringify(status === 201 ? { id:'saved-id' } : {message:'Unauthorized'}), {status});
   };
-  const csrf = load('server/utils/fetchBackendWithCsrf.ts', {'../../shared/backend/proxy.ts':{backendCsrfCookie}}, {fetch:backendFetch});
+  const csrf = load('server/utils/fetchBackendWithCsrf.ts', {'../../shared/backend/proxy.ts':{backendCsrfCookie}}, {...globals, fetch:backendFetch});
   const backend = load('server/utils/inboxBackend.ts', {'./fetchBackendWithCsrf':csrf, '../../app/utilities/apiDocs':apiDocs}, globals);
   const saved = await backend.inboxBackendRequest({token:'member-token'},'/feedback','POST',{answers:[]});
   assert.equal(saved.id,'saved-id'); assert.equal(calls.length,2);

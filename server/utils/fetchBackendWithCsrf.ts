@@ -8,7 +8,7 @@ export async function fetchBackendWithCsrf(
 ): Promise<Response> {
   const method = (init.method || 'GET').toUpperCase();
   if (
-    process.env.NUXT_CSRF_ENABLED?.trim().toLowerCase() === 'false' ||
+    String(useRuntimeConfig().csrfEnabled).trim().toLowerCase() === 'false' ||
     !['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
   ) {
     return fetch(url, init);

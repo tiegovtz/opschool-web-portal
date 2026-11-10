@@ -132,7 +132,7 @@ export default defineEventHandler(async (event) => {
     // ------------------------------------------------
 
     if (
-      process.env.NUXT_CSRF_ENABLED?.trim().toLowerCase() !== 'false' &&
+      String(useRuntimeConfig(event).csrfEnabled).trim().toLowerCase() !== 'false' &&
       ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)
     ) {
       const csrfUrl = backendProxyTarget(

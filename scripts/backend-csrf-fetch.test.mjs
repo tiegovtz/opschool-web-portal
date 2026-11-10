@@ -4,9 +4,11 @@ import { fetchBackendWithCsrf } from '../server/utils/fetchBackendWithCsrf.ts';
 
 test('server-side backend writes send the matching CSRF token and cookie', async () => {
   const originalFetch = globalThis.fetch;
+  const originalRuntimeConfig = globalThis.useRuntimeConfig;
   const originalSetting = process.env.NUXT_CSRF_ENABLED;
   const requests = [];
   delete process.env.NUXT_CSRF_ENABLED;
+  globalThis.useRuntimeConfig = () => ({ csrfEnabled: true });
   globalThis.fetch = async (url, init) => {
     requests.push({ url: String(url), init });
     if (requests.length === 1) {
@@ -31,7 +33,34 @@ test('server-side backend writes send the matching CSRF token and cookie', async
     assert.ok(requests[1].init.body instanceof FormData);
   } finally {
     globalThis.fetch = originalFetch;
+    if (originalRuntimeConfig === undefined) delete globalThis.useRuntimeConfig;
+    else globalThis.useRuntimeConfig = originalRuntimeConfig;
     if (originalSetting === undefined) delete process.env.NUXT_CSRF_ENABLED;
     else process.env.NUXT_CSRF_ENABLED = originalSetting;
+  }
+});
+
+test('server-side backend writes skip CSRF when runtime config disables it', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalRuntimeConfig = globalThis.useRuntimeConfig;
+  const requests = [];
+  globalThis.useRuntimeConfig = () => ({ csrfEnabled: false });
+  globalThis.fetch = async (url, init) => {
+    requests.push({ url: String(url), init });
+    return new Response('{}', { status: 201 });
+  };
+  try {
+    const response = await fetchBackendWithCsrf(
+      'https://backend.example/v1',
+      'https://backend.example/v1/auth/sign-up',
+      { method: 'POST', body: '{}' },
+    );
+    assert.equal(response.status, 201);
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].url, 'https://backend.example/v1/auth/sign-up');
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalRuntimeConfig === undefined) delete globalThis.useRuntimeConfig;
+    else globalThis.useRuntimeConfig = originalRuntimeConfig;
   }
 });
