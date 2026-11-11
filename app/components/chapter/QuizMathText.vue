@@ -61,7 +61,7 @@ const chunks = computed(() => {
     }
   }
   flush();
-  return parts;import { feedbackSupportPaths } from '../../../app/utilities/apiDocs';
+  return parts;
 });
 </script>
 
