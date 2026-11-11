@@ -1,3 +1,4 @@
+import { feedbackSupportPaths } from '../../../app/utilities/apiDocs';
 import { inboxBackendBase, inboxBackendRequest } from '../../utils/inboxBackend';
 import { ownedSupportTickets, filterOwnedSupportTickets } from '../../utils/ownedSupportTickets';
 import { protectSubmission, submissionActor } from '../../utils/inboxSubmission';
@@ -40,11 +41,11 @@ export default defineEventHandler(async event => {
   }
   try {
     if (method === 'GET' && !id && query.success) {
-      const items = await ownedSupportTickets(page => inboxBackendRequest(event, `/support/tickets?page=${page}&limit=50`));
+      const items = await ownedSupportTickets(page => inboxBackendRequest(event, `${feedbackSupportPaths.tickets}?page=${page}&limit=50`));
       return supportListSchema.parse(filterOwnedSupportTickets(items, query.data));
     }
-    const suffix = id ? `/${encodeURIComponent(id)}${action ? '/messages' : ''}` : '';
-    const response = await inboxBackendRequest(event, `/support/tickets${suffix}`, method, body);
+    const endpoint = id ? action ? feedbackSupportPaths.messages(id) : feedbackSupportPaths.ticket(id) : feedbackSupportPaths.tickets;
+    const response = await inboxBackendRequest(event, endpoint, method, body);
     const parsed = supportTicketSchema.safeParse(response);
     if (!parsed.success) throw createError({ statusCode: 502, statusMessage: 'The support service returned an unexpected response.' });
     if (method === 'POST') setResponseStatus(event, id ? 200 : 201);

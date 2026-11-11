@@ -1,9 +1,10 @@
+import { feedbackSupportBaseURL } from '../../app/utilities/apiDocs';
 import type { H3Event } from 'h3';
 import { fetchBackendWithCsrf } from './fetchBackendWithCsrf';
 
 export function inboxBackendBase(event: H3Event) {
   const config = useRuntimeConfig(event);
-  return String(config.supportApiBaseUrl || config.backendApiBaseUrl || '').trim().replace(/\/+$/, '');
+  return feedbackSupportBaseURL(String(config.supportApiBaseUrl || config.backendApiBaseUrl || ''));
 }
 
 export async function inboxBackendRequest(event: H3Event, path: string, method = 'GET', body?: unknown) {

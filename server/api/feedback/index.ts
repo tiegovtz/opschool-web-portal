@@ -1,3 +1,4 @@
+import { feedbackSupportPaths } from '../../../app/utilities/apiDocs';
 import { inboxBackendRequest } from '../../utils/inboxBackend';
 import { feedbackSchema } from '../../../shared/feedback/contracts';
 import { localInboxEnabled, createEntry } from '../../utils/localInboxStore';
@@ -15,7 +16,7 @@ export default defineEventHandler(async event => {
     setResponseStatus(event, 201); return { id: entry.id };
   }
   // Omit unanswered optional questions; keep all required-answer validation above.
-  const response = await inboxBackendRequest(event, '/feedback', 'POST', { ...input, answers: input.answers.filter(item => item.answer.trim()) });
+  const response = await inboxBackendRequest(event, feedbackSupportPaths.feedback, 'POST', { ...input, answers: input.answers.filter(item => item.answer.trim()) });
   if (typeof response.id !== 'string' || !response.id) throw createError({ statusCode: 502, statusMessage: 'The feedback service returned an unexpected response.' });
   setResponseStatus(event, 201); return { id: response.id };
 });
