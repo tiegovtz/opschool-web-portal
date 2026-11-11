@@ -137,6 +137,10 @@ onBeforeUnmount(() => { active = false; controller?.abort(); clearTimeout(search
   <section v-show="view !== 'feedback'" :aria-label="view === 'requests' ? text.requests : text.technical" class="space-y-5 text-base font-normal text-darkBlue [&_button:disabled]:cursor-not-allowed [&_button:disabled]:opacity-50 [&_button:focus-visible]:outline-none [&_button:focus-visible]:ring-2 [&_button:focus-visible]:ring-oceanBlue [&_button:focus-visible]:ring-offset-2">
 
     <div v-show="view === 'support'" id="support-panel" role="tabpanel" aria-labelledby="support-tab" class="space-y-4">
+      <div class="rounded-xl border border-sky-200 bg-sky-50 p-4 text-base leading-relaxed text-darkBlue">
+        <p>{{ sw ? 'Huwezi kuingia au una tatizo la kuingia kwenye akaunti? Wasiliana nasi moja kwa moja kwa msaada.' : 'Unable to log in or having trouble signing in? Contact us directly for help.' }}</p>
+        <a href="tel:+255735041168" class="mt-2 inline-flex min-h-11 items-center rounded-md font-semibold text-deepBlue underline underline-offset-4 hover:text-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-deepBlue">+255-735-041168</a>
+      </div>
       <p>{{ text.technicalHint }}</p>
     </div>
     <div v-if="error" role="alert" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-base text-amber-900">{{ error }} <NuxtLink v-if="authRequired" :to="signInLink" class="ml-2 underline">{{ text.retryLogin }}</NuxtLink><button v-else type="button" class="ml-3 underline" :disabled="busy || loading" @click="load">{{ text.refresh }}</button></div>
