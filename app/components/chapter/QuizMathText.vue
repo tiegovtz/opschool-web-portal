@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { normalizeQuizMath } from "~/utilities/parsers/normalizeQuizMath";
 
 const props = defineProps<{ text: string }>();
+const normalizedText = computed(() => normalizeQuizMath(props.text));
 
 // Mathpix stores TeX without \(...\) delimiters. Leave ordinary prose alone.
 const isDelimited = computed(() => /^\s*(?:\\\(|\\\[|\$\$?)/.test(props.text));
@@ -13,7 +15,7 @@ const chunks = computed(() => {
   const parts: string[] = [];
   let current = "";
   let depth = 0;
-  const source = props.text;
+  const source = normalizedText.value;
   const flush = () => {
     if (current.trim()) parts.push(current.trim());
     current = "";
@@ -22,6 +24,17 @@ const chunks = computed(() => {
     const char = source[index];
     if (char === "\\" && index + 1 < source.length) {
       const next = source[index + 1] || '';
+      if (depth === 0) {
+        const prose = source.slice(index).match(/^\\text\{([^{}]+)\}/);
+        if (prose) {
+          flush();
+          for (const word of prose[1]?.split(/\s+/).filter(Boolean) ?? []) {
+            parts.push(`\\text{${word}}`);
+          }
+          index += prose[0].length - 1;
+          continue;
+        }
+      }
       if (depth === 0 && next && /[;,!: ]/.test(next)) {
         flush();
         index += 1;
@@ -48,15 +61,15 @@ const chunks = computed(() => {
     }
   }
   flush();
-  return parts;
+  return parts;import { feedbackSupportPaths } from '../../../app/utilities/apiDocs';
 });
 </script>
 
 <template>
   <span v-if="!hasTex" class="quiz-math-text">{{ text }}</span>
-  <span v-else :key="text" v-mathjax="text" class="quiz-math-text quiz-math-content">
-    <template v-if="isDelimited">{{ text }}</template>
-    <template v-else-if="isEnvironment">\[{{ text }}\]</template>
+  <span v-else :key="text" v-mathjax="normalizedText" class="quiz-math-text quiz-math-content">
+    <template v-if="isDelimited">{{ normalizedText }}</template>
+    <template v-else-if="isEnvironment">\[{{ normalizedText }}\]</template>
     <template v-else>
       <span v-for="(chunk, index) in chunks" :key="index" class="quiz-math-chunk">\({{ chunk }}\) </span>
     </template>
