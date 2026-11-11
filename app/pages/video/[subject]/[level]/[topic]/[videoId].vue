@@ -188,7 +188,7 @@ const contentLayoutLanguage = useContentLayoutLanguage(() => route.params.level)
 
                     <!-- Next and Prev BUTTON -->
                     <div :class="[
-                        'flex items-center w-full',
+                        'flex items-center w-full gap-8',
                         videoInfo?.previous && videoInfo?.next ? 'justify-between'
                             : !videoInfo?.previous && videoInfo?.next ? 'justify-end'
                                 : !videoInfo?.next && videoInfo?.previous ? 'justify-start' : '',

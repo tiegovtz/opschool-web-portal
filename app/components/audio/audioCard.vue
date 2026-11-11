@@ -73,14 +73,14 @@ const setAudioToListen = () => {
 <template>
     <NuxtLink v-if="!isDeleted" :to="audioTarget"
         @click="setAudioToListen()" :class="[
-            'relative flex overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group min-w-[300px]',
-            layoutEffect == 'grid' ? 'flex-col h-[350px]' : 'flex-row h-32'
+            'relative flex min-w-0 w-full overflow-hidden transition-all duration-500 ease-in-out bg-white rounded-lg shadow-md cursor-pointer hover:bg-deepBlue hover:shadow-xl group md:min-w-[300px]',
+            layoutEffect == 'grid' ? 'flex-col h-[270px] md:h-[350px]' : 'flex-row h-32'
         ]">
 
         <!-- Thumbnail section -->
         <div tabindex='0' :class="[
             'relative overflow-hidden transition-all duration-500 ease-in-out',
-            layoutEffect == 'grid' ? 'h-[280px]' : 'h-full w-full max-w-[200px]'
+            layoutEffect == 'grid' ? 'h-32 shrink-0 md:h-44' : 'h-full w-full max-w-[200px]'
         ]">
             <CardImage :src="audioThumbnail" :alt="audioName.toLowerCase()" :class="[
                 'object-cover w-full h-full transition-transform duration-500',
@@ -99,15 +99,15 @@ const setAudioToListen = () => {
         </div>
         <!-- Content section -->
         <div :class="[
-            'flex flex-col',
-            layoutEffect == 'grid' ? 'p-4' : 'px-2'
+            'flex min-w-0 flex-col overflow-hidden',
+            layoutEffect == 'grid' ? 'p-2 md:p-4' : 'px-2'
         ]">
             <h3
-                class="mb-2 text-lg font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white">
+                class="mb-1 line-clamp-2 break-words text-sm font-semibold capitalize transition-colors duration-500 ease-in-out group-hover:text-white md:mb-2 md:text-lg">
                 {{ audioName }}
             </h3>
             <p
-                class="mb-4 text-sm text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white line-clamp-2">
+                class="content-card-summary mb-2 break-words text-xs leading-5 text-gray-600 transition-colors duration-500 ease-in-out group-hover:text-white md:text-sm">
                 {{ audioDescription }}
             </p>
         </div>

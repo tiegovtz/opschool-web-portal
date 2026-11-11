@@ -13,6 +13,7 @@ import {
 const navigationStore = useNavigationStore()
 const route = useRoute();
 const primaryContentLanguage = usePrimaryContentLanguage();
+const cardLanguage = computed(() => resolveRouteLanguage(route, undefined, primaryContentLanguage.value));
 
 // Define Props
 const props = withDefaults(defineProps<{
@@ -97,8 +98,8 @@ const userToken = useCookie('signInUserToken')
 
   <NuxtLink  v-else :to="topicTarget"
     @click="setTopicToView()" :class="[
-      'relative flex overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out min-w-[300px]',
-      layoutEffect == 'grid' && modelType === 'card' ? 'flex-col lg:pb-4' : 'flex-row h-32',
+      'relative flex min-w-0 overflow-hidden rounded-lg shadow-md group transition-all duration-500 ease-in-out md:min-w-[300px]',
+      layoutEffect == 'grid' && modelType === 'card' ? 'flex-col h-[300px] md:h-[350px]' : 'flex-col md:flex-row md:h-32',
       { 'cursor-pointer flex-row my-2 pb-0 md:h-20 !max-h-14 ': modelType === 'search' },
     ]"
     :aria-label="`Visit this page to learn more about topic of ${topicTitle}`"
@@ -106,7 +107,7 @@ const userToken = useCookie('signInUserToken')
     <!-- topic image -->
     <div :class="[
       'relative overflow-hidden transition-all duration-500 ease-in-out',
-      layoutEffect == 'grid' && modelType === 'card' ? 'h-56' : 'w-full max-w-[200px]',
+      layoutEffect == 'grid' && modelType === 'card' ? 'h-28 shrink-0 md:h-44' : 'h-28 md:h-auto md:w-full md:max-w-[200px]',
       { 'md:h-20 !h-full max-w-[80px]': modelType === 'search', },
     ]">
       <CardImage :src="topicImage" tabindex="0" :alt="altText ?? `Image of ${topicTitle}`" :class="[
@@ -124,7 +125,7 @@ const userToken = useCookie('signInUserToken')
 
     <!-- topic information -->
     <div
-      class="flex-1 px-4 transition-all duration-500 ease-in-out bg-white group-hover:bg-deepBlue group-hover:text-white">
+      class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white px-2 transition-all duration-500 ease-in-out group-hover:bg-deepBlue group-hover:text-white md:px-4">
       <!-- topic progress bar -->
       <div v-if="userToken && modelType === 'card' && layoutEffect === 'grid'"
         class="flex items-center w-full max-w-full gap-2 mt-2">
@@ -140,30 +141,30 @@ const userToken = useCookie('signInUserToken')
       <!-- topic title and description -->
       <div class="flex flex-col my-auto transition-all duration-500 ease-in-out">
         <p :class="[
-          'md:text-[1.2rem] font-bold text-gray-800 group-hover:text-white',
+          'line-clamp-2 text-sm font-bold text-gray-800 group-hover:text-white md:text-[1.2rem]',
           { 'mt-2': !userToken, 'text-[1rem] font-medium': modelType === 'search' }
         ]">
           {{ topicTitle }}
         </p>
-        <p v-if="modelType === 'card'" class="text-[1rem] text-black/80 group-hover:text-white line-clamp-2">
+        <p v-if="modelType === 'card'" class="content-card-summary topic-card-summary text-sm leading-5 text-black/80 group-hover:text-white">
           {{ topicDescription }}
         </p>
       </div>
 
       <!-- topic subject name and metrics -->
       <div v-if="modelType === 'card'"
-        class="flex items-center justify-between pt-2 pb-2 lg:pb-0 whitespace-nowrap text-extraSmall text-oceanBlue group-hover:text-white">
-        <div class="flex items-center gap-2">
-          <IconsMenuBook class="" :size="20"/>
-          <p class="capitalize">{{ subjectName }}</p>
+        class="mt-auto flex min-w-0 items-center justify-between gap-1 pt-2 pb-2 text-[10px] text-oceanBlue group-hover:text-white md:text-extraSmall lg:pb-1">
+        <div class="flex min-w-0 items-center gap-1 md:gap-2">
+          <IconsMenuBook class="shrink-0" :size="16"/>
+          <p class="truncate capitalize">{{ subjectName }}</p>
         </div>
         <!-- <div class="flex items-center gap-2">
                 <Icon name="mdi-light:heart" class="text-medium" />
                 <p class="">{{ calculateTopicMetrics(topicLikes) + " Likes" }}</p>
               </div> -->
-        <div class="flex items-center gap-2">
-          <IconsUsersViews :size="20"/>
-          <p class="">{{ calculateTopicMetrics(topicViews) + " Views" }}</p>
+        <div class="flex shrink-0 items-center gap-1 md:gap-2">
+          <IconsUsersViews :size="16"/>
+          <p>{{ calculateTopicMetrics(topicViews) }}<span class="hidden md:inline"> Views</span></p>
         </div>
       </div>
     </div>
@@ -172,7 +173,7 @@ const userToken = useCookie('signInUserToken')
       <!-- learn more -->
       <div v-if="modelType == 'card' && layoutEffect == 'grid'"
         class="absolute bottom-0 z-10 items-center justify-between hidden w-full h-10 px-4 text-white transition-all duration-500 ease-in-out opacity-0 lg:flex bg-gradient-to-b from-deepBlue to-gray-800 group-hover:opacity-100">
-        <p class="capitalize text-small">{{primaryContentLanguage === 'kiswahili' ? 'Anza kujifunza' : 'Start learning'}}</p>
+        <p class="capitalize text-small">{{cardLanguage === 'kiswahili' ? 'Anza kujifunza' : 'Start learning'}}</p>
         <div class="flex items-center justify-center w-6 h-6 bg-white rounded-full animate-bounce-horizontal">
           <IconsArrowFilled :size="20" class="text-deepBlue" />
         </div>
@@ -182,7 +183,7 @@ const userToken = useCookie('signInUserToken')
     <!-- learn more -->
     <div v-if="modelType == 'card'"
       class="flex items-center justify-between w-full h-8 px-4 text-white lg:hidden bg-gradient-to-b from-deepBlue to-gray-800 ">
-      <p class="capitalize text-small">{{primaryContentLanguage === 'kiswahili' ? 'Anza kujifunza' : 'Start learning'}}</p>
+      <p class="text-xs capitalize sm:text-small"><span class="sm:hidden">{{cardLanguage === 'kiswahili' ? 'Fungua' : 'Open'}}</span><span class="hidden sm:inline">{{cardLanguage === 'kiswahili' ? 'Anza kujifunza' : 'Start learning'}}</span></p>
       <div class="flex items-center justify-center w-6 h-6 bg-white rounded-full animate-bounce-horizontal">
         <IconsArrowFilled :size="20" class="text-deepBlue" />
       </div>

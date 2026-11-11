@@ -1,61 +1,64 @@
-import { defineEventHandler, readBody, getQuery } from "h3";
+import { defineEventHandler, readBody, getQuery, createError } from "h3";
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import apiDocs from "~/utilities/apiDocs";
+import apiDocs from "~~/server/utils/backendApiDocs";
+import { searchTextbookPassages } from "../../utils/textbookSearch";
+import { readSessionToken } from "../../utils/sessionAuth";
+import { classifyChatError, logChatError } from "../../utils/chatErrors";
+
+type SearchLanguage = "english" | "kiswahili";
+
+const NOT_FOUND_TEXT: Record<SearchLanguage, string> = {
+  english: "I couldn't find this in the textbooks yet. Try different keywords or browse the topics below.",
+  kiswahili: "Sikupata jambo hili kwenye vitabu bado. Jaribu maneno mengine au pitia mada zilizo hapa chini.",
+};
 
 export default defineEventHandler(async (event) => {
+  const query = getQuery(event) as { q?: string; query?: string; language?: string };
+  let body: { q?: string; query?: string; language?: string } = {};
   try {
-    const query = getQuery(event) as { q?: string; query?: string };
-    let body: { q?: string; query?: string } = {};
-    try {
-      body = await readBody(event);
-    } catch (e) {
-      // Body might be empty, that's okay
-      body = {};
-    }
-    
-    // Get search query from query params or body
-    const searchQuery = query.q || query.query || body.query || body.q;
-    
-    console.log("[AI Search] Request received:", { 
-      hasQuery: !!query.q || !!query.query, 
-      hasBody: !!body.query || !!body.q,
-      searchQuery: searchQuery?.substring(0, 50) 
+    body = (await readBody(event)) || {};
+  } catch {
+    // Body might be empty, that's okay
+    body = {};
+  }
+
+  // Get search query from query params or body
+  const searchQuery = query.q || query.query || body.query || body.q;
+  const rawLanguage = String(body.language || query.language || "").trim().toLowerCase();
+  const language: SearchLanguage = rawLanguage === "kiswahili" ? "kiswahili" : "english";
+
+  if (!searchQuery || typeof searchQuery !== "string" || searchQuery.trim().length === 0) {
+    throw createError({
+      statusCode: 400,
+      message: "Search query is required",
+      data: { code: "validation", reason: "empty_message" },
     });
-    
-    if (!searchQuery || typeof searchQuery !== "string" || searchQuery.trim().length === 0) {
-      console.warn("[AI Search] No search query provided");
-      return {
-        success: false,
-        error: "Search query is required",
-        answer: null,
-        results: [],
-      };
-    }
+  }
+  if (searchQuery.length > 500) {
+    throw createError({
+      statusCode: 400,
+      message: "Search query is too long",
+      data: { code: "validation" },
+    });
+  }
 
-    // Get API key using the same pattern as working endpoints
-    const config = useRuntimeConfig();
-    const apiKey = config.OPENAI_API_KEY || 
-                   config.openaiApiKey || 
-                   process.env.OPENAI_API_KEY;
-    
-    if (!apiKey) {
-      console.error("[AI Search] Missing OpenAI API key");
-      console.error("[AI Search] Config check:", {
-        hasOPENAI_API_KEY: !!config.OPENAI_API_KEY,
-        hasOpenaiApiKey: !!config.openaiApiKey,
-        hasEnvOpenAI: !!process.env.OPENAI_API_KEY,
-        configKeys: Object.keys(config).filter(k => k.toLowerCase().includes('openai')),
-      });
-      throw new Error("Missing OpenAI API key");
-    }
+  const config = useRuntimeConfig();
+  const apiKey = String(config.OPENAI_API_KEY || config.openaiApiKey || process.env.OPENAI_API_KEY || "");
+  if (!apiKey) {
+    console.error("[AI Search] OPENAI_API_KEY is not configured");
+    throw createError({
+      statusCode: 503,
+      message: "The AI service is not configured.",
+      data: { code: "provider" },
+    });
+  }
 
+  try {
     const openai = createOpenAI({ apiKey });
 
-    // Get user token for traditional search fallback
-    const userToken = event.headers.get("authorization")?.replace("Bearer ", "") || 
-                      getCookie(event, "signInAccessToken") || 
-                      "";
+    // Same token the ai-auth middleware validated.
+    const userToken = readSessionToken(event) || "";
 
     // Perform traditional search for topics/subjects
     let traditionalResults: any[] = [];
@@ -64,7 +67,6 @@ export default defineEventHandler(async (event) => {
         ? `${apiDocs.search.getSearch}?query=${encodeURIComponent(searchQuery.trim())}`
         : `${apiDocs.topics.filterTopics}?name=${encodeURIComponent(searchQuery.trim())}`;
 
-      console.log("[AI Search] Performing traditional search:", searchUrl);
       const searchResponse = await $fetch(searchUrl, {
         method: "GET",
         headers: userToken ? { Authorization: `Bearer ${userToken}` } : {},
@@ -72,60 +74,67 @@ export default defineEventHandler(async (event) => {
 
       if (Array.isArray(searchResponse) && searchResponse.length > 0) {
         traditionalResults = searchResponse;
-        console.log("[AI Search] Traditional search found", traditionalResults.length, "results");
-      } else {
-        console.log("[AI Search] Traditional search returned no results or invalid format");
       }
     } catch (error: any) {
       console.warn("[AI Search] Traditional search failed:", error?.message || error);
       // Continue without traditional results
     }
 
-    // Generate AI answer using LLM
+    // Ground the answer in the textbooks with the same retrieval as the AI teacher.
+    const textbook = await searchTextbookPassages(searchQuery, {
+      caller: "home-search",
+      maxChars: 6000,
+    });
+    const citations = textbook.status === "found" ? textbook.citations : [];
+
     const hasTopics = traditionalResults.length > 0;
-    
-    const systemPrompt = `You are TIE AI Search Assistant, a specialized educational assistant for the Tanzanian (NECTA) curriculum. Your role is to provide clear, concise answers to student questions based on the Tanzanian curriculum.
+    const languageName = language === "kiswahili" ? "Kiswahili" : "English";
+    const textbookSection =
+      textbook.status === "found"
+        ? `TEXTBOOK PASSAGES (answer ONLY from these, and mention the book title):\n${textbook.context}`
+        : textbook.status === "not_found"
+          ? "TEXTBOOK PASSAGES: none found for this question."
+          : "TEXTBOOK PASSAGES: textbook search is unavailable right now (technical error).";
 
-CURRICULUM RULES:
-1. Your PRIMARY source of truth is the Tanzanian curriculum (NECTA).
-2. You can answer questions about topics that are part of the Tanzanian curriculum (physics, chemistry, mathematics, biology, geography, etc.) as long as the question is clearly curriculum-related.
-3. If necessary, you may use nearby East African curricula (Kenya, Uganda, Rwanda) ONLY as secondary references — NEVER as replacements.
-4. ONLY refuse to answer if the question is clearly NOT related to the Tanzanian curriculum (e.g., current events, politics, non-educational topics).
-5. Explanations must be clear, simple, step-by-step, and aligned with the Tanzanian syllabus.
-6. Use Tanzanian context when providing examples (Tanzanian cities like Dar es Salaam, Arusha, Dodoma; Tanzanian culture, industries, geography, wildlife, agriculture, etc.).
+    const systemPrompt = `You are TIE AI Search Assistant, a specialized educational assistant for the Tanzanian (NECTA) curriculum. Give students a clear, short answer grounded in their textbooks.
 
-${hasTopics ? `\nRelevant topics found in the platform: ${traditionalResults.map((r: any) => r.name || r.title).join(", ")}` : ""}
+LANGUAGE: Answer in ${languageName}.
 
-ANSWER INSTRUCTIONS:
-1. Provide a direct, helpful answer to the user's question
-2. If the question is about a curriculum topic (science, math, geography, etc.), answer it based on Tanzanian curriculum standards
-3. If relevant topics were found, mention them briefly to guide the student
-4. Keep answers concise (2-4 sentences maximum)
-5. Use your knowledge of the Tanzanian curriculum to provide a helpful answer. Only refuse if the question is clearly outside the curriculum scope
-6. Be encouraging and educational in tone
-7. Always ensure your answer aligns with Tanzanian curriculum standards
+RULES:
+1. If TEXTBOOK PASSAGES are provided, answer ONLY from them and mention the book title (e.g. "According to Biology Form 1...").
+2. If no passages were found, say briefly that the textbooks do not cover this yet and suggest trying other keywords. Do NOT answer from your own knowledge.
+3. If textbook search is unavailable, say that textbook search is unavailable right now and suggest trying again in a few minutes. Do NOT answer from your own knowledge.
+4. ONLY refuse if the question is clearly NOT related to the Tanzanian curriculum (e.g., current events, politics, non-educational topics).
+5. Use Tanzanian context in examples (Dar es Salaam, Arusha, Dodoma, local farming, markets, wildlife).
+6. Keep the answer concise (2-5 sentences); show short calculations completely.
+${hasTopics ? `\nRelevant topics found in the platform (you may mention them briefly): ${traditionalResults.map((r: any) => r.name || r.title).join(", ")}` : ""}
 
-User Question: "${searchQuery}"`;
+${textbookSection}`;
 
-    let aiAnswer = "";
-    try {
-      console.log("[AI Search] Generating AI answer...");
-      const response = await generateText({
-        model: openai("gpt-4o-mini"),
-        system: systemPrompt,
-        prompt: `Answer the following question: "${searchQuery}"`,
-        temperature: 0.7,
-        maxOutputTokens: 200,
-      });
-
-      aiAnswer = response.text.trim();
-      console.log("[AI Search] AI answer generated successfully");
-    } catch (error: any) {
-      console.error("[AI Search] AI answer generation failed:", error?.message || error);
-      // Fallback answer
-      aiAnswer = traditionalResults.length > 0
-        ? `I found ${traditionalResults.length} relevant topic${traditionalResults.length > 1 ? "s" : ""} for your search. Check the results below.`
-        : "I couldn't find specific information to answer your question. Try searching with different keywords or browse topics by subject.";
+    let aiAnswer: string | null = null;
+    let answerError: { code: string } | null = null;
+    if (textbook.status === "not_found") {
+      // Nothing to ground on: say so plainly instead of a model guess.
+      aiAnswer = NOT_FOUND_TEXT[language];
+    } else {
+      try {
+        const response = await generateText({
+          model: openai("gpt-4o-mini"),
+          system: systemPrompt,
+          prompt: `Student question: "${searchQuery}"`,
+          temperature: 0.4,
+          maxOutputTokens: 400,
+        });
+        aiAnswer = response.text.trim() || null;
+        if (!aiAnswer) {
+          answerError = { code: "provider" };
+          console.error("[AI Search] Empty AI answer");
+        }
+      } catch (error: any) {
+        logChatError("ai-search", error);
+        // No canned fallback: the UI shows a specific, localized message.
+        answerError = { code: classifyChatError(error) };
+      }
     }
 
     // 3.5. Extract keywords/concepts from the query using AI for better material discovery
@@ -472,6 +481,10 @@ Provide a brief, encouraging list of suggestions that align with the Tanzanian (
     const response = {
       success: true,
       answer: aiAnswer,
+      answerError,
+      textbookStatus: textbook.status === "error" ? "unavailable" : textbook.status,
+      citations,
+      language,
       results: traditionalResults,
       relatedContent: {
         topics: relatedContent.topics,
@@ -483,26 +496,13 @@ Provide a brief, encouraging list of suggestions that align with the Tanzanian (
       resultCount: traditionalResults.length,
     };
     
-    console.log("[AI Search] Response prepared:", {
-      success: response.success,
-      hasAnswer: !!response.answer,
-      hasResults: Array.isArray(response.results),
-      resultCount: response.resultCount,
-      relatedTopics: response.relatedContent.topics.length,
-      relatedVideos: response.relatedContent.videos.length,
-      relatedAudio: response.relatedContent.audio.length,
-      relatedExperiments: response.relatedContent.experiments.length,
-      hasSuggestions: !!response.relatedContent.suggestions,
-    });
-    
     return response;
   } catch (error: any) {
-    console.error("[AI Search] Error:", error?.message || error);
-    return {
-      success: false,
-      error: error?.message || "An error occurred during search",
-      answer: null,
-      results: [],
-    };
+    logChatError("ai-search", error);
+    throw createError({
+      statusCode: 500,
+      message: "AI search failed",
+      data: { code: "provider" },
+    });
   }
 });

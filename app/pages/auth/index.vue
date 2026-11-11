@@ -151,13 +151,15 @@ const signIn = async () => {
       }
 
       userSignIn.controller.feedback = content.value.feedback.authenticated;
-
-      userSignIn.controller.feedback = content.value.feedback.authenticated;
       userSignIn.controller.isSucces = true;
+
+      // Production builds are also previewed over plain HTTP. Secure cookies
+      // cannot be stored there, so use the actual browser protocol.
+      const secureCookie = import.meta.client && window.location.protocol === "https:";
 
       const accessToken = useCookie("signInAccessToken", {
         httpOnly: false,              // Accessible in browser
-        secure: import.meta.env.PROD, // uses Nuxt's client env detection
+        secure: secureCookie,
         maxAge: 60 * 60 * 2,          // 2 hours
         sameSite: "strict",
         path: "/",
@@ -165,7 +167,7 @@ const signIn = async () => {
 
       const refreshToken = useCookie("signInRefreshToken", {
         httpOnly: false,              // Accessible in browser
-        secure: import.meta.env.PROD,
+        secure: secureCookie,
         maxAge: 60 * 60 * 2,          // 2 hours
         sameSite: "strict",
         path: "/",
@@ -173,7 +175,7 @@ const signIn = async () => {
 
       const userToken = useCookie("signInUserToken", {
         httpOnly: false,              // Accessible in browser
-        secure: import.meta.env.PROD,
+        secure: secureCookie,
         maxAge: 60 * 60 * 2,          // 2 hours
         sameSite: "strict",
         path: "/",
@@ -182,7 +184,7 @@ const signIn = async () => {
       // create user remember me cookie
       const userRememberMe = useCookie("userRememberMe", {
         httpOnly: false,                  // Accessible in browser
-        secure: import.meta.env.PROD,
+        secure: secureCookie,
         maxAge: 60 * 60 * 24 * 7,         // 1 week
         sameSite: "strict",
         path: "/",

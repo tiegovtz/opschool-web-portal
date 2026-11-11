@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useElementBounding, useEventListener, useWindowSize } from '@vueuse/core';
 
-const props = defineProps<{ active: string; language: 'english' | 'kiswahili' }>();
+const props = withDefaults(defineProps<{ active: string; language: 'english' | 'kiswahili'; idPrefix?: string }>(), { idPrefix: 'hub-tab' });
 const emit = defineEmits<{ select: [section: string] }>();
 const tooltipId = `adt-tab-description-${useId()}`;
 const tooltipAnchor = ref<HTMLElement | null>(null);
@@ -60,14 +60,14 @@ function navigateTabs(event: KeyboardEvent, index: number) {
   if (next < 0) return;
   event.preventDefault();
   const id = items.value[next]!.id;
-  document.getElementById(`hub-tab-${id}`)?.focus();
+  document.getElementById(`${props.idPrefix}-${id}`)?.focus();
   emit('select', id);
 }
 </script>
 
 <template>
   <div role="tablist" :aria-label="language === 'kiswahili' ? 'Aina ya maudhui' : 'Content type'" class="mt-6 flex gap-2 overflow-x-auto border-b border-gray-200">
-    <button v-for="(item, index) in items" :id="`hub-tab-${item.id}`" :key="item.id" type="button" role="tab"
+    <button v-for="(item, index) in items" :id="`${idPrefix}-${item.id}`" :key="item.id" type="button" role="tab"
       :aria-selected="active === item.id" aria-controls="hub-content-panel" :tabindex="active === item.id ? 0 : -1"
       :aria-describedby="item.id === 'adt' ? tooltipId : undefined"
       class="inline-flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-5 py-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-oceanBlue"

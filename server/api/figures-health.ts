@@ -9,13 +9,20 @@
 
 import { getErrorStats, resetErrorCounters } from '../utils/errorTracking';
 import { getCacheStats } from '../utils/figuresCache';
+import { requireSessionUser } from '../utils/sessionAuth';
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const action = query.action as string | undefined;
 
-  // Reset error counters if requested
+  // Reset error counters if requested (signed-in users only, and not via GET
+  // so a crawler or prefetch cannot wipe the counters)
   if (action === 'reset') {
+    if (event.method !== 'POST') {
+      setResponseHeader(event, 'Allow', 'POST');
+      throw createError({ statusCode: 405, message: 'Use POST to reset error counters.' });
+    }
+    await requireSessionUser(event);
     resetErrorCounters();
     return {
       success: true,

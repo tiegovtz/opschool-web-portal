@@ -19,6 +19,7 @@
                 aria-atomic="false"
                 v-html="seg.html"
                 @click="handleLinkClick"
+                @error.capture="hideBrokenAiImage"
               />
               <GraphBlock v-else-if="seg.kind === 'graph' && seg.spec" :spec="seg.spec as any" />
               <ChartBlock v-else-if="seg.kind === 'chart' && seg.spec" :spec="seg.spec as any" />
@@ -33,6 +34,30 @@
           </template>
           <!-- Tool calls are hidden from the user - do not display them -->
         </div>
+        <AiResponseCopyButton
+          v-if="message.role === 'assistant'"
+          :text="copyText"
+          :language="language"
+          :disabled="isStreaming"
+        />
+        <div
+          v-if="citations.length > 0"
+          class="mt-3 border-t border-gray-100 pt-2 text-xs text-gray-500"
+        >
+          <p class="font-medium text-gray-600">{{ isSwahili ? "Vyanzo" : "Sources" }}</p>
+          <ul class="mt-1 space-y-0.5">
+            <li
+              v-for="(citation, cIdx) in citations"
+              :key="`${citation.book}-${citation.chapter}-${cIdx}`"
+              class="flex items-start gap-1"
+            >
+              <Icon name="heroicons:book-open" class="mt-0.5 h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+              <span>
+                {{ citation.book }}<template v-if="citation.chapter"> · {{ citation.chapter }}</template>
+              </span>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -40,20 +65,56 @@
 
 <script setup lang="ts">
 import MarkdownIt from "markdown-it";
-import { ref, watch, nextTick, onMounted } from "vue";
+import { sanitizeAiHtml, hideBrokenAiImage } from "~/utilities/sanitizeHtml";
+import { ref, watch, nextTick, onMounted, computed } from "vue";
 import { getImageFromShortcode, loadDynamicShortcodes, shortcodesVersion } from "~/utilities/imageShortcodes";
 import { useRouter } from "vue-router";
 import GraphBlock from "./renderers/GraphBlock.vue";
 import ChartBlock from "./renderers/ChartBlock.vue";
 import GeometryBlock from "./renderers/GeometryBlock.vue";
 import StepsBlock from "./renderers/StepsBlock.vue";
+import type { LanguageSupport } from "~/types/language.interface";
 
 type Segment =
   | { kind: "html"; html: string }
   | { kind: "graph" | "chart" | "geometry" | "steps"; spec: Record<string, any> };
 
 const md = new MarkdownIt({ html: true, breaks: true, linkify: true });
-const props = defineProps<{ message: any }>();
+const props = defineProps<{ message: any; language?: LanguageSupport; isStreaming?: boolean }>();
+const copyText = computed(() => (props.message.parts || [])
+  .filter((part: { type: string; text?: string }) => part.type === "text" && typeof part.text === "string")
+  .map((part: { text: string }) => part.text)
+  .join("\n\n"));
+const contentLayoutLanguage = useContentLayoutLanguage();
+const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
+
+type Citation = { book: string; chapter: string };
+
+// Book/chapter sources: sent as message metadata by /api/chat, and also present
+// in the output of any searchTextbooks tool call in this message.
+const citations = computed<Citation[]>(() => {
+  const collected: Citation[] = [];
+  const add = (items: unknown) => {
+    if (!Array.isArray(items)) return;
+    for (const item of items as any[]) {
+      if (typeof item?.book !== "string" || !item.book.trim()) continue;
+      collected.push({ book: item.book.trim(), chapter: typeof item.chapter === "string" ? item.chapter.trim() : "" });
+    }
+  };
+  add(props.message?.metadata?.citations);
+  for (const part of props.message?.parts || []) {
+    if (part?.type === "tool-searchTextbooks" && part.state === "output-available") {
+      add(part.output?.citations);
+    }
+  }
+  const seen = new Set<string>();
+  return collected.filter((citation) => {
+    const key = `${citation.book}|${citation.chapter}`.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 6);
+});
 const mathContainer = ref<HTMLElement[]>([]);
 const router = useRouter();
 const shortcodesLoaded = ref(false); // Flag to force re-render when shortcodes are loaded
@@ -352,7 +413,7 @@ const splitIntoSegments = (text: string): Segment[] => {
   while ((m = FENCED_RE.exec(text)) !== null) {
     const before = text.slice(lastIndex, m.index);
     if (before.trim()) {
-      segments.push({ kind: "html", html: processMathInText(before) });
+      segments.push({ kind: "html", html: sanitizeAiHtml(processMathInText(before)) });
     }
     const kind = m[1] as "graph" | "chart" | "geometry" | "steps";
     const raw = (m[2] || "").trim();
@@ -361,13 +422,13 @@ const splitIntoSegments = (text: string): Segment[] => {
       segments.push({ kind, spec });
     } else {
       // fall back to rendering as code block so user sees the issue
-      segments.push({ kind: "html", html: processMathInText("```\n" + raw + "\n```") });
+      segments.push({ kind: "html", html: sanitizeAiHtml(processMathInText("```\n" + raw + "\n```")) });
     }
     lastIndex = m.index + m[0].length;
   }
   const rest = text.slice(lastIndex);
   if (rest.trim() || segments.length === 0) {
-    segments.push({ kind: "html", html: processMathInText(rest) });
+    segments.push({ kind: "html", html: sanitizeAiHtml(processMathInText(rest)) });
   }
   return segments;
 };

@@ -77,6 +77,13 @@ const shouldRememberCurrentRoute = () =>
   );
 
 const showLogoutConfirm = ref(false);
+const mobileLogoutRequested = useState<boolean>("mobile-logout-requested", () => false);
+watch(mobileLogoutRequested, (requested) => {
+  if (requested) {
+    mobileLogoutRequested.value = false;
+    showLogoutConfirm.value = true;
+  }
+});
 const showLogoutToast = ref(false);
 const logoutToastTimeout = ref<null | any>(null);
 const logoutAlert = ref<HTMLElement | null>(null);
@@ -294,11 +301,6 @@ const setPrimaryLanguage = async (language: LanguageSupport) => {
   }
 };
 
-const setPrimaryLanguageFromAccountMenu = async (language: LanguageSupport) => {
-  await setPrimaryLanguage(language);
-  closeAccountMenu();
-};
-
 const navigateToHomeHub = async (educationLevel: "primary" | "secondary") => {
   hubEducationLevel.value = educationLevel;
   hubHeaderLang.value = getHubLanguage(
@@ -397,7 +399,7 @@ onBeforeUnmount(() => {
 <template>
   <!-- Header -->
   <header
-    class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat"
+    class="relative shadow-sm bg-[url('/flag/tenor.gif')] bg-cover bg-center bg-no-repeat rounded-b-xl lg:rounded-none"
     role="navigation"
   >
     <nav class="flex flex-col items-center bg-white bg-opacity-75">
@@ -409,7 +411,7 @@ onBeforeUnmount(() => {
       <div class="w-full">
         <!-- Media Screen -->
         <div
-          class="hidden w-full items-center gap-4 text-white md:grid md:grid-cols-[minmax(0,1fr)_auto] min-[1441px]:grid-cols-[1fr_auto_1fr] bg-oceanBlue rounded-xs wrapper-container"
+          class="app-header-desktop-nav hidden w-full items-center gap-4 text-white md:grid md:grid-cols-[minmax(0,1fr)_auto] min-[1441px]:grid-cols-[1fr_auto_1fr] bg-oceanBlue rounded-xs wrapper-container"
         >
           <div class="flex items-center gap-2 justify-self-start">
             <div
@@ -686,9 +688,9 @@ onBeforeUnmount(() => {
 
         <!-- Mobile Menu -->
         <div
-          class="w-full text-white md:hidden bg-oceanBlue rounded-b-md"
+          class="app-header-mobile-nav w-full rounded-b-md bg-oceanBlue text-white md:hidden"
         >
-          <div class="flex w-full items-center justify-between gap-2 px-2 py-1 sm:px-4">
+          <div class="flex w-full items-center justify-between gap-2 px-4 py-1">
             <div class="flex items-center gap-1">
               <div
                 class="relative"
@@ -709,6 +711,8 @@ onBeforeUnmount(() => {
                   <div class="flex items-center justify-center">
                     <IconsHome :size="20" />
                   </div>
+                  <span class="text-xs font-semibold">{{ homeHubLabel }}</span>
+                  <Icon name="heroicons:chevron-down-20-solid" class="h-4 w-4" aria-hidden="true" />
                 </button>
 
                 <div
@@ -743,7 +747,7 @@ onBeforeUnmount(() => {
                 href="https://ol.tie.go.tz/index.php"
                 target="_blank"
                 rel="noopener noreferrer"
-                :class="[mobileNavItemClass, inactiveNavItemClass]"
+                :class="[mobileNavItemClass, inactiveNavItemClass, 'hidden']"
               >
                 <div class="flex items-center justify-center">
                   <IconsTieLibrary :size="20" />
@@ -756,6 +760,7 @@ onBeforeUnmount(() => {
                 :class="[
                   mobileNavItemClass,
                   isSmartClassRoute ? activeNavItemClass : inactiveNavItemClass,
+                  'hidden',
                 ]"
               >
                 <div class="flex items-center justify-center">
@@ -770,11 +775,20 @@ onBeforeUnmount(() => {
                 :class="[
                   mobileNavItemClass,
                   isAiTeacherRoute ? activeNavItemClass : inactiveNavItemClass,
+                  'hidden',
                 ]"
               >
                 <IconsRobotAi :size="20" />
               </NuxtLink>
             </div>
+
+            <LanguageSwitcher
+              v-if="showPrimaryLanguageSwitch"
+              :active="activePrimaryLanguage"
+              :language-switch-content="languageSwitchContent"
+              appearance="desktop-nav"
+              @change="setPrimaryLanguage"
+            />
 
             <!-- Account and Sign in -->
             <div class="relative flex items-center gap-1">
@@ -782,16 +796,17 @@ onBeforeUnmount(() => {
                 v-if="userToken"
                 data-account-menu-root
               >
-                <button
-                  aria-label="Open account menu"
+                <NuxtLink
+                  :to="profileRoute"
+                  aria-label="Go to profile page"
                   :aria-current="isAccountSectionRoute ? 'page' : undefined"
                   :class="[
                     mobileNavItemClass,
-                    isAccountSectionRoute || isAccountMenuOpen
+                    '!h-9 !w-9 !rounded-full !p-0 aspect-square shrink-0 overflow-hidden',
+                    isAccountSectionRoute
                       ? activeNavItemClass
                       : inactiveNavItemClass,
                   ]"
-                  @click="toggleAccountMenu"
                 >
                   <div
                     v-if="
@@ -816,91 +831,8 @@ onBeforeUnmount(() => {
                   <span class="hidden max-w-24 truncate text-sm font-medium sm:block">
                     {{ userDisplayName }}
                   </span>
-                </button>
+                </NuxtLink>
 
-                <div
-                  v-if="isAccountMenuOpen"
-                  class="absolute right-0 z-30 w-48 overflow-hidden bg-white border shadow-xl top-full rounded-2xl border-slate-200"
-                >
-                  <div
-                    v-if="showPrimaryLanguageSwitch"
-                    class="px-4 py-2.5 border-b border-slate-200"
-                  >
-                    <!-- <p class="mb-2 text-xs font-semibold tracking-wide uppercase text-slate-500">
-                      {{ languageSwitchContent.label }}
-                    </p> -->
-                    <div
-                      class="flex overflow-hidden border rounded-full border-slate-200 bg-slate-50"
-                    >
-                      <button
-                        type="button"
-                        class="flex-1 px-3 py-1.5 text-xs font-medium transition-colors"
-                        :class="
-                          activePrimaryLanguage === 'english'
-                            ? 'bg-deepBlue text-white'
-                            : 'text-slate-700 hover:bg-slate-100'
-                        "
-                        @click="setPrimaryLanguageFromAccountMenu('english')"
-                      >
-                        {{ languageSwitchContent.english }}
-                      </button>
-                      <button
-                        type="button"
-                        class="flex-1 px-3 py-1.5 text-xs font-medium transition-colors"
-                        :class="
-                          activePrimaryLanguage === 'kiswahili'
-                            ? 'bg-deepBlue text-white'
-                            : 'text-slate-700 hover:bg-slate-100'
-                        "
-                        @click="setPrimaryLanguageFromAccountMenu('kiswahili')"
-                      >
-                        {{ languageSwitchContent.kiswahili }}
-                      </button>
-                    </div>
-                  </div>
-
-                  <NuxtLink
-                    aria-label="Go to learning statistics page"
-                    :to="learningStatisticsRoute"
-                    class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
-                    @click="closeAccountMenu"
-                  >
-                    <Icon
-                      name="heroicons:chart-bar-square-20-solid"
-                      class="w-5 h-5"
-                    />
-                    <span>{{
-                      language === "english"
-                        ? `Learning statistics`
-                        : `Takwimu za ujifunzaji`
-                    }}</span>
-                  </NuxtLink>
-
-                  <NuxtLink
-                    aria-label="Go to profile page"
-                    :to="profileRoute"
-                    class="flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50"
-                    @click="closeAccountMenu"
-                  >
-                    <IconsProfileCircle :size="20" />
-                    <span>{{
-                      language === "english" ? `Profile` : `Wasifu`
-                    }}</span>
-                  </NuxtLink>
-
-                  <button
-                    aria-label="Log out"
-                    class="flex items-center w-full gap-3 px-4 py-2.5 text-sm font-medium text-left transition-colors text-rose-700 hover:bg-rose-50"
-                    @click="openLogoutConfirmFromMenu"
-                  >
-                    <IconsLogout
-                      :size="20"
-                    />
-                    <span>{{
-                      language === "english" ? `Logout` : `Ondoka`
-                    }}</span>
-                  </button>
-                </div>
               </div>
 
               <div

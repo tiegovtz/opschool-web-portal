@@ -1,9 +1,23 @@
 #!/bin/bash
 # Upload all textbook PDFs to the production RAG endpoint
-# Usage: bash scripts/upload-books-to-production.sh
+# Usage:
+#   RAG_API_BASE_URL=https://<insights-host> INSIGHTS_API_KEY=<key> \
+#     bash scripts/upload-books-to-production.sh
+#
+# The key is read from the environment only; never commit it here.
 
-API_URL="http://opschool.tie.go.tz:5002"
-API_KEY="d53e956e0792841048a1cb215ea7d83dd01812aea990c0bcd8471b3fb52cb5e4"
+API_URL="${RAG_API_BASE_URL:?Set RAG_API_BASE_URL to the Insights base URL (https)}"
+API_KEY="${INSIGHTS_API_KEY:?Set INSIGHTS_API_KEY in the environment}"
+API_URL="${API_URL%/}"
+
+case "$API_URL" in
+  https://*) ;;
+  http://localhost*|http://127.0.0.1*) ;;
+  *)
+    echo "Refusing to send the API key over plain HTTP to $API_URL (use https)." >&2
+    exit 1
+    ;;
+esac
 DOWNLOADS="$HOME/Downloads"
 
 # Form 1 classLevel ID / Form 2 classLevel ID

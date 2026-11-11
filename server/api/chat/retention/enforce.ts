@@ -8,8 +8,6 @@
  * 3. On user request
  */
 
-import apiDocs from "~/utilities/apiDocs";
-
 export default defineEventHandler(async (event) => {
   if (event.method !== "POST") {
     throw createError({
@@ -47,19 +45,20 @@ export default defineEventHandler(async (event) => {
       Authorization: `Bearer ${auth_token}`,
     };
 
-    // Call external API to enforce retention
-    const url = apiDocs.chat.enforceRetention;
-    const response = await fetch(url, {
+    const response = await $fetch.raw('/api/backend/v1/chat/retention/enforce', {
       method: "POST",
       headers,
-      body: JSON.stringify({
+      body: {
         userId,
         maxSessions,
-      }),
+      },
+      ignoreResponseError: true,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (response.status >= 400) {
+      const errorText = typeof response._data === 'string'
+        ? response._data
+        : JSON.stringify(response._data);
       throw createError({
         statusCode: response.status,
         statusMessage: `HTTP error! Status: ${response.status}`,
@@ -67,8 +66,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const data = await response.json();
-    return data;
+    return response._data;
   } catch (error: any) {
     console.error("[Chat Retention] Error:", error);
     

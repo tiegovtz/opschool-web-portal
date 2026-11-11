@@ -1,5 +1,5 @@
 // @ts-nocheck
-import apiDocs from "~/utilities/apiDocs"
+import apiDocs from "~~/server/utils/backendApiDocs"
 
 // ============================================================================
 // Types for Compact Conversation State
@@ -106,8 +106,8 @@ function extractAIRole(pieces: string[]): string | null {
 function detectMood(answer: string): 'positive' | 'negative' | 'neutral' {
   const lower = answer.toLowerCase()
   
-  const negativePatterns = /(bad|sad|not good|unhappy|bored|tired|upset|angry|lonely|terrible|awful|worst|hate|scared|scary|nervous|difficult|hard|stressed|worried|sick|ill|pain|hurt|died|passed away|lost|divorce|no money|can't afford|financial)/i
-  const positivePatterns = /(good|great|fine|happy|excellent|amazing|wonderful|awesome|nice|fantastic|love|excited|fun|enjoy|glad|pleased|beautiful|best)/i
+  const negativePatterns = /\b(bad|sad|not good|unhappy|bored|tired|upset|angry|lonely|terrible|awful|worst|hate|scared|scary|nervous|difficult|hard|stressed|worried|sick|ill|pain|hurt|died|passed away|lost|divorce|no money|can't afford|financial)\b/i
+  const positivePatterns = /\b(good|great|fine|happy|excellent|amazing|wonderful|awesome|nice|fantastic|love|excited|fun|enjoy|glad|pleased|beautiful|best)\b/i
   
   if (negativePatterns.test(lower)) return 'negative'
   if (positivePatterns.test(lower)) return 'positive'
@@ -128,7 +128,7 @@ function extractKeyFacts(answer: string, currentPiece: string): string[] {
   }
   
   // Subject/favorite extraction
-  if (/favorite|favourite|like|love/i.test(currentPiece)) {
+  if (/\b(favorite|favourite|like|love)\b/i.test(currentPiece)) {
     const subjectMatch = answer.match(/(?:i like|i love|my (?:favorite|favourite) is|it's)\s+([a-z]+)/i)
     if (subjectMatch) {
       facts.push(`user likes ${subjectMatch[1]}`)
@@ -333,7 +333,7 @@ function detectBranch(
   
   // 2. Contradiction branches (user says "no" when script expects "yes")
   const isNegativeAnswer = /^(no|nope|nah|not really|i don't think so|i'm not)\b/i.test(answerLower)
-  const isPositiveQuestion = /are you|do you|did you|have you|will you/i.test(currentLower)
+  const isPositiveQuestion = /\b(are you|do you|did you|have you|will you)\b/i.test(currentLower)
   
   if (isNegativeAnswer && isPositiveQuestion && nextPiece) {
     // Check if the next piece assumes a positive answer
@@ -521,7 +521,7 @@ function shouldReturnFromBranch(
   // Branch is resolved if:
   // 1. User provided a substantive answer (not another question)
   // 2. Answer is not too short (more than 2 words usually)
-  const isQuestion = /\?$/.test(userAnswer) || /^(what|when|where|why|how|who)/i.test(userAnswer)
+  const isQuestion = /\?$/.test(userAnswer) || /^(what|when|where|why|how|who)\b/i.test(userAnswer)
   const isSubstantive = userAnswer.split(/\s+/).length >= 2
   
   if (!isQuestion && isSubstantive) {
@@ -1283,8 +1283,8 @@ Respond with JSON only:
     let finalAdapted: string | null = null
     if (nextPiece && derivedIsCorrect) {
       const next = String(nextPiece).trim()
-      const negTone = /(bad|sad|not good|unhappy|bored|tired|upset|angry|lonely|terrible|awful|worst)/i
-      const posTone = /(good|fine|great|happy|excellent|amazing|wonderful|awesome|nice|fantastic|love)/i
+      const negTone = /\b(bad|sad|not good|unhappy|bored|tired|upset|angry|lonely|terrible|awful|worst)\b/i
+      const posTone = /\b(good|fine|great|happy|excellent|amazing|wonderful|awesome|nice|fantastic|love)\b/i
       
       finalAdapted = modelAdapted || next
       
@@ -1382,8 +1382,8 @@ Respond with JSON only:
     let finalAdaptedResponse = nextPiece && derivedIsCorrect ? finalAdapted : null
 
     // Feedback adjustments
-    const isModelNegative = /wrong|contradict|doesn['']?t match/i.test(String(modelFeedback))
-    const hasSeriousHardship = /(passed away|died|loss|divorce|financial trouble)/i.test(userAnswer)
+    const isModelNegative = /\b(wrong|contradict\w*|doesn['’]?t match)\b/i.test(String(modelFeedback))
+    const hasSeriousHardship = /\b(passed away|died|loss|divorce|financial trouble)\b/i.test(userAnswer)
     
     finalFeedback = derivedIsCorrect && isModelNegative && hasSeriousHardship
       ? "Thanks for sharing. I'm sorry to hear that."

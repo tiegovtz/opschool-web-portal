@@ -79,6 +79,12 @@ const forgotPassword = async () => {
                     }
             });
 
+        if (Number(response?.statusCode) >= 400) {
+            userForgotPassword.controller.feedback = response?.message || messages.error.auth.passwordResetEmailFailed;
+            userForgotPassword.controller.isDisabled = false;
+            return;
+        }
+
         if (userForgotPassword?.type?.toLowerCase().trim() == 'student') {
             userForgotPassword.controller.isSucces = true;
             const route = useRouter();
@@ -94,7 +100,8 @@ const forgotPassword = async () => {
         }
 
     } catch (error) {
-        userForgotPassword.controller.feedback = messages.error.auth.invalidCredentials;
+        userForgotPassword.controller.feedback = error?.data?.data?.message ||
+            error?.data?.message || messages.error.auth.passwordResetEmailFailed;
         userForgotPassword.controller.isSucces = false;
         userForgotPassword.controller.isDisabled = false;
         console.error('Error sending forgot password request:', error);

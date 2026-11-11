@@ -46,6 +46,7 @@ const messages = {
       // Authentication related error messages
       auth: {
         invalidCredentials: "Invalid username or password",
+        passwordResetEmailFailed: "Unable to send the password reset email. Please try again.",
         accountLocked: "Your account has been locked. Please contact support",
         emailNotVerified: "Please verify your email before logging in",
         passwordMismatch: "Passwords do not match",

@@ -5,6 +5,7 @@ import type { tabs, videoType, tabGroup } from "~/types/types.data";
 import { moveFocus } from "~/utilities/focus.helper";
 import {
   getEducationRouteQuery,
+  getHubPath,
   normalizeEducationLevel,
   resolveRouteLanguage,
   type EducationBucket,
@@ -120,8 +121,17 @@ const buildAnonymousTarget = (
 
 <template>
   <section class="my-5">
+    <NuxtLink
+      v-if="topicId"
+      :to="buildAnonymousTarget(getHubPath(anonymousEducationLevel))"
+      class="mb-4 inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-deepBlue shadow-sm hover:bg-sky-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-oceanBlue"
+    >
+      <Icon name="mdi:arrow-left" size="18" aria-hidden="true" />
+      {{ language === 'kiswahili' ? 'Rudi kwenye masomo' : 'Back to subjects' }}
+    </NuxtLink>
     <div
       class="flex items-center text-center justify-start gap-3 mb-6 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center"
+      :class="{ 'subject-content-tabs': topicId }"
     >
       <!-- subject tab -->
       <div
@@ -159,6 +169,15 @@ const buildAnonymousTarget = (
           {{ localizedContent.skipContent }}
         </button>
       </div>
+
+      <NuxtLink
+        v-else-if="topicId"
+        :to="buildAnonymousTarget(getHubPath(anonymousEducationLevel))"
+        class="flex items-center justify-center gap-2 px-2 text-center text-white rounded-[6px] bg-oceanBlue hover:bg-paleBrickRed text-medium"
+      >
+        <IconsSubjects :size="20" />
+        {{ localizedContent.tabs.subject }}
+      </NuxtLink>
 
       <!-- Interactive Content -->
       <div
@@ -219,7 +238,7 @@ const buildAnonymousTarget = (
       </NuxtLink>
 
       <!-- Learning Activities -->
-      <div v-if="tabGroup === 'lower secondary'" class="flex items-center text-center justify-start gap-3 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center"  >
+      <div v-if="tabGroup === 'lower secondary' || topicId" class="flex items-center text-center justify-start gap-3 overflow-x-scroll scrollbar-none whitespace-nowrap md:justify-center" :class="{ 'subject-content-options': topicId }" >
         <div v-if="isLoggedIn">
           <button
             role="tab"
@@ -432,3 +451,16 @@ const buildAnonymousTarget = (
     </div>
   </section>
 </template>
+
+<style scoped>
+.subject-content-options > :nth-child(1) { order: 3; }
+.subject-content-options > :nth-child(2) { order: 1; }
+.subject-content-options > :nth-child(3) { order: 2; }
+.subject-content-options > :nth-child(4) { order: 4; }
+
+@media (max-width: 767px) {
+  .subject-content-tabs {
+    display: none;
+  }
+}
+</style>

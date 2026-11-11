@@ -62,7 +62,7 @@ const toggleReadMore = async () => {
 
 <template>
   <!-- Hero landmark -->
-  <section class="flex justify-center my-2 hero-section" aria-label="Ekima interactive learning introduction">
+  <section class="hidden justify-center my-2 hero-section md:flex" aria-label="Ekima interactive learning introduction">
     <div class="grid grid-cols-1 xl:grid-cols-2 md:gap-2">
       <!-- Slider -->
       <div class="flex flex-col items-center justify-center h-full">
@@ -82,7 +82,7 @@ const toggleReadMore = async () => {
 
         <!-- Description container controlled by the button -->
         <div id="hero-description" tabindex="-1" role="region" aria-live="polite" aria-atomic="true"
-          class="my-2 text-xl text-justify text-black text-medium text-opacity-80" v-html="isExpanded ? fullText : shortText">
+          class="my-2 text-base leading-7 text-left text-black text-opacity-80 md:text-xl md:text-justify" v-html="isExpanded ? fullText : shortText">
         </div>
 
         <!-- Read more / Show less toggle -->

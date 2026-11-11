@@ -3,13 +3,7 @@
 import HeroSection from "@/components/home/HeroSection.vue";
 import TabBar from "@/components/home/TabBar.vue";
 import { ref, computed, onMounted, watch } from "vue";
-import {
-  isGreaterToXL,
-  isGreaterToLG,
-  isGreaterToMD,
-  isGreaterToSM,
-  screenWidth,
-} from "@/utilities/controlls";
+import { screenWidth } from "@/utilities/controlls";
 import apiDocs from "~/utilities/apiDocs";
 import customGridTwo from "~/components/home/customGridTwo.vue";
 import VideoCard from "~/components/video/videoCard.vue";
@@ -38,6 +32,7 @@ const decodeParam = (value) => {
 };
 const subjectId = String(route.params.subjectId ?? "");
 const subjectTitle = decodeParam(route.params.subject).replaceAll("-", " ");
+const subjectQueryName = subjectTitle.replace(/\b\w/g, (letter) => letter.toUpperCase());
 const activeTab = ref(route.query?.type === "oth" ? "class-videos" : "video");
 const subjectSlug = computed(() => (subjectTitle || "").toLowerCase().trim().replace(/\s+/g, "-"));
 const primaryContentLanguage = usePrimaryContentLanguage();
@@ -49,7 +44,7 @@ const language = computed(() =>
   ),
 );
 const educationRouteQuery = computed(() =>
-  getEducationRouteQuery(educationLevel.value, {}, language.value),
+  getEducationRouteQuery(educationLevel.value, typeof route.query.level === "string" ? { level: route.query.level } : {}, language.value),
 );
 
 const buildTabTarget = (tab) => {
@@ -132,7 +127,7 @@ const userToken = useCookie("signInUserToken");
 const status = ref("pending"); // Initial Status State
 const topic = ref([]); // Initial Topics State
 const slicedData = ref(); // Initial slice data to 9
-const videoType = route.query?.type ? route.query?.type === 'conc' ? "Conceptual" : 'Other' : 'Conceptual'; // Initial video type state
+const videoType = route.query?.type === 'oth' ? 'Others' : 'Conceptual'; // Initial video type state
 
 // First, fix the sliceData function
 const sliceData = (start, end) => {
@@ -155,10 +150,9 @@ const sliceData = (start, end) => {
 const currentPage = ref(1);
 const pageSize = ref();
 const getPageSize = () => {
-  if (screenWidth.value >= 1280 || isGreaterToXL.value) return 12;
-  if (screenWidth.value >= 1024 || isGreaterToLG.value) return 9;
-  if (screenWidth.value >= 768 || isGreaterToMD.value) return 6;
-  return 4;
+  if (screenWidth.value >= 1280) return 12;
+  if (screenWidth.value >= 1024) return 9;
+  return 6;
 };
 
 // Then, update fetchVideos to call sliceData after data is loaded
@@ -182,12 +176,13 @@ const fetchVideos = async (params) => {
   try {
     status.value = "pending";
     currentPage.value = 1;
-    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${language.value}-${subjectId}-${params?.toString()}`, () => $fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
+    const { data: response, status: fetchStatus } = await fetchAsyncData(`videos-${educationLevel.value}-${language.value}-${subjectId}-${JSON.stringify(params ?? {})}`, () => $fetch(apiDocs.videos.getPublicVideoBySubjectId.replace(
       "{subjectId}",
       subjectId
     ), {
       params: {
         ...params,
+        subject: subjectQueryName,
       },
     }));
 
@@ -203,7 +198,7 @@ const fetchVideos = async (params) => {
 };
 
 // Call Fetch Topics function
-fetchVideos();
+fetchVideos({ level: typeof route.query.level === "string" ? route.query.level : undefined, videoType });
 
 //  assigning page size based on screen sizes
 pageSize.value = getPageSize();
@@ -268,11 +263,16 @@ watch(() => route.query?.type, () => {
   activeTab.value = route.query?.type === "oth" ? "class-videos" : "video";
 
   fetchVideos({
-    videoType: route.query?.type == 'conc' ? 'Conceptual' : 'others'
+    videoType: route.query?.type === 'oth' ? 'Others' : 'Conceptual',
+    level: typeof route.query.level === "string" ? route.query.level : undefined,
   })
 })
 
 const contentLayoutLanguage = useContentLayoutLanguage();
+const applyClassFilter = (value) => fetchVideos({
+  level: value || undefined,
+  videoType: activeTab.value === 'class-videos' ? 'Others' : 'Conceptual',
+});
 </script>
 
 <template>
@@ -281,8 +281,11 @@ const contentLayoutLanguage = useContentLayoutLanguage();
       ' ',
       { ' animate-pulse': isLoading }
     ]">
-      <HomeSearchbar v-if="userToken" appearance="rounded" :language :education-level="educationLevel" />
-      <HeroSection v-else :language :education-level="educationLevel" />
+      <div class="hidden md:block">
+        <HomeSearchbar v-if="userToken" appearance="rounded" :language :education-level="educationLevel" />
+        <HeroSection v-else :language :education-level="educationLevel" />
+      </div>
+      <HomeMobileSubjectContentTools :active-tab="activeTab" :language="language" :education-level="educationLevel" @update:selected-level="applyClassFilter" @select-tab="switchTab" />
       <TabBar :is-logged-in="!!userToken" :active-tab="activeTab" @emit-active-tab="switchTab($event)"
         :subject-title="subjectTitle" :topic-id="subjectId" :language :education-level="educationLevel"
         :tab-group="educationLevel" />
@@ -305,7 +308,7 @@ const contentLayoutLanguage = useContentLayoutLanguage();
           <div class="flex flex-col w-full">
             <div class="flex items-start gap-4">
               <!-- Topic Cards are in Grid -->
-              <div class="flex flex-col items-start ">
+              <div class="flex w-full min-w-0 flex-col items-start">
                 <customGridTwo>
                   <template #data>
                     <!-- Video Cards are in Grid -->

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import apiDocs from "~/utilities/apiDocs";
 import questionsAnswers from "./questionsAnswers.vue";
+import QuizMathText from "./QuizMathText.vue";
 import { ANSWER_SEPARATOR, type Choice, type Question } from "~/types/question.interface";
 import type {
   QuizAttemptPayload,
@@ -12,7 +13,8 @@ import {
   getChapterQuestionType,
 } from "~/utilities/learnerProgressHistory";
 import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
-import { generateSuggestion } from "~/utilities/linkfy.helper";
+import { parseTextAndLinks } from "~/utilities/linkfy.helper";
+import { parseOrderedQuestionBlocks } from "~/utilities/orderedQuestionBlocks";
 
 // define Props
 const props = defineProps({
@@ -71,10 +73,11 @@ const shuffleList = <T>(items: T[]) =>
     .map(({ item }) => item);
 const route = useRoute();
 const shuffledQuestions = ref<Question[]>([]);
-const resultMathKey = computed(() => JSON.stringify({
-  questions: shuffledQuestions.value.map((question) => question.question),
-  answers: quizAttempt.clickedAnswer,
-}));
+const resultQuestionBlocks = computed(() =>
+  shuffledQuestions.value.map((question) =>
+    parseOrderedQuestionBlocks(String(question.question ?? "")),
+  ),
+);
 const isSecondaryQuiz = computed(
   () => resolveEducationLevelFromRoute(route) !== "primary",
 );
@@ -325,6 +328,13 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
     (choice: Choice) => choice.value.trim().toLowerCase() === userAnswer.trim().toLowerCase()
   )?.description || '';
 };
+
+const getChoiceReasonLines = (question: Question, userAnswer: string): string[] =>
+  getChoiceReason(question, userAnswer)
+    .replace(/https?:\/\/[^\s]+/g, "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 </script>
 
 <template>
@@ -360,7 +370,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
       </p> -->
 
       <!-- Outputs or results or Marks -->
-      <div v-if="quizAttempt.quizCompleted && quizAttempt.isAttempting" v-mathjax="resultMathKey" class="w-full">
+      <div v-if="quizAttempt.quizCompleted && quizAttempt.isAttempting" class="w-full min-w-0">
         <!-- Scores -->
         <div class="flex flex-col items-center w-full mb-4">
           <p>
@@ -373,16 +383,33 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
 
         <!-- Question with Answers -->
         <div class="flex flex-col w-full rounded-lg my-4 shadow-[0px_0px_8px_3px_rgba(0,0,0,0.05)]" v-for="(question, index) in shuffledQuestions" :key="index">
-          <div class="flex w-full rounded-lg  p-4">
+          <div class="flex w-full min-w-0 rounded-lg p-4">
             <span class="flex rounded-full bg-[#2b7efe] text-white h-6 w-6 p-2 items-center justify-center text-sm">{{
               index + 1 }}</span>
-            <div class="pl-4 text-justify flex-1">
-              <p class="mb-2">
-                {{
-                  isDragAndDropQuestion(question.questionType)
+            <div class="pl-4 text-justify flex-1 min-w-0">
+              <div v-if="resultQuestionBlocks[index]" class="mb-2 space-y-3">
+                <template v-for="block in resultQuestionBlocks[index]" :key="block.key">
+                  <p v-if="block.type === 'paragraph'" class="leading-relaxed">
+                    <template v-for="segment in block.segments" :key="segment.key">
+                      <QuizMathText v-if="segment.type === 'text'" :text="segment.text" />
+                      <span v-else class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle">&nbsp;</span>
+                    </template>
+                  </p>
+                  <div v-else class="flex items-start gap-3 leading-relaxed">
+                    <span class="shrink-0 font-medium">{{ block.marker }}</span>
+                    <div class="flex-1 min-w-0">
+                      <template v-for="segment in block.segments" :key="segment.key">
+                        <QuizMathText v-if="segment.type === 'text'" :text="segment.text" />
+                        <span v-else class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle">&nbsp;</span>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+              </div>
+              <p v-else class="mb-2 min-w-0">
+                <QuizMathText :text="isDragAndDropQuestion(question.questionType)
                     ? question.question.replace(/(_\$blank)/g, ' __________ ')
-                    : question.question
-                }}
+                    : question.question" />
               </p>
               <p :class="quizAttempt.clickedAnswer[index] == question.answer
                 ? 'text-normalGreener'
@@ -402,7 +429,7 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
                   </span>
                 </template>
                 <span v-else :class="{ 'capitalize': isDragAndDropQuestion(question.questionType) }">
-                  {{ (quizAttempt.clickedAnswer[index] ?? '').replaceAll(ANSWER_SEPARATOR, ' ,') }}
+                  <QuizMathText :text="(quizAttempt.clickedAnswer[index] ?? '').replaceAll(ANSWER_SEPARATOR, ' ,')" />
                 </span>
                 <span v-if="question.questionType !== 'drag_and_drop'" class="ml-2 font-bold" :class="quizAttempt.clickedAnswer[index] == question.answer
                   ? 'text-normalGreener'
@@ -414,10 +441,22 @@ const getChoiceReason = (question: Question, userAnswer: string): string => {
           </div>
           <!-- choice description (reason)-->
           <!--  -->
-          <div class="px-4"
+          <div class="px-4 min-w-0"
             v-if="question.choices.find((choice: Choice) => choice.value === quizAttempt.clickedAnswer[index])?.description?.trim() && getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? '').trim()"
-            :aria-label="`Explanation to justify why you answer ${quizAttempt.clickedAnswer[index] == question.answer ? 'correct' : 'incorrect'}`"
-            v-html="generateSuggestion(getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? ''), quizAttempt.clickedAnswer[index] == question.answer,topicLanguage)">
+            :aria-label="`Explanation to justify why you answer ${quizAttempt.clickedAnswer[index] == question.answer ? 'correct' : 'incorrect'}`">
+            <div class="p-4 mb-5 rounded-lg border min-w-0" :class="quizAttempt.clickedAnswer[index] == question.answer
+              ? 'bg-green-100 text-green-900 border-green-600'
+              : 'bg-red-100 text-red-900 border-red-600'">
+              <b>{{ topicLanguage.toLowerCase().trim() === 'english' ? 'Explanation' : 'Maelezo' }}:</b>
+              <p v-for="(line, lineIndex) in getChoiceReasonLines(question, quizAttempt.clickedAnswer[index] ?? '')" :key="lineIndex" class="mt-2 min-w-0">
+                <QuizMathText :text="line" />
+              </p>
+            </div>
+            <ul v-if="parseTextAndLinks(getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? '')).links.length" class="pl-5 space-y-1 text-sm text-blue-600">
+              <li v-for="link in parseTextAndLinks(getChoiceReason(question, quizAttempt.clickedAnswer[index] ?? '')).links" :key="link">
+                <a :href="link" target="_blank" rel="noopener noreferrer">{{ topicLanguage.toLowerCase().trim() === 'english' ? 'Visit reference to learn more.' : 'Bofya hapa kujifunza zaidi' }}</a>
+              </li>
+            </ul>
           </div>
         </div>
 

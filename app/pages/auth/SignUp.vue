@@ -28,6 +28,14 @@ import type { FetchError } from "ofetch";
 // input tabs control
 const inputTabs = ref("tabOne");
 const headingRef = ref<HTMLElement | null>(null);
+const formRef = ref<HTMLFormElement | null>(null);
+watch(inputTabs, async () => {
+  await nextTick();
+  if (!formRef.value) return;
+  formRef.value.scrollTop = 0;
+  formRef.value.scrollIntoView({ block: "start", behavior: "auto" });
+  formRef.value.focus({ preventScroll: true });
+});
 const listLevel = ref<Level[]>([]);
 const listEducationLevels = ref<educationLevel[]>([]);
 const classLevel = ref<string>('');
@@ -868,7 +876,7 @@ const signUp = async () => {
         return;
       }
 
-      const response = await $fetch.raw('/api/auth/sign-up', {
+      const response = await $fetch.raw(apiDocs.auth.signUp, {
         method: "POST",
         body: typeKey == 'Student' ?
           {
@@ -930,7 +938,7 @@ const signUp = async () => {
 
         // Navigate to auth page
         const router = useRouter()
-        router.push({ path: '/auth', query: { ...authRedirectQuery.value, registered: '1' } });
+        await router.push({ path: '/auth', query: { ...authRedirectQuery.value, registered: '1' } });
 
       } else {
         usersignUp.controller.isSent = 'failed';
@@ -1821,7 +1829,7 @@ onMounted(async () => {
           :alt="content.logoAlt" />
       </NuxtLink>
 
-      <form @submit.prevent="signUp" @keydown.enter.prevent :class="['text-textGray md:h-[530px] h-dvh relative overflow-y-scroll text-extraSmall lg:scroll-height lg:overflow-y-scroll no-scrollbar',
+      <form ref="formRef" tabindex="-1" :aria-label="`${content.title}: ${isSwahili ? 'hatua ya' : 'step'} ${inputTabs === 'tabOne' ? 1 : 2} ${isSwahili ? 'kati ya' : 'of'} 2`" @submit.prevent="signUp" @keydown.enter.prevent :class="['text-textGray md:h-[530px] h-dvh relative overflow-y-scroll text-extraSmall lg:scroll-height lg:overflow-y-scroll no-scrollbar',
         {
           'md:h-[600px]':
             usersignUp.controller.errors.age ||

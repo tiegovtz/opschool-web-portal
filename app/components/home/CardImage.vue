@@ -12,14 +12,26 @@ const props = withDefaults(defineProps<{
 const $img = useImage();
 const config = useRuntimeConfig();
 const failedOptimization = ref(false);
+const failedSource = ref(false);
 const source = computed(() => {
+  if (failedSource.value) return "/images/default.webp";
   const value = props.src?.trim() || "/images/default.webp";
   return value.startsWith("/public/") ? value.slice("/public".length) : value;
 });
-watch(source, () => { failedOptimization.value = false; });
+watch(() => props.src, () => {
+  failedOptimization.value = false;
+  failedSource.value = false;
+});
+const handleImageError = () => {
+  if (optimizable.value && !failedOptimization.value) {
+    failedOptimization.value = true;
+  } else if (source.value !== "/images/default.webp") {
+    failedSource.value = true;
+  }
+};
 const optimizedSource = computed(() => {
   // Use a configured server-reachable origin for backend uploads when needed.
-  const origin = config.public.imageFetchOrigin?.trim().replace(/\/+$/, "");
+  const origin = String(config.public.imageFetchOrigin || "").trim().replace(/\/+$/, "");
   const publicUploads = "http://41.59.251.166/api/uploads/";
   return origin && source.value.startsWith(publicUploads)
     ? `${origin}/api/uploads/${source.value.slice(publicUploads.length)}`
@@ -57,6 +69,6 @@ const imageSrcset = computed(() => {
     :height="height"
     loading="lazy"
     decoding="async"
-    @error="failedOptimization = true"
+    @error="handleImageError"
   />
 </template>

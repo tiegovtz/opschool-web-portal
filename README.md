@@ -76,6 +76,28 @@ bun install
 
 ## Development Server
 
+The portal calls its backend through the same-origin Nuxt route `/api/backend/v1/**`.
+Set `VITE_API_BASE_URL` in `.env` to the absolute upstream API URL (including its
+`/api/v1` or `/v1` prefix), then restart Nuxt. Keep this value pointed at the remote
+API, not `/api/backend/v1`, to avoid a proxy loop. Existing server features call the
+upstream directly, and existing media URLs keep using the upstream asset base.
+
+For example, `/api/backend/v1/public-subjects?educationLevel=lower+secondary`
+is forwarded to `${VITE_API_BASE_URL}/public-subjects?educationLevel=lower+secondary`.
+The proxy forwards bearer authentication, request bodies, query strings, and
+upstream status codes. Portal cookies stay private; state-changing requests obtain
+a matching CSRF token and cookie directly from the backend. It checks browser
+origins locally and omits `Origin` and `Referer` when contacting the upstream.
+
+The proxy requires the Nuxt server (`dev` or a server deployment); a static-only
+deployment cannot serve this route. Set `NUXT_BACKEND_API_BASE_URL` in the server
+environment to override the upstream at runtime. Production does not automatically
+load `.env`; configure environment variables when starting the server.
+
+Run `pnpm build && pnpm test:backend-proxy && pnpm test:backend-proxy:integration`
+to verify the production proxy against a local mock API, including authentication,
+uploads, errors, and origin checks.
+
 For the ADT book catalogue, API key setup, read grants, and sample previews, see
 [ADT integration](docs/adt-integration.md).
 

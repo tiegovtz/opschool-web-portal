@@ -58,6 +58,9 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    // Preserve the build-time .env value in production; NUXT_CSRF_ENABLED can
+    // still override it in the running server's environment.
+    csrfEnabled: process.env.NUXT_CSRF_ENABLED?.trim().toLowerCase() !== "false",
     public: {
       localInboxDemo: process.env.NODE_ENV !== "production" && process.env.INBOX_DEMO_ENABLED === "true",
       imageFetchOrigin: process.env.NUXT_PUBLIC_IMAGE_FETCH_ORIGIN || "",
@@ -68,8 +71,10 @@ export default defineNuxtConfig({
     adtStoreApiKey: "",
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY || "",
-    ragApiBaseUrl:
-      process.env.RAG_API_BASE_URL || "http://opschool.tie.go.tz:5002",
+    // Insights (textbook RAG). No default: an unset URL is reported as
+    // "textbook search unavailable" instead of silently using plain HTTP.
+    // Can also be set at runtime with NUXT_RAG_API_BASE_URL / NUXT_INSIGHTS_API_KEY.
+    ragApiBaseUrl: process.env.RAG_API_BASE_URL || "",
     insightsApiKey: process.env.INSIGHTS_API_KEY || "",
   },
 
@@ -81,6 +86,32 @@ export default defineNuxtConfig({
   ],
 
   modules: ["@nuxtjs/google-fonts", "@nuxt/image", "@nuxt/icon", "@vite-pwa/nuxt"],
+
+  // Self-host the fonts (download: true, the module default) instead of a
+  // render-blocking @import to fonts.googleapis.com/fonts.gstatic.com.
+  googleFonts: {
+    display: "swap",
+    families: {
+      "PT Serif": { wght: [400, 700], ital: [400, 700] },
+      Poppins: {
+        wght: [100, 200, 300, 400, 500, 600, 700, 800, 900],
+        ital: [100, 200, 300, 400, 500, 600, 700, 800, 900],
+      },
+    },
+  },
+
+  // Long-lived caching for build output and static assets (PageSpeed:
+  // "Use efficient cache lifetimes"). _nuxt/** filenames are content-hashed
+  // by Vite, so a 1-year immutable cache is safe; unhashed public assets
+  // (images, local fonts, pwa icons) get a shorter cache instead.
+  routeRules: {
+    "/_nuxt/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
+    "/images/**": { headers: { "cache-control": "public, max-age=2592000" } },
+    "/font/**": { headers: { "cache-control": "public, max-age=2592000" } },
+    "/pwa-*.png": { headers: { "cache-control": "public, max-age=2592000" } },
+    "/apple-touch-icon.png": { headers: { "cache-control": "public, max-age=2592000" } },
+    "/favicon.ico": { headers: { "cache-control": "public, max-age=2592000" } },
+  },
 
   hooks: {
     'imports:extend'(imports) {
@@ -124,7 +155,7 @@ export default defineNuxtConfig({
       runtimeCaching: [
         {
           urlPattern: ({ url }: { url: URL }) => url.origin === location.origin
-            && /^\/api\/(?:auth|profile|chat|progress|recommendations)(?:\/|$)/.test(url.pathname),
+            && /^\/api\/(?:backend|auth|profile|chat|progress|recommendations)(?:\/|$)/.test(url.pathname),
           handler: "NetworkOnly",
         },
         {
@@ -209,11 +240,6 @@ export default defineNuxtConfig({
     },
   },
 
-  // devServer: {
-  //   // host: "192.168.0.147",
-  //   port: 3010,
-  // },
-
   build: {
     transpile: ["vuetify"],
   },
@@ -265,6 +291,7 @@ export default defineNuxtConfig({
     head: {
       meta: [
         { name: "generator", content: "" },
+        { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
         { name: "theme-color", content: "#0a7ac8" },
         { name: "mobile-web-app-capable", content: "yes" },
         { name: "apple-mobile-web-app-capable", content: "yes" },

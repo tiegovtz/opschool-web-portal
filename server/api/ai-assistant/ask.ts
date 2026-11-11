@@ -1,4 +1,96 @@
-import apiDocs from "~/utilities/apiDocs";
+import apiDocs from "~~/server/utils/backendApiDocs";
+import { truncateAtBoundary } from "../../utils/ragContext";
+import { readSessionToken } from "../../utils/sessionAuth";
+import { classifyChatError, logChatError, type ChatErrorCode } from "../../utils/chatErrors";
+
+/** Chapter text budget; the teaching instructions are never cut. */
+const CHAPTER_CONTENT_MAX_CHARS = 24000;
+const MAX_HISTORY_MESSAGES = 20; // 10 user + 10 assistant messages
+const OPENAI_TIMEOUT_MS = 45000;
+
+type UiLanguage = "english" | "kiswahili";
+
+const ERROR_MESSAGES: Record<string, Record<UiLanguage, string>> = {
+  method: { english: "Method Not Allowed", kiswahili: "Njia hii hairuhusiwi" },
+  signIn: {
+    english: "Please sign in to use the AI Subject Teacher.",
+    kiswahili: "Tafadhali ingia ili kutumia Mwalimu wa Somo wa AI.",
+  },
+  badBody: {
+    english: "The request could not be read. Please reload the page and try again.",
+    kiswahili: "Ombi halikuweza kusomwa. Tafadhali pakia ukurasa upya kisha ujaribu tena.",
+  },
+  missingFields: {
+    english: "Please type a question. If this keeps happening, reload the page.",
+    kiswahili: "Tafadhali andika swali. Hali hii ikiendelea, pakia ukurasa upya.",
+  },
+  sessionExpired: {
+    english: "Your session has expired. Please sign in again.",
+    kiswahili: "Muda wako wa kuingia umeisha. Tafadhali ingia tena.",
+  },
+  chapterNotFound: {
+    english: "This chapter could not be found. Please reload the page.",
+    kiswahili: "Sura hii haikupatikana. Tafadhali pakia ukurasa upya.",
+  },
+  chapterFetchFailed: {
+    english: "The chapter content could not be loaded right now. Please try again in a few minutes.",
+    kiswahili: "Maudhui ya sura hayakuweza kupakiwa kwa sasa. Tafadhali jaribu tena baada ya dakika chache.",
+  },
+  chapterEmpty: {
+    english: "This chapter has no text content for the AI teacher to use yet.",
+    kiswahili: "Sura hii bado haina maandishi ambayo Mwalimu wa AI anaweza kutumia.",
+  },
+  quota: {
+    english: "The AI service has reached its usage limit. Please try again later.",
+    kiswahili: "Huduma ya AI imefikia kikomo cha matumizi. Tafadhali jaribu tena baadaye.",
+  },
+  rate_limit: {
+    english: "The AI service is busy. Please wait a minute and try again.",
+    kiswahili: "Huduma ya AI ina shughuli nyingi. Tafadhali subiri dakika moja kisha ujaribu tena.",
+  },
+  validation: {
+    english: "This question could not be processed. Try a shorter question.",
+    kiswahili: "Swali hili halikuweza kushughulikiwa. Jaribu swali fupi zaidi.",
+  },
+  provider: {
+    english: "AI Subject Teacher is temporarily unavailable. Please try again in a few minutes.",
+    kiswahili: "Mwalimu wa Somo wa AI hapatikani kwa muda huu. Tafadhali jaribu tena baada ya muda mfupi.",
+  },
+};
+
+function localizedError(
+  statusCode: number,
+  key: keyof typeof ERROR_MESSAGES,
+  language: UiLanguage,
+  code: ChatErrorCode | "chapter",
+) {
+  return createError({
+    statusCode,
+    message: ERROR_MESSAGES[key]![language],
+    data: { code },
+  });
+}
+
+/**
+ * Keep the latest messages, and drop the trailing user turn when it is the
+ * current question (the client includes it in the history as well).
+ */
+function buildHistory(conversationHistory: unknown, question: string) {
+  if (!Array.isArray(conversationHistory)) return [];
+  const history = conversationHistory
+    .filter(
+      (msg: any) =>
+        (msg?.role === "user" || msg?.role === "assistant") &&
+        typeof msg.content === "string" &&
+        msg.content.trim(),
+    )
+    .map((msg: any) => ({ role: msg.role as "user" | "assistant", content: msg.content as string }));
+  const last = history[history.length - 1];
+  if (last && last.role === "user" && last.content.trim() === question.trim()) {
+    history.pop();
+  }
+  return history.slice(-MAX_HISTORY_MESSAGES);
+}
 
 /**
  * Extract plain text from HTML content, removing all HTML tags and formatting
@@ -14,6 +106,11 @@ function extractTextContent(html: string): string {
   // Remove script and style tags with their content
   text = text.replace(/<script[\s\S]*?<\/script>/gi, "");
   text = text.replace(/<style[\s\S]*?<\/style>/gi, "");
+
+  // Block-level boundaries become paragraph breaks so long chapters can be
+  // shortened at a paragraph instead of mid-sentence.
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<\/(p|div|h[1-6]|li|tr|section|article|blockquote|table|ul|ol)>/gi, "\n\n");
 
   // Remove HTML tags but preserve text content
   text = text.replace(/<[^>]+>/g, " ");
@@ -37,8 +134,12 @@ function extractTextContent(html: string): string {
     String.fromCharCode(parseInt(hex, 16))
   );
 
-  // Clean up whitespace - multiple spaces, newlines, tabs to single space
-  text = text.replace(/\s+/g, " ").trim();
+  // Clean up whitespace: collapse spaces within lines, keep paragraph breaks
+  text = text
+    .replace(/[ \t\f\v\u00a0]+/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 
   // Remove any remaining special characters that might be from parsed content
   // (like expPackage, model tags, etc.)
@@ -49,105 +150,95 @@ function extractTextContent(html: string): string {
 }
 
 export default defineEventHandler(async (event) => {
-  if (event.method !== "POST") {
-    throw createError({
-      statusCode: 405,
-      message: "Method Not Allowed",
-    });
-  }
-
-  // Get auth token from cookie or Authorization header
-  const auth_token =
-    getCookie(event, "signInAccessToken") ||
-    event.headers.get("authorization")?.replace("Bearer ", "").trim();
-
-  if (!auth_token) {
-    throw createError({
-      statusCode: 401,
-      message: "No authorization token provided. Please sign in.",
-    });
-  }
-
-  let body;
+  let body: any;
   try {
     body = await readBody(event);
   } catch {
-    throw createError({
-      statusCode: 400,
-      message: "Invalid request body",
-    });
+    body = undefined;
   }
 
   const { question, chapterId, conversationHistory, uiLanguage } = body || {};
-  const preferredUiLanguage =
+  const preferredUiLanguage: UiLanguage =
     typeof uiLanguage === "string" && uiLanguage.trim().toLowerCase() === "kiswahili"
       ? "kiswahili"
       : "english";
-  const safeServiceUnavailableMessage =
-    preferredUiLanguage === "kiswahili"
-      ? "Mwalimu wa Somo wa AI hapatikani kwa muda huu. Tafadhali jaribu tena baada ya muda mfupi."
-      : "AI Subject Teacher is temporarily unavailable. Please try again in a few minutes.";
 
-  if (!question || !chapterId) {
-    throw createError({
-      statusCode: 400,
-      message: `Missing required fields. Question: ${!!question}, ChapterId: ${!!chapterId}`,
-    });
+  if (event.method !== "POST") {
+    throw localizedError(405, "method", preferredUiLanguage, "validation");
+  }
+  if (!body || typeof body !== "object") {
+    throw localizedError(400, "badBody", preferredUiLanguage, "validation");
   }
 
+  // The ai-auth middleware has already validated this token.
+  const auth_token = readSessionToken(event);
+  if (!auth_token) {
+    throw localizedError(401, "signIn", preferredUiLanguage, "auth");
+  }
+
+  if (typeof question !== "string" || !question.trim() || typeof chapterId !== "string" || !chapterId.trim()) {
+    throw localizedError(400, "missingFields", preferredUiLanguage, "validation");
+  }
+
+  // 1. Fetch chapter content/notes
+  let chapterResponse: Response;
   try {
-    // 1. Fetch chapter content/notes
-    const chapterResponse = await fetch(
-      apiDocs.chapters.getChapterId.replaceAll(":id", chapterId),
+    chapterResponse = await fetch(
+      apiDocs.chapters.getChapterId.replaceAll(":id", encodeURIComponent(chapterId)),
       {
         method: "GET",
-        headers: {
-          Authorization: `Bearer ${auth_token}`,
-        },
+        headers: { Authorization: `Bearer ${auth_token}` },
+        signal: AbortSignal.timeout(15000),
       }
     );
+  } catch (error: any) {
+    console.error("[AI Subject Teacher] Chapter fetch failed", {
+      chapterId,
+      message: error?.message || String(error),
+    });
+    throw localizedError(503, "chapterFetchFailed", preferredUiLanguage, "chapter");
+  }
 
-    if (!chapterResponse.ok) {
-      if (chapterResponse.status === 401) {
-        throw createError({
-          statusCode: 401,
-          message:
-            "Authentication failed. Your session may have expired. Please sign in again.",
-        });
-      }
-
-      throw createError({
-        statusCode: chapterResponse.status,
-        message: `Failed to fetch chapter content: ${
-          chapterResponse.statusText || "Unknown error"
-        }`,
-      });
+  if (!chapterResponse.ok) {
+    console.error("[AI Subject Teacher] Chapter fetch returned an error", {
+      chapterId,
+      status: chapterResponse.status,
+    });
+    if (chapterResponse.status === 401 || chapterResponse.status === 403) {
+      throw localizedError(401, "sessionExpired", preferredUiLanguage, "auth");
     }
-
-    const chapterData = await chapterResponse.json();
-
-    // Extract raw content (may contain HTML)
-    const rawContent =
-      chapterData?.content ||
-      chapterData?.notes ||
-      chapterData?.description ||
-      "";
-
-    // Extract only text content, removing HTML tags and formatting
-    const chapterContent = extractTextContent(rawContent);
-
-    const chapterName = chapterData?.name || "this competence";
-
-    // If no text content was extracted, provide a fallback message
-    if (!chapterContent || chapterContent.trim().length === 0) {
-      throw createError({
-        statusCode: 400,
-        message: "Chapter content is empty or could not be extracted",
-      });
+    if (chapterResponse.status === 404) {
+      throw localizedError(404, "chapterNotFound", preferredUiLanguage, "chapter");
     }
+    throw localizedError(503, "chapterFetchFailed", preferredUiLanguage, "chapter");
+  }
 
-    // 2. Prepare prompt with strict instructions
-    const systemPrompt = `You are AI Subject Teacher, a friendly and experienced teacher helping Tanzanian students. Your goal is to help students understand and learn about the current competence/chapter they are studying.
+  const chapterData: any = await chapterResponse.json().catch(() => null);
+
+  // Extract raw content (may contain HTML)
+  const rawContent =
+    chapterData?.content ||
+    chapterData?.notes ||
+    chapterData?.description ||
+    "";
+
+  // Extract only text content, removing HTML tags and formatting
+  const fullChapterContent = extractTextContent(rawContent);
+  const chapterName = chapterData?.name || "this competence";
+
+  if (!fullChapterContent) {
+    throw localizedError(422, "chapterEmpty", preferredUiLanguage, "chapter");
+  }
+
+  // Only the chapter text is shortened (at a paragraph boundary); the
+  // instructions below always stay whole.
+  const chapterWasShortened = fullChapterContent.length > CHAPTER_CONTENT_MAX_CHARS;
+  const chapterContent = chapterWasShortened
+    ? `${truncateAtBoundary(fullChapterContent, CHAPTER_CONTENT_MAX_CHARS)}\n\n[Only the first part of this chapter is included here.]`
+    : fullChapterContent;
+
+  // 2. Prepare prompt with strict instructions
+  const systemPrompt = `You are AI Subject Teacher, a friendly and experienced teacher helping Tanzanian students. Your goal is to help students understand and learn about the current competence/chapter they are studying.
 
 *** LANGUAGE RULE ***
 - The student's current interface language is ${preferredUiLanguage}.
@@ -234,205 +325,81 @@ RESPONSE STRUCTURE (when you explain or teach):
    - "What would happen if...?"
 Before sending any reply that taught something, verify: (a) you included at least one everyday life example (ideally from Tanzania), and (b) the last sentence is a competence-based question. If either is missing, add it.`;
 
-    // 3. Build conversation messages
-    const messages: Array<{ role: string; content: string }> = [
-      { role: "system", content: systemPrompt },
-    ];
+  // 3. Build conversation messages (the current question is sent once)
+  const messages: Array<{ role: string; content: string }> = [
+    { role: "system", content: systemPrompt },
+    ...buildHistory(conversationHistory, question),
+    { role: "user", content: question },
+  ];
 
-    // Limit conversation history to prevent token overflow (keep last 10 exchanges)
-    const maxHistoryMessages = 20; // 10 user + 10 assistant messages
-
-    // Add conversation history if provided (excluding system messages)
-    if (conversationHistory && Array.isArray(conversationHistory)) {
-      // Filter and add previous messages (only user and assistant roles)
-      // Keep only the most recent messages to prevent token overflow
-      const recentHistory = conversationHistory
-        .filter((msg: any) => msg.role === "user" || msg.role === "assistant")
-        .slice(-maxHistoryMessages);
-
-      recentHistory.forEach((msg: any) => {
-        messages.push({
-          role: msg.role,
-          content: msg.content,
-        });
-      });
-    }
-
-    // Add current user question
-    messages.push({ role: "user", content: question });
-
-    // 4. Call LLM API with GPT as primary and Gemma as fallback
-    const config = useRuntimeConfig();
-    const openaiApiKey =
-      config.OPENAI_API_KEY || process.env.OPENAI_API_KEY || "";
-
-    // Primary: OpenAI GPT configuration
-    const primaryConfig = {
-      baseUrl: "https://api.openai.com/v1",
-      model: "gpt-4o-mini",
-      provider: "OpenAI",
-      maxTokens: 2000,
-      timeout: 30000, // 30 seconds
-      requiresAuth: true,
-    };
-
-    // Fallback: Ollama Gemma configuration
-    const fallbackConfig = {
-      baseUrl: "http://localhost:11434/v1",
-      model: "gemma3:1b",
-      provider: "Ollama",
-      maxTokens: 1500,
-      timeout: 45000, // 45 seconds
-      requiresAuth: false,
-    };
-
-    // Limit chapter content length for faster processing (keep first 8000 chars for fallback)
-    const optimizedSystemPrompt =
-      systemPrompt.length > 8000
-        ? systemPrompt.substring(0, 8000) +
-          "\n\n[Content truncated for faster response]"
-        : systemPrompt;
-
-    // Replace system message with optimized version if needed
-    const optimizedMessages = messages.map((msg, idx) =>
-      idx === 0 && msg.role === "system"
-        ? { ...msg, content: optimizedSystemPrompt }
-        : msg
-    );
-
-    const promptCacheKey = `tie:ai-assistant:${chapterId}`;
-
-    // Helper function to make LLM API call
-    const callLLM = async (llmConfig: typeof primaryConfig): Promise<any> => {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-
-      if (llmConfig.requiresAuth && openaiApiKey) {
-        headers["Authorization"] = `Bearer ${openaiApiKey}`;
-      }
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), llmConfig.timeout);
-
-      try {
-        const llmResponse = await fetch(
-          `${llmConfig.baseUrl}/chat/completions`,
-          {
-            method: "POST",
-            headers: headers,
-            body: JSON.stringify({
-              model: llmConfig.model,
-              messages: optimizedMessages,
-              temperature: 0.7,
-              max_tokens: llmConfig.maxTokens,
-              prompt_cache_key: promptCacheKey,
-            }),
-            signal: controller.signal,
-          }
-        );
-
-        clearTimeout(timeoutId);
-
-        if (!llmResponse.ok) {
-          const errorText = await llmResponse.text().catch(() => "");
-          let error;
-          try {
-            error = JSON.parse(errorText);
-          } catch {
-            error = { message: errorText || llmResponse.statusText };
-          }
-
-          throw new Error(
-            error.error?.message ||
-              error.message ||
-              `${llmConfig.provider} API error`
-          );
-        }
-
-        const aiData = await llmResponse.json();
-        const choice = aiData.choices[0];
-        const answer =
-          choice?.message?.content || "Sorry, I couldn't generate an answer.";
-        const finishReason = choice?.finish_reason;
-
-        return {
-          answer,
-          finishReason,
-          provider: llmConfig.provider,
-          model: llmConfig.model,
-        };
-      } catch (fetchError: any) {
-        clearTimeout(timeoutId);
-
-        if (fetchError.name === "AbortError") {
-          throw new Error(`Request timed out after ${llmConfig.timeout}ms`);
-        }
-
-        throw fetchError;
-      }
-    };
-
-    // Try primary (OpenAI GPT) first
-    try {
-      // Check if OpenAI API key is available
-      if (!openaiApiKey) {
-        throw new Error("OpenAI API key not configured");
-      }
-
-      const result = await callLLM(primaryConfig);
-      return {
-        answer: result.answer,
-        chapterName,
-        timestamp: new Date().toISOString(),
-        finishReason: result.finishReason,
-        provider: result.provider,
-        model: result.model,
-      };
-    } catch (primaryError: any) {
-      // Try fallback (Ollama Gemma)
-      try {
-        const result = await callLLM(fallbackConfig);
-        return {
-          answer: result.answer,
-          chapterName,
-          timestamp: new Date().toISOString(),
-          finishReason: result.finishReason,
-          provider: result.provider,
-          model: result.model,
-        };
-      } catch (fallbackError: any) {
-        console.error("[AI Subject Teacher] Provider failure", {
-          chapterId,
-          chapterName,
-          primaryProvider: primaryConfig.provider,
-          fallbackProvider: fallbackConfig.provider,
-          primaryError: primaryError?.message || String(primaryError),
-          fallbackError: fallbackError?.message || String(fallbackError),
-        });
-
-        throw createError({
-          statusCode: 503,
-          message: safeServiceUnavailableMessage,
-        });
-      }
-    }
-  } catch (error: any) {
-    if (error.statusCode && error.statusCode < 500) {
-      throw error;
-    }
-
-    if (error?.statusCode >= 500) {
-      console.error("[AI Subject Teacher] Request failed", {
-        chapterId,
-        statusCode: error.statusCode,
-        message: error.message,
-      });
-    }
-
-    throw createError({
-      statusCode: error.statusCode || 500,
-      message: safeServiceUnavailableMessage,
-    });
+  // 4. Call OpenAI. There is no silent fallback model: a failure is logged
+  // and returned as a specific, localized error.
+  const config = useRuntimeConfig();
+  const openaiApiKey = String(
+    config.OPENAI_API_KEY || config.openaiApiKey || process.env.OPENAI_API_KEY || "",
+  );
+  if (!openaiApiKey) {
+    console.error("[AI Subject Teacher] OPENAI_API_KEY is not configured");
+    throw localizedError(503, "provider", preferredUiLanguage, "provider");
   }
+
+  const model = "gpt-4o-mini";
+  let llmResponse: Response;
+  try {
+    llmResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${openaiApiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 2000,
+        prompt_cache_key: `tie:ai-assistant:${chapterId}`,
+      }),
+      signal: AbortSignal.timeout(OPENAI_TIMEOUT_MS),
+    });
+  } catch (error: any) {
+    logChatError("ai-assistant", error, { chapterId });
+    throw localizedError(503, "provider", preferredUiLanguage, "provider");
+  }
+
+  if (!llmResponse.ok) {
+    const errorText = await llmResponse.text().catch(() => "");
+    let upstreamMessage = errorText || llmResponse.statusText;
+    try {
+      const parsed = JSON.parse(errorText);
+      upstreamMessage = parsed?.error?.message || parsed?.message || upstreamMessage;
+    } catch {
+      /* keep raw text */
+    }
+    const providerError = {
+      statusCode: llmResponse.status,
+      message: String(upstreamMessage || "OpenAI request failed"),
+      responseBody: errorText,
+    };
+    logChatError("ai-assistant", providerError, { chapterId, chapterName });
+    const code = classifyChatError(providerError);
+    throw localizedError(code === "validation" ? 400 : 503, code, preferredUiLanguage, code);
+  }
+
+  const aiData: any = await llmResponse.json().catch(() => null);
+  const choice = aiData?.choices?.[0];
+  const answer = typeof choice?.message?.content === "string" ? choice.message.content.trim() : "";
+  if (!answer) {
+    logChatError("ai-assistant", new Error("Empty answer from OpenAI"), { chapterId });
+    throw localizedError(503, "provider", preferredUiLanguage, "provider");
+  }
+
+  return {
+    answer,
+    chapterName,
+    chapterShortened: chapterWasShortened,
+    timestamp: new Date().toISOString(),
+    finishReason: choice?.finish_reason,
+    provider: "OpenAI",
+    model,
+  };
 });

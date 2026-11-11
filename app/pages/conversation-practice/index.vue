@@ -102,6 +102,8 @@
           <!-- Current Conversation Piece -->
           <div class="bg-gray-50 rounded-md p-4">
             <p class="text-lg text-gray-800">{{ currentConversationPiece }}</p>
+            <AiResponseCopyButton :text="currentConversationPiece"
+              :language="uiLanguage === 'sw' ? 'kiswahili' : 'english'" />
           </div>
 
           <!-- Next Question Preview (context) -->
@@ -116,6 +118,8 @@
             statusMessage.type === 'error' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
           ]">
             <p class="text-gray-900 font-semibold">{{ statusMessage.text }}</p>
+            <AiResponseCopyButton v-if="statusMessage.copyable" :text="statusMessage.text"
+              :language="uiLanguage === 'sw' ? 'kiswahili' : 'english'" />
           </div>
 
           <!-- User Answer Display -->
@@ -207,6 +211,8 @@
                 class="bg-gray-50 rounded-md p-3 text-sm"
               >
                 <p class="font-semibold text-gray-700">{{ aiSpeakerLabel }}: {{ item.ai }}</p>
+                <AiResponseCopyButton :text="item.ai"
+                  :language="uiLanguage === 'sw' ? 'kiswahili' : 'english'" />
                 <p v-if="item.user" class="text-gray-600 mt-1">{{ youLabel }}: {{ item.user }}</p>
               </div>
             </div>
@@ -1049,7 +1055,7 @@ const validateAnswer = async (answer) => {
           })
           audioUrlCache.value = {}
         } else {
-          showStatus('success', response.feedback || 'Correct!')
+          showStatus('success', response.feedback || 'Correct!', Boolean(response.feedback))
           userAnswer.value = ''
           
           if (inputMode.value === 'text') {
@@ -1061,7 +1067,7 @@ const validateAnswer = async (answer) => {
           }
         }
       } else {
-        showStatus('error', response.feedback || 'This is wrong. Try again.')
+        showStatus('error', response.feedback || 'This is wrong. Try again.', Boolean(response.feedback))
         userAnswer.value = ''
       }
     } else {
@@ -1114,8 +1120,8 @@ const updatePlaybackSpeed = () => {
   }
 }
 
-const showStatus = (type, text) => {
-  statusMessage.value = { type, text }
+const showStatus = (type, text, copyable = false) => {
+  statusMessage.value = { type, text, copyable }
 }
 
 const showToast = (message, type = 'info', duration = 4000) => {

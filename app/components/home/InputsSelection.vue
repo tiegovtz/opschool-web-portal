@@ -17,7 +17,7 @@ type DropdownOption = {
 };
 
 const props = withDefaults(
-  defineProps<{ educationLevel?: string; selectedSublevel?: string; language?: LanguageSupport; classifications?: AdtClassifications; disabled?: boolean }>(),
+  defineProps<{ educationLevel?: string; selectedSublevel?: string; selectedStandard?: string; language?: LanguageSupport; classifications?: AdtClassifications; disabled?: boolean; hideSearch?: boolean; hideSubject?: boolean; showLabels?: boolean; compact?: boolean; suppressInitialEmit?: boolean }>(),
   {
     language: "english",
   },
@@ -83,6 +83,9 @@ const content = computed(() =>
         selectSubject: "Chagua somo",
         selectClassFirst: "Chagua somo",
         loading: "Inapakia...",
+        levelLabel: "Ngazi ya elimu",
+        classLabel: "Darasa",
+        subjectLabel: "Somo",
       }
     : {
         selectLevel: "Select education level",
@@ -91,11 +94,16 @@ const content = computed(() =>
         selectSubject: "Select subject",
         selectClassFirst: "Select subject",
         loading: "Loading...",
+        levelLabel: "Education level",
+        classLabel: "Class",
+        subjectLabel: "Subject",
       },
 );
 
 const dropdownButtonClass =
   "h-10 w-full rounded-none border-b border-gray-300 px-2 py-2 text-left text-sm text-gray-700 shadow-none focus:border-oceanBlue disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500";
+const popupDropdownButtonClass =
+  "h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-900 shadow-sm focus:border-oceanBlue disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
 
 const emitSelection = () => {
   emit("emitLevel", level.value);
@@ -150,7 +158,7 @@ const headers = {
 const { data: educationLevels, pending: educationLevelsPending } = useFetch<
   educationLevel[]
 >(apiDocs.educationLevel.getEducationLevels, {
-  immediate: !props.classifications,
+  immediate: !props.classifications && !props.hideSubject,
   headers,
   default: () => [],
 });
@@ -185,7 +193,7 @@ const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
     };
   }),
   default: () => [],
-  watch: props.classifications ? false : [level,standard],
+  watch: props.classifications || props.hideSubject ? false : [level,standard],
 });
 
 const matchedEducationLevels = computed(() => {
@@ -206,6 +214,11 @@ watch(
     const matching = selectedSublevel
       ? options.find((option) => normalizeEducationLevel(option.name) === normalizeEducationLevel(selectedSublevel))
       : undefined;
+    if (props.suppressInitialEmit) {
+      level.value = matching?.name ?? "all";
+      standard.value = props.selectedStandard ?? "";
+      return;
+    }
     onLevelChange(matching?.name ?? "all");
   },
   { immediate: true },
@@ -251,6 +264,10 @@ const classOptions = computed<DropdownOption[]>(() => {
   );
 });
 
+watch([() => props.selectedStandard, classOptions], ([selected, options]) => {
+  if (selected && options.some(option => option.id === selected)) standard.value = selected;
+}, { immediate: true });
+
 const subjectOptions = computed<DropdownOption[]>(() => {
   if (props.classifications) return localizedAdtOptions(adtSubjectOptions(props.classifications, level.value, standard.value));
   if (!level.value.trim() || !standard.value.trim()) return [];
@@ -295,14 +312,17 @@ watch(
 
 <template>
   <div
-    class="flex flex-col items-center justify-between gap-4 px-4 my-5 xl:flex-row"
+    class="flex flex-col items-center justify-between gap-4 xl:flex-row"
+    :class="compact ? 'my-4 px-0' : 'my-5 px-4'"
   >
     <form
       action=""
-      class="flex flex-col items-center justify-center w-full gap-4 my-5 md:flex-row"
+      class="flex w-full flex-col items-center justify-center gap-4 md:flex-row"
+      :class="compact ? 'my-0' : 'my-5'"
     >
+      <div v-if="showEducationLevelDropdown" class="w-full">
+      <p v-if="showLabels" class="mb-1 text-xs font-semibold text-slate-700 md:sr-only">{{ content.levelLabel }}</p>
       <CustomDropDownList
-        v-if="showEducationLevelDropdown"
         id="home-education-level"
         :aria-label="content.selectLevel"
         :model-value="level"
@@ -311,10 +331,13 @@ watch(
           (props.classifications ? props.disabled : educationLevelsPending) ? content.loading : content.selectLevel
         "
         :disabled="props.classifications ? props.disabled : educationLevelsPending"
-        :button-class="dropdownButtonClass"
+        :button-class="showLabels ? popupDropdownButtonClass : dropdownButtonClass"
         @update-model-value="onLevelChange"
       />
+      </div>
 
+      <div class="w-full">
+      <p v-if="showLabels" class="mb-1 text-xs font-semibold text-slate-700 md:sr-only">{{ content.classLabel }}</p>
       <CustomDropDownList
         id="home-class-level"
         :aria-label="content.selectClass"
@@ -328,10 +351,13 @@ watch(
             : content.selectLevelFirst
         "
         :disabled="props.disabled || (!props.classifications && !level.trim()) || !classOptions.length"
-        :button-class="dropdownButtonClass"
+        :button-class="showLabels ? popupDropdownButtonClass : dropdownButtonClass"
         @update-model-value="onStandardChange"
       />
+      </div>
 
+      <div v-if="!hideSubject" class="w-full">
+      <p v-if="showLabels" class="mb-1 text-xs font-semibold text-slate-700 md:sr-only">{{ content.subjectLabel }}</p>
       <CustomDropDownList
         id="home-subject"
         :aria-label="content.selectSubject"
@@ -345,15 +371,18 @@ watch(
             : content.selectClassFirst
         "
         :disabled="props.disabled || (!props.classifications && !level.trim()) || !standard.trim() || !subjectOptions.length"
-        :button-class="dropdownButtonClass"
+        :button-class="showLabels ? popupDropdownButtonClass : dropdownButtonClass"
         @update-model-value="onSubjectChange"
       />
+      </div>
     </form>
 
-    <HomeSearchbar
-      :search-handler="props.classifications ? (value: string) => emit('emitSearch', value) : undefined"
-      :language="props.language"
-      :education-level="props.educationLevel"
-    />
+    <div v-if="!hideSearch" class="hidden w-full md:block">
+      <HomeSearchbar
+        :search-handler="props.classifications ? (value: string) => emit('emitSearch', value) : undefined"
+        :language="props.language"
+        :education-level="props.educationLevel"
+      />
+    </div>
   </div>
 </template>
