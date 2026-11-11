@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Chat } from "@ai-sdk/vue";
+import { DefaultChatTransport } from "ai";
 import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
 import { useChatStore } from "~/stores/chatStore";
 import type { ChatMessage } from "~/types/chat.interface";
@@ -65,8 +66,10 @@ const closeToBackground = async () => {
   await router.replace(backgroundUrl.value);
 };
 
-// Chat instance
-const chat = new Chat({});
+const apiBasePath = useRuntimeConfig().app.baseURL.replace(/\/$/, "");
+const chat = new Chat({
+  transport: new DefaultChatTransport({ api: `${apiBasePath}/api/chat` }),
+});
 
 // Local state
 const isTyping = ref(false);
