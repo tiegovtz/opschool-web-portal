@@ -290,16 +290,6 @@
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1) !important;
 }
 
-:root {
-  scrollbar-color: #56ade8 transparent;
-  scrollbar-width: 6px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #56ade8;
-  border-radius: 8px;
-}
-
 /* wrapper class */
 .wrapper-container {
   /* display: block; */
