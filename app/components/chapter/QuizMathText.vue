@@ -8,7 +8,8 @@ const normalizedText = computed(() => normalizeQuizMath(props.text));
 
 // Mathpix stores TeX without \(...\) delimiters. Leave ordinary prose alone.
 const isDelimited = computed(() => /^\s*(?:\\\(|\\\[|\$\$?)/.test(props.text));
-const hasTex = computed(() => isDelimited.value || /\\(?:[a-zA-Z]+|[;,! ])|\^\s*\{/.test(props.text));
+const hasMathSpacing = computed(() => /~/.test(props.text) && /[=+\-−*/^]/.test(props.text));
+const hasTex = computed(() => isDelimited.value || hasMathSpacing.value || /\\(?:[a-zA-Z]+|[;,! ])|\^\s*\{/.test(props.text));
 const isEnvironment = computed(() => /\\begin\{/.test(props.text));
 const inlineBody = computed(() => {
   if (isEnvironment.value) return null;
@@ -34,5 +35,11 @@ const chunks = computed(() => inlineBody.value === null ? [] : splitQuizMath(inl
 .quiz-math-text { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 .quiz-math-content { display: inline; }
 .quiz-math-chunk { display: inline-block; max-width: 100%; vertical-align: baseline; }
-.quiz-math-content :deep(mjx-container[display="true"]) { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+.quiz-math-content :deep(mjx-container[display="true"]) {
+  max-width: 100%;
+  margin: 0.25em 0 !important;
+  text-align: left !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
 </style>
