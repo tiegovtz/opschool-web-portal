@@ -155,7 +155,7 @@ export default defineNuxtConfig({
       runtimeCaching: [
         {
           urlPattern: ({ url }: { url: URL }) => url.origin === location.origin
-            && /^\/api\/(?:auth|profile|chat|progress|recommendations)(?:\/|$)/.test(url.pathname),
+            && /^\/api\/(?:backend|auth|profile|chat|progress|recommendations)(?:\/|$)/.test(url.pathname),
           handler: "NetworkOnly",
         },
         {

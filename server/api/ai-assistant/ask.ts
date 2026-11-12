@@ -1,4 +1,4 @@
-import apiDocs from "~/utilities/apiDocs";
+import apiDocs from "~~/server/utils/backendApiDocs";
 import { truncateAtBoundary } from "../../utils/ragContext";
 import { readSessionToken } from "../../utils/sessionAuth";
 import { classifyChatError, logChatError, type ChatErrorCode } from "../../utils/chatErrors";

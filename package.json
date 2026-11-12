@@ -11,6 +11,8 @@
     "test:rag-context": "node --experimental-strip-types --test scripts/rag-context.test.mjs",
     "test:adt": "node --experimental-strip-types --test scripts/adt.test.mjs",
     "test:adt:api": "node --experimental-strip-types --test scripts/adt-api.test.mjs",
+    "test:backend-proxy": "node --experimental-strip-types --test scripts/backend-proxy.test.mjs",
+    "test:backend-proxy:integration": "node --experimental-strip-types --test scripts/backend-proxy.integration.test.mjs",
     "build": "NODE_OPTIONS='--max-old-space-size=4096' nuxt build",
     "dev": "NODE_OPTIONS='--max-old-space-size=4096' nuxt dev",
     "generate": "nuxt generate",

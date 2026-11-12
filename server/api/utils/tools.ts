@@ -8,10 +8,11 @@ import {
   rationalize as mathRationalize,
   evaluate as mathEvaluate,
 } from "mathjs";
-import { searchTextbookPassages, type TextbookSearchFilters } from "../../utils/textbookSearch";
+import { loadTextbookCatalog, resolveTextbookScope, type TextbookScope } from "../../utils/textbookScope";
+import { normalizeFilterId, searchTextbookPassages, type TextbookSearchFilters } from "../../utils/textbookSearch";
 import type { RagCitation } from "../../utils/ragContext";
 import { openAiEmbedder, searchFigures } from "../../utils/figureSearch";
-import apiDocs from "~/utilities/apiDocs";
+import apiDocs from "~~/server/utils/backendApiDocs";
 import type { Syllabus } from "~/types/syllabus.interface";
 
 const figureShortcodesStorage = new AsyncLocalStorage<{ usedShortcodes: Set<string> }>();
@@ -285,6 +286,8 @@ async function fetchSubjectsFromApi(authToken: string | undefined): Promise<any[
 export type StudentToolsOptions = {
   /** Class level / subject IDs from the request, passed to Insights as filters. */
   ragFilters?: TextbookSearchFilters;
+  /** Selected lesson names or IDs take precedence over model arguments. */
+  textbookScope?: TextbookScope;
   /** Called with the book/chapter citations of every successful search. */
   onCitations?: (citations: RagCitation[]) => void;
 };
@@ -1047,7 +1050,33 @@ Coordinates are in SVG pixel space (origin top-left). Keep within the declared w
     }),
   }),
 
-  searchTextbooks: tool({
+  searchTextbooks: createTextbookSearchTool(options.textbookScope ?? {
+    subject: options.ragFilters?.subject,
+    level: options.ragFilters?.classLevel,
+  }, authToken, options),
+  };
+}
+
+export async function resolveTextbookSearchScope(
+  input: TextbookScope,
+  selected: TextbookScope,
+  authToken?: string,
+) {
+  const catalog = await loadTextbookCatalog(apiDocs.baseURL, authToken);
+  const filters = resolveTextbookScope(input, selected, catalog);
+  // Insights silently drops non-ID filters, so reject them before retrieval.
+  if (!normalizeFilterId(filters.subject) || !normalizeFilterId(filters.classLevel)) {
+    throw new Error("Please select a valid subject and class level.");
+  }
+  return filters;
+}
+
+export function createTextbookSearchTool(
+  selectedScope: TextbookScope = {},
+  authToken?: string,
+  options: StudentToolsOptions = {},
+) {
+  return tool({
     description: `Search uploaded textbooks (Insights RAG) for factual information about a topic.
 
 WHEN TO USE THIS TOOL:
@@ -1071,7 +1100,7 @@ RESULTS:
       subject: z.string().optional().describe("Optional: The subject area."),
       level: z.string().optional().describe("Optional: The education level."),
     }),
-    execute: async ({ query }) => {
+    execute: async ({ query, subject, level }) => {
       if (!query?.trim()) {
         return {
           found: false,
@@ -1080,8 +1109,20 @@ RESULTS:
         };
       }
 
+      let filters: { classLevel: string; subject: string };
+      try {
+        filters = await resolveTextbookSearchScope({ subject, level }, selectedScope, authToken);
+      } catch (error: any) {
+        return {
+          found: false,
+          context: "",
+          message: error.message,
+          instruction: "Ask the student to clarify the subject/class if needed, or retry if the catalog is unavailable. Do not answer from other levels or general knowledge.",
+        };
+      }
+
       const outcome = await searchTextbookPassages(query, {
-        ...options.ragFilters,
+        ...filters,
         caller: "chat-tool",
       });
 
@@ -1122,8 +1163,7 @@ RESULTS:
           "You MUST use the context above to answer. Mention the book title (e.g. 'According to [Book Title]...'). Do NOT use information outside this context.",
       };
     },
-  }),
-  };
+  });
 }
 
 export type StudentTools = ReturnType<typeof createStudentTools>;

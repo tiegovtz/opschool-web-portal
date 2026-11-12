@@ -34,6 +34,12 @@
           </template>
           <!-- Tool calls are hidden from the user - do not display them -->
         </div>
+        <AiResponseCopyButton
+          v-if="message.role === 'assistant'"
+          :text="copyText"
+          :language="language"
+          :disabled="isStreaming"
+        />
         <div
           v-if="citations.length > 0"
           class="mt-3 border-t border-gray-100 pt-2 text-xs text-gray-500"
@@ -67,13 +73,18 @@ import GraphBlock from "./renderers/GraphBlock.vue";
 import ChartBlock from "./renderers/ChartBlock.vue";
 import GeometryBlock from "./renderers/GeometryBlock.vue";
 import StepsBlock from "./renderers/StepsBlock.vue";
+import type { LanguageSupport } from "~/types/language.interface";
 
 type Segment =
   | { kind: "html"; html: string }
   | { kind: "graph" | "chart" | "geometry" | "steps"; spec: Record<string, any> };
 
 const md = new MarkdownIt({ html: true, breaks: true, linkify: true });
-const props = defineProps<{ message: any }>();
+const props = defineProps<{ message: any; language?: LanguageSupport; isStreaming?: boolean }>();
+const copyText = computed(() => (props.message.parts || [])
+  .filter((part: { type: string; text?: string }) => part.type === "text" && typeof part.text === "string")
+  .map((part: { text: string }) => part.text)
+  .join("\n\n"));
 const contentLayoutLanguage = useContentLayoutLanguage();
 const isSwahili = computed(() => contentLayoutLanguage.value === "kiswahili");
 

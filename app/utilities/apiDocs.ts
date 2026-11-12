@@ -25,11 +25,9 @@ export function feedbackSupportApiURLs(value: string) {
 const upstreamBaseURL =
   import.meta.env?.VITE_API_BASE_URL || "https://opschool.tie.go.tz:5001/v1";
 
-// Server utilities call the backend directly; browsers use the portal origin.
-const baseURL = import.meta.client ? "/api/backend/v1" : upstreamBaseURL;
-
-const apiDocs = {
-  baseURL: upstreamBaseURL, // Keep existing asset URL resolution unchanged.
+export const createApiDocs = (baseURL: string, assetBaseURL = baseURL) => ({
+  // Keep existing asset URL builders pointed at the upstream media server.
+  baseURL: assetBaseURL,
   requestBaseURL: baseURL,
 
   ...feedbackSupportApiURLs(baseURL),
@@ -238,6 +236,7 @@ const apiDocs = {
     streamingLinks: `${baseURL}/live-classrooms/streaming-links`,
     session: `${baseURL}/live-classrooms/sessions`,
   },
-};
+});
 
+const apiDocs = createApiDocs(import.meta.client ? "/api/backend/v1" : upstreamBaseURL, upstreamBaseURL);
 export default apiDocs;

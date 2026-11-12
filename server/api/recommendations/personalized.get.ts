@@ -1,7 +1,7 @@
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { getCookie } from "h3";
-import apiDocs from "~/utilities/apiDocs";
+import apiDocs from "~~/server/utils/backendApiDocs";
 import type {
   LearnerAnalysisOverview,
   PersonalizedRecommendation,
