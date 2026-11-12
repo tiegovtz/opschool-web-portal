@@ -1,0 +1,13 @@
+diff --git a/dist/runtime/components/MathJaxRenderer.vue b/dist/runtime/components/MathJaxRenderer.vue
+index 8456631ee102aff2d5117c31a0455d7b66d9882e..aa0d80a3497a179af957568b0503d2db8b0da8ab 100644
+--- a/dist/runtime/components/MathJaxRenderer.vue
++++ b/dist/runtime/components/MathJaxRenderer.vue
+@@ -8,7 +8,7 @@ onMounted(async () => renderMathJax())
+ function renderMathJax() {
+   if (import.meta.client) {
+     if (window.MathJax && containerRef.value) {
+-      window.MathJax.typesetPromise?.([containerRef.value]).catch((err: Error) => console.error(err))
++      Promise.resolve(window.MathJax.typesetPromise?.([containerRef.value])).catch((err: Error) => console.error(err))
+     }
+   }
+ }
