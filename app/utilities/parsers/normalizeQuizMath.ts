@@ -22,9 +22,9 @@ function restoreWords(value: string): string {
     .replace(/\\[;,!: ]|~/g, "|")
     .split("|")
     .map((part) => {
-      const letters = part.trim().split(/\s+/).filter(Boolean);
-      return letters.length > 1 && letters.every((letter) => /^[A-Za-z]$/.test(letter))
-        ? letters.join("")
+      const spacedWord = part.trim().match(/^((?:[A-Za-z]\s+)+[A-Za-z])\s*([.,:;!?]*)$/);
+      return spacedWord
+        ? spacedWord[1]!.replace(/\s+/g, "") + spacedWord[2]
         : part.trim();
     })
     .filter(Boolean)
@@ -88,9 +88,6 @@ export function normalizeQuizMath(source: string): string {
     });
 
   return restorePlainProse(repaired)
-    // OCR sometimes wraps a prose fragment in an extra group. Math mode
-    // ignores ordinary spaces between that group and the next variable.
-    .replace(/\{\s*(\\text\{[^{}]+\})\s*\}/g, "$1")
     .replace(/(\\text\{[^{}]+\})\s+(?=[A-Za-z])/g, "$1\\;")
     .replace(/\b([A-Za-z])\s+(?=\\text\{)/g, "$1\\;")
     .replace(SUBJECT_PROMPT, (full, subject: string, prose: string, formula: string) =>
