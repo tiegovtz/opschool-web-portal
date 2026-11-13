@@ -8,6 +8,11 @@ overrides:
   nitropack: 2.13.0
   ipx>sharp: 0.34.5
 
+patchedDependencies:
+  nuxt-mathjax@1.1.1:
+    hash: 6ac293748b544062f895bd93ff9bb2de31b0424113f542168ece301a130f284c
+    path: patches/nuxt-mathjax@1.1.1.patch
+
 importers:
 
   .:
@@ -129,6 +134,9 @@ importers:
       nuxt:
         specifier: ^4.6.3
         version: 4.6.4(@babel/plugin-syntax-jsx@7.29.7(@babel/core@7.29.13))(@babel/plugin-syntax-typescript@7.29.7(@babel/core@7.29.13))(@oxc-project/types@0.156.0)(@rollup/plugin-babel@6.1.0(@babel/core@7.29.13)(@types/babel__core@7.20.5)(rollup@4.68.2))(@vue/compiler-sfc@3.5.45)(acorn@8.19.0)(bare-buffer@3.7.1)(confbox@0.3.2)(db0@0.3.4)(dotenv@17.4.2)(esbuild@0.27.7)(giget@3.3.1)(ioredis@5.11.1)(lightningcss@1.33.0)(mlly@1.8.2)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.30(typescript@5.9.3)))(rolldown@1.2.19)(rollup-plugin-visualizer@6.0.11(rolldown@1.2.19)(rollup@4.68.2))(rollup@4.68.2)(srvx@1.0.8)(terser@5.51.2)(typescript@5.9.3)(vite@6.4.6(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.1))(vue-tsc@3.3.14(typescript@5.9.3))(yaml@2.9.1)
+      nuxt-mathjax:
+        specifier: 1.1.1
+        version: 1.1.1(patch_hash=6ac293748b544062f895bd93ff9bb2de31b0424113f542168ece301a130f284c)(magicast@0.5.5)
       openai:
         specifier: ^4.0.0
         version: 4.104.0(ws@8.22.2)(zod@3.25.76)
@@ -5173,6 +5181,9 @@ packages:
   npm-run-path@6.0.0:
     resolution: {integrity: sha512-9qny7Z9DsQU8Ou39ERsPU4OZQlSTP47ShQzuKZ6PRXpYLtIFgl/DEBYEXKlvcEa+9tHVcK8CF81Y2V72qaZhWA==}
     engines: {node: '>=18'}
+
+  nuxt-mathjax@1.1.1:
+    resolution: {integrity: sha512-3GZRWHAz0qUQZgaz+BcwxDG5SoK81TDjXYHhDES3pIovKq06BP9MlIDU73oBebp0dunSDY/4JmE6FAIaclYMlQ==}
 
   nuxt@4.6.4:
     resolution: {integrity: sha512-nxeBPQp64cw6VmxFdrShRaMC7wln0UADaD7IB59o5LlP5rZqH8ZWbzONRralQksqj62UXowJSSaDGY+94XM+Gg==}
@@ -12091,6 +12102,12 @@ snapshots:
     dependencies:
       path-key: 4.0.0
       unicorn-magic: 0.3.0
+
+  nuxt-mathjax@1.1.1(patch_hash=6ac293748b544062f895bd93ff9bb2de31b0424113f542168ece301a130f284c)(magicast@0.5.5):
+    dependencies:
+      '@nuxt/kit': 3.21.11(magicast@0.5.5)
+    transitivePeerDependencies:
+      - magicast
 
   nuxt@4.6.4(@babel/plugin-syntax-jsx@7.29.7(@babel/core@7.29.13))(@babel/plugin-syntax-typescript@7.29.7(@babel/core@7.29.13))(@oxc-project/types@0.156.0)(@rollup/plugin-babel@6.1.0(@babel/core@7.29.13)(@types/babel__core@7.20.5)(rollup@4.68.2))(@vue/compiler-sfc@3.5.45)(acorn@8.19.0)(bare-buffer@3.7.1)(confbox@0.3.2)(db0@0.3.4)(dotenv@17.4.2)(esbuild@0.27.7)(giget@3.3.1)(ioredis@5.11.1)(lightningcss@1.33.0)(mlly@1.8.2)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.30(typescript@5.9.3)))(rolldown@1.2.19)(rollup-plugin-visualizer@6.0.11(rolldown@1.2.19)(rollup@4.68.2))(rollup@4.68.2)(srvx@1.0.8)(terser@5.51.2)(typescript@5.9.3)(vite@6.4.6(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.1))(vue-tsc@3.3.14(typescript@5.9.3))(yaml@2.9.1):
     dependencies:

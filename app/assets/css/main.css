@@ -285,11 +285,11 @@
   padding: 10px;
   /* border: none !important; */
 }
-
 /* sidebar shadow left only */
 .sidebar {
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1) !important;
 }
+
 /* wrapper class */
 .wrapper-container {
   /* display: block; */
