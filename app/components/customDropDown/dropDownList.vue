@@ -29,6 +29,7 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  focusableWhenDisabled: { type: Boolean, default: false },
   optionClass: { type: String, default: '' },
   buttonClass: {
     type: String,
@@ -202,7 +203,7 @@ onBeforeUnmount(() => {
       buttonClass
     ]" @click.stop="toggleOpen" role="combobox" aria-haspopup="listbox"
       :aria-expanded="(!disabled && isOpen) ? 'true' : 'false'"
-      :aria-controls="$attrs.id ? `${$attrs.id}-listbox` : `${instanceId}-listbox`" :disabled="disabled"
+      :aria-controls="$attrs.id ? `${$attrs.id}-listbox` : `${instanceId}-listbox`" :disabled="disabled && !focusableWhenDisabled"
       :aria-disabled="disabled ? 'true' : 'false'" v-bind="$attrs">
       <span :class="[
         selected ? 'text-md text-textGray' : 'text-md text-slate-600',
