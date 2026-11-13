@@ -19,6 +19,7 @@ const tieLogoAlt = computed(() =>
 <template>
     <div :class="['relative shadow-sm', props.variant === 'landing' ? 'upper-header--landing' : '']">
         <button
+            v-if="props.variant !== 'landing'"
             class="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2 -z-30 focus:z-50 border border-blue-800 rounded-full px-4 py-1 bg-white"
             aria-label="Press Enter to jump to main content" @click="moveFocus('main-container')" type="button">{{ props.language=='english' ?`Skip to
             the

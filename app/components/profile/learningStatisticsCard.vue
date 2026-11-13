@@ -621,6 +621,8 @@ onMounted(() => {
           <p class="mt-2 text-sm text-emerald-800">
             {{ text.keepReviewing }}
           </p>
+          <AiResponseCopyButton v-if="personalizedRecommendations?.summary"
+            :text="personalizedRecommendations.summary" :language="pageLanguage" />
         </div>
       </div>
 
@@ -629,6 +631,8 @@ onMounted(() => {
           <p class="text-sm leading-6 text-slate-700">
             {{ personalizedRecommendations?.summary }}
           </p>
+          <AiResponseCopyButton v-if="personalizedRecommendations?.summary"
+            :text="personalizedRecommendations.summary" :language="pageLanguage" />
         </div>
 
         <LearningOverviewHero v-if="recommendationOverview" :overview="recommendationOverview"
@@ -978,6 +982,7 @@ onMounted(() => {
               <div
                 class="mt-3 prose prose-sm max-w-none text-slate-700 prose-p:my-2 prose-ul:my-2 prose-ul:list-disc prose-ul:pl-5 prose-ol:my-2 prose-ol:list-decimal prose-ol:pl-5 prose-li:my-1 prose-strong:font-semibold prose-headings:text-slate-900"
                 v-html="renderTalkToDataAnswer(talkToDataAnswer)"></div>
+              <AiResponseCopyButton :text="talkToDataAnswer" :language="pageLanguage" />
             </div>
           </div>
         </section>
@@ -1066,6 +1071,7 @@ onMounted(() => {
             </p>
 
             <div class="flex flex-col gap-3 sm:flex-row">
+              <AiResponseCopyButton :text="recommendation.explanation" :language="pageLanguage" />
               <NuxtLink :to="recommendation.revisitPath"
                 class="inline-flex items-center justify-center w-full gap-2 px-4 py-3 font-semibold transition-colors border rounded-md sm:w-auto border-oceanBlue/20 text-oceanBlue hover:bg-oceanBlue/5">
                 <Icon name="heroicons:play-circle" class="w-5 h-5" />

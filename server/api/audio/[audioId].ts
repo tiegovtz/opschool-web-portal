@@ -1,4 +1,4 @@
-import apiDocs from "~/utilities/apiDocs";
+import apiDocs from "~~/server/utils/backendApiDocs";
 
 export default defineEventHandler(async (event) => {
   const { audioId } = getRouterParams(event);

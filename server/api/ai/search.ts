@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, getQuery, createError } from "h3";
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import apiDocs from "~/utilities/apiDocs";
+import apiDocs from "~~/server/utils/backendApiDocs";
 import { searchTextbookPassages } from "../../utils/textbookSearch";
 import { readSessionToken } from "../../utils/sessionAuth";
 import { classifyChatError, logChatError } from "../../utils/chatErrors";

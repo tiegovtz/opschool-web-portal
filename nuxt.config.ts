@@ -87,6 +87,32 @@ export default defineNuxtConfig({
 
   modules: ["@nuxtjs/google-fonts", "@nuxt/image", "@nuxt/icon", "@vite-pwa/nuxt"],
 
+  // Self-host the fonts (download: true, the module default) instead of a
+  // render-blocking @import to fonts.googleapis.com/fonts.gstatic.com.
+  googleFonts: {
+    display: "swap",
+    families: {
+      "PT Serif": { wght: [400, 700], ital: [400, 700] },
+      Poppins: {
+        wght: [100, 200, 300, 400, 500, 600, 700, 800, 900],
+        ital: [100, 200, 300, 400, 500, 600, 700, 800, 900],
+      },
+    },
+  },
+
+  // Long-lived caching for build output and static assets (PageSpeed:
+  // "Use efficient cache lifetimes"). _nuxt/** filenames are content-hashed
+  // by Vite, so a 1-year immutable cache is safe; unhashed public assets
+  // (images, local fonts, pwa icons) get a shorter cache instead.
+  routeRules: {
+    "/_nuxt/**": { headers: { "cache-control": "public, max-age=31536000, immutable" } },
+    "/images/**": { headers: { "cache-control": "public, max-age=2592000" } },
+    "/font/**": { headers: { "cache-control": "public, max-age=2592000" } },
+    "/pwa-*.png": { headers: { "cache-control": "public, max-age=2592000" } },
+    "/apple-touch-icon.png": { headers: { "cache-control": "public, max-age=2592000" } },
+    "/favicon.ico": { headers: { "cache-control": "public, max-age=2592000" } },
+  },
+
   hooks: {
     'imports:extend'(imports) {
       for (let index = imports.length - 1; index >= 0; index--) {
@@ -129,7 +155,7 @@ export default defineNuxtConfig({
       runtimeCaching: [
         {
           urlPattern: ({ url }: { url: URL }) => url.origin === location.origin
-            && /^\/api\/(?:auth|profile|chat|progress|recommendations)(?:\/|$)/.test(url.pathname),
+            && /^\/api\/(?:backend|auth|profile|chat|progress|recommendations)(?:\/|$)/.test(url.pathname),
           handler: "NetworkOnly",
         },
         {

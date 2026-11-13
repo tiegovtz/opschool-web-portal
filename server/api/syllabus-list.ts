@@ -1,5 +1,5 @@
 import { getCookie } from "h3";
-import apiDocs from "~/utilities/apiDocs";
+import apiDocs from "~~/server/utils/backendApiDocs";
 
 interface SubjectData {
   id: string;

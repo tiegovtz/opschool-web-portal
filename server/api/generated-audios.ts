@@ -2,7 +2,7 @@ import { defineEventHandler, getQuery, getCookie } from "h3";
 import type { Chapter } from "~/types/chapter.interface";
 import type { Audios } from "~/types/audio.interface";
 import type { AudioFileInfo } from "~/types/audio.interface";
-import apiDocs from "~/utilities/apiDocs";
+import apiDocs from "~~/server/utils/backendApiDocs";
 
 // Get base URL - use process.env on server side, fallback to apiDocs if not set
 const getBaseURL = () => {
