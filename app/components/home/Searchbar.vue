@@ -780,6 +780,7 @@ const mouseOut = () => {
               class="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none"
               v-html="renderAIAnswer(aiAnswer)"
             ></div>
+            <AiResponseCopyButton :text="aiAnswer" :language="props.language" />
             <div v-if="aiCitations.length > 0" class="mt-2 text-xs text-gray-500">
               <span class="font-medium text-gray-600">{{ props.language === "kiswahili" ? "Vyanzo:" : "Sources:" }}</span>
               <span v-for="(citation, cIdx) in aiCitations" :key="`${citation.book}-${cIdx}`">
@@ -1050,6 +1051,7 @@ const mouseOut = () => {
             {{ localizedContent.aiSuggestions }}
           </p>
           <p class="text-sm text-gray-700">{{ relatedContent.suggestions }}</p>
+          <AiResponseCopyButton :text="relatedContent.suggestions" :language="props.language" />
         </div>
 
         <!-- Related Topics -->

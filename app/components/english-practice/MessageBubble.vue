@@ -42,6 +42,7 @@
     >
       Waiting for speech...
     </div>
+    <AiResponseCopyButton v-if="type === 'ai'" :text="transcript || scriptText || ''" />
   </div>
 </template>
 
