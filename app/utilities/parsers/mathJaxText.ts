@@ -1,10 +1,11 @@
 import { normalizeQuizMath } from "./normalizeQuizMath.ts";
 
 const DELIMITED_MATH = /\\\(|\\\[|\$\$|(?<!\$)\$[^$\n]+\$|\\begin\{(?:math|displaymath|equation)\}/;
-const TEX_COMMAND = /\\(?:[A-Za-z]+|[;,! ])|\^\s*\{/;
+const TEX_COMMAND = /\\(?:[A-Za-z]+|[;,! {}])|\^\s*\{/;
 const MATH_SPACING = /~.*[=+\-−*/^]|[=+\-−*/^].*~/;
 const TEX_START = /^\s*\{?\s*\\(?:begin|mathrm|mathsf|mathbb|mathbf|mathit|text|frac|dfrac|tfrac|sqrt|left|sum|int|vec|overline|underline)\b/;
 const VARIABLE_START = /^\s*[A-Za-z0-9]\s*(?:\\[;,! ]|[=+\-−*/^~])/;
+const ESCAPED_SET = /\\\{[\s\S]*?\\\}/g;
 const SKIP_MATH_PARENTS = "script, style, noscript, textarea, code, pre, mjx-container, mjx-assistive-mml";
 
 export function hasMathJaxText(source: string): boolean {
@@ -26,6 +27,23 @@ export function splitMathJaxText(source: string): MathJaxSegment[] {
   }
   const start = source.indexOf("\\begin{array}");
   if (start === -1) {
+    const firstSet = source.match(ESCAPED_SET)?.[0];
+    const proseBeforeSet = firstSet ? source.slice(0, source.indexOf(firstSet)) : "";
+    if (/\b[A-Za-z]{2,}\s+[A-Za-z]{2,}\b/.test(proseBeforeSet)) {
+      const parts: MathJaxSegment[] = [];
+      let offset = 0;
+      for (const match of source.matchAll(ESCAPED_SET)) {
+        const index = match.index ?? 0;
+        if (index > offset) {
+          const preceding = source.slice(offset, index);
+          parts.push({ kind: "text", value: /[A-Za-z0-9]$/.test(preceding) ? `${preceding} ` : preceding });
+        }
+        parts.push({ kind: "math", value: formatMathJaxText(match[0]) });
+        offset = index + match[0].length;
+      }
+      if (offset < source.length) parts.push({ kind: "text", value: source.slice(offset) });
+      return parts;
+    }
     return [{ kind: hasMathJaxText(source) ? "math" : "text", value: formatMathJaxText(source) }];
   }
 
@@ -56,6 +74,13 @@ export function prepareUndelimitedMath(root: Element): void {
     const source = node.textContent ?? "";
     if (!parent || parent.closest(SKIP_MATH_PARENTS)) continue;
     if (!hasMathJaxText(source) || DELIMITED_MATH.test(source) || /https?:\/\//.test(source)) continue;
+    const segments = splitMathJaxText(source);
+    if (segments.length > 1) {
+      const fragment = document.createDocumentFragment();
+      for (const segment of segments) fragment.append(document.createTextNode(segment.value));
+      node.replaceWith(fragment);
+      continue;
+    }
     if (!TEX_START.test(source) && !VARIABLE_START.test(source)) continue;
     node.textContent = formatMathJaxText(source);
   }
