@@ -426,12 +426,6 @@ const playDemoAnimation = async () => {
             <p v-if="block.type === 'paragraph'" class="leading-relaxed">
               <template v-for="segment in block.segments" :key="segment.key">
                 <QuizMathText v-if="segment.type === 'text'" :text="segment.text" />
-                <span
-                  v-else
-                  class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle"
-                >
-                  &nbsp;
-                </span>
               </template>
             </p>
             <div v-else class="flex items-start gap-3 leading-relaxed">
@@ -439,19 +433,13 @@ const playDemoAnimation = async () => {
               <div class="flex-1">
                 <template v-for="segment in block.segments" :key="segment.key">
                   <QuizMathText v-if="segment.type === 'text'" :text="segment.text" />
-                  <span
-                    v-else
-                    class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle"
-                  >
-                    &nbsp;
-                  </span>
                 </template>
               </div>
             </div>
           </template>
         </div>
         <p v-else class="mb-4 text-justify min-w-0 w-full">
-          <QuizMathText :text="question" />
+          <QuizMathText :text="question.replaceAll('_$blank', '')" />
         </p>
         <!-- <p
           v-if="thumbnail"
