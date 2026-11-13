@@ -558,7 +558,6 @@ const mouseOut = () => {
         ? 'max-w-md'
         : `md:h-72 h-32 bg-background3 bg-cover bg-center bg-no-repeat rounded-md`,
     ]"
-    tabindex="0"
     :aria-label="
       props.appearance === 'normal'
         ? localizedContent.searchBoxLabel

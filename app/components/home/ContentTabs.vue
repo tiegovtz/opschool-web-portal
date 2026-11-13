@@ -68,7 +68,7 @@ function navigateTabs(event: KeyboardEvent, index: number) {
 <template>
   <div role="tablist" :aria-label="language === 'kiswahili' ? 'Aina ya maudhui' : 'Content type'" class="mt-6 flex gap-2 overflow-x-auto border-b border-gray-200">
     <button v-for="(item, index) in items" :id="`${idPrefix}-${item.id}`" :key="item.id" type="button" role="tab"
-      :aria-selected="active === item.id" aria-controls="hub-content-panel" :tabindex="active === item.id ? 0 : -1"
+      :aria-selected="active === item.id" aria-controls="hub-content-panel" :tabindex="active === 'subjects' || active === item.id ? 0 : -1"
       :aria-describedby="item.id === 'adt' ? tooltipId : undefined"
       class="inline-flex shrink-0 items-center gap-2 rounded-t-lg border-b-2 px-5 py-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-oceanBlue"
       :class="active === item.id ? 'border-oceanBlue bg-sky-50 text-deepBlue' : 'border-transparent text-gray-600 hover:bg-gray-50'"
