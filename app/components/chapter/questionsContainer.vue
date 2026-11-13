@@ -392,7 +392,7 @@ const getChoiceReasonLines = (question: Question, userAnswer: string): string[] 
                   <p v-if="block.type === 'paragraph'" class="leading-relaxed">
                     <template v-for="segment in block.segments" :key="segment.key">
                       <QuizMathText v-if="segment.type === 'text'" :text="segment.text" />
-                      <span v-else class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle">&nbsp;</span>
+                      <span v-else-if="isDragAndDropQuestion(question.questionType)" class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle">&nbsp;</span>
                     </template>
                   </p>
                   <div v-else class="flex items-start gap-3 leading-relaxed">
@@ -400,7 +400,7 @@ const getChoiceReasonLines = (question: Question, userAnswer: string): string[] 
                     <div class="flex-1 min-w-0">
                       <template v-for="segment in block.segments" :key="segment.key">
                         <QuizMathText v-if="segment.type === 'text'" :text="segment.text" />
-                        <span v-else class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle">&nbsp;</span>
+                        <span v-else-if="isDragAndDropQuestion(question.questionType)" class="inline-block min-w-[90px] border-b border-dashed border-slate-400 align-middle">&nbsp;</span>
                       </template>
                     </div>
                   </div>
@@ -409,7 +409,7 @@ const getChoiceReasonLines = (question: Question, userAnswer: string): string[] 
               <p v-else class="mb-2 min-w-0">
                 <QuizMathText :text="isDragAndDropQuestion(question.questionType)
                     ? question.question.replace(/(_\$blank)/g, ' __________ ')
-                    : question.question" />
+                    : question.question.replace(/(_\$blank)/g, '')" />
               </p>
               <p :class="quizAttempt.clickedAnswer[index] == question.answer
                 ? 'text-normalGreener'
