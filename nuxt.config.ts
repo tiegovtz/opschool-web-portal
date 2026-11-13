@@ -85,7 +85,23 @@ export default defineNuxtConfig({
     { src: "~/plugins/init-chapter-progress.client.js", mode: "client" },
   ],
 
-  modules: ["@nuxtjs/google-fonts", "@nuxt/image", "@nuxt/icon", "@vite-pwa/nuxt"],
+  modules: ["@nuxtjs/google-fonts", "@nuxt/image", "@nuxt/icon", "@vite-pwa/nuxt", "nuxt-mathjax"],
+
+  // nuxt-mathjax types omit valid MathJax loader options and the mhchem package map.
+  MathJax: {
+    component: "tex-mml-chtml",
+    mathjax: {
+      tex: {
+        inlineMath: [["$", "$"], ["\\(", "\\)"]],
+        displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+        processEscapes: true,
+        processEnvironments: true,
+        packages: { "[+]": ["mhchem"] },
+      },
+      loader: { load: ["[tex]/mhchem"] },
+      options: { skipHtmlTags: ["script", "noscript", "style"] },
+    },
+  } as any,
 
   // Self-host the fonts (download: true, the module default) instead of a
   // render-blocking @import to fonts.googleapis.com/fonts.gstatic.com.
