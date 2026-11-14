@@ -326,6 +326,7 @@ watch(
       <div v-if="showEducationLevelDropdown" class="w-full">
       <p v-if="showLabels" class="mb-1 text-xs font-semibold text-slate-700 md:sr-only">{{ content.levelLabel }}</p>
       <CustomDropDownList
+        focusable-when-disabled
         id="home-education-level"
         :aria-label="content.selectLevel"
         :model-value="level"
@@ -342,6 +343,7 @@ watch(
       <div class="w-full">
       <p v-if="showLabels" class="mb-1 text-xs font-semibold text-slate-700 md:sr-only">{{ content.classLabel }}</p>
       <CustomDropDownList
+        focusable-when-disabled
         id="home-class-level"
         :aria-label="content.selectClass"
         :model-value="standard"
@@ -362,6 +364,7 @@ watch(
       <div v-if="!hideSubject" class="w-full">
       <p v-if="showLabels" class="mb-1 text-xs font-semibold text-slate-700 md:sr-only">{{ content.subjectLabel }}</p>
       <CustomDropDownList
+        focusable-when-disabled
         id="home-subject"
         :aria-label="content.selectSubject"
         :model-value="subject"
