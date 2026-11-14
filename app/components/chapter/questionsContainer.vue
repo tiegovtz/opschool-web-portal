@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { PropType } from "vue";
 import apiDocs from "~/utilities/apiDocs";
 import questionsAnswers from "./questionsAnswers.vue";
 import QuizMathText from "./QuizMathText.vue";
@@ -15,6 +16,7 @@ import {
 import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
 import { parseTextAndLinks } from "~/utilities/linkfy.helper";
 import { parseOrderedQuestionBlocks } from "~/utilities/orderedQuestionBlocks";
+import type { ChapterAction } from "~/types/chapterAction";
 
 // define Props
 const props = defineProps({
@@ -29,7 +31,7 @@ const props = defineProps({
   topicLanguage: { type: String, default: "English" },
   chaptersList: Number,
   chaptersNumber: Number,
-  changeChapter: Function,
+  changeChapter: Function as PropType<(action: ChapterAction) => void>,
   chapterId: String,
   topicId: String,
   subjectId: String,
@@ -86,6 +88,14 @@ const isSecondaryQuiz = computed(
 const scoredComputed = computed(() => {
   return (quizAttempt.scored / quizAttempt.totalQuestions) * 100;
 });
+const canReadNextChapter = computed(
+  () => quizAttempt.scored >= quizAttempt.totalQuestions / 2 &&
+    (props.chaptersNumber ?? 0) < (props.chaptersList ?? 0),
+);
+
+const continueAfterQuiz = () => {
+  props.changeChapter?.(canReadNextChapter.value ? "next" : "read");
+};
 
 // Motivation Messages
 const getMotivationMessage = (score: number) => {
@@ -345,7 +355,7 @@ const getChoiceReasonLines = (question: Question, userAnswer: string): string[] 
       <!-- Close Button -->
       <div class="flex items-center justify-end mb-2">
         <div class="flex items-center justify-center w-8 h-8 p-2 bg-red-500 rounded-full cursor-pointer"
-          @click="changeChapter?.('R')">
+          @click="changeChapter?.('read')">
            <IconsClose :size="24" class="font-bold text-white" />
         </div>
       </div>
@@ -463,14 +473,12 @@ const getChoiceReasonLines = (question: Question, userAnswer: string): string[] 
         <!-- Read notes again and Read next -->
         <div class="flex items-center justify-end w-full gap-2">
           <small>{{ topicLanguage.toLowerCase().trim() === 'english' ? 'Recommendation:' : 'Pendekezo:' }}</small>
-          <button v-if="quizAttempt.quizCompleted" @click="changeChapter?.(
-            quizAttempt.scored >= (quizAttempt.totalQuestions/2) ? 'N' : 'R'
-          )"
+          <button v-if="quizAttempt.quizCompleted" type="button" @click="continueAfterQuiz"
             class="flex items-center justify-center px-4 py-1 text-white transition-colors duration-500 ease-in-out rounded-md cursor-pointer bg-oceanBlue hover:bg-deepBlue">
             <span class="capitalize">
               {{
-                quizAttempt.scored >= (quizAttempt.totalQuestions/2)
-                  ? topicLanguage.toLowerCase().trim() === 'english' ? 'Next quiz':'Zoezi lijalo'
+                canReadNextChapter
+                  ? topicLanguage.toLowerCase().trim() === 'english' ? 'Next chapter':'Sura inayofuata'
                   : topicLanguage.toLowerCase().trim() === 'english' ? 'Read notes again' :' Soma maudhui tena'
               }}
             </span>
@@ -480,7 +488,7 @@ const getChoiceReasonLines = (question: Question, userAnswer: string): string[] 
         <!-- Next and Previous chapter Action -->
         <!-- <div class="flex flex-row-reverse items-center justify-between pt-4"> -->
         <!-- Next Chapter -->
-        <!-- <button @click="changeChapter('n')" :disabled="chaptersNumber == chaptersList"
+        <!-- <button @click="changeChapter('next')" :disabled="chaptersNumber == chaptersList"
                         :class="{ 'opacity-0': chaptersNumber == chaptersList }"
                         class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
                         <p class="flex gap-2 capitalize">Next <span class="hidden md:flex">Chapter</span></p>
@@ -489,7 +497,7 @@ const getChoiceReasonLines = (question: Question, userAnswer: string): string[] 
                         </div>
                     </button> -->
         <!-- Previous Chapter -->
-        <!-- <button @click="changeChapter('p')" :disabled="chaptersNumber <= 1"
+        <!-- <button @click="changeChapter('previous')" :disabled="chaptersNumber <= 1"
                         :class="{ 'opacity-0': chaptersNumber <= 1 }"
                         class="flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue">
                         <div class="flex items-center justify-center w-4 h-4 bg-white rounded-full animate-bounce-horizontal">
