@@ -71,6 +71,9 @@ const content = computed(() => ({
       : "Sign-in ID is not valid (use email, phone number, Prem Number, or username)",
     passwordRequired: isSwahili.value ? "Nenosiri linahitajika" : "Password is required",
     invalidCredentials: isSwahili.value ? "Jina la mtumiaji au nenosiri si sahihi" : "Invalid username or password",
+    verificationRequired: isSwahili.value
+      ? "Akaunti ya msimamizi haiwezi kuingia hapa. Tumia mfumo wa wasimamizi."
+      : "Administrator accounts cannot sign in here. Please use the administrator's portal.",
   },
   feedback: {
     authenticated: isSwahili.value ? "Umefanikiwa kuingia" : "Successfully logged in",
@@ -144,6 +147,13 @@ const signIn = async () => {
         }
       );
 
+      if (response?.twoFactorRequired === true) {
+        userSignIn.controller.feedback = content.value.errors.verificationRequired;
+        userSignIn.controller.isSucces = false;
+        isDisable.value = false;
+        return;
+      }
+
       const issuedAccessToken = response?.accessToken ?? response?.access_token;
       const issuedRefreshToken = response?.refreshToken ?? response?.refresh_token;
       if (typeof issuedAccessToken !== 'string' || !issuedAccessToken.trim()) {
@@ -205,7 +215,7 @@ const signIn = async () => {
       refreshToken.value = typeof issuedRefreshToken === 'string' ? issuedRefreshToken : null;
       userToken.value = response.user;
       useAuthStore().setToken(accessToken.value);
-      
+
       // Navigate to the intended page after login
       const router = useRouter();
       const redirectPath =
