@@ -10,6 +10,7 @@ import { resolveEducationLevelFromRoute } from "~/utilities/educationRoute";
 
 const route = useRoute();
 const router = useRouter();
+const isHubPage = computed(() => /^\/(primary|secondary|education-hub)\/?$/.test(route.path));
 const contentLayoutLanguage = useContentLayoutLanguage();
 
 const userToken = useCookie("signInUserToken");
@@ -180,7 +181,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport :to="isHubPage ? '#hub-ai-launcher' : 'body'" defer>
     <client-only>
       <div
         v-if="showLauncher"
