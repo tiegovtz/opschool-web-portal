@@ -72,8 +72,8 @@ const content = computed(() => ({
     passwordRequired: isSwahili.value ? "Nenosiri linahitajika" : "Password is required",
     invalidCredentials: isSwahili.value ? "Jina la mtumiaji au nenosiri si sahihi" : "Invalid username or password",
     verificationRequired: isSwahili.value
-      ? "Akaunti ya msimamizi haiwezi kuingia hapa. Tumia mfumo wa wasimamizi."
-      : "Administrator accounts cannot sign in here. Please use the administrator's portal.",
+      ? "Akaunti ya msimamizi haiwezi kuingia hapa. Tembelea mfumo wa wasimamizi."
+      : "Administrator accounts cannot sign in here. Please visit administrator's portal.",
   },
   feedback: {
     authenticated: isSwahili.value ? "Umefanikiwa kuingia" : "Successfully logged in",
