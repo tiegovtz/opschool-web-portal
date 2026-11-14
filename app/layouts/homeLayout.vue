@@ -20,6 +20,8 @@
       <NuxtImg src="/images/2.KitabuKimoja.webp" alt="KITABU KIMOJA MWANAFUNZI MMOJA" class="object-contain w-full h-full" />
     </div>  -->
     
+    <div id="hub-ai-launcher" />
+
     <!-- Footer -->
     <div class="home-layout-footer hidden shrink-0 md:block"><FooterView :language :education-level /></div>
     <MobileBottomNav :language :education-level />
