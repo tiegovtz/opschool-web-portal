@@ -8,6 +8,7 @@ import { mediaParser } from "~/utilities/parsers/mediaParser";
 import conversationParser from "~/utilities/parsers/conversationParser";
 import { activityPopupId, currentTopic, experimrntUrl } from "~/utilities/controlls";
 import QuestionsContainer from "~/components/chapter/questionsContainer.vue";
+import type { ChapterAction } from "~/types/chapterAction";
 import AIAssistant from "~/components/chapter/AIAssistant.vue";
 import { isTokenExpiringSoon } from "~/utilities/jwToken";
 import apiDocs from "~/utilities/apiDocs";
@@ -196,28 +197,26 @@ const isFullscreen = ref(false);
 const activePopupActivityId = computed(() => String(activityPopupId.value ?? ""));
 
 // Changer Chapter
-const changeChapter = (action: string) => {
-  if (chapters.number >= 1 && chapters.number <= chapters.list?.length) {
-    // p = Previous and n = Next
-    if (action.toLowerCase() == "p") {
-      chapters.number == 1 ? "" : chapters.number--;
-      getChapter(chapters.list && chapters.list[chapters.number - 1]._id);
-      chapters.isAttemptingQuizes = false; //close quiz
-    } else if (action.toLowerCase() == "n") {
-      // n = Next Chapter
-      chapters.number == (chapters.list)?.length ? "" : chapters.number++;
-      getChapter(chapters.list[chapters.number - 1]._id);
-      chapters.isAttemptingQuizes = false; //close quiz
-    } else if (action.toLowerCase() == "r") {
-      // Read again
-      chapters.isAttemptingQuizes = false; //close quiz
-    }
-    // Scroll Up when chapter changed
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth", // Smooth scrolling effect
-    });
+const changeChapter = (action: ChapterAction) => {
+  const currentIndex = chapters.list.findIndex(
+    (chapter: any) => chapter._id === chapters.currentChapterId,
+  );
+  const index = currentIndex >= 0 ? currentIndex : chapters.number - 1;
+  if (action === "next" || action === "previous") {
+    const nextIndex = index + (action === "next" ? 1 : -1);
+    const nextChapterId = chapters.list[nextIndex]?._id;
+    if (!nextChapterId) return;
+
+    chapters.number = nextIndex + 1;
+    chapters.isAttemptingQuizes = false;
+    getChapter(nextChapterId);
+  } else if (action === "read") {
+    chapters.isAttemptingQuizes = false;
+  } else {
+    return;
   }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 // function for toggling  experiment fullscreeen
@@ -1385,7 +1384,7 @@ definePageMeta({
             <!-- Next and Previous chapter Action -->
             <div class="flex flex-row-reverse items-center justify-between lg:hidden">
               <!-- Next Chapter -->
-              <button @click="changeChapter('n')" :disabled="chapters.number == chapters.list?.length" :class="[
+              <button @click="changeChapter('next')" :disabled="chapters.number == chapters.list?.length" :class="[
                 'flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue',
                 { 'opacity-0': chapters.number == chapters.list?.length }]">
                 <p class="flex gap-2 capitalize">
@@ -1397,7 +1396,7 @@ definePageMeta({
               </button>
 
               <!-- Previous Chapter -->
-              <button @click="changeChapter('p')" :disabled="chapters.number <= 1" :class="[
+              <button @click="changeChapter('previous')" :disabled="chapters.number <= 1" :class="[
                 'flex items-center justify-center h-10 gap-4 px-4 text-white rounded-md bg-oceanBlue hover:bg-deepBlue',
                 { 'opacity-0': chapters.number <= 1 }
               ]">

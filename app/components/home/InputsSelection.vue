@@ -49,8 +49,7 @@ const EDUCATION_LEVEL_RENDER_ORDER: Record<string, number> = {
 }
 
 const sortedEducationLevels = computed(() => {
-  const list = educationLevels.value || []
-  return [...list].sort((a, b) => {
+  return [...safeEducationLevels.value].sort((a, b) => {
     const aOrder = EDUCATION_LEVEL_RENDER_ORDER[a?.name ?? ""] ?? Number.MAX_SAFE_INTEGER
     const bOrder = EDUCATION_LEVEL_RENDER_ORDER[b?.name ?? ""] ?? Number.MAX_SAFE_INTEGER
     if (aOrder !== bOrder) return aOrder - bOrder
@@ -163,6 +162,10 @@ const { data: educationLevels, pending: educationLevelsPending } = useFetch<
   default: () => [],
 });
 
+const safeEducationLevels = computed<educationLevel[]>(() =>
+  Array.isArray(educationLevels.value) ? educationLevels.value : [],
+);
+
 const selectedEducationBucket = computed(() => getEducationBucket(level.value));
 
 const { data: classLevels, pending: classLevelsPending } = useFetch<
@@ -197,9 +200,9 @@ const { data: publicSubjects, pending: publicSubjectsPending } = useFetch<
 });
 
 const matchedEducationLevels = computed(() => {
-  if (!props.educationLevel || !educationLevels.value.length) return [];
+  if (!props.educationLevel || !safeEducationLevels.value.length) return [];
 
-  return educationLevels.value.filter((educationLevelOption) =>
+  return safeEducationLevels.value.filter((educationLevelOption) =>
     isEducationLevelVisibleInHub(
       educationLevelOption.name,
       props.educationLevel,
@@ -227,7 +230,7 @@ watch(
 const filteredEducationLevels = computed(() =>
   matchedEducationLevels.value.length
     ? matchedEducationLevels.value
-    : educationLevels.value,
+    : safeEducationLevels.value,
 );
 
 const educationLevelOptions = computed<DropdownOption[]>(() => {

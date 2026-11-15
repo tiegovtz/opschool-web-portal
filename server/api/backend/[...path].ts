@@ -281,6 +281,5 @@ export default defineEventHandler(async (event) => {
   // --------------------------------------------------
   // Stream backend response without transformation
   // --------------------------------------------------
-
   return sendStream(event, response.body);
 });
