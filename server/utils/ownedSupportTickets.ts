@@ -20,7 +20,8 @@ export async function ownedSupportTickets(requestPage: (page: number) => Promise
 export function filterOwnedSupportTickets(items: SupportTicket[], filters: { category?: string; status?: string; search?: string; page: number; limit: number }) {
   const counts = Object.fromEntries(['technical','feature','support'].map(category => [category, { total: items.filter(item => item.category === category).length, new: items.filter(item => item.category === category && item.status === 'new').length }]));
   const search = filters.search?.toLowerCase();
-  const matches = [...items].sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).filter(item => (!filters.category || item.category === filters.category) && (!filters.status || item.status === filters.status) && (!search || `${item.subject} ${item.body}`.toLowerCase().includes(search)));
-  const summary = { submitted: items.length, pending: items.filter(item => item.status !== 'resolved').length, solved: items.filter(item => item.status === 'resolved').length };
+  const latestResolved = new Set([...items].filter(item => item.status === 'resolved').sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0,5).map(item => item.id));
+  const matches = [...items].filter(item => item.status !== 'resolved' || latestResolved.has(item.id)).sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).filter(item => (!filters.category || item.category === filters.category) && (!filters.status || item.status === filters.status) && (!search || `${item.subject} ${item.body}`.toLowerCase().includes(search)));
+  const summary = { submitted: items.filter(item => item.status === 'new').length, pending: items.filter(item => item.status === 'in_review').length, solved: items.filter(item => item.status === 'resolved').length };
   return { summary, items: matches.slice((filters.page - 1) * filters.limit, filters.page * filters.limit), total: matches.length, counts };
 }

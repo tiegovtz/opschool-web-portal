@@ -58,8 +58,26 @@ test('Swagger user pagination is aggregated before filtering and counts; private
   assert.equal(items[0].attachments[0].data,undefined);
   const result = owned.filterOwnedSupportTickets(items,{status:'resolved',search:'Lesson 53',page:1,limit:10});
   assert.equal(result.total,1); assert.equal(result.items[0].id,records[52].id);
-  assert.deepEqual(result.summary,{submitted:53,pending:52,solved:1});
+  assert.deepEqual(result.summary,{submitted:52,pending:0,solved:1});
   await assert.rejects(owned.ownedSupportTickets(async () => ({items:[],total:1,counts})),/incomplete/);
+});
+
+test('resolved history keeps only the five newest across pages and filters while counts retain all statuses', () => {
+  const resolved = Array.from({length:8}, (_,i) => ({...ticket(i+1,'resolved'),createdAt:`2026-11-${String(i+1).padStart(2,'0')}T06:00:00.000Z`}));
+  const records = [ticket(20), ticket(21,'in_review'), ...resolved.reverse()];
+  const first = owned.filterOwnedSupportTickets(records,{page:1,limit:3});
+  const second = owned.filterOwnedSupportTickets(records,{page:2,limit:3});
+  const third = owned.filterOwnedSupportTickets(records,{page:3,limit:3});
+  assert.equal(first.total,7);
+  assert.deepEqual(first.summary,{submitted:1,pending:1,solved:8});
+  const visibleResolved = [...first.items,...second.items,...third.items].filter(item => item.status === 'resolved');
+  assert.deepEqual(visibleResolved.map(item => Number(item.id)),[8,7,6,5,4]);
+  const hiddenSearch = owned.filterOwnedSupportTickets(records,{status:'resolved',search:'Lesson 1',page:1,limit:10});
+  assert.equal(hiddenSearch.total,0);
+  const recent = owned.filterOwnedSupportTickets(records,{status:'resolved',page:1,limit:10});
+  assert.equal(recent.total,5);
+  assert.equal(owned.filterOwnedSupportTickets(records,{status:'new',page:1,limit:10}).total,1);
+  assert.equal(owned.filterOwnedSupportTickets(records,{status:'in_review',page:1,limit:10}).total,1);
 });
 
 test('live feedback and support handlers forward forms, sanitize outputs, and keep read access authenticated', async () => {
